@@ -200,13 +200,6 @@ public class AntBuilder extends BuilderSupport {
 
                 // restore original input stream
                 System.setIn(originalIn);
-                try {
-                    if (inputStream != null) {
-                        inputStream.close();
-                    }
-                } catch (IOException ioe) {
-                    log.log(Level.WARNING, "The wrapper input stream around System.in couldn't be closed.");
-                }
             }
         }
         else {
