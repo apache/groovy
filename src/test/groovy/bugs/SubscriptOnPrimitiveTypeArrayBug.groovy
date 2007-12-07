@@ -29,4 +29,12 @@ class SubscriptOnPrimitiveTypeArrayBug extends TestSupport {
         int i2 = i1
         assert i2 == 1
     }
+
+    void testIntArrayObjectRangeSelection() {
+        int[] ia = [1000, 1100, 1200, 1300, 1400]
+        def range = new ObjectRange(new Integer(1), new Integer(3))
+        def selected = ia[range]
+        assert selected == [1100, 1200, 1300]
+    }
+
 }

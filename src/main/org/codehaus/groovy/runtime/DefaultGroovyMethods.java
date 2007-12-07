@@ -3859,162 +3859,442 @@ public class DefaultGroovyMethods {
     // Primitive type array methods
     //-------------------------------------------------------------------------
 
-    public static Object getAt(byte[] array, int idx) {
-        return primitiveArrayGet(array, idx);
+    /**
+     * Support the subscript operator for a byte array
+     *
+     * @param array a byte array
+     * @param index the index of the item to retrieve
+     * @return the byte at the given index
+     */
+    public static Object getAt(byte[] array, int index) {
+        return primitiveArrayGet(array, index);
     }
 
-    public static Object getAt(char[] array, int idx) {
-        return primitiveArrayGet(array, idx);
+    /**
+     * Support the subscript operator for a char array
+     *
+     * @param array a char array
+     * @param index the index of the item to retrieve
+     * @return the char at the given index
+     */
+    public static Object getAt(char[] array, int index) {
+        return primitiveArrayGet(array, index);
     }
 
-    public static Object getAt(short[] array, int idx) {
-        return primitiveArrayGet(array, idx);
+    /**
+     * Support the subscript operator for a short array
+     *
+     * @param array a short array
+     * @param index the index of the item to retrieve
+     * @return the short at the given index
+     */
+    public static Object getAt(short[] array, int index) {
+        return primitiveArrayGet(array, index);
     }
 
-    public static Object getAt(int[] array, int idx) {
-        return primitiveArrayGet(array, idx);
+    /**
+     * Support the subscript operator for an int array
+     *
+     * @param array an int array
+     * @param index the index of the item to retrieve
+     * @return the int at the given index
+     */
+    public static Object getAt(int[] array, int index) {
+        return primitiveArrayGet(array, index);
     }
 
-    public static Object getAt(long[] array, int idx) {
-        return primitiveArrayGet(array, idx);
+    /**
+     * Support the subscript operator for a long array
+     *
+     * @param array a long array
+     * @param index the index of the item to retrieve
+     * @return the long at the given index
+     */
+    public static Object getAt(long[] array, int index) {
+        return primitiveArrayGet(array, index);
     }
 
-    public static Object getAt(float[] array, int idx) {
-        return primitiveArrayGet(array, idx);
+    /**
+     * Support the subscript operator for a float array
+     *
+     * @param array a float array
+     * @param index the index of the item to retrieve
+     * @return the float at the given index
+     */
+    public static Object getAt(float[] array, int index) {
+        return primitiveArrayGet(array, index);
     }
 
-    public static Object getAt(double[] array, int idx) {
-        return primitiveArrayGet(array, idx);
+    /**
+     * Support the subscript operator for a double array
+     *
+     * @param array a double array
+     * @param index the index of the item to retrieve
+     * @return the double at the given index
+     */
+    public static Object getAt(double[] array, int index) {
+        return primitiveArrayGet(array, index);
     }
 
-    public static Object getAt(boolean[] array, int idx) {
-        return primitiveArrayGet(array, idx);
+    /**
+     * Support the subscript operator for a boolean array
+     *
+     * @param array a boolean array
+     * @param index the index of the item to retrieve
+     * @return the boolean at the given index
+     */
+    public static Object getAt(boolean[] array, int index) {
+        return primitiveArrayGet(array, index);
     }
 
+    /**
+     * Support the subscript operator with a range for a byte array
+     *
+     * @param array a byte array
+     * @param range a range indicating the indices for the items to retrieve
+     * @return list of the retrieved bytes
+     */
     public static Object getAt(byte[] array, Range range) {
         return primitiveArrayGet(array, range);
     }
 
+    /**
+     * Support the subscript operator with a range for a char array
+     *
+     * @param array a char array
+     * @param range a range indicating the indices for the items to retrieve
+     * @return list of the retrieved chars
+     */
     public static Object getAt(char[] array, Range range) {
         return primitiveArrayGet(array, range);
     }
 
+    /**
+     * Support the subscript operator with a range for a short array
+     *
+     * @param array a short array
+     * @param range a range indicating the indices for the items to retrieve
+     * @return list of the retrieved shorts
+     */
     public static Object getAt(short[] array, Range range) {
         return primitiveArrayGet(array, range);
     }
 
+    /**
+     * Support the subscript operator with a range for an int array
+     *
+     * @param array an int array
+     * @param range a range indicating the indices for the items to retrieve
+     * @return list of the ints at the given indices
+     */
     public static Object getAt(int[] array, Range range) {
         return primitiveArrayGet(array, range);
     }
 
+    /**
+     * Support the subscript operator with a range for a long array
+     *
+     * @param array a long array
+     * @param range a range indicating the indices for the items to retrieve
+     * @return list of the retrieved longs
+     */
     public static Object getAt(long[] array, Range range) {
         return primitiveArrayGet(array, range);
     }
 
+    /**
+     * Support the subscript operator with a range for a float array
+     *
+     * @param array a float array
+     * @param range a range indicating the indices for the items to retrieve
+     * @return list of the retrieved floats
+     */
     public static Object getAt(float[] array, Range range) {
         return primitiveArrayGet(array, range);
     }
 
+    /**
+     * Support the subscript operator with a range for a double array
+     *
+     * @param array a double array
+     * @param range a range indicating the indices for the items to retrieve
+     * @return list of the retrieved doubles
+     */
     public static Object getAt(double[] array, Range range) {
         return primitiveArrayGet(array, range);
     }
 
+    /**
+     * Support the subscript operator with a range for a boolean array
+     *
+     * @param array a boolean array
+     * @param range a range indicating the indices for the items to retrieve
+     * @return list of the retrieved booleans
+     */
     public static Object getAt(boolean[] array, Range range) {
         return primitiveArrayGet(array, range);
     }
 
+    /**
+     * Support the subscript operator with an IntRange for a byte array
+     *
+     * @param array a byte array
+     * @param range an IntRange indicating the indices for the items to retrieve
+     * @return list of the retrieved bytes
+     */
     public static Object getAt(byte[] array, IntRange range) {
         return primitiveArrayGet(array, range);
     }
 
+    /**
+     * Support the subscript operator with an IntRange for a char array
+     *
+     * @param array a char array
+     * @param range an IntRange indicating the indices for the items to retrieve
+     * @return list of the retrieved chars
+     */
     public static Object getAt(char[] array, IntRange range) {
         return primitiveArrayGet(array, range);
     }
 
+    /**
+     * Support the subscript operator with an IntRange for a short array
+     *
+     * @param array a short array
+     * @param range an IntRange indicating the indices for the items to retrieve
+     * @return list of the retrieved shorts
+     */
     public static Object getAt(short[] array, IntRange range) {
         return primitiveArrayGet(array, range);
     }
 
+    /**
+     * Support the subscript operator with an IntRange for an int array
+     *
+     * @param array an int array
+     * @param range an IntRange indicating the indices for the items to retrieve
+     * @return list of the retrieved ints
+     */
     public static Object getAt(int[] array, IntRange range) {
         return primitiveArrayGet(array, range);
     }
 
+    /**
+     * Support the subscript operator with an IntRange for a long array
+     *
+     * @param array a long array
+     * @param range an IntRange indicating the indices for the items to retrieve
+     * @return list of the retrieved longs
+     */
     public static Object getAt(long[] array, IntRange range) {
         return primitiveArrayGet(array, range);
     }
 
+    /**
+     * Support the subscript operator with an IntRange for a float array
+     *
+     * @param array a float array
+     * @param range an IntRange indicating the indices for the items to retrieve
+     * @return list of the retrieved floats
+     */
     public static Object getAt(float[] array, IntRange range) {
         return primitiveArrayGet(array, range);
     }
 
+    /**
+     * Support the subscript operator with an IntRange for a double array
+     *
+     * @param array a double array
+     * @param range an IntRange indicating the indices for the items to retrieve
+     * @return list of the retrieved doubles
+     */
     public static Object getAt(double[] array, IntRange range) {
         return primitiveArrayGet(array, range);
     }
 
+    /**
+     * Support the subscript operator with an IntRange for a boolean array
+     *
+     * @param array a boolean array
+     * @param range an IntRange indicating the indices for the items to retrieve
+     * @return list of the retrieved booleans
+     */
     public static Object getAt(boolean[] array, IntRange range) {
         return primitiveArrayGet(array, range);
     }
 
+    /**
+     * Support the subscript operator with an ObjectRange for a byte array
+     *
+     * @param array a byte array
+     * @param range an ObjectRange indicating the indices for the items to retrieve
+     * @return list of the retrieved bytes
+     */
     public static Object getAt(byte[] array, ObjectRange range) {
         return primitiveArrayGet(array, range);
     }
 
+    /**
+     * Support the subscript operator with an ObjectRange for a char array
+     *
+     * @param array a char array
+     * @param range an ObjectRange indicating the indices for the items to retrieve
+     * @return list of the retrieved chars
+     */
     public static Object getAt(char[] array, ObjectRange range) {
         return primitiveArrayGet(array, range);
     }
 
+    /**
+     * Support the subscript operator with an ObjectRange for a short array
+     *
+     * @param array a short array
+     * @param range an ObjectRange indicating the indices for the items to retrieve
+     * @return list of the retrieved shorts
+     */
     public static Object getAt(short[] array, ObjectRange range) {
         return primitiveArrayGet(array, range);
     }
 
+    /**
+     * Support the subscript operator with an ObjectRange for an int array
+     *
+     * @param array an int array
+     * @param range an ObjectRange indicating the indices for the items to retrieve
+     * @return list of the retrieved ints
+     */
     public static Object getAt(int[] array, ObjectRange range) {
         return primitiveArrayGet(array, range);
     }
 
+    /**
+     * Support the subscript operator with an ObjectRange for a long array
+     *
+     * @param array a long array
+     * @param range an ObjectRange indicating the indices for the items to retrieve
+     * @return list of the retrieved longs
+     */
     public static Object getAt(long[] array, ObjectRange range) {
         return primitiveArrayGet(array, range);
     }
 
+    /**
+     * Support the subscript operator with an ObjectRange for a float array
+     *
+     * @param array a float array
+     * @param range an ObjectRange indicating the indices for the items to retrieve
+     * @return list of the retrieved floats
+     */
     public static Object getAt(float[] array, ObjectRange range) {
         return primitiveArrayGet(array, range);
     }
 
+    /**
+     * Support the subscript operator with an ObjectRange for a double array
+     *
+     * @param array a double array
+     * @param range an ObjectRange indicating the indices for the items to retrieve
+     * @return list of the retrieved doubles
+     */
     public static Object getAt(double[] array, ObjectRange range) {
         return primitiveArrayGet(array, range);
     }
 
+    /**
+     * Support the subscript operator with an ObjectRange for a byte array
+     *
+     * @param array a byte array
+     * @param range an ObjectRange indicating the indices for the items to retrieve
+     * @return list of the retrieved bytes
+     */
     public static Object getAt(boolean[] array, ObjectRange range) {
         return primitiveArrayGet(array, range);
     }
 
+    /**
+     * Support the subscript operator with a collection for a byte array
+     *
+     * @param array a byte array
+     * @param indices a collection of indices for the items to retrieve
+     * @return list of the bytes at the given indices
+     */
     public static Object getAt(byte[] array, Collection indices) {
         return primitiveArrayGet(array, indices);
     }
 
+    /**
+     * Support the subscript operator with a collection for a char array
+     *
+     * @param array a char array
+     * @param indices a collection of indices for the items to retrieve
+     * @return list of the chars at the given indices
+     */
     public static Object getAt(char[] array, Collection indices) {
         return primitiveArrayGet(array, indices);
     }
 
+    /**
+     * Support the subscript operator with a collection for a short array
+     *
+     * @param array a short array
+     * @param indices a collection of indices for the items to retrieve
+     * @return list of the shorts at the given indices
+     */
     public static Object getAt(short[] array, Collection indices) {
         return primitiveArrayGet(array, indices);
     }
 
+    /**
+     * Support the subscript operator with a collection for an int array
+     *
+     * @param array an int array
+     * @param indices a collection of indices for the items to retrieve
+     * @return list of the ints at the given indices
+     */
     public static Object getAt(int[] array, Collection indices) {
         return primitiveArrayGet(array, indices);
     }
 
+    /**
+     * Support the subscript operator with a collection for a long array
+     *
+     * @param array a long array
+     * @param indices a collection of indices for the items to retrieve
+     * @return list of the longs at the given indices
+     */
     public static Object getAt(long[] array, Collection indices) {
         return primitiveArrayGet(array, indices);
     }
 
+    /**
+     * Support the subscript operator with a collection for a float array
+     *
+     * @param array a float array
+     * @param indices a collection of indices for the items to retrieve
+     * @return list of the floats at the given indices
+     */
     public static Object getAt(float[] array, Collection indices) {
         return primitiveArrayGet(array, indices);
     }
 
+    /**
+     * Support the subscript operator with a collection for a double array
+     *
+     * @param array a double array
+     * @param indices a collection of indices for the items to retrieve
+     * @return list of the doubles at the given indices
+     */
     public static Object getAt(double[] array, Collection indices) {
         return primitiveArrayGet(array, indices);
     }
 
+    /**
+     * Support the subscript operator with a collection for a boolean array
+     *
+     * @param array a boolean array
+     * @param indices a collection of indices for the items to retrieve
+     * @return list of the booleans at the given indices
+     */
     public static Object getAt(boolean[] array, Collection indices) {
         return primitiveArrayGet(array, indices);
     }
@@ -8395,7 +8675,7 @@ public class DefaultGroovyMethods {
 
     private static boolean isRootLoaderClassOrSubClass(ClassLoader self) {
         Class current = self.getClass();
-        while(current.getName() != Object.class.getName()) {
+        while(!current.getName().equals(Object.class.getName())) {
             if(current.getName().equals(RootLoader.class.getName())) return true;
             current = current.getSuperclass();
         }
