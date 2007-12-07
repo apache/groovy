@@ -99,10 +99,10 @@ if exist "%USERPROFILE%/.groovy/init.bat" call "%USERPROFILE%/.groovy/init.bat"
 @rem interpreter
 if "x" == "x%CP%" goto empty_cp
 :non_empty_cp
-set CP=%STARTER_CLASSPATH%;%CP%;.
+set CP=%CP%;.
 goto after_cp
 :empty_cp
-set CP=%STARTER_CLASSPATH%;.
+set CP=.
 if "x" == "x%CLASSPATH%" goto after_cp
 set STARTER_CLASSPATH=%STARTER_CLASSPATH%;%CLASSPATH%
 :after_cp
