@@ -16,27 +16,22 @@
 package groovy.util;
 
 
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
-import org.apache.tools.ant.BuildLogger;
-import org.apache.tools.ant.NoBannerLogger;
-import org.apache.tools.ant.Project;
-import org.apache.tools.ant.RuntimeConfigurable;
-import org.apache.tools.ant.Target;
-import org.apache.tools.ant.Task;
-import org.apache.tools.ant.UnknownElement;
+import groovy.xml.QName;
+import org.apache.tools.ant.*;
 import org.apache.tools.ant.helper.AntXMLContext;
 import org.apache.tools.ant.helper.ProjectHelper2;
+import org.apache.tools.ant.input.DefaultInputHandler;
 import org.codehaus.groovy.ant.FileScanner;
 import org.xml.sax.Attributes;
 import org.xml.sax.Locator;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.AttributesImpl;
-import groovy.xml.QName;
+
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Allows Ant tasks to be used with GroovyMarkup 
@@ -67,6 +62,10 @@ public class AntBuilder extends BuilderSupport {
 
     public AntBuilder(final Project project, final Target owningTarget) {
         this.project = project;
+
+        this.project.setDefaultInputStream(System.in);
+        this.project.setInputHandler(new DefaultInputHandler());
+        System.setIn(new DemuxInputStream(this.project));
 
         collectorTarget = owningTarget;
         
