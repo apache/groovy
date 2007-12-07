@@ -27,12 +27,13 @@ import org.xml.sax.Locator;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.AttributesImpl;
 
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.io.InputStream;
 
 /**
  * Allows Ant tasks to be used with GroovyMarkup 
@@ -64,10 +65,10 @@ public class AntBuilder extends BuilderSupport {
     public AntBuilder(final Project project, final Target owningTarget) {
         this.project = project;
 
-        setInputStreamHandlingPolicy(System.in);
+        this.project.setDefaultInputStream(System.in);
+        this.project.setInputHandler(new DefaultInputHandler());
 
         collectorTarget = owningTarget;
-        
         antXmlContext = new AntXMLContext(project);
         collectorTarget.setProject(project);
         antXmlContext.setCurrentTarget(collectorTarget);
@@ -190,7 +191,22 @@ public class AntBuilder extends BuilderSupport {
             lastCompletedNode = task;
             // UnknownElement may wrap everything: task, path, ...
             if (task instanceof Task) {
-            	((Task) task).perform();
+                // save original input stream
+                InputStream originalIn = System.in;
+                DemuxInputStream inputStream = new DemuxInputStream(this.project);
+                System.setIn(inputStream);
+
+                ((Task) task).perform();
+
+                // restore original input stream
+                System.setIn(originalIn);
+                try {
+                    if (inputStream != null) {
+                        inputStream.close();
+                    }
+                } catch (IOException ioe) {
+                    log.log(Level.WARNING, "The wrapper input stream around System.in couldn't be closed.");
+                }
             }
         }
         else {
