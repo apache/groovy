@@ -32,6 +32,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.io.InputStream;
 
 /**
  * Allows Ant tasks to be used with GroovyMarkup 
@@ -63,9 +64,7 @@ public class AntBuilder extends BuilderSupport {
     public AntBuilder(final Project project, final Target owningTarget) {
         this.project = project;
 
-        this.project.setDefaultInputStream(System.in);
-        this.project.setInputHandler(new DefaultInputHandler());
-        System.setIn(new DemuxInputStream(this.project));
+        setInputStreamHandlingPolicy(System.in);
 
         collectorTarget = owningTarget;
         
@@ -76,6 +75,27 @@ public class AntBuilder extends BuilderSupport {
         
         // FileScanner is a Groovy hack (utility?)
         project.addDataTypeDefinition("fileScanner", FileScanner.class);
+    }
+
+    /**
+     * <p>
+     * Set the input stream handling policy.
+     * This method can also be used to define a different input stream for text input.
+     * </p>
+     *
+     * <p>
+     * <b>Remark</b>: This policy has been introduced to fix GROOVY-2362.
+     * With the upgrade to Ant 1.7 from Ant 1.6.5, it was not possible to call the input task twice
+     * without getting errors. By using a default input handler and a DemuxInputStream,
+     * it seems to solve the problem.
+     * </p>
+     *
+     * @param in input stream to use for reading input from the command-line
+     */
+    public void setInputStreamHandlingPolicy(InputStream in) {
+        this.project.setDefaultInputStream(in);
+        this.project.setInputHandler(new DefaultInputHandler());
+        System.setIn(new DemuxInputStream(this.project));
     }
 
     public AntBuilder(final Task parentTask) {
