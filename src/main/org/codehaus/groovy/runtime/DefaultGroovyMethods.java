@@ -8704,7 +8704,7 @@ public class DefaultGroovyMethods {
      * @return a new instance of this class
      */
     public static Object newInstance(Class c) {
-        return InvokerHelper.getInstance().invokeConstructorOf(c, null);
+        return InvokerHelper.invokeConstructorOf(c, null);
     }
 
     /**
@@ -8719,7 +8719,7 @@ public class DefaultGroovyMethods {
      */
     public static Object newInstance(Class c, Object[] args) {
         if (args == null) args = new Object[]{null};
-        return InvokerHelper.getInstance().invokeConstructorOf(c, args);
+        return InvokerHelper.invokeConstructorOf(c, args);
     }
 
 

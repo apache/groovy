@@ -54,8 +54,6 @@ import java.util.*;
  */
 public class InvokeMethodTest extends GroovyTestCase {
 
-    protected Invoker invoker = InvokerHelper.getInstance();
-
     // Method invocation tests
     //-------------------------------------------------------------------------
 
@@ -442,7 +440,7 @@ public class InvokeMethodTest extends GroovyTestCase {
 
     protected Object invoke(Object object, String method, Object args) throws Throwable {
         try {
-            return invoker.invokeMethod(object, method, args);
+            return InvokerHelper.invokeMethod(object, method, args);
         }
         catch (InvokerInvocationException e) {
             throw e.getCause();

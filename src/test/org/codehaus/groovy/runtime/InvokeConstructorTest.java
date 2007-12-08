@@ -57,8 +57,6 @@ import groovy.util.GroovyTestCase;
  */
 public class InvokeConstructorTest extends GroovyTestCase {
 
-    protected Invoker invoker = new Invoker();
-
     public void testInvokeConstructorNoParams() throws Throwable {
         assertConstructor(new DummyBean(), new Object[0]);
     }
@@ -91,7 +89,7 @@ public class InvokeConstructorTest extends GroovyTestCase {
 
     protected Object invoke(Class type, Object args) throws Throwable {
         try {
-            return invoker.invokeConstructorOf(type, args);
+            return InvokerHelper.invokeConstructorOf(type, args);
         }
         catch (InvokerInvocationException e) {
             throw e.getCause();

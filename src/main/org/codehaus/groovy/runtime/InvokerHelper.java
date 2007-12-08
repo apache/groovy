@@ -19,6 +19,7 @@ import groovy.lang.*;
 import groovy.xml.dom.DOMUtil;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.IntegerCache;
+import org.codehaus.groovy.runtime.wrappers.PojoWrapper;
 import org.w3c.dom.Element;
 
 import java.beans.Introspector;
@@ -36,76 +37,47 @@ import java.util.regex.Pattern;
  * @version $Revision$
  */
 public class InvokerHelper {
-    public static final Object[] EMPTY_ARGS = {
-    };
+    private   static final Object[] EMPTY_MAIN_ARGS = new Object[]{new String[0]};
 
-    private static final Object[] EMPTY_MAIN_ARGS = new Object[]{new String[0]};
+    public    static final Object[] EMPTY_ARGS = {};
+    protected static final Object[] EMPTY_ARGUMENTS = EMPTY_ARGS;
+    protected static final Class[]  EMPTY_TYPES = {};
 
-    private static final Invoker SINGLETON = new Invoker();
-    private static final Object[] EMPTY_OBJECT_ARRAY = new Object[0];
-
-
-    public static MetaClass getMetaClass(Object object) {
-        return getInstance().getMetaClass(object);
-    }
+    static final MetaClassRegistry metaRegistry = GroovySystem.getMetaClassRegistry();
 
     public static void removeClass(Class clazz) {
-        getInstance().removeMetaClass(clazz);
+        metaRegistry.removeMetaClass(clazz);
         Introspector.flushFromCaches(clazz);
-    }
-
-    public static Invoker getInstance() {
-        return SINGLETON;
-    }
-
-    public static Object invokeNoArgumentsMethod(Object object, String methodName) {
-        return getInstance().invokeMethod(object, methodName, EMPTY_ARGS);
-    }
-
-    public static Object invokeMethod(Object object, String methodName, Object arguments) {
-        return getInstance().invokeMethod(object, methodName, arguments);
-    }
-
-    public static Object invokeSuperMethod(Object object, String methodName, Object arguments) {
-        return getInstance().invokeSuperMethod(object, methodName, arguments);
     }
 
     public static Object invokeMethodSafe(Object object, String methodName, Object arguments) {
         if (object != null) {
-            return getInstance().invokeMethod(object, methodName, arguments);
+            return invokeMethod(object, methodName, arguments);
         }
         return null;
     }
 
-    public static Object invokeStaticMethod(Class type, String methodName, Object arguments) {
-        return getInstance().invokeStaticMethod(type, methodName, arguments);
-    }
-
     public static Object invokeStaticMethod(String klass, String methodName, Object arguments) throws ClassNotFoundException {
         Class type = Class.forName(klass);
-        return getInstance().invokeStaticMethod(type, methodName, arguments);
+        return invokeStaticMethod(type, methodName, arguments);
     }
 
 
     public static Object invokeStaticNoArgumentsMethod(Class type, String methodName) {
-        return getInstance().invokeStaticMethod(type, methodName, EMPTY_ARGS);
-    }
-
-    public static Object invokeConstructorOf(Class type, Object arguments) {
-        return getInstance().invokeConstructorOf(type, arguments);
+        return invokeStaticMethod(type, methodName, EMPTY_ARGS);
     }
 
     public static Object invokeConstructorOf(String klass, Object arguments) throws ClassNotFoundException {
         Class type = Class.forName(klass);
-        return getInstance().invokeConstructorOf(type, arguments);
+        return invokeConstructorOf(type, arguments);
     }
 
     public static Object invokeNoArgumentsConstructorOf(Class type) {
-        return getInstance().invokeConstructorOf(type, EMPTY_ARGS);
+        return invokeConstructorOf(type, EMPTY_ARGS);
     }
 
     public static Object invokeClosure(Object closure, Object arguments) {
-        return getInstance().invokeMethod(closure, "doCall", arguments);
+        return invokeMethod(closure, "doCall", arguments);
     }
 
     public static List asList(Object value) {
@@ -136,8 +108,6 @@ public class InvokerHelper {
             return toListString((Collection) arguments);
         if (arguments instanceof Map)
             return toMapString((Map) arguments);
-        if (arguments instanceof Collection)
-            return format(arguments, true);
         return format(arguments, false);
     }
 
@@ -146,26 +116,69 @@ public class InvokerHelper {
     }
 
     public static Object getAttribute(Object object, String attribute) {
-        return getInstance().getAttribute(object, attribute);
+//        if (object == null) {
+//            throw new NullPointerException("Cannot get attribute: " + attribute + " on null object");
+//        }
+
+        if (object instanceof Class) {
+            return metaRegistry.getMetaClass((Class) object).getAttribute(object, attribute);
+        }
+        if (object instanceof GroovyObject) {
+            return ((GroovyObject) object).getMetaClass().getAttribute(object, attribute);
+        }
+        return metaRegistry.getMetaClass(object.getClass()).getAttribute(object, attribute);
     }
 
     public static void setAttribute(Object object, String attribute, Object newValue) {
-        getInstance().setAttribute(object, attribute, newValue);
+//        if (object == null) {
+//            throw new GroovyRuntimeException("Cannot set attribute on null object");
+//        }
+
+        if (object instanceof Class) {
+            metaRegistry.getMetaClass((Class) object).setAttribute(object, attribute, newValue);
+        }
+        if (object instanceof GroovyObject) {
+            ((GroovyObject) object).getMetaClass().setAttribute(object, attribute, newValue);
+        }
+        metaRegistry.getMetaClass(object.getClass()).setAttribute(object, attribute, newValue);
     }
 
     public static Object getProperty(Object object, String property) {
-        return getInstance().getProperty(object, property);
+//        if (object == null) {
+//            throw new NullPointerException("Cannot get property: " + property + " on null object");
+//        }
+        if (object instanceof GroovyObject) {
+            GroovyObject pogo = (GroovyObject) object;
+            return pogo.getProperty(property);
+        }
+        if (object instanceof Class) {
+            Class c = (Class) object;
+            return metaRegistry.getMetaClass(c).getProperty(object, property);
+        }
+        return metaRegistry.getMetaClass(object.getClass()).getProperty(object, property);
     }
 
     public static Object getPropertySafe(Object object, String property) {
         if (object != null) {
-            return getInstance().getProperty(object, property);
+            return getProperty(object, property);
         }
         return null;
     }
 
     public static void setProperty(Object object, String property, Object newValue) {
-        getInstance().setProperty(object, property, newValue);
+//        if (object == null) {
+//            throw new GroovyRuntimeException("Cannot set property on null object");
+//        }
+        if (object instanceof GroovyObject) {
+            GroovyObject pogo = (GroovyObject) object;
+            pogo.setProperty(property, newValue);
+        }
+        else {
+            if (object instanceof Class)
+                metaRegistry.getMetaClass((Class) object).setProperty((Class) object, property, newValue);
+            else
+                metaRegistry.getMetaClass(object.getClass()).setProperty(object, property, newValue);
+        }
     }
 
     /**
@@ -173,7 +186,7 @@ public class InvokerHelper {
      * At some point a better name might be in order.
      */
     public static void setProperty2(Object newValue, Object object, String property) {
-        getInstance().setProperty(object, property, newValue);
+        setProperty(object, property, newValue);
     }
 
 
@@ -204,7 +217,10 @@ public class InvokerHelper {
      * Returns the method pointer for the given object name
      */
     public static Closure getMethodPointer(Object object, String methodName) {
-        return getInstance().getMethodPointer(object, methodName);
+        if (object == null) {
+            throw new NullPointerException("Cannot access method pointer for '" + methodName + "' on null object");
+        }
+        return new MethodClosure(object, methodName);
     }
 
     public static Object unaryMinus(Object value) {
@@ -239,7 +255,7 @@ public class InvokerHelper {
             }
             return newlist;
         }
-        return invokeMethod(value, "negative", EMPTY_OBJECT_ARRAY);
+        return invokeMethod(value, "negative", EMPTY_ARGS);
     }
 
     public static Object unaryPlus(Object value) {
@@ -260,7 +276,7 @@ public class InvokerHelper {
             }
             return newlist;
         }
-        return invokeMethod(value, "positive", EMPTY_OBJECT_ARRAY);
+        return invokeMethod(value, "positive", EMPTY_ARGS);
     }
 
     /**
@@ -407,7 +423,7 @@ public class InvokerHelper {
      * Sets the properties on the given object
      */
     public static void setProperties(Object object, Map map) {
-        MetaClass mc = getInstance().getMetaClass(object);
+        MetaClass mc = getMetaClass(object);
         for (Iterator iter = map.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry) iter.next();
             String key = entry.getKey().toString();
@@ -681,7 +697,115 @@ public class InvokerHelper {
             }
             return newlist;
         }
-        return invokeMethod(value, "bitwiseNegate", EMPTY_OBJECT_ARRAY);
+        return invokeMethod(value, "bitwiseNegate", EMPTY_ARGS);
     }
 
+    public static MetaClassRegistry getMetaRegistry() {
+        return metaRegistry;
+    }
+
+    public static MetaClass getMetaClass(Object object) {
+        return metaRegistry.getMetaClass(object.getClass());
+    }
+
+    /**
+     * Invokes the given method on the object.
+     */
+    public static Object invokeMethod(Object object, String methodName, Object arguments) {
+        if (object == null) {
+            object = NullObject.getNullObject();
+            //throw new NullPointerException("Cannot invoke method " + methodName + "() on null object");
+        }
+
+        // if the object is a Class, call a static method from that class
+        if (object instanceof Class) {
+            Class theClass = (Class) object;
+            MetaClass metaClass = metaRegistry.getMetaClass(theClass);
+            return metaClass.invokeStaticMethod(object, methodName, asArray(arguments));
+        }
+        else { // it's an instance
+            // if it's not an object implementing GroovyObject (thus not builder, nor a closure)
+            if (!(object instanceof GroovyObject)) {
+                return invokePojoMethod(object, methodName, arguments);
+            }
+            // it's an object implementing GroovyObject
+            else {
+                return invokePogoMethod(object, methodName, arguments);
+            }
+        }
+    }
+
+    private static Object invokePojoMethod(Object object, String methodName, Object arguments) {
+        Class theClass = object.getClass();
+        MetaClass metaClass = metaRegistry.getMetaClass(theClass);
+        return metaClass.invokeMethod(object, methodName, asArray(arguments));
+    }
+
+    private static Object invokePogoMethod(Object object, String methodName, Object arguments) {
+        GroovyObject groovy = (GroovyObject) object;
+        boolean intercepting = groovy instanceof GroovyInterceptable;
+        try {
+            // if it's a pure interceptable object (even intercepting toString(), clone(), ...)
+            if (intercepting) {
+                return groovy.invokeMethod(methodName, asUnwrappedArray(arguments));
+            }
+            //else try a statically typed method or a GDK method
+            return groovy.getMetaClass().invokeMethod(object, methodName, asArray(arguments));
+        } catch (MissingMethodException e) {
+            if (!intercepting && e.getMethod().equals(methodName) && object.getClass() == e.getType()) {
+                // in case there's nothing else, invoke the object's own invokeMethod()
+                return groovy.invokeMethod(methodName, asUnwrappedArray(arguments));
+            }
+            throw e;
+        }
+    }
+
+    public static Object invokeSuperMethod(Object object, String methodName, Object arguments) {
+        if (object == null) {
+            throw new NullPointerException("Cannot invoke method " + methodName + "() on null object");
+        }
+
+        Class theClass = object.getClass();
+
+        MetaClass metaClass = metaRegistry.getMetaClass(theClass.getSuperclass());
+        return metaClass.invokeMethod(object, methodName, asArray(arguments));
+    }
+
+    public static Object invokeStaticMethod(Class type, String method, Object arguments) {
+        MetaClass metaClass = metaRegistry.getMetaClass(type);
+        return metaClass.invokeStaticMethod(type, method, asArray(arguments));
+    }
+
+    public static Object invokeConstructorOf(Class type, Object arguments) {
+        MetaClass metaClass = metaRegistry.getMetaClass(type);
+        return metaClass.invokeConstructor(asArray(arguments));
+    }
+
+    /**
+     * Converts the given object into an array; if its an array then just
+     * cast otherwise wrap it in an array
+     */
+    public static Object[] asArray(Object arguments) {
+
+    	if (arguments == null) {
+    		return EMPTY_ARGUMENTS;
+    	}
+    	if (arguments instanceof Object[]) {
+    		return  (Object[]) arguments;
+    	}
+    	return new Object[]{arguments};
+    }
+
+    public static Object[] asUnwrappedArray(Object arguments) {
+
+        Object[] args = asArray(arguments);
+
+        for (int i=0; i<args.length; i++) {
+            if (args[i] instanceof PojoWrapper) {
+                args[i] = ((PojoWrapper)args[i]).unwrap();
+            }
+        }
+
+        return args;
+    }
 }

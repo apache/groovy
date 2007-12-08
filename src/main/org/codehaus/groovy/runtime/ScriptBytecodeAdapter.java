@@ -790,14 +790,6 @@ public class ScriptBytecodeAdapter {
         return InvokerHelper.getMetaClass(object);
     }
 
-    private static MetaClass getMetaClassObjectNotNull(Object object) {
-        if (!(object instanceof GroovyObject)) {
-            return initMetaClass(object);
-        } else {
-            return ((GroovyObject) object).getMetaClass();
-        }
-    }
-
     private static boolean isSpreadable (Object receiver) {
         return (receiver instanceof Collection)
           || (receiver instanceof Iterator)

@@ -62,8 +62,6 @@ import java.util.*;
  */
 public class InvokerTest extends GroovyTestCase {
 
-    protected Invoker invoker = new Invoker();
-
     public void testAsCollectionWithArray() {
         Object[] array = {"A", "B", "C"};
         assertAsCollection(array, 3);

@@ -11,12 +11,12 @@ class CustomMetaClassTest extends GroovyTestCase{
         def firstInstance = "first"
         assertEquals "first", firstInstance.toString()
 
-        def invoker = InvokerHelper.instance
-        def stored = invoker.metaRegistry.getMetaClass(String.class)
+        MetaClassRegistry registry = InvokerHelper.metaRegistry
+        def stored = registry.getMetaClass(String.class)
         assert stored instanceof MetaClassImpl
         def myMetaClass = new MyDelegatingMetaClass(String.class)
-        invoker.metaRegistry.removeMetaClass String.class
-        invoker.metaRegistry.setMetaClass(String.class, myMetaClass)
+        registry.removeMetaClass String.class
+        registry.setMetaClass(String.class, myMetaClass)
 
         /*
          * Constructing second instance after meta class replacment
@@ -32,8 +32,8 @@ class CustomMetaClassTest extends GroovyTestCase{
         assertEquals "changed first", firstInstance.toString()
         assertEquals "changed second", secondInstance.toString()
 
-        invoker.metaRegistry.removeMetaClass String.class
-        stored = invoker.metaRegistry.getMetaClass(String.class)
+        registry.removeMetaClass String.class
+        stored = registry.getMetaClass(String.class)
         assert stored instanceof MetaClassImpl
     }
 

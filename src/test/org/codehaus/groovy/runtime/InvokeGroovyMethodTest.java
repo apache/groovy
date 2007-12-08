@@ -61,7 +61,6 @@ import java.util.List;
  */
 public class InvokeGroovyMethodTest extends GroovyTestCase {
 
-    protected Invoker invoker = new Invoker();
     private StringBuffer buffer;
 
     // Method invocation tests
@@ -74,7 +73,7 @@ public class InvokeGroovyMethodTest extends GroovyTestCase {
         list.add("abc");
         list.add("def");
 
-        invoker.invokeMethod(list, "each", new Closure(this) {
+        InvokerHelper.invokeMethod(list, "each", new Closure(this) {
             protected Object doCall(Object arguments) {
                 buffer.append(arguments.toString());
                 return null;

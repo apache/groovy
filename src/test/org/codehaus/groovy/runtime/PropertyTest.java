@@ -65,8 +65,6 @@ import java.util.Map;
  */
 public class PropertyTest extends GroovyTestCase {
 
-    protected Invoker invoker = new Invoker();
-
     public void testMapProperties() throws Exception {
         Map map = new HashMap();
         map.put("foo", "abc");
