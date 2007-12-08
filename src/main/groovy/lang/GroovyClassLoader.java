@@ -492,7 +492,7 @@ public class GroovyClassLoader extends URLClassLoader {
      */
     protected Class getClassCacheEntry(String name) {
         if (name == null) return null;
-        synchronized (this) {
+        synchronized (classCache) {
             return (Class) classCache.get(name);
         }
     }
@@ -506,7 +506,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @see #clearCache()
      */
     protected void setClassCacheEntry(Class cls) {
-        synchronized (this) {
+        synchronized (classCache) {
             classCache.put(cls.getName(), cls);
         }
     }
@@ -520,7 +520,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @see #clearCache()
      */
     protected void removeClassCacheEntry(String name) {
-        synchronized (this) {
+        synchronized (classCache) {
             classCache.remove(name);
         }
     }
@@ -640,12 +640,13 @@ public class GroovyClassLoader extends URLClassLoader {
         // at this point the loading from a parent loader failed
         // and we want to recompile if needed.
         if (lookupScriptFiles) {
-            // synchronize on cache, as we want only one compilation at the same time
+            // synchronize on this, as we want only one compilation at the same time
             synchronized (this) {
                 // try groovy file
                 try {
                     // check if recompilation already happened.
-                    if (getClassCacheEntry(name) != cls) return getClassCacheEntry(name);
+                    final Class classCacheEntry = getClassCacheEntry(name);
+                    if (classCacheEntry != cls) return classCacheEntry;
                     URL source = resourceLoader.loadGroovySource(name);
                     cls = recompile(source, name, cls);
                 } catch (IOException ioe) {
@@ -828,7 +829,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @return all classes loaded by this class loader
      */
     public Class[] getLoadedClasses() {
-        synchronized (this) {
+        synchronized (classCache) {
             final Collection values = classCache.values();
             return (Class[]) values.toArray(new Class[values.size()]);
         }
@@ -842,7 +843,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @see #removeClassCacheEntry(String)
      */
     public void clearCache() {
-        synchronized (this) {
+        synchronized (classCache) {
             classCache.clear();
         }
     }
