@@ -17,9 +17,10 @@ package org.codehaus.groovy.reflection;
 
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.classgen.BytecodeHelper;
+import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.metaclass.MethodHelper;
-import org.codehaus.groovy.runtime.metaclass.ReflectionMetaMethod;
 
+import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
@@ -29,14 +30,13 @@ import java.util.Arrays;
 /**
  * @author Alex.Tkachman
  */
-public class CachedMethod extends ParameterTypes implements Comparable{
+public class CachedMethod extends MetaMethod implements Comparable{
     public final CachedClass cachedClass;
 
-    public final Method cachedMethod;
+    private final Method cachedMethod;
     private boolean alreadySetAccessible;
     private int methodIndex;
     private int hashCode;
-    private MetaMethod reflectionMetaMethod;
 
     public CachedMethod(CachedClass clazz, Method method) {
         this.cachedMethod = method;
@@ -63,7 +63,7 @@ public class CachedMethod extends ParameterTypes implements Comparable{
         return methods[i];
     }
 
-    Class[] getPT() {
+    protected Class[] getPT() {
         return cachedMethod.getParameterTypes();
     }
 
@@ -75,8 +75,24 @@ public class CachedMethod extends ParameterTypes implements Comparable{
         return BytecodeHelper.getMethodDescriptor(getReturnType(), getNativeParameterTypes());
     }
 
-    public Class getDeclaringClass() {
-        return cachedClass.getCachedClass();
+    public CachedClass getDeclaringClass() {
+        return cachedClass;
+    }
+
+    public Object invoke(Object object, Object[] arguments) {
+        try {
+            return setAccessible().invoke(object, arguments);
+        } catch (IllegalArgumentException e) {
+            throw new InvokerInvocationException(e);
+        } catch (IllegalAccessException e) {
+            throw new InvokerInvocationException(e);
+        } catch (InvocationTargetException e) {
+            throw new InvokerInvocationException(e);
+        }
+    }
+
+    public ParameterTypes getParamTypes() {
+        return null;
     }
 
     public Class getReturnType() {
@@ -217,14 +233,6 @@ public class CachedMethod extends ParameterTypes implements Comparable{
 
     public String toString() {
         return cachedMethod.toString();
-    }
-
-    // Should have lock for declaringClass
-    public MetaMethod getReflectionMetaMethod() {
-        if (reflectionMetaMethod == null) {
-          reflectionMetaMethod = new ReflectionMetaMethod(this);
-        }
-        return reflectionMetaMethod;
     }
 }
 

@@ -19,7 +19,6 @@ import groovy.lang.Closure;
 import groovy.lang.ClosureInvokingMethod;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
-import org.codehaus.groovy.reflection.ParameterTypes;
 import org.codehaus.groovy.reflection.ReflectionCache;
 
 import java.lang.reflect.Modifier;
@@ -35,7 +34,6 @@ public class ClosureStaticMetaMethod extends MetaMethod implements ClosureInvoki
 
 	private final Closure callable;
 	private final CachedClass declaringClass;
-    private final ParameterTypes pt;
     private final String name;
 
     /**
@@ -45,7 +43,7 @@ public class ClosureStaticMetaMethod extends MetaMethod implements ClosureInvoki
      * @param c The closure that this ClosureMetaMethod will invoke when called
      */
     public ClosureStaticMetaMethod(String name, Class declaringClass, Closure c) {
-        pt = new ParameterTypes(c.getParameterTypes());
+        super(c.getParameterTypes());
         this.callable = c;
 		this.declaringClass = ReflectionCache.getCachedClass(declaringClass);
         this.name = name;
@@ -72,10 +70,6 @@ public class ClosureStaticMetaMethod extends MetaMethod implements ClosureInvoki
     public CachedClass getDeclaringClass() {
 		return this.declaringClass;
 	}
-
-    public ParameterTypes getParamTypes() {
-        return pt;
-    }
 
     /**
      * Retrieves the closure that is invoked by this MetaMethod

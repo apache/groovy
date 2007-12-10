@@ -594,7 +594,7 @@ public class MetaClassHelper {
     }
 
     public static Object doMethodInvoke(Object object, MetaMethod method, Object[] argumentArray) {
-        argumentArray = method.getParamTypes().coerceArgumentsToClasses(argumentArray);
+        argumentArray = method.coerceArgumentsToClasses(argumentArray);
         try {
             return method.invoke(object, argumentArray);
         } catch (IllegalArgumentException e) {
@@ -639,7 +639,7 @@ public class MetaClassHelper {
             return (ParameterTypes) methodOrConstructor;
         }
         if (methodOrConstructor instanceof MetaMethod) {
-            return ((MetaMethod) methodOrConstructor).getParamTypes();
+            return ((MetaMethod) methodOrConstructor);
         }
         if (methodOrConstructor instanceof Method) {
             Method method = (Method) methodOrConstructor;

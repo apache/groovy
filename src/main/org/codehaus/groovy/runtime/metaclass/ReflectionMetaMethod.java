@@ -18,11 +18,9 @@ package org.codehaus.groovy.runtime.metaclass;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
-import org.codehaus.groovy.reflection.ParameterTypes;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 
 import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 
 public class ReflectionMetaMethod extends MetaMethod {
     protected final CachedMethod method;
@@ -47,10 +45,6 @@ public class ReflectionMetaMethod extends MetaMethod {
         return method.cachedClass;
     }
 
-    public ParameterTypes getParamTypes() {
-        return method;
-    }
-
     public Object invoke(Object object, Object[] arguments) {
         try {
             return method.setAccessible().invoke(object, arguments);
@@ -63,11 +57,11 @@ public class ReflectionMetaMethod extends MetaMethod {
         }
     }
 
-    public boolean isMethod(Method method) {
-        return method == this.method.cachedMethod || super.isMethod(method);
-    }
-
     public String toString () {
         return method.toString();
+    }
+
+    protected Class[] getPT() {
+        return method.getNativeParameterTypes();
     }
 }

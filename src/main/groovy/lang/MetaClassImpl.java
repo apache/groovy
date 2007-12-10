@@ -237,7 +237,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
             CachedMethod[] cachedMethods = c.getMethods();
             for (int i = 0; i < cachedMethods.length; i++) {
-                MetaMethod metaMethod = cachedMethods[i].getReflectionMetaMethod();
+                MetaMethod metaMethod = cachedMethods[i];
                 addToAllMethodsIfPublic(metaMethod);
                 if (!metaMethod.isPrivate() || c == firstGroovySuper)
                   addMetaMethodToIndex(metaMethod, header);
@@ -269,7 +269,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
             CachedMethod[] cachedMethods = c.getMethods();
             for (int i = 0; i < cachedMethods.length; i++) {
-                MetaMethod metaMethod = cachedMethods[i].getReflectionMetaMethod();
+                MetaMethod metaMethod = cachedMethods[i];
                 addToAllMethodsIfPublic(metaMethod);
                 addMetaMethodToIndex(metaMethod, header);
             }
@@ -292,7 +292,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             CachedClass c = (CachedClass) iter.next();
             final CachedMethod[] m = c.getMethods();
             for (int i=0; i != m.length; ++i) {
-                MetaMethod method = m [i].getReflectionMetaMethod();
+                MetaMethod method = m[i];
                 String name = method.getName();
                 MetaMethodIndex.Entry e = metaMethodIndex.getOrPutMethods(name, header);
                 e.methods = metaMethodIndex.addMethodToList(e.methods, method);
@@ -402,7 +402,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
                             int matchingMethod = findMatchingMethod(mopMethods, from, to, method);
                             if (matchingMethod != -1) {
-                                e.methods = mopMethods[matchingMethod].getReflectionMetaMethod();
+                                e.methods = mopMethods[matchingMethod];
                             }
                         }
                     }
@@ -433,7 +433,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
                             int matchingMethod = findMatchingMethod(mopMethods, from, to, method);
                             if (matchingMethod != -1) {
-                                e.methodsForSuper = mopMethods[matchingMethod].getReflectionMetaMethod();
+                                e.methodsForSuper = mopMethods[matchingMethod];
                             }
                         }
                     }
@@ -460,7 +460,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
                         int matchingMethod = findMatchingMethod(mopMethods, from, to, method);
                         if (matchingMethod != -1) {
-                            methods.set(i, mopMethods[matchingMethod].getReflectionMetaMethod());
+                            methods.set(i, mopMethods[matchingMethod]);
                         }
                     }
                 }
@@ -1374,7 +1374,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         List ret = new ArrayList(propertyMap.size());
         for (ComplexKeyHashMap.EntryIterator iter = propertyMap.getEntrySetIterator(); iter.hasNext();) {
             MetaProperty element = (MetaProperty) ((SingleKeyHashMap.Entry) iter.next()).value;
-            if (element instanceof MetaFieldProperty) continue;
+            if (element instanceof CachedField) continue;
             // filter out DGM beans
             if (element instanceof MetaBeanProperty) {
                 MetaBeanProperty mp = (MetaBeanProperty) element;
@@ -1542,8 +1542,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             SingleKeyHashMap.Entry entry = ((SingleKeyHashMap.Entry) iter.next());
 
             MetaProperty mp = (MetaProperty) entry.getValue();
-            if (mp instanceof MetaFieldProperty) {
-                MetaFieldProperty mfp = (MetaFieldProperty) mp;
+            if (mp instanceof CachedField) {
+                CachedField mfp = (CachedField) mp;
                 if (!mfp.isStatic()) continue;
             } else if (mp instanceof MetaBeanProperty) {
                 MetaProperty result = establishStaticMetaProperty(mp);
@@ -1564,7 +1564,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         MetaProperty result = null;
         final MetaMethod getterMethod = mbp.getGetter();
         final MetaMethod setterMethod = mbp.getSetter();
-        final MetaFieldProperty metaField = mbp.getField();
+        final CachedField metaField = mbp.getField();
 
         boolean getter = getterMethod == null || getterMethod.isStatic();
         boolean setter = setterMethod == null || setterMethod.isStatic();
@@ -1642,15 +1642,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private void addFields(final CachedClass klass, SingleKeyHashMap propertyIndex) {
         CachedField[] fields = klass.getFields();
         for (int i = 0; i < fields.length; i++) {
-            MetaFieldProperty mfp = MetaFieldProperty.create(fields[i]);
-            propertyIndex.put(fields[i].getName(), mfp);
+            propertyIndex.put(fields[i].getName(), fields[i]);
         }
     }
 
     private void copyNonPrivateFields(SingleKeyHashMap from, SingleKeyHashMap to) {
         for (ComplexKeyHashMap.EntryIterator iter = from.getEntrySetIterator(); iter.hasNext();) {
             SingleKeyHashMap.Entry entry = (SingleKeyHashMap.Entry) iter.next();
-            MetaFieldProperty mfp = (MetaFieldProperty) entry.getValue();
+            CachedField mfp = (CachedField) entry.getValue();
             if (!Modifier.isPublic(mfp.getModifiers()) && !Modifier.isProtected(mfp.getModifiers())) continue;
             to.put(entry.getKey(), mfp);
         }
@@ -1716,12 +1715,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
         } else {
             MetaBeanProperty mbp;
-            MetaFieldProperty mfp;
+            CachedField mfp;
             if (mp instanceof MetaBeanProperty) {
                 mbp = (MetaBeanProperty) mp;
                 mfp = mbp.getField();
-            } else if (mp instanceof MetaFieldProperty) {
-                mfp = (MetaFieldProperty) mp;
+            } else if (mp instanceof CachedField) {
+                mfp = (CachedField) mp;
                 mbp = new MetaBeanProperty(propName,
                         mfp.getType(),
                         null, null);
@@ -1788,13 +1787,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
             SingleKeyHashMap propertyMap = classPropertyIndex.getNotNull(theCachedClass);
             //keep field
-            MetaFieldProperty field;
+            CachedField field;
             MetaProperty old = (MetaProperty) propertyMap.get(mp.getName());
             if (old != null) {
                 if (old instanceof MetaBeanProperty) {
                     field = ((MetaBeanProperty) old).getField();
                 } else {
-                    field = (MetaFieldProperty) old;
+                    field = (CachedField) old;
                 }
                 mp.setField(field);
             }
@@ -2246,20 +2245,20 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             final Object data[] = m.getArray();
             for (int i = 0; i != len; ++i) {
                 MetaMethod method = (MetaMethod) data[i];
-                if (method.isMethod(aMethod.cachedMethod)) {
+                if (method.isMethod(aMethod)) {
                     return method;
                 }
             }
         }
         else {
             MetaMethod method = (MetaMethod) methods;
-            if (method.isMethod(aMethod.cachedMethod)) {
+            if (method.isMethod(aMethod)) {
                 return method;
             }
         }
         //log.warning("Creating reflection based dispatcher for: " + aMethod);
         synchronized (aMethod.cachedClass) {
-          return aMethod.getReflectionMetaMethod();
+            return aMethod;
         }
     }
 
@@ -2423,7 +2422,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             Method[] listenerMethods = descriptor.getListenerMethods();
             for (int j = 0; j < listenerMethods.length; j++) {
                 Method listenerMethod = listenerMethods[j];
-                final ReflectionMetaMethod metaMethod = new ReflectionMetaMethod(CachedMethod.find(descriptor.getAddListenerMethod()));
+                final MetaMethod metaMethod = CachedMethod.find(descriptor.getAddListenerMethod());
                 addToAllMethodsIfPublic(metaMethod);
                 String name = listenerMethod.getName();
                 if (listeners.containsKey(name)) {

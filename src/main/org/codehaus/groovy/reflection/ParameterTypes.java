@@ -77,7 +77,7 @@ public class ParameterTypes
         return nativeParamTypes;
     }
 
-    Class[] getPT() { return null; }
+    protected Class[] getPT() { throw new UnsupportedOperationException(getClass().getName()); }
 
     public boolean isVargsMethod(Object[] arguments) {
         getParameterTypes();

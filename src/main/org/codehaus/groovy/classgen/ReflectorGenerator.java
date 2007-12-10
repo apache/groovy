@@ -164,7 +164,7 @@ public class ReflectorGenerator implements Opcodes {
 
     protected void invokeMethod(CachedMethod method, MethodVisitor mv) {
         // compute class to make the call on
-        Class callClass = method.getDeclaringClass();
+        Class callClass = method.getDeclaringClass().getCachedClass();
         boolean useInterface = callClass.isInterface();
 //        if (callClass == null) {
 //            callClass = method.getCallClass();

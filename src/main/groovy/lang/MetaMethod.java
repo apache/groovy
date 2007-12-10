@@ -22,7 +22,6 @@ import org.codehaus.groovy.reflection.ParameterTypes;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 
 /**
@@ -30,13 +29,18 @@ import java.lang.reflect.Modifier;
  * except without using reflection to invoke the method
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author Alex Tkachman
  * @version $Revision$
  */
-public abstract class MetaMethod implements Cloneable {
+public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     private String signature;
     private String mopName;
 
     public MetaMethod() {
+    }
+
+    public MetaMethod(Class [] pt) {
+        super (pt);
     }
 
     public abstract int getModifiers();
@@ -47,13 +51,7 @@ public abstract class MetaMethod implements Cloneable {
 
     public abstract CachedClass getDeclaringClass();
 
-    public abstract ParameterTypes getParamTypes();
-
     public abstract Object invoke(Object object, Object[] arguments);
-
-    public final CachedClass [] getParameterTypes() {
-        return getParamTypes().getParameterTypes();
-    }
 
     /**
      * Checks that the given parameters are valid to call this method
@@ -73,7 +71,7 @@ public abstract class MetaMethod implements Cloneable {
                     + InvokerHelper.toString(arguments));
         }
     }
-    public boolean isMethod(Method method) {
+    public boolean isMethod(MetaMethod method) {
         return getName().equals(method.getName())
             && getModifiers() == method.getModifiers()
             && getReturnType().equals(method.getReturnType())
@@ -161,10 +159,6 @@ public abstract class MetaMethod implements Cloneable {
 
     public boolean isCacheable() {
         return true;
-    }
-
-    public final Class[] getNativeParameterTypes() {
-        return getParamTypes().getNativeParameterTypes();
     }
 
     public String getDescriptor() {

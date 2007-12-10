@@ -19,7 +19,6 @@ import groovy.lang.Closure;
 import groovy.lang.ClosureInvokingMethod;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
-import org.codehaus.groovy.reflection.ParameterTypes;
 import org.codehaus.groovy.reflection.ReflectionCache;
 
 import java.lang.reflect.Modifier;
@@ -36,7 +35,6 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
 
 	private final Closure callable;
     private final String name;
-    private final ParameterTypes pt;
     private final CachedClass declaringClass;
 
     public ClosureMetaMethod(String name, Closure c) {
@@ -44,9 +42,9 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
 	}
 
     public ClosureMetaMethod(String name, Class declaringClass,Closure c) {
-		this.name = name;
+        super (c.getParameterTypes());
+        this.name = name;
         callable = c;
-        pt = new ParameterTypes(c.getParameterTypes());
         this.declaringClass = ReflectionCache.getCachedClass(declaringClass);
     }
 
@@ -66,10 +64,6 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
 	public CachedClass getDeclaringClass() {
 		return declaringClass;
 	}
-
-    public ParameterTypes getParamTypes() {
-        return pt;
-    }
 
 	public Object invoke(final Object object, final Object[] arguments) {
 		Closure cloned = (Closure) callable.clone();

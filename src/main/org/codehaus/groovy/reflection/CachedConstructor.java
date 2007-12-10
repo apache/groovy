@@ -40,7 +40,7 @@ public class CachedConstructor extends ParameterTypes {
         this(ReflectionCache.getCachedClass(c.getDeclaringClass()), c);
     }
 
-    Class[] getPT() {
+    protected Class[] getPT() {
         return cachedConstructor.getParameterTypes();
     }
 

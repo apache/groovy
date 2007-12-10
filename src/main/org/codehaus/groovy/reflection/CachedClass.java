@@ -26,9 +26,9 @@ import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.*;
-import java.security.PrivilegedAction;
 import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.util.*;
 
 /**
  * @author Alex.Tkachman
@@ -207,7 +207,7 @@ public class CachedClass {
             CachedMethod m = methods[i];
             if (m.getName().equals(name)
                     && ReflectionCache.arrayContentsEq(parameterTypes, m.getParameterTypes())
-                    && (res == null || res.getReturnType().isAssignableFrom(m.cachedMethod.getReturnType())))
+                    && (res == null || res.getReturnType().isAssignableFrom(m.getReturnType())))
                 res = m;
         }
 

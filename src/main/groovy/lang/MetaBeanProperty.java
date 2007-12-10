@@ -15,10 +15,11 @@
  */
 package groovy.lang;
 
-import java.lang.reflect.Modifier;
-
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.runtime.MetaClassHelper;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+
+import java.lang.reflect.Modifier;
 
 /**
  * Represents a property on a bean which may have a getter and/or a setter
@@ -31,7 +32,7 @@ public class MetaBeanProperty extends MetaProperty {
 
     private MetaMethod getter;
     private MetaMethod setter;
-    private MetaFieldProperty field;
+    private CachedField field;
 
     public MetaBeanProperty(String name, Class type, MetaMethod getter, MetaMethod setter) {
         super(name, type);
@@ -111,11 +112,11 @@ public class MetaBeanProperty extends MetaProperty {
         return states;
     }
 
-    public void setField(MetaFieldProperty f) {
+    public void setField(CachedField f) {
         this.field = f;
     }
 
-    public MetaFieldProperty getField() {
+    public CachedField getField() {
         return field;
     }
 }

@@ -19,14 +19,12 @@ package org.codehaus.groovy.runtime.metaclass;
 import groovy.lang.Closure;
 import groovy.lang.MetaBeanProperty;
 import groovy.lang.MetaMethod;
+import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.ReflectionCache;
 
 import java.lang.reflect.Modifier;
 import java.util.Map;
 import java.util.WeakHashMap;
-
-import org.codehaus.groovy.reflection.CachedClass;
-import org.codehaus.groovy.reflection.ReflectionCache;
-import org.codehaus.groovy.reflection.ParameterTypes;
 
 /**
  * This MetaBeanProperty will create a pseudo property whose value is bound to the current
@@ -164,10 +162,10 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
 
 
         private final String name, name0;
-        private final ParameterTypes pt = new ParameterTypes(new CachedClass[0]);
 
 
         public ThreadBoundGetter(String name) {
+            super (new Class[0]);
             this.name = getGetterName(name, type);
             this.name0 = name;
         }
@@ -189,11 +187,6 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
             return ReflectionCache.getCachedClass(declaringClass);
         }
 
-        public ParameterTypes getParamTypes() {
-            return pt;
-        }
-
-
         /* (non-Javadoc)
            * @see groovy.lang.MetaMethod#invoke(java.lang.Object, java.lang.Object[])
            */
@@ -211,9 +204,9 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
 
 
         private final String name, name0;
-        private ParameterTypes pt = new ParameterTypes(new CachedClass[]{ReflectionCache.getCachedClass(type)});
 
         public ThreadBoundSetter(String name) {
+            super (new Class [] {type} );
             this.name = getSetterName(name);
             this.name0 = name;
         }
@@ -235,10 +228,6 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
 
         public CachedClass getDeclaringClass() {
             return ReflectionCache.getCachedClass(declaringClass);
-        }
-
-        public ParameterTypes getParamTypes() {
-            return pt;
         }
 
         /* (non-Javadoc)

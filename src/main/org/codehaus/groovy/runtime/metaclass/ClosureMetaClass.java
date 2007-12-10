@@ -393,8 +393,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
         attributes.put("!", null); // just a dummy for later
         CachedField[] fieldArray = theCachedClass.getFields();
         for (int i = 0; i < fieldArray.length; i++) {
-            MetaFieldProperty mfp = MetaFieldProperty.create(fieldArray[i]);
-            attributes.put(fieldArray[i].getName(), mfp);
+            attributes.put(fieldArray[i].getName(), fieldArray[i]);
         }
         attributeInitDone = !attributes.isEmpty();
     }
@@ -405,9 +404,8 @@ public final class ClosureMetaClass extends MetaClassImpl {
             synchronized (theCachedClass) {
                 for (int i = 0; i < methodArray.length; i++) {
                     final CachedMethod cachedMethod = methodArray[i];
-                    Method reflectionMethod = cachedMethod.cachedMethod;
-                    if (!reflectionMethod.getName().equals(CLOSURE_DO_CALL_METHOD)) continue;
-                    MetaMethod method = cachedMethod.getReflectionMetaMethod();
+                    if (!cachedMethod.getName().equals(CLOSURE_DO_CALL_METHOD)) continue;
+                    MetaMethod method = cachedMethod;
                     closureMethods.add(method);
                 }
             }
@@ -584,7 +582,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
             return getStaticMetaClass().getAttribute(sender, object, attribute, useSuper);
         } else {
             if (!attributeInitDone) initAttributes();
-            MetaFieldProperty mfp = (MetaFieldProperty) attributes.get(attribute);
+            CachedField mfp = (CachedField) attributes.get(attribute);
             if (mfp == null) {
                 return CLOSURE_METACLASS.getAttribute(sender, object, attribute, useSuper);
             } else {
@@ -599,7 +597,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
             getStaticMetaClass().setAttribute(sender, object, attribute, newValue, useSuper, fromInsideClass);
         } else {
             if (!attributeInitDone) initAttributes();
-            MetaFieldProperty mfp = (MetaFieldProperty) attributes.get(attribute);
+            CachedField mfp = (CachedField) attributes.get(attribute);
             if (mfp == null) {
                 CLOSURE_METACLASS.setAttribute(sender, object, attribute, newValue, useSuper, fromInsideClass);
             } else {
