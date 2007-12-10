@@ -27,7 +27,6 @@ import org.xml.sax.Locator;
 import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.AttributesImpl;
 
-import java.io.IOException;
 import java.io.InputStream;
 import java.util.Collections;
 import java.util.Iterator;
@@ -65,7 +64,6 @@ public class AntBuilder extends BuilderSupport {
     public AntBuilder(final Project project, final Target owningTarget) {
         this.project = project;
 
-        this.project.setDefaultInputStream(System.in);
         this.project.setInputHandler(new DefaultInputHandler());
 
         collectorTarget = owningTarget;
@@ -76,27 +74,6 @@ public class AntBuilder extends BuilderSupport {
         
         // FileScanner is a Groovy hack (utility?)
         project.addDataTypeDefinition("fileScanner", FileScanner.class);
-    }
-
-    /**
-     * <p>
-     * Set the input stream handling policy.
-     * This method can also be used to define a different input stream for text input.
-     * </p>
-     *
-     * <p>
-     * <b>Remark</b>: This policy has been introduced to fix GROOVY-2362.
-     * With the upgrade to Ant 1.7 from Ant 1.6.5, it was not possible to call the input task twice
-     * without getting errors. By using a default input handler and a DemuxInputStream,
-     * it seems to solve the problem.
-     * </p>
-     *
-     * @param in input stream to use for reading input from the command-line
-     */
-    public void setInputStreamHandlingPolicy(InputStream in) {
-        this.project.setDefaultInputStream(in);
-        this.project.setInputHandler(new DefaultInputHandler());
-        System.setIn(new DemuxInputStream(this.project));
     }
 
     public AntBuilder(final Task parentTask) {
@@ -191,15 +168,19 @@ public class AntBuilder extends BuilderSupport {
             lastCompletedNode = task;
             // UnknownElement may wrap everything: task, path, ...
             if (task instanceof Task) {
-                // save original input stream
+                // save the original input stream for System.in and the project default stream
                 InputStream originalIn = System.in;
-                DemuxInputStream inputStream = new DemuxInputStream(this.project);
-                System.setIn(inputStream);
+                InputStream projectDefaultStream = this.project.getDefaultInputStream();
+                
+                this.project.setDefaultInputStream(originalIn);
+                System.setIn(new DemuxInputStream(this.project));
 
                 ((Task) task).perform();
 
-                // restore original input stream
+                // restore original input streams for System.in and the project default stream
                 System.setIn(originalIn);
+                this.project.setDefaultInputStream(projectDefaultStream);
+
             }
         }
         else {
