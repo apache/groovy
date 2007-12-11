@@ -319,10 +319,12 @@ public class GroovyClassLoader extends URLClassLoader {
 
     public static class InnerLoader extends GroovyClassLoader {
         private final GroovyClassLoader delegate;
+        private final long timeStamp;
 
         public InnerLoader(GroovyClassLoader delegate) {
             super(delegate);
             this.delegate = delegate;
+            timeStamp = System.currentTimeMillis();
         }
 
         public void addClasspath(String path) {
@@ -377,6 +379,10 @@ public class GroovyClassLoader extends URLClassLoader {
 
         public void addURL(URL url) {
             delegate.addURL(url);
+        }
+
+        public long getTimeStamp() {
+            return timeStamp;
         }
     }
 

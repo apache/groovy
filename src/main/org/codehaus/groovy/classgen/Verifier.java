@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.classgen;
 
+import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 import org.codehaus.groovy.ast.*;
@@ -614,6 +615,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     public static long getTimestamp (Class clazz) {
+        if (clazz.getClassLoader() instanceof GroovyClassLoader.InnerLoader) {
+            GroovyClassLoader.InnerLoader innerLoader = (GroovyClassLoader.InnerLoader) clazz.getClassLoader();
+            return innerLoader.getTimeStamp();
+        }
+
         final Field[] fields = clazz.getFields();
         for (int i = 0; i != fields.length; ++i ) {
            if (Modifier.isStatic(fields[i].getModifiers())) {
