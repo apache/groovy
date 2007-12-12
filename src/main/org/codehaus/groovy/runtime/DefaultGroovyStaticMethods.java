@@ -76,7 +76,7 @@ public class DefaultGroovyStaticMethods {
      * @param object receiver
      * @param millis the number of milliseconds to sleep
      * @param closure optional closure called when interrupted
-     *                as long ass the closure returns false the sleep continues
+     *                as long as the closure returns false the sleep continues
      */
     protected static void sleepImpl(Object object, long millis, Closure closure) {
         long start = System.currentTimeMillis();
