@@ -76,7 +76,7 @@ public class DefaultGroovyStaticMethods {
      * @param object receiver
      * @param millis the number of milliseconds to sleep
      * @param closure optional closure called when interrupted
-     *                if the closure returns true the sleep continues
+     *                as long ass the closure returns false the sleep continues
      */
     protected static void sleepImpl(Object object, long millis, Closure closure) {
         long start = System.currentTimeMillis();
@@ -114,7 +114,7 @@ public class DefaultGroovyStaticMethods {
      * @param object receiver
      * @param milliseconds the number of milliseconds to sleep
      * @param onInterrupt interrupt handler, InterruptedException is passed to the Closure
-     *                    if it returns true, the sleep continues
+     *                    as long as it returns false, the sleep continues
      */
     public static void sleep(Object object, long milliseconds, Closure onInterrupt){
 	sleepImpl(object, milliseconds, onInterrupt);
