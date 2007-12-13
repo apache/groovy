@@ -1,5 +1,44 @@
 package groovy.ui.view
 
+static handler = false
+if (!handler) {
+    try {
+        handler = build("""
+package groovy.ui
+
+import com.apple.mrj.*
+
+class ConsoleMacOsSupport implements MRJQuitHandler, MRJAboutHandler {
+
+	def quitHandler
+	def aboutHandler
+
+	public void handleAbout() {
+		aboutHandler()
+	}
+
+	public void handleQuit() {
+		quitHandler()
+	}
+
+}
+
+def handler = new ConsoleMacOsSupport(quitHandler:controller.&exit, aboutHandler:controller.&showAbout)
+MRJApplicationUtils.registerAboutHandler(handler)
+MRJApplicationUtils.registerQuitHandler(handler)
+
+return handler
+""", new GroovyClassLoader(this.class.classLoader))
+    } catch (Exception se) {
+        // usually an AccessControlException, sometimes applets and JNLP won't let
+        // you access MRJ classes.
+        // However, in any exceptional case back out and use the BasicMenuBar
+        se.printStackTrace()
+        build(BasicMenuBar)
+        return
+    }
+}
+
 menuBar {
     menu(text: 'File', mnemonic: 'F') {
         menuItem(newFileAction, icon:null)
@@ -53,33 +92,3 @@ menuBar {
     }
 }
 
-static handler = false
-if (!handler) {
-
-handler = build("""
-package groovy.ui
-
-import com.apple.mrj.*
-
-class ConsoleMacOsSupport implements MRJQuitHandler, MRJAboutHandler {
-
-	def quitHandler
-	def aboutHandler
-
-	public void handleAbout() {
-		aboutHandler()
-	}
-
-	public void handleQuit() {
-		quitHandler()
-	}
-
-}
-
-def handler = new ConsoleMacOsSupport(quitHandler:controller.&exit, aboutHandler:controller.&showAbout)
-MRJApplicationUtils.registerAboutHandler(handler)
-MRJApplicationUtils.registerQuitHandler(handler)
-
-return handler
-""", new GroovyClassLoader(this.class.classLoader))
-}
