@@ -3170,11 +3170,14 @@ public class DefaultGroovyMethods {
      * @return the merged Collection
      */
     public static Collection plus(Collection left, Collection right) {
-        Collection answer;
-        if (left instanceof Set)
+        final Collection answer;
+        if (left instanceof SortedSet) {
+            answer = new TreeSet();
+        } else if (left instanceof Set) {
             answer = new HashSet();
-        else
+        } else {
             answer = new ArrayList(left.size() + right.size());
+        }
         answer.addAll(left);
         answer.addAll(right);
         return answer;
@@ -3190,11 +3193,14 @@ public class DefaultGroovyMethods {
      * @return the resulting Collection
      */
     public static Collection plus(Collection left, Object right) {
-        Collection answer;
-        if (left instanceof Set)
+        final Collection answer;
+        if(left instanceof SortedSet) {
+            answer = new TreeSet();
+        } else if (left instanceof Set) {
             answer = new HashSet();
-        else
+        } else {
             answer = new ArrayList(left.size() + 1);
+        }
         answer.addAll(left);
         answer.add(right);
         return answer;
