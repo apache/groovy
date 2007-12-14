@@ -1,6 +1,8 @@
 package org.codehaus.groovy.runtime.iterator.vm5
 
-import org.codehaus.groovy.runtime.iterator.*
+import org.codehaus.groovy.runtime.iterator.Concurrency
+import org.codehaus.groovy.runtime.iterator.Iterators
+import org.codehaus.groovy.runtime.iterator.TransformIterator
 
 class ConcurrencyTest extends GroovyTestCase {
 
@@ -120,30 +122,30 @@ class ConcurrencyTest extends GroovyTestCase {
     }
 
     void testTests() {
-        use(Iterators, Concurrency) {
-            withProducerThread {
-                def ant = new AntBuilder()
-                def scanner = ant.fileScanner {
-                    fileset(dir: "src/test", includes: "**/*Test.groovy")
-                    fileset(dir: "src/test", includes: "**/*Bug.groovy")
-                }
-                for (f in scanner) {
-                    put f.getAbsolutePath()
-                }
-            }.withConcurrentTransform(poolSize: 4, maxCapacity: 6) {file ->
-                defineLocal("loader", null)
-
-                if (!loader)
-                    loader = new GroovyClassLoader()
-
-                println "Compiling $file on thread $threadIndexInPool ${Thread.currentThread()}"
-                loader.parseClass(new File(file))
-            }.withFilter {type ->
-                junit.framework.Test.isAssignableFrom(type) && !type.name.endsWith("ConcurrencyTest")
-            }.withConcurrentTransform(poolSize: 4, maxCapacity: 6) {type ->
-                println "Running ${type.name} on thread: $threadIndexInPool  ${Thread.currentThread()}"
-                junit.textui.TestRunner.run(type)
-            }.each {}
-        }
+//        use(Iterators, Concurrency) {
+//            withProducerThread {
+//                def ant = new AntBuilder()
+//                def scanner = ant.fileScanner {
+//                    fileset(dir: "src/test", includes: "**/*Test.groovy")
+//                    fileset(dir: "src/test", includes: "**/*Bug.groovy")
+//                }
+//                for (f in scanner) {
+//                    put f.getAbsolutePath()
+//                }
+//            }.withConcurrentTransform(poolSize: 4, maxCapacity: 6) {file ->
+//                defineLocal("loader", null)
+//
+//                if (!loader)
+//                    loader = new GroovyClassLoader()
+//
+//                println "Compiling $file on thread $threadIndexInPool ${Thread.currentThread()}"
+//                loader.parseClass(new File(file))
+//            }.withFilter {type ->
+//                junit.framework.Test.isAssignableFrom(type) && !type.name.endsWith("ConcurrencyTest")
+//            }.withConcurrentTransform(poolSize: 4, maxCapacity: 6) {type ->
+//                println "Running ${type.name} on thread: $threadIndexInPool  ${Thread.currentThread()}"
+//                junit.textui.TestRunner.run(type)
+//            }.each {}
+//        }
     }
 }
