@@ -1,4 +1,6 @@
-package org.codehaus.groovy.runtime.iterator
+package org.codehaus.groovy.runtime.iterator.vm5
+
+import org.codehaus.groovy.runtime.iterator.*
 
 class ConcurrencyTest extends GroovyTestCase {
 

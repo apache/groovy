@@ -11,14 +11,14 @@ import junit.framework.Test;
 import junit.framework.TestCase;
 
 /**
- * Collect all groovy tests 
+ * Collect all groovy tests
  */
-public class UberTestCaseGroovySourceCodehausPackages extends TestCase {
+public class UberTestCaseGroovySourceCodehausPackages_VM5 extends TestCase {
     /**
-     * Add all groovy tests from the codehaus subdirs
+     * Add all VM5 specific groovy tests from the codehaus subdirs
      * @return testsuite
      */
     public static Test suite() {
-        return AllTestSuite.suite("src/test", "org/codehaus/**/*Test.groovy", "org/codehaus/**/vm5/*Test.groovy");
+        return AllTestSuite.suite("src/test", "org/codehaus/**/vm5/*Test.groovy");
     }
 }
