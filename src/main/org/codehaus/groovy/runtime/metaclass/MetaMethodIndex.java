@@ -369,7 +369,7 @@ public class MetaMethodIndex {
                 return list;
             } else {
                 if (match.isPrivate()
-                        || (match.getDeclaringClass().isInterface() && !method.getDeclaringClass().isInterface())) {
+                        || (!isNonRealMethod(match) && match.getDeclaringClass().isInterface() && !method.getDeclaringClass().isInterface())) {
                     // do not overwrite interface methods with instance methods
                     // do not overwrite private methods
                     // Note: private methods from parent classes are not shown here,
@@ -380,10 +380,7 @@ public class MetaMethodIndex {
                     Class methodC = method.getDeclaringClass().getCachedClass();
                     Class matchC = match.getDeclaringClass().getCachedClass();
                     if (methodC == matchC) {
-                        if (method instanceof NewInstanceMetaMethod ||
-                                method instanceof NewStaticMetaMethod ||
-                                method instanceof ClosureMetaMethod ||
-                                method instanceof ClosureStaticMetaMethod) {
+                        if (isNonRealMethod(method)) {
                             return method;
                         }
                     } else if (!MetaClassHelper.isAssignableFrom(methodC, matchC)) {
@@ -404,7 +401,7 @@ public class MetaMethodIndex {
                 MetaMethod match = (MetaMethod) list.get(found);
                 if (match==method) return o;
                 if (match.isPrivate()
-                        || (match.getDeclaringClass().isInterface() && !method.getDeclaringClass().isInterface())) {
+                        || (!isNonRealMethod(match) && match.getDeclaringClass().isInterface() && !method.getDeclaringClass().isInterface())) {
                     // do not overwrite interface methods with instance methods
                     // do not overwrite private methods
                     // Note: private methods from parent classes are not shown here,
@@ -415,10 +412,7 @@ public class MetaMethodIndex {
                     Class methodC = method.getDeclaringClass().getCachedClass();
                     Class matchC = match.getDeclaringClass().getCachedClass();
                     if (methodC == matchC) {
-                        if (method instanceof NewInstanceMetaMethod ||
-                                method instanceof NewStaticMetaMethod ||
-                                method instanceof ClosureMetaMethod ||
-                                method instanceof ClosureStaticMetaMethod) {
+                        if (isNonRealMethod(method)) {
                             list.set(found, method);
                         }
                     } else if (!MetaClassHelper.isAssignableFrom(methodC, matchC)) {
@@ -429,6 +423,13 @@ public class MetaMethodIndex {
         }
 
         return o;
+    }
+
+    private boolean isNonRealMethod(MetaMethod method) {
+        return method instanceof NewInstanceMetaMethod ||
+                method instanceof NewStaticMetaMethod ||
+                method instanceof ClosureMetaMethod ||
+                method instanceof ClosureStaticMetaMethod;
     }
 
     private boolean isMatchingMethod(MetaMethod aMethod, MetaMethod method) {
