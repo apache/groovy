@@ -4,7 +4,7 @@ class ConcurrencyTest extends GroovyTestCase {
 
     void testMax() {
         use(Iterators, Concurrency) {
-            TransformIterator iterator = [1, 6, 2, 5, 4, 3].withTransform() {
+            TransformIterator iterator = [1, 6, 2, 5, 4, 3].withTransform {
                 defineLocal("max", Integer.MIN_VALUE)
                 if (max < it) {
                     max = it

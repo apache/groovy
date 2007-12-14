@@ -36,6 +36,9 @@ public class Iterators {
         if (self instanceof Iterator)
             return (Iterator) self;
 
+        if (self instanceof Collection)
+            return ((Collection) self).iterator();
+
         if (self instanceof Map)
             return ((Map) self).entrySet().iterator();
 
