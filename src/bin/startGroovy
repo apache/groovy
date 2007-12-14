@@ -15,6 +15,8 @@ PROGNAME=`basename "$0"`
 
 #DIRNAME=`dirname "$0"`
 
+SCRIPT_PATH="$0"
+
 # Use the maximum available, or set MAX_FD != -1 to use that value.
 MAX_FD="maximum"
 
@@ -231,6 +233,7 @@ startGroovy ( ) {
     else
         exec "$JAVACMD" $JAVA_OPTS \
             -classpath "$STARTER_CLASSPATH" \
+            -Dscript.name="$SCRIPT_PATH" \
             -Dprogram.name="$PROGNAME" \
             -Dgroovy.starter.conf="$GROOVY_CONF" \
             -Dgroovy.home="$GROOVY_HOME" \

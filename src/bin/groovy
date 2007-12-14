@@ -15,8 +15,6 @@
 
 GROOVY_APP_NAME=Groovy
 DIRNAME=`dirname "$0"`
-JAVA_OPTS="$JAVA_OPTS -Dscript.name=$0"
-export JAVA_OPTS
 . "$DIRNAME/startGroovy"
 
 startGroovy groovy.ui.GroovyMain "$@"

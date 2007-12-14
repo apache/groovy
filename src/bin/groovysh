@@ -20,4 +20,3 @@ if [ "x$OLDSHELL" != "x" ]; then
 else
     startGroovy org.codehaus.groovy.tools.shell.Main "$@"
 fi
-
