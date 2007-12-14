@@ -83,7 +83,7 @@ p() {
         new XmlNodePrinter(new PrintWriter(sw)).print(html)
         def result = fixEOLs(sw.toString())
         def expected = '''\
-<html>
+<html xmlns="http://www.w3.org/HTML/1998/html4">
   <head>
     <title>
       GINA Book Review
@@ -91,7 +91,7 @@ p() {
   </head>
   <body>
     <h1>
-      <dc:title>
+      <dc:title xmlns:dc="http://purl.org/dc/elements/1.1/">
         Groovy in Action Review
       </dc:title>
     </h1>
@@ -113,7 +113,7 @@ p() {
       <tr align="left">
         <td>
           <dc:author>
-            <g:developer>
+            <g:developer xmlns:g="http://groovy.codehaus.org/roles">
               Dierk König
             </g:developer>
             ,

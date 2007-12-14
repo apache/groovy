@@ -17,28 +17,27 @@
 package groovy.util;
 
 import groovy.xml.QName;
-import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.codehaus.groovy.runtime.InvokerHelper;
+
 /**
  * Prints a node with all children in XML format.
- * 
- * @see groovy.util.NodePrinter
+ *
  * @author Christian Stein
+ * @see groovy.util.NodePrinter
  */
 public class XmlNodePrinter {
 
     protected final IndentPrinter out;
     private final String quote;
-
-    public XmlNodePrinter() {
-        this(new PrintWriter(new OutputStreamWriter(System.out)));
-    }
+    private boolean namespaceAware = true;
 
     public XmlNodePrinter(PrintWriter out) {
         this(out, "  ");
@@ -60,6 +59,10 @@ public class XmlNodePrinter {
         this.quote = quote;
     }
 
+    public XmlNodePrinter() {
+        this(new PrintWriter(new OutputStreamWriter(System.out)));
+    }
+
     public String getNameOfNode(Node node) {
         if (node == null) {
             throw new IllegalArgumentException("Node must not be null!");
@@ -67,6 +70,9 @@ public class XmlNodePrinter {
         Object name = node.name();
         if (name instanceof QName) {
             QName qname = (QName) name;
+            if (!namespaceAware) {
+                return qname.getLocalPart();
+            }
             return qname.getQualifiedName();
         }
         return name.toString();
@@ -83,6 +89,28 @@ public class XmlNodePrinter {
     }
 
     public void print(Node node) {
+        print(node, new NamespaceContext());
+    }
+
+    /**
+     * Determine if namspace handling is enabled.
+     *
+     * @return true if namespace handling is enabled
+     */
+    public boolean isNamespaceAware() {
+        return namespaceAware;
+    }
+
+    /**
+     * Enable and/or disable namspace handling.
+     *
+     * @param namespaceAware the new desired value
+     */
+    public void setNamespaceAware(boolean namespaceAware) {
+        this.namespaceAware = namespaceAware;
+    }
+
+    protected void print(Node node, NamespaceContext ctx) {
         /*
          * Handle empty elements like '<br/>', '<img/> or '<hr noshade="noshade"/>.
          */
@@ -90,6 +118,9 @@ public class XmlNodePrinter {
             printLineBegin();
             out.print("<");
             out.print(getNameOfNode(node));
+            if (ctx != null) {
+                printNamespace(node, ctx);
+            }
             printNameAttributes(node.attributes());
             out.print("/>");
             printLineEnd(); // "node named '" + node.name() + "'"
@@ -110,17 +141,17 @@ public class XmlNodePrinter {
          */
         Object value = node.value();
         if (value instanceof List) {
-            printName(node, true);
-            printList((List) value);
-            printName(node, false);
+            printName(node, ctx, true);
+            printList((List) value, ctx);
+            printName(node, ctx, false);
             out.flush();
             return;
         }
 
         // treat as simple type - probably a String
-        printName(node, true);
+        printName(node, ctx, true);
         printSimpleItemWithIndent(value);
-        printName(node, false);
+        printName(node, ctx, false);
         out.flush();
     }
 
@@ -141,7 +172,7 @@ public class XmlNodePrinter {
         out.print("\n");
     }
 
-    protected void printList(List list) {
+    protected void printList(List list, NamespaceContext ctx) {
         out.incrementIndent();
         for (Iterator iter = list.iterator(); iter.hasNext();) {
             Object value = iter.next();
@@ -149,7 +180,7 @@ public class XmlNodePrinter {
              * If the current value is a node, recurse into that node.
              */
             if (value instanceof Node) {
-                print((Node) value);
+                print((Node) value, ctx);
                 continue;
             }
             printSimpleItem(value);
@@ -170,7 +201,7 @@ public class XmlNodePrinter {
         printLineEnd();
     }
 
-    protected void printName(Node node, boolean begin) {
+    protected void printName(Node node, NamespaceContext ctx, boolean begin) {
         if (node == null) {
             throw new NullPointerException("Node must not be null.");
         }
@@ -184,6 +215,9 @@ public class XmlNodePrinter {
             out.print("/");
         }
         out.print(getNameOfNode(node));
+        if (ctx != null) {
+            printNamespace(node, ctx);
+        }
         if (begin) {
             printNameAttributes(node.attributes());
         }
@@ -213,6 +247,49 @@ public class XmlNodePrinter {
 
     protected boolean printSpecialNode(Node node) {
         return false;
+    }
+
+    protected void printNamespace(Node node, NamespaceContext ctx) {
+        Object name = node.name();
+        if (name instanceof QName && namespaceAware) {
+            QName qname = (QName) name;
+            String namespaceUri = qname.getNamespaceURI();
+            if (namespaceUri != null) {
+                String prefix = qname.getPrefix();
+                if (!ctx.isNamespaceRegistered(namespaceUri)) {
+                    ctx.registerNamespacePrefix(namespaceUri, prefix);
+                    out.print(" ");
+                    out.print("xmlns");
+                    if (prefix.length() > 0) {
+                        out.print(":");
+                        out.print(prefix);
+                    }
+                    out.print("=\"");
+                    out.print(namespaceUri);
+                    out.print("\"");
+                }
+            }
+        }
+    }
+
+    private class NamespaceContext {
+        Map namespaceMap = new HashMap();
+
+        public boolean isNamespaceRegistered(String uri) {
+            return namespaceMap.containsKey(uri);
+        }
+
+        public void registerNamespacePrefix(String uri, String prefix) {
+            if (!isNamespaceRegistered(uri)) {
+                namespaceMap.put(uri, prefix);
+            }
+        }
+
+        public String getNamespacePrefix(String uri) {
+            Object prefix = namespaceMap.get(uri);
+            return (prefix == null) ? null : prefix.toString();
+        }
+
     }
 
 }

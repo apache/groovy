@@ -204,6 +204,25 @@ public class XmlParser implements ContentHandler {
     public Node parseText(String text) throws IOException, SAXException {
         return parse(new StringReader(text));
     }
+
+    /**
+     * Determine if namspace handling is enabled.
+     *
+     * @return true if namespace handling is enabled
+     */
+    public boolean isNamespaceAware() {
+        return namespaceAware;
+    }
+
+    /**
+     * Enable and/or disable namspace handling.
+     *
+     * @param namespaceAware the new desired value
+     */
+    public void setNamespaceAware(boolean namespaceAware) {
+        this.namespaceAware = namespaceAware;
+    }
+    
     // Delegated XMLReader methods
     //------------------------------------------------------------------------
 
