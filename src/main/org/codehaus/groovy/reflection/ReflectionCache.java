@@ -93,6 +93,9 @@ public class ReflectionCache {
     static WeakDoubleKeyHashMap assignableMap = new WeakDoubleKeyHashMap();
 
     public static boolean isAssignableFrom(Class klazz, Class aClass) {
+        if (klazz == aClass)
+          return true;
+        
         WeakDoubleKeyHashMap.Entry val = assignableMap.getOrPut(klazz, aClass);
         if (val.value == null) {
             val.value = Boolean.valueOf(klazz.isAssignableFrom(aClass));
