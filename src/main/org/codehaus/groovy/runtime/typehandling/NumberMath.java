@@ -180,37 +180,32 @@ public abstract class NumberMath {
 		if (isFloatingPoint(left) || isFloatingPoint(right)) {
 			return FloatingPointMath.INSTANCE;
 		}
-		else if (isBigDecimal(left) || isBigDecimal(right)) {
+		if (isBigDecimal(left) || isBigDecimal(right)) {
 			return BigDecimalMath.INSTANCE;
 		}
-		else if (isBigInteger(left) || isBigInteger(right)) {
+		if (isBigInteger(left) || isBigInteger(right)) {
 			return BigIntegerMath.INSTANCE;
 		}
-		else if (isLong(left) || isLong(right)){
+		if (isLong(left) || isLong(right)){
 			return LongMath.INSTANCE;
 		}
 		return IntegerMath.INSTANCE;
 	}
 
 	private static NumberMath getMath(Number number) {
-		if (isInteger(number)) {
-			return IntegerMath.INSTANCE;
-		}
-		else if (isLong(number)) {
+		if (isLong(number)) {
 			return LongMath.INSTANCE;
 		}
-		else if (isFloatingPoint(number)) {
+		if (isFloatingPoint(number)) {
 			return FloatingPointMath.INSTANCE;
 		}			
-		else if (isBigDecimal(number)) {
+		if (isBigDecimal(number)) {
 			return BigDecimalMath.INSTANCE;
 		}
-		else if (isBigInteger(number)) {
+		if (isBigInteger(number)) {
 			return BigIntegerMath.INSTANCE;
 		}
-		else {
-			throw new IllegalArgumentException("An unexpected Number subclass was supplied.");
-		}
+		return IntegerMath.INSTANCE;
 	}
 	
 	//Subclasses implement according to the type promotion hierarchy rules
