@@ -390,7 +390,7 @@ class GroovyMethodsTest extends GroovyTestCase {
             false // continue sleeping
         }
         long slept = System.currentTimeMillis() - start
-        short allowedError = 2 // ms
+        short allowedError = 4 // ms
         assert slept + allowedError >= 2000, "should have slept for at least 2s but only slept for ${slept}ms"
         assertEquals 'java.lang.InterruptedException: sleep interrupted', log.toString()
     }
