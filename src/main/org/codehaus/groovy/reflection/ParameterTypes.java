@@ -25,6 +25,8 @@ public class ParameterTypes
   protected Class [] nativeParamTypes;
   protected CachedClass [] parameterTypes;
 
+  protected boolean isVargsMethod;
+
     public ParameterTypes () {
     }
 
@@ -33,7 +35,12 @@ public class ParameterTypes
     }
 
     public ParameterTypes(CachedClass[] parameterTypes) {
-        this.parameterTypes = parameterTypes;
+        setParametersTypes(parameterTypes);
+    }
+
+    protected final void setParametersTypes(CachedClass[] pt) {
+        this.parameterTypes = pt;
+        isVargsMethod = pt.length > 0 && pt [pt.length-1].isArray;
     }
 
     public CachedClass[] getParameterTypes() {
@@ -49,7 +56,7 @@ public class ParameterTypes
             pt[i] = ReflectionCache.getCachedClass(npt[i]);
 
           nativeParamTypes = npt;
-          parameterTypes = pt;
+          setParametersTypes(pt);
         }
       }
 
@@ -80,10 +87,12 @@ public class ParameterTypes
     protected Class[] getPT() { throw new UnsupportedOperationException(getClass().getName()); }
 
     public boolean isVargsMethod(Object[] arguments) {
-        getParameterTypes();
-        if (parameterTypes.length == 0) return false;
+        // Uncomment if at some point this method can be called before parameterTypes initialized
+        // getParameterTypes();
+        if(!isVargsMethod)
+          return false;
+
         final int lenMinus1 = parameterTypes.length - 1;
-        if (!parameterTypes[lenMinus1].isArray) return false;
         // -1 because the varg part is optional
         if (lenMinus1 == arguments.length) return true;
         if (lenMinus1 > arguments.length) return false;
@@ -98,19 +107,9 @@ public class ParameterTypes
     }
 
     public Object[] coerceArgumentsToClasses(Object[] argumentArray) {
-        getParameterTypes();
-        // correct argumentArray's length
-        if (argumentArray == null) {
-            argumentArray = MetaClassHelper.EMPTY_ARRAY;
-        } else if (parameterTypes.length == 1 && argumentArray.length == 0) {
-            if (isVargsMethod(argumentArray)) {
-                argumentArray = new Object[]{Array.newInstance(parameterTypes[0].getCachedClass().getComponentType(), 0)};
-            }
-            else
-                argumentArray = MetaClassHelper.ARRAY_WITH_NULL;
-        } else if (isVargsMethod(argumentArray)) {
-            argumentArray = fitToVargs(argumentArray, parameterTypes);
-        }
+        // Uncomment if at some point this method can be called before parameterTypes initialized
+        // getParameterTypes();
+        argumentArray = correctArguments(argumentArray);
 
         //correct Type
         for (int i = 0; i < argumentArray.length; i++) {
@@ -124,6 +123,25 @@ public class ParameterTypes
             argument = parameterType.coerceArray(argument);
             argumentArray[i] = argument;
         }
+        return argumentArray;
+    }
+
+    private Object[] correctArguments(Object[] argumentArray) {
+        // correct argumentArray's length
+        if (argumentArray == null) {
+            return MetaClassHelper.EMPTY_ARRAY;
+        }
+        else
+            if (parameterTypes.length == 1 && argumentArray.length == 0) {
+                if (isVargsMethod)
+                    return new Object[]{Array.newInstance(parameterTypes[0].getCachedClass().getComponentType(), 0)};
+                else
+                    return MetaClassHelper.ARRAY_WITH_NULL;
+            }
+            else
+                if (isVargsMethod(argumentArray)) {
+                    return fitToVargs(argumentArray, parameterTypes);
+                }
         return argumentArray;
     }
 

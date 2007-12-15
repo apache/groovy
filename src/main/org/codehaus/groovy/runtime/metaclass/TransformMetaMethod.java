@@ -31,7 +31,7 @@ public class TransformMetaMethod extends MetaMethod {
 
     public TransformMetaMethod(MetaMethod metaMethod) {
         this.metaMethod = metaMethod;
-        parameterTypes = metaMethod.getParameterTypes();
+        setParametersTypes(metaMethod.getParameterTypes());
         nativeParamTypes = metaMethod.getNativeParameterTypes();
     }
 

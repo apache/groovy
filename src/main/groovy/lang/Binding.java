@@ -27,10 +27,9 @@ import java.util.Map;
  * @version $Revision$
  */
 public class Binding extends GroovyObjectSupport {
-    private final Map variables;
+    private Map variables;
     
     public Binding() {
-        variables = new HashMap();
     }
     
     public Binding(Map variables) {
@@ -52,6 +51,9 @@ public class Binding extends GroovyObjectSupport {
      * @return the variable value
      */
     public Object getVariable(String name) {
+        if (variables == null)
+            throw new MissingPropertyException(name, Binding.class);
+
         Object result = variables.get(name);
         
         if (result == null && !variables.containsKey(name)) {
@@ -67,10 +69,14 @@ public class Binding extends GroovyObjectSupport {
      * @param value the new value for the given variable
      */
     public void setVariable(String name, Object value) {
+        if (variables == null)
+          variables = new HashMap();
         variables.put(name, value);
     }
     
     public Map getVariables() {
+        if (variables == null)
+          variables = new HashMap();
         return variables;
     }
 

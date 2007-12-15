@@ -383,7 +383,7 @@ public class CachedClass {
         return reflector;
     }
 
-    public Class getCachedClass() {
+    public final Class getCachedClass() {
         return cachedClass;
     }
 

@@ -638,9 +638,6 @@ public class MetaClassHelper {
         if (methodOrConstructor instanceof ParameterTypes) {
             return (ParameterTypes) methodOrConstructor;
         }
-        if (methodOrConstructor instanceof MetaMethod) {
-            return ((MetaMethod) methodOrConstructor);
-        }
         if (methodOrConstructor instanceof Method) {
             Method method = (Method) methodOrConstructor;
             return CachedMethod.find(method);

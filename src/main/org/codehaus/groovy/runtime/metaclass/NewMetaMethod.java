@@ -37,7 +37,7 @@ public class NewMetaMethod extends ReflectionMetaMethod {
             logicalParameterTypes = new CachedClass[--size];
             System.arraycopy(bytecodeParameterTypes, 1, logicalParameterTypes, 0, size);
         }
-        parameterTypes = logicalParameterTypes;
+        setParametersTypes(logicalParameterTypes);
     }
 
     public CachedClass getDeclaringClass() {

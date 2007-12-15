@@ -165,9 +165,10 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
 
 
         public ThreadBoundGetter(String name) {
-            super (new Class[0]);
+            setParametersTypes(new CachedClass[0]);
             this.name = getGetterName(name, type);
             this.name0 = name;
+
         }
 
 
@@ -206,7 +207,7 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
         private final String name, name0;
 
         public ThreadBoundSetter(String name) {
-            super (new Class [] {type} );
+            setParametersTypes (new CachedClass [] {ReflectionCache.getCachedClass(type)} );
             this.name = getSetterName(name);
             this.name0 = name;
         }

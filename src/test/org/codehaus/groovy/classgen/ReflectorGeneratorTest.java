@@ -46,77 +46,9 @@
 
 package org.codehaus.groovy.classgen;
 
-import groovy.lang.GroovySystem;
-import groovy.lang.MetaClassRegistry;
-import groovy.util.GroovyTestCase;
 import org.codehaus.groovy.reflection.CachedMethod;
-import org.codehaus.groovy.reflection.ReflectionCache;
-import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
-import org.objectweb.asm.ClassWriter;
-import org.objectweb.asm.util.ASMifierClassVisitor;
-import org.objectweb.asm.util.CheckClassAdapter;
 
-import java.io.FileOutputStream;
 import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
-/**
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
- */
-public class ReflectorGeneratorTest extends GroovyTestCase {
-
-    public void testGenerator() throws Exception {
-        List methods = new ArrayList();
-//        methods.add(new MetaMethod("toCharArray", String.class, new CachedClass[0], char[].class, 0));
-        //methods.add(new MetaMethod("toString", String.class, new Class[0], String.class, 0));
-        testMethods(methods);
-    }
-
-    public void testObjectGenerator() throws Exception {
-        List methods = Arrays.asList(ReflectionCache.OBJECT_CLASS.getMethods());
-        testMethods(methods);
-    }
-
-    public void testDummyReflector() throws Exception {
-        DummyReflector dummy = new DummyReflector();
-        assertTrue(dummy != null);
-    }
-
-    protected void testMethods(List methods) throws Exception {
-        ReflectorGenerator generator = new ReflectorGenerator(methods);
-        String name = getClass().getName() + "." + getMethodName();
-        ClassWriter cw = new ClassWriter(true);
-
-        //ASMifierClassVisitor dumper = new ASMifierClassVisitor(new PrintWriter(new OutputStreamWriter(System.out)));
-        //generator.generate(dumper, name);
-
-        generator.generate(new CheckClassAdapter(cw), name);
-
-        byte[] bytecode = cw.toByteArray();
-
-        // lets write it to disk
-        String fileName = "target/" + name + ".class";
-        FileOutputStream out = new FileOutputStream(fileName);
-        out.write(bytecode);
-        out.close();
-
-        // now lets try dump it
-        ASMifierClassVisitor.main(new String[]{fileName});
-
-        // now lets try class load it
-        MetaClassRegistry registry = GroovySystem.getMetaClassRegistry();
-        Object reflector = ((MetaClassRegistryImpl) registry).loadReflector(getClass(), methods);
-
-        System.out.println("Created new reflector: " + reflector);
-    }
-
-    public void testP () {
-        A_GroovyReflector.doIt(); 
-    }
-}
 
 class A {
     protected void protectedMethod() {}

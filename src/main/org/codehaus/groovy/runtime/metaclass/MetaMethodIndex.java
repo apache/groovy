@@ -44,6 +44,11 @@ public class MetaMethodIndex {
         }
     }
 
+    public static class CacheEntry {
+        public Class [] params;
+        public MetaMethod method;
+    }
+
     public static class Entry {
         public int hash;
 
@@ -53,6 +58,8 @@ public class MetaMethodIndex {
         public Class cls;
 
         public Object methods, methodsForSuper, staticMethods;
+
+        public CacheEntry cachedMethod, cachedMethodForSuper, cachedStaticMethod;
 
         public String toString () {
             return "[" + name + ", " + cls.getName() + "]";
@@ -507,4 +514,18 @@ public class MetaMethodIndex {
         }
     }
 
+    public void clearCaches() {
+        for (int i = 0; i != table.length; ++i )
+          for (Entry e = table [i]; e != null; e = e.nextHashEntry ) {
+              e.cachedMethod = e.cachedMethodForSuper = e.cachedStaticMethod = null;
+          }
+    }
+
+    public void clearCaches(String name) {
+        for (int i = 0; i != table.length; ++i )
+          for (Entry e = table [i]; e != null; e = e.nextHashEntry ) {
+              if (e.name.equals(name))
+                 e.cachedMethod = e.cachedMethodForSuper = e.cachedStaticMethod = null;
+          }
+    }
 }

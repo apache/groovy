@@ -80,8 +80,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private final SingleKeyHashMap staticPropertyIndex = new SingleKeyHashMap();
 
     private final Map listeners = new HashMap();
-    private final Map methodCache = new ConcurrentReaderHashMap();
-    private final Map staticMethodCache = new ConcurrentReaderHashMap();
     private FastArray constructors;
     private final List allMethods = new ArrayList();
     private List interfaceMethods;
@@ -186,7 +184,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      */
     public MetaMethod getStaticMetaMethod(String name, Object[] argTypes) {
         Class[] classes = castArgumentsToClassArray(argTypes);
-        return retrieveStaticMethod(name, classes);
+        return pickStaticMethod(name, classes);
     }
 
 
@@ -325,7 +323,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             public void methodNameAction(Class clazz, MetaMethodIndex.Entry e) {
                 if (e.methods == null)
                   return;
-                
+
                 boolean hasPrivate = false;
                 if (e.methods instanceof FastArray) {
                     FastArray methods = (FastArray) e.methods;
@@ -540,7 +538,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private CachedClass calcFirstGroovySuperClass(Collection superClasses) {
         if (theCachedClass.isInterface)
           return ReflectionCache.OBJECT_CLASS;
-        
+
         CachedClass firstGroovy = null;
         Iterator iter = superClasses.iterator();
         for (; iter.hasNext();) {
@@ -755,11 +753,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             MetaClassHelper.logMethodCall(object, methodName, originalArguments);
         }
         final Object[] arguments = originalArguments == null ? EMPTY_ARGUMENTS : originalArguments;
-        final Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
+//        final Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
+//
+//        unwrap(arguments);
 
+        MetaMethod method = getMethodWithCaching(sender, methodName, arguments, isCallToSuper);
         unwrap(arguments);
-
-        MetaMethod method = getMethodWithCaching(sender, methodName, argClasses, isCallToSuper);
 
         if (method == null && arguments.length == 1 && arguments[0] instanceof List) {
             Object[] newArguments = ((List) arguments[0]).toArray();
@@ -807,6 +806,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             final Object delegate = closure.getDelegate();
             final boolean isClosureNotOwner = owner != closure;
             final int resolveStrategy = closure.getResolveStrategy();
+
+        final Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
 
             switch (resolveStrategy) {
                 case Closure.TO_SELF:
@@ -938,40 +939,75 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return go.invokeMethod(methodName, originalArguments);
     }
 
-    public MetaMethod getMethodWithCaching(Class sender, String methodName, Class[] arguments, boolean isCallToSuper) {
+    public MetaMethod getMethodWithCaching(Class sender, String methodName, Object[] arguments, boolean isCallToSuper) {
         // lets try use the cache to find the method
         if (GroovyCategorySupport.hasCategoryInAnyThread() && !isCallToSuper) {
-            return getMethodWithoutCaching(sender, methodName, arguments, isCallToSuper);
+            return getMethodWithoutCaching(sender, methodName, MetaClassHelper.convertToTypeArray(arguments), isCallToSuper);
         } else {
-            MethodKey methodKey = new DefaultMethodKey(sender, methodName, arguments, isCallToSuper);
-            MetaMethod method = (MetaMethod) methodCache.get(methodKey);
-            if (method == null) {
-                method = getMethodWithoutCaching(sender, methodName, arguments, isCallToSuper);
-                if (method == null)
-                    method = NULL_METHOD;
-                cacheInstanceMethod(methodKey, method);
-                if (method == NULL_METHOD)
-                    method = null;
-            } else {
-                if (method == NULL_METHOD)
-                    method = null;
+            final MetaMethodIndex.Entry e = metaMethodIndex.getMethods(sender, methodName);
+            if (e == null)
+              return null;
+
+            MetaMethodIndex.CacheEntry cacheEntry;
+            if (!isCallToSuper) {
+                if (e.methods == null)
+                  return null;
+
+                cacheEntry = e.cachedMethod;
+                if (cacheEntry != null
+                   && (sameClasses(cacheEntry.params, arguments, e.methods instanceof MetaMethod))) {
+                     return cacheEntry.method;
+                }
+
+                cacheEntry = new MetaMethodIndex.CacheEntry ();
+                final Class[] classes = MetaClassHelper.convertToTypeArray(arguments);
+                cacheEntry.params = classes;
+                cacheEntry.method = (MetaMethod) chooseMethod(methodName, e.methods, classes, false);
+                e.cachedMethod = cacheEntry;
+                return cacheEntry.method;
             }
-            return method;
+            else {
+                if (e.methodsForSuper == null)
+                  return null;
+
+                cacheEntry = e.cachedMethodForSuper;
+                if (cacheEntry != null
+                   && (sameClasses(cacheEntry.params, arguments, e.methodsForSuper instanceof MetaMethod))) {
+                     return cacheEntry.method;
+                }
+
+                cacheEntry = new MetaMethodIndex.CacheEntry ();
+                final Class[] classes = MetaClassHelper.convertToTypeArray(arguments);
+                cacheEntry.params = classes;
+                cacheEntry.method = (MetaMethod) chooseMethod(methodName, e.methodsForSuper, classes, false);
+                e.cachedMethodForSuper = cacheEntry;
+                return cacheEntry.method;
+            }
         }
     }
 
-    protected void cacheInstanceMethod(MethodKey key, MetaMethod method) {
-        if (method != null && method.isCacheable()) {
-            methodCache.put(key, method);
-        }
-    }
+    private boolean sameClasses(Class[] params, Object[] arguments, boolean weakNullCheck) {
+        if (params.length != arguments.length)
+          return false;
 
-    protected void cacheStaticMethod(MethodKey key, MetaMethod method) {
-        if (method != null && method.isCacheable()) {
-            staticMethodCache.put(key, method);
+        for (int i = params.length-1; i >= 0; i--) {
+            Object arg = arguments[i];
+            if (arg != null) {
+                if (arg instanceof Wrapper) {
+                    if (params[i] != ((Wrapper)arg).getType())
+                      return false;
+                }
+                else
+                    if (params[i] != arg.getClass())
+                      return false;
+            }
+            else
+              if (!weakNullCheck)
+                return false;
         }
-    }
 
+        return true;
+    }
 
     public Constructor retrieveConstructor(Class[] arguments) {
         CachedConstructor constructor = (CachedConstructor) chooseMethod("<init>", constructors, arguments, false);
@@ -985,14 +1021,25 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return null;
     }
 
-    public MetaMethod retrieveStaticMethod(String methodName, Class[] arguments) {
-        MethodKey methodKey = new DefaultMethodKey(theClass, methodName, arguments, false);
-        MetaMethod method = (MetaMethod) staticMethodCache.get(methodKey);
-        if (method == null) {
-            method = pickStaticMethod(methodName, arguments);
-            cacheStaticMethod(methodKey.createCopy(), method);
+    public MetaMethod retrieveStaticMethod(String methodName, Object[] arguments) {
+        final MetaMethodIndex.Entry e = metaMethodIndex.getMethods(theClass, methodName);
+        MetaMethodIndex.CacheEntry cacheEntry;
+        if (e != null) {
+            cacheEntry = e.cachedStaticMethod;
+            if (cacheEntry != null
+               && (sameClasses(cacheEntry.params, arguments, e.staticMethods instanceof MetaMethod))) {
+                 return cacheEntry.method;
+            }
+
+            cacheEntry = new MetaMethodIndex.CacheEntry ();
+            final Class[] classes = MetaClassHelper.convertToTypeArray(arguments);
+            cacheEntry.params = classes;
+            cacheEntry.method = pickStaticMethod(methodName, classes);
+            e.cachedStaticMethod = cacheEntry;
+            return cacheEntry.method;
         }
-        return method;
+        else
+          return pickStaticMethod(methodName, MetaClassHelper.convertToTypeArray(arguments));
     }
 
     public MetaMethod getMethodWithoutCaching(Class sender, String methodName, Class[] arguments, boolean isCallToSuper) {
@@ -1020,9 +1067,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         if (arguments == null) arguments = EMPTY_ARGUMENTS;
-        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
+//        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
 
-        MetaMethod method = retrieveStaticMethod(methodName, argClasses);
+        MetaMethod method = retrieveStaticMethod(methodName, arguments);
         // lets try use the cache to find the method
 
         if (method != null) {
@@ -1044,6 +1091,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         unwrap(arguments);
 
         Class superClass = sender.getSuperclass();
+        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
         while (superClass != Object.class && superClass != null) {
             MetaClass mc = registry.getMetaClass(superClass);
             method = mc.getStaticMetaMethod(methodName, argClasses);
@@ -2163,7 +2211,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     protected boolean isInitialized() {
         return initialized;
     }
-    
+
     /**
      * return false: add method
      *        null:  ignore method
@@ -2177,10 +2225,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         for (int i = 0; i < params1.length; i++) {
             if (params1[i] != params2[i]) return Boolean.FALSE;
         }
-        
+
         Class aMethodClass = aMethod.getDeclaringClass().getCachedClass();
         Class categoryMethodClass = categoryMethod.getDeclaringClass().getCachedClass();
-        
+
         if (aMethodClass==categoryMethodClass) return Boolean.TRUE;
         boolean match = aMethodClass.isAssignableFrom(categoryMethodClass);
         if (match) return Boolean.TRUE;
@@ -2193,7 +2241,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             list.add(method);
             return;
         }
-        
+
         Object data[] = list.getArray();
         for (int j = 0; j != len; ++j) {
             MetaMethod aMethod = (MetaMethod) data[j];
@@ -2202,12 +2250,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             if (match==Boolean.TRUE) {
                 list.set(j, method);
                 return;
-            // null == ignore (we have a better method already)    
+            // null == ignore (we have a better method already)
             } else if (match==null) {
                 return;
             }
         }
-        // the casese true and null for a match are through, the 
+        // the casese true and null for a match are through, the
         // remaining case is false and that means adding the method
         // to our list
         list.add(method);
@@ -2448,19 +2496,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     protected void dropStaticMethodCache(String name) {
-        for (Iterator it = staticMethodCache.keySet().iterator(); it.hasNext();) {
-            MethodKey k = (MethodKey) it.next();
-            if (name.equals(k.getName()))
-                it.remove();
-        }
+        metaMethodIndex.clearCaches(name);
     }
 
     protected void dropMethodCache(String name) {
-        for (Iterator it = methodCache.keySet().iterator(); it.hasNext();) {
-            MethodKey k = (MethodKey) it.next();
-            if (name.equals(k.getName()))
-                it.remove();
-        }
+        metaMethodIndex.clearCaches(name);
     }
 
     private abstract class MethodIndexAction {
@@ -2523,8 +2563,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * method is added during runtime, but not by using a category.
      */
     protected void clearInvocationCaches() {
-        staticMethodCache.clear();
-        methodCache.clear();
+        metaMethodIndex.clearCaches ();
     }
 
     private static final SingleKeyHashMap.Copier NAME_INDEX_COPIER = new SingleKeyHashMap.Copier() {

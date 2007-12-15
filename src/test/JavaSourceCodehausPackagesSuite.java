@@ -66,7 +66,7 @@ public class JavaSourceCodehausPackagesSuite {
         suite.addTestSuite(NodePrinterTest.class);
         suite.addTestSuite(org.codehaus.groovy.classgen.PropertyTest.class);
         suite.addTestSuite(org.codehaus.groovy.runtime.PropertyTest.class);
-        suite.addTestSuite(ReflectorGeneratorTest.class);
+//        suite.addTestSuite(ReflectorGeneratorTest.class);
         suite.addTestSuite(RunBugsTest.class);
         suite.addTestSuite(RunClosureTest.class);
         suite.addTestSuite(RunGroovyTest.class);

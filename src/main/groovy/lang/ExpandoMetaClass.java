@@ -408,8 +408,9 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                     String name = metaMethodFromSuper.getName();
                     ClosureMetaMethod localMethod = new ClosureMetaMethod(name, getJavaClass(), cloned);
                     addMetaMethod(localMethod);
+
                     MethodKey key = new DefaultCachedMethodKey(getJavaClass(),name, localMethod.getParameterTypes(),false );
-                    cacheInstanceMethod(key, localMethod);
+//                    cacheInstanceMethod(key, localMethod);
 
                     checkIfGroovyObjectMethod(localMethod, name);
                     expandoMethods.put(key,localMethod);
@@ -859,7 +860,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
                     addMetaMethod(metaMethod);
                     dropStaticMethodCache (methodName);
-                    cacheStaticMethod(key,metaMethod);
+//                    cacheStaticMethod(key,metaMethod);
 
                     if(isGetter(methodName, metaMethod.getParameterTypes())) {
                         String propertyName = getPropertyForGetter(methodName);
