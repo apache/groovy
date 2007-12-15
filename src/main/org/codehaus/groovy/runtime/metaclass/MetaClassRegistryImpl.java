@@ -16,20 +16,16 @@
 package org.codehaus.groovy.runtime.metaclass;
 
 import groovy.lang.*;
-import org.codehaus.groovy.classgen.ReflectorGenerator;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.FastArray;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
-import org.codehaus.groovy.runtime.Reflector;
-import org.objectweb.asm.ClassWriter;
 
+import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.*;
 
 /**
@@ -50,9 +46,52 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     private MemoryAwareConcurrentReadMap weakMetaClasses = new MemoryAwareConcurrentReadMap();
     private MemoryAwareConcurrentReadMap loaderMap = new MemoryAwareConcurrentReadMap();
     private boolean useAccessible;
-    
+
     private FastArray instanceMethods = new FastArray();
     private FastArray staticMethods = new FastArray();
+
+    private volatile Integer version = new Integer(0);
+
+    /*
+       We keep references to meta classes already known to this thread.
+       It allows us to avoid synchronization. When we need to ask global registry
+       we do sync but usually it is enough to check if global registry has the
+       same version as when we asked last time (neither removeMetaClass
+       nor setMetaClass were called), if version changed we prefer to forget
+       everything we know in the thread and start again (most likely it happens not too often).
+       Unfortunately, we have to keep it in weak map to avoid possible leak of classes.
+     */
+    private class LocalMap extends WeakHashMap {
+        int version;
+
+        public MetaClass getMetaClass(Class theClass) {
+            final Integer regVer = MetaClassRegistryImpl.this.version;
+            final int regv = regVer.intValue();
+            if (version != regv) {
+              clear ();
+            }
+            else {
+                final SoftReference ref = (SoftReference) super.get(theClass);
+                MetaClass mc;
+                if (ref != null && (mc = (MetaClass) ref.get()) != null) {
+                    return mc;
+                }
+            }
+
+            synchronized (MetaClassRegistryImpl.this) {
+                MetaClass answer = getGlobalMetaClass(theClass);
+                put(theClass, new SoftReference(answer));
+                version = MetaClassRegistryImpl.this.version.intValue();
+                return answer;
+            }
+        }
+    }
+
+    private ThreadLocal locallyKnown = new ThreadLocal() {
+        protected Object initialValue() {
+            return new LocalMap();
+        }
+    };
 
     public static final int LOAD_DEFAULT = 0;
     public static final int DONT_LOAD_DEFAULT = 1;
@@ -95,12 +134,10 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
 
         installMetaClassCreationHandle();
 
-        final MetaClass emcMetaClass = getMetaClassFor(ExpandoMetaClass.class);
+        final MetaClass emcMetaClass = metaClassCreationHandle.create(ExpandoMetaClass.class, this);
         emcMetaClass.initialize();
         constantMetaClasses.put(ExpandoMetaClass.class,emcMetaClass);
         constantMetaClassCount = 1;
-
-
    }
 
     /**
@@ -149,38 +186,40 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         }
     }
 
-    public MetaClass getMetaClass(Class theClass) {
+    private synchronized MetaClass getGlobalMetaClass (Class theClass) {
         MetaClass answer=null;
         if (constantMetaClassCount!=0) answer = (MetaClass) constantMetaClasses.get(theClass);
         if (answer!=null) return answer;
         answer = (MetaClass) weakMetaClasses.get(theClass);
         if (answer!=null) return answer;
 
-        synchronized (theClass) {
-            answer = (MetaClass) weakMetaClasses.get(theClass);
-            if (answer!=null) return answer;
-            
-            answer = getMetaClassFor(theClass);
-            answer.initialize();
-            if (GroovySystem.isKeepJavaMetaClasses()) {
-                constantMetaClassCount++;
-                constantMetaClasses.put(theClass,answer);
-            } else {
-                weakMetaClasses.put(theClass, answer);
-            }
-            return answer;
+        answer = (MetaClass) weakMetaClasses.get(theClass);
+        if (answer!=null) return answer;
+
+        answer = metaClassCreationHandle.create(theClass, this);
+        answer.initialize();
+        if (GroovySystem.isKeepJavaMetaClasses()) {
+            constantMetaClassCount++;
+            constantMetaClasses.put(theClass,answer);
+        } else {
+            weakMetaClasses.put(theClass, answer);
         }
+        return answer;
     }
 
-    public void removeMetaClass(Class theClass) {
+    public MetaClass getMetaClass(Class theClass) {
+        return ((LocalMap) locallyKnown.get()).getMetaClass(theClass);
+    }
+
+    public synchronized void removeMetaClass(Class theClass) {
+        version = new Integer (version.intValue()+1);
+
         Object answer=null;
         if (constantMetaClassCount!=0) answer = constantMetaClasses.remove(theClass);
         if (answer==null) {
             weakMetaClasses.remove(theClass);
         } else {
-            synchronized(theClass) {
-                constantMetaClassCount--;
-            }
+            constantMetaClassCount--;
         }
     }
 
@@ -190,44 +229,15 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      * @param theClass
      * @param theMetaClass
      */
-    public void setMetaClass(Class theClass, MetaClass theMetaClass) {
-        synchronized(theClass) {
-            constantMetaClassCount++;
-            constantMetaClasses.put(theClass, theMetaClass);
-        }
+    public synchronized void setMetaClass(Class theClass, MetaClass theMetaClass) {
+        version = new Integer (version.intValue()+1);
+
+        constantMetaClassCount++;
+        constantMetaClasses.put(theClass, theMetaClass);
     }
 
     public boolean useAccessible() {
         return useAccessible;
-    }
-
-    /**
-     * create Reflector loader instance if not in map. This method
-     * is only used with a lock on "this" and since loaderMap is not
-     * used anywhere else no sync is needed here
-     */
-    private ReflectorLoader getReflectorLoader(final ClassLoader loader) {
-        ReflectorLoader reflectorLoader = (ReflectorLoader) loaderMap.get(loader);
-        if (reflectorLoader == null) {
-            reflectorLoader = (ReflectorLoader) AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-                    return new ReflectorLoader(loader);
-                }
-            }); 
-            loaderMap.put(loader, reflectorLoader);
-        }
-        return reflectorLoader;
-    }
-
-    /**
-     * Find a MetaClass for the class
-     * Use the MetaClass of the superclass of the class to create the MetaClass
-     * 
-     * @param theClass
-     * @return An instance of the MetaClass which will handle this class
-     */
-    private MetaClass getMetaClassFor(final Class theClass) {
-        return metaClassCreationHandle.create(theClass,this);
     }
 
     // the following is experimental code, not intended for stable use yet
@@ -271,57 +281,6 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             }
             return instanceExclude;
         }
-    }
-
-    public synchronized Reflector loadReflector(final Class theClass, List methods) {
-        final String name = getReflectorName(theClass);
-        ClassLoader loader = (ClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
-        ClassLoader loader = theClass.getClassLoader();
-        if (loader == null) loader = this.getClass().getClassLoader();
-                return loader;
-            }
-        });
-        final ReflectorLoader rloader = getReflectorLoader(loader);
-        Class ref = rloader.getLoadedClass(name);
-        if (ref == null) {
-            /*
-             * Lets generate it && load it.
-             */                        
-            ReflectorGenerator generator = new ReflectorGenerator(methods);
-            ClassWriter cw = new ClassWriter(true);
-            generator.generate(cw, name);
-            final byte[] bytecode = cw.toByteArray();
-            ref = (Class) AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-                    return rloader.defineClass(name, bytecode, getClass().getProtectionDomain());
-        }
-            });
-        }
-        try {
-          return (Reflector) ref.newInstance();
-        } catch (Exception e) {
-            return null;
-        }
-    }
-
-    private String getReflectorName(Class theClass) {
-        String className = theClass.getName();
-        String packagePrefix = "gjdk.";
-        String name = packagePrefix + className + "_GroovyReflector";
-        if (theClass.isArray()) {
-               Class clazz = theClass;
-               name = packagePrefix;
-               int level = 0;
-               while (clazz.isArray()) {
-                  clazz = clazz.getComponentType();
-                  level++;
-               }
-            String componentName = clazz.getName();
-            name = packagePrefix + componentName + "_GroovyReflectorArray";
-            if (level>1) name += level;
-        }
-        return name;
     }
 
     public FastArray getInstanceMethods() {
