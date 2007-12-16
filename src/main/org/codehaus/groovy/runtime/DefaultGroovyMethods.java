@@ -3499,10 +3499,15 @@ public class DefaultGroovyMethods {
      * @return the resulting set
      */
     public static Set minus(Set self, Collection operands) {
-        if (self.size() == 0)
-            return new HashSet();
-        Set ansSet = new HashSet(self);
-        ansSet.removeAll(operands);
+        final Set ansSet;
+        if (self instanceof SortedSet) {
+            ansSet = new TreeSet(self);
+        } else {
+            ansSet = new HashSet(self);
+        }
+        if (self.size() > 0) {
+            ansSet.removeAll(operands);
+        }
         return ansSet;
     }
 
@@ -3514,7 +3519,12 @@ public class DefaultGroovyMethods {
      * @return the resulting set
      */
     public static Set minus(Set self, Object operand) {
-        Set ansSet = new HashSet();
+        final Set ansSet;
+        if(self instanceof SortedSet) {
+            ansSet = new TreeSet();
+        } else {
+            ansSet = new HashSet();
+        }
         Comparator numberComparator = new NumberAwareComparator();
         for (Iterator it = self.iterator(); it.hasNext();) {
             Object o = it.next();
