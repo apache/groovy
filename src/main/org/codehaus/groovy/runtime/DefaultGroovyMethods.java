@@ -7134,6 +7134,18 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * Synonym for write(text) allowing file.text = 'foo'.
+     *
+     * @param file a File
+     * @param text the text to write to the File
+     * @throws IOException if an IOException occurs.
+     * @see #write(File, String)
+     */
+    public static void setText(File file, String text) throws IOException {
+        write(file, text);
+    }
+
+    /**
      * Write the text to the File.
      *
      * @param file a File
