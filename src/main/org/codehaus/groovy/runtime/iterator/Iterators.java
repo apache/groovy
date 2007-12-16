@@ -111,7 +111,7 @@ public class Iterators {
      *
      * @param self
      * @param closure
-     * @return
+     * @return iterator of filtered elements
      */
     public static FilterIterator withFilter(Object self, Closure closure) {
         return withFilter(iterate(self), null, closure);
@@ -136,7 +136,7 @@ public class Iterators {
      *
      * @param self
      * @param closure
-     * @return
+     * @return iterator of filtered elements
      */
     public static TransformIterator withTransform(Object self, Closure closure) {
         return withTransform(self, null, closure);
@@ -152,7 +152,7 @@ public class Iterators {
      *
      * @param self the object to iterate
      * @param strategy defines how to flatten maps (keys, values, entries)
-     * @return
+     * @return iterator of flattened elements
      */
     public static Iterator withOneLevelFlattening(Object self, int strategy) {
         return new FlatteningIterator.FlatteningOneLevelIterator(iterate(self), strategy);
@@ -162,7 +162,7 @@ public class Iterators {
      * Same as previous
      *
      * @param self
-     * @return
+     * @return iterator of flattened elements
      */
     public static Iterator withOneLevelFlattening(Object self) {
         return withOneLevelFlattening(iterate(self), 0);
@@ -178,7 +178,7 @@ public class Iterators {
      *
      * @param self the object to iterate
      * @param strategy defines how to flatten maps (keys, values, entries)
-     * @return
+     * @return iterator of flattened elements
      */
     public static Iterator withAllLevelsFlattening(Object self, int strategy) {
         return new FlatteningIterator.FlatteningAllLevelsIterator(iterate(self), strategy);
@@ -188,7 +188,7 @@ public class Iterators {
      * Same as previous
      *
      * @param self
-     * @return
+     * @return iterator of flattened elements
      */
     public static Iterator withAllLevelsFlattening(Object self) {
         return withAllLevelsFlattening(iterate(self), 0);
@@ -263,7 +263,7 @@ public class Iterators {
      *
      * @param first
      * @param second
-     * @return
+     * @return iterator over composed sequence
      */
     public static Iterator plus(Iterator first, Iterator second) {
         return new CompositeIterator(first, second);
