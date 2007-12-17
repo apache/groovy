@@ -113,10 +113,12 @@ public class DefaultTypeTransformation {
     }
     
     public static Number castToNumber(Object object) {
-        if (object instanceof Number) return (Number) object;
+        if (object instanceof Number)
+            return (Number) object;
         if (object instanceof Character) {
             return new Integer(((Character) object).charValue());
-        } else if (object instanceof String) {
+        }
+        if (object instanceof String) {
             String c = (String) object;
             if (c.length() == 1) {
                 return new Integer(c.charAt(0));
@@ -132,42 +134,48 @@ public class DefaultTypeTransformation {
     	if (object == null) {
     		return false;
     	}
-    	else if (object instanceof Boolean) {
+    	if (object instanceof Boolean) {
             Boolean booleanValue = (Boolean) object;
             return booleanValue.booleanValue();
         }
-        else if (object instanceof Matcher) {
+        if (object instanceof Matcher) {
             Matcher matcher = (Matcher) object;
             RegexSupport.setLastMatcher(matcher);
             return matcher.find();
         }
-        else if (object instanceof Collection) {
+        if (object instanceof Collection) {
             Collection collection = (Collection) object;
             return !collection.isEmpty();
         }
-        else if (object instanceof Map) {
+        if (object instanceof Map) {
             Map map = (Map) object;
             return !map.isEmpty();
         }
-        else if (object instanceof CharSequence) {
+        if (object instanceof Iterator) {
+            Iterator iterator = (Iterator) object;
+            return iterator.hasNext();
+        }
+        if (object instanceof Enumeration) {
+            Enumeration e = (Enumeration) object;
+            return e.hasMoreElements();
+        }
+        if (object instanceof CharSequence) {
         	CharSequence string =  (CharSequence) object;
             return string.length() > 0;
         } 
-        else if (object instanceof Object[]) {
+        if (object instanceof Object[]) {
         	Object[] array =  (Object[]) object;
             return array.length > 0;
         } 
-        else if (object instanceof Character) {
+        if (object instanceof Character) {
             Character c = (Character) object;
             return c.charValue() != 0;
         }
-        else if (object instanceof Number) {
+        if (object instanceof Number) {
             Number n = (Number) object;
             return n.doubleValue() != 0;
         }
-        else {
-            return true;
-        }
+        return true;
     }
     
     public static char castToChar(Object object) {

@@ -26,7 +26,7 @@ class GroovyTruthTest extends GroovyTestCase {
         testFalse([].toArray())
 
         testFalse [:]
-        testTrue([bla: 'some value']) 
+        testTrue([bla: 'some value'])
         testTrue 1234
         testFalse 0
         testTrue 0.3f
@@ -35,15 +35,25 @@ class GroovyTruthTest extends GroovyTestCase {
         testTrue new Character((char) 1)
         testFalse new Character((char) 0)
     }
-    
-    protected testTrue(someObj)
-    {
-    	assertTrue someObj ? true : false
+
+    void testIteratorTruth() {
+        testFalse([].iterator())
+        testTrue([1].iterator())
     }
 
-    protected testFalse(someObj)
-    {
-    	assertFalse someObj ? true : false
+    void testEnumerationTruth() {
+        def v = new Vector()
+        testFalse(v.elements())
+        v.add(new Object())
+        testTrue(v.elements())
+    }
+
+    protected testTrue(someObj) {
+        assertTrue someObj ? true : false
+    }
+
+    protected testFalse(someObj) {
+        assertFalse someObj ? true : false
     }
 
 }
