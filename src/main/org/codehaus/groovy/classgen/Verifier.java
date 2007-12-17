@@ -343,6 +343,19 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     public void visitField(FieldNode node) {
     }
+    
+    private boolean methodNeedsReplacement(MethodNode m) {
+        // no method found, we need to replace
+        if (m==null) return true;
+        // method is in current class, nothing to be done
+        if (m.getDeclaringClass()==this.getClassNode()) return false;
+        // private method from a parent? replace it.
+        if ((m.getModifiers()&ACC_PRIVATE)!=0) return true;
+        // method is not private, from a parent and abstract, replace it
+        if (m.isAbstract()) return true;
+        // method is from a parent, is not abstract and is visible.. nothing to be done
+        return false;
+    }
 
     public void visitProperty(PropertyNode node) {
         String name = node.getName();
@@ -353,13 +366,18 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         Statement getterBlock = node.getGetterBlock();
         if (getterBlock == null) {
-            if (!node.isPrivate() && classNode.getGetterMethod(getterName) == null) {
+            MethodNode getter = classNode.getGetterMethod(getterName);
+            if (!node.isPrivate() && methodNeedsReplacement(getter)) {
                 getterBlock = createGetterBlock(node, field);
             }
         }
         Statement setterBlock = node.getSetterBlock();
         if (setterBlock == null) {
-            if (!node.isPrivate() && (node.getModifiers()&ACC_FINAL)==0 && classNode.getSetterMethod(setterName) == null) {
+            MethodNode setter = classNode.getSetterMethod(setterName);
+            if ( !node.isPrivate() && 
+                 (node.getModifiers()&ACC_FINAL)==0 && 
+                 methodNeedsReplacement(setter)) 
+            {
                 setterBlock = createSetterBlock(node, field);
             }
         }
@@ -658,7 +676,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     
     private void addCovariantMethods(ClassNode classNode, List declaredMethods, Map methodsToAdd, Map oldGenericsSpec) {
         ClassNode sn = classNode.getUnresolvedSuperClass(false);
-        if (sn!=null && sn.redirect()!=ClassHelper.OBJECT_TYPE) {
+        if (sn!=null) {
             Map genericsSpec = createGenericsSpec(sn,oldGenericsSpec);
             for (Iterator it = declaredMethods.iterator(); it.hasNext();) {
                 MethodNode method = (MethodNode) it.next();

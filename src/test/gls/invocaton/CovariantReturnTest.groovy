@@ -32,4 +32,13 @@ public class CovariantReturnTest extends CompilableTestSupport {
        assert Rational.declaredMethods.findAll{it.name=="eval"}.size()==2    
     """
   }
+  
+  void testCovariantReturnOverwritingObjectMethod() {
+    shouldNotCompile """
+      class X {
+        Long toString() { 333L } 
+        String hashCode() { "hash" }
+      }
+    """
+  }
 }
