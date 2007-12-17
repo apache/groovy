@@ -119,7 +119,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
                     Object method = data[i];
 
                     // making this false helps find matches
-                    if (MetaClassHelper.isValidMethod(method, arguments, coerce)) {
+                    if (MetaClassHelper.isValidMethod(method, arguments)) {
                         matchingMethods.add(method);
                     }
                 }
@@ -470,7 +470,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
                             // general case for single method
                             chooser = new MethodChooser() {
                                 public Object chooseMethod(Class[] arguments, boolean coerce) {
-                                    if (MetaClassHelper.isValidMethod(doCall, arguments, coerce)) {
+                                    if (doCall.isValidMethod(arguments)) {
                                         return doCall;
                                     }
                                     return null;

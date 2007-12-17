@@ -69,7 +69,7 @@ public class WeakDoubleKeyHashMap extends ComplexKeyHashMap
     }
 
   public final Object get(Object key1, Object key2) {
-    expungeStaleEntries();
+//    expungeStaleEntries();
     int h = hash (31*key1.hashCode()+key2.hashCode());
     ComplexKeyHashMap.Entry e = table [h & (table.length-1)];
     for (; e != null; e = e.next)
@@ -86,7 +86,7 @@ public class WeakDoubleKeyHashMap extends ComplexKeyHashMap
 
   public Entry getOrPut(Object key1, Object key2)
   {
-    expungeStaleEntries();
+//    expungeStaleEntries();
     int h = hash (31*key1.hashCode()+key2.hashCode());
     final int index = h & (table.length - 1);
     ComplexKeyHashMap.Entry e = table [index];

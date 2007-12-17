@@ -21,9 +21,17 @@ public class Main
 
         // launch threads, each one instantiating the scriptClass and running
         // it numIter times
+        ScriptLauncher [] arr = new ScriptLauncher [numThreads];
+        long tids [] = new long [numThreads];
         for (int i = 0; i < numThreads; i++)
         {
-            new ScriptLauncher(scriptClass, numIter, latch).start();
+            arr [i] = new ScriptLauncher(scriptClass, numIter, latch, tids);
+            tids [i] = arr [i].getId();
+        }
+
+        for (int i = 0; i < numThreads; i++)
+        {
+            arr [i].start();
         }
 
         // wait for the threads to finish

@@ -96,11 +96,12 @@ public class ReflectionCache {
         if (klazz == aClass)
           return true;
         
-        WeakDoubleKeyHashMap.Entry val = assignableMap.getOrPut(klazz, aClass);
-        if (val.value == null) {
-            val.value = Boolean.valueOf(klazz.isAssignableFrom(aClass));
-        }
-        return ((Boolean)val.value).booleanValue();
+//        WeakDoubleKeyHashMap.Entry val = assignableMap.getOrPut(klazz, aClass);
+//        if (val.value == null) {
+//            val.value = Boolean.valueOf(klazz.isAssignableFrom(aClass));
+//        }
+//        return ((Boolean)val.value).booleanValue();
+        return klazz.isAssignableFrom(aClass);
     }
 
     static boolean arrayContentsEq(Object[] a1, Object[] a2) {

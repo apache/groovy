@@ -2340,7 +2340,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      */
     private Object chooseMethod(String methodName, Object methodOrList, Class[] arguments, boolean coerce) {
         if (methodOrList instanceof MetaMethod) {
-            if (MetaClassHelper.isValidMethod(methodOrList, arguments, coerce)) {
+            if (MetaClassHelper.isValidMethod(methodOrList, arguments)) {
                 return methodOrList;
             }
             return null;
@@ -2352,7 +2352,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return null;
         } else if (methodCount == 1) {
             Object method = methods.get(0);
-            if (MetaClassHelper.isValidMethod(method, arguments, coerce)) {
+            if (MetaClassHelper.isValidMethod(method, arguments)) {
                 return method;
             }
             return null;
@@ -2371,7 +2371,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 Object method = data[i];
 
                 // making this false helps find matches
-                if (MetaClassHelper.isValidMethod(method, arguments, coerce)) {
+                if (MetaClassHelper.isValidMethod(method, arguments)) {
                     matchingMethods.add(method);
                 }
             }

@@ -739,44 +739,8 @@ public class MetaClassHelper {
         return true;
     }
 
-    public static boolean isValidMethod(ParameterTypes pt, Class[] arguments, boolean includeCoerce) {
-        if (arguments == null) {
-            return true;
-        }
-        int size = arguments.length;
-
-        CachedClass[] paramTypes = pt.getParameterTypes();
-        if ((size >= paramTypes.length || size == paramTypes.length - 1)
-                && paramTypes.length > 0
-                && paramTypes[(paramTypes.length - 1)].isArray) {
-            // first check normal number of parameters
-            for (int i = 0; i < paramTypes.length - 1; i++) {
-                if (isAssignableFrom(paramTypes[i].getCachedClass(), arguments[i])) continue;
-                return false;
-            }
-            // check varged
-            Class clazz = paramTypes[paramTypes.length - 1].getCachedClass().getComponentType();
-            for (int i = paramTypes.length; i < size; i++) {
-                if (isAssignableFrom(clazz, arguments[i])) continue;
-                return false;
-            }
-            return true;
-        } else if (paramTypes.length == size) {
-            // lets check the parameter types match
-            for (int i = 0; i < size; i++) {
-                if (isAssignableFrom(paramTypes[i].getCachedClass(), arguments[i])) continue;
-                return false;
-            }
-            return true;
-        } else if (paramTypes.length == 1 && size == 0) {
-            return true;
-        }
-        return false;
-
-    }
-
-    public static boolean isValidMethod(Object method, Class[] arguments, boolean includeCoerce) {
-        return isValidMethod(getParameterTypes(method), arguments, includeCoerce);
+    public static boolean isValidMethod(Object method, Class[] arguments) {
+        return getParameterTypes(method).isValidMethod(arguments);
     }
 
     public static void logMethodCall(Object object, String methodName, Object[] arguments) {

@@ -34,7 +34,7 @@ public class CachedMethod extends MetaMethod implements Comparable{
     public final CachedClass cachedClass;
 
     private final Method cachedMethod;
-    private boolean alreadySetAccessible;
+    private volatile boolean alreadySetAccessible;
     private int methodIndex;
     private int hashCode;
 
@@ -114,15 +114,19 @@ public class CachedMethod extends MetaMethod implements Comparable{
 
     public Method setAccessible() {
         if ( !alreadySetAccessible ) {
-            AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-                    cachedMethod.setAccessible(true);
-                    return null;
-                }
-            });
+            setAccessible0();
         }
-        alreadySetAccessible = true;
         return cachedMethod;
+    }
+
+    private synchronized void setAccessible0() {
+        AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
+                cachedMethod.setAccessible(true);
+                return null;
+            }
+        });
+        alreadySetAccessible = true;
     }
 
     public boolean isStatic() {

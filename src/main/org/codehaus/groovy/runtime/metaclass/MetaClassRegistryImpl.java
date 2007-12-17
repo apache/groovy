@@ -78,12 +78,10 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
                 }
             }
 
-            synchronized (MetaClassRegistryImpl.this) {
-                MetaClass answer = getGlobalMetaClass(theClass);
-                put(theClass, new SoftReference(answer));
-                version = MetaClassRegistryImpl.this.version.intValue();
-                return answer;
-            }
+            MetaClass answer = getGlobalMetaClass(theClass);
+            put(theClass, new SoftReference(answer));
+            version = MetaClassRegistryImpl.this.version.intValue();
+            return answer;
         }
     }
 
@@ -186,23 +184,25 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         }
     }
 
-    private synchronized MetaClass getGlobalMetaClass (Class theClass) {
+    private MetaClass getGlobalMetaClass (Class theClass) {
         MetaClass answer=null;
         if (constantMetaClassCount!=0) answer = (MetaClass) constantMetaClasses.get(theClass);
         if (answer!=null) return answer;
         answer = (MetaClass) weakMetaClasses.get(theClass);
         if (answer!=null) return answer;
 
-        answer = (MetaClass) weakMetaClasses.get(theClass);
-        if (answer!=null) return answer;
-
-        answer = metaClassCreationHandle.create(theClass, this);
-        answer.initialize();
-        if (GroovySystem.isKeepJavaMetaClasses()) {
-            constantMetaClassCount++;
-            constantMetaClasses.put(theClass,answer);
-        } else {
-            weakMetaClasses.put(theClass, answer);
+        synchronized (theClass) {
+            answer = (MetaClass) weakMetaClasses.get(theClass);
+            if (answer!=null) return answer;
+    
+            answer = metaClassCreationHandle.create(theClass, this);
+            answer.initialize();
+            if (GroovySystem.isKeepJavaMetaClasses()) {
+                constantMetaClassCount++;
+                constantMetaClasses.put(theClass,answer);
+            } else {
+                weakMetaClasses.put(theClass, answer);
+            }
         }
         return answer;
     }

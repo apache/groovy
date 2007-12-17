@@ -61,7 +61,7 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
      */
     public void checkParameters(Class[] arguments) {
         // lets check that the argument types are valid
-        if (!MetaClassHelper.isValidMethod(getParameterTypes(), arguments, false)) {
+        if (!MetaClassHelper.isValidMethod(getParameterTypes(), arguments)) {
             throw new IllegalArgumentException(
                     "Parameters to method: "
                     + getName()

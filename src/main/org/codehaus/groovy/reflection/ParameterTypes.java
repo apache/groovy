@@ -17,13 +17,14 @@ package org.codehaus.groovy.reflection;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.runtime.MetaClassHelper;
+import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
 import java.lang.reflect.Array;
 
 public class ParameterTypes
 {
-  protected Class [] nativeParamTypes;
-  protected CachedClass [] parameterTypes;
+  protected volatile Class [] nativeParamTypes;
+  protected volatile CachedClass [] parameterTypes;
 
   protected boolean isVargsMethod;
 
@@ -45,43 +46,47 @@ public class ParameterTypes
 
     public CachedClass[] getParameterTypes() {
       if (parameterTypes == null) {
-        synchronized (this) {
-          if (parameterTypes != null)
-            return parameterTypes;
-
-          Class [] npt = nativeParamTypes == null ? getPT() : nativeParamTypes;
-
-          CachedClass [] pt = new CachedClass [npt.length];
-          for (int i = 0; i != npt.length; ++i)
-            pt[i] = ReflectionCache.getCachedClass(npt[i]);
-
-          nativeParamTypes = npt;
-          setParametersTypes(pt);
-        }
+          getParametersTypes0();
       }
 
       return parameterTypes;
   }
 
+    private synchronized void getParametersTypes0() {
+      if (parameterTypes != null)
+          return;
+
+      Class [] npt = nativeParamTypes == null ? getPT() : nativeParamTypes;
+
+      CachedClass[] pt = new CachedClass [npt.length];
+      for (int i = 0; i != npt.length; ++i)
+        pt[i] = ReflectionCache.getCachedClass(npt[i]);
+
+      nativeParamTypes = npt;
+      setParametersTypes(pt);
+    }
+
     public Class[] getNativeParameterTypes() {
         if (nativeParamTypes == null) {
-          synchronized (this) {
-            if (nativeParamTypes != null)
-              return nativeParamTypes;
-
-            Class [] npt;
-            if (parameterTypes != null) {
-                npt = new Class [parameterTypes.length];
-                for (int i = 0; i != parameterTypes.length; ++i) {
-                    npt[i] = parameterTypes[i].getCachedClass();
-                }
-            }
-            else
-              npt = getPT ();
-            nativeParamTypes = npt;
-          }
+            getNativeParameterTypes0();
         }
         return nativeParamTypes;
+    }
+
+    private synchronized void getNativeParameterTypes0() {
+      if (nativeParamTypes != null)
+          return;
+
+      Class [] npt;
+      if (parameterTypes != null) {
+          npt = new Class [parameterTypes.length];
+          for (int i = 0; i != parameterTypes.length; ++i) {
+              npt[i] = parameterTypes[i].getCachedClass();
+          }
+      }
+      else
+        npt = getPT ();
+      nativeParamTypes = npt;
     }
 
     protected Class[] getPT() { throw new UnsupportedOperationException(getClass().getName()); }
@@ -194,5 +199,91 @@ public class ParameterTypes
         } else {
             throw new GroovyBugError("trying to call a vargs method without enough arguments");
         }
+    }
+
+    public boolean isValidMethod(Class[] arguments) {
+        if (arguments == null) {
+            return true;
+        }
+        int size = arguments.length;
+
+        CachedClass[] paramTypes = getParameterTypes();
+        if ((size >= paramTypes.length || size == paramTypes.length - 1)
+                && paramTypes.length > 0
+                && paramTypes[(paramTypes.length - 1)].isArray) {
+            // first check normal number of parameters
+            for (int i = 0; i < paramTypes.length - 1; i++) {
+                if (MetaClassHelper.isAssignableFrom(paramTypes[i].getCachedClass(), arguments[i])) continue;
+                return false;
+            }
+            // check varged
+            Class clazz = paramTypes[paramTypes.length - 1].getCachedClass().getComponentType();
+            for (int i = paramTypes.length; i < size; i++) {
+                if (MetaClassHelper.isAssignableFrom(clazz, arguments[i])) continue;
+                return false;
+            }
+            return true;
+        } else if (paramTypes.length == size) {
+            // lets check the parameter types match
+            for (int i = 0; i < size; i++) {
+                if (MetaClassHelper.isAssignableFrom(paramTypes[i].getCachedClass(), arguments[i])) continue;
+                return false;
+            }
+            return true;
+        } else if (paramTypes.length == 1 && size == 0) {
+            return true;
+        }
+        return false;
+
+    }
+
+    public boolean isValidMethod(Object[] arguments) {
+        if (arguments == null) {
+            return true;
+        }
+        int size = arguments.length;
+
+        CachedClass[] paramTypes = getParameterTypes();
+        if ((size >= paramTypes.length || size == paramTypes.length - 1)
+                && paramTypes.length > 0
+                && paramTypes[(paramTypes.length - 1)].isArray) {
+            // first check normal number of parameters
+            for (int i = 0; i < paramTypes.length - 1; i++) {
+                if (MetaClassHelper.isAssignableFrom(paramTypes[i].getCachedClass(), getArgClass(arguments[i]))) continue;
+                return false;
+            }
+            // check varged
+            Class clazz = paramTypes[paramTypes.length - 1].getCachedClass().getComponentType();
+            for (int i = paramTypes.length; i < size; i++) {
+                if (MetaClassHelper.isAssignableFrom(clazz, getArgClass(arguments[i]))) continue;
+                return false;
+            }
+            return true;
+        } else if (paramTypes.length == size) {
+            // lets check the parameter types match
+            for (int i = 0; i < size; i++) {
+                if (MetaClassHelper.isAssignableFrom(paramTypes[i].getCachedClass(), getArgClass(arguments[i]))) continue;
+                return false;
+            }
+            return true;
+        } else if (paramTypes.length == 1 && size == 0) {
+            return true;
+        }
+        return false;
+
+    }
+
+    private Class getArgClass(Object arg) {
+        Class cls;
+        if (arg == null) {
+            cls = null;
+        } else {
+            if (arg instanceof Wrapper) {
+                cls = ((Wrapper)arg).getType();
+            }
+            else
+                cls = arg.getClass();
+        }
+        return cls;
     }
 }

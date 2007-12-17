@@ -27,6 +27,7 @@ public class ReflectionMetaMethod extends MetaMethod {
 
     public ReflectionMetaMethod(CachedMethod method) {
         this.method = method;
+        setParametersTypes(method.getParameterTypes());
     }
 
     public int getModifiers() {
