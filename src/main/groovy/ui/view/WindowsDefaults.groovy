@@ -8,7 +8,7 @@ import org.codehaus.groovy.runtime.InvokerHelper
 build(Defaults)
 
 // change fonts for vista
-if ((System.properties['os.version'] as Float) >= 6.0) {
+if (System.properties['os.version'] =~ /6\./) {
     // Vista/Server 2008 or later
     styles.regular[StyleConstants.FontFamily] = 'Consolas'
     styles[StyleContext.DEFAULT_STYLE][StyleConstants.FontFamily] = 'Consolas'
