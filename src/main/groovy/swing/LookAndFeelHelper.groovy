@@ -34,7 +34,7 @@ class LookAndFeelHelper {
     private Map lafCodeNames = [
         // stuff built into various JDKs
         metal   : 'javax.swing.plaf.metal.MetalLookAndFeel',
-        nimbus  : 'sun.swing.plaf.nimbus.NimbusLookAndFeel',
+        nimbus  : 'com.sun.swing.plaf.nimbus.NimbusLookAndFeel',
         mac     : 'apple.laf.AquaLookAndFeel',
         motif   : 'com.sun.java.swing.plaf.motif.MotifLookAndFeel',
         windows : 'com.sun.java.swing.plaf.windows.WindowsLookAndFeel',
