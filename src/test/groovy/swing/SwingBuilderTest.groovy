@@ -377,6 +377,23 @@ class SwingBuilderTest extends GroovyTestCase {
         assert swing.tp.selectedIndex == 1
         assert swing.tp.selectedComponent == swing.p2
 
+        swing.tabbedPane(id:'r') {
+            label(id:'a', text:'a', title:'ta')
+            tabbedPane(id:'st', title:'st') {
+                label(id:'sa', text:'sa', title:'sta')
+                label(id:'sb', text:'sb', title:'stb')
+            }
+        }
+        assert swing.a.parent == swing.r
+        assert swing.st.parent == swing.r
+        assert swing.r.indexOfTab('ta') == swing.r.indexOfComponent(swing.a)
+        assert swing.r.indexOfTab('st') == swing.r.indexOfComponent(swing.st)
+        assert swing.sa.parent == swing.st
+        assert swing.sb.parent == swing.st
+        assert swing.st.indexOfTab('sta') == swing.st.indexOfComponent(swing.sa)
+        assert swing.st.indexOfTab('stb') == swing.st.indexOfComponent(swing.sb)
+
+
     }
 
     void testComboBox() {

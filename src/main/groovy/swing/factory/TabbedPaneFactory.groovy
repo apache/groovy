@@ -27,26 +27,28 @@ class TabbedPaneFactory extends BeanFactory {
     }
 
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        builder.context.tabbedPaneFactoryClosure = this.&inspectChild
+        def newChild = super.newInstance(builder, name, value, attributes)
+        builder.context.tabbedPaneFactoryClosure =
+            { FactoryBuilderSupport cBuilder, Object cNode, Map cAttributes ->
+                if (builder.current == newChild) inspectChild(cBuilder, cNode, cAttributes)
+            }
         builder.addAttributeDelegate(builder.context.tabbedPaneFactoryClosure)
         builder.context.selectedIndex = attributes.remove('selectedIndex')
         builder.context.selectedComponent = attributes.remove('selectedComponent')
-        return super.newInstance(builder, name, value, attributes)
+        return newChild;
     }
 
     public static void inspectChild(FactoryBuilderSupport builder, Object node, Map attributes) {
-        if (builder.current instanceof JTabbedPane) {
-            def name = attributes.remove('title')
-            def icon = attributes.remove('tabIcon')
-            def disabledIcon = attributes.remove('tabDisabledIcon')
-            def toolTip = attributes.remove('tabToolTip')
-            def background = attributes.remove('tabBackground')
-            def foreground = attributes.remove('tabForeground')
-            def enabled = attributes.remove('tabEnabled')
-            def mnemonic = attributes.remove('tabMnemonic')
-            def displayedMnemonicIndex = attributes.remove('tabDisplayedMnemonicIndex')
-            builder.context.put(node, [name, icon, disabledIcon, toolTip, background, foreground, enabled, mnemonic, displayedMnemonicIndex])
-        }
+        def name = attributes.remove('title')
+        def icon = attributes.remove('tabIcon')
+        def disabledIcon = attributes.remove('tabDisabledIcon')
+        def toolTip = attributes.remove('tabToolTip')
+        def background = attributes.remove('tabBackground')
+        def foreground = attributes.remove('tabForeground')
+        def enabled = attributes.remove('tabEnabled')
+        def mnemonic = attributes.remove('tabMnemonic')
+        def displayedMnemonicIndex = attributes.remove('tabDisplayedMnemonicIndex')
+        builder.context.put(node, [name, icon, disabledIcon, toolTip, background, foreground, enabled, mnemonic, displayedMnemonicIndex])
     }
 
     public void setChild(FactoryBuilderSupport builder, Object parent, Object child) {
