@@ -10,6 +10,29 @@ class SqlCompleteTest extends TestHelper {
         assert results == expected
     }
     
+    void testRowResultOtherMethods() {
+        def sql = createSql()
+        def resultSet = sql.firstRow("select * from PERSON")
+        assert resultSet.containsKey('FIRSTNAME')
+        assert resultSet.size() > 0
+    }
+
+    void testFirstRowGString() {
+        def sql = createSql()
+        def table = 'PERSON'
+        GString query = "select * from $table"
+        def resultSet = sql.firstRow(query)
+        assert resultSet.containsKey('FIRSTNAME')
+    }
+
+    void testRowsGString() {
+        def sql = createSql()
+        def table = 'PERSON'
+        GString query = "select * from $table"
+        def result = sql.rows(query)
+        assert result.size() == 3
+    }
+
     void testSqlQueryWithWhereClause() {
         def sql = createSql()
         def foo = "drink"
