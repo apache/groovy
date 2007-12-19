@@ -9,7 +9,6 @@ class TestHelper extends GroovyTestCase {
         return foo.createSql()
     }
     
-    
     protected def createEmptySql() {
         return newSql(getURI())
     }
@@ -27,7 +26,7 @@ class TestHelper extends GroovyTestCase {
         sql.execute("create table FOOD ( type varchar, name varchar)")
         sql.execute("create table FEATURE ( id integer, name varchar)")
         
-        // now lets populate the datasets
+        // now let's populate the datasets
         def people = sql.dataSet("PERSON")
         people.add( firstname:"James", lastname:"Strachan", id:1, location_id:10, location_name:'London' )
         people.add( firstname:"Bob", lastname:"Mcwhirter", id:2, location_id:20, location_name:'Atlanta' )

@@ -29,38 +29,38 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 
 /**
- * GroovyResultSetExtension implements additional logic for ResultSet. Due to 
- * the version incompatibility between java6 and java5 this methods are moved 
+ * GroovyResultSetExtension implements additional logic for ResultSet. Due to
+ * the version incompatibility between java6 and java5 this methods are moved
  * here from the original GroovyResultSet class. The methods in this class are
  * used by the proxy GroovyResultSetProxy, which will try to invoke methods
- * on this class before invokeing it on ResultSet. 
- * 
+ * on this class before invokeing it on ResultSet.
+ * <p/>
  * <p><b>This class is not intended to be used directly. Should be used through
- *  GroovyResultSetProxy only!</b></p>
- * 
+ * GroovyResultSetProxy only!</b></p>
+ *
+ * @author Jochen Theodorou
  * @see GroovyResultSet
  * @see GroovyResultSetProxy
- *  
- * @author Jochen Theodorou
  */
-public class GroovyResultSetExtension extends GroovyObjectSupport{
+public class GroovyResultSetExtension extends GroovyObjectSupport {
 
     private boolean updated;
     private final ResultSet resultSet;
-    
+
     /**
      * Gets the current result set.
+     *
      * @return the result set
      * @throws SQLException if the result set can not be returned
      */
-    protected ResultSet getResultSet() throws SQLException{
+    protected ResultSet getResultSet() throws SQLException {
         return resultSet;
     }
-    
+
     /**
      * Creats a GroovyResultSet implementation-
-     *  
-     * @param set the result set 
+     *
+     * @param set the result set
      */
     public GroovyResultSetExtension(ResultSet set) {
         updated = false;
@@ -95,13 +95,14 @@ public class GroovyResultSetExtension extends GroovyObjectSupport{
             throw new InvokerInvocationException(se);
         }
     }
-    
+
     /**
-     * Gets the value of the designated column in the current row 
+     * Gets the value of the designated column in the current row
      * of as an <code>Object</code>.
+     *
      * @param columnName the SQL name of the column
-     * @throws MissingPropertyException 
-     *   if an SQLException happens while getting the object
+     * @return the returned column value
+     * @throws MissingPropertyException if an SQLException happens while getting the object
      * @see groovy.lang.GroovyObject#getProperty(java.lang.String)
      * @see ResultSet#getObject(java.lang.String)
      */
@@ -114,12 +115,12 @@ public class GroovyResultSetExtension extends GroovyObjectSupport{
         }
     }
 
-
     /**
      * Updates the designated column with an <code>Object</code> value.
+     *
      * @param columnName the SQL name of the column
-     * @throws MissingPropertyException 
-     *   if an SQLException happens while getting the object 
+     * @param newValue   the updated value
+     * @throws MissingPropertyException if an SQLException happens while setting the new value
      * @see groovy.lang.GroovyObject#setProperty(java.lang.String, java.lang.Object)
      * @see ResultSet#updateObject(java.lang.String, java.lang.Object)
      */
@@ -132,24 +133,28 @@ public class GroovyResultSetExtension extends GroovyObjectSupport{
             throw new MissingPropertyException(columnName, GroovyResultSetProxy.class, e);
         }
     }
-    
+
     /**
      * Supports integer based subscript operators for accessing at numbered columns
      * starting at zero. Negative indices are supported, they will count from the last column backwards.
      *
      * @param index is the number of the column to look at starting at 1
+     * @return the returned column value
+     * @throws java.sql.SQLException if something goes wrong
      * @see ResultSet#getObject(int)
      */
     public Object getAt(int index) throws SQLException {
         index = normalizeIndex(index);
         return getResultSet().getObject(index);
     }
-    
+
     /**
      * Supports integer based subscript operators for updating the values of numbered columns
      * starting at zero. Negative indices are supported, they will count from the last column backwards.
      *
-     * @param index is the number of the column to look at starting at 1
+     * @param index    is the number of the column to look at starting at 1
+     * @param newValue the updated value
+     * @throws java.sql.SQLException if something goes wrong
      * @see ResultSet#updateObject(java.lang.String, java.lang.Object)
      */
     public void putAt(int index, Object newValue) throws SQLException {
@@ -161,6 +166,7 @@ public class GroovyResultSetExtension extends GroovyObjectSupport{
      * Adds a new row to the result set
      *
      * @param values a map containing the mappings for column names and values
+     * @throws java.sql.SQLException if something goes wrong
      * @see ResultSet#insertRow()
      * @see ResultSet#updateObject(java.lang.String, java.lang.Object)
      * @see ResultSet#moveToInsertRow()
@@ -178,7 +184,7 @@ public class GroovyResultSetExtension extends GroovyObjectSupport{
      * Takes a zero based index and convert it into an SQL based 1 based index.
      * A negative index will count backwards from the last column.
      *
-     * @param index
+     * @param index the raw requested index (may be negative)
      * @return a JDBC index
      * @throws SQLException if some exception occurs finding out the column count
      */
@@ -193,12 +199,11 @@ public class GroovyResultSetExtension extends GroovyObjectSupport{
         return index + 1;
     }
 
-
     /**
      * Call the closure once for each row in the result set.
      *
-     * @param closure
-     * @throws SQLException
+     * @param closure the closure to perform on each row
+     * @throws SQLException if something goes wrong
      */
     public void eachRow(Closure closure) throws SQLException {
         while (next()) {
@@ -231,7 +236,7 @@ public class GroovyResultSetExtension extends GroovyObjectSupport{
         }
         return getResultSet().next();
     }
-    
+
     /**
      * Moves the cursor to the previous row in this
      * <code>getResultSet()</code> object.
@@ -249,7 +254,5 @@ public class GroovyResultSetExtension extends GroovyObjectSupport{
         }
         return getResultSet().previous();
     }
-
-
 
 }

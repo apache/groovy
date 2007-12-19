@@ -15,12 +15,13 @@
  */
 package groovy.sql;
 
+import groovy.lang.Closure;
+import groovy.lang.GroovyObject;
+import groovy.lang.MissingPropertyException;
+
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.Map;
-
-import groovy.lang.Closure;
-import groovy.lang.GroovyObject;
 
 /**
  * Represents an extent of objects
@@ -32,7 +33,7 @@ import groovy.lang.GroovyObject;
  */
 public interface GroovyResultSet extends GroovyObject, ResultSet {
     /**
-     * Supports integer based subscript operators for accessing at numbered columns
+     * Supports integer-based subscript operators for accessing at numbered columns
      * starting at zero. Negative indices are supported, they will count from the last column backwards.
      *
      * @param index is the number of the column to look at starting at 1
@@ -40,6 +41,16 @@ public interface GroovyResultSet extends GroovyObject, ResultSet {
      * @return the object for this index in the current result set
      */
     Object getAt(int index) throws SQLException;
+
+    /**
+     * Gets the value of the designated column in the current row
+     * as an <code>Object</code>.
+     * @param columnName the SQL name of the column
+     * @throws groovy.lang.MissingPropertyException
+     *   if an SQLException happens while getting the object
+     * @return the returned column value
+     */
+    public Object getAt(String columnName);
 
     /**
      * Supports integer based subscript operators for updating the values of numbered columns
@@ -50,6 +61,15 @@ public interface GroovyResultSet extends GroovyObject, ResultSet {
      * @throws SQLException if a database error occurs
      */
     void putAt(int index, Object newValue) throws SQLException;
+
+    /**
+     * Updates the designated column with an <code>Object</code> value.
+     * @param columnName the SQL name of the column
+     * @param newValue the updated value
+     * @throws MissingPropertyException
+     *   if an SQLException happens while setting the new value
+     */
+    public void putAt(String columnName, Object newValue);
 
     /**
      * Adds a new row to this result set
