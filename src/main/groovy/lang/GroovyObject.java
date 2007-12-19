@@ -18,36 +18,50 @@ package groovy.lang;
 
 /**
  * The interface implemented by all Groovy objects.
- *
+ * <p/>
  * Especially handy for using Groovy objects when in the Java world.
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
 public interface GroovyObject {
 
-    /** 
-     * Invokes the given method
+    /**
+     * Invokes the given method.
+     *
+     * @param name the name of the method to call
+     * @param args the arguments to use for the method call
+     * @return the result of invoking the method
      */
     Object invokeMethod(String name, Object args);
-    
-    /**
-     * @return the given property
-     */
-    Object getProperty(String property);
 
     /**
-     * Sets the given property to the new value
+     * Retrieves a property value.
+     *
+     * @param propertyName the name of the property of interest
+     * @return the given property
      */
-    void setProperty(String property, Object newValue);
-        
+    Object getProperty(String propertyName);
+
     /**
+     * Sets the given property to the new value.
+     *
+     * @param propertyName the name of the property of interest
+     * @param newValue     the new value for the property
+     */
+    void setProperty(String propertyName, Object newValue);
+
+    /**
+     * Returns the metaclass for a given class.
+     *
      * @return the metaClass of this instance
      */
     MetaClass getMetaClass();
-    
+
     /**
-     * Allows the MetaClass to be replaced with a derived implementation
+     * Allows the MetaClass to be replaced with a derived implementation.
+     *
+     * @param metaClass the new metaclass
      */
     void setMetaClass(MetaClass metaClass);
 }
