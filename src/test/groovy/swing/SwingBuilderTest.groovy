@@ -1019,19 +1019,37 @@ class SwingBuilderTest extends GroovyTestCase {
         boolean pass = false
         swing.doLater {sleep 100; pass = true }
         assert !pass
-        sleep 200
+        // check for pass changing up to 3 times, then call it a failed test
+        int maxFailures = 3
+        while (maxFailures > 0) {
+            sleep 200
+            if (pass) break
+            maxFailures--
+        }
         assert pass
 
         // doLater in the EDT is still a do later
         pass = false
         swing.edt { swing.doLater {sleep 100; pass = true } }
         assert !pass
-        sleep 200
+        // check for pass changing up to 3 times, then call it a failed test
+        maxFailures = 3
+        while (maxFailures > 0) {
+            sleep 200
+            if (pass) break
+            maxFailures--
+        }
         assert pass
 
         instancePass = false
         swing.doLater this.&markPassed
-        sleep 50
+        // check for pass changing up to 3 times, then call it a failed test
+        maxFailures = 3
+        while (maxFailures > 0) {
+            sleep 50
+            if (instancePass) break
+            maxFailures--
+        }
         assert instancePass
     }
 
@@ -1042,20 +1060,38 @@ class SwingBuilderTest extends GroovyTestCase {
         boolean pass = false
         swing.doOutside {sleep 100; pass = true }
         assert !pass
-        sleep 200
+        // check for pass changing up to 3 times, then call it a failed test
+        int maxFailures = 3
+        while (maxFailures > 0) {
+            sleep 200
+            if (pass) break
+            maxFailures--
+        }
         assert pass
 
         pass = false
         swing.edt {
             swing.doOutside {sleep 100; pass = true }
             assert !pass
-            sleep 200
+            // check for pass changing up to 3 times, then call it a failed test
+            int myMaxFailures = 3
+            while (myMaxFailures > 0) {
+                sleep 200
+                if (pass) break
+                myMaxFailures--
+            }
             assert pass
         }
 
         instancePass = false
         swing.doOutside this.&markPassed
-        sleep 50
+        // check for pass changing up to 3 times, then call it a failed test
+        maxFailures = 3
+        while (maxFailures > 0) {
+            sleep 50
+            if (instancePass) break
+            maxFailures--
+        }
         assert instancePass
     }
 
