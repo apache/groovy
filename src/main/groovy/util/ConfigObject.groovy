@@ -73,10 +73,12 @@ class ConfigObject extends LinkedHashMap implements Writable {
      */
     def getProperty(String name) {  
 		if(name == 'configFile') return this.configFile
-        def prop = get(name)
-        if(prop == null) prop = new ConfigObject(this.configFile)
-        put(name, prop)
-        return prop
+        if(!containsKey (name)) {
+           ConfigObject prop = new ConfigObject(this.configFile)
+           put(name, prop)
+           return prop
+        }
+        return get(name)
     }
     
     /**
@@ -239,7 +241,13 @@ class ConfigObject extends LinkedHashMap implements Writable {
                 populate(suffix+"${key}.", config, value)
             }
             else {
-                config[suffix+key] = value
+                try {
+                  config[suffix+key] = value
+                }
+                catch (java.lang.NullPointerException e) {
+                    // it is idiotic story but if config map doesn't allow null values (like Hashtable)
+                    // we can't do too much
+                }
             }
         }
     }

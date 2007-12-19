@@ -126,6 +126,7 @@ environments {
         def config = slurper.parse('''
 smtp.server.url = "localhost"
 smtp.username = "fred"
+smtp.dummy = null
 ''')
 
         assert config
@@ -133,6 +134,7 @@ smtp.username = "fred"
         println config.smtp.server
         assertEquals "localhost", config.smtp.server.url
         assertEquals "fred", config.smtp.username
+        assertNull config.smtp.dummy
     }
 
     void testScopedProperties() {
@@ -347,6 +349,7 @@ log4j {
     void testToProperties() {
         def slurper = new ConfigSlurper()
         def config = slurper.parse('''
+smtp.dummy = null
 log4j {
     appender {
         stdout("org.apache.log4j.ConsoleAppender") {
@@ -373,7 +376,7 @@ log4j {
         assertEquals "error,stdout", props."log4j.rootLogger"
         assertEquals "info,stdout", props."log4j.logger.org.codehaus.groovy.grails"
         assertEquals "false", props."log4j.additivity.org.codehaus.groovy.grails"
-
+        assertNull props.'smtp.dummy'
 
         props = config.log4j.toProperties("log4j")
         assertEquals "org.apache.log4j.ConsoleAppender", props."log4j.appender.stdout"
@@ -381,7 +384,7 @@ log4j {
         assertEquals "error,stdout", props."log4j.rootLogger"
         assertEquals "info,stdout", props."log4j.logger.org.codehaus.groovy.grails"
         assertEquals "false", props."log4j.additivity.org.codehaus.groovy.grails"
-
+        assertFalse props.containsKey('smtp.dummy')
     }     
       
 	void testConfigTokensAsStrings() {
