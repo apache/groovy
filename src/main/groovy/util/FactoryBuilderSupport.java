@@ -35,6 +35,8 @@ public abstract class FactoryBuilderSupport extends Binding {
     public static final String PARENT_NODE = "_PARENT_NODE_";
     public static final String CURRENT_NODE = "_CURRENT_NODE_";
     public static final String PARENT_CONTEXT = "_PARENT_CONTEXT_";
+    public static final String PARENT_NAME = "_PARENT_NAME_";
+    public static final String CURRENT_NAME = "_CURRENT_NAME_";
     public static final String OWNER = "owner";
     private static final Logger LOG = Logger.getLogger( FactoryBuilderSupport.class.getName() );
 
@@ -153,6 +155,17 @@ public abstract class FactoryBuilderSupport extends Binding {
     }
 
     /**
+     * Returns the current node's name.
+     */
+    public String getCurrentName() {
+        if( !proxyBuilder.contexts.isEmpty() ){
+            Map context = (Map) proxyBuilder.contexts.getFirst();
+            return (String) context.get( CURRENT_NAME );
+        }
+        return null;
+    }
+
+    /**
      * Returns the factory of the parent of the current node.
      */
     public Factory getParentFactory() {
@@ -170,6 +183,17 @@ public abstract class FactoryBuilderSupport extends Binding {
         if( !proxyBuilder.contexts.isEmpty() ){
             Map context = (Map) proxyBuilder.contexts.getFirst();
             return context.get( PARENT_NODE );
+        }
+        return null;
+    }
+
+    /**
+     * Returns the parent's name of the current node.
+     */
+    public String getParentName() {
+        if( !proxyBuilder.contexts.isEmpty() ){
+            Map context = (Map) proxyBuilder.contexts.getFirst();
+            return (String) context.get( PARENT_NAME );
         }
         return null;
     }
@@ -334,6 +358,7 @@ public abstract class FactoryBuilderSupport extends Binding {
             return null;
         }
         proxyBuilder.getContext().put( CURRENT_FACTORY, factory );
+        proxyBuilder.getContext().put( CURRENT_NAME, String.valueOf(name) );
         proxyBuilder.preInstantiate( name, attributes, value );
         try{
             node = factory.newInstance( this, name, value, attributes );
@@ -456,6 +481,7 @@ public abstract class FactoryBuilderSupport extends Binding {
             }
             // push new node on stack
             Object parentFactory = proxyBuilder.getCurrentFactory();
+            String parentName = proxyBuilder.getCurrentName();
             Map parentContext = proxyBuilder.getContext();
             proxyBuilder.newContext();
             proxyBuilder.getContext().put( OWNER, closure.getOwner() );
@@ -463,6 +489,7 @@ public abstract class FactoryBuilderSupport extends Binding {
             proxyBuilder.getContext().put( PARENT_FACTORY, parentFactory );
             proxyBuilder.getContext().put( PARENT_NODE, current );
             proxyBuilder.getContext().put( PARENT_CONTEXT, parentContext );
+            proxyBuilder.getContext().put( PARENT_NAME, parentName );
             // lets register the builder as the delegate
             proxyBuilder.setClosureDelegate( closure, node );
             closure.call();
