@@ -136,75 +136,55 @@ public abstract class FactoryBuilderSupport extends Binding {
      * Returns the current node being built.
      */
     public Object getCurrent() {
-        if( !proxyBuilder.contexts.isEmpty() ){
-            Map context = (Map) proxyBuilder.contexts.getFirst();
-            return context.get( CURRENT_NODE );
-        }
-        return null;
+        return getContextAttribute( CURRENT_NODE );
     }
 
     /**
      * Returns the factory that built the current node.
      */
     public Factory getCurrentFactory() {
-        if( !proxyBuilder.contexts.isEmpty() ){
-            Map context = (Map) proxyBuilder.contexts.getFirst();
-            return (Factory) context.get( CURRENT_FACTORY );
-        }
-        return null;
+        return (Factory) getContextAttribute( CURRENT_FACTORY );
     }
 
     /**
      * Returns the current node's name.
      */
     public String getCurrentName() {
-        if( !proxyBuilder.contexts.isEmpty() ){
-            Map context = (Map) proxyBuilder.contexts.getFirst();
-            return (String) context.get( CURRENT_NAME );
-        }
-        return null;
+        return (String) getContextAttribute( CURRENT_NAME );
     }
 
     /**
      * Returns the factory of the parent of the current node.
      */
     public Factory getParentFactory() {
-        if( !proxyBuilder.contexts.isEmpty() ){
-            Map context = (Map) proxyBuilder.contexts.getFirst();
-            return (Factory) context.get( PARENT_FACTORY );
-        }
-        return null;
+        return (Factory) getContextAttribute( PARENT_FACTORY );
     }
 
     /**
      * Returns the parent of the current node.
      */
     public Object getParentNode() {
-        if( !proxyBuilder.contexts.isEmpty() ){
-            Map context = (Map) proxyBuilder.contexts.getFirst();
-            return context.get( PARENT_NODE );
-        }
-        return null;
+        return getContextAttribute( PARENT_NODE );
     }
 
     /**
      * Returns the parent's name of the current node.
      */
     public String getParentName() {
-        if( !proxyBuilder.contexts.isEmpty() ){
-            Map context = (Map) proxyBuilder.contexts.getFirst();
-            return (String) context.get( PARENT_NAME );
-        }
-        return null;
+        return (String) getContextAttribute( PARENT_NAME );
     }
 
     /**
      * Returns the context of the parent of the current node.
      */
     public Map getParentContext() {
+        return (Map) getContextAttribute( PARENT_CONTEXT );
+    }
+
+    private Object getContextAttribute( String key ) {
         if( !proxyBuilder.contexts.isEmpty() ){
             Map context = (Map) proxyBuilder.contexts.getFirst();
-            return (Map) context.get( PARENT_CONTEXT );
+            return context.get( key );
         }
         return null;
     }
