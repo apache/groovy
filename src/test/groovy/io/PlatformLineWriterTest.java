@@ -4,7 +4,6 @@ import groovy.text.SimpleTemplateEngine;
 import groovy.text.Template;
 import junit.framework.TestCase;
 
-import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
