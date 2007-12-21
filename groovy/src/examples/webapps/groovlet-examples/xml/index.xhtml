@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<!-- DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+ "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd" -->
+
+<html xmlns:gsp="http://groovy.codehaus.org/2005/gsp">
+
+  <head>
+    <link rel="stylesheet" href="../codehaus-style.css" type="text/css" />
+  </head>
+
+  <body>
+
+  Name = ${request.getParameter("name")} <br/>
+  Name = <gsp:expression>params.get("name")</gsp:expression>
+
+  <hr color="#12334" noshade="noshade" />
+
+  BEGIN
+
+    <br/>
+
+  <gsp:scriptlet>
+   <![CDATA[
+    3.times {
+   ]]>
+  </gsp:scriptlet>
+* Hello World! *
+  <gsp:scriptlet>
+   <![CDATA[  } // 3.times ]]>
+  </gsp:scriptlet>  
+
+    <br/>
+
+    END
+
+  </body>
+
+</html>

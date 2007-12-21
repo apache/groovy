@@ -1,0 +1,61 @@
+<!-- 
+This file is referenced from cruisecontrol's config.xml and contains the project definition.
+
+Available entities are:
+basedir
+hostname
+defaultmailhost
+-->
+
+<project name="groovy" buildafterfailed="false">
+		<modificationset quietperiod="120">
+			<svn localworkingcopy="&basedir;/groovy/cruisecontrol/checkout"/>
+		</modificationset>
+		<schedule>
+			<!-- buildfile is relative to checkout dir -->
+			<ant    antscript="/usr/local/java/apache-ant-1.7.0/bin/ant"
+				buildfile="&basedir;/groovy/cruisecontrol/checkout/cruise/build.xml"
+				antWorkingDir="&basedir;/groovy/cruisecontrol/checkout"
+				usedebug="false"
+				uselogger="true"
+				>
+                            <property name="reporting-app-dir" value="&basedir;/groovy/&hostname;/groovy/"/>
+                        </ant>
+		</schedule>
+		<listeners>
+			<currentbuildstatuslistener file="&basedir;/groovy/cruisecontrol/logs/status.txt"/>
+		</listeners>
+		<log dir="&basedir;/groovy/cruisecontrol/logs">
+			<merge dir="&basedir;/groovy/cruisecontrol/checkout/target/test-reports/"/>
+		</log>
+
+		<publishers>
+            <artifactspublisher dir="&basedir;/groovy/cruisecontrol/checkout/target/reports"
+            dest="&basedir;/groovy/cruisecontrol/artifacts" subdirectory="reports"/>
+            <artifactspublisher dir="&basedir;/groovy/cruisecontrol/checkout/target/dist"
+            dest="&basedir;/groovy/cruisecontrol/artifacts" subdirectory="dist"/>
+            <artifactspublisher dir="&basedir;/groovy/cruisecontrol/checkout/target/root"
+            dest="&basedir;/groovy/cruisecontrol/artifacts"/>
+            <!-- htmlemail is used only for explicit subscribers -->
+            <htmlemail
+				buildresultsurl="http://&hostname;/groovy/"
+				mailhost="&defaultmailhost;"
+				defaultsuffix="@codehaus.org"
+				returnaddress="build-support@canoo.com"
+				spamwhilebroken="false"
+				skipusers="true"
+				logdir="&basedir;/groovy/cruisecontrol/logs"
+				xslfile="&basedir;/groovy/cruisecontrol/checkout/cruise/htmlmail.xsl"
+				>
+				<always address="scm@groovy.codehaus.org"/>
+				<always address="dierk.koenig@canoo.com"/>
+				<always address="mguillemot@yahoo.fr"/>
+                                <always address="build-support@canoo.com"/>
+			</htmlemail>
+			<XSLTLogPublisher
+				directory="&basedir;/groovy/&hostname;/groovy/"
+				outfilename="buildstatus.rss"
+				xsltfile="&basedir;/groovy/cruisecontrol/checkout/cruise/buildstatus.xsl"
+				/>
+		</publishers>
+</project>
