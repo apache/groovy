@@ -21,6 +21,8 @@ import groovy.model.ValueHolder
 import groovy.model.ValueModel
 import javax.swing.table.TableModel
 import javax.swing.JTable
+import java.beans.PropertyChangeListener
+import java.beans.PropertyChangeEvent
 
 public class TableModelFactory extends AbstractFactory {
     
@@ -43,11 +45,21 @@ public class TableModelFactory extends AbstractFactory {
     }
 
     public void onNodeCompleted(FactoryBuilderSupport builder, Object parent, Object node) {
-        if ((node.columnCount > 0)
-            && (parent instanceof JTable))
-        {
-            parent.columnModel = node.columnModel
+        if ((node.columnCount > 0) && (parent instanceof JTable)) {
             parent.autoCreateColumnsFromModel = false;
+            PropertyChangeListener listener = {e ->
+                    if ((e.propertyName == 'model') && e.newValue instanceof DefaultTableModel) {
+                        e.source.columnModel = e.newValue.columnModel
+                        e.source.revalidate()
+                        e.source.repaint()
+                    }
+                } as PropertyChangeListener;
+
+            parent.addPropertyChangeListener('model', listener)
+            builder.addDisposalClosure( {parent.removeProppertyChangeListener('table', listener)})
+
+            // the table has already set the model, so fire the listener manually
+            listener.propertyChange(new PropertyChangeEvent(parent, 'model', null, node)) 
         }
     }
 }

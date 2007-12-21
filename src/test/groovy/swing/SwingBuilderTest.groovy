@@ -30,6 +30,10 @@ import javax.swing.border.TitledBorder
 import javax.swing.plaf.metal.MetalLookAndFeel
 import javax.swing.text.DateFormatter
 import javax.swing.text.NumberFormatter
+import groovy.model.ValueHolder
+import groovy.model.DefaultTableModel
+import groovy.model.DefaultTableColumn
+import groovy.model.PropertyModel
 
 class SwingBuilderTest extends GroovyTestCase {
 
@@ -618,6 +622,42 @@ class SwingBuilderTest extends GroovyTestCase {
 
         //GROOVY-2111 - resetting the model w/ a pass-through cleared the columns
         assert table.columnModel.columnCount == 3
+    }
+
+    void tableModelChange2() {
+        if (headless) return
+
+        def tableData = [
+           ["ATHLETEID":1, "FIRSTNAME":"Bob", "LASTNAME":"Jones", "DATEOFBIRTH":1875-05-20],
+           ["ATHLETEID":2, "FIRSTNAME":"Sam", "LASTNAME":"Wilson", "DATEOFBIRTH":1876-12-15],
+           ["ATHLETEID":3, "FIRSTNAME":"Jessie", "LASTNAME":"James", "DATEOFBIRTH":1877-06-12]
+        ]
+
+        SwingBuilder swing = new SwingBuilder()
+
+        swing.frame() {
+            scrollPane {
+               table(id: 'table01') {
+                    tableModel(list:tableData, id: 'tableModel01') {
+                        propertyColumn(header:'Athlete ID',propertyName:'ATHLETEID')
+                        propertyColumn(header:'First Name',propertyName:'FIRSTNAME')
+                        propertyColumn(header:'Last Name',propertyName:'LASTNAME')
+                        propertyColumn(header:'Date Of Birth',propertyName:'DATEOFBIRTH')
+                    }
+                }
+            }
+        }
+
+        assert swing.table01.columnModel == swing.table01.model.columnModel
+
+        def list = [ ['name':'Fred', 'location':'London'], ['name':'Bob', 'location':'Atlanta']]
+        def listModel = new ValueHolder(list)
+        def model = new DefaultTableModel(listModel)
+        model.addColumn(new DefaultTableColumn("Name", new PropertyModel(model.rowModel, "name")))
+        model.addColumn(new DefaultTableColumn("Location", new PropertyModel(model.rowModel, "location")))
+        swing.table01.setModel(model) 
+
+        assert swing.table01.columnModel == swing.table01.model.columnModel
     }
 
     void testTableModelValues() {
