@@ -31,8 +31,25 @@ class VArgsTest extends GroovyTestCase {
     assert doubleMethod(1.0d,1.0d)==22
     assert doubleMethod(1.0d,1.0d,1.0d)==23 
     assert doubleMethod([1,2,2,2] as double[])==24
-    
   }
+  
+  // test vargs with one fixed argument for primitives
+  def doubleMethod2(double a, double[] id) {31+id.length}
+
+  void testDoubleMethodWithOneFixedPrimitive() {
+    // with BigDecimal
+    assert doubleMethod2(1.0G)==31
+    assert doubleMethod2(1.0G,1.0G)==32
+    assert doubleMethod2(1.0G,1.0G,1.0G)==33 
+    assert doubleMethod2(1.0G, [1,2,2,2] as BigDecimal[])==35
+        
+    // with double
+    assert doubleMethod2(1.0d)==31
+    assert doubleMethod2(1.0d,1.0d)==32
+    assert doubleMethod2(1.0d,1.0d,1.0d)==33 
+    assert doubleMethod2(1.0d,[1,2,2,2] as double[])==35
+  }
+  
   
   def objectMethod(){0}
   def objectMethod(Object i) {1}  
@@ -111,6 +128,7 @@ class VArgsTest extends GroovyTestCase {
      assert m2204a('hello', 'world', 'from', 'list') == 'arg1: hello, arg2: world, args: {"from", "list"}, kwargs: [:]'
      assert m2204a('hello', 'world', 'from', 'list', from: 'kwargs') == 'arg1: hello, arg2: world, args: {"from", "list"}, kwargs: ["from":"kwargs"]'
      assert m2204a('hello', 'world', from: 'kwargs') == 'arg1: hello, arg2: world, args: {}, kwargs: ["from":"kwargs"]'
+     assert m2204a([:], 'hello', 'world', [] as Object[]) == 'arg1: hello, arg2: world, args: {}, kwargs: [:]'
      
      assert m2204b('hello', 'world') == 'arg1: hello, arg2: 1, args: {"world"}, kwargs: [:]'
      assert m2204b('hello', 'world', 'from', 'list') == 'arg1: hello, arg2: 1, args: {"world", "from", "list"}, kwargs: [:]'

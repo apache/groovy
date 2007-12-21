@@ -202,23 +202,35 @@ public class ParameterTypes
     }
 
     public boolean isValidMethod(Class[] arguments) {
-        if (arguments == null) {
-            return true;
-        }
-        int size = arguments.length;
+        if (arguments == null) return true;
 
+        final int size = arguments.length;
         CachedClass[] paramTypes = getParameterTypes();
-        if ((size >= paramTypes.length || size == paramTypes.length - 1)
-                && paramTypes.length > 0
-                && paramTypes[(paramTypes.length - 1)].isArray) {
+        final int paramMinus1 = paramTypes.length-1;
+
+        if ( size >= paramMinus1 && paramTypes.length > 0 &&
+             paramTypes[(paramMinus1)].isArray) 
+        {
             // first check normal number of parameters
-            for (int i = 0; i < paramTypes.length - 1; i++) {
+            for (int i = 0; i < paramMinus1; i++) {
                 if (MetaClassHelper.isAssignableFrom(paramTypes[i].getCachedClass(), arguments[i])) continue;
                 return false;
             }
+            
+            
+            // check direct match
+            Class varg = paramTypes[paramMinus1].getCachedClass();
+            Class clazz = varg.getComponentType();
+            if ( size==paramTypes.length && 
+                 (MetaClassHelper.isAssignableFrom(varg, arguments[paramMinus1]) ||
+                  MetaClassHelper.isAssignableFrom(clazz, arguments[paramMinus1].getComponentType()))) 
+            {
+                return true;
+            }
+            
+
             // check varged
-            Class clazz = paramTypes[paramTypes.length - 1].getCachedClass().getComponentType();
-            for (int i = paramTypes.length; i < size; i++) {
+            for (int i = paramMinus1; i < size; i++) {
                 if (MetaClassHelper.isAssignableFrom(clazz, arguments[i])) continue;
                 return false;
             }
@@ -234,27 +246,38 @@ public class ParameterTypes
             return true;
         }
         return false;
-
-    }
-
+    }   
+    
     public boolean isValidMethod(Object[] arguments) {
-        if (arguments == null) {
-            return true;
-        }
-        int size = arguments.length;
+        if (arguments == null) return true;
 
+        final int size = arguments.length;
         CachedClass[] paramTypes = getParameterTypes();
-        if ((size >= paramTypes.length || size == paramTypes.length - 1)
-                && paramTypes.length > 0
-                && paramTypes[(paramTypes.length - 1)].isArray) {
+        final int paramMinus1 = paramTypes.length-1;
+
+        if ( size >= paramMinus1 && paramTypes.length > 0 &&
+             paramTypes[(paramMinus1)].isArray) 
+        {
             // first check normal number of parameters
-            for (int i = 0; i < paramTypes.length - 1; i++) {
+            for (int i = 0; i < paramMinus1; i++) {
                 if (MetaClassHelper.isAssignableFrom(paramTypes[i].getCachedClass(), getArgClass(arguments[i]))) continue;
                 return false;
             }
+            
+            
+            // check direct match
+            Class varg = paramTypes[paramMinus1].getCachedClass();
+            Class clazz = varg.getComponentType();
+            if ( size==paramTypes.length && 
+                 (MetaClassHelper.isAssignableFrom(varg, getArgClass(arguments[paramMinus1])) ||
+                  MetaClassHelper.isAssignableFrom(clazz, getArgClass(arguments[paramMinus1]).getComponentType()))) 
+            {
+                return true;
+            }
+            
+
             // check varged
-            Class clazz = paramTypes[paramTypes.length - 1].getCachedClass().getComponentType();
-            for (int i = paramTypes.length; i < size; i++) {
+            for (int i = paramMinus1; i < size; i++) {
                 if (MetaClassHelper.isAssignableFrom(clazz, getArgClass(arguments[i]))) continue;
                 return false;
             }
@@ -270,7 +293,6 @@ public class ParameterTypes
             return true;
         }
         return false;
-
     }
 
     private Class getArgClass(Object arg) {
