@@ -44,7 +44,27 @@ public class InvokerHelper {
     protected static final Class[]  EMPTY_TYPES = {};
 
     static final MetaClassRegistry metaRegistry = GroovySystem.getMetaClassRegistry();
+    /**
+     * @deprecated
+     */
+    private static final Invoker SINGLETON = new Invoker();
 
+    /**
+     * This method should no longer be used.
+     * @deprecated
+     * @return an Invoker
+     */
+    public static Invoker getInstance() {
+        return SINGLETON;
+    }
+
+    /**
+     * @deprecated
+     */
+    public static Object invokeNoArgumentsMethod(Object object, String methodName) {
+        return getInstance().invokeMethod(object, methodName, EMPTY_ARGS);
+    }    
+    
     public static void removeClass(Class clazz) {
         metaRegistry.removeMetaClass(clazz);
         Introspector.flushFromCaches(clazz);
