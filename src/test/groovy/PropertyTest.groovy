@@ -154,6 +154,11 @@ class PropertyTest extends GroovyTestCase {
         c.superThing = 'bar thing'
         assert c.superthing() == 'bar1bar thing'
     }
+    
+    void testOverwritingNormalProperty() {
+        def c = new Child();
+        assert c.normalProperty == 2
+    }
 }
 
 class Base {
@@ -166,6 +171,9 @@ class Base {
     
     //testing final property getter
     final getFinalProperty() {1}
+    
+    // testing normal property
+    def normalProperty = 1
 }
 
 class Child extends Base {
@@ -195,4 +203,7 @@ class Child extends Base {
     // the following property should not add a new getter
     // method, this would result in a verify error
     def finalProperty = 32
+    
+    // testing overwriting normal property
+    def normalProperty = 2
 }

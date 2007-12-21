@@ -349,12 +349,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         if (m==null) return true;
         // method is in current class, nothing to be done
         if (m.getDeclaringClass()==this.getClassNode()) return false;
-        // private method from a parent? replace it.
-        if ((m.getModifiers()&ACC_PRIVATE)!=0) return true;
-        // method is not private, from a parent and abstract, replace it
-        if (m.isAbstract()) return true;
-        // method is from a parent, is not abstract and is visible.. nothing to be done
-        return false;
+        // do not overwrite final
+        if ((m.getModifiers()&ACC_FINAL)!=0) return false;
+        return true;
     }
 
     public void visitProperty(PropertyNode node) {
