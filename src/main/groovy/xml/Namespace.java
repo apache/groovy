@@ -29,12 +29,12 @@ public class Namespace {
     }
 
     public Namespace(String uri) {
-        this.uri = uri;
+        this.uri = uri.trim();
     }
 
     public Namespace(String uri, String prefix) {
-        this.uri = uri;
-        this.prefix = prefix;
+        this.uri = uri.trim();
+        this.prefix = prefix.trim();
     }
 
     /**

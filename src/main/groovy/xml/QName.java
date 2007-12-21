@@ -73,17 +73,17 @@ public class QName implements Serializable {
     public QName(String namespaceURI, String localPart, String prefix) {
         this.namespaceURI = (namespaceURI == null)
                 ? EMPTY_STRING
-                : namespaceURI.intern();
+                : namespaceURI.trim().intern();
         if (localPart == null) {
             throw new IllegalArgumentException("invalid QName local part");
         } else {
-            this.localPart = localPart.intern();
+            this.localPart = localPart.trim().intern();
         }
 
         if (prefix == null) {
             throw new IllegalArgumentException("invalid QName prefix");
         } else {
-            this.prefix = prefix.intern();
+            this.prefix = prefix.trim().intern();
         }
     }
 

@@ -86,6 +86,10 @@ public class Node implements Serializable {
         return new Node(this, name, attributes);
     }
 
+    public Node appendNode(Object name) {
+        return new Node(this, name);
+    }
+
     public Node appendNode(Object name, Object value) {
         return new Node(this, name, value);
     }
