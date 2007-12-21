@@ -438,9 +438,11 @@ public class JavaStubGenerator
     }
 
     private void printDefaultValue(PrintWriter out, ClassNode type) {
-        out.print("(");
-        printType(type,out);
-        out.print(")");
+        if (type.redirect()!=ClassHelper.OBJECT_TYPE) {
+            out.print("(");
+            printType(type,out);
+            out.print(")");
+        }
 
         if (ClassHelper.isPrimitiveType(type)) {
             if (type==ClassHelper.boolean_TYPE){
