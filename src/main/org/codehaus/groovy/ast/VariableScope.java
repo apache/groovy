@@ -152,4 +152,26 @@ public class VariableScope  {
         else
           return referencedClassVariables.remove(name);
     }
+    
+    /**
+     * Gets a map containing the class variables referenced 
+     * by this scope. This not can not be modified.
+     * @return a map containing the class variable references
+     */
+    public Map getReferencedClassVariables() {
+        if (referencedClassVariables == Collections.EMPTY_MAP) {
+            return Collections.EMPTY_MAP;
+        } else {
+            return Collections.unmodifiableMap(referencedClassVariables);
+        }
+    }
+    
+    /**
+     * Gets an iterator for the referenced class variables. The
+     * remove operation is not supported.
+     * @return an iterator for the referenced class variables
+     */
+    public Iterator getReferencedClassVariablesIterator() {
+        return getReferencedClassVariables().values().iterator();
+    }
 }
