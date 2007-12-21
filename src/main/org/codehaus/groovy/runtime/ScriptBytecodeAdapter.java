@@ -16,6 +16,7 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.*;
+
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
 import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
@@ -64,10 +65,11 @@ public class ScriptBytecodeAdapter {
     //  --------------------------------------------------------
     public static Object invokeMethodOnCurrentN(Class senderClass, GroovyObject receiver, String messageName, Object[] messageArguments) throws Throwable {
         Object result = null;
+        boolean intercepting = receiver instanceof GroovyInterceptable;
         try {
             try {
                 // if it's a pure interceptable object (even intercepting toString(), clone(), ...)
-                if (receiver instanceof GroovyInterceptable) {
+                if (intercepting) {
                     result = receiver.invokeMethod(messageName, messageArguments);
                 }
                 //else if there's a statically typed method or a GDK method
@@ -75,7 +77,7 @@ public class ScriptBytecodeAdapter {
                     result = receiver.getMetaClass().invokeMethod(senderClass, receiver, messageName, messageArguments, false, true);
                 }
             } catch (MissingMethodException e) {
-                if (receiver.getClass() == e.getType() && e.getMethod().equals(messageName)) {
+                if (!intercepting && receiver.getClass() == e.getType() && e.getMethod().equals(messageName)) {
                     // in case there's nothing else, invoke the object's own invokeMethod()
                     result = receiver.invokeMethod(messageName, messageArguments);
                 } else {

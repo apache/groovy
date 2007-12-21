@@ -19,6 +19,18 @@ class GroovyInterceptableTest extends GroovyTestCase {
         // should this be 1 or 90?
         assert g.getFoo() == 1
     }
+    
+    void testCallMissingMethod() {
+        def obj = new GI2()
+        shouldFail { obj.notAMethod() }
+        assert 'missing' == obj.result 
+    }
+ 
+    void testCallMissingMethodFromInstance() {
+        def obj = new GI2()
+        shouldFail { obj.method() }
+        assert 'missing' == obj.result
+   }
 }
 
 class GI implements GroovyInterceptable {
@@ -38,3 +50,17 @@ class GI implements GroovyInterceptable {
     }
 }
 
+
+class GI2 implements GroovyInterceptable {
+  def result = ""
+  def invokeMethod(String name, args) {
+    def metaMethod = Foo.metaClass.getMetaMethod(name, args)
+    if (metaMethod != null) return metaMethod.invoke(this, args)
+    result += "missing"
+    throw new MissingMethodException(name, Foo.class, args)
+  }
+  
+  def method() {
+      notAMethod()
+  }
+}
