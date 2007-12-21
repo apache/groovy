@@ -29,8 +29,6 @@ import org.codehaus.groovy.control.ResolveVisitor;
 import org.objectweb.asm.Opcodes;
 
 import java.io.*;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Modifier;
 import java.util.*;
 
 public class JavaStubGenerator
@@ -326,39 +324,23 @@ public class JavaStubGenerator
         }
     }
 
-    private ConstructorNode selectAccessibleConstructorFromSuper(ConstructorNode node) {
+    private Parameter[] selectAccessibleConstructorFromSuper(ConstructorNode node) {
         ClassNode type = node.getDeclaringClass();
         ClassNode superType = type.getSuperClass();
 
+        boolean hadPrivateConstructor = false;
         for (Iterator iter = superType.getDeclaredConstructors().iterator(); iter.hasNext();) {
             ConstructorNode c = (ConstructorNode)iter.next();
 
             // Only look at things we can actually call
             if (c.isPublic() || c.isProtected()) {
-                return c;
+                return c.getParameters();
             }
         }
-
-        if (!superType.isResolved()) {
-            throw new Error("Super-class (" + superType.getName() + ")should have been resolved already for type: " + type.getName());
-        }
-
-        Constructor[] constructors = superType.getTypeClass().getDeclaredConstructors();
-
-        for (int i=0; i<constructors.length; i++) {
-            int mod = constructors[i].getModifiers();
-
-            // Only look at things we can actualy call
-            if (Modifier.isPublic(mod) || Modifier.isProtected(mod)) {
-                Class[] types = constructors[i].getParameterTypes();
-                Parameter[] params = new Parameter[types.length];
-                for (int j=0; j<types.length; j++) {
-                    ClassNode ptype = ClassHelper.make(types[j]);
-                    params[j] = new Parameter(ptype, types[j].getName());
-                }
-
-                return new ConstructorNode(mod, params, null, null);
-            }
+        
+        // fall back for parameterless constructor 
+        if (superType.isPrimaryClassNode()) {
+            return Parameter.EMPTY_ARRAY;
         }
         
         return null;
@@ -368,11 +350,10 @@ public class JavaStubGenerator
         // Select a constructor from our class, or super-class which is legal to call,
         // then write out an invoke w/nulls using casts to avoid abigous crapo
 
-        ConstructorNode c = selectAccessibleConstructorFromSuper(node);
-        if (c != null) {
+        Parameter[] params = selectAccessibleConstructorFromSuper(node);
+        if (params != null) {
             out.print("super (");
 
-            Parameter[] params = c.getParameters();
             for (int i=0; i<params.length; i++) {
                 printDefaultValue(out, params[i].getType());
                 if (i + 1 < params.length) {
@@ -408,12 +389,10 @@ public class JavaStubGenerator
 
                     if (o instanceof String) {
                         out.print("(String)null");
-                    }
-                    else {
+                    } else {
                         out.print(expression.getText());
                     }
-                }
-                else {
+                } else {
                     printDefaultValue(out, arg.getType());
                 }
 
