@@ -75,7 +75,12 @@ public class GroovyResultSetExtension extends GroovyObjectSupport {
             for (int i = 1; i <= count; i++) {
                 sb.append(metaData.getColumnName(i));
                 sb.append(":");
-                sb.append(resultSet.getObject(i).toString());
+                Object object = resultSet.getObject(i);
+                if (object!=null) {
+                    sb.append(object.toString());
+                } else {
+                    sb.append("[null]");
+                }
                 if (i < count) {
                     sb.append(", ");
                 }
