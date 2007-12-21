@@ -47,7 +47,6 @@ class ObjectBrowser {
     }
     
     void run() {
-        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
         swing = new SwingBuilder()
         
         frame = swing.frame(title:'Groovy Object Browser', location:[200,200],
