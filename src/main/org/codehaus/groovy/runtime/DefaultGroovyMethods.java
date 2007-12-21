@@ -327,6 +327,21 @@ public class DefaultGroovyMethods {
     public static void print(Object self, Object value) {
         System.out.print(InvokerHelper.toString(value));
     }
+    
+    /**
+     * Print a value. This method delegates to the owner to
+     * execute the method.
+     *
+     * @param self  a generated closure
+     * @param value the value to print
+     */
+    public static void print(Closure cls, Object value) {
+        Object owner =  ((Closure) cls).getOwner();
+        while (owner instanceof GeneratedClosure) {
+            owner = ((Closure) owner).getOwner();
+        }
+        InvokerHelper.invokeMethod(owner, "print", new Object[]{value});
+    }
 
     /**
      * Print a linebreak to the standard output stream.
@@ -335,6 +350,20 @@ public class DefaultGroovyMethods {
      */
     public static void println(Object self) {
         System.out.println();
+    }
+        
+    /**
+     * Print a linebreak. This method delegates to the owner to
+     * execute the method.
+     *
+     * @param self  a closure
+     */
+    public static void println(Closure cls) {
+        Object owner =  ((Closure) cls).getOwner();
+        while (owner instanceof GeneratedClosure) {
+            owner = ((Closure) owner).getOwner();
+        }
+        InvokerHelper.invokeMethod(owner, "println", new Object[0]);
     }
 
     /**
@@ -345,6 +374,21 @@ public class DefaultGroovyMethods {
      */
     public static void println(Object self, Object value) {
         System.out.println(InvokerHelper.toString(value));
+    }
+    
+    /**
+     * Print a linebreak. This method delegates to the owner to
+     * execute the method.
+     *
+     * @param self  a closure
+     * @param value the value to print
+     */
+    public static void println(Closure cls, Object value) {
+        Object owner =  ((Closure) cls).getOwner();
+        while (owner instanceof GeneratedClosure) {
+            owner = ((Closure) owner).getOwner();
+        }
+        InvokerHelper.invokeMethod(owner, "println", new Object[]{value});
     }
 
     /**
