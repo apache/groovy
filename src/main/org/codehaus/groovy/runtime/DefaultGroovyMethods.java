@@ -325,7 +325,22 @@ public class DefaultGroovyMethods {
      * @param value the value to print
      */
     public static void print(Object self, Object value) {
-        System.out.print(InvokerHelper.toString(value));
+        // we won't get here if we are a PrintWriter
+        if (self instanceof Writer) {
+            PrintWriter pw = null;
+            try {
+                pw = new PrintWriter((Writer)self);
+                pw.print(InvokerHelper.toString(value));
+            } finally {
+                try {
+                    pw.close();
+                } catch (Exception ex) {
+                    // ignore
+                }
+            }
+        } else {
+            System.out.print(InvokerHelper.toString(value));
+        }
     }
     
     /**
@@ -346,9 +361,24 @@ public class DefaultGroovyMethods {
      * @param self any Object
      */
     public static void println(Object self) {
-        System.out.println();
+        // we won't get here if we are a PrintWriter
+        if (self instanceof Writer) {
+            PrintWriter pw = null;
+            try {
+                pw = new PrintWriter((Writer)self);
+                pw.println();
+            } finally {
+                try {
+                    pw.close();
+                } catch (Exception ex) {
+                    // ignore
+                }
+            }
+        } else {
+            System.out.println();
+        }
     }
-        
+
     /**
      * Print a linebreak to the standard output stream.
      * This method delegates to the owner to execute the method.
@@ -375,7 +405,22 @@ public class DefaultGroovyMethods {
      * @param value the value to print
      */
     public static void println(Object self, Object value) {
-        System.out.println(InvokerHelper.toString(value));
+        // we won't get here if we are a PrintWriter
+        if (self instanceof Writer) {
+            PrintWriter pw = null;
+            try {
+                pw = new PrintWriter((Writer)self);
+                pw.println(InvokerHelper.toString(value));
+            } finally {
+                try {
+                    pw.close();
+                } catch (Exception ex) {
+                    // ignore
+                }
+            }
+        } else {
+            System.out.println(InvokerHelper.toString(value));
+        }
     }
     
     /**
