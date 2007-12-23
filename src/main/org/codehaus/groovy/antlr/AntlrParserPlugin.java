@@ -596,7 +596,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             modifiers = modifiers(node, annotations, modifiers);
             node = node.getNextSibling();
         }
-        
+
         if (classNode.isInterface()) {
         	modifiers |= Opcodes.ACC_STATIC | Opcodes.ACC_FINAL;
         	if ( (modifiers & (Opcodes.ACC_PRIVATE | Opcodes.ACC_PROTECTED)) == 0) {
@@ -1053,6 +1053,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         AST node = variableDef.getFirstChild();
         ClassNode type = null;
         if (isType(MODIFIERS, node)) {
+            // force check of modifier conflicts
+            modifiers(node, null, 0);
             node = node.getNextSibling();
         }
         if (isType(TYPE, node)) {
