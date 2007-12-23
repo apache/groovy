@@ -89,7 +89,8 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
         String[] names = {"sleep", "sleep", "println", "println", "println", "find", "print", "print", "each", "invokeMethod", "asType",
                 "inspect", "is", "isCase", "identity", "getAt", "putAt", "dump", "getMetaPropertyValues", "getProperties",
                 "use", "use", "use", "printf", "printf", "eachWithIndex", "every", "every", "any", "any", "grep", "collect", "collect", "findAll",
-                "findIndexOf", "iterator", "addShutdownHook", "sprintf", "sprintf", "with", "inject", "getMetaClass"
+                "findIndexOf", "findIndexOf", "findLastIndexOf", "findLastIndexOf", "findIndexValues", "findIndexValues",
+                "iterator", "addShutdownHook", "sprintf", "sprintf", "with", "inject", "getMetaClass"
         };
         assertEquals(names.length, metaMethods.length);
         assertNameEquals(names, metaMethods);

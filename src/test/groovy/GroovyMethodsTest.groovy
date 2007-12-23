@@ -29,437 +29,465 @@ import org.codehaus.groovy.runtime.typehandling.GroovyCastException
  * @version $Revision$
  */
 class GroovyMethodsTest extends GroovyTestCase {
-    void testCollect() {
-        assert [2, 4, 6].collect {it * 2} == [4, 8, 12]
-        def answer = [2, 4, 6].collect(new Vector()) {it * 2}
-        assert answer[0] == 4
-        assert answer[1] == 8
-        assert answer[2] == 12
-        assert [1: 'a', 2: 'b', 3: 'c'].collect {k, v -> k + v} == ['1a', '2b', '3c']
-        assert [1: 'a', 2: 'b', 3: 'c'].collect {it.getKey() + "*" + it.getValue()} == ['1*a', '2*b', '3*c']
-    }
+                void testCollect() {
+                    assert [2, 4, 6].collect {it * 2} == [4, 8, 12]
+                    def answer = [2, 4, 6].collect(new Vector()) {it * 2}
+                    assert answer[0] == 4
+                    assert answer[1] == 8
+                    assert answer[2] == 12
+                    assert [1: 'a', 2: 'b', 3: 'c'].collect {k, v -> k + v} == ['1a', '2b', '3c']
+                    assert [1: 'a', 2: 'b', 3: 'c'].collect {it.getKey() + "*" + it.getValue()} == ['1*a', '2*b', '3*c']
+                }
 
-    void testAsCoercion() {
-        def d0 = new Dimension(100, 200)
-        assert d0 == new Dimension(width: 100, height: 200)
-        assert d0 == [100, 200] as Dimension
-        assert d0 == [width: 100, height: 200] as Dimension
-    }
+                void testAsCoercion() {
+                    def d0 = new Dimension(100, 200)
+                    assert d0 == new Dimension(width: 100, height: 200)
+                    assert d0 == [100, 200] as Dimension
+                    assert d0 == [width: 100, height: 200] as Dimension
+                }
 
-    void testCombinations() {
-        def lists = [['a', 'b'], [1, 2, 3]]
-        assert lists.combinations() as Set ==
-                        [['a', 1], ['a', 2], ['a', 3],
-                        ['b', 1], ['b', 2], ['b', 3]] as Set
-    }
+                void testCombinations() {
+                    def lists = [['a', 'b'], [1, 2, 3]]
+                    assert lists.combinations() as Set ==
+                                    [['a', 1], ['a', 2], ['a', 3],
+                                    ['b', 1], ['b', 2], ['b', 3]] as Set
+                }
 
-    void testTranspose() {
-        def lists = [['a', 'b'], [1, 2, 3]]
-        assert lists.transpose() == [['a', 1], ['b', 2]]
-    }
+                void testTranspose() {
+                    def lists = [['a', 'b'], [1, 2, 3]]
+                    assert lists.transpose() == [['a', 1], ['b', 2]]
+                }
 
-    void testSum() {
-        assert [].sum() == null
-        assert [null].sum() == null
-        assert [1].sum() == 1
-        assert [1, 2, 3].sum() == 6
-        assert [1, 2, 3].sum("") == "123"
-        assert [[1, 2], [3, 4], [5, 6]].sum() == [1, 2, 3, 4, 5, 6]
-        assert [[1, 2], [3, 4], [5, 6]].sum("") == "[1, 2][3, 4][5, 6]"
+                void testSum() {
+                    assert [].sum() == null
+                    assert [null].sum() == null
+                    assert [1].sum() == 1
+                    assert [1, 2, 3].sum() == 6
+                    assert [1, 2, 3].sum("") == "123"
+                    assert [[1, 2], [3, 4], [5, 6]].sum() == [1, 2, 3, 4, 5, 6]
+                    assert [[1, 2], [3, 4], [5, 6]].sum("") == "[1, 2][3, 4][5, 6]"
 
-        assert [].sum {it.length()} == null
-        assert [null].sum {it.toString()} == 'null'
-        assert ["abc"].sum {it.length()} == 3
-        assert ["a", "bc", "def"].sum {it.length()} == 6
-        assert ["a", "bc", "def"].sum("") {it.length()} == "123"
-        assert [[1, 2], [3, 4], [5, 6]].sum {it.size()} == 6
-        assert [[1, 2], [3, 4], [5, 6]].sum {list -> list.collect {it * 2}} == [2, 4, 6, 8, 10, 12]
-        def result = []
-        [[1, 2], [3, 4], [5, 6]].each {list -> result << list.collect {it * 2}}
-        assert result.sum() == [2, 4, 6, 8, 10, 12]
-        assert [[1, 2], [3, 4], [5, 6]].sum {list -> list.collect {it * 2}} == [2, 4, 6, 8, 10, 12]
-    }
+                    assert [].sum {it.length()} == null
+                    assert [null].sum {it.toString()} == 'null'
+                    assert ["abc"].sum {it.length()} == 3
+                    assert ["a", "bc", "def"].sum {it.length()} == 6
+                    assert ["a", "bc", "def"].sum("") {it.length()} == "123"
+                    assert [[1, 2], [3, 4], [5, 6]].sum {it.size()} == 6
+                    assert [[1, 2], [3, 4], [5, 6]].sum {list -> list.collect {it * 2}} == [2, 4, 6, 8, 10, 12]
+                    def result = []
+                    [[1, 2], [3, 4], [5, 6]].each {list -> result << list.collect {it * 2}}
+                    assert result.sum() == [2, 4, 6, 8, 10, 12]
+                    assert [[1, 2], [3, 4], [5, 6]].sum {list -> list.collect {it * 2}} == [2, 4, 6, 8, 10, 12]
+                }
 
-    void testJoin() {
-        assert [2, 4, 6].join("-") == "2-4-6"
-        assert ["edam", "cheddar", "brie"].join(", ") == 'edam, cheddar, brie'
-        assert ["abc", 5, 2.34].join(", ") == "abc, 5, 2.34"
-    }
+                void testJoin() {
+                    assert [2, 4, 6].join("-") == "2-4-6"
+                    assert ["edam", "cheddar", "brie"].join(", ") == 'edam, cheddar, brie'
+                    assert ["abc", 5, 2.34].join(", ") == "abc, 5, 2.34"
+                }
 
-    void testTimes() {
-        def count = 0
-        5.times {i -> count = count + i}
-        assert count == 10
-        count = 0
-        def temp = 5
-        temp.times {i -> count = count + i}
-        assert count == 10
-    }
+                void testTimes() {
+                    def count = 0
+                    5.times {i -> count = count + i}
+                    assert count == 10
+                    count = 0
+                    def temp = 5
+                    temp.times {i -> count = count + i}
+                    assert count == 10
+                }
 
-    void testArraySubscript() {
-        def list = [1, 2, 3, 4]
-        def array = list.toArray()
-        def value = array[2]
-        assert value == 3
-        array[0] = 9
-        assert array[0] == 9
-        assert array[0..<0] == []
-    }
+                void testArraySubscript() {
+                    def list = [1, 2, 3, 4]
+                    def array = list.toArray()
+                    def value = array[2]
+                    assert value == 3
+                    array[0] = 9
+                    assert array[0] == 9
+                    assert array[0..<0] == []
+                }
 
-    void testToCharacterMethod() {
-        def s = 'c'
-        def x = s.toCharacter()
-        assert x instanceof Character
-    }
+                void testToCharacterMethod() {
+                    def s = 'c'
+                    def x = s.toCharacter()
+                    assert x instanceof Character
+                }
 
-    void testPutAtRange() {
-        def list
-        list = ['a', 'b', 'c']; list[4] = 'x'; assert list == ["a", "b", "c", null, "x"]
-        list = ['a', 'b', 'c']; list[1..2] = ['x', 'y']; assert list == ["a", "x", "y"]
-        list = ['a', 'b', 'c']; list[1..2] = 'x'; assert list == ["a", "x"]
-        list = ['a', 'b', 'c']; list[4..5] = ['x', 'y']; assert list == ["a", "b", "c", null, "x", "y"]
-        list = ['a', 'b', 'c']; list[4..5] = 'x'; assert list == ["a", "b", "c", null, "x"]
-    }
+                void testPutAtRange() {
+                    def list
+                    list = ['a', 'b', 'c']; list[4] = 'x'; assert list == ["a", "b", "c", null, "x"]
+                    list = ['a', 'b', 'c']; list[1..2] = ['x', 'y']; assert list == ["a", "x", "y"]
+                    list = ['a', 'b', 'c']; list[1..2] = 'x'; assert list == ["a", "x"]
+                    list = ['a', 'b', 'c']; list[4..5] = ['x', 'y']; assert list == ["a", "b", "c", null, "x", "y"]
+                    list = ['a', 'b', 'c']; list[4..5] = 'x'; assert list == ["a", "b", "c", null, "x"]
+                }
 
-    void testGetAtRange() {
-        def list = ['a', 'b', 'c']
-        assert list[1..2] == ['b', 'c']
-        assert list[0..<0] == []
-    }
+                void testGetAtRange() {
+                    def list = ['a', 'b', 'c']
+                    assert list[1..2] == ['b', 'c']
+                    assert list[0..<0] == []
+                }
 
-    void testCharSequenceGetAt() {
-        def x = "matrix"
-        assert x[0, 5..0] == 'mxirtam'
-        assert x[3..0, 0..3] == 'rtammatr'
-        assert x[2..-4, 3..-4, 3..-3] == 'trtr'
-        assert x[-1..-3, -3..-1] == 'xirrix'
-        assert x[0..<0] == ''
-    }
+                void testCharSequenceGetAt() {
+                    def x = "matrix"
+                    assert x[0, 5..0] == 'mxirtam'
+                    assert x[3..0, 0..3] == 'rtammatr'
+                    assert x[2..-4, 3..-4, 3..-3] == 'trtr'
+                    assert x[-1..-3, -3..-1] == 'xirrix'
+                    assert x[0..<0] == ''
+                }
 
-    void testListGrep() {
-        def list = ["James", "Bob", "Guillaume", "Sam"]
-        def answer = list.grep(~".*a.*")
-        assert answer == ["James", "Guillaume", "Sam"]
-        answer = list.grep(~"B.b")
-        assert answer == ["Bob"]
-    }
+                void testListGrep() {
+                    def list = ["James", "Bob", "Guillaume", "Sam"]
+                    def answer = list.grep(~".*a.*")
+                    assert answer == ["James", "Guillaume", "Sam"]
+                    answer = list.grep(~"B.b")
+                    assert answer == ["Bob"]
+                }
 
-    void testCollectionToList() {
-        def c = [1, 2, 3, 4, 5] // but it's a list
-        def l = c.toList()
-        assert l.containsAll(c)
-        assert c.size() == l.size()
-    }
+                void testCollectionToList() {
+                    def c = [1, 2, 3, 4, 5] // but it's a list
+                    def l = c.toList()
+                    assert l.containsAll(c)
+                    assert c.size() == l.size()
+                }
 
-    void testIteratorToList() {
-        def c = [1, 2, 3, 4, 5]
-        def l = c.iterator().toList()
-        assert l.containsAll(c)
-        assert c.size() == l.size()
-    }
+                void testIteratorToList() {
+                    def c = [1, 2, 3, 4, 5]
+                    def l = c.iterator().toList()
+                    assert l.containsAll(c)
+                    assert c.size() == l.size()
+                }
 
-    void testEnumerationToList() {
-        def c = [1, 2, 3, 4, 5]
-        def v = new Vector()
-        c.each {
-            v.add(it)
-        }
-        def l = v.elements().toList()
-        assert l.containsAll(c)
-        assert c.size() == l.size()
-    }
+                void testEnumerationToList() {
+                    def c = [1, 2, 3, 4, 5]
+                    def v = new Vector()
+                    c.each {
+                        v.add(it)
+                    }
+                    def l = v.elements().toList()
+                    assert l.containsAll(c)
+                    assert c.size() == l.size()
+                }
 
-    void testStringToList() {
-        String s = 'hello 10'
-        def gs = "hello ${5+5}"
-        def expected = ["h", "e", "l", "l", "o", " ", "1", "0"]
-        assert s.toList() == expected
-        assert s as String[] == expected
-        assert gs as String[] == expected
-    }
+                void testStringToList() {
+                    String s = 'hello 10'
+                    def gs = "hello ${5+5}"
+                    def expected = ["h", "e", "l", "l", "o", " ", "1", "0"]
+                    assert s.toList() == expected
+                    assert s as String[] == expected
+                    assert gs as String[] == expected
+                }
 
-    void testCollectionAsList() {
-        Integer[] nums = [1, 2, 3, 4, 5]
-        def numList = nums as List
-        nums.each {assert numList.contains(it)}
-        assert nums.size() == numList.size()
-    }
+                void testCollectionAsList() {
+                    Integer[] nums = [1, 2, 3, 4, 5]
+                    def numList = nums as List
+                    nums.each {assert numList.contains(it)}
+                    assert nums.size() == numList.size()
+                }
 
-    void testCollectionAsLinkedList() {
-        Integer[] nums = [1, 2, 3, 4, 5]
-        def numList = nums as LinkedList
-        nums.each {assert numList.contains(it)}
-        assert nums.size() == numList.size()
-        assert numList.class == LinkedList.class
-    }
+                void testCollectionAsLinkedList() {
+                    Integer[] nums = [1, 2, 3, 4, 5]
+                    def numList = nums as LinkedList
+                    nums.each {assert numList.contains(it)}
+                    assert nums.size() == numList.size()
+                    assert numList.class == LinkedList.class
+                }
 
-    void testArrayListAsLinkedList() {
-        ArrayList nums = [1, 2, 3, 4, 5]
-        shouldFail(GroovyCastException.class) {
-            def numList = nums as LinkedList
-        }
-    }
+                void testArrayListAsLinkedList() {
+                    ArrayList nums = [1, 2, 3, 4, 5]
+                    shouldFail(GroovyCastException.class) {
+                        def numList = nums as LinkedList
+                    }
+                }
 
-    void testFileSize() {
-        assert new File('build.properties').size()
-    }
+                void testFileSize() {
+                    assert new File('build.properties').size()
+                }
 
-    void testMatcherSize() {
-        assertEquals 3, ('aaa' =~ /./).count
-        assertEquals 3, ('aaa' =~ /./).size()
-        assertEquals 1, ('a' =~ /./).size()
-        assertEquals 0, ('a' =~ /x/).size()
-    }
+                void testMatcherSize() {
+                    assertEquals 3, ('aaa' =~ /./).count
+                    assertEquals 3, ('aaa' =~ /./).size()
+                    assertEquals 1, ('a' =~ /./).size()
+                    assertEquals 0, ('a' =~ /x/).size()
+                }
 
-    void testJoinString() {
-        String[] arr = ["a", "b", "c", "d"]
-        def joined = arr.join(", ")
-        assert joined == "a, b, c, d"
-    }
+                void testJoinString() {
+                    String[] arr = ["a", "b", "c", "d"]
+                    def joined = arr.join(", ")
+                    assert joined == "a, b, c, d"
+                }
 
-    void testReverseEach() {
-        def l = ["cheese", "loves", "Guillaume"]
-        def expected = ["Guillaume", "loves", "cheese"]
-        def answer = []
-        l.reverseEach {answer << it}
-        assert answer == expected
-    }
+                void testReverseEach() {
+                    def l = ["cheese", "loves", "Guillaume"]
+                    def expected = ["Guillaume", "loves", "cheese"]
+                    def answer = []
+                    l.reverseEach {answer << it}
+                    assert answer == expected
+                }
 
-    void testGrep() {
-        def list = ["Guillaume", "loves", "cheese"]
-        def answer = list.grep(~".*ee.*")
-        assert answer == ["cheese"]
-        list = [123, "abc", 4.56]
-        answer = list.grep(String)
-        assert answer == ["abc"]
-        list = [4, 2, 7, 3, 6, 2]
-        answer = list.grep(2..3)
-        assert answer == [2, 3, 2]
-    }
+                void testGrep() {
+                    def list = ["Guillaume", "loves", "cheese"]
+                    def answer = list.grep(~".*ee.*")
+                    assert answer == ["cheese"]
+                    list = [123, "abc", 4.56]
+                    answer = list.grep(String)
+                    assert answer == ["abc"]
+                    list = [4, 2, 7, 3, 6, 2]
+                    answer = list.grep(2..3)
+                    assert answer == [2, 3, 2]
+                }
 
-    void testMapGetWithDefault() {
-        def map = [:]
-        assert map.foo == null
-        map.get("foo", []).add(123)
-        assert map.foo == [123]
-        map.get("bar", [:]).get("xyz", [:]).cheese = 123
-        assert map.bar.xyz.cheese == 123
-        assert map.size() == 2
-    }
+                void testMapGetWithDefault() {
+                    def map = [:]
+                    assert map.foo == null
+                    map.get("foo", []).add(123)
+                    assert map.foo == [123]
+                    map.get("bar", [:]).get("xyz", [:]).cheese = 123
+                    assert map.bar.xyz.cheese == 123
+                    assert map.size() == 2
+                }
 
-    String getCmd() {
-        def cmd = "ls -l"
-        if (System.properties.'os.name'.contains('Win')) {
-            cmd = "cmd /c dir"
-        }
-        return cmd
-    }
+                String getCmd() {
+                    def cmd = "ls -l"
+                    if (System.properties.'os.name'.contains('Win')) {
+                        cmd = "cmd /c dir"
+                    }
+                    return cmd
+                }
 
-    void testExecuteCommandLineProcessUsingAString() {
-        println "executing command: ${cmd}"
-        def process = cmd.execute()
-        // lets have an easier way to do this!
-        def count = 0
-        println "Read the following lines..."
-        /** @todo we should simplify the following line!!! */
-        new InputStreamReader(process.in).eachLine {line ->
-            println line
-            ++count
-        }
-        println ""
-        process.waitFor()
-        def value = process.exitValue()
-        println "Exit value of command line is ${value}"
-        assert count > 1
-    }
+                void testExecuteCommandLineProcessUsingAString() {
+                    println "executing command: ${cmd}"
+                    def process = cmd.execute()
+                    // lets have an easier way to do this!
+                    def count = 0
+                    println "Read the following lines..."
+                    /** @todo we should simplify the following line!!! */
+                    new InputStreamReader(process.in).eachLine {line ->
+                        println line
+                        ++count
+                    }
+                    println ""
+                    process.waitFor()
+                    def value = process.exitValue()
+                    println "Exit value of command line is ${value}"
+                    assert count > 1
+                }
 
-    /*
-    void testExecuteCommandLineProcessAndUseWaitForOrKill_FAILS_ON_WINDOWS() {
-        if (System.properties.'os.name'.contains('Windows') && notYetImplemented()) return
+                /*
+                void testExecuteCommandLineProcessAndUseWaitForOrKill_FAILS_ON_WINDOWS() {
+                    if (System.properties.'os.name'.contains('Windows') && notYetImplemented()) return
 
-        println "executing command: ${cmd}"
+                    println "executing command: ${cmd}"
 
-        def process = cmd.execute()
+                    def process = cmd.execute()
 
-        process.consumeProcessOutput()
-        process.waitForOrKill(1000)
-        def value = process.exitValue()
-        println "Exit value of command line is ${value}"
+                    process.consumeProcessOutput()
+                    process.waitForOrKill(1000)
+                    def value = process.exitValue()
+                    println "Exit value of command line is ${value}"
 
-        process = cmd.execute()
+                    process = cmd.execute()
 
-        process.consumeProcessOutput()
-        process.waitForOrKill(10) // This fails on RLW's workstation with parameter 1, >=8 is required.
-        value = process.exitValue()
-        println "Exit value of command line is ${value}"
-        
-    }
-    */
+                    process.consumeProcessOutput()
+                    process.waitForOrKill(10) // This fails on RLW's workstation with parameter 1, >=8 is required.
+                    value = process.exitValue()
+                    println "Exit value of command line is ${value}"
 
-    void testExecuteCommandLineUnderWorkingDirectory_FAILS() {if (notYetImplemented()) return
+                }
+                */
 
-        def envp = java.util.Array.newInstance(String, 0)
-        def workDir = new File(".")
+                void testExecuteCommandLineUnderWorkingDirectory_FAILS() {if (notYetImplemented()) return
 
-        println "executing command: ${cmd} under the directory ${workDir.canonicalPath}"
+                    def envp = java.util.Array.newInstance(String, 0)
+                    def workDir = new File(".")
 
-        def process = cmd.execute(envp, workDir)
+                    println "executing command: ${cmd} under the directory ${workDir.canonicalPath}"
 
-        // lets have an easier way to do this!
-        def count = 0
+                    def process = cmd.execute(envp, workDir)
 
-        println "Read the following lines under the directory ${workDir} ..."
+                    // lets have an easier way to do this!
+                    def count = 0
 
-        /** @todo we should simplify the following line!!! */
-        new InputStreamReader(process.in).eachLine {line ->
-            println line
-            ++count
-        }
-        println ""
+                    println "Read the following lines under the directory ${workDir} ..."
 
-        process.waitFor()
-        def value = process.exitValue()
-        println "Exit value of command line is ${value}"
+                    /** @todo we should simplify the following line!!! */
+                    new InputStreamReader(process.in).eachLine {line ->
+                        println line
+                        ++count
+                    }
+                    println ""
 
-        assert count > 1
-    }
+                    process.waitFor()
+                    def value = process.exitValue()
+                    println "Exit value of command line is ${value}"
 
-    void testDisplaySystemProperties() {
-        println "System properties are..."
-        def properties = System.properties
-        def keys = properties.keySet().sort()
-        for (k in keys) {
-            println "${k} = ${properties[k]}"
-        }
-    }
+                    assert count > 1
+                }
 
-    void testMax() {
-        assert [-5, -3, -1, 0, 2, 4].max {it * it} == -5
-    }
+                void testDisplaySystemProperties() {
+                    println "System properties are..."
+                    def properties = System.properties
+                    def keys = properties.keySet().sort()
+                    for (k in keys) {
+                        println "${k} = ${properties[k]}"
+                    }
+                }
 
-    void testMin() {
-        assert [-5, -3, -1, 0, 2, 4].min {it * it} == 0
-    }
+                void testMax() {
+                    assert [-5, -3, -1, 0, 2, 4].max {it * it} == -5
+                }
 
-    void testSort() {
-        assert [-5, -3, -1, 0, 2, 4].sort {it * it} == [0, -1, 2, -3, 4, -5]
-    }
+                void testMin() {
+                    assert [-5, -3, -1, 0, 2, 4].min {it * it} == 0
+                }
 
-    void testReplaceAllClosure() {
-        assert "1 a 2 b 3 c 4".replaceAll("\\p{Digit}") {it * 2} == "11 a 22 b 33 c 44"
-    }
+                void testFindIndexValues() {
+                    assert ['a', 'b', 'd', 'e'].findIndexOf{ it > 'f' } == -1
+                    assert ['a', 'b', 'd', 'e'].findLastIndexOf{ it > 'f' } == -1
+                    assert ['a', 'b', 'd', 'e'].findIndexValues{ it > 'f' } == []
 
-    void testObjectSleep() {
-        long start = System.currentTimeMillis()
-        sleep 1000
-        long slept = System.currentTimeMillis() - start
-        long epsilon = 120
-        assert (slept > 1000 - epsilon) && (slept < 1000 + epsilon):  \
-              "should have slept for 1s (+/- " + epsilon + "ms) but was ${slept}ms"
-    }
+                    assert ['a', 'b', 'c', 'e'].findIndexOf{ it < 'd' } == 0
+                    assert ['a', 'b', 'c', 'e'].findLastIndexOf{ it < 'd' } == 2
+                    assert ['a', 'b', 'c', 'e'].findIndexValues{ it < 'd' } == [0, 1, 2]
 
-    void testObjectSleepInterrupted() {
-        def interruptor = new groovy.TestInterruptor(Thread.currentThread())
-        new Thread(interruptor).start()
-        long start = System.currentTimeMillis()
-        sleep 1000
-        long slept = System.currentTimeMillis() - start
-        long epsilon = 150
-        assert (slept > 1000 - epsilon) && (slept < 1000 + epsilon):  \
-              "should have slept for 1s (+/- " + epsilon + "ms) but was ${slept}ms"
-    }
+                    assert ['a', 'b', 'd', 'e', 'f'].findIndexOf{ it > 'c' } == 2
+                    assert ['a', 'b', 'd', 'e', 'f'].findLastIndexOf{ it > 'c' } == 4
+                    assert ['a', 'b', 'd', 'e', 'f'].findIndexValues{ it > 'c' } == [2, 3, 4]
+                }
 
-    void testObjectSleepWithOnInterruptHandler() {
-        def log = ''
-        def interruptor = new groovy.TestInterruptor(Thread.currentThread())
-        new Thread(interruptor).start()
-        long start = System.currentTimeMillis()
-        sleep(2000) {log += it.toString()}
-        long slept = System.currentTimeMillis() - start
-        assert slept < 2000, "should have been interrupted but slept ${slept}ms > 2s"
-        assertEquals 'java.lang.InterruptedException: sleep interrupted', log.toString()
-    }
+                void testFindIndexValuesWithStartIndex() {
+                    assert ['a', 'b', 'd', 'e'].findIndexOf(1){ it < 'b' } == -1
+                    assert ['a', 'b', 'd', 'e'].findLastIndexOf(1){ it < 'b' } == -1
+                    assert ['a', 'b', 'd', 'e'].findIndexValues(1){ it < 'b' } == []
 
-    void testObjectSleepWithOnInterruptHandlerContinueSleeping() {
-        def log = ''
-        def interruptor = new groovy.TestInterruptor(Thread.currentThread())
-        new Thread(interruptor).start()
-        long start = System.currentTimeMillis()
-        sleep(2000) {
-            log += it.toString()
-            false // continue sleeping
-        }
-        long slept = System.currentTimeMillis() - start
-        short allowedError = 4 // ms
-        assert slept + allowedError >= 2000, "should have slept for at least 2s but only slept for ${slept}ms"
-        assertEquals 'java.lang.InterruptedException: sleep interrupted', log.toString()
-    }
+                    assert ['a', 'b', 'c', 'e'].findIndexOf(1){ it < 'd' } == 1
+                    assert ['a', 'b', 'c', 'e'].findLastIndexOf(1){ it < 'd' } == 2
+                    assert ['a', 'b', 'c', 'e'].findIndexValues(1){ it < 'd' } == [1, 2]
 
-    void testObjectIdentity() {
-        def a = new Object()
-        def b = a
-        assert a.is(b)
-        assert !a.is(null)
-        assert !1.is(2)
-        // naive impl would fall for this trap
-        assert !new WackyHashCode().is(new WackyHashCode())
-    }
+                    assert ['a', 'b', 'd', 'e', 'f'].findIndexOf(3){ it > 'c' } == 3
+                    assert ['a', 'b', 'd', 'e', 'f'].findLastIndexOf(3){ it > 'c' } == 4
+                    assert ['a', 'b', 'd', 'e', 'f'].findIndexValues(3){ it > 'c' } == [3, 4]
+                }
 
-    void testGroupByList() {
-        def expected = [Integer: [1, 2], String: ["a", "b"], BigDecimal: [3.5, 4.6]]
-        def list = [1, "a", 2, "b", 3.5, 4.6]
-        def result = list.groupBy {it.class}
-        assert [1, 2] == result[Integer]
-        assert ["a", "b"] == result[String]
-        assert [3.5, 4.6] == result[BigDecimal]
-        assert 3 == result.size()
-    }
+                void testSort() {
+                    assert [-5, -3, -1, 0, 2, 4].sort {it * it} == [0, -1, 2, -3, 4, -5]
+                }
 
-    void testGroupByMapEntry() {
-        def expectedKeys = [Integer: [1, 3], String: [2, 4], BigDecimal: [5, 6]]
-        def expectedVals = [Integer: [1, 2], String: ["a", "b"], BigDecimal: [3.5, 4.6]]
-        def map = [1: 1, 2: "a", 3: 2, 4: "b", 5: 3.5, 6: 4.6]
-        def result = map.groupBy {entry -> entry.value.class}
-        assert expectedKeys.Integer == result[Integer].collect {it.key}
-        assert expectedVals.Integer == result[Integer].collect {it.value}
-        assert expectedKeys.String == result[String].collect {it.key}
-        assert expectedVals.String == result[String].collect {it.value}
-        assert expectedKeys.BigDecimal == result[BigDecimal].collect {it.key}
-        assert expectedVals.BigDecimal == result[BigDecimal].collect {it.value}
-        assert 3 == result.size()
-    }
+                void testReplaceAllClosure() {
+                    assert "1 a 2 b 3 c 4".replaceAll("\\p{Digit}") {it * 2} == "11 a 22 b 33 c 44"
+                }
 
-    def leftCol = ["2"]
-    def rightCol = ["1", "2", "3"]
+                void testObjectSleep() {
+                    long start = System.currentTimeMillis()
+                    sleep 1000
+                    long slept = System.currentTimeMillis() - start
+                    long epsilon = 120
+                    assert (slept > 1000 - epsilon) && (slept < 1000 + epsilon):  \
+                          "should have slept for 1s (+/- " + epsilon + "ms) but was ${slept}ms"
+                }
 
-    void testList() {
-        def lst = [] as LinkedList
-        doIt(lst)
-    }
+                void testObjectSleepInterrupted() {
+                    def interruptor = new groovy.TestInterruptor(Thread.currentThread())
+                    new Thread(interruptor).start()
+                    long start = System.currentTimeMillis()
+                    sleep 1000
+                    long slept = System.currentTimeMillis() - start
+                    long epsilon = 150
+                    assert (slept > 1000 - epsilon) && (slept < 1000 + epsilon):  \
+                          "should have slept for 1s (+/- " + epsilon + "ms) but was ${slept}ms"
+                }
 
-    void testSetWithExplicitCoercion() {
-        def set = [] as HashSet
-        doIt(set)
-    }
+                void testObjectSleepWithOnInterruptHandler() {
+                    def log = ''
+                    def interruptor = new groovy.TestInterruptor(Thread.currentThread())
+                    new Thread(interruptor).start()
+                    long start = System.currentTimeMillis()
+                    sleep(2000) {log += it.toString()}
+                    long slept = System.currentTimeMillis() - start
+                    assert slept < 2000, "should have been interrupted but slept ${slept}ms > 2s"
+                    assertEquals 'java.lang.InterruptedException: sleep interrupted', log.toString()
+                }
 
-    void testSetWithImplicitCoercion() {
-        Set set = []
-        doIt(set)
-    }
+                void testObjectSleepWithOnInterruptHandlerContinueSleeping() {
+                    def log = ''
+                    def interruptor = new groovy.TestInterruptor(Thread.currentThread())
+                    new Thread(interruptor).start()
+                    long start = System.currentTimeMillis()
+                    sleep(2000) {
+                        log += it.toString()
+                        false // continue sleeping
+                    }
+                    long slept = System.currentTimeMillis() - start
+                    short allowedError = 4 // ms
+                    assert slept + allowedError >= 2000, "should have slept for at least 2s but only slept for ${slept}ms"
+                    assertEquals 'java.lang.InterruptedException: sleep interrupted', log.toString()
+                }
 
-    void testVector() {
-        def vctr = [] as Vector
-        doIt(vctr)
-    }
+                void testObjectIdentity() {
+                    def a = new Object()
+                    def b = a
+                    assert a.is(b)
+                    assert !a.is(null)
+                    assert !1.is(2)
+                    // naive impl would fall for this trap
+                    assert !new WackyHashCode().is(new WackyHashCode())
+                }
 
-    void doIt(col) {
-        col.clear();
-        col.addAll(leftCol);
-        // not really concerned about  correctness, rather that the method can be called, however..
-        assert col.intersect(rightCol) == ["2"]
-    }
-}
+                void testGroupByList() {
+                    def expected = [Integer: [1, 2], String: ["a", "b"], BigDecimal: [3.5, 4.6]]
+                    def list = [1, "a", 2, "b", 3.5, 4.6]
+                    def result = list.groupBy {it.class}
+                    assert [1, 2] == result[Integer]
+                    assert ["a", "b"] == result[String]
+                    assert [3.5, 4.6] == result[BigDecimal]
+                    assert 3 == result.size()
+                }
 
-class WackyHashCode {
-    int hashCode() {return 1;}
-}
+                void testGroupByMapEntry() {
+                    def expectedKeys = [Integer: [1, 3], String: [2, 4], BigDecimal: [5, 6]]
+                    def expectedVals = [Integer: [1, 2], String: ["a", "b"], BigDecimal: [3.5, 4.6]]
+                    def map = [1: 1, 2: "a", 3: 2, 4: "b", 5: 3.5, 6: 4.6]
+                    def result = map.groupBy {entry -> entry.value.class}
+                    assert expectedKeys.Integer == result[Integer].collect {it.key}
+                    assert expectedVals.Integer == result[Integer].collect {it.value}
+                    assert expectedKeys.String == result[String].collect {it.key}
+                    assert expectedVals.String == result[String].collect {it.value}
+                    assert expectedKeys.BigDecimal == result[BigDecimal].collect {it.key}
+                    assert expectedVals.BigDecimal == result[BigDecimal].collect {it.value}
+                    assert 3 == result.size()
+                }
+
+                def leftCol = ["2"]
+                def rightCol = ["1", "2", "3"]
+
+                void testList() {
+                    def lst = [] as LinkedList
+                    doIt(lst)
+                }
+
+                void testSetWithExplicitCoercion() {
+                    def set = [] as HashSet
+                    doIt(set)
+                }
+
+                void testSetWithImplicitCoercion() {
+                    Set set = []
+                    doIt(set)
+                }
+
+                void testVector() {
+                    def vctr = [] as Vector
+                    doIt(vctr)
+                }
+
+                void doIt(col) {
+                    col.clear();
+                    col.addAll(leftCol);
+                    // not really concerned about  correctness, rather that the method can be called, however..
+                    assert col.intersect(rightCol) == ["2"]
+                }
+            }
+
+           class WackyHashCode {
+                int hashCode() {return 1;}
+            }

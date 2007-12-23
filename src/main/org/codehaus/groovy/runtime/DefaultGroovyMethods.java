@@ -8707,22 +8707,115 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates over every element of the collection and returns the index of the first object
-     * that matches the condition specified in the closure
+     * Iterates over the elements of an iterable collection of items and returns
+     * the index of the first item that matches the condition specified in the closure.
      *
-     * @param self    the iteration object over which we iterate
+     * @param self    the iteration object over which to iterate
      * @param closure the filter to perform a match on the collection
-     * @return an integer that is the index of the first macthed object.
+     * @return an integer that is the index of the first matched object or -1 if no match was found
      */
     public static int findIndexOf(Object self, Closure closure) {
+        return findIndexOf(self, 0, closure);
+    }
+
+    /**
+     * Iterates over the elements of an iterable collection of items, starting from a
+     * specified startIndex, and returns the index of the first item that matches the
+     * condition specified in the closure.
+     *
+     * @param self       the iteration object over which to iterate
+     * @param startIndex start matching from this index
+     * @param closure    the filter to perform a match on the collection
+     * @return an integer that is the index of the first matched object or -1 if no match was found
+     */
+    public static int findIndexOf(Object self, int startIndex, Closure closure) {
+        int result = -1;
         int i = 0;
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext(); i++) {
             Object value = iter.next();
+            if (i < startIndex) {
+                continue;
+            }
             if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
+                result = i;
                 break;
             }
         }
-        return i;
+        return result;
+    }
+
+    /**
+     * Iterates over the elements of an iterable collection of items and returns
+     * the index of the last item that matches the condition specified in the closure.
+     *
+     * @param self    the iteration object over which to iterate
+     * @param closure the filter to perform a match on the collection
+     * @return an integer that is the index of the last matched object or -1 if no match was found
+     */
+    public static int findLastIndexOf(Object self, Closure closure) {
+        return findLastIndexOf(self, 0, closure);
+    }
+
+    /**
+     * Iterates over the elements of an iterable collection of items, starting
+     * from a specified startIndex, and returns the index of the last item that
+     * matches the condition specified in the closure.
+     *
+     * @param self       the iteration object over which to iterate
+     * @param startIndex start matching from this index
+     * @param closure    the filter to perform a match on the collection
+     * @return an integer that is the index of the last matched object or -1 if no match was found
+     */
+    public static int findLastIndexOf(Object self, int startIndex, Closure closure) {
+        int result = -1;
+        int i = 0;
+        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext(); i++) {
+            Object value = iter.next();
+            if (i < startIndex) {
+                continue;
+            }
+            if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
+                result = i;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Iterates over the elements of an iterable collection of items and returns
+     * the index values of the items that match the condition specified in the closure.
+     *
+     * @param self    the iteration object over which to iterate
+     * @param closure the filter to perform a match on the collection
+     * @return a list of integers corresponding to the index values of all matched objects
+     */
+    public static List findIndexValues(Object self, Closure closure) {
+        return findIndexValues(self, 0, closure);
+    }
+
+    /**
+     * Iterates over the elements of an iterable collection of items, starting from
+     * a specified startIndex, and returns the index values of the items that match
+     * the condition specified in the closure.
+     *
+     * @param self       the iteration object over which to iterate
+     * @param startIndex start matching from this index
+     * @param closure    the filter to perform a match on the collection
+     * @return a list of integers corresponding to the index values of all matched objects
+     */
+    public static List findIndexValues(Object self, int startIndex, Closure closure) {
+        List result = new ArrayList();
+        int i = 0;
+        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext(); i++) {
+            Object value = iter.next();
+            if (i < startIndex) {
+                continue;
+            }
+            if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
+                result.add(new Integer(i));
+            }
+        }
+        return result;
     }
 
     /**
