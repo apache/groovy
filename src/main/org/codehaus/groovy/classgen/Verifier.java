@@ -62,21 +62,32 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         this.classNode = node;
         
         if ((classNode.getModifiers() & Opcodes.ACC_INTERFACE) >0) {
-            //interfaces have no construcotrs, but this code expects one, 
+            //interfaces have no constructors, but this code expects one,
             //so create a dummy and don't add it to the class node
             ConstructorNode dummy = new ConstructorNode(0,null);
             addInitialization(node, dummy);
             node.visitContents(this);
             return;
         }
-        
+
+        ClassNode[] classNodes = classNode.getInterfaces();
+        List interfaces = new ArrayList();
+        for (int i = 0; i < classNodes.length; i++) {
+            ClassNode classNode = classNodes[i];
+            interfaces.add(classNode.getName());
+        }
+        Set interfaceSet = new HashSet(interfaces);
+        if (interfaceSet.size() != interfaces.size()) {
+            throw new RuntimeParserException("Duplicate interfaces in implements list: " + interfaces, classNode);
+        }
+
         addDefaultParameterMethods(node);
         addDefaultParameterConstructors(node);
 
         if (!node.isDerivedFromGroovyObject()) {
             node.addInterface(ClassHelper.make(GroovyObject.class));
 
-            // lets add a new field for the metaclass
+            // let's add a new field for the metaclass
             StaticMethodCallExpression initMetaClassCall =
                 new StaticMethodCallExpression(
                     ClassHelper.make(ScriptBytecodeAdapter.class),
@@ -108,7 +119,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
             // @todo we should check if the base class implements the invokeMethod method
 
-            // lets add the invokeMethod implementation
+            // let's add the invokeMethod implementation
             ClassNode superClass = node.getSuperClass();
             boolean addDelegateObject =
                 (node instanceof InnerClassNode && superClass.equals(ClassHelper.CLOSURE_TYPE))
@@ -297,7 +308,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             else if (statement instanceof BlockStatement) {
                 BlockStatement block = (BlockStatement) statement;
 
-                // lets copy the list so we create a new block
+                // let's copy the list so we create a new block
                 List list = new ArrayList(block.getStatements());
                 if (!list.isEmpty()) {
                     int idx = list.size() - 1;

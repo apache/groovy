@@ -1,19 +1,9 @@
 package groovy
 
 import org.codehaus.groovy.control.CompilationFailedException
+import gls.CompilableTestSupport
 
-class AbstractClassAndInterfaceTest extends GroovyTestCase {
-
-	def shouldNotCompile(String script) {
-	  try {
-        GroovyShell shell = new GroovyShell()
-        shell.parse(script, getTestClassName())
-      } catch (CompilationFailedException cfe) {
-        assert true
-        return
-      }
-      fail("the compilation succeeded but should have failed")
-	}
+class AbstractClassAndInterfaceTest extends CompilableTestSupport {
 
 	void testInterface() {
     	def shell = new GroovyShell()
@@ -205,4 +195,15 @@ class AbstractClassAndInterfaceTest extends GroovyTestCase {
 	   """
 	   shell.evaluate(text)
 	}
+
+	void testImplementsDuplicateInterface() {
+        shouldCompile """
+        interface I {}
+        class C implements I {}
+        """
+        shouldNotCompile """
+        interface I {}
+        class C implements I, I {}
+        """
+    }
 }
