@@ -1469,24 +1469,55 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Groups all map members into groups determined by the
+     * Groups all map entries into groups determined by the
      * supplied mapping closure. The closure will be passed a Map.Entry or
      * key and value (depending on the number of parameters the closure accepts)
      * and should return the key that each item should be grouped under.  The
      * resulting map will have an entry for each 'group' key returned by the
-     * closure, with values being the a list of map entries that belong to each
+     * closure, with values being the list of map entries that belong to each
      * group.
      *
      * @param self    a map to group
      * @param closure a closure mapping entries on keys
      * @return a new Map grouped by keys
      */
-    public static Map groupBy(Map self, Closure closure) {
+    public static Map groupEntriesBy(Map self, Closure closure) {
         final Map answer = new HashMap();
         for (final Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry) iter.next();
-            Object value = callClosureForMapEntry(closure, entry);//closure.call(element);
+            Object value = callClosureForMapEntry(closure, entry);
             groupAnswer(answer, entry, value);
+        }
+        return answer;
+    }
+
+    /**
+     * Groups the members of a map into sub maps determined by the
+     * supplied mapping closure. The closure will be passed a Map.Entry or
+     * key and value (depending on the number of parameters the closure accepts)
+     * and should return the key that each item should be grouped under.  The
+     * resulting map will have an entry for each 'group' key returned by the
+     * closure, with values being the map members from the original map that
+     * belong to each group.
+     *
+     * @param self    a map to group
+     * @param closure a closure mapping entries on keys
+     * @return a new Map grouped by keys
+     */
+    public static Map groupBy(Map self, Closure closure) {
+        final Map initial = groupEntriesBy(self, closure);
+        final Map answer = new HashMap();
+        Iterator iterator = initial.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry outer = (Map.Entry) iterator.next();
+            Object key = outer.getKey();
+            List entries = (List) outer.getValue();
+            Map target = new HashMap();
+            for (int i = 0; i < entries.size(); i++) {
+                Map.Entry inner = (Map.Entry) entries.get(i);
+                target.put(inner.getKey(), inner.getValue());
+            }
+            answer.put(key, target);
         }
         return answer;
     }

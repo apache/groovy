@@ -433,7 +433,7 @@ class GroovyMethodsTest extends GroovyTestCase {
                     assert !new WackyHashCode().is(new WackyHashCode())
                 }
 
-                void testGroupByList() {
+                void testCollectionGroupBy() {
                     def expected = [Integer: [1, 2], String: ["a", "b"], BigDecimal: [3.5, 4.6]]
                     def list = [1, "a", 2, "b", 3.5, 4.6]
                     def result = list.groupBy {it.class}
@@ -443,11 +443,11 @@ class GroovyMethodsTest extends GroovyTestCase {
                     assert 3 == result.size()
                 }
 
-                void testGroupByMapEntry() {
+                void testMapGroupEntriesBy() {
                     def expectedKeys = [Integer: [1, 3], String: [2, 4], BigDecimal: [5, 6]]
                     def expectedVals = [Integer: [1, 2], String: ["a", "b"], BigDecimal: [3.5, 4.6]]
                     def map = [1: 1, 2: "a", 3: 2, 4: "b", 5: 3.5, 6: 4.6]
-                    def result = map.groupBy {entry -> entry.value.class}
+                    def result = map.groupEntriesBy {entry -> entry.value.class}
                     assert expectedKeys.Integer == result[Integer].collect {it.key}
                     assert expectedVals.Integer == result[Integer].collect {it.value}
                     assert expectedKeys.String == result[String].collect {it.key}
@@ -455,6 +455,15 @@ class GroovyMethodsTest extends GroovyTestCase {
                     assert expectedKeys.BigDecimal == result[BigDecimal].collect {it.key}
                     assert expectedVals.BigDecimal == result[BigDecimal].collect {it.value}
                     assert 3 == result.size()
+                }
+
+                void testMapGroupBy() {
+                    def map = [1: 1, 2: "a", 3: 2, 4: "b", 5: 3.5, 6: 4.6]
+                    def result = map.groupBy {entry -> entry.value.class}
+                    assert 3 == result.size()
+                    assert result[BigDecimal] == [5:3.5, 6:4.6]
+                    assert result[String] == [2:'a', 4:'b']
+                    assert result[Integer] == [1:1, 3:2]
                 }
 
                 def leftCol = ["2"]
