@@ -502,7 +502,8 @@ class Groovysh
         try {
             loadUserScript('groovysh.profile')
 
-            if (commandLine != null) {
+            // if args were passed in, just execute as a command (but cygwin gives an empty string)
+            if (commandLine != null && commandLine.trim().size() > 0) {
                 // Run the given commands
                 execute(commandLine)
             }
