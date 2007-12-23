@@ -1062,7 +1062,12 @@ public class DefaultGroovyMethods {
      * @return the original list
      */
     public static List reverseEach(List self, Closure closure) {
-        each(reverse(self).iterator(), closure);
+        each(new ReverseListIterator(self), closure);
+        return self;
+    }
+
+    public static Object[] reverseEach(Object[] self, Closure closure) {
+        each(new ReverseListIterator(Arrays.asList(self)), closure);
         return self;
     }
 
