@@ -506,6 +506,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         String name = identifier(node);
         if (classNode != null) {
             if (classNode.getNameWithoutPackage().equals(name)) {
+                if ((classNode.getModifiers() & Opcodes.ACC_INTERFACE) >0) {
+                    throw new ASTRuntimeException(methodDef, "Constructor not permitted within an interface.");
+                }
                 throw new ASTRuntimeException(methodDef, "Invalid constructor format. Try remove the 'def' expression?");
             }
         }
@@ -728,6 +731,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         String name = identifier(node);
         node = node.getNextSibling();
+
         VariableExpression leftExpression = new VariableExpression(name, type);
         configureAST(leftExpression, paramNode);
 
@@ -735,6 +739,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         if (node != null) {
             assertNodeType(ASSIGN, node);
             Expression rightExpression = expression(node.getFirstChild());
+            if ((classNode.getModifiers() & Opcodes.ACC_INTERFACE) >0) {
+                throw new ASTRuntimeException(node, "Cannot specify default value for method parameter '" + name + " = " + rightExpression.getText() + "' inside an interface");
+            }
             parameter = new Parameter(type, name, rightExpression);
         }
         else

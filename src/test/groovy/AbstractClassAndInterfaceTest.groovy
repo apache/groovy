@@ -206,4 +206,17 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
         class C implements I, I {}
         """
     }
+
+	void testDefaultMethodParamsNotAllowedInInterface() {
+        shouldCompile """
+        interface Foo {
+           def doit( String param, int o )
+        }
+        """
+        shouldNotCompile """
+        interface Foo {
+           def doit( String param = "Groovy", int o )
+        }
+        """
+    }
 }
