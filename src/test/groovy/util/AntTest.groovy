@@ -104,7 +104,7 @@ SpoofTask ctor
 begin SpoofTaskContainer execute
 begin SpoofTask execute
 tag name from wrapper: spoof
-attributes map from wrapper: ["foo":"123"]
+attributes map from wrapper: [foo:123]
 param foo: 123
 end SpoofTask execute
 end SpoofTaskContainer execute
@@ -203,16 +203,16 @@ end SpoofTaskContainer execute
 		project.executeTarget("testAntBuilderWithinGroovyTask");
  		
 		def expectedSpoof =
-"""started: taskdef["name":"groovy", "classname":"org.codehaus.groovy.ant.Groovy"]
-finished: taskdef["name":"groovy", "classname":"org.codehaus.groovy.ant.Groovy"]
-started: echo["message":"before groovy task"]
-finished: echo["message":"before groovy task"]
+"""started: taskdef[name:groovy, classname:org.codehaus.groovy.ant.Groovy]
+finished: taskdef[name:groovy, classname:org.codehaus.groovy.ant.Groovy]
+started: echo[message:before groovy task]
+finished: echo[message:before groovy task]
 started: groovy[:]
-started: echo["message":"ant builder within groovy task"]
-finished: echo["message":"ant builder within groovy task"]
+started: echo[message:ant builder within groovy task]
+finished: echo[message:ant builder within groovy task]
 finished: groovy[:]
-started: echo["message":"after groovy task"]
-finished: echo["message":"after groovy task"]
+started: echo[message:after groovy task]
+finished: echo[message:after groovy task]
 """
 
          assertEquals expectedSpoof, customListener.spoof.toString()

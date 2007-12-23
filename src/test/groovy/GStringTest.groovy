@@ -446,14 +446,14 @@ class GStringTest extends GroovyTestCase {
     void testMapInString() {
         def map = ["key": 1];
         def str = "map.key: <${map.key}>; map: <${map}>";
-        assertEquals("map replacement ok", 'map.key: <1>; map: <["key":1]>', str)
+        assertEquals("map replacement ok", 'map.key: <1>; map: <[key:1]>', str)
         map.key++;
 
         // The map shows the effects of the change because the string holds a reference
         // to the mutable map.  map.key doesn't show the effect of the change because
         // in this slot the string holds a reference to the original value and
         // map.kep++ created a new value which was stored in the map.
-        assertEquals("map replacement ok", 'map.key: <1>; map: <["key":2]>', str)
+        assertEquals("map replacement ok", 'map.key: <1>; map: <[key:2]>', str)
     }
 
     /**
