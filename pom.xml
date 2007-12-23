@@ -435,6 +435,10 @@
             <name>Hamlet D'Arcy</name>
             <email></email>
         </contributor>
+        <contributor>
+            <name>Mike Dillon</name>
+            <email></email>
+        </contributor>
     </contributors>
 
     <dependencies>
