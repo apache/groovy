@@ -4,11 +4,19 @@ import gls.CompilableTestSupport
 
 class VisibilityModifiersTest extends CompilableTestSupport {
 
+    public void testInterface() {
+        // control
+        shouldCompile("interface X {}")
+        // erroneous
+        shouldNotCompile("synchronized interface X {}")
+    }
+
     public void testClass() {
         // control
         shouldCompile("public class X {}")
         // erroneous
         shouldNotCompile("public private class X {}")
+        shouldNotCompile("synchronized class X {}")
     }
 
     public void testMethod() {

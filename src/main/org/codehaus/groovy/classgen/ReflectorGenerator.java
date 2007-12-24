@@ -62,7 +62,7 @@ public class ReflectorGenerator implements Opcodes {
         this.cv = cv;
 
         classInternalName = BytecodeHelper.getClassInternalName(className);
-        cv.visit(ClassGenerator.asmJDKVersion, ACC_PUBLIC + ACC_SUPER, classInternalName, null, "org/codehaus/groovy/runtime/Reflector", null);
+        cv.visit(ClassGenerator.asmJDKVersion, ACC_PUBLIC, classInternalName, null, "org/codehaus/groovy/runtime/Reflector", null);
 
         cv.visitField(ACC_PUBLIC + ACC_STATIC, "accessor", "Ljava/lang/Object;", null, null);
 

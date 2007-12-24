@@ -27,9 +27,8 @@ public class ClassCompletionVerifierTest extends TestSupport {
             "The method 'java.lang.Object yyy()' from interface 'zzz' must not be static. Only fields may be static in an interface.";
     private static final String EXPECTED_TRANSIENT_CLASS_ERROR_MESSAGE =
             "The class 'DodgyClass' has an incorrect modifier transient.";
-    // TODO: enable for synchronized
-//    private static final String EXPECTED_SYNCHRONIZED_CLASS_ERROR_MESSAGE =
-//            "The class 'DodgyClass' has an incorrect modifier synchronized.";
+    private static final String EXPECTED_SYNCHRONIZED_CLASS_ERROR_MESSAGE =
+            "The class 'DodgyClass' has an incorrect modifier synchronized.";
     private static final String EXPECTED_NATIVE_CLASS_ERROR_MESSAGE =
             "The class 'DodgyClass' has an incorrect modifier native.";
     private static final String EXPECTED_VOLATILE_CLASS_ERROR_MESSAGE =
@@ -71,10 +70,10 @@ public class ClassCompletionVerifierTest extends TestSupport {
     }
 
     public void testDetectsIncorrectOtherModifier() throws Exception {
-        checkVisitErrors("DodgyClass", ACC_TRANSIENT | ACC_VOLATILE | ACC_NATIVE /*| ACC_SYNCHRONIZED*/, true);
+        checkVisitErrors("DodgyClass", ACC_TRANSIENT | ACC_VOLATILE | ACC_NATIVE | ACC_SYNCHRONIZED, true);
         checkErrorMessage(EXPECTED_TRANSIENT_CLASS_ERROR_MESSAGE);
         checkErrorMessage(EXPECTED_VOLATILE_CLASS_ERROR_MESSAGE);
-//        checkErrorMessage(EXPECTED_SYNCHRONIZED_CLASS_ERROR_MESSAGE);
+        checkErrorMessage(EXPECTED_SYNCHRONIZED_CLASS_ERROR_MESSAGE);
         checkErrorMessage(EXPECTED_NATIVE_CLASS_ERROR_MESSAGE);
     }
 
