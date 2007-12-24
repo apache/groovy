@@ -89,9 +89,11 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     }
 
     private void checkClassForOtherModifiers(ClassNode node) {
-        // TODO: work out why "synchronised" can't be used here
         checkClassForModifier(node, Modifier.isTransient(node.getModifiers()), "transient");
         checkClassForModifier(node, Modifier.isVolatile(node.getModifiers()), "volatile");
+        // TODO: enable for synchronized
+//        checkClassForModifier(node, Modifier.isSynchronized(node.getModifiers()), "synchronized");
+        checkClassForModifier(node, Modifier.isNative(node.getModifiers()), "native");
     }
 
     private void checkClassForModifier(ClassNode node, boolean condition, String modifierName) {

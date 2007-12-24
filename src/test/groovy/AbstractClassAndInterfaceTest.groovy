@@ -1,6 +1,5 @@
 package groovy
 
-import org.codehaus.groovy.control.CompilationFailedException
 import gls.CompilableTestSupport
 
 class AbstractClassAndInterfaceTest extends CompilableTestSupport {
