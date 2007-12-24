@@ -622,7 +622,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             initialValue = expression(node);
         }
 
-        if (initialValue == null && type != null) {
+        if (classNode.isInterface() && initialValue == null && type != null) {
             if (type==ClassHelper.int_TYPE) {
                 initialValue = new ConstantExpression(new Integer(0));
             }

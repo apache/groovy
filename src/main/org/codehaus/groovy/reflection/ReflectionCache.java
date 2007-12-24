@@ -86,22 +86,30 @@ public class ReflectionCache {
     static final Map /*<Class,SoftReference<CachedClass>>*/ CACHED_CLASS_MAP = new WeakHashMap();
 
     public static boolean isArray(Class klazz) {
-        CachedClass cachedClass = getCachedClass(klazz);
-        return cachedClass.isArray;
+//        CachedClass cachedClass = getCachedClass(klazz);
+//        return cachedClass.isArray;
+      return klazz.getName().charAt(0) == '[';
     }
 
     static WeakDoubleKeyHashMap assignableMap = new WeakDoubleKeyHashMap();
+
+    static void setAssignableFrom(Class klazz, Class aClass) {
+        WeakDoubleKeyHashMap.Entry val = assignableMap.getOrPut(klazz, aClass);
+        if (val.value == null) {
+            val.value = Boolean.TRUE;
+        }
+    }
 
     public static boolean isAssignableFrom(Class klazz, Class aClass) {
         if (klazz == aClass)
           return true;
         
-//        WeakDoubleKeyHashMap.Entry val = assignableMap.getOrPut(klazz, aClass);
-//        if (val.value == null) {
-//            val.value = Boolean.valueOf(klazz.isAssignableFrom(aClass));
-//        }
-//        return ((Boolean)val.value).booleanValue();
-        return klazz.isAssignableFrom(aClass);
+        WeakDoubleKeyHashMap.Entry val = assignableMap.getOrPut(klazz, aClass);
+        if (val.value == null) {
+            val.value = Boolean.valueOf(klazz.isAssignableFrom(aClass));
+        }
+        return ((Boolean)val.value).booleanValue();
+//        return klazz.isAssignableFrom(aClass);
     }
 
     static boolean arrayContentsEq(Object[] a1, Object[] a2) {
@@ -151,5 +159,4 @@ public class ReflectionCache {
         }
         return cachedClass;
     }
-
-            }
+}

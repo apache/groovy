@@ -37,6 +37,7 @@ import java.util.*;
  * @author John Wilson
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  * @author Graeme Rocher
+ * @author Alex Tkachman
  *
  * @version $Revision$
  */
@@ -61,35 +62,60 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
        everything we know in the thread and start again (most likely it happens not too often).
        Unfortunately, we have to keep it in weak map to avoid possible leak of classes.
      */
-    private class LocalMap extends WeakHashMap {
+    private class LocallyKnownClasses extends WeakHashMap {
         int version;
 
+        public static final int CACHE_SIZE = 10;
+        Object cache [] = new Object[CACHE_SIZE];
+        int nextCacheEntry;
+
         public MetaClass getMetaClass(Class theClass) {
-            final Integer regVer = MetaClassRegistryImpl.this.version;
-            final int regv = regVer.intValue();
+            final int regv = MetaClassRegistryImpl.this.version.intValue();
             if (version != regv) {
               clear ();
             }
             else {
-                final SoftReference ref = (SoftReference) super.get(theClass);
+                for (int i = 0; i != CACHE_SIZE; i++) {
+                    if (cache [i++] == theClass) {
+                        return (MetaClass) cache[i];
+                    }
+                }
+
+                final SoftReference ref = (SoftReference) get(theClass);
                 MetaClass mc;
                 if (ref != null && (mc = (MetaClass) ref.get()) != null) {
+                    putToCache(theClass, mc);
                     return mc;
                 }
             }
 
             MetaClass answer = getGlobalMetaClass(theClass);
-            put(theClass, new SoftReference(answer));
+            put(theClass, answer);
             version = MetaClassRegistryImpl.this.version.intValue();
             return answer;
         }
+
+        public Object put(Object key, Object value) {
+            putToCache(key, value);
+            return super.put(key, new SoftReference(value));
+        }
+
+        private void putToCache(Object key, Object value) {
+            cache [nextCacheEntry++] = key;
+            cache [nextCacheEntry++] = value;
+            if (nextCacheEntry == CACHE_SIZE)
+              nextCacheEntry = 0;
+        }
+
+        public void clear() {
+            for (int i = 0; i < cache.length; i++) {
+                cache [i] = null;
+            }
+            super.clear();
+        }
     }
 
-    private ThreadLocal locallyKnown = new ThreadLocal() {
-        protected Object initialValue() {
-            return new LocalMap();
-        }
-    };
+    private MyThreadLocal locallyKnown = new MyThreadLocal();
 
     public static final int LOAD_DEFAULT = 0;
     public static final int DONT_LOAD_DEFAULT = 1;
@@ -159,25 +185,55 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     private void registerMethods(final Class theClass, final boolean useInstanceMethods, Map map) {
         CachedMethod[] methods = ReflectionCache.getCachedClass(theClass).getMethods();
 
-        for (int i = 0; i < methods.length; i++) {
-            CachedMethod method = methods[i];
-            final int mod = method.getModifiers();
-            if (Modifier.isStatic(mod) && Modifier.isPublic(mod)) {
-                CachedClass[] paramTypes = method.getParameterTypes();
-                if (paramTypes.length > 0) {
-                    ArrayList arr = (ArrayList) map.get(paramTypes[0]);
-                    if (arr == null) {
-                        arr = new ArrayList(4);
-                        map.put(paramTypes[0],arr);
+        if (useInstanceMethods) {
+            // Here we instanciate objects representing MetaMethods for DGM methods.
+            // Calls for such meta methods done without reflection, so more effectively.
+            // It gives 7-8% improvement for benchmarks involving just several ariphmetic operations
+            for (int i = 0; ; ++i) {
+                try {
+                    final String className = "org.codehaus.groovy.runtime.dgm$" + i;
+                    final Class aClass = Class.forName(className);
+                    try {
+                        MetaMethod method = (MetaMethod) aClass.newInstance();
+                        final CachedClass declClass = method.getDeclaringClass();
+                        ArrayList arr = (ArrayList) map.get(declClass);
+                        if (arr == null) {
+                            arr = new ArrayList(4);
+                            map.put(declClass,arr);
+                        }
+                        arr.add(method);
+                        instanceMethods.add(method);
+                    } catch (InstantiationException e) {
+                    } catch (IllegalAccessException e) {
                     }
-                    if (useInstanceMethods) {
-                        final NewInstanceMetaMethod metaMethod = new NewInstanceMetaMethod(method);
-                        arr.add(metaMethod);
-                        instanceMethods.add(metaMethod);
-                    } else {
-                        final NewStaticMetaMethod metaMethod = new NewStaticMetaMethod(method);
-                        arr.add(metaMethod);
-                        staticMethods.add(metaMethod);
+                }
+                catch(ClassNotFoundException e){
+                    break;
+                }
+            }
+        }
+        else
+        {
+            for (int i = 0; i < methods.length; i++) {
+                CachedMethod method = methods[i];
+                final int mod = method.getModifiers();
+                if (Modifier.isStatic(mod) && Modifier.isPublic(mod)) {
+                    CachedClass[] paramTypes = method.getParameterTypes();
+                    if (paramTypes.length > 0) {
+                        ArrayList arr = (ArrayList) map.get(paramTypes[0]);
+                        if (arr == null) {
+                            arr = new ArrayList(4);
+                            map.put(paramTypes[0],arr);
+                        }
+                        if (useInstanceMethods) {
+                            final NewInstanceMetaMethod metaMethod = new NewInstanceMetaMethod(method);
+                            arr.add(metaMethod);
+                            instanceMethods.add(metaMethod);
+                        } else {
+                            final NewStaticMetaMethod metaMethod = new NewStaticMetaMethod(method);
+                            arr.add(metaMethod);
+                            staticMethods.add(metaMethod);
+                        }
                     }
                 }
             }
@@ -208,7 +264,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     }
 
     public MetaClass getMetaClass(Class theClass) {
-        return ((LocalMap) locallyKnown.get()).getMetaClass(theClass);
+        return locallyKnown.getMetaClass(theClass);
     }
 
     public synchronized void removeMetaClass(Class theClass) {
@@ -221,6 +277,8 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         } else {
             constantMetaClassCount--;
         }
+
+        ReflectionCache.getCachedClass(theClass).setStaticMetaClassField (null);
     }
 
     /**
@@ -234,6 +292,8 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
 
         constantMetaClassCount++;
         constantMetaClasses.put(theClass, theMetaClass);
+
+        ReflectionCache.getCachedClass(theClass).setStaticMetaClassField (theMetaClass);
     }
 
     public boolean useAccessible() {
@@ -289,5 +349,25 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
 
     public FastArray getStaticMethods() {
         return staticMethods;
+    }
+
+    private class MyThreadLocal extends ThreadLocal {
+        private volatile LocallyKnownClasses myClasses = new LocallyKnownClasses();
+        private Thread myThread = Thread.currentThread();
+
+        protected Object initialValue() {
+            return new LocallyKnownClasses();
+        }
+
+        public MetaClass getMetaClass (Class theClass) {
+            return ((LocallyKnownClasses)get()).getMetaClass(theClass);
+        }
+
+        public Object get() {
+            if (!Thread.currentThread().equals(myThread))
+              return super.get();
+            else
+              return myClasses;
+        }
     }
 }

@@ -178,6 +178,7 @@ public class AsmClassGenerator extends ClassGenerator {
     private boolean implicitThis = false;
 
     private Map genericParameterNames = null;
+    private ClassNode rightHandType;
 
     public AsmClassGenerator(
             GeneratorContext context, ClassVisitor classVisitor,
@@ -719,7 +720,7 @@ public class AsmClassGenerator extends ClassGenerator {
             visitAndAutoboxBoolean(expression.getTrueExpression());
             boolPart = new BooleanExpression(
                     new BytecodeExpression() {
-                        public void visit(GroovyCodeVisitor visitor) {
+                        public void visit(MethodVisitor mv) {
                             mv.visitInsn(DUP);
                         }
                     }
@@ -727,7 +728,7 @@ public class AsmClassGenerator extends ClassGenerator {
             truePart = BytecodeExpression.NOP;
             final Expression oldFalse = falsePart;
             falsePart = new BytecodeExpression() {
-                public void visit(GroovyCodeVisitor visitor) {
+                public void visit(MethodVisitor mv) {
                     mv.visitInsn(POP);
                     visitAndAutoboxBoolean(oldFalse);
                 }
@@ -3179,12 +3180,14 @@ public class AsmClassGenerator extends ClassGenerator {
 
     protected void doConvertAndCast(ClassNode type, boolean coerce) {
         if (type == ClassHelper.OBJECT_TYPE) return;
-        if (isValidTypeForCast(type)) {
-            visitClassExpression(new ClassExpression(type));
-            if (coerce) {
-                asTypeMethod.call(mv);
-            } else {
-                castToTypeMethod.call(mv);
+        if (rightHandType == null || !rightHandType.isDerivedFrom(type)) {
+            if (isValidTypeForCast(type)) {
+                visitClassExpression(new ClassExpression(type));
+                if (coerce) {
+                    asTypeMethod.call(mv);
+                } else {
+                    castToTypeMethod.call(mv);
+                }
             }
         }
         helper.doCast(type);
@@ -3334,7 +3337,7 @@ public class AsmClassGenerator extends ClassGenerator {
         // lets not cast for primitive types as we handle these in field setting etc
         if (ClassHelper.isPrimitiveType(type)) {
             visitAndAutoboxBoolean(rightExpression);
-        } else if (type != ClassHelper.OBJECT_TYPE) {
+        } else if (!rightExpression.getType().isDerivedFrom(type)) {
             visitCastExpression(new CastExpression(type, rightExpression));
         } else {
             visitAndAutoboxBoolean(rightExpression);
@@ -3342,7 +3345,9 @@ public class AsmClassGenerator extends ClassGenerator {
 
         mv.visitInsn(DUP);  // to leave a copy of the rightexpression value on the stack after the assignment.
         leftHandExpression = true;
+        rightHandType = rightExpression.getType();
         leftExpression.visit(this);
+        rightHandType = null;
         leftHandExpression = false;
     }
 
@@ -3396,6 +3401,10 @@ public class AsmClassGenerator extends ClassGenerator {
                 type != ClassHelper.REFERENCE_TYPE;
     }
 
+    public void visitBytecodeExpression(BytecodeExpression cle) {
+        cle.visit(mv);
+    }
+
     protected void visitAndAutoboxBoolean(Expression expression) {
         expression.visit(this);
 
@@ -3420,7 +3429,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 mv.visitInsn(DUP);
                 final int resultIdx = compileStack.defineTemporaryVariable("postfix_" + method, true);
                 BytecodeExpression result = new BytecodeExpression() {
-                    public void visit(GroovyCodeVisitor visitor) {
+                    public void visit(MethodVisitor mv) {
                         mv.visitVarInsn(ALOAD, resultIdx);
                     }
                 };

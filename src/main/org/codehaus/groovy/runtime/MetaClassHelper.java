@@ -607,7 +607,7 @@ public class MetaClassHelper {
             // if the invokation failed here. This is ok for IllegalArgumentException, but it is
             // possible that a Reflector will be used to execute the call and then an Exception from inside
             // the method is not wrapped in a InvocationTargetException and we will end here.
-            boolean setReason = e.getClass() != IllegalArgumentException.class;
+            boolean setReason = e.getClass() != IllegalArgumentException.class || method instanceof GeneratedMetaMethod;
             throw createExceptionText("failed to invoke method: ", method, object, argumentArray, e, setReason);
         } catch (RuntimeException e) {
             throw e;
@@ -651,6 +651,7 @@ public class MetaClassHelper {
 
     public static boolean isAssignableFrom(Class classToTransformTo, Class classToTransformFrom) {
         if (classToTransformFrom == null) return true;
+        if (classToTransformTo == Object.class) return true;
         classToTransformTo = ReflectionCache.autoboxType(classToTransformTo);
         classToTransformFrom = ReflectionCache.autoboxType(classToTransformFrom);
 

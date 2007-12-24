@@ -199,15 +199,19 @@ public class DefaultTypeTransformation {
         if (object == null) {
             return null;
         }
-        
-        if (type == object.getClass()) return object;
+
+        if (type == Object.class)
+          return object;
+
+        final Class aClass = object.getClass();
+        if (type == aClass) return object;
         // TODO we should move these methods to groovy method, like g$asType() so that
         // we can use operator overloading to customize on a per-type basis
         if (ReflectionCache.isArray(type)) {
             return asArray(object, type);
 
         }
-        if (ReflectionCache.isAssignableFrom(type,object.getClass())) {
+        if (ReflectionCache.isAssignableFrom(type, aClass)) {
             return object;
         }
         if (Collection.class.isAssignableFrom(type)) {
@@ -217,7 +221,7 @@ public class DefaultTypeTransformation {
                     (type == HashSet.class || Modifier.isAbstract(modifiers) || Modifier.isInterface(modifiers))) {
                 return new HashSet((Collection)object);
             }
-            if (object.getClass().isArray()) {
+            if (aClass.isArray()) {
                 if (type.isAssignableFrom(ArrayList.class) && (Modifier.isAbstract(modifiers) || Modifier.isInterface(modifiers))) {
                     answer = new ArrayList();
                 } else {
@@ -303,7 +307,7 @@ public class DefaultTypeTransformation {
                 //throw a runtime exception if conversion would be out-of-range for the type.
                 if (!(object instanceof Double) && (answer.doubleValue() == Double.NEGATIVE_INFINITY
                         || answer.doubleValue() == Double.POSITIVE_INFINITY)) {
-                    throw new GroovyRuntimeException("Automatic coercion of " + object.getClass().getName()
+                    throw new GroovyRuntimeException("Automatic coercion of " + aClass.getName()
                             + " value " + object + " to double failed.  Value is out of range.");
                 }
                 return answer;

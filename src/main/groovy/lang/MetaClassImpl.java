@@ -1428,10 +1428,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 MetaBeanProperty mp = (MetaBeanProperty) element;
                 boolean setter = true;
                 boolean getter = true;
-                if (mp.getGetter() == null || mp.getGetter() instanceof NewInstanceMetaMethod) {
+                if (mp.getGetter() == null || mp.getGetter() instanceof GeneratedMetaMethod || mp.getGetter() instanceof NewInstanceMetaMethod) {
                     getter = false;
                 }
-                if (mp.getSetter() == null || mp.getSetter() instanceof NewInstanceMetaMethod) {
+                if (mp.getSetter() == null || mp.getSetter() instanceof GeneratedMetaMethod || mp.getSetter() instanceof NewInstanceMetaMethod) {
                     setter = false;
                 }
                 if (!setter && !getter) continue;
@@ -2363,7 +2363,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         } else if (arguments.length == 1 && arguments[0] == null) {
             answer = MetaClassHelper.chooseMostGeneralMethodWith1NullParam(methods);
         } else {
-            List matchingMethods = new ArrayList(methods.size());
+            Object matchingMethods = null;
 
             final int len = methods.size;
             Object data[] = methods.getArray();
@@ -2372,15 +2372,25 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
                 // making this false helps find matches
                 if (MetaClassHelper.isValidMethod(method, arguments)) {
-                    matchingMethods.add(method);
+                    if (matchingMethods == null)
+                      matchingMethods = method;
+                    else
+                        if (matchingMethods instanceof ArrayList)
+                          ((ArrayList)matchingMethods).add(method);
+                        else {
+                            ArrayList arr = new ArrayList(4);
+                            arr.add(matchingMethods);
+                            arr.add(method);
+                            matchingMethods = arr;
+                        }
                 }
             }
-            if (matchingMethods.isEmpty()) {
+            if (matchingMethods == null) {
                 return null;
-            } else if (matchingMethods.size() == 1) {
-                return matchingMethods.get(0);
+            } else if (!(matchingMethods instanceof ArrayList)) {
+                return matchingMethods;
             }
-            return chooseMostSpecificParams(methodName, matchingMethods, arguments);
+            return chooseMostSpecificParams(methodName, (List) matchingMethods, arguments);
 
         }
         if (answer != null) {

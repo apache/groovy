@@ -18,6 +18,7 @@ package org.codehaus.groovy.classgen;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ExpressionTransformer;
+import org.objectweb.asm.MethodVisitor;
 
 /**
  * Represents some custom bytecode generation by the compiler
@@ -27,7 +28,7 @@ import org.codehaus.groovy.ast.expr.ExpressionTransformer;
  */
 public abstract class BytecodeExpression extends Expression {
     public static BytecodeExpression NOP = new BytecodeExpression() {
-        public void visit(GroovyCodeVisitor visitor) {
+        public void visit(MethodVisitor visitor) {
             //do nothing             
         }
     };
@@ -36,7 +37,11 @@ public abstract class BytecodeExpression extends Expression {
     public BytecodeExpression() {
     }
     
-    public abstract void visit(GroovyCodeVisitor visitor);
+    public void visit(GroovyCodeVisitor visitor) {
+        visitor.visitBytecodeExpression(this);
+    }
+
+    public abstract void visit (MethodVisitor mv);
 
     public Expression transformExpression(ExpressionTransformer transformer) {
         return this;
