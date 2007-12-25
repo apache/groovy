@@ -254,7 +254,7 @@ public class GroovyShell extends GroovyObjectSupport {
             throw new GroovyRuntimeException("This script or class could not be run.\n" +
                     "It should either: \n" +
                     "- have a main method, \n" +
-                    "- be a class extending GroovyTestCase, \n" +
+                    "- be a class extending JUnit's TestCase, \n" +
                     "- or implement the Runnable interface.");
         }
     }
