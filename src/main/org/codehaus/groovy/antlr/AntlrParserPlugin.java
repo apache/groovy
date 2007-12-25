@@ -305,6 +305,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         int modifiers = Opcodes.ACC_PUBLIC;
         if (isType(MODIFIERS, node)) {
             modifiers = modifiers(node, annotations, modifiers);
+            checkNoInvalidModifier(classDef, "Interface", modifiers, Opcodes.ACC_SYNCHRONIZED, "synchronized");
             node = node.getNextSibling();
         }
         modifiers |= Opcodes.ACC_ABSTRACT | Opcodes.ACC_INTERFACE;
@@ -343,6 +344,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         int modifiers = Opcodes.ACC_PUBLIC;
         if (isType(MODIFIERS, node)) {
             modifiers = modifiers(node, annotations, modifiers);
+            checkNoInvalidModifier(classDef, "Class", modifiers, Opcodes.ACC_SYNCHRONIZED, "synchronized");
             node = node.getNextSibling();
         }
 
@@ -490,10 +492,11 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         int modifiers = Opcodes.ACC_PUBLIC;
         if (isType(MODIFIERS, node)) {
             modifiers = modifiers(node, annotations, modifiers);
+            checkNoInvalidModifier(methodDef, "Method", modifiers, Opcodes.ACC_VOLATILE, "volatile");
             node = node.getNextSibling();
         }
 
-        if (classNode!=null && (classNode.getModifiers() & Opcodes.ACC_INTERFACE) >0) {
+        if (isAnInterface()) {
             modifiers |= Opcodes.ACC_ABSTRACT;
         }
 
@@ -506,7 +509,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         String name = identifier(node);
         if (classNode != null) {
             if (classNode.getNameWithoutPackage().equals(name)) {
-                if ((classNode.getModifiers() & Opcodes.ACC_INTERFACE) >0) {
+                if (isAnInterface()) {
                     throw new ASTRuntimeException(methodDef, "Constructor not permitted within an interface.");
                 }
                 throw new ASTRuntimeException(methodDef, "Invalid constructor format. Try remove the 'def' expression?");
@@ -548,7 +551,17 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             output.addMethod(methodNode);
         }
     }
-    
+
+    private void checkNoInvalidModifier(AST node, String nodeType, int modifiers, int modifier, String modifierText) {
+        if ((modifiers & modifier) != 0) {
+            throw new ASTRuntimeException(node, nodeType + " has an incorrect modifier '" + modifierText + "'.");
+        }
+    }
+
+    private boolean isAnInterface() {
+        return classNode != null && (classNode.getModifiers() & Opcodes.ACC_INTERFACE) > 0;
+    }
+
     protected void staticInit(AST staticInit) {        
         BlockStatement code = (BlockStatement) statementList(staticInit);
         classNode.addStaticInitializerStatements(code.getStatements(),false);
@@ -655,7 +668,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         configureAST(fieldNode, fieldDef);
 
         if (!hasVisibility(modifiers)) {
-            // lets set the modifiers on the field
+            // let's set the modifiers on the field
             int fieldModifiers = 0;
             int flags = Opcodes.ACC_STATIC | Opcodes.ACC_TRANSIENT | Opcodes.ACC_VOLATILE | Opcodes.ACC_FINAL;
 
@@ -664,7 +677,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 fieldModifiers |= Opcodes.ACC_PRIVATE;
             }
 
-            // lets pass along any other modifiers we need
+            // let's pass along any other modifiers we need
             fieldModifiers |= (modifiers & flags);
             fieldNode.setModifiers(fieldModifiers);
             
@@ -739,7 +752,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         if (node != null) {
             assertNodeType(ASSIGN, node);
             Expression rightExpression = expression(node.getFirstChild());
-            if ((classNode.getModifiers() & Opcodes.ACC_INTERFACE) >0) {
+            if (isAnInterface()) {
                 throw new ASTRuntimeException(node, "Cannot specify default value for method parameter '" + name + " = " + rightExpression.getText() + "' inside an interface");
             }
             parameter = new Parameter(type, name, rightExpression);
@@ -1207,7 +1220,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         Statement finallyStatement = EmptyStatement.INSTANCE;
         AST node = tryNode.getNextSibling();
 
-        // lets do the catch nodes
+        // let's do the catch nodes
         List catches = new ArrayList();
         for (; node != null && isType(LITERAL_catch, node); node = node.getNextSibling()) {
             catches.add(catchStatement(node));
@@ -1886,7 +1899,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected Expression dotExpression(AST node) {
-        // lets decide if this is a propery invocation or a method call
+        // let's decide if this is a propery invocation or a method call
         AST leftNode = node.getFirstChild();
         if (leftNode != null) {
             AST identifierNode = leftNode.getNextSibling();
@@ -2072,9 +2085,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
         if (namedArguments) {
             if (!expressionList.isEmpty()) {
-                // lets remove any non-MapEntryExpression instances
+                // let's remove any non-MapEntryExpression instances
                 // such as if the last expression is a ClosureExpression
-                // so lets wrap the named method calls in a Map expression
+                // so let's wrap the named method calls in a Map expression
                 List argumentList = new ArrayList();
                 for (Iterator iter = expressionList.iterator(); iter.hasNext();) {
                     Expression expression = (Expression) iter.next();
@@ -2170,7 +2183,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     protected Expression unaryMinusExpression(AST unaryMinusExpr) {
         AST node = unaryMinusExpr.getFirstChild();
 
-        // if we are a number literal then lets just parse it
+        // if we are a number literal then let's just parse it
         // as the negation operator on MIN_INT causes rounding to a long
         String text = node.getText();
         switch (node.getType()) {

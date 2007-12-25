@@ -74,7 +74,7 @@ public class PropertyTest extends TestSupport {
     }
 
     public void testProperties() throws Exception {
-        ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
+        ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC + ACC_SUPER, ClassHelper.OBJECT_TYPE);
         classNode.addProperty(new PropertyNode("bar", ACC_PUBLIC, ClassHelper.STRING_TYPE, classNode, null, null, null));
 
         Class fooClass = loadClass(classNode);
@@ -90,7 +90,7 @@ public class PropertyTest extends TestSupport {
     }
 
     public void testInheritedProperties() throws Exception {
-        ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC, ClassHelper.make(DummyBean.class));
+        ClassNode classNode = new ClassNode("Foo", ACC_PUBLIC + ACC_SUPER, ClassHelper.make(DummyBean.class));
         classNode.addProperty(new PropertyNode("bar", ACC_PUBLIC, ClassHelper.STRING_TYPE, classNode, null, null, null));
 
         Class fooClass = loadClass(classNode);

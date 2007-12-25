@@ -37,6 +37,14 @@ public class ClassCompletionVerifierTest extends TestSupport {
             "Repetitive method name/signature for method 'java.lang.Object xxx()' in class 'zzz'.";
     private static final String EXPECTED_DUPLICATE_METHOD_ERROR_INTERFACE_MESSAGE =
             "Repetitive method name/signature for method 'java.lang.Object xxx(java.lang.String)' in interface 'zzz'.";
+    private static final String EXPECTED_VOLATILE_METHOD_ERROR_MESSAGE =
+            "The method 'java.lang.Object vo()' has an incorrect modifier volatile.";
+    private static final String EXPECTED_STRICT_METHOD_ERROR_MESSAGE =
+            "The method 'java.lang.Object st()' has an incorrect modifier strictfp.";
+    private static final String EXPECTED_NATIVE_METHOD_ERROR_MESSAGE =
+            "The method 'java.lang.Object na()' has an incorrect modifier native.";
+    private static final String EXPECTED_SYNCHRONIZED_METHOD_ERROR_MESSAGE =
+            "The method 'java.lang.Object sy()' has an incorrect modifier synchronized.";
 
     protected void setUp() throws Exception {
         super.setUp();
@@ -70,10 +78,10 @@ public class ClassCompletionVerifierTest extends TestSupport {
     }
 
     public void testDetectsIncorrectOtherModifier() throws Exception {
-        checkVisitErrors("DodgyClass", ACC_TRANSIENT | ACC_VOLATILE | ACC_NATIVE | ACC_SYNCHRONIZED, true);
+        // can't check synchronized here as it doubles up with ACC_SUPER
+        checkVisitErrors("DodgyClass", ACC_TRANSIENT | ACC_VOLATILE | ACC_NATIVE, true);
         checkErrorMessage(EXPECTED_TRANSIENT_CLASS_ERROR_MESSAGE);
         checkErrorMessage(EXPECTED_VOLATILE_CLASS_ERROR_MESSAGE);
-        checkErrorMessage(EXPECTED_SYNCHRONIZED_CLASS_ERROR_MESSAGE);
         checkErrorMessage(EXPECTED_NATIVE_CLASS_ERROR_MESSAGE);
     }
 
@@ -92,6 +100,33 @@ public class ClassCompletionVerifierTest extends TestSupport {
         checkErrorCount(2);
         checkErrorMessage(EXPECTED_INTERFACE_FINAL_METHOD_ERROR_MESSAGE);
         checkErrorMessage(EXPECTED_INTERFACE_STATIC_METHOD_ERROR_MESSAGE);
+    }
+
+    public void testDetectsIncorrectMethodModifiersInInterface() throws Exception {
+        // TODO: can't check volatile here as it doubles up with bridge
+        ClassNode node = new ClassNode("zzz", ACC_ABSTRACT | ACC_INTERFACE, ClassHelper.OBJECT_TYPE);
+        node.addMethod(new MethodNode("st", ACC_STRICT, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        node.addMethod(new MethodNode("na", ACC_NATIVE, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        node.addMethod(new MethodNode("sy", ACC_SYNCHRONIZED, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        // constructors should not be treated as errors (they have no real meaning for interfaces anyway)
+        node.addMethod(new MethodNode("<clinit>", ACC_PUBLIC | ACC_STATIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        verifier.visitClass(node);
+        checkErrorCount(3);
+        checkErrorMessage(EXPECTED_STRICT_METHOD_ERROR_MESSAGE);
+        checkErrorMessage(EXPECTED_NATIVE_METHOD_ERROR_MESSAGE);
+        checkErrorMessage(EXPECTED_SYNCHRONIZED_METHOD_ERROR_MESSAGE);
+    }
+
+    public void testDetectsCorrectMethodModifiersInClass() throws Exception {
+        // TODO: can't check volatile here as it doubles up with bridge
+        ClassNode node = new ClassNode("zzz", ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
+        node.addMethod(new MethodNode("st", ACC_STRICT, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        node.addMethod(new MethodNode("na", ACC_NATIVE, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        node.addMethod(new MethodNode("sy", ACC_SYNCHRONIZED, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        // constructors should not be treated as errors (they have no real meaning for interfaces anyway)
+        node.addMethod(new MethodNode("<clinit>", ACC_PUBLIC | ACC_STATIC, ClassHelper.OBJECT_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, null));
+        verifier.visitClass(node);
+        checkErrorCount(0);
     }
 
     private void checkErrorCount(int count) {

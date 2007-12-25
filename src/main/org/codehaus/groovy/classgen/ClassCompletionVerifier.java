@@ -91,11 +91,13 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     private void checkClassForOtherModifiers(ClassNode node) {
         checkClassForModifier(node, Modifier.isTransient(node.getModifiers()), "transient");
         checkClassForModifier(node, Modifier.isVolatile(node.getModifiers()), "volatile");
-        // don't check synchronized for synthetic fields
-        if ((node.getModifiers() & Opcodes.ACC_SYNTHETIC) == 0) {
-            checkClassForModifier(node, Modifier.isSynchronized(node.getModifiers()), "synchronized");
-        }
         checkClassForModifier(node, Modifier.isNative(node.getModifiers()), "native");
+        // don't check synchronized here as it overlaps with ACC_SUPER
+    }
+
+    private void checkMethodForModifier(MethodNode node, boolean condition, String modifierName) {
+        if (!condition) return;
+        addError("The " + getDescription(node) + " has an incorrect modifier " + modifierName + ".", node);
     }
 
     private void checkClassForModifier(ClassNode node, boolean condition, String modifierName) {
@@ -230,7 +232,18 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         checkAbstractDeclaration(node);
         checkRepetitiveMethod(node);
         checkOverloadingPrivateAndPublic(node);
+        checkMethodModifiers(node);
         super.visitMethod(node);
+    }
+
+    private void checkMethodModifiers(MethodNode node) {
+        // don't check volatile here as it overlaps with ACC_BRIDGE
+        // additional modifiers not allowed for interfaces
+        if ((this.currentClass.getModifiers() & Opcodes.ACC_INTERFACE) != 0) {
+            checkMethodForModifier(node, Modifier.isStrict(node.getModifiers()), "strictfp");
+            checkMethodForModifier(node, Modifier.isSynchronized(node.getModifiers()), "synchronized");
+            checkMethodForModifier(node, Modifier.isNative(node.getModifiers()), "native");
+        }
     }
 
     private void checkOverloadingPrivateAndPublic(MethodNode node) {
