@@ -12,22 +12,8 @@ import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.expr.ArgumentListExpression;
-import org.codehaus.groovy.ast.expr.ArrayExpression;
-import org.codehaus.groovy.ast.expr.BinaryExpression;
-import org.codehaus.groovy.ast.expr.ClassExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
-import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.FieldExpression;
-import org.codehaus.groovy.ast.expr.ListExpression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
-import org.codehaus.groovy.ast.expr.SpreadExpression;
-import org.codehaus.groovy.ast.expr.VariableExpression;
-import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
-import org.codehaus.groovy.ast.stmt.ReturnStatement;
-import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Token;
@@ -66,6 +52,14 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
 
     private void completeEnum(final ClassNode enumClass) {
         ClassNode enumArray = enumClass.makeArray();
+        List methods = enumClass.getMethods();
+        boolean hasNext = false;
+        boolean hasPrevious = false;
+        for (int i = 0; i < methods.size(); i++) {
+            MethodNode m = (MethodNode) methods.get(i);
+            if (m.getName().equals("next") && m.getParameters().length == 0) hasNext = true;
+            if (m.getName().equals("previous") && m.getParameters().length == 0) hasPrevious = true;
+        }
 
         // create values field
         FieldNode values = new FieldNode("$VALUES",PRIVATE_FS,enumArray,enumClass,null);
@@ -83,8 +77,132 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
             valuesMethod.setCode(code);
             enumClass.addMethod(valuesMethod);
         }
-        
-        {        
+
+        if (!hasNext) {
+            // create next() method, code:
+            //     Day next() {
+            //        int ordinal = ordinal().next()
+            //        if (ordinal >= values().size()) ordinal = 0
+            //        return values()[ordinal]
+            //     }
+            Token assign = Token.newSymbol(Types.ASSIGN, -1, -1);
+            Token ge = Token.newSymbol(Types.COMPARE_GREATER_THAN_EQUAL, -1, -1);
+            MethodNode nextMethod = new MethodNode("next", Opcodes.ACC_PUBLIC, enumClass, new Parameter[0], ClassNode.EMPTY_ARRAY, null);
+            nextMethod.setSynthetic(true);
+            BlockStatement code = new BlockStatement();
+            BlockStatement ifStatement = new BlockStatement();
+            ifStatement.addStatement(
+                    new ExpressionStatement(
+                            new BinaryExpression(new VariableExpression("ordinal"), assign, new ConstantExpression(new Integer(0)))
+                    )
+            );
+
+            code.addStatement(
+                    new ExpressionStatement(
+                            new DeclarationExpression(
+                                    new VariableExpression("ordinal"),
+                                    assign,
+                                    new MethodCallExpression(
+                                            new MethodCallExpression(
+                                                    VariableExpression.THIS_EXPRESSION,
+                                                    "ordinal",
+                                                    MethodCallExpression.NO_ARGUMENTS),
+                                            "next",
+                                            MethodCallExpression.NO_ARGUMENTS
+                                    )
+                            )
+                    )
+            );
+            code.addStatement(
+                    new IfStatement(
+                            new BooleanExpression(new BinaryExpression(
+                                    new VariableExpression("ordinal"),
+                                    ge,
+                                    new MethodCallExpression(
+                                            new FieldExpression(values),
+                                            "size",
+                                            MethodCallExpression.NO_ARGUMENTS
+                                    )
+                            )),
+                            ifStatement,
+                            EmptyStatement.INSTANCE
+                    )
+            );
+            code.addStatement(
+                    new ReturnStatement(
+                            new MethodCallExpression(new FieldExpression(values), "getAt", new VariableExpression("ordinal"))
+                    )
+            );
+            nextMethod.setCode(code);
+            enumClass.addMethod(nextMethod);
+        }
+
+        if (!hasPrevious) {
+            // create previous() method, code:
+            //    Day previous() {
+            //        int ordinal = ordinal().previous()
+            //        if (ordinal < 0) ordinal = values().size() - 1
+            //        return values()[ordinal]
+            //    }
+            Token assign = Token.newSymbol(Types.ASSIGN, -1, -1);
+            Token lt = Token.newSymbol(Types.COMPARE_LESS_THAN, -1, -1);
+            MethodNode nextMethod = new MethodNode("previous", Opcodes.ACC_PUBLIC, enumClass, new Parameter[0], ClassNode.EMPTY_ARRAY, null);
+            nextMethod.setSynthetic(true);
+            BlockStatement code = new BlockStatement();
+            BlockStatement ifStatement = new BlockStatement();
+            ifStatement.addStatement(
+                    new ExpressionStatement(
+                            new BinaryExpression(new VariableExpression("ordinal"), assign,
+                                    new MethodCallExpression(
+                                            new MethodCallExpression(
+                                                    new FieldExpression(values),
+                                                    "size",
+                                                    MethodCallExpression.NO_ARGUMENTS
+                                            ),
+                                            "minus",
+                                            new ConstantExpression(new Integer(1))
+                                    )
+                            )
+                    )
+            );
+
+            code.addStatement(
+                    new ExpressionStatement(
+                            new DeclarationExpression(
+                                    new VariableExpression("ordinal"),
+                                    assign,
+                                    new MethodCallExpression(
+                                            new MethodCallExpression(
+                                                    VariableExpression.THIS_EXPRESSION,
+                                                    "ordinal",
+                                                    MethodCallExpression.NO_ARGUMENTS),
+                                            "previous",
+                                            MethodCallExpression.NO_ARGUMENTS
+                                    )
+                            )
+                    )
+            );
+            code.addStatement(
+                    new IfStatement(
+                            new BooleanExpression(new BinaryExpression(
+                                    new VariableExpression("ordinal"),
+                                    lt,
+                                    new ConstantExpression(new Integer(0))
+                            )),
+                            ifStatement,
+                            EmptyStatement.INSTANCE
+                    )
+            );
+            code.addStatement(
+                    new ReturnStatement(
+                            new MethodCallExpression(new FieldExpression(values), "getAt", new VariableExpression("ordinal"))
+                    )
+            );
+            nextMethod.setCode(code);
+            enumClass.addMethod(nextMethod);
+        }
+
+        {
             // create valueOf
             Parameter stringParameter = new Parameter(ClassHelper.STRING_TYPE,"name");
             MethodNode valueOfMethod = new MethodNode("valueOf",PS,enumClass,new Parameter[]{stringParameter},ClassNode.EMPTY_ARRAY,null);
@@ -106,7 +224,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
         {
             // constructor helper
             // This method is used instead of calling the constructor as
-            // calling the constrcutor may require a table with MetaClass
+            // calling the constructor may require a table with MetaClass
             // selecting the constructor for each enum value. So instead we
             // use this method to have a central point for constructor selection
             // and only one table. The whole construction is needed because 
@@ -188,7 +306,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
         } 
         
         // for each constructor:
-        // if constructordoes not define a call to super, then transform constructor
+        // if constructor does not define a call to super, then transform constructor
         // to get String,int parameters at beginning and add call super(String,int)  
         
         for (Iterator iterator = ctors.iterator(); iterator.hasNext();) {
