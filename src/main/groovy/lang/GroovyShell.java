@@ -295,7 +295,7 @@ public class GroovyShell extends GroovyObjectSupport {
     }
 
     /**
-     * Run the specified class extending GroovyTestCase as a unit test.
+     * Run the specified class extending TestCase as a unit test.
      * This is done through reflection, to avoid adding a dependency to the JUnit framework.
      * Otherwise, developers embedding Groovy and using GroovyShell to load/parse/compile
      * groovy scripts and classes would have to add another dependency on their classpath.
@@ -312,10 +312,10 @@ public class GroovyShell extends GroovyObjectSupport {
     }
 
     /**
-     * Utility method to check through reflection if the parsed class extends GroovyTestCase.
+     * Utility method to check through reflection if the parsed class extends TestCase.
      *
-     * @param scriptClass the class we want to know if it extends GroovyTestCase
-     * @return true if the class extends groovy.util.GroovyTestCase
+     * @param scriptClass the class we want to know if it extends TestCase
+     * @return true if the class extends junit.framework.TestCase
      */
     private boolean isUnitTestCase(Class scriptClass) {
         // check if the parsed class is a GroovyTestCase,
@@ -323,7 +323,7 @@ public class GroovyShell extends GroovyObjectSupport {
         boolean isUnitTestCase = false;
         try {
             try {
-                Class testCaseClass = this.loader.loadClass("groovy.util.GroovyTestCase");
+                Class testCaseClass = this.loader.loadClass("junit.framework.TestCase");
                 // if scriptClass extends testCaseClass
                 if (testCaseClass.isAssignableFrom(scriptClass)) {
                     isUnitTestCase = true;
