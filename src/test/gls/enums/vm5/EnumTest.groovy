@@ -53,6 +53,16 @@ class EnumTest extends GroovyTestCase {
         assert UsCoin.MAX_VALUE == UsCoin.quarter
     }
 
+    void testComparators() {
+        assert UsCoin.nickel <=> UsCoin.penny  ==  1
+        assert UsCoin.nickel <=> UsCoin.nickel ==  0
+        assert UsCoin.nickel <=> UsCoin.dime   == -1
+        assert UsCoin.nickel <=  UsCoin.nickel
+        assert UsCoin.nickel <=  UsCoin.dime
+        assert UsCoin.nickel >=  UsCoin.penny
+        assert UsCoin.nickel >=  UsCoin.nickel
+    }
+
     void testStepWithRange() {
         def coinRange2 = UsCoin.nickel..UsCoin.quarter
         def coins = coinRange2.toList()
@@ -92,7 +102,6 @@ class EnumTest extends GroovyTestCase {
         coins = coinRange2.step(-4)
         assert coins == [UsCoin.nickel]
     }
-
 }
 
 enum UsCoin {
