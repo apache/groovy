@@ -59,11 +59,16 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
             MethodNode m = (MethodNode) methods.get(i);
             if (m.getName().equals("next") && m.getParameters().length == 0) hasNext = true;
             if (m.getName().equals("previous") && m.getParameters().length == 0) hasPrevious = true;
+            if (hasNext && hasPrevious) break;
         }
+
+        // create MIN_VALUE and MAX_VALUE fields
+        FieldNode minValue = new FieldNode("MIN_VALUE", PUBLIC_FS, enumClass, enumClass, null);
+        FieldNode maxValue = new FieldNode("MAX_VALUE", PUBLIC_FS, enumClass, enumClass, null);
 
         // create values field
         FieldNode values = new FieldNode("$VALUES",PRIVATE_FS,enumArray,enumClass,null);
-        values.setSynthetic(true);      
+        values.setSynthetic(true);
         {
             // create values() method
             MethodNode valuesMethod = new MethodNode("values",PUBLIC_FS,enumArray,new Parameter[0],ClassNode.EMPTY_ARRAY,null);
@@ -255,11 +260,15 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
             int value = -1;
             Token assign = Token.newSymbol(Types.ASSIGN, -1, -1);
             List block = new ArrayList();
+            FieldNode tempMin = null;
+            FieldNode tempMax = null;
             for (Iterator iterator = fields.iterator(); iterator.hasNext();) {
                 FieldNode field = (FieldNode) iterator.next();
                 if ((field.getModifiers()&Opcodes.ACC_ENUM) == 0) continue;
                 value++;
-                
+                if (tempMin == null) tempMin = field;
+                tempMax = field;
+
                 ArgumentListExpression args = new ArgumentListExpression();
                 args.addExpression(new ConstantExpression(field.getName()));
                 args.addExpression(new ConstantExpression(new Integer(value)));
@@ -282,7 +291,25 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
                 );
                 arrayInit.add(new FieldExpression(field));
             }
-            
+            block.add(
+                    new ExpressionStatement(
+                            new BinaryExpression(
+                                    new FieldExpression(minValue),
+                                    assign,
+                                    new FieldExpression(tempMin)
+                            )
+                    )
+            );
+            block.add(
+                    new ExpressionStatement(
+                            new BinaryExpression(
+                                    new FieldExpression(maxValue),
+                                    assign,
+                                    new FieldExpression(tempMax)
+                            )
+                    )
+            );
+
             block.add(
                     new ExpressionStatement(
                             new BinaryExpression(new FieldExpression(values),assign,new ArrayExpression(enumClass,arrayInit))
@@ -290,6 +317,8 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
             );
             enumClass.addStaticInitializerStatements(block, true);
             enumClass.addField(values);
+            enumClass.addField(minValue);
+            enumClass.addField(maxValue);
         }
         
         
