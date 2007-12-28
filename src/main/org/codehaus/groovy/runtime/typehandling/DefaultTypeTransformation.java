@@ -450,10 +450,33 @@ public class DefaultTypeTransformation {
                 throw new GroovyRuntimeException("Error reading file: " + value, e);
             }
         }
+        else if (isEnumSubclass(value)) {
+            Object[] values = (Object[])InvokerHelper.invokeMethod(value, "values", new Object[0]);
+            return Arrays.asList(values);
+        }
         else {
             // lets assume its a collection of 1
             return Collections.singletonList(value);
         }
+    }
+
+    /**
+     * Determines whether the value object is a Class object representing a
+     * subclass of java.lang.Enum. Uses class name check to avoid breaking on
+     * pre-Java 5 JREs.
+     */
+    private static boolean isEnumSubclass(Object value) {
+        if (value instanceof Class) {
+            Class superclass = ((Class)value).getSuperclass();
+            while (superclass != null) {
+                if (superclass.getName().equals("java.lang.Enum")) {
+                    return true;
+                }
+                superclass = superclass.getSuperclass();
+            }
+        }
+
+        return false;
     }
     
     /**
