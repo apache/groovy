@@ -271,12 +271,12 @@ public class ObjectRange extends AbstractList implements Range {
             } else {
                 // let's lazily calculate the size
                 size = 0;
-                Object first = from;
-                Object value = from;
+                Comparable first = from;
+                Comparable value = from;
                 while (to.compareTo(value) >= 0) {
-                    value = increment(value);
+                    value = (Comparable) increment(value);
                     size++;
-                    if (value == first) break; // handle back to beginning due to modulo incrementing
+                    if (first.compareTo(value) >= 0) break; // handle back to beginning due to modulo incrementing
                 }
             }
         }
@@ -346,7 +346,7 @@ public class ObjectRange extends AbstractList implements Range {
                 closure.call(value);
                 for (int i = 0; i < step; i++) {
                     value = (Comparable) increment(value);
-                    if (first == value) return;
+                    if (value.compareTo(first) <= 0) return;
                 }
             }
         } else {
@@ -357,7 +357,7 @@ public class ObjectRange extends AbstractList implements Range {
                 closure.call(value);
                 for (int i = 0; i < step; i++) {
                     value = (Comparable) decrement(value);
-                    if (first == value) return;
+                    if (value.compareTo(first) >= 0) return;
                 }
             }
         }
