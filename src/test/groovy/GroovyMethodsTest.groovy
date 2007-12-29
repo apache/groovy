@@ -340,6 +340,18 @@ class GroovyMethodsTest extends GroovyTestCase {
         }
     }
 
+    void testInForLists() {
+        def list = ['a', 'b', 'c']
+        assert 'b' in list
+        assert !('d' in list)
+    }
+
+    void testInForArrays() {
+        String[] array = ['a', 'b', 'c']
+        assert 'b' in array
+        assert !('d' in array)
+    }
+
     void testMax() {
         assert [-5, -3, -1, 0, 2, 4].max {it * it} == -5
     }

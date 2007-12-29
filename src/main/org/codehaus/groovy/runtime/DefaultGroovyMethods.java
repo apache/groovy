@@ -746,8 +746,8 @@ public class DefaultGroovyMethods {
 
     /**
      * Method for overloading the behavior of the 'case' method in switch statements.
-     * The default implementation simply delegates to Object#equals, but this
-     * may be overridden for other types.  In this example:
+     * The default implementation handles arrays types but otherwise simply delegates
+     * to Object#equals, but this may be overridden for other types. In this example:
      * <pre> switch( a ) {
      *   case b: //some code
      * }</pre>
@@ -759,6 +759,9 @@ public class DefaultGroovyMethods {
      * @return true if the switchValue is deemed to be equal to the caseValue
      */
     public static boolean isCase(Object caseValue, Object switchValue) {
+        if (caseValue.getClass().isArray()) {
+            return isCase(DefaultTypeTransformation.asCollection(caseValue), switchValue);
+        }
         return caseValue.equals(switchValue);
     }
 
