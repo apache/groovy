@@ -1704,9 +1704,9 @@ public class AsmClassGenerator extends ClassGenerator {
         boolean isSuperMethodCall = usesSuper(call);
         boolean isThisExpression = isThisExpression(call.getObjectExpression());
 
-        // are we a local variable
+        // are we a local variable?
         if (methodName != null && isThisExpression && isFieldOrVariable(methodName) && !classNode.hasPossibleMethod(methodName, arguments)) {
-            // lets invoke the closure method
+            // let's invoke the closure method
             visitVariableExpression(new VariableExpression(methodName));
             if (arguments instanceof TupleExpression) {
                 arguments.visit(this);
