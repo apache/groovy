@@ -1808,8 +1808,8 @@ checkSuspiciousExpressionStatement[int prevToken]
         // Either not a block, or a block with an explicit closure parameter list.
         (   {prevToken == NLS}?
             {   addWarning(
-                "Expression statement looks like it may continue a previous statement.",
-                "Either remove previous newline, or add an explicit semicolon ';'.");
+                "Expression statement looks like it may continue a previous statement",
+                "Either remove the previous newline, or add an explicit semicolon ';'.");
             }
         )?
     |
