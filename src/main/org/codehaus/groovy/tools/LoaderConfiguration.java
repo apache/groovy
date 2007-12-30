@@ -15,6 +15,8 @@
  */
 package org.codehaus.groovy.tools;
 
+import groovy.text.RegexUtils;
+
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -191,7 +193,7 @@ public class LoaderConfiguration {
         String startDir = filter.substring(0, starIndex - 1);
         File root = new File(startDir);
 
-        filter = quote(filter);
+        filter = RegexUtils.quote(filter);
         filter = filter.replaceAll("\\"+WILDCARD+"\\"+WILDCARD, MATCH_ALL);
         filter = filter.replaceAll("\\" + WILDCARD, MATCH_FILE_NAME);
         Pattern pattern = Pattern.compile(filter);
@@ -315,20 +317,4 @@ public class LoaderConfiguration {
         this.requireMain = requireMain;
     }
 
-    // Replacement for Pattern.quote from JDK 1.5
-    private static String quote(String s) {
-        StringBuffer sb = new StringBuffer(s.length() * 2);
-        int eIndex = s.indexOf("\\E");
-        if (eIndex == -1)
-            return sb.append("\\Q").append(s).append("\\E").toString();
-
-        sb.append("\\Q");
-        eIndex = 0;
-        int cur = 0;
-        while ((eIndex = s.indexOf("\\E", cur)) != -1) {
-            sb.append(s.substring(cur, eIndex)).append("\\E\\\\E\\Q");
-            cur = eIndex + 2;
-        }
-        return sb.append(s.substring(cur, s.length())).append("\\E").toString();
-    }
 }

@@ -81,16 +81,6 @@ class StringTest extends GroovyTestCase {
         assert result.toString() == "hi Gromit!"
     }
 
-    void assertLength(s, len) {
-        if (s.length() != len)  println "*** length != $len: $s"
-        assert s.length() == len
-    }
-    void assertContains(s, len, subs) {
-        assertLength(s, len)
-        if (s.indexOf(subs) < 0)  println "*** missing $subs: $s"
-        assert s.indexOf(subs) >= 0
-    }
-
     void testSimpleStringLiterals() {
         assertLength("\n", 1)
         assertLength("\"", 1)
@@ -106,6 +96,14 @@ y", 2, "xy")
         assertContains('${0}', 4, '{0}')
         assertContains('x\
 y', 2, 'xy')
+    }
+
+    void testMinusRemovesFirstOccurenceOfString() {
+        assert "abcdeabcd" - 'bc' == 'adeabcd'
+    }
+
+    void testMinusEscapesRegexChars() {
+        assert "abcdeab.d.f" - '.d.' == 'abcdeabf'
     }
 
     void testMultilineStringLiterals() {
@@ -134,9 +132,7 @@ y''', 3, 'x\ny');
 /
     }
 
-
     void testBoolCoerce() {
-
         // Explicit coercion
         assertFalse((Boolean) "")
         assertTrue((Boolean) "content")
@@ -151,9 +147,7 @@ y''', 3, 'x\ny');
             fail("'' should have evaluated to false, but didn't")
         }
         s = 'something'
-        if (s) {
-            // OK
-        } else {
+        if (!s) {
             fail("'something' should have evaluated to false, but didn't")
         }
         
@@ -182,6 +176,17 @@ y''', 3, 'x\ny');
         def splitted = text.split().toList()
         def tokenized = text.tokenize()
         assert splitted == tokenized
+    }
+
+    private assertLength(s, len) {
+        if (s.length() != len)  println "*** length != $len: $s"
+        assert s.length() == len
+    }
+
+    private assertContains(s, len, subs) {
+        assertLength(s, len)
+        if (s.indexOf(subs) < 0)  println "*** missing $subs: $s"
+        assert s.indexOf(subs) >= 0
     }
 
 }

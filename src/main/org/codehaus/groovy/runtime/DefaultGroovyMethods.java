@@ -17,6 +17,7 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.*;
 import groovy.util.*;
+import groovy.text.RegexUtils;
 import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
@@ -5053,7 +5054,6 @@ public class DefaultGroovyMethods {
         return left + value;
     }
 
-
     /**
      * Remove a part of a String.  This essentially replaces the first
      * occurrence of the operand with '' and returns the result.
@@ -5064,7 +5064,7 @@ public class DefaultGroovyMethods {
      * @see String#replaceFirst(String,String)
      */
     public static String minus(String left, Object value) {
-        String text = toString(value);
+        String text = RegexUtils.quote(toString(value));
         return left.replaceFirst(text, "");
     }
 
