@@ -30,12 +30,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.LinkedHashMap;
-import java.util.Properties;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -1185,14 +1180,7 @@ public class Sql {
      * @return extracts the parameters from the expression as a List
      */
     protected List getParameters(GString gstring) {
-        Object[] values = gstring.getValues();
-        List answer = new ArrayList(values.length);
-        for (int i = 0; i < values.length; i++) {
-            if (values[i] != null) {
-                answer.add(values[i]);
-            }
-        }
-        return answer;
+        return new ArrayList(Arrays.asList(gstring.getValues()));
     }
 
     /**
@@ -1202,7 +1190,9 @@ public class Sql {
         int i = 1;
         for (Iterator iter = params.iterator(); iter.hasNext();) {
             Object value = iter.next();
-            setObject(statement, i++, value);
+            if (value != null) {
+                setObject(statement, i++, value);
+            }
         }
     }
 
