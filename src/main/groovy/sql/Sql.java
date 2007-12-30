@@ -58,21 +58,26 @@ public class Sql {
 
     private Connection useConnection;
 
-    /** lets only warn of using deprecated methods once */
+    /**
+     * let's only warn of using deprecated methods once
+     */
     private boolean warned;
 
     // store the last row count for executeUpdate
     int updateCount = 0;
 
-    /** allows a closure to be used to configure the statement before its use */
+    /**
+     * allows a closure to be used to configure the statement before its use
+     */
     private Closure configureStatement;
 
     /**
-     * A helper method which creates a new Sql instance from a JDBC connection
-     * URL
+     * Creates a new Sql instance given a JDBC connection URL.
      *
-     * @param url
+     * @param url a database url of the form
+     *            <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
      * @return a new Sql instance with a connection
+     * @throws SQLException if a database access error occurs
      */
     public static Sql newInstance(String url) throws SQLException {
         Connection connection = DriverManager.getConnection(url);
@@ -80,11 +85,16 @@ public class Sql {
     }
 
     /**
-     * A helper method which creates a new Sql instance from a JDBC connection
-     * URL
+     * Creates a new Sql instance given a JDBC connection URL
+     * and some properties.
      *
-     * @param url
+     * @param url        a database url of the form
+     *                   <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     * @param properties a list of arbitrary string tag/value pairs
+     *                   as connection arguments; normally at least a "user" and
+     *                   "password" property should be included
      * @return a new Sql instance with a connection
+     * @throws SQLException if a database access error occurs
      */
     public static Sql newInstance(String url, Properties properties) throws SQLException {
         Connection connection = DriverManager.getConnection(url, properties);
@@ -92,23 +102,36 @@ public class Sql {
     }
 
     /**
-     * A helper method which creates a new Sql instance from a JDBC connection
-     * URL and driver class name
+     * Creates a new Sql instance given a JDBC connection URL,
+     * some properties and a driver class name.
      *
-     * @param url
+     * @param url             a database url of the form
+     *                        <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     * @param properties      a list of arbitrary string tag/value pairs
+     *                        as connection arguments; normally at least a "user" and
+     *                        "password" property should be included
+     * @param driverClassName the fully qualified class name of the driver class
      * @return a new Sql instance with a connection
+     * @throws SQLException           if a database access error occurs
+     * @throws ClassNotFoundException if the class cannot be found or loaded
      */
-    public static Sql newInstance(String url, Properties properties, String driverClassName) throws SQLException, ClassNotFoundException {
+    public static Sql newInstance(String url, Properties properties, String driverClassName)
+            throws SQLException, ClassNotFoundException {
         loadDriver(driverClassName);
         return newInstance(url, properties);
     }
 
     /**
-     * A helper method which creates a new Sql instance from a JDBC connection
-     * URL, username and password
+     * Creates a new Sql instance given a JDBC connection URL,
+     * a username and a password.
      *
-     * @param url
+     * @param url      a database url of the form
+     *                 <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     * @param user     the database user on whose behalf the connection
+     *                 is being made
+     * @param password the user's password
      * @return a new Sql instance with a connection
+     * @throws SQLException if a database access error occurs
      */
     public static Sql newInstance(String url, String user, String password) throws SQLException {
         Connection connection = DriverManager.getConnection(url, user, password);
@@ -116,11 +139,18 @@ public class Sql {
     }
 
     /**
-     * A helper method which creates a new Sql instance from a JDBC connection
-     * URL, username, password and driver class name
+     * Creates a new Sql instance given a JDBC connection URL,
+     * a username, a password and a driver class name.
      *
-     * @param url
+     * @param url             a database url of the form
+     *                        <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     * @param user            the database user on whose behalf the connection
+     *                        is being made
+     * @param password        the user's password
+     * @param driverClassName the fully qualified class name of the driver class
      * @return a new Sql instance with a connection
+     * @throws SQLException           if a database access error occurs
+     * @throws ClassNotFoundException if the class cannot be found or loaded
      */
     public static Sql newInstance(String url, String user, String password, String driverClassName) throws SQLException,
             ClassNotFoundException {
@@ -129,13 +159,15 @@ public class Sql {
     }
 
     /**
-     * A helper method which creates a new Sql instance from a JDBC connection
-     * URL and driver class name
+     * Creates a new Sql instance given a JDBC connection URL
+     * and a driver class name.
      *
-     * @param url
-     * @param driverClassName
-     *            the class name of the driver
+     * @param url             a database url of the form
+     *                        <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     * @param driverClassName the fully qualified class name of the driver class
      * @return a new Sql instance with a connection
+     * @throws SQLException           if a database access error occurs
+     * @throws ClassNotFoundException if the class cannot be found or loaded
      */
     public static Sql newInstance(String url, String driverClassName) throws SQLException, ClassNotFoundException {
         loadDriver(driverClassName);
@@ -146,12 +178,12 @@ public class Sql {
      * Attempts to load the JDBC driver on the thread, current or system class
      * loaders
      *
-     * @param driverClassName
-     * @throws ClassNotFoundException
+     * @param driverClassName the fully qualified class name of the driver class
+     * @throws ClassNotFoundException if the class cannot be found or loaded
      */
     public static void loadDriver(String driverClassName) throws ClassNotFoundException {
-        // lets try the thread context class loader first
-        // lets try to use the system class loader
+        // let's try the thread context class loader first
+        // let's try to use the system class loader
         try {
             Class.forName(driverClassName);
         }
@@ -160,7 +192,7 @@ public class Sql {
                 Thread.currentThread().getContextClassLoader().loadClass(driverClassName);
             }
             catch (ClassNotFoundException e2) {
-                // now lets try the classloader which loaded us
+                // now let's try the classloader which loaded us
                 try {
                     Sql.class.getClassLoader().loadClass(driverClassName);
                 }
@@ -235,7 +267,8 @@ public class Sql {
 
     /**
      * Create a new InParameter
-     * @param type the JDBC data type
+     *
+     * @param type  the JDBC data type
      * @param value the object value
      * @return an InParameter
      */
@@ -244,65 +277,72 @@ public class Sql {
             public int getType() {
                 return type;
             }
+
             public Object getValue() {
                 return value;
             }
         };
     }
-    
+
     /**
      * Create a new OutParameter
+     *
      * @param type the JDBC data type.
      * @return an OutParameter
      */
-    public static OutParameter out(final int type){
-        return new OutParameter(){
+    public static OutParameter out(final int type) {
+        return new OutParameter() {
             public int getType() {
                 return type;
             }
         };
     }
-    
+
     /**
      * Create an inout parameter using this in parameter.
+     *
      * @param in
      */
-    public static InOutParameter inout(final InParameter in){
-        return new InOutParameter(){
+    public static InOutParameter inout(final InParameter in) {
+        return new InOutParameter() {
             public int getType() {
                 return in.getType();
             }
+
             public Object getValue() {
                 return in.getValue();
-            }            
+            }
         };
     }
-    
+
     /**
      * Create a new ResultSetOutParameter
+     *
      * @param type the JDBC data type.
      * @return a ResultSetOutParameter
      */
-    public static ResultSetOutParameter resultSet(final int type){
-        return new ResultSetOutParameter(){
+    public static ResultSetOutParameter resultSet(final int type) {
+        return new ResultSetOutParameter() {
             public int getType() {
                 return type;
             }
         };
     }
-        
+
     /**
      * Creates a variable to be expanded in the Sql string rather
      * than representing an sql parameter.
+     *
      * @param object
      */
-    public static ExpandedVariable expand(final Object object){
-        return new ExpandedVariable(){
+    public static ExpandedVariable expand(final Object object) {
+        return new ExpandedVariable() {
             public Object getObject() {
                 return object;
-            }};
+            }
+        };
     }
-    
+
     /**
      * Constructs an SQL instance using the given DataSource. Each operation
      * will use a Connection from the DataSource pool and close it when the
@@ -318,7 +358,7 @@ public class Sql {
      * Constructs an SQL instance using the given Connection. It is the caller's
      * responsibility to close the Connection after the Sql instance has been
      * used. You can do this on the connection object directly or by calling the
-     * {@link java.sql.Connection#close()}  method.
+     * {@link Connection#close()}  method.
      *
      * @param connection
      */
@@ -411,14 +451,15 @@ public class Sql {
      * result set
      */
     public void eachRow(String sql, Closure closure) throws SQLException {
-        eachRow(sql,(Closure) null,closure);
+        eachRow(sql, (Closure) null, closure);
     }
 
     /**
      * Performs the given SQL query calling closures for metadata and each row
-     * @param sql the sql statement
+     *
+     * @param sql         the sql statement
      * @param metaClosure called for meta data (only once after sql execution)
-     * @param rowClosure called for each row with a GroovyResultSet
+     * @param rowClosure  called for each row with a GroovyResultSet
      */
     public void eachRow(String sql, Closure metaClosure, Closure rowClosure) throws SQLException {
         Connection connection = createConnection();
@@ -428,9 +469,9 @@ public class Sql {
         try {
             log.fine(sql);
             results = statement.executeQuery(sql);
-            
-            if (metaClosure!=null) metaClosure.call( results.getMetaData() );
-            
+
+            if (metaClosure != null) metaClosure.call(results.getMetaData());
+
             GroovyResultSet groovyRS = new GroovyResultSetProxy(results).getImpl();
             while (groovyRS.next()) {
                 rowClosure.call(groovyRS);
@@ -497,59 +538,74 @@ public class Sql {
     }
 
     /**
-     * Performs the given SQL query and return the rows of the result set
-     */
-     public List rows(String sql) throws SQLException {
-        return rows(sql,(Closure) null);
-    }
-
-    /**
-     * Performs the given SQL query and return the rows of the result set
+     * Performs the given SQL query and return the rows of the result set.
+     *
      * @param sql the SQL statement
-     * @param metaClosure called with meta data of the ResultSet
+     * @return a list of GroovyRowResult objects
+     * @throws SQLException if a database access error occurs
      */
-     public List rows(String sql, Closure metaClosure) throws SQLException {
-         List results = new ArrayList();
-         Connection connection = createConnection();
-         Statement statement = connection.createStatement();
-         configure(statement);
-         ResultSet rs = null;
-         try {
-             log.fine(sql);
-             rs = statement.executeQuery(sql);
-
-             if (metaClosure!=null) metaClosure.call( rs.getMetaData() );
-
-             while (rs.next()) {
-                 ResultSetMetaData metadata = rs.getMetaData();
-                 LinkedHashMap lhm = new LinkedHashMap(metadata.getColumnCount(),1,true);
-                 for(int i=1 ; i<=metadata.getColumnCount() ; i++) {
-                     lhm.put(metadata.getColumnName(i),rs.getObject(i));
-                 }
-                 GroovyRowResult row = new GroovyRowResult(lhm);
-                 results.add(row);
-             }
-             return(results);
-         } catch (SQLException e) {
-             log.log(Level.FINE, "Failed to execute: " + sql, e);
-             throw e;
-         } finally {
-             closeResources(connection, statement, rs);
-         }
+    public List rows(String sql) throws SQLException {
+        return rows(sql, (Closure) null);
     }
-      
+
     /**
-     * Performs the given SQL query and return the first row of the result set
+     * Performs the given SQL query and return the rows of the result set.
+     *
+     * @param sql         the SQL statement
+     * @param metaClosure called with meta data of the ResultSet
+     * @return a list of GroovyRowResult objects
+     * @throws SQLException if a database access error occurs
+     */
+    public List rows(String sql, Closure metaClosure) throws SQLException {
+        List results = new ArrayList();
+        Connection connection = createConnection();
+        Statement statement = connection.createStatement();
+        configure(statement);
+        ResultSet rs = null;
+        try {
+            log.fine(sql);
+            rs = statement.executeQuery(sql);
+            if (metaClosure != null) metaClosure.call(rs.getMetaData());
+
+            while (rs.next()) {
+                ResultSetMetaData metadata = rs.getMetaData();
+                LinkedHashMap lhm = new LinkedHashMap(metadata.getColumnCount(), 1, true);
+                for (int i = 1; i <= metadata.getColumnCount(); i++) {
+                    lhm.put(metadata.getColumnName(i), rs.getObject(i));
+                }
+                GroovyRowResult row = new GroovyRowResult(lhm);
+                results.add(row);
+            }
+            return (results);
+        } catch (SQLException e) {
+            log.log(Level.FINE, "Failed to execute: " + sql, e);
+            throw e;
+        } finally {
+            closeResources(connection, statement, rs);
+        }
+    }
+
+    /**
+     * Performs the given SQL query and return the first row of the result set.
+     *
+     * @param sql the SQL statement
+     * @return a GroovyRowResult object
+     * @throws SQLException if a database access error occurs
      */
     public Object firstRow(String sql) throws SQLException {
         List rows = rows(sql);
         if (rows.isEmpty()) return null;
-        return(rows.get(0));
+        return (rows.get(0));
     }
 
     /**
      * Performs the given SQL query with the list of params and return
-     * the rows of the result set
+     * the rows of the result set.
+     *
+     * @param sql    the SQL statement
+     * @param params a list of parameters
+     * @return a list of GroovyRowResult objects
+     * @throws SQLException if a database access error occurs
      */
     public List rows(String sql, List params) throws SQLException {
         List results = new ArrayList();
@@ -564,14 +620,14 @@ public class Sql {
             rs = statement.executeQuery();
             while (rs.next()) {
                 ResultSetMetaData metadata = rs.getMetaData();
-                LinkedHashMap lhm = new LinkedHashMap(metadata.getColumnCount(),1,true);
-                for(int i=1 ; i<=metadata.getColumnCount() ; i++) {
-                    lhm.put(metadata.getColumnName(i),rs.getObject(i));
+                LinkedHashMap lhm = new LinkedHashMap(metadata.getColumnCount(), 1, true);
+                for (int i = 1; i <= metadata.getColumnCount(); i++) {
+                    lhm.put(metadata.getColumnName(i), rs.getObject(i));
                 }
                 GroovyRowResult row = new GroovyRowResult(lhm);
                 results.add(row);
             }
-            return(results);
+            return (results);
         }
         catch (SQLException e) {
             log.log(Level.FINE, "Failed to execute: " + sql, e);
@@ -582,15 +638,15 @@ public class Sql {
         }
     }
 
-     /**
-      * Performs the given SQL query with the list of params and return
-      * the first row of the result set
-      */
+    /**
+     * Performs the given SQL query with the list of params and return
+     * the first row of the result set
+     */
     public Object firstRow(String sql, List params) throws SQLException {
-         List rows = rows(sql, params);
-         if (rows.isEmpty()) return null;
-         return rows.get(0);
-     }
+        List rows = rows(sql, params);
+        if (rows.isEmpty()) return null;
+        return rows.get(0);
+    }
 
     /**
      * Executes the given piece of SQL
@@ -617,7 +673,7 @@ public class Sql {
 
     /**
      * Executes the given SQL update
-     * 
+     *
      * @return the number of rows updated
      */
     public int executeUpdate(String sql) throws SQLException {
@@ -641,10 +697,11 @@ public class Sql {
 
     /**
      * Executes the given SQL statement. See {@link #executeInsert(GString)}
-     * for more details. 
+     * for more details.
+     *
      * @param sql The SQL statement to execute.
      * @return A list of the auto-generated column values for each
-     * inserted row.
+     *         inserted row.
      */
     public List executeInsert(String sql) throws SQLException {
         Connection connection = createConnection();
@@ -658,24 +715,24 @@ public class Sql {
             // Prepare a list to contain the auto-generated column
             // values, and then fetch them from the statement.
             List autoKeys = new ArrayList();
-        	ResultSet keys = statement.getGeneratedKeys();
-        	int count = keys.getMetaData().getColumnCount();
+            ResultSet keys = statement.getGeneratedKeys();
+            int count = keys.getMetaData().getColumnCount();
 
-        	// Copy the column values into a list of a list.
-        	while (keys.next()) {
-        		List rowKeys = new ArrayList(count);
-        		for (int i = 1; i <= count; i++) {
-        			rowKeys.add(keys.getObject(i));
-        		}
+            // Copy the column values into a list of a list.
+            while (keys.next()) {
+                List rowKeys = new ArrayList(count);
+                for (int i = 1; i <= count; i++) {
+                    rowKeys.add(keys.getObject(i));
+                }
 
-        		autoKeys.add(rowKeys);
-        	}
+                autoKeys.add(rowKeys);
+            }
 
-        	// Store the update count so that it can be retrieved by
-        	// clients, and then return the list of auto-generated
-        	// values.
-        	this.updateCount = statement.getUpdateCount();
-        	return autoKeys;
+            // Store the update count so that it can be retrieved by
+            // clients, and then return the list of auto-generated
+            // values.
+            this.updateCount = statement.getUpdateCount();
+            return autoKeys;
         }
         catch (SQLException e) {
             log.log(Level.FINE, "Failed to execute: " + sql, e);
@@ -712,7 +769,7 @@ public class Sql {
 
     /**
      * Executes the given SQL update with parameters
-     * 
+     *
      * @return the number of rows updated
      */
     public int executeUpdate(String sql, List params) throws SQLException {
@@ -738,12 +795,13 @@ public class Sql {
     /**
      * Executes the given SQL statement with a particular list of
      * parameter values. See {@link #executeInsert(GString)} for
-     * more details. 
-     * @param sql The SQL statement to execute.
+     * more details.
+     *
+     * @param sql    The SQL statement to execute.
      * @param params The parameter values that will be substituted
-     * into the SQL statement's parameter slots.
+     *               into the SQL statement's parameter slots.
      * @return A list of the auto-generated column values for each
-     * inserted row.
+     *         inserted row.
      */
     public List executeInsert(String sql, List params) throws SQLException {
         // Now send the SQL to the database.
@@ -761,20 +819,20 @@ public class Sql {
             // Prepare a list to contain the auto-generated column
             // values, and then fetch them from the statement.
             List autoKeys = new ArrayList();
-        	ResultSet keys = statement.getGeneratedKeys();
-        	int count = keys.getMetaData().getColumnCount();
+            ResultSet keys = statement.getGeneratedKeys();
+            int count = keys.getMetaData().getColumnCount();
 
-        	// Copy the column values into a list of a list.
-        	while (keys.next()) {
-        		List rowKeys = new ArrayList(count);
-        		for (int i = 1; i <= count; i++) {
-        			rowKeys.add(keys.getObject(i));
-        		}
+            // Copy the column values into a list of a list.
+            while (keys.next()) {
+                List rowKeys = new ArrayList(count);
+                for (int i = 1; i <= count; i++) {
+                    rowKeys.add(keys.getObject(i));
+                }
 
-        		autoKeys.add(rowKeys);
-        	}
+                autoKeys.add(rowKeys);
+            }
 
-        	return autoKeys;
+            return autoKeys;
         }
         catch (SQLException e) {
             log.log(Level.FINE, "Failed to execute: " + sql, e);
@@ -796,7 +854,7 @@ public class Sql {
 
     /**
      * Executes the given SQL update with embedded expressions inside
-     * 
+     *
      * @return the number of rows updated
      */
     public int executeUpdate(GString gstring) throws SQLException {
@@ -820,22 +878,23 @@ public class Sql {
      * ID:</p>
      * <pre>
      *     def sql = Sql.newInstance("jdbc:mysql://localhost:3306/groovy",
-     *                               "user", 
+     *                               "user",
      *                               "password",
      *                               "com.mysql.jdbc.Driver")
-     *
+     * <p/>
      *     def keys = sql.insert("insert into test_table (INT_DATA, STRING_DATA) "
      *                           + "VALUES (1, 'Key Largo')")
-     *
+     * <p/>
      *     def id = keys[0][0]
-     *
+     * <p/>
      *     // 'id' now contains the value of the new row's ID column.
      *     // It can be used to update an object representation's
      *     // id attribute for example.
      *     ...
      * </pre>
+     *
      * @return A list of column values representing each row's
-     * auto-generated keys.
+     *         auto-generated keys.
      */
     public List executeInsert(GString gstring) throws SQLException {
         List params = getParameters(gstring);
@@ -887,14 +946,14 @@ public class Sql {
             int inouts = 0;
             for (Iterator iter = params.iterator(); iter.hasNext();) {
                 Object value = iter.next();
-                if(value instanceof OutParameter){
-                    if(value instanceof ResultSetOutParameter){
-                        results.add(CallResultSet.getImpl(statement,indx));
-                    }else{
-                        Object o = statement.getObject(indx+1);
-                        if(o instanceof ResultSet){
-                            results.add(new GroovyResultSetProxy((ResultSet)o).getImpl());
-                        }else{
+                if (value instanceof OutParameter) {
+                    if (value instanceof ResultSetOutParameter) {
+                        results.add(CallResultSet.getImpl(statement, indx));
+                    } else {
+                        Object o = statement.getObject(indx + 1);
+                        if (o instanceof ResultSet) {
+                            results.add(new GroovyResultSetProxy((ResultSet) o).getImpl());
+                        } else {
                             results.add(o);
                         }
                     }
@@ -910,7 +969,7 @@ public class Sql {
             closeResources(connection, statement);
         }
     }
-    
+
     /**
      * Performs a stored procedure call with the given parameters
      */
@@ -927,15 +986,15 @@ public class Sql {
      */
     public void call(GString gstring, Closure closure) throws Exception {
         List params = getParameters(gstring);
-        String sql = asSql(gstring,params);
-        call(sql, params,closure);
+        String sql = asSql(gstring, params);
+        call(sql, params, closure);
     }
-    
+
     /**
      * If this SQL object was created with a Connection then this method closes
      * the connection. If this SQL object was created from a DataSource then
      * this method does nothing.
-     * 
+     *
      * @throws SQLException
      */
     public void close() throws SQLException {
@@ -1021,10 +1080,10 @@ public class Sql {
             if (iter.hasNext()) {
                 Object value = iter.next();
                 if (value != null) {
-                    if(value instanceof ExpandedVariable){
-                        buffer.append(((ExpandedVariable)value).getObject());
+                    if (value instanceof ExpandedVariable) {
+                        buffer.append(((ExpandedVariable) value).getObject());
                         iter.remove();
-                    }else{
+                    } else {
                         boolean validBinding = true;
                         if (i < strings.length - 1) {
                             String nextText = strings[i + 1];
@@ -1045,8 +1104,7 @@ public class Sql {
                             buffer.append("?");
                         }
                     }
-                }
-                else {
+                } else {
                     nulls = true;
                     buffer.append("?'\"?"); // will replace these with nullish
                     // values
@@ -1062,7 +1120,7 @@ public class Sql {
 
     /**
      * replace ?'"? references with NULLish
-     * 
+     *
      * @param sql
      */
     protected String nullify(String sql) {
@@ -1074,10 +1132,10 @@ public class Sql {
         //could be more efficient by compiling expressions in advance.
         int firstWhere = findWhereKeyword(sql);
         if (firstWhere >= 0) {
-            Pattern[] patterns = { Pattern.compile("(?is)^(.{" + firstWhere + "}.*?)!=\\s{0,1}(\\s*)\\?'\"\\?(.*)"),
+            Pattern[] patterns = {Pattern.compile("(?is)^(.{" + firstWhere + "}.*?)!=\\s{0,1}(\\s*)\\?'\"\\?(.*)"),
                     Pattern.compile("(?is)^(.{" + firstWhere + "}.*?)<>\\s{0,1}(\\s*)\\?'\"\\?(.*)"),
-                    Pattern.compile("(?is)^(.{" + firstWhere + "}.*?[^<>])=\\s{0,1}(\\s*)\\?'\"\\?(.*)"), };
-            String[] replacements = { "$1 is not $2null$3", "$1 is not $2null$3", "$1 is $2null$3", };
+                    Pattern.compile("(?is)^(.{" + firstWhere + "}.*?[^<>])=\\s{0,1}(\\s*)\\?'\"\\?(.*)"),};
+            String[] replacements = {"$1 is not $2null$3", "$1 is not $2null$3", "$1 is $2null$3",};
             for (int i = 0; i < patterns.length; i++) {
                 Matcher matcher = patterns[i].matcher(sql);
                 while (matcher.matches()) {
@@ -1091,7 +1149,7 @@ public class Sql {
 
     /**
      * Find the first 'where' keyword in the sql.
-     * 
+     *
      * @param sql
      */
     protected int findWhereKeyword(String sql) {
@@ -1106,8 +1164,7 @@ public class Sql {
                 case '\'':
                     if (inString) {
                         inString = false;
-                    }
-                    else {
+                    } else {
                         inString = true;
                     }
                     break;
@@ -1154,9 +1211,9 @@ public class Sql {
      * such as for CLOBs etc.
      */
     protected void setObject(PreparedStatement statement, int i, Object value)
-        throws SQLException {
-        if (value instanceof InParameter  || value instanceof OutParameter) {
-            if(value instanceof InParameter){
+            throws SQLException {
+        if (value instanceof InParameter || value instanceof OutParameter) {
+            if (value instanceof InParameter) {
                 InParameter in = (InParameter) value;
                 Object val = in.getValue();
                 if (null == val) {
@@ -1165,11 +1222,11 @@ public class Sql {
                     statement.setObject(i, val, in.getType());
                 }
             }
-            if(value instanceof OutParameter){
-                try{
-                    OutParameter out = (OutParameter)value;
-                    ((CallableStatement)statement).registerOutParameter(i,out.getType());
-                }catch(ClassCastException e){
+            if (value instanceof OutParameter) {
+                try {
+                    OutParameter out = (OutParameter) value;
+                    ((CallableStatement) statement).registerOutParameter(i, out.getType());
+                } catch (ClassCastException e) {
                     throw new SQLException("Cannot register out parameter.");
                 }
             }
@@ -1195,14 +1252,12 @@ public class Sql {
                 Exception e = pae.getException();
                 if (e instanceof SQLException) {
                     throw (SQLException) e;
-                }
-                else {
+                } else {
                     throw (RuntimeException) e;
                 }
             }
             return con;
-        }
-        else {
+        } else {
             //System.out.println("createConnection returning: " +
             // useConnection);
             return useConnection;
