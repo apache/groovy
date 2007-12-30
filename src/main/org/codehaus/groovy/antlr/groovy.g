@@ -1821,11 +1821,11 @@ checkSuspiciousExpressionStatement[int prevToken]
         // Might be closure expression:  obj.foo ; {x->println x}
         // Might be open block:  obj.foo ; L:{println x}
         {   require(false,
-            "Closure expression looks like it may be an isolated open block, "+
-            "or it may continue a previous statement."
-            ,
-            "Add an explicit parameter list, as in {it -> ...}, or label it as L:{...}, "+
-            "and also either remove previous newline, or add an explicit semicolon ';'."
+            "Ambiguous expression could be a parameterless closure expression, "+
+            "an isolated open code block, or it may continue a previous statement",
+            "Add an explicit parameter list, e.g. {it -> ...}, or force it to be treated "+
+            "as an open block by giving it a label, e.g. L:{...}, "+
+            "and also either remove the previous newline, or add an explicit semicolon ';'"
             );
         }
     |
@@ -1835,8 +1835,10 @@ checkSuspiciousExpressionStatement[int prevToken]
         // Might be closure expression:  obj.foo ; {x->println x}
         // Might be open block:  obj.foo ; L:{println x}
         {   require(false,
-            "Closure expression looks like it may be an isolated open block.",
-            "Add an explicit parameter list, as in {it -> ...}, or label it as L:{...}.");
+            "Ambiguous expression could be either a parameterless closure expression or "+
+            "an isolated open code block",
+            "Add an explicit closure parameter list, e.g. {it -> ...}, or force it to "+
+            "be treated as an open block by giving it a label, e.g. L:{...}");
         }
     ;
 
