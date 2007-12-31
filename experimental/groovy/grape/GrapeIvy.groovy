@@ -12,6 +12,9 @@ import org.apache.ivy.core.module.descriptor.ModuleDescriptor
 import org.apache.ivy.plugins.report.XmlReportParser
 import org.apache.ivy.core.module.descriptor.Artifact
 import org.codehaus.groovy.tools.RootLoader
+import org.apache.ivy.util.MessageLogger
+import org.apache.ivy.util.DefaultMessageLogger
+import org.apache.ivy.util.Message
 
 
 /**
@@ -71,9 +74,11 @@ class GrapeIvy {
         // we have a valid classloader, now get grab details
         String groupId = attrs.group ?: attrs.groupId ?: 'groovy'
         String module = attrs.module ?: attrs.artifactId
-        String version = attrs.version
+        String version = attrs.version //TODO accept ranges and decode them
+
 
         // start ivy
+        Message.setDefaultLogger(new DefaultMessageLogger(-1))
         Ivy ivy = Ivy.newInstance()
         IvySettings settings = ivy.getSettings()
         settings.setVariable("ivy.default.configuration.m2compatible", "true")
@@ -116,7 +121,7 @@ class GrapeIvy {
             cacheManager).setValidate(true).setUseOrigin(false)
         def report = ivy.resolve(ivyfile.toURL(), resolveOptions)
         if (report.hasError()) {
-            System.exit(1)
+            throw new RuntimeException("Error grabbing Grapes -- $report.allProblemMessages")
         }
         md = report.getModuleDescriptor()
 
@@ -155,7 +160,7 @@ class GrapeIvy {
           </resolvers>
         </ivysettings>
         */
-        grab(groupId:'com.jidesoft', artifactId:'jide-oss', version:'2.2.1.07', refrenceObject:this)
+        grab(groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,)', refrenceObject:this)
         //println (new com.jidesoft.swing.JideSplitButton())
         // requires compiled class and special classloader setup, to be addressed
         println Thread.currentThread().contextClassLoader.loadClass('com.jidesoft.swing.JideSplitButton')
