@@ -38,4 +38,26 @@ class StaticThisTest extends CompilableTestSupport {
             """
     }
 
+    void testThisPropertyInStaticMethodShouldNotCompile() {
+        shouldNotCompile """
+            class A {
+                def prop
+                static method(){
+                    this.prop
+                }
+            }
+            """
+    }
+
+    void testSuperPropertyInStaticMethodShouldNotCompile() {
+        shouldNotCompile """
+            class A { def prop }
+            class B extends A {
+                static method(){
+                    super.prop
+                }
+            }
+            """
+    }
+
 }

@@ -153,7 +153,6 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         return ce;
     }
 
-    // TODO: find a nicer way to do this - we are unravelling what ResolveVisitor ravelled
     protected Expression transformPropertyExpression(PropertyExpression pe) {
         boolean oldInPropertyExpression = inPropertyExpression;
         Expression oldFoundArgs = foundArgs;
@@ -162,6 +161,16 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         foundArgs = null;
         foundConstant = null;
         Expression objectExpression = transform(pe.getObjectExpression());
+        boolean isExplicitThisOrSuper = false;
+        if (objectExpression instanceof VariableExpression) {
+            VariableExpression ve = (VariableExpression) objectExpression;
+            isExplicitThisOrSuper = !pe.isImplicitThis() && (ve.getName().equals("this") || ve.getName().equals("super"));
+            if (isExplicitThisOrSuper && currentMethod != null && currentMethod.isStatic()) {
+                addError("Non-static variable '" + ve.getName() + "' cannot be referenced from the static method " + currentMethod.getName() + ".", pe);
+                return null;
+            }
+        }
+
         if (foundArgs != null && foundConstant != null) {
             Expression result = findStaticMethodImportFromModule(foundConstant, foundArgs);
             if (result != null) {
