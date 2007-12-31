@@ -1,6 +1,8 @@
 package groovy
 
-class StaticThisTest extends GroovyTestCase {
+import gls.CompilableTestSupport
+
+class StaticThisTest extends CompilableTestSupport {
 
     void testThisFail() {
         staticMethod()
@@ -8,17 +10,32 @@ class StaticThisTest extends GroovyTestCase {
 
     static def staticMethod() {
         def foo = this
-
         assert foo != null
         assert foo.name.endsWith("StaticThisTest")
 
-        println("this: " + this)
-
         def s = super
-
         assert s != null
-        assert s.name.endsWith("GroovyTestCase")
-
-        println("super: " + super)
+        assert s.name.endsWith("CompilableTestSupport")
     }
+
+    void testThisMethodInStaticMethodShouldNotCompile() {
+        shouldNotCompile """
+            class A {
+                static method(){
+                    this.toString()
+                }
+            }
+            """
+    }
+
+    void testSuperMethodInStaticMethodShouldNotCompile() {
+        shouldNotCompile """
+            class A {
+                static method(){
+                    super.toString()
+                }
+            }
+            """
+    }
+
 }

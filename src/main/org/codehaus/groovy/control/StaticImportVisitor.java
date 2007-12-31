@@ -103,17 +103,17 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         Expression args = transform(mce.getArguments());
         Expression method = transform(mce.getMethod());
         Expression object = transform(mce.getObjectExpression());
-        boolean isExplicitThis = false;
+        boolean isExplicitThisOrSuper = false;
         if (object instanceof VariableExpression) {
             VariableExpression ve = (VariableExpression) object;
-            isExplicitThis = !mce.isImplicitThis() && ve.getName().equals("this");
-            if (isExplicitThis && currentMethod != null && currentMethod.isStatic()) {
-                addError("Non-static variable 'this' cannot be referenced from the static method " + currentMethod.getName() + ".", mce);
+            isExplicitThisOrSuper = !mce.isImplicitThis() && (ve.getName().equals("this") || ve.getName().equals("super"));
+            if (isExplicitThisOrSuper && currentMethod != null && currentMethod.isStatic()) {
+                addError("Non-static variable '" + ve.getName() + "' cannot be referenced from the static method " + currentMethod.getName() + ".", mce);
                 return null;
             }
         }
 
-        if (mce.isImplicitThis() || isExplicitThis) {
+        if (mce.isImplicitThis() || isExplicitThisOrSuper) {
             Expression ret = findStaticMethodImportFromModule(method, args);
             if (ret != null) {
                 return ret;
