@@ -27,7 +27,7 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
 		def retVal = shell.evaluate(text)
 		assert retVal.class == Object
 	}
-	
+
 	void testClassImplementingAnInterfaceButMissesMethod() {
         shouldNotCompile """
         	interface A {
@@ -59,7 +59,18 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
 			return b.methodTwo()
 			"""
 	}
-	
+
+	void testClassImplementingNestedInterfaceShouldContainMethodsFromSuperInterfaces() {
+        shouldNotCompile """
+            interface A { def a() }
+            interface B extends A { def b() }
+            class BImpl implements B {
+                def b(){ println 'foo' }
+            }
+            new BImpl().b()
+			"""
+	}
+
 	void testAbstractClass() {
     	def shell = new GroovyShell()
         def text = """
