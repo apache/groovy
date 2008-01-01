@@ -125,22 +125,18 @@ public class ParameterTypes
 
     }
 
-    public Object[] coerceArgumentsToClasses(Object[] argumentArray) {
+    public final Object[] coerceArgumentsToClasses(Object[] argumentArray) {
         // Uncomment if at some point this method can be called before parameterTypes initialized
         // getParameterTypes();
         argumentArray = correctArguments(argumentArray);
 
         final CachedClass[] pt = parameterTypes;
-        for (int i = 0; i < argumentArray.length; i++) {
-            Object argument = argumentArray[i];
-            if (argument == null) continue;
-            CachedClass parameterType = pt[i];
-            if (ReflectionCache.isAssignableFrom(parameterType.getCachedClass(), argument.getClass())) continue;
-
-            argument = parameterType.coerceGString(argument);
-            argument = parameterType.coerceNumber(argument);
-            argument = parameterType.coerceArray(argument);
-            argumentArray[i] = argument;
+        final int len = argumentArray.length;
+        for (int i = 0; i < len; i++) {
+            final Object argument = argumentArray[i];
+            if (argument != null) {
+                argumentArray[i] = pt[i].coerceArgument(argument);
+            }
         }
         return argumentArray;
     }
@@ -159,7 +155,7 @@ public class ParameterTypes
                 return MetaClassHelper.ARRAY_WITH_NULL;
         }
 
-        if (isVargsMethod(argumentArray)) {
+        if (isVargsMethod && isVargsMethod(argumentArray)) {
             return fitToVargs(argumentArray, pt);
         }
 
@@ -238,7 +234,7 @@ public class ParameterTypes
     private boolean isValidExactMethod(Class[] arguments, int size, CachedClass[] pt) {
         // lets check the parameter types match
         for (int i = 0; i < size; i++) {
-            if (MetaClassHelper.isAssignableFrom(pt[i].getCachedClass(), arguments[i])) continue;
+            if (pt[i].isAssignableFrom(arguments[i])) continue;
             return false;
         }
         return true;
@@ -247,15 +243,15 @@ public class ParameterTypes
     private boolean isValidVarargsMethod(Class[] arguments, int size, CachedClass[] pt, int paramMinus1) {
         // first check normal number of parameters
         for (int i = 0; i < paramMinus1; i++) {
-            if (MetaClassHelper.isAssignableFrom(pt[i].getCachedClass(), arguments[i])) continue;
+            if (pt[i].isAssignableFrom(arguments[i])) continue;
             return false;
         }
 
         // check direct match
-        Class varg = pt[paramMinus1].getCachedClass();
-        Class clazz = varg.getComponentType();
+        CachedClass varg = pt[paramMinus1];
+        Class clazz = varg.getCachedClass().getComponentType();
         if ( size==pt.length &&
-             (MetaClassHelper.isAssignableFrom(varg, arguments[paramMinus1]) ||
+             (varg.isAssignableFrom(arguments[paramMinus1]) ||
               MetaClassHelper.isAssignableFrom(clazz, arguments[paramMinus1].getComponentType())))
         {
             return true;
@@ -281,16 +277,16 @@ public class ParameterTypes
         {
             // first check normal number of parameters
             for (int i = 0; i < paramMinus1; i++) {
-                if (MetaClassHelper.isAssignableFrom(paramTypes[i].getCachedClass(), getArgClass(arguments[i]))) continue;
+                if (paramTypes[i].isAssignableFrom(getArgClass(arguments[i]))) continue;
                 return false;
             }
             
             
             // check direct match
-            Class varg = paramTypes[paramMinus1].getCachedClass();
-            Class clazz = varg.getComponentType();
+            CachedClass varg = paramTypes[paramMinus1];
+            Class clazz = varg.getCachedClass().getComponentType();
             if ( size==paramTypes.length && 
-                 (MetaClassHelper.isAssignableFrom(varg, getArgClass(arguments[paramMinus1])) ||
+                 (varg.isAssignableFrom(getArgClass(arguments[paramMinus1])) ||
                   MetaClassHelper.isAssignableFrom(clazz, getArgClass(arguments[paramMinus1]).getComponentType()))) 
             {
                 return true;
@@ -306,7 +302,7 @@ public class ParameterTypes
         } else if (paramTypes.length == size) {
             // lets check the parameter types match
             for (int i = 0; i < size; i++) {
-                if (MetaClassHelper.isAssignableFrom(paramTypes[i].getCachedClass(), getArgClass(arguments[i]))) continue;
+                if (paramTypes[i].isAssignableFrom(getArgClass(arguments[i]))) continue;
                 return false;
             }
             return true;

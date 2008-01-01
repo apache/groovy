@@ -39,8 +39,13 @@ public class JO extends GeneratedMetaMethod implements Opcodes {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
+    public final Object doMethodInvoke(Object object, Object[] argumentArray) {
+        argumentArray = coerceArgumentsToClasses(argumentArray);
+        return invoke(object, argumentArray);
+    }
+
     public static void main(String[] args) throws Exception {
-        ASMifierClassVisitor.main(new String[]{"target/test-classes/TreeNode.class"});
+        ASMifierClassVisitor.main(new String[]{"target/test-classes/org/codehaus/groovy/classgen/JO.class"});
 //        ASMifierClassVisitor.main(new String[]{"target/test-classes/groovy/bugs/CustomMetaClassTest.class"});
     }
 }

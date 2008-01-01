@@ -18,6 +18,7 @@ package groovy.lang;
 
 import org.codehaus.groovy.classgen.BytecodeHelper;
 import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.GeneratedMetaMethod;
 import org.codehaus.groovy.reflection.ParameterTypes;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.MetaClassHelper;
@@ -197,5 +198,35 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
             mopName = new StringBuffer().append("super$").append(declaringClass.getSuperClassDistance()).append("$").append(name).toString();
         }
         return mopName;
+    }
+
+    protected final RuntimeException processDoMethodInvokeException (Exception e, Object object, Object [] argumentArray) {
+        if (e instanceof IllegalArgumentException) {
+            //TODO: test if this is ok with new MOP, should be changed!
+            // we don't want the exception being unwrapped if it is a IllegalArgumentException
+            // but in the case it is for example a IllegalThreadStateException, we want the unwrapping
+            // from the runtime
+            //Note: the reason we want unwrapping sometimes and sometimes not is that the method
+            // invokation tries to invoke the method with and then reacts with type transformation
+            // if the invokation failed here. This is ok for IllegalArgumentException, but it is
+            // possible that a Reflector will be used to execute the call and then an Exception from inside
+            // the method is not wrapped in a InvocationTargetException and we will end here.
+            boolean setReason = e.getClass() != IllegalArgumentException.class || this instanceof GeneratedMetaMethod;
+            return MetaClassHelper.createExceptionText("failed to invoke method: ", this, object, argumentArray, e, setReason);
+        }
+
+        if (e instanceof RuntimeException)
+          return (RuntimeException) e;
+
+        return MetaClassHelper.createExceptionText("failed to invoke method: ", this, object, argumentArray, e, true);
+    }
+
+    public Object doMethodInvoke(Object object, Object[] argumentArray) {
+        argumentArray = coerceArgumentsToClasses(argumentArray);
+        try {
+            return invoke(object, argumentArray);
+        } catch (Exception e) {
+            throw processDoMethodInvokeException(e, object, argumentArray);
+        }
     }
 }

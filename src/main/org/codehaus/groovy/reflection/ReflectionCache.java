@@ -16,6 +16,8 @@
 package org.codehaus.groovy.reflection;
 
 import java.lang.ref.SoftReference;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
@@ -85,13 +87,15 @@ public class ReflectionCache {
 
     static final Map /*<Class,SoftReference<CachedClass>>*/ CACHED_CLASS_MAP = new WeakHashMap();
 
+    static WeakDoubleKeyHashMap assignableMap = new WeakDoubleKeyHashMap();
+
+    private static final CachedClass STRING_CLASS = new CachedClass.StringCachedClass();
+
     public static boolean isArray(Class klazz) {
 //        CachedClass cachedClass = getCachedClass(klazz);
 //        return cachedClass.isArray;
       return klazz.getName().charAt(0) == '[';
     }
-
-    static WeakDoubleKeyHashMap assignableMap = new WeakDoubleKeyHashMap();
 
     static void setAssignableFrom(Class klazz, Class aClass) {
         WeakDoubleKeyHashMap.Entry val = assignableMap.getOrPut(klazz, aClass);
@@ -103,7 +107,7 @@ public class ReflectionCache {
     public static boolean isAssignableFrom(Class klazz, Class aClass) {
         if (klazz == aClass)
           return true;
-        
+
         WeakDoubleKeyHashMap.Entry val = assignableMap.getOrPut(klazz, aClass);
         if (val.value == null) {
             val.value = Boolean.valueOf(klazz.isAssignableFrom(aClass));
@@ -138,6 +142,10 @@ public class ReflectionCache {
         public synchronized CachedClass getCachedSuperClass() {
             return null;
         }
+
+        public boolean isAssignableFrom(Class argument) {
+            return true;
+        }
     };
 
     public static final CachedClass OBJECT_ARRAY_CLASS = getCachedClass(Object[].class);
@@ -149,11 +157,54 @@ public class ReflectionCache {
         if (klazz == Object.class)
             return OBJECT_CLASS;
 
+        if (klazz == String.class)
+            return STRING_CLASS;
+
         CachedClass cachedClass;
         synchronized (CACHED_CLASS_MAP) {
             SoftReference ref = (SoftReference) CACHED_CLASS_MAP.get(klazz);
             if (ref == null || (cachedClass = (CachedClass) ref.get()) == null) {
-                cachedClass = new CachedClass(klazz);
+                if (Number.class.isAssignableFrom(klazz) || klazz.isPrimitive()) {
+                    if (klazz == Integer.class || klazz == Integer.TYPE)
+                      cachedClass = new CachedClass.IntegerCachedClass(klazz);
+                    else
+                      if (klazz == Double.class || klazz == Double.TYPE )
+                        cachedClass = new CachedClass.DoubleCachedClass(klazz);
+                      else
+                          if (klazz == BigDecimal.class )
+                            cachedClass = new CachedClass.BigDecimalCachedClass(klazz);
+                          else
+                              if (klazz == Long.class || klazz == Long.TYPE)
+                                cachedClass = new CachedClass.LongCachedClass(klazz);
+                              else
+                                  if (klazz == Float.class || klazz == Float.TYPE)
+                                    cachedClass = new CachedClass.FloatCachedClass(klazz);
+                                  else
+                                      if (klazz == Short.class || klazz == Short.TYPE)
+                                        cachedClass = new CachedClass.ShortCachedClass(klazz);
+                                      else
+                                          if (klazz == Boolean.TYPE)
+                                            cachedClass = new CachedClass.BooleanCachedClass(klazz);
+                                          else
+                                              if (klazz == Character.TYPE)
+                                                cachedClass = new CachedClass.CharacterCachedClass(klazz);
+                                              else
+                                                  if (klazz == BigInteger.class)
+                                                    cachedClass = new CachedClass.BigIntegerCachedClass(klazz);
+                                                  else
+                                                    cachedClass = new CachedClass(klazz);
+                }
+                else
+                    if (klazz.getName().charAt(0) == '[')
+                      cachedClass = new CachedClass.ArrayCachedClass (klazz);
+                    else
+                        if (klazz == Boolean.class)
+                          cachedClass = new CachedClass.BooleanCachedClass(klazz);
+                        else
+                            if (klazz == Character.class)
+                              cachedClass = new CachedClass.CharacterCachedClass(klazz);
+                            else
+                              cachedClass = new CachedClass(klazz);
                 CACHED_CLASS_MAP.put(klazz, new SoftReference(cachedClass));
             }
         }

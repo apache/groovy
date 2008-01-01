@@ -20,7 +20,6 @@ import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.FastArray;
 import org.codehaus.groovy.reflection.GeneratedMetaMethod;
 import org.codehaus.groovy.reflection.SingleKeyHashMap;
-import org.codehaus.groovy.runtime.MetaClassHelper;
 
 import java.util.NoSuchElementException;
 
@@ -203,7 +202,7 @@ public class MetaMethodIndex {
         int h = hash(31 * cls.hashCode() + name.hashCode());
         Entry e = table[h & (table.length - 1)];
         for (; e != null; e = e.nextHashEntry)
-            if (e.hash == h && cls == e.cls && e.name.equals(name))
+            if (e.hash == h && cls == e.cls && (e.name == name || e.name.equals(name)) )
                 return e;
 
         return null;
@@ -216,13 +215,13 @@ public class MetaMethodIndex {
         final int index = h & (t.length - 1);
         Entry e = t[index];
         for (; e != null; e = e.nextHashEntry)
-            if (e.hash == h && cls == e.cls && e.name.equals(name))
+            if (e.hash == h && cls == e.cls && (e.name == name || e.name.equals(name)) )
                 return e;
 
         Entry entry = new Entry();
         entry.nextHashEntry = t[index];
         entry.hash = h;
-        entry.name = name;
+        entry.name = name.intern();
         entry.cls = cls;
         t[index] = entry;
 
@@ -385,13 +384,13 @@ public class MetaMethodIndex {
                     // methods of the parent class with methods of a subclass and
                     // in that case we want to keep the private methods
                 } else {
-                    Class methodC = method.getDeclaringClass().getCachedClass();
-                    Class matchC = match.getDeclaringClass().getCachedClass();
+                    CachedClass methodC = method.getDeclaringClass();
+                    CachedClass matchC = match.getDeclaringClass();
                     if (methodC == matchC) {
                         if (isNonRealMethod(method)) {
                             return method;
                         }
-                    } else if (!MetaClassHelper.isAssignableFrom(methodC, matchC)) {
+                    } else if (!methodC.isAssignableFrom(matchC.getCachedClass())) {
                         return method;
                     }
                 }
@@ -417,13 +416,13 @@ public class MetaMethodIndex {
                     // methods of the parent class with methods of a subclass and
                     // in that case we want to keep the private methods
                 } else {
-                    Class methodC = method.getDeclaringClass().getCachedClass();
-                    Class matchC = match.getDeclaringClass().getCachedClass();
+                    CachedClass  methodC = method.getDeclaringClass();
+                    CachedClass matchC = match.getDeclaringClass();
                     if (methodC == matchC) {
                         if (isNonRealMethod(method)) {
                             list.set(found, method);
                         }
-                    } else if (!MetaClassHelper.isAssignableFrom(methodC, matchC)) {
+                    } else if (!methodC.isAssignableFrom(matchC.getCachedClass())) {
                         list.set(found, method);
                     }
                 }

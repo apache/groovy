@@ -88,17 +88,18 @@ public class WeakDoubleKeyHashMap extends ComplexKeyHashMap
   {
 //    expungeStaleEntries();
     int h = hash (31*key1.hashCode()+key2.hashCode());
-    final int index = h & (table.length - 1);
-    ComplexKeyHashMap.Entry e = table [index];
+      final ComplexKeyHashMap.Entry[] t = table;
+      final int index = h & (t.length - 1);
+    ComplexKeyHashMap.Entry e = t[index];
     for (; e != null; e = e.next)
       if (e.hash == h && checkEquals( e, key1, key2))
         return (Entry) e;
 
     ComplexKeyHashMap.Entry entry = createEntry(key1, key2, h, index);
-    table [index] = entry;
+    t[index] = entry;
 
     if ( ++size == threshold )
-      resize(2*table.length);
+      resize(2* t.length);
 
     return (Entry) entry;
   }

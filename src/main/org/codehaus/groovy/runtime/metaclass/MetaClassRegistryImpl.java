@@ -65,8 +65,8 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     private class LocallyKnownClasses extends WeakHashMap {
         int version;
 
-        public static final int CACHE_SIZE = 10;
-        Object cache [] = new Object[CACHE_SIZE];
+        public static final int CACHE_SIZE = 5;
+        final MetaClass cache [] = new MetaClass[CACHE_SIZE];
         int nextCacheEntry;
 
         public MetaClass getMetaClass(Class theClass) {
@@ -75,20 +75,39 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
               clear ();
             }
             else {
-                for (int i = 0; i != CACHE_SIZE; i++) {
-                    if (cache [i++] == theClass) {
-                        return (MetaClass) cache[i];
-                    }
-                }
+                MetaClass mc = checkCache(theClass);
+                if (mc != null)
+                  return mc;
 
-                final SoftReference ref = (SoftReference) get(theClass);
-                MetaClass mc;
-                if (ref != null && (mc = (MetaClass) ref.get()) != null) {
-                    putToCache(theClass, mc);
-                    return mc;
-                }
+                mc = checkMap(theClass);
+                if (mc != null)
+                  return mc;
             }
 
+            return getFromGlobal(theClass);
+        }
+
+        private MetaClass checkCache(Class theClass) {
+            for (int i = 0; i != CACHE_SIZE; i++) {
+                final MetaClass metaClass = cache[i];
+                if (metaClass != null && metaClass.getTheClass() == theClass) {
+                    return metaClass;
+                }
+            }
+            return null;
+        }
+
+        private MetaClass checkMap(Class theClass) {
+            MetaClass mc;
+            final SoftReference ref = (SoftReference) get(theClass);
+            if (ref != null && (mc = (MetaClass) ref.get()) != null) {
+                putToCache(mc);
+                return mc;
+            }
+            return null;
+        }
+
+        private MetaClass getFromGlobal(Class theClass) {
             MetaClass answer = getGlobalMetaClass(theClass);
             put(theClass, answer);
             version = MetaClassRegistryImpl.this.version.intValue();
@@ -96,12 +115,11 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         }
 
         public Object put(Object key, Object value) {
-            putToCache(key, value);
+            putToCache((MetaClass) value);
             return super.put(key, new SoftReference(value));
         }
 
-        private void putToCache(Object key, Object value) {
-            cache [nextCacheEntry++] = key;
+        private void putToCache(MetaClass value) {
             cache [nextCacheEntry++] = value;
             if (nextCacheEntry == CACHE_SIZE)
               nextCacheEntry = 0;
@@ -364,7 +382,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         }
 
         public Object get() {
-            if (!Thread.currentThread().equals(myThread))
+            if (Thread.currentThread() != myThread)
               return super.get();
             else
               return myClasses;

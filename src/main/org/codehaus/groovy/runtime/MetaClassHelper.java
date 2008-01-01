@@ -240,30 +240,30 @@ public class MetaClassHelper {
         return Math.max(max, getMaximumInterfaceDistance(c.getSuperclass(), interfaceClass));
     }
 
-    private static long calculateParameterDistance(Class argument, Class parameter) {
+    private static long calculateParameterDistance(Class argument, CachedClass parameter) {
         /**
          * note: when shifting with 32 bit, you should only shift on a long. If you do
          *       that with an int, then i==(i<<32), which means you loose the shift
          *       information
          */
 
-        if (parameter == argument) return 0;
+        if (parameter.getCachedClass() == argument) return 0;
 
         if (parameter.isInterface()) {
-            return getMaximumInterfaceDistance(argument, parameter)<<1;
+            return getMaximumInterfaceDistance(argument, parameter.getCachedClass())<<1;
         }
 
         long objectDistance = 0;
         if (argument != null) {
-            long pd = getPrimitiveDistance(parameter, argument);
+            long pd = getPrimitiveDistance(parameter.getCachedClass(), argument);
             if (pd != -1) return pd << 32;
 
             // add one to dist to be sure interfaces are prefered
             objectDistance += PRIMITIVES.length + 1;
             Class clazz = ReflectionCache.autoboxType(argument);
             while (clazz != null) {
-                if (clazz == parameter) break;
-                if (clazz == GString.class && parameter == String.class) {
+                if (clazz == parameter.getCachedClass()) break;
+                if (clazz == GString.class && parameter.getCachedClass() == String.class) {
                     objectDistance += 2;
                     break;
                 }
@@ -276,7 +276,7 @@ public class MetaClassHelper {
             // specific type
             // remove one to dist to be sure Object is prefered
             objectDistance--;
-            Class clazz = parameter;
+            Class clazz = parameter.getCachedClass();
             if (clazz.isPrimitive()) {
                 objectDistance += 2;
             } else {
@@ -289,7 +289,8 @@ public class MetaClassHelper {
         return objectDistance << 32;
     }
 
-    public static long calculateParameterDistance(Class[] arguments, Class[] parameters) {
+    public static long calculateParameterDistance(Class[] arguments, ParameterTypes pt) {
+        CachedClass [] parameters = pt.getParameterTypes();
         if (parameters.length == 0) return 0;
 
         long ret = 0;        
@@ -337,9 +338,9 @@ public class MetaClassHelper {
         if (arguments.length==parameters.length) {
             // case C&D, we use baseType to calculate and set it
             // to the value we need according to case C and D
-            Class baseType = parameters[noVargsLength]; // case C
-            if (!isAssignableFrom(parameters[noVargsLength],arguments[noVargsLength])) {
-                baseType=baseType.getComponentType(); // case D
+            CachedClass baseType = parameters[noVargsLength]; // case C
+            if (!parameters[noVargsLength].isAssignableFrom(arguments[noVargsLength])) {
+                baseType= ReflectionCache.getCachedClass(baseType.getCachedClass().getComponentType()); // case D
                 ret+=2l<<VARGS_SHIFT; // penalty for vargs
             }
             ret += calculateParameterDistance(arguments[noVargsLength], baseType);
@@ -348,7 +349,7 @@ public class MetaClassHelper {
             // we give our a vargs penalty for each exceeding argument and iterate
             // by using parameters[noVargsLength].getComponentType()
             ret += (2+arguments.length-parameters.length)<<VARGS_SHIFT;
-            Class vargsType = parameters[noVargsLength].getComponentType();
+            CachedClass vargsType = ReflectionCache.getCachedClass(parameters[noVargsLength].getCachedClass().getComponentType());
             for (int i = noVargsLength; i < arguments.length; i++) {
                 ret += calculateParameterDistance(arguments[i], vargsType);
             }
@@ -580,7 +581,7 @@ public class MetaClassHelper {
         return Array.newInstance(baseClass, length);
     }
 
-    private static GroovyRuntimeException createExceptionText(String init, MetaMethod method, Object object, Object[] args, Throwable reason, boolean setReason) {
+    public static GroovyRuntimeException createExceptionText(String init, MetaMethod method, Object object, Object[] args, Throwable reason, boolean setReason) {
         return new GroovyRuntimeException(
                 init
                         + method
@@ -591,29 +592,6 @@ public class MetaClassHelper {
                         + " reason: "
                         + reason,
                 setReason ? reason : null);
-    }
-
-    public static Object doMethodInvoke(Object object, MetaMethod method, Object[] argumentArray) {
-        argumentArray = method.coerceArgumentsToClasses(argumentArray);
-        try {
-            return method.invoke(object, argumentArray);
-        } catch (IllegalArgumentException e) {
-            //TODO: test if this is ok with new MOP, should be changed!
-            // we don't want the exception being unwrapped if it is a IllegalArgumentException
-            // but in the case it is for example a IllegalThreadStateException, we want the unwrapping
-            // from the runtime
-            //Note: the reason we want unwrapping sometimes and sometimes not is that the method
-            // invokation tries to invoke the method with and then reacts with type transformation
-            // if the invokation failed here. This is ok for IllegalArgumentException, but it is
-            // possible that a Reflector will be used to execute the call and then an Exception from inside
-            // the method is not wrapped in a InvocationTargetException and we will end here.
-            boolean setReason = e.getClass() != IllegalArgumentException.class || method instanceof GeneratedMetaMethod;
-            throw createExceptionText("failed to invoke method: ", method, object, argumentArray, e, setReason);
-        } catch (RuntimeException e) {
-            throw e;
-        } catch (Exception e) {
-            throw createExceptionText("failed to invoke method: ", method, object, argumentArray, e, true);
-        }
     }
 
     protected static String getClassName(Object object) {
@@ -650,6 +628,9 @@ public class MetaClassHelper {
     }
 
     public static boolean isAssignableFrom(Class classToTransformTo, Class classToTransformFrom) {
+        if (classToTransformTo == classToTransformFrom) {
+            return true;
+        }
         if (classToTransformFrom == null) return true;
         if (classToTransformTo == Object.class) return true;
         classToTransformTo = ReflectionCache.autoboxType(classToTransformTo);
@@ -812,4 +793,5 @@ public class MetaClassHelper {
         }
         return wrappedArguments;
     }
+
 }

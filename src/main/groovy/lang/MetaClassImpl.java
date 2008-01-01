@@ -901,7 +901,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         if (method != null) {
-            return MetaClassHelper.doMethodInvoke(object, method, arguments);
+            return method.doMethodInvoke(object, arguments);
         } else {
             // if no method was found, try to find a closure defined as a field of the class and run it
             Object value = null;
@@ -948,42 +948,47 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             if (e == null)
               return null;
 
-            MetaMethodIndex.CacheEntry cacheEntry;
-            if (!isCallToSuper) {
-                if (e.methods == null)
-                  return null;
-
-                cacheEntry = e.cachedMethod;
-                if (cacheEntry != null
-                   && (sameClasses(cacheEntry.params, arguments, e.methods instanceof MetaMethod))) {
-                     return cacheEntry.method;
-                }
-
-                cacheEntry = new MetaMethodIndex.CacheEntry ();
-                final Class[] classes = MetaClassHelper.convertToTypeArray(arguments);
-                cacheEntry.params = classes;
-                cacheEntry.method = (MetaMethod) chooseMethod(methodName, e.methods, classes, false);
-                e.cachedMethod = cacheEntry;
-                return cacheEntry.method;
-            }
-            else {
-                if (e.methodsForSuper == null)
-                  return null;
-
-                cacheEntry = e.cachedMethodForSuper;
-                if (cacheEntry != null
-                   && (sameClasses(cacheEntry.params, arguments, e.methodsForSuper instanceof MetaMethod))) {
-                     return cacheEntry.method;
-                }
-
-                cacheEntry = new MetaMethodIndex.CacheEntry ();
-                final Class[] classes = MetaClassHelper.convertToTypeArray(arguments);
-                cacheEntry.params = classes;
-                cacheEntry.method = (MetaMethod) chooseMethod(methodName, e.methodsForSuper, classes, false);
-                e.cachedMethodForSuper = cacheEntry;
-                return cacheEntry.method;
-            }
+            return isCallToSuper ? getSuperMethodWithCaching(arguments, e) : getNormalMethodWithCaching(arguments, e);
         }
+    }
+
+    private MetaMethod getSuperMethodWithCaching(Object[] arguments, MetaMethodIndex.Entry e) {
+        MetaMethodIndex.CacheEntry cacheEntry;
+        if (e.methodsForSuper == null)
+          return null;
+
+        cacheEntry = e.cachedMethodForSuper;
+        if (cacheEntry != null
+           && (sameClasses(cacheEntry.params, arguments, e.methodsForSuper instanceof MetaMethod))) {
+             return cacheEntry.method;
+        }
+
+        cacheEntry = new MetaMethodIndex.CacheEntry ();
+        final Class[] classes = MetaClassHelper.convertToTypeArray(arguments);
+        cacheEntry.params = classes;
+        cacheEntry.method = (MetaMethod) chooseMethod(e.name, e.methodsForSuper, classes, false);
+        e.cachedMethodForSuper = cacheEntry;
+        return cacheEntry.method;
+    }
+
+    private MetaMethod getNormalMethodWithCaching(Object[] arguments, MetaMethodIndex.Entry e) {
+        MetaMethodIndex.CacheEntry cacheEntry;
+        final Object methods = e.methods;
+        if (methods == null)
+          return null;
+
+        cacheEntry = e.cachedMethod;
+        if (cacheEntry != null
+           && (sameClasses(cacheEntry.params, arguments, methods instanceof MetaMethod))) {
+             return cacheEntry.method;
+        }
+
+        cacheEntry = new MetaMethodIndex.CacheEntry ();
+        final Class[] classes = MetaClassHelper.convertToTypeArray(arguments);
+        cacheEntry.params = classes;
+        cacheEntry.method = (MetaMethod) chooseMethod(e.name, methods, classes, false);
+        e.cachedMethod = cacheEntry;
+        return cacheEntry.method;
     }
 
     private boolean sameClasses(Class[] params, Object[] arguments, boolean weakNullCheck) {
@@ -1074,7 +1079,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         if (method != null) {
             unwrap(arguments);
-            return MetaClassHelper.doMethodInvoke(object, method, arguments);
+            return method.doMethodInvoke(object, arguments);
         }
         Object prop = null;
         try {
@@ -1095,7 +1100,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         while (superClass != Object.class && superClass != null) {
             MetaClass mc = registry.getMetaClass(superClass);
             method = mc.getStaticMetaMethod(methodName, argClasses);
-            if (method != null) return MetaClassHelper.doMethodInvoke(object, method, arguments);
+            if (method != null) return method.doMethodInvoke(object, arguments);
 
             try {
                 prop = mc.getProperty(superClass, superClass, methodName, false, false);
@@ -1361,7 +1366,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             //----------------------------------------------------------------------
             // executing the getter method
             //----------------------------------------------------------------------
-            return MetaClassHelper.doMethodInvoke(object, method, arguments);
+            return method.doMethodInvoke(object, arguments);
         }
 
         //----------------------------------------------------------------------
@@ -1976,7 +1981,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                         method.getParameterTypes()[1].getCachedClass());
                 arguments[1] = newValue;
             }
-            MetaClassHelper.doMethodInvoke(object, method, arguments);
+            method.doMethodInvoke(object, arguments);
             return;
         }
 
@@ -2405,7 +2410,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         LinkedList matches = new LinkedList();
         for (Iterator iter = matchingMethods.iterator(); iter.hasNext();) {
             Object method = iter.next();
-            Class[] paramTypes = MetaClassHelper.getParameterTypes(method).getNativeParameterTypes();
+            ParameterTypes paramTypes = MetaClassHelper.getParameterTypes(method);
             long dist = MetaClassHelper.calculateParameterDistance(arguments, paramTypes);
             if (dist == 0) return method;
             if (matches.size() == 0) {
