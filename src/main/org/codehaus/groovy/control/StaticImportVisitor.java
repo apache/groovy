@@ -161,6 +161,20 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         foundArgs = null;
         foundConstant = null;
         Expression objectExpression = transform(pe.getObjectExpression());
+
+        // check for static field access in a static method in the class containing the field
+        if (objectExpression instanceof ClassExpression && currentMethod != null && currentMethod.isStatic()) {
+            ClassExpression ce = (ClassExpression) objectExpression;
+            if (ce.getType().getName().equals(currentClass.getName())) {
+                FieldNode field = currentClass.getField(pe.getPropertyAsString());
+                if (field != null && field.isStatic()) {
+                    Expression expression = new FieldExpression(field);
+                    return expression;
+                }
+            }
+        }
+
+        // some this/super validation
         boolean isExplicitThisOrSuper = false;
         if (objectExpression instanceof VariableExpression) {
             VariableExpression ve = (VariableExpression) objectExpression;
