@@ -3604,9 +3604,12 @@ options {
                 }
             }
             int ttype = testLiteralsTable(IDENT);
-            // Java doesn't have the keyword 'as' so make some allowances here for 'as'
-            // in package names for better integration with existng Java packages
-            if (ttype == LITERAL_as && (LA(1) == '.' || lastSigTokenType == DOT || lastSigTokenType == LITERAL_package)) { ttype = IDENT; }
+            // Java doesn't have the keywords 'as', 'in' or 'def so we make some allowances
+            // for them in package names for better integration with existng Java packages
+            if ((ttype == LITERAL_as || ttype == LITERAL_def || ttype == LITERAL_in) &&
+                (LA(1) == '.' || lastSigTokenType == DOT || lastSigTokenType == LITERAL_package)) {
+                ttype = IDENT;
+            }
 
         /* The grammar allows a few keywords to follow dot.
          * TODO: Reinstate this logic if we change or remove keywordPropertyNames.
