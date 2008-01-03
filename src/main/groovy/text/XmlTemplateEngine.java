@@ -57,6 +57,7 @@ public class XmlTemplateEngine extends TemplateEngine {
 
         public GspPrinter(IndentPrinter out) {
             super(out, "\\\"");
+            setQuote("'");
         }
 
         protected void printGroovyTag(String tag, String text) {
@@ -73,7 +74,17 @@ public class XmlTemplateEngine extends TemplateEngine {
                 printLineEnd();
                 return;
             }
-            throw new RuntimeException("Unsupported tag named \"" + tag + "\".");
+            throw new RuntimeException("Unsupported gsp tag named \"" + tag + "\".");
+        }
+
+        protected void printSimpleItem(Object value) {
+            this.printLineBegin();
+            out.print(escapeQuote(InvokerHelper.toString(value)));
+            printLineEnd();
+        }
+
+        private String escapeQuote(String s) {
+            return s.replaceAll("\"", "\\\\\"");
         }
 
         protected void printLineBegin() {
