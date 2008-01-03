@@ -1318,13 +1318,52 @@ public class DefaultGroovyMethods {
      * as a transformer, returning a list of transformed values.
      *
      * @param self       a collection
-     * @param collection the Collection to which the mapped values are added
-     * @param closure    the closure used to map each element of the collection
+     * @param collection an initial Collection to which the transformed values are added
+     * @param closure    the closure used to transform each element of the collection
      * @return the resultant collection
      */
     public static Collection collect(Collection self, Collection collection, Closure closure) {
         for (Iterator iter = self.iterator(); iter.hasNext();) {
             collection.add(closure.call(iter.next()));
+            if (closure.getDirective() == Closure.DONE) {
+                break;
+            }
+        }
+        return collection;
+    }
+
+    /**
+     * Recursively iterates through this collection transforming each non-Collection entry
+     * into a new value using the closure as a transformer. Returns a potentially nested
+     * list of transformed values.
+     *
+     * @param self       a collection
+     * @param closure    the closure used to transform each element of the collection
+     * @return the resultant collection
+     */
+    public static Collection collectAll(Collection self, Closure closure) {
+        return collectAll(self, new ArrayList(self.size()), closure);
+    }
+
+    /**
+     * Recursively iterates through this collection transforming each non-Collection entry
+     * into a new value using the closure as a transformer. Returns a potentially nested
+     * list of transformed values.
+     *
+     * @param self       a collection
+     * @param collection an initial Collection to which the transformed values are added
+     * @param closure    the closure used to transform each element of the collection
+     * @return the resultant collection
+     */
+    public static Collection collectAll(Collection self, Collection collection, Closure closure) {
+        for (Iterator iter = self.iterator(); iter.hasNext();) {
+            final Object o = iter.next();
+            if (o instanceof Collection) {
+                Collection c = (Collection) o;
+                collection.add(collectAll(c, new ArrayList(c.size()), closure));
+            } else {
+                collection.add(closure.call(o));
+            }
             if (closure.getDirective() == Closure.DONE) {
                 break;
             }

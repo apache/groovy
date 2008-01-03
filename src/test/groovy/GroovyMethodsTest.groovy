@@ -39,6 +39,13 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert [1: 'a', 2: 'b', 3: 'c'].collect {it.getKey() + "*" + it.getValue()} == ['1*a', '2*b', '3*c']
     }
 
+    void testCollectAll() {
+        def animalLists= [["ant", "mouse", "elephant"], ["deer", "monkey"]]
+        assert animalLists*.size() == [3, 2]
+        assert animalLists.collect{ it.size() } == [3, 2]
+        assert animalLists.collectAll{ it.size() } == [[3, 5, 8], [4, 6]]
+    }
+
     void testAsCoercion() {
         def d0 = new Dimension(100, 200)
         assert d0 == new Dimension(width: 100, height: 200)
