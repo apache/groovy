@@ -35,7 +35,7 @@ import org.codehaus.groovy.runtime.GroovyCategorySupport;
  * with these objects implicit in their scope:
  *
  * <ul>
- * 	<li>request - the HttpServletRequest</li>
+ *  <li>request - the HttpServletRequest</li>
  *  <li>response - the HttpServletResponse</li>
  *  <li>application - the ServletContext associated with the servlet</li>
  *  <li>session - the HttpSession associated with the HttpServletRequest</li>
@@ -79,7 +79,7 @@ public class GroovyServlet extends AbstractHttpServlet {
     /**
      * The script engine executing the Groovy scripts for this servlet
      */
-    private static GroovyScriptEngine gse;
+    private GroovyScriptEngine gse;
 
     /**
      * Initialize the GroovyServlet.
@@ -91,7 +91,7 @@ public class GroovyServlet extends AbstractHttpServlet {
         super.init(config);
 
         // Set up the scripting engine
-        gse = new GroovyScriptEngine(this);
+        gse = createGroovyScriptEngine();
 
         servletContext.log("Groovy servlet initialized on " + gse + ".");
     }
@@ -180,4 +180,12 @@ public class GroovyServlet extends AbstractHttpServlet {
         }
     }
 
+    /**
+     * Hook method to setup the GroovyScriptEngine to use.<br/>
+     * Subclasses may override this method to provide a custom
+     * engine.
+     */ 
+    protected GroovyScriptEngine createGroovyScriptEngine(){
+        return new GroovyScriptEngine(this);
+    }
 }
