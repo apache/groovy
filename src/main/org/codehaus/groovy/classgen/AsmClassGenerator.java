@@ -1129,6 +1129,10 @@ public class AsmClassGenerator extends ClassGenerator {
     protected void evaluateExpression(Expression expression) {
         visitAndAutoboxBoolean(expression);
 
+        if (isPopRequired(expression)) {
+            return; // we already have the return value
+        }
+        // otherwise create return value if appropriate
         Expression assignExpr = createReturnLHSExpression(expression);
         if (assignExpr != null) {
             leftHandExpression = false;
