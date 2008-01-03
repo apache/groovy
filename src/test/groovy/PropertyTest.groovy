@@ -1,6 +1,6 @@
 package groovy
 
-/** 
+/**
  * Tests the use of properties in Groovy
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
@@ -159,6 +159,23 @@ class PropertyTest extends GroovyTestCase {
         def c = new Child();
         assert c.normalProperty == 2
     }
+
+    //GROOVY-2244
+    public void testWriteOnlyBeanProperty() {
+        def bean = new Child()
+
+        // assert the property exists
+        assert bean.metaClass.properties.findAll{it.name == 'superThing'}
+
+        // attempt to write to it
+        bean.superThing= 'x'
+
+        // attempt to read it
+        shouldFailWithCause(MissingPropertyException) {
+            fail("We shouldn't be able to read bean.superThing, but we can: '$bean.superThing'")
+        }
+    }
+    
 }
 
 class Base {
