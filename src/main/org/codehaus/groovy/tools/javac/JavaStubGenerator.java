@@ -72,6 +72,7 @@ public class JavaStubGenerator
         Verifier verifier = new Verifier() {
             public void addCovariantMethods(ClassNode cn) {}
             protected void addTimeStamp(ClassNode node) {}
+            protected void addInitialization(ClassNode node) {}
         };
         verifier.visitClass(classNode);
         

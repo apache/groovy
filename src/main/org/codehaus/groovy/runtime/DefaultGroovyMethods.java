@@ -3330,7 +3330,8 @@ public class DefaultGroovyMethods {
     /**
      * Create a Collection as a union of two collections. If the left collection
      * is a Set, then the returned collection will be a Set otherwise a List.
-     * TODO: remove equivalent numbers after merge, e.g. 1L and 1G?
+     * This operation will always create a new object for the result, 
+     * while the operands remain unchanged.
      *
      * @param left  the left Collection
      * @param right the right Collection
@@ -3353,7 +3354,8 @@ public class DefaultGroovyMethods {
     /**
      * Create a collection as a union of a Collection and an Object. If the collection
      * is a Set, then the returned collection will be a Set otherwise a List.
-     * TODO: remove equivalent numbers after merge, e.g. 1L and 1G?
+     * This operation will always create a new object for the result, 
+     * while the operands remain unchanged.
      *
      * @param left  a Collection
      * @param right an object to add/append
@@ -5441,6 +5443,8 @@ public class DefaultGroovyMethods {
 
     /**
      * Add a Character and a Number.
+     * This operation will always create a new object for the result, 
+     * while the operands remain unchanged.
      *
      * @param left  a Character
      * @param right a Number
@@ -5463,6 +5467,8 @@ public class DefaultGroovyMethods {
 
     /**
      * Add two Characters.
+     * This operation will always create a new object for the result, 
+     * while the operands remain unchanged.
      *
      * @param left  a Character
      * @param right a Character
