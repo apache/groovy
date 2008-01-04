@@ -74,17 +74,21 @@ public class XmlTemplateEngine extends TemplateEngine {
                 printLineEnd();
                 return;
             }
-            throw new RuntimeException("Unsupported gsp tag named \"" + tag + "\".");
+            throw new RuntimeException("Unsupported 'gsp:' tag named \"" + tag + "\".");
         }
 
         protected void printSimpleItem(Object value) {
             this.printLineBegin();
-            out.print(escapeQuote(InvokerHelper.toString(value)));
+            out.print(escapeSpecialChars(InvokerHelper.toString(value)));
             printLineEnd();
         }
 
-        private String escapeQuote(String s) {
-            return s.replaceAll("\"", "\\\\\"");
+        private String escapeSpecialChars(String s) {
+            s = s.replaceAll("\"", "&quot;");
+            s = s.replaceAll("<", "&lt;");
+            s = s.replaceAll(">", "&gt;");
+            s = s.replaceAll("'", "&apos;");
+            return s;
         }
 
         protected void printLineBegin() {
