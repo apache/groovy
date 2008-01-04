@@ -159,6 +159,19 @@ public class SimpleTemplateEngine extends TemplateEngine {
                     }
                     continue; // at least '<' is consumed ... read next chars.
                 }
+                if (c == '$') {
+                    reader.mark(1);
+                    c = reader.read();
+                    if (c != '{') {
+                        sw.write('$');
+                        reader.reset();
+                    } else {
+                        reader.mark(1);
+                        sw.write("${");
+                        processGSstring(reader, sw);
+                    }
+                    continue; // at least '$' is consumed ... read next chars.
+                }
                 if (c == '\"') {
                     sw.write('\\');
                 }
@@ -189,6 +202,18 @@ public class SimpleTemplateEngine extends TemplateEngine {
 
         private void endScript(StringWriter sw) {
             sw.write("\");\n");
+        }
+
+        private void processGSstring(Reader reader, StringWriter sw) throws IOException {
+            int c;
+            while ((c = reader.read()) != -1) {
+                if (c != '\n' && c != '\r') {
+                    sw.write(c);
+                }
+                if (c == '}') {
+                    break;
+                }
+            }
         }
 
         /**
