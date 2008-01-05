@@ -84,11 +84,44 @@ public class XmlTemplateEngine extends TemplateEngine {
         }
 
         private String escapeSpecialChars(String s) {
-            s = s.replaceAll("\"", "&quot;");
-            s = s.replaceAll("<", "&lt;");
-            s = s.replaceAll(">", "&gt;");
-            s = s.replaceAll("'", "&apos;");
-            return s;
+            StringBuffer sb = new StringBuffer();
+            boolean inGString = false;
+            for (int i = 0; i < s.length(); i++) {
+                final char c = s.charAt(i);
+                switch (c) {
+                    case '$':
+                        sb.append("$");
+                        if (i < s.length() - 1 && s.charAt(i + 1) == '{') inGString = true;
+                        break;
+                    case '<':
+                        append(sb, c, "&lt;", inGString);
+                        break;
+                    case '>':
+                        append(sb, c, "&gt;", inGString);
+                        break;
+                    case '"':
+                        append(sb, c, "&quot;", inGString);
+                        break;
+                    case '\'':
+                        append(sb, c, "&apos;", inGString);
+                        break;
+                    case '}':
+                        sb.append(c);
+                        inGString = false;
+                        break;
+                    default:
+                        sb.append(c);
+                }
+            }
+            return sb.toString();
+        }
+
+        private void append(StringBuffer sb, char plainChar, String xmlString, boolean inGString) {
+            if (inGString) {
+                sb.append(plainChar);
+            } else {
+                sb.append(xmlString);
+            }
         }
 
         protected void printLineBegin() {
