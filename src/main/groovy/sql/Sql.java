@@ -53,6 +53,10 @@ public class Sql {
 
     private Connection useConnection;
 
+    private int resultSetType = ResultSet.TYPE_FORWARD_ONLY;
+    private int resultSetConcurrency = ResultSet.CONCUR_READ_ONLY;
+    private int resultSetHoldability = -1;
+
     /**
      * let's only warn of using deprecated methods once
      */
@@ -167,6 +171,76 @@ public class Sql {
     public static Sql newInstance(String url, String driverClassName) throws SQLException, ClassNotFoundException {
         loadDriver(driverClassName);
         return newInstance(url);
+    }
+
+    /**
+     * Gets the resultSetType for statements created using the connection.
+     *
+     * @return the current resultSetType value
+     */
+    public int getResultSetType() {
+        return resultSetType;
+    }
+
+    /**
+     * Sets the resultSetType for statements created using the connection.
+     * May cause SQLFeatureNotSupportedException exceptions to occur if the
+     * underlying database doesn't support the requested type value.
+     *
+     * @param resultSetType one of the following <code>ResultSet</code>
+     *        constants:
+     *         <code>ResultSet.TYPE_FORWARD_ONLY</code>,
+     *         <code>ResultSet.TYPE_SCROLL_INSENSITIVE</code>, or
+     *         <code>ResultSet.TYPE_SCROLL_SENSITIVE</code>
+     */
+    public void setResultSetType(int resultSetType) {
+        this.resultSetType = resultSetType;
+    }
+
+    /**
+     * Gets the resultSetConcurrency for statements created using the connection.
+     *
+     * @return the current resultSetConcurrency value
+     */
+    public int getResultSetConcurrency() {
+        return resultSetConcurrency;
+    }
+
+    /**
+     * Sets the resultSetConcurrency for statements created using the connection.
+     * May cause SQLFeatureNotSupportedException exceptions to occur if the
+     * underlying database doesn't support the requested concurrency value.
+     *
+     * @param resultSetConcurrency one of the following <code>ResultSet</code>
+     *        constants:
+     *         <code>ResultSet.CONCUR_READ_ONLY</code> or
+     *         <code>ResultSet.CONCUR_UPDATABLE</code>
+     */
+    public void setResultSetConcurrency(int resultSetConcurrency) {
+        this.resultSetConcurrency = resultSetConcurrency;
+    }
+
+    /**
+     * Gets the resultSetHoldability for statements created using the connection.
+     *
+     * @return the current resultSetHoldability value or -1 if not set
+     */
+    public int getResultSetHoldability() {
+        return resultSetHoldability;
+    }
+
+    /**
+     * Sets the resultSetHoldability for statements created using the connection.
+     * May cause SQLFeatureNotSupportedException exceptions to occur if the
+     * underlying database doesn't support the requested holdability value.
+     *
+     * @param resultSetHoldability one of the following <code>ResultSet</code>
+     *        constants:
+     *         <code>ResultSet.HOLD_CURSORS_OVER_COMMIT</code> or
+     *         <code>ResultSet.CLOSE_CURSORS_AT_COMMIT</code>
+     */
+    public void setResultSetHoldability(int resultSetHoldability) {
+        this.resultSetHoldability = resultSetHoldability;
     }
 
     /**
@@ -382,7 +456,7 @@ public class Sql {
      */
     public void query(String sql, Closure closure) throws SQLException {
         Connection connection = createConnection();
-        Statement statement = connection.createStatement();
+        Statement statement = createConnection(connection);
         configure(statement);
         ResultSet results = null;
         try {
@@ -397,6 +471,13 @@ public class Sql {
         finally {
             closeResources(connection, statement, results);
         }
+    }
+
+    private Statement createConnection(Connection connection) throws SQLException {
+        if (resultSetHoldability == -1) {
+            return connection.createStatement(resultSetType, resultSetConcurrency);
+        }
+        return connection.createStatement(resultSetType, resultSetConcurrency, resultSetHoldability);
     }
 
     /**
@@ -458,7 +539,7 @@ public class Sql {
      */
     public void eachRow(String sql, Closure metaClosure, Closure rowClosure) throws SQLException {
         Connection connection = createConnection();
-        Statement statement = connection.createStatement();
+        Statement statement = createConnection(connection);
         configure(statement);
         ResultSet results = null;
         try {
@@ -554,7 +635,7 @@ public class Sql {
     public List rows(String sql, Closure metaClosure) throws SQLException {
         List results = new ArrayList();
         Connection connection = createConnection();
-        Statement statement = connection.createStatement();
+        Statement statement = createConnection(connection);
         configure(statement);
         ResultSet rs = null;
         try {
@@ -651,7 +732,7 @@ public class Sql {
         Statement statement = null;
         try {
             log.fine(sql);
-            statement = connection.createStatement();
+            statement = createConnection(connection);
             configure(statement);
             boolean isResultSet = statement.execute(sql);
             this.updateCount = statement.getUpdateCount();
@@ -676,7 +757,7 @@ public class Sql {
         Statement statement = null;
         try {
             log.fine(sql);
-            statement = connection.createStatement();
+            statement = createConnection(connection);
             configure(statement);
             this.updateCount = statement.executeUpdate(sql);
             return this.updateCount;
@@ -703,7 +784,7 @@ public class Sql {
         Statement statement = null;
         try {
             log.fine(sql);
-            statement = connection.createStatement();
+            statement = createConnection(connection);
             configure(statement);
             boolean hasResultSet = statement.execute(sql, Statement.RETURN_GENERATED_KEYS);
 
