@@ -101,6 +101,17 @@ public class GStringTemplateEngine extends TemplateEngine {
                 } else if (c == '"') {
                     appendCharacter('\\', templateExpressions, writingString);
                     writingString = true;
+                } else if (c == '$') {
+                    appendCharacter('$', templateExpressions, writingString);
+                    writingString = true;
+                    c = reader.read();
+                    if (c == '{') {
+                        appendCharacter('{', templateExpressions, writingString);
+                        writingString = true;
+                        parseGSstring(reader, writingString, templateExpressions);
+                        writingString = true;
+                        continue;
+                    }
                 }
                 appendCharacter((char) c, templateExpressions, writingString);
                 writingString = true;
@@ -138,6 +149,20 @@ public class GStringTemplateEngine extends TemplateEngine {
                 templateExpressions.append("out << \"\"\"");
             }
             templateExpressions.append(c);
+        }
+
+        private void parseGSstring(Reader reader, boolean writingString, StringBuffer templateExpressions) throws IOException {
+            if (!writingString) {
+                templateExpressions.append("\"\"\"; ");
+            }
+            while (true) {
+                int c = reader.read();
+                if (c == -1) break;
+                templateExpressions.append((char) c);
+                if (c == '}') {
+                    break;
+                }
+            }
         }
 
         /**
