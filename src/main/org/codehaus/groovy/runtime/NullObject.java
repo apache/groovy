@@ -53,7 +53,7 @@ public class NullObject extends GroovyObjectSupport {
      * @return a NPE
      */
     public Object getProperty(String property) {
-        throw new NullPointerException("Cannot get property " + property + "() on null object");
+        throw new NullPointerException("Cannot get property '" + property + "' on null object");
     }
 
     /**
@@ -63,7 +63,7 @@ public class NullObject extends GroovyObjectSupport {
      * @param newValue - the new value of the property
      */
     public void setProperty(String property, Object newValue) {
-        throw new NullPointerException("Cannot set property " + property + "() on null object");
+        throw new NullPointerException("Cannot set property '" + property + "' on null object");
     }
 
     /**
