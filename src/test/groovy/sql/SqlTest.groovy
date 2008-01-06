@@ -40,10 +40,17 @@ class SqlTest extends GroovyTestCase {
         sql.eachRow("select * from FOOD where type=${foo}") { println("Drink ${it.name}") }
     }
 
-    void testSqlQueryWithWhereClauseWith2Arguments() {
+    void testEachRowWithWhereClauseWith2Arguments() {
         def foo = "cheese"
         def bar = "edam"
         sql.eachRow("select * from FOOD where type=${foo} and name != ${bar}") { println("Found cheese ${it.name}") }
+    }
+
+    void testFirstRowWithWhereClauseWith2Arguments() {
+        def foo = "cheese"
+        def bar = "edam"
+        def result = sql.firstRow("select * from FOOD where type=${foo} and name != ${bar}")
+        assert result.name == 'brie'
     }
 
     void testSqlQueryWithIncorrectlyQuotedDynamicExpressions() {
