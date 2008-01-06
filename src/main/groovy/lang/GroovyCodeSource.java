@@ -84,45 +84,47 @@ public class GroovyCodeSource {
 			throw new RuntimeException("A CodeSource file URL cannot be constructed from the supplied codeBase: " + codeBase);
 		}
 	}
-	
-	public GroovyCodeSource(final File file) throws FileNotFoundException {
-		if (!file.exists())
-		    throw new FileNotFoundException(file.toString() + " (" +  file.getAbsolutePath() +  ")");
-		else {
-		   try {
-		       if (!file.canRead())
-		           throw new RuntimeException(file.toString() + " can not be read. Check the read permisson of the file \"" + file.toString() + "\" (" +  file.getAbsolutePath() +  ").");
-		   }
-		   catch (SecurityException e) {
-		        throw e;
-		    }
-		}
 
-		//this.inputStream = new FileInputStream(file);
-		this.file = file;
-		this.inputStream = null;
+    public GroovyCodeSource(final File file) throws FileNotFoundException {
+        if (!file.exists()) {
+            throw new FileNotFoundException(file.toString() + " (" + file.getAbsolutePath() + ")");
+        }
+        if (file.isDirectory()) {
+            throw new IllegalArgumentException(file.toString() + " (" + file.getAbsolutePath() + ") is a directory not a Groovy source file.");
+        }
+        try {
+            if (!file.canRead())
+                throw new RuntimeException(file.toString() + " can not be read. Check the read permisson of the file \"" + file.toString() + "\" (" + file.getAbsolutePath() + ").");
+        }
+        catch (SecurityException e) {
+            throw e;
+        }
+
+        //this.inputStream = new FileInputStream(file);
+        this.file = file;
+        this.inputStream = null;
         this.cachable = true;
-		//The calls below require access to user.dir - allow here since getName() and getCodeSource() are
-		//package private and used only by the GroovyClassLoader.
-		try {
-            Object[] info = (Object[]) AccessController.doPrivileged( new PrivilegedExceptionAction() {
-				public Object run() throws MalformedURLException {
+        //The calls below require access to user.dir - allow here since getName() and getCodeSource() are
+        //package private and used only by the GroovyClassLoader.
+        try {
+            Object[] info = (Object[]) AccessController.doPrivileged(new PrivilegedExceptionAction() {
+                public Object run() throws MalformedURLException {
                     Object[] info = new Object[2];
                     URL url = file.toURI().toURL();
                     info[0] = url.toExternalForm();
-					//toURI().toURL() will encode, but toURL() will not.
-					info[1] = new CodeSource(url, (Certificate[]) null);
+                    //toURI().toURL() will encode, but toURL() will not.
+                    info[1] = new CodeSource(url, (Certificate[]) null);
                     return info;
-				}
-			});
-			this.name = (String) info[0];
+                }
+            });
+            this.name = (String) info[0];
             this.codeSource = (CodeSource) info[1];
-		} catch (PrivilegedActionException pae) {
-			throw new RuntimeException("Could not construct a URL from: " + file);
-		}
-	}
-	
-	public GroovyCodeSource(URL url) throws IOException {
+        } catch (PrivilegedActionException pae) {
+            throw new RuntimeException("Could not construct a URL from: " + file);
+        }
+    }
+
+    public GroovyCodeSource(URL url) throws IOException {
 		if (url == null) {
 			throw new RuntimeException("Could not construct a GroovyCodeSource from a null URL");
 		}
