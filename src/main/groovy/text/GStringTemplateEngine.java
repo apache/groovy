@@ -15,11 +15,7 @@
  */
 package groovy.text;
 
-import groovy.lang.Closure;
-import groovy.lang.GroovyClassLoader;
-import groovy.lang.GroovyCodeSource;
-import groovy.lang.GroovyObject;
-import groovy.lang.Writable;
+import groovy.lang.*;
 
 import java.io.IOException;
 import java.io.Reader;
@@ -35,6 +31,7 @@ import org.codehaus.groovy.control.CompilationFailedException;
  */
 public class GStringTemplateEngine extends TemplateEngine {
     private final ClassLoader parentLoader;
+    private static int counter = 1;
 
     public GStringTemplateEngine() {
         this(GStringTemplate.class.getClassLoader());
@@ -129,7 +126,12 @@ public class GStringTemplateEngine extends TemplateEngine {
                             return new GroovyClassLoader(parentLoader);
                         }
                     });
-            final Class groovyClass = loader.parseClass(new GroovyCodeSource(templateExpressions.toString(), "C", "x"));
+            final Class groovyClass;
+            try {
+                groovyClass = loader.parseClass(new GroovyCodeSource(templateExpressions.toString(), "GStringTemplateScript" + counter++ + ".groovy", "x"));
+            } catch (Exception e) {
+                throw new GroovyRuntimeException("Failed to parse template script (your template may contain an error or be trying to use expressions not currently supported): " + e.getMessage());
+            }
 
             try {
                 final GroovyObject object = (GroovyObject) groovyClass.newInstance();
