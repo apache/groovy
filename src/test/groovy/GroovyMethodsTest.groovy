@@ -493,6 +493,31 @@ class GroovyMethodsTest extends GroovyTestCase {
         // not really concerned about  correctness, rather that the method can be called, however..
         assert col.intersect(rightCol) == ["2"]
     }
+
+    void testFileWithReader() {
+        def f = new File('build.properties')
+        def expected = f.text
+        assert expected == f.withReader { r -> r.text } 
+    }
+
+    void testFileWithInputStream() {
+        def f = new File('build.properties')
+        def buf = new byte[f.size()]
+        assert buf.size() == f.withInputStream { i -> i.read(buf) } 
+    }
+
+    void testUrlReader() {
+        def u = new File('build.properties').toURL()
+        def expected = u.text
+        assert expected == u.withReader { r -> r.text } 
+    }
+
+    void testUrlWithInputStream() {
+        def f = new File('build.properties')
+        def u = f.toURL()
+        def buf = new byte[f.size()]
+        assert buf.size() == u.withInputStream { i -> i.read(buf) } 
+    }
 }
 
 class WackyHashCode {

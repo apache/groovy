@@ -6890,11 +6890,12 @@ public class DefaultGroovyMethods {
      *
      * @param file    a File
      * @param closure a closure
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      * @see #withStream(InputStream,Closure)
      */
-    public static void withObjectInputStream(File file, Closure closure) throws IOException {
-        withStream(newObjectInputStream(file), closure);
+    public static Object withObjectInputStream(File file, Closure closure) throws IOException {
+        return withStream(newObjectInputStream(file), closure);
     }
 
     /**
@@ -6904,11 +6905,12 @@ public class DefaultGroovyMethods {
      *
      * @param file    a File
      * @param closure a closure
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      * @see #withStream(OutputStream,Closure)
      */
-    public static void withObjectOutputStream(File file, Closure closure) throws IOException {
-        withStream(newObjectOutputStream(file), closure);
+    public static Object withObjectOutputStream(File file, Closure closure) throws IOException {
+        return withStream(newObjectOutputStream(file), closure);
     }
 
     /**
@@ -7660,10 +7662,11 @@ public class DefaultGroovyMethods {
      *
      * @param file    a file object
      * @param closure a closure
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      */
-    public static void withReader(File file, Closure closure) throws IOException {
-        withReader(newReader(file), closure);
+    public static Object withReader(File file, Closure closure) throws IOException {
+        return withReader(newReader(file), closure);
     }
 
     /**
@@ -7694,11 +7697,12 @@ public class DefaultGroovyMethods {
      *
      * @param file    a File
      * @param closure a closure
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      * @see #withStream(OutputStream,Closure)
      */
-    public static void withOutputStream(File file, Closure closure) throws IOException {
-        withStream(newOutputStream(file), closure);
+    public static Object withOutputStream(File file, Closure closure) throws IOException {
+        return withStream(newOutputStream(file), closure);
     }
 
     /**
@@ -7707,11 +7711,26 @@ public class DefaultGroovyMethods {
      *
      * @param file    a File
      * @param closure a closure
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      * @see #withStream(InputStream,Closure)
      */
-    public static void withInputStream(File file, Closure closure) throws IOException {
-        withStream(newInputStream(file), closure);
+    public static Object withInputStream(File file, Closure closure) throws IOException {
+        return withStream(newInputStream(file), closure);
+    }
+
+    /**
+     * Creates a new InputStream for this URL and passes it into the closure.
+     * This method ensures the stream is closed after the closure returns.
+     *
+     * @param url     a URL
+     * @param closure a closure
+     * @return the value returned by the closure
+     * @throws IOException if an IOException occurs.
+     * @see #withStream(InputStream,Closure)
+     */
+    public static Object withInputStream(URL url, Closure closure) throws IOException {
+        return withStream(newInputStream(url), closure);
     }
 
     /**
@@ -7720,11 +7739,12 @@ public class DefaultGroovyMethods {
      *
      * @param file    a File
      * @param closure a closure
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      * @see #withStream(OutputStream,Closure)
      */
-    public static void withDataOutputStream(File file, Closure closure) throws IOException {
-        withStream(newDataOutputStream(file), closure);
+    public static Object withDataOutputStream(File file, Closure closure) throws IOException {
+        return withStream(newDataOutputStream(file), closure);
     }
 
     /**
@@ -7733,11 +7753,12 @@ public class DefaultGroovyMethods {
      *
      * @param file    a File
      * @param closure a closure
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      * @see #withStream(InputStream,Closure)
      */
-    public static void withDataInputStream(File file, Closure closure) throws IOException {
-        withStream(newDataInputStream(file), closure);
+    public static Object withDataInputStream(File file, Closure closure) throws IOException {
+        return withStream(newDataInputStream(file), closure);
     }
 
     /**
@@ -7826,10 +7847,11 @@ public class DefaultGroovyMethods {
      *
      * @param file    a File
      * @param closure a closure
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      */
-    public static void withWriter(File file, Closure closure) throws IOException {
-        withWriter(newWriter(file), closure);
+    public static Object withWriter(File file, Closure closure) throws IOException {
+        return withWriter(newWriter(file), closure);
     }
 
     /**
@@ -7840,10 +7862,11 @@ public class DefaultGroovyMethods {
      * @param file    a File
      * @param charset the charset used
      * @param closure a closure
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      */
-    public static void withWriter(File file, String charset, Closure closure) throws IOException {
-        withWriter(newWriter(file, charset), closure);
+    public static Object withWriter(File file, String charset, Closure closure) throws IOException {
+        return withWriter(newWriter(file, charset), closure);
     }
 
     /**
@@ -7854,10 +7877,11 @@ public class DefaultGroovyMethods {
      * @param file    a File
      * @param charset the charset used
      * @param closure a closure
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      */
-    public static void withWriterAppend(File file, String charset, Closure closure) throws IOException {
-        withWriter(newWriter(file, charset, true), closure);
+    public static Object withWriterAppend(File file, String charset, Closure closure) throws IOException {
+        return withWriter(newWriter(file, charset, true), closure);
     }
 
     /**
@@ -7866,10 +7890,11 @@ public class DefaultGroovyMethods {
      *
      * @param file    a File
      * @param closure a closure
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      */
-    public static void withWriterAppend(File file, Closure closure) throws IOException {
-        withWriter(newWriter(file, true), closure);
+    public static Object withWriterAppend(File file, Closure closure) throws IOException {
+        return withWriter(newWriter(file, true), closure);
     }
 
     /**
@@ -7903,10 +7928,11 @@ public class DefaultGroovyMethods {
      *
      * @param file    a File
      * @param closure the closure to invoke with the PrintWriter
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      */
-    public static void withPrintWriter(File file, Closure closure) throws IOException {
-        withWriter(newPrintWriter(file), closure);
+    public static Object withPrintWriter(File file, Closure closure) throws IOException {
+        return withWriter(newPrintWriter(file), closure);
     }
 
     /**
@@ -7917,10 +7943,11 @@ public class DefaultGroovyMethods {
      * @param file    a File
      * @param charset the charset
      * @param closure the closure to invoke with the PrintWriter
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      */
-    public static void withPrintWriter(File file, String charset, Closure closure) throws IOException {
-        withWriter(newPrintWriter(file, charset), closure);
+    public static Object withPrintWriter(File file, String charset, Closure closure) throws IOException {
+        return withWriter(newPrintWriter(file, charset), closure);
     }
 
     /**
@@ -7929,11 +7956,13 @@ public class DefaultGroovyMethods {
      *
      * @param writer  the writer which is used and then closed
      * @param closure the closure that the writer is passed into
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      */
-    public static void withWriter(Writer writer, Closure closure) throws IOException {
+    public static Object withWriter(Writer writer, Closure closure) throws IOException {
         try {
-            closure.call(writer);
+            Object result = closure.call(writer);
+
             try {
                 writer.flush();
             } catch (IOException e) {
@@ -7942,6 +7971,7 @@ public class DefaultGroovyMethods {
             Writer temp = writer;
             writer = null;
             temp.close();
+            return result;
         } finally {
             closeWriterWithWarning(writer);
         }
@@ -7953,15 +7983,18 @@ public class DefaultGroovyMethods {
      *
      * @param reader  the reader which is used and then closed
      * @param closure the closure that the writer is passed into
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      */
-    public static void withReader(Reader reader, Closure closure) throws IOException {
+    public static Object withReader(Reader reader, Closure closure) throws IOException {
         try {
-            closure.call(reader);
+            Object result = closure.call(reader);
 
             Reader temp = reader;
             reader = null;
             temp.close();
+
+            return result;
         } finally {
             closeReaderWithWarning(reader);
         }
@@ -7973,15 +8006,18 @@ public class DefaultGroovyMethods {
      *
      * @param stream  the stream which is used and then closed
      * @param closure the closure that the stream is passed into
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      */
-    public static void withStream(InputStream stream, Closure closure) throws IOException {
+    public static Object withStream(InputStream stream, Closure closure) throws IOException {
         try {
-            closure.call(stream);
+            Object result = closure.call(stream);
 
             InputStream temp = stream;
             stream = null;
             temp.close();
+
+            return result;
         } finally {
             closeInputStreamWithWarning(stream);
         }
@@ -8029,10 +8065,11 @@ public class DefaultGroovyMethods {
      *
      * @param url     a URL
      * @param closure the closure to invoke with the reader
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      */
-    public static void withReader(URL url, Closure closure) throws IOException {
-        withReader(url.openConnection().getInputStream(), closure);
+    public static Object withReader(URL url, Closure closure) throws IOException {
+        return withReader(url.openConnection().getInputStream(), closure);
     }
 
     /**
@@ -8041,10 +8078,11 @@ public class DefaultGroovyMethods {
      *
      * @param in      a stream
      * @param closure the closure to invoke with the InputStream
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      */
-    public static void withReader(InputStream in, Closure closure) throws IOException {
-        withReader(new InputStreamReader(in), closure);
+    public static Object withReader(InputStream in, Closure closure) throws IOException {
+        return withReader(new InputStreamReader(in), closure);
     }
 
     /**
@@ -8053,11 +8091,12 @@ public class DefaultGroovyMethods {
      *
      * @param stream  the stream which is used and then closed
      * @param closure the closure that the writer is passed into
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      * @see #withWriter(Writer,Closure)
      */
-    public static void withWriter(OutputStream stream, Closure closure) throws IOException {
-        withWriter(new OutputStreamWriter(stream), closure);
+    public static Object withWriter(OutputStream stream, Closure closure) throws IOException {
+        return withWriter(new OutputStreamWriter(stream), closure);
     }
 
     /**
@@ -8067,11 +8106,12 @@ public class DefaultGroovyMethods {
      * @param stream  the stream which is used and then closed
      * @param charset the charset used
      * @param closure the closure that the writer is passed into
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      * @see #withWriter(Writer,Closure)
      */
-    public static void withWriter(OutputStream stream, String charset, Closure closure) throws IOException {
-        withWriter(new OutputStreamWriter(stream, charset), closure);
+    public static Object withWriter(OutputStream stream, String charset, Closure closure) throws IOException {
+        return withWriter(new OutputStreamWriter(stream, charset), closure);
     }
 
     /**
@@ -8080,16 +8120,19 @@ public class DefaultGroovyMethods {
      *
      * @param os      the stream which is used and then closed
      * @param closure the closure that the stream is passed into
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      */
-    public static void withStream(OutputStream os, Closure closure) throws IOException {
+    public static Object withStream(OutputStream os, Closure closure) throws IOException {
         try {
-            closure.call(os);
+            Object result = closure.call(os);
             os.flush();
 
             OutputStream temp = os;
             os = null;
             temp.close();
+
+            return result;
         } finally {
             closeOutputStreamWithWarning(os);
         }
@@ -8104,6 +8147,18 @@ public class DefaultGroovyMethods {
      */
     public static BufferedInputStream newInputStream(File file) throws FileNotFoundException {
         return new BufferedInputStream(new FileInputStream(file));
+    }
+
+    /**
+     * Creates a buffered input stream for this URL.
+     *
+     * @param url a URL
+     * @return a BufferedInputStream of the URL
+     * @throws MalformedURLException is thrown if the URL is not well formed
+     * @throws IOException if an I/O error occurs while creating the input stream
+     */
+    public static BufferedInputStream newInputStream(URL url) throws MalformedURLException, IOException {
+        return new BufferedInputStream(url.openConnection().getInputStream());
     }
 
     /**
@@ -8419,13 +8474,14 @@ public class DefaultGroovyMethods {
      *
      * @param socket  a Socket
      * @param closure a Closure
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      */
-    public static void withStreams(Socket socket, Closure closure) throws IOException {
+    public static Object withStreams(Socket socket, Closure closure) throws IOException {
         InputStream input = socket.getInputStream();
         OutputStream output = socket.getOutputStream();
         try {
-            closure.call(new Object[]{input, output});
+            Object result = closure.call(new Object[]{input, output});
 
             InputStream temp1 = input;
             input = null;
@@ -8433,6 +8489,8 @@ public class DefaultGroovyMethods {
             OutputStream temp2 = output;
             output = null;
             temp2.close();
+
+            return result;
         } finally {
             closeInputStreamWithWarning(input);
             closeOutputStreamWithWarning(output);
@@ -8446,16 +8504,17 @@ public class DefaultGroovyMethods {
      *
      * @param socket  this Socket
      * @param closure a Closure
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      * @since 1.1 beta 2
      */
-    public static void withObjectStreams(Socket socket, Closure closure) throws IOException {
+    public static Object withObjectStreams(Socket socket, Closure closure) throws IOException {
         InputStream input = socket.getInputStream();
         OutputStream output = socket.getOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(output);
         ObjectInputStream ois = new ObjectInputStream(input);
         try {
-            closure.call(new Object[]{ois, oos});
+            Object result = closure.call(new Object[]{ois, oos});
 
             InputStream temp1 = ois;
             ois = null;
@@ -8469,6 +8528,8 @@ public class DefaultGroovyMethods {
             temp2 = output;
             output = null;
             temp2.close();
+
+            return result;
         } finally {
             closeInputStreamWithWarning(ois);
             closeInputStreamWithWarning(input);
