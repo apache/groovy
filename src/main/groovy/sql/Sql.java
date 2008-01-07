@@ -725,7 +725,7 @@ public class Sql {
             rs = statement.executeQuery();
             while (rs.next()) {
                 ResultSetMetaData metadata = rs.getMetaData();
-                LinkedHashMap lhm = new LinkedHashMap(metadata.getColumnCount(), 1, true);
+                LinkedHashMap lhm = new LinkedHashMap(metadata.getColumnCount(), 1);
                 for (int i = 1; i <= metadata.getColumnCount(); i++) {
                     lhm.put(metadata.getColumnName(i), rs.getObject(i));
                 }
