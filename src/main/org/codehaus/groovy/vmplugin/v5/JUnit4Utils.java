@@ -17,7 +17,6 @@ package org.codehaus.groovy.vmplugin.v5;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyRuntimeException;
-import groovy.lang.GroovySystem;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.util.List;
