@@ -8717,6 +8717,7 @@ public class DefaultGroovyMethods {
      * <li>Double</li>
      * <li>Float</li>
      * <li>File</li>
+     * <li>Subclasses of Enum (Java 5 and above)</li>
      * </ul>
      * If any other type is given, the call is delegated to
      * {@link #asType(Object,Class)}.
@@ -8740,6 +8741,8 @@ public class DefaultGroovyMethods {
             return toFloat(self);
         } else if (c == File.class) {
             return new File(self);
+        } else if (DefaultTypeTransformation.isEnumSubclass(c)) {
+            return InvokerHelper.invokeMethod(c, "valueOf", new Object[]{ self });
         }
         return asType((Object) self, c);
     }

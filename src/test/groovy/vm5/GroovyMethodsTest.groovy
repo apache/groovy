@@ -36,6 +36,14 @@ class GroovyMethodsTest extends GroovyTestCase {
         }
         assert answer == expected
     }
+
+    void testAsEnumType() {
+        assert Suit.HEARTS == ("HEARTS" as Suit)
+
+        shouldFail(IllegalArgumentException) {
+            "FOO" as Suit
+        } 
+    }
 }
 
 enum Suit { HEARTS, CLUBS, SPADES, DIAMONDS }

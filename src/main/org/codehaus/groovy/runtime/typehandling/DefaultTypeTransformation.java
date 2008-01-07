@@ -465,7 +465,7 @@ public class DefaultTypeTransformation {
      * subclass of java.lang.Enum. Uses class name check to avoid breaking on
      * pre-Java 5 JREs.
      */
-    private static boolean isEnumSubclass(Object value) {
+    public static boolean isEnumSubclass(Object value) {
         if (value instanceof Class) {
             Class superclass = ((Class)value).getSuperclass();
             while (superclass != null) {
