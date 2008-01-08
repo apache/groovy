@@ -1,19 +1,8 @@
 package groovy
 
-import org.codehaus.groovy.control.CompilationFailedException
+import gls.CompilableTestSupport
 
-class AbstractClassAndInterfaceTest extends GroovyTestCase {
-
-	def shouldNotCompile(String script) {
-	  try {
-        GroovyShell shell = new GroovyShell()
-        shell.parse(script, getTestClassName())
-      } catch (CompilationFailedException cfe) {
-        assert true
-        return
-      }
-      fail("the compilation succeeded but should have failed")
-	}
+class AbstractClassAndInterfaceTest extends CompilableTestSupport {
 
 	void testInterface() {
     	def shell = new GroovyShell()
@@ -38,7 +27,7 @@ class AbstractClassAndInterfaceTest extends GroovyTestCase {
 		def retVal = shell.evaluate(text)
 		assert retVal.class == Object
 	}
-	
+
 	void testClassImplementingAnInterfaceButMissesMethod() {
         shouldNotCompile """
         	interface A {
@@ -70,7 +59,18 @@ class AbstractClassAndInterfaceTest extends GroovyTestCase {
 			return b.methodTwo()
 			"""
 	}
-	
+
+	void testClassImplementingNestedInterfaceShouldContainMethodsFromSuperInterfaces() {
+        shouldNotCompile """
+            interface A { def a() }
+            interface B extends A { def b() }
+            class BImpl implements B {
+                def b(){ println 'foo' }
+            }
+            new BImpl().b()
+			"""
+	}
+
 	void testAbstractClass() {
     	def shell = new GroovyShell()
         def text = """
@@ -205,4 +205,28 @@ class AbstractClassAndInterfaceTest extends GroovyTestCase {
 	   """
 	   shell.evaluate(text)
 	}
+
+	void testImplementsDuplicateInterface() {
+        shouldCompile """
+        interface I {}
+        class C implements I {}
+        """
+        shouldNotCompile """
+        interface I {}
+        class C implements I, I {}
+        """
+    }
+
+	void testDefaultMethodParamsNotAllowedInInterface() {
+        shouldCompile """
+        interface Foo {
+           def doit( String param, int o )
+        }
+        """
+        shouldNotCompile """
+        interface Foo {
+           def doit( String param = "Groovy", int o )
+        }
+        """
+    }
 }

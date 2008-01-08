@@ -64,6 +64,8 @@ public class TemplateTest extends TestCase {
         Template template2 = new GStringTemplateEngine().createTemplate("<%= sam %><% out << sam %>");
         assertEquals("pullarapullara", template2.make(binding).toString());
 
+        Template template3 = new GStringTemplateEngine().createTemplate("<%= sam + \" \" + sam %><% out << sam %>");
+        assertEquals("pullara pullarapullara", template3.make(binding).toString());
     }
 
 }

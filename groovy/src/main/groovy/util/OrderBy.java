@@ -64,7 +64,12 @@ public class OrderBy implements Comparator {
             }
             if (value1 instanceof Comparable) {
                 Comparable c1 = (Comparable) value1;
-                return c1.compareTo(value2);
+                int result = c1.compareTo(value2);
+                if (result == 0) {
+                    continue;
+                } else {
+                    return result;
+                }
             }
             if (value1.equals(value2)) {
                 continue;

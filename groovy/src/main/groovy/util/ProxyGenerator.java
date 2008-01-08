@@ -120,6 +120,8 @@ public class ProxyGenerator {
         publicAndProtectedMethods.addAll(getInheritedMethods(baseClass));
         for (int i = 0; i < publicAndProtectedMethods.size(); i++) {
             Method method = (Method) publicAndProtectedMethods.get(i);
+            if (method.getName().indexOf('$') != -1)
+              continue;
             if (map.containsKey(method.getName())) {
                 selectedMethods.add(method.getName());
                 addOverridingMapCall(buffer, method);
@@ -144,6 +146,8 @@ public class ProxyGenerator {
         // add leftover methods from the map
         for (Iterator iterator = map.keySet().iterator(); iterator.hasNext();) {
             String methodName = (String) iterator.next();
+            if (methodName.indexOf('$') != -1)
+              continue;
             if (selectedMethods.contains(methodName)) continue;
             addNewMapCall(buffer, methodName);
         }
@@ -253,6 +257,8 @@ public class ProxyGenerator {
         additionalMethods.addAll(getInheritedMethods(delegate.getClass()));
         for (int i = 0; i < additionalMethods.size(); i++) {
             Method method = (Method) additionalMethods.get(i);
+            if (method.getName().indexOf('$') != -1)
+              continue;
             if (!containsEquivalentMethod(interfaceMethods, method) &&
                     !containsEquivalentMethod(objectMethods, method) &&
                     !containsEquivalentMethod(groovyObjectMethods, method)) {
@@ -326,6 +332,8 @@ public class ProxyGenerator {
             Method[] protectedMethods = currentClass.getDeclaredMethods();
             for (int i = 0; i < protectedMethods.length; i++) {
                 Method method = protectedMethods[i];
+                if (method.getName().indexOf('$') != -1)
+                  continue;
                 if (Modifier.isProtected(method.getModifiers()))
                     protectedMethodList.add(method);
             }

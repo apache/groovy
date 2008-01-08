@@ -21,7 +21,7 @@ class SqlCompleteTest extends TestHelper {
         def sql = createSql()
         def table = 'PERSON'
         GString query = "select * from $table"
-        def resultSet = sql.firstRow(query)
+        def resultSet = sql.firstRow(query.toString())
         assert resultSet.containsKey('FIRSTNAME')
     }
 
@@ -29,7 +29,7 @@ class SqlCompleteTest extends TestHelper {
         def sql = createSql()
         def table = 'PERSON'
         GString query = "select * from $table"
-        def result = sql.rows(query)
+        def result = sql.rows(query.toString())
         assert result.size() == 3
     }
 

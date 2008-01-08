@@ -58,7 +58,8 @@ import com.thoughtworks.xstream.XStream;
 public class SourceUnit extends ProcessingUnit {
 
     /**
-     * The pluggable parser used to generate the AST - we allow pluggability currently as we need to have Classic and JSR support
+     * The pluggable parser used to generate the AST - we allow
+     * pluggability currently as we need to have Classic and JSR support
      */
     private ParserPlugin parserPlugin;
 
@@ -66,12 +67,14 @@ public class SourceUnit extends ProcessingUnit {
      * Where we can get Readers for our source unit
      */
     protected ReaderSource source;
+
     /**
      * A descriptive name of the source unit. This name shouldn't
-     * be used for controling the SourceUnit, it is only for error
+     * be used for controlling the SourceUnit, it is only for error
      * messages
      */
     protected String name;
+
     /**
      * A Concrete Syntax Tree of the source
      */
@@ -86,7 +89,8 @@ public class SourceUnit extends ProcessingUnit {
     /**
      * Initializes the SourceUnit from existing machinery.
      */
-    public SourceUnit(String name, ReaderSource source, CompilerConfiguration flags, GroovyClassLoader loader, ErrorCollector er) {
+    public SourceUnit(String name, ReaderSource source, CompilerConfiguration flags,
+                      GroovyClassLoader loader, ErrorCollector er) {
         super(flags, loader, er);
 
         this.name = name;
@@ -113,14 +117,15 @@ public class SourceUnit extends ProcessingUnit {
     /**
      * Initializes the SourceUnit for a string of source.
      */
-    public SourceUnit(String name, String source, CompilerConfiguration configuration, GroovyClassLoader loader, ErrorCollector er) {
+    public SourceUnit(String name, String source, CompilerConfiguration configuration,
+                      GroovyClassLoader loader, ErrorCollector er) {
         this(name, new StringReaderSource(source, configuration), configuration, loader, er);
     }
 
 
     /**
      * Returns the name for the SourceUnit. This name shouldn't
-     * be used for controling the SourceUnit, it is only for error
+     * be used for controlling the SourceUnit, it is only for error
      * messages
      */
     public String getName() {
@@ -136,7 +141,7 @@ public class SourceUnit extends ProcessingUnit {
     }
 
     /**
-     * Returns the Abstract Syntax Tree produced during parse()ing
+     * Returns the Abstract Syntax Tree produced during convert()ing
      * and expanded during later phases.
      */
     public ModuleNode getAST() {
@@ -233,7 +238,7 @@ public class SourceUnit extends ProcessingUnit {
         try {
             reader = source.getReader();
 
-            // lets recreate the parser each time as it tends to keep around state
+            // let's recreate the parser each time as it tends to keep around state
             parserPlugin = getConfiguration().getPluginFactory().createParserPlugin();
 
             cst = parserPlugin.parseCST(this, reader);
@@ -320,7 +325,8 @@ public class SourceUnit extends ProcessingUnit {
                 if (column > 40) {
                     int start = column - 30 - 1;
                     int end = (column + 10 > text.length() ? text.length() : column + 10 - 1);
-                    sample = "   " + text.substring(start, end) + Utilities.eol() + "   " + marker.substring(start, marker.length());
+                    sample = "   " + text.substring(start, end) + Utilities.eol() + "   " +
+                            marker.substring(start, marker.length());
                 }
                 else {
                     sample = "   " + text + Utilities.eol() + "   " + marker;

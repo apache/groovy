@@ -17,6 +17,7 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.*;
 import groovy.util.*;
+import groovy.text.RegexUtils;
 import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
@@ -325,7 +326,22 @@ public class DefaultGroovyMethods {
      * @param value the value to print
      */
     public static void print(Object self, Object value) {
-        System.out.print(InvokerHelper.toString(value));
+        // we won't get here if we are a PrintWriter
+        if (self instanceof Writer) {
+            PrintWriter pw = null;
+            try {
+                pw = new PrintWriter((Writer)self);
+                pw.print(InvokerHelper.toString(value));
+            } finally {
+                try {
+                    pw.close();
+                } catch (Exception ex) {
+                    // ignore
+                }
+            }
+        } else {
+            System.out.print(InvokerHelper.toString(value));
+        }
     }
     
     /**
@@ -346,9 +362,24 @@ public class DefaultGroovyMethods {
      * @param self any Object
      */
     public static void println(Object self) {
-        System.out.println();
+        // we won't get here if we are a PrintWriter
+        if (self instanceof Writer) {
+            PrintWriter pw = null;
+            try {
+                pw = new PrintWriter((Writer)self);
+                pw.println();
+            } finally {
+                try {
+                    pw.close();
+                } catch (Exception ex) {
+                    // ignore
+                }
+            }
+        } else {
+            System.out.println();
+        }
     }
-        
+
     /**
      * Print a linebreak to the standard output stream.
      * This method delegates to the owner to execute the method.
@@ -375,7 +406,22 @@ public class DefaultGroovyMethods {
      * @param value the value to print
      */
     public static void println(Object self, Object value) {
-        System.out.println(InvokerHelper.toString(value));
+        // we won't get here if we are a PrintWriter
+        if (self instanceof Writer) {
+            PrintWriter pw = null;
+            try {
+                pw = new PrintWriter((Writer)self);
+                pw.println(InvokerHelper.toString(value));
+            } finally {
+                try {
+                    pw.close();
+                } catch (Exception ex) {
+                    // ignore
+                }
+            }
+        } else {
+            System.out.println(InvokerHelper.toString(value));
+        }
     }
     
     /**
@@ -701,8 +747,8 @@ public class DefaultGroovyMethods {
 
     /**
      * Method for overloading the behavior of the 'case' method in switch statements.
-     * The default implementation simply delegates to Object#equals, but this
-     * may be overridden for other types.  In this example:
+     * The default implementation handles arrays types but otherwise simply delegates
+     * to Object#equals, but this may be overridden for other types. In this example:
      * <pre> switch( a ) {
      *   case b: //some code
      * }</pre>
@@ -714,6 +760,9 @@ public class DefaultGroovyMethods {
      * @return true if the switchValue is deemed to be equal to the caseValue
      */
     public static boolean isCase(Object caseValue, Object switchValue) {
+        if (caseValue.getClass().isArray()) {
+            return isCase(DefaultTypeTransformation.asCollection(caseValue), switchValue);
+        }
         return caseValue.equals(switchValue);
     }
 
@@ -1017,7 +1066,12 @@ public class DefaultGroovyMethods {
      * @return the original list
      */
     public static List reverseEach(List self, Closure closure) {
-        each(reverse(self).iterator(), closure);
+        each(new ReverseListIterator(self), closure);
+        return self;
+    }
+
+    public static Object[] reverseEach(Object[] self, Closure closure) {
+        each(new ReverseListIterator(Arrays.asList(self)), closure);
         return self;
     }
 
@@ -1264,13 +1318,52 @@ public class DefaultGroovyMethods {
      * as a transformer, returning a list of transformed values.
      *
      * @param self       a collection
-     * @param collection the Collection to which the mapped values are added
-     * @param closure    the closure used to map each element of the collection
+     * @param collection an initial Collection to which the transformed values are added
+     * @param closure    the closure used to transform each element of the collection
      * @return the resultant collection
      */
     public static Collection collect(Collection self, Collection collection, Closure closure) {
         for (Iterator iter = self.iterator(); iter.hasNext();) {
             collection.add(closure.call(iter.next()));
+            if (closure.getDirective() == Closure.DONE) {
+                break;
+            }
+        }
+        return collection;
+    }
+
+    /**
+     * Recursively iterates through this collection transforming each non-Collection entry
+     * into a new value using the closure as a transformer. Returns a potentially nested
+     * list of transformed values.
+     *
+     * @param self       a collection
+     * @param closure    the closure used to transform each element of the collection
+     * @return the resultant collection
+     */
+    public static Collection collectAll(Collection self, Closure closure) {
+        return collectAll(self, new ArrayList(self.size()), closure);
+    }
+
+    /**
+     * Recursively iterates through this collection transforming each non-Collection entry
+     * into a new value using the closure as a transformer. Returns a potentially nested
+     * list of transformed values.
+     *
+     * @param self       a collection
+     * @param collection an initial Collection to which the transformed values are added
+     * @param closure    the closure used to transform each element of the collection
+     * @return the resultant collection
+     */
+    public static Collection collectAll(Collection self, Collection collection, Closure closure) {
+        for (Iterator iter = self.iterator(); iter.hasNext();) {
+            final Object o = iter.next();
+            if (o instanceof Collection) {
+                Collection c = (Collection) o;
+                collection.add(collectAll(c, new ArrayList(c.size()), closure));
+            } else {
+                collection.add(closure.call(o));
+            }
             if (closure.getDirective() == Closure.DONE) {
                 break;
             }
@@ -1469,24 +1562,55 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Groups all map members into groups determined by the
+     * Groups all map entries into groups determined by the
      * supplied mapping closure. The closure will be passed a Map.Entry or
      * key and value (depending on the number of parameters the closure accepts)
      * and should return the key that each item should be grouped under.  The
      * resulting map will have an entry for each 'group' key returned by the
-     * closure, with values being the a list of map entries that belong to each
+     * closure, with values being the list of map entries that belong to each
      * group.
      *
      * @param self    a map to group
      * @param closure a closure mapping entries on keys
      * @return a new Map grouped by keys
      */
-    public static Map groupBy(Map self, Closure closure) {
+    public static Map groupEntriesBy(Map self, Closure closure) {
         final Map answer = new HashMap();
         for (final Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry) iter.next();
-            Object value = callClosureForMapEntry(closure, entry);//closure.call(element);
+            Object value = callClosureForMapEntry(closure, entry);
             groupAnswer(answer, entry, value);
+        }
+        return answer;
+    }
+
+    /**
+     * Groups the members of a map into sub maps determined by the
+     * supplied mapping closure. The closure will be passed a Map.Entry or
+     * key and value (depending on the number of parameters the closure accepts)
+     * and should return the key that each item should be grouped under.  The
+     * resulting map will have an entry for each 'group' key returned by the
+     * closure, with values being the map members from the original map that
+     * belong to each group.
+     *
+     * @param self    a map to group
+     * @param closure a closure mapping entries on keys
+     * @return a new Map grouped by keys
+     */
+    public static Map groupBy(Map self, Closure closure) {
+        final Map initial = groupEntriesBy(self, closure);
+        final Map answer = new HashMap();
+        Iterator iterator = initial.entrySet().iterator();
+        while (iterator.hasNext()) {
+            Map.Entry outer = (Map.Entry) iterator.next();
+            Object key = outer.getKey();
+            List entries = (List) outer.getValue();
+            Map target = new HashMap();
+            for (int i = 0; i < entries.size(); i++) {
+                Map.Entry inner = (Map.Entry) entries.get(i);
+                target.put(inner.getKey(), inner.getValue());
+            }
+            answer.put(key, target);
         }
         return answer;
     }
@@ -3206,7 +3330,8 @@ public class DefaultGroovyMethods {
     /**
      * Create a Collection as a union of two collections. If the left collection
      * is a Set, then the returned collection will be a Set otherwise a List.
-     * TODO: remove equivalent numbers after merge, e.g. 1L and 1G?
+     * This operation will always create a new object for the result, 
+     * while the operands remain unchanged.
      *
      * @param left  the left Collection
      * @param right the right Collection
@@ -3229,7 +3354,8 @@ public class DefaultGroovyMethods {
     /**
      * Create a collection as a union of a Collection and an Object. If the collection
      * is a Set, then the returned collection will be a Set otherwise a List.
-     * TODO: remove equivalent numbers after merge, e.g. 1L and 1G?
+     * This operation will always create a new object for the result, 
+     * while the operands remain unchanged.
      *
      * @param left  a Collection
      * @param right an object to add/append
@@ -4969,7 +5095,6 @@ public class DefaultGroovyMethods {
         return left + value;
     }
 
-
     /**
      * Remove a part of a String.  This essentially replaces the first
      * occurrence of the operand with '' and returns the result.
@@ -4980,7 +5105,7 @@ public class DefaultGroovyMethods {
      * @see String#replaceFirst(String,String)
      */
     public static String minus(String left, Object value) {
-        String text = toString(value);
+        String text = RegexUtils.quote(toString(value));
         return left.replaceFirst(text, "");
     }
 
@@ -5019,6 +5144,26 @@ public class DefaultGroovyMethods {
     }
 
     /**
+     * This method is called by the ++ operator for the class Object but
+     * acts simply as a hook for objects which happen to be Java 5 enums.
+     * It won't be called for Objects which already contain a next method
+     * and for non Java 5 enums, it simply chains through to Groovy's normal
+     * missing method processing.
+     *
+     * @param self an Object that will be processed if it happens to be a Java 5 Enum
+     * @return the next defined enum from the enum class
+     */
+    public static Object next(Object self) {
+        final MetaClass metaClass = InvokerHelper.getMetaClass(self);
+        if (DefaultTypeTransformation.isEnumSubclass(self.getClass())) {
+            Object[] values = (Object[]) InvokerHelper.invokeStaticMethod(self.getClass(), "values", new Object[0]);
+            int index = Arrays.asList(values).indexOf(self);
+            return values[index < values.length - 1 ? index + 1 : 0];
+        }
+        return metaClass.invokeMissingMethod(self, "next", new Object[0]);
+    }
+
+    /**
      * This method is called by the ++ operator for the class String.
      * It increments the last character in the given string. If the
      * character in the string is Character.MAX_VALUE a Character.MIN_VALUE
@@ -5043,6 +5188,26 @@ public class DefaultGroovyMethods {
             }
         }
         return buffer.toString();
+    }
+
+    /**
+     * This method is called by the -- operator for the class Object but
+     * acts simply as a hook for objects which happen to be Java 5 enums.
+     * It won't be called for Objects which already contain a previous method
+     * and for non Java 5 enums, it simply chains through to Groovy's normal
+     * missing method processing.
+     *
+     * @param self an Object that will be processed if it happens to be a Java 5 Enum
+     * @return the previous defined enum from the enum class
+     */
+    public static Object previous(Object self) {
+        final MetaClass metaClass = InvokerHelper.getMetaClass(self);
+        if (DefaultTypeTransformation.isEnumSubclass(self.getClass())) {
+            Object[] values = (Object[]) InvokerHelper.invokeStaticMethod(self.getClass(), "values", new Object[0]);
+            int index = Arrays.asList(values).indexOf(self);
+            return values[index > 0 ? index - 1 : values.length - 1];
+        }
+        return metaClass.invokeMissingMethod(self, "previous", new Object[0]);
     }
 
     /**
@@ -5318,6 +5483,8 @@ public class DefaultGroovyMethods {
 
     /**
      * Add a Character and a Number.
+     * This operation will always create a new object for the result, 
+     * while the operands remain unchanged.
      *
      * @param left  a Character
      * @param right a Number
@@ -5340,6 +5507,8 @@ public class DefaultGroovyMethods {
 
     /**
      * Add two Characters.
+     * This operation will always create a new object for the result, 
+     * while the operands remain unchanged.
      *
      * @param left  a Character
      * @param right a Character
@@ -6761,11 +6930,12 @@ public class DefaultGroovyMethods {
      *
      * @param file    a File
      * @param closure a closure
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      * @see #withStream(InputStream,Closure)
      */
-    public static void withObjectInputStream(File file, Closure closure) throws IOException {
-        withStream(newObjectInputStream(file), closure);
+    public static Object withObjectInputStream(File file, Closure closure) throws IOException {
+        return withStream(newObjectInputStream(file), closure);
     }
 
     /**
@@ -6775,11 +6945,12 @@ public class DefaultGroovyMethods {
      *
      * @param file    a File
      * @param closure a closure
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      * @see #withStream(OutputStream,Closure)
      */
-    public static void withObjectOutputStream(File file, Closure closure) throws IOException {
-        withStream(newObjectOutputStream(file), closure);
+    public static Object withObjectOutputStream(File file, Closure closure) throws IOException {
+        return withStream(newObjectOutputStream(file), closure);
     }
 
     /**
@@ -7531,10 +7702,11 @@ public class DefaultGroovyMethods {
      *
      * @param file    a file object
      * @param closure a closure
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      */
-    public static void withReader(File file, Closure closure) throws IOException {
-        withReader(newReader(file), closure);
+    public static Object withReader(File file, Closure closure) throws IOException {
+        return withReader(newReader(file), closure);
     }
 
     /**
@@ -7565,11 +7737,12 @@ public class DefaultGroovyMethods {
      *
      * @param file    a File
      * @param closure a closure
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      * @see #withStream(OutputStream,Closure)
      */
-    public static void withOutputStream(File file, Closure closure) throws IOException {
-        withStream(newOutputStream(file), closure);
+    public static Object withOutputStream(File file, Closure closure) throws IOException {
+        return withStream(newOutputStream(file), closure);
     }
 
     /**
@@ -7578,11 +7751,26 @@ public class DefaultGroovyMethods {
      *
      * @param file    a File
      * @param closure a closure
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      * @see #withStream(InputStream,Closure)
      */
-    public static void withInputStream(File file, Closure closure) throws IOException {
-        withStream(newInputStream(file), closure);
+    public static Object withInputStream(File file, Closure closure) throws IOException {
+        return withStream(newInputStream(file), closure);
+    }
+
+    /**
+     * Creates a new InputStream for this URL and passes it into the closure.
+     * This method ensures the stream is closed after the closure returns.
+     *
+     * @param url     a URL
+     * @param closure a closure
+     * @return the value returned by the closure
+     * @throws IOException if an IOException occurs.
+     * @see #withStream(InputStream,Closure)
+     */
+    public static Object withInputStream(URL url, Closure closure) throws IOException {
+        return withStream(newInputStream(url), closure);
     }
 
     /**
@@ -7591,11 +7779,12 @@ public class DefaultGroovyMethods {
      *
      * @param file    a File
      * @param closure a closure
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      * @see #withStream(OutputStream,Closure)
      */
-    public static void withDataOutputStream(File file, Closure closure) throws IOException {
-        withStream(newDataOutputStream(file), closure);
+    public static Object withDataOutputStream(File file, Closure closure) throws IOException {
+        return withStream(newDataOutputStream(file), closure);
     }
 
     /**
@@ -7604,11 +7793,12 @@ public class DefaultGroovyMethods {
      *
      * @param file    a File
      * @param closure a closure
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      * @see #withStream(InputStream,Closure)
      */
-    public static void withDataInputStream(File file, Closure closure) throws IOException {
-        withStream(newDataInputStream(file), closure);
+    public static Object withDataInputStream(File file, Closure closure) throws IOException {
+        return withStream(newDataInputStream(file), closure);
     }
 
     /**
@@ -7697,10 +7887,11 @@ public class DefaultGroovyMethods {
      *
      * @param file    a File
      * @param closure a closure
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      */
-    public static void withWriter(File file, Closure closure) throws IOException {
-        withWriter(newWriter(file), closure);
+    public static Object withWriter(File file, Closure closure) throws IOException {
+        return withWriter(newWriter(file), closure);
     }
 
     /**
@@ -7711,10 +7902,11 @@ public class DefaultGroovyMethods {
      * @param file    a File
      * @param charset the charset used
      * @param closure a closure
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      */
-    public static void withWriter(File file, String charset, Closure closure) throws IOException {
-        withWriter(newWriter(file, charset), closure);
+    public static Object withWriter(File file, String charset, Closure closure) throws IOException {
+        return withWriter(newWriter(file, charset), closure);
     }
 
     /**
@@ -7725,10 +7917,11 @@ public class DefaultGroovyMethods {
      * @param file    a File
      * @param charset the charset used
      * @param closure a closure
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      */
-    public static void withWriterAppend(File file, String charset, Closure closure) throws IOException {
-        withWriter(newWriter(file, charset, true), closure);
+    public static Object withWriterAppend(File file, String charset, Closure closure) throws IOException {
+        return withWriter(newWriter(file, charset, true), closure);
     }
 
     /**
@@ -7737,10 +7930,11 @@ public class DefaultGroovyMethods {
      *
      * @param file    a File
      * @param closure a closure
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      */
-    public static void withWriterAppend(File file, Closure closure) throws IOException {
-        withWriter(newWriter(file, true), closure);
+    public static Object withWriterAppend(File file, Closure closure) throws IOException {
+        return withWriter(newWriter(file, true), closure);
     }
 
     /**
@@ -7774,10 +7968,11 @@ public class DefaultGroovyMethods {
      *
      * @param file    a File
      * @param closure the closure to invoke with the PrintWriter
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      */
-    public static void withPrintWriter(File file, Closure closure) throws IOException {
-        withWriter(newPrintWriter(file), closure);
+    public static Object withPrintWriter(File file, Closure closure) throws IOException {
+        return withWriter(newPrintWriter(file), closure);
     }
 
     /**
@@ -7788,10 +7983,11 @@ public class DefaultGroovyMethods {
      * @param file    a File
      * @param charset the charset
      * @param closure the closure to invoke with the PrintWriter
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      */
-    public static void withPrintWriter(File file, String charset, Closure closure) throws IOException {
-        withWriter(newPrintWriter(file, charset), closure);
+    public static Object withPrintWriter(File file, String charset, Closure closure) throws IOException {
+        return withWriter(newPrintWriter(file, charset), closure);
     }
 
     /**
@@ -7800,11 +7996,13 @@ public class DefaultGroovyMethods {
      *
      * @param writer  the writer which is used and then closed
      * @param closure the closure that the writer is passed into
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      */
-    public static void withWriter(Writer writer, Closure closure) throws IOException {
+    public static Object withWriter(Writer writer, Closure closure) throws IOException {
         try {
-            closure.call(writer);
+            Object result = closure.call(writer);
+
             try {
                 writer.flush();
             } catch (IOException e) {
@@ -7813,6 +8011,7 @@ public class DefaultGroovyMethods {
             Writer temp = writer;
             writer = null;
             temp.close();
+            return result;
         } finally {
             closeWriterWithWarning(writer);
         }
@@ -7824,15 +8023,18 @@ public class DefaultGroovyMethods {
      *
      * @param reader  the reader which is used and then closed
      * @param closure the closure that the writer is passed into
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      */
-    public static void withReader(Reader reader, Closure closure) throws IOException {
+    public static Object withReader(Reader reader, Closure closure) throws IOException {
         try {
-            closure.call(reader);
+            Object result = closure.call(reader);
 
             Reader temp = reader;
             reader = null;
             temp.close();
+
+            return result;
         } finally {
             closeReaderWithWarning(reader);
         }
@@ -7844,15 +8046,18 @@ public class DefaultGroovyMethods {
      *
      * @param stream  the stream which is used and then closed
      * @param closure the closure that the stream is passed into
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      */
-    public static void withStream(InputStream stream, Closure closure) throws IOException {
+    public static Object withStream(InputStream stream, Closure closure) throws IOException {
         try {
-            closure.call(stream);
+            Object result = closure.call(stream);
 
             InputStream temp = stream;
             stream = null;
             temp.close();
+
+            return result;
         } finally {
             closeInputStreamWithWarning(stream);
         }
@@ -7900,10 +8105,11 @@ public class DefaultGroovyMethods {
      *
      * @param url     a URL
      * @param closure the closure to invoke with the reader
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      */
-    public static void withReader(URL url, Closure closure) throws IOException {
-        withReader(url.openConnection().getInputStream(), closure);
+    public static Object withReader(URL url, Closure closure) throws IOException {
+        return withReader(url.openConnection().getInputStream(), closure);
     }
 
     /**
@@ -7912,10 +8118,11 @@ public class DefaultGroovyMethods {
      *
      * @param in      a stream
      * @param closure the closure to invoke with the InputStream
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      */
-    public static void withReader(InputStream in, Closure closure) throws IOException {
-        withReader(new InputStreamReader(in), closure);
+    public static Object withReader(InputStream in, Closure closure) throws IOException {
+        return withReader(new InputStreamReader(in), closure);
     }
 
     /**
@@ -7924,11 +8131,12 @@ public class DefaultGroovyMethods {
      *
      * @param stream  the stream which is used and then closed
      * @param closure the closure that the writer is passed into
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      * @see #withWriter(Writer,Closure)
      */
-    public static void withWriter(OutputStream stream, Closure closure) throws IOException {
-        withWriter(new OutputStreamWriter(stream), closure);
+    public static Object withWriter(OutputStream stream, Closure closure) throws IOException {
+        return withWriter(new OutputStreamWriter(stream), closure);
     }
 
     /**
@@ -7938,11 +8146,12 @@ public class DefaultGroovyMethods {
      * @param stream  the stream which is used and then closed
      * @param charset the charset used
      * @param closure the closure that the writer is passed into
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      * @see #withWriter(Writer,Closure)
      */
-    public static void withWriter(OutputStream stream, String charset, Closure closure) throws IOException {
-        withWriter(new OutputStreamWriter(stream, charset), closure);
+    public static Object withWriter(OutputStream stream, String charset, Closure closure) throws IOException {
+        return withWriter(new OutputStreamWriter(stream, charset), closure);
     }
 
     /**
@@ -7951,16 +8160,19 @@ public class DefaultGroovyMethods {
      *
      * @param os      the stream which is used and then closed
      * @param closure the closure that the stream is passed into
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      */
-    public static void withStream(OutputStream os, Closure closure) throws IOException {
+    public static Object withStream(OutputStream os, Closure closure) throws IOException {
         try {
-            closure.call(os);
+            Object result = closure.call(os);
             os.flush();
 
             OutputStream temp = os;
             os = null;
             temp.close();
+
+            return result;
         } finally {
             closeOutputStreamWithWarning(os);
         }
@@ -7975,6 +8187,18 @@ public class DefaultGroovyMethods {
      */
     public static BufferedInputStream newInputStream(File file) throws FileNotFoundException {
         return new BufferedInputStream(new FileInputStream(file));
+    }
+
+    /**
+     * Creates a buffered input stream for this URL.
+     *
+     * @param url a URL
+     * @return a BufferedInputStream of the URL
+     * @throws MalformedURLException is thrown if the URL is not well formed
+     * @throws IOException if an I/O error occurs while creating the input stream
+     */
+    public static BufferedInputStream newInputStream(URL url) throws MalformedURLException, IOException {
+        return new BufferedInputStream(url.openConnection().getInputStream());
     }
 
     /**
@@ -8290,13 +8514,14 @@ public class DefaultGroovyMethods {
      *
      * @param socket  a Socket
      * @param closure a Closure
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      */
-    public static void withStreams(Socket socket, Closure closure) throws IOException {
+    public static Object withStreams(Socket socket, Closure closure) throws IOException {
         InputStream input = socket.getInputStream();
         OutputStream output = socket.getOutputStream();
         try {
-            closure.call(new Object[]{input, output});
+            Object result = closure.call(new Object[]{input, output});
 
             InputStream temp1 = input;
             input = null;
@@ -8304,6 +8529,8 @@ public class DefaultGroovyMethods {
             OutputStream temp2 = output;
             output = null;
             temp2.close();
+
+            return result;
         } finally {
             closeInputStreamWithWarning(input);
             closeOutputStreamWithWarning(output);
@@ -8317,16 +8544,17 @@ public class DefaultGroovyMethods {
      *
      * @param socket  this Socket
      * @param closure a Closure
+     * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      * @since 1.1 beta 2
      */
-    public static void withObjectStreams(Socket socket, Closure closure) throws IOException {
+    public static Object withObjectStreams(Socket socket, Closure closure) throws IOException {
         InputStream input = socket.getInputStream();
         OutputStream output = socket.getOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(output);
         ObjectInputStream ois = new ObjectInputStream(input);
         try {
-            closure.call(new Object[]{ois, oos});
+            Object result = closure.call(new Object[]{ois, oos});
 
             InputStream temp1 = ois;
             ois = null;
@@ -8340,6 +8568,8 @@ public class DefaultGroovyMethods {
             temp2 = output;
             output = null;
             temp2.close();
+
+            return result;
         } finally {
             closeInputStreamWithWarning(ois);
             closeInputStreamWithWarning(input);
@@ -8527,6 +8757,7 @@ public class DefaultGroovyMethods {
      * <li>Double</li>
      * <li>Float</li>
      * <li>File</li>
+     * <li>Subclasses of Enum (Java 5 and above)</li>
      * </ul>
      * If any other type is given, the call is delegated to
      * {@link #asType(Object,Class)}.
@@ -8550,6 +8781,8 @@ public class DefaultGroovyMethods {
             return toFloat(self);
         } else if (c == File.class) {
             return new File(self);
+        } else if (DefaultTypeTransformation.isEnumSubclass(c)) {
+            return InvokerHelper.invokeMethod(c, "valueOf", new Object[]{ self });
         }
         return asType((Object) self, c);
     }
@@ -8707,22 +8940,115 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Iterates over every element of the collection and returns the index of the first object
-     * that matches the condition specified in the closure
+     * Iterates over the elements of an iterable collection of items and returns
+     * the index of the first item that matches the condition specified in the closure.
      *
-     * @param self    the iteration object over which we iterate
+     * @param self    the iteration object over which to iterate
      * @param closure the filter to perform a match on the collection
-     * @return an integer that is the index of the first macthed object.
+     * @return an integer that is the index of the first matched object or -1 if no match was found
      */
     public static int findIndexOf(Object self, Closure closure) {
+        return findIndexOf(self, 0, closure);
+    }
+
+    /**
+     * Iterates over the elements of an iterable collection of items, starting from a
+     * specified startIndex, and returns the index of the first item that matches the
+     * condition specified in the closure.
+     *
+     * @param self       the iteration object over which to iterate
+     * @param startIndex start matching from this index
+     * @param closure    the filter to perform a match on the collection
+     * @return an integer that is the index of the first matched object or -1 if no match was found
+     */
+    public static int findIndexOf(Object self, int startIndex, Closure closure) {
+        int result = -1;
         int i = 0;
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext(); i++) {
             Object value = iter.next();
+            if (i < startIndex) {
+                continue;
+            }
             if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
+                result = i;
                 break;
             }
         }
-        return i;
+        return result;
+    }
+
+    /**
+     * Iterates over the elements of an iterable collection of items and returns
+     * the index of the last item that matches the condition specified in the closure.
+     *
+     * @param self    the iteration object over which to iterate
+     * @param closure the filter to perform a match on the collection
+     * @return an integer that is the index of the last matched object or -1 if no match was found
+     */
+    public static int findLastIndexOf(Object self, Closure closure) {
+        return findLastIndexOf(self, 0, closure);
+    }
+
+    /**
+     * Iterates over the elements of an iterable collection of items, starting
+     * from a specified startIndex, and returns the index of the last item that
+     * matches the condition specified in the closure.
+     *
+     * @param self       the iteration object over which to iterate
+     * @param startIndex start matching from this index
+     * @param closure    the filter to perform a match on the collection
+     * @return an integer that is the index of the last matched object or -1 if no match was found
+     */
+    public static int findLastIndexOf(Object self, int startIndex, Closure closure) {
+        int result = -1;
+        int i = 0;
+        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext(); i++) {
+            Object value = iter.next();
+            if (i < startIndex) {
+                continue;
+            }
+            if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
+                result = i;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Iterates over the elements of an iterable collection of items and returns
+     * the index values of the items that match the condition specified in the closure.
+     *
+     * @param self    the iteration object over which to iterate
+     * @param closure the filter to perform a match on the collection
+     * @return a list of integers corresponding to the index values of all matched objects
+     */
+    public static List findIndexValues(Object self, Closure closure) {
+        return findIndexValues(self, 0, closure);
+    }
+
+    /**
+     * Iterates over the elements of an iterable collection of items, starting from
+     * a specified startIndex, and returns the index values of the items that match
+     * the condition specified in the closure.
+     *
+     * @param self       the iteration object over which to iterate
+     * @param startIndex start matching from this index
+     * @param closure    the filter to perform a match on the collection
+     * @return a list of integers corresponding to the index values of all matched objects
+     */
+    public static List findIndexValues(Object self, int startIndex, Closure closure) {
+        List result = new ArrayList();
+        int i = 0;
+        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext(); i++) {
+            Object value = iter.next();
+            if (i < startIndex) {
+                continue;
+            }
+            if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
+                result.add(new Integer(i));
+            }
+        }
+        return result;
     }
 
     /**

@@ -29,6 +29,7 @@ import java.util.*;
  */
 public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     private ClassNode currentClass;
+    private MethodNode currentMethod;
     private SourceUnit source;
     private CompilationUnit compilationUnit;
     private boolean stillResolving;
@@ -46,6 +47,12 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         this.currentClass = node;
         this.source = source;
         super.visitClass(node);
+    }
+
+    protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
+        this.currentMethod = node;
+        super.visitConstructorOrMethod(node, isConstructor);
+        this.currentMethod = null;
     }
 
     public Expression transform(Expression exp) {
@@ -95,20 +102,32 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     protected Expression transformMethodCallExpression(MethodCallExpression mce) {
         Expression args = transform(mce.getArguments());
         Expression method = transform(mce.getMethod());
-        if (mce.isImplicitThis()) {
+        Expression object = transform(mce.getObjectExpression());
+        boolean isExplicitThisOrSuper = false;
+        if (object instanceof VariableExpression) {
+            VariableExpression ve = (VariableExpression) object;
+            isExplicitThisOrSuper = !mce.isImplicitThis() && (ve.getName().equals("this") || ve.getName().equals("super"));
+            if (isExplicitThisOrSuper && currentMethod != null && currentMethod.isStatic()) {
+                addError("Non-static variable '" + ve.getName() + "' cannot be referenced from the static method " + currentMethod.getName() + ".", mce);
+                return null;
+            }
+        }
+
+        if (mce.isImplicitThis() || isExplicitThisOrSuper) {
             Expression ret = findStaticMethodImportFromModule(method, args);
             if (ret != null) {
                 return ret;
             }
-            if (inSpecialConstructorCall && method instanceof ConstantExpression) {
+            if (method instanceof ConstantExpression) {
                 ConstantExpression ce = (ConstantExpression) method;
                 Object value = ce.getValue();
                 if (value instanceof String) {
-                    return new StaticMethodCallExpression(currentClass, (String) value, args);
+                    String methodName = (String) value;
+                    if (inSpecialConstructorCall || currentClass.hasPossibleStaticMethod(methodName, args))
+                    return new StaticMethodCallExpression(currentClass, methodName, args);
                 }
             }
         }
-        Expression object = transform(mce.getObjectExpression());
 
         MethodCallExpression result = new MethodCallExpression(object, method, args);
         result.setSafe(mce.isSafe());
@@ -134,7 +153,6 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         return ce;
     }
 
-    // TODO: find a nicer way to do this - we are unravelling what ResolveVisitor ravelled
     protected Expression transformPropertyExpression(PropertyExpression pe) {
         boolean oldInPropertyExpression = inPropertyExpression;
         Expression oldFoundArgs = foundArgs;
@@ -143,6 +161,30 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         foundArgs = null;
         foundConstant = null;
         Expression objectExpression = transform(pe.getObjectExpression());
+
+        // check for static field access in a static method in the class containing the field
+        if (objectExpression instanceof ClassExpression && currentMethod != null && currentMethod.isStatic()) {
+            ClassExpression ce = (ClassExpression) objectExpression;
+            if (ce.getType().getName().equals(currentClass.getName())) {
+                FieldNode field = currentClass.getField(pe.getPropertyAsString());
+                if (field != null && field.isStatic()) {
+                    Expression expression = new FieldExpression(field);
+                    return expression;
+                }
+            }
+        }
+
+        // some this/super validation
+        boolean isExplicitThisOrSuper = false;
+        if (objectExpression instanceof VariableExpression) {
+            VariableExpression ve = (VariableExpression) objectExpression;
+            isExplicitThisOrSuper = !pe.isImplicitThis() && (ve.getName().equals("this") || ve.getName().equals("super"));
+            if (isExplicitThisOrSuper && currentMethod != null && currentMethod.isStatic()) {
+                addError("Non-static variable '" + ve.getName() + "' cannot be referenced from the static method " + currentMethod.getName() + ".", pe);
+                return null;
+            }
+        }
+
         if (foundArgs != null && foundConstant != null) {
             Expression result = findStaticMethodImportFromModule(foundConstant, foundArgs);
             if (result != null) {
@@ -176,7 +218,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         if (ve == VariableExpression.THIS_EXPRESSION || ve == VariableExpression.SUPER_EXPRESSION) return;
         Variable v = ve.getAccessedVariable();
         if (v != null && !(v instanceof DynamicVariable) && v.isInStaticContext()) return;
-        addError("the name " + ve.getName() + " doesn't refer to a declared variable or class. The static" +
+        addError("The name " + ve.getName() + " doesn't refer to a declared variable or class. The static" +
                 " scope requires that you declare variables before using them. If the variable should have" +
                 " been a class check the spelling.", ve);
     }

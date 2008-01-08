@@ -29,13 +29,7 @@ import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Represents a class in the AST.<br/>
@@ -359,8 +353,12 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         do {
             abstractNodes.add(parent);
             ClassNode[] interfaces = parent.getInterfaces();
-            for (int i = 0; i < interfaces.length; i++) {
-                abstractNodes.add(interfaces[i].redirect());
+            List interfaceList = new ArrayList(Arrays.asList(interfaces));
+            while (!interfaceList.isEmpty()) {
+                final ClassNode interfaceNode = (ClassNode) interfaceList.get(0);
+                interfaceList.remove(0);
+                abstractNodes.add(interfaceNode.redirect());
+                interfaceList.addAll(Arrays.asList(interfaceNode.getInterfaces()));
             }
             parent = parent.getSuperClass().redirect();
         } while (parent!=null && ((parent.getModifiers() & Opcodes.ACC_ABSTRACT) != 0));

@@ -17,10 +17,7 @@
 package org.codehaus.groovy.runtime.metaclass;
 
 import groovy.lang.*;
-import org.codehaus.groovy.reflection.CachedClass;
-import org.codehaus.groovy.reflection.CachedField;
-import org.codehaus.groovy.reflection.CachedMethod;
-import org.codehaus.groovy.reflection.FastArray;
+import org.codehaus.groovy.reflection.*;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
@@ -137,9 +134,10 @@ public final class ClosureMetaClass extends MetaClassImpl {
             LinkedList matches = new LinkedList();
             for (Iterator iter = matchingMethods.iterator(); iter.hasNext();) {
                 Object method = iter.next();
-                Class[] paramTypes = MetaClassHelper.getParameterTypes(method).getNativeParameterTypes();
+                final ParameterTypes parameterTypes = MetaClassHelper.getParameterTypes(method);
+                Class[] paramTypes = parameterTypes.getNativeParameterTypes();
                 if (!MetaClassHelper.parametersAreCompatible(arguments, paramTypes)) continue;
-                long dist = MetaClassHelper.calculateParameterDistance(arguments, paramTypes);
+                long dist = MetaClassHelper.calculateParameterDistance(arguments, parameterTypes);
                 if (dist == 0) return method;
                 if (matches.isEmpty()) {
                     matches.add(method);
@@ -249,7 +247,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
             method = CLOSURE_METACLASS.pickMethod(methodName, argClasses);
         }
  
-        if (method != null) return MetaClassHelper.doMethodInvoke(object, method, arguments);
+        if (method != null) return method.doMethodInvoke(object, arguments);
 
         MissingMethodException last = null;
         Object callObject = object;
@@ -334,7 +332,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
         }
 
         if (method != null) {
-            return MetaClassHelper.doMethodInvoke(callObject, method, arguments);
+            return method.doMethodInvoke(callObject, arguments);
         } else {
             // if no method was found, try to find a closure defined as a field of the class and run it
             Object value = null;

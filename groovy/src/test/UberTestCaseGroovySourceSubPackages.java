@@ -12,7 +12,7 @@ import junit.framework.TestCase;
 
 public class UberTestCaseGroovySourceSubPackages extends TestCase {
     public static Test suite() {
-        return AllTestSuite.suite("src/test", "groovy/*/**/*Test.groovy");
+        return AllTestSuite.suite("src/test", "groovy/**/*Test.groovy", "groovy/**/vm5/*Test.groovy");
     }
 
 // no tests inside (should we have an AbstractGroovyTestCase???)

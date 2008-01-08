@@ -71,6 +71,7 @@ class ProxyGeneratorTest extends GroovyTestCase {
     }
 
     void testDelegateWithBaseClass() {
+        ProxyGenerator.debug = true;
         def delegate = new TestClass()
         Map map = [myMethodE: {"the injected E"}, myMethodB: {"the new B"}, myMethodX: {"the injected X"}]
         TestClass testClass = ProxyGenerator.instantiateDelegateWithBaseClass(map, [TestInterface, TestOtherInterface], delegate)

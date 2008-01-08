@@ -21,7 +21,7 @@ import java.lang.reflect.*;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
-import org.codehaus.groovy.vmplugin.VMPluging;
+import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.ast.ClassHelper;
 
 /**
@@ -29,7 +29,8 @@ import org.codehaus.groovy.ast.ClassHelper;
  * @author Jochen Theodorou
  *
  */
-public class Java5 implements VMPluging {
+public class Java5 implements VMPlugin { 
+    private static Class[] PLUGIN_DGM={PluginDefaultGroovyMethods.class};
 
     public void setGenericsTypes(ClassNode cn) {
         TypeVariable[] tvs = cn.getTypeClass().getTypeParameters();
@@ -104,6 +105,10 @@ public class Java5 implements VMPluging {
             gts[i] = new GenericsType(configureType(ta[i]));
         }
         return gts;
+    }
+
+    public Class[] getPluginDefaultGroovyMethods() {
+        return PLUGIN_DGM;
     }
 
 }

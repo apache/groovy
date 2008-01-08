@@ -27,18 +27,18 @@ public class VMPluginFactory {
     
     private static final String JDK5_CLASSNAME_CHECK = "java.lang.annotation.Annotation";
     private static final String JDK5_PLUGIN_NAME = "org.codehaus.groovy.vmplugin.v5.Java5";
-    private static VMPluging plugin;
+    private static VMPlugin plugin;
     static {
         try {
             ClassLoader.getSystemClassLoader().loadClass(JDK5_CLASSNAME_CHECK);
-            plugin = (VMPluging) VMPluginFactory.class.getClassLoader()
+            plugin = (VMPlugin) VMPluginFactory.class.getClassLoader()
                                  .loadClass(JDK5_PLUGIN_NAME).newInstance();
         } catch(Exception ex) {
             plugin = new Java4();
         }
     }
     
-    public static VMPluging getPlugin() {
+    public static VMPlugin getPlugin() {
         return plugin;
     }
     

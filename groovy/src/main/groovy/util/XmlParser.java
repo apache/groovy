@@ -36,11 +36,11 @@ import javax.xml.parsers.SAXParserFactory;
 import org.xml.sax.*;
 
 /**
- * A helper class for parsing XML into a tree of Node instances for 
- * a simple way of processing XML. This parser does not preserve the
- * XML InfoSet - if thats what you need try using W3C DOM, dom4j, JDOM, XOM etc.
- * This parser ignores comments and processing instructions and converts the
- * XML into a Node for each element in the XML with attributes
+ * A helper class for parsing XML into a tree of Node instances for a
+ * simple way of processing XML. This parser does not preserve the XML
+ * InfoSet - if that's what you need try using W3C DOM, dom4j, JDOM, XOM etc.
+ * This parser ignores comments and processing instructions and converts
+ * the XML into a Node for each element in the XML with attributes
  * and child Nodes and Strings. This simple model is sufficient for
  * most simple use cases of processing XML.
  * 

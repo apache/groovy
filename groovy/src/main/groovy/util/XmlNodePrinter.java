@@ -36,7 +36,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 public class XmlNodePrinter {
 
     protected final IndentPrinter out;
-    private final String quote;
+    private String quote;
     private boolean namespaceAware = true;
 
     public XmlNodePrinter(PrintWriter out) {
@@ -93,7 +93,7 @@ public class XmlNodePrinter {
     }
 
     /**
-     * Determine if namspace handling is enabled.
+     * Check if namespace handling is enabled.
      *
      * @return true if namespace handling is enabled
      */
@@ -102,12 +102,30 @@ public class XmlNodePrinter {
     }
 
     /**
-     * Enable and/or disable namspace handling.
+     * Enable and/or disable namespace handling.
      *
      * @param namespaceAware the new desired value
      */
     public void setNamespaceAware(boolean namespaceAware) {
         this.namespaceAware = namespaceAware;
+    }
+
+    /**
+     * Get Quote to use when printing attributes.
+     *
+     * @return the quote character
+     */
+    public String getQuote() {
+        return quote;
+    }
+
+    /**
+     * Set Quote to use when printing attributes.
+     *
+     * @param quote the quote character
+     */
+    public void setQuote(String quote) {
+        this.quote = quote;
     }
 
     protected void print(Node node, NamespaceContext ctx) {
@@ -129,7 +147,7 @@ public class XmlNodePrinter {
         }
 
         /*
-         * Handle GSP tag element!
+         * Hook for extra processing, e.g. GSP tag element!
          */
         if (printSpecialNode(node)) {
             out.flush();
@@ -195,7 +213,7 @@ public class XmlNodePrinter {
         out.decrementIndent();
     }
 
-    private void printSimpleItem(Object value) {
+    protected void printSimpleItem(Object value) {
         printLineBegin();
         out.print(InvokerHelper.toString(value));
         printLineEnd();
@@ -264,9 +282,9 @@ public class XmlNodePrinter {
                         out.print(":");
                         out.print(prefix);
                     }
-                    out.print("=\"");
+                    out.print("=" + quote);
                     out.print(namespaceUri);
-                    out.print("\"");
+                    out.print(quote);
                 }
             }
         }
