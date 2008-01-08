@@ -329,17 +329,14 @@ public class DefaultGroovyMethods {
     }
     
     /**
-     * Print a value. This method delegates to the owner to
-     * execute the method.
+     * Print a value to the standard output stream.
+     * This method delegates to the owner to execute the method.
      *
      * @param self  a generated closure
      * @param value the value to print
      */
-    public static void print(Closure cls, Object value) {
-        Object owner =  ((Closure) cls).getOwner();
-        while (owner instanceof GeneratedClosure) {
-            owner = ((Closure) owner).getOwner();
-        }
+    public static void print(Closure self, Object value) {
+        Object owner = getClosureOwner(self);
         InvokerHelper.invokeMethod(owner, "print", new Object[]{value});
     }
 
@@ -353,17 +350,22 @@ public class DefaultGroovyMethods {
     }
         
     /**
-     * Print a linebreak. This method delegates to the owner to
-     * execute the method.
+     * Print a linebreak to the standard output stream.
+     * This method delegates to the owner to execute the method.
      *
      * @param self  a closure
      */
-    public static void println(Closure cls) {
-        Object owner =  ((Closure) cls).getOwner();
+    public static void println(Closure self) {
+        Object owner = getClosureOwner(self);
+        InvokerHelper.invokeMethod(owner, "println", new Object[0]);
+    }
+
+    private static Object getClosureOwner(Closure cls) {
+        Object owner =  cls.getOwner();
         while (owner instanceof GeneratedClosure) {
             owner = ((Closure) owner).getOwner();
         }
-        InvokerHelper.invokeMethod(owner, "println", new Object[0]);
+        return owner;
     }
 
     /**
@@ -377,17 +379,14 @@ public class DefaultGroovyMethods {
     }
     
     /**
-     * Print a linebreak. This method delegates to the owner to
-     * execute the method.
+     * Print a value (followed by a newline) to the standard output stream.
+     * This method delegates to the owner to execute the method.
      *
      * @param self  a closure
      * @param value the value to print
      */
-    public static void println(Closure cls, Object value) {
-        Object owner =  ((Closure) cls).getOwner();
-        while (owner instanceof GeneratedClosure) {
-            owner = ((Closure) owner).getOwner();
-        }
+    public static void println(Closure self, Object value) {
+        Object owner = getClosureOwner(self);
         InvokerHelper.invokeMethod(owner, "println", new Object[]{value});
     }
 
@@ -1594,7 +1593,7 @@ public class DefaultGroovyMethods {
      * "plus" method on all items in the collection.
      *
      * @param self Collection of values to add together.
-     * @return The sum of all of the list itmems.
+     * @return The sum of all of the list items.
      */
     public static Object sum(Collection self) {
         return sum(self, null, true);
