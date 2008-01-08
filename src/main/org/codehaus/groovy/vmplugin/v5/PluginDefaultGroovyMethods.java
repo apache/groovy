@@ -13,27 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.codehaus.groovy.vmplugin.v4;
 
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.vmplugin.VMPlugin;
+package org.codehaus.groovy.vmplugin.v5;
 
-/**
- * java 4 based functions
- * @author Jochen Theodorou
- *
- */
-public class Java4 implements VMPlugin {
-    private static Class[] EMPTY_CLASS_ARRAY = new Class[0];
-    
-    
-    
-    public void setGenericsTypes(ClassNode c) {
-        return;        
-    }
-    
-    public Class[] getPluginDefaultGroovyMethods() {
-        return EMPTY_CLASS_ARRAY;
-    }
+public class PluginDefaultGroovyMethods {
 
 }

@@ -22,6 +22,7 @@ import org.codehaus.groovy.reflection.FastArray;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
@@ -163,8 +164,12 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             HashMap map = new HashMap();
 
             // lets register the default methods
-            registerMethods(DefaultGroovyMethods.class, true, map);
-            registerMethods(DefaultGroovyStaticMethods.class, false, map);
+            registerMethods(DefaultGroovyMethods.class, true, true, map);
+            Class[] pluginDGMs = VMPluginFactory.getPlugin().getPluginDefaultGroovyMethods();
+            for (int i=0; i<pluginDGMs.length; i++) {
+                registerMethods(pluginDGMs[i], false, true, map);
+            }
+            registerMethods(DefaultGroovyStaticMethods.class, false, false, map);
 
             for (Iterator it = map.entrySet().iterator(); it.hasNext(); ) {
                 Map.Entry e = (Map.Entry) it.next();
@@ -200,10 +205,10 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
 	       }
     }
     
-    private void registerMethods(final Class theClass, final boolean useInstanceMethods, Map map) {
+    private void registerMethods(final Class theClass, final boolean useMethodrapper, final boolean useInstanceMethods, Map map) {
         CachedMethod[] methods = ReflectionCache.getCachedClass(theClass).getMethods();
 
-        if (useInstanceMethods) {
+        if (useMethodrapper) {
             // Here we instanciate objects representing MetaMethods for DGM methods.
             // Calls for such meta methods done without reflection, so more effectively.
             // It gives 7-8% improvement for benchmarks involving just several ariphmetic operations

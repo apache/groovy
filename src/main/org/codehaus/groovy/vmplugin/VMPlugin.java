@@ -18,10 +18,13 @@ package org.codehaus.groovy.vmplugin;
 import org.codehaus.groovy.ast.ClassNode;
 
 /**
- * interface to access VM version based actions
+ * Interface to access VM version based actions.
+ * This interface is for internal use only!
+ * 
  * @author Jochen Theodorou
  */
-public interface VMPluging {
+public interface VMPlugin {
 
     void setGenericsTypes(ClassNode c);
+    Class[] getPluginDefaultGroovyMethods();
 }
