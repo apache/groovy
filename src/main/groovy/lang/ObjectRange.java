@@ -138,8 +138,8 @@ public class ObjectRange extends AbstractList implements Range {
     /**
      * Compares an {@link ObjectRange} to another {@link ObjectRange}.
      *
-     * @return <code>true</code> if the ranges are equal
      * @param that the object to check equality with
+     * @return <code>true</code> if the ranges are equal
      */
     public boolean equals(ObjectRange that) {
         return that != null
@@ -271,10 +271,12 @@ public class ObjectRange extends AbstractList implements Range {
             } else {
                 // let's lazily calculate the size
                 size = 0;
-                Object value = from;
+                Comparable first = from;
+                Comparable value = from;
                 while (to.compareTo(value) >= 0) {
-                    value = increment(value);
+                    value = (Comparable) increment(value);
                     size++;
+                    if (first.compareTo(value) >= 0) break; // handle back to beginning due to modulo incrementing
                 }
             }
         }
@@ -319,7 +321,7 @@ public class ObjectRange extends AbstractList implements Range {
 
     public boolean contains(Object value) {
         Iterator it = iterator();
-        if (value==null) return false;
+        if (value == null) return false;
         while (it.hasNext()) {
             try {
                 if (DefaultTypeTransformation.compareEqual(value, it.next())) return true;
@@ -338,20 +340,24 @@ public class ObjectRange extends AbstractList implements Range {
             step = -step;
         }
         if (step >= 0) {
+            Comparable first = from;
             Comparable value = from;
             while (value.compareTo(to) <= 0) {
                 closure.call(value);
                 for (int i = 0; i < step; i++) {
                     value = (Comparable) increment(value);
+                    if (value.compareTo(first) <= 0) return;
                 }
             }
         } else {
             step = -step;
+            Comparable first = to;
             Comparable value = to;
             while (value.compareTo(from) >= 0) {
                 closure.call(value);
                 for (int i = 0; i < step; i++) {
                     value = (Comparable) decrement(value);
+                    if (value.compareTo(first) >= 0) return;
                 }
             }
         }

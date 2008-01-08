@@ -16,17 +16,24 @@
 package org.codehaus.groovy.vmplugin.v4;
 
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.vmplugin.VMPluging;
+import org.codehaus.groovy.vmplugin.VMPlugin;
 
 /**
  * java 4 based functions
  * @author Jochen Theodorou
  *
  */
-public class Java4 implements VMPluging {
-
+public class Java4 implements VMPlugin {
+    private static Class[] EMPTY_CLASS_ARRAY = new Class[0];
+    
+    
+    
     public void setGenericsTypes(ClassNode c) {
         return;        
+    }
+    
+    public Class[] getPluginDefaultGroovyMethods() {
+        return EMPTY_CLASS_ARRAY;
     }
 
 }

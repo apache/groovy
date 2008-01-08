@@ -199,15 +199,19 @@ public class DefaultTypeTransformation {
         if (object == null) {
             return null;
         }
-        
-        if (type == object.getClass()) return object;
+
+        if (type == Object.class)
+          return object;
+
+        final Class aClass = object.getClass();
+        if (type == aClass) return object;
         // TODO we should move these methods to groovy method, like g$asType() so that
         // we can use operator overloading to customize on a per-type basis
         if (ReflectionCache.isArray(type)) {
             return asArray(object, type);
 
         }
-        if (ReflectionCache.isAssignableFrom(type,object.getClass())) {
+        if (ReflectionCache.isAssignableFrom(type, aClass)) {
             return object;
         }
         if (Collection.class.isAssignableFrom(type)) {
@@ -217,7 +221,7 @@ public class DefaultTypeTransformation {
                     (type == HashSet.class || Modifier.isAbstract(modifiers) || Modifier.isInterface(modifiers))) {
                 return new HashSet((Collection)object);
             }
-            if (object.getClass().isArray()) {
+            if (aClass.isArray()) {
                 if (type.isAssignableFrom(ArrayList.class) && (Modifier.isAbstract(modifiers) || Modifier.isInterface(modifiers))) {
                     answer = new ArrayList();
                 } else {
@@ -303,7 +307,7 @@ public class DefaultTypeTransformation {
                 //throw a runtime exception if conversion would be out-of-range for the type.
                 if (!(object instanceof Double) && (answer.doubleValue() == Double.NEGATIVE_INFINITY
                         || answer.doubleValue() == Double.POSITIVE_INFINITY)) {
-                    throw new GroovyRuntimeException("Automatic coercion of " + object.getClass().getName()
+                    throw new GroovyRuntimeException("Automatic coercion of " + aClass.getName()
                             + " value " + object + " to double failed.  Value is out of range.");
                 }
                 return answer;
@@ -446,10 +450,33 @@ public class DefaultTypeTransformation {
                 throw new GroovyRuntimeException("Error reading file: " + value, e);
             }
         }
+        else if (isEnumSubclass(value)) {
+            Object[] values = (Object[])InvokerHelper.invokeMethod(value, "values", new Object[0]);
+            return Arrays.asList(values);
+        }
         else {
             // lets assume its a collection of 1
             return Collections.singletonList(value);
         }
+    }
+
+    /**
+     * Determines whether the value object is a Class object representing a
+     * subclass of java.lang.Enum. Uses class name check to avoid breaking on
+     * pre-Java 5 JREs.
+     */
+    public static boolean isEnumSubclass(Object value) {
+        if (value instanceof Class) {
+            Class superclass = ((Class)value).getSuperclass();
+            while (superclass != null) {
+                if (superclass.getName().equals("java.lang.Enum")) {
+                    return true;
+                }
+                superclass = superclass.getSuperclass();
+            }
+        }
+
+        return false;
     }
     
     /**

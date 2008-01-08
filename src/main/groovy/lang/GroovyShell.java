@@ -247,14 +247,22 @@ public class GroovyShell extends GroovyObjectSupport {
             if (Runnable.class.isAssignableFrom(scriptClass)) {
                 return runRunnable(scriptClass, args);
             }
-            // if it's a unit test extending GroovyTestCase, run it with JUnit's TextRunner
-            if (isUnitTestCase(scriptClass)) {
-                return runTest(scriptClass);
+            // if it's a JUnit 3.8.x test, run it with an appropriate runner
+            if (isJUnit3Test(scriptClass)) {
+                return runJUnit3Test(scriptClass);
+            }
+            // if it's a JUnit 4.x test, run it with an appropriate runner
+            if (isJUnit4Test(scriptClass)) {
+                return runJUnit4Test(scriptClass);
+            }
+            // if it's a TestNG tst, run it with an appropriate runner
+            if (isTestNgTest(scriptClass)) {
+                return runTestNgTest(scriptClass);
             }
             throw new GroovyRuntimeException("This script or class could not be run.\n" +
                     "It should either: \n" +
                     "- have a main method, \n" +
-                    "- be a class extending GroovyTestCase, \n" +
+                    "- be a JUnit test, TestNG test or extend GroovyTestCase, \n" +
                     "- or implement the Runnable interface.");
         }
     }
@@ -267,7 +275,7 @@ public class GroovyShell extends GroovyObjectSupport {
             // first, fetch the constructor taking String[] as parameter
             constructor = scriptClass.getConstructor(new Class[]{(new String[]{}).getClass()});
             try {
-                // instanciate a runnable and run it
+                // instantiate a runnable and run it
                 runnable = (Runnable) constructor.newInstance(new Object[]{args});
             } catch (Throwable t) {
                 reason = t;
@@ -277,7 +285,7 @@ public class GroovyShell extends GroovyObjectSupport {
                 // otherwise, find the default constructor
                 constructor = scriptClass.getConstructor(new Class[]{});
                 try {
-                    // instanciate a runnable and run it
+                    // instantiate a runnable and run it
                     runnable = (Runnable) constructor.newInstance(new Object[]{});
                 } catch (Throwable t) {
                     reason = t;
@@ -295,14 +303,14 @@ public class GroovyShell extends GroovyObjectSupport {
     }
 
     /**
-     * Run the specified class extending GroovyTestCase as a unit test.
+     * Run the specified class extending TestCase as a unit test.
      * This is done through reflection, to avoid adding a dependency to the JUnit framework.
      * Otherwise, developers embedding Groovy and using GroovyShell to load/parse/compile
      * groovy scripts and classes would have to add another dependency on their classpath.
      *
      * @param scriptClass the class to be run as a unit test
      */
-    private Object runTest(Class scriptClass) {
+    private Object runJUnit3Test(Class scriptClass) {
         try {
             Object testSuite = InvokerHelper.invokeConstructorOf("junit.framework.TestSuite",new Object[]{scriptClass});
             return InvokerHelper.invokeStaticMethod("junit.textui.TestRunner", "run", new Object[]{testSuite});
@@ -311,19 +319,38 @@ public class GroovyShell extends GroovyObjectSupport {
         }
     }
 
+    private Object runJUnit4Test(Class scriptClass) {
+        try {
+            return InvokerHelper.invokeStaticMethod("org.codehaus.groovy.vmplugin.v5.JUnit4Utils",
+                    "realRunJUnit4Test", new Object[]{scriptClass});
+        } catch (ClassNotFoundException e) {
+            throw new GroovyRuntimeException("Failed to run the JUnit 4 test.");
+        }
+    }
+
+    private Object runTestNgTest(Class scriptClass) {
+        try {
+            return InvokerHelper.invokeStaticMethod("org.codehaus.groovy.vmplugin.v5.TestNgUtils",
+                    "realRunTestNgTest", new Object[]{scriptClass});
+        } catch (ClassNotFoundException e) {
+            throw new GroovyRuntimeException("Failed to run the TestNG test.");
+        }
+    }
+
     /**
-     * Utility method to check through reflection if the parsed class extends GroovyTestCase.
+     * Utility method to check through reflection if the class appears to be a
+     * JUnit 3.8.x test, i.e. checks if it extends JUnit 3.8.x's TestCase.
      *
-     * @param scriptClass the class we want to know if it extends GroovyTestCase
-     * @return true if the class extends groovy.util.GroovyTestCase
+     * @param scriptClass the class we want to check
+     * @return true if the class appears to be a test
      */
-    private boolean isUnitTestCase(Class scriptClass) {
+    private boolean isJUnit3Test(Class scriptClass) {
         // check if the parsed class is a GroovyTestCase,
         // so that it is possible to run it as a JUnit test
         boolean isUnitTestCase = false;
         try {
             try {
-                Class testCaseClass = this.loader.loadClass("groovy.util.GroovyTestCase");
+                Class testCaseClass = this.loader.loadClass("junit.framework.TestCase");
                 // if scriptClass extends testCaseClass
                 if (testCaseClass.isAssignableFrom(scriptClass)) {
                     isUnitTestCase = true;
@@ -335,6 +362,63 @@ public class GroovyShell extends GroovyObjectSupport {
             // fall through
         }
         return isUnitTestCase;
+    }
+
+    /**
+     * Utility method to check via reflection if the parsed class appears to be a JUnit4
+     * test, i.e. checks whether it appears to be using the relevant JUnit 4 annotations.
+     *
+     * @param scriptClass the class we want to check
+     * @return true if the class appears to be a test
+     */
+    private boolean isJUnit4Test(Class scriptClass) {
+        // if we are running under Java 1.4 don't bother trying to check
+        char version = System.getProperty("java.version").charAt(2);
+        if (version < '5') {
+            return false;
+        }
+
+        // check if there are appropriate class or method annotations
+        // that suggest we have a JUnit 4 test
+        boolean isTest = false;
+
+        try {
+            if (InvokerHelper.invokeStaticMethod("org.codehaus.groovy.vmplugin.v5.JUnit4Utils",
+                    "realIsJUnit4Test", new Object[]{scriptClass, this.loader}) == Boolean.TRUE) {
+                isTest = true;
+            };
+        } catch (ClassNotFoundException e) {
+            throw new GroovyRuntimeException("Failed to invoke the JUnit 4 helper class.");
+        }
+        return isTest;
+    }
+
+    /**
+     * Utility method to check via reflection if the parsed class appears to be a TestNG
+     * test, i.e. checks whether it appears to be using the relevant TestNG annotations.
+     *
+     * @param scriptClass the class we want to check
+     * @return true if the class appears to be a test
+     */
+    private boolean isTestNgTest(Class scriptClass) {
+        char version = System.getProperty("java.version").charAt(2);
+        if (version < '5') {
+            return false;
+        }
+
+        // check if there are appropriate class or method annotations
+        // that suggest we have a TestNG test
+        boolean isTest = false;
+
+        try {
+            if (InvokerHelper.invokeStaticMethod("org.codehaus.groovy.vmplugin.v5.TestNgUtils",
+                    "realIsTestNgTest", new Object[]{scriptClass, this.loader}) == Boolean.TRUE) {
+                isTest = true;
+            };
+        } catch (ClassNotFoundException e) {
+            throw new GroovyRuntimeException("Failed to invoke the TestNG helper class.");
+        }
+        return isTest;
     }
 
     /**

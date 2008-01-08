@@ -17,8 +17,8 @@
 package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.ast.expr.*;
-
 import org.codehaus.groovy.ast.stmt.*;
+import org.codehaus.groovy.classgen.BytecodeExpression;
 
 /**
  * An implementation of the visitor pattern for working with ASTNodes
@@ -138,5 +138,7 @@ public interface GroovyCodeVisitor {
     void visitArgumentlistExpression(ArgumentListExpression expression);
 
     void visitClosureListExpression(ClosureListExpression closureListExpression);
+
+    void visitBytecodeExpression(BytecodeExpression expression);
 }
 

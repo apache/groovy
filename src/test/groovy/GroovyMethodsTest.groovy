@@ -39,6 +39,13 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert [1: 'a', 2: 'b', 3: 'c'].collect {it.getKey() + "*" + it.getValue()} == ['1*a', '2*b', '3*c']
     }
 
+    void testCollectAll() {
+        def animalLists= [["ant", "mouse", "elephant"], ["deer", "monkey"]]
+        assert animalLists*.size() == [3, 2]
+        assert animalLists.collect{ it.size() } == [3, 2]
+        assert animalLists.collectAll{ it.size() } == [[3, 5, 8], [4, 6]]
+    }
+
     void testAsCoercion() {
         def d0 = new Dimension(100, 200)
         assert d0 == new Dimension(width: 100, height: 200)
@@ -49,7 +56,7 @@ class GroovyMethodsTest extends GroovyTestCase {
     void testCombinations() {
         def lists = [['a', 'b'], [1, 2, 3]]
         assert lists.combinations() as Set ==
-                        [['a', 1], ['a', 2], ['a', 3],
+                [['a', 1], ['a', 2], ['a', 3],
                         ['b', 1], ['b', 2], ['b', 3]] as Set
     }
 
@@ -171,7 +178,7 @@ class GroovyMethodsTest extends GroovyTestCase {
 
     void testStringToList() {
         String s = 'hello 10'
-        def gs = "hello ${5+5}"
+        def gs = "hello ${5 + 5}"
         def expected = ["h", "e", "l", "l", "o", " ", "1", "0"]
         assert s.toList() == expected
         assert s as String[] == expected
@@ -218,10 +225,17 @@ class GroovyMethodsTest extends GroovyTestCase {
     }
 
     void testReverseEach() {
+        // List
         def l = ["cheese", "loves", "Guillaume"]
         def expected = ["Guillaume", "loves", "cheese"]
         def answer = []
         l.reverseEach {answer << it}
+        assert answer == expected
+
+        // Array
+        def ary = l as String[]
+        answer = []
+        ary.reverseEach {answer << it}
         assert answer == expected
     }
 
@@ -292,7 +306,7 @@ class GroovyMethodsTest extends GroovyTestCase {
         process.waitForOrKill(10) // This fails on RLW's workstation with parameter 1, >=8 is required.
         value = process.exitValue()
         println "Exit value of command line is ${value}"
-        
+
     }
     */
 
@@ -333,6 +347,18 @@ class GroovyMethodsTest extends GroovyTestCase {
         }
     }
 
+    void testInForLists() {
+        def list = ['a', 'b', 'c']
+        assert 'b' in list
+        assert !('d' in list)
+    }
+
+    void testInForArrays() {
+        String[] array = ['a', 'b', 'c']
+        assert 'b' in array
+        assert !('d' in array)
+    }
+
     void testMax() {
         assert [-5, -3, -1, 0, 2, 4].max {it * it} == -5
     }
@@ -354,8 +380,8 @@ class GroovyMethodsTest extends GroovyTestCase {
         sleep 1000
         long slept = System.currentTimeMillis() - start
         long epsilon = 120
-        assert (slept > 1000 - epsilon) && (slept < 1000 + epsilon):  \
-              "should have slept for 1s (+/- " + epsilon + "ms) but was ${slept}ms"
+        assert (slept > 1000 - epsilon) && (slept < 1000 + epsilon):   \
+               "should have slept for 1s (+/- " + epsilon + "ms) but was ${slept}ms"
     }
 
     void testObjectSleepInterrupted() {
@@ -365,8 +391,8 @@ class GroovyMethodsTest extends GroovyTestCase {
         sleep 1000
         long slept = System.currentTimeMillis() - start
         long epsilon = 150
-        assert (slept > 1000 - epsilon) && (slept < 1000 + epsilon):  \
-              "should have slept for 1s (+/- " + epsilon + "ms) but was ${slept}ms"
+        assert (slept > 1000 - epsilon) && (slept < 1000 + epsilon):   \
+               "should have slept for 1s (+/- " + epsilon + "ms) but was ${slept}ms"
     }
 
     void testObjectSleepWithOnInterruptHandler() {
@@ -415,11 +441,11 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert 3 == result.size()
     }
 
-    void testGroupByMapEntry() {
+    void testMapGroupEntriesBy() {
         def expectedKeys = [Integer: [1, 3], String: [2, 4], BigDecimal: [5, 6]]
         def expectedVals = [Integer: [1, 2], String: ["a", "b"], BigDecimal: [3.5, 4.6]]
         def map = [1: 1, 2: "a", 3: 2, 4: "b", 5: 3.5, 6: 4.6]
-        def result = map.groupBy {entry -> entry.value.class}
+        def result = map.groupEntriesBy {entry -> entry.value.class}
         assert expectedKeys.Integer == result[Integer].collect {it.key}
         assert expectedVals.Integer == result[Integer].collect {it.value}
         assert expectedKeys.String == result[String].collect {it.key}
@@ -427,6 +453,15 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert expectedKeys.BigDecimal == result[BigDecimal].collect {it.key}
         assert expectedVals.BigDecimal == result[BigDecimal].collect {it.value}
         assert 3 == result.size()
+    }
+
+    void testMapGroupBy() {
+        def map = [1: 1, 2: "a", 3: 2, 4: "b", 5: 3.5, 6: 4.6]
+        def result = map.groupBy {entry -> entry.value.class}
+        assert 3 == result.size()
+        assert result[BigDecimal] == [5:3.5, 6:4.6]
+        assert result[String] == [2:'a', 4:'b']
+        assert result[Integer] == [1:1, 3:2]
     }
 
     def leftCol = ["2"]
@@ -457,6 +492,31 @@ class GroovyMethodsTest extends GroovyTestCase {
         col.addAll(leftCol);
         // not really concerned about  correctness, rather that the method can be called, however..
         assert col.intersect(rightCol) == ["2"]
+    }
+
+    void testFileWithReader() {
+        def f = new File('build.properties')
+        def expected = f.text
+        assert expected == f.withReader { r -> r.text } 
+    }
+
+    void testFileWithInputStream() {
+        def f = new File('build.properties')
+        def buf = new byte[f.size()]
+        assert buf.size() == f.withInputStream { i -> i.read(buf) } 
+    }
+
+    void testUrlReader() {
+        def u = new File('build.properties').toURL()
+        def expected = u.text
+        assert expected == u.withReader { r -> r.text } 
+    }
+
+    void testUrlWithInputStream() {
+        def f = new File('build.properties')
+        def u = f.toURL()
+        def buf = new byte[f.size()]
+        assert buf.size() == u.withInputStream { i -> i.read(buf) } 
     }
 }
 

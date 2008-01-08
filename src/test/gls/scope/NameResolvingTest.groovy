@@ -24,12 +24,19 @@ class NameResolvingTest extends CompilableTestSupport {
     """
   }
   
-  public void testAssignmentToNonLocalVariableWithSameNameAsClass() {
-    shouldNotCompile """
-      String = 1    
+  public void testInAsDefAllowedInPackageNames() {
+    shouldCompile """
+      package as.in.def
+      class X {}
     """
   }
   
+  public void testAssignmentToNonLocalVariableWithSameNameAsClass() {
+    shouldNotCompile """
+      String = 1
+    """
+  }
+
   public void testClassUsageInSuper(){
      shouldCompile """
        class A {A(x){}}

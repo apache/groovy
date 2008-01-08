@@ -75,7 +75,7 @@ public class AsmClassGenerator extends ClassGenerator {
     private boolean leftHandExpression = false;
     /**
      * Notes for leftHandExpression:
-     * The default is false, that menas the right side is default.
+     * The default is false, that means the right side is default.
      * The right side means that variables are read and not written.
      * Any change of leftHandExpression to true, should be made carefully.
      * If such a change is needed, then it should be set to false as soon as
@@ -178,6 +178,7 @@ public class AsmClassGenerator extends ClassGenerator {
     private boolean implicitThis = false;
 
     private Map genericParameterNames = null;
+    private ClassNode rightHandType;
 
     public AsmClassGenerator(
             GeneratorContext context, ClassVisitor classVisitor,
@@ -454,7 +455,7 @@ public class AsmClassGenerator extends ClassGenerator {
             }
             compileStack.clear();
 
-            // lets do all the exception blocks
+            // let's do all the exception blocks
             for (Iterator iter = exceptionBlocks.iterator(); iter.hasNext();) {
                 Runnable runnable = (Runnable) iter.next();
                 runnable.run();
@@ -719,7 +720,7 @@ public class AsmClassGenerator extends ClassGenerator {
             visitAndAutoboxBoolean(expression.getTrueExpression());
             boolPart = new BooleanExpression(
                     new BytecodeExpression() {
-                        public void visit(GroovyCodeVisitor visitor) {
+                        public void visit(MethodVisitor mv) {
                             mv.visitInsn(DUP);
                         }
                     }
@@ -727,7 +728,7 @@ public class AsmClassGenerator extends ClassGenerator {
             truePart = BytecodeExpression.NOP;
             final Expression oldFalse = falsePart;
             falsePart = new BytecodeExpression() {
-                public void visit(GroovyCodeVisitor visitor) {
+                public void visit(MethodVisitor mv) {
                     mv.visitInsn(POP);
                     visitAndAutoboxBoolean(oldFalse);
                 }
@@ -778,7 +779,7 @@ public class AsmClassGenerator extends ClassGenerator {
         } else {
             boolean first = true;
 
-            // lets create a new expression
+            // let's create a new expression
             mv.visitTypeInsn(NEW, "java/lang/StringBuffer");
             mv.visitInsn(DUP);
             mv.visitLdcInsn(expressionText + ". Values: ");
@@ -1128,6 +1129,10 @@ public class AsmClassGenerator extends ClassGenerator {
     protected void evaluateExpression(Expression expression) {
         visitAndAutoboxBoolean(expression);
 
+        if (isPopRequired(expression)) {
+            return; // we already have the return value
+        }
+        // otherwise create return value if appropriate
         Expression assignExpr = createReturnLHSExpression(expression);
         if (assignExpr != null) {
             leftHandExpression = false;
@@ -1159,7 +1164,7 @@ public class AsmClassGenerator extends ClassGenerator {
         VariableExpression vex = expression.getVariableExpression();
         ClassNode type = vex.getType();
 
-        // lets not cast for primitive types as we handle these in field setting etc
+        // let's not cast for primitive types as we handle these in field setting etc
         if (ClassHelper.isPrimitiveType(type)) {
             rightExpression.visit(this);
         } else {
@@ -1420,7 +1425,7 @@ public class AsmClassGenerator extends ClassGenerator {
             loadThis();
         }
 
-        // now lets load the various parameters we're passing
+        // now let's load the various parameters we're passing
         // we start at index 1 because the first variable we pass
         // is the owner instance and at this point it is already 
         // on the stack
@@ -1703,9 +1708,9 @@ public class AsmClassGenerator extends ClassGenerator {
         boolean isSuperMethodCall = usesSuper(call);
         boolean isThisExpression = isThisExpression(call.getObjectExpression());
 
-        // are we a local variable
+        // are we a local variable?
         if (methodName != null && isThisExpression && isFieldOrVariable(methodName) && !classNode.hasPossibleMethod(methodName, arguments)) {
-            // lets invoke the closure method
+            // let's invoke the closure method
             visitVariableExpression(new VariableExpression(methodName));
             if (arguments instanceof TupleExpression) {
                 arguments.visit(this);
@@ -2572,7 +2577,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 Expression element = (Expression) iter.next();
                 if (element == ConstantExpression.EMTPY_EXPRESSION) break;
                 dimensions++;
-                // lets convert to an int
+                // let's convert to an int
                 visitAndAutoboxBoolean(element);
                 helper.unbox(int.class);
             }
@@ -3023,7 +3028,7 @@ public class AsmClassGenerator extends ClassGenerator {
         if (parameters == null) {
             parameters = Parameter.EMPTY_ARRAY;
         } else if (parameters.length == 0) {
-            // lets create a default 'it' parameter
+            // let's create a default 'it' parameter
             parameters = new Parameter[]{new Parameter(ClassHelper.OBJECT_TYPE, "it", ConstantExpression.NULL)};
         }
 
@@ -3056,7 +3061,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 && parameters[0].getType() != null
                 && parameters[0].getType() != ClassHelper.OBJECT_TYPE)) {
 
-            // lets add a typesafe call method
+            // let's add a typesafe call method
             MethodNode call = answer.addMethod(
                     "call",
                     ACC_PUBLIC,
@@ -3071,7 +3076,7 @@ public class AsmClassGenerator extends ClassGenerator {
             call.setSourcePosition(expression);
         }
 
-        // lets make the constructor
+        // let's make the constructor
         BlockStatement block = new BlockStatement();
         block.setSourcePosition(expression);
         VariableExpression outer = new VariableExpression("_outerInstance");
@@ -3087,7 +3092,7 @@ public class AsmClassGenerator extends ClassGenerator {
                                 ClassNode.SUPER,
                                 conArgs)));
 
-        // lets assign all the parameter fields from the outer context
+        // let's assign all the parameter fields from the outer context
         for (int i = 0; i < localVariableParams.length; i++) {
             Parameter param = localVariableParams[i];
             String paramName = param.getName();
@@ -3103,7 +3108,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 paramField.setHolder(true);
                 String methodName = Verifier.capitalize(paramName);
 
-                // lets add a getter & setter
+                // let's add a getter & setter
                 Expression fieldExp = new FieldExpression(paramField);
                 answer.addMethod(
                         "get" + methodName,
@@ -3179,12 +3184,14 @@ public class AsmClassGenerator extends ClassGenerator {
 
     protected void doConvertAndCast(ClassNode type, boolean coerce) {
         if (type == ClassHelper.OBJECT_TYPE) return;
-        if (isValidTypeForCast(type)) {
-            visitClassExpression(new ClassExpression(type));
-            if (coerce) {
-                asTypeMethod.call(mv);
-            } else {
-                castToTypeMethod.call(mv);
+        if (rightHandType == null || !rightHandType.isDerivedFrom(type)) {
+            if (isValidTypeForCast(type)) {
+                visitClassExpression(new ClassExpression(type));
+                if (coerce) {
+                    asTypeMethod.call(mv);
+                } else {
+                    castToTypeMethod.call(mv);
+                }
             }
         }
         helper.doCast(type);
@@ -3264,7 +3271,7 @@ public class AsmClassGenerator extends ClassGenerator {
         if (leftExpression instanceof BinaryExpression) {
             BinaryExpression leftBinExpr = (BinaryExpression) leftExpression;
             if (leftBinExpr.getOperation().getType() == Types.LEFT_SQUARE_BRACKET) {
-                // lets replace this assignment to a subscript operator with a
+                // let's replace this assignment to a subscript operator with a
                 // method call
                 // e.g. x[5] += 10
                 // -> (x, [], 5), =, x[5] + 10
@@ -3311,7 +3318,7 @@ public class AsmClassGenerator extends ClassGenerator {
         if (leftExpression instanceof BinaryExpression) {
             BinaryExpression leftBinExpr = (BinaryExpression) leftExpression;
             if (leftBinExpr.getOperation().getType() == Types.LEFT_SQUARE_BRACKET) {
-                // lets replace this assignment to a subscript operator with a
+                // let's replace this assignment to a subscript operator with a
                 // method call
                 // e.g. x[5] = 10
                 // -> (x, [], 5), =, 10
@@ -3328,13 +3335,13 @@ public class AsmClassGenerator extends ClassGenerator {
             }
         }
 
-        // lets evaluate the RHS then hopefully the LHS will be a field
+        // let's evaluate the RHS then hopefully the LHS will be a field
         Expression rightExpression = expression.getRightExpression();
         ClassNode type = getLHSType(leftExpression);
-        // lets not cast for primitive types as we handle these in field setting etc
+        // let's not cast for primitive types as we handle these in field setting etc
         if (ClassHelper.isPrimitiveType(type)) {
             visitAndAutoboxBoolean(rightExpression);
-        } else if (type != ClassHelper.OBJECT_TYPE) {
+        } else if (!rightExpression.getType().isDerivedFrom(type)) {
             visitCastExpression(new CastExpression(type, rightExpression));
         } else {
             visitAndAutoboxBoolean(rightExpression);
@@ -3342,7 +3349,9 @@ public class AsmClassGenerator extends ClassGenerator {
 
         mv.visitInsn(DUP);  // to leave a copy of the rightexpression value on the stack after the assignment.
         leftHandExpression = true;
+        rightHandType = rightExpression.getType();
         leftExpression.visit(this);
+        rightHandType = null;
         leftHandExpression = false;
     }
 
@@ -3396,6 +3405,10 @@ public class AsmClassGenerator extends ClassGenerator {
                 type != ClassHelper.REFERENCE_TYPE;
     }
 
+    public void visitBytecodeExpression(BytecodeExpression cle) {
+        cle.visit(mv);
+    }
+
     protected void visitAndAutoboxBoolean(Expression expression) {
         expression.visit(this);
 
@@ -3420,7 +3433,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 mv.visitInsn(DUP);
                 final int resultIdx = compileStack.defineTemporaryVariable("postfix_" + method, true);
                 BytecodeExpression result = new BytecodeExpression() {
-                    public void visit(GroovyCodeVisitor visitor) {
+                    public void visit(MethodVisitor mv) {
                         mv.visitVarInsn(ALOAD, resultIdx);
                     }
                 };

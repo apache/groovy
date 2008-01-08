@@ -38,6 +38,7 @@ public class CachedMethod extends MetaMethod implements Comparable{
     private volatile boolean alreadySetAccessible;
     private int methodIndex;
     private int hashCode;
+    private static MyComparator comparator = new MyComparator();
 
     public CachedMethod(CachedClass clazz, Method method) {
         this.cachedMethod = method;
@@ -57,17 +58,7 @@ public class CachedMethod extends MetaMethod implements Comparable{
 //                return cachedMethod;
 //        }
 //        return null;
-        int i = Arrays.binarySearch(methods, method, new Comparator() {
-            public int compare(Object o1, Object o2) {
-                if (o1 instanceof CachedMethod)
-                    return ((CachedMethod)o1).compareTo(o2);
-                else if (o2 instanceof CachedMethod)
-                    return -((CachedMethod)o2).compareTo(o1);
-                else
-                    // really, this should never happen, it's eveidence of corruption if it does
-                    throw new ClassCastException("One of the two comperables must be a CachedMethod");
-            }
-        });
+        int i = Arrays.binarySearch(methods, method, comparator);
         if (i < 0)
           return null;
 
@@ -248,6 +239,18 @@ public class CachedMethod extends MetaMethod implements Comparable{
 
     public String toString() {
         return cachedMethod.toString();
+    }
+
+    private static class MyComparator implements Comparator {
+        public int compare(Object o1, Object o2) {
+            if (o1 instanceof CachedMethod)
+                return ((CachedMethod)o1).compareTo(o2);
+            else if (o2 instanceof CachedMethod)
+                return -((CachedMethod)o2).compareTo(o1);
+            else
+                // really, this should never happen, it's eveidence of corruption if it does
+                throw new ClassCastException("One of the two comperables must be a CachedMethod");
+        }
     }
 }
 

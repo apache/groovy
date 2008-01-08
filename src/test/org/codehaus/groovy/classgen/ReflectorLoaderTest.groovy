@@ -10,5 +10,5 @@ class ReflectorLoaderTest extends GroovyTestCase {
 	  def binding  = new Binding()
 	  ( new GroovyShell ( binding ) ).evaluate ( program )
 	  binding.closureB.call( )
-  }
+    }
 }

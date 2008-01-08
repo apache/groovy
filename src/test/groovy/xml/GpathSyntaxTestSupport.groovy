@@ -75,7 +75,7 @@ class GpathSyntaxTestSupport {
     static void checkNestedSizeExpressions(Closure getRoot) {
         def root = getRoot(nestedXml)
         assert root.'*'.size() == 4, "Expected size 4 but was ${root.'*'.size()}"
-        assert root.'a'.'z'.size() == 2
+        assert root.'a'.'z'.size() == 2, "Expected size 2 but was ${root.'a'.'z'.size()}"
         assert root.'*'.'*'.size() == 5
         assert root.a.'*'.size() == 3
         assert root.'*'.z.size() == 3
@@ -96,7 +96,7 @@ class GpathSyntaxTestSupport {
         assert numericValue.text().toDouble() == 1
         assert numericValue.text().toBigInteger() == 1
         assert numericValue.text().toBigDecimal() == 1
-        assert booleanValue.text().toBoolean() == true
+        assert booleanValue.text().toBoolean()
         assert uriValue.text().toURI() == "http://example.org/".toURI()
         assert urlValue.text().toURL() == "http://example.org/".toURL()
         if (isSlurper(root)) {
@@ -107,7 +107,7 @@ class GpathSyntaxTestSupport {
             assert numericValue.toDouble() == 1
             assert numericValue.toBigInteger() == 1
             assert numericValue.toBigDecimal() == 1
-            assert booleanValue.toBoolean() == true
+            assert booleanValue.toBoolean()
             assert uriValue.toURI() == "http://example.org/".toURI()
             assert urlValue.toURL() == "http://example.org/".toURL()
         }

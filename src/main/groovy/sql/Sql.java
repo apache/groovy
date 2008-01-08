@@ -30,12 +30,7 @@ import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.LinkedHashMap;
-import java.util.Properties;
+import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -58,21 +53,30 @@ public class Sql {
 
     private Connection useConnection;
 
-    /** lets only warn of using deprecated methods once */
+    private int resultSetType = ResultSet.TYPE_FORWARD_ONLY;
+    private int resultSetConcurrency = ResultSet.CONCUR_READ_ONLY;
+    private int resultSetHoldability = -1;
+
+    /**
+     * let's only warn of using deprecated methods once
+     */
     private boolean warned;
 
     // store the last row count for executeUpdate
     int updateCount = 0;
 
-    /** allows a closure to be used to configure the statement before its use */
+    /**
+     * allows a closure to be used to configure the statement before its use
+     */
     private Closure configureStatement;
 
     /**
-     * A helper method which creates a new Sql instance from a JDBC connection
-     * URL
+     * Creates a new Sql instance given a JDBC connection URL.
      *
-     * @param url
+     * @param url a database url of the form
+     *            <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
      * @return a new Sql instance with a connection
+     * @throws SQLException if a database access error occurs
      */
     public static Sql newInstance(String url) throws SQLException {
         Connection connection = DriverManager.getConnection(url);
@@ -80,11 +84,16 @@ public class Sql {
     }
 
     /**
-     * A helper method which creates a new Sql instance from a JDBC connection
-     * URL
+     * Creates a new Sql instance given a JDBC connection URL
+     * and some properties.
      *
-     * @param url
+     * @param url        a database url of the form
+     *                   <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     * @param properties a list of arbitrary string tag/value pairs
+     *                   as connection arguments; normally at least a "user" and
+     *                   "password" property should be included
      * @return a new Sql instance with a connection
+     * @throws SQLException if a database access error occurs
      */
     public static Sql newInstance(String url, Properties properties) throws SQLException {
         Connection connection = DriverManager.getConnection(url, properties);
@@ -92,23 +101,36 @@ public class Sql {
     }
 
     /**
-     * A helper method which creates a new Sql instance from a JDBC connection
-     * URL and driver class name
+     * Creates a new Sql instance given a JDBC connection URL,
+     * some properties and a driver class name.
      *
-     * @param url
+     * @param url             a database url of the form
+     *                        <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     * @param properties      a list of arbitrary string tag/value pairs
+     *                        as connection arguments; normally at least a "user" and
+     *                        "password" property should be included
+     * @param driverClassName the fully qualified class name of the driver class
      * @return a new Sql instance with a connection
+     * @throws SQLException           if a database access error occurs
+     * @throws ClassNotFoundException if the class cannot be found or loaded
      */
-    public static Sql newInstance(String url, Properties properties, String driverClassName) throws SQLException, ClassNotFoundException {
+    public static Sql newInstance(String url, Properties properties, String driverClassName)
+            throws SQLException, ClassNotFoundException {
         loadDriver(driverClassName);
         return newInstance(url, properties);
     }
 
     /**
-     * A helper method which creates a new Sql instance from a JDBC connection
-     * URL, username and password
+     * Creates a new Sql instance given a JDBC connection URL,
+     * a username and a password.
      *
-     * @param url
+     * @param url      a database url of the form
+     *                 <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     * @param user     the database user on whose behalf the connection
+     *                 is being made
+     * @param password the user's password
      * @return a new Sql instance with a connection
+     * @throws SQLException if a database access error occurs
      */
     public static Sql newInstance(String url, String user, String password) throws SQLException {
         Connection connection = DriverManager.getConnection(url, user, password);
@@ -116,11 +138,18 @@ public class Sql {
     }
 
     /**
-     * A helper method which creates a new Sql instance from a JDBC connection
-     * URL, username, password and driver class name
+     * Creates a new Sql instance given a JDBC connection URL,
+     * a username, a password and a driver class name.
      *
-     * @param url
+     * @param url             a database url of the form
+     *                        <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     * @param user            the database user on whose behalf the connection
+     *                        is being made
+     * @param password        the user's password
+     * @param driverClassName the fully qualified class name of the driver class
      * @return a new Sql instance with a connection
+     * @throws SQLException           if a database access error occurs
+     * @throws ClassNotFoundException if the class cannot be found or loaded
      */
     public static Sql newInstance(String url, String user, String password, String driverClassName) throws SQLException,
             ClassNotFoundException {
@@ -129,13 +158,15 @@ public class Sql {
     }
 
     /**
-     * A helper method which creates a new Sql instance from a JDBC connection
-     * URL and driver class name
+     * Creates a new Sql instance given a JDBC connection URL
+     * and a driver class name.
      *
-     * @param url
-     * @param driverClassName
-     *            the class name of the driver
+     * @param url             a database url of the form
+     *                        <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     * @param driverClassName the fully qualified class name of the driver class
      * @return a new Sql instance with a connection
+     * @throws SQLException           if a database access error occurs
+     * @throws ClassNotFoundException if the class cannot be found or loaded
      */
     public static Sql newInstance(String url, String driverClassName) throws SQLException, ClassNotFoundException {
         loadDriver(driverClassName);
@@ -143,15 +174,85 @@ public class Sql {
     }
 
     /**
+     * Gets the resultSetType for statements created using the connection.
+     *
+     * @return the current resultSetType value
+     */
+    public int getResultSetType() {
+        return resultSetType;
+    }
+
+    /**
+     * Sets the resultSetType for statements created using the connection.
+     * May cause SQLFeatureNotSupportedException exceptions to occur if the
+     * underlying database doesn't support the requested type value.
+     *
+     * @param resultSetType one of the following <code>ResultSet</code>
+     *        constants:
+     *         <code>ResultSet.TYPE_FORWARD_ONLY</code>,
+     *         <code>ResultSet.TYPE_SCROLL_INSENSITIVE</code>, or
+     *         <code>ResultSet.TYPE_SCROLL_SENSITIVE</code>
+     */
+    public void setResultSetType(int resultSetType) {
+        this.resultSetType = resultSetType;
+    }
+
+    /**
+     * Gets the resultSetConcurrency for statements created using the connection.
+     *
+     * @return the current resultSetConcurrency value
+     */
+    public int getResultSetConcurrency() {
+        return resultSetConcurrency;
+    }
+
+    /**
+     * Sets the resultSetConcurrency for statements created using the connection.
+     * May cause SQLFeatureNotSupportedException exceptions to occur if the
+     * underlying database doesn't support the requested concurrency value.
+     *
+     * @param resultSetConcurrency one of the following <code>ResultSet</code>
+     *        constants:
+     *         <code>ResultSet.CONCUR_READ_ONLY</code> or
+     *         <code>ResultSet.CONCUR_UPDATABLE</code>
+     */
+    public void setResultSetConcurrency(int resultSetConcurrency) {
+        this.resultSetConcurrency = resultSetConcurrency;
+    }
+
+    /**
+     * Gets the resultSetHoldability for statements created using the connection.
+     *
+     * @return the current resultSetHoldability value or -1 if not set
+     */
+    public int getResultSetHoldability() {
+        return resultSetHoldability;
+    }
+
+    /**
+     * Sets the resultSetHoldability for statements created using the connection.
+     * May cause SQLFeatureNotSupportedException exceptions to occur if the
+     * underlying database doesn't support the requested holdability value.
+     *
+     * @param resultSetHoldability one of the following <code>ResultSet</code>
+     *        constants:
+     *         <code>ResultSet.HOLD_CURSORS_OVER_COMMIT</code> or
+     *         <code>ResultSet.CLOSE_CURSORS_AT_COMMIT</code>
+     */
+    public void setResultSetHoldability(int resultSetHoldability) {
+        this.resultSetHoldability = resultSetHoldability;
+    }
+
+    /**
      * Attempts to load the JDBC driver on the thread, current or system class
      * loaders
      *
-     * @param driverClassName
-     * @throws ClassNotFoundException
+     * @param driverClassName the fully qualified class name of the driver class
+     * @throws ClassNotFoundException if the class cannot be found or loaded
      */
     public static void loadDriver(String driverClassName) throws ClassNotFoundException {
-        // lets try the thread context class loader first
-        // lets try to use the system class loader
+        // let's try the thread context class loader first
+        // let's try to use the system class loader
         try {
             Class.forName(driverClassName);
         }
@@ -160,7 +261,7 @@ public class Sql {
                 Thread.currentThread().getContextClassLoader().loadClass(driverClassName);
             }
             catch (ClassNotFoundException e2) {
-                // now lets try the classloader which loaded us
+                // now let's try the classloader which loaded us
                 try {
                     Sql.class.getClassLoader().loadClass(driverClassName);
                 }
@@ -235,7 +336,8 @@ public class Sql {
 
     /**
      * Create a new InParameter
-     * @param type the JDBC data type
+     *
+     * @param type  the JDBC data type
      * @param value the object value
      * @return an InParameter
      */
@@ -244,71 +346,80 @@ public class Sql {
             public int getType() {
                 return type;
             }
+
             public Object getValue() {
                 return value;
             }
         };
     }
-    
+
     /**
      * Create a new OutParameter
+     *
      * @param type the JDBC data type.
      * @return an OutParameter
      */
-    public static OutParameter out(final int type){
-        return new OutParameter(){
+    public static OutParameter out(final int type) {
+        return new OutParameter() {
             public int getType() {
                 return type;
             }
         };
     }
-    
+
     /**
      * Create an inout parameter using this in parameter.
-     * @param in
+     *
+     * @param in the InParameter of interest
+     * @return the resulting InOutParameter
      */
-    public static InOutParameter inout(final InParameter in){
-        return new InOutParameter(){
+    public static InOutParameter inout(final InParameter in) {
+        return new InOutParameter() {
             public int getType() {
                 return in.getType();
             }
+
             public Object getValue() {
                 return in.getValue();
-            }            
+            }
         };
     }
-    
+
     /**
      * Create a new ResultSetOutParameter
+     *
      * @param type the JDBC data type.
      * @return a ResultSetOutParameter
      */
-    public static ResultSetOutParameter resultSet(final int type){
-        return new ResultSetOutParameter(){
+    public static ResultSetOutParameter resultSet(final int type) {
+        return new ResultSetOutParameter() {
             public int getType() {
                 return type;
             }
         };
     }
-        
+
     /**
      * Creates a variable to be expanded in the Sql string rather
      * than representing an sql parameter.
-     * @param object
+     *
+     * @param object the object of interest
+     * @return the expanded variable
      */
-    public static ExpandedVariable expand(final Object object){
-        return new ExpandedVariable(){
+    public static ExpandedVariable expand(final Object object) {
+        return new ExpandedVariable() {
             public Object getObject() {
                 return object;
-            }};
+            }
+        };
     }
-    
+
     /**
      * Constructs an SQL instance using the given DataSource. Each operation
      * will use a Connection from the DataSource pool and close it when the
      * operation is completed putting it back into the pool.
      *
-     * @param dataSource
+     * @param dataSource the DataSource to use
      */
     public Sql(DataSource dataSource) {
         this.dataSource = dataSource;
@@ -318,9 +429,9 @@ public class Sql {
      * Constructs an SQL instance using the given Connection. It is the caller's
      * responsibility to close the Connection after the Sql instance has been
      * used. You can do this on the connection object directly or by calling the
-     * {@link java.sql.Connection#close()}  method.
+     * {@link Connection#close()}  method.
      *
-     * @param connection
+     * @param connection the Connection to use
      */
     public Sql(Connection connection) {
         if (connection == null) {
@@ -343,11 +454,15 @@ public class Sql {
     }
 
     /**
-     * Performs the given SQL query calling the closure with the result set
+     * Performs the given SQL query calling the closure with the result set.
+     *
+     * @param sql     the sql statement
+     * @param closure called for each row with a GroovyResultSet
+     * @throws SQLException if a database access error occurs
      */
     public void query(String sql, Closure closure) throws SQLException {
         Connection connection = createConnection();
-        Statement statement = connection.createStatement();
+        Statement statement = createConnection(connection);
         configure(statement);
         ResultSet results = null;
         try {
@@ -364,9 +479,21 @@ public class Sql {
         }
     }
 
+    private Statement createConnection(Connection connection) throws SQLException {
+        if (resultSetHoldability == -1) {
+            return connection.createStatement(resultSetType, resultSetConcurrency);
+        }
+        return connection.createStatement(resultSetType, resultSetConcurrency, resultSetHoldability);
+    }
+
     /**
      * Performs the given SQL query with parameters calling the closure with the
-     * result set
+     * result set.
+     *
+     * @param sql     the sql statement
+     * @param params  a list of parameters
+     * @param closure called for each row with a GroovyResultSet
+     * @throws SQLException if a database access error occurs
      */
     public void query(String sql, List params, Closure closure) throws SQLException {
         Connection connection = createConnection();
@@ -390,7 +517,11 @@ public class Sql {
     }
 
     /**
-     * Performs the given SQL query calling the closure with the result set
+     * Performs the given SQL query calling the closure with the result set.
+     *
+     * @param gstring a GString containing the SQL query with embedded params
+     * @param closure  called for each row with a GroovyResultSet
+     * @throws SQLException if a database access error occurs
      */
     public void query(GString gstring, Closure closure) throws SQLException {
         List params = getParameters(gstring);
@@ -399,38 +530,36 @@ public class Sql {
     }
 
     /**
-     * @deprecated please use eachRow instead
-     */
-    public void queryEach(String sql, Closure closure) throws SQLException {
-        warnDeprecated();
-        eachRow(sql, closure);
-    }
-
-    /**
      * Performs the given SQL query calling the closure with each row of the
-     * result set
+     * result set.
+     *
+     * @param sql      the sql statement
+     * @param closure  called for each row with a GroovyResultSet
+     * @throws SQLException if a database access error occurs
      */
     public void eachRow(String sql, Closure closure) throws SQLException {
-        eachRow(sql,(Closure) null,closure);
+        eachRow(sql, (Closure) null, closure);
     }
 
     /**
      * Performs the given SQL query calling closures for metadata and each row
-     * @param sql the sql statement
+     *
+     * @param sql         the sql statement
      * @param metaClosure called for meta data (only once after sql execution)
-     * @param rowClosure called for each row with a GroovyResultSet
+     * @param rowClosure  called for each row with a GroovyResultSet
+     * @throws SQLException if a database access error occurs
      */
     public void eachRow(String sql, Closure metaClosure, Closure rowClosure) throws SQLException {
         Connection connection = createConnection();
-        Statement statement = connection.createStatement();
+        Statement statement = createConnection(connection);
         configure(statement);
         ResultSet results = null;
         try {
             log.fine(sql);
             results = statement.executeQuery(sql);
-            
-            if (metaClosure!=null) metaClosure.call( results.getMetaData() );
-            
+
+            if (metaClosure != null) metaClosure.call(results.getMetaData());
+
             GroovyResultSet groovyRS = new GroovyResultSetProxy(results).getImpl();
             while (groovyRS.next()) {
                 rowClosure.call(groovyRS);
@@ -444,15 +573,12 @@ public class Sql {
     }
 
     /**
-     * @deprecated please use eachRow instead
-     */
-    public void queryEach(String sql, List params, Closure closure) throws SQLException {
-        warnDeprecated();
-        eachRow(sql, params, closure);
-    }
-
-    /**
-     * Performs the given SQL query calling the closure with the result set
+     * Performs the given SQL query calling the closure with the result set.
+     *
+     * @param sql     the sql statement
+     * @param params  a list of parameters
+     * @param closure called for each row with a GroovyResultSet
+     * @throws SQLException if a database access error occurs
      */
     public void eachRow(String sql, List params, Closure closure) throws SQLException {
         Connection connection = createConnection();
@@ -480,11 +606,31 @@ public class Sql {
     }
 
     /**
-     * Performs the given SQL query calling the closure with the result set
+     * Performs the given SQL query calling the closure with the result set.
+     *
+     * @param gstring a GString containing the SQL query with embedded params
+     * @param closure called for each row with a GroovyResultSet
+     * @throws SQLException if a database access error occurs
      */
     public void eachRow(GString gstring, Closure closure) throws SQLException {
         List params = getParameters(gstring);
         String sql = asSql(gstring, params);
+        eachRow(sql, params, closure);
+    }
+
+    /**
+     * @deprecated please use eachRow instead
+     */
+    public void queryEach(String sql, Closure closure) throws SQLException {
+        warnDeprecated();
+        eachRow(sql, closure);
+    }
+
+    /**
+     * @deprecated please use eachRow instead
+     */
+    public void queryEach(String sql, List params, Closure closure) throws SQLException {
+        warnDeprecated();
         eachRow(sql, params, closure);
     }
 
@@ -497,59 +643,74 @@ public class Sql {
     }
 
     /**
-     * Performs the given SQL query and return the rows of the result set
-     */
-     public List rows(String sql) throws SQLException {
-        return rows(sql,(Closure) null);
-    }
-
-    /**
-     * Performs the given SQL query and return the rows of the result set
+     * Performs the given SQL query and return the rows of the result set.
+     *
      * @param sql the SQL statement
-     * @param metaClosure called with meta data of the ResultSet
+     * @return a list of GroovyRowResult objects
+     * @throws SQLException if a database access error occurs
      */
-     public List rows(String sql, Closure metaClosure) throws SQLException {
-         List results = new ArrayList();
-         Connection connection = createConnection();
-         Statement statement = connection.createStatement();
-         configure(statement);
-         ResultSet rs = null;
-         try {
-             log.fine(sql);
-             rs = statement.executeQuery(sql);
-
-             if (metaClosure!=null) metaClosure.call( rs.getMetaData() );
-
-             while (rs.next()) {
-                 ResultSetMetaData metadata = rs.getMetaData();
-                 LinkedHashMap lhm = new LinkedHashMap(metadata.getColumnCount(),1,true);
-                 for(int i=1 ; i<=metadata.getColumnCount() ; i++) {
-                     lhm.put(metadata.getColumnName(i),rs.getObject(i));
-                 }
-                 GroovyRowResult row = new GroovyRowResult(lhm);
-                 results.add(row);
-             }
-             return(results);
-         } catch (SQLException e) {
-             log.log(Level.FINE, "Failed to execute: " + sql, e);
-             throw e;
-         } finally {
-             closeResources(connection, statement, rs);
-         }
+    public List rows(String sql) throws SQLException {
+        return rows(sql, (Closure) null);
     }
-      
+
     /**
-     * Performs the given SQL query and return the first row of the result set
+     * Performs the given SQL query and return the rows of the result set.
+     *
+     * @param gstring a GString containing the SQL query with embedded params
+     * @return a list of GroovyRowResult objects
+     * @throws SQLException if a database access error occurs
      */
-    public Object firstRow(String sql) throws SQLException {
-        List rows = rows(sql);
-        if (rows.isEmpty()) return null;
-        return(rows.get(0));
+    public List rows(GString gstring) throws SQLException {
+        List params = getParameters(gstring);
+        String sql = asSql(gstring, params);
+        return rows(sql, params);
+    }
+
+    /**
+     * Performs the given SQL query and return the rows of the result set.
+     *
+     * @param sql         the SQL statement
+     * @param metaClosure called with meta data of the ResultSet
+     * @return a list of GroovyRowResult objects
+     * @throws SQLException if a database access error occurs
+     */
+    public List rows(String sql, Closure metaClosure) throws SQLException {
+        List results = new ArrayList();
+        Connection connection = createConnection();
+        Statement statement = createConnection(connection);
+        configure(statement);
+        ResultSet rs = null;
+        try {
+            log.fine(sql);
+            rs = statement.executeQuery(sql);
+            if (metaClosure != null) metaClosure.call(rs.getMetaData());
+
+            while (rs.next()) {
+                ResultSetMetaData metadata = rs.getMetaData();
+                LinkedHashMap lhm = new LinkedHashMap(metadata.getColumnCount(), 1);
+                for (int i = 1; i <= metadata.getColumnCount(); i++) {
+                    lhm.put(metadata.getColumnName(i), rs.getObject(i));
+                }
+                GroovyRowResult row = new GroovyRowResult(lhm);
+                results.add(row);
+            }
+            return (results);
+        } catch (SQLException e) {
+            log.log(Level.FINE, "Failed to execute: " + sql, e);
+            throw e;
+        } finally {
+            closeResources(connection, statement, rs);
+        }
     }
 
     /**
      * Performs the given SQL query with the list of params and return
-     * the rows of the result set
+     * the rows of the result set.
+     *
+     * @param sql    the SQL statement
+     * @param params a list of parameters
+     * @return a list of GroovyRowResult objects
+     * @throws SQLException if a database access error occurs
      */
     public List rows(String sql, List params) throws SQLException {
         List results = new ArrayList();
@@ -564,14 +725,14 @@ public class Sql {
             rs = statement.executeQuery();
             while (rs.next()) {
                 ResultSetMetaData metadata = rs.getMetaData();
-                LinkedHashMap lhm = new LinkedHashMap(metadata.getColumnCount(),1,true);
-                for(int i=1 ; i<=metadata.getColumnCount() ; i++) {
-                    lhm.put(metadata.getColumnName(i),rs.getObject(i));
+                LinkedHashMap lhm = new LinkedHashMap(metadata.getColumnCount(), 1);
+                for (int i = 1; i <= metadata.getColumnCount(); i++) {
+                    lhm.put(metadata.getColumnName(i), rs.getObject(i));
                 }
                 GroovyRowResult row = new GroovyRowResult(lhm);
                 results.add(row);
             }
-            return(results);
+            return (results);
         }
         catch (SQLException e) {
             log.log(Level.FINE, "Failed to execute: " + sql, e);
@@ -582,25 +743,63 @@ public class Sql {
         }
     }
 
-     /**
-      * Performs the given SQL query with the list of params and return
-      * the first row of the result set
-      */
-    public Object firstRow(String sql, List params) throws SQLException {
-         List rows = rows(sql, params);
-         if (rows.isEmpty()) return null;
-         return rows.get(0);
-     }
+    /**
+     * Performs the given SQL query and return the first row of the result set.
+     *
+     * @param sql the SQL statement
+     * @return a GroovyRowResult object
+     * @throws SQLException if a database access error occurs
+     */
+    public Object firstRow(String sql) throws SQLException {
+        List rows = rows(sql);
+        if (rows.isEmpty()) return null;
+        return (rows.get(0));
+    }
 
     /**
-     * Executes the given piece of SQL
+     * Performs the given SQL query and return
+     * the first row of the result set.
+     *
+     * @param gstring a GString containing the SQL query with embedded params
+     * @return a GroovyRowResult object
+     * @throws SQLException if a database access error occurs
+     */
+    public Object firstRow(GString gstring) throws SQLException {
+        List params = getParameters(gstring);
+        String sql = asSql(gstring, params);
+        return firstRow(sql, params);
+    }
+
+    /**
+     * Performs the given SQL query with the list of params and return
+     * the first row of the result set.
+     *
+     * @param sql    the SQL statement
+     * @param params a list of parameters
+     * @return a GroovyRowResult object
+     * @throws SQLException if a database access error occurs
+     */
+    public Object firstRow(String sql, List params) throws SQLException {
+        List rows = rows(sql, params);
+        if (rows.isEmpty()) return null;
+        return rows.get(0);
+    }
+
+    /**
+     * Executes the given piece of SQL.
+     *
+     * @param sql    the SQL statement
+     * @return <code>true</code> if the first result is a <code>ResultSet</code>
+     *         object; <code>false</code> if it is an update count or there are
+     *         no results
+     * @throws SQLException if a database access error occurs
      */
     public boolean execute(String sql) throws SQLException {
         Connection connection = createConnection();
         Statement statement = null;
         try {
             log.fine(sql);
-            statement = connection.createStatement();
+            statement = createConnection(connection);
             configure(statement);
             boolean isResultSet = statement.execute(sql);
             this.updateCount = statement.getUpdateCount();
@@ -616,78 +815,14 @@ public class Sql {
     }
 
     /**
-     * Executes the given SQL update
-     * 
-     * @return the number of rows updated
-     */
-    public int executeUpdate(String sql) throws SQLException {
-        Connection connection = createConnection();
-        Statement statement = null;
-        try {
-            log.fine(sql);
-            statement = connection.createStatement();
-            configure(statement);
-            this.updateCount = statement.executeUpdate(sql);
-            return this.updateCount;
-        }
-        catch (SQLException e) {
-            log.log(Level.FINE, "Failed to execute: " + sql, e);
-            throw e;
-        }
-        finally {
-            closeResources(connection, statement);
-        }
-    }
-
-    /**
-     * Executes the given SQL statement. See {@link #executeInsert(GString)}
-     * for more details. 
-     * @param sql The SQL statement to execute.
-     * @return A list of the auto-generated column values for each
-     * inserted row.
-     */
-    public List executeInsert(String sql) throws SQLException {
-        Connection connection = createConnection();
-        Statement statement = null;
-        try {
-            log.fine(sql);
-            statement = connection.createStatement();
-            configure(statement);
-            boolean hasResultSet = statement.execute(sql, Statement.RETURN_GENERATED_KEYS);
-
-            // Prepare a list to contain the auto-generated column
-            // values, and then fetch them from the statement.
-            List autoKeys = new ArrayList();
-        	ResultSet keys = statement.getGeneratedKeys();
-        	int count = keys.getMetaData().getColumnCount();
-
-        	// Copy the column values into a list of a list.
-        	while (keys.next()) {
-        		List rowKeys = new ArrayList(count);
-        		for (int i = 1; i <= count; i++) {
-        			rowKeys.add(keys.getObject(i));
-        		}
-
-        		autoKeys.add(rowKeys);
-        	}
-
-        	// Store the update count so that it can be retrieved by
-        	// clients, and then return the list of auto-generated
-        	// values.
-        	this.updateCount = statement.getUpdateCount();
-        	return autoKeys;
-        }
-        catch (SQLException e) {
-            log.log(Level.FINE, "Failed to execute: " + sql, e);
-            throw e;
-        }
-        finally {
-            closeResources(connection, statement);
-        }
-    }
-
-    /**
-     * Executes the given piece of SQL with parameters
+     * Executes the given piece of SQL with parameters.
+     *
+     * @param sql    the SQL statement
+     * @param params a list of parameters
+     * @return <code>true</code> if the first result is a <code>ResultSet</code>
+     *         object; <code>false</code> if it is an update count or there are
+     *         no results
+     * @throws SQLException if a database access error occurs
      */
     public boolean execute(String sql, List params) throws SQLException {
         Connection connection = createConnection();
@@ -711,9 +846,195 @@ public class Sql {
     }
 
     /**
-     * Executes the given SQL update with parameters
-     * 
-     * @return the number of rows updated
+     * Executes the given SQL with embedded expressions inside.
+     *
+     * @param gstring a GString containing the SQL query with embedded params
+     * @return <code>true</code> if the first result is a <code>ResultSet</code>
+     *         object; <code>false</code> if it is an update count or there are
+     *         no results
+     * @throws SQLException if a database access error occurs
+     */
+    public boolean execute(GString gstring) throws SQLException {
+        List params = getParameters(gstring);
+        String sql = asSql(gstring, params);
+        return execute(sql, params);
+    }
+
+    /**
+     * Executes the given SQL statement. See {@link #executeInsert(GString)}
+     * for more details.
+     *
+     * @param sql The SQL statement to execute
+     * @return A list of the auto-generated column values for each
+     *         inserted row
+     * @throws SQLException if a database access error occurs
+     */
+    public List executeInsert(String sql) throws SQLException {
+        Connection connection = createConnection();
+        Statement statement = null;
+        try {
+            log.fine(sql);
+            statement = createConnection(connection);
+            configure(statement);
+            boolean hasResultSet = statement.execute(sql, Statement.RETURN_GENERATED_KEYS);
+
+            // Prepare a list to contain the auto-generated column
+            // values, and then fetch them from the statement.
+            List autoKeys = new ArrayList();
+            ResultSet keys = statement.getGeneratedKeys();
+            int count = keys.getMetaData().getColumnCount();
+
+            // Copy the column values into a list of a list.
+            while (keys.next()) {
+                List rowKeys = new ArrayList(count);
+                for (int i = 1; i <= count; i++) {
+                    rowKeys.add(keys.getObject(i));
+                }
+
+                autoKeys.add(rowKeys);
+            }
+
+            // Store the update count so that it can be retrieved by
+            // clients, and then return the list of auto-generated
+            // values.
+            this.updateCount = statement.getUpdateCount();
+            return autoKeys;
+        }
+        catch (SQLException e) {
+            log.log(Level.FINE, "Failed to execute: " + sql, e);
+            throw e;
+        }
+        finally {
+            closeResources(connection, statement);
+        }
+    }
+
+    /**
+     * Executes the given SQL statement with a particular list of
+     * parameter values. See {@link #executeInsert(GString)} for
+     * more details.
+     *
+     * @param sql    The SQL statement to execute
+     * @param params The parameter values that will be substituted
+     *               into the SQL statement's parameter slots
+     * @return A list of the auto-generated column values for each
+     *         inserted row
+     * @throws SQLException if a database access error occurs
+     */
+    public List executeInsert(String sql, List params) throws SQLException {
+        // Now send the SQL to the database.
+        Connection connection = createConnection();
+        PreparedStatement statement = null;
+        try {
+            log.fine(sql);
+
+            // Prepare a statement for the SQL and then execute it.
+            statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            setParameters(params, statement);
+            configure(statement);
+            this.updateCount = statement.executeUpdate();
+
+            // Prepare a list to contain the auto-generated column
+            // values, and then fetch them from the statement.
+            List autoKeys = new ArrayList();
+            ResultSet keys = statement.getGeneratedKeys();
+            int count = keys.getMetaData().getColumnCount();
+
+            // Copy the column values into a list of a list.
+            while (keys.next()) {
+                List rowKeys = new ArrayList(count);
+                for (int i = 1; i <= count; i++) {
+                    rowKeys.add(keys.getObject(i));
+                }
+
+                autoKeys.add(rowKeys);
+            }
+
+            return autoKeys;
+        }
+        catch (SQLException e) {
+            log.log(Level.FINE, "Failed to execute: " + sql, e);
+            throw e;
+        }
+        finally {
+            closeResources(connection, statement);
+        }
+    }
+
+    /**
+     * <p>Executes the given SQL with embedded expressions inside, and
+     * returns the values of any auto-generated colums, such as an
+     * autoincrement ID field. These values can be accessed using
+     * array notation. For example, to return the second auto-generated
+     * column value of the third row, use <code>keys[3][1]</code>. The
+     * method is designed to be used with SQL INSERT statements, but is
+     * not limited to them.</p>
+     * <p>The standard use for this method is when a table has an
+     * autoincrement ID column and you want to know what the ID is for
+     * a newly inserted row. In this example, we insert a single row
+     * into a table in which the first column contains the autoincrement
+     * ID:</p>
+     * <pre>
+     *     def sql = Sql.newInstance("jdbc:mysql://localhost:3306/groovy",
+     *                               "user",
+     *                               "password",
+     *                               "com.mysql.jdbc.Driver")
+     * <p/>
+     *     def keys = sql.insert("insert into test_table (INT_DATA, STRING_DATA) "
+     *                           + "VALUES (1, 'Key Largo')")
+     * <p/>
+     *     def id = keys[0][0]
+     * <p/>
+     *     // 'id' now contains the value of the new row's ID column.
+     *     // It can be used to update an object representation's
+     *     // id attribute for example.
+     *     ...
+     * </pre>
+     *
+     * @param gstring a GString containing the SQL query with embedded params
+     * @return A list of column values representing each row's
+     *         auto-generated keys
+     * @throws SQLException if a database access error occurs
+     */
+    public List executeInsert(GString gstring) throws SQLException {
+        List params = getParameters(gstring);
+        String sql = asSql(gstring, params);
+        return executeInsert(sql, params);
+    }
+
+    /**
+     * Executes the given SQL update.
+     *
+     * @param sql    the SQL statement
+     * @return the number of rows updated or 0 for SQL statements that return nothing
+     * @throws SQLException if a database access error occurs
+     */
+    public int executeUpdate(String sql) throws SQLException {
+        Connection connection = createConnection();
+        Statement statement = null;
+        try {
+            log.fine(sql);
+            statement = createConnection(connection);
+            configure(statement);
+            this.updateCount = statement.executeUpdate(sql);
+            return this.updateCount;
+        }
+        catch (SQLException e) {
+            log.log(Level.FINE, "Failed to execute: " + sql, e);
+            throw e;
+        }
+        finally {
+            closeResources(connection, statement);
+        }
+    }
+
+    /**
+     * Executes the given SQL update with parameters.
+     *
+     * @param sql    the SQL statement
+     * @param params a list of parameters
+     * @return the number of rows updated or 0 for SQL statements that return nothing
+     * @throws SQLException if a database access error occurs
      */
     public int executeUpdate(String sql, List params) throws SQLException {
         Connection connection = createConnection();
@@ -736,68 +1057,11 @@ public class Sql {
     }
 
     /**
-     * Executes the given SQL statement with a particular list of
-     * parameter values. See {@link #executeInsert(GString)} for
-     * more details. 
-     * @param sql The SQL statement to execute.
-     * @param params The parameter values that will be substituted
-     * into the SQL statement's parameter slots.
-     * @return A list of the auto-generated column values for each
-     * inserted row.
-     */
-    public List executeInsert(String sql, List params) throws SQLException {
-        // Now send the SQL to the database.
-        Connection connection = createConnection();
-        PreparedStatement statement = null;
-        try {
-            log.fine(sql);
-
-            // Prepare a statement for the SQL and then execute it.
-            statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            setParameters(params, statement);
-            configure(statement);
-            this.updateCount = statement.executeUpdate();
-
-            // Prepare a list to contain the auto-generated column
-            // values, and then fetch them from the statement.
-            List autoKeys = new ArrayList();
-        	ResultSet keys = statement.getGeneratedKeys();
-        	int count = keys.getMetaData().getColumnCount();
-
-        	// Copy the column values into a list of a list.
-        	while (keys.next()) {
-        		List rowKeys = new ArrayList(count);
-        		for (int i = 1; i <= count; i++) {
-        			rowKeys.add(keys.getObject(i));
-        		}
-
-        		autoKeys.add(rowKeys);
-        	}
-
-        	return autoKeys;
-        }
-        catch (SQLException e) {
-            log.log(Level.FINE, "Failed to execute: " + sql, e);
-            throw e;
-        }
-        finally {
-            closeResources(connection, statement);
-        }
-    }
-
-    /**
-     * Executes the given SQL with embedded expressions inside
-     */
-    public boolean execute(GString gstring) throws SQLException {
-        List params = getParameters(gstring);
-        String sql = asSql(gstring, params);
-        return execute(sql, params);
-    }
-
-    /**
-     * Executes the given SQL update with embedded expressions inside
-     * 
-     * @return the number of rows updated
+     * Executes the given SQL update with embedded expressions inside.
+     *
+     * @param gstring a GString containing the SQL query with embedded params
+     * @return the number of rows updated or 0 for SQL statements that return nothing
+     * @throws SQLException if a database access error occurs
      */
     public int executeUpdate(GString gstring) throws SQLException {
         List params = getParameters(gstring);
@@ -806,52 +1070,23 @@ public class Sql {
     }
 
     /**
-     * <p>Executes the given SQL with embedded expressions inside, and
-     * returns the values of any auto-generated colums, such as an
-     * autoincrement ID field. These values can be accessed using
-     * array notation. For example, to return the second auto-generated
-     * column value of the third row, use <code>keys[3][1]</code>. The
-     * method is designed to be used with SQL INSERT statements, but is
-     * not limited to them.</p>
-     * <p>The standard use for this method is when a table has an
-     * autoincrement ID column and you want to know what the ID is for
-     * a newly inserted row. In this example, we insert a single row
-     * into a table in which the first column contains the autoincrement
-     * ID:</p>
-     * <pre>
-     *     def sql = Sql.newInstance("jdbc:mysql://localhost:3306/groovy",
-     *                               "user", 
-     *                               "password",
-     *                               "com.mysql.jdbc.Driver")
+     * Performs a stored procedure call.
      *
-     *     def keys = sql.insert("insert into test_table (INT_DATA, STRING_DATA) "
-     *                           + "VALUES (1, 'Key Largo')")
-     *
-     *     def id = keys[0][0]
-     *
-     *     // 'id' now contains the value of the new row's ID column.
-     *     // It can be used to update an object representation's
-     *     // id attribute for example.
-     *     ...
-     * </pre>
-     * @return A list of column values representing each row's
-     * auto-generated keys.
-     */
-    public List executeInsert(GString gstring) throws SQLException {
-        List params = getParameters(gstring);
-        String sql = asSql(gstring, params);
-        return executeInsert(sql, params);
-    }
-
-    /**
-     * Performs a stored procedure call
+     * @param sql    the SQL statement
+     * @return the number of rows updated or 0 for SQL statements that return nothing
+     * @throws SQLException if a database access error occurs
      */
     public int call(String sql) throws Exception {
         return call(sql, Collections.EMPTY_LIST);
     }
 
     /**
-     * Performs a stored procedure call with the given parameters
+     * Performs a stored procedure call with the given parameters.
+     *
+     * @param sql    the SQL statement
+     * @param params a list of parameters
+     * @return the number of rows updated or 0 for SQL statements that return nothing
+     * @throws SQLException if a database access error occurs
      */
     public int call(String sql, List params) throws Exception {
         Connection connection = createConnection();
@@ -874,6 +1109,11 @@ public class Sql {
     /**
      * Performs a stored procedure call with the given parameters.  The closure
      * is called once with all the out parameters.
+     *
+     * @param sql     the sql statement
+     * @param params  a list of parameters
+     * @param closure called for each row with a GroovyResultSet
+     * @throws SQLException if a database access error occurs
      */
     public void call(String sql, List params, Closure closure) throws Exception {
         Connection connection = createConnection();
@@ -887,14 +1127,14 @@ public class Sql {
             int inouts = 0;
             for (Iterator iter = params.iterator(); iter.hasNext();) {
                 Object value = iter.next();
-                if(value instanceof OutParameter){
-                    if(value instanceof ResultSetOutParameter){
-                        results.add(CallResultSet.getImpl(statement,indx));
-                    }else{
-                        Object o = statement.getObject(indx+1);
-                        if(o instanceof ResultSet){
-                            results.add(new GroovyResultSetProxy((ResultSet)o).getImpl());
-                        }else{
+                if (value instanceof OutParameter) {
+                    if (value instanceof ResultSetOutParameter) {
+                        results.add(CallResultSet.getImpl(statement, indx));
+                    } else {
+                        Object o = statement.getObject(indx + 1);
+                        if (o instanceof ResultSet) {
+                            results.add(new GroovyResultSetProxy((ResultSet) o).getImpl());
+                        } else {
                             results.add(o);
                         }
                     }
@@ -910,9 +1150,13 @@ public class Sql {
             closeResources(connection, statement);
         }
     }
-    
+
     /**
-     * Performs a stored procedure call with the given parameters
+     * Performs a stored procedure call with the given parameters.
+     *
+     * @param gstring a GString containing the SQL query with embedded params
+     * @return the number of rows updated or 0 for SQL statements that return nothing
+     * @throws SQLException if a database access error occurs
      */
     public int call(GString gstring) throws Exception {
         List params = getParameters(gstring);
@@ -924,19 +1168,23 @@ public class Sql {
     /**
      * Performs a stored procedure call with the given parameters,
      * calling the closure once with all result objects.
+     *
+     * @param gstring a GString containing the SQL query with embedded params
+     * @param closure  called for each row with a GroovyResultSet
+     * @throws SQLException if a database access error occurs
      */
     public void call(GString gstring, Closure closure) throws Exception {
         List params = getParameters(gstring);
-        String sql = asSql(gstring,params);
-        call(sql, params,closure);
+        String sql = asSql(gstring, params);
+        call(sql, params, closure);
     }
-    
+
     /**
      * If this SQL object was created with a Connection then this method closes
      * the connection. If this SQL object was created from a DataSource then
      * this method does nothing.
-     * 
-     * @throws SQLException
+     *
+     * @throws SQLException if a database access error occurs
      */
     public void close() throws SQLException {
         if (useConnection != null) {
@@ -991,7 +1239,7 @@ public class Sql {
      * Allows a closure to be passed in to configure the JDBC statements before they are executed
      * to do things like set the query size etc.
      *
-     * @param configureStatement
+     * @param configureStatement the closure
      */
     public void withStatement(Closure configureStatement) {
         this.configureStatement = configureStatement;
@@ -1001,6 +1249,8 @@ public class Sql {
     //-------------------------------------------------------------------------
 
     /**
+     * @param gstring a GString containing the SQL query with embedded params
+     * @param values the values to embed
      * @return the SQL version of the given query using ? instead of any
      *         parameter
      */
@@ -1021,10 +1271,10 @@ public class Sql {
             if (iter.hasNext()) {
                 Object value = iter.next();
                 if (value != null) {
-                    if(value instanceof ExpandedVariable){
-                        buffer.append(((ExpandedVariable)value).getObject());
+                    if (value instanceof ExpandedVariable) {
+                        buffer.append(((ExpandedVariable) value).getObject());
                         iter.remove();
-                    }else{
+                    } else {
                         boolean validBinding = true;
                         if (i < strings.length - 1) {
                             String nextText = strings[i + 1];
@@ -1045,8 +1295,7 @@ public class Sql {
                             buffer.append("?");
                         }
                     }
-                }
-                else {
+                } else {
                     nulls = true;
                     buffer.append("?'\"?"); // will replace these with nullish
                     // values
@@ -1062,8 +1311,9 @@ public class Sql {
 
     /**
      * replace ?'"? references with NULLish
-     * 
-     * @param sql
+     *
+     * @param sql the SQL statement
+     * @return the modified SQL String
      */
     protected String nullify(String sql) {
         /*
@@ -1074,10 +1324,10 @@ public class Sql {
         //could be more efficient by compiling expressions in advance.
         int firstWhere = findWhereKeyword(sql);
         if (firstWhere >= 0) {
-            Pattern[] patterns = { Pattern.compile("(?is)^(.{" + firstWhere + "}.*?)!=\\s{0,1}(\\s*)\\?'\"\\?(.*)"),
+            Pattern[] patterns = {Pattern.compile("(?is)^(.{" + firstWhere + "}.*?)!=\\s{0,1}(\\s*)\\?'\"\\?(.*)"),
                     Pattern.compile("(?is)^(.{" + firstWhere + "}.*?)<>\\s{0,1}(\\s*)\\?'\"\\?(.*)"),
-                    Pattern.compile("(?is)^(.{" + firstWhere + "}.*?[^<>])=\\s{0,1}(\\s*)\\?'\"\\?(.*)"), };
-            String[] replacements = { "$1 is not $2null$3", "$1 is not $2null$3", "$1 is $2null$3", };
+                    Pattern.compile("(?is)^(.{" + firstWhere + "}.*?[^<>])=\\s{0,1}(\\s*)\\?'\"\\?(.*)"),};
+            String[] replacements = {"$1 is not $2null$3", "$1 is not $2null$3", "$1 is $2null$3",};
             for (int i = 0; i < patterns.length; i++) {
                 Matcher matcher = patterns[i].matcher(sql);
                 while (matcher.matches()) {
@@ -1091,8 +1341,9 @@ public class Sql {
 
     /**
      * Find the first 'where' keyword in the sql.
-     * 
-     * @param sql
+     *
+     * @param sql the SQL statement
+     * @return the index of the found keyword or -1 if not found
      */
     protected int findWhereKeyword(String sql) {
         char[] chars = sql.toLowerCase().toCharArray();
@@ -1104,12 +1355,7 @@ public class Sql {
         while (i < chars.length && noWhere) {
             switch (chars[i]) {
                 case '\'':
-                    if (inString) {
-                        inString = false;
-                    }
-                    else {
-                        inString = true;
-                    }
+                    inString = !inString;
                     break;
                 default:
                     if (!inString && chars[i] == whereChars[inWhere]) {
@@ -1125,38 +1371,38 @@ public class Sql {
     }
 
     /**
+     * @param gstring a GString containing the SQL query with embedded params
      * @return extracts the parameters from the expression as a List
      */
     protected List getParameters(GString gstring) {
-        Object[] values = gstring.getValues();
-        List answer = new ArrayList(values.length);
-        for (int i = 0; i < values.length; i++) {
-            if (values[i] != null) {
-                answer.add(values[i]);
-            }
-        }
-        return answer;
+        return new ArrayList(Arrays.asList(gstring.getValues()));
     }
 
     /**
-     * Appends the parameters to the given statement
+     * Appends the parameters to the given statement.
+     *
+     * @throws SQLException if a database access error occurs
      */
     protected void setParameters(List params, PreparedStatement statement) throws SQLException {
         int i = 1;
         for (Iterator iter = params.iterator(); iter.hasNext();) {
             Object value = iter.next();
-            setObject(statement, i++, value);
+            if (value != null) {
+                setObject(statement, i++, value);
+            }
         }
     }
 
     /**
      * Strategy method allowing derived classes to handle types differently
      * such as for CLOBs etc.
+     *
+     * @throws SQLException if a database access error occurs
      */
     protected void setObject(PreparedStatement statement, int i, Object value)
-        throws SQLException {
-        if (value instanceof InParameter  || value instanceof OutParameter) {
-            if(value instanceof InParameter){
+            throws SQLException {
+        if (value instanceof InParameter || value instanceof OutParameter) {
+            if (value instanceof InParameter) {
                 InParameter in = (InParameter) value;
                 Object val = in.getValue();
                 if (null == val) {
@@ -1165,11 +1411,11 @@ public class Sql {
                     statement.setObject(i, val, in.getType());
                 }
             }
-            if(value instanceof OutParameter){
-                try{
-                    OutParameter out = (OutParameter)value;
-                    ((CallableStatement)statement).registerOutParameter(i,out.getType());
-                }catch(ClassCastException e){
+            if (value instanceof OutParameter) {
+                try {
+                    OutParameter out = (OutParameter) value;
+                    ((CallableStatement) statement).registerOutParameter(i, out.getType());
+                } catch (ClassCastException e) {
                     throw new SQLException("Cannot register out parameter.");
                 }
             }
@@ -1195,16 +1441,12 @@ public class Sql {
                 Exception e = pae.getException();
                 if (e instanceof SQLException) {
                     throw (SQLException) e;
-                }
-                else {
+                } else {
                     throw (RuntimeException) e;
                 }
             }
             return con;
-        }
-        else {
-            //System.out.println("createConnection returning: " +
-            // useConnection);
+        } else {
             return useConnection;
         }
     }
@@ -1250,7 +1492,7 @@ public class Sql {
     /**
      * Provides a hook to be able to configure JDBC statements, such as to configure
      *
-     * @param statement
+     * @param statement the statement to configure
      */
     protected void configure(Statement statement) {
         if (configureStatement != null) {

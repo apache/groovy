@@ -132,7 +132,16 @@ $Date$
         </target>
     -->
 
-    <target name="compileMain" depends="ubercompile,stagedcompile"
+    <target name="dgmConvert" depends="ubercompile,stagedcompile">
+        <java classname="org.codehaus.groovy.tools.DgmConverter"
+              fork="yes"
+              failonerror="true">
+            <classpath refid="compilePath"/>
+            <classpath path="${mainClassesDirectory}"/>
+        </java>
+    </target>
+
+    <target name="compileMain" depends="ubercompile,stagedcompile,dgmConvert"
             description="Compile the Java and Groovy code in the main source.">
     </target>
 
@@ -216,19 +225,23 @@ $Date$
         <antforked target="realCompileTest"/>
     </target>
 
+    <property name="vm5GroovySourceFiles" value="gls/**/vm5/*Test.groovy,org/codehaus/groovy/**/vm5/**/*.groovy,groovy/**/vm5/**/*.groovy"/>
+    <property name="vm5JavaSourceFiles" value="org/codehaus/groovy/**/vm5/**/*.java"/>
+    <property name="antGroovySourceFiles" value="org/codehaus/groovy/ant/**/GroovyTest*.groovy"/>
+
     <target name="realCompileTest">
         <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}"
                  classpathref="testPath"/>
         <!-- compile Groovy test files excluding ones which we want to pick up from the file system -->
         <groovyc srcdir="${testSourceDirectory}"
                  destdir="${testClassesDirectory}"
-                 excludes="org/codehaus/groovy/ant/**/GroovyTest*.groovy,gls/**/vm5/*Test.groovy,org/codehaus/groovy/**/vm5/**/*.groovy" >
+                 excludes="${antGroovySourceFiles},${vm5GroovySourceFiles}" >
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
                 <pathelement path="${testClassesDirectory}"/>
                 <path refid="testPath"/>
             </classpath>
-            <javac source="1.4" target="1.4" fork="true" memorymaximumsize="64m" excludes="org/codehaus/groovy/**/vm5/**/*.java"/>
+            <javac source="1.4" target="1.4" fork="true" memorymaximumsize="64m" excludes="${vm5JavaSourceFiles}"/>
         </groovyc>
         <antcall target="realCompileTest_vm5"/>
     </target>
@@ -236,7 +249,7 @@ $Date$
     <target name="realCompileTest_vm5" if="groovy.build.vm5">
         <groovyc srcdir="${testSourceDirectory}"
                  destdir="${testClassesDirectory}"
-                 includes="gls/**/vm5/*Test.groovy,org/codehaus/groovy/**/vm5/**/*.groovy,org/codehaus/groovy/**/vm5/**/*.java" >
+                 includes="${vm5GroovySourceFiles},${vm5JavaSourceFiles}" >
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
                 <pathelement path="${testClassesDirectory}"/>

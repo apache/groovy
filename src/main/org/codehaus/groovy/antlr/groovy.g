@@ -1808,8 +1808,8 @@ checkSuspiciousExpressionStatement[int prevToken]
         // Either not a block, or a block with an explicit closure parameter list.
         (   {prevToken == NLS}?
             {   addWarning(
-                "Expression statement looks like it may continue a previous statement.",
-                "Either remove previous newline, or add an explicit semicolon ';'.");
+                "Expression statement looks like it may continue a previous statement",
+                "Either remove the previous newline, or add an explicit semicolon ';'.");
             }
         )?
     |
@@ -1821,11 +1821,11 @@ checkSuspiciousExpressionStatement[int prevToken]
         // Might be closure expression:  obj.foo ; {x->println x}
         // Might be open block:  obj.foo ; L:{println x}
         {   require(false,
-            "Closure expression looks like it may be an isolated open block, "+
-            "or it may continue a previous statement."
-            ,
-            "Add an explicit parameter list, as in {it -> ...}, or label it as L:{...}, "+
-            "and also either remove previous newline, or add an explicit semicolon ';'."
+            "Ambiguous expression could be a parameterless closure expression, "+
+            "an isolated open code block, or it may continue a previous statement",
+            "Add an explicit parameter list, e.g. {it -> ...}, or force it to be treated "+
+            "as an open block by giving it a label, e.g. L:{...}, "+
+            "and also either remove the previous newline, or add an explicit semicolon ';'"
             );
         }
     |
@@ -1835,8 +1835,10 @@ checkSuspiciousExpressionStatement[int prevToken]
         // Might be closure expression:  obj.foo ; {x->println x}
         // Might be open block:  obj.foo ; L:{println x}
         {   require(false,
-            "Closure expression looks like it may be an isolated open block.",
-            "Add an explicit parameter list, as in {it -> ...}, or label it as L:{...}.");
+            "Ambiguous expression could be either a parameterless closure expression or "+
+            "an isolated open code block",
+            "Add an explicit closure parameter list, e.g. {it -> ...}, or force it to "+
+            "be treated as an open block by giving it a label, e.g. L:{...}");
         }
     ;
 
@@ -3602,6 +3604,13 @@ options {
                 }
             }
             int ttype = testLiteralsTable(IDENT);
+            // Java doesn't have the keywords 'as', 'in' or 'def so we make some allowances
+            // for them in package names for better integration with existng Java packages
+            if ((ttype == LITERAL_as || ttype == LITERAL_def || ttype == LITERAL_in) &&
+                (LA(1) == '.' || lastSigTokenType == DOT || lastSigTokenType == LITERAL_package)) {
+                ttype = IDENT;
+            }
+
         /* The grammar allows a few keywords to follow dot.
          * TODO: Reinstate this logic if we change or remove keywordPropertyNames.
             if (ttype != IDENT && lastSigTokenType == DOT) {

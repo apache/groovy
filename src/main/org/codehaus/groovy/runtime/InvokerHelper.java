@@ -728,6 +728,10 @@ public class InvokerHelper {
         return metaRegistry.getMetaClass(object.getClass());
     }
 
+    public static MetaClass getMetaClass(Class cls) {
+        return metaRegistry.getMetaClass(cls);
+    }
+
     /**
      * Invokes the given method on the object.
      */

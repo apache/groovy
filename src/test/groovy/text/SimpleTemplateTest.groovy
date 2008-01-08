@@ -46,6 +46,15 @@ class SimpleTemplateTest extends GroovyTestCase {
     assertEquals('111', simpleCall(text))
     }
 
+    void testWithQuotesInScriplet(){
+    def text = '''<%
+        ['1',"2",/3/].each{ x ->
+            out.print(x)
+        }
+    %>'''
+    assertEquals('123', simpleCall(text))
+    }
+
     String simpleCall(input){
         bindingCall([:], input)
     }

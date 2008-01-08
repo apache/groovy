@@ -17,10 +17,7 @@
  */
 package groovy.text;
 
-import groovy.lang.Binding;
-import groovy.lang.GroovyShell;
-import groovy.lang.Script;
-import groovy.lang.Writable;
+import groovy.lang.*;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -43,6 +40,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  */
 public class SimpleTemplateEngine extends TemplateEngine {
     private boolean verbose;
+    private static int counter = 1;
 
     private GroovyShell groovyShell;
 
@@ -71,7 +69,11 @@ public class SimpleTemplateEngine extends TemplateEngine {
             System.out.print(script);
             System.out.println("\n-- script end --\n");
         }
-        template.script = groovyShell.parse(script);
+        try {
+            template.script = groovyShell.parse(script, "SimpleTemplateScript" + counter++ + ".groovy");
+        } catch (Exception e) {
+            throw new GroovyRuntimeException("Failed to parse template script (your template may contain an error or be trying to use expressions not currently supported): " + e.getMessage());
+        }
         return template;
     }
 
@@ -159,6 +161,19 @@ public class SimpleTemplateEngine extends TemplateEngine {
                     }
                     continue; // at least '<' is consumed ... read next chars.
                 }
+                if (c == '$') {
+                    reader.mark(1);
+                    c = reader.read();
+                    if (c != '{') {
+                        sw.write('$');
+                        reader.reset();
+                    } else {
+                        reader.mark(1);
+                        sw.write("${");
+                        processGSstring(reader, sw);
+                    }
+                    continue; // at least '$' is consumed ... read next chars.
+                }
                 if (c == '\"') {
                     sw.write('\\');
                 }
@@ -189,6 +204,18 @@ public class SimpleTemplateEngine extends TemplateEngine {
 
         private void endScript(StringWriter sw) {
             sw.write("\");\n");
+        }
+
+        private void processGSstring(Reader reader, StringWriter sw) throws IOException {
+            int c;
+            while ((c = reader.read()) != -1) {
+                if (c != '\n' && c != '\r') {
+                    sw.write(c);
+                }
+                if (c == '}') {
+                    break;
+                }
+            }
         }
 
         /**

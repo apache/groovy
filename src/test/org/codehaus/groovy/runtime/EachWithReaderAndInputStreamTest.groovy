@@ -1,9 +1,6 @@
 package org.codehaus.groovy.runtime
 
-import java.io.StringReader
-import java.io.StringBufferInputStream
-
-/** 
+/**
  * Test .each with Reader and InputStream
  * 
  * @author <a href="mailto:joachim.baumann@xinaris.de">Joachim Baumann</a>
@@ -43,7 +40,9 @@ and not one punctuation mark
 	void testEachForStringBufferInputStream(){
 		def ist = new StringBufferInputStream(multiLineVal)
 		def readVal = ""
-		ist.each { readVal += (char)it }
+		ist.each {
+            readVal += (char)it 
+        }
 		assert readVal == multiLineVal
 	}
 	 		

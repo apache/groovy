@@ -64,6 +64,14 @@ class SqlRowsTest extends TestHelper {
         assert results[1].lastname == "Mcwhirter"
     }
 
+    void testAllRowsWithGStringPropertyName() {
+        def sql = createSql()
+        def name = "James"
+        def results = sql.rows("select firstname, lastname from PERSON where firstname = ${name}")
+        assert results.size() == 1
+        assert results[0].lastname == "Strachan"
+    }
+
     void testAllRowsWithPropertyNameAndParams() {
         def sql = createSql()
 
