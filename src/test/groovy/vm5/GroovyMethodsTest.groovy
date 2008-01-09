@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 the original author or authors.
+ * Copyright 2007-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,6 +44,16 @@ class GroovyMethodsTest extends GroovyTestCase {
         shouldFail(IllegalArgumentException) {
             "FOO" as Suit
         } 
+    }
+
+    void testJavaEnumType() {
+        def x = Language.English
+        x++
+        assert x == Language.French
+        x = Language.English
+        x--
+        assert x == Language.Spanish
+        assert Language.French in Language.English..Language.Spanish
     }
 
     void testStringBuilderPlusPutAtSizeLeftShift() {
