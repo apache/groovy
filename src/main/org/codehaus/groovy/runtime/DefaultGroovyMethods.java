@@ -2883,7 +2883,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Support the subscript operator for a List.
+     * Support the subscript operator for a Map.
      *
      * @param self a Map
      * @param key  an Object as a key for the map
