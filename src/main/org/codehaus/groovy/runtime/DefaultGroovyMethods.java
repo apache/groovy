@@ -5144,26 +5144,6 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * This method is called by the ++ operator for the class Object but
-     * acts simply as a hook for objects which happen to be Java 5 enums.
-     * It won't be called for Objects which already contain a next method
-     * and for non Java 5 enums, it simply chains through to Groovy's normal
-     * missing method processing.
-     *
-     * @param self an Object that will be processed if it happens to be a Java 5 Enum
-     * @return the next defined enum from the enum class
-     */
-    public static Object next(Object self) {
-        final MetaClass metaClass = InvokerHelper.getMetaClass(self);
-        if (DefaultTypeTransformation.isEnumSubclass(self.getClass())) {
-            Object[] values = (Object[]) InvokerHelper.invokeStaticMethod(self.getClass(), "values", new Object[0]);
-            int index = Arrays.asList(values).indexOf(self);
-            return values[index < values.length - 1 ? index + 1 : 0];
-        }
-        return metaClass.invokeMissingMethod(self, "next", new Object[0]);
-    }
-
-    /**
      * This method is called by the ++ operator for the class String.
      * It increments the last character in the given string. If the
      * character in the string is Character.MAX_VALUE a Character.MIN_VALUE
@@ -5188,26 +5168,6 @@ public class DefaultGroovyMethods {
             }
         }
         return buffer.toString();
-    }
-
-    /**
-     * This method is called by the -- operator for the class Object but
-     * acts simply as a hook for objects which happen to be Java 5 enums.
-     * It won't be called for Objects which already contain a previous method
-     * and for non Java 5 enums, it simply chains through to Groovy's normal
-     * missing method processing.
-     *
-     * @param self an Object that will be processed if it happens to be a Java 5 Enum
-     * @return the previous defined enum from the enum class
-     */
-    public static Object previous(Object self) {
-        final MetaClass metaClass = InvokerHelper.getMetaClass(self);
-        if (DefaultTypeTransformation.isEnumSubclass(self.getClass())) {
-            Object[] values = (Object[]) InvokerHelper.invokeStaticMethod(self.getClass(), "values", new Object[0]);
-            int index = Arrays.asList(values).indexOf(self);
-            return values[index > 0 ? index - 1 : values.length - 1];
-        }
-        return metaClass.invokeMissingMethod(self, "previous", new Object[0]);
     }
 
     /**

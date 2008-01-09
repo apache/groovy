@@ -16,6 +16,57 @@
 
 package org.codehaus.groovy.vmplugin.v5;
 
+import groovy.lang.MetaClass;
+import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+
+import java.util.Arrays;
+import java.lang.reflect.Method;
+
 public class PluginDefaultGroovyMethods {
+    private static final Object[] NO_ARGS = new Object[0];
+
+    /**
+     * This method is called by the ++ operator for enums. It will invoke
+     * Groovy's default next behaviour for enums do not have their own
+     * next method.
+     *
+     * @param self an Enum
+     * @return the next defined enum from the enum class
+     */
+    public static Object next(Enum self) {
+        final Method[] methods = self.getClass().getMethods();
+        for (int i = 0; i < methods.length; i++) {
+            Method method = methods[i];
+            if (method.getName().equals("next") && method.getParameterTypes().length == 0) {
+                return InvokerHelper.invokeMethod(self, "next", NO_ARGS);
+            }
+        }
+        Object[] values = (Object[]) InvokerHelper.invokeStaticMethod(self.getClass(), "values", NO_ARGS);
+        int index = Arrays.asList(values).indexOf(self);
+        return values[index < values.length - 1 ? index + 1 : 0];
+    }
+
+    /**
+     * This method is called by the -- operator for enums. It will invoke
+     * Groovy's default previous behaviour for enums that do not have
+     * their own previous method.
+     *
+     * @param self an Enum
+     * @return the previous defined enum from the enum class
+     */
+    public static Object previous(Enum self) {
+        final Method[] methods = self.getClass().getMethods();
+        for (int i = 0; i < methods.length; i++) {
+            Method method = methods[i];
+            if (method.getName().equals("previous") && method.getParameterTypes().length == 0) {
+                return InvokerHelper.invokeMethod(self, "previous", NO_ARGS);
+            }
+        }
+        Object[] values = (Object[]) InvokerHelper.invokeStaticMethod(self.getClass(), "values", NO_ARGS);
+        int index = Arrays.asList(values).indexOf(self);
+        return values[index > 0 ? index - 1 : values.length - 1];
+    }
+
 
 }
