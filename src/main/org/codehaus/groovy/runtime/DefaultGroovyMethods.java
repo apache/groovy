@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ import java.util.regex.Pattern;
  * @author Joachim Baumann
  * @version $Revision$
  */
-public class DefaultGroovyMethods {
+public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     private static final Logger LOG = Logger.getLogger(DefaultGroovyMethods.class.getName());
     private static final Integer ONE = new Integer(1);
@@ -2464,26 +2464,6 @@ public class DefaultGroovyMethods {
             answer = reverse(answer);
         }
         return answer;
-    }
-
-    // helper method for getAt and putAt
-    protected static RangeInfo subListBorders(int size, IntRange range) {
-        int from = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getFrom()), size);
-        int to = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getTo()), size);
-        boolean reverse = range.isReverse();
-        if (from > to) {                        // support list[1..-1]
-            int tmp = to;
-            to = from;
-            from = tmp;
-            reverse = !reverse;
-        }
-        return new RangeInfo(from, to + 1, reverse);
-    }
-
-    // helper method for getAt and putAt
-    protected static RangeInfo subListBorders(int size, EmptyRange range) {
-        int from = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getFrom()), size);
-        return new RangeInfo(from, from, false);
     }
 
     /**
@@ -9151,17 +9131,6 @@ public class DefaultGroovyMethods {
                     process.destroy();
                 }
             }
-        }
-    }
-
-    protected static class RangeInfo {
-        protected int from, to;
-        protected boolean reverse;
-
-        public RangeInfo(int from, int to, boolean reverse) {
-            this.from = from;
-            this.to = to;
-            this.reverse = reverse;
         }
     }
 

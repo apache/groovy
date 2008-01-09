@@ -17,13 +17,21 @@
 package org.codehaus.groovy.vmplugin.v5;
 
 import groovy.lang.MetaClass;
+import groovy.lang.IntRange;
+import groovy.lang.EmptyRange;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.util.Arrays;
 import java.lang.reflect.Method;
 
-public class PluginDefaultGroovyMethods {
+/**
+ * This class defines new Java 5 specific groovy methods which extend the normal
+ * JDK classes inside the Groovy environment. Static methods are used with the
+ * first parameter the destination class.
+ */
+public class PluginDefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     private static final Object[] NO_ARGS = new Object[0];
 
     /**
@@ -68,5 +76,63 @@ public class PluginDefaultGroovyMethods {
         return values[index > 0 ? index - 1 : values.length - 1];
     }
 
+    /**
+     * Provide standard Groovy size() method for StringBuilders
+     *
+     * @param builder a StringBuilder
+     * @return the length of the StringBuilder
+     */
+    public static int size(StringBuilder builder) {
+        return builder.length();
+    }
+
+    /**
+     * Overloads the left shift operator to provide an easy way to append multiple
+     * objects as string representations to a StringBuilder.
+     *
+     * @param self  a StringBuilder
+     * @param value a value to append
+     * @return the StringBuilder on which this operation was invoked
+     */
+    public static StringBuilder leftShift(StringBuilder self, Object value) {
+        self.append(value);
+        return self;
+    }
+
+    /**
+     * Support the range subscript operator for StringBuilder.  Index values are
+     * treated as characters within the builder.
+     *
+     * @param self  a StringBuilder
+     * @param range a Range
+     * @param value the object that's toString() will be inserted
+     */
+    public static void putAt(StringBuilder self, IntRange range, Object value) {
+        RangeInfo info = subListBorders(self.length(), range);
+        self.replace(info.from, info.to, value.toString());
+    }
+
+    /**
+     * Support the range subscript operator for StringBuilder.
+     *
+     * @param self  a StringBuilder
+     * @param range a Range
+     * @param value the object that's toString() will be inserted
+     */
+    public static void putAt(StringBuilder self, EmptyRange range, Object value) {
+        RangeInfo info = subListBorders(self.length(), range);
+        self.replace(info.from, info.to, value.toString());
+    }
+
+    /**
+     * Appends a String to this StringBuilder.
+     *
+     * @param self  a StringBuilder
+     * @param value a String
+     * @return a String
+     */
+    public static String plus(StringBuilder self, String value) {
+        return self + value;
+    }
 
 }

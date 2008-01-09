@@ -16,9 +16,10 @@
 package groovy.vm5
 
 /** 
- * Tests the Java 5 variants of various new Groovy methods
+ * Tests the Java 5 variants of various new Groovy methods.
  *
  * @author Mike Dillon
+ * @author Paul King
  */
 class GroovyMethodsTest extends GroovyTestCase {
     void testEachOnEnumClassIteratesThroughTheValuesOfTheEnum() {
@@ -43,6 +44,21 @@ class GroovyMethodsTest extends GroovyTestCase {
         shouldFail(IllegalArgumentException) {
             "FOO" as Suit
         } 
+    }
+
+    void testStringBuilderPlusPutAtSizeLeftShift() {
+        def sb = new StringBuilder('foo')
+        assert sb + 'bar' == 'foobar'
+        sb << 'baz'
+        assert sb.size() == 6
+        def result = sb.toString()
+        assert result == 'foobaz'
+        sb[3..4] = 'abc'
+        result = sb.toString()
+        assert result == 'fooabcz'
+        sb[6..<6] = 'xy'
+        result = sb.toString()
+        assert result == 'fooabcxyz'
     }
 }
 
