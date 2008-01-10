@@ -732,7 +732,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         if (method == null && arguments.length == 1 && arguments[0] instanceof List) {
             Object[] newArguments = ((List) arguments[0]).toArray();
-            Class[] newArgClasses = MetaClassHelper.convertToTypeArray(newArguments);
             method = getMethodWithCaching(sender, methodName, newArguments, isCallToSuper);
             if (method != null) {
                 method = new TransformMetaMethod(method) {

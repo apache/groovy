@@ -2,7 +2,6 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.MetaClass;
 import org.codehaus.groovy.reflection.GeneratedMetaMethod;
-import org.codehaus.groovy.runtime.CallSite;
 import org.codehaus.groovy.runtime.CallSiteArray;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.objectweb.asm.Opcodes;
@@ -13,15 +12,6 @@ public class JO extends GeneratedMetaMethod implements Opcodes {
     public static Class myMetaClass = initMyClass();
 
     private static CallSiteArray callSiteArray;
-
-    public static CallSite getCallSite (int index) {
-        CallSiteArray a = callSiteArray;
-        if (a == null) {
-            a = new CallSiteArray(239);
-            callSiteArray = a;
-        }
-        return a.getCallSite(index);
-    }
 
     private static Class initMyClass() {
         try {

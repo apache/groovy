@@ -269,7 +269,7 @@ public class AsmClassGenerator extends ClassGenerator {
             if (callSiteCount > 0) {
                cv.visitField(ACC_STATIC+ACC_SYNTHETIC, "$callSiteArray", "Lorg/codehaus/groovy/runtime/CallSiteArray;", null, null);
 
-                MethodVisitor mv = cv.visitMethod(ACC_PUBLIC+ACC_SYNTHETIC+ACC_STATIC,"$getCallSite", "(I)Lorg/codehaus/groovy/runtime/CallSite;", null, null);
+                MethodVisitor mv = cv.visitMethod(ACC_PUBLIC+ACC_SYNTHETIC+ACC_STATIC,"$getCallSiteArray", "()Lorg/codehaus/groovy/runtime/CallSiteArray;", null, null);
                 mv.visitCode();
                 mv.visitFieldInsn(GETSTATIC, internalClassName, "$callSiteArray", "Lorg/codehaus/groovy/runtime/CallSiteArray;");
                 mv.visitVarInsn(ASTORE, 1);
@@ -285,8 +285,6 @@ public class AsmClassGenerator extends ClassGenerator {
                 mv.visitFieldInsn(PUTSTATIC, internalClassName, "$callSiteArray", "Lorg/codehaus/groovy/runtime/CallSiteArray;");
                 mv.visitLabel(l0);
                 mv.visitVarInsn(ALOAD, 1);
-                mv.visitVarInsn(ILOAD, 0);
-                mv.visitMethodInsn(INVOKEVIRTUAL, "org/codehaus/groovy/runtime/CallSiteArray", "getCallSite", "(I)Lorg/codehaus/groovy/runtime/CallSite;");
                 mv.visitInsn(ARETURN);
                 mv.visitMaxs(0,0);
                 mv.visitEnd();
@@ -1707,9 +1705,9 @@ public class AsmClassGenerator extends ClassGenerator {
             Expression receiver, String message, Expression arguments,
             MethodCallerMultiAdapter adapter) {
 
-        mv.visitLdcInsn(new Integer(allocateIndex()));
-        mv.visitMethodInsn(INVOKESTATIC,internalClassName,"$getCallSite","(I)Lorg/codehaus/groovy/runtime/CallSite;");
+        mv.visitMethodInsn(INVOKESTATIC,internalClassName,"$getCallSiteArray","()Lorg/codehaus/groovy/runtime/CallSiteArray;");
 
+        mv.visitLdcInsn(new Integer(allocateIndex()));
         mv.visitLdcInsn(message);
 
         // ensure VariableArguments are read, not stored
@@ -1750,7 +1748,7 @@ public class AsmClassGenerator extends ClassGenerator {
             }
         }
 
-        mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/CallSite", "call","(Ljava/lang/String;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
+        mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/CallSiteArray", "call","(ILjava/lang/String;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
 
         leftHandExpression = lhs;
     }
