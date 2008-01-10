@@ -16,8 +16,8 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.*;
-import groovy.util.*;
 import groovy.text.RegexUtils;
+import groovy.util.*;
 import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
@@ -2653,16 +2653,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param value an Object to put at the given index
      */
     public static void putAt(Object[] array, int idx, Object value) {
-        if (value instanceof Number) {
-            Class arrayComponentClass = array.getClass().getComponentType();
-
-            if (!arrayComponentClass.equals(value.getClass())) {
-                Object newVal = DefaultTypeTransformation.castToType(value, arrayComponentClass);
-                array[normaliseIndex(idx, array.length)] = newVal;
-                return;
-            }
-        }
         array[normaliseIndex(idx, array.length)] = value;
+    }
+
+    /**
+     * Support the subscript operator for an Array.
+     *
+     * @param array an Array of Objects
+     * @param idx   an index
+     * @param value an Object to put at the given index
+     */
+    public static void putAt(Double[] array, int idx, Number value) {
+        if (!(value instanceof Double)) {
+          value = (Number) DefaultTypeTransformation.castToType(value, Double.class);
+        }
+        array[normaliseIndex(idx, array.length)] = (Double) value;
     }
 
     /**
@@ -3310,7 +3315,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a Collection as a union of two collections. If the left collection
      * is a Set, then the returned collection will be a Set otherwise a List.
-     * This operation will always create a new object for the result, 
+     * This operation will always create a new object for the result,
      * while the operands remain unchanged.
      *
      * @param left  the left Collection
@@ -3334,7 +3339,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a collection as a union of a Collection and an Object. If the collection
      * is a Set, then the returned collection will be a Set otherwise a List.
-     * This operation will always create a new object for the result, 
+     * This operation will always create a new object for the result,
      * while the operands remain unchanged.
      *
      * @param left  a Collection
@@ -5423,7 +5428,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Add a Character and a Number.
-     * This operation will always create a new object for the result, 
+     * This operation will always create a new object for the result,
      * while the operands remain unchanged.
      *
      * @param left  a Character
@@ -5447,7 +5452,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Add two Characters.
-     * This operation will always create a new object for the result, 
+     * This operation will always create a new object for the result,
      * while the operands remain unchanged.
      *
      * @param left  a Character

@@ -2,6 +2,8 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.MetaClass;
 import org.codehaus.groovy.reflection.GeneratedMetaMethod;
+import org.codehaus.groovy.runtime.CallSite;
+import org.codehaus.groovy.runtime.CallSiteArray;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.util.ASMifierClassVisitor;
@@ -9,6 +11,17 @@ import org.objectweb.asm.util.ASMifierClassVisitor;
 public class JO extends GeneratedMetaMethod implements Opcodes {
     public static MetaClass staticMetaClass;
     public static Class myMetaClass = initMyClass();
+
+    private static CallSiteArray callSiteArray;
+
+    public static CallSite getCallSite (int index) {
+        CallSiteArray a = callSiteArray;
+        if (a == null) {
+            a = new CallSiteArray(239);
+            callSiteArray = a;
+        }
+        return a.getCallSite(index);
+    }
 
     private static Class initMyClass() {
         try {
@@ -35,13 +48,16 @@ public class JO extends GeneratedMetaMethod implements Opcodes {
         super();
     }
 
+    public boolean isValidMethod(Class[] arguments) {
+        return arguments == null || getParameterTypes()[0].isAssignableFrom(arguments[0]);
+    }
+
     public Object invoke(Object object, Object[] arguments) {
         return null;  //To change body of implemented methods use File | Settings | File Templates.
     }
 
     public final Object doMethodInvoke(Object object, Object[] argumentArray) {
-        argumentArray = coerceArgumentsToClasses(argumentArray);
-        return invoke(object, argumentArray);
+        return invoke(object, coerceArgumentsToClasses(argumentArray));
     }
 
     public static void main(String[] args) throws Exception {

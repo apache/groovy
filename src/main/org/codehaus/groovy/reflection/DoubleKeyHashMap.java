@@ -25,7 +25,7 @@ public class DoubleKeyHashMap extends ComplexKeyHashMap
     int h = hash (31*key1.hashCode()+key2.hashCode());
     ComplexKeyHashMap.Entry e = table [h & (table.length-1)];
     for (; e != null; e = e.next)
-      if (e.hash == h && checkEquals((Entry) e, key1, key2))
+      if (e.hash == h && checkEquals(e, key1, key2))
         return e;
 
     return null;
@@ -72,7 +72,7 @@ public class DoubleKeyHashMap extends ComplexKeyHashMap
     int h = hash (31*key1.hashCode()+key2.hashCode());
     int index = h & (table.length -1);
     for (ComplexKeyHashMap.Entry e = table [index], prev = null; e != null; prev = e, e = e.next ) {
-      if (e.hash == h && checkEquals((Entry) e, key1, key2)) {
+      if (e.hash == h && checkEquals(e, key1, key2)) {
         if (prev == null)
           table [index] = e.next;
         else

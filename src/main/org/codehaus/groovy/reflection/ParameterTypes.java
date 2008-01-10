@@ -220,22 +220,24 @@ public class ParameterTypes
         CachedClass[] pt = getParameterTypes();
         final int paramMinus1 = pt.length-1;
 
-        if ( size >= paramMinus1 && isVargsMethod)
+        if (isVargsMethod && size >= paramMinus1)
             return isValidVarargsMethod(arguments, size, pt, paramMinus1);
         else
             if (pt.length == size)
-                return isValidExactMethod(arguments, size, pt);
+                return isValidExactMethod(arguments, pt);
             else
                 if (pt.length == 1 && size == 0)
                     return true;
         return false;
     }
 
-    private boolean isValidExactMethod(Class[] arguments, int size, CachedClass[] pt) {
+    private boolean isValidExactMethod(Class[] arguments, CachedClass[] pt) {
         // lets check the parameter types match
+        int size = pt.length;
         for (int i = 0; i < size; i++) {
-            if (pt[i].isAssignableFrom(arguments[i])) continue;
-            return false;
+            if (!pt[i].isAssignableFrom(arguments[i])) {
+                return false;
+            }
         }
         return true;
     }

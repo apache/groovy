@@ -23,7 +23,10 @@ import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.*;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
-import java.lang.reflect.*;
+import java.lang.reflect.Array;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Iterator;
@@ -43,6 +46,7 @@ public class MetaClassHelper {
     protected static final Logger LOG = Logger.getLogger(MetaClassHelper.class.getName());
     private static final int MAX_ARG_LEN = 12;
     private static final int VARGS_SHIFT = 28;
+    public static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
 
     public static boolean accessibleToConstructor(final Class at, final Constructor constructor) {
         boolean accessible = false;
@@ -378,7 +382,7 @@ public class MetaClassHelper {
         final Object[] data = methods.getArray();
         for (int i = 0; i != len; ++i) {
             Object method = data[i];
-            final ParameterTypes pt = getParameterTypes(method);
+            final ParameterTypes pt = (ParameterTypes) method;
             CachedClass[] paramTypes = pt.getParameterTypes();
             int paramLength = paramTypes.length;
             if (paramLength == 0) {
@@ -406,7 +410,7 @@ public class MetaClassHelper {
         for (int i = 0; i != len; ++i) {
             final Object[] data = methods.getArray();
             Object method = data[i];
-            final ParameterTypes pt = getParameterTypes(method);
+            final ParameterTypes pt = (ParameterTypes) method;
             CachedClass[] paramTypes = pt.getParameterTypes();
             int paramLength = paramTypes.length;
             if (paramLength == 0 || paramLength > 2) continue;
@@ -612,21 +616,6 @@ public class MetaClassHelper {
         return new MethodClosure(object, methodName);
     }
 
-    public static ParameterTypes getParameterTypes(Object methodOrConstructor) {
-        if (methodOrConstructor instanceof ParameterTypes) {
-            return (ParameterTypes) methodOrConstructor;
-        }
-        if (methodOrConstructor instanceof Method) {
-            Method method = (Method) methodOrConstructor;
-            return CachedMethod.find(method);
-        }
-        if (methodOrConstructor instanceof Constructor) {
-            Constructor constructor = (Constructor) methodOrConstructor;
-            return CachedConstructor.find(constructor);
-        }
-        throw new IllegalArgumentException("Must be a Method or Constructor");
-    }
-
     public static boolean isAssignableFrom(Class classToTransformTo, Class classToTransformFrom) {
         if (classToTransformTo == classToTransformFrom) {
             return true;
@@ -721,10 +710,6 @@ public class MetaClassHelper {
         return true;
     }
 
-    public static boolean isValidMethod(Object method, Class[] arguments) {
-        return getParameterTypes(method).isValidMethod(arguments);
-    }
-
     public static void logMethodCall(Object object, String methodName, Object[] arguments) {
         String className = getClassName(object);
         String logname = "methodCalls." + className + "." + methodName;
@@ -794,4 +779,55 @@ public class MetaClassHelper {
         return wrappedArguments;
     }
 
+    public static boolean sameClasses(Class[] params, Object[] arguments, boolean weakNullCheck) {
+        if (params.length != arguments.length)
+          return false;
+
+        for (int i = params.length-1; i >= 0; i--) {
+            Object arg = arguments[i];
+            if (arg != null) {
+                if (arg instanceof Wrapper) {
+                    if (params[i] != ((Wrapper)arg).getType())
+                      return false;
+                }
+                else
+                    if (params[i] != arg.getClass())
+                      return false;
+            }
+            else
+              if (!weakNullCheck)
+                return false;
+        }
+
+        return true;
+    }
+
+    public static Class[] castArgumentsToClassArray(Object[] argTypes) {
+        if (argTypes == null) return EMPTY_CLASS_ARRAY;
+        Class[] classes = new Class[argTypes.length];
+        for (int i = 0; i < argTypes.length; i++) {
+            Object argType = argTypes[i];
+            if (argType instanceof Class) {
+                classes[i] = (Class) argType;
+            } else if (argType == null) {
+                classes[i] = null;
+            } else {
+//                throw new IllegalArgumentException("Arguments to method [respondsTo] must be of type java.lang.Class!");
+                classes[i] = argType.getClass();
+            }
+        }
+        return classes;
+    }
+
+    public static void unwrap(Object[] arguments) {
+        //
+        // Temp code to ignore wrapped parameters
+        // The New MOP will deal with these properly
+        //
+        for (int i = 0; i != arguments.length; i++) {
+            if (arguments[i] instanceof Wrapper) {
+                arguments[i] = ((Wrapper) arguments[i]).unwrap();
+            }
+        }
+    }
 }

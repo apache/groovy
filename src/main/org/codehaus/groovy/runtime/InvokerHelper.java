@@ -751,13 +751,13 @@ public class InvokerHelper {
         }
     }
 
-    private static Object invokePojoMethod(Object object, String methodName, Object arguments) {
+    static Object invokePojoMethod(Object object, String methodName, Object arguments) {
         Class theClass = object.getClass();
         MetaClass metaClass = metaRegistry.getMetaClass(theClass);
         return metaClass.invokeMethod(object, methodName, asArray(arguments));
     }
 
-    private static Object invokePogoMethod(Object object, String methodName, Object arguments) {
+    static Object invokePogoMethod(Object object, String methodName, Object arguments) {
         GroovyObject groovy = (GroovyObject) object;
         boolean intercepting = groovy instanceof GroovyInterceptable;
         try {

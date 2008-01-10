@@ -134,7 +134,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         }
     }
 
-    private MyThreadLocal locallyKnown = new MyThreadLocal();
+    private final MyThreadLocal locallyKnown = new MyThreadLocal();
 
     public static final int LOAD_DEFAULT = 0;
     public static final int DONT_LOAD_DEFAULT = 1;
@@ -286,7 +286,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         return answer;
     }
 
-    public MetaClass getMetaClass(Class theClass) {
+    public final MetaClass getMetaClass(Class theClass) {
         return locallyKnown.getMetaClass(theClass);
     }
 
@@ -382,11 +382,11 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             return new LocallyKnownClasses();
         }
 
-        public MetaClass getMetaClass (Class theClass) {
+        public final MetaClass getMetaClass (Class theClass) {
             return ((LocallyKnownClasses)get()).getMetaClass(theClass);
         }
 
-        public Object get() {
+        public final Object get() {
             if (Thread.currentThread() != myThread)
               return super.get();
             else

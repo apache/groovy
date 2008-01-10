@@ -116,7 +116,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
                     Object method = data[i];
 
                     // making this false helps find matches
-                    if (MetaClassHelper.isValidMethod(method, arguments)) {
+                    if (((ParameterTypes) method).isValidMethod(arguments)) {
                         matchingMethods.add(method);
                     }
                 }
@@ -134,7 +134,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
             LinkedList matches = new LinkedList();
             for (Iterator iter = matchingMethods.iterator(); iter.hasNext();) {
                 Object method = iter.next();
-                final ParameterTypes parameterTypes = MetaClassHelper.getParameterTypes(method);
+                final ParameterTypes parameterTypes = (ParameterTypes) method;
                 Class[] paramTypes = parameterTypes.getNativeParameterTypes();
                 if (!MetaClassHelper.parametersAreCompatible(arguments, paramTypes)) continue;
                 long dist = MetaClassHelper.calculateParameterDistance(arguments, parameterTypes);
@@ -165,7 +165,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
             msg += InvokerHelper.toString(arguments);
             msg += " due to overlapping prototypes between:";
             for (Iterator iter = matches.iterator(); iter.hasNext();) {
-                CachedClass[] types = MetaClassHelper.getParameterTypes(iter.next()).getParameterTypes();
+                CachedClass[] types = ((ParameterTypes) iter.next()).getParameterTypes();
                 msg += "\n\t" + InvokerHelper.toString(types);
             }
             throw new GroovyRuntimeException(msg);
@@ -544,7 +544,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
     }
 
     public MetaMethod pickMethod(String name, Class[] argTypes) {
-        if (argTypes == null) argTypes = EMPTY_CLASS_ARRAY;
+        if (argTypes == null) argTypes = MetaClassHelper.EMPTY_CLASS_ARRAY;
         if (name.equals(CLOSURE_CALL_METHOD) || name.equals(CLOSURE_DO_CALL_METHOD)) {
             return pickClosureMethod(argTypes);
         }

@@ -6,6 +6,7 @@ import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
@@ -60,13 +61,37 @@ public class DgmConverter implements Opcodes{
             mv = cw.visitMethod(ACC_PUBLIC + ACC_FINAL, "doMethodInvoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", null, null);
             helper = new BytecodeHelper(mv);
             mv.visitCode();
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitVarInsn(ALOAD, 2);
-            mv.visitMethodInsn(INVOKEVIRTUAL, className, "coerceArgumentsToClasses", "([Ljava/lang/Object;)[Ljava/lang/Object;");
-            mv.visitVarInsn(ASTORE, 2);
-            mv.visitVarInsn(ALOAD,1);
-            helper.doCast(method.getParameterTypes()[0].getCachedClass());
-            loadParameters(method,2,mv);
+            if (method.getParamsCount() == 2 && method.getParameterTypes()[0].isNumber && method.getParameterTypes()[1].isNumber) {
+                mv.visitVarInsn(ALOAD,1);
+                helper.doCast(method.getParameterTypes()[0].getCachedClass());
+
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKEVIRTUAL, className, "getParameterTypes", "()[Lorg/codehaus/groovy/reflection/CachedClass;");
+                mv.visitInsn(ICONST_0);
+                mv.visitInsn(AALOAD);
+                mv.visitVarInsn(ALOAD, 2);
+                mv.visitInsn(ICONST_0);
+                mv.visitInsn(AALOAD);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "org/codehaus/groovy/reflection/CachedClass", "coerceArgument", "(Ljava/lang/Object;)Ljava/lang/Object;");
+
+                // cast argument to parameter class, inclusive unboxing
+                // for methods with primitive types
+                Class type = method.getParameterTypes()[1].getCachedClass();
+                if (type.isPrimitive()) {
+                    helper.unbox(type);
+                } else {
+                    helper.doCast(type);
+                }
+            }
+            else {
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitVarInsn(ALOAD, 2);
+                mv.visitMethodInsn(INVOKEVIRTUAL, className, "coerceArgumentsToClasses", "([Ljava/lang/Object;)[Ljava/lang/Object;");
+                mv.visitVarInsn(ASTORE, 2);
+                mv.visitVarInsn(ALOAD,1);
+                helper.doCast(method.getParameterTypes()[0].getCachedClass());
+                loadParameters(method,2,mv);
+            }
             mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/DefaultGroovyMethods", method.getName(), methodDescriptor);
             helper.box(returnType);
             if (method.getReturnType() == void.class) {
@@ -76,39 +101,34 @@ public class DgmConverter implements Opcodes{
             mv.visitMaxs(0, 0);
             mv.visitEnd();
 
-//            mv = cw.visitMethod(ACC_PUBLIC, "doMethodInvoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", null, null);
-//            mv.visitCode();
-//            Label l0 = new Label();
-//            Label l1 = new Label();
-//            Label l2 = new Label();
-//            mv.visitTryCatchBlock(l0, l1, l2, "java/lang/Exception");
-//            mv.visitVarInsn(ALOAD, 0);
-//            mv.visitVarInsn(ALOAD, 2);
-//            mv.visitMethodInsn(INVOKEVIRTUAL, className, "coerceArgumentsToClasses", "([Ljava/lang/Object;)[Ljava/lang/Object;");
-//            mv.visitVarInsn(ASTORE, 2);
-//            mv.visitLabel(l0);
-//            helper = new BytecodeHelper(mv);
-//            mv.visitCode();
-//            mv.visitVarInsn(ALOAD,1);
-//            helper.doCast(method.getParameterTypes()[0].getCachedClass());
-//            loadParameters(method,2,mv);
-//            mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/DefaultGroovyMethods", method.getName(), methodDescriptor);
-//            helper.box(returnType);
-//            if (method.getReturnType() == void.class) {
-//                mv.visitInsn(ACONST_NULL);
-//            }
-//            mv.visitLabel(l1);
-//            mv.visitInsn(ARETURN);
-//            mv.visitLabel(l2);
-//            mv.visitVarInsn(ASTORE, 3);
-//            mv.visitVarInsn(ALOAD, 0);
-//            mv.visitVarInsn(ALOAD, 3);
-//            mv.visitVarInsn(ALOAD, 1);
-//            mv.visitVarInsn(ALOAD, 2);
-//            mv.visitMethodInsn(INVOKEVIRTUAL, className, "processDoMethodInvokeException", "(Ljava/lang/Exception;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/RuntimeException;");
-//            mv.visitInsn(ATHROW);
-//            mv.visitMaxs(0, 0);
-//            mv.visitEnd();
+            if (method.getParamsCount() == 2 && method.getParameterTypes()[0].isNumber && method.getParameterTypes()[1].isNumber) {
+                // 1 param meta method
+                mv = cw.visitMethod(ACC_PUBLIC, "isValidMethod", "([Ljava/lang/Class;)Z", null, null);
+                mv.visitCode();
+                mv.visitVarInsn(ALOAD, 1);
+                Label l0 = new Label();
+                mv.visitJumpInsn(IFNULL, l0);
+                mv.visitVarInsn(ALOAD, 0);
+                mv.visitMethodInsn(INVOKEVIRTUAL, className, "getParameterTypes", "()[Lorg/codehaus/groovy/reflection/CachedClass;");
+                mv.visitInsn(ICONST_0);
+                mv.visitInsn(AALOAD);
+                mv.visitVarInsn(ALOAD, 1);
+                mv.visitInsn(ICONST_0);
+                mv.visitInsn(AALOAD);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "org/codehaus/groovy/reflection/CachedClass", "isAssignableFrom", "(Ljava/lang/Class;)Z");
+                Label l1 = new Label();
+                mv.visitJumpInsn(IFEQ, l1);
+                mv.visitLabel(l0);
+                mv.visitInsn(ICONST_1);
+                Label l2 = new Label();
+                mv.visitJumpInsn(GOTO, l2);
+                mv.visitLabel(l1);
+                mv.visitInsn(ICONST_0);
+                mv.visitLabel(l2);
+                mv.visitInsn(IRETURN);
+                mv.visitMaxs(0, 0);
+                mv.visitEnd();
+            }
 
             mv = cw.visitMethod(ACC_PUBLIC, "$markerMethod$" + method.getName(), methodDescriptor, null, null);
             mv.visitCode();
