@@ -47,7 +47,7 @@ class FileTest extends GroovyTestCase {
 	void testEachFileMatch() {
 		def collectedFiles = []
 		baseDir.eachFileMatch ~/fo.*/, { it -> collectedFiles << it.name }
-		collectedFiles.sort() // needs to sort as there is no guaranty on the order within a folder
+		collectedFiles.sort() // needs to sort as there is no guarantee on the order within a folder
 
     	def expected = ["folder1", "folder2", "folder3", "foo", "foo.txt"]
     	
