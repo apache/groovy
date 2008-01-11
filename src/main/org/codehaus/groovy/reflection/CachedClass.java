@@ -233,7 +233,7 @@ public class CachedClass {
         return modifiers;
     }
 
-    protected Object coerceArgument(Object argument) {
+    public Object coerceArgument(Object argument) {
         return argument;
     }
     
@@ -335,7 +335,7 @@ public class CachedClass {
     public MetaClass getMetaClassForClass() {
         Object cur = metaClassForClass;
         if (cur == null)
-          return null;
+            return null;
         if (cur instanceof SoftReference) {
             SoftReference softReference = (SoftReference) cur;
             return (MetaClass) softReference.get();
@@ -385,7 +385,7 @@ public class CachedClass {
             super(klazz);
         }
 
-        protected Object coerceArgument(Object argument) {
+        public Object coerceArgument(Object argument) {
             if (argument instanceof Number) {
                 return coerceNumber(argument);
             }
@@ -415,7 +415,7 @@ public class CachedClass {
             super(klazz);
         }
 
-        protected Object coerceArgument(Object argument) {
+        public Object coerceArgument(Object argument) {
             if (argument instanceof Integer) {
                 return argument;
             }
@@ -467,7 +467,7 @@ public class CachedClass {
             super(klazz);
         }
 
-        protected Object coerceArgument(Object argument) {
+        public Object coerceArgument(Object argument) {
             if (argument instanceof Short) {
                 return argument;
             }
@@ -494,7 +494,7 @@ public class CachedClass {
         }
 
 
-        protected Object coerceArgument(Object argument) {
+        public Object coerceArgument(Object argument) {
             if (argument instanceof Long) {
                 return argument;
             }
@@ -524,7 +524,7 @@ public class CachedClass {
             super(klazz);
         }
 
-        protected Object coerceArgument(Object argument) {
+        public Object coerceArgument(Object argument) {
             if (argument instanceof Float) {
                 return argument;
             }
@@ -564,7 +564,7 @@ public class CachedClass {
             return argument instanceof Double;
         }
 
-        protected Object coerceArgument(Object argument) {
+        public Object coerceArgument(Object argument) {
             if (argument instanceof Double) {
                 return argument;
             }
@@ -604,7 +604,7 @@ public class CachedClass {
             return argument instanceof BigDecimal;
         }
 
-        protected Object coerceArgument(Object argument) {
+        public Object coerceArgument(Object argument) {
             if (argument instanceof BigDecimal) {
                 return argument;
             }
@@ -631,7 +631,7 @@ public class CachedClass {
                   || ReflectionCache.isAssignableFrom(GSTRING_CLASS,classToTransformFrom);
         }
 
-        protected Object coerceArgument(Object argument) {
+        public Object coerceArgument(Object argument) {
             return argument instanceof GString ? argument.toString() : argument;
         }
     }
@@ -665,7 +665,7 @@ public class CachedClass {
             super(klazz);
         }
 
-        protected Object coerceArgument(Object argument) {
+        public Object coerceArgument(Object argument) {
             Class argumentClass = argument.getClass();
             if (argumentClass.getName().charAt(0) != '[') return argument;
             Class argumentComponent = argumentClass.getComponentType();
