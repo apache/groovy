@@ -1662,10 +1662,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     protected static Object callClosureForMapEntryAndCounter(Closure closure, Map.Entry entry, int counter) {
         if (closure.getMaximumNumberOfParameters() == 3) {
-            return closure.call(new Object[]{entry.getKey(), entry.getValue(),
-                Integer.valueOf(counter)});
-        } else if (closure.getMaximumNumberOfParameters() == 2) {
-            return closure.call(new Object[]{entry, Integer.valueOf(counter)});
+            return closure.call(new Object[]{entry.getKey(), entry.getValue(), new Integer(counter)});
+        }
+        if (closure.getMaximumNumberOfParameters() == 2) {
+            return closure.call(new Object[]{entry, new Integer(counter)});
         }
         return closure.call(entry);
     }
