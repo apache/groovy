@@ -121,6 +121,30 @@ class ClosureTest extends GroovyTestCase {
         assert str == 'abcd' && sum == 6
     }
 
+    void testMapWithEntryIndex() {
+        def keyStr = ''
+        def valStr = ''
+        def sum = 0
+        ['a':'z','b':'y','c':'x','d':'w'].eachWithIndex { entry, index ->
+            keyStr += entry.key
+            valStr += entry.value
+            sum += index
+        }
+        assert keyStr == 'abcd' && valStr == 'zyxw' && sum == 6
+    }
+
+    void testMapWithKeyValueIndex() {
+        def keyStr = ''
+        def valStr = ''
+        def sum = 0
+        ['a':'z','b':'y','c':'x','d':'w'].eachWithIndex { k, v, index ->
+            keyStr += k
+            valStr += v
+            sum += index
+        }
+        assert keyStr == 'abcd' && valStr == 'zyxw' && sum == 6
+    }
+
     /**
     * Test access to Closure's properties
     * cf GROOVY-2089

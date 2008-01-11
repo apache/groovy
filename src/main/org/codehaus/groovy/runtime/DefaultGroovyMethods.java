@@ -1059,6 +1059,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Allows a Map to be iterated through using a closure. If the
+     * closure takes two parameters then it will be passed the Map.Entry and
+     * the item's index (a counter starting at zero) otherwise if the closure
+     * takes three parameters then it will be passed the key, the value, and
+     * the index.
+     *
+     * @param self    the map over which we iterate
+     * @param closure a Closure to operate on each item
+     * @return the self Object
+     */
+    public static Object eachWithIndex(Map self, Closure closure) {
+        int counter = 0;
+        for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            callClosureForMapEntryAndCounter(closure, entry, counter++);
+        }
+        return self;
+    }
+
+    /**
      * Iterate over each element of the list in the reverse order.
      *
      * @param self    a List
@@ -1636,6 +1656,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     protected static Object callClosureForMapEntry(Closure closure, Map.Entry entry) {
         if (closure.getMaximumNumberOfParameters() == 2) {
             return closure.call(new Object[]{entry.getKey(), entry.getValue()});
+        }
+        return closure.call(entry);
+    }
+
+    protected static Object callClosureForMapEntryAndCounter(Closure closure, Map.Entry entry, int counter) {
+        if (closure.getMaximumNumberOfParameters() == 3) {
+            return closure.call(new Object[]{entry.getKey(), entry.getValue(),
+                Integer.valueOf(counter)});
+        } else if (closure.getMaximumNumberOfParameters() == 2) {
+            return closure.call(new Object[]{entry, Integer.valueOf(counter)});
         }
         return closure.call(entry);
     }
