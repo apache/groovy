@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,11 @@ import java.util.Map;
 
 /**
  * A helper class for creating XML or HTML markup
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Stefan Matthias Aust
  * @author <a href="mailto:scottstirling@rcn.com">Scott Stirling</a>
+ * @author Paul King
  * @version $Revision$
  */
 public class MarkupBuilder extends BuilderSupport {
@@ -37,6 +38,8 @@ public class MarkupBuilder extends BuilderSupport {
     private int state;
     private boolean nodeIsEmpty = true;
     private boolean useDoubleQuotes = false;
+    private boolean omitNullAttributes = true;
+    private boolean omitEmptyAttributes = false;
 
     public MarkupBuilder() {
         this(new IndentPrinter());
@@ -72,6 +75,50 @@ public class MarkupBuilder extends BuilderSupport {
      */
     public void setDoubleQuotes(boolean useDoubleQuotes) {
         this.useDoubleQuotes = useDoubleQuotes;
+    }
+
+    /**
+     * Determine whether null attributes will appear in the produced markup.
+     *
+     * @return <code>true</code>, if null attributes will be
+     * removed from the resulting markup.
+     */
+    public boolean isOmitNullAttributes() {
+        return omitNullAttributes;
+    }
+
+    /**
+     * Allows null attributes to be removed the produced markup.
+     *
+     * @param omitNullAttributes if <code>true</code>, null
+     * attributes will not be included in the resulting markup.
+     * If <code>false</code> null attributes will be included in the
+     * markup as empty strings regardless of the omitEmptyAttribute
+     * setting. Defaults to <code>true</code>.
+     */
+    public void setOmitNullAttributes(boolean omitNullAttributes) {
+        this.omitNullAttributes = omitNullAttributes;
+    }
+
+    /**
+     * Determine whether empty attributes will appear in the produced markup.
+     *
+     * @return <code>true</code>, if empty attributes will be
+     * removed from the resulting markup.
+     */
+    public boolean isOmitEmptyAttributes() {
+        return omitEmptyAttributes;
+    }
+
+    /**
+     * Allows empty attributes to be removed the produced markup.
+     *
+     * @param omitEmptyAttributes if <code>true</code>, empty
+     * attributes will not be included in the resulting markup.
+     * Defaults to <code>false</code>.
+     */
+    public void setOmitEmptyAttributes(boolean omitEmptyAttributes) {
+        this.omitEmptyAttributes = omitEmptyAttributes;
     }
 
     protected IndentPrinter getPrinter() {
@@ -113,11 +160,15 @@ public class MarkupBuilder extends BuilderSupport {
     }
 
     protected Object createNode(Object name, Object value) {
-        toState(2, name);
-        this.nodeIsEmpty = false;
-        out.print(">");
-        out.print(escapeElementContent(value.toString()));
-        return name;
+        if (value == null){
+            return createNode(name);
+        } else {
+            toState(2, name);
+            this.nodeIsEmpty = false;
+            out.print(">");
+            out.print(escapeElementContent(value.toString()));
+            return name;
+        }
     }
 
     protected Object createNode(Object name, Map attributes, Object value) {
@@ -125,18 +176,20 @@ public class MarkupBuilder extends BuilderSupport {
         for (Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry) iter.next();
             Object attributeValue = entry.getValue();
-            if (attributeValue != null) {
+            boolean skipNull = attributeValue == null && omitNullAttributes;
+            boolean skipEmpty = attributeValue != null && omitEmptyAttributes &&
+                    attributeValue.toString().length() == 0;
+            if (!skipNull && !skipEmpty) {
                 out.print(" ");
                 // Output the attribute name,
                 print(entry.getKey().toString());
                 // Output the attribute value within quotes. Use whichever
                 // type of quotes are currently configured.
                 out.print(this.useDoubleQuotes ? "=\"" : "='");
-                print(escapeAttributeValue(attributeValue.toString()));
+                print(attributeValue == null ? "" : escapeAttributeValue(attributeValue.toString()));
                 out.print(this.useDoubleQuotes ? "\"" : "'");
             }
         }
-
         if (value != null) {
             yield(value.toString());
         } else {
@@ -149,7 +202,7 @@ public class MarkupBuilder extends BuilderSupport {
     protected Object createNode(Object name, Map attributes) {
         return createNode(name, attributes, null);
     }
-    
+
     protected void nodeCompleted(Object parent, Object node) {
         toState(3, node);
         out.flush();
@@ -165,7 +218,7 @@ public class MarkupBuilder extends BuilderSupport {
 
     /**
      * Returns a String with special XML characters escaped as entities so that
-     * output XML is valid. Escapes the following characters as corresponding 
+     * output XML is valid. Escapes the following characters as corresponding
      * entities:
      * <ul>
      *   <li>\' as &amp;apos;</li>
@@ -173,7 +226,7 @@ public class MarkupBuilder extends BuilderSupport {
      *   <li>&lt; as &amp;lt;</li>
      *   <li>&gt; as &amp;gt;</li>
      * </ul>
-     * 
+     *
      * @param value to be searched and replaced for XML special characters.
      * @return value with XML characters escaped
      * @deprecated

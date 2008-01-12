@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -173,6 +173,14 @@ class MarkupBuilderTest extends GroovyTestCase {
   <element attr='value 1 &amp; 2'>chars: &amp; &lt; &gt; " in middle</element>
   <greaterthan>&gt;</greaterthan>
   <emptyElement />
+  <null />
+  <nullAttribute />
+  <emptyWithAttributes attr1='set' />
+  <emptyAttribute t1='' />
+  <parent key='value'>
+    <label for='usernameId'>Username: </label>
+    <input name='test' id='1' />
+  </parent>
 </chars>'''
 
         // Generate the markup.
@@ -184,6 +192,14 @@ class MarkupBuilderTest extends GroovyTestCase {
             element(attr: "value 1 & 2", "chars: & < > \" in middle")
             greaterthan(">")
             emptyElement()
+            'null'(null)
+            nullAttribute(t1:null)
+            emptyWithAttributes(attr1:'set')
+            emptyAttribute(t1:'')
+            parent(key:'value'){
+                label(for:'usernameId', 'Username: ')
+                input(name:'test', id:1)
+            }
         }
 
         assertEquals(expectedXml, fixEOLs(writer.toString()))
@@ -288,17 +304,41 @@ require escaping. The other characters consist of:
         assertExpectedXml('''\
 <p><em>Usually</em> Hearts &amp; Diamonds <b>beats</b> Spades &amp; Clubs </p>''')
     }
-    
+
     void testCallingMethod() {
        // this test is to ensure compatiblity only
-       xml.p { 
+       xml.p {
          def aValue = myMethod([:]).value
          em(aValue)
       }
-      
+
       assertExpectedXml('<p><em>call to outside</em></p>')
     }
-    
+
+    void testOmitAttributeSettingsOmitNullKeepEmptyDefaultCase() {
+        xml.element(att1:null, att2:'')
+        assertExpectedXml("<element att2='' />")
+    }
+
+    void testOmitAttributeSettingsKeepBoth() {
+        xml.omitNullAttributes = false
+        xml.element(att1:null, att2:'')
+        assertExpectedXml("<element att1='' att2='' />")
+    }
+
+    void testOmitAttributeSettingsKeepNullOmitEmpty() {
+        xml.omitNullAttributes = false
+        xml.omitEmptyAttributes = true
+        xml.element(att1:null, att2:'')
+        assertExpectedXml("<element att1='' />")
+    }
+
+    void testOmitAttributeSettingsKeepNeither() {
+        xml.omitEmptyAttributes = true
+        xml.element(att1:null, att2:'')
+        assertExpectedXml("<element />")
+    }
+
     private myMethod(x) {
       x.value='call to outside'
       return x
