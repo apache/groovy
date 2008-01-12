@@ -358,7 +358,7 @@ public class GroovyMain {
      * - name.gsh
      */
     public File huntForTheScriptFile(String scriptFileName) {
-        File scriptFile = new File(scriptFileName);
+        File scriptFile = new File(scriptFileName.trim());
         String[] standardExtensions = {".groovy",".gvy",".gy",".gsh"};
         int i = 0;
         while (i < standardExtensions.length && !scriptFile.exists()) {
