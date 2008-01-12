@@ -165,7 +165,7 @@ public abstract class Script extends GroovyObjectSupport {
      *
      * @param expression is the Groovy script expression to evaluate
      */
-    public Object evaluate(String expression) throws CompilationFailedException, IOException {
+    public Object evaluate(String expression) throws CompilationFailedException {
         GroovyShell shell = new GroovyShell(binding);
         return shell.evaluate(expression);
     }
