@@ -8909,6 +8909,27 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Creates a new BufferedWriter as stdin for this process,
+     * passes it to the closure, and ensures the stream is flushed
+     * and closed after the closure returns.
+     * A new Thread is started, so this method will return immediately.
+     *
+     * @param self a Process
+     * @param closure a closure
+     */
+    public static void withWriter(final Process self, final Closure closure) {
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    withWriter(new OutputStreamWriter(getOut(self)), closure);
+                } catch (IOException e) {
+                    throw new GroovyRuntimeException("exception while reading process stream", e);
+                }
+            }
+        }).start();
+    }
+
+    /**
      * Allows one Process to asynchronously pipe data to another Process.
      *
      * @param left  a Process instance
