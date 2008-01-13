@@ -8870,12 +8870,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param error a StringBuffer to capture the process stderr
      */
     public static void consumeProcessOutput(Process self, StringBuffer output, StringBuffer error) {
-        Dumper d = new Dumper(self.getErrorStream(), error);
-        Thread t = new Thread(d);
-        t.start();
-        d = new Dumper(self.getInputStream(), output);
-        t = new Thread(d);
-        t.start();
+        consumeProcessOutputStream(self, output);
+        consumeProcessErrorStream(self, error);
     }
 
     /**
