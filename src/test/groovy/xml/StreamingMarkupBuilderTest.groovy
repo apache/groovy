@@ -18,7 +18,7 @@ package groovy.xml
 import org.custommonkey.xmlunit.*
 
 /**
- * This test uses the concise syntax to test the building of
+ * This test uses the concise syntax to test the building of 
  * textual markup (XML or HTML) using GroovyMarkup
  */
 class StreamingMarkupBuilderTest extends TestXmlSupport {
@@ -118,34 +118,6 @@ class StreamingMarkupBuilderTest extends TestXmlSupport {
     <p>The <i>quick</i> brown fox jumped over the <b>lazy</b> dog &amp; sleepy cat</p>
   </body>
 </html>'''
-    }
-
-    void testOmitAttributeSettingsKeepBothDefaultCase() {
-        def b = new StreamingMarkupBuilder()
-        def m = { element(att1:null, att2:'') }
-        assertExpectedXml b, m, "<element att1='' att2='' />"
-    }
-
-    void testOmitAttributeSettingsOmitNull() {
-        def b = new StreamingMarkupBuilder()
-        b.omitNullAttributes = true
-        def m = { element(att1:null, att2:'') }
-        assertExpectedXml b, m, "<element att2='' />"
-    }
-
-    void testOmitAttributeSettingsOmitEmpty() {
-        def b = new StreamingMarkupBuilder()
-        b.omitEmptyAttributes = true
-        def m = { element(att1:null, att2:'') }
-        assertExpectedXml b, m, "<element att1='' />"
-    }
-
-    void testOmitAttributeSettingsOmitBoth() {
-        def b = new StreamingMarkupBuilder()
-        b.omitEmptyAttributes = true
-        b.omitNullAttributes = true
-        def m = { element(att1:null, att2:'') }
-        assertExpectedXml b, m, "<element />"
     }
 
 }
