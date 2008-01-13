@@ -45,9 +45,9 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
         }
     }
     def declarationClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
-        out.unescaped() << '<?xml version="1.0" encoding="'
-        out.escaped() << "${out.encoding}"
-        out.unescaped() << '"?>\n'
+        out.unescaped() << '<?xml version="1.0"'
+        if (out.encodingKnown) out.escaped() << " encoding=\"${out.encoding}\""
+        out.unescaped() << '?>\n'
     }
     def noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
         body.each {
