@@ -68,6 +68,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     protected static final Logger LOG = Logger.getLogger(MetaClass.class.getName());
     protected final Class theClass;
+
+    public CachedClass getTheCachedClass() {
+        return theCachedClass;
+    }
+
     protected final CachedClass theCachedClass;
 
     protected MetaClassRegistry registry;
@@ -919,6 +924,51 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
             return isCallToSuper ? getSuperMethodWithCaching(arguments, e) : getNormalMethodWithCaching(arguments, e);
         }
+    }
+
+    private static boolean sameClasses(Class[] params, Class[] arguments, boolean weakNullCheck) {
+        if (params.length != arguments.length)
+          return false;
+
+        for (int i = params.length-1; i >= 0; i--) {
+            Object arg = arguments[i];
+            if (arg != null) {
+               if (params[i] != arguments[i])
+                  return false;
+            }
+            else
+              if (!weakNullCheck)
+                return false;
+        }
+
+        return true;
+    }
+
+    // This method should be called by CallSite only
+    public MetaMethod getMethodWithCachingInternal (Class sender, String methodName, Class [] params) {
+        if (GroovyCategorySupport.hasCategoryInAnyThread())
+            return getMethodWithoutCaching(sender, methodName, params, false);
+
+        final MetaMethodIndex.Entry e = metaMethodIndex.getMethods(sender, methodName);
+        if (e == null)
+          return null;
+
+        MetaMethodIndex.CacheEntry cacheEntry;
+        final Object methods = e.methods;
+        if (methods == null)
+          return null;
+
+        cacheEntry = e.cachedMethod;
+        if (cacheEntry != null
+           && (sameClasses(cacheEntry.params, params, methods instanceof MetaMethod))) {
+             return cacheEntry.method;
+        }
+
+        cacheEntry = new MetaMethodIndex.CacheEntry ();
+        cacheEntry.params = params;
+        cacheEntry.method = (MetaMethod) chooseMethod(e.name, methods, params, false);
+        e.cachedMethod = cacheEntry;
+        return cacheEntry.method;
     }
 
     private MetaMethod getSuperMethodWithCaching(Object[] arguments, MetaMethodIndex.Entry e) {

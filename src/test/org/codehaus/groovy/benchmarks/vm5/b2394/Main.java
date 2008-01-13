@@ -9,7 +9,6 @@ import java.util.concurrent.CountDownLatch;
 
 public class Main
 {
-
     public Main(String scriptName, int numIter, int numThreads)
     {
         System.out.println("Running " + scriptName);

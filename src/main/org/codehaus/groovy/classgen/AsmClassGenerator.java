@@ -278,8 +278,9 @@ public class AsmClassGenerator extends ClassGenerator {
                 mv.visitJumpInsn(IFNONNULL, l0);
                 mv.visitTypeInsn(NEW, "org/codehaus/groovy/runtime/CallSiteArray");
                 mv.visitInsn(DUP);
+                mv.visitFieldInsn(GETSTATIC, internalClassName, "$ownClass", "Ljava/lang/Class;");
                 mv.visitLdcInsn(new Integer(callSiteCount));
-                mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/CallSiteArray", "<init>", "(I)V");
+                mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/CallSiteArray", "<init>", "(Ljava/lang/Class;I)V");
                 mv.visitVarInsn(ASTORE, 1);
                 mv.visitVarInsn(ALOAD, 1);
                 mv.visitFieldInsn(PUTSTATIC, internalClassName, "$callSiteArray", "Lorg/codehaus/groovy/runtime/CallSiteArray;");
@@ -295,6 +296,16 @@ public class AsmClassGenerator extends ClassGenerator {
             e.setModule(classNode.getModule());
             throw e;
         }
+    }
+
+    private String getMyClassFieldName(ClassNode classNode) {
+        String res = null;
+        for ( Iterator it = classNode.getFields().iterator(); it.hasNext(); ) {
+            FieldNode f = (FieldNode) it.next();
+            if (f.isStatic() && f.isSynthetic() && f.getName().startsWith("$myClass"))
+              res = f.getName();
+        }
+        return res;
     }
 
     public void visitGenericType(GenericsType genericsType) {
@@ -1654,6 +1665,28 @@ public class AsmClassGenerator extends ClassGenerator {
             MethodCallerMultiAdapter adapter,
             boolean safe, boolean spreadSafe, boolean implicitThis
     ) {
+        if ((adapter == invokeMethod || adapter == invokeMethodOnCurrent)&& !spreadSafe) {
+            String methodName = null;
+            if (message instanceof CastExpression) {
+                CastExpression msg = (CastExpression) message;
+                if (msg.getType() == ClassHelper.STRING_TYPE) {
+                    final Expression methodExpr = msg.getExpression();
+                    if (methodExpr instanceof ConstantExpression)
+                      methodName = methodExpr.getText();
+                }
+            }
+
+            if (methodName == null && message instanceof ConstantExpression) {
+                ConstantExpression constantExpression = (ConstantExpression) message;
+                methodName = constantExpression.getText();
+            }
+
+            if (methodName != null) {
+                makeCallSite(receiver, methodName, arguments, safe, implicitThis, adapter == invokeMethodOnCurrent);
+                return;
+            }
+        }
+
         // ensure VariableArguments are read, not stored
         boolean lhs = leftHandExpression;
         leftHandExpression = false;
@@ -1671,7 +1704,7 @@ public class AsmClassGenerator extends ClassGenerator {
         // arguments
         boolean containsSpreadExpression = containsSpreadExpression(arguments);
         int numberOfArguments = containsSpreadExpression ? -1 : argumentSize(arguments);
-        if (numberOfArguments > adapter.MAX_ARGS || containsSpreadExpression) {
+        if (numberOfArguments > MethodCallerMultiAdapter.MAX_ARGS || containsSpreadExpression) {
             ArgumentListExpression ae;
             if (arguments instanceof ArgumentListExpression) {
                 ae = (ArgumentListExpression) arguments;
@@ -1701,9 +1734,7 @@ public class AsmClassGenerator extends ClassGenerator {
         leftHandExpression = lhs;
     }
 
-    private void makeCallSite(
-            Expression receiver, String message, Expression arguments,
-            MethodCallerMultiAdapter adapter) {
+    private void makeCallSite(Expression receiver, String message, Expression arguments, boolean safe, boolean implicitThis, boolean callCurrent) {
 
         mv.visitMethodInsn(INVOKESTATIC,internalClassName,"$getCallSiteArray","()Lorg/codehaus/groovy/runtime/CallSiteArray;");
 
@@ -1716,14 +1747,14 @@ public class AsmClassGenerator extends ClassGenerator {
 
         // receiver
         boolean oldVal = this.implicitThis;
-        this.implicitThis = false;
+        this.implicitThis = implicitThis;
         visitAndAutoboxBoolean(receiver);
         this.implicitThis = oldVal;
 
         // arguments
         boolean containsSpreadExpression = containsSpreadExpression(arguments);
         int numberOfArguments = containsSpreadExpression ? -1 : argumentSize(arguments);
-        if (numberOfArguments > adapter.MAX_ARGS || containsSpreadExpression) {
+        if (numberOfArguments > MethodCallerMultiAdapter.MAX_ARGS || containsSpreadExpression) {
             ArgumentListExpression ae;
             if (arguments instanceof ArgumentListExpression) {
                 ae = (ArgumentListExpression) arguments;
@@ -1746,9 +1777,26 @@ public class AsmClassGenerator extends ClassGenerator {
                 visitAndAutoboxBoolean(argument);
                 if (argument instanceof CastExpression) loadWrapper(argument);
             }
+        } else {
+            mv.visitFieldInsn(GETSTATIC,"org/codehaus/groovy/runtime/CallSiteArray","NOPARAM","[Ljava/lang/Object;");
         }
 
-        mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/CallSiteArray", "call","(ILjava/lang/String;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
+        if (callCurrent) {
+//            // sender
+//            ClassNode cn = classNode;
+//            if (isInClosure() && !implicitThis) {
+//                cn = getOutermostClass();
+//            }
+//            new ClassExpression(cn).visit(this);
+
+            mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/CallSiteArray", "callCurrent","(ILjava/lang/String;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
+        }
+        else {
+            if (safe)
+              mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/CallSiteArray", "callSafe","(ILjava/lang/String;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
+            else
+              mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/CallSiteArray", "call","(ILjava/lang/String;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
+        }
 
         leftHandExpression = lhs;
     }
@@ -3323,7 +3371,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected void evaluateBinaryExpression(String method, BinaryExpression expression) {
-        makeCallSite(expression.getLeftExpression(), method, new ArgumentListExpression(expression.getRightExpression()), invokeMethod);
+        makeCallSite(expression.getLeftExpression(), method, new ArgumentListExpression(expression.getRightExpression()), false, false, false);
     }
 
     protected void evaluateCompareTo(BinaryExpression expression) {
@@ -3495,11 +3543,11 @@ public class AsmClassGenerator extends ClassGenerator {
 
     private void execMethodAndStoreForSubscriptOperator(String method, Expression expression) {
         // execute method
-        makeCall(
+        makeCallSite(
                 expression,
-                new ConstantExpression(method),
+                method,
                 MethodCallExpression.NO_ARGUMENTS,
-                invokeMethod,false,false,false);
+                false, false, false);
         
         // we need special code for arrays to store the result
         boolean setResult = true;
@@ -3516,10 +3564,10 @@ public class AsmClassGenerator extends ClassGenerator {
                 TupleExpression args = new ArgumentListExpression();
                 args.addExpression(be.getRightExpression());
                 args.addExpression(result);
-                makeCall(
-                        be.getLeftExpression(), new ConstantExpression("putAt"),
+                makeCallSite(
+                        be.getLeftExpression(), "putAt",
                         args,
-                        invokeMethod,false,false,false);
+                        false, false, false);
                 mv.visitInsn(POP);
                 setResult = false;
             } 

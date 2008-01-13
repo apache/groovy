@@ -16,8 +16,8 @@
 package org.codehaus.groovy.ast;
 
 import groovy.lang.GroovyObject;
-
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -289,6 +289,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         }
         this.methods = new MapOfLists();
         this.methodsList = new ArrayList();
+
+        if ((modifiers & ACC_INTERFACE) == 0)
+          addField("$ownClass", ACC_STATIC|ACC_PUBLIC|ACC_FINAL|ACC_SYNTHETIC, ClassHelper.CLASS_Type, new ClassExpression(this)).setSynthetic(true);
     }
 
     
