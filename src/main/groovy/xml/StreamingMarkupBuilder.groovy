@@ -20,8 +20,6 @@ import groovy.xml.streamingmarkupsupport.StreamingMarkupWriter
 import groovy.xml.streamingmarkupsupport.BaseMarkupBuilder
 
 class StreamingMarkupBuilder extends AbstractStreamingBuilder {
-    def omitNullAttributes = false
-    def omitEmptyAttributes = false
     def pendingStack = []
     def commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
         out.unescaped() << "<!--"
@@ -80,26 +78,21 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
         out = out.unescaped() << "<${tag}"
 
         attrs.each {key, value ->
-            boolean skipNull = value == null && omitNullAttributes;
-            boolean skipEmpty = value != null && omitEmptyAttributes &&
-                    value.toString().length() == 0;
-            if (!skipNull && !skipEmpty) {
-                if (key.contains('$')) {
-                    def parts = key.tokenize('$')
+            if (key.contains('$')) {
+                def parts = key.tokenize('$')
 
-                    if (namespaces.containsKey(parts[0]) || pendingNamespaces.containsKey(parts[0])) {
-                        key = parts[0] + ":" + parts[1]
-                    } else {
-                        throw new GroovyRuntimeException("bad attribute namespace tag: ${parts[0]} in ${key}")
-                    }
+                if (namespaces.containsKey(parts[0]) || pendingNamespaces.containsKey(parts[0])) {
+                    key = parts[0] + ":" + parts[1]
+                } else {
+                    throw new GroovyRuntimeException("bad attribute namespace tag: ${parts[0]} in ${key}")
                 }
-
-                out << " ${key}='"
-                out.writingAttribute = true
-                "${value}".build(doc)
-                out.writingAttribute = false
-                out << "'"
             }
+
+            out << " ${key}='"
+            out.writingAttribute = true
+            "${value}".build(doc)
+            out.writingAttribute = false
+            out << "'"
         }
 
         def hiddenNamespaces = [:]
