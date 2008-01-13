@@ -124,7 +124,7 @@ class MarkupBuilderTest extends GroovyTestCase {
   <elem1>hello1</elem1>
   <elem2>hello2</elem2>
   <nestedElem x='abc' y='def'>
-    <child z='def' />
+    <child z='def' nulltest=''/>
     <child2 />
   </nestedElem>
   <nestedElem2 z='zzz'>
@@ -174,7 +174,7 @@ class MarkupBuilderTest extends GroovyTestCase {
   <greaterthan>&gt;</greaterthan>
   <emptyElement />
   <null />
-  <nullAttribute />
+  <nullAttribute t1='' />
   <emptyWithAttributes attr1='set' />
   <emptyAttribute t1='' />
   <parent key='value'>
@@ -315,19 +315,18 @@ require escaping. The other characters consist of:
       assertExpectedXml '<p><em>call to outside</em></p>'
     }
 
-    void testOmitAttributeSettingsOmitNullKeepEmptyDefaultCase() {
-        xml.element(att1:null, att2:'')
-        assertExpectedXml "<element att2='' />"
-    }
-
-    void testOmitAttributeSettingsKeepBoth() {
-        xml.omitNullAttributes = false
+    void testOmitAttributeSettingsKeepBothDefaultCase() {
         xml.element(att1:null, att2:'')
         assertExpectedXml "<element att1='' att2='' />"
     }
 
+    void testOmitAttributeSettingsOmitNullKeepEmpty() {
+        xml.omitNullAttributes = true
+        xml.element(att1:null, att2:'')
+        assertExpectedXml "<element att2='' />"
+    }
+
     void testOmitAttributeSettingsKeepNullOmitEmpty() {
-        xml.omitNullAttributes = false
         xml.omitEmptyAttributes = true
         xml.element(att1:null, att2:'')
         assertExpectedXml "<element att1='' />"
@@ -335,6 +334,7 @@ require escaping. The other characters consist of:
 
     void testOmitAttributeSettingsOmitBoth() {
         xml.omitEmptyAttributes = true
+        xml.omitNullAttributes = true
         xml.element(att1:null, att2:'')
         assertExpectedXml "<element />"
     }

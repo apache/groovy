@@ -38,7 +38,7 @@ public class MarkupBuilder extends BuilderSupport {
     private int state;
     private boolean nodeIsEmpty = true;
     private boolean useDoubleQuotes = false;
-    private boolean omitNullAttributes = true;
+    private boolean omitNullAttributes = false;
     private boolean omitEmptyAttributes = false;
 
     public MarkupBuilder() {
@@ -94,7 +94,7 @@ public class MarkupBuilder extends BuilderSupport {
      * attributes will not be included in the resulting markup.
      * If <code>false</code> null attributes will be included in the
      * markup as empty strings regardless of the omitEmptyAttribute
-     * setting. Defaults to <code>true</code>.
+     * setting. Defaults to <code>false</code>.
      */
     public void setOmitNullAttributes(boolean omitNullAttributes) {
         this.omitNullAttributes = omitNullAttributes;
