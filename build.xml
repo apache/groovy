@@ -331,8 +331,7 @@ $Date$
 
     <target name="-testOne" if="_testOne_">
         <mkdir dir="${junitRawDirectory}"/>
-        <junit printsummary="true" fork="true" includeantruntime="false" haltonfailure="yes"
-               maxmemory="${groovyJUnit_mx}" dir="${basedir}">
+        <junit printsummary="true" fork="true" includeantruntime="false" maxmemory="${groovyJUnit_mx}" dir="${basedir}">
             <jvmarg line="${junitJvmArgs}"/>
             <test name="${testCase}" todir="${junitRawDirectory}"/>
             <formatter type="brief" usefile="false"/>
@@ -368,8 +367,7 @@ $Date$
 
     <target name="-testAll" if="_testAll_" depends="-collect14tests,-collect15tests">
         <mkdir dir="${junitRawDirectory}"/>
-        <junit printsummary="true" fork="true" includeantruntime="false" failureproperty="testFailed"
-               maxmemory="${groovyJUnit_mx}" dir="${basedir}">
+        <junit printsummary="true" fork="true" includeantruntime="false" failureproperty="testFailed" maxmemory="${groovyJUnit_mx}" dir="${basedir}">
             <jvmarg line="${junitJvmArgs}"/>
             <formatter type="xml"/>
             <formatter type="plain" unless="noTextReports"/>

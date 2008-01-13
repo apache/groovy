@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!--
+
+  Copyright © 2008 Russel Winder
+
+  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+  compliance with the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software distributed under the License is
+  distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and limitations under the License.
+
+-->
+
+<project name="Test Groovyc Task" default="test1">
+
+  <property name="srcPath" value="."/>
+  <property name="destPath" value="${user.dir}/target/test-classes"/>
+
+  <path id="groovyMaterials">
+    <pathelement location="${user.dir}/target/classes"/>
+    <pathelement location="${user.dir}/target/test-classes"/>
+    <fileset dir="${user.dir}/target/lib/test">
+      <include name="asm*.jar"/>
+    </fileset>
+  </path>
+
+  <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="groovyMaterials"/>
+
+  <target name="GroovycTest1">
+    <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy"/>
+    <java classname="org.codehaus.groovy.ant.GroovycTest1" classpathref="groovyMaterials"/>
+  </target>
+
+  <target name="GroovycTest1_Fork">
+    <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy" fork="true" classpathref="groovyMaterials"/>
+    <java classname="org.codehaus.groovy.ant.GroovycTest1" classpathref="groovyMaterials"/>
+  </target>
+
+  <target name="GroovycTest1_Fork_Inherit">
+    <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy" fork="true"/>
+    <java classname="org.codehaus.groovy.ant.GroovycTest1" classpathref="groovyMaterials"/>
+  </target>
+
+  <target name="clean">
+    <delete quiet="true">
+      <fileset dir="${destPath}/org/codehaus/groovy/ant">
+        <include name="GroovycTest1*.class"/>
+      </fileset>
+    </delete>
+  </target>
+
+</project>
