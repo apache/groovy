@@ -5111,16 +5111,28 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Remove a part of a String.  This replaces the first occurrence
-     * of value found within self with '' and returns the result.
+     * Remove a part of a String. This replaces the first occurrence
+     * of target within self with '' and returns the result. If
+     * target is a regex Pattern, the first occurrence of that
+     * pattern will be removed (using regex matching), otherwise
+     * the first occurrence of target.toString() will be removed.
      *
-     * @param self  a String
-     * @param value an object representing the part to remove
+     * @param self   a String
+     * @param target an object representing the part to remove
      * @return a String minus the part to be removed
      */
-    public static String minus(String self, Object value) {
-        String text = RegexUtils.quote(toString(value));
-        return self.replaceFirst(text, "");
+    public static String minus(String self, Object target) {
+        if (target instanceof Pattern) {
+            return ((Pattern)target).matcher(self).replaceFirst("");
+        }
+        String text = toString(target);
+        int index = self.indexOf(text);
+        if (index == -1) return self;
+        int end = index + text.length();
+        if (self.length() > end) {
+            return self.substring(0, index) + self.substring(end);
+        }
+        return self.substring(0, index);
     }
 
     /**
