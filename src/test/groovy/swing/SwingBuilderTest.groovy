@@ -624,7 +624,7 @@ class SwingBuilderTest extends GroovyTestCase {
         assert table.columnModel.columnCount == 3
     }
 
-    void tableModelChange2() {
+    void testTableModelChange2() {
         if (headless) return
 
         def tableData = [
@@ -658,6 +658,14 @@ class SwingBuilderTest extends GroovyTestCase {
         swing.table01.setModel(model) 
 
         assert swing.table01.columnModel == swing.table01.model.columnModel
+
+        // try moiving some columns and verifying values
+        def value = swing.table01.getValueAt(0, 0)
+        swing.table01.moveColumn(0, 1)
+        assert value == swing.table01.getValueAt(0, 1)
+
+        swing.table01.removeColumn(swing.table01.columnModel.getColumn(0))
+        assert value == swing.table01.getValueAt(0, 0)
     }
 
     void testTableModelValues() {
