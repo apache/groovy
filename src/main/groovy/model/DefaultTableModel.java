@@ -21,6 +21,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableColumnModel;
 import javax.swing.table.TableColumnModel;
+import javax.swing.table.TableColumn;
 import java.util.Collections;
 import java.util.List;
 
@@ -178,6 +179,23 @@ public class DefaultTableModel extends AbstractTableModel {
         public List getColumnList() {
             return tableColumns;
         }
+
+        public void removeColumn(TableColumn column) {
+            super.removeColumn(column);
+            renumberTableColumns();
+        }
+
+        public void moveColumn(int columnIndex, int newIndex) {
+            super.moveColumn(columnIndex, newIndex);
+            renumberTableColumns();
+        }
+
+        public void renumberTableColumns() {
+            for (int i = tableColumns.size() - 1; i >= 0; i--) {
+                ((DefaultTableColumn)tableColumns.get(i)).setModelIndex(i);
+            }
+        }
+
     }
     
     public ValueModel getRowModel() {
@@ -187,5 +205,6 @@ public class DefaultTableModel extends AbstractTableModel {
     public ValueModel getRowsModel() {
         return rowsModel;
     }
+
 
 }
