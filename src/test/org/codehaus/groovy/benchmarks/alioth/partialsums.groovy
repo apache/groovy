@@ -15,14 +15,17 @@ def calculate()
 {
   n = Integer.parseInt(args[0])
 
-  double s0 = s1 = s2 = s3 = s4 = s5 = s6 = s7 = s8 = 0.0D ; alt = true ; double d = 1.0D
+  double s0, s1, s2, s3, s4, s5, s6, s7, s8;
+  s0 = s1 = s2 = s3 = s4 = s5 = s6 = s7 = s8 = 0.0D ;
+  boolean alt = true ;
+  double d = 1.0D
 
   double twoThird = 2.0D / 3.0D
+  final double ONE = 1.0d
   while (d <= n)
   {
     double d2 = d * d, d3 = d2 * d, ds = Math.sin(d), ds2 = ds * ds, dc2 = 1.0D - ds2
 
-    final double ONE = 1.0d
       def dminus1 = d - ONE
     s0 = s0 * twoThird + ONE
     s1 += ONE / Math.sqrt(d)
@@ -42,7 +45,7 @@ def calculate()
       s8 -= ONE / (d + dminus1)
     }
 
-    alt = !alt; 
+    alt = !alt;
     d += ONE
   }
 

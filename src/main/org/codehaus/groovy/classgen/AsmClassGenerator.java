@@ -206,6 +206,8 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitClass(ClassNode classNode) {
 
         try {
+            callSiteCount = 0;
+
             syntheticStaticFields.clear();
             this.classNode = classNode;
             this.outermostClass = null;

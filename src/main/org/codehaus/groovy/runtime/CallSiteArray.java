@@ -1,6 +1,8 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.*;
+import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
 public class CallSiteArray {
     private final CallSite[] array;
@@ -101,10 +103,43 @@ public class CallSiteArray {
           Class [] params = MetaClassHelper.convertToTypeArray(args);
           MetaMethod metaMethod = ((MetaClassImpl)metaClass).getMethodWithCachingInternal(metaClass.getTheClass(), name, params);
           if (metaMethod != null)
-             return new PojoViaMetaMethodSite(name, (MetaClassImpl) metaClass, metaMethod, params);
+             return createPojoViaMetaMethodSite(metaClass, metaMethod, name, params, args);
         }
 
         return new PojoViaMetaClassSite(name, metaClass.getTheClass());
+    }
+
+    // an idea here is to avoid unwrap/coerceArguments and try/catch if possible
+    private static PojoViaMetaMethodSite createPojoViaMetaMethodSite(MetaClass metaClass, MetaMethod metaMethod, String name, Class[] params, Object[] args) {
+        if (metaMethod.correctArguments(args) == args) {
+            if (noWrappers(args)) {
+                if (noCoerce(metaMethod,args))
+                    return new PojoViaMetaMethodSiteNoUnwrap(name, (MetaClassImpl) metaClass, metaMethod, params);
+                else
+                    return new PojoViaMetaMethodSiteNoUnwrapNoCoerce(name, (MetaClassImpl) metaClass, metaMethod, params);
+            }
+        }
+        return new PojoViaMetaMethodSite(name, (MetaClassImpl) metaClass, metaMethod, params);
+    }
+
+    private static boolean noCoerce(MetaMethod metaMethod, Object[] args) {
+        final CachedClass[] paramClasses = metaMethod.getParameterTypes();
+        if (paramClasses.length != args.length)
+          return false;
+        
+        for (int i = 0; i < paramClasses.length; i++) {
+            CachedClass paramClass = paramClasses[i];
+            if (args[i] != null && !paramClass.isDirectlyAssignable(args[i]))
+              return true;
+        }
+        return false;
+    }
+
+    private static boolean noWrappers(Object[] args) {
+        for (int i = 0; i != args.length; ++i)
+          if (args [i] instanceof Wrapper)
+            return false;
+        return true;
     }
 
     private static CallSite createPogoSite(String name, Object receiver, Object[] args) {
@@ -188,7 +223,7 @@ public class CallSiteArray {
             this.metaMethod = metaMethod;
         }
 
-        final Object call(Object receiver, Object[] args) {
+        Object call(Object receiver, Object[] args) {
             MetaClassHelper.unwrap(args);
             return metaMethod.doMethodInvoke(receiver,  args);
         }
@@ -197,6 +232,28 @@ public class CallSiteArray {
             return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
 //               && ((MetaClassImpl)metaClass).getTheCachedClass().getMetaClassForClass() == metaClass // metaClass still be valid
                && MetaClassHelper.sameClasses(params, args, false); // right arguments
+        }
+    }
+
+    private static class PojoViaMetaMethodSiteNoUnwrap extends PojoViaMetaMethodSite {
+
+        public PojoViaMetaMethodSiteNoUnwrap(String name, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
+            super(name, metaClass, metaMethod, params);
+        }
+
+        final Object call(Object receiver, Object[] args) {
+            return metaMethod.doMethodInvoke(receiver,  args);
+        }
+    }
+
+    private static class PojoViaMetaMethodSiteNoUnwrapNoCoerce extends PojoViaMetaMethodSite {
+
+        public PojoViaMetaMethodSiteNoUnwrapNoCoerce(String name, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
+            super(name, metaClass, metaMethod, params);
+        }
+
+        final Object call(Object receiver, Object[] args) {
+            return metaMethod.invoke(receiver,  args);
         }
     }
 

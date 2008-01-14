@@ -141,7 +141,7 @@ public class ParameterTypes
         return argumentArray;
     }
 
-    private Object[] correctArguments(Object[] argumentArray) {
+    public Object[] correctArguments(Object[] argumentArray) {
         // correct argumentArray's length
         if (argumentArray == null) {
             return MetaClassHelper.EMPTY_ARRAY;

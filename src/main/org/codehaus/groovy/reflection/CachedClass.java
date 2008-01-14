@@ -355,7 +355,7 @@ public class CachedClass {
         return argument == null || ReflectionCache.isAssignableFrom(getCachedClass(), argument);
     }
 
-    boolean isDirectlyAssignable(Object argument) {
+    public boolean isDirectlyAssignable(Object argument) {
         return ReflectionCache.isAssignableFrom(getCachedClass(), argument.getClass());
     }
 
@@ -423,7 +423,7 @@ public class CachedClass {
             return new Integer(((Number) argument).intValue());
         }
 
-        boolean isDirectlyAssignable(Object argument) {
+        public boolean isDirectlyAssignable(Object argument) {
             return argument == null || argument instanceof Integer;
         }
 
@@ -444,7 +444,7 @@ public class CachedClass {
             super(klazz);
         }
 
-        boolean isDirectlyAssignable(Object argument) {
+        public boolean isDirectlyAssignable(Object argument) {
             return argument instanceof BigInteger;
         }
 
@@ -475,7 +475,7 @@ public class CachedClass {
             return new Short(((Number) argument).shortValue());
         }
 
-        boolean isDirectlyAssignable(Object argument) {
+        public boolean isDirectlyAssignable(Object argument) {
             return argument instanceof Short;
         }
 
@@ -502,7 +502,7 @@ public class CachedClass {
             return new Long(((Number) argument).longValue());
         }
 
-        boolean isDirectlyAssignable(Object argument) {
+        public boolean isDirectlyAssignable(Object argument) {
             return argument instanceof Long;
         }
 
@@ -536,7 +536,7 @@ public class CachedClass {
             return res;
         }
 
-        boolean isDirectlyAssignable(Object argument) {
+        public boolean isDirectlyAssignable(Object argument) {
             return argument instanceof Float;
         }
 
@@ -560,7 +560,7 @@ public class CachedClass {
             super(klazz);
         }
 
-        boolean isDirectlyAssignable(Object argument) {
+        public boolean isDirectlyAssignable(Object argument) {
             return argument instanceof Double;
         }
 
@@ -600,7 +600,7 @@ public class CachedClass {
             super(klazz);
         }
 
-        boolean isDirectlyAssignable(Object argument) {
+        public boolean isDirectlyAssignable(Object argument) {
             return argument instanceof BigDecimal;
         }
 
@@ -621,7 +621,7 @@ public class CachedClass {
             super(STRING_CLASS);
         }
 
-        boolean isDirectlyAssignable(Object argument) {
+        public boolean isDirectlyAssignable(Object argument) {
             return argument instanceof String;
         }
 

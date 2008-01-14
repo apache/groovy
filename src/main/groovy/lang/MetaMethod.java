@@ -221,6 +221,8 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
         return MetaClassHelper.createExceptionText("failed to invoke method: ", this, object, argumentArray, e, true);
     }
 
+    // This method is not final but it should be overloaded very carefully and only by generated methods
+    // there is no garantee that it will be called
     public Object doMethodInvoke(Object object, Object[] argumentArray) {
         argumentArray = coerceArgumentsToClasses(argumentArray);
         try {
