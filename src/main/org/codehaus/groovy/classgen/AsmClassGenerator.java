@@ -1533,8 +1533,14 @@ public class AsmClassGenerator extends ClassGenerator {
      * @see <a href="http://java.sun.com/docs/books/vmspec/2nd-edition/html/ClassFile.doc.html#14152">Class field types</a>
      */
     public void visitConstantExpression(ConstantExpression expression) {
-        Object value = expression.getValue();
-        helper.loadConstant(value);
+        final String constantName = expression.getConstantName();
+        if ((methodNode != null && methodNode.getName().equals("<clinit>")) || constantName == null) {
+            Object value = expression.getValue();
+            helper.loadConstant(value);
+        }
+        else {
+            mv.visitFieldInsn(GETSTATIC, internalClassName,constantName, BytecodeHelper.getTypeDescription(expression.getType()));
+        }
     }
 
     public void visitSpreadExpression(SpreadExpression expression) {
@@ -1784,13 +1790,6 @@ public class AsmClassGenerator extends ClassGenerator {
         }
 
         if (callCurrent) {
-//            // sender
-//            ClassNode cn = classNode;
-//            if (isInClosure() && !implicitThis) {
-//                cn = getOutermostClass();
-//            }
-//            new ClassExpression(cn).visit(this);
-
             mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/CallSiteArray", "callCurrent","(ILjava/lang/String;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
         }
         else {

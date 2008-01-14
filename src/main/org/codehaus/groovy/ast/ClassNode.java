@@ -94,7 +94,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     private List  objectInitializers = new ArrayList();
     private MapOfLists methods;
     private List methodsList;
-    private List fields = new ArrayList();
+    private LinkedList fields = new LinkedList();
     private List properties = new ArrayList();
     private Map fieldIndex = new HashMap();
     private ModuleNode module;
@@ -462,6 +462,13 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         node.setDeclaringClass(redirect());
         node.setOwner(redirect());
         redirect().fields.add(node);
+        redirect().fieldIndex.put(node.getName(), node);
+    }
+
+    public void addConstField(FieldNode node) {
+        node.setDeclaringClass(redirect());
+        node.setOwner(redirect());
+        redirect().fields.addFirst(node);
         redirect().fieldIndex.put(node.getName(), node);
     }
 

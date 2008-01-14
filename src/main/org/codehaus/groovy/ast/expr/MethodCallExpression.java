@@ -16,7 +16,6 @@
 package org.codehaus.groovy.ast.expr;
 
 import groovy.lang.MetaMethod;
-
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
@@ -67,6 +66,7 @@ public class MethodCallExpression extends Expression {
         MethodCallExpression answer =
             new MethodCallExpression(transformer.transform(objectExpression), transformer.transform(method), transformer.transform(arguments));
         answer.setSafe(safe);
+        answer.setSpreadSafe(spreadSafe);
         answer.setSourcePosition(this);
         return answer;
     }

@@ -10,11 +10,15 @@ public class CallSiteArray {
     public static final Object [] NOPARAM = new Object[0];
     private final Class owner;
     private final int size;
+    private static final CallSite DUMMY = new DummyCallSite();
 
     public CallSiteArray(Class owner, int size) {
         this.owner = owner;
         this.size = size;
         array = new CallSite[size];
+        for (int i = 0; i < array.length; i++) {
+            array[i] = DUMMY;
+        }
     }
 
     public final Object callSafe (int index, String name, Object receiver, Object [] args) throws Throwable {
@@ -48,9 +52,8 @@ public class CallSiteArray {
     }
     
     private CallSite getCallSite(int index, String name, Object receiver, Object [] args) {
-        final CallSite[] array = getArray();
         CallSite site = array[index];
-        if (site != null && site.accept(receiver, args)) {
+        if (site.accept(receiver, args)) {
             return site;
         }
         site = createCallSite(name, receiver, args);
@@ -59,12 +62,12 @@ public class CallSiteArray {
     }
 
     private CallSite getCallCurrentSite(int index, String name, Object receiver, Object [] args) {
-        CallSite site = getArray()[index];
+        CallSite site = array[index];
         if (site != null && site.accept(receiver, args)) {
             return site;
         }
         site = createCallCurrentSite(name, receiver, args, owner);
-        getArray()[index] = site;
+        array[index] = site;
         return site;
     }
 
@@ -155,10 +158,6 @@ public class CallSiteArray {
         }
 
         return new PogoViaMetaClassSite(name, metaClass);
-    }
-
-    public CallSite[] getArray() {
-        return array;
     }
 
     private abstract static class CallSite {
@@ -315,6 +314,20 @@ public class CallSiteArray {
 
         boolean accept(Object receiver, Object[] args) {
             return receiver.getClass() == klazz;
+        }
+    }
+
+    private static class DummyCallSite extends CallSite {
+        public DummyCallSite() {
+            super("");
+        }
+
+        Object call(Object receiver, Object[] args) {
+            return null;
+        }
+
+        boolean accept(Object receiver, Object[] args) {
+            return false;
         }
     }
 }

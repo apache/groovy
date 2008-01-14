@@ -34,6 +34,7 @@ public class ConstantExpression extends Expression {
     public static final ConstantExpression EMTPY_EXPRESSION = new ConstantExpression(null);
     
     private Object value;
+    private String constantName;
     
     public ConstantExpression(Object value) {
         this.value = value;
@@ -63,5 +64,13 @@ public class ConstantExpression extends Expression {
 
     public String getText() {
         return (value == null) ? "null" : value.toString();
+    }
+
+    public String getConstantName() {
+        return constantName;
+    }
+
+    public void setConstantName(String constantName) {
+        this.constantName = constantName;
     }
 }

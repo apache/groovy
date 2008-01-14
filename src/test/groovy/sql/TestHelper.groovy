@@ -49,7 +49,9 @@ class TestHelper extends GroovyTestCase {
     protected def getURI() {
 		def answer = "jdbc:hsqldb:mem:foo"
 		def name = getMethodName()
-		if (name == null) {name = ""}
+		if (name == null) {
+            name = ""
+        }
 		name += counter++
 		return answer + name
     }
