@@ -544,12 +544,25 @@ public class Groovyc extends MatchingTask
           } ;
           int size = fixedParameters.length + compileList.length ;
           if ( encoding != null ) { size += 2 ; }
+          Map javaOptions = null ;
+          if ( jointCompilation ) {
+            size += 1 ;
+            javaOptions = javac.getRuntimeConfigurableWrapper ( ).getAttributeMap ( ) ;
+            size += javaOptions.size ( ) ;
+          }
           final String[] parameters = new String [ size ] ;
           System.arraycopy ( fixedParameters , 0 , parameters , 0 ,  fixedParameters.length ) ;
           int index = fixedParameters.length ;
           if ( encoding != null ) {
             parameters[ index++ ] = "--encoding" ;
             parameters[ index++ ] = encoding ;
+          }
+          if ( jointCompilation ) {
+            parameters[ index++ ] = "-j" ;
+            for ( Iterator i = javaOptions.entrySet ( ).iterator ( ) ; i.hasNext ( ) ; ) {
+              final Map.Entry e = (Map.Entry) i.next ( ) ;
+              parameters[ index++ ] = "-J" + e.getKey ( ) + "=" + e.getValue ( ) ;
+            }
           }
           for ( int i = 0 ; i < compileList.length ; ++i ) { parameters[i + index] = compileList[i].getPath ( ) ; }
           try { if ( Runtime.getRuntime( ).exec ( parameters ).waitFor ( ) != 0 ) { throw new BuildException ( "Forked groovyc failed to return 0.") ; } }

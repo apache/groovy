@@ -79,4 +79,19 @@ public class GroovycTest extends GroovyTestCase {
     project.executeTarget ( "GroovycTest1_Fork_Inherit" ) ;
     ensureResultOK ( "GroovycTest1" ) ;
   }
+  public void testGroovycTest1_Joint ( ) {
+    ensureNotPresent ( "GroovycTest1" ) ;
+    project.executeTarget ( "GroovycTest1_Joint" ) ;
+    ensureResultOK ( "GroovycTest1" ) ;
+  }
+  public void testGroovycTest1_Joint_Fork ( ) {
+    ensureNotPresent ( "GroovycTest1" ) ;
+    project.executeTarget ( "GroovycTest1_Joint_Fork" ) ;
+    ensureResultOK ( "GroovycTest1" ) ;
+  }
+  public void testGroovycTest11_Joint_Fork_Inherit ( ) {
+    ensureNotPresent ( "GroovycTest1" ) ;
+    project.executeTarget ( "GroovycTest1_Joint_Fork_Inherit" ) ;
+    ensureResultOK ( "GroovycTest1" ) ;
+  }
 }
