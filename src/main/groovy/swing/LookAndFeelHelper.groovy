@@ -146,9 +146,9 @@ class LookAndFeelHelper {
 
     static String getNimbusLAFName() {
         try {
-            return Class.forName('com.sun.swing.plaf.nimbus.NimbusLookAndFeel').getName()
+            return Class.forName('org.jdesktop.swingx.plaf.nimbus.NimbusLookAndFeel').getName()
         } catch (Throwable t) {
-            return 'sun.swing.plaf.nimbus.NimbusLookAndFeel'
+            return 'org.jdesktop.swingx.plaf.nimbus.NimbusLookAndFeel'
         }
     }
 }
