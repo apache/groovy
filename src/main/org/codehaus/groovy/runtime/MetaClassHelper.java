@@ -20,12 +20,14 @@ import groovy.lang.Closure;
 import groovy.lang.GString;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaMethod;
-import org.codehaus.groovy.reflection.*;
+import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.FastArray;
+import org.codehaus.groovy.reflection.ParameterTypes;
+import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -519,36 +521,6 @@ public class MetaClassHelper {
             }
         }
         return ans;
-    }
-
-    public static Object doConstructorInvoke(CachedConstructor constructor, Object[] argumentArray) {
-        final Constructor constr = constructor.cachedConstructor;
-        if (LOG.isLoggable(Level.FINER)) {
-            logMethodCall(constr.getDeclaringClass(), constr.getName(), argumentArray);
-        }
-        argumentArray = constructor.coerceArgumentsToClasses(argumentArray);
-        try {
-            return constr.newInstance(argumentArray);
-        } catch (InvocationTargetException e) {
-            throw new InvokerInvocationException(e);
-        } catch (IllegalArgumentException e) {
-            throw createExceptionText("failed to invoke constructor: ", constr, argumentArray, e, false);
-        } catch (IllegalAccessException e) {
-            throw createExceptionText("could not access constructor: ", constr, argumentArray, e, false);
-        } catch (Exception e) {
-            throw createExceptionText("failed to invoke constructor: ", constr, argumentArray, e, true);
-        }
-    }
-
-    private static GroovyRuntimeException createExceptionText(String init, Constructor constructor, Object[] argumentArray, Throwable e, boolean setReason) {
-        throw new GroovyRuntimeException(
-                init
-                        + constructor
-                        + " with arguments: "
-                        + InvokerHelper.toString(argumentArray)
-                        + " reason: "
-                        + e,
-                setReason ? e : null);
     }
 
     public static Object makeCommonArray(Object[] arguments, int offset, Class fallback) {

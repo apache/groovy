@@ -154,7 +154,7 @@ public class AsmClassGenerator extends ClassGenerator {
     // exception blocks list
     private List exceptionBlocks = new ArrayList();
 
-    private Set syntheticStaticFields = new HashSet();
+    private Set referencedClasses = new HashSet();
     private boolean passingClosureParams;
 
     private ConstructorNode constructorNode;
@@ -180,6 +180,7 @@ public class AsmClassGenerator extends ClassGenerator {
     private Map genericParameterNames = null;
     private ClassNode rightHandType;
     private int callSiteCount;
+    private static final String CONSTRUCTOR = "<$constructor$>";
 
     public AsmClassGenerator(
             GeneratorContext context, ClassVisitor classVisitor,
@@ -208,7 +209,7 @@ public class AsmClassGenerator extends ClassGenerator {
         try {
             callSiteCount = 0;
 
-            syntheticStaticFields.clear();
+            referencedClasses.clear();
             this.classNode = classNode;
             this.outermostClass = null;
             this.internalClassName = BytecodeHelper.getClassInternalName(classNode);
@@ -269,23 +270,23 @@ public class AsmClassGenerator extends ClassGenerator {
             //TODO: an inner class should have an entry of itself
 
             if (callSiteCount > 0) {
-               cv.visitField(ACC_STATIC+ACC_SYNTHETIC, "$callSiteArray", "Lorg/codehaus/groovy/runtime/CallSiteArray;", null, null);
+                cv.visitField(ACC_STATIC+ACC_SYNTHETIC, "$callSiteArray", "Lorg/codehaus/groovy/runtime/callsite/CallSiteArray;", null, null);
 
-                MethodVisitor mv = cv.visitMethod(ACC_PUBLIC+ACC_SYNTHETIC+ACC_STATIC,"$getCallSiteArray", "()Lorg/codehaus/groovy/runtime/CallSiteArray;", null, null);
+                MethodVisitor mv = cv.visitMethod(ACC_PUBLIC+ACC_SYNTHETIC+ACC_STATIC,"$getCallSiteArray", "()Lorg/codehaus/groovy/runtime/callsite/CallSiteArray;", null, null);
                 mv.visitCode();
-                mv.visitFieldInsn(GETSTATIC, internalClassName, "$callSiteArray", "Lorg/codehaus/groovy/runtime/CallSiteArray;");
+                mv.visitFieldInsn(GETSTATIC, internalClassName, "$callSiteArray", "Lorg/codehaus/groovy/runtime/callsite/CallSiteArray;");
                 mv.visitVarInsn(ASTORE, 1);
                 mv.visitVarInsn(ALOAD, 1);
                 Label l0 = new Label();
                 mv.visitJumpInsn(IFNONNULL, l0);
-                mv.visitTypeInsn(NEW, "org/codehaus/groovy/runtime/CallSiteArray");
+                mv.visitTypeInsn(NEW, "org/codehaus/groovy/runtime/callsite/CallSiteArray");
                 mv.visitInsn(DUP);
                 mv.visitFieldInsn(GETSTATIC, internalClassName, "$ownClass", "Ljava/lang/Class;");
                 mv.visitLdcInsn(new Integer(callSiteCount));
-                mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/CallSiteArray", "<init>", "(Ljava/lang/Class;I)V");
+                mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/callsite/CallSiteArray", "<init>", "(Ljava/lang/Class;I)V");
                 mv.visitVarInsn(ASTORE, 1);
                 mv.visitVarInsn(ALOAD, 1);
-                mv.visitFieldInsn(PUTSTATIC, internalClassName, "$callSiteArray", "Lorg/codehaus/groovy/runtime/CallSiteArray;");
+                mv.visitFieldInsn(PUTSTATIC, internalClassName, "$callSiteArray", "Lorg/codehaus/groovy/runtime/callsite/CallSiteArray;");
                 mv.visitLabel(l0);
                 mv.visitVarInsn(ALOAD, 1);
                 mv.visitInsn(ARETURN);
@@ -481,10 +482,15 @@ public class AsmClassGenerator extends ClassGenerator {
             compileStack.init(node.getVariableScope(), parameters, mv, classNode);
 
             // ensure we save the current (meta) class in a register
-            (new ClassExpression(classNode)).visit(this);
-            mv.visitInsn(POP);
-            (new ClassExpression(ClassHelper.METACLASS_TYPE)).visit(this);
-            mv.visitInsn(POP);
+//            (new ClassExpression(classNode)).visit(this);
+//            mv.visitInsn(POP);
+//            (new ClassExpression(ClassHelper.METACLASS_TYPE)).visit(this);
+//            mv.visitInsn(POP);
+
+//            mv.visitMethodInsn(INVOKESTATIC,internalClassName,"$getCallSiteArray","()Lorg/codehaus/groovy/runtime/callsite/CallSiteArray;");
+//            int index = compileStack.defineTemporaryVariable("$local$callSiteAray", ClassHelper.make(CallSiteArray.class), true);
+//            compileStack.setCurrentCallSiteArrayIndex(index);
+
 
             // handle body
             super.visitConstructorOrMethod(node, isConstructor);
@@ -1673,7 +1679,7 @@ public class AsmClassGenerator extends ClassGenerator {
             MethodCallerMultiAdapter adapter,
             boolean safe, boolean spreadSafe, boolean implicitThis
     ) {
-        if ((adapter == invokeMethod || adapter == invokeMethodOnCurrent)&& !spreadSafe) {
+        if ((adapter == invokeMethod || adapter == invokeMethodOnCurrent || adapter == invokeStaticMethod)&& !spreadSafe) {
             String methodName = null;
             if (message instanceof CastExpression) {
                 CastExpression msg = (CastExpression) message;
@@ -1690,7 +1696,7 @@ public class AsmClassGenerator extends ClassGenerator {
             }
 
             if (methodName != null) {
-                makeCallSite(receiver, methodName, arguments, safe, implicitThis, adapter == invokeMethodOnCurrent);
+                makeCallSite(receiver, methodName, arguments, safe, implicitThis, adapter == invokeMethodOnCurrent, adapter == invokeStaticMethod);
                 return;
             }
         }
@@ -1742,12 +1748,19 @@ public class AsmClassGenerator extends ClassGenerator {
         leftHandExpression = lhs;
     }
 
-    private void makeCallSite(Expression receiver, String message, Expression arguments, boolean safe, boolean implicitThis, boolean callCurrent) {
+    private void makeCallSite(Expression receiver, String message, Expression arguments, boolean safe, boolean implicitThis, boolean callCurrent, boolean callStatic) {
 
-        mv.visitMethodInsn(INVOKESTATIC,internalClassName,"$getCallSiteArray","()Lorg/codehaus/groovy/runtime/CallSiteArray;");
+//        final int index = compileStack.getCurrentCallSiteArrayIndex();
+//        if (index != -1)
+//          mv.visitVarInsn(ALOAD, index);
+//        else
+//          mv.visitMethodInsn(INVOKESTATIC,internalClassName,"$getCallSiteArray","()Lorg/codehaus/groovy/runtime/callsite/CallSiteArray;");
+        mv.visitMethodInsn(INVOKESTATIC,internalClassName,"$getCallSiteArray","()Lorg/codehaus/groovy/runtime/callsite/CallSiteArray;");
 
         mv.visitLdcInsn(new Integer(allocateIndex()));
-        mv.visitLdcInsn(message);
+        boolean constructor = message.equals(CONSTRUCTOR);
+        if (!constructor)
+          mv.visitLdcInsn(message);
 
         // ensure VariableArguments are read, not stored
         boolean lhs = leftHandExpression;
@@ -1786,19 +1799,27 @@ public class AsmClassGenerator extends ClassGenerator {
                 if (argument instanceof CastExpression) loadWrapper(argument);
             }
         } else {
-            mv.visitFieldInsn(GETSTATIC,"org/codehaus/groovy/runtime/CallSiteArray","NOPARAM","[Ljava/lang/Object;");
+            mv.visitFieldInsn(GETSTATIC,"org/codehaus/groovy/runtime/callsite/CallSiteArray","NOPARAM","[Ljava/lang/Object;");
         }
 
-        if (callCurrent) {
-            mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/CallSiteArray", "callCurrent","(ILjava/lang/String;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
+        if (callStatic) {
+            mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSiteArray", "call","(ILjava/lang/String;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
         }
-        else {
-            if (safe)
-              mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/CallSiteArray", "callSafe","(ILjava/lang/String;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
-            else
-              mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/CallSiteArray", "call","(ILjava/lang/String;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
-        }
-
+        else
+            if (constructor) {
+                mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSiteArray", "callConstructor","(ILjava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
+            }
+            else {
+                if (callCurrent) {
+                    mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSiteArray", "callCurrent","(ILjava/lang/String;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
+                }
+                else {
+                    if (safe)
+                      mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSiteArray", "callSafe","(ILjava/lang/String;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
+                    else
+                      mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSiteArray", "call","(ILjava/lang/String;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
+                }
+            }
         leftHandExpression = lhs;
     }
 
@@ -2078,11 +2099,10 @@ public class AsmClassGenerator extends ClassGenerator {
         }
 
         Expression receiverClass = new ClassExpression(call.getType());
-        makeCall(
-                receiverClass, null,
-                arguments,
-                invokeNew, false, false, false
-        );
+        makeCallSite(
+                receiverClass, CONSTRUCTOR,
+                arguments,false, false, false,
+                false);
     }
 
     private static String makeFieldClassName(ClassNode type) {
@@ -2497,11 +2517,11 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected void createInterfaceSyntheticStaticFields() {
-        if (syntheticStaticFields.isEmpty()) return;
+        if (referencedClasses.isEmpty()) return;
 
         addInnerClass(interfaceClassLoadingClass);
 
-        for (Iterator iter = syntheticStaticFields.iterator(); iter.hasNext();) {
+        for (Iterator iter = referencedClasses.iterator(); iter.hasNext();) {
             String staticFieldName = (String) iter.next();
             // generate a field node
             interfaceClassLoadingClass.addField(staticFieldName, ACC_STATIC + ACC_SYNTHETIC, ClassHelper.CLASS_Type, null);
@@ -2509,25 +2529,43 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected void createSyntheticStaticFields() {
-        for (Iterator iter = syntheticStaticFields.iterator(); iter.hasNext();) {
-            String staticFieldName = (String) iter.next();
+        for (Iterator iter = referencedClasses.iterator(); iter.hasNext();) {
+            ClassRef ref = (ClassRef) iter.next();
+            String staticFieldName = getStaticFieldName(ref.type);
             // generate a field node
             FieldNode fn = classNode.getField(staticFieldName);
             if (fn != null) {
                 boolean type = fn.getType() == ClassHelper.CLASS_Type;
                 boolean modifiers = fn.getModifiers() == ACC_STATIC + ACC_SYNTHETIC;
-                if (type && modifiers) continue;
-                String text = "";
-                if (!type) text = " with wrong type: " + fn.getType() + " (java.lang.Class needed)";
-                if (!modifiers)
-                    text = " with wrong modifiers: " + fn.getModifiers() + " (" + (ACC_STATIC + ACC_SYNTHETIC) + " needed)";
-                throwException(
-                        "tried to set a static syntethic field " + staticFieldName + " in " + classNode.getName() +
-                                " for class resolving, but found alreeady a node of that" +
-                                " name " + text);
+                if (!type || !modifiers) {
+                    String text = "";
+                    if (!type) text = " with wrong type: " + fn.getType() + " (java.lang.Class needed)";
+                    if (!modifiers)
+                        text = " with wrong modifiers: " + fn.getModifiers() + " (" + (ACC_STATIC + ACC_SYNTHETIC) + " needed)";
+                    throwException(
+                            "tried to set a static syntethic field " + staticFieldName + " in " + classNode.getName() +
+                                    " for class resolving, but found alreeady a node of that" +
+                                    " name " + text);
+                }
             } else {
-                cv.visitField(ACC_STATIC + ACC_SYNTHETIC, staticFieldName, "Ljava/lang/Class;", null, null);
+                cv.visitField(ACC_PRIVATE + ACC_STATIC + ACC_SYNTHETIC, staticFieldName, "Ljava/lang/Class;", null, null);
             }
+
+            mv = cv.visitMethod(ACC_PRIVATE + ACC_STATIC + ACC_SYNTHETIC, "get$" + staticFieldName,"()Ljava/lang/Class;",null, null);
+            mv.visitCode();
+            mv.visitFieldInsn(GETSTATIC,internalClassName,staticFieldName,"Ljava/lang/Class;");
+            mv.visitInsn(DUP);
+            Label l0 = new Label();
+            mv.visitJumpInsn(IFNONNULL,l0);
+            mv.visitInsn(POP);
+            mv.visitLdcInsn(BytecodeHelper.getClassLoadingTypeDescription(ref.type));
+            mv.visitMethodInsn(INVOKESTATIC,internalClassName,"class$","(Ljava/lang/String;)Ljava/lang/Class;");
+            mv.visitInsn(DUP);
+            mv.visitFieldInsn(PUTSTATIC,internalClassName,staticFieldName,"Ljava/lang/Class;");
+            mv.visitLabel(l0);
+            mv.visitInsn(ARETURN);
+            mv.visitMaxs(0,0);
+            mv.visitEnd();
         }
 
         mv =
@@ -2567,53 +2605,16 @@ public class AsmClassGenerator extends ClassGenerator {
             ClassNode objectType = ClassHelper.getWrapper(type);
             mv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(objectType), "TYPE", "Ljava/lang/Class;");
         } else {
-            String staticFieldName;
-            if (type.equals(classNode)) {
-                staticFieldName = "class$0";
-                if (compileStack.getCurrentClassIndex() != -1) {
-                    mv.visitVarInsn(ALOAD, compileStack.getCurrentClassIndex());
-                    return;
-                }
-            } else if (type.equals(ClassHelper.METACLASS_TYPE)) {
-                staticFieldName = getStaticFieldName(type);
-                if (compileStack.getCurrentMetaClassIndex() != -1) {
-                    mv.visitVarInsn(ALOAD, compileStack.getCurrentMetaClassIndex());
-                    return;
-                }
-            } else {
-                staticFieldName = getStaticFieldName(type);
-            }
+            String staticFieldName = getStaticFieldName(type);
 
-            syntheticStaticFields.add(staticFieldName);
+            referencedClasses.add(new ClassRef(type));
 
             String internalClassName = this.internalClassName;
             if (classNode.isInterface()) {
                 internalClassName = BytecodeHelper.getClassInternalName(interfaceClassLoadingClass);
             }
 
-            mv.visitFieldInsn(GETSTATIC, internalClassName, staticFieldName, "Ljava/lang/Class;");
-
-            Label l0 = new Label();
-            mv.visitJumpInsn(IFNONNULL, l0);
-            mv.visitLdcInsn(BytecodeHelper.getClassLoadingTypeDescription(type));
-            mv.visitMethodInsn(INVOKESTATIC, internalClassName, "class$", "(Ljava/lang/String;)Ljava/lang/Class;");
-            mv.visitInsn(DUP);
-            mv.visitFieldInsn(PUTSTATIC, internalClassName, staticFieldName, "Ljava/lang/Class;");
-            Label l1 = new Label();
-            mv.visitJumpInsn(GOTO, l1);
-            mv.visitLabel(l0);
-            mv.visitFieldInsn(GETSTATIC, internalClassName, staticFieldName, "Ljava/lang/Class;");
-            mv.visitLabel(l1);
-
-            if (type.equals(classNode)) {
-                mv.visitInsn(DUP);
-                int index = compileStack.defineTemporaryVariable("class$0", ClassHelper.CLASS_Type, true);
-                compileStack.setCurrentClassIndex(index);
-            } else if (type.equals(ClassHelper.METACLASS_TYPE)) {
-                mv.visitInsn(DUP);
-                int index = compileStack.defineTemporaryVariable("meta$class$0", ClassHelper.CLASS_Type, true);
-                compileStack.setCurrentMetaClassIndex(index);
-            }
+            mv.visitMethodInsn(INVOKESTATIC, internalClassName, "get$" + staticFieldName, "()Ljava/lang/Class;");
         }
     }
 
@@ -3372,7 +3373,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected void evaluateBinaryExpression(String method, BinaryExpression expression) {
-        makeCallSite(expression.getLeftExpression(), method, new ArgumentListExpression(expression.getRightExpression()), false, false, false);
+        makeCallSite(expression.getLeftExpression(), method, new ArgumentListExpression(expression.getRightExpression()), false, false, false, false);
     }
 
     protected void evaluateCompareTo(BinaryExpression expression) {
@@ -3548,7 +3549,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 expression,
                 method,
                 MethodCallExpression.NO_ARGUMENTS,
-                false, false, false);
+                false, false, false, false);
         
         // we need special code for arrays to store the result
         boolean setResult = true;
@@ -3568,7 +3569,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 makeCallSite(
                         be.getLeftExpression(), "putAt",
                         args,
-                        false, false, false);
+                        false, false, false, false);
                 mv.visitInsn(POP);
                 setResult = false;
             } 
@@ -3862,4 +3863,21 @@ public class AsmClassGenerator extends ClassGenerator {
         return CompilerConfiguration.POST_JDK5.equals(target) ? Opcodes.V1_5 : Opcodes.V1_3;
     }
 
+    private static class ClassRef {
+        private final ClassNode type;
+
+        public ClassRef(ClassNode type) {
+            this.type = type;
+        }
+
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            ClassRef classRef = (ClassRef) o;
+            return type.getName().equals(classRef.type.getName());
+        }
+
+        public int hashCode() {
+            return type.getName().hashCode();
+        }
+    }
 }

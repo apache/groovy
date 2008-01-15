@@ -18,6 +18,7 @@ package groovy.lang;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.*;
+import org.codehaus.groovy.runtime.callsite.*;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ClosureStaticMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ConcurrentReaderHashMap;
@@ -1117,6 +1118,37 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         return false;
     }
 
+    public CallSite createPojoCallSite(String name, Object[] args) {
+        if (invokeMethodMethod != null)
+          return new PojoMetaClassSite(name,this);
+        return super.createPojoCallSite(name, args);
+    }
 
+    public CallSite createStaticSite(String name, Object[] args) {
+        if(invokeStaticMethodMethod != null)
+            return new StaticMetaClassSite(name, this);
+        return super.createStaticSite(name, args);
+    }
+
+    public CallSite createPogoCallSite(String name, Object[] args) {
+        if (invokeMethodMethod != null)
+            return new PogoMetaClassSite(name,this);
+        return super.createPogoCallSite(name, args);
+    }
+
+    public CallSite createPogoCallCurrentSite(Class sender, String name, Object[] args) {
+        if (invokeMethodMethod != null)
+            return new PogoMetaClassSite(name,this);
+        return super.createPogoCallCurrentSite(sender, name, args);
+    }
+
+    public CallSite createConstructorSite(Object[] args) {
+        Class[] params = MetaClassHelper.convertToTypeArray(args);
+        MetaMethod method = pickMethod(GROOVY_CONSTRUCTOR, params);
+        if(method!=null && method.getParameterTypes().length == args.length) {
+           return new ConstructorMetaMethodSite(this, method, params);
+        }
+
+        return super.createConstructorSite(args);
+    }
 }
-

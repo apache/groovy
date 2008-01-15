@@ -90,9 +90,6 @@ public class CompileStack implements Opcodes {
     
     private Label thisStartLabel, thisEndLabel;
 
-    // current class index
-    private int currentClassIndex , currentMetaClassIndex;
-    
     private MethodVisitor mv;
     private BytecodeHelper helper;
     
@@ -318,7 +315,6 @@ public class CompileStack implements Opcodes {
         this.helper = new BytecodeHelper(mv);
         defineMethodVariables(parameters,el.isInStaticContext());
         this.className = BytecodeHelper.getTypeDescription(cn);
-        currentClassIndex = -1; currentMetaClassIndex = -1;
     }
 
     /**
@@ -540,22 +536,6 @@ public class CompileStack implements Opcodes {
         return l;
     }
     
-    public int getCurrentClassIndex(){
-        return currentClassIndex;
-    }
-    
-    public void setCurrentClassIndex(int index){
-        currentClassIndex=index;
-    }
-    
-    public int getCurrentMetaClassIndex(){
-        return currentMetaClassIndex;
-    }
-    
-    public void setCurrentMetaClassIndex(int index){
-        currentMetaClassIndex=index;
-    }
-
     public void applyFinallyBlocks(Label label, boolean isBreakLabel) {
         // first find the state defining the label. That is the state
         // directly after the state not knowing this label. If no state

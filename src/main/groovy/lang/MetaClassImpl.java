@@ -22,6 +22,7 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.reflection.*;
 import org.codehaus.groovy.runtime.*;
+import org.codehaus.groovy.runtime.callsite.*;
 import org.codehaus.groovy.runtime.metaclass.*;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
@@ -735,20 +736,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         MetaMethod method = getMethodWithCaching(sender, methodName, arguments, isCallToSuper);
         MetaClassHelper.unwrap(arguments);
 
-        if (method == null && arguments.length == 1 && arguments[0] instanceof List) {
-            Object[] newArguments = ((List) arguments[0]).toArray();
-            method = getMethodWithCaching(sender, methodName, newArguments, isCallToSuper);
-            if (method != null) {
-                method = new TransformMetaMethod(method) {
-                    public Object invoke(Object object, Object[] arguments) {
-                        Object firstArgument = arguments[0];
-                        List list = (List) firstArgument;
-                        arguments = list.toArray();
-                        return super.invoke(object, arguments);
-                    }
-                };
-            }
-        }
+        if (method == null)
+          method = tryListParamMetaMethod(sender, methodName, isCallToSuper, arguments);
 
         final boolean isClosure = object instanceof Closure;
         if (isClosure) {
@@ -877,24 +866,47 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (method != null) {
             return method.doMethodInvoke(object, arguments);
         } else {
-            // if no method was found, try to find a closure defined as a field of the class and run it
-            Object value = null;
-            final MetaProperty metaProperty = this.getMetaProperty(theCachedClass, methodName, false, false);
-            if (metaProperty != null)
-              value = metaProperty.getProperty(object);
-            else {
-                if (object instanceof Map)
-                  value = ((Map)object).get(methodName);
-            }
-
-            if (value instanceof Closure) {  // This test ensures that value != this If you ever change this ensure that value != this
-                Closure closure = (Closure) value;
-                MetaClass delegateMetaClass = closure.getMetaClass();
-                return delegateMetaClass.invokeMethod(closure.getClass(), closure, CLOSURE_DO_CALL_METHOD, originalArguments, false, fromInsideClass);
-            }
-
-            return invokeMissingMethod(object, methodName, originalArguments);
+            return invokePropertyOrMissing(object, methodName, originalArguments, fromInsideClass);
         }
+    }
+
+    private MetaMethod tryListParamMetaMethod(Class sender, String methodName, boolean isCallToSuper, Object[] arguments) {
+        MetaMethod method = null;
+        if (arguments.length == 1 && arguments[0] instanceof List) {
+            Object[] newArguments = ((List) arguments[0]).toArray();
+            method = getMethodWithCaching(sender, methodName, newArguments, isCallToSuper);
+            if (method != null) {
+                method = new TransformMetaMethod(method) {
+                    public Object invoke(Object object, Object[] arguments) {
+                        Object firstArgument = arguments[0];
+                        List list = (List) firstArgument;
+                        arguments = list.toArray();
+                        return super.invoke(object, arguments);
+                    }
+                };
+            }
+        }
+        return method;
+    }
+
+    private Object invokePropertyOrMissing(Object object, String methodName, Object[] originalArguments, boolean fromInsideClass) {
+        // if no method was found, try to find a closure defined as a field of the class and run it
+        Object value = null;
+        final MetaProperty metaProperty = this.getMetaProperty(theCachedClass, methodName, false, false);
+        if (metaProperty != null)
+          value = metaProperty.getProperty(object);
+        else {
+            if (object instanceof Map)
+              value = ((Map)object).get(methodName);
+        }
+
+        if (value instanceof Closure) {  // This test ensures that value != this If you ever change this ensure that value != this
+            Closure closure = (Closure) value;
+            MetaClass delegateMetaClass = closure.getMetaClass();
+            return delegateMetaClass.invokeMethod(closure.getClass(), closure, CLOSURE_DO_CALL_METHOD, originalArguments, false, fromInsideClass);
+        }
+
+        return invokeMissingMethod(object, methodName, originalArguments);
     }
 
     private MetaClass lookupObjectMetaClass(Object object) {
@@ -966,7 +978,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         cacheEntry = new MetaMethodIndex.CacheEntry ();
         cacheEntry.params = params;
-        cacheEntry.method = (MetaMethod) chooseMethod(e.name, methods, params, false);
+        cacheEntry.method = (MetaMethod) chooseMethod(e.name, methods, params);
         e.cachedMethod = cacheEntry;
         return cacheEntry.method;
     }
@@ -985,7 +997,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         cacheEntry = new MetaMethodIndex.CacheEntry ();
         final Class[] classes = MetaClassHelper.convertToTypeArray(arguments);
         cacheEntry.params = classes;
-        cacheEntry.method = (MetaMethod) chooseMethod(e.name, e.methodsForSuper, classes, false);
+        cacheEntry.method = (MetaMethod) chooseMethod(e.name, e.methodsForSuper, classes);
         e.cachedMethodForSuper = cacheEntry;
         return cacheEntry.method;
     }
@@ -1005,17 +1017,17 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         cacheEntry = new MetaMethodIndex.CacheEntry ();
         final Class[] classes = MetaClassHelper.convertToTypeArray(arguments);
         cacheEntry.params = classes;
-        cacheEntry.method = (MetaMethod) chooseMethod(e.name, methods, classes, false);
+        cacheEntry.method = (MetaMethod) chooseMethod(e.name, methods, classes);
         e.cachedMethod = cacheEntry;
         return cacheEntry.method;
     }
 
     public Constructor retrieveConstructor(Class[] arguments) {
-        CachedConstructor constructor = (CachedConstructor) chooseMethod("<init>", constructors, arguments, false);
+        CachedConstructor constructor = (CachedConstructor) chooseMethod("<init>", constructors, arguments);
         if (constructor != null) {
             return constructor.cachedConstructor;
         }
-        constructor = (CachedConstructor) chooseMethod("<init>", constructors, arguments, true);
+        constructor = (CachedConstructor) chooseMethod("<init>", constructors, arguments);
         if (constructor != null) {
             return constructor.cachedConstructor;
         }
@@ -1047,7 +1059,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         MetaMethod method = null;
         Object methods = getMethods(sender, methodName, isCallToSuper);
         if (methods != null) {
-            method = (MetaMethod) chooseMethod(methodName, methods, arguments, false);
+            method = (MetaMethod) chooseMethod(methodName, methods, arguments);
         }
         return method;
     }
@@ -1133,14 +1145,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         Object methods = getStaticMethods(theClass, methodName);
 
         if (!(methods instanceof FastArray) || !((FastArray)methods).isEmpty()) {
-            method = (MetaMethod) chooseMethod(methodName, methods, arguments, false);
+            method = (MetaMethod) chooseMethod(methodName, methods, arguments);
         }
         if (method == null && theClass != Class.class) {
             MetaClass classMetaClass = registry.getMetaClass(Class.class);
             method = classMetaClass.pickMethod(methodName, arguments);
         }
         if (method == null) {
-            method = (MetaMethod) chooseMethod(methodName, methods, MetaClassHelper.convertToTypeArray(arguments), true);
+            method = (MetaMethod) chooseMethod(methodName, methods, MetaClassHelper.convertToTypeArray(arguments));
         }
         return method;
     }
@@ -1168,9 +1180,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (arguments == null) arguments = EMPTY_ARGUMENTS;
         Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
         MetaClassHelper.unwrap(arguments);
-        CachedConstructor constructor = (CachedConstructor) chooseMethod("<init>", constructors, argClasses, false);
+        CachedConstructor constructor = (CachedConstructor) chooseMethod("<init>", constructors, argClasses);
         if (constructor == null) {
-            constructor = (CachedConstructor) chooseMethod("<init>", constructors, argClasses, true);
+            constructor = (CachedConstructor) chooseMethod("<init>", constructors, argClasses);
         }
         if (constructor == null) {
             throw new GroovyRuntimeException(
@@ -1223,21 +1235,17 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (arguments == null) arguments = EMPTY_ARGUMENTS;
         Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
         MetaClassHelper.unwrap(arguments);
-        CachedConstructor constructor = (CachedConstructor) chooseMethod("<init>", constructors, argClasses, false);
+        CachedConstructor constructor = (CachedConstructor) chooseMethod("<init>", constructors, argClasses);
         if (constructor != null) {
-            return doConstructorInvoke(at, constructor, arguments, true);
-        }
-        constructor = (CachedConstructor) chooseMethod("<init>", constructors, argClasses, true);
-        if (constructor != null) {
-            return doConstructorInvoke(at, constructor, arguments, true);
+            return constructor.doConstructorInvoke(arguments);
         }
 
         if (arguments.length == 1) {
             Object firstArgument = arguments[0];
             if (firstArgument instanceof Map) {
-                constructor = (CachedConstructor) chooseMethod("<init>", constructors, MetaClassHelper.EMPTY_TYPE_ARRAY, false);
+                constructor = (CachedConstructor) chooseMethod("<init>", constructors, MetaClassHelper.EMPTY_TYPE_ARRAY);
                 if (constructor != null) {
-                    Object bean = doConstructorInvoke(at, constructor, MetaClassHelper.EMPTY_ARRAY, true);
+                    Object bean = constructor.doConstructorInvoke(MetaClassHelper.EMPTY_ARRAY);
                     setProperties(bean, ((Map) firstArgument));
                     return bean;
                 }
@@ -2312,26 +2320,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
 
-    private static Object doConstructorInvoke(final Class at, CachedConstructor constructor, Object[] argumentArray, boolean setAccessible) {
-        if (LOG.isLoggable(Level.FINER)) {
-            MetaClassHelper.logMethodCall(constructor.cachedConstructor.getDeclaringClass(), constructor.cachedConstructor.getName(), argumentArray);
-        }
-
-//       if (setAccessible) {
-//           // To fix JIRA 435
-//           // Every constructor should be opened to the accessible classes.
-//           final boolean accessible = MetaClassHelper.accessibleToConstructor(at, constructor);
-//           final Constructor ctor = constructor;
-//           AccessController.doPrivileged(new PrivilegedAction() {
-//               public Object run() {
-//                   ctor.setAccessible(accessible);
-//                   return null;
-//               }
-//           });
-//       }
-        return MetaClassHelper.doConstructorInvoke(constructor, argumentArray);
-    }
-
     /**
      * Chooses the correct method to use from a list of methods which match by
      * name.
@@ -2339,7 +2327,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @param methodOrList   the possible methods to choose from
      * @param arguments
      */
-    private Object chooseMethod(String methodName, Object methodOrList, Class[] arguments, boolean coerce) {
+    private Object chooseMethod(String methodName, Object methodOrList, Class[] arguments) {
         if (methodOrList instanceof MetaMethod) {
             if (((ParameterTypes) methodOrList).isValidMethod(arguments)) {
                 return methodOrList;
@@ -2530,6 +2518,60 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     protected void dropMethodCache(String name) {
         metaMethodIndex.clearCaches(name);
+    }
+
+    public CallSite createPojoCallSite(String name, Object[] args) {
+          Class [] params = MetaClassHelper.convertToTypeArray(args);
+          MetaMethod metaMethod = getMethodWithCachingInternal(getTheClass(), name, params);
+          if (metaMethod != null)
+             return PojoMetaMethodSite.createPojoMetaMethodSite(this, metaMethod, name, params, args);
+          else
+              return new PojoMetaClassSite(name, this);
+    }
+
+
+    public CallSite createStaticSite(String name, Object[] args) {
+        Class [] params = MetaClassHelper.convertToTypeArray(args);
+        MetaMethod metaMethod = retrieveStaticMethod(name, args);
+        if (metaMethod != null)
+           return StaticMetaMethodSite.createStaticMetaMethodSite(this, metaMethod, name, params, args);
+        else
+           return new StaticMetaClassSite(name, this);
+    }
+
+    public CallSite createPogoCallSite(String name, Object[] args) {
+        Class [] params = MetaClassHelper.convertToTypeArray(args);
+        MetaMethod metaMethod = getMethodWithCachingInternal(theClass, name, params);
+        if (metaMethod != null)
+           return PogoMetaMethodSite.createPogoMetaMethodSite(this, metaMethod, name, params, args);
+        else
+           return new PogoMetaClassSite(name, this);
+    }
+
+    public CallSite createPogoCallCurrentSite(Class sender, String name, Object[] args) {
+          Class [] params = MetaClassHelper.convertToTypeArray(args);
+          MetaMethod metaMethod = getMethodWithCachingInternal(sender, name, params);
+          if (metaMethod != null)
+            return PogoMetaMethodSite.createPogoMetaMethodSite(this, metaMethod, name, params, args);
+          else
+            return new PogoMetaClassSite(name, this);
+    }
+
+    public CallSite createConstructorSite(Object[] args) {
+        Class[] params = MetaClassHelper.convertToTypeArray(args);
+        CachedConstructor constructor = (CachedConstructor) chooseMethod("<init>", constructors, params);
+        if (constructor != null) {
+            return ConstructorSite.createConstructorSite(this,constructor,params, args);
+        }
+        else {
+            if (args.length == 1 && args[0] instanceof Map) {
+                constructor = (CachedConstructor) chooseMethod("<init>", constructors, MetaClassHelper.EMPTY_TYPE_ARRAY);
+                if (constructor != null) {
+                    return new ConstructorSite.NoParamSite(this,constructor,params);
+                }
+            }
+        }
+        return new MetaClassConstructorSite(this);
     }
 
     private abstract class MethodIndexAction {

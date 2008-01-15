@@ -15,7 +15,12 @@
  */
 package org.codehaus.groovy.reflection;
 
+import groovy.lang.GroovyRuntimeException;
+import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.InvokerInvocationException;
+
 import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * @author Alex.Tkachman
@@ -53,5 +58,37 @@ public class CachedConstructor extends ParameterTypes {
         }
         throw new RuntimeException("Couldn't find method: " + constructor);
     }
+
+    public Object doConstructorInvoke(Object[] argumentArray) {
+        argumentArray = coerceArgumentsToClasses(argumentArray);
+        return invoke(argumentArray);
+    }
+
+    public Object invoke(Object[] argumentArray) {
+        Constructor constr = cachedConstructor;
+        try {
+            return constr.newInstance(argumentArray);
+        } catch (InvocationTargetException e) {
+            throw new InvokerInvocationException(e);
+        } catch (IllegalArgumentException e) {
+            throw createExceptionText("failed to invoke constructor: ", constr, argumentArray, e, false);
+        } catch (IllegalAccessException e) {
+            throw createExceptionText("could not access constructor: ", constr, argumentArray, e, false);
+        } catch (Exception e) {
+            throw createExceptionText("failed to invoke constructor: ", constr, argumentArray, e, true);
+        }
+    }
+
+    private static GroovyRuntimeException createExceptionText(String init, Constructor constructor, Object[] argumentArray, Throwable e, boolean setReason) {
+        throw new GroovyRuntimeException(
+                init
+                        + constructor
+                        + " with arguments: "
+                        + InvokerHelper.toString(argumentArray)
+                        + " reason: "
+                        + e,
+                setReason ? e : null);
+    }
+
 
 }

@@ -20,6 +20,8 @@ import groovy.lang.*;
 import org.codehaus.groovy.reflection.*;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.MetaClassHelper;
+import org.codehaus.groovy.runtime.callsite.CallSite;
+import org.codehaus.groovy.runtime.callsite.PogoMetaClassSite;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
 import java.lang.reflect.Constructor;
@@ -616,6 +618,14 @@ public final class ClosureMetaClass extends MetaClassImpl {
         }
     }
 
+    public CallSite createPogoCallSite(String name, Object[] args) {
+       return new PogoMetaClassSite(name, this);
+    }
+
+    public CallSite createPogoCallCurrentSite(Class sender, String name, Object[] args) {
+        return new PogoMetaClassSite(name, this);
+    }
+
     public MetaMethod getMethodWithoutCaching(Class sender, String methodName, Class[] arguments, boolean isCallToSuper) {
         throw new UnsupportedOperationException();
     }
@@ -645,6 +655,10 @@ public final class ClosureMetaClass extends MetaClassImpl {
     }
 
     public Constructor retrieveConstructor(Class[] arguments) {
+        throw new UnsupportedOperationException();
+    }
+
+    public CallSite createPojoCallSite(String name, Object[] args) {
         throw new UnsupportedOperationException();
     }
 }

@@ -15,7 +15,9 @@ class BenchmarkInterceptorTest extends GroovyTestCase{
         proxy.setInterceptor(benchmarkInterceptor)
     }
 
+    // this test is not valid any more as we don't log calls
     void testSimpleInterception() {
+/*
         proxy.use {
              def x = new Date(0)
              x++
@@ -26,6 +28,7 @@ class BenchmarkInterceptorTest extends GroovyTestCase{
         assert stats.find{it[0] == 'next'}
         assert stats.every{it[1] == 1}
         assert stats.every{it[2] < 200}
+*/
     }
 
 

@@ -42,7 +42,7 @@ public class ScriptBytecodeAdapter {
     //  --------------------------------------------------------
     //                   exception handling
     //  --------------------------------------------------------
-    static Throwable unwrap(GroovyRuntimeException gre) {
+    public static Throwable unwrap(GroovyRuntimeException gre) {
         if (gre instanceof MissingPropertyExceptionNoStack) {
             MissingPropertyExceptionNoStack noStack = (MissingPropertyExceptionNoStack) gre;
             return new MissingPropertyException(noStack.getProperty(), noStack.getType());

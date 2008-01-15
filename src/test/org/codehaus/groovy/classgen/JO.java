@@ -2,8 +2,8 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.MetaClass;
 import org.codehaus.groovy.reflection.GeneratedMetaMethod;
-import org.codehaus.groovy.runtime.CallSiteArray;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.callsite.CallSiteArray;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.util.ASMifierClassVisitor;
 
@@ -51,7 +51,7 @@ public class JO extends GeneratedMetaMethod implements Opcodes {
     }
 
     public static void main(String[] args) throws Exception {
-        ASMifierClassVisitor.main(new String[]{"target/test-classes/groovy/PostfixTest.class"});
+        ASMifierClassVisitor.main(new String[]{"target/test-classes/spectralnorm.class"});
 //        ASMifierClassVisitor.main(new String[]{"target/test-classes/groovy/bugs/CustomMetaClassTest.class"});
     }
 }
