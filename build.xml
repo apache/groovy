@@ -569,7 +569,6 @@ org.junit;resolution:=optional" file="${stagingDirectory}/META-INF/MANIFEST.MF"/
         <!-- add commons-cli -->
         <unzip dest="${stagingDirectory}">
             <patternset>
-                <!--<include name="**/*"/>-->
                 <!-- no need for the manifest file, we have our own -->
                 <exclude name="META-INF/MANIFEST.MF"/>
             </patternset>
