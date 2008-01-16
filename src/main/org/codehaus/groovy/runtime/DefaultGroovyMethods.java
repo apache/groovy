@@ -8947,17 +8947,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static Process pipeTo(final Process left, final Process right) throws IOException {
         new Thread(new Runnable() {
             public void run() {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(getIn(left)));
-                PrintWriter writer = new PrintWriter(new BufferedOutputStream(getOut(right)));
-                String next;
+                InputStream in = new BufferedInputStream(getIn(left));
+                OutputStream out = new BufferedOutputStream(getOut(right));
+                byte[] buf = new byte[8192];
+                int next;
                 try {
-                    while ((next = reader.readLine()) != null) {
-                        writer.println(next);
+                    while ((next = in.read(buf)) != -1) {
+                        out.write(buf, 0, next);
                     }
                 } catch (IOException e) {
                     throw new GroovyRuntimeException("exception while reading process stream", e);
                 } finally {
-                    writer.close();
+                    closeOutputStreamWithWarning(out);
                 }
             }
         }).start();
