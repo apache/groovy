@@ -1521,7 +1521,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a Collection of lists
      * @return a List of the combinations found
-     * @see GroovyCollections#combinations(Collection)
+     * @see groovy.util.GroovyCollections#combinations(java.util.Collection)
      */
     public static List combinations(Collection self) {
         return GroovyCollections.combinations(self);
@@ -1532,7 +1532,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a Collection of lists
      * @return a List of the transposed lists
-     * @see GroovyCollections#transpose(Collection)
+     * @see groovy.util.GroovyCollections#transpose(java.util.Collection)
      */
     public static List transpose(Collection self) {
         return GroovyCollections.transpose(self);
@@ -1885,7 +1885,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a Collection
      * @return the maximum value
-     * @see GroovyCollections#max(Collection)
+     * @see groovy.util.GroovyCollections#max(java.util.Collection)
      */
     public static Object max(Collection self) {
         return GroovyCollections.max(self);
@@ -1914,7 +1914,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a Collection
      * @return the minimum value
-     * @see GroovyCollections#min(Collection)
+     * @see groovy.util.GroovyCollections#min(java.util.Collection)
      */
     public static Object min(Collection self) {
         return GroovyCollections.min(self);

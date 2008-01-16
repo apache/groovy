@@ -153,11 +153,14 @@ class DocGenerator
 			if (parameters)
 				parameters.remove(0) // method is static, first arg is the "real this"
 
+            def seeComments = method.getTagsByName("see").collect { [target: getDocUrl(it.value)] }
+
 			def returnType = getReturnType(method)
 			def methodInfo = [name: method.name, 
 			                  comment: getComment(method),
 			                  shortComment: getComment(method).replaceAll('\\..*', ''),
 			                  returnComment: method.getTagByName("return")?.getValue() ?: '',
+			                  seeComments: seeComments,
 			                  returnTypeDocUrl: getDocUrl(returnType),
 			                  parametersSignature: getParametersDecl(method),
 			                  parametersDocUrl: getParametersDocUrl(method),
@@ -184,8 +187,10 @@ class DocGenerator
 		if (!type.contains('.'))
 			return type
 		
-		def shortClassName = type.replaceAll(".*\\.", "")
-		def packageName = type[0..(-shortClassName.size()-2)] 
+        def target = type.split('#')
+		def shortClassName = target[0].replaceAll(/.*\./, "")
+		def packageName = type[0..(-shortClassName.size()-2)]
+		shortClassName += (target.size() > 1 ? '#' + target[1].split('\\(')[0] : '')
 		def apiBaseUrl, title
 		if (type.startsWith("groovy")) {
 			apiBaseUrl = "http://groovy.codehaus.org/api/"
@@ -196,7 +201,7 @@ class DocGenerator
 			title = "JDK class in $packageName"
 		}
 
-		def url = apiBaseUrl + type.replaceAll("\\.", "/") + '.html'
+		def url = apiBaseUrl + target[0].replaceAll(/\./, "/") + '.html' + (target.size() > 1 ? '#' + target[1] : '')
 		return "<a href='$url' title='$title'>$shortClassName</a>"
 	}
 
