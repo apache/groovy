@@ -9390,7 +9390,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     if (sb != null) {
                         sb.append(next);
                     } else {
-                        w.append(next);
+                        w.write(next);
                     }
                 }
             } catch (IOException e) {
