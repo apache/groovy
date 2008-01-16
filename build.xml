@@ -410,17 +410,96 @@ $Date$
     <target name="-makeManifest">
         <mkdir dir="${mainClassesDirectory}/META-INF"/>
         <copy todir="${mainClassesDirectory}/META-INF" file="LICENSE.txt"/>
-        <manifest file="${mainClassesDirectory}/META-INF/MANIFEST.MF">
-            <attribute name="Built-By" value="${user.name}"/>
-            <attribute name="Extension-Name" value="groovy"/>
-            <attribute name="Specification-Title" value="Groovy: a powerful, dynamic language for the JVM"/>
-            <attribute name="Specification-Version" value="${groovyVersion}"/>
-            <attribute name="Specification-Vendor" value="The Codehaus"/>
-            <attribute name="Implementation-Title" value="Groovy: a powerful, dynamic language for the JVM"/>
-            <attribute name="Implementation-Version" value="${groovyVersion}"/>
-            <attribute name="Implementation-Vendor" value="The Codehaus"/>
-        </manifest>
-    </target>
+    	<makemanifest dependencies="antlr,
+org.objectweb.asm,
+org.apache.ant;resolution:=optional,
+org.apache.commons.cli;resolution:=optional,
+org.junit;resolution:=optional" file="${mainClassesDirectory}/META-INF/MANIFEST.MF"/>
+	</target>
+    
+    <macrodef name="makemanifest">
+        <attribute name="dependencies"/>
+    	<attribute name="file"/>
+        <sequential>
+            <manifest file="@{file}">
+                <attribute name="Built-By" value="${user.name}"/>
+                <attribute name="Extension-Name" value="groovy"/>
+                <attribute name="Specification-Title" value="Groovy: a powerful, dynamic language for the JVM"/>
+                <attribute name="Specification-Version" value="${groovyVersion}"/>
+                <attribute name="Specification-Vendor" value="The Codehaus"/>
+                <attribute name="Implementation-Title" value="Groovy: a powerful, dynamic language for the JVM"/>
+                <attribute name="Implementation-Version" value="${groovyVersion}"/>
+                <attribute name="Implementation-Vendor" value="The Codehaus"/>
+                <attribute name="Bundle-ManifestVersion" value="2" />
+                <attribute name="Bundle-Name" value="Groovy Runtime" />
+                <attribute name="Bundle-SymbolicName" value="org.codehaus.groovy" />
+                <attribute name="Bundle-Version" value="${groovyBundleVersion}" />
+                <attribute name="Bundle-Vendor" value="The Codehaus" />
+                <attribute name="Bundle-ClassPath" value="." />
+                <attribute name="Bundle-RequiredExecutionEnvironment" value="J2SE-1.4" />
+                <attribute name="Require-Bundle" value="@{dependencies}" />
+                <attribute name="Export-Package" value="groovy.inspect,
+groovy.inspect.swingui,
+groovy.io,
+groovy.lang,
+groovy.mock,
+groovy.mock.interceptor,
+groovy.model,
+groovy.security,
+groovy.servlet,
+groovy.sql,
+groovy.swing,
+groovy.swing.binding,
+groovy.swing.factory,
+groovy.swing.impl,
+groovy.text,
+groovy.time,
+groovy.ui,
+groovy.ui.icons,
+groovy.ui.text,
+groovy.ui.view,
+groovy.util,
+groovy.util.slurpersupport,
+groovy.xml,
+groovy.xml.dom,
+groovy.xml.streamingmarkupsupport,
+org.codehaus.groovy,
+org.codehaus.groovy.ant,
+org.codehaus.groovy.antlr,
+org.codehaus.groovy.antlr.java,
+org.codehaus.groovy.antlr.parser,
+org.codehaus.groovy.antlr.treewalker,
+org.codehaus.groovy.ast,
+org.codehaus.groovy.ast.expr,
+org.codehaus.groovy.ast.stmt,
+org.codehaus.groovy.binding,
+org.codehaus.groovy.bsf,
+org.codehaus.groovy.classgen,
+org.codehaus.groovy.control,
+org.codehaus.groovy.control.io,
+org.codehaus.groovy.control.messages,
+org.codehaus.groovy.groovydoc,
+org.codehaus.groovy.reflection,
+org.codehaus.groovy.runtime,
+org.codehaus.groovy.runtime.metaclass,
+org.codehaus.groovy.runtime.typehandling,
+org.codehaus.groovy.runtime.wrappers,
+org.codehaus.groovy.syntax,
+org.codehaus.groovy.tools,
+org.codehaus.groovy.tools.groovydoc,
+org.codehaus.groovy.tools.javac,
+org.codehaus.groovy.tools.shell,
+org.codehaus.groovy.tools.shell.commands,
+org.codehaus.groovy.tools.shell.util,
+org.codehaus.groovy.tools.xml,
+org.codehaus.groovy.vmplugin,
+org.codehaus.groovy.vmplugin.v4,
+org.codehaus.groovy.vmplugin.v5" />
+                <attribute name="Eclipse-BuddyPolicy" value="dependent"/>
+                <attribute name="Eclipse-LazyStart" value="true"/>
+            </manifest>
+        </sequential>
+    </macrodef>
 
     <target name="-includeResources" depends="-includeGroovyDocTemplates">
         <copy todir="${mainClassesDirectory}">
@@ -478,6 +557,9 @@ $Date$
             </fileset>
         </copy>
         <mkdir dir="${targetDistDirectory}"/>
+    	<makemanifest dependencies="org.apache.ant;resolution:=optional,
+org.apache.commons.cli;resolution:=optional,
+org.junit;resolution:=optional" file="${stagingDirectory}/META-INF/MANIFEST.MF"/>
         <jarjar jarfile="${targetDistDirectory}/groovy-all-minimal-${groovyVersion}.jar"
                 manifest="${stagingDirectory}/META-INF/MANIFEST.MF">
             <fileset dir="${stagingDirectory}"/>
@@ -486,10 +568,18 @@ $Date$
         </jarjar>
         <!-- add commons-cli -->
         <unzip dest="${stagingDirectory}">
+            <patternset>
+                <include name="*/*"/>
+                <!-- no need for the manifest file, we have our own -->
+                <exclude name="META-INF/MANIFEST.MF"/>
+            </patternset>
+            <globmapper from="META-INF/LICENSE.txt" to="META-INF/CLI-LICENSE.txt"/>
             <fileset dir="${runtimeLibDirectory}">
                 <include name="commons-cli-*.jar"/>
             </fileset>
         </unzip>
+    	<makemanifest dependencies="org.apache.ant;resolution:=optional,
+org.junit;resolution:=optional" file="${stagingDirectory}/META-INF/MANIFEST.MF"/>
         <jarjar jarfile="${targetDistDirectory}/groovy-all-${groovyVersion}.jar"
                 manifest="${stagingDirectory}/META-INF/MANIFEST.MF">
             <fileset dir="${stagingDirectory}" excludes="groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class"/>
