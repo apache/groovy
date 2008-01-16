@@ -1517,7 +1517,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Adds combinations() as a method on collections.
+     * Adds GroovyCollections#combinations(Collection) as a method on collections.
      *
      * @param self a Collection of lists
      * @return a List of the combinations found
@@ -1528,7 +1528,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Adds transpose() as a method on collections.
+     * Adds GroovyCollections#transpose(Collection) as a method on collections.
      *
      * @param self a Collection of lists
      * @return a List of the transposed lists
