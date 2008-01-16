@@ -16,7 +16,6 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.*;
-import groovy.text.RegexUtils;
 import groovy.util.*;
 import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
@@ -8867,13 +8866,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a Process
      */
     public static void consumeProcessOutput(Process self) {
-        consumeProcessOutput(self, null, null);
+        consumeProcessOutput(self, (OutputStream)null, (OutputStream)null);
     }
 
     /**
      * Gets the output and error streams from a process and reads them
      * to keep the process from blocking due to a full output buffer.
-     * The processed stream data is appended to the supplied StringBuffer(s).
+     * The processed stream data is appended to the supplied StringBuffer.
      * For this, two Threads are started, so this method will return immediately.
      *
      * @param self a Process
@@ -8881,6 +8880,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param error a StringBuffer to capture the process stderr
      */
     public static void consumeProcessOutput(Process self, StringBuffer output, StringBuffer error) {
+        consumeProcessOutputStream(self, output);
+        consumeProcessErrorStream(self, error);
+    }
+
+    /**
+     * Gets the output and error streams from a process and reads them
+     * to keep the process from blocking due to a full output buffer.
+     * The processed stream data is appended to the supplied OutputStream.
+     * For this, two Threads are started, so this method will return immediately.
+     *
+     * @param self a Process
+     * @param output an OutputStream to capture the process stdout
+     * @param error an OutputStream to capture the process stderr
+     */
+    public static void consumeProcessOutput(Process self, OutputStream output, OutputStream error) {
         consumeProcessOutputStream(self, output);
         consumeProcessErrorStream(self, error);
     }
@@ -8895,9 +8909,33 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param error a StringBuffer to capture the process stderr
      */
     public static void consumeProcessErrorStream(Process self, StringBuffer error) {
-        Dumper d = new Dumper(self.getErrorStream(), error);
-        Thread t = new Thread(d);
-        t.start();
+        new Thread(new TextDumper(self.getErrorStream(), error)).start();
+    }
+
+    /**
+     * Gets the error stream from a process and reads it
+     * to keep the process from blocking due to a full buffer.
+     * The processed stream data is appended to the supplied OutputStream.
+     * A new Thread is started, so this method will return immediately.
+     *
+     * @param self a Process
+     * @param err an OutputStream to capture the process stderr
+     */
+    public static void consumeProcessErrorStream(Process self, OutputStream err) {
+        new Thread(new ByteDumper(self.getErrorStream(), err)).start();
+    }
+
+    /**
+     * Gets the error stream from a process and reads it
+     * to keep the process from blocking due to a full buffer.
+     * The processed stream data is appended to the supplied Writer.
+     * A new Thread is started, so this method will return immediately.
+     *
+     * @param self a Process
+     * @param err a Writer to capture the process stderr
+     */
+    public static void consumeProcessErrorStream(Process self, Writer err) {
+        new Thread(new TextDumper(self.getErrorStream(), err)).start();
     }
 
     /**
@@ -8910,9 +8948,33 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param output a StringBuffer to capture the process stdout
      */
     public static void consumeProcessOutputStream(Process self, StringBuffer output) {
-        Dumper d = new Dumper(self.getInputStream(), output);
-        Thread t = new Thread(d);
-        t.start();
+        new Thread(new TextDumper(self.getInputStream(), output)).start();
+    }
+
+    /**
+     * Gets the output stream from a process and reads it
+     * to keep the process from blocking due to a full output buffer.
+     * The processed stream data is appended to the supplied OutputStream.
+     * A new Thread is started, so this method will return immediately.
+     *
+     * @param self a Process
+     * @param output an OutputStream to capture the process stdout
+     */
+    public static void consumeProcessOutputStream(Process self, OutputStream output) {
+        new Thread(new ByteDumper(self.getInputStream(), output)).start();
+    }
+
+    /**
+     * Gets the output stream from a process and reads it
+     * to keep the process from blocking due to a full output buffer.
+     * The processed stream data is appended to the supplied Writer.
+     * A new Thread is started, so this method will return immediately.
+     *
+     * @param self a Process
+     * @param output a Writer to capture the process stdout
+     */
+    public static void consumeProcessOutputStream(Process self, Writer output) {
+        new Thread(new TextDumper(self.getInputStream(), output)).start();
     }
 
     /**
@@ -8928,7 +8990,28 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         new Thread(new Runnable() {
             public void run() {
                 try {
-                    withWriter(new OutputStreamWriter(getOut(self)), closure);
+                    withWriter(new BufferedOutputStream(getOut(self)), closure);
+                } catch (IOException e) {
+                    throw new GroovyRuntimeException("exception while reading process stream", e);
+                }
+            }
+        }).start();
+    }
+
+    /**
+     * Creates a new buffered OutputStream as stdin for this process,
+     * passes it to the closure, and ensures the stream is flushed
+     * and closed after the closure returns.
+     * A new Thread is started, so this method will return immediately.
+     *
+     * @param self a Process
+     * @param closure a closure
+     */
+    public static void withOutputStream(final Process self, final Closure closure) {
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    withStream(new BufferedOutputStream(getOut(self)), closure);
                 } catch (IOException e) {
                     throw new GroovyRuntimeException("exception while reading process stream", e);
                 }
@@ -9283,17 +9366,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
     }
 
-    private static class Dumper implements Runnable {
+    private static class TextDumper implements Runnable {
         InputStream in;
         StringBuffer sb;
+        Writer w;
 
-        public Dumper(InputStream in, StringBuffer sb) {
+        public TextDumper(InputStream in, StringBuffer sb) {
             this.in = in;
             this.sb = sb;
         }
 
-        public Dumper(InputStream in) {
+        public TextDumper(InputStream in, Writer w) {
             this.in = in;
+            this.w = w;
         }
 
         public void run() {
@@ -9304,10 +9389,38 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 while ((next = br.readLine()) != null) {
                     if (sb != null) {
                         sb.append(next);
+                    } else {
+                        w.append(next);
                     }
                 }
             } catch (IOException e) {
                 throw new GroovyRuntimeException("exception while reading process stream", e);
+            }
+        }
+    }
+
+    private static class ByteDumper implements Runnable {
+        InputStream in;
+        OutputStream out;
+
+        public ByteDumper(InputStream in, OutputStream out) {
+            this.in = new BufferedInputStream(in);
+            this.out = out;
+        }
+
+        public ByteDumper(InputStream in) {
+            this.in = new BufferedInputStream(in);
+        }
+
+        public void run() {
+            byte[] buf = new byte[8192];
+            int next;
+            try {
+                while ((next = in.read(buf)) != -1) {
+                    if (out != null) out.write(buf, 0, next);
+                }
+            } catch (IOException e) {
+                throw new GroovyRuntimeException("exception while dumping process stream", e);
             }
         }
     }
