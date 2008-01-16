@@ -518,15 +518,20 @@ public class MetaMethodIndex {
     public void clearCaches() {
         for (int i = 0; i != table.length; ++i )
           for (Entry e = table [i]; e != null; e = e.nextHashEntry ) {
-              e.cachedMethod = e.cachedMethodForSuper = e.cachedStaticMethod = null;
+              synchronized (e) {
+                  e.cachedMethod = e.cachedMethodForSuper = e.cachedStaticMethod = null;
+              }
           }
     }
 
     public void clearCaches(String name) {
         for (int i = 0; i != table.length; ++i )
           for (Entry e = table [i]; e != null; e = e.nextHashEntry ) {
-              if (e.name.equals(name))
-                 e.cachedMethod = e.cachedMethodForSuper = e.cachedStaticMethod = null;
+              if (e.name.equals(name)) {
+                  synchronized (e) {
+                      e.cachedMethod = e.cachedMethodForSuper = e.cachedStaticMethod = null;
+                  }
+              }
           }
     }
 }
