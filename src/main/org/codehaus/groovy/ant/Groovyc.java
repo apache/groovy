@@ -13,18 +13,31 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 package org.codehaus.groovy.ant;
 
-import groovy.lang.GroovyClassLoader;
-import org.apache.commons.cli.*;
-import org.apache.tools.ant.*;
+import org.apache.commons.cli.CommandLine ;
+import org.apache.commons.cli.Options ;
+import org.apache.commons.cli.OptionBuilder ;
+import org.apache.commons.cli.PosixParser ;
+import org.apache.commons.cli.ParseException ;
+
+import org.apache.tools.ant.AntClassLoader ;
+import org.apache.tools.ant.BuildException ;
+import org.apache.tools.ant.DefaultLogger ;
+import org.apache.tools.ant.DirectoryScanner ;
+import org.apache.tools.ant.Project ;
 import org.apache.tools.ant.listener.AnsiColorLogger;
 import org.apache.tools.ant.taskdefs.Javac;
+import org.apache.tools.ant.taskdefs.Execute ;
 import org.apache.tools.ant.taskdefs.MatchingTask;
 import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.types.Reference;
 import org.apache.tools.ant.util.GlobPatternMapper;
 import org.apache.tools.ant.util.SourceFileScanner;
+
+import groovy.lang.GroovyClassLoader;
+
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.tools.ErrorReporter;
@@ -44,7 +57,7 @@ import java.util.List;
 import java.util.Map;
 
 import java.io.FilenameFilter ;
-import java.util.ArrayList ;
+
 
 /**
  * Compiles Groovy source files. This task can take the following
@@ -69,12 +82,12 @@ import java.util.ArrayList ;
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Hein Meling
+ * @author <a href="mailto:russel.winder@concertant.com">Russel Winder</a>
  * @version $Revision$ 
  */
 public class Groovyc extends MatchingTask
 {
     private final LoggingHelper log = new LoggingHelper(this);
-
 
     private Path compileClasspath;
     private Path compileSourcepath;
@@ -524,25 +537,57 @@ public class Groovyc extends MatchingTask
         if ( fork ) {
 
           if ( compileList.length == 0 ) {  throw new BuildException ( "No files to compile in fork mode." ) ; }
-          final String javaHome = System.getProperty ( "java.home" ) ;
-          final String javaClasspath = System.getProperty ( "java.class.path" ) ;
-          //final String groovyHome = System.getProperty ( "groovy.home" ) ;
           final String separator = System.getProperty ( "file.separator" ) ;
+          final String javaHome = System.getProperty ( "java.home" ) ;
+
+          //final String javaClasspath = System.getProperty ( "java.class.path" ) ;
+
+          //  One of the Groovy jars is necessarily already on the classpath -- this code could not be
+          //  executing otherwise.  If is it groovy-all then we do not need to worry, everything should just
+          //  work -- groovy-all has jarjar versions of commons-cli, antlr, and asm bound into the jar.  If
+          //  it is just the groovy jar, then we must add commons-cli, antlr and asm jars from the directory
+          //  in which the groovy jar is.
+
+          String javaClasspath = System.getProperty ( "java.class.path" ) ;
+          if ( ! javaClasspath.contains ( "groovy-all-" ) ) {
+            final String[] jarRoots = { "commons-cli-" , "asm-" , "antlr-" } ;
+            final String[] pathelements = javaClasspath.split ( ":" ) ;
+            String groovyPath = null ;
+            for ( int i = 0 ; i < pathelements.length ; ++i ) {
+              if ( pathelements[ i ].contains ( "groovy-" ) ) {
+                groovyPath = pathelements[ i ].substring ( 0 , pathelements[ i ].lastIndexOf ( "/" ) ) ;
+              }
+            }
+            final File groovyDirectory = new File ( groovyPath ) ;
+            for ( int i = 0 ; i < jarRoots.length ; ++i ) {
+              if ( ! javaClasspath.contains ( jarRoots[ i ] ) ) {
+                //  Java has to use final variables in ananymous classes :-( jarRoots is already final but i
+                //  is not.
+                final int i_f = i ;
+                final String[] possibles = groovyDirectory.list ( new FilenameFilter ( ) {
+                    public boolean accept ( final File f , final String s ) { return s.contains ( jarRoots[ i_f ] ) ; }
+                  } ) ;
+                for ( int j = 0 ; j < possibles.length ; ++j ) {
+                  javaClasspath += System.getProperty ( "path.separator" ) + groovyPath + System.getProperty ( "file.separator" ) + possibles[ j ] ;
+                }
+              }
+            }
+
+            //  Why does this have to be on the Java classpath?
+
+            javaClasspath += System.getProperty ( "path.separator" ) + groovyPath + System.getProperty ( "file.separator" ) + "junit-3.8.2.jar" ;
+          
+          }
+          
           final String groovyClasspath = getClasspath ( ) != null ? getClasspath ( ).toString ( ) : javaClasspath ;
-          final String[] fixedParameters = {
+          final String[] fixedCommandItems = {
             javaHome + separator + "bin" + separator + "java" ,
             "-classpath" ,  javaClasspath ,
-            "-Dprogram.name=groovyc" ,
-            //"-Dgroovy.starter.conf=" + groovyHome + separator + "conf" + separator + "groovy-starter.conf" ,
-            //"-Dgroovy.home=" + groovyHome ,
-            "-Dtools.jar=" + javaHome + separator + "lib" + separator + "tools.jar" ,
-            "org.codehaus.groovy.tools.GroovyStarter" ,
-            "--main" ,  "org.codehaus.groovy.tools.FileSystemCompiler" ,
-            //"--conf" ,  groovyHome + separator + "conf" + separator + "groovy-starter.conf"  ,
+            "org.codehaus.groovy.tools.FileSystemCompiler" ,
             "-d" , destDir.getPath ( ) ,
             "--classpath" , groovyClasspath
           } ;
-          int size = fixedParameters.length + compileList.length ;
+          int size = fixedCommandItems.length + compileList.length ;
           if ( encoding != null ) { size += 2 ; }
           Map javaOptions = null ;
           if ( jointCompilation ) {
@@ -550,25 +595,27 @@ public class Groovyc extends MatchingTask
             javaOptions = javac.getRuntimeConfigurableWrapper ( ).getAttributeMap ( ) ;
             size += javaOptions.size ( ) ;
           }
-          final String[] parameters = new String [ size ] ;
-          System.arraycopy ( fixedParameters , 0 , parameters , 0 ,  fixedParameters.length ) ;
-          int index = fixedParameters.length ;
+          final String[] commandLine = new String [ size ] ;
+          System.arraycopy ( fixedCommandItems , 0 , commandLine , 0 ,  fixedCommandItems.length ) ;
+          int index = fixedCommandItems.length ;
           if ( encoding != null ) {
-            parameters[ index++ ] = "--encoding" ;
-            parameters[ index++ ] = encoding ;
+            commandLine[ index++ ] = "--encoding" ;
+            commandLine[ index++ ] = encoding ;
           }
           if ( jointCompilation ) {
-            parameters[ index++ ] = "-j" ;
+            commandLine[ index++ ] = "-j" ;
             for ( Iterator i = javaOptions.entrySet ( ).iterator ( ) ; i.hasNext ( ) ; ) {
               final Map.Entry e = (Map.Entry) i.next ( ) ;
-              parameters[ index++ ] = "-J" + e.getKey ( ) + "=" + e.getValue ( ) ;
+              if ( e.getKey ( ).toString ( ).contains ( "debug" ) ) { commandLine[ index++ ] = "-Fg" ; }
+              else { commandLine[ index++ ] = "-J" + e.getKey ( ) + "=" + e.getValue ( ) ; }
             }
           }
-          for ( int i = 0 ; i < compileList.length ; ++i ) { parameters[i + index] = compileList[i].getPath ( ) ; }
-          try { if ( Runtime.getRuntime( ).exec ( parameters ).waitFor ( ) != 0 ) { throw new BuildException ( "Forked groovyc failed to return 0.") ; } }
-          catch ( final IOException ioe ) { throw new BuildException ( "Forked compile failed with " + ioe.getMessage ( ) ) ; }
-          catch ( final InterruptedException ie ) { throw new BuildException ( "Forked compile was interruptes with " + ie.getMessage ( ) ) ; }
+          for ( int i = 0 ; i < compileList.length ; ++i ) { commandLine[ i + index ] = compileList[ i ].getPath ( ) ; }
           
+for ( int i = 0 ; i < commandLine.length ; ++i ) { System.err.println ( commandLine [ i ] ) ; }
+
+          Execute.runCommand ( this , commandLine ) ;
+
         }
         else {
           
