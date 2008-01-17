@@ -3469,22 +3469,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     // Also handles nulls. Null is less than everything else.
     private static class NumberAwareComparator implements Comparator {
         public int compare(Object o1, Object o2) {
-            if (o1 == null) {
-                return o2 == null ? 0 : -1;
-            }
-            if (o2 == null) {
-                return 1;
-            }
-            if (o1 instanceof Number && o2 instanceof Number) {
-                BigDecimal x1 = new BigDecimal(String.valueOf(o1));
-                BigDecimal x2 = new BigDecimal(String.valueOf(o2));
-                return x1.compareTo(x2);
-            }
-            if (o1 instanceof Comparable && o2 instanceof Comparable &&
-                    (o1.getClass().isAssignableFrom(o2.getClass()) ||
-                            o2.getClass().isAssignableFrom(o1.getClass()))) {
-                return ((Comparable) o1).compareTo((Comparable) o2);
-            }
+            try {
+                return DefaultTypeTransformation.compareTo(o1, o2);
+            } catch (ClassCastException cce) {
+            } catch (GroovyRuntimeException gre) {}
             int x1 = o1.hashCode();
             int x2 = o2.hashCode();
             return (x1 - x2);
