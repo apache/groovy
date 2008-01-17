@@ -497,19 +497,19 @@ class GroovyMethodsTest extends GroovyTestCase {
     void testFileWithReader() {
         def f = new File('build.properties')
         def expected = f.text
-        assert expected == f.withReader { r -> r.text } 
+        assert expected == f.withReader { r -> r.text }
     }
 
     void testFileWithInputStream() {
         def f = new File('build.properties')
         def buf = new byte[f.size()]
-        assert buf.size() == f.withInputStream { i -> i.read(buf) } 
+        assert buf.size() == f.withInputStream { i -> i.read(buf) }
     }
 
     void testUrlReader() {
         def u = new File('build.properties').toURL()
         def expected = u.text
-        assert expected == u.withReader { r -> r.text } 
+        assert expected == u.withReader { r -> r.text }
     }
 
     void testUrlWithInputStream() {
@@ -517,6 +517,14 @@ class GroovyMethodsTest extends GroovyTestCase {
         def u = f.toURL()
         def buf = new byte[f.size()]
         assert buf.size() == u.withInputStream { i -> i.read(buf) } 
+    }
+
+    void testMinus() {
+        // collections and lists remove all - deemed most common behavior for these
+        assert [1, 2, 1, 3] - 1 == [2, 3]
+        // strings remove first - deemed most common behavior for strings
+        assert 'abcda.ce' - /a.c/ == 'abcde'
+        assert 'abcda.ce' - ~/a.c/ == 'da.ce'
     }
 }
 
