@@ -135,5 +135,24 @@ class ForLoopTest extends GroovyTestCase {
        }
        assert sum==100
     }
+    
+    void testClassicForWithContinue() {
+      def sum1 = 0
+      for (int i=0; i<10; i++) {
+        if (i%2 == 0) continue
+        sum1 += i
+      }
+      assert sum1 == 25
+      
+      // same as before, but with label
+      def sum2 = 0
+      test:
+      for (int i=0; i<10; i++) {
+        if (i%2 == 0) continue test
+        sum2 += i
+      }
+      assert sum2 == 25      
+      
+    }
 
 }
