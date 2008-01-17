@@ -1568,6 +1568,7 @@ openOrClosableBlock
  *  and expressions.
  */
 statement[int prevToken]
+{boolean sce=false;}
     // prevToken is NLS if previous statement is separated only by a newline
 
     :   (genericMethodStart)=>
@@ -1619,7 +1620,7 @@ statement[int prevToken]
     |   forStatement
 
     // While statement
-    |   "while"^ LPAREN! strictContextExpression RPAREN! nlsWarn! compatibleBodyStatement
+    |   "while"^ LPAREN! sce=strictContextExpression[true] RPAREN! nlsWarn! compatibleBodyStatement
 
     /*OBS* no do-while statement in Groovy (too ambiguous)
     // do-while statement
@@ -1630,7 +1631,7 @@ statement[int prevToken]
     |   importStatement
 
     // switch/case statement
-    |   "switch"^ LPAREN! strictContextExpression RPAREN! nlsWarn! LCURLY! nls!
+    |   "switch"^ LPAREN! sce=strictContextExpression[true] RPAREN! nlsWarn! LCURLY! nls!
         ( casesGroup )*
         RCURLY!
 
@@ -1638,7 +1639,7 @@ statement[int prevToken]
     |   tryBlock
 
     // synchronize a statement
-    |   "synchronized"^ LPAREN! strictContextExpression RPAREN! nlsWarn! compoundStatement
+    |   "synchronized"^ LPAREN! sce=strictContextExpression[true] RPAREN! nlsWarn! compoundStatement
 
 
     /*OBS*
@@ -1652,7 +1653,7 @@ statement[int prevToken]
 forStatement
     :   f:"for"^
         LPAREN!
-        (   (SEMI |(strictContextExpression SEMI))=>closureList
+        (   (SEMI |(strictContextExpression[true] SEMI))=>closureList
             // *OBS*
             // There's no need at all for squeezing in the new Java 5 "for"
             // syntax, since Groovy's is a suitable alternative.
@@ -1666,12 +1667,12 @@ forStatement
     ;
 
 closureList
-	{Token first = LT(1);}
+	{Token first = LT(1); boolean sce=false;}
     :
     	
-    	strictContextExpression
+    	sce=strictContextExpression[true]
     	(
-    			SEMI! strictContextExpression 
+    			SEMI! sce=strictContextExpression[true] 
     	   |	SEMI! {astFactory.addASTChild(currentAST,astFactory.create(EMPTY_STAT, "EMPTY_STAT"));}
     	)+
 		{#closureList = #(create(CLOSURE_LIST,"CLOSURE_LIST",first,LT(1)),#closureList);}
@@ -1885,8 +1886,8 @@ forInit  {Token first = LT(1);}
         {#forInit = #(create(FOR_INIT,"FOR_INIT",first,LT(1)),#forInit);}
     ;
 
-forCond  {Token first = LT(1);}
-    :   (strictContextExpression)?
+forCond  {Token first = LT(1); boolean sce=false;}
+    :   (sce=strictContextExpression[false])?
         {#forCond = #(create(FOR_CONDITION,"FOR_CONDITION",first,LT(1)),#forCond);}
     ;
 
@@ -1996,8 +1997,8 @@ expression[int lc_stmt]
 // This is a list of expressions.
 // Used for backward compatibility, in a few places where
 // comma-separated lists of Java expression statements and declarations are required.
-controlExpressionList  {Token first = LT(1);}
-    :   strictContextExpression (COMMA! nls! strictContextExpression)*
+controlExpressionList  {Token first = LT(1); boolean sce=false;}
+    :   sce=strictContextExpression[false] (COMMA! nls! sce=strictContextExpression[false])*
         {#controlExpressionList = #(create(ELIST,"ELIST",first,LT(1)), controlExpressionList);}
     ;
 
@@ -2462,13 +2463,30 @@ primaryExpression
 // Note:  This is guaranteed to be an EXPR AST.
 // That is, parentheses are preserved, in case the walker cares about them.
 // They are significant sometimes, as in (f(x)){y} vs. f(x){y}.
-parenthesizedExpression { Token first = LT(1); boolean hasClosureList=false; }
+parenthesizedExpression 
+{   Token first = LT(1); 
+	Token declaration = null;
+	boolean hasClosureList=false;
+	boolean firstContainsDeclaration=false;
+	boolean sce=false; 
+}
     :   LPAREN! 
-           strictContextExpression
+           { declaration=LT(1); }
+           firstContainsDeclaration = strictContextExpression[true]
            (SEMI!  
              {hasClosureList=true;}
-             (strictContextExpression | { astFactory.addASTChild(currentAST,astFactory.create(EMPTY_STAT, "EMPTY_STAT")); })  
+             (sce=strictContextExpression[true] | { astFactory.addASTChild(currentAST,astFactory.create(EMPTY_STAT, "EMPTY_STAT")); })  
            )*
+           // if the first exrpession contained a declaration,
+           // but we are having only one expression at all, then
+           // the first declaration is of the kind (def a=b)
+           // which is invalid. Therefore if there was no closure
+           // list we let the compiler throw an error if the 
+           // the first declaration exists
+           {
+           	if (firstContainsDeclaration && !hasClosureList) 
+           	   throw new NoViableAltException(declaration, getFilename());
+           }
         RPAREN!
         {
         	if (hasClosureList) {
@@ -2480,10 +2498,12 @@ parenthesizedExpression { Token first = LT(1); boolean hasClosureList=false; }
 /** Things that can show up as expressions, but only in strict
  *  contexts like inside parentheses, argument lists, and list constructors.
  */
-strictContextExpression  {Token first = LT(1);}
+strictContextExpression[boolean allowDeclaration]
+returns [boolean hasDeclaration=false]
+{Token first = LT(1);}
     :
-        (   (declarationStart)=>
-            singleDeclaration  // used for both binding and value, as: while (String xx = nextln()) { println xx }
+        (   ({allowDeclaration}? declarationStart)=>
+            {hasDeclaration=true;} singleDeclaration  // used for both binding and value, as: while (String xx = nextln()) { println xx }
         |   expression[0]
         |   branchStatement // useful to embed inside expressions (cf. C++ throw)
         |   annotation      // creates an annotation value
@@ -2714,6 +2734,7 @@ argList
     	int hls=0, hls2=0; 
     	boolean hasClosureList=false;
     	boolean trailingComma=false; 
+    	boolean sce=false;
    	}
     :	
         // Note:  nls not needed, since we are inside parens,
@@ -2723,7 +2744,7 @@ argList
     		(
     			SEMI! {hasClosureList=true;}
     			(
-    				strictContextExpression
+    				sce=strictContextExpression[true]
     				| { astFactory.addASTChild(currentAST,astFactory.create(EMPTY_STAT, "EMPTY_STAT")); }
     			)
     		)+
@@ -2756,6 +2777,7 @@ argList
  */
 argument
 returns [byte hasLabelOrSpread = 0]
+{boolean sce=false;}
     :
         // Optional argument label.
         // Usage:  Specifies a map key, or a keyworded argument.
@@ -2774,7 +2796,7 @@ returns [byte hasLabelOrSpread = 0]
             )?
         )?
 
-        strictContextExpression
+        sce=strictContextExpression[true]
         {
             require(LA(1) != COLON,
                 "illegal colon after argument expression",
