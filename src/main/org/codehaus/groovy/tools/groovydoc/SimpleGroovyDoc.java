@@ -17,8 +17,15 @@ package org.codehaus.groovy.tools.groovydoc;
 
 import java.text.BreakIterator;
 import java.util.Locale;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.StringTokenizer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.codehaus.groovy.groovydoc.*;
+import groovy.lang.Closure;
+import groovy.text.RegexUtils;
 
 public class SimpleGroovyDoc implements GroovyDoc {
 	public SimpleGroovyDoc(String name) {
@@ -63,17 +70,59 @@ public class SimpleGroovyDoc implements GroovyDoc {
         	this.firstSentenceCommentText = commentText;
         }
 		// hack to reformat groovydoc tags into html (todo: tags)
-		this.commentText = this.commentText.replaceAll("(?m)@([a-z]*)\\s*(.*)$","<DL><DT><B>$1:</B></DT><DD>$2</DD></DL>");			// note: use of $ here is a reference to a subsequence (as defined in Matcher.appendReplacement())
+		this.commentText = replaceAllTags(this.commentText, "(?m)@([a-z]*)\\s*(.*)$",
+                "<DL><DT><B>$1:</B></DT><DD>", "</DD></DL>");
 
 		// hack to hide groovydoc tags in summaries
 		this.firstSentenceCommentText = this.firstSentenceCommentText.replaceAll("(?m)@([a-z]*\\s*.*)$",""); // remove @return etc from summaries
         
 	}
 
-	
-	
-	
-	// Methods from Comparable
+    // TODO: this should go away once we have tags
+    public String replaceAllTags(String self, String regex, String s1, String s2) {
+        Matcher matcher = Pattern.compile(regex).matcher(self);
+        if (matcher.find()) {
+            matcher.reset();
+            StringBuffer sb = new StringBuffer();
+            while (matcher.find()) {
+                if (matcher.group(1).equals("see")) {
+                    // TODO: escape $ signs?
+                    matcher.appendReplacement(sb, s1 + getDocUrl(matcher.group(2)) + s2);
+                } else {
+                    matcher.appendReplacement(sb, s1 + "$2" + s2);
+                }
+            }
+            matcher.appendTail(sb);
+            return sb.toString();
+        } else {
+            return self;
+        }
+    }
+
+    // TODO use links instead of hard-coded values
+    private String getDocUrl(String type) {
+        if (type.indexOf('.') == -1)
+            return type;
+
+        final String[] target = type.split("#");
+        String title, apiBaseUrl;
+        String shortClassName = target[0].replaceAll(".*\\.", "");
+        String packageName = type.substring(0, type.length()-shortClassName.length()-2);
+        shortClassName += (target.length > 1 ? "#" + target[1].split("\\(")[0] : "");
+        if (type.startsWith("groovy")) {
+            apiBaseUrl = "http://groovy.codehaus.org/api/";
+            title = "Groovy class in " + packageName;
+        }
+        else {
+            apiBaseUrl = "http://java.sun.com/j2se/1.4.2/docs/api/";
+            title = "JDK class in " + packageName;
+        }
+
+        String url = apiBaseUrl + target[0].replaceAll("\\.", "/") + ".html" + (target.length > 1 ? "#" + target[1] : "");
+        return "<a href='" + url + "' title='" + title + "'>" + shortClassName + "</a>";
+    }
+
+    // Methods from Comparable
 	public int compareTo(Object that) {
 		if (that instanceof SimpleGroovyDoc) {
 			return name.compareTo(((SimpleGroovyDoc) that).name);

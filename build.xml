@@ -712,7 +712,7 @@ org.junit;resolution:=optional" file="${stagingDirectory}/META-INF/MANIFEST.MF"/
         <javadoc destdir="${docsDirectory}/api" author="true" version="true"
                  windowtitle="${title} (${groovyVersion})" doctitle="${title} (${groovyVersion})"
                  encoding="ISO-8859-1" useexternalfile="true" source="1.4"
-                 footer="Copyright &amp;copy; 2003-2007 The Codehaus. All rights reserved.">
+                 footer="Copyright &amp;copy; 2003-2008 The Codehaus. All rights reserved.">
             <classpath>
                 <path path="${mainClassesDirectory}"/>
                 <path refid="compilePath"/>
@@ -755,10 +755,20 @@ org.junit;resolution:=optional" file="${stagingDirectory}/META-INF/MANIFEST.MF"/
                 packagenames="**.*"
                 use="true"
                 windowtitle="groovydoc"
-                private="false"/>
+                private="false">
+            <link prefix="java" href="http://java.sun.com/j2se/1.4.2/docs/api"/>
+            <link prefix="ant.apache.org" href="http://www.dpml.net/api/ant/1.7.0"/>
+            <link prefix="junit.org" href="http://junit.sourceforge.net/junit3.8.1/javadoc/"/>
+        </groovydoc>
     </target>
 
-	<target name="docGDK" depends="-compileTools" description="Create the GDK documentation">
+    <macrodef name="commonLinks">
+        <sequential>
+
+        </sequential>
+    </macrodef>
+
+    <target name="docGDK" depends="-compileTools" description="Create the GDK documentation">
         <java classname="org.codehaus.groovy.tools.DocGenerator" fork="yes" failonerror="true">
             <classpath>
                 <pathelement path="${toolsClassesDirectory}"/>

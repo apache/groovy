@@ -52,6 +52,8 @@ public class Groovydoc extends Task
     private boolean includeNoSourcePackages;
     private List packageSets;
 	private List sourceFilesToDoc;
+    // TODO: hook this in
+    private List links = new ArrayList();
 
 
     public Groovydoc() {
@@ -283,4 +285,62 @@ public class Groovydoc extends Task
 		}
 
     }
+
+    /**
+     * Create link to Javadoc/GroovyDoc output at the given URL.
+     *
+     * @return link argument to configure
+     */
+    public LinkArgument createLink() {
+        LinkArgument la = new LinkArgument();
+        links.add(la);
+        return la;
+    }
+
+    /**
+     * Represents a link pair (href, prefix).
+     */
+    public class LinkArgument {
+        private String href;
+
+        /**
+         * Get the prefix attribute.
+         *
+         * @return the prefix attribute.
+         */
+        public String getPrefix() {
+            return prefix;
+        }
+
+        /**
+         * Set the prefix attribute.
+         *
+         * @param prefix a <code>String</code> value representing the package prefix corresponding to this link
+         */
+        public void setPrefix(String prefix) {
+            this.prefix = prefix;
+        }
+
+        private String prefix;
+
+        /**
+         * Get the href attribute.
+         *
+         * @return the href attribute.
+         */
+        public String getHref() {
+            return href;
+        }
+
+        /**
+         * Set the href attribute.
+         *
+         * @param hr a <code>String</code> value representing the URL to use for this link
+         */
+        public void setHref(String hr) {
+            href = hr;
+        }
+
+    }
+
 }
