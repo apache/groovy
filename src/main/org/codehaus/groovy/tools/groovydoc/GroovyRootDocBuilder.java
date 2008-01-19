@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Map;
+import java.util.List;
 
 import org.codehaus.groovy.antlr.AntlrASTProcessor;
 import org.codehaus.groovy.antlr.SourceBuffer;
@@ -53,19 +54,18 @@ public class GroovyRootDocBuilder {
 	private final String sourcepath;
 	private final SimpleGroovyRootDoc rootDoc;
 	private static final char FS = '/';
+    private List links;
 
-	
-	public GroovyRootDocBuilder(GroovyDocTool tool,
-			String sourcepath) {
+    public GroovyRootDocBuilder(GroovyDocTool tool, String sourcepath, List links) {
 		this.tool = tool;
 		this.sourcepath = sourcepath;
-		
+		this.links = links;
 		this.rootDoc = new SimpleGroovyRootDoc("root");
 	}
-
 	
 	// parsing
-	public Map getClassDocsFromSingleSource(String packagePath, String file, String src) throws RecognitionException, TokenStreamException {
+	public Map getClassDocsFromSingleSource(String packagePath, String file, String src)
+            throws RecognitionException, TokenStreamException {
 		Map classDocsFromSrc = null;
 		if (file.indexOf(".java") > 0) { // simple (for now) decision on java or groovy
 			// java
@@ -99,7 +99,7 @@ public class GroovyRootDocBuilder {
 
         
         // now do the business     
-        Visitor visitor = new SimpleGroovyClassDocAssembler(packagePath, file, sourceBuffer);
+        Visitor visitor = new SimpleGroovyClassDocAssembler(packagePath, file, sourceBuffer, links);
         AntlrASTProcessor traverser = new SourceCodeTraversal(visitor);
 
         traverser.process(ast);
@@ -114,8 +114,8 @@ public class GroovyRootDocBuilder {
         parser.compilationUnit();
         AST ast = parser.getAST();
 
-        // now do the business     
-        Visitor visitor = new SimpleGroovyClassDocAssembler(packagePath, file, sourceBuffer);
+        // now do the business
+        Visitor visitor = new SimpleGroovyClassDocAssembler(packagePath, file, sourceBuffer, links);
         AntlrASTProcessor traverser = new SourceCodeTraversal(visitor);
 
         traverser.process(ast);
@@ -167,7 +167,6 @@ public class GroovyRootDocBuilder {
 			System.out.println("ignored due to TokenStreamException: " + filename);
 		}
 	}
-
 
 	public GroovyRootDoc getRootDoc() {
 		rootDoc.resolve();

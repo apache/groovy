@@ -22,6 +22,8 @@ import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 
+import java.util.ArrayList;
+
 public class GroovyDocToolTest extends GroovyTestCase {
     GroovyDocTool xmlTool;
     GroovyDocTool xmlToolForTests;
@@ -38,7 +40,8 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 "src" + FS + "main", // source file dirs
                 new String[]{TEMPLATES_DIR + FS + "top-level" + FS + "rootDocStructuredData.xml"},
                 new String[]{TEMPLATES_DIR + FS + "package-level" + FS + "packageDocStructuredData.xml"},
-                new String[]{TEMPLATES_DIR + FS + "class-level" + FS + "classDocStructuredData.xml"}
+                new String[]{TEMPLATES_DIR + FS + "class-level" + FS + "classDocStructuredData.xml"},
+                new ArrayList()
         );
 
         xmlToolForTests = new GroovyDocTool(
@@ -46,7 +49,8 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 "src" + FS + "test", // source file dirs
                 new String[]{TEMPLATES_DIR + FS + "top-level" + FS + "rootDocStructuredData.xml"},
                 new String[]{TEMPLATES_DIR + FS + "package-level" + FS + "packageDocStructuredData.xml"},
-                new String[]{TEMPLATES_DIR + FS + "class-level" + FS + "classDocStructuredData.xml"}
+                new String[]{TEMPLATES_DIR + FS + "class-level" + FS + "classDocStructuredData.xml"},
+                new ArrayList()
         );
     }
 

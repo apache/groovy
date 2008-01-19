@@ -21,6 +21,8 @@ import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.List;
+import java.util.ArrayList;
 
 public class GroovyDocTool {
 
@@ -33,19 +35,19 @@ public class GroovyDocTool {
     }
 
     public GroovyDocTool(ResourceManager resourceManager, String sourcepath, String classTemplate) {
-		this(resourceManager, sourcepath, new String[]{}, new String[]{}, new String[] {classTemplate});
+		this(resourceManager, sourcepath, new String[]{}, new String[]{}, new String[] {classTemplate}, new ArrayList());
 	}
 
-	public GroovyDocTool(ResourceManager resourceManager, String sourcepath, String[] docTemplates, String[] packageTemplates, String[] classTemplates) {
-		rootDocBuilder = new GroovyRootDocBuilder(this, sourcepath);
+	public GroovyDocTool(ResourceManager resourceManager, String sourcepath, String[] docTemplates, String[] packageTemplates, String[] classTemplates, List links) {
+		rootDocBuilder = new GroovyRootDocBuilder(this, sourcepath, links);
 		if (resourceManager == null) {
             templateEngine = null;
         } else {
             templateEngine = new GroovyDocTemplateEngine(this, resourceManager, docTemplates, packageTemplates, classTemplates);
         }
-	}
-	
-	public void add(String filename) throws RecognitionException, TokenStreamException, IOException {
+    }
+
+    public void add(String filename) throws RecognitionException, TokenStreamException, IOException {
 		if (templateEngine != null) {
             // only print out if we are being used for template generation
             System.out.println("Loading source files for " + filename);

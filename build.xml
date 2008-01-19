@@ -416,7 +416,8 @@ org.apache.ant;resolution:=optional,
 org.apache.commons.cli;resolution:=optional,
 org.junit;resolution:=optional" file="${mainClassesDirectory}/META-INF/MANIFEST.MF"/>
 	</target>
-    
+
+    <!-- TODO: investigate whether we can generate package list not hard-code it -->
     <macrodef name="makemanifest">
         <attribute name="dependencies"/>
     	<attribute name="file"/>
@@ -756,9 +757,10 @@ org.junit;resolution:=optional" file="${stagingDirectory}/META-INF/MANIFEST.MF"/
                 use="true"
                 windowtitle="groovydoc"
                 private="false">
-            <link prefix="java" href="http://java.sun.com/j2se/1.4.2/docs/api"/>
-            <link prefix="ant.apache.org" href="http://www.dpml.net/api/ant/1.7.0"/>
-            <link prefix="junit.org" href="http://junit.sourceforge.net/junit3.8.1/javadoc/"/>
+            <link packages="java." href="http://java.sun.com/j2se/1.4.2/docs/api"/>
+            <link packages="org.apache.ant." href="http://www.dpml.net/api/ant/1.7.0"/>
+            <link packages="org.junit.,junit.framework." href="http://junit.sourceforge.net/junit3.8.1/javadoc/"/>
+            <link packages="groovy.,org.codehaus.groovy." href="http://groovy.codehaus.org/api/"/>
         </groovydoc>
     </target>
 

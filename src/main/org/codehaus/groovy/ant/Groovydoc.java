@@ -269,8 +269,9 @@ public class Groovydoc extends Task
 				},
 				new String[] { // class level templates
 						"org/codehaus/groovy/tools/groovydoc/gstring-templates/class-level/classDocName.html"
-				}
-				);
+				},
+                  links
+                );
 
 		try {
 			Iterator itr = sourceFilesToDoc.iterator();
@@ -298,30 +299,29 @@ public class Groovydoc extends Task
     }
 
     /**
-     * Represents a link pair (href, prefix).
+     * Represents a link pair (href, packages).
      */
-    public class LinkArgument {
+    public static class LinkArgument {
         private String href;
+        private String packages;
 
         /**
-         * Get the prefix attribute.
+         * Get the packages attribute.
          *
-         * @return the prefix attribute.
+         * @return the packages attribute.
          */
-        public String getPrefix() {
-            return prefix;
+        public String getPackages() {
+            return packages;
         }
 
         /**
-         * Set the prefix attribute.
+         * Set the packages attribute.
          *
-         * @param prefix a <code>String</code> value representing the package prefix corresponding to this link
+         * @param packages the comma separated package prefixs corresponding to this link
          */
-        public void setPrefix(String prefix) {
-            this.prefix = prefix;
+        public void setPackages(String packages) {
+            this.packages = packages;
         }
-
-        private String prefix;
 
         /**
          * Get the href attribute.
