@@ -3278,6 +3278,27 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Converts the given array to either a List, Set, or
+     * SortedSet.  If the given class is something else, the
+     * call is deferred to {link #asType(Object,Class)}.
+     *
+     * @param ary   an array
+     * @param clazz the desired class
+     * @return the object resulting from this type conversion
+     * @see #asType(Object,Class)
+     */
+    public static Object asType(Object[] ary, Class clazz) {
+        if (clazz == List.class) {
+            return Arrays.asList(ary);
+        } else if (clazz == Set.class) {
+            return new HashSet(Arrays.asList(ary));
+        } else if (clazz == SortedSet.class) {
+            return new TreeSet(Arrays.asList(ary));
+        }
+        return asType((Object) ary, clazz);
+    }
+
+    /**
      * Coerces the closure to an implementation of the given class.  The class
      * is assumed to be an interface or class with a single method definition.
      * The closure is used as the implementation of that single method.
