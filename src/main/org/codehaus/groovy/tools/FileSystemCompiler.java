@@ -227,7 +227,7 @@ public class FileSystemCompiler
     }
 
     private static File createTempDir() throws IOException {
-        File tempFile = File.createTempFile("generated-", "java-source");
+        File tempFile = File.createTempFile("groovy-generated-", "-java-source");
         tempFile.delete();
         tempFile.mkdirs();
         return tempFile;
