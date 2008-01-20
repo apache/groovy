@@ -44,7 +44,7 @@ public class JavaSourceCodehausPackagesSuite {
         suite.addTestSuite(ForTest.class);
         suite.addTestSuite(GetPropertyTest.class);
         suite.addTestSuite(GroovyTest.class);
-        // suite.addTestSuite(GroovycTest.class);
+        suite.addTestSuite(GroovycTest.class);
         suite.addTestSuite(GroovyClassLoaderTest.class);
         suite.addTestSuite(GroovyDocToolTest.class);
         suite.addTestSuite(GroovySourceASTTest.class);

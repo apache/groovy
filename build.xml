@@ -152,10 +152,7 @@ $Date$
                deprecation="on" debug="yes" source="1.4" target="1.4" fork="true" classpathref="compilePath">
                <exclude name="**/vmplugin/v5/**" unless="groovy.build.vm5"/>
         </javac>
-
-        <echo message="Groovyc of main code."/>
-        <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}"
-                 classpathref="runtimePath"/>
+        <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}" classpathref="runtimePath"/>
         <groovyc srcdir="${mainSourceDirectory}" destdir="${mainClassesDirectory}" classpathref="compilePath"/>
     </target>
 
@@ -230,8 +227,7 @@ $Date$
     <property name="antGroovySourceFiles" value="org/codehaus/groovy/ant/**/GroovyTest*.groovy"/>
 
     <target name="realCompileTest">
-        <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}"
-                 classpathref="testPath"/>
+        <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}" classpathref="testPath"/>
         <!-- compile Groovy test files excluding ones which we want to pick up from the file system -->
         <groovyc srcdir="${testSourceDirectory}"
                  destdir="${testClassesDirectory}"
