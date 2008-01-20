@@ -176,7 +176,7 @@ public abstract class NumberMath {
 	 * Note that for division, if either operand isFloatingPoint, the result will be floating.  Otherwise,
 	 * the result is BigDecimal
 	 */
-	private static NumberMath getMath(Number left, Number right) {
+	public static NumberMath getMath(Number left, Number right) {
 		if (isFloatingPoint(left) || isFloatingPoint(right)) {
 			return FloatingPointMath.INSTANCE;
 		}
@@ -210,10 +210,10 @@ public abstract class NumberMath {
 	
 	//Subclasses implement according to the type promotion hierarchy rules
 	protected abstract Number absImpl(Number number);
-	protected abstract Number addImpl(Number left, Number right);
-	protected abstract Number subtractImpl(Number left, Number right);
-	protected abstract Number multiplyImpl(Number left, Number right);
-	protected abstract Number divideImpl(Number left, Number right);
+	public abstract Number addImpl(Number left, Number right);
+	public abstract Number subtractImpl(Number left, Number right);
+	public abstract Number multiplyImpl(Number left, Number right);
+	public abstract Number divideImpl(Number left, Number right);
 	protected abstract int compareToImpl(Number left, Number right);
     protected abstract Number unaryMinusImpl(Number left);
 

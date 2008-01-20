@@ -1117,37 +1117,39 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         return false;
     }
 
-    public CallSite createPojoCallSite(String name, Object[] args) {
+    public CallSite createPojoCallSite(CallSite site, Object receiver, Object[] args) {
         if (invokeMethodMethod != null)
-          return new PojoMetaClassSite(name,this);
-        return super.createPojoCallSite(name, args);
+          return new PojoMetaClassSite(site, this);
+
+        return super.createPojoCallSite(site, receiver, args);
     }
 
-    public CallSite createStaticSite(String name, Object[] args) {
+    public CallSite createStaticSite(CallSite site, Object[] args) {
         if(invokeStaticMethodMethod != null)
-            return new StaticMetaClassSite(name, this);
-        return super.createStaticSite(name, args);
+            return new StaticMetaClassSite(site, this);
+
+        return super.createStaticSite(site, args);
     }
 
-    public CallSite createPogoCallSite(String name, Object[] args) {
+    public CallSite createPogoCallSite(CallSite site, Object[] args) {
         if (invokeMethodMethod != null)
-            return new PogoMetaClassSite(name,this);
-        return super.createPogoCallSite(name, args);
+            return new PogoMetaClassSite(site, this);
+        return super.createPogoCallSite(site, args);
     }
 
-    public CallSite createPogoCallCurrentSite(Class sender, String name, Object[] args) {
+    public CallSite createPogoCallCurrentSite(CallSite site, Class sender, String name, Object[] args) {
         if (invokeMethodMethod != null)
-            return new PogoMetaClassSite(name,this);
-        return super.createPogoCallCurrentSite(sender, name, args);
+            return new PogoMetaClassSite(site, this);
+        return super.createPogoCallCurrentSite(site, sender, args);
     }
 
-    public CallSite createConstructorSite(Object[] args) {
+    public CallSite createConstructorSite(CallSite site, Object[] args) {
         Class[] params = MetaClassHelper.convertToTypeArray(args);
         MetaMethod method = pickMethod(GROOVY_CONSTRUCTOR, params);
         if(method!=null && method.getParameterTypes().length == args.length) {
-           return new ConstructorMetaMethodSite(this, method, params);
+           return new ConstructorMetaMethodSite(site, this, method, params);
         }
 
-        return super.createConstructorSite(args);
+        return super.createConstructorSite(site, args);
     }
 }

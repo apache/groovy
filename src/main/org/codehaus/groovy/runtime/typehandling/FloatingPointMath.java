@@ -31,19 +31,19 @@ public class FloatingPointMath extends NumberMath {
 		return new Double(Math.abs(number.doubleValue()));
 	}
 	
-	protected Number addImpl(Number left, Number right) {
+	public Number addImpl(Number left, Number right) {
 		return new Double(left.doubleValue() + right.doubleValue());
 	}
 
-	protected Number subtractImpl(Number left, Number right) {
+	public Number subtractImpl(Number left, Number right) {
 		return new Double(left.doubleValue() - right.doubleValue());
 	}
 
-	protected Number multiplyImpl(Number left, Number right) {
+	public Number multiplyImpl(Number left, Number right) {
 		return new Double(left.doubleValue() * right.doubleValue());
 	}
 
-	protected Number divideImpl(Number left, Number right) {
+	public Number divideImpl(Number left, Number right) {
 		return new Double(left.doubleValue() / right.doubleValue());
 	}
 	protected int compareToImpl(Number left, Number right) {

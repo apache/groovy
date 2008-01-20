@@ -25,11 +25,11 @@ import groovy.lang.MetaClass;
  * @author Alex Tkachman
 */
 public class PojoMetaClassSite extends MetaClassSite{
-    public PojoMetaClassSite(String name, MetaClass metaClass) {
-        super(name, metaClass);
+    public PojoMetaClassSite(CallSite site, MetaClass metaClass) {
+        super(site, metaClass);
     }
 
-    public Object call(Object receiver, Object[] args) {
+    public Object invoke(Object receiver, Object[] args) {
         return metaClass.invokeMethod(receiver, name, args);
     }
 

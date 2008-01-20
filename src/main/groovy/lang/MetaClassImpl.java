@@ -2541,58 +2541,58 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         metaMethodIndex.clearCaches(name);
     }
 
-    public CallSite createPojoCallSite(String name, Object[] args) {
+    public CallSite createPojoCallSite(CallSite site, Object receiver, Object[] args) {
           Class [] params = MetaClassHelper.convertToTypeArray(args);
-          MetaMethod metaMethod = getMethodWithCachingInternal(getTheClass(), name, params);
+          MetaMethod metaMethod = getMethodWithCachingInternal(getTheClass(), site.name, params);
           if (metaMethod != null)
-             return PojoMetaMethodSite.createPojoMetaMethodSite(this, metaMethod, name, params, args);
+             return PojoMetaMethodSite.createPojoMetaMethodSite(site, this, metaMethod, params, receiver, args);
           else
-              return new PojoMetaClassSite(name, this);
+              return new PojoMetaClassSite(site, this);
     }
 
 
-    public CallSite createStaticSite(String name, Object[] args) {
+    public CallSite createStaticSite(CallSite site, Object[] args) {
         Class [] params = MetaClassHelper.convertToTypeArray(args);
-        MetaMethod metaMethod = retrieveStaticMethod(name, args);
+        MetaMethod metaMethod = retrieveStaticMethod(site.name, args);
         if (metaMethod != null)
-           return StaticMetaMethodSite.createStaticMetaMethodSite(this, metaMethod, name, params, args);
+           return StaticMetaMethodSite.createStaticMetaMethodSite(site, this, metaMethod, params, args);
         else
-           return new StaticMetaClassSite(name, this);
+           return new StaticMetaClassSite(site, this);
     }
 
-    public CallSite createPogoCallSite(String name, Object[] args) {
+    public CallSite createPogoCallSite(CallSite site, Object[] args) {
         Class [] params = MetaClassHelper.convertToTypeArray(args);
-        MetaMethod metaMethod = getMethodWithCachingInternal(theClass, name, params);
+        MetaMethod metaMethod = getMethodWithCachingInternal(theClass, site.name, params);
         if (metaMethod != null)
-           return PogoMetaMethodSite.createPogoMetaMethodSite(this, metaMethod, name, params, args);
+           return PogoMetaMethodSite.createPogoMetaMethodSite(site, this, metaMethod, params, args);
         else
-           return new PogoMetaClassSite(name, this);
+           return new PogoMetaClassSite(site, this);
     }
 
-    public CallSite createPogoCallCurrentSite(Class sender, String name, Object[] args) {
+    public CallSite createPogoCallCurrentSite(CallSite site, Class sender, Object[] args) {
           Class [] params = MetaClassHelper.convertToTypeArray(args);
-          MetaMethod metaMethod = getMethodWithCachingInternal(sender, name, params);
+          MetaMethod metaMethod = getMethodWithCachingInternal(sender, site.name, params);
           if (metaMethod != null)
-            return PogoMetaMethodSite.createPogoMetaMethodSite(this, metaMethod, name, params, args);
+            return PogoMetaMethodSite.createPogoMetaMethodSite(site, this, metaMethod, params, args);
           else
-            return new PogoMetaClassSite(name, this);
+            return new PogoMetaClassSite(site, this);
     }
 
-    public CallSite createConstructorSite(Object[] args) {
+    public CallSite createConstructorSite(CallSite site, Object[] args) {
         Class[] params = MetaClassHelper.convertToTypeArray(args);
         CachedConstructor constructor = (CachedConstructor) chooseMethod("<init>", constructors, params);
         if (constructor != null) {
-            return ConstructorSite.createConstructorSite(this,constructor,params, args);
+            return ConstructorSite.createConstructorSite(site, this,constructor,params, args);
         }
         else {
             if (args.length == 1 && args[0] instanceof Map) {
                 constructor = (CachedConstructor) chooseMethod("<init>", constructors, MetaClassHelper.EMPTY_TYPE_ARRAY);
                 if (constructor != null) {
-                    return new ConstructorSite.NoParamSite(this,constructor,params);
+                    return new ConstructorSite.NoParamSite(site, this,constructor,params);
                 }
             }
         }
-        return new MetaClassConstructorSite(this);
+        return new MetaClassConstructorSite(site, this);
     }
 
     private abstract class MethodIndexAction {

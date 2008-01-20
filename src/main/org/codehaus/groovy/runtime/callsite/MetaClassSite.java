@@ -25,8 +25,8 @@ import groovy.lang.MetaClass;
 public abstract class MetaClassSite extends CallSite {
     protected final MetaClass metaClass;
 
-    public MetaClassSite(String name, MetaClass metaClass) {
-        super(name);
+    public MetaClassSite(CallSite site, MetaClass metaClass) {
+        super(site);
         this.metaClass = metaClass;
     }
 }

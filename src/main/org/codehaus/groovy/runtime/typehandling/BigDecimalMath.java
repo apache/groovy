@@ -37,19 +37,19 @@ public class BigDecimalMath extends NumberMath {
 		return toBigDecimal(number).abs();
 	}
 	
-	protected Number addImpl(Number left, Number right) {
+	public Number addImpl(Number left, Number right) {
 		return toBigDecimal(left).add(toBigDecimal(right));
 	}
 
-	protected Number subtractImpl(Number left, Number right) {
+	public Number subtractImpl(Number left, Number right) {
 		return toBigDecimal(left).subtract(toBigDecimal(right));
 	}
 
-	protected Number multiplyImpl(Number left, Number right) {
+	public Number multiplyImpl(Number left, Number right) {
 		return toBigDecimal(left).multiply(toBigDecimal(right));
 	}
 
-	protected Number divideImpl(Number left, Number right) {
+	public Number divideImpl(Number left, Number right) {
 		//Hack until Java 1.5 BigDecimal is available.  For now, pick
 		//a result scale which is the maximum of the scale of the
 		//two operands and an arbitrary maximum (similar to what a

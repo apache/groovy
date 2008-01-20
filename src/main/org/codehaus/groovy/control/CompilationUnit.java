@@ -78,7 +78,7 @@ public class CompilationUnit extends ProcessingUnit {
     protected ProgressCallback progressCallback;  // A callback for use during compile()
     protected ResolveVisitor resolveVisitor;
     protected StaticImportVisitor staticImportVisitor;
-    protected ConstantOptimizerVisitor constantOptimizer;
+    protected OptimizerVisitor optimizer;
 
     LinkedList[] phaseOperations;
 
@@ -126,7 +126,7 @@ public class CompilationUnit extends ProcessingUnit {
         this.verifier = new Verifier();
         this.resolveVisitor = new ResolveVisitor(this);
         this.staticImportVisitor = new StaticImportVisitor(this);
-        this.constantOptimizer = new ConstantOptimizerVisitor(this);
+        this.optimizer = new OptimizerVisitor(this);
 
         phaseOperations = new LinkedList[Phases.ALL + 1];
         for (int i = 0; i < phaseOperations.length; i++) {
@@ -530,7 +530,7 @@ public class CompilationUnit extends ProcessingUnit {
     private PrimaryClassNodeOperation staticImport = new PrimaryClassNodeOperation() {
         public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
             staticImportVisitor.visitClass(classNode, source);
-            constantOptimizer.visitClass(classNode, source);
+            optimizer.visitClass(classNode, source);
         }
     };
 

@@ -31,18 +31,18 @@ public class BigIntegerMath extends NumberMath {
 		return toBigInteger(number).abs();
 	}
 	
-	protected Number addImpl(Number left, Number right) {
+	public Number addImpl(Number left, Number right) {
 		return toBigInteger(left).add(toBigInteger(right));
 	}
-	protected Number subtractImpl(Number left, Number right) {
+	public Number subtractImpl(Number left, Number right) {
 		return toBigInteger(left).subtract(toBigInteger(right));
 	}
 
-	protected Number multiplyImpl(Number left, Number right) {
+	public Number multiplyImpl(Number left, Number right) {
 		return toBigInteger(left).multiply(toBigInteger(right));
 	}
 
-	protected Number divideImpl(Number left, Number right) {
+	public Number divideImpl(Number left, Number right) {
 		return BigDecimalMath.INSTANCE.divideImpl(left, right);
 	}
 	

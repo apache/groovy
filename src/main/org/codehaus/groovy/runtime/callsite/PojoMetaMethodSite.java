@@ -27,11 +27,11 @@ import org.codehaus.groovy.runtime.MetaClassHelper;
  * @author Alex Tkachman
 */
 public class PojoMetaMethodSite extends MetaMethodSite {
-    public PojoMetaMethodSite(String name, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
-        super(name, metaClass, metaMethod, params);
+    public PojoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
+        super(site, metaClass, metaMethod, params);
     }
 
-    public Object call(Object receiver, Object[] args) {
+    public Object invoke(Object receiver, Object[] args) {
         MetaClassHelper.unwrap(args);
         return metaMethod.doMethodInvoke(receiver,  args);
     }
@@ -39,19 +39,22 @@ public class PojoMetaMethodSite extends MetaMethodSite {
     public final boolean accept(Object receiver, Object[] args) {
         return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
 //               && ((MetaClassImpl)metaClass).getTheCachedClass().getMetaClassForClass() == metaClass // metaClass still be valid
-           && MetaClassHelper.sameClasses(params, args, false); // right arguments
+           && MetaClassHelper.sameClasses(params, args); // right arguments
     }
 
-    public static PojoMetaMethodSite createPojoMetaMethodSite(MetaClassImpl metaClass, MetaMethod metaMethod, String name, Class[] params, Object[] args) {
+    public static CallSite createPojoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
+        if (metaMethod instanceof CallSiteAwareMetaMethod) {
+            return ((CallSiteAwareMetaMethod)metaMethod).createPojoCallSite(site, metaClass, metaMethod, params, receiver, args);
+        }
         if (metaMethod.correctArguments(args) == args) {
-            if (CallSiteArray.noWrappers(args)) {
-                if (CallSiteArray.noCoerce(metaMethod,args))
-                    return new PojoMetaMethodSiteNoUnwrap(name, metaClass, metaMethod, params);
+            if (noWrappers(args)) {
+                if (noCoerce(metaMethod,args))
+                    return new PojoMetaMethodSiteNoUnwrap(site, metaClass, metaMethod, params);
                 else
-                    return new PojoMetaMethodSiteNoUnwrapNoCoerce(name, metaClass, metaMethod, params);
+                    return new PojoMetaMethodSiteNoUnwrapNoCoerce(site, metaClass, metaMethod, params);
             }
         }
-        return new PojoMetaMethodSite(name, metaClass, metaMethod, params);
+        return new PojoMetaMethodSite(site, metaClass, metaMethod, params);
     }
 
     /**
@@ -59,11 +62,11 @@ public class PojoMetaMethodSite extends MetaMethodSite {
      */
     public static class PojoMetaMethodSiteNoUnwrap extends PojoMetaMethodSite {
 
-        public PojoMetaMethodSiteNoUnwrap(String name, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
-            super(name, metaClass, metaMethod, params);
+        public PojoMetaMethodSiteNoUnwrap(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
+            super(site, metaClass, metaMethod, params);
         }
 
-        public final Object call(Object receiver, Object[] args) {
+        public final Object invoke(Object receiver, Object[] args) {
             return metaMethod.doMethodInvoke(receiver,  args);
         }
     }
@@ -73,11 +76,11 @@ public class PojoMetaMethodSite extends MetaMethodSite {
      */
     public static class PojoMetaMethodSiteNoUnwrapNoCoerce extends PojoMetaMethodSite {
 
-        public PojoMetaMethodSiteNoUnwrapNoCoerce(String name, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
-            super(name, metaClass, metaMethod, params);
+        public PojoMetaMethodSiteNoUnwrapNoCoerce(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
+            super(site, metaClass, metaMethod, params);
         }
 
-        public final Object call(Object receiver, Object[] args) {
+        public final Object invoke(Object receiver, Object[] args) {
             return metaMethod.invoke(receiver,  args);
         }
     }

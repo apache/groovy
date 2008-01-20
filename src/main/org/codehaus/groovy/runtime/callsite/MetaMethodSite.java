@@ -27,8 +27,8 @@ public abstract class MetaMethodSite extends MetaClassSite {
     final MetaMethod metaMethod;
     final Class [] params;
 
-    public MetaMethodSite(String name, MetaClass metaClass, MetaMethod metaMethod, Class[] params) {
-        super(name, metaClass);
+    public MetaMethodSite(CallSite site, MetaClass metaClass, MetaMethod metaMethod, Class[] params) {
+        super(site, metaClass);
         this.metaMethod = metaMethod;
         this.params = params;
     }

@@ -13,17 +13,17 @@ import org.codehaus.groovy.runtime.MetaClassHelper;
 */
 public class ConstructorMetaMethodSite extends MetaMethodSite {
 
-    public ConstructorMetaMethodSite(MetaClass metaClass, MetaMethod method, Class [] params) {
-        super("", metaClass, method, params);
+    public ConstructorMetaMethodSite(CallSite site, MetaClass metaClass, MetaMethod method, Class [] params) {
+        super(site, metaClass, method, params);
     }
 
-    public final Object call(Object receiver, Object [] args) {
+    public final Object invoke(Object receiver, Object [] args) {
         MetaClassHelper.unwrap(args);
         return metaMethod.doMethodInvoke(metaClass.getTheClass(), args);
     }
 
     public final boolean accept(Object receiver, Object[] args) {
         return receiver == metaClass.getTheClass() // meta class match receiver
-           && MetaClassHelper.sameClasses(params, args, false); // right arguments
+           && MetaClassHelper.sameClasses(params, args); // right arguments
     }
 }

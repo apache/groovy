@@ -26,11 +26,11 @@ import org.codehaus.groovy.runtime.MetaClassHelper;
  *   method - cached
 */
 public class PogoMetaMethodSite extends MetaMethodSite {
-    public PogoMetaMethodSite(String name, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
-        super(name, metaClass, metaMethod, params);
+    public PogoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
+        super(site, metaClass, metaMethod, params);
     }
 
-    public Object call(Object receiver, Object[] args) {
+    public Object invoke(Object receiver, Object[] args) {
         MetaClassHelper.unwrap(args);
         return metaMethod.doMethodInvoke(receiver,  args);
     }
@@ -38,19 +38,22 @@ public class PogoMetaMethodSite extends MetaMethodSite {
     public final boolean accept(Object receiver, Object[] args) {
         return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
            && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
-           && MetaClassHelper.sameClasses(params, args, false); // right arguments
+           && MetaClassHelper.sameClasses(params, args); // right arguments
     }
 
-    public static PogoMetaMethodSite createPogoMetaMethodSite(MetaClassImpl metaClass, MetaMethod metaMethod, String name, Class[] params, Object[] args) {
+    public static CallSite createPogoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object[] args) {
+        if (metaMethod instanceof CallSiteAwareMetaMethod) {
+            return ((CallSiteAwareMetaMethod)metaMethod).createPojoCallSite(site, metaClass, metaMethod, params, null, args);
+        }
         if (metaMethod.correctArguments(args) == args) {
-            if (CallSiteArray.noWrappers(args)) {
-                if (CallSiteArray.noCoerce(metaMethod,args))
-                    return new PogoMetaMethodSiteNoUnwrap(name, metaClass, metaMethod, params);
+            if (noWrappers(args)) {
+                if (noCoerce(metaMethod,args))
+                    return new PogoMetaMethodSiteNoUnwrap(site, metaClass, metaMethod, params);
                 else
-                    return new PogoMetaMethodSiteNoUnwrapNoCoerce(name, metaClass, metaMethod, params);
+                    return new PogoMetaMethodSiteNoUnwrapNoCoerce(site, metaClass, metaMethod, params);
             }
         }
-        return new PogoMetaMethodSite(name, metaClass, metaMethod, params);
+        return new PogoMetaMethodSite(site, metaClass, metaMethod, params);
     }
 
     /**
@@ -58,11 +61,11 @@ public class PogoMetaMethodSite extends MetaMethodSite {
      */
     public static class PogoMetaMethodSiteNoUnwrap extends PogoMetaMethodSite {
 
-        public PogoMetaMethodSiteNoUnwrap(String name, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
-            super(name, metaClass, metaMethod, params);
+        public PogoMetaMethodSiteNoUnwrap(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
+            super(site, metaClass, metaMethod, params);
         }
 
-        public final Object call(Object receiver, Object[] args) {
+        public final Object invoke(Object receiver, Object[] args) {
             return metaMethod.doMethodInvoke(receiver,  args);
         }
     }
@@ -72,11 +75,11 @@ public class PogoMetaMethodSite extends MetaMethodSite {
      */
     public static class PogoMetaMethodSiteNoUnwrapNoCoerce extends PogoMetaMethodSite {
 
-        public PogoMetaMethodSiteNoUnwrapNoCoerce(String name, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
-            super(name, metaClass, metaMethod, params);
+        public PogoMetaMethodSiteNoUnwrapNoCoerce(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
+            super(site, metaClass, metaMethod, params);
         }
 
-        public final Object call(Object receiver, Object[] args) {
+        public final Object invoke(Object receiver, Object[] args) {
             return metaMethod.invoke(receiver,  args);
         }
     }

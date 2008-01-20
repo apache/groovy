@@ -25,11 +25,11 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * @author Alex Tkachman
  */
 public class PogoMetaClassSite extends MetaClassSite {
-    public PogoMetaClassSite(String name, MetaClass metaClass) {
-        super(name, metaClass);
+    public PogoMetaClassSite(CallSite site, MetaClass metaClass) {
+        super(site, metaClass);
     }
 
-    public final Object call(Object receiver, Object[] args) {
+    public final Object invoke(Object receiver, Object[] args) {
         try {
             return metaClass.invokeMethod(receiver, name, args);
         } catch (MissingMethodException e) {

@@ -25,11 +25,11 @@ import groovy.lang.MetaClass;
  * @author Alex Tkachman
 */
 public class MetaClassConstructorSite extends MetaClassSite {
-    public MetaClassConstructorSite(MetaClass metaClass) {
-        super("", metaClass);
+    public MetaClassConstructorSite(CallSite site, MetaClass metaClass) {
+        super(site, metaClass);
     }
 
-    public final Object call(Object receiver, Object[] args) {
+    public final Object invoke(Object receiver, Object[] args) {
         return metaClass.invokeConstructor(args);
     }
 

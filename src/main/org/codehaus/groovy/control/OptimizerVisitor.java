@@ -27,17 +27,18 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * Visitor to replace numbered constants with references to static fields
+ * Visitor to produce several optimizations
+ *  - to replace numbered constants with references to static fields
  *
  * @author Alex Tkachman
  */
-public class ConstantOptimizerVisitor extends ClassCodeExpressionTransformer {
+public class OptimizerVisitor extends ClassCodeExpressionTransformer {
     private ClassNode currentClass;
     private SourceUnit source;
 
     Map const2Var = new HashMap();
 
-    public ConstantOptimizerVisitor(CompilationUnit cu) {
+    public OptimizerVisitor(CompilationUnit cu) {
     }
 
     public void visitClass(ClassNode node, SourceUnit source) {

@@ -30,19 +30,19 @@ public class LongMath extends NumberMath {
 		return new Long(Math.abs(number.longValue()));
 	}
 	
-	protected Number addImpl(Number left, Number right) {
+	public Number addImpl(Number left, Number right) {
 		return new Long(left.longValue() + right.longValue());
 	}
 
-	protected Number subtractImpl(Number left, Number right) {
+	public Number subtractImpl(Number left, Number right) {
 		return new Long(left.longValue() - right.longValue());
 	}
 
-	protected Number multiplyImpl(Number left, Number right) {
+	public Number multiplyImpl(Number left, Number right) {
 		return new Long(left.longValue() * right.longValue());
 	}
 
-	protected Number divideImpl(Number left, Number right) {
+	public Number divideImpl(Number left, Number right) {
 		return BigDecimalMath.INSTANCE.divideImpl(left, right);
 	}
 	

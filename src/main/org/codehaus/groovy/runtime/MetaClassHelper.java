@@ -758,18 +758,30 @@ public class MetaClassHelper {
 
         for (int i = params.length-1; i >= 0; i--) {
             Object arg = arguments[i];
-            if (arg != null) {
-                if (arg instanceof Wrapper) {
-                    if (params[i] != ((Wrapper)arg).getType())
-                      return false;
-                }
-                else
-                    if (params[i] != arg.getClass())
+            if (arg == null) {
+                if (!weakNullCheck)
+                  return false;
+            } else {
+                if (params[i] != arg.getClass()
+                     &&(!(arg instanceof Wrapper) || params[i] != ((Wrapper)arg).getType()))
                       return false;
             }
-            else
-              if (!weakNullCheck)
-                return false;
+        }
+
+        return true;
+    }
+
+    public static boolean sameClasses(Class[] params, Object[] arguments) {
+        if (params.length != arguments.length)
+          return false;
+
+        for (int i = params.length-1; i >= 0; i--) {
+            Object arg = arguments[i];
+            if (arg == null
+                    || (params[i] != arg.getClass()
+                       &&(    !(arg instanceof Wrapper)
+                           || params[i] != ((Wrapper)arg).getType())))
+              return false;
         }
 
         return true;

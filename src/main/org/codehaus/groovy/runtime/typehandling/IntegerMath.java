@@ -30,19 +30,19 @@ public class IntegerMath extends NumberMath {
 		return new Integer(Math.abs(number.intValue()));
 	}
 	
-	protected Number addImpl(Number left, Number right) {
+	public Number addImpl(Number left, Number right) {
 		return new Integer(left.intValue() + right.intValue());
 	}
 
-	protected Number subtractImpl(Number left, Number right) {
+	public Number subtractImpl(Number left, Number right) {
 		return new Integer(left.intValue() - right.intValue());
 	}
 
-	protected Number multiplyImpl(Number left, Number right) {
+	public Number multiplyImpl(Number left, Number right) {
 		return new Integer(left.intValue() * right.intValue());
 	}
 
-	protected Number divideImpl(Number left, Number right) {
+	public Number divideImpl(Number left, Number right) {
 		return BigDecimalMath.INSTANCE.divideImpl(left, right);
 	}
 	

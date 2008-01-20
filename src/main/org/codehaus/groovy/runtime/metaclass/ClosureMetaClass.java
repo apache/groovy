@@ -618,15 +618,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
         }
     }
 
-    public CallSite createPogoCallSite(String name, Object[] args) {
-       return new PogoMetaClassSite(name, this);
-    }
-
-    public CallSite createPogoCallCurrentSite(Class sender, String name, Object[] args) {
-        return new PogoMetaClassSite(name, this);
-    }
-
-    public MetaMethod getMethodWithoutCaching(Class sender, String methodName, Class[] arguments, boolean isCallToSuper) {
+    public MetaMethod getMethodWithoutCaching(int index, Class sender, String methodName, Class[] arguments, boolean isCallToSuper) {
         throw new UnsupportedOperationException();
     }
 
@@ -658,7 +650,15 @@ public final class ClosureMetaClass extends MetaClassImpl {
         throw new UnsupportedOperationException();
     }
 
-    public CallSite createPojoCallSite(String name, Object[] args) {
+    public CallSite createPojoCallSite(CallSite site, Object receiver, Object[] args) {
         throw new UnsupportedOperationException();
+    }
+
+    public CallSite createPogoCallSite(CallSite site, Object[] args) {
+       return new PogoMetaClassSite(site, this);
+    }
+
+    public CallSite createPogoCallCurrentSite(CallSite site, Class sender, Object[] args) {
+        return new PogoMetaClassSite(site, this);
     }
 }

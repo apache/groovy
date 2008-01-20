@@ -25,32 +25,32 @@ public class ConstructorSite extends MetaClassSite {
     final CachedConstructor constructor;
     final Class [] params;
 
-    public ConstructorSite(MetaClassImpl metaClass, CachedConstructor constructor, Class params[]) {
-        super("", metaClass);
+    public ConstructorSite(CallSite site, MetaClassImpl metaClass, CachedConstructor constructor, Class params[]) {
+        super(site, metaClass);
         this.constructor = constructor;
         this.params = params;
     }
 
-    public Object call(Object receiver, Object[] args) {
+    public Object invoke(Object receiver, Object[] args) {
         MetaClassHelper.unwrap(args);
         return constructor.doConstructorInvoke(args);
     }
 
     public final boolean accept(Object receiver, Object[] args) {
         return receiver == metaClass.getTheClass() // meta class match receiver
-           && MetaClassHelper.sameClasses(params, args, false); // right arguments
+           && MetaClassHelper.sameClasses(params, args); // right arguments
     }
 
-    public static ConstructorSite createConstructorSite(MetaClassImpl metaClass, CachedConstructor constructor, Class[] params, Object[] args) {
+    public static ConstructorSite createConstructorSite(CallSite site, MetaClassImpl metaClass, CachedConstructor constructor, Class[] params, Object[] args) {
         if (constructor.correctArguments(args) == args) {
-            if (CallSiteArray.noWrappers(args)) {
-                if (CallSiteArray.noCoerce(constructor,args))
-                    return new ConstructorSiteNoUnwrap(metaClass, constructor, params);
+            if (noWrappers(args)) {
+                if (noCoerce(constructor,args))
+                    return new ConstructorSiteNoUnwrap(site, metaClass, constructor, params);
                 else
-                    return new ConstructorSiteNoUnwrapNoCoerce(metaClass, constructor, params);
+                    return new ConstructorSiteNoUnwrapNoCoerce(site, metaClass, constructor, params);
             }
         }
-        return new ConstructorSite(metaClass, constructor, params);
+        return new ConstructorSite(site, metaClass, constructor, params);
     }
 
 
@@ -59,11 +59,11 @@ public class ConstructorSite extends MetaClassSite {
      */
     public static class ConstructorSiteNoUnwrap extends ConstructorSite {
 
-        public ConstructorSiteNoUnwrap(MetaClassImpl metaClass, CachedConstructor constructor, Class params[]) {
-            super(metaClass, constructor, params);
+        public ConstructorSiteNoUnwrap(CallSite site, MetaClassImpl metaClass, CachedConstructor constructor, Class params[]) {
+            super(site, metaClass, constructor, params);
         }
 
-        public final Object call(Object receiver, Object[] args) {
+        public final Object invoke(Object receiver, Object[] args) {
             return constructor.doConstructorInvoke(args);
         }
     }
@@ -73,11 +73,11 @@ public class ConstructorSite extends MetaClassSite {
      */
     public static class ConstructorSiteNoUnwrapNoCoerce extends ConstructorSite {
 
-        public ConstructorSiteNoUnwrapNoCoerce(MetaClassImpl metaClass, CachedConstructor constructor, Class params[]) {
-            super(metaClass, constructor, params);
+        public ConstructorSiteNoUnwrapNoCoerce(CallSite site, MetaClassImpl metaClass, CachedConstructor constructor, Class params[]) {
+            super(site, metaClass, constructor, params);
         }
 
-        public Object call(Object receiver, Object[] args) {
+        public Object invoke(Object receiver, Object[] args) {
             return constructor.invoke(args);
         }
     }
@@ -85,11 +85,11 @@ public class ConstructorSite extends MetaClassSite {
     public static class NoParamSite extends ConstructorSiteNoUnwrapNoCoerce {
         private static final Object[] NO_ARGS = new Object[0];
 
-        public NoParamSite(MetaClassImpl metaClass, CachedConstructor constructor, Class[] params) {
-            super(metaClass, constructor, params);
+        public NoParamSite(CallSite site, MetaClassImpl metaClass, CachedConstructor constructor, Class[] params) {
+            super(site, metaClass, constructor, params);
         }
 
-        public final Object call(Object receiver, Object[] args) {
+        public final Object invoke(Object receiver, Object[] args) {
             final Object bean = constructor.invoke(NO_ARGS);
             ((MetaClassImpl)metaClass).setProperties(bean, (Map) args[0]);
             return bean;

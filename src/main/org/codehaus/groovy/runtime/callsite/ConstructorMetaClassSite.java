@@ -3,11 +3,11 @@ package org.codehaus.groovy.runtime.callsite;
 import groovy.lang.MetaClass;
 
 public class ConstructorMetaClassSite extends MetaClassSite {
-    public ConstructorMetaClassSite(MetaClass metaClass) {
-        super("", metaClass);
+    public ConstructorMetaClassSite(CallSite site, MetaClass metaClass) {
+        super(site, metaClass);
     }
 
-    public Object call(Object receiver, Object[] args) {
+    public Object invoke(Object receiver, Object[] args) {
         return metaClass.invokeConstructor(args);
     }
 

@@ -17,6 +17,10 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.*;
 import groovy.util.*;
+import org.codehaus.groovy.runtime.dgmimpl.NumberNumberDiv;
+import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMinus;
+import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMultiply;
+import org.codehaus.groovy.runtime.dgmimpl.NumberNumberPlus;
 import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
@@ -66,6 +70,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     private static final Logger LOG = Logger.getLogger(DefaultGroovyMethods.class.getName());
     private static final Integer ONE = new Integer(1);
+
+    public static final Class [] additionals = {
+            NumberNumberPlus.class,
+            NumberNumberMultiply.class,
+            NumberNumberMinus.class,
+            NumberNumberDiv.class
+    };
 
     /**
      * Identity check. Since == is overridden in Groovy with the meaning of equality
@@ -5452,7 +5463,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return an incremented Number
      */
     public static Number next(Number self) {
-        return plus(self, ONE);
+        return NumberNumberPlus.plus(self, ONE);
     }
 
     /**
@@ -5472,7 +5483,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a decremented Number
      */
     public static Number previous(Number self) {
-        return minus(self, ONE);
+        return NumberNumberMinus.minus(self, ONE);
     }
 
     /**
@@ -5485,7 +5496,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the addition of the Character and the Number
      */
     public static Number plus(Character left, Number right) {
-        return plus(new Integer(left.charValue()), right);
+        return NumberNumberPlus.plus(new Integer(left.charValue()), right);
     }
 
     /**
@@ -5496,7 +5507,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the addition of the Character and the Number
      */
     public static Number plus(Number left, Character right) {
-        return plus(left, new Integer(right.charValue()));
+        return NumberNumberPlus.plus(left, new Integer(right.charValue()));
     }
 
     /**
@@ -5510,17 +5521,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Number plus(Character left, Character right) {
         return plus(new Integer(left.charValue()), right);
-    }
-
-    /**
-     * Add two numbers and return the result.
-     *
-     * @param left  a Number
-     * @param right another Number to add
-     * @return the addition of both Numbers
-     */
-    public static Number plus(Number left, Number right) {
-        return NumberMath.add(left, right);
     }
 
     /**
@@ -5576,7 +5576,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the addition of the Character and the Number
      */
     public static Number minus(Character left, Number right) {
-        return minus(new Integer(left.charValue()), right);
+        return NumberNumberMinus.minus(new Integer(left.charValue()), right);
     }
 
     /**
@@ -5587,7 +5587,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the addition of the Character and the Number
      */
     public static Number minus(Number left, Character right) {
-        return minus(left, new Integer(right.charValue()));
+        return NumberNumberMinus.minus(left, new Integer(right.charValue()));
     }
 
     /**
@@ -5602,17 +5602,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Substraction of two Numbers.
-     *
-     * @param left  a Number
-     * @param right another Number to substract to the first one
-     * @return the substraction
-     */
-    public static Number minus(Number left, Number right) {
-        return NumberMath.subtract(left, right);
-    }
-
-    /**
      * Multiply a Character by a Number.
      *
      * @param left  a Character
@@ -5620,7 +5609,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the multiplication of both
      */
     public static Number multiply(Character left, Number right) {
-        return multiply(new Integer(left.charValue()), right);
+        return NumberNumberMultiply.multiply(new Integer(left.charValue()), right);
     }
 
     /**
@@ -5631,7 +5620,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the multiplication of both
      */
     public static Number multiply(Number left, Character right) {
-        return multiply(left, new Integer(right.charValue()));
+        return NumberNumberMultiply.multiply(left, new Integer(right.charValue()));
     }
 
     /**
@@ -5643,19 +5632,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Number multiply(Character left, Character right) {
         return multiply(new Integer(left.charValue()), right);
-    }
-
-    /**
-     * Multiply two Numbers.
-     *
-     * @param left  a Number
-     * @param right another Number
-     * @return the multiplication of both
-     */
-    //Note:  This method is NOT called if left AND right are both BigIntegers or BigDecimals because
-    //those classes implement a method with a better exact match.
-    public static Number multiply(Number left, Number right) {
-        return NumberMath.multiply(left, right);
     }
 
     /**
@@ -5723,7 +5699,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the multiplication of both
      */
     public static Number div(Character left, Number right) {
-        return div(new Integer(left.charValue()), right);
+        return NumberNumberDiv.div(new Integer(left.charValue()), right);
     }
 
     /**
@@ -5734,7 +5710,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the multiplication of both
      */
     public static Number div(Number left, Character right) {
-        return div(left, new Integer(right.charValue()));
+        return NumberNumberDiv.div(left, new Integer(right.charValue()));
     }
 
     /**
@@ -5746,19 +5722,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Number div(Character left, Character right) {
         return div(new Integer(left.charValue()), right);
-    }
-
-    /**
-     * Divide two Numbers.
-     *
-     * @param left  a Number
-     * @param right another Number
-     * @return a Number resulting of the divide operation
-     */
-    //Method name changed from 'divide' to avoid collision with BigInteger method that has
-    //different semantics.  We want a BigDecimal result rather than a BigInteger.
-    public static Number div(Number left, Number right) {
-        return NumberMath.divide(left, right);
     }
 
     /**

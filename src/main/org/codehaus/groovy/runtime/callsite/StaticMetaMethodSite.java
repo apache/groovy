@@ -27,11 +27,11 @@ import org.codehaus.groovy.runtime.MetaClassHelper;
  * @author Alex Tkachman
 */
 public class StaticMetaMethodSite extends MetaMethodSite {
-    public StaticMetaMethodSite(String name, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
-        super(name, metaClass, metaMethod, params);
+    public StaticMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
+        super(site, metaClass, metaMethod, params);
     }
 
-    public Object call(Object receiver, Object[] args) {
+    public Object invoke(Object receiver, Object[] args) {
         MetaClassHelper.unwrap(args);
         return metaMethod.doMethodInvoke(receiver,  args);
     }
@@ -39,19 +39,19 @@ public class StaticMetaMethodSite extends MetaMethodSite {
     public final boolean accept(Object receiver, Object[] args) {
         return receiver == metaClass.getTheClass() // meta class match receiver
 //               && ((MetaClassImpl)metaClass).getTheCachedClass().getMetaClassForClass() == metaClass // metaClass still be valid
-           && MetaClassHelper.sameClasses(params, args, false); // right arguments
+           && MetaClassHelper.sameClasses(params, args); // right arguments
     }
 
-    public static StaticMetaMethodSite createStaticMetaMethodSite(MetaClassImpl metaClass, MetaMethod metaMethod, String name, Class[] params, Object[] args) {
+    public static StaticMetaMethodSite createStaticMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object[] args) {
         if (metaMethod.correctArguments(args) == args) {
-            if (CallSiteArray.noWrappers(args)) {
-                if (CallSiteArray.noCoerce(metaMethod,args))
-                    return new StaticMetaMethodSiteNoUnwrap(name, metaClass, metaMethod, params);
+            if (noWrappers(args)) {
+                if (noCoerce(metaMethod,args))
+                    return new StaticMetaMethodSiteNoUnwrap(site, metaClass, metaMethod, params);
                 else
-                    return new StaticMetaMethodSiteNoUnwrapNoCoerce(name, metaClass, metaMethod, params);
+                    return new StaticMetaMethodSiteNoUnwrapNoCoerce(site, metaClass, metaMethod, params);
             }
         }
-        return new StaticMetaMethodSite(name, metaClass, metaMethod, params);
+        return new StaticMetaMethodSite(site, metaClass, metaMethod, params);
     }
 
     /**
@@ -59,11 +59,11 @@ public class StaticMetaMethodSite extends MetaMethodSite {
      */
     public static class StaticMetaMethodSiteNoUnwrap extends StaticMetaMethodSite {
 
-        public StaticMetaMethodSiteNoUnwrap(String name, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
-            super(name, metaClass, metaMethod, params);
+        public StaticMetaMethodSiteNoUnwrap(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
+            super(site, metaClass, metaMethod, params);
         }
 
-        public final Object call(Object receiver, Object[] args) {
+        public final Object invoke(Object receiver, Object[] args) {
             return metaMethod.doMethodInvoke(receiver,  args);
         }
     }
@@ -73,11 +73,11 @@ public class StaticMetaMethodSite extends MetaMethodSite {
      */
     public static class StaticMetaMethodSiteNoUnwrapNoCoerce extends StaticMetaMethodSite {
 
-        public StaticMetaMethodSiteNoUnwrapNoCoerce(String name, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
-            super(name, metaClass, metaMethod, params);
+        public StaticMetaMethodSiteNoUnwrapNoCoerce(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
+            super(site, metaClass, metaMethod, params);
         }
 
-        public final Object call(Object receiver, Object[] args) {
+        public final Object invoke(Object receiver, Object[] args) {
             return metaMethod.invoke(receiver,  args);
         }
     }

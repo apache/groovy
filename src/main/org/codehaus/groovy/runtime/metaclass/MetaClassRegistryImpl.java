@@ -216,23 +216,16 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
                 try {
                     final String className = "org.codehaus.groovy.runtime.dgm$" + i;
                     final Class aClass = Class.forName(className);
-                    try {
-                        MetaMethod method = (MetaMethod) aClass.newInstance();
-                        final CachedClass declClass = method.getDeclaringClass();
-                        ArrayList arr = (ArrayList) map.get(declClass);
-                        if (arr == null) {
-                            arr = new ArrayList(4);
-                            map.put(declClass,arr);
-                        }
-                        arr.add(method);
-                        instanceMethods.add(method);
-                    } catch (InstantiationException e) {
-                    } catch (IllegalAccessException e) {
-                    }
+                    createMetaMethodFromClass(map, aClass);
                 }
                 catch(ClassNotFoundException e){
                     break;
                 }
+            }
+
+            final Class[] additionals = DefaultGroovyMethods.additionals;
+            for (int i = 0; i != additionals.length; ++i ) {
+                createMetaMethodFromClass(map, additionals[i]);
             }
         }
         else
@@ -260,6 +253,22 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
                     }
                 }
             }
+        }
+    }
+
+    private void createMetaMethodFromClass(Map map, Class aClass) {
+        try {
+            MetaMethod method = (MetaMethod) aClass.newInstance();
+            final CachedClass declClass = method.getDeclaringClass();
+            ArrayList arr = (ArrayList) map.get(declClass);
+            if (arr == null) {
+                arr = new ArrayList(4);
+                map.put(declClass,arr);
+            }
+            arr.add(method);
+            instanceMethods.add(method);
+        } catch (InstantiationException e) {
+        } catch (IllegalAccessException e) {
         }
     }
 

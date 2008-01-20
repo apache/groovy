@@ -226,23 +226,23 @@ public class ProxyMetaClass extends MetaClassImpl implements AdaptingMetaClass {
         return result;
     }
 
-    public CallSite createPojoCallSite(String name, Object[] args) {
-      return new PojoMetaClassSite(name, this);
+    public CallSite createPojoCallSite(CallSite site, Object receiver, Object[] args) {
+      return new PojoMetaClassSite(site, this);
     }
 
-    public CallSite createPogoCallSite(String name, Object[] args) {
-      return new PogoMetaClassSite(name, this);
+    public CallSite createPogoCallSite(CallSite site, Object[] args) {
+      return new PogoMetaClassSite(site, this);
     }
 
-    public CallSite createPogoCallCurrentSite(Class sender, String name, Object[] args) {
-        return new PogoMetaClassSite(name, this);
+    public CallSite createPogoCallCurrentSite(CallSite site, Class sender, Object[] args) {
+        return new PogoMetaClassSite(site, this);
     }
 
-    public CallSite createStaticSite(String name, Object[] args) {
-        return new StaticMetaClassSite(name, this);
+    public CallSite createStaticSite(CallSite site, Object[] args) {
+        return new StaticMetaClassSite(site, this);
     }
 
-    public CallSite createConstructorSite(Object[] args) {
-        return new ConstructorMetaClassSite (this);
+    public CallSite createConstructorSite(CallSite site, Object[] args) {
+        return new ConstructorMetaClassSite (site, this);
     }
 }
