@@ -207,17 +207,29 @@ if $cygwin ; then
     if [ "$GROOVY_CYGPATTERN" != "" ] ; then
         OURCYGPATTERN="$OURCYGPATTERN|($GROOVY_CYGPATTERN)"
     fi
-    # Now convert the arguments
+    # Now convert the arguments - kludge to limit ourselves to /bin/sh
+    i=0
     for arg in "$@" ; do
         CHECK=`echo "$arg"|egrep -c "$OURCYGPATTERN" -`
         if [ $CHECK -ne 0 ] ; then
-            convArg=`cygpath --path --ignore --mixed "$arg"`
+            eval `echo args$i`=`cygpath --path --ignore --mixed "$arg"`
         else
-            convArg="$arg"
+            eval `echo args$i`="\"$arg\""
         fi
-        ARGUMENTS=("${ARGUMENTS[@]}" "$convArg")
+        i=$((i+1))
     done
-    set -- "${ARGUMENTS[@]}"
+    case $i in
+        (0) set -- ;;
+        (1) set -- "$args0" ;;
+        (2) set -- "$args0" "$args1" ;;
+        (3) set -- "$args0" "$args1" "$args2" ;;
+        (4) set -- "$args0" "$args1" "$args2" "$args3" ;;
+        (5) set -- "$args0" "$args1" "$args2" "$args3" "$args4" ;;
+        (6) set -- "$args0" "$args1" "$args2" "$args3" "$args4" "$args5" ;;
+        (7) set -- "$args0" "$args1" "$args2" "$args3" "$args4" "$args5" "$args6" ;;
+        (8) set -- "$args0" "$args1" "$args2" "$args3" "$args4" "$args5" "$args6" "$args7" ;;
+        (9) set -- "$args0" "$args1" "$args2" "$args3" "$args4" "$args5" "$args6" "$args7" "$args8" ;;
+    esac
 
 fi
 
