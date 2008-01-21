@@ -4,13 +4,14 @@ import groovy.xml.StreamingMarkupBuilder
 
 import java.io.File
 
+import org.codehaus.groovy.runtime.DefaultGroovyMethods
 import com.thoughtworks.qdox.JavaDocBuilder
 import com.thoughtworks.qdox.model.JavaSource
 import com.thoughtworks.qdox.model.JavaClass
 import com.thoughtworks.qdox.model.JavaMethod
 import com.thoughtworks.qdox.model.JavaParameter
 import com.thoughtworks.qdox.model.Type
-import java.util.*;
+import java.util.*
 
 
 /**
@@ -149,7 +150,9 @@ class DocGenerator
 		def listOfMethods = jdkEnhancedClasses[aClass].sort{ it.name }
 		def methods = []
 		listOfMethods.each { method ->
-			def parameters = method.getTagsByName("param").collect { [name: it.value.replaceAll(' .*', ''), comment: it.value.replaceAll('^\\w*', '')]}
+			def parameters = method.getTagsByName("param").collect {
+                [name: it.value.replaceAll(' .*', ''), comment: it.value.replaceAll('^\\w*', '')]
+            }
 			if (parameters)
 				parameters.remove(0) // method is static, first arg is the "real this"
 
@@ -182,6 +185,7 @@ class DocGenerator
 		getParameters(method).collect{"${getDocUrl(it.type.toString())} ${it.getName()}" }.join(", ")
 	}
 
+    // TODO make this understand @see references within the same file, i.e. beginning with #
 	private String getDocUrl(type)
 	{
 		if (!type.contains('.'))
@@ -290,20 +294,19 @@ class DocGenerator
      */
     static void main(args)
     {
-        def defaultGroovyMethodSource = new File("src/main/org/codehaus/groovy/runtime/DefaultGroovyMethods.java")
-        def v5GroovyMethodSource = new File("src/main/org/codehaus/groovy/vmplugin/v5/PluginDefaultGroovyMethods.java")
-        def defaultGroovyStaticMethodSource = new File("src/main/org/codehaus/groovy/runtime/DefaultGroovyStaticMethods.java")
         def outFolder = new File("target/html/groovy-jdk")
         outFolder.mkdirs()
-
-        def start = System.currentTimeMillis();
-
-        def docGen = new DocGenerator([defaultGroovyMethodSource, v5GroovyMethodSource, defaultGroovyStaticMethodSource], outFolder)
+        def start = System.currentTimeMillis()
+        def srcFiles = args.collect{getSourceFile(it)}
+        srcFiles.addAll(DefaultGroovyMethods.additionals.collect{getSourceFile(it.name)})
+        def docGen = new DocGenerator(srcFiles, outFolder)
         docGen.generateNew()
+        def end = System.currentTimeMillis()
+        println "Done. Took ${end - start} millis."
+    }
 
-        def end = System.currentTimeMillis();
-
-        println "Done. in ${end - start} millis"
-
+    private static File getSourceFile(String classname)
+    {
+        new File("src/main/" + classname.replaceAll(/\./, "/") + ".java")
     }
 }
