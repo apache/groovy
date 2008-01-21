@@ -2708,7 +2708,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static void putAt(Double[] array, int idx, Number value) {
         if (!(value instanceof Double)) {
-          value = (Number) DefaultTypeTransformation.castToType(value, Double.class);
+          value = new Double(value.doubleValue());
         }
         array[normaliseIndex(idx, array.length)] = (Double) value;
     }

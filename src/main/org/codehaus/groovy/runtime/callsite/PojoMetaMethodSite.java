@@ -42,6 +42,12 @@ public class PojoMetaMethodSite extends MetaMethodSite {
            && MetaClassHelper.sameClasses(params, args); // right arguments
     }
 
+    public final boolean acceptBinop(Object receiver, Object args) {
+        return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
+//               && ((MetaClassImpl)metaClass).getTheCachedClass().getMetaClassForClass() == metaClass // metaClass still be valid
+           && MetaClassHelper.sameClass(params, args); // right arguments
+    }
+
     public static CallSite createPojoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
         if (metaMethod instanceof CallSiteAwareMetaMethod) {
             return ((CallSiteAwareMetaMethod)metaMethod).createPojoCallSite(site, metaClass, metaMethod, params, receiver, args);

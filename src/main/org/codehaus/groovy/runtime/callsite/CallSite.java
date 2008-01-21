@@ -98,7 +98,7 @@ public abstract class CallSite {
         }
     }
 
-    public Object callBinop(Object receiver, Object arg) throws Throwable {
+    public final Object callBinop(Object receiver, Object arg) throws Throwable {
         try {
             if (receiver == null)
                 receiver = NullObject.getNullObject();
