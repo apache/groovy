@@ -665,6 +665,11 @@ org.junit;resolution:=optional" file="${stagingDirectory}/META-INF/MANIFEST.MF"/
     </target>
 
     <target name="-compileTools" depends="compileMain">
+
+<!--
+
+Use the shiny new groovyc fork mode :-)
+
         <echo message="Groovyc of tools code."/>
         <java classname="org.codehaus.groovy.ant.Groovyc" fork="true">
             <classpath>
@@ -675,6 +680,18 @@ org.junit;resolution:=optional" file="${stagingDirectory}/META-INF/MANIFEST.MF"/
             <arg value="${toolsClassesDirectory}"/>
             <arg value="${toolsSourceDirectory}"/>
         </java>
+-->
+
+        <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}"
+                 classpathref="compilePath"/>
+        <groovyc srcdir="${toolsSourceDirectory}" destdir="${toolsClassesDirectory}" fork="true">
+            <classpath>
+                <path refid="toolsPath"/>
+                <pathelement path="${mainClassesDirectory}"/>
+                <path refid="compilePath"/>
+            </classpath>
+        </groovyc>
+
         <copy todir="${toolsClassesDirectory}">
             <fileset dir="${toolsSourceDirectory}">
                 <include name="**/*.html"/>
