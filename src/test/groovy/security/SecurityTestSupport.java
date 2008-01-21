@@ -13,8 +13,8 @@ import junit.textui.ResultPrinter;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.PrintStream;
+import java.io.IOException;
 import java.security.*;
 import java.util.Enumeration;
 
@@ -143,7 +143,7 @@ public class SecurityTestSupport extends GroovyTestCase {
         GroovyCodeSource gcs = null;
         try {
             gcs = new GroovyCodeSource(file);
-        } catch (FileNotFoundException fnfe) {
+        } catch (IOException fnfe) {
             fail(fnfe.toString());
         }
         return parseClass(gcs);
@@ -248,7 +248,7 @@ public class SecurityTestSupport extends GroovyTestCase {
         GroovyCodeSource gcs = null;
         try {
             gcs = new GroovyCodeSource(file);
-        } catch (FileNotFoundException fnfe) {
+        } catch (IOException fnfe) {
             fail(fnfe.toString());
         }
         parseAndExecute(gcs, missingPermission);

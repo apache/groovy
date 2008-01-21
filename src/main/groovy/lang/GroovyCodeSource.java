@@ -85,7 +85,9 @@ public class GroovyCodeSource {
 		}
 	}
 
-    public GroovyCodeSource(final File file) throws FileNotFoundException {
+    public GroovyCodeSource(final File infile) throws IOException {
+        // avoid files which confuse us like ones with .. in path
+        final File file = new File(infile.getCanonicalPath());
         if (!file.exists()) {
             throw new FileNotFoundException(file.toString() + " (" + file.getAbsolutePath() + ")");
         }
