@@ -84,11 +84,27 @@ if "x%~1" == "x" goto execute
 
 rem horrible roll your own arg processing inspired by jruby equivalent
 
-rem escape any quotes. use -q == ", -d == -.
+rem escape quotes (-q), minus (-d), star (-s).
 set _ARGS=%*
 if not defined _ARGS goto execute
 set _ARGS=%_ARGS:-=-d%
 set _ARGS=%_ARGS:"=-q%
+rem Windowz will try to match * with files so we escape it here
+rem but it is also a meta char for env var string substitution
+rem so it can't be first char here, hack just for common cases.
+rem If in doubt use a space or bracket before * if using -e.
+set _ARGS=%_ARGS: *= -s%
+set _ARGS=%_ARGS:)*=)-s%
+set _ARGS=%_ARGS:0*=0-s%
+set _ARGS=%_ARGS:1*=1-s%
+set _ARGS=%_ARGS:2*=2-s%
+set _ARGS=%_ARGS:3*=3-s%
+set _ARGS=%_ARGS:4*=4-s%
+set _ARGS=%_ARGS:5*=5-s%
+set _ARGS=%_ARGS:6*=6-s%
+set _ARGS=%_ARGS:7*=7-s%
+set _ARGS=%_ARGS:8*=8-s%
+set _ARGS=%_ARGS:9*=9-s%
 rem prequote all args for 'for' statement
 set _ARGS="%_ARGS%"
 
@@ -108,9 +124,10 @@ goto :EOF
 :process_arg
 if "%_ARG%" == "" goto execute
 
-rem now unescape -q and -d
+rem now unescape -q, -d, -s
 set _ARG=%_ARG:-q="%
 set _ARG=%_ARG:-d=-%
+set _ARG=%_ARG:-s=*%
 if "x2" == "x%_SKIP%" goto skip_path
 if "x1" == "x%_SKIP%" goto skip_main
 
