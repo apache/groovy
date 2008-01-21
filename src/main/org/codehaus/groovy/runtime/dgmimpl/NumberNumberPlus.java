@@ -27,8 +27,12 @@ public class NumberNumberPlus extends NumberNumberMetaMethod {
 
     public CallSite createPojoCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
         return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-            public Object invoke(Object receiver, Object[] args) {
+            public final Object invoke(Object receiver, Object[] args) {
                 return math.addImpl((Number)receiver,(Number)args[0]);
+            }
+
+            public Object invokeBinop(Object receiver, Object arg) {
+                return math.addImpl((Number)receiver,(Number)arg);
             }
         };
     }

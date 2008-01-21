@@ -32,6 +32,10 @@ public class NumberNumberMultiply extends NumberNumberMetaMethod {
             public Object invoke(Object receiver, Object[] args) {
                 return math.multiplyImpl((Number)receiver,(Number)args[0]);
             }
+
+            public Object invokeBinop(Object receiver, Object arg) {
+                return math.multiplyImpl((Number)receiver,(Number)arg);
+            }
         };
     }
 }

@@ -57,6 +57,8 @@ def MultiplyAtAv(n, v, AtAv){
     MultiplyAtv(n, u, AtAv)
 }
 
+long start = System.currentTimeMillis ()
+
 def n = (args.length == 0 ? 100 : args[0].toInteger())
 def nf = java.text.NumberFormat.getInstance()
 nf.setMaximumFractionDigits(9)
@@ -64,5 +66,5 @@ nf.setMinimumFractionDigits(9)
 nf.setGroupingUsed(false)
 println(nf.format(approximate(n)))
 
-// EOF
+println "${System.currentTimeMillis () - start}ms"
 

@@ -1777,13 +1777,6 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private void makeCallSite(Expression receiver, String message, Expression arguments, boolean safe, boolean implicitThis, boolean callCurrent, boolean callStatic) {
-
-//        final int index = compileStack.getCurrentCallSiteArrayIndex();
-//        if (index != -1)
-//          mv.visitVarInsn(ALOAD, index);
-//        else
-//          mv.visitMethodInsn(INVOKESTATIC,internalClassName,"$getCallSiteArray","()Lorg/codehaus/groovy/runtime/callsite/CallSiteArray;");
-
         if (methodNode == null || !methodNode.getName().equals("<clinit>")) {
             mv.visitVarInsn(ALOAD, callSiteArrayVarIndex);
         }
@@ -1853,6 +1846,33 @@ public class AsmClassGenerator extends ClassGenerator {
                       mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "call","(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
                 }
             }
+        leftHandExpression = lhs;
+    }
+
+    private void makeBinopCallSite(Expression receiver, String message, Expression arguments) {
+
+        if (methodNode == null || !methodNode.getName().equals("<clinit>")) {
+            mv.visitVarInsn(ALOAD, callSiteArrayVarIndex);
+        }
+        else {
+            mv.visitMethodInsn(INVOKESTATIC,internalClassName,"$getCallSiteArray","()[Lorg/codehaus/groovy/runtime/callsite/CallSite;");
+        }
+        mv.visitLdcInsn(new Integer(allocateIndex(message)));
+        mv.visitInsn(AALOAD);
+
+        // ensure VariableArguments are read, not stored
+        boolean lhs = leftHandExpression;
+        leftHandExpression = false;
+
+        // receiver
+        boolean oldVal = this.implicitThis;
+        this.implicitThis = false;
+        visitAndAutoboxBoolean(receiver);
+        this.implicitThis = oldVal;
+
+        visitAndAutoboxBoolean(arguments);
+
+        mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "callBinop","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
         leftHandExpression = lhs;
     }
 
@@ -3408,7 +3428,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected void evaluateBinaryExpression(String method, BinaryExpression expression) {
-        makeCallSite(expression.getLeftExpression(), method, new ArgumentListExpression(expression.getRightExpression()), false, false, false, false);
+        makeBinopCallSite(expression.getLeftExpression(), method, expression.getRightExpression());
     }
 
     protected void evaluateCompareTo(BinaryExpression expression) {

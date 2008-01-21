@@ -54,6 +54,10 @@ public abstract class CallSite {
      */
     public abstract Object invoke(Object receiver, Object [] args);
 
+    public Object invokeBinop(Object receiver, Object arg) {
+        return invoke(receiver, new Object[] {arg});
+    }
+
     /**
      * Check if receiver/arguments are "exactly the same" as when this site was created.
      *
@@ -67,6 +71,10 @@ public abstract class CallSite {
      * @return if receiver/arguments are valid for this site
      */
     public abstract boolean accept(Object receiver, Object[] args);
+
+    public boolean acceptBinop(Object receiver, Object args) {
+        return accept(receiver, new Object[] {args} );
+    }
 
     public final Object callSafe(Object receiver, Object[] args) throws Throwable {
         try {
@@ -85,6 +93,17 @@ public abstract class CallSite {
                 receiver = NullObject.getNullObject();
 
             return getCallSite(receiver, args).invoke(receiver, args);
+        } catch (GroovyRuntimeException gre) {
+            throw ScriptBytecodeAdapter.unwrap(gre);
+        }
+    }
+
+    public Object callBinop(Object receiver, Object arg) throws Throwable {
+        try {
+            if (receiver == null)
+                receiver = NullObject.getNullObject();
+
+            return getCallBinopSite(receiver, arg).invokeBinop(receiver, arg);
         } catch (GroovyRuntimeException gre) {
             throw ScriptBytecodeAdapter.unwrap(gre);
         }
@@ -209,6 +228,15 @@ public abstract class CallSite {
     public final CallSite getCallConstructorSite(Class receiver, Object [] args) {
         if (!accept(receiver, args)) {
             CallSite site = createCallConstructorSite(receiver, args);
+            array.array[index] = site;
+            return site;
+        }
+        return this;
+    }
+
+    public final CallSite getCallBinopSite(Object receiver, Object args) {
+        if (!acceptBinop(receiver, args)) {
+            CallSite site = createCallSite(receiver, new Object[] {args} );
             array.array[index] = site;
             return site;
         }

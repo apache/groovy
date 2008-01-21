@@ -787,6 +787,14 @@ public class MetaClassHelper {
         return true;
     }
 
+    public static boolean sameClass(Class[] params, Object arg) {
+        return !(arg == null
+                || (params[0] != arg.getClass()
+                && (!(arg instanceof Wrapper)
+                || params[0] != ((Wrapper) arg).getType())));
+
+    }
+
     public static Class[] castArgumentsToClassArray(Object[] argTypes) {
         if (argTypes == null) return EMPTY_CLASS_ARRAY;
         Class[] classes = new Class[argTypes.length];

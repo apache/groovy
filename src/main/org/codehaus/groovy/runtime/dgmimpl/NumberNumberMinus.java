@@ -30,6 +30,10 @@ public class NumberNumberMinus extends NumberNumberMetaMethod {
             public Object invoke(Object receiver, Object[] args) {
                 return math.subtractImpl((Number)receiver,(Number)args[0]);
             }
+
+            public Object invokeBinop(Object receiver, Object arg) {
+                return math.subtractImpl((Number)receiver,(Number)arg);
+            }
         };
     }
 }

@@ -4,6 +4,7 @@ import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
+import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.codehaus.groovy.runtime.callsite.CallSiteAwareMetaMethod;
 import org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite;
@@ -43,6 +44,12 @@ public abstract class NumberNumberMetaMethod extends CallSiteAwareMetaMethod {
         public NumberNumberCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Number receiver, Number arg) {
             super(site, metaClass, metaMethod, params);
             math = NumberMath.getMath(receiver,arg);
+        }
+
+        public final boolean acceptBinop(Object receiver, Object arg) {
+            return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
+//               && ((MetaClassImpl)metaClass).getTheCachedClass().getMetaClassForClass() == metaClass // metaClass still be valid
+               && MetaClassHelper.sameClass(params, arg); // right arguments
         }
     }
 }
