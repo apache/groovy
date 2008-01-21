@@ -61,7 +61,7 @@ public class GroovyCodeSource {
 	
 	/**
 	 * Construct a GroovyCodeSource for an inputStream of groovyCode that has an
-	 * unknown provenance -- meaning it didn't come from a File or a URL (e.g. a String).
+	 * unknown provenance -- meaning it didn't come from a File or a URL (e.g.&nbsp;a String).
 	 * The supplied codeBase will be used to construct a File URL that should match up
 	 * with a java Policy entry that determines the grants to be associated with the
 	 * class that will be built from the InputStream.

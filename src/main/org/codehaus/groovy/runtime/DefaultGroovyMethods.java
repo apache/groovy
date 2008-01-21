@@ -248,7 +248,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Convenience method that calls {@link #getMetaPropertyValues(Object)}(self)
-     * and provides the data in form of simple key/value pairs, i.e. without
+     * and provides the data in form of simple key/value pairs, i.e.&nsbp;without
      * type() information.
      *
      * @param self the receiver object
@@ -1109,7 +1109,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Used to determine if the given predicate closure is valid (i.e. returns
+     * Used to determine if the given predicate closure is valid (i.e.&nsbp;returns
      * <code>true</code> for all items in this data structure).
      * A simple example for a list:
      * <pre>def list = [3,4,5]
@@ -2376,7 +2376,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Support the subscript operator, e.g. matcher[index], for a regex Matcher.
+     * Support the subscript operator, e.g.&nbsp;matcher[index], for a regex Matcher.
      * <p/>
      * For an example using no group match, <code><pre>
      *    def p = /ab[d|f]/
