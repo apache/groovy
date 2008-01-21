@@ -197,7 +197,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
         /* here is a different implementation that uses getProperties(). I have left
          * it commented out because it returns a slightly different list of properties;
-         * ie it does not return privates. I don't know what dump() really should be doing,
+         * i.e. it does not return privates. I don't know what dump() really should be doing,
          * although IMO showing private fields is a no-no
          */
         /*
@@ -304,9 +304,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * use() a list of categories, specifying the list as varargs:<br>
-     * use(CategoryClass1, CategoryClass2) { ... }<br>
-     * This method prevents the error of forgetting to wrap the the category
+     * Allows you to use a list of categories, specifying the list as varargs.
+     * <code>use(CategoryClass1, CategoryClass2) { ... }</code>
+     * This method saves having to wrap the the category
      * classes in a list.
      *
      * @param self  any Object
@@ -447,7 +447,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Printf to a console.  Only works with JDK1.5 or later.
+     * Printf to a console (Only works with JDK1.5 or later).
      *
      * @param self   any Object
      * @param format a format string
@@ -461,7 +461,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sprintf to a string.  Only works with JDK1.5 or later.
+     * Sprintf to a string (Only works with JDK1.5 or later).
      *
      * @param self   any Object
      * @param format a format string
@@ -476,7 +476,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Printf to a PrintStream.  Only works with JDK1.5 or later.
+     * Printf to a PrintStream (Only works with JDK1.5 or later).
      *
      * @param out    a PrintStream object
      * @param format a format string
@@ -515,7 +515,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Prints a formatted string using the specified format string and
-     * arguments.
+     * arguments (Only works with JDK1.5 or later).
      * <p/>
      * <p/>
      * For examples, <pre>
@@ -704,6 +704,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
 
     /**
+     * Inspects returns the String that matches what would be typed into a
+     * terminal to create this object.
+     *
      * @param self any Object
      * @return a String that matches what would be typed into a terminal to
      *         create this object. e.g. [1, 'hello'].inspect() -> [1, "hello"]
@@ -1107,7 +1110,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Used to determine if the given predicate closure is valid (i.e. returns
-     * <code>true</code>) for all items in this data structure.
+     * <code>true</code> for all items in this data structure).
      * A simple example for a list:
      * <pre>def list = [3,4,5]
      * def greaterThanTwo = list.every { it > 2 }
