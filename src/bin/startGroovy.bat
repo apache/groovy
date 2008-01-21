@@ -77,12 +77,56 @@ if "%eval[2+2]" == "4" goto 4NT_args
 :win9xME_args
 @rem Slurp the command line arguments.  
 set CMD_LINE_ARGS=
+set _SKIP=2
 
 :win9xME_args_slurp
 if "x%~1" == "x" goto execute
-set CMD_LINE_ARGS=%CMD_LINE_ARGS% %1
-shift
-goto win9xME_args_slurp
+
+rem horrible roll your own arg processing inspired by jruby equivalent
+
+rem escape any quotes. use -q == ", -d == -.
+set _ARGS=%*
+if not defined _ARGS goto execute
+set _ARGS=%_ARGS:-=-d%
+set _ARGS=%_ARGS:"=-q%
+rem prequote all args for 'for' statement
+set _ARGS="%_ARGS%"
+
+:win9xME_args_loop
+rem split args by spaces into first and rest
+for /f "tokens=1,*" %%i in (%_ARGS%) do call :get_arg "%%i" "%%j"
+goto process_arg
+
+:get_arg
+rem remove quotes around first arg
+for %%i in (%1) do set _ARG=%%~i
+rem set the remaining args
+set _ARGS=%2
+rem return
+goto :EOF
+
+:process_arg
+if "%_ARG%" == "" goto execute
+
+rem now unescape -q and -d
+set _ARG=%_ARG:-q="%
+set _ARG=%_ARG:-d=-%
+if "x2" == "x%_SKIP%" goto skip_path
+if "x1" == "x%_SKIP%" goto skip_main
+
+set CMD_LINE_ARGS=%CMD_LINE_ARGS% %_ARG%
+set _ARG=
+goto win9xME_args_loop
+
+:skip_path
+set _ARG=
+set _SKIP=1
+goto win9xME_args_loop
+
+:skip_main
+set _ARG=
+set _SKIP=0
+goto win9xME_args_loop
 
 :4NT_args
 @rem Get arguments from the 4NT Shell from JP Software
@@ -131,4 +175,3 @@ if "%OS%"=="Windows_NT" endlocal
 
 @rem Optional pause the batch file
 if "%GROOVY_BATCH_PAUSE%" == "on" pause
-
