@@ -3317,7 +3317,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * is assumed to be an interface or class with a single method definition.
      * The closure is used as the implementation of that single method.
      *
-     * @param cl    the implementaiton of the single method
+     * @param cl    the implementation of the single method
      * @param clazz the target type
      * @return a Proxy of the given type which wraps this closure.
      */
