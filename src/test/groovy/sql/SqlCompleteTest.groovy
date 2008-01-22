@@ -25,6 +25,14 @@ class SqlCompleteTest extends TestHelper {
         assert resultSet.containsKey('FIRSTNAME')
     }
 
+    void testGroovyRowResultAsMapConstructor() {
+        def sql = createSql()
+        def resultSet = sql.firstRow('select * from PERSON')
+        assert resultSet == [FIRSTNAME:'James', LASTNAME:'Strachan', ID:1, LOCATION_ID:10, LOCATION_NAME:'London']
+        def p = new PersonDTO(resultSet)
+        assert p.FIRSTNAME == 'James'
+    }
+
     void testRowsGString() {
         def sql = createSql()
         def table = 'PERSON'
@@ -163,4 +171,8 @@ class SqlCompleteTest extends TestHelper {
       assert result!=null
       assert result["name"]=="edam"
     }
+}
+
+class PersonDTO {
+    def FIRSTNAME, LASTNAME, ID, LOCATION_ID, LOCATION_NAME
 }
