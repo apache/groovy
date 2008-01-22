@@ -13,52 +13,42 @@ import java.text.DecimalFormat
 
 def calculate()
 {
+    final def twothirds = 2.0d/3.0d;
+
     n = Integer.parseInt(args[0])
 
-    double s0, s1, s2, s3, s4, s5, s6, s7, s8;
-    s0 = s1 = s2 = s3 = s4 = s5 = s6 = s7 = s8 = 0.0D;
-    boolean alt = true;
-    double d = 1.0d
+    def a1 = 0.0d, a2 = 0.0d, a3 = 0.0d, a4 = 0.0d, a5 = 0.0d
+    def a6 = 0.0d, a7 = 0.0d, a8 = 0.0d, a9 = 0.0d, alt = -1.0d
 
-    double twoThird = 2.0D / 3.0D
-    while (d <= n)
-    {
-        double d2 = d * d, d3 = d2 * d, ds = Math.sin(d), ds2 = ds * ds, dc2 = 1.0d - ds2
+    def k = 1.0d
+    while (k<=n){
+       def k2 = Math.pow(k,2.0d), k3 = k2*k
+       def sk = Math.sin(k), ck = Math.cos(k)
+       alt = -alt
 
-        def dminus1 = d - 1.0d
-        s0 = s0 * twoThird + 1.0d
-        s1 += 1.0d / Math.sqrt(d)
-        double oneByD = 1.0d / d
-        s2 += oneByD / (d + 1.0d)
-        double oneByD3 = 1.0d / d3
-        s3 += oneByD3 / ds2
-        s4 += oneByD3 / dc2
-        s5 += oneByD
-        s6 += 1.0d / d2
-        if (alt) {
-            s7 += oneByD
-            s8 += 1.0d / (d + dminus1)
-        }
-        else {
-            s7 -= oneByD
-            s8 -= 1.0d / (d + dminus1)
-        }
-
-        alt = !alt;
-        d += 1.0d
+       a1 += Math.pow(twothirds,k-1.0d)
+       a2 += Math.pow(k,-0.5d)
+       a3 += 1.0d/(k*(k+1.0d))
+       a4 += 1.0d/(k3 * sk*sk)
+       a5 += 1.0d/(k3 * ck*ck)
+       a6 += 1.0d/k
+       a7 += 1.0d/k2
+       a8 += alt/k
+       a9 += alt/(2.0d*k-1.0d)
+       k += 1.0d
     }
 
-    fmt = new DecimalFormat("##0.000000000")
+    def fmt = new DecimalFormat("##0.000000000")
 
-    result = fmt.format(s0); println "${result}\t(2/3)^k"
-    result = fmt.format(s1); println "${result}\tk^-0.5"
-    result = fmt.format(s2); println "${result}\t1/k(k+1)"
-    result = fmt.format(s3); println "${result}\tFlint Hills"
-    result = fmt.format(s4); println "${result}\tCookson Hills"
-    result = fmt.format(s5); println "${result}\tHarmonic"
-    result = fmt.format(s6); println "${result}\tRiemann Zeta"
-    result = fmt.format(s7); println "${result}\tAlternating Harmonic"
-    result = fmt.format(s8); println "${result}\tGregory"
+    result = fmt.format(a1); println "${result}\t(2/3)^k"
+    result = fmt.format(a2); println "${result}\tk^-0.5"
+    result = fmt.format(a3); println "${result}\t1/k(k+1)"
+    result = fmt.format(a4); println "${result}\tFlint Hills"
+    result = fmt.format(a5); println "${result}\tCookson Hills"
+    result = fmt.format(a6); println "${result}\tHarmonic"
+    result = fmt.format(a7); println "${result}\tRiemann Zeta"
+    result = fmt.format(a8); println "${result}\tAlternating Harmonic"
+    result = fmt.format(a9); println "${result}\tGregory"
 }
 
 // --------------------------------
