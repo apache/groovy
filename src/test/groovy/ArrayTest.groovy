@@ -89,10 +89,18 @@ class ArrayTest extends GroovyTestCase {
 
     void testArrayDeclaration() {
         String[] array = [ "a", "b", "c" ]
+        assert array.class == String[].class
         assert array.size() == 3
         assert array[0] == "a"
         assert array[1] == "b"
         assert array[2] == "c"
+    }
+
+    void testArrayAssignmentShouldHonorInheritance() {
+        String[] array = [ "a", "b", "c" ]
+        Object[] other = array
+        assert other.class == String[].class
+        assert other.hashCode() == array.hashCode()
     }
 
     void testSimpleArrayEquals() {
