@@ -193,15 +193,15 @@ public class GroovyMain {
         options.addOption(
             OptionBuilder.withArgName("extension")
             .hasOptionalArg()
-            .withDescription("modify files in place, create backup if extension is given (e.g. \'.bak\')")
+            .withDescription("modify files in place; create backup if extension is given (e.g. \'.bak\')")
             .create('i'));
         options.addOption(
             OptionBuilder.hasArg(false)
-            .withDescription("process files line by line")
+            .withDescription("process files line by line using implicit 'line' variable")
             .create('n'));
         options.addOption(
             OptionBuilder.hasArg(false)
-            .withDescription("process files line by line and print result")
+            .withDescription("process files line by line and print result (see also -n)")
             .create('p'));
         options.addOption(
             OptionBuilder.withArgName("port")
@@ -211,7 +211,7 @@ public class GroovyMain {
         options.addOption(
             OptionBuilder.withArgName("splitPattern")
             .hasOptionalArg()
-            .withDescription("automatically split current line (defaults to '\\s')")
+            .withDescription("split lines using splitPattern (default '\\s') using implicit 'split' variable")
             .withLongOpt("autosplit")
             .create('a'));
 
