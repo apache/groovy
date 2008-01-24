@@ -16,10 +16,12 @@
 package groovy.lang;
 
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.runtime.GStringImpl;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
-import java.io.*;
+import java.io.IOException;
+import java.io.Serializable;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -33,11 +35,13 @@ import java.util.regex.Pattern;
  * actual value objects can be bound to a JDBC statement. The lovely name of
  * this class was suggested by Jules Gosnell and was such a good idea, I
  * couldn't resist :)
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
 public abstract class GString extends GroovyObjectSupport implements Comparable, CharSequence, Writable, Buildable, Serializable {
+
+    static final long serialVersionUID = -2638020355892246323L;
 
     private Object[] values;
 
@@ -53,7 +57,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     public abstract String[] getStrings();
 
     /**
-     * Overloaded to implement duck typing for Strings 
+     * Overloaded to implement duck typing for Strings
      * so that any method that can't be evaluated on this
      * object will be forwarded to the toString() object instead.
      */
@@ -170,7 +174,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     public void build(final GroovyObject builder) {
     final String[] s = getStrings();
     final int numberOfValues = values.length;
-        
+
         for (int i = 0, size = s.length; i < size; i++) {
             builder.getProperty("mkp");
             builder.invokeMethod("yield", new Object[]{s[i]});
@@ -182,11 +186,18 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     }
 
     public boolean equals(Object that) {
-        return that != null && toString().equals(that.toString()) ;
+        if (that instanceof GString) {
+            return equals((GString) that);
+        }
+        return false;
+    }
+
+    public boolean equals(GString that) {
+        return toString().equals(that.toString());
     }
 
     public int hashCode() {
-        return toString().hashCode();
+        return 37 + toString().hashCode();
     }
 
     public int compareTo(Object that) {
@@ -213,14 +224,4 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     public Pattern negate() {
         return DefaultGroovyMethods.bitwiseNegate(toString());
     }
-
-    /**
-     * GString always serialized as usual String. The string value comes from call to toString method.
-     *
-     * @return
-     * @throws ObjectStreamException
-     */
-    public final Object writeReplace() throws ObjectStreamException {
-       return new GStringImpl(new Object[0], new String[]{ toString () });
-    }
- }
+}
