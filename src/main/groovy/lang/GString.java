@@ -15,16 +15,15 @@
  */
 package groovy.lang;
 
-import java.io.IOException;
-import java.io.StringWriter;
-import java.io.Writer;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.GStringImpl;
+import org.codehaus.groovy.runtime.InvokerHelper;
+
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
-
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * Represents a String which contains embedded values such as "hello there
@@ -38,7 +37,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public abstract class GString extends GroovyObjectSupport implements Comparable, CharSequence, Writable, Buildable {
+public abstract class GString extends GroovyObjectSupport implements Comparable, CharSequence, Writable, Buildable, Serializable {
 
     private Object[] values;
 
@@ -183,18 +182,11 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     }
 
     public boolean equals(Object that) {
-        if (that instanceof GString) {
-            return equals((GString) that);
-        }
-        return false;
-    }
-
-    public boolean equals(GString that) {
-        return toString().equals(that.toString());
+        return that != null && toString().equals(that.toString()) ;
     }
 
     public int hashCode() {
-        return 37 + toString().hashCode();
+        return toString().hashCode();
     }
 
     public int compareTo(Object that) {
@@ -221,4 +213,14 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     public Pattern negate() {
         return DefaultGroovyMethods.bitwiseNegate(toString());
     }
-}
+
+    /**
+     * GString always serialized as usual String. The string value comes from call to toString method.
+     *
+     * @return
+     * @throws ObjectStreamException
+     */
+    public final Object writeReplace() throws ObjectStreamException {
+       return new GStringImpl(new Object[0], new String[]{ toString () });
+    }
+ }
