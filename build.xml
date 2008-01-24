@@ -747,8 +747,15 @@ Use the shiny new groovyc fork mode :-)
         </copy>
     </target>
 
-    <target name="groovydoc" depends="-docInit,-includeGroovyDocTemplates,docGDK"
-            description="Create the groovydoc documentation.">
+    <target name="groovydoc" depends="-docInit,-includeGroovyDocTemplates,docGDK">
+        <path id="groovydocpath">
+            <path path="${mainClassesDirectory}"/>
+            <path refid="runtimePath"/>
+        </path>
+        <antforked target="realgroovydoc" maxmemory="512m" classpathref="groovydocpath"/>
+    </target>
+
+    <target name="realgroovydoc">
         <taskdef name="groovydoc" classname="org.codehaus.groovy.ant.Groovydoc">
             <classpath>
                 <path path="${mainClassesDirectory}"/>
