@@ -1,6 +1,6 @@
 package groovy.bugs
 
-class AmbigousListOrMethodTest extends GroovyTestCase {
+class AmbiguousListOrMethodTest extends GroovyTestCase {
 
     void testLocalVariableVersion() {
         def foo = [3, 2, 3]
@@ -38,4 +38,15 @@ class AmbigousListOrMethodTest extends GroovyTestCase {
         return myList.size()
     }
 
+    void testCanFindCorrectMethod() {
+        def e = new Example()
+        assert e["", ""] == 2
+        assert e[""] == 1
+    }
+
+}
+
+class Example {
+    def getAt(String a, String b) {return 2}
+    def getAt(String a) {return 1}
 }

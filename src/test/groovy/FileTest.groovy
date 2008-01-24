@@ -27,7 +27,7 @@ class FileTest extends GroovyTestCase {
 	void testEachFile() {
 		def collectedFiles = []
 		baseDir.eachFile { it -> collectedFiles << it.name }
-		collectedFiles.sort() // needs to sort as there is no guaranty on the order within a folder
+		collectedFiles.sort() // needs to sort as there is no guarantee on the order within a folder
 
     	def expected = ["emptyFolder", "folder1", "folder2", "folder3", "foo", "foo.txt"]
     	
@@ -37,7 +37,7 @@ class FileTest extends GroovyTestCase {
 	void testEachDir() {
 		def collectedFiles = []
 		baseDir.eachDir { it -> collectedFiles << it.name }
-		collectedFiles.sort() // needs to sort as there is no guaranty on the order within a folder
+		collectedFiles.sort() // needs to sort as there is no guarantee on the order within a folder
 
     	def expected = ["emptyFolder", "folder1", "folder2", "folder3"]
     	
@@ -47,7 +47,7 @@ class FileTest extends GroovyTestCase {
 	void testEachFileMatch() {
 		def collectedFiles = []
 		baseDir.eachFileMatch ~/fo.*/, { it -> collectedFiles << it.name }
-		collectedFiles.sort() // needs to sort as there is no guaranty on the order within a folder
+		collectedFiles.sort() // needs to sort as there is no guarantee on the order within a folder
 
     	def expected = ["folder1", "folder2", "folder3", "foo", "foo.txt"]
     	
@@ -57,7 +57,7 @@ class FileTest extends GroovyTestCase {
 	void testEachDirMatch() {
 		def collectedFiles = []
 		baseDir.eachDirMatch ~/fo.*/, { it -> collectedFiles << it.name }
-		collectedFiles.sort() // needs to sort as there is no guaranty on the order within a folder
+		collectedFiles.sort() // needs to sort as there is no guarantee on the order within a folder
 
     	def expected = ["folder1", "folder2", "folder3"]
     	
@@ -67,7 +67,7 @@ class FileTest extends GroovyTestCase {
 	void testEachFileRecurse() {
 		def collectedFiles = []
 		baseDir.eachFileRecurse { it -> collectedFiles << it.name }
-		collectedFiles.sort() // needs to sort as there is no guaranty on the order within a folder
+		collectedFiles.sort() // needs to sort as there is no guarantee on the order within a folder
 
     	def expected = ["Readme", "build.xml", "emptyFolder",  
     	 "file1.groovy", "file2.groovy", "file3.groovy", "folder1", "folder2", "folder3", 
@@ -81,7 +81,7 @@ class FileTest extends GroovyTestCase {
 	void testEachDirRecurse() {
 		def collectedFiles = []
 		baseDir.eachDirRecurse { it -> collectedFiles << it.name }
-		collectedFiles.sort() // needs to sort as there is no guaranty on the order within a folder
+		collectedFiles.sort() // needs to sort as there is no guarantee on the order within a folder
 
     	def expected = ["emptyFolder", "folder1", "folder2", "folder3", "subfolder", "subfolder",]
     	

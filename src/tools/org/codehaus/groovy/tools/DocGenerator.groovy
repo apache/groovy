@@ -286,13 +286,14 @@ class DocGenerator
     static void main(args)
     {
         def defaultGroovyMethodSource = new File("src/main/org/codehaus/groovy/runtime/DefaultGroovyMethods.java")
+        def v5GroovyMethodSource = new File("src/main/org/codehaus/groovy/vmplugin/v5/PluginDefaultGroovyMethods.java")
         def defaultGroovyStaticMethodSource = new File("src/main/org/codehaus/groovy/runtime/DefaultGroovyStaticMethods.java")
         def outFolder = new File("target/html/groovy-jdk")
         outFolder.mkdirs()
 
         def start = System.currentTimeMillis();
 
-        def docGen = new DocGenerator([defaultGroovyMethodSource, defaultGroovyStaticMethodSource], outFolder)
+        def docGen = new DocGenerator([defaultGroovyMethodSource, v5GroovyMethodSource, defaultGroovyStaticMethodSource], outFolder)
         docGen.generateNew()
 
         def end = System.currentTimeMillis();
