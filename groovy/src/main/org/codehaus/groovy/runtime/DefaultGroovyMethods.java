@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ import java.util.regex.Pattern;
  * @author Joachim Baumann
  * @version $Revision$
  */
-public class DefaultGroovyMethods {
+public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     private static final Logger LOG = Logger.getLogger(DefaultGroovyMethods.class.getName());
     private static final Integer ONE = new Integer(1);
@@ -2466,26 +2466,6 @@ public class DefaultGroovyMethods {
         return answer;
     }
 
-    // helper method for getAt and putAt
-    protected static RangeInfo subListBorders(int size, IntRange range) {
-        int from = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getFrom()), size);
-        int to = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getTo()), size);
-        boolean reverse = range.isReverse();
-        if (from > to) {                        // support list[1..-1]
-            int tmp = to;
-            to = from;
-            from = tmp;
-            reverse = !reverse;
-        }
-        return new RangeInfo(from, to + 1, reverse);
-    }
-
-    // helper method for getAt and putAt
-    protected static RangeInfo subListBorders(int size, EmptyRange range) {
-        int from = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getFrom()), size);
-        return new RangeInfo(from, from, false);
-    }
-
     /**
      * Allows a List to be used as the indices to be used on a List
      *
@@ -2883,7 +2863,7 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * Support the subscript operator for a List.
+     * Support the subscript operator for a Map.
      *
      * @param self a Map
      * @param key  an Object as a key for the map
@@ -5144,26 +5124,6 @@ public class DefaultGroovyMethods {
     }
 
     /**
-     * This method is called by the ++ operator for the class Object but
-     * acts simply as a hook for objects which happen to be Java 5 enums.
-     * It won't be called for Objects which already contain a next method
-     * and for non Java 5 enums, it simply chains through to Groovy's normal
-     * missing method processing.
-     *
-     * @param self an Object that will be processed if it happens to be a Java 5 Enum
-     * @return the next defined enum from the enum class
-     */
-    public static Object next(Object self) {
-        final MetaClass metaClass = InvokerHelper.getMetaClass(self);
-        if (DefaultTypeTransformation.isEnumSubclass(self.getClass())) {
-            Object[] values = (Object[]) InvokerHelper.invokeStaticMethod(self.getClass(), "values", new Object[0]);
-            int index = Arrays.asList(values).indexOf(self);
-            return values[index < values.length - 1 ? index + 1 : 0];
-        }
-        return metaClass.invokeMissingMethod(self, "next", new Object[0]);
-    }
-
-    /**
      * This method is called by the ++ operator for the class String.
      * It increments the last character in the given string. If the
      * character in the string is Character.MAX_VALUE a Character.MIN_VALUE
@@ -5188,26 +5148,6 @@ public class DefaultGroovyMethods {
             }
         }
         return buffer.toString();
-    }
-
-    /**
-     * This method is called by the -- operator for the class Object but
-     * acts simply as a hook for objects which happen to be Java 5 enums.
-     * It won't be called for Objects which already contain a previous method
-     * and for non Java 5 enums, it simply chains through to Groovy's normal
-     * missing method processing.
-     *
-     * @param self an Object that will be processed if it happens to be a Java 5 Enum
-     * @return the previous defined enum from the enum class
-     */
-    public static Object previous(Object self) {
-        final MetaClass metaClass = InvokerHelper.getMetaClass(self);
-        if (DefaultTypeTransformation.isEnumSubclass(self.getClass())) {
-            Object[] values = (Object[]) InvokerHelper.invokeStaticMethod(self.getClass(), "values", new Object[0]);
-            int index = Arrays.asList(values).indexOf(self);
-            return values[index > 0 ? index - 1 : values.length - 1];
-        }
-        return metaClass.invokeMissingMethod(self, "previous", new Object[0]);
     }
 
     /**
@@ -9191,17 +9131,6 @@ public class DefaultGroovyMethods {
                     process.destroy();
                 }
             }
-        }
-    }
-
-    protected static class RangeInfo {
-        protected int from, to;
-        protected boolean reverse;
-
-        public RangeInfo(int from, int to, boolean reverse) {
-            this.from = from;
-            this.to = to;
-            this.reverse = reverse;
         }
     }
 

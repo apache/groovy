@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -753,17 +753,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             MetaClassHelper.logMethodCall(object, methodName, originalArguments);
         }
         final Object[] arguments = originalArguments == null ? EMPTY_ARGUMENTS : originalArguments;
-//        final Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
-//
-//        unwrap(arguments);
-
         MetaMethod method = getMethodWithCaching(sender, methodName, arguments, isCallToSuper);
         unwrap(arguments);
 
         if (method == null && arguments.length == 1 && arguments[0] instanceof List) {
             Object[] newArguments = ((List) arguments[0]).toArray();
-            Class[] newArgClasses = MetaClassHelper.convertToTypeArray(newArguments);
-            method = getMethodWithCaching(sender, methodName, newArgClasses, isCallToSuper);
+            method = getMethodWithCaching(sender, methodName, newArguments, isCallToSuper);
             if (method != null) {
                 method = new TransformMetaMethod(method) {
                     public Object invoke(Object object, Object[] arguments) {
@@ -940,7 +935,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     public MetaMethod getMethodWithCaching(Class sender, String methodName, Object[] arguments, boolean isCallToSuper) {
-        // lets try use the cache to find the method
+        // let's try use the cache to find the method
         if (GroovyCategorySupport.hasCategoryInAnyThread() && !isCallToSuper) {
             return getMethodWithoutCaching(sender, methodName, MetaClassHelper.convertToTypeArray(arguments), isCallToSuper);
         } else {
@@ -1014,12 +1009,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return true;
     }
 
-    public Constructor retrieveConstructor(Class[] arguments) {
-        CachedConstructor constructor = (CachedConstructor) chooseMethod("<init>", constructors, arguments, false);
+    public Constructor retrieveConstructor(Class[] argClasses) {
+        CachedConstructor constructor = (CachedConstructor) chooseMethod("<init>", constructors, argClasses, false);
         if (constructor != null) {
             return constructor.cachedConstructor;
         }
-        constructor = (CachedConstructor) chooseMethod("<init>", constructors, arguments, true);
+        constructor = (CachedConstructor) chooseMethod("<init>", constructors, argClasses, true);
         if (constructor != null) {
             return constructor.cachedConstructor;
         }
@@ -2302,8 +2297,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     return method;
                 }
             }
-        }
-        else {
+        } else {
             MetaMethod method = (MetaMethod) methods;
             if (method.isMethod(aMethod)) {
                 return method;
@@ -2340,12 +2334,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * Chooses the correct method to use from a list of methods which match by
      * name.
      *
-     * @param methodOrList   the possible methods to choose from
-     * @param arguments
+     * @param methodOrList the possible methods to choose from
+     * @param argClasses   the argument types
      */
-    private Object chooseMethod(String methodName, Object methodOrList, Class[] arguments, boolean coerce) {
+    private Object chooseMethod(String methodName, Object methodOrList, Class[] argClasses, boolean coerce) {
         if (methodOrList instanceof MetaMethod) {
-            if (MetaClassHelper.isValidMethod(methodOrList, arguments)) {
+            if (MetaClassHelper.isValidMethod(methodOrList, argClasses)) {
                 return methodOrList;
             }
             return null;
@@ -2357,15 +2351,15 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return null;
         } else if (methodCount == 1) {
             Object method = methods.get(0);
-            if (MetaClassHelper.isValidMethod(method, arguments)) {
+            if (MetaClassHelper.isValidMethod(method, argClasses)) {
                 return method;
             }
             return null;
         }
         Object answer;
-        if (arguments == null || arguments.length == 0) {
+        if (argClasses == null || argClasses.length == 0) {
             answer = MetaClassHelper.chooseEmptyMethodParams(methods);
-        } else if (arguments.length == 1 && arguments[0] == null) {
+        } else if (argClasses.length == 1 && argClasses[0] == null) {
             answer = MetaClassHelper.chooseMostGeneralMethodWith1NullParam(methods);
         } else {
             Object matchingMethods = null;
@@ -2376,18 +2370,17 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 Object method = data[i];
 
                 // making this false helps find matches
-                if (MetaClassHelper.isValidMethod(method, arguments)) {
+                if (MetaClassHelper.isValidMethod(method, argClasses)) {
                     if (matchingMethods == null)
-                      matchingMethods = method;
-                    else
-                        if (matchingMethods instanceof ArrayList)
-                          ((ArrayList)matchingMethods).add(method);
-                        else {
-                            ArrayList arr = new ArrayList(4);
-                            arr.add(matchingMethods);
-                            arr.add(method);
-                            matchingMethods = arr;
-                        }
+                        matchingMethods = method;
+                    else if (matchingMethods instanceof ArrayList)
+                        ((ArrayList) matchingMethods).add(method);
+                    else {
+                        ArrayList arr = new ArrayList(4);
+                        arr.add(matchingMethods);
+                        arr.add(method);
+                        matchingMethods = arr;
+                    }
                 }
             }
             if (matchingMethods == null) {
@@ -2395,13 +2388,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             } else if (!(matchingMethods instanceof ArrayList)) {
                 return matchingMethods;
             }
-            return chooseMostSpecificParams(methodName, (List) matchingMethods, arguments);
+            return chooseMostSpecificParams(methodName, (List) matchingMethods, argClasses);
 
         }
         if (answer != null) {
             return answer;
         }
-        throw new MethodSelectionException(methodName, methods, arguments);
+        throw new MethodSelectionException(methodName, methods, argClasses);
     }
 
     private Object chooseMostSpecificParams(String name, List matchingMethods, Class[] arguments) {

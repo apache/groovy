@@ -44,34 +44,36 @@ public interface MetaObjectProtocol {
     List getMethods();
     
     /**
-     * <p>Returns true if the implementing MetaClass responds a method with the given name and arguments types
+     * <p>Returns an object satisfying Groovy truth if the implementing MetaClass responds to
+     * a method with the given name and arguments types.
      *
-     * <p>Note that this method will only return true for realised methods and does not take into account
+     * <p>Note that this method's return value is based on realised methods and does not take into account
      * objects or classes that implement invokeMethod or methodMissing
      *
-     * <p>This method is "safe" and will always return a boolean and never throw an exception
+     * <p>This method is "safe" in that it will always return a value and never throw an exception
      *
      * @param obj The object to inspect
-     * @param name The name of the method
-     * @param argTypes The argument types
-     * @return A List of MetaMethods which is empty if non exist
+     * @param name The name of the method of interest
+     * @param argTypes The argument types to match against
+     * @return A List of MetaMethods matching the argument types which will be empty if no matching methods exist
      */
-    List respondsTo(Object obj,String name, Object[] argTypes);
+    List respondsTo(Object obj, String name, Object[] argTypes);
 
     /**
-     * <p>Returns true if the implementing MetaClass responds a method with the given name regardless of
-     * arguments. In other words this method will return for foo() and foo(String)
+     * <p>Returns an object satisfying Groovy truth if the implementing MetaClass responds to
+     * a method with the given name regardless of arguments. In other words this method will
+     * return for foo() and foo(String).
      *
-     * <p>Note that this method will only return true for realised methods and does not take into account
+     * <p>Note that this method's return value is based on realised methods and does not take into account
      * objects or classes that implement invokeMethod or methodMissing
      *
-     * <p>This method is "safe" and will always return a boolean and never throw an exception
+     * <p>This method is "safe" in that it will always return a value and never throw an exception
      *
      * @param obj The object to inspect
-     * @param name The name of the method
-     * @return A List of MetaMethods which is empty if non exist
+     * @param name The name of the method of interest
+     * @return A List of MetaMethods which will be empty if no methods with the given name exist
      */
-    List respondsTo(Object obj,String name);
+    List respondsTo(Object obj, String name);
 
     /**
      * <p>Returns true of the implementing MetaClass has a property of the given name

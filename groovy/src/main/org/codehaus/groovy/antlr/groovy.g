@@ -546,7 +546,7 @@ declarationStart!
            		|   qualifiedTypeName
               ) (typeArguments)? (LBRACK balancedTokens RBRACK)*
         )+
-        IDENT 
+        ( IDENT | STRING_LITERAL )
     ;
 
 /**
