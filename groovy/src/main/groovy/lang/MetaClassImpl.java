@@ -86,7 +86,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private boolean initialized;
     // we only need one of these that can be reused over and over.
     private final MetaProperty arrayLengthProperty = new MetaArrayLengthProperty();
-    private static final MetaMethod AMBIGOUS_LISTENER_METHOD = new DummyMetaMethod();
+    private static final MetaMethod AMBIGUOUS_LISTENER_METHOD = new DummyMetaMethod();
     private static final Object[] EMPTY_ARGUMENTS = {};
     private final Set newGroovyMethodsSet = new HashSet();
 
@@ -1918,12 +1918,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         // listener method
         //----------------------------------------------------------------------
-        boolean ambigousListener = false;
+        boolean ambiguousListener = false;
         if (method == null) {
             method = (MetaMethod) listeners.get(name);
-            ambigousListener = method == AMBIGOUS_LISTENER_METHOD;
+            ambiguousListener = method == AMBIGUOUS_LISTENER_METHOD;
             if (method != null &&
-                    !ambigousListener &&
+                    !ambiguousListener &&
                     newValue instanceof Closure) {
                 // lets create a dynamic proxy
                 Object proxy = Proxy.newProxyInstance(
@@ -1983,7 +1983,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         // error due to missing method/field
         //----------------------------------------------------------------------
-        if (ambigousListener) {
+        if (ambiguousListener) {
             throw new GroovyRuntimeException("There are multiple listeners for the property " + name + ". Please do not use the bean short form to access this listener.");
         }
         if (mp != null) {
@@ -2425,7 +2425,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return null;
         }
 
-        //more than one matching method found --> ambigous!
+        //more than one matching method found --> ambiguous!
         String msg = "Ambiguous method overloading for method ";
         msg += theClass.getName() + "#" + name;
         msg += ".\nCannot resolve which method to invoke for ";
@@ -2457,15 +2457,24 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private void addProperties() {
         BeanInfo info;
+        final Class stopClass;
         //     introspect
         try {
-            info = (BeanInfo) AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                public Object run() throws IntrospectionException {
-                    return Introspector.getBeanInfo(theClass);
-                }
-            });
+            if (isBeanDerivative(theClass)) {
+                info = (BeanInfo) AccessController.doPrivileged(new PrivilegedExceptionAction() {
+                    public Object run() throws IntrospectionException {
+                        return Introspector.getBeanInfo(theClass, Introspector.IGNORE_ALL_BEANINFO);
+                    }
+                });
+            } else {
+                info = (BeanInfo) AccessController.doPrivileged(new PrivilegedExceptionAction() {
+                    public Object run() throws IntrospectionException {
+                        return Introspector.getBeanInfo(theClass);
+                    }
+                });
+            }
         } catch (PrivilegedActionException pae) {
-            throw new GroovyRuntimeException("exception while bean introspection", pae.getException());
+            throw new GroovyRuntimeException("exception during bean introspection", pae.getException());
         }
         PropertyDescriptor[] descriptors = info.getPropertyDescriptors();
         // build up the metaproperties based on the public fields, property descriptors,
@@ -2482,12 +2491,21 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 addToAllMethodsIfPublic(metaMethod);
                 String name = listenerMethod.getName();
                 if (listeners.containsKey(name)) {
-                    listeners.put(name, AMBIGOUS_LISTENER_METHOD);
+                    listeners.put(name, AMBIGUOUS_LISTENER_METHOD);
                 } else {
                     listeners.put(name, metaMethod);
                 }
             }
         }
+    }
+
+    private boolean isBeanDerivative(Class theClass) {
+        Class next = theClass;
+        while (next != null) {
+            if (Arrays.asList(next.getInterfaces()).contains(BeanInfo.class)) return true;
+            next = next.getSuperclass();
+        }
+        return false;
     }
 
     private void addToAllMethodsIfPublic(MetaMethod metaMethod) {
