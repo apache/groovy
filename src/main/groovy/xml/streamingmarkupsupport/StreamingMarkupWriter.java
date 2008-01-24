@@ -24,11 +24,12 @@ import java.nio.charset.CharsetEncoder;
 
 public class StreamingMarkupWriter extends Writer {
 	protected final Writer writer;
-    protected final String encoding;
-    protected final CharsetEncoder encoder;
-    protected boolean writingAttribute = false;
-    protected boolean haveHighSurrogate = false;
-    protected StringBuffer surrogatePair = new StringBuffer(2);
+  protected final String encoding;
+  protected boolean encodingKnown;
+  protected final CharsetEncoder encoder;
+  protected boolean writingAttribute = false;
+  protected boolean haveHighSurrogate = false;
+  protected StringBuffer surrogatePair = new StringBuffer(2);
 	private final Writer escapedWriter =  new Writer() {
 											/* (non-Javadoc)
 											 * @see java.io.Writer#close()
@@ -86,10 +87,13 @@ public class StreamingMarkupWriter extends Writer {
         
         if (encoding != null) {
             this.encoding = encoding;
+            this.encodingKnown = true;
         } else if (writer instanceof OutputStreamWriter) {
             this.encoding = ((OutputStreamWriter)writer).getEncoding();
+            this.encodingKnown = true;
         } else {
             this.encoding = "US-ASCII";
+            this.encodingKnown = false;
         }
         
         this.encoder = Charset.forName(this.encoding).newEncoder();
@@ -178,5 +182,9 @@ public class StreamingMarkupWriter extends Writer {
     
     public String getEncoding() {
         return this.encoding;
+    }
+    
+    public boolean getEncodingKnown() {
+      return this.encodingKnown;
     }
 }

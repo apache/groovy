@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -47,12 +47,12 @@ class MarkupBuilderTest extends GroovyTestCase {
             elem2('hello2')
             elem3(x:7)
         }
-        assertExpectedXml('''\
+        assertExpectedXml '''\
 <root1 a='5' b='7'>
   <elem1>hello1</elem1>
   <elem2>hello2</elem2>
   <elem3 x='7' />
-</root1>''')
+</root1>'''
     }
 
     // It is not recommended practice to use the value attribute
@@ -85,7 +85,7 @@ class MarkupBuilderTest extends GroovyTestCase {
                 elem2(d:4)
             }
         }
-        assertExpectedXml('''\
+        assertExpectedXml '''\
 <root1 a='5' b='7'>hello1<elem1 c='4'>hello2<elem2 d='4'>hello3</elem2>
 </elem1>
 <elem1 c='4'>hello2<elem2>hello3</elem2>
@@ -103,7 +103,7 @@ class MarkupBuilderTest extends GroovyTestCase {
 <elem1>hello2<elem2 d='4'>hello3</elem2>
 <elem2 d='4' />
 </elem1>
-</root1>''')
+</root1>'''
     }
 
     void testTree() {
@@ -119,7 +119,7 @@ class MarkupBuilderTest extends GroovyTestCase {
                 child2("hello")
             }
         }
-        assertExpectedXml('''\
+        assertExpectedXml '''\
 <root2 a='5' b='7'>
   <elem1>hello1</elem1>
   <elem2>hello2</elem2>
@@ -131,12 +131,12 @@ class MarkupBuilderTest extends GroovyTestCase {
     <child z='def' />
     <child2>hello</child2>
   </nestedElem2>
-</root2>''')
+</root2>'''
     }
 
     void testContentAndDataInMarkup() {
         xml.a(href:"http://groovy.codehaus.org", "groovy")
-        assertExpectedXml("<a href='http://groovy.codehaus.org'>groovy</a>")
+        assertExpectedXml "<a href='http://groovy.codehaus.org'>groovy</a>"
     }
 
     void testMarkupWithColonsAndNamespaces() {
@@ -155,7 +155,7 @@ class MarkupBuilderTest extends GroovyTestCase {
                 "initial-letters"("A.J.")
             }
         }
-        assertEquals(expectedXml, fixEOLs(writer.toString()))
+        assertEquals expectedXml, fixEOLs(writer.toString())
     }
 
     /**
@@ -173,6 +173,14 @@ class MarkupBuilderTest extends GroovyTestCase {
   <element attr='value 1 &amp; 2'>chars: &amp; &lt; &gt; " in middle</element>
   <greaterthan>&gt;</greaterthan>
   <emptyElement />
+  <null />
+  <nullAttribute />
+  <emptyWithAttributes attr1='set' />
+  <emptyAttribute t1='' />
+  <parent key='value'>
+    <label for='usernameId'>Username: </label>
+    <input name='test' id='1' />
+  </parent>
 </chars>'''
 
         // Generate the markup.
@@ -184,9 +192,17 @@ class MarkupBuilderTest extends GroovyTestCase {
             element(attr: "value 1 & 2", "chars: & < > \" in middle")
             greaterthan(">")
             emptyElement()
+            'null'(null)
+            nullAttribute(t1:null)
+            emptyWithAttributes(attr1:'set')
+            emptyAttribute(t1:'')
+            parent(key:'value'){
+                label(for:'usernameId', 'Username: ')
+                input(name:'test', id:1)
+            }
         }
 
-        assertEquals(expectedXml, fixEOLs(writer.toString()))
+        assertEquals expectedXml, fixEOLs(writer.toString())
     }
 
     /**
@@ -216,7 +232,7 @@ class MarkupBuilderTest extends GroovyTestCase {
             emptyElement()
         }
 
-        assertEquals(expectedXml, fixEOLs(writer.toString()))
+        assertEquals expectedXml, fixEOLs(writer.toString())
     }
 
     /**
@@ -233,13 +249,13 @@ require escaping. The other characters consist of:
     * & - ampersand
 ''')
 
-        assertExpectedXml('''\
+        assertExpectedXml '''\
 <element>This is multi-line content with characters, such as &lt;, that
 require escaping. The other characters consist of:
 
     * &gt; - greater than
     * &amp; - ampersand
-</element>''')
+</element>'''
     }
 
     /**
@@ -260,7 +276,7 @@ require escaping. The other characters consist of:
             }
         }
 
-        assertExpectedXml('''\
+        assertExpectedXml '''\
 <ELEM1>
   <ELEM2 type='2' id='first'>
     <ELEM3A id='first' />
@@ -274,7 +290,7 @@ require escaping. The other characters consist of:
     <ELEM3A id='third' />
     <ELEM3B type='3'>text</ELEM3B>
   </ELEM2>
-</ELEM1>''')
+</ELEM1>'''
     }
 
     void testMixedMarkup() {
@@ -285,20 +301,44 @@ require escaping. The other characters consist of:
             mkp.yieldUnescaped ' Spades &amp; Clubs'
         }
 
-        assertExpectedXml('''\
-<p><em>Usually</em> Hearts &amp; Diamonds <b>beats</b> Spades &amp; Clubs </p>''')
+        assertExpectedXml '''\
+<p><em>Usually</em> Hearts &amp; Diamonds <b>beats</b> Spades &amp; Clubs </p>'''
     }
-    
+
     void testCallingMethod() {
        // this test is to ensure compatiblity only
-       xml.p { 
+       xml.p {
          def aValue = myMethod([:]).value
          em(aValue)
       }
-      
-      assertExpectedXml('<p><em>call to outside</em></p>')
+
+      assertExpectedXml '<p><em>call to outside</em></p>'
     }
-    
+
+    void testOmitAttributeSettingsOmitNullKeepEmptyDefaultCase() {
+        xml.element(att1:null, att2:'')
+        assertExpectedXml "<element att2='' />"
+    }
+
+    void testOmitAttributeSettingsKeepBoth() {
+        xml.omitNullAttributes = false
+        xml.element(att1:null, att2:'')
+        assertExpectedXml "<element att1='' att2='' />"
+    }
+
+    void testOmitAttributeSettingsKeepNullOmitEmpty() {
+        xml.omitNullAttributes = false
+        xml.omitEmptyAttributes = true
+        xml.element(att1:null, att2:'')
+        assertExpectedXml "<element att1='' />"
+    }
+
+    void testOmitAttributeSettingsOmitBoth() {
+        xml.omitEmptyAttributes = true
+        xml.element(att1:null, att2:'')
+        assertExpectedXml "<element />"
+    }
+
     private myMethod(x) {
       x.value='call to outside'
       return x

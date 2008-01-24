@@ -1059,6 +1059,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Allows a Map to be iterated through using a closure. If the
+     * closure takes two parameters then it will be passed the Map.Entry and
+     * the item's index (a counter starting at zero) otherwise if the closure
+     * takes three parameters then it will be passed the key, the value, and
+     * the index.
+     *
+     * @param self    the map over which we iterate
+     * @param closure a Closure to operate on each item
+     * @return the self Object
+     */
+    public static Object eachWithIndex(Map self, Closure closure) {
+        int counter = 0;
+        for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
+            Map.Entry entry = (Map.Entry) iter.next();
+            callClosureForMapEntryAndCounter(closure, entry, counter++);
+        }
+        return self;
+    }
+
+    /**
      * Iterate over each element of the list in the reverse order.
      *
      * @param self    a List
@@ -1636,6 +1656,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     protected static Object callClosureForMapEntry(Closure closure, Map.Entry entry) {
         if (closure.getMaximumNumberOfParameters() == 2) {
             return closure.call(new Object[]{entry.getKey(), entry.getValue()});
+        }
+        return closure.call(entry);
+    }
+
+    protected static Object callClosureForMapEntryAndCounter(Closure closure, Map.Entry entry, int counter) {
+        if (closure.getMaximumNumberOfParameters() == 3) {
+            return closure.call(new Object[]{entry.getKey(), entry.getValue(), new Integer(counter)});
+        }
+        if (closure.getMaximumNumberOfParameters() == 2) {
+            return closure.call(new Object[]{entry, new Integer(counter)});
         }
         return closure.call(entry);
     }
@@ -8815,18 +8845,124 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Gets the output and error streams from a process and reads them
-     * to keep the process from blocking due to a full ouput buffer. For this
+     * to keep the process from blocking due to a full output buffer. For this,
      * two Threads are started, so this method will return immediately.
      *
      * @param self a Process
      */
     public static void consumeProcessOutput(Process self) {
-        Dumper d = new Dumper(self.getErrorStream());
+        consumeProcessOutput(self, null, null);
+    }
+
+    /**
+     * Gets the output and error streams from a process and reads them
+     * to keep the process from blocking due to a full output buffer.
+     * The processed stream data is appended to the supplied StringBuffer(s).
+     * For this, two Threads are started, so this method will return immediately.
+     *
+     * @param self a Process
+     * @param output a StringBuffer to capture the process stdout
+     * @param error a StringBuffer to capture the process stderr
+     */
+    public static void consumeProcessOutput(Process self, StringBuffer output, StringBuffer error) {
+        Dumper d = new Dumper(self.getErrorStream(), error);
         Thread t = new Thread(d);
         t.start();
-        d = new Dumper(self.getInputStream());
+        d = new Dumper(self.getInputStream(), output);
         t = new Thread(d);
         t.start();
+    }
+
+    /**
+     * Gets the error stream from a process and reads it
+     * to keep the process from blocking due to a full buffer.
+     * The processed stream data is appended to the supplied StringBuffer.
+     * A new Thread is started, so this method will return immediately.
+     *
+     * @param self a Process
+     * @param error a StringBuffer to capture the process stderr
+     */
+    public static void consumeProcessErrorStream(Process self, StringBuffer error) {
+        Dumper d = new Dumper(self.getErrorStream(), error);
+        Thread t = new Thread(d);
+        t.start();
+    }
+
+    /**
+     * Gets the output stream from a process and reads it
+     * to keep the process from blocking due to a full output buffer.
+     * The processed stream data is appended to the supplied StringBuffer.
+     * A new Thread is started, so this method will return immediately.
+     *
+     * @param self a Process
+     * @param output a StringBuffer to capture the process stdout
+     */
+    public static void consumeProcessOutputStream(Process self, StringBuffer output) {
+        Dumper d = new Dumper(self.getInputStream(), output);
+        Thread t = new Thread(d);
+        t.start();
+    }
+
+    /**
+     * Creates a new BufferedWriter as stdin for this process,
+     * passes it to the closure, and ensures the stream is flushed
+     * and closed after the closure returns.
+     * A new Thread is started, so this method will return immediately.
+     *
+     * @param self a Process
+     * @param closure a closure
+     */
+    public static void withWriter(final Process self, final Closure closure) {
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    withWriter(new OutputStreamWriter(getOut(self)), closure);
+                } catch (IOException e) {
+                    throw new GroovyRuntimeException("exception while reading process stream", e);
+                }
+            }
+        }).start();
+    }
+
+    /**
+     * Allows one Process to asynchronously pipe data to another Process.
+     *
+     * @param left  a Process instance
+     * @param right a Process to pipe output to
+     * @return the second Process to allow chaining
+     * @throws IOException if an IOException occurs.
+     */
+    public static Process pipeTo(final Process left, final Process right) throws IOException {
+        new Thread(new Runnable() {
+            public void run() {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(getIn(left)));
+                PrintWriter writer = new PrintWriter(new BufferedOutputStream(getOut(right)));
+                String next;
+                try {
+                    while ((next = reader.readLine()) != null) {
+                        writer.println(next);
+                    }
+                } catch (IOException e) {
+                    throw new GroovyRuntimeException("exception while reading process stream", e);
+                } finally {
+                    writer.close();
+                }
+            }
+        }).start();
+        return right;
+    }
+
+    /**
+     * Overrides the or operator to allow one Process to asynchronously
+     * pipe data to another Process.
+     *
+     * @param left  a Process instance
+     * @param right a Process to pipe output to
+     * @return the second Process to allow chaining
+     * @throws IOException if an IOException occurs.
+     */
+    public static Process or(final Process left, final Process right) throws IOException {
+        return pipeTo(left, right);
     }
 
     /**
@@ -9136,6 +9272,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     private static class Dumper implements Runnable {
         InputStream in;
+        StringBuffer sb;
+
+        public Dumper(InputStream in, StringBuffer sb) {
+            this.in = in;
+            this.sb = sb;
+        }
 
         public Dumper(InputStream in) {
             this.in = in;
@@ -9144,8 +9286,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         public void run() {
             InputStreamReader isr = new InputStreamReader(in);
             BufferedReader br = new BufferedReader(isr);
+            String next;
             try {
-                while (br.readLine() != null) {
+                while ((next = br.readLine()) != null) {
+                    if (sb != null) {
+                        sb.append(next);
+                    }
                 }
             } catch (IOException e) {
                 throw new GroovyRuntimeException("exception while reading process stream", e);

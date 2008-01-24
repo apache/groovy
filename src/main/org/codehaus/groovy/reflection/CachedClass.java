@@ -233,7 +233,7 @@ public class CachedClass {
         return modifiers;
     }
 
-    protected Object coerceArgument(Object argument) {
+    public Object coerceArgument(Object argument) {
         return argument;
     }
     
@@ -335,7 +335,7 @@ public class CachedClass {
     public MetaClass getMetaClassForClass() {
         Object cur = metaClassForClass;
         if (cur == null)
-          return null;
+            return null;
         if (cur instanceof SoftReference) {
             SoftReference softReference = (SoftReference) cur;
             return (MetaClass) softReference.get();
@@ -385,7 +385,7 @@ public class CachedClass {
             super(klazz);
         }
 
-        protected Object coerceArgument(Object argument) {
+        public Object coerceArgument(Object argument) {
             if (argument instanceof Number) {
                 return coerceNumber(argument);
             }
@@ -393,48 +393,19 @@ public class CachedClass {
 
         }
 
+        public boolean isAssignableFrom(Class classToTransformFrom) {
+            return classToTransformFrom == null
+                || Number.class.isAssignableFrom(classToTransformFrom);
+        }
+
         private Object coerceNumber(Object argument) {
-            Object oldArgument = argument;
-            boolean wasDouble = false;
-            boolean wasFloat = false;
             Class param = getCachedClass();
-            if (param == Byte.class || param == Byte.TYPE) {
+            if (param == Byte.class /*|| param == Byte.TYPE*/) {
                 argument = new Byte(((Number) argument).byteValue());
-            } else if (param == Double.class || param == Double.TYPE) {
-                wasDouble = true;
-                argument = new Double(((Number) argument).doubleValue());
-            } else if (param == Float.class || param == Float.TYPE) {
-                wasFloat = true;
-                argument = new Float(((Number) argument).floatValue());
-            } else if (param == Integer.class || param == Integer.TYPE) {
-                argument = new Integer(((Number) argument).intValue());
-            } else if (param == Long.class || param == Long.TYPE) {
-                argument = new Long(((Number) argument).longValue());
-            } else if (param == Short.class || param == Short.TYPE) {
-                argument = new Short(((Number) argument).shortValue());
-            } else if (param == BigDecimal.class) {
-                argument = new BigDecimal(String.valueOf((Number) argument));
             } else if (param == BigInteger.class) {
                 argument = new BigInteger(String.valueOf((Number) argument));
             }
 
-            if (oldArgument instanceof BigDecimal) {
-                BigDecimal oldbd = (BigDecimal) oldArgument;
-                boolean throwException = false;
-                if (wasDouble) {
-                    Double d = (Double) argument;
-                    if (d.isInfinite()) throwException = true;
-                } else if (wasFloat) {
-                    Float f = (Float) argument;
-                    if (f.isInfinite()) throwException = true;
-                } else {
-                    BigDecimal newbd = new BigDecimal(String.valueOf((Number) argument));
-                    throwException = !oldArgument.equals(newbd);
-                }
-
-                if (throwException)
-                    throw new IllegalArgumentException(param + " out of range while converting from BigDecimal");
-            }
             return argument;
         }
     }
@@ -442,6 +413,14 @@ public class CachedClass {
     public static class IntegerCachedClass extends NumberCachedClass {  // int, Integer
         IntegerCachedClass(Class klazz) {
             super(klazz);
+        }
+
+        public Object coerceArgument(Object argument) {
+            if (argument instanceof Integer) {
+                return argument;
+            }
+
+            return new Integer(((Number) argument).intValue());
         }
 
         boolean isDirectlyAssignable(Object argument) {
@@ -488,6 +467,14 @@ public class CachedClass {
             super(klazz);
         }
 
+        public Object coerceArgument(Object argument) {
+            if (argument instanceof Short) {
+                return argument;
+            }
+
+            return new Short(((Number) argument).shortValue());
+        }
+
         boolean isDirectlyAssignable(Object argument) {
             return argument instanceof Short;
         }
@@ -506,6 +493,14 @@ public class CachedClass {
             super(klazz);
         }
 
+
+        public Object coerceArgument(Object argument) {
+            if (argument instanceof Long) {
+                return argument;
+            }
+
+            return new Long(((Number) argument).longValue());
+        }
 
         boolean isDirectlyAssignable(Object argument) {
             return argument instanceof Long;
@@ -527,6 +522,18 @@ public class CachedClass {
     public static class FloatCachedClass extends NumberCachedClass {
         FloatCachedClass(Class klazz) {
             super(klazz);
+        }
+
+        public Object coerceArgument(Object argument) {
+            if (argument instanceof Float) {
+                return argument;
+            }
+
+            Float res = new Float(((Number) argument).floatValue());
+            if (argument instanceof BigDecimal && res.isInfinite()) {
+                throw new IllegalArgumentException(Float.class + " out of range while converting from BigDecimal");
+            }
+            return res;
         }
 
         boolean isDirectlyAssignable(Object argument) {
@@ -557,7 +564,7 @@ public class CachedClass {
             return argument instanceof Double;
         }
 
-        protected Object coerceArgument(Object argument) {
+        public Object coerceArgument(Object argument) {
             if (argument instanceof Double) {
                 return argument;
             }
@@ -597,7 +604,7 @@ public class CachedClass {
             return argument instanceof BigDecimal;
         }
 
-        protected Object coerceArgument(Object argument) {
+        public Object coerceArgument(Object argument) {
             if (argument instanceof BigDecimal) {
                 return argument;
             }
@@ -607,8 +614,11 @@ public class CachedClass {
     }
 
     public static class StringCachedClass extends CachedClass {
+        private static final Class STRING_CLASS = String.class;
+        private static final Class GSTRING_CLASS = GString.class;
+
         StringCachedClass() {
-            super(String.class);
+            super(STRING_CLASS);
         }
 
         boolean isDirectlyAssignable(Object argument) {
@@ -617,13 +627,12 @@ public class CachedClass {
 
         public boolean isAssignableFrom(Class classToTransformFrom) {
             return  classToTransformFrom == null
-                  || classToTransformFrom == String.class
-                  || ReflectionCache.isAssignableFrom(GString.class,classToTransformFrom);
+                  || classToTransformFrom == STRING_CLASS
+                  || ReflectionCache.isAssignableFrom(GSTRING_CLASS,classToTransformFrom);
         }
 
-        protected Object coerceArgument(Object argument) {
-            if (!(argument instanceof GString)) return argument;
-            return argument.toString();
+        public Object coerceArgument(Object argument) {
+            return argument instanceof GString ? argument.toString() : argument;
         }
     }
 
@@ -656,7 +665,7 @@ public class CachedClass {
             super(klazz);
         }
 
-        protected Object coerceArgument(Object argument) {
+        public Object coerceArgument(Object argument) {
             Class argumentClass = argument.getClass();
             if (argumentClass.getName().charAt(0) != '[') return argument;
             Class argumentComponent = argumentClass.getComponentType();
