@@ -21,7 +21,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.Variable;
 
 /**
- * Represents a local variable name, the simplest form of expression. e.g. "foo".
+ * Represents a local variable name, the simplest form of expression. e.g.&nbsp;"foo".
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$

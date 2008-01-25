@@ -2,6 +2,31 @@ package groovy
 
 class SerializeTest extends GroovyTestCase {
 
+    void testGString () {
+        def a = 2, b = 2
+        def gs = "${a + b} = ${b * a}"
+
+        assertTrue(gs instanceof GString)
+
+        def buffer = write(gs)
+        def res = read(buffer)
+
+        assertTrue(res instanceof GString)
+        assertEquals "4 = 4", res
+    }
+
+    void testGStringField () {
+        def a = 2, b = 2
+
+        def obj = new WithGStringField()
+        obj.f = "${a + b} = ${b * a}"
+
+        def buffer = write(obj)
+        def resObj = read(buffer)
+
+        assertEquals "4 = 4", resObj.f
+    }
+
     void testFoo() {
         def foo = new Foo()
         foo.name = "Gromit"
@@ -35,4 +60,10 @@ class SerializeTest extends GroovyTestCase {
         return object
     }
 
+}
+
+class WithGStringField implements Serializable{
+    private static final long serialVersionUID = 1L;
+
+    GString f;
 }

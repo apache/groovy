@@ -8,4 +8,9 @@ change sets from trunk NOT in 1.5.x:
 * 10398: Static fields for numerical constants brings noticable performance improvements. 
 * 10403: All most important (in some non-defined sense) paths of call dispatch is covered by call site caching. In fact it brings 2x-4x performance improvement for several benchmarks we have.
 * 10522: Some more call site optimizations
-*
+* 10554: First step for special call sites for binops
+* 10562: More about call sites
+* 10566: bemchmarks for call site
+
+
+Last change set applied to 1.5.x: 10590

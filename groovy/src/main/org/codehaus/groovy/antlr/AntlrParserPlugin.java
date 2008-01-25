@@ -1256,6 +1256,11 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     protected Statement whileStatement(AST whileNode) {
         AST node = whileNode.getFirstChild();
         assertNodeType(EXPR, node);
+        // TODO remove this once we support declarations in the while condition
+        if (isType(VARIABLE_DEF, node.getFirstChild())) {
+            throw new ASTRuntimeException(whileNode,
+                    "While loop condition contains a declaration; this is currently unsupported.");
+        }
         BooleanExpression booleanExpression = booleanExpression(node);
 
         node = node.getNextSibling();

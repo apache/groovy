@@ -1,6 +1,6 @@
 /**
  * The tests collected here all take a 'significant' length of time to execute,
- * i.e. greater than 2 seconds elapsed on my machine.
+ * i.e.&nsbp;greater than 2 seconds elapsed on my machine.
  *
  * to prevent a JVM startup-shutdown time per test, it should be more efficient to
  * collect the tests together into a suite.

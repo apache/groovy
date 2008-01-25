@@ -1,5 +1,5 @@
 /**
- * methods with specific parameters (e.g. primitives)
+ * methods with specific parameters (e.g.&nbsp;primitives)
  * for use with groovy tests
  *
  * @author <a href="mailto:jeremy.rayner@bigfoot.com">Jeremy Rayner</a>
