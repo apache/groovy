@@ -1518,22 +1518,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Adds combinations() as a method on collections.
+     * Adds GroovyCollections#combinations(Collection) as a method on collections.
      *
      * @param self a Collection of lists
      * @return a List of the combinations found
-     * @see GroovyCollections#combinations(Collection)
+     * @see groovy.util.GroovyCollections#combinations(java.util.Collection)
      */
     public static List combinations(Collection self) {
         return GroovyCollections.combinations(self);
     }
 
     /**
-     * Adds transpose() as a method on collections.
+     * Adds GroovyCollections#transpose(Collection) as a method on collections.
      *
      * @param self a Collection of lists
      * @return a List of the transposed lists
-     * @see GroovyCollections#transpose(Collection)
+     * @see groovy.util.GroovyCollections#transpose(java.util.Collection)
      */
     public static List transpose(Collection self) {
         return GroovyCollections.transpose(self);
@@ -1886,7 +1886,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a Collection
      * @return the maximum value
-     * @see GroovyCollections#max(Collection)
+     * @see groovy.util.GroovyCollections#max(java.util.Collection)
      */
     public static Object max(Collection self) {
         return GroovyCollections.max(self);
@@ -1915,7 +1915,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a Collection
      * @return the minimum value
-     * @see GroovyCollections#min(Collection)
+     * @see groovy.util.GroovyCollections#min(java.util.Collection)
      */
     public static Object min(Collection self) {
         return GroovyCollections.min(self);
@@ -3274,6 +3274,27 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Converts the given array to either a List, Set, or
+     * SortedSet.  If the given class is something else, the
+     * call is deferred to {link #asType(Object,Class)}.
+     *
+     * @param ary   an array
+     * @param clazz the desired class
+     * @return the object resulting from this type conversion
+     * @see #asType(Object,Class)
+     */
+    public static Object asType(Object[] ary, Class clazz) {
+        if (clazz == List.class) {
+            return Arrays.asList(ary);
+        } else if (clazz == Set.class) {
+            return new HashSet(Arrays.asList(ary));
+        } else if (clazz == SortedSet.class) {
+            return new TreeSet(Arrays.asList(ary));
+        }
+        return asType((Object) ary, clazz);
+    }
+
+    /**
      * Coerces the closure to an implementation of the given class.  The class
      * is assumed to be an interface or class with a single method definition.
      * The closure is used as the implementation of that single method.
@@ -3465,22 +3486,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     // Also handles nulls. Null is less than everything else.
     private static class NumberAwareComparator implements Comparator {
         public int compare(Object o1, Object o2) {
-            if (o1 == null) {
-                return o2 == null ? 0 : -1;
-            }
-            if (o2 == null) {
-                return 1;
-            }
-            if (o1 instanceof Number && o2 instanceof Number) {
-                BigDecimal x1 = new BigDecimal(String.valueOf(o1));
-                BigDecimal x2 = new BigDecimal(String.valueOf(o2));
-                return x1.compareTo(x2);
-            }
-            if (o1 instanceof Comparable && o2 instanceof Comparable &&
-                    (o1.getClass().isAssignableFrom(o2.getClass()) ||
-                            o2.getClass().isAssignableFrom(o1.getClass()))) {
-                return ((Comparable) o1).compareTo((Comparable) o2);
-            }
+            try {
+                return DefaultTypeTransformation.compareTo(o1, o2);
+            } catch (ClassCastException cce) {
+            } catch (GroovyRuntimeException gre) {}
             int x1 = o1.hashCode();
             int x2 = o2.hashCode();
             return (x1 - x2);
@@ -8862,13 +8871,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a Process
      */
     public static void consumeProcessOutput(Process self) {
-        consumeProcessOutput(self, null, null);
+        consumeProcessOutput(self, (OutputStream)null, (OutputStream)null);
     }
 
     /**
      * Gets the output and error streams from a process and reads them
      * to keep the process from blocking due to a full output buffer.
-     * The processed stream data is appended to the supplied StringBuffer(s).
+     * The processed stream data is appended to the supplied StringBuffer.
      * For this, two Threads are started, so this method will return immediately.
      *
      * @param self a Process
@@ -8876,6 +8885,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param error a StringBuffer to capture the process stderr
      */
     public static void consumeProcessOutput(Process self, StringBuffer output, StringBuffer error) {
+        consumeProcessOutputStream(self, output);
+        consumeProcessErrorStream(self, error);
+    }
+
+    /**
+     * Gets the output and error streams from a process and reads them
+     * to keep the process from blocking due to a full output buffer.
+     * The processed stream data is appended to the supplied OutputStream.
+     * For this, two Threads are started, so this method will return immediately.
+     *
+     * @param self a Process
+     * @param output an OutputStream to capture the process stdout
+     * @param error an OutputStream to capture the process stderr
+     */
+    public static void consumeProcessOutput(Process self, OutputStream output, OutputStream error) {
         consumeProcessOutputStream(self, output);
         consumeProcessErrorStream(self, error);
     }
@@ -8890,9 +8914,33 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param error a StringBuffer to capture the process stderr
      */
     public static void consumeProcessErrorStream(Process self, StringBuffer error) {
-        Dumper d = new Dumper(self.getErrorStream(), error);
-        Thread t = new Thread(d);
-        t.start();
+        new Thread(new TextDumper(self.getErrorStream(), error)).start();
+    }
+
+    /**
+     * Gets the error stream from a process and reads it
+     * to keep the process from blocking due to a full buffer.
+     * The processed stream data is appended to the supplied OutputStream.
+     * A new Thread is started, so this method will return immediately.
+     *
+     * @param self a Process
+     * @param err an OutputStream to capture the process stderr
+     */
+    public static void consumeProcessErrorStream(Process self, OutputStream err) {
+        new Thread(new ByteDumper(self.getErrorStream(), err)).start();
+    }
+
+    /**
+     * Gets the error stream from a process and reads it
+     * to keep the process from blocking due to a full buffer.
+     * The processed stream data is appended to the supplied Writer.
+     * A new Thread is started, so this method will return immediately.
+     *
+     * @param self a Process
+     * @param err a Writer to capture the process stderr
+     */
+    public static void consumeProcessErrorStream(Process self, Writer err) {
+        new Thread(new TextDumper(self.getErrorStream(), err)).start();
     }
 
     /**
@@ -8905,9 +8953,33 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param output a StringBuffer to capture the process stdout
      */
     public static void consumeProcessOutputStream(Process self, StringBuffer output) {
-        Dumper d = new Dumper(self.getInputStream(), output);
-        Thread t = new Thread(d);
-        t.start();
+        new Thread(new TextDumper(self.getInputStream(), output)).start();
+    }
+
+    /**
+     * Gets the output stream from a process and reads it
+     * to keep the process from blocking due to a full output buffer.
+     * The processed stream data is appended to the supplied OutputStream.
+     * A new Thread is started, so this method will return immediately.
+     *
+     * @param self a Process
+     * @param output an OutputStream to capture the process stdout
+     */
+    public static void consumeProcessOutputStream(Process self, OutputStream output) {
+        new Thread(new ByteDumper(self.getInputStream(), output)).start();
+    }
+
+    /**
+     * Gets the output stream from a process and reads it
+     * to keep the process from blocking due to a full output buffer.
+     * The processed stream data is appended to the supplied Writer.
+     * A new Thread is started, so this method will return immediately.
+     *
+     * @param self a Process
+     * @param output a Writer to capture the process stdout
+     */
+    public static void consumeProcessOutputStream(Process self, Writer output) {
+        new Thread(new TextDumper(self.getInputStream(), output)).start();
     }
 
     /**
@@ -8923,7 +8995,28 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         new Thread(new Runnable() {
             public void run() {
                 try {
-                    withWriter(new OutputStreamWriter(getOut(self)), closure);
+                    withWriter(new BufferedOutputStream(getOut(self)), closure);
+                } catch (IOException e) {
+                    throw new GroovyRuntimeException("exception while reading process stream", e);
+                }
+            }
+        }).start();
+    }
+
+    /**
+     * Creates a new buffered OutputStream as stdin for this process,
+     * passes it to the closure, and ensures the stream is flushed
+     * and closed after the closure returns.
+     * A new Thread is started, so this method will return immediately.
+     *
+     * @param self a Process
+     * @param closure a closure
+     */
+    public static void withOutputStream(final Process self, final Closure closure) {
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    withStream(new BufferedOutputStream(getOut(self)), closure);
                 } catch (IOException e) {
                     throw new GroovyRuntimeException("exception while reading process stream", e);
                 }
@@ -8942,17 +9035,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static Process pipeTo(final Process left, final Process right) throws IOException {
         new Thread(new Runnable() {
             public void run() {
-                BufferedReader reader = new BufferedReader(new InputStreamReader(getIn(left)));
-                PrintWriter writer = new PrintWriter(new BufferedOutputStream(getOut(right)));
-                String next;
+                InputStream in = new BufferedInputStream(getIn(left));
+                OutputStream out = new BufferedOutputStream(getOut(right));
+                byte[] buf = new byte[8192];
+                int next;
                 try {
-                    while ((next = reader.readLine()) != null) {
-                        writer.println(next);
+                    while ((next = in.read(buf)) != -1) {
+                        out.write(buf, 0, next);
                     }
                 } catch (IOException e) {
                     throw new GroovyRuntimeException("exception while reading process stream", e);
                 } finally {
-                    writer.close();
+                    closeOutputStreamWithWarning(out);
                 }
             }
         }).start();
@@ -9277,17 +9371,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
     }
 
-    private static class Dumper implements Runnable {
+    private static class TextDumper implements Runnable {
         InputStream in;
         StringBuffer sb;
+        Writer w;
 
-        public Dumper(InputStream in, StringBuffer sb) {
+        public TextDumper(InputStream in, StringBuffer sb) {
             this.in = in;
             this.sb = sb;
         }
 
-        public Dumper(InputStream in) {
+        public TextDumper(InputStream in, Writer w) {
             this.in = in;
+            this.w = w;
         }
 
         public void run() {
@@ -9298,10 +9394,38 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 while ((next = br.readLine()) != null) {
                     if (sb != null) {
                         sb.append(next);
+                    } else {
+                        w.write(next);
                     }
                 }
             } catch (IOException e) {
                 throw new GroovyRuntimeException("exception while reading process stream", e);
+            }
+        }
+    }
+
+    private static class ByteDumper implements Runnable {
+        InputStream in;
+        OutputStream out;
+
+        public ByteDumper(InputStream in, OutputStream out) {
+            this.in = new BufferedInputStream(in);
+            this.out = out;
+        }
+
+        public ByteDumper(InputStream in) {
+            this.in = new BufferedInputStream(in);
+        }
+
+        public void run() {
+            byte[] buf = new byte[8192];
+            int next;
+            try {
+                while ((next = in.read(buf)) != -1) {
+                    if (out != null) out.write(buf, 0, next);
+                }
+            } catch (IOException e) {
+                throw new GroovyRuntimeException("exception while dumping process stream", e);
             }
         }
     }

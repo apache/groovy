@@ -750,8 +750,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 MethodNode method = (MethodNode) it.next();
                 if (method.isStatic()) continue;
                 storeMissingCovariantMethods(sn,method,methodsToAdd,genericsSpec);
-                addCovariantMethods(sn,declaredMethods,methodsToAdd,genericsSpec);
             }
+            addCovariantMethods(sn.redirect(),declaredMethods,methodsToAdd,genericsSpec);
         }
         
         ClassNode[] interfaces = classNode.getInterfaces();
@@ -761,9 +761,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 MethodNode method = (MethodNode) it.next();
                 if (method.isStatic()) continue;
                 storeMissingCovariantMethods(interfaces[i],method,methodsToAdd,genericsSpec);
-                addCovariantMethods(sn,declaredMethods,methodsToAdd,genericsSpec);
             }
-        }        
+            addCovariantMethods(interfaces[i],declaredMethods,methodsToAdd,genericsSpec);
+        }
+        
     }
     
     private MethodNode getCovariantImplementation(final MethodNode oldMethod, final MethodNode overridingMethod, Map genericsSpec) {

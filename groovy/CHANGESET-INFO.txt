@@ -6,4 +6,6 @@ change sets from trunk NOT in 1.5.x:
 * 10389: Continuation of call site caching patch
 * 10393: Continuation of call site caching.
 * 10398: Static fields for numerical constants brings noticable performance improvements. 
-* 
+* 10403: All most important (in some non-defined sense) paths of call dispatch is covered by call site caching. In fact it brings 2x-4x performance improvement for several benchmarks we have.
+* 10522: Some more call site optimizations
+*

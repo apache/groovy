@@ -41,4 +41,18 @@ public class CovariantReturnTest extends CompilableTestSupport {
       }
     """
   }
+  
+  void testCovariantOverwritingMethodWithPrimitives() {
+    assertScript """
+      class Base {
+         Object foo(boolean i) {i}
+      }
+      class Child extends Base {
+         String foo(boolean i) {""+super.foo(i)}
+      }
+      def x = new Child()
+      assert x.foo(true) == "true"
+      assert x.foo(false) == "false"
+    """
+  }
 }

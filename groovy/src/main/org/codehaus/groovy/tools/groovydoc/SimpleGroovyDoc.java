@@ -16,18 +16,31 @@
 package org.codehaus.groovy.tools.groovydoc;
 
 import java.text.BreakIterator;
-import java.util.Locale;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.codehaus.groovy.groovydoc.*;
+import org.codehaus.groovy.ant.Groovydoc;
+import groovy.lang.Closure;
+import groovy.text.RegexUtils;
 
 public class SimpleGroovyDoc implements GroovyDoc {
-	public SimpleGroovyDoc(String name) {
-		this.name = name;
-	}
 	private String name;
 	private String commentText;
 	private String rawCommentText;
 	private String firstSentenceCommentText;
+    private List links;
+
+    public SimpleGroovyDoc(String name, List links) {
+        this.name = name;
+        this.links = links;
+    }
+
+    public SimpleGroovyDoc(String name) {
+        this(name, new ArrayList());
+    }
+
 	public String name() {
 		return name;
 	}
@@ -63,17 +76,60 @@ public class SimpleGroovyDoc implements GroovyDoc {
         	this.firstSentenceCommentText = commentText;
         }
 		// hack to reformat groovydoc tags into html (todo: tags)
-		this.commentText = this.commentText.replaceAll("(?m)@([a-z]*)\\s*(.*)$","<DL><DT><B>$1:</B></DT><DD>$2</DD></DL>");			// note: use of $ here is a reference to a subsequence (as defined in Matcher.appendReplacement())
+		this.commentText = replaceAllTags(this.commentText, "(?m)@([a-z]*)\\s*(.*)$",
+                "<DL><DT><B>$1:</B></DT><DD>", "</DD></DL>");
 
 		// hack to hide groovydoc tags in summaries
 		this.firstSentenceCommentText = this.firstSentenceCommentText.replaceAll("(?m)@([a-z]*\\s*.*)$",""); // remove @return etc from summaries
         
 	}
 
-	
-	
-	
-	// Methods from Comparable
+    // TODO: this should go away once we have tags
+    public String replaceAllTags(String self, String regex, String s1, String s2) {
+        Matcher matcher = Pattern.compile(regex).matcher(self);
+        if (matcher.find()) {
+            matcher.reset();
+            StringBuffer sb = new StringBuffer();
+            while (matcher.find()) {
+                if (matcher.group(1).equals("see")) {
+                    // TODO: escape $ signs?
+                    matcher.appendReplacement(sb, s1 + getDocUrl(matcher.group(2)) + s2);
+                } else {
+                    matcher.appendReplacement(sb, s1 + "$2" + s2);
+                }
+            }
+            matcher.appendTail(sb);
+            return sb.toString();
+        } else {
+            return self;
+        }
+    }
+
+    public String getDocUrl(String type) {
+        if (type == null || type.indexOf('.') == -1)
+            return type;
+
+        final String[] target = type.split("#");
+        String shortClassName = target[0].replaceAll(".*\\.", "");
+        String packageName = type.substring(0, type.length()-shortClassName.length()-2);
+        shortClassName += (target.length > 1 ? "#" + target[1].split("\\(")[0] : "");
+        for (int i = 0; i < links.size(); i++) {
+            Groovydoc.LinkArgument linkArgument = (Groovydoc.LinkArgument) links.get(i);
+            final StringTokenizer tokenizer = new StringTokenizer(linkArgument.getPackages(), ", ");
+            while (tokenizer.hasMoreTokens()) {
+                final String token = tokenizer.nextToken();
+                if (type.startsWith(token)) {
+                    String apiBaseUrl = linkArgument.getHref();
+                    if (!apiBaseUrl.endsWith("/")) { apiBaseUrl += "/"; }
+                    String url = apiBaseUrl + target[0].replaceAll("\\.", "/") + ".html" + (target.length > 1 ? "#" + target[1] : "");
+                    return "<a href='" + url + "' title='" + shortClassName + "'>" + shortClassName + "</a>";
+                }
+            }
+        }
+        return type;
+    }
+
+    // Methods from Comparable
 	public int compareTo(Object that) {
 		if (that instanceof SimpleGroovyDoc) {
 			return name.compareTo(((SimpleGroovyDoc) that).name);

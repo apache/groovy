@@ -17,12 +17,20 @@ package org.codehaus.groovy.tools.groovydoc;
 
 import org.codehaus.groovy.groovydoc.*;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class SimpleGroovyMethodDoc extends SimpleGroovyExecutableMemberDoc implements GroovyMethodDoc {
 	public SimpleGroovyMethodDoc(String name) {
-		super(name);
+		this(name, new ArrayList());
+	}
+	public SimpleGroovyMethodDoc(String name, List links) {
+		super(name, links);
 	}
 	private GroovyType returnType;
 	public GroovyType returnType() {return returnType;}
+    // TODO need returnType.qualifiedTypeName() here
+    public String returnTypeName() {return getDocUrl(returnType.typeName());}
 	public void setReturnType(GroovyType returnType) {
 		this.returnType = returnType;
 	}

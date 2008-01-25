@@ -23,9 +23,14 @@ public class SimpleGroovyExecutableMemberDoc extends SimpleGroovyMemberDoc imple
 	List parameters;
 	
 	public SimpleGroovyExecutableMemberDoc(String name) {
-		super(name);
+		this(name, new ArrayList());
+	}
+
+	public SimpleGroovyExecutableMemberDoc(String name, List links) {
+        super(name, links);
 		parameters = new ArrayList();
 	}
+
 	public GroovyParameter[] parameters() {
 		return (GroovyParameter[]) parameters.toArray(new GroovyParameter[parameters.size()]);
 	}

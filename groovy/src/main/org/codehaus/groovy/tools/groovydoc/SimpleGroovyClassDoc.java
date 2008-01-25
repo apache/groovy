@@ -31,11 +31,15 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
 	private String superClassName;
 	private GroovyClassDoc superClass;
 	
+	public SimpleGroovyClassDoc(String name, List links) {
+        super(name, links);
+        constructors = new ArrayList();
+        fields = new ArrayList();
+        methods = new ArrayList();
+    }
+
 	public SimpleGroovyClassDoc(String name) {
-		super(name);
-		constructors = new ArrayList();
-		fields = new ArrayList();
-		methods = new ArrayList();
+		this(name, new ArrayList());
 	}
 
 	/**

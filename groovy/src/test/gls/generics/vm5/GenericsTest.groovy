@@ -229,4 +229,17 @@ class GenericsTest extends GenericsTestBase {
         assert task.call() == "x"
       """  
 	}
+	
+	void testCovariantReturnWithEmptyAbstractClassesInBetween() {
+	  assertScript """
+	    import java.util.concurrent.*;
+
+        abstract class AbstractCallableTask<T> implements Callable<T> { }
+        abstract class SubclassCallableTask<T> extends AbstractCallableTask<T> { }
+        class CallableTask extends SubclassCallableTask<String> {
+          public String call() { return "x"; }
+        }
+        assert "x" == new CallableTask().call();
+	  """
+	}
 }
