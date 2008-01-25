@@ -349,6 +349,9 @@ public class DefaultTypeTransformation {
     }
 
     public static Object asArray(Object object, Class type) {
+        if (type.isAssignableFrom(object.getClass())) {
+            return object;
+        }
         Collection list = asCollection(object);
         int size = list.size();
         Class elementType = type.getComponentType();

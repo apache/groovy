@@ -251,8 +251,8 @@ tokens {
     }
 
     /** Create an AST node with the token type and text passed in, but
-     *  with the same background information as another supplied Token (e.g. line numbers)
-     * to be used in place of antlr tree construction syntax,
+     *  with the same background information as another supplied Token (e.g.&nbsp;line numbers).
+     * To be used in place of antlr tree construction syntax,
      * i.e. #[TOKEN,"text"]  becomes  create(TOKEN,"text",anotherToken)
      *
      * todo - change antlr.ASTFactory to do this instead...

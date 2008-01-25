@@ -15,16 +15,17 @@
  */
 package groovy.lang;
 
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.InvokerHelper;
+
 import java.io.IOException;
+import java.io.Serializable;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Pattern;
-
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * Represents a String which contains embedded values such as "hello there
@@ -34,11 +35,13 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * actual value objects can be bound to a JDBC statement. The lovely name of
  * this class was suggested by Jules Gosnell and was such a good idea, I
  * couldn't resist :)
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public abstract class GString extends GroovyObjectSupport implements Comparable, CharSequence, Writable, Buildable {
+public abstract class GString extends GroovyObjectSupport implements Comparable, CharSequence, Writable, Buildable, Serializable {
+
+    static final long serialVersionUID = -2638020355892246323L;
 
     private Object[] values;
 
@@ -54,7 +57,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     public abstract String[] getStrings();
 
     /**
-     * Overloaded to implement duck typing for Strings 
+     * Overloaded to implement duck typing for Strings
      * so that any method that can't be evaluated on this
      * object will be forwarded to the toString() object instead.
      */
@@ -171,7 +174,7 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     public void build(final GroovyObject builder) {
     final String[] s = getStrings();
     final int numberOfValues = values.length;
-        
+
         for (int i = 0, size = s.length; i < size; i++) {
             builder.getProperty("mkp");
             builder.invokeMethod("yield", new Object[]{s[i]});

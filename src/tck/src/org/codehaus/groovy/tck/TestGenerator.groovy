@@ -112,7 +112,7 @@ class TestGenerator{
     // -- useful stuff
 
     /**
-     * Creates alternative versions of the given source, one for each end of line comment tag e.g. //@fail
+     * Creates alternative versions of the given source, one for each end of line comment tag e.g.&nbsp;//@fail
      * will remove the double slash from the start of each of the matching line.
      * e.g. src text of...
      * <pre>

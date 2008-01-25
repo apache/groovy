@@ -22,15 +22,11 @@ class ScriptTest extends GroovyTestCase {
         def shell = new GroovyShell()
         def args = ['a', 'b', 'c']
         
-        shell.run(file, args)
-
-        /** @todo this doesn't work when ran in an IDE?
         try {
 	        shell.run(file, args)
         } 
         catch (Exception e) {
             println("Caught: " + e)
         }
-         */
     }
 }
