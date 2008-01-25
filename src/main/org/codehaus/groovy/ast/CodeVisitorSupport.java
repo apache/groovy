@@ -17,7 +17,6 @@ package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
-import org.codehaus.groovy.classgen.BytecodeExpression;
 
 import java.util.Iterator;
 import java.util.List;
@@ -279,6 +278,4 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
         visitListOfExpressions(cle.getExpressions());
     }
 
-    public void visitBytecodeExpression(BytecodeExpression cle) {
-    }
 }

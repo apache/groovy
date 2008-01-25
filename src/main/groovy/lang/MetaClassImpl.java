@@ -1449,10 +1449,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 MetaBeanProperty mp = (MetaBeanProperty) element;
                 boolean setter = true;
                 boolean getter = true;
-                if (mp.getGetter() == null || mp.getGetter() instanceof GeneratedMetaMethod || mp.getGetter() instanceof NewInstanceMetaMethod) {
+                if (mp.getGetter() == null || mp.getGetter() instanceof NewInstanceMetaMethod) {
                     getter = false;
                 }
-                if (mp.getSetter() == null || mp.getSetter() instanceof GeneratedMetaMethod || mp.getSetter() instanceof NewInstanceMetaMethod) {
+                if (mp.getSetter() == null || mp.getSetter() instanceof NewInstanceMetaMethod) {
                     setter = false;
                 }
                 if (!setter && !getter) continue;

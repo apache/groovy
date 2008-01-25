@@ -18,7 +18,6 @@ package groovy.lang;
 
 import org.codehaus.groovy.classgen.BytecodeHelper;
 import org.codehaus.groovy.reflection.CachedClass;
-import org.codehaus.groovy.reflection.GeneratedMetaMethod;
 import org.codehaus.groovy.reflection.ParameterTypes;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.MetaClassHelper;
@@ -211,7 +210,7 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
             // if the invokation failed here. This is ok for IllegalArgumentException, but it is
             // possible that a Reflector will be used to execute the call and then an Exception from inside
             // the method is not wrapped in a InvocationTargetException and we will end here.
-            boolean setReason = e.getClass() != IllegalArgumentException.class || this instanceof GeneratedMetaMethod;
+            boolean setReason = e.getClass() != IllegalArgumentException.class;
             return MetaClassHelper.createExceptionText("failed to invoke method: ", this, object, argumentArray, e, setReason);
         }
 

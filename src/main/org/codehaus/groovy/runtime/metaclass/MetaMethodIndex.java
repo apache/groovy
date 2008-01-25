@@ -18,7 +18,6 @@ package org.codehaus.groovy.runtime.metaclass;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.FastArray;
-import org.codehaus.groovy.reflection.GeneratedMetaMethod;
 import org.codehaus.groovy.reflection.SingleKeyHashMap;
 
 import java.util.NoSuchElementException;
@@ -436,7 +435,6 @@ public class MetaMethodIndex {
         return method instanceof NewInstanceMetaMethod ||
                 method instanceof NewStaticMetaMethod ||
                 method instanceof ClosureMetaMethod ||
-                method instanceof GeneratedMetaMethod ||
                 method instanceof ClosureStaticMetaMethod;
     }
 

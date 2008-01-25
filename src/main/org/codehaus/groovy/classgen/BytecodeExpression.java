@@ -28,7 +28,7 @@ import org.objectweb.asm.MethodVisitor;
  */
 public abstract class BytecodeExpression extends Expression {
     public static BytecodeExpression NOP = new BytecodeExpression() {
-        public void visit(MethodVisitor visitor) {
+        public void visit(GroovyCodeVisitor visitor) {
             //do nothing             
         }
     };
@@ -37,11 +37,8 @@ public abstract class BytecodeExpression extends Expression {
     public BytecodeExpression() {
     }
     
-    public void visit(GroovyCodeVisitor visitor) {
-        visitor.visitBytecodeExpression(this);
-    }
+    public abstract void visit(GroovyCodeVisitor visitor);
 
-    public abstract void visit (MethodVisitor mv);
 
     public Expression transformExpression(ExpressionTransformer transformer) {
         return this;

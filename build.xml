@@ -132,16 +132,7 @@ $Date$
         </target>
     -->
 
-    <target name="dgmConvert" depends="ubercompile,stagedcompile">
-        <java classname="org.codehaus.groovy.tools.DgmConverter"
-              fork="yes"
-              failonerror="true">
-            <classpath refid="compilePath"/>
-            <classpath path="${mainClassesDirectory}"/>
-        </java>
-    </target>
-
-    <target name="compileMain" depends="ubercompile,stagedcompile,dgmConvert"
+    <target name="compileMain" depends="ubercompile,stagedcompile"
             description="Compile the Java and Groovy code in the main source.">
     </target>
 
