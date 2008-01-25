@@ -43,6 +43,8 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import java.io.FilenameFilter ;
+import java.util.ArrayList ;
 
 /**
  * Compiles Groovy source files. This task can take the following
@@ -87,6 +89,8 @@ public class Groovyc extends MatchingTask
     protected File[] compileList = new File[0];
     
     private boolean jointCompilation;
+
+  private boolean fork = false ;
 
     public static void main(String[] args) {
 
@@ -397,6 +401,15 @@ public class Groovyc extends MatchingTask
         return failOnError;
     }
 
+  /**
+   *  If true forks the Groovy compiler.
+   *
+   *  @param f "true|false|on|off|yes|no"
+   */
+  public void setFork ( boolean f ) {
+    fork = f ;
+  }
+
     /**
      * Executes the task.
      * @exception BuildException if an error occurs
@@ -508,35 +521,75 @@ public class Groovyc extends MatchingTask
             }
         }
 
-        try {
+        if ( fork ) {
+
+          if ( compileList.length == 0 ) {  throw new BuildException ( "No files to compile in fork mode." ) ; }
+          final String javaHome = System.getProperty ( "java.home" ) ;
+          final String javaClasspath = System.getProperty ( "java.class.path" ) ;
+          //final String groovyHome = System.getProperty ( "groovy.home" ) ;
+          final String separator = System.getProperty ( "file.separator" ) ;
+          final String groovyClasspath = getClasspath ( ) != null ? getClasspath ( ).toString ( ) : javaClasspath ;
+          final String[] fixedParameters = {
+            javaHome + separator + "bin" + separator + "java" ,
+            "-classpath" ,  javaClasspath ,
+            "-Dprogram.name=groovyc" ,
+            //"-Dgroovy.starter.conf=" + groovyHome + separator + "conf" + separator + "groovy-starter.conf" ,
+            //"-Dgroovy.home=" + groovyHome ,
+            "-Dtools.jar=" + javaHome + separator + "lib" + separator + "tools.jar" ,
+            "org.codehaus.groovy.tools.GroovyStarter" ,
+            "--main" ,  "org.codehaus.groovy.tools.FileSystemCompiler" ,
+            //"--conf" ,  groovyHome + separator + "conf" + separator + "groovy-starter.conf"  ,
+            "-d" , destDir.getPath ( ) ,
+            "--classpath" , groovyClasspath
+          } ;
+          int size = fixedParameters.length + compileList.length ;
+          if ( encoding != null ) { size += 2 ; }
+          final String[] parameters = new String [ size ] ;
+          System.arraycopy ( fixedParameters , 0 , parameters , 0 ,  fixedParameters.length ) ;
+          int index = fixedParameters.length ;
+          if ( encoding != null ) {
+            parameters[ index++ ] = "--encoding" ;
+            parameters[ index++ ] = encoding ;
+          }
+          for ( int i = 0 ; i < compileList.length ; ++i ) { parameters[i + index] = compileList[i].getPath ( ) ; }
+          try { if ( Runtime.getRuntime( ).exec ( parameters ).waitFor ( ) != 0 ) { throw new BuildException ( "Forked groovyc failed to return 0.") ; } }
+          catch ( final IOException ioe ) { throw new BuildException ( "Forked compile failed with " + ioe.getMessage ( ) ) ; }
+          catch ( final InterruptedException ie ) { throw new BuildException ( "Forked compile was interruptes with " + ie.getMessage ( ) ) ; }
+          
+        }
+        else {
+          
+          try {
             Path classpath = getClasspath();
             if (classpath != null) {
-                configuration.setClasspath(classpath.toString());
+              configuration.setClasspath(classpath.toString());
             }
             configuration.setTargetDirectory(destDir);
-
+            
             if (encoding != null) {
-                configuration.setSourceEncoding(encoding);
+              configuration.setSourceEncoding(encoding);
             }
-
+            
             CompilationUnit unit = makeCompileUnit();
             unit.addSources(compileList);
             unit.compile();
-        }
-        catch (Exception e) {
-
+          }
+          catch (Exception e) {
+            
             StringWriter writer = new StringWriter();
             new ErrorReporter( e, false ).write( new PrintWriter(writer) );
             String message = writer.toString();
-
+            
             if (failOnError) {
-                throw new BuildException(message, e, getLocation());
+              throw new BuildException(message, e, getLocation());
             }
             else {
-                log(message, Project.MSG_ERR);
+              log(message, Project.MSG_ERR);
             }
-
+            
+          }
         }
+        
     }
     
     protected CompilationUnit makeCompileUnit() {
