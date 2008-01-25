@@ -8,7 +8,7 @@ import java.io.Reader;
 import antlr.InputBuffer;
 import antlr.LexerSharedInputState;
 }
- 
+
 /** JSR-241 Groovy Recognizer
  *
  * Run 'java Main [-showtree] directory-full-of-groovy-files'
@@ -181,7 +181,7 @@ import antlr.LexerSharedInputState;
  *    o I have taken java.g for Java1.5 from Michael Studman (1.22.4)
  *      and have applied the groovy.diff from java.g (1.22) by John Rose
  *      back onto the new root (1.22.4) - Jeremy Rayner (Jan 2005)
- *    o for a map of the task see... 
+ *    o for a map of the task see...
  *      http://groovy.javanicus.com/java-g.png
  *
  * This grammar is in the PUBLIC DOMAIN
@@ -236,12 +236,12 @@ tokens {
     public static GroovyRecognizer make(Reader in) { return make(new GroovyLexer(in)); }
     public static GroovyRecognizer make(InputBuffer in) { return make(new GroovyLexer(in)); }
     public static GroovyRecognizer make(LexerSharedInputState in) { return make(new GroovyLexer(in)); }
-    
+
     private static GroovySourceAST dummyVariableToforceClassLoaderToFindASTClass = new GroovySourceAST();
 
     List warningList;
     public List getWarningList() { return warningList; }
-    
+
     GroovyLexer lexer;
     public GroovyLexer getLexer() { return lexer; }
     public void setFilename(String f) { super.setFilename(f); lexer.setFilename(f); }
@@ -287,7 +287,7 @@ tokens {
         if (returnAST != null)  rname += returnAST.toStringList();
         super.traceOut(rname);
     }
-        
+
     // Error handling.  This is a funnel through which parser errors go, when the parser can suggest a solution.
     public void requireFailed(String problem, String solution) throws SemanticException {
         // TODO: Needs more work.
@@ -368,7 +368,7 @@ tokens {
      * either GT, SR or BSR tokens.
      */
     private int ltCounter = 0;
-    
+
     /* This symbol is used to work around a known ANTLR limitation.
      * In a loop with syntactic predicate, ANTLR needs help knowing
      * that the loop exit is a second alternative.
@@ -471,20 +471,20 @@ declaration!
         {#declaration = #v2;}
     ;
 
-genericMethod! 
-	:
+genericMethod!
+    :
         // method using a 'def' or a modifier; type is optional
         m:modifiers
         p:typeParameters
         t:typeSpec[false]
         v:variableDefinitions[#m, #t]
         {
-        	#genericMethod = #v;
-			AST old = #v.getFirstChild();
-        	#genericMethod.setFirstChild(#p);
-        	#p.setNextSibling(old);
+            #genericMethod = #v;
+            AST old = #v.getFirstChild();
+            #genericMethod.setFirstChild(#p);
+            #p.setNextSibling(old);
         }
-	;
+    ;
 
 
 // *TODO* We must also audit the various occurrences of warning
@@ -529,7 +529,7 @@ singleDeclaration
  *  syntaxes, or to have the parser query the symbol table.  Parse-time queries are evil.
  *  And we want both {String x} and {println x}.  So we need a syntactic razor-edge to slip
  *  between 'println' and 'String'.)
- *  
+ *
  *   *TODO* The declarationStart production needs to be strengthened to recognize
  *  things like {List<String> foo}.
  *  Right now it only knows how to skip square brackets after the type, not
@@ -538,12 +538,12 @@ singleDeclaration
  *  just put a TODO comment in.
  */
 declarationStart!
-    :   (	  "def" nls
-    		| modifier nls 
-    		| annotation nls
-         	| (   upperCaseIdent
-           		|   builtInType
-           		|   qualifiedTypeName
+    :   (     "def" nls
+            | modifier nls
+            | annotation nls
+            | (   upperCaseIdent
+                |   builtInType
+                |   qualifiedTypeName
               ) (typeArguments)? (LBRACK balancedTokens RBRACK)*
         )+
         ( IDENT | STRING_LITERAL )
@@ -555,21 +555,21 @@ declarationStart!
  * static <T> T foo(){}
  * <T> must be first after the modifier.
  * This rule allows more and does no exact match, but it
- * is only a lookahead, not the real rule. 
+ * is only a lookahead, not the real rule.
  */
 genericMethodStart!
-    :   (	  "def" nls
-    		| modifier nls 
-    		| annotation nls
-    	)+ LT	
-    ;		
+    :   (     "def" nls
+            | modifier nls
+            | annotation nls
+        )+ LT
+    ;
 
 qualifiedTypeName!
-	:
-		IDENT DOT (IDENT DOT)* upperCaseIdent
-	;
-	
-/** Used to look ahead for a constructor 
+    :
+        IDENT DOT (IDENT DOT)* upperCaseIdent
+    ;
+
+/** Used to look ahead for a constructor
  */
 constructorStart!
     :
@@ -596,7 +596,7 @@ places: '@' ident '(' balancedTokens ')'.
 typeDeclarationStart!
     :   modifiersOpt! ("class" | "interface" | "enum" | AT "interface")
     ;
-    
+
 /** An IDENT token whose spelling is required to start with an uppercase letter.
  *  In the case of a simple statement {UpperID name} the identifier is taken to be a type name, not a command name.
  */
@@ -659,7 +659,7 @@ typeArgument  {Token first = LT(1);}
 
 // Wildcard type indicating all types (with possible constraint)
 wildcardType
-    :   QUESTION 
+    :   QUESTION
         (("extends" | "super")=> typeArgumentBounds)?
         {#wildcardType.setType(WILDCARD_TYPE);}
     ;
@@ -719,7 +719,7 @@ typeArgumentBounds
 builtInTypeArraySpec[boolean addImagNode]  {Token first = LT(1);}
     :   bt:builtInType!
         (   (LBRACK)=>   // require at least one []
-            declaratorBrackets[#bt] 
+            declaratorBrackets[#bt]
         |   {require(false,
                           "primitive type parameters not allowed here",
                            "use the corresponding wrapper type, such as Integer for int"
@@ -848,11 +848,11 @@ annotationsOpt  {Token first = LT(1);}
 
 annotationArguments
     :   v:annotationMemberValueInitializer
-    		{ Token itkn = new Token(IDENT, "value");
-    		  AST i;
-    		  #i = #(create(IDENT, "value", itkn, itkn));
-    			#annotationArguments = #(create(ANNOTATION_MEMBER_VALUE_PAIR,"ANNOTATION_MEMBER_VALUE_PAIR",LT(1),LT(1)), i, v);} 
-    		| annotationMemberValuePairs
+            { Token itkn = new Token(IDENT, "value");
+              AST i;
+              #i = #(create(IDENT, "value", itkn, itkn));
+                #annotationArguments = #(create(ANNOTATION_MEMBER_VALUE_PAIR,"ANNOTATION_MEMBER_VALUE_PAIR",LT(1),LT(1)), i, v);}
+            | annotationMemberValuePairs
     ;
 
 annotationMemberValuePairs
@@ -939,8 +939,8 @@ interfaceDefinition![AST modifiers]  {Token first = LT(1);}
 
 enumDefinition![AST modifiers]  {Token first = LT(1); AST prevCurrentClass = currentClass;}
     :   "enum" IDENT
-    		{ currentClass = #IDENT; }
-    	nls!
+            { currentClass = #IDENT; }
+        nls!
         // it might implement some interfaces...
         ic:implementsClause
         nls!
@@ -1098,7 +1098,7 @@ enumConstantBlock  {Token first = LT(1);}
 //An enum constant field is just like a class field but without
 //the posibility of a constructor definition or a static initializer
 
-// TODO - maybe allow 'declaration' production within this production, 
+// TODO - maybe allow 'declaration' production within this production,
 // but how to disallow constructors and static initializers...
 enumConstantField!  {Token first = LT(1);}
     :   mods:modifiersOpt!
@@ -1180,7 +1180,7 @@ classField!  {Token first = LT(1);}
         (declarationStart)=>
         dd:declaration
         {#classField = #dd;}
-        
+
     |
         //TODO - unify typeDeclaration and typeDefinitionInternal names
         // type declaration
@@ -1265,7 +1265,7 @@ variableDefinitions[AST mods, AST t]  {Token first = LT(1);}
 
         // get the list of exceptions that this method is
         // declared to throw
-        ((nls "throws") =>  tc:throwsClause!  )? 
+        ((nls "throws") =>  tc:throwsClause!  )?
 
         // the method body is an open block
         // but, it may have an optional constructor call (for constructors only)
@@ -1282,7 +1282,7 @@ variableDefinitions[AST mods, AST t]  {Token first = LT(1);}
         }
     ;
 
-/** I've split out constructors separately; we could maybe integrate back into variableDefinitions 
+/** I've split out constructors separately; we could maybe integrate back into variableDefinitions
  *  later on if we maybe simplified 'def' to be a type declaration?
  */
 constructorDefinition[AST mods]  {Token first = LT(1);}
@@ -1398,7 +1398,7 @@ ctorHead
 
 // This is a list of exception classes that the method is declared to throw
 throwsClause
-    :   nls! "throws"^ nls! identifier ( COMMA! nls! identifier )* 
+    :   nls! "throws"^ nls! identifier ( COMMA! nls! identifier )*
     ;
 
 /** A list of zero or more formal parameters.
@@ -1525,7 +1525,7 @@ openBlock
 
 /** A block body is a parade of zero or more statements or expressions. */
 blockBody[int prevToken]
-    :   
+    :
         (statement[prevToken])? (sep! (statement[sepToken])?)*
     ;
 
@@ -1573,7 +1573,7 @@ statement[int prevToken]
 
     :   (genericMethodStart)=>
         genericMethod
-        
+
 
     // declarations are ambiguous with "ID DOT" relative to expression
     // statements. Must backtrack to be sure. Could use a semantic
@@ -1620,7 +1620,8 @@ statement[int prevToken]
     |   forStatement
 
     // While statement
-    |   "while"^ LPAREN! sce=strictContextExpression[true] RPAREN! nlsWarn! compatibleBodyStatement
+    |   "while"^ LPAREN! sce=strictContextExpression[true] RPAREN! nlsWarn!
+        (SEMI | compatibleBodyStatement)
 
     /*OBS* no do-while statement in Groovy (too ambiguous)
     // do-while statement
@@ -1663,19 +1664,21 @@ forStatement
             forInClause
         )
         RPAREN! nls!
-        compatibleBodyStatement                                  // statement to loop over
+        (SEMI | compatibleBodyStatement)                          // statement to loop over
     ;
 
 closureList
-	{Token first = LT(1); boolean sce=false;}
+    {Token first = LT(1); boolean sce=false;}
     :
-    	
-    	sce=strictContextExpression[true]
-    	(
-    			SEMI! sce=strictContextExpression[true] 
-    	   |	SEMI! {astFactory.addASTChild(currentAST,astFactory.create(EMPTY_STAT, "EMPTY_STAT"));}
-    	)+
-		{#closureList = #(create(CLOSURE_LIST,"CLOSURE_LIST",first,LT(1)),#closureList);}
+
+        (   sce=strictContextExpression[true]
+            |    {astFactory.addASTChild(currentAST,astFactory.create(EMPTY_STAT, "EMPTY_STAT"));}
+        )
+        (
+                SEMI! sce=strictContextExpression[true]
+           |    SEMI! {astFactory.addASTChild(currentAST,astFactory.create(EMPTY_STAT, "EMPTY_STAT"));}
+        )+
+        {#closureList = #(create(CLOSURE_LIST,"CLOSURE_LIST",first,LT(1)),#closureList);}
     ;
 
 /*OBS*
@@ -1771,7 +1774,7 @@ statementLabelPrefix
 //         positions where their value is not used, e.g., <code>{1+1;println}</code>
 expressionStatement[int prevToken]
         {Token first = LT(1);boolean isPathExpr = false;  }
-    : 
+    :
         (   (suspiciousExpressionStatementStart)=>
             checkSuspiciousExpressionStatement[prevToken]
         )?
@@ -1786,7 +1789,7 @@ expressionStatement[int prevToken]
         )?
         {#expressionStatement = #(create(EXPR,"EXPR",first,LT(1)),#expressionStatement);}
     ;
-        
+
 /**
  *  If two statements are separated by newline (not SEMI), the second had
  *  better not look like the latter half of an expression.  If it does, issue a warning.
@@ -1917,7 +1920,7 @@ handler
  *  Unlike parenthesized arguments, these must be plain expressions,
  *  without labels or spread operators.
  */
-commandArguments[AST head]  
+commandArguments[AST head]
   {
   	Token first = LT(1);
   	int hls=0;
@@ -2012,7 +2015,7 @@ controlExpressionList  {Token first = LT(1); boolean sce=false;}
  */
 pathExpression[int lc_stmt]
         { AST prefix = null; }
-    :	
+    :
         pre:primaryExpression!
         { prefix = #pre; }
 
@@ -2138,7 +2141,7 @@ namePart  {Token first = LT(1);}
                 // This helps the user recover from ruined Java identifiers, as in System.'in'.
                 // DECIDE: Shall we just define foo.in to DTRT automagically, or do we want the syntax check?
             }
-*/                        
+*/
         )
 
         // (No, x.&@y is not needed; just say x.&y as Slot or some such.)
@@ -2154,7 +2157,7 @@ keywordPropertyNames
         )
         { #keywordPropertyNames.setType(IDENT); }
     ;
-                                                
+
 /** If a dot is followed by a parenthesized or quoted expression, the member is computed dynamically,
  *  and the member selection is done only at runtime.  This forces a statically unchecked member access.
  */
@@ -2263,10 +2266,10 @@ assignmentExpression[int lc_stmt]
 
 // conditional test (level 14)
 conditionalExpression[int lc_stmt]
-    :   logicalOrExpression[lc_stmt] 
-        ( 
-          (ELVIS_OPERATOR)=> ELVIS_OPERATOR^ nls! conditionalExpression[0] 
-          | QUESTION^ nls! assignmentExpression[0] COLON! nls! conditionalExpression[0] 
+    :   logicalOrExpression[lc_stmt]
+        (
+          (ELVIS_OPERATOR)=> ELVIS_OPERATOR^ nls! conditionalExpression[0]
+          | QUESTION^ nls! assignmentExpression[0] COLON! nls! conditionalExpression[0]
         )?
     ;
 
@@ -2314,8 +2317,8 @@ equalityExpression[int lc_stmt]
 // boolean relational expressions (level 7)
 relationalExpression[int lc_stmt]
     :   shiftExpression[lc_stmt]
-        (	options {greedy=true;} : (	
-        		(   LT^
+        (   options {greedy=true;} : (
+                (   LT^
                 |   GT^
                 |   LE^
                 |   GE^
@@ -2323,10 +2326,10 @@ relationalExpression[int lc_stmt]
                 )
                 nls!
                 shiftExpression[0]
-            
-        	)
-        	|   "instanceof"^ nls! typeSpec[true]
-        	|   "as"^         nls! typeSpec[true] //TODO: Rework to allow type expression?
+
+            )
+            |   "instanceof"^ nls! typeSpec[true]
+            |   "as"^         nls! typeSpec[true] //TODO: Rework to allow type expression?
         )?
     ;
 
@@ -2366,16 +2369,16 @@ multiplicativeExpression[int lc_stmt]
     |    ( PLUS^ {#PLUS.setType(UNARY_PLUS);} nls!   powerExpressionNotPlusMinus[0] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
     |    (  powerExpressionNotPlusMinus[lc_stmt] ((STAR^ | DIV^ | MOD^ )  nls!  powerExpression[0])* )
     ;
-    
+
 // math power operator (**) (level 3)
 powerExpression[int lc_stmt]
     :   unaryExpression[lc_stmt] (STAR_STAR^ nls! unaryExpression[0])*
     ;
-    
-// math power operator (**) (level 3) 
+
+// math power operator (**) (level 3)
 // (without ++(prefix)/--(prefix)/+(unary)/-(unary))
 // The different rules are needed to avoid ambigous selection
-// of alternatives. 
+// of alternatives.
 powerExpressionNotPlusMinus[int lc_stmt]
     :   unaryExpressionNotPlusMinus[lc_stmt] (STAR_STAR^ nls! unaryExpression[0])*
     ;
@@ -2384,8 +2387,8 @@ powerExpressionNotPlusMinus[int lc_stmt]
 unaryExpression[int lc_stmt]
     :   INC^ nls! unaryExpression[0]
     |   DEC^ nls! unaryExpression[0]
-    |   MINUS^   {#MINUS.setType(UNARY_MINUS);}   nls! unaryExpression[0] 
-    |   PLUS^    {#PLUS.setType(UNARY_PLUS);}     nls! unaryExpression[0] 
+    |   MINUS^   {#MINUS.setType(UNARY_MINUS);}   nls! unaryExpression[0]
+    |   PLUS^    {#PLUS.setType(UNARY_PLUS);}     nls! unaryExpression[0]
     |   unaryExpressionNotPlusMinus[lc_stmt]
     ;
 
@@ -2433,7 +2436,7 @@ postfixExpression[int lc_stmt]
         |   de:DEC^ {#de.setType(POST_DEC);}
         )?
     ;
-    
+
 // TODO:  Move pathExpression to this point in the file.
 
 // the basic element of an expression
@@ -2463,35 +2466,35 @@ primaryExpression
 // Note:  This is guaranteed to be an EXPR AST.
 // That is, parentheses are preserved, in case the walker cares about them.
 // They are significant sometimes, as in (f(x)){y} vs. f(x){y}.
-parenthesizedExpression 
-{   Token first = LT(1); 
-	Token declaration = null;
-	boolean hasClosureList=false;
-	boolean firstContainsDeclaration=false;
-	boolean sce=false; 
+parenthesizedExpression
+{   Token first = LT(1);
+    Token declaration = null;
+    boolean hasClosureList=false;
+    boolean firstContainsDeclaration=false;
+    boolean sce=false;
 }
-    :   LPAREN! 
+    :   LPAREN!
            { declaration=LT(1); }
            firstContainsDeclaration = strictContextExpression[true]
-           (SEMI!  
+           (SEMI!
              {hasClosureList=true;}
-             (sce=strictContextExpression[true] | { astFactory.addASTChild(currentAST,astFactory.create(EMPTY_STAT, "EMPTY_STAT")); })  
+             (sce=strictContextExpression[true] | { astFactory.addASTChild(currentAST,astFactory.create(EMPTY_STAT, "EMPTY_STAT")); })
            )*
            // if the first exrpession contained a declaration,
            // but we are having only one expression at all, then
            // the first declaration is of the kind (def a=b)
            // which is invalid. Therefore if there was no closure
-           // list we let the compiler throw an error if the 
+           // list we let the compiler throw an error if the
            // the first declaration exists
            {
-           	if (firstContainsDeclaration && !hasClosureList) 
-           	   throw new NoViableAltException(declaration, getFilename());
+            if (firstContainsDeclaration && !hasClosureList)
+               throw new NoViableAltException(declaration, getFilename());
            }
         RPAREN!
         {
-        	if (hasClosureList) {
-        		#parenthesizedExpression = #(create(CLOSURE_LIST,"CLOSURE_LIST",first,LT(1)),#parenthesizedExpression);
-        	}
+            if (hasClosureList) {
+                #parenthesizedExpression = #(create(CLOSURE_LIST,"CLOSURE_LIST",first,LT(1)),#parenthesizedExpression);
+            }
         }
     ;
 
@@ -2511,7 +2514,7 @@ returns [boolean hasDeclaration=false]
         // For the sake of the AST walker, mark nodes like this very clearly.
         {#strictContextExpression = #(create(EXPR,"EXPR",first,LT(1)),#strictContextExpression);}
     ;
-    
+
 assignmentLessExpression  {Token first = LT(1);}
     :
         (   conditionalExpression[0]
@@ -2695,10 +2698,10 @@ newExpression
 
             {#newExpression.addChild(#mca.getFirstChild());}
 
-        //|  
+        //|
         //from blackrag: new Object.f{} matches this part here
         //and that shouldn't happen unless we decide to support
-        //this kind of Object initialization        
+        //this kind of Object initialization
             //apb:appendedBlock[null]!
             // FIXME:  This node gets dropped, somehow.
 
@@ -2729,47 +2732,47 @@ anonymousInnerClassBlock
 
 argList
     {
-    	Token first = LT(1); 
-    	Token lastComma = null;
-    	int hls=0, hls2=0; 
-    	boolean hasClosureList=false;
-    	boolean trailingComma=false; 
-    	boolean sce=false;
-   	}
-    :	
+        Token first = LT(1);
+        Token lastComma = null;
+        int hls=0, hls2=0;
+        boolean hasClosureList=false;
+        boolean trailingComma=false;
+        boolean sce=false;
+    }
+    :
         // Note:  nls not needed, since we are inside parens,
         // and those insignificant newlines are suppressed by the lexer.
-    	(hls=argument
-    	(( 
-    		(
-    			SEMI! {hasClosureList=true;}
-    			(
-    				sce=strictContextExpression[true]
-    				| { astFactory.addASTChild(currentAST,astFactory.create(EMPTY_STAT, "EMPTY_STAT")); }
-    			)
-    		)+
-    		{#argList = #(create(CLOSURE_LIST,"CLOSURE_LIST",first,LT(1)),#argList);}
-    	) | (	
-    			(   {lastComma = LT(1);}
-        	  		COMMA! 
-        	  		(
-        	  			(hls2=argument {hls |= hls2;})
-        	  			|
-        	  			(
-        	  			 {  if (trailingComma) throw new NoViableAltException(lastComma, getFilename());
-        	  			 	trailingComma=true;
-        	  			 }
-        	  			)
-        	  		)	 
-        	  			
-        		)*
-    	        {#argList = #(create(ELIST,"ELIST",first,LT(1)), argList);}
-	        )
-    	) | (
-			{#argList = create(ELIST,"ELIST",first,LT(1));}
-    	)
-    	)	
-    	{argListHasLabels = (hls&1)!=0; }
+        (hls=argument
+        ((
+            (
+                SEMI! {hasClosureList=true;}
+                (
+                    sce=strictContextExpression[true]
+                    | { astFactory.addASTChild(currentAST,astFactory.create(EMPTY_STAT, "EMPTY_STAT")); }
+                )
+            )+
+            {#argList = #(create(CLOSURE_LIST,"CLOSURE_LIST",first,LT(1)),#argList);}
+        ) | (
+                (   {lastComma = LT(1);}
+                    COMMA!
+                    (
+                        (hls2=argument {hls |= hls2;})
+                        |
+                        (
+                         {  if (trailingComma) throw new NoViableAltException(lastComma, getFilename());
+                            trailingComma=true;
+                         }
+                        )
+                    )
+
+                )*
+                {#argList = #(create(ELIST,"ELIST",first,LT(1)), argList);}
+            )
+        ) | (
+            {#argList = create(ELIST,"ELIST",first,LT(1));}
+        )
+        )
+        {argListHasLabels = (hls&1)!=0; }
     ;
 
 /** A single argument in (...) or [...].  Corresponds to to a method or closure parameter.
@@ -2881,7 +2884,7 @@ balancedTokens!
         )*
     ;
 
-/** A statement separator is either a semicolon or a significant newline. 
+/** A statement separator is either a semicolon or a significant newline.
  *  Any number of additional (insignificant) newlines may accompany it.
  */
 //  (All the '!' signs simply suppress the default AST building.)
@@ -2997,7 +3000,7 @@ options {
             stringCtorState = (expectLiteral? SCS_LIT: SCS_VAL) + (stringCtorState & SCS_TYPE);
         }
     }
-    
+
     protected boolean allowRegexpLiteral() {
         return !isExpressionEndingToken(lastSigTokenType);
     }
@@ -3092,7 +3095,7 @@ options {
         }
         newline();
     }
-    
+
     protected boolean atValidDollarEscape() throws CharStreamException {
         // '$' (('*')? ('{' | LETTER)) =>
         int k = 1;
@@ -3190,7 +3193,7 @@ options {
     private void require(boolean z, String problem, String solution) throws SemanticException {
         // TODO: Direct to a common error handler, rather than through the parser.
         if (!z)  parser.requireFailed(problem, solution);
-    }    
+    }
 }
 
 // TODO:  Borneo-style ops.
@@ -3250,8 +3253,8 @@ RANGE_INCLUSIVE   options {paraphrase="'..'";}          :   ".."            ;
 RANGE_EXCLUSIVE   options {paraphrase="'..<'";}         :   "..<"           ;
 TRIPLE_DOT        options {paraphrase="'...'";}         :   "..."           ;
 SPREAD_DOT        options {paraphrase="'*.'";}          :   "*."            ;
-OPTIONAL_DOT      options {paraphrase="'?.'";}          :   "?."			;
-ELVIS_OPERATOR    options {paraphrase="'?:'";}          :   "?:"			;
+OPTIONAL_DOT      options {paraphrase="'?.'";}          :   "?."            ;
+ELVIS_OPERATOR    options {paraphrase="'?:'";}          :   "?:"            ;
 MEMBER_POINTER    options {paraphrase="'.&'";}          :   ".&"            ;
 REGEX_FIND        options {paraphrase="'=~'";}          :   "=~"            ;
 REGEX_MATCH       options {paraphrase="'==~'";}         :   "==~"           ;
@@ -3291,7 +3294,7 @@ options {
             newlineCheck(check);
         }
     ;
-        
+
 // Group any number of newlines (with comments and whitespace) into a single token.
 // This reduces the amount of parser lookahead required to parse around newlines.
 // It is an invariant that the parser never sees NLS tokens back-to-back.
@@ -3574,12 +3577,12 @@ options {
     //|!  ONE_NL[true]          { $setText('\n'); }             // always normalize to newline
     ;
 
-protected 
+protected
 STRING_NL[boolean allowNewline]
 options {
     paraphrase="a newline inside a string";
 }
-    :  {if (!allowNewline) throw new MismatchedCharException('\n', '\n', true, this); } 
+    :  {if (!allowNewline) throw new MismatchedCharException('\n', '\n', true, this); }
        ONE_NL[false] { $setText('\n'); }
     ;
 
@@ -3751,7 +3754,7 @@ options {
     ;
 
 // JDK 1.5 token for annotations and their declarations
-// also a groovy operator for actual field access e.g. 'telson.@age' 
+// also a groovy operator for actual field access e.g. 'telson.@age'
 AT
 options {
     paraphrase="'@'";
