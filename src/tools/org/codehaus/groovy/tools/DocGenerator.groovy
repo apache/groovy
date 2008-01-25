@@ -298,7 +298,11 @@ class DocGenerator
         outFolder.mkdirs()
         def start = System.currentTimeMillis()
         def srcFiles = args.collect{getSourceFile(it)}
-        srcFiles.addAll(DefaultGroovyMethods.additionals.collect{getSourceFile(it.name)})
+        try {
+            srcFiles.addAll(DefaultGroovyMethods.additionals.collect {getSourceFile(it.name)})
+        } catch (MissingPropertyException mpe) {
+            // no call site change available, so ignore it
+        }
         def docGen = new DocGenerator(srcFiles, outFolder)
         docGen.generateNew()
         def end = System.currentTimeMillis()
