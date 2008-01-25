@@ -164,12 +164,12 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             HashMap map = new HashMap();
 
             // lets register the default methods
-            registerMethods(DefaultGroovyMethods.class, true, true, map);
+            registerMethods(DefaultGroovyMethods.class, true, map);
             Class[] pluginDGMs = VMPluginFactory.getPlugin().getPluginDefaultGroovyMethods();
             for (int i=0; i<pluginDGMs.length; i++) {
-                registerMethods(pluginDGMs[i], false, true, map);
+                registerMethods(pluginDGMs[i], true, map);
             }
-            registerMethods(DefaultGroovyStaticMethods.class, false, false, map);
+            registerMethods(DefaultGroovyStaticMethods.class, false, map);
 
             for (Iterator it = map.entrySet().iterator(); it.hasNext(); ) {
                 Map.Entry e = (Map.Entry) it.next();
@@ -205,58 +205,28 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
 	       }
     }
     
-    private void registerMethods(final Class theClass, final boolean useMethodrapper, final boolean useInstanceMethods, Map map) {
+    private void registerMethods(final Class theClass, final boolean useInstanceMethods, Map map) {
         CachedMethod[] methods = ReflectionCache.getCachedClass(theClass).getMethods();
 
-        if (useMethodrapper) {
-            // Here we instanciate objects representing MetaMethods for DGM methods.
-            // Calls for such meta methods done without reflection, so more effectively.
-            // It gives 7-8% improvement for benchmarks involving just several ariphmetic operations
-            for (int i = 0; ; ++i) {
-                try {
-                    final String className = "org.codehaus.groovy.runtime.dgm$" + i;
-                    final Class aClass = Class.forName(className);
-                    try {
-                        MetaMethod method = (MetaMethod) aClass.newInstance();
-                        final CachedClass declClass = method.getDeclaringClass();
-                        ArrayList arr = (ArrayList) map.get(declClass);
-                        if (arr == null) {
-                            arr = new ArrayList(4);
-                            map.put(declClass,arr);
-                        }
-                        arr.add(method);
-                        instanceMethods.add(method);
-                    } catch (InstantiationException e) {
-                    } catch (IllegalAccessException e) {
+        for (int i = 0; i < methods.length; i++) {
+            CachedMethod method = methods[i];
+            final int mod = method.getModifiers();
+            if (Modifier.isStatic(mod) && Modifier.isPublic(mod)) {
+                CachedClass[] paramTypes = method.getParameterTypes();
+                if (paramTypes.length > 0) {
+                    ArrayList arr = (ArrayList) map.get(paramTypes[0]);
+                    if (arr == null) {
+                        arr = new ArrayList(4);
+                        map.put(paramTypes[0],arr);
                     }
-                }
-                catch(ClassNotFoundException e){
-                    break;
-                }
-            }
-        }
-        else
-        {
-            for (int i = 0; i < methods.length; i++) {
-                CachedMethod method = methods[i];
-                final int mod = method.getModifiers();
-                if (Modifier.isStatic(mod) && Modifier.isPublic(mod)) {
-                    CachedClass[] paramTypes = method.getParameterTypes();
-                    if (paramTypes.length > 0) {
-                        ArrayList arr = (ArrayList) map.get(paramTypes[0]);
-                        if (arr == null) {
-                            arr = new ArrayList(4);
-                            map.put(paramTypes[0],arr);
-                        }
-                        if (useInstanceMethods) {
-                            final NewInstanceMetaMethod metaMethod = new NewInstanceMetaMethod(method);
-                            arr.add(metaMethod);
-                            instanceMethods.add(metaMethod);
-                        } else {
-                            final NewStaticMetaMethod metaMethod = new NewStaticMetaMethod(method);
-                            arr.add(metaMethod);
-                            staticMethods.add(metaMethod);
-                        }
+                    if (useInstanceMethods) {
+                        final NewInstanceMetaMethod metaMethod = new NewInstanceMetaMethod(method);
+                        arr.add(metaMethod);
+                        instanceMethods.add(metaMethod);
+                    } else {
+                        final NewStaticMetaMethod metaMethod = new NewStaticMetaMethod(method);
+                        arr.add(metaMethod);
+                        staticMethods.add(metaMethod);
                     }
                 }
             }

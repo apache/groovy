@@ -721,7 +721,7 @@ public class AsmClassGenerator extends ClassGenerator {
             visitAndAutoboxBoolean(expression.getTrueExpression());
             boolPart = new BooleanExpression(
                     new BytecodeExpression() {
-                        public void visit(MethodVisitor mv) {
+                        public void visit(GroovyCodeVisitor visitor) {
                             mv.visitInsn(DUP);
                         }
                     }
@@ -729,7 +729,7 @@ public class AsmClassGenerator extends ClassGenerator {
             truePart = BytecodeExpression.NOP;
             final Expression oldFalse = falsePart;
             falsePart = new BytecodeExpression() {
-                public void visit(MethodVisitor mv) {
+                public void visit(GroovyCodeVisitor visitor) {
                     mv.visitInsn(POP);
                     visitAndAutoboxBoolean(oldFalse);
                 }
@@ -3406,10 +3406,6 @@ public class AsmClassGenerator extends ClassGenerator {
                 type != ClassHelper.REFERENCE_TYPE;
     }
 
-    public void visitBytecodeExpression(BytecodeExpression cle) {
-        cle.visit(mv);
-    }
-
     protected void visitAndAutoboxBoolean(Expression expression) {
         expression.visit(this);
 
@@ -3434,7 +3430,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 mv.visitInsn(DUP);
                 final int resultIdx = compileStack.defineTemporaryVariable("postfix_" + method, true);
                 BytecodeExpression result = new BytecodeExpression() {
-                    public void visit(MethodVisitor mv) {
+                    public void visit(GroovyCodeVisitor visitor) {
                         mv.visitVarInsn(ALOAD, resultIdx);
                     }
                 };
