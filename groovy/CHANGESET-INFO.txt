@@ -1,5 +1,9 @@
-changesets from trunk not in 1.5.x:
+change sets from trunk NOT in 1.5.x:
 
 * 9967:  Fix for GROOVY-2331: Println behavior for collections, strings and gstrings
 * 10315: 1st approximation of call site caching on existing MOP and some other performance improvements
 * 10320: A bit more about caching call site
+* 10389: Continuation of call site caching patch
+* 10393: Continuation of call site caching.
+* 10398: Static fields for numerical constants brings noticable performance improvements. 
+* 
