@@ -16,9 +16,15 @@
 package org.codehaus.groovy.tools.groovydoc;
 import org.codehaus.groovy.groovydoc.*;
 
+import java.util.List;
+import java.util.ArrayList;
+
 public class SimpleGroovyMemberDoc extends SimpleGroovyProgramElementDoc implements GroovyMemberDoc{
 	public SimpleGroovyMemberDoc(String name) {
-		super(name);
+		this(name, new ArrayList());
+	}
+	public SimpleGroovyMemberDoc(String name, List links) {
+		super(name, links);
 	}
 	public boolean isSynthetic() {/*todo*/return false;}
 }

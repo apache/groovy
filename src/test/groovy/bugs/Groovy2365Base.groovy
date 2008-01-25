@@ -11,7 +11,7 @@ class Groovy2365Base extends GroovyTestCase {
 
     protected String createData () {
 
-        File dir = createTempDir("src-", "-src")
+        File dir = createTempDir("groovy-src-", "-src")
         assertNotNull dir
 
         def fileList =  [

@@ -16,6 +16,8 @@
 package org.codehaus.groovy.tools.groovydoc;
 import org.codehaus.groovy.groovydoc.*;
 
+import java.util.List;
+
 public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements GroovyProgramElementDoc {
 	private GroovyPackageDoc packageDoc;
 	
@@ -23,6 +25,10 @@ public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements Gr
 		super(name);
 	}
 	
+	public SimpleGroovyProgramElementDoc(String name, List links) {
+		super(name, links);
+	}
+
 	public GroovyPackageDoc containingPackage() {
 		return packageDoc;
 	}

@@ -14,7 +14,7 @@ class InterfaceTest extends GroovyTestCase{
         }
 
 
-        File dir = createTempDir("src-", "-src")
+        File dir = createTempDir("groovy-src-", "-src")
         assertNotNull dir
 
         def fileList =  [
@@ -47,9 +47,9 @@ class InterfaceTest extends GroovyTestCase{
         }
 
         CompilerConfiguration config = new CompilerConfiguration()
-         config.targetDirectory = createTempDir("target-", "-target")
+         config.targetDirectory = createTempDir("groovy-target-", "-target")
          config.jointCompilationOptions = [
-			"stubDir" : createTempDir("stub-", "-stub"),
+			"stubDir" : createTempDir("groovy-stub-", "-stub"),
 //			"namedValues" : ["target","1.5","source","1.5"] as String[]
 		 ]
          config.classpath = "target/classes"

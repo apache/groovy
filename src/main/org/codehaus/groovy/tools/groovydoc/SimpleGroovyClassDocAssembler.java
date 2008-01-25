@@ -15,10 +15,7 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.Stack;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -39,11 +36,13 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
 	private String packagePath;
 	private Pattern previousJavaDocCommentPattern;
 	private static final String FS = "/";
-	
-	public SimpleGroovyClassDocAssembler(String packagePath, String file, SourceBuffer sourceBuffer) {
+    private List links;
+
+    public SimpleGroovyClassDocAssembler(String packagePath, String file, SourceBuffer sourceBuffer, List links) {
 		this.sourceBuffer = sourceBuffer;
 		this.packagePath = packagePath;		
-		
+		this.links = links;
+
 		stack = new Stack();
         classDocs = new HashMap();
         String className = file;
@@ -52,7 +51,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
         	int idx = file.lastIndexOf(".");
         	className = file.substring(0,idx);
         }
-		currentClassDoc = new SimpleGroovyClassDoc(className);
+		currentClassDoc = new SimpleGroovyClassDoc(className, links);
 		currentClassDoc.setFullPathName(packagePath + FS + className);
 		classDocs.put(currentClassDoc.getFullPathName(),currentClassDoc);
 		
@@ -134,7 +133,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
 
     		// method name
     		String methodName = t.childOfType(GroovyTokenTypes.IDENT).getText();
-    		currentMethodDoc = new SimpleGroovyMethodDoc(methodName);
+    		currentMethodDoc = new SimpleGroovyMethodDoc(methodName, links);
 
     		// comments
     		String commentText = getJavaDocCommentsBeforeNode(t);

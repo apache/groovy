@@ -21,6 +21,36 @@ package groovy.lang
 
 class ExpandoMetaClassTest extends GroovyTestCase {
 
+    void testMethodsAfterAddingNewMethod() {
+        Test.metaClass.newMethod ={-> "foo" }
+
+        def methods = Test.metaClass.methods.findAll {it.name == "newMethod"}
+        assert methods
+        assertEquals 1, methods.size()
+
+        Test.metaClass.newMethod ={-> "foo" }
+
+        methods = Test.metaClass.methods.findAll {it.name == "newMethod"}
+        assert methods
+        assertEquals 1, methods.size()
+
+    }
+
+    void testPropertiesAfterAddingProperty() {
+        Test.metaClass.getNewProp ={-> "foo" }
+
+        def props = Test.metaClass.properties.findAll {it.name == "newProp"}
+        assert props
+        assertEquals 1, props.size()
+
+        Test.metaClass.setNewProp ={String txt-> }
+
+        props = Test.metaClass.properties.findAll {it.name == "newProp"}
+        assert props
+        assertEquals 1, props.size()
+
+    }
+
     void testOverrideStaticMethod() {        
         TestStatic.metaClass.'static'.f = { "first" }
         assertEquals "first",TestStatic.f("")

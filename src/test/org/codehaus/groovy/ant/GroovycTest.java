@@ -18,6 +18,7 @@ import java.io.File ;
 import java.io.FileNotFoundException ;
 import java.io.FileReader ;
 import java.io.IOException ;
+import org.apache.tools.ant.BuildException ;
 import org.apache.tools.ant.Project ;
 import org.apache.tools.ant.ProjectHelper ;
 import groovy.util.GroovyTestCase ;
@@ -64,19 +65,91 @@ public class GroovycTest extends GroovyTestCase {
     catch ( final FileNotFoundException fnfe ) { fail ( "File " + result.getName ( ) + " should have been created but wasn't." ) ; }
     catch ( final IOException ioe ) { fail ( "Error reading file " + result.getName ( ) + "." ) ; }
   }
-  public void testGroovycTest1 ( ) {
+
+  public void testGroovycTest1_NoFork_NoClasspath ( ) {
     ensureNotPresent ( "GroovycTest1" ) ;
-    project.executeTarget ( "GroovycTest1" ) ;
+    project.executeTarget ( "GroovycTest1_NoFork_NoClasspath" ) ;
     ensureResultOK ( "GroovycTest1" ) ;
   }
-  public void testGroovycTest1_Fork ( ) {
+  public void testGroovycTest1_NoFork_WithGroovyClasspath ( ) {
     ensureNotPresent ( "GroovycTest1" ) ;
-    project.executeTarget ( "GroovycTest1_Fork" ) ;
+    project.executeTarget ( "GroovycTest1_NoFork_WithGroovyClasspath" ) ;
     ensureResultOK ( "GroovycTest1" ) ;
   }
-  public void testGroovycTest1_Fork_Inherit ( ) {
+  public void testGroovycTest1_NoFork_WithJavaClasspath ( ) {
     ensureNotPresent ( "GroovycTest1" ) ;
-    project.executeTarget ( "GroovycTest1_Fork_Inherit" ) ;
+    project.executeTarget ( "GroovycTest1_NoFork_WithJavaClasspath" ) ;
     ensureResultOK ( "GroovycTest1" ) ;
   }
+  public void testGroovycTest1_NoFork_WithBothClasspath ( ) {
+    ensureNotPresent ( "GroovycTest1" ) ;
+    project.executeTarget ( "GroovycTest1_NoFork_WithBothClasspath" ) ;
+    ensureResultOK ( "GroovycTest1" ) ;
+  }
+
+  public void testGroovycTest1_ForkGroovy_NoClasspath ( ) {
+    ensureNotPresent ( "GroovycTest1" ) ;
+    project.executeTarget ( "GroovycTest1_ForkGroovy_NoClasspath" ) ;
+    ensureResultOK ( "GroovycTest1" ) ;
+  }
+  public void testGroovycTest1_ForkGroovy_WithGroovyClasspath ( ) {
+    ensureNotPresent ( "GroovycTest1" ) ;
+    project.executeTarget ( "GroovycTest1_ForkGroovy_WithGroovyClasspath" ) ;
+    ensureResultOK ( "GroovycTest1" ) ;
+
+  }
+  public void testGroovycTest1_ForkGroovy_WithJavaClasspath ( ) {
+    ensureNotPresent ( "GroovycTest1" ) ;
+    project.executeTarget ( "GroovycTest1_ForkGroovy_WithJavaClasspath" ) ;
+    ensureResultOK ( "GroovycTest1" ) ;
+  }
+  public void testGroovycTest1_ForkGroovy_WithBothClasspath ( ) {
+    ensureNotPresent ( "GroovycTest1" ) ;
+    project.executeTarget ( "GroovycTest1_ForkGroovy_WithBothClasspath" ) ;
+    ensureResultOK ( "GroovycTest1" ) ;
+  }
+
+  public void testGroovycTest1_Joint_NoFork_NoClasspath ( ) {
+    ensureNotPresent ( "GroovycTest1" ) ;
+    project.executeTarget ( "GroovycTest1_Joint_NoFork_NoClasspath" ) ;
+    ensureResultOK ( "GroovycTest1" ) ;
+  }
+  public void testGroovycTest1_Joint_NoFork_WithGroovyClasspath ( ) {
+    ensureNotPresent ( "GroovycTest1" ) ;
+    project.executeTarget ( "GroovycTest1_Joint_NoFork_WithGroovyClasspath" ) ;
+    ensureResultOK ( "GroovycTest1" ) ;
+  }
+  public void testGroovycTest1_Joint_NoFork_WithJavaClasspath ( ) {
+    ensureNotPresent ( "GroovycTest1" ) ;
+    project.executeTarget ( "GroovycTest1_Joint_NoFork_WithJavaClasspath" ) ;
+    ensureResultOK ( "GroovycTest1" ) ;
+  }
+  public void testGroovycTest1_Joint_NoFork_WithBothClasspath ( ) {
+    ensureNotPresent ( "GroovycTest1" ) ;
+    project.executeTarget ( "GroovycTest1_Joint_NoFork_WithBothClasspath" ) ;
+    ensureResultOK ( "GroovycTest1" ) ;
+  }
+
+  public void testGroovycTest1_Joint_ForkGroovy_NoClasspath ( ) {
+    ensureNotPresent ( "GroovycTest1" ) ;
+    project.executeTarget ( "GroovycTest1_Joint_ForkGroovy_NoClasspath" ) ;
+    ensureResultOK ( "GroovycTest1" ) ;
+  }
+  public void testGroovycTest1_Joint_ForkGroovy_WithGroovyClasspath ( ) {
+    ensureNotPresent ( "GroovycTest1" ) ;
+    project.executeTarget ( "GroovycTest1_Joint_ForkGroovy_WithGroovyClasspath" ) ;
+    ensureResultOK ( "GroovycTest1" ) ;
+
+  }
+  public void testGroovycTest1_Joint_ForkGroovy_WithJavaClasspath ( ) {
+    ensureNotPresent ( "GroovycTest1" ) ;
+    project.executeTarget ( "GroovycTest1_Joint_ForkGroovy_WithJavaClasspath" ) ;
+    ensureResultOK ( "GroovycTest1" ) ;
+  }
+  public void testGroovycTest1_Joint_ForkGroovy_WithBothClasspath ( ) {
+    ensureNotPresent ( "GroovycTest1" ) ;
+    project.executeTarget ( "GroovycTest1_Joint_ForkGroovy_WithBothClasspath" ) ;
+    ensureResultOK ( "GroovycTest1" ) ;
+  }
+
 }

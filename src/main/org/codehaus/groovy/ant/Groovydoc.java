@@ -52,6 +52,8 @@ public class Groovydoc extends Task
     private boolean includeNoSourcePackages;
     private List packageSets;
 	private List sourceFilesToDoc;
+    // TODO: hook this in
+    private List links = new ArrayList();
 
 
     public Groovydoc() {
@@ -267,8 +269,9 @@ public class Groovydoc extends Task
 				},
 				new String[] { // class level templates
 						"org/codehaus/groovy/tools/groovydoc/gstring-templates/class-level/classDocName.html"
-				}
-				);
+				},
+                  links
+                );
 
 		try {
 			Iterator itr = sourceFilesToDoc.iterator();
@@ -283,4 +286,61 @@ public class Groovydoc extends Task
 		}
 
     }
+
+    /**
+     * Create link to Javadoc/GroovyDoc output at the given URL.
+     *
+     * @return link argument to configure
+     */
+    public LinkArgument createLink() {
+        LinkArgument la = new LinkArgument();
+        links.add(la);
+        return la;
+    }
+
+    /**
+     * Represents a link pair (href, packages).
+     */
+    public static class LinkArgument {
+        private String href;
+        private String packages;
+
+        /**
+         * Get the packages attribute.
+         *
+         * @return the packages attribute.
+         */
+        public String getPackages() {
+            return packages;
+        }
+
+        /**
+         * Set the packages attribute.
+         *
+         * @param packages the comma separated package prefixs corresponding to this link
+         */
+        public void setPackages(String packages) {
+            this.packages = packages;
+        }
+
+        /**
+         * Get the href attribute.
+         *
+         * @return the href attribute.
+         */
+        public String getHref() {
+            return href;
+        }
+
+        /**
+         * Set the href attribute.
+         *
+         * @param hr a <code>String</code> value representing the URL to use for this link
+         */
+        public void setHref(String hr) {
+            href = hr;
+        }
+
+    }
+
 }

@@ -79,6 +79,13 @@ ${method.shortComment}
 <% if (method.returnComment) { %>
 <DT><B>Returns:</B><DD>${method.returnComment}</DL>
 <% } %>
+
+<% if (method.seeComments) { %>
+<DT><B>See:</B>
+<% method.seeComments.each { param -> %>
+    <DD>${param.target}.
+<% } } %>
+
 </DD>
 </DL>
 <HR>

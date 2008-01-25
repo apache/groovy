@@ -348,7 +348,3 @@ public class SourceUnit extends ProcessingUnit {
         getErrorCollector().addError(se,this);
     }
 }
-
-
-
-

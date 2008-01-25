@@ -563,8 +563,8 @@ public class AsmClassGenerator extends ClassGenerator {
         Label continueLabel = compileStack.getContinueLabel();
         Label breakLabel = compileStack.getBreakLabel();
 
-        mv.visitLabel(continueLabel);
-
+        Label cond = new Label();
+        mv.visitLabel(cond);
         // visit condition leave boolean on stack
         {
             Expression condExpr = (Expression) expressions.get(condIndex);
@@ -585,12 +585,13 @@ public class AsmClassGenerator extends ClassGenerator {
         loop.getLoopBlock().visit(this);
 
         // visit increment
+        mv.visitLabel(continueLabel);
         for (int i = condIndex + 1; i < size; i++) {
             visitExpressionOrStatement(expressions.get(i));
         }
 
         // jump to test the condition again
-        mv.visitJumpInsn(GOTO, continueLabel);
+        mv.visitJumpInsn(GOTO, cond);
 
         // loop end
         mv.visitLabel(breakLabel);

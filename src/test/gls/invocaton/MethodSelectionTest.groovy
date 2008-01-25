@@ -23,6 +23,24 @@ public class MethodSelectionTest extends CompilableTestSupport {
       assert m(new C()) == 2
       assert m(new E()) == 2
     """   
+    
+    assertScript """
+      class A implements I1 {}
+      class B extends A implements I2 {}
+      class C extends B implements I3 {}
+      interface I1 {}
+      interface I2 extends I1 {}
+      interface I3 extends I2 {}
+
+      def foo(bar) {0}
+      def foo(I1 bar) {1}
+      def foo(I2 bar) {2}
+      def foo(I3 bar) {3}
+
+      assert foo(new A())==1
+      assert foo(new B())==2
+      assert foo(new C())==3
+    """
   }
   
   public void testMostGeneralForNull() {
@@ -57,4 +75,5 @@ public class MethodSelectionTest extends CompilableTestSupport {
     
     """  
   }
+  
 }

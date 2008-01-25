@@ -32,6 +32,7 @@ public class GroovyCollections {
      *
      * @param lists an array of lists
      * @return a List of the combinations found
+     * @see #combinations(Collection)
      */
     public static List combinations(Object[] lists) {
         return combinations(Arrays.asList(lists));
@@ -39,6 +40,10 @@ public class GroovyCollections {
 
     /**
      * Finds all combinations of items from a collection of lists.
+     * So, <code>combinations([[true, false], [true, false]])</code>
+     * is <code>[[true, true], [false, true], [true, false], [false, false]]</code>
+     * and <code>combinations([['a', 'b'],[1, 2, 3]])</code>
+     * is <code>[['a', 1], ['b', 1], ['a', 2], ['b', 2], ['a', 3], ['b', 3]]</code>.
      *
      * @param lists a Collection of lists
      * @return a List of the combinations found
@@ -72,11 +77,11 @@ public class GroovyCollections {
     }
 
     /**
-     * Transposes an array of lists. So,
-     * transpose([['a', 'b'], [1, 2]] as Object[]) == [['a', 1], ['b', 2]].
+     * Transposes an array of lists.
      *
      * @param lists an array of lists
      * @return a List of the transposed lists
+     * @see #transpose(Collection)
      */
     public static List transpose(Object[] lists) {
         return transpose(Arrays.asList(lists));
@@ -84,7 +89,10 @@ public class GroovyCollections {
 
     /**
      * Transposes a collection of lists. So,
-     * transpose([['a', 'b'], [1, 2]]) == [['a', 1], ['b', 2]].
+     * <code>transpose([['a', 'b'], [1, 2]])</code>
+     * is <code>[['a', 1], ['b', 2]]</code> and.
+     * <code>transpose([['a', 'b', 'c']])</code>
+     * is <code>[['a'], ['b'], ['c']]</code> and.
      *
      * @param lists a Collection of lists
      * @return a List of the transposed lists
