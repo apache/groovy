@@ -165,34 +165,37 @@ public class ReflectionCache {
             SoftReference ref = (SoftReference) CACHED_CLASS_MAP.get(klazz);
             if (ref == null || (cachedClass = (CachedClass) ref.get()) == null) {
                 if (Number.class.isAssignableFrom(klazz) || klazz.isPrimitive()) {
-                    if (klazz == Integer.class || klazz == Integer.TYPE)
-                      cachedClass = new CachedClass.IntegerCachedClass(klazz);
+                    if (klazz == Number.class)
+                      cachedClass = new CachedClass.NumberCachedClass(klazz);
                     else
-                      if (klazz == Double.class || klazz == Double.TYPE )
-                        cachedClass = new CachedClass.DoubleCachedClass(klazz);
-                      else
-                          if (klazz == BigDecimal.class )
-                            cachedClass = new CachedClass.BigDecimalCachedClass(klazz);
+                        if (klazz == Integer.class || klazz == Integer.TYPE)
+                          cachedClass = new CachedClass.IntegerCachedClass(klazz);
+                        else
+                          if (klazz == Double.class || klazz == Double.TYPE )
+                            cachedClass = new CachedClass.DoubleCachedClass(klazz);
                           else
-                              if (klazz == Long.class || klazz == Long.TYPE)
-                                cachedClass = new CachedClass.LongCachedClass(klazz);
+                              if (klazz == BigDecimal.class )
+                                cachedClass = new CachedClass.BigDecimalCachedClass(klazz);
                               else
-                                  if (klazz == Float.class || klazz == Float.TYPE)
-                                    cachedClass = new CachedClass.FloatCachedClass(klazz);
+                                  if (klazz == Long.class || klazz == Long.TYPE)
+                                    cachedClass = new CachedClass.LongCachedClass(klazz);
                                   else
-                                      if (klazz == Short.class || klazz == Short.TYPE)
-                                        cachedClass = new CachedClass.ShortCachedClass(klazz);
+                                      if (klazz == Float.class || klazz == Float.TYPE)
+                                        cachedClass = new CachedClass.FloatCachedClass(klazz);
                                       else
-                                          if (klazz == Boolean.TYPE)
-                                            cachedClass = new CachedClass.BooleanCachedClass(klazz);
+                                          if (klazz == Short.class || klazz == Short.TYPE)
+                                            cachedClass = new CachedClass.ShortCachedClass(klazz);
                                           else
-                                              if (klazz == Character.TYPE)
-                                                cachedClass = new CachedClass.CharacterCachedClass(klazz);
+                                              if (klazz == Boolean.TYPE)
+                                                cachedClass = new CachedClass.BooleanCachedClass(klazz);
                                               else
-                                                  if (klazz == BigInteger.class)
-                                                    cachedClass = new CachedClass.BigIntegerCachedClass(klazz);
+                                                  if (klazz == Character.TYPE)
+                                                    cachedClass = new CachedClass.CharacterCachedClass(klazz);
                                                   else
-                                                    cachedClass = new CachedClass(klazz);
+                                                      if (klazz == BigInteger.class)
+                                                        cachedClass = new CachedClass.BigIntegerCachedClass(klazz);
+                                                      else
+                                                        cachedClass = new CachedClass(klazz);
                 }
                 else
                     if (klazz.getName().charAt(0) == '[')
