@@ -516,9 +516,7 @@ public class MetaMethodIndex {
     public void clearCaches() {
         for (int i = 0; i != table.length; ++i )
           for (Entry e = table [i]; e != null; e = e.nextHashEntry ) {
-              synchronized (e) {
-                  e.cachedMethod = e.cachedMethodForSuper = e.cachedStaticMethod = null;
-              }
+              e.cachedMethod = e.cachedMethodForSuper = e.cachedStaticMethod = null;
           }
     }
 
@@ -526,9 +524,7 @@ public class MetaMethodIndex {
         for (int i = 0; i != table.length; ++i )
           for (Entry e = table [i]; e != null; e = e.nextHashEntry ) {
               if (e.name.equals(name)) {
-                  synchronized (e) {
-                      e.cachedMethod = e.cachedMethodForSuper = e.cachedStaticMethod = null;
-                  }
+                  e.cachedMethod = e.cachedMethodForSuper = e.cachedStaticMethod = null;
               }
           }
     }

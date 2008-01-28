@@ -952,13 +952,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (e.methodsForSuper == null)
           return null;
 
-        synchronized (e) {
-            cacheEntry = e.cachedMethodForSuper;
-        }
+        cacheEntry = e.cachedMethodForSuper;
         
-        if (cacheEntry != null
-           && (sameClasses(cacheEntry.params, arguments, e.methodsForSuper instanceof MetaMethod))) {
-             return cacheEntry.method;
+        if (cacheEntry != null &&
+            sameClasses(cacheEntry.params, arguments, e.methodsForSuper instanceof MetaMethod)) 
+        {
+             MetaMethod method = cacheEntry.method;
+             if (method!=null) return method;
         }
 
         cacheEntry = new MetaMethodIndex.CacheEntry ();
@@ -966,10 +966,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         cacheEntry.params = classes;
         cacheEntry.method = (MetaMethod) chooseMethod(e.name, e.methodsForSuper, classes, false);
         
-        synchronized (e) {
-            e.cachedMethodForSuper = cacheEntry;
-        }
-        
+        e.cachedMethodForSuper = cacheEntry;
+       
         return cacheEntry.method;
     }
 
@@ -979,28 +977,28 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (methods == null)
           return null;
 
-        synchronized (e) {
-            cacheEntry = e.cachedMethod;
-        }
-        
-        if (cacheEntry != null
-           && (sameClasses(cacheEntry.params, arguments, methods instanceof MetaMethod))) {
-             return cacheEntry.method;
+        cacheEntry = e.cachedMethod;
+        if (cacheEntry != null && 
+            sameClasses(cacheEntry.params, arguments, methods instanceof MetaMethod))
+        {
+            MetaMethod method=cacheEntry.method;
+            if (method!=null) return method;
         }
 
         cacheEntry = new MetaMethodIndex.CacheEntry ();
         final Class[] classes = MetaClassHelper.convertToTypeArray(arguments);
         cacheEntry.params = classes;
         cacheEntry.method = (MetaMethod) chooseMethod(e.name, methods, classes, false);
-        
-        synchronized (e) {
-            e.cachedMethod = cacheEntry;
-        }
-        
+        e.cachedMethod = cacheEntry;
+
         return cacheEntry.method;
     }
 
     private boolean sameClasses(Class[] params, Object[] arguments, boolean weakNullCheck) {
+        // we do here a null check because the params field might not have been
+        // set yet
+        if (params==null) return false;
+        
         if (params.length != arguments.length)
           return false;
 
@@ -1039,13 +1037,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         final MetaMethodIndex.Entry e = metaMethodIndex.getMethods(theClass, methodName);
         MetaMethodIndex.CacheEntry cacheEntry;
         if (e != null) {
-            synchronized (e) {
-                cacheEntry = e.cachedStaticMethod;
-            }
+            cacheEntry = e.cachedStaticMethod;
             
-            if (cacheEntry != null
-               && (sameClasses(cacheEntry.params, arguments, e.staticMethods instanceof MetaMethod))) {
-                 return cacheEntry.method;
+            if (cacheEntry != null &&
+                sameClasses(cacheEntry.params, arguments, e.staticMethods instanceof MetaMethod))
+            {
+                 MetaMethod method = cacheEntry.method;
+                 if (method!=null) return method;
             }
 
             cacheEntry = new MetaMethodIndex.CacheEntry ();
@@ -1053,9 +1051,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             cacheEntry.params = classes;
             cacheEntry.method = pickStaticMethod(methodName, classes);
             
-            synchronized (e) {
-                e.cachedStaticMethod = cacheEntry;
-            }
+            e.cachedStaticMethod = cacheEntry;
             
             return cacheEntry.method;
         }
