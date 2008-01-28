@@ -395,7 +395,14 @@ public class CachedClass {
 
         public boolean isAssignableFrom(Class classToTransformFrom) {
             return classToTransformFrom == null
-                || Number.class.isAssignableFrom(classToTransformFrom);
+                    || Number.class.isAssignableFrom(classToTransformFrom)
+                    || classToTransformFrom == Byte.TYPE
+                    || classToTransformFrom == Short.TYPE
+                    || classToTransformFrom == Integer.TYPE
+                    || classToTransformFrom == Long.TYPE
+                    || classToTransformFrom == Float.TYPE
+                    || classToTransformFrom == Double.TYPE
+                        ;
         }
 
         private Object coerceNumber(Object argument) {
