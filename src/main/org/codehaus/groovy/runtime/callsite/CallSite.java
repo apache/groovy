@@ -15,12 +15,14 @@
  */
 package org.codehaus.groovy.runtime.callsite;
 
-import groovy.lang.*;
+import groovy.lang.GroovyInterceptable;
+import groovy.lang.GroovyObject;
+import groovy.lang.MetaClass;
+import groovy.lang.MetaClassImpl;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ParameterTypes;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.NullObject;
-import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
 /**
@@ -55,6 +57,9 @@ public abstract class CallSite {
     public abstract Object invoke(Object receiver, Object [] args);
 
     public Object invokeBinop(Object receiver, Object arg) {
+        if (receiver == null)
+          receiver = NullObject.getNullObject();
+
         return invoke(receiver, new Object[] {arg});
     }
 
@@ -70,87 +75,95 @@ public abstract class CallSite {
      * @param args arguments
      * @return if receiver/arguments are valid for this site
      */
-    public abstract boolean accept(Object receiver, Object[] args);
+    public CallSite acceptCall(Object receiver, Object[] args) {
+        throw new UnsupportedOperationException();
+    }
 
-    public boolean acceptBinop(Object receiver, Object args) {
-        return accept(receiver, new Object[] {args} );
+    public CallSite acceptCurrent(Object receiver, Object[] args) {
+        throw new UnsupportedOperationException();
+    }
+
+    public CallSite acceptConstructor(Object receiver, Object[] args) {
+        throw new UnsupportedOperationException();
+    }
+
+    public CallSite acceptStatic(Object receiver, Object[] args) {
+        throw new UnsupportedOperationException();
+    }
+
+    public CallSite acceptBinop(Object receiver, Object arg) {
+        try {
+            final Object[] args = {arg};
+            return acceptCall(receiver, args);
+        }
+        catch (NullPointerException e) {
+            if (receiver == null)
+              return acceptBinop(NullObject.getNullObject(), arg );
+            throw e;
+        }
     }
 
     public final Object callSafe(Object receiver, Object[] args) throws Throwable {
-        try {
-            if (receiver == null)
-                return null;
+        if (receiver == null)
+            return null;
 
-            return getCallSite(receiver, args).invoke(receiver, args);
-        } catch (GroovyRuntimeException gre) {
-            throw ScriptBytecodeAdapter.unwrap(gre);
-        }
+        return acceptCall(receiver, args).invoke(receiver, args);
     }
 
     public final Object call(Object receiver, Object[] args) throws Throwable {
-        try {
-            if (receiver == null)
-                receiver = NullObject.getNullObject();
-
-            return getCallSite(receiver, args).invoke(receiver, args);
-        } catch (GroovyRuntimeException gre) {
-            throw ScriptBytecodeAdapter.unwrap(gre);
-        }
-    }
-
-    public final Object callBinop(Object receiver, Object arg) throws Throwable {
-        try {
-            if (receiver == null)
-                receiver = NullObject.getNullObject();
-
-            return getCallBinopSite(receiver, arg).invokeBinop(receiver, arg);
-        } catch (GroovyRuntimeException gre) {
-            throw ScriptBytecodeAdapter.unwrap(gre);
-        }
+        return acceptCall(receiver, args).invoke(receiver, args);
     }
 
     public final Object callCurrent (Object receiver, Object [] args) throws Throwable {
-        try {
-            return getCallCurrentSite(receiver, args).invoke(receiver, args);
-        } catch (GroovyRuntimeException gre) {
-            throw ScriptBytecodeAdapter.unwrap(gre);
-        }
+        return acceptCurrent(receiver, args).invoke(receiver, args);
     }
     
     public final Object callConstructor (Object receiver, Object [] args) throws Throwable {
-        try {
-            return getCallConstructorSite((Class) receiver, args).invoke(receiver, args);
-        } catch (GroovyRuntimeException gre) {
-            throw ScriptBytecodeAdapter.unwrap(gre);
-        }
+        return acceptConstructor((Class) receiver, args).invoke(receiver, args);
     }
 
     final CallSite createCallStaticSite(Class receiver, Object[] args) {
+        CallSite site;
         MetaClass metaClass = InvokerHelper.getMetaClass(receiver);
         if (metaClass instanceof MetaClassImpl) {
-            return ((MetaClassImpl)metaClass).createStaticSite(this, args);
+            site = ((MetaClassImpl)metaClass).createStaticSite(this, args);
         }
-       return new StaticMetaClassSite(this, metaClass);
+        else
+          site = new StaticMetaClassSite(this, metaClass);
+
+        array.array [index] = site;
+        return site;
     }
 
-    final CallSite createCallConstructorSite(Class receiver, Object[] args) {
+    protected final CallSite createCallConstructorSite(Class receiver, Object[] args) {
        MetaClass metaClass = InvokerHelper.getMetaClass(receiver);
+
+       CallSite site;
        if (metaClass instanceof MetaClassImpl) {
-           return ((MetaClassImpl)metaClass).createConstructorSite(this, args);
+           site = ((MetaClassImpl)metaClass).createConstructorSite(this, args);
        }
-       return new MetaClassConstructorSite(this, metaClass);
+       else
+         site = new MetaClassConstructorSite(this, metaClass);
+
+       array.array [index] = site;
+       return site;
     }
 
-    final CallSite createCallCurrentSite(Object receiver, Object[] args, Class sender) {
+    protected final CallSite createCallCurrentSite(Object receiver, Object[] args, Class sender) {
+        CallSite site;
         if (receiver instanceof GroovyInterceptable)
-          return new PogoInterceptableSite(this);
-
-        MetaClass metaClass = ((GroovyObject)receiver).getMetaClass();
-        if (metaClass instanceof MetaClassImpl) {
-            return ((MetaClassImpl)metaClass).createPogoCallCurrentSite(this, sender, args);
+          site = new PogoInterceptableSite(this);
+        else {
+            MetaClass metaClass = ((GroovyObject)receiver).getMetaClass();
+            if (metaClass instanceof MetaClassImpl) {
+                site = ((MetaClassImpl)metaClass).createPogoCallCurrentSite(this, sender, args);
+            }
+            else
+              site = new PogoMetaClassSite(this, metaClass);
         }
 
-        return new PogoMetaClassSite(this, metaClass);
+        array.array [index] = site;
+        return site;
     }
 
     // for MetaClassImpl we try to pick meta method,
@@ -211,55 +224,42 @@ public abstract class CallSite {
             return null;
         }
 
-        public boolean accept(Object receiver, Object[] args) {
-            return false;
+        public final CallSite acceptCall(Object receiver, Object[] args) {
+            return createCallSite(receiver, args);
+        }
+
+        public final CallSite acceptCurrent(Object receiver, Object[] args) {
+            return createCallCurrentSite(receiver, args, array.owner);
+        }
+
+        public final CallSite acceptConstructor(Object receiver, Object[] args) {
+            return createCallConstructorSite((Class) receiver, args);
+        }
+
+        public final CallSite acceptStatic(Object receiver, Object[] args) {
+            return createCallStaticSite((Class) receiver, args);
         }
     }
 
-    public final CallSite getCallCurrentSite(Object receiver, Object[] args) {
-        if (!accept(receiver, args)) {
-            CallSite site = createCallCurrentSite(receiver, args, array.owner);
-            array.array[index] = site;
-            return site;
-        }
-        return this;
-    }
-
-    public final CallSite getCallConstructorSite(Class receiver, Object [] args) {
-        if (!accept(receiver, args)) {
-            CallSite site = createCallConstructorSite(receiver, args);
-            array.array[index] = site;
-            return site;
-        }
-        return this;
-    }
-
-    public final CallSite getCallBinopSite(Object receiver, Object args) {
-        if (!acceptBinop(receiver, args)) {
-            CallSite site = createCallSite(receiver, new Object[] {args} );
-            array.array[index] = site;
-            return site;
-        }
-        return this;
-    }
-
-    public final CallSite getCallSite(Object receiver, Object [] args) {
-        if (!accept(receiver, args)) {
-            CallSite site = createCallSite(receiver, args);
-            array.array[index] = site;
-            return site;
-        }
-        return this;
-    }
-
-    private CallSite createCallSite(Object receiver, Object[] args) {
+    protected final CallSite createCallSite(Object receiver, Object[] args) {
+        CallSite site;
+        if (receiver == null)
+          return new CallSite(this) {
+              public Object invoke(Object receiver, Object[] args) {
+                      return InvokerHelper.invokeMethod(NullObject.getNullObject(), name, args);
+              }
+          };
+        
         if (receiver instanceof Class)
-          return createCallStaticSite((Class) receiver, args);
+          site = createCallStaticSite((Class) receiver, args);
+        else
+            if (!(receiver instanceof GroovyObject)) {
+              site = createPojoSite(receiver, args);
+            }
+            else
+              site = createPogoSite(receiver, args);
 
-        if (!(receiver instanceof GroovyObject)) {
-            return createPojoSite(receiver, args);
-        }
-
-        return createPogoSite(receiver, args);
+        array.array[index] = site;
+        return site;
     }
 }

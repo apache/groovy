@@ -17,10 +17,7 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.*;
 import groovy.util.*;
-import org.codehaus.groovy.runtime.dgmimpl.NumberNumberDiv;
-import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMinus;
-import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMultiply;
-import org.codehaus.groovy.runtime.dgmimpl.NumberNumberPlus;
+import org.codehaus.groovy.runtime.dgmimpl.*;
 import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
@@ -64,6 +61,7 @@ import java.util.regex.Pattern;
  * @author Paul King
  * @author Michael Baehr
  * @author Joachim Baumann
+ * @author Alex Tkachman
  * @version $Revision$
  */
 public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
@@ -75,7 +73,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             NumberNumberPlus.class,
             NumberNumberMultiply.class,
             NumberNumberMinus.class,
-            NumberNumberDiv.class
+            NumberNumberDiv.class,
+            ObjectArrayGetAtMetaMethod.class,
+            ObjectArrayPutAtMetaMethod.class,
     };
 
     /**
@@ -2549,7 +2549,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 answer.addAll(getAt(self, (Collection) value));
             } else {
                 int idx = DefaultTypeTransformation.intUnbox(value);
-                answer.add(getAt(self, idx));
+                answer.add(getAtImpl(self, idx));
             }
         }
         return answer;
@@ -2677,40 +2677,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return getAt(list, range);
     }
 
-    /**
-     * Support the subscript operator for an Array.
-     *
-     * @param array an Array of Objects
-     * @param idx   an index
-     * @return the value at the given index
-     */
-    public static Object getAt(Object[] array, int idx) {
+    private static Object getAtImpl(Object[] array, int idx) {
         return array[normaliseIndex(idx, array.length)];
-    }
-
-    /**
-     * Support the subscript operator for an Array.
-     *
-     * @param array an Array of Objects
-     * @param idx   an index
-     * @param value an Object to put at the given index
-     */
-    public static void putAt(Object[] array, int idx, Object value) {
-        array[normaliseIndex(idx, array.length)] = value;
-    }
-
-    /**
-     * Support the subscript operator for an Array.
-     *
-     * @param array an Array of Objects
-     * @param idx   an index
-     * @param value an Object to put at the given index
-     */
-    public static void putAt(Double[] array, int idx, Number value) {
-        if (!(value instanceof Double)) {
-          value = new Double(value.doubleValue());
-        }
-        array[normaliseIndex(idx, array.length)] = (Double) value;
     }
 
     /**

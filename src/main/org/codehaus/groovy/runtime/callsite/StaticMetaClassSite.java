@@ -18,7 +18,10 @@ public class StaticMetaClassSite extends MetaClassSite {
         return metaClass.invokeStaticMethod(receiver, name, args);
     }
 
-    public boolean accept(Object receiver, Object[] args) {
-        return receiver == metaClass.getTheClass();
+    public CallSite acceptStatic(Object receiver, Object[] args) {
+        if(receiver == metaClass.getTheClass())
+          return this;
+        else
+          return createCallStaticSite((Class) receiver, args);
     }
 }

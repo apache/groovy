@@ -36,9 +36,12 @@ public class ConstructorSite extends MetaClassSite {
         return constructor.doConstructorInvoke(args);
     }
 
-    public final boolean accept(Object receiver, Object[] args) {
-        return receiver == metaClass.getTheClass() // meta class match receiver
-           && MetaClassHelper.sameClasses(params, args); // right arguments
+    public final CallSite acceptConstructor(Object receiver, Object[] args) {
+        if (receiver == metaClass.getTheClass() // meta class match receiver
+           && MetaClassHelper.sameClasses(params, args) ) // right arguments
+          return this;
+        else
+          return createCallConstructorSite((Class)receiver, args);
     }
 
     public static ConstructorSite createConstructorSite(CallSite site, MetaClassImpl metaClass, CachedConstructor constructor, Class[] params, Object[] args) {

@@ -20,6 +20,7 @@ import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovyShell;
 import junit.framework.TestCase;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.lang.reflect.Method;
@@ -219,6 +220,10 @@ public class GroovyTestCase extends TestCase {
         try {
             code.call();
         }
+        catch (GroovyRuntimeException gre) {
+            failed = true;
+            result = ScriptBytecodeAdapter.unwrap(gre).getMessage();
+        }
         catch (Throwable e) {
                 failed = true;
                 result = e.getMessage();
@@ -240,7 +245,7 @@ public class GroovyTestCase extends TestCase {
         try {
             code.call();
         } catch (GroovyRuntimeException gre) {
-            th = unwrap(gre);
+            th = ScriptBytecodeAdapter.unwrap(gre);
         } catch (Throwable e) {
             th = e;
         }
@@ -394,11 +399,4 @@ public class GroovyTestCase extends TestCase {
 	}
 
     private static final ThreadLocal notYetImplementedFlag = new ThreadLocal();
-
-    private Throwable unwrap (GroovyRuntimeException gre) {
-        Throwable th = gre;
-        if (th.getCause() != null && th.getCause() != gre) th = th.getCause();
-        if (th != gre && (th instanceof GroovyRuntimeException)) return unwrap((GroovyRuntimeException) th);
-        return th;
-    }
 }

@@ -11,7 +11,10 @@ public class ConstructorMetaClassSite extends MetaClassSite {
         return metaClass.invokeConstructor(args);
     }
 
-    public boolean accept(Object receiver, Object[] args) {
-        return receiver == metaClass.getTheClass();
+    public CallSite acceptConstructor(Object receiver, Object[] args) {
+        if (receiver == metaClass.getTheClass())
+          return this;
+        else
+          return createCallConstructorSite((Class)receiver, args);
     }
 }

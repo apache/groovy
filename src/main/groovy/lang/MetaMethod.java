@@ -200,7 +200,7 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
         return mopName;
     }
 
-    protected final RuntimeException processDoMethodInvokeException (Exception e, Object object, Object [] argumentArray) {
+    public final RuntimeException processDoMethodInvokeException (Exception e, Object object, Object [] argumentArray) {
         if (e instanceof IllegalArgumentException) {
             //TODO: test if this is ok with new MOP, should be changed!
             // we don't want the exception being unwrapped if it is a IllegalArgumentException

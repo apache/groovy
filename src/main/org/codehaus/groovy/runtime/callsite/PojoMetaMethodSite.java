@@ -18,6 +18,7 @@ package org.codehaus.groovy.runtime.callsite;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.runtime.MetaClassHelper;
+import org.codehaus.groovy.runtime.NullObject;
 
 /**
  * POJO call site
@@ -36,22 +37,39 @@ public class PojoMetaMethodSite extends MetaMethodSite {
         return metaMethod.doMethodInvoke(receiver,  args);
     }
 
-    public final boolean accept(Object receiver, Object[] args) {
-        return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
+    public final CallSite acceptCall(Object receiver, Object[] args) {
+        if(receiver.getClass() == metaClass.getTheClass() // meta class match receiver
 //               && ((MetaClassImpl)metaClass).getTheCachedClass().getMetaClassForClass() == metaClass // metaClass still be valid
-           && MetaClassHelper.sameClasses(params, args); // right arguments
+           && MetaClassHelper.sameClasses(params, args)) // right arguments
+          return this;
+        else
+          return createCallSite(receiver, args);
     }
 
-    public final boolean acceptBinop(Object receiver, Object args) {
-        return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
+    public final CallSite acceptBinop(Object receiver, Object arg) {
+        try {
+            return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
 //               && ((MetaClassImpl)metaClass).getTheCachedClass().getMetaClassForClass() == metaClass // metaClass still be valid
-           && MetaClassHelper.sameClass(params, args); // right arguments
+           && MetaClassHelper.sameClass(params, arg) // right arguments
+                ? this
+                : createCallSite(receiver, new Object[]{arg});
+        }
+        catch (NullPointerException e) {
+            if (receiver == null)
+              return acceptBinop(NullObject.getNullObject(), arg);
+
+            throw e;
+        }
     }
 
     public static CallSite createPojoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
         if (metaMethod instanceof CallSiteAwareMetaMethod) {
             return ((CallSiteAwareMetaMethod)metaMethod).createPojoCallSite(site, metaClass, metaMethod, params, receiver, args);
         }
+        return createNonAwareCallSite(site, metaClass, metaMethod, params, args);
+    }
+
+    public static CallSite createNonAwareCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object[] args) {
         if (metaMethod.correctArguments(args) == args) {
             if (noWrappers(args)) {
                 if (noCoerce(metaMethod,args))

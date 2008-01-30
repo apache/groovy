@@ -28,12 +28,199 @@ public class NumberNumberMultiply extends NumberNumberMetaMethod {
     }
 
     public CallSite createPojoCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
+        NumberMath m = NumberMath.getMath((Number)receiver, (Number)args[0]);
+
+
+        if (receiver instanceof Integer) {
+            if (args[0] instanceof Integer)
+                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
+                    public final Object invoke(Object receiver, Object[] args) {
+                        return new Integer(((Integer) receiver).intValue() * ((Integer) args[0]).intValue());
+                    }
+
+                    public final Object invokeBinop(Object receiver, Object arg) {
+                        return new Integer(((Integer) receiver).intValue() * ((Integer) arg).intValue());
+                    }
+                };
+
+            if (args[0] instanceof Long)
+                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
+                    public final Object invoke(Object receiver, Object[] args) {
+                        return new Long(((Integer) receiver).longValue() * ((Long) args[0]).longValue());
+                    }
+
+                    public final Object invokeBinop(Object receiver, Object arg) {
+                        return new Long(((Integer) receiver).longValue() * ((Long) arg).longValue());
+                    }
+                };
+
+            if (args[0] instanceof Float)
+                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
+                    public final Object invoke(Object receiver, Object[] args) {
+                        return new Double(((Integer) receiver).doubleValue() * ((Float) args[0]).doubleValue());
+                    }
+
+                    public final Object invokeBinop(Object receiver, Object arg) {
+                        return new Double(((Integer) receiver).doubleValue() * ((Float) arg).doubleValue());
+                    }
+                };
+
+            if (args[0] instanceof Double)
+                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
+                    public final Object invoke(Object receiver, Object[] args) {
+                        return new Double(((Integer) receiver).doubleValue() * ((Double) args[0]).doubleValue());
+                    }
+
+                    public final Object invokeBinop(Object receiver, Object arg) {
+                        return new Double(((Integer) receiver).doubleValue() * ((Double) arg).doubleValue());
+                    }
+                };
+            }
+
+        if (receiver instanceof Long) {
+            if (args[0] instanceof Integer)
+                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
+                    public final Object invoke(Object receiver, Object[] args) {
+                        return new Long(((Long) receiver).longValue() * ((Integer) args[0]).longValue());
+                    }
+
+                    public final Object invokeBinop(Object receiver, Object arg) {
+                        return new Long(((Long) receiver).longValue() * ((Integer) arg).longValue());
+                    }
+                };
+
+            if (args[0] instanceof Long)
+                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
+                    public final Object invoke(Object receiver, Object[] args) {
+                        return new Long(((Long) receiver).longValue() * ((Long) args[0]).longValue());
+                    }
+
+                    public final Object invokeBinop(Object receiver, Object arg) {
+                        return new Long(((Long) receiver).longValue() * ((Long) arg).longValue());
+                    }
+                };
+
+            if (args[0] instanceof Float)
+                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
+                    public final Object invoke(Object receiver, Object[] args) {
+                        return new Double(((Long) receiver).doubleValue() * ((Float) args[0]).doubleValue());
+                    }
+
+                    public final Object invokeBinop(Object receiver, Object arg) {
+                        return new Double(((Long) receiver).doubleValue() * ((Float) arg).doubleValue());
+                    }
+                };
+
+            if (args[0] instanceof Double)
+                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
+                    public final Object invoke(Object receiver, Object[] args) {
+                        return new Double(((Long) receiver).doubleValue() * ((Double) args[0]).doubleValue());
+                    }
+
+                    public final Object invokeBinop(Object receiver, Object arg) {
+                        return new Double(((Long) receiver).doubleValue() * ((Double) arg).doubleValue());
+                    }
+                };
+            }
+
+        if (receiver instanceof Float) {
+            if (args[0] instanceof Integer)
+                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
+                    public final Object invoke(Object receiver, Object[] args) {
+                        return new Double(((Float) receiver).doubleValue() * ((Integer) args[0]).doubleValue());
+                    }
+
+                    public final Object invokeBinop(Object receiver, Object arg) {
+                        return new Double(((Float) receiver).doubleValue() * ((Integer) arg).doubleValue());
+                    }
+                };
+
+            if (args[0] instanceof Long)
+                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
+                    public final Object invoke(Object receiver, Object[] args) {
+                        return new Double(((Float) receiver).doubleValue() * ((Long) args[0]).doubleValue());
+                    }
+
+                    public final Object invokeBinop(Object receiver, Object arg) {
+                        return new Double(((Float) receiver).doubleValue() * ((Long) arg).doubleValue());
+                    }
+                };
+
+            if (args[0] instanceof Float)
+                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
+                    public final Object invoke(Object receiver, Object[] args) {
+                        return new Double(((Float) receiver).doubleValue() * ((Float) args[0]).doubleValue());
+                    }
+
+                    public final Object invokeBinop(Object receiver, Object arg) {
+                        return new Double(((Float) receiver).doubleValue() * ((Float) arg).doubleValue());
+                    }
+                };
+
+            if (args[0] instanceof Double)
+                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
+                    public final Object invoke(Object receiver, Object[] args) {
+                        return new Double(((Float) receiver).doubleValue() * ((Double) args[0]).doubleValue());
+                    }
+
+                    public final Object invokeBinop(Object receiver, Object arg) {
+                        return new Double(((Float) receiver).doubleValue() * ((Double) arg).doubleValue());
+                    }
+                };
+            }
+
+        if (receiver instanceof Double) {
+            if (args[0] instanceof Integer)
+                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
+                    public final Object invoke(Object receiver, Object[] args) {
+                        return new Double(((Double) receiver).doubleValue() * ((Integer) args[0]).doubleValue());
+                    }
+
+                    public final Object invokeBinop(Object receiver, Object arg) {
+                        return new Double(((Double) receiver).doubleValue() * ((Integer) arg).doubleValue());
+                    }
+                };
+
+            if (args[0] instanceof Long)
+                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
+                    public final Object invoke(Object receiver, Object[] args) {
+                        return new Double(((Double) receiver).doubleValue() * ((Long) args[0]).doubleValue());
+                    }
+
+                    public final Object invokeBinop(Object receiver, Object arg) {
+                        return new Double(((Double) receiver).doubleValue() * ((Long) arg).doubleValue());
+                    }
+                };
+
+            if (args[0] instanceof Float)
+                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
+                    public final Object invoke(Object receiver, Object[] args) {
+                        return new Double(((Double) receiver).doubleValue() * ((Float) args[0]).doubleValue());
+                    }
+
+                    public final Object invokeBinop(Object receiver, Object arg) {
+                        return new Double(((Double) receiver).doubleValue() * ((Float) arg).doubleValue());
+                    }
+                };
+
+            if (args[0] instanceof Double)
+                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
+                    public final Object invoke(Object receiver, Object[] args) {
+                        return new Double(((Double) receiver).doubleValue() * ((Double) args[0]).doubleValue());
+                    }
+
+                    public final Object invokeBinop(Object receiver, Object arg) {
+                        return new Double(((Double) receiver).doubleValue() * ((Double) arg).doubleValue());
+                    }
+                };
+            }
+
         return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-            public Object invoke(Object receiver, Object[] args) {
+            public final Object invoke(Object receiver, Object[] args) {
                 return math.multiplyImpl((Number)receiver,(Number)args[0]);
             }
 
-            public Object invokeBinop(Object receiver, Object arg) {
+            public final Object invokeBinop(Object receiver, Object arg) {
                 return math.multiplyImpl((Number)receiver,(Number)arg);
             }
         };

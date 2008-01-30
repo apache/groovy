@@ -15,11 +15,20 @@
  */
 package org.codehaus.groovy.reflection;
 
+import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.classgen.BytecodeHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
+import org.codehaus.groovy.runtime.callsite.CallSite;
+import org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite;
+import org.codehaus.groovy.runtime.callsite.StaticMetaMethodSite;
 import org.codehaus.groovy.runtime.metaclass.MethodHelper;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
+import java.lang.ref.WeakReference;
+import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -31,7 +40,7 @@ import java.util.Comparator;
 /**
  * @author Alex.Tkachman
  */
-public class CachedMethod extends MetaMethod implements Comparable{
+public class CachedMethod extends MetaMethod implements Comparable, Opcodes{
     public final CachedClass cachedClass;
 
     private final Method cachedMethod;
@@ -241,6 +250,122 @@ public class CachedMethod extends MetaMethod implements Comparable{
         return cachedMethod.toString();
     }
 
+    private WeakReference staticMetaMethodLoader;
+
+    public StaticMetaMethodSite createStaticMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Class owner) {
+        MyClassLoader loader;
+        if (staticMetaMethodLoader == null || (loader = (MyClassLoader) staticMetaMethodLoader.get()) == null ) {
+            ClassWriter cw = new ClassWriter(true);
+
+            final String name = getDeclaringClass().getCachedClass().getName().replace(".","_") + "$" + getName();
+            byte[] bytes = genStaticMetaMethodSite(cw, name);
+
+            loader = new MyClassLoader(owner.getClassLoader(), name, bytes);
+            staticMetaMethodLoader = new WeakReference(loader);
+        }
+
+        final Constructor constructor;
+        try {
+            constructor = loader.cls.getConstructor(new Class[]{CallSite.class, MetaClassImpl.class, MetaMethod.class, Class[].class});
+            return (StaticMetaMethodSite) constructor.newInstance(new Object[]{site, metaClass, metaMethod, params});
+        } catch (NoSuchMethodException e) {
+        } catch (IllegalAccessException e) {
+        } catch (InvocationTargetException e) {
+        } catch (InstantiationException e) {
+        }
+        return null;
+    }
+
+    private byte[] genPogoMetaMethodSite(ClassWriter cw, String name) {
+        MethodVisitor mv;
+        cw.visit(V1_4, ACC_PUBLIC, name, null, "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", null);
+
+        {
+        mv = cw.visitMethod(ACC_PUBLIC, "<init>", "(Lorg/codehaus/groovy/runtime/callsite/CallSite;Lgroovy/lang/MetaClassImpl;Lgroovy/lang/MetaMethod;[Ljava/lang/Class;)V", null, null);
+        mv.visitCode();
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitVarInsn(ALOAD, 1);
+        mv.visitVarInsn(ALOAD, 2);
+        mv.visitVarInsn(ALOAD, 3);
+        mv.visitVarInsn(ALOAD, 4);
+        mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", "<init>", "(Lorg/codehaus/groovy/runtime/callsite/CallSite;Lgroovy/lang/MetaClassImpl;Lgroovy/lang/MetaMethod;[Ljava/lang/Class;)V");
+        mv.visitInsn(RETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+        }
+
+        {
+        mv = cw.visitMethod(ACC_PUBLIC|ACC_FINAL, "invoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", null, null);
+        mv.visitCode();
+        genInvokeMethod(mv);
+        mv.visitInsn(ARETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+        }
+        cw.visitEnd();
+
+        byte [] bytes = cw.toByteArray();
+        return bytes;
+    }
+
+    private WeakReference pogoMetaMethodLoader;
+
+    public PogoMetaMethodSite createPogoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Class owner) {
+        MyClassLoader loader;
+        if (pogoMetaMethodLoader == null || (loader = (MyClassLoader) pogoMetaMethodLoader.get()) == null ) {
+            ClassWriter cw = new ClassWriter(true);
+
+            final String name = getDeclaringClass().getCachedClass().getName().replace(".","_") + "$" + getName();
+            byte[] bytes = genPogoMetaMethodSite(cw, name);
+
+            loader = new MyClassLoader(owner.getClassLoader(), name, bytes);
+            pogoMetaMethodLoader = new WeakReference(loader);
+        }
+
+        final Constructor constructor;
+        try {
+            constructor = loader.cls.getConstructor(new Class[]{CallSite.class, MetaClassImpl.class, MetaMethod.class, Class[].class});
+            return (PogoMetaMethodSite) constructor.newInstance(new Object[]{site, metaClass, metaMethod, params});
+        } catch (NoSuchMethodException e) {
+        } catch (IllegalAccessException e) {
+        } catch (InvocationTargetException e) {
+        } catch (InstantiationException e) {
+        }
+        return null;
+    }
+
+    private byte[] genStaticMetaMethodSite(ClassWriter cw, String name) {
+        MethodVisitor mv;
+        cw.visit(V1_4, ACC_PUBLIC, name, null, "org/codehaus/groovy/runtime/callsite/StaticMetaMethodSite", null);
+
+        {
+        mv = cw.visitMethod(ACC_PUBLIC, "<init>", "(Lorg/codehaus/groovy/runtime/callsite/CallSite;Lgroovy/lang/MetaClassImpl;Lgroovy/lang/MetaMethod;[Ljava/lang/Class;)V", null, null);
+        mv.visitCode();
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitVarInsn(ALOAD, 1);
+        mv.visitVarInsn(ALOAD, 2);
+        mv.visitVarInsn(ALOAD, 3);
+        mv.visitVarInsn(ALOAD, 4);
+        mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/callsite/StaticMetaMethodSite", "<init>", "(Lorg/codehaus/groovy/runtime/callsite/CallSite;Lgroovy/lang/MetaClassImpl;Lgroovy/lang/MetaMethod;[Ljava/lang/Class;)V");
+        mv.visitInsn(RETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+        }
+
+        {
+        mv = cw.visitMethod(ACC_PUBLIC|ACC_FINAL, "invoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", null, null);
+        mv.visitCode();
+        genInvokeMethod(mv);
+        mv.visitInsn(ARETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+        }
+        cw.visitEnd();
+
+        byte [] bytes = cw.toByteArray();
+        return bytes;
+    }
+
     private static class MyComparator implements Comparator {
         public int compare(Object o1, Object o2) {
             if (o1 instanceof CachedMethod)
@@ -250,6 +375,75 @@ public class CachedMethod extends MetaMethod implements Comparable{
             else
                 // really, this should never happen, it's eveidence of corruption if it does
                 throw new ClassCastException("One of the two comperables must be a CachedMethod");
+        }
+    }
+
+    private static class MyClassLoader extends ClassLoader {
+        final Class cls;
+        final String name;
+
+        private MyClassLoader(ClassLoader parent, String name, byte bytes []) {
+            super(parent);
+            this.name = name;
+            cls = defineClass(name, bytes, 0, bytes.length);
+            resolveClass(cls);
+        }
+
+        protected synchronized Class loadClass(String name, boolean resolve) throws ClassNotFoundException {
+            if (name.startsWith("org.codehaus.groovy.runtime") || name.startsWith("groovy.lang"))
+              return getClass().getClassLoader().loadClass(name);
+            return super.loadClass(name, resolve);    //To change body of overridden methods use File | Settings | File Templates.
+        }
+    }
+
+    protected void genInvokeMethod(MethodVisitor mv) {
+        BytecodeHelper helper = new BytecodeHelper(mv);
+        // compute class to make the call on
+        Class callClass = getDeclaringClass().getCachedClass();
+        boolean useInterface = callClass.isInterface();
+//        if (callClass == null) {
+//            callClass = method.getCallClass();
+//        } else {
+//            useInterface = true;
+//        }
+        // get bytecode information
+        String type = BytecodeHelper.getClassInternalName(callClass.getName());
+        String descriptor = BytecodeHelper.getMethodDescriptor(getReturnType(), getNativeParameterTypes());
+
+        // make call
+        if (isStatic()) {
+            genLoadParameters(2, mv, helper);
+            mv.visitMethodInsn(INVOKESTATIC, type, getName(), descriptor);
+        } else {
+            mv.visitVarInsn(ALOAD, 1);
+            helper.doCast(callClass);
+            genLoadParameters(2, mv, helper);
+            mv.visitMethodInsn((useInterface) ? INVOKEINTERFACE : INVOKEVIRTUAL, type, getName(), descriptor);
+        }
+
+        helper.box(getReturnType());
+        if (getReturnType() == void.class) {
+            mv.visitInsn(ACONST_NULL);
+        }
+    }
+
+    protected void genLoadParameters(int argumentIndex, MethodVisitor mv, BytecodeHelper helper) {
+        CachedClass[] parameters = getParameterTypes();
+        int size = parameters.length;
+        for (int i = 0; i < size; i++) {
+            // unpack argument from Object[]
+            mv.visitVarInsn(ALOAD, argumentIndex);
+            helper.pushConstant(i);
+            mv.visitInsn(AALOAD);
+
+            // cast argument to parameter class, inclusive unboxing
+            // for methods with primitive types
+            Class type = parameters[i].getCachedClass();
+            if (type.isPrimitive()) {
+                helper.unbox(type);
+            } else {
+                helper.doCast(type);
+            }
         }
     }
 }

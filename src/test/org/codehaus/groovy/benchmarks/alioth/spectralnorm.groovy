@@ -5,7 +5,7 @@
 	contributed by Jochen Hinrichsen
 */
 
-def approximate(n) {
+private def approximate(n) {
     // create unit vector
 	def u = [1.0D] * n as Double []
 
@@ -19,7 +19,7 @@ def approximate(n) {
 
     // B=AtA         A multiplied by A transposed
     // v.Bv /(v.v)   eigenvalue of v
-    double vBv = vv = 0.0D
+    double vBv = 0.0d, vv = 0.0D
     for (i in 0..<n) {
         vBv += u[i]*v[i]
         vv  += v[i]*v[i]
@@ -59,7 +59,7 @@ def MultiplyAtAv(n, v, AtAv){
 
 long start = System.currentTimeMillis ()
 
-def n = (args.length == 0 ? 100 : args[0].toInteger())
+def n = (args.length == 0 ? 100 : args[(int)0.0d].toInteger())
 def nf = java.text.NumberFormat.getInstance()
 nf.setMaximumFractionDigits(9)
 nf.setMinimumFractionDigits(9)

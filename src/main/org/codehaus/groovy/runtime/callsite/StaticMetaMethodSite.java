@@ -36,10 +36,17 @@ public class StaticMetaMethodSite extends MetaMethodSite {
         return metaMethod.doMethodInvoke(receiver,  args);
     }
 
-    public final boolean accept(Object receiver, Object[] args) {
-        return receiver == metaClass.getTheClass() // meta class match receiver
+    public final CallSite acceptStatic(Object receiver, Object[] args) {
+        if(receiver == metaClass.getTheClass() // meta class match receiver
 //               && ((MetaClassImpl)metaClass).getTheCachedClass().getMetaClassForClass() == metaClass // metaClass still be valid
-           && MetaClassHelper.sameClasses(params, args); // right arguments
+           && MetaClassHelper.sameClasses(params, args)) // right arguments
+          return this;
+        else
+          return createCallStaticSite((Class) receiver, args);
+    }
+
+    public final CallSite acceptCall(Object receiver, Object[] args) {
+          return acceptStatic(receiver, args);
     }
 
     public static StaticMetaMethodSite createStaticMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object[] args) {
@@ -47,8 +54,18 @@ public class StaticMetaMethodSite extends MetaMethodSite {
             if (noWrappers(args)) {
                 if (noCoerce(metaMethod,args))
                     return new StaticMetaMethodSiteNoUnwrap(site, metaClass, metaMethod, params);
-                else
+                else {
+//                    if (metaMethod.getClass() == CachedMethod.class) {
+//                        CachedMethod m = (CachedMethod)metaMethod;
+//                        if (m.isPublic()) {
+//                            final StaticMetaMethodSite res = m.createStaticMetaMethodSite(site, metaClass, metaMethod, params, site.array.owner);
+//                            if (res != null)
+//                              return res;
+//                        }
+//                    }
+
                     return new StaticMetaMethodSiteNoUnwrapNoCoerce(site, metaClass, metaMethod, params);
+                }
             }
         }
         return new StaticMetaMethodSite(site, metaClass, metaMethod, params);

@@ -32,7 +32,7 @@ class GroovyTestCaseTest extends GroovyTestCase {
 
     void testShouldFailWithMessage() {
         def msg = shouldFail { throw new RuntimeException('x') }
-        assertEquals 'java.lang.RuntimeException: x', msg
+        assertEquals 'x', msg
     }
     void testShouldFailWithMessageForClass() {
         def msg = shouldFail(RuntimeException.class) { throw new RuntimeException('x') }

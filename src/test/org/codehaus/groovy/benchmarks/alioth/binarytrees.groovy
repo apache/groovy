@@ -32,7 +32,7 @@ class TreeNode {
       this.item = item
    }
 
-   private def itemCheck(){
+   public def itemCheck(){
       // if necessary deallocate here
       if (left==null) return item
       else return item + left.itemCheck() - right.itemCheck()

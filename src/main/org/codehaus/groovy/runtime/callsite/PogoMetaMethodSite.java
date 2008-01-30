@@ -35,22 +35,41 @@ public class PogoMetaMethodSite extends MetaMethodSite {
         return metaMethod.doMethodInvoke(receiver,  args);
     }
 
-    public final boolean accept(Object receiver, Object[] args) {
-        return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
+    public final CallSite acceptCurrent(Object receiver, Object[] args) {
+        if(receiver.getClass() == metaClass.getTheClass() // meta class match receiver
            && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
-           && MetaClassHelper.sameClasses(params, args); // right arguments
+           && MetaClassHelper.sameClasses(params, args)) // right arguments
+          return this;
+        else
+          return createCallCurrentSite(receiver, args, array.owner);
+    }
+
+    public final CallSite acceptCall(Object receiver, Object[] args) {
+        if(receiver.getClass() == metaClass.getTheClass() // meta class match receiver
+           && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
+           && MetaClassHelper.sameClasses(params, args)) // right arguments
+          return this;
+        else
+          return createCallSite(receiver, args);
     }
 
     public static CallSite createPogoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object[] args) {
-        if (metaMethod instanceof CallSiteAwareMetaMethod) {
-            return ((CallSiteAwareMetaMethod)metaMethod).createPojoCallSite(site, metaClass, metaMethod, params, null, args);
-        }
         if (metaMethod.correctArguments(args) == args) {
             if (noWrappers(args)) {
                 if (noCoerce(metaMethod,args))
                     return new PogoMetaMethodSiteNoUnwrap(site, metaClass, metaMethod, params);
-                else
+                else {
+//                    if (metaMethod.getClass() == CachedMethod.class) {
+//                        CachedMethod m = (CachedMethod)metaMethod;
+//                        if (m.isPublic()) {
+//                            final PogoMetaMethodSite res = m.createPogoMetaMethodSite(site, metaClass, metaMethod, params, site.array.owner);
+//                            if (res != null)
+//                              return res;
+//                        }
+//                    }
+//
                     return new PogoMetaMethodSiteNoUnwrapNoCoerce(site, metaClass, metaMethod, params);
+                }
             }
         }
         return new PogoMetaMethodSite(site, metaClass, metaMethod, params);
