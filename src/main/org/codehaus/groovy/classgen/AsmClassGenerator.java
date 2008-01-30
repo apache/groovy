@@ -1669,7 +1669,10 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitCastExpression(CastExpression expression) {
         ClassNode type = expression.getType();
         visitAndAutoboxBoolean(expression.getExpression());
+        final ClassNode rht = rightHandType;
+        rightHandType = expression.getExpression().getType();
         doConvertAndCast(type, expression.getExpression(), expression.isIgnoringAutoboxing(), false, expression.isCoerce());
+        rightHandType = rht;
     }
 
     public void visitNotExpression(NotExpression expression) {
