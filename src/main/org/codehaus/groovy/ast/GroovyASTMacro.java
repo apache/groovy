@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.codehaus.groovy.vmplugin;
 
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.control.CompilationUnit;
+package org.codehaus.groovy.ast;
+
+import org.codehaus.groovy.control.Phases;
+
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
+import java.lang.annotation.ElementType;
 
 /**
- * Interface to access VM version based actions.
- * This interface is for internal use only!
- * 
- * @author Jochen Theodorou
+ * @author Danno Ferrin (shemnon)
  */
-public interface VMPlugin {
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.ANNOTATION_TYPE)
+public @interface GroovyASTMacro {
 
-    void setGenericsTypes(ClassNode c);
-    Class[] getPluginDefaultGroovyMethods();
-    void addPhaseOperations(CompilationUnit unit);
+    //String macroClass();
+    Class macroClass();
+    int phase() default Phases.CANONICALIZATION;
 }

@@ -148,10 +148,22 @@ $Date$
     <target name="stagedcompile" depends="-init,-includeResources,ensureGrammars,-jvm14BuildWarning,-jvm15BuildWarning" unless="uber">
         <mkdir dir="${mainClassesDirectory}"/>
         <mkdir dir="${toolsClassesDirectory}"/>
+
         <javac srcdir="${mainSourceDirectory}" includeantruntime="false" destdir="${mainClassesDirectory}"
                deprecation="on" debug="yes" source="1.4" target="1.4" fork="true" classpathref="compilePath">
-               <exclude name="**/vmplugin/v5/**" unless="groovy.build.vm5"/>
+               <exclude name="groovy/beans/*.java"/>
+               <exclude name="org/codehaus/groovy/ast/GroovyASTMacro.java"/>
+               <exclude name="**/vmplugin/v5/**"/>
         </javac>
+
+        <!-- compile annotations -->
+        <javac srcdir="${mainSourceDirectory}" includeantruntime="false" destdir="${mainClassesDirectory}"
+               deprecation="on" debug="yes" source="1.5" target="1.5" fork="true" classpathref="compilePath">
+            <include name="groovy/beans/*.java" if="groovy.build.vm5"/>
+            <include name="org/codehaus/groovy/ast/GroovyASTMacro.java" if="groovy.build.vm5"/>
+            <include name="**/vmplugin/v5/**" if="groovy.build.vm5"/>
+        </javac>
+
         <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}" classpathref="runtimePath"/>
         <groovyc srcdir="${mainSourceDirectory}" destdir="${mainClassesDirectory}" classpathref="compilePath"/>
     </target>

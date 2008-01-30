@@ -17,6 +17,7 @@ package org.codehaus.groovy.vmplugin.v4;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.vmplugin.VMPlugin;
+import org.codehaus.groovy.control.CompilationUnit;
 
 /**
  * java 4 based functions
@@ -26,8 +27,6 @@ import org.codehaus.groovy.vmplugin.VMPlugin;
 public class Java4 implements VMPlugin {
     private static Class[] EMPTY_CLASS_ARRAY = new Class[0];
     
-    
-    
     public void setGenericsTypes(ClassNode c) {
         return;        
     }
@@ -36,4 +35,7 @@ public class Java4 implements VMPlugin {
         return EMPTY_CLASS_ARRAY;
     }
 
+    public void addPhaseOperations(CompilationUnit unit) {
+        // add nothing
+    }
 }

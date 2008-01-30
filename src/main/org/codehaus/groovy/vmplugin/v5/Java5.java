@@ -17,12 +17,18 @@
 package org.codehaus.groovy.vmplugin.v5;
 
 import java.lang.reflect.*;
+import java.util.Map;
+import java.util.HashMap;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.control.Phases;
+import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.vmplugin.v5.ASTAnnotationMacroCollectorCodeVisitor;
+import org.codehaus.groovy.vmplugin.v5.ASTAnnotationMacroCodeVisitor;
 
 /**
  * java 5 based functions
@@ -47,7 +53,7 @@ public class Java5 implements VMPlugin {
         }
         return gts;
     }
-    
+
     private GenericsType configureTypeVariableDefintion(TypeVariable tv) {
        ClassNode base = configureTypeVariableReference(tv);
        Type[] tBounds = tv.getBounds();
@@ -111,4 +117,14 @@ public class Java5 implements VMPlugin {
         return PLUGIN_DGM;
     }
 
+    public void addPhaseOperations(CompilationUnit unit) {
+        Map<Integer, ASTAnnotationMacroCodeVisitor> macroVisitors = new HashMap<Integer, ASTAnnotationMacroCodeVisitor>();
+        ASTAnnotationMacroCollectorCodeVisitor annotCollector = new ASTAnnotationMacroCollectorCodeVisitor(macroVisitors);
+        unit.addPhaseOperation(annotCollector.getOperation(), Phases.SEMANTIC_ANALYSIS);
+        for (int i = Phases.SEMANTIC_ANALYSIS; i <= Phases.ALL; i++) {
+            ASTAnnotationMacroCodeVisitor macroVisitor = new ASTAnnotationMacroCodeVisitor();
+            macroVisitors.put(Integer.valueOf(i), macroVisitor);
+            unit.addPhaseOperation(macroVisitor.getOperation(), i);
+        }
+    }
 }
