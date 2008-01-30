@@ -257,7 +257,7 @@ public class CachedMethod extends MetaMethod implements Comparable, Opcodes{
         if (staticMetaMethodLoader == null || (loader = (MyClassLoader) staticMetaMethodLoader.get()) == null ) {
             ClassWriter cw = new ClassWriter(true);
 
-            final String name = getDeclaringClass().getCachedClass().getName().replace(".","_") + "$" + getName();
+            final String name = getDeclaringClass().getCachedClass().getName().replace('.','_') + "$" + getName();
             byte[] bytes = genStaticMetaMethodSite(cw, name);
 
             loader = new MyClassLoader(owner.getClassLoader(), name, bytes);
@@ -315,7 +315,7 @@ public class CachedMethod extends MetaMethod implements Comparable, Opcodes{
         if (pogoMetaMethodLoader == null || (loader = (MyClassLoader) pogoMetaMethodLoader.get()) == null ) {
             ClassWriter cw = new ClassWriter(true);
 
-            final String name = getDeclaringClass().getCachedClass().getName().replace(".","_") + "$" + getName();
+            final String name = getDeclaringClass().getCachedClass().getName().replace('.','_') + "$" + getName();
             byte[] bytes = genPogoMetaMethodSite(cw, name);
 
             loader = new MyClassLoader(owner.getClassLoader(), name, bytes);
