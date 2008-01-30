@@ -3288,7 +3288,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Object asType(Object[] ary, Class clazz) {
         if (clazz == List.class) {
-            return Arrays.asList(ary);
+            return new ArrayList(Arrays.asList(ary));
         } else if (clazz == Set.class) {
             return new HashSet(Arrays.asList(ary));
         } else if (clazz == SortedSet.class) {
