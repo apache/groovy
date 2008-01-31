@@ -285,6 +285,19 @@ $Date$
                 <path refid="examplesPath"/>
             </classpath>
         </groovyc>
+        <javac srcdir="${examplesSourceDirectory}"
+                destdir="${examplesClassesDirectory}"
+                source="1.5"
+                target="1.5"
+                includes="org/codehaus/groovy/grails/compiler/injection/*.java"
+                fork="true">
+            <classpath>
+                <pathelement path="${mainClassesDirectory}"/>
+                <pathelement path="${examplesClassesDirectory}"/>
+                <path refid="compilePath"/>
+                <path refid="examplesPath"/>
+            </classpath>
+        </javac>
         <groovyc srcdir="${examplesSourceDirectory}"
                 destdir="${examplesClassesDirectory}"
                 excludes="webapps/groovlet-examples/WEB-INF/groovy/**">
