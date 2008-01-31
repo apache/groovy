@@ -10,5 +10,7 @@ class Groovy2391Bug extends GroovyTestCase{
       ArrayList.metaClass.initialize()
 
       assertEquals("Boom", [1,"Boom",3] as String)
+
+      GroovySystem.metaClassRegistry.removeMetaClass ArrayList
     }
 }
