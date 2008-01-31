@@ -28,6 +28,7 @@ import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.codehaus.groovy.syntax.Types;
+import org.codehaus.groovy.syntax.Token;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.*;
 
@@ -3281,20 +3282,40 @@ public class AsmClassGenerator extends ClassGenerator {
                 // -> (x, [], 5), =, x[5] + 10
                 // -> methodCall(x, "putAt", [5, methodCall(x[5], "plus", 10)])
 
+                final Expression objExpr = leftBinExpr.getLeftExpression();
+                objExpr.visit(this);
+                final int objVar = compileStack.defineTemporaryVariable("$object", true);
+
+                final Expression indexExpr = leftBinExpr.getRightExpression();
+                indexExpr.visit(this);
+                final int indexVar = compileStack.defineTemporaryVariable("$index", true);
+
+                final BinaryExpression leftExpr = new BinaryExpression(
+                        new VariableExpression("$object"),
+                        Token.newSymbol(Types.LEFT_SQUARE_BRACKET, -1, -1),
+                        new VariableExpression("$index")
+                );
                 MethodCallExpression methodCall =
                         new MethodCallExpression(
-                                expression.getLeftExpression(),
+                                leftExpr,
                                 method,
                                 new ArgumentListExpression(expression.getRightExpression()));
 
-                Expression safeIndexExpr = createReusableExpression(leftBinExpr.getRightExpression());
+                methodCall.visit(this);
+                final int resultVar = compileStack.defineTemporaryVariable("$result", true);
 
                 visitMethodCallExpression(
                         new MethodCallExpression(
-                                leftBinExpr.getLeftExpression(),
+                                new VariableExpression("$object"),
                                 "putAt",
-                                new ArgumentListExpression(safeIndexExpr, methodCall)));
-                //cv.visitInsn(POP);
+                                new ArgumentListExpression(
+                                        new Expression[]{ new VariableExpression("$index"), new VariableExpression("$result")})));
+                mv.visitInsn(POP); //drop return value
+
+                mv.visitVarInsn(ALOAD, resultVar );
+                compileStack.removeVar(resultVar);
+                compileStack.removeVar(indexVar);
+                compileStack.removeVar(objVar);
                 return;
             }
         }
@@ -3328,13 +3349,20 @@ public class AsmClassGenerator extends ClassGenerator {
                 // -> (x, [], 5), =, 10
                 // -> methodCall(x, "putAt", [5, 10])
 
+                final Expression right = expression.getRightExpression();
+                right.visit(this);
+                final int rhsVar = compileStack.defineTemporaryVariable("$rhs", right.getType(), true);
+
                 visitMethodCallExpression(
                         new MethodCallExpression(
                                 leftBinExpr.getLeftExpression(),
                                 "putAt",
                                 new ArgumentListExpression(
-                                        new Expression[]{leftBinExpr.getRightExpression(), expression.getRightExpression()})));
-                // cv.visitInsn(POP); //this is realted to isPopRequired()
+                                        new Expression[]{leftBinExpr.getRightExpression(), new VariableExpression("$rhs")})));
+                mv.visitInsn(POP); //drop return value
+
+                mv.visitVarInsn(ALOAD, rhsVar);
+                compileStack.removeVar(rhsVar);
                 return;
             }
         }
