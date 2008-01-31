@@ -195,7 +195,10 @@ public class ReflectionCache {
                                                       if (klazz == BigInteger.class)
                                                         cachedClass = new CachedClass.BigIntegerCachedClass(klazz);
                                                       else
-                                                        cachedClass = new CachedClass(klazz);
+                                                        if (klazz == Byte.class)
+                                                          cachedClass = new CachedClass.ByteCachedClass(klazz);
+                                                        else
+                                                          cachedClass = new CachedClass(klazz);
                 }
                 else
                     if (klazz.getName().charAt(0) == '[')
