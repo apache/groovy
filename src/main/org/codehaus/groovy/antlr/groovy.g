@@ -1620,7 +1620,8 @@ statement[int prevToken]
     |   forStatement
 
     // While statement
-    |   "while"^ LPAREN! sce=strictContextExpression[true] RPAREN! nlsWarn! compatibleBodyStatement
+    |   "while"^ LPAREN! sce=strictContextExpression[false] RPAREN! nlsWarn!
+        (SEMI | compatibleBodyStatement)
 
     /*OBS* no do-while statement in Groovy (too ambiguous)
     // do-while statement
@@ -1631,7 +1632,7 @@ statement[int prevToken]
     |   importStatement
 
     // switch/case statement
-    |   "switch"^ LPAREN! sce=strictContextExpression[true] RPAREN! nlsWarn! LCURLY! nls!
+    |   "switch"^ LPAREN! sce=strictContextExpression[false] RPAREN! nlsWarn! LCURLY! nls!
         ( casesGroup )*
         RCURLY!
 
@@ -1639,7 +1640,7 @@ statement[int prevToken]
     |   tryBlock
 
     // synchronize a statement
-    |   "synchronized"^ LPAREN! sce=strictContextExpression[true] RPAREN! nlsWarn! compoundStatement
+    |   "synchronized"^ LPAREN! sce=strictContextExpression[false] RPAREN! nlsWarn! compoundStatement
 
 
     /*OBS*
@@ -1663,7 +1664,7 @@ forStatement
             forInClause
         )
         RPAREN! nls!
-        compatibleBodyStatement                                  // statement to loop over
+        (SEMI | compatibleBodyStatement)                                  // statement to loop over
     ;
 
 closureList

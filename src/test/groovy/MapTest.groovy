@@ -86,9 +86,9 @@ class MapTest extends GroovyTestCase {
         
         def foo = m['def'] = 5
         assert m['def'] == 5
-        //  it is not valid any more
-        //        assert foo == null
-                assert foo == 5
+//  it is not valid any more
+//        assert foo == null
+        assert foo == 5
     }
 
     void testFindAll(){

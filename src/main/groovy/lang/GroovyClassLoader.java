@@ -196,7 +196,13 @@ public class GroovyClassLoader extends URLClassLoader {
      * @return the main class defined in the given script
      */
     public Class parseClass(String text, String fileName) throws CompilationFailedException {
-        return parseClass(new ByteArrayInputStream(text.getBytes()), fileName);
+        byte[] bytes = null;
+        try {
+            bytes = text.getBytes(config.getSourceEncoding());
+        } catch (UnsupportedEncodingException e) {
+            throw new CompilationFailedException(1,null,e);
+        }
+        return parseClass(new ByteArrayInputStream(bytes), fileName);
     }
 
     /**
@@ -206,7 +212,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @return the main class defined in the given script
      */
     public Class parseClass(String text) throws CompilationFailedException {
-        return parseClass(new ByteArrayInputStream(text.getBytes()), "script" + System.currentTimeMillis() + ".groovy");
+        return parseClass(text, "script" + System.currentTimeMillis() + ".groovy");
     }
 
     /**
