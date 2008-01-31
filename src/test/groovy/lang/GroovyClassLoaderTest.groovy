@@ -22,6 +22,7 @@ import java.security.CodeSource
 import org.codehaus.groovy.control.*
 import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.classgen.*
+import org.codehaus.groovy.control.CompilerConfiguration as Conf
 
 
 public class GroovyClassLoaderTest extends GroovyTestCase {
@@ -147,6 +148,26 @@ public class GroovyClassLoaderTest extends GroovyTestCase {
       def ret = loader.parseClass("""class Foo{}""")
       def field = ret.declaredFields.find {it.name=="id" && it.type==Long.TYPE}
       assert  field != null
+  }
+  
+  public void testEncoding() {
+    def encoding = System.getProperty("file.encoding")
+    System.setProperty("file.encoding", "US-ASCII")
+    def gcl = new GroovyClassLoader()
+    gcl.config.sourceEncoding = "UTF-8"
+    // 20AC should be the currency symbol for EURO
+    def clazz = gcl.parseClass('return "\u20AC"')
+    def result = clazz.newInstance().run()
+    int i = result[0]
+    
+    try {
+      // 0xFFFD is used if the original chracter was not found,
+      // it is the famous ? that can often be seen. So if this here 
+      // fails, then the String conversion failed at one point
+      assert i != 0xFFFD
+    } finally {
+      System.setProperty("file.encoding", encoding)
+    }  
   }
 }
 
