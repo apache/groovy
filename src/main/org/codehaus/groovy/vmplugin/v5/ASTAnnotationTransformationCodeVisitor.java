@@ -23,12 +23,11 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.ASTAnnotationMacro;
+import org.codehaus.groovy.ast.ASTAnnotationTransformation;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
@@ -37,15 +36,15 @@ import java.util.Collection;
 /**
  * @author Danno Ferrin (shemnon)
  */
-public class ASTAnnotationMacroCodeVisitor extends ClassCodeVisitorSupport {
+public class ASTAnnotationTransformationCodeVisitor extends ClassCodeVisitorSupport {
 
     private SourceUnit source;
     private GeneratorContext context;
-    private Map<String, ASTAnnotationMacro> annotationsMap;
+    private Map<String, ASTAnnotationTransformation> annotationsMap;
     private List<ASTNode[]> targetNodes;
 
-    public ASTAnnotationMacroCodeVisitor() {
-        annotationsMap = new HashMap<String, ASTAnnotationMacro>();
+    public ASTAnnotationTransformationCodeVisitor() {
+        annotationsMap = new HashMap<String, ASTAnnotationTransformation>();
     }
 
     protected SourceUnit getSourceUnit() {
@@ -74,15 +73,15 @@ public class ASTAnnotationMacroCodeVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    public void addAnnotation(String name, ASTAnnotationMacro macro) {
-        annotationsMap.put(name, macro);
+    public void addAnnotation(String name, ASTAnnotationTransformation transformation) {
+        annotationsMap.put(name, transformation);
     }
 
     public CompilationUnit.PrimaryClassNodeOperation getOperation() {
         return new CompilationUnit.PrimaryClassNodeOperation() {
             public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
-                ASTAnnotationMacroCodeVisitor.this.source = source;
-                ASTAnnotationMacroCodeVisitor.this.context = context;
+                ASTAnnotationTransformationCodeVisitor.this.source = source;
+                ASTAnnotationTransformationCodeVisitor.this.context = context;
                 visitClass(classNode);
             }
         };

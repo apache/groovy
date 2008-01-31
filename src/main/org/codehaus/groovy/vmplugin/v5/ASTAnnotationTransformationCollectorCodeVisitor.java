@@ -20,27 +20,25 @@ import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.control.messages.Message;
 import org.codehaus.groovy.control.messages.SimpleMessage;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
-import org.codehaus.groovy.ast.GroovyASTMacro;
-import org.codehaus.groovy.ast.ASTAnnotationMacro;
+import org.codehaus.groovy.ast.GroovyASTTransformation;
+import org.codehaus.groovy.ast.ASTAnnotationTransformation;
 import org.codehaus.groovy.ast.ClassNode;
 
-import java.util.Iterator;
 import java.util.Map;
 import java.util.Collection;
 
 /**
  * @author Danno Ferrin (shemnon)
  */
-public class ASTAnnotationMacroCollectorCodeVisitor extends ClassCodeVisitorSupport {
+public class ASTAnnotationTransformationCollectorCodeVisitor extends ClassCodeVisitorSupport {
     private SourceUnit source;
-    private Map<Integer, ASTAnnotationMacroCodeVisitor> stageVisitors;
+    private Map<Integer, ASTAnnotationTransformationCodeVisitor> stageVisitors;
 
-    public ASTAnnotationMacroCollectorCodeVisitor(Map<Integer, ASTAnnotationMacroCodeVisitor> stageVisitors) {
+    public ASTAnnotationTransformationCollectorCodeVisitor(Map<Integer, ASTAnnotationTransformationCodeVisitor> stageVisitors) {
         this.stageVisitors = stageVisitors;
     }
 
@@ -52,21 +50,24 @@ public class ASTAnnotationMacroCollectorCodeVisitor extends ClassCodeVisitorSupp
         super.visitAnnotations(node);
         for (AnnotationNode annotation : (Collection<AnnotationNode>) node.getAnnotations().values()) {
             Class annotationType = annotation.getClassNode().getTypeClass();
-            GroovyASTMacro macroAnnotation = (GroovyASTMacro) annotationType.getAnnotation(GroovyASTMacro.class);
+            GroovyASTTransformation transformationAnnotation = (GroovyASTTransformation) annotationType.getAnnotation(GroovyASTTransformation.class);
+            if (transformationAnnotation == null) {
+                continue;
+            }
             try {
-                stageVisitors.get(macroAnnotation.phase())
+                stageVisitors.get(transformationAnnotation.phase())
                     .addAnnotation(
                         annotationType.getName(),
-                        (ASTAnnotationMacro) macroAnnotation.macroClass().newInstance());
+                        (ASTAnnotationTransformation) transformationAnnotation.transformationClass().newInstance());
             } catch (InstantiationException e) {
                 source.getErrorCollector().addError(
                     new SimpleMessage(
-                        "Could not instantiate Macro Processor " + macroAnnotation.macroClass().getName(),
+                        "Could not instantiate Transformation Processor " + transformationAnnotation.transformationClass().getName(),
                         source));
             } catch (IllegalAccessException e) {
                 source.getErrorCollector().addError(
                     new SimpleMessage(
-                        "Could not instantiate Macro Processor " + macroAnnotation.macroClass().getName(),
+                        "Could not instantiate Transformation Processor " + transformationAnnotation.transformationClass().getName(),
                         source));
             }
         }
@@ -75,7 +76,7 @@ public class ASTAnnotationMacroCollectorCodeVisitor extends ClassCodeVisitorSupp
     public CompilationUnit.PrimaryClassNodeOperation getOperation() {
         return new CompilationUnit.PrimaryClassNodeOperation() {
             public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
-                ASTAnnotationMacroCollectorCodeVisitor.this.source = source;
+                ASTAnnotationTransformationCollectorCodeVisitor.this.source = source;
                 visitClass(classNode);
             }
         };

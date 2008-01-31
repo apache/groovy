@@ -16,7 +16,7 @@
 
 package groovy.beans;
 
-import org.codehaus.groovy.ast.GroovyASTMacro;
+import org.codehaus.groovy.ast.GroovyASTTransformation;
 import org.codehaus.groovy.control.Phases;
 
 import java.lang.annotation.ElementType;
@@ -29,6 +29,6 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.FIELD)
-@GroovyASTMacro(macroClass = ConstrainedASTMacro.class, phase = Phases.CANONICALIZATION)
+@GroovyASTTransformation(transformationClass = ConstrainedASTTransformation.class, phase = Phases.CANONICALIZATION)
 public @interface Constrained {
 }

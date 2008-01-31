@@ -16,21 +16,12 @@
 
 package org.codehaus.groovy.ast;
 
-import org.codehaus.groovy.control.Phases;
-
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-import java.lang.annotation.ElementType;
+import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.classgen.GeneratorContext;
 
 /**
  * @author Danno Ferrin (shemnon)
  */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.ANNOTATION_TYPE)
-public @interface GroovyASTMacro {
-
-    //String macroClass();
-    Class macroClass();
-    int phase() default Phases.CANONICALIZATION;
+public interface ASTAnnotationTransformation {
+    public void visit(AnnotationNode node, AnnotatedNode parent, SourceUnit source, GeneratorContext generatorContext);
 }
