@@ -74,7 +74,7 @@ public class CompileStack implements Opcodes {
     // index for the next variable on stack
     private int nextVariableIndex = 1;
     // currently temporary variables in use
-    private final List temporaryVariables = new LinkedList();
+    private final LinkedList temporaryVariables = new LinkedList();
     // overall used variables for a method/constructor
     private final LinkedList usedVariables = new LinkedList();
     // map containing named labels of parenting blocks
@@ -215,6 +215,15 @@ public class CompileStack implements Opcodes {
         if (variableName.equals("this")) return Variable.THIS_VARIABLE;
         if (variableName.equals("super")) return Variable.SUPER_VARIABLE;
         Variable v = (Variable) stackVariables.get(variableName);
+        if (v == null) {
+            for (Iterator it = temporaryVariables.iterator(); it.hasNext(); ) {
+                Variable tvar = (Variable) it.next();
+                if (tvar.getName().equals(variableName)) {
+                    v = tvar;
+                    break;
+                }
+            }
+        }
         if (v==null && mustExist)  throw new GroovyBugError("tried to get a variable with the name "+variableName+" as stack variable, but a variable with this name was not created");
         return v;
     }
@@ -240,7 +249,7 @@ public class CompileStack implements Opcodes {
      */
     public int defineTemporaryVariable(String name, ClassNode node, boolean store) {
         Variable answer = defineVar(name,node,false);
-        temporaryVariables.add(answer);
+        temporaryVariables.addFirst(answer); // TRICK: we add at the beginning so when we find for remove or get we always have the last one
         usedVariables.removeLast();
         
         if (store) mv.visitVarInsn(ASTORE, currentVariableIndex);
