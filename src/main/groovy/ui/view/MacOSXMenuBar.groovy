@@ -87,6 +87,10 @@ menuBar {
         menuItem(runAction, icon:null)
         menuItem(runSelectionAction, icon:null)
         separator()
+        menuItem(addClasspathJar)
+        menuItem(addClasspathDir)
+        menuItem(clearClassloader)
+        separator()
         menuItem(inspectLastAction, icon:null)
         menuItem(inspectVariablesAction, icon:null)
     }

@@ -207,6 +207,24 @@ action(id: 'runSelectionAction',
     accelerator: shortcut('shift R')
 )
 
+action(id: 'addClasspathJar',
+    name: 'Add Jar to ClassPath',
+    closure: controller.&addClasspathJar,
+    mnemonic: 'J',
+)
+
+action(id: 'addClasspathDir',
+    name: 'Add Directory to ClassPath',
+    closure: controller.&addClasspathDir,
+    mnemonic: 'D',
+)
+
+action(id: 'clearClassloader',
+    name: 'Clear Script Context',
+    closure: controller.&clearContext,
+    mnemonic: 'C',
+)
+
 action(id: 'inspectLastAction',
     name: 'Inspect Last',
     closure: controller.&inspectLast,

@@ -101,6 +101,8 @@ class Console implements CaretListener {
     int textSelectionEnd
     def scriptFile
     File currentFileChooserDir = new File(Preferences.userNodeForPackage(Console).get('currentFileChooserDir', '.'))
+    File currentClasspathJarDir = new File(Preferences.userNodeForPackage(Console).get('currentClasspathJarDir', '.'))
+    File currentClasspathDir = new File(Preferences.userNodeForPackage(Console).get('currentClasspathDir', '.'))
 
     // Running scripts
     GroovyShell shell
@@ -119,7 +121,7 @@ class Console implements CaretListener {
         //when starting via main set the look and feel to system
         UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); 
 
-        def console = new Console()
+        def console = new Console(Console.class.classLoader?.getRootLoader())
         console.run()
     }
 
@@ -131,8 +133,12 @@ class Console implements CaretListener {
         this(null, binding)
     }
 
+    Console(ClassLoader parent) {
+        this(parent, new Binding())
+    }
+
     Console(ClassLoader parent, Binding binding) {
-        shell = new GroovyShell(parent,binding)
+        newScript(parent, binding);
         try {
             System.setProperty("groovy.full.stacktrace",
                 Boolean.toString(Boolean.valueOf(System.getProperty("groovy.full.stacktrace", "false"))))
@@ -140,6 +146,11 @@ class Console implements CaretListener {
             fullStackTracesAction.enabled = false;
         }
     }
+
+    void newScript(ClassLoader parent, Binding binding) {
+        shell = new GroovyShell(parent, binding)
+    }
+
 
     void run() {
         swing = new SwingBuilder()
@@ -459,6 +470,32 @@ class Console implements CaretListener {
 
     void runSelectedScript(EventObject evt = null) {
         runScriptImpl(true)
+    }
+
+    void addClasspathJar(EventObject evt = null) {
+        def fc = new JFileChooser(currentClasspathJarDir)
+        fc.fileSelectionMode = JFileChooser.FILES_ONLY
+        fc.acceptAllFileFilterUsed = true
+        if (fc.showDialog(frame, "Add") == JFileChooser.APPROVE_OPTION) {
+            currentClasspathJarDir = fc.currentDirectory
+            Preferences.userNodeForPackage(Console).put('currentClasspathJarDir', currentClasspathJarDir.path)
+            shell.getClassLoader().addURL(fc.selectedFile.toURL())
+        }
+    }
+
+    void addClasspathDir(EventObject evt = null) {
+        def fc = new JFileChooser(currentClasspathDir)
+        fc.fileSelectionMode = JFileChooser.DIRECTORIES_ONLY
+        fc.acceptAllFileFilterUsed = true
+        if (fc.showDialog(frame, "Add") == JFileChooser.APPROVE_OPTION) {
+            currentClasspathDir = fc.currentDirectory
+            Preferences.userNodeForPackage(Console).put('currentClasspathDir', currentClasspathDir.path)
+            shell.getClassLoader().addURL(fc.selectedFile.toURL())
+        }
+    }
+
+    void clearContext(EventObject evt = null) {
+        newScript(null, new Binding())
     }
 
     private void runScriptImpl(boolean selected) {

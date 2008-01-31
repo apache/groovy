@@ -50,6 +50,10 @@ menuBar {
         menuItem(runAction)
         menuItem(runSelectionAction)
         separator()
+        menuItem(addClasspathJar)
+        menuItem(addClasspathDir)
+        menuItem(clearClassloader)
+        separator()
         menuItem(inspectLastAction)
         menuItem(inspectVariablesAction)
     }
