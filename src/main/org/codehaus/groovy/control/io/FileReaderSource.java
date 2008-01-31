@@ -15,11 +15,8 @@
  */
 package org.codehaus.groovy.control.io;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.io.Reader;
+import java.io.*;
+import java.nio.charset.Charset;
 
 import org.codehaus.groovy.control.CompilerConfiguration;
 
@@ -31,6 +28,7 @@ import org.codehaus.groovy.control.CompilerConfiguration;
  */
 public class FileReaderSource extends AbstractReaderSource {
     private File file;  // The File from which we produce Readers.
+    private final Charset UTF8 = Charset.forName("UTf-8");
 
    /**
     *  Creates the ReaderSource from a File descriptor.
@@ -46,7 +44,26 @@ public class FileReaderSource extends AbstractReaderSource {
     *  Returns a new Reader on the underlying source object.  
     */
     public Reader getReader() throws IOException {
-       return new InputStreamReader( new FileInputStream(file), configuration.getSourceEncoding() );
+       // we want to remove the BOM windows adds from a file if the encoding is UTF-8
+       // in other cases we depend on the charsets 
+       Charset cs = Charset.forName(configuration.getSourceEncoding());
+       InputStream in = new BufferedInputStream(new FileInputStream(file));
+       if (UTF8.compareTo(cs) == 0) {
+           in.mark(3);
+           boolean hasBOM = true;
+           try {
+               int i = in.read();
+               hasBOM &= i == 0xEF;
+               i = in.read();
+               hasBOM &= i == 0xBB;
+               i = in.read();
+               hasBOM &= i == 0xFF;
+           } catch (IOException ioe) {
+               hasBOM= false;
+           }
+           if (!hasBOM) in.reset();
+       }
+       return new InputStreamReader( in, cs );
     }
     
 }
