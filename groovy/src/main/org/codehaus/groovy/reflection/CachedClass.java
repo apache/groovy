@@ -469,6 +469,30 @@ public class CachedClass {
         }
     }
 
+    public static class ByteCachedClass extends NumberCachedClass {
+        ByteCachedClass(Class klazz) {
+            super(klazz);
+        }
+
+        public Object coerceArgument(Object argument) {
+            if (argument instanceof Byte) {
+                return argument;
+            }
+
+            return new Byte(((Number) argument).byteValue());
+        }
+
+        public boolean isDirectlyAssignable(Object argument) {
+            return argument instanceof Short;
+        }
+
+        public boolean isAssignableFrom(Class classToTransformFrom) {
+            return classToTransformFrom == null
+                || classToTransformFrom == Byte.class
+                || classToTransformFrom == Byte.TYPE;
+        }
+    }
+
     public static class ShortCachedClass extends NumberCachedClass {
         ShortCachedClass(Class klazz) {
             super(klazz);
@@ -491,30 +515,6 @@ public class CachedClass {
                 || classToTransformFrom == Short.class
                 || classToTransformFrom == Byte.class
                 || classToTransformFrom == Short.TYPE
-                || classToTransformFrom == Byte.TYPE;
-        }
-    }
-
-    public static class ByteCachedClass extends NumberCachedClass {
-        ByteCachedClass(Class klazz) {
-            super(klazz);
-        }
-
-        public Object coerceArgument(Object argument) {
-            if (argument instanceof Byte) {
-                return argument;
-            }
-
-            return new Byte(((Number) argument).byteValue());
-        }
-
-        public boolean isDirectlyAssignable(Object argument) {
-            return argument instanceof Short;
-        }
-
-        public boolean isAssignableFrom(Class classToTransformFrom) {
-            return classToTransformFrom == null
-                || classToTransformFrom == Byte.class
                 || classToTransformFrom == Byte.TYPE;
         }
     }

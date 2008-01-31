@@ -27,6 +27,7 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.syntax.RuntimeParserException;
+import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.syntax.Token;
 import org.objectweb.asm.AnnotationVisitor;
@@ -301,7 +302,7 @@ public class AsmClassGenerator extends ClassGenerator {
      *
      * @param methods unfiltered list of methods for MOP
      * @param isThis  if true, then we are creating a MOP method on "this", "super" else
-     * @see #generateMopCalls(LinkedList,boolean)
+     * @see #generateMopCalls(java.util.LinkedList, boolean) 
      */
     private void visitMopMethodList(List methods, boolean isThis) {
         HashMap mops = new HashMap();
@@ -3282,19 +3283,28 @@ public class AsmClassGenerator extends ClassGenerator {
                 // -> (x, [], 5), =, x[5] + 10
                 // -> methodCall(x, "putAt", [5, methodCall(x[5], "plus", 10)])
 
-                final Expression objExpr = leftBinExpr.getLeftExpression();
-                objExpr.visit(this);
+                visitAndAutoboxBoolean(leftBinExpr.getLeftExpression());
                 final int objVar = compileStack.defineTemporaryVariable("$object", true);
+                Expression objectExpression = new BytecodeExpression() {
+                    public void visit(GroovyCodeVisitor visitor) {
+                        mv.visitVarInsn(ALOAD,objVar);
+                    }
+                };
 
-                final Expression indexExpr = leftBinExpr.getRightExpression();
-                indexExpr.visit(this);
+                visitAndAutoboxBoolean(leftBinExpr.getRightExpression());
                 final int indexVar = compileStack.defineTemporaryVariable("$index", true);
+                Expression indexExpression = new BytecodeExpression() {
+                    public void visit(GroovyCodeVisitor visitor) {
+                        mv.visitVarInsn(ALOAD,indexVar);
+                    }
+                };
 
                 final BinaryExpression leftExpr = new BinaryExpression(
-                        new VariableExpression("$object"),
+                        objectExpression,
                         Token.newSymbol(Types.LEFT_SQUARE_BRACKET, -1, -1),
-                        new VariableExpression("$index")
+                        indexExpression
                 );
+                leftExpr.setSourcePosition(leftExpression);
                 MethodCallExpression methodCall =
                         new MethodCallExpression(
                                 leftExpr,
@@ -3303,13 +3313,17 @@ public class AsmClassGenerator extends ClassGenerator {
 
                 methodCall.visit(this);
                 final int resultVar = compileStack.defineTemporaryVariable("$result", true);
-
+                Expression resultExpression = new BytecodeExpression() {
+                    public void visit(GroovyCodeVisitor visitor) {
+                        mv.visitVarInsn(ALOAD, resultVar);
+                    }
+                };
                 visitMethodCallExpression(
                         new MethodCallExpression(
-                                new VariableExpression("$object"),
+                                objectExpression,
                                 "putAt",
                                 new ArgumentListExpression(
-                                        new Expression[]{ new VariableExpression("$index"), new VariableExpression("$result")})));
+                                        new Expression[]{ indexExpression, resultExpression})));
                 mv.visitInsn(POP); //drop return value
 
                 mv.visitVarInsn(ALOAD, resultVar );
@@ -3350,15 +3364,19 @@ public class AsmClassGenerator extends ClassGenerator {
                 // -> methodCall(x, "putAt", [5, 10])
 
                 final Expression right = expression.getRightExpression();
-                right.visit(this);
+                visitAndAutoboxBoolean(right);
                 final int rhsVar = compileStack.defineTemporaryVariable("$rhs", right.getType(), true);
-
+                Expression rhsExpr = new BytecodeExpression() {
+                      public void visit (GroovyCodeVisitor visitor) {
+                          mv.visitVarInsn(ALOAD,rhsVar);                          
+                      }
+                };
                 visitMethodCallExpression(
                         new MethodCallExpression(
                                 leftBinExpr.getLeftExpression(),
                                 "putAt",
                                 new ArgumentListExpression(
-                                        new Expression[]{leftBinExpr.getRightExpression(), new VariableExpression("$rhs")})));
+                                        new Expression[]{leftBinExpr.getRightExpression(), rhsExpr})));
                 mv.visitInsn(POP); //drop return value
 
                 mv.visitVarInsn(ALOAD, rhsVar);
@@ -3639,14 +3657,19 @@ public class AsmClassGenerator extends ClassGenerator {
         int col = statement.getColumnNumber();
         this.currentASTNode = statement;
 
+        boolean createEntry = true;
         if (line >= 0) {
+            columnNumber = col;       
+            createEntry = lineNumber!=line;
             lineNumber = line;
-            columnNumber = col;
         }
+
         if (line >= 0 && mv != null) {
-            Label l = new Label();
-            mv.visitLabel(l);
-            mv.visitLineNumber(line, l);
+            if (createEntry) {
+                Label l = new Label();
+                mv.visitLabel(l);
+                mv.visitLineNumber(line, l);
+            }
             if (ASM_DEBUG) {
                 helper.mark(message + "[" + statement.getLineNumber() + ":" + statement.getColumnNumber() + "]");
             }
