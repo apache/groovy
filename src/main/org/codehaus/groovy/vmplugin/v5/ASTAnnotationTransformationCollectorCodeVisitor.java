@@ -20,24 +20,39 @@ import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.messages.SimpleMessage;
+import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.GroovyASTTransformation;
 import org.codehaus.groovy.ast.ASTAnnotationTransformation;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.syntax.SyntaxException;
 
 import java.util.Map;
 import java.util.Collection;
 
 /**
+ * This visitor walks the AST tree and collects references to Annotations that
+ * are annotated themselves by @{@link GroovyASTTransformation}.  Each such
+ * annotation is added
+ *
+ * This visitor is only intended to be executed once, durring the
+ * SEMANTIC_ANALYSIS phase of compilation.
+ *
  * @author Danno Ferrin (shemnon)
  */
 public class ASTAnnotationTransformationCollectorCodeVisitor extends ClassCodeVisitorSupport {
     private SourceUnit source;
     private Map<Integer, ASTAnnotationTransformationCodeVisitor> stageVisitors;
 
+    /**
+     * Create the visitor
+     *
+     * @param stageVisitors The map of {@link ASTAnnotationTransformationCodeVisitor}s keyed by phase number.
+     */
     public ASTAnnotationTransformationCollectorCodeVisitor(Map<Integer, ASTAnnotationTransformationCodeVisitor> stageVisitors) {
         this.stageVisitors = stageVisitors;
     }
@@ -46,33 +61,64 @@ public class ASTAnnotationTransformationCollectorCodeVisitor extends ClassCodeVi
         return source;
     }
 
+    /**
+     * If the annotaiton is annotated with @{@link org.codehaus.groovy.ast.GroovyASTTransformation}
+     * the annotation is added to stageVisitors at the appropriate processor visitor.
+     * @param node
+     */
     public void visitAnnotations(AnnotatedNode node) {
         super.visitAnnotations(node);
         for (AnnotationNode annotation : (Collection<AnnotationNode>) node.getAnnotations().values()) {
-            Class annotationType = annotation.getClassNode().getTypeClass();
-            GroovyASTTransformation transformationAnnotation = (GroovyASTTransformation) annotationType.getAnnotation(GroovyASTTransformation.class);
+            Class<? extends GroovyASTTransformation> annotationType = annotation.getClassNode().getTypeClass();
+            GroovyASTTransformation transformationAnnotation =
+                annotationType.getAnnotation(GroovyASTTransformation.class);
             if (transformationAnnotation == null) {
                 continue;
             }
-            try {
-                stageVisitors.get(transformationAnnotation.phase())
-                    .addAnnotation(
-                        annotationType.getName(),
-                        (ASTAnnotationTransformation) transformationAnnotation.transformationClass().newInstance());
-            } catch (InstantiationException e) {
-                source.getErrorCollector().addError(
-                    new SimpleMessage(
-                        "Could not instantiate Transformation Processor " + transformationAnnotation.transformationClass().getName(),
-                        source));
-            } catch (IllegalAccessException e) {
-                source.getErrorCollector().addError(
-                    new SimpleMessage(
-                        "Could not instantiate Transformation Processor " + transformationAnnotation.transformationClass().getName(),
-                        source));
+            ASTAnnotationTransformationCodeVisitor stage = stageVisitors.get(
+                transformationAnnotation.phase());
+            String annotationTypeName = annotationType.getName();
+
+            if (stage == null) {
+                try {
+                    String phaseName = Phases.getDescription(transformationAnnotation.phase());
+                    source.getErrorCollector().addErrorAndContinue(
+                        new SyntaxErrorMessage(new SyntaxException(
+                            "@" + annotationTypeName + " cannot be handled in phase " + phaseName,
+                            node.getLineNumber(),
+                            node.getColumnNumber()),
+                            source));
+                } catch (ArrayIndexOutOfBoundsException aiobe) {
+                    source.getErrorCollector().addErrorAndContinue(
+                        new SyntaxErrorMessage(new SyntaxException(
+                            "@" + annotationTypeName + " specifies a phase that does not exist: " + transformationAnnotation.phase(),
+                            node.getLineNumber(),
+                            node.getColumnNumber()),
+                            source));
+                }
+            } else if (!stage.hasAnnotation(annotationTypeName)) {
+                try {
+                    stage.addAnnotation(annotationTypeName,
+                        transformationAnnotation.transformationClass().newInstance());
+                } catch (InstantiationException e) {
+                    source.getErrorCollector().addError(
+                        new SimpleMessage(
+                            "Could not instantiate Transformation Processor " + transformationAnnotation.transformationClass().getName(),
+                            source));
+                } catch (IllegalAccessException e) {
+                    source.getErrorCollector().addError(
+                        new SimpleMessage(
+                            "Could not instantiate Transformation Processor " + transformationAnnotation.transformationClass().getName(),
+                            source));
+                }
             }
         }
     }
 
+    /**
+     * Wraps itself in a PrimaryClassNodeOpration
+     * @return
+     */
     public CompilationUnit.PrimaryClassNodeOperation getOperation() {
         return new CompilationUnit.PrimaryClassNodeOperation() {
             public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {

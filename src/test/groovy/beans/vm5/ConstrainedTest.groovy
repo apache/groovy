@@ -79,6 +79,39 @@ class ConstrainedTest extends GroovyTestCase {
         assert shell.vetoCheck
     }
 
+    public void testMultipleProperties() {
+        GroovyShell shell = new GroovyShell()
+        shell.evaluate("""
+            import groovy.beans.Bound
+            import groovy.beans.Constrained
+
+            class SimpleBean {
+                String u1
+                @Bound String b1
+                @Constrained String c1
+                @Bound @Constrained String bc1
+                String u2
+                @Bound String b2
+                @Constrained String c2
+                @Bound @Constrained String bc2
+            }
+
+            sb = new SimpleBean(u1:'a', b1:'b', c1:'c', bc1:'d', u2:'e', b2:'f', c2:'g', bc2:'h')
+            changed = 0
+            sb.vetoableChange = { changed++ }
+            sb.propertyChange = { changed++ }
+            sb.u1  = 'i'
+            sb.b1  = 'j'
+            sb.c1  = 'k'
+            sb.bc1 = 'l'
+            sb.u2  = 'm'
+            sb.b2  = 'n'
+            sb.c2  = 'o'
+            sb.bc2 = 'p'
+        """)
+        assert shell.changed == 8
+    }
+
     public void testExisingSetter() {
         GroovyShell shell = new GroovyShell()
         shouldFail(CompilationFailedException) {

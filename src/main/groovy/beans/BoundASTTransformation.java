@@ -50,13 +50,34 @@ import java.beans.PropertyChangeSupport;
 import java.util.Collection;
 
 /**
+ * Handles genration of code for the @Bound annotation when @Constrained
+ * is not present.
+ *
+ * Generally, it adds (if needed) a PropertyChangeSupport field and
+ * the needed add/removePropertyChangeListener methods to support the
+ * listeners.
+ *
+ * It also generates the setter and wires the setter through the
+ * PropertyChangeSupport.
+ *
+ * If a @{@link Constrained} annotaton is detected it does noting and
+ * lets the {@link ConstrainedASTTransformation} handle all the changes.
+ *
  * @author Danno Ferrin (shemnon)
  */
 public class BoundASTTransformation implements ASTAnnotationTransformation, Opcodes {
 
-    //String pcsFieldName;
-    FieldNode pcsField;
+    /**
+     * The found or created PropertyChangeSupport field
+     */
+    protected FieldNode pcsField;
 
+    /**
+     * Convienience method to see if an annotatied node is @Bound
+     *
+     * @param node
+     * @return
+     */
     public static boolean hasBoundAnnotation(AnnotatedNode node) {
         for (AnnotationNode annotation : (Collection<AnnotationNode>) node.getAnnotations().values()) {
             if (Bound.class.getName().equals(annotation.getClassNode().getName())) {
@@ -66,6 +87,14 @@ public class BoundASTTransformation implements ASTAnnotationTransformation, Opco
         return false;
     }
 
+    /**
+     * Handles the bulk of the processing, mostly delegating to other methods.
+     *
+     * @param node
+     * @param parent
+     * @param source
+     * @param context
+     */
     public void visit(AnnotationNode node, AnnotatedNode parent, SourceUnit source, GeneratorContext context) {
         if (ConstrainedASTTransformation.hasConstrainedAnnotation(parent)) {
             // ConstrainedASTTransformation will handle both @Bound and @Constrained
@@ -106,10 +135,17 @@ public class BoundASTTransformation implements ASTAnnotationTransformation, Opco
             source));
     }
 
-
-
+    /**
+     * Creates a statement body silimar to
+     *
+     * pcsField.firePropertyChange("field", field, field = value);
+     *
+     * @param field the field node for the proeprty
+     * @param fieldExpression a field expression for setting the property value
+     * @return
+     */
     protected Statement createBoundStatement(FieldNode field, Expression fieldExpression) {
-        // create statementBody this$propertyChangeSupport.firePropertyChange("field", field, field = value);
+        // create statementBody
         return new ExpressionStatement(
             new MethodCallExpression(
                 new FieldExpression(pcsField),
@@ -124,6 +160,14 @@ public class BoundASTTransformation implements ASTAnnotationTransformation, Opco
                                     new VariableExpression("value"))})));
     }
 
+    /**
+     * Creates a seter method with the given body
+     *
+     * @param declaringClass
+     * @param field
+     * @param setterName
+     * @param setterBlock
+     */
     protected void createSetterMethod(ClassNode declaringClass, FieldNode field, String setterName, Statement setterBlock) {
         Parameter[] setterParameterTypes = { new Parameter(field.getType(), "value")};
         MethodNode setter =
@@ -133,6 +177,13 @@ public class BoundASTTransformation implements ASTAnnotationTransformation, Opco
         declaringClass.addMethod(setter);
     }
 
+    /**
+     * Snoops through the declaring class and all parents looking for a field
+     * of type PropertyChangeSupport.  Returns the field if found
+     *
+     * @param declaringClass
+     * @return
+     */
     protected boolean needsPropertyChangeSupport(ClassNode declaringClass) {
         while (declaringClass != null) {
             for (FieldNode field : (Collection<FieldNode>) declaringClass.getFields()) {
@@ -151,12 +202,24 @@ public class BoundASTTransformation implements ASTAnnotationTransformation, Opco
         return true;
     }
 
+    /**
+     * Adds a new field "protpected final java.beans.PropertyChangeSupport this$PropertyChangeSupport = new java.beans.PropertyChangeSupport(this)"
+     *
+     * Also adds support methods...
+     *  public void addPropertyChangeListener(java.beans.PropertyChangeListener)
+     *  public void addPropertyChangeListener(String, java.beans.PropertyChangeListener)
+     *  public void removePropertyChangeListener(java.beans.PropertyChangeListener)
+     *  public void removePropertyChangeListener(String, java.beans.PropertyChangeListener)
+     *  public java.beans.PropertyChangeListener[] getPropertyChangeListeners()
+     *
+     * @param declaringClass
+     */
     protected void addPropertyChangeSupport(ClassNode declaringClass) {
         ClassNode pcsClassNode = ClassHelper.make(PropertyChangeSupport.class);
         ClassNode pclClassNode = ClassHelper.make(PropertyChangeListener.class);
         //String pcsFieldName = "this$propertyChangeSupport";
 
-        // add field protected static PropertyChangeSupport this$propertyChangeSupport = new java.beans.PropertyChangeSupport(this)
+        // add field protected final PropertyChangeSupport this$propertyChangeSupport = new java.beans.PropertyChangeSupport(this)
         pcsField = declaringClass.addField(
             "this$propertyChangeSupport",
             ACC_FINAL | ACC_PROTECTED | ACC_SYNTHETIC,
@@ -182,7 +245,7 @@ public class BoundASTTransformation implements ASTAnnotationTransformation, Opco
                             new Expression[] {new VariableExpression("listener")})))));
         // add method void addPropertyChangeListener(name, listner) {
         //     this$propertyChangeSupport.addPropertyChangeListner(name, listener)
-        //  }
+        //  }                           
         declaringClass.addMethod(
             new MethodNode(
                 "addPropertyChangeListener",

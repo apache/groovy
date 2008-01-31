@@ -20,8 +20,19 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.classgen.GeneratorContext;
 
 /**
+ * This is the delegate class for {@link GroovyASTTransformation}s.
+ *
  * @author Danno Ferrin (shemnon)
  */
 public interface ASTAnnotationTransformation {
+
+    /**
+     * The call made when the compiler encounters an AST Transformation Annotation
+     *
+     * @param node The actual annotation node that triggered the call
+     * @param parent The node that was being annotated by the AST Transformation Annotation
+     * @param source The source unit being compiled
+     * @param generatorContext the generation context of the source unit
+     */
     public void visit(AnnotationNode node, AnnotatedNode parent, SourceUnit source, GeneratorContext generatorContext);
 }

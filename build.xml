@@ -289,7 +289,6 @@ $Date$
                 destdir="${examplesClassesDirectory}"
                 source="1.5"
                 target="1.5"
-                includes="org/codehaus/groovy/grails/compiler/injection/*.java"
                 fork="true">
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
@@ -297,6 +296,7 @@ $Date$
                 <path refid="compilePath"/>
                 <path refid="examplesPath"/>
             </classpath>
+            <include name="org/codehaus/groovy/grails/compiler/injection/*.java" if="groovy.build.vm5"/>
         </javac>
         <groovyc srcdir="${examplesSourceDirectory}"
                 destdir="${examplesClassesDirectory}"
@@ -307,7 +307,9 @@ $Date$
                 <path refid="compilePath"/>
                 <path refid="examplesPath"/>
             </classpath>
-            <javac source="1.4" target="1.4" fork="true" memorymaximumsize="64m"/>
+            <javac source="1.4" target="1.4" fork="true" memorymaximumsize="64m">
+                <exclude name="org/codehaus/groovy/grails/compiler/injection/**"/>
+            </javac>
         </groovyc>
 
     </target>

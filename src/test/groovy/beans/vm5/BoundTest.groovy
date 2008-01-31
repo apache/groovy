@@ -30,7 +30,7 @@ class BoundTest extends GroovyTestCase {
 
             class SimpleBean {
                 @Bound String name
-            } 
+            }
 
             sb = new SimpleBean()
             sb.name = "bar"
@@ -39,6 +39,26 @@ class BoundTest extends GroovyTestCase {
             sb.name = "foo"
         """)
         assert shell.changed
+    }
+
+    public void testMultipleBoundProperty() {
+        GroovyShell shell = new GroovyShell()
+        shell.evaluate("""
+            import groovy.beans.Bound
+
+            class SimpleBean {
+                @Bound String name
+                @Bound String value
+            }
+
+            sb = new SimpleBean(name:"foo", value:"bar")
+            changed = 0
+            sb.propertyChange = {changed++}
+            sb.name = "baz"
+            sb.value = "biff"
+
+        """)
+        assert shell.changed == 2
     }
 
     public void testExisingSetter() {

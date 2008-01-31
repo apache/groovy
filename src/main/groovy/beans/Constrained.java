@@ -25,6 +25,18 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
+ * Annotates a groovy property, and indicates that it should be a constrained
+ * property according to the JavaBeans spec, subject to listeners vetoing
+ * the property change.
+ *
+ * It is a compilation error to place this annotation on a field (that is
+ * nota property, i.e. has scope visibility modifiers).
+ *
+ * It is a compilation error to place this annotation on a property with
+ * a user defined settter.
+ *
+ * @see ConstrainedASTTransformation
+ *
  * @author Danno Ferrin (shemnon)
  */
 @Retention(RetentionPolicy.SOURCE)

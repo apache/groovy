@@ -24,11 +24,38 @@ import java.lang.annotation.Target;
 import java.lang.annotation.ElementType;
 
 /**
+ * This is an annotaton on an annotaiton.  This indicates that the annotated
+ * annotation be handeled specially by the groovy compiler.
+ *
+ * Specifically, when the annotated annotation is encountered in the
+ * appropriate compilation phase ( see {@link Phases}) then an instance of
+ * the {@link #transformationClass} has its
+ * {@link org.codehaus.groovy.ast.ASTAnnotationTransformation#visit(AnnotationNode, AnnotatedNode, org.codehaus.groovy.control.SourceUnit, org.codehaus.groovy.classgen.GeneratorContext)}
+ * method called at that annotation.
+ *
+ * Note that only the SEMANTIC_ANALYSIS and latter phases are legal for
+ * the phase().  This is because the annotations are not inspected until
+ * after the classes are all resolved.
+ *
+ * Also, only annotation types present durring the SEMANTIC_ANALYSIS phase
+ * will be handleded.  Transformations adding other annotations that are
+ * transformable will have those new annotations only considered in
+ * latter phases, and only if the type was present in the source unit
+ * durring SEMANTIC_ANALYSIS.
+ *
+ * It is a compile time error to specify {@link Phases#INITIALIZATION},
+ * {@link Phases#PARSING}, or {@link Phases#CONVERSION} as a {@link #phase}.
+ *
+ * It is a compile time error to specify a {@link #phase} that does not exit
+ *
+ * It is a compile time error to specify a {@link #transformationClass} that
+ * is not accessable at compileTime. 
+ *
  * @author Danno Ferrin (shemnon)
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.ANNOTATION_TYPE)
 public @interface GroovyASTTransformation {
-    Class transformationClass();
+    Class<? extends ASTAnnotationTransformation> transformationClass();
     int phase() default Phases.CANONICALIZATION;
 }

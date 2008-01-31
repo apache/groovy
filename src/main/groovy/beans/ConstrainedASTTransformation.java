@@ -50,12 +50,37 @@ import java.beans.VetoableChangeSupport;
 import java.util.Collection;
 
 /**
+ * Handles genration of code for the @Constrained annotation, and @Bound
+ * if also present.
+ *
+ * Generally, it adds (if needed) a VetoableChangeSupport field and
+ * the needed add/removeVetoableChangeListener methods to support the
+ * listeners.
+ *
+ * It also generates the setter and wires the setter through the
+ * VetoableChangeSupport.
+ *
+ * If a @{@link Bound} annotaton is detected it also adds support similar
+ * to what {@link BoundASTTransformation} would do.
+ *
  * @author Danno Ferrin (shemnon)
  */
 public class ConstrainedASTTransformation extends BoundASTTransformation {
 
-    FieldNode vcsField;
+    /**
+     * Convienience method to see if an annotatied node is @Bound
+     *
+     * @param node
+     * @return
+     */
+    protected FieldNode vcsField;
 
+    /**
+     * Convienience method to see if an annotatied node is @Constrained
+     *
+     * @param node
+     * @return
+     */
     public static boolean hasConstrainedAnnotation(AnnotatedNode node) {
         for (AnnotationNode annotation : (Collection<AnnotationNode>) node.getAnnotations().values()) {
             if (Constrained.class.getName().equals(annotation.getClassNode().getName())) {
@@ -65,6 +90,14 @@ public class ConstrainedASTTransformation extends BoundASTTransformation {
         return false;
     }
 
+    /**
+     * Handles the bulk of the processing, mostly delegating to other methods.
+     *
+     * @param node
+     * @param parent
+     * @param source
+     * @param context
+     */
     public void visit(AnnotationNode node, AnnotatedNode parent, SourceUnit source, GeneratorContext context) {
         boolean bound = BoundASTTransformation.hasBoundAnnotation(parent);
 
@@ -112,8 +145,16 @@ public class ConstrainedASTTransformation extends BoundASTTransformation {
             source));
     }
 
+    /**
+     * Creates a statement body silimar to
+     *
+     * vcsField.fireVetoableChange("field", field, field = value);
+     *
+     * @param field the field node for the proeprty
+     * @param fieldExpression a field expression for setting the property value
+     * @return
+     */
     protected Statement createConstrainedStatement(FieldNode field, Expression fieldExpression) {
-        // create statementBody this$propertyChangeSupport.firePropertyChange("field", field, field = value);
         return new ExpressionStatement(
             new MethodCallExpression(
                 new FieldExpression(vcsField),
@@ -125,6 +166,16 @@ public class ConstrainedASTTransformation extends BoundASTTransformation {
                                 new VariableExpression("value")})));
     }
 
+    /**
+     * Creates a statement body silimar to
+     *
+     * field = value
+     *
+     * Used when the field is not also @Bound
+     *
+     * @param fieldExpression a field expression for setting the property value
+     * @return
+     */
     protected Statement createSetStatement(Expression fieldExpression) {
         return new ExpressionStatement(
             new BinaryExpression(
@@ -133,6 +184,13 @@ public class ConstrainedASTTransformation extends BoundASTTransformation {
                 new VariableExpression("value")));
     }
 
+    /**
+     * Snoops through the declaring class and all parents looking for a field
+     * of type VetoableChangeSupport.  Returns the field if found
+     *
+     * @param declaringClass
+     * @return
+     */
     protected boolean needsVetoableChangeSupport(ClassNode declaringClass) {
         while (declaringClass != null) {
             for (FieldNode field : (Collection<FieldNode>) declaringClass.getFields()) {
@@ -150,6 +208,17 @@ public class ConstrainedASTTransformation extends BoundASTTransformation {
         return true;
     }
 
+    /**
+     * Creates a seter method with the given body.
+     *
+     * This differs from normal setters in that we need to add a declared
+     * exception java.beans.PropertyVetoException
+     *
+     * @param declaringClass
+     * @param field
+     * @param setterName
+     * @param setterBlock
+     */
     protected void createSetterMethod(ClassNode declaringClass, FieldNode field, String setterName, Statement setterBlock) {
         Parameter[] setterParameterTypes = { new Parameter(field.getType(), "value")};
         ClassNode[] exceptions = {new ClassNode(PropertyVetoException.class)};
@@ -160,7 +229,18 @@ public class ConstrainedASTTransformation extends BoundASTTransformation {
         declaringClass.addMethod(setter);
     }
 
-
+    /**
+     * Adds a new field "protpected final java.beans.VetoableChangeSupport this$vetoableChangeSupport = new java.beans.VetoableChangeSupport(this)"
+     *
+     * Also adds support methods...
+     *  public void addVetoableChangeListener(java.beans.VetoableChangeListener)
+     *  public void addVetoableChangeListener(String, java.beans.VetoableChangeListener)
+     *  public void removeVetoableChangeListener(java.beans.VetoableChangeListener)
+     *  public void removeVetoableChangeListener(String, java.beans.VetoableChangeListener)
+     *  public java.beans.VetoableChangeListener[] getVetoableChangeListeners()
+     *
+     * @param declaringClass
+     */
     protected void addVetoableChangeSupport(ClassNode declaringClass) {
         ClassNode vcsClassNode = ClassHelper.make(VetoableChangeSupport.class);
         ClassNode vclClassNode = ClassHelper.make(VetoableChangeListener.class);
