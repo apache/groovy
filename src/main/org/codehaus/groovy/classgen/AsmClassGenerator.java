@@ -3537,19 +3537,28 @@ public class AsmClassGenerator extends ClassGenerator {
                 // -> (x, [], 5), =, x[5] + 10
                 // -> methodCall(x, "putAt", [5, methodCall(x[5], "plus", 10)])
 
-                final Expression objExpr = leftBinExpr.getLeftExpression();
-                objExpr.visit(this);
+                visitAndAutoboxBoolean(leftBinExpr.getLeftExpression());
                 final int objVar = compileStack.defineTemporaryVariable("$object", true);
+                Expression objectExpression = new BytecodeExpression() {
+                    public void visit(MethodVisitor mv) {
+                        mv.visitVarInsn(ALOAD,objVar);
+                    }
+                };
 
-                final Expression indexExpr = leftBinExpr.getRightExpression();
-                indexExpr.visit(this);
+                visitAndAutoboxBoolean(leftBinExpr.getRightExpression());
                 final int indexVar = compileStack.defineTemporaryVariable("$index", true);
+                Expression indexExpression = new BytecodeExpression() {
+                    public void visit(MethodVisitor mv) {
+                        mv.visitVarInsn(ALOAD,indexVar);
+                    }
+                };
 
                 final BinaryExpression leftExpr = new BinaryExpression(
-                        new VariableExpression("$object"),
+                        objectExpression,
                         Token.newSymbol(Types.LEFT_SQUARE_BRACKET, -1, -1),
-                        new VariableExpression("$index")
+                        indexExpression
                 );
+                leftExpr.setSourcePosition(leftExpression);
                 MethodCallExpression methodCall =
                         new MethodCallExpression(
                                 leftExpr,
@@ -3558,13 +3567,17 @@ public class AsmClassGenerator extends ClassGenerator {
 
                 methodCall.visit(this);
                 final int resultVar = compileStack.defineTemporaryVariable("$result", true);
-
+                Expression resultExpression = new BytecodeExpression() {
+                    public void visit(MethodVisitor mv) {
+                        mv.visitVarInsn(ALOAD, resultVar);
+                    }
+                };
                 visitMethodCallExpression(
                         new MethodCallExpression(
-                                new VariableExpression("$object"),
+                                objectExpression,
                                 "putAt",
                                 new ArgumentListExpression(
-                                        new Expression[]{ new VariableExpression("$index"), new VariableExpression("$result")})));
+                                        new Expression[]{ indexExpression, resultExpression})));
                 mv.visitInsn(POP); //drop return value
 
                 mv.visitVarInsn(ALOAD, resultVar );
@@ -3605,15 +3618,19 @@ public class AsmClassGenerator extends ClassGenerator {
                 // -> methodCall(x, "putAt", [5, 10])
 
                 final Expression right = expression.getRightExpression();
-                right.visit(this);
+                visitAndAutoboxBoolean(right);
                 final int rhsVar = compileStack.defineTemporaryVariable("$rhs", right.getType(), true);
-
+                Expression rhsExpr = new BytecodeExpression() {
+                      public void visit (MethodVisitor mv) {
+                          mv.visitVarInsn(ALOAD,rhsVar);                          
+                      }
+                };
                 visitMethodCallExpression(
                         new MethodCallExpression(
                                 leftBinExpr.getLeftExpression(),
                                 "putAt",
                                 new ArgumentListExpression(
-                                        new Expression[]{leftBinExpr.getRightExpression(), new VariableExpression("$rhs")})));
+                                        new Expression[]{leftBinExpr.getRightExpression(), rhsExpr})));
                 mv.visitInsn(POP); //drop return value
 
                 mv.visitVarInsn(ALOAD, rhsVar);

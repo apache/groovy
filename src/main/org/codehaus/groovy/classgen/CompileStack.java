@@ -47,6 +47,12 @@ import java.util.*;
  *      are only used for debugging and do not conflict with each 
  *      other or normal variables. For accessing the index of the
  *      variable must be used.
+ * <li> never mix temporary and normal variables by changes to this class.
+ *      While the name is very important for a normal variable, it is only a
+ *      helper construct for temporary variables. That means for example a
+ *      name for a temporary variable can be used multiple times without
+ *      conflict. So mixing them both may lead to the problem that a normal
+ *      or temporary variable is hidden or even removed. that must not happen!       
  * </ul>
  * 
  * 
@@ -207,20 +213,25 @@ public class CompileStack implements Opcodes {
     public Variable getVariable(String variableName ) {
         return getVariable(variableName,true);
     }
-    
+
+    /**
+     * returns a normal variable, that was defined before.
+     * If mustExist is
+     * to false, then this method will throw a GroovyBugError. It is no the
+     * intention of this method to let this happen! And the exception
+     * should never be used for flow control. If the exception is thrown
+     * then it is a bug in the class using CompileStack. This mehod can also
+     * not be used to return a temporary variable. Temporary variables are not
+     * normal variables.
+     *
+     * @param variableName name of the variable
+     * @param mustExist  throw exception if variable does not exist
+     * @return
+     */
     public Variable getVariable(String variableName, boolean mustExist) {
         if (variableName.equals("this")) return Variable.THIS_VARIABLE;
         if (variableName.equals("super")) return Variable.SUPER_VARIABLE;
         Variable v = (Variable) stackVariables.get(variableName);
-        if (v == null) {
-            for (Iterator it = temporaryVariables.iterator(); it.hasNext(); ) {
-                Variable tvar = (Variable) it.next();
-                if (tvar.getName().equals(variableName)) {
-                    v = tvar;
-                    break;
-                }
-            }
-        }
         if (v==null && mustExist)  throw new GroovyBugError("tried to get a variable with the name "+variableName+" as stack variable, but a variable with this name was not created");
         return v;
     }
