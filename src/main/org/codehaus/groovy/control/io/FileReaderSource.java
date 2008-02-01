@@ -28,7 +28,7 @@ import org.codehaus.groovy.control.CompilerConfiguration;
  */
 public class FileReaderSource extends AbstractReaderSource {
     private File file;  // The File from which we produce Readers.
-    private final Charset UTF8 = Charset.forName("UTf-8");
+    private final Charset UTF8 = Charset.forName("UTF-8");
 
    /**
     *  Creates the ReaderSource from a File descriptor.
@@ -48,7 +48,7 @@ public class FileReaderSource extends AbstractReaderSource {
        // in other cases we depend on the charsets 
        Charset cs = Charset.forName(configuration.getSourceEncoding());
        InputStream in = new BufferedInputStream(new FileInputStream(file));
-       if (UTF8.compareTo(cs) == 0) {
+       if (UTF8.name().equalsIgnoreCase(cs.name())) {
            in.mark(3);
            boolean hasBOM = true;
            try {
