@@ -287,7 +287,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
     private void generateCallSiteArray() {
         if (!classNode.isInterface()) {
-            cv.visitField(ACC_STATIC+ACC_SYNTHETIC, "$callSiteArray", "Lorg/codehaus/groovy/runtime/callsite/CallSiteArray;", null, null);
+            cv.visitField(ACC_PRIVATE+ACC_STATIC+ACC_SYNTHETIC, "$callSiteArray", "Ljava/lang/ref/SoftReference;", null, null);
 
             generateCreateCallSiteArray();
             generateGetCallSiteArray();
@@ -295,25 +295,36 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private void generateGetCallSiteArray() {
-        MethodVisitor mv;
-
-        mv = cv.visitMethod(ACC_PUBLIC+ACC_SYNTHETIC+ACC_STATIC,"$getCallSiteArray", "()[Lorg/codehaus/groovy/runtime/callsite/CallSite;", null, null);
+        MethodVisitor mv = cv.visitMethod(ACC_PUBLIC+ACC_SYNTHETIC+ACC_STATIC,"$getCallSiteArray", "()[Lorg/codehaus/groovy/runtime/callsite/CallSite;", null, null);
         mv.visitCode();
-        mv.visitFieldInsn(GETSTATIC, internalClassName, "$callSiteArray", "Lorg/codehaus/groovy/runtime/callsite/CallSiteArray;");
-        mv.visitInsn(DUP);
+        mv.visitFieldInsn(GETSTATIC, internalClassName, "$callSiteArray", "Ljava/lang/ref/SoftReference;");
         Label l0 = new Label();
-        mv.visitJumpInsn(IFNONNULL, l0);
-        mv.visitInsn(POP);
-        mv.visitMethodInsn(INVOKESTATIC, internalClassName, "$createCallSiteArray", "()Lorg/codehaus/groovy/runtime/callsite/CallSiteArray;");
+        mv.visitJumpInsn(IFNULL, l0);
+        mv.visitFieldInsn(GETSTATIC, internalClassName, "$callSiteArray", "Ljava/lang/ref/SoftReference;");
+        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/ref/SoftReference", "get", "()Ljava/lang/Object;");
+        mv.visitTypeInsn(CHECKCAST, "org/codehaus/groovy/runtime/callsite/CallSiteArray");
+        mv.visitInsn(DUP);
+        mv.visitVarInsn(ASTORE, 0);
+        Label l1 = new Label();
+        mv.visitJumpInsn(IFNONNULL, l1);
         mv.visitLabel(l0);
-        mv.visitFieldInsn(GETFIELD,"org/codehaus/groovy/runtime/callsite/CallSiteArray","array","[Lorg/codehaus/groovy/runtime/callsite/CallSite;" );
+        mv.visitMethodInsn(INVOKESTATIC, internalClassName, "$createCallSiteArray", "()Lorg/codehaus/groovy/runtime/callsite/CallSiteArray;");
+        mv.visitVarInsn(ASTORE, 0);
+        mv.visitTypeInsn(NEW, "java/lang/ref/SoftReference");
+        mv.visitInsn(DUP);
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitMethodInsn(INVOKESPECIAL, "java/lang/ref/SoftReference", "<init>", "(Ljava/lang/Object;)V");
+        mv.visitFieldInsn(PUTSTATIC, internalClassName, "$callSiteArray", "Ljava/lang/ref/SoftReference;");
+        mv.visitLabel(l1);
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitFieldInsn(GETFIELD, "org/codehaus/groovy/runtime/callsite/CallSiteArray", "array", "[Lorg/codehaus/groovy/runtime/callsite/CallSite;");
         mv.visitInsn(ARETURN);
         mv.visitMaxs(0,0);
         mv.visitEnd();
     }
 
     private void generateCreateCallSiteArray() {
-        MethodVisitor mv = cv.visitMethod(ACC_PUBLIC+ACC_SYNTHETIC+ACC_STATIC,"$createCallSiteArray", "()Lorg/codehaus/groovy/runtime/callsite/CallSiteArray;", null, null);
+        MethodVisitor mv = cv.visitMethod(ACC_PRIVATE+ACC_SYNTHETIC+ACC_STATIC,"$createCallSiteArray", "()Lorg/codehaus/groovy/runtime/callsite/CallSiteArray;", null, null);
         mv.visitCode();
         mv.visitTypeInsn(NEW, "org/codehaus/groovy/runtime/callsite/CallSiteArray");
         mv.visitInsn(DUP);
@@ -330,8 +341,6 @@ public class AsmClassGenerator extends ClassGenerator {
         }
 
         mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/callsite/CallSiteArray", "<init>", "(Ljava/lang/Class;[Ljava/lang/String;)V");
-        mv.visitInsn(DUP);
-        mv.visitFieldInsn(PUTSTATIC, internalClassName, "$callSiteArray", "Lorg/codehaus/groovy/runtime/callsite/CallSiteArray;");
         mv.visitInsn(ARETURN);
         mv.visitMaxs(0,0);
         mv.visitEnd();
