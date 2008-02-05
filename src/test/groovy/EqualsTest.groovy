@@ -24,9 +24,11 @@ class EqualsTest extends GroovyTestCase {
         assert y == x
         assert x == y
         assert z == x
-        assert x != z // Gotcha see: http://mattfleming.com/node/141
-        // above assert is just documenting that Groovy currently
-        // follows Java behaviour for this case
+        // assert x != z
+        // Gotcha see: http://mattfleming.com/node/141
+        // Groovy follows Java behaviour for this case which will
+        // pass in negated form (!) for Java 1.6 and fail with a
+        // CCE in earlier versions
     }
 
     void testUnrelatedComparablesShouldNeverBeEqual() {
