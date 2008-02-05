@@ -38,6 +38,9 @@ public abstract class FactoryBuilderSupport extends Binding {
     public static final String PARENT_NAME = "_PARENT_NAME_";
     public static final String CURRENT_NAME = "_CURRENT_NAME_";
     public static final String OWNER = "owner";
+    public static final String PARENT_BUILDER = "_PARENT_BUILDER_";
+    public static final String CURRENT_BUILDER = "_CURRENT_BUILDER_";
+    public static final String CHILD_BUILDER = "_CHILD_BUILDER_";
     private static final Logger LOG = Logger.getLogger( FactoryBuilderSupport.class.getName() );
 
     /**
@@ -53,12 +56,12 @@ public abstract class FactoryBuilderSupport extends Binding {
     }
 
     /**
-     * Returns true if type is assignalbe to the value's class, false if value
-     * is null.<br>
-     *
+     * Checks type of value against buidler type
      * @param value the node's value
      * @param name the node's name
      * @param type a Class that may be assignable to the value's class
+     * @return true if type is assignalbe to the value's class, false if value
+     * is null.
      */
     public static boolean checkValueIsType( Object value, Object name, Class type ) {
         if( value != null ){
@@ -74,12 +77,13 @@ public abstract class FactoryBuilderSupport extends Binding {
     }
 
     /**
-     * Returns true if type is assignale to the value's class, false if value is
-     * null or a String.<br>
+     * Checks values against factory's type
      *
      * @param value the node's value
      * @param name the node's name
      * @param type a Class that may be assignable to the value's class
+     * @return Returns true if type is assignale to the value's class, false if value is
+     * null or a String.
      */
     public static boolean checkValueIsTypeNotString( Object value, Object name, Class type ) {
         if( value != null ){
@@ -116,14 +120,90 @@ public abstract class FactoryBuilderSupport extends Binding {
     }
 
     /**
-     * Returns the factory map (Unmodifiable Map).
+     * @param name the name of the variable to lookup
+     * @return the variable value
      */
-    public Map getFactories() {
-        return Collections.unmodifiableMap( proxyBuilder.factories );
+    public Object getVariable(String name) {
+        return proxyBuilder.doGetVariable(name);
+    }
+
+    private Object doGetVariable(String name) {
+        return super.getVariable(name);
     }
 
     /**
-     * Returns the context of the current node.
+     * Sets the value of the given variable
+     *
+     * @param name  the name of the variable to set
+     * @param value the new value for the given variable
+     */
+    public void setVariable(String name, Object value) {
+        proxyBuilder.doSetVariable(name, value);
+    }
+
+    private void doSetVariable(String name, Object value) {
+        super.setVariable(name, value);
+    }
+
+    public Map getVariables() {
+        return proxyBuilder.doGetVariables();
+    }
+
+    private Map doGetVariables() {
+        return super.getVariables();
+    }
+
+    /**
+     * Overloaded to make variables appear as bean properties or via the subscript operator
+     */
+    public Object getProperty(String property) {
+        try {
+            return proxyBuilder.doGetProperty(property);
+        } catch (MissingPropertyException mpe) {
+            return getMetaClass().getProperty(this, property);
+        }
+    }
+
+    private Object doGetProperty(String property) {
+        return super.getProperty(property);
+    }
+
+    /**
+     * Overloaded to make variables appear as bean properties or via the subscript operator
+     */
+    public void setProperty(String property, Object newValue) {
+        proxyBuilder.doSetProperty(property, newValue);
+    }
+
+    private void doSetProperty(String property, Object newValue) {
+        super.setProperty(property, newValue);
+    }
+
+    /**
+     * @return the factory map (Unmodifiable Map).
+     */
+    public Map/*<String, Factory>*/ getFactories() {
+        return Collections.unmodifiableMap( proxyBuilder.factories );
+    }
+
+    public List/*<Closure>*/ getAttributeDelegates() {
+        return Collections.unmodifiableList(attributeDelegates);
+    }
+
+    public List/*<Closure>*/ getPreInstantiateDelegates() {
+        return Collections.unmodifiableList(preInstantiateDelegates);
+    }
+
+    public List/*<Closure>*/ getPostInstantiateDelegates() {
+        return Collections.unmodifiableList(postInstantiateDelegates);
+    }
+
+    public List/*<Closure>*/ getPostNodeCompletionDelegates() {
+        return Collections.unmodifiableList(postNodeCompletionDelegates);
+    }
+
+    /**
+     * @return the context of the current node.
      */
     public Map getContext() {
         if( !proxyBuilder.contexts.isEmpty() ){
@@ -133,52 +213,63 @@ public abstract class FactoryBuilderSupport extends Binding {
     }
 
     /**
-     * Returns the current node being built.
+     * @return the current node being built.
      */
     public Object getCurrent() {
         return getContextAttribute( CURRENT_NODE );
     }
 
     /**
-     * Returns the factory that built the current node.
+     * @return the factory that built the current node.
      */
     public Factory getCurrentFactory() {
         return (Factory) getContextAttribute( CURRENT_FACTORY );
     }
 
     /**
-     * Returns the current node's name.
+     * @return the factory of the parent of the current node.
      */
     public String getCurrentName() {
         return (String) getContextAttribute( CURRENT_NAME );
     }
 
     /**
-     * Returns the factory of the parent of the current node.
+     * @return the builder that built the current node.
      */
-    public Factory getParentFactory() {
-        return (Factory) getContextAttribute( PARENT_FACTORY );
+    public FactoryBuilderSupport getCurrentBuilder() {
+        return (FactoryBuilderSupport) getContextAttribute( CURRENT_BUILDER );
     }
 
     /**
-     * Returns the parent of the current node.
+     * @return the node of the parent of the current node.
      */
     public Object getParentNode() {
         return getContextAttribute( PARENT_NODE );
     }
 
     /**
-     * Returns the parent's name of the current node.
+     * @return the factory of the parent of the current node.
+     */
+    public Factory getParentFactory() {
+        return (Factory) getContextAttribute( PARENT_FACTORY );
+    }
+
+    /**
+     * @return the context of the parent of the current node.
+     */
+    public Map getParentContext() {
+        return (Map) getContextAttribute( PARENT_CONTEXT );
+    }
+
+    /**
+     * @return the name of the parent of the current node.
      */
     public String getParentName() {
         return (String) getContextAttribute( PARENT_NAME );
     }
 
-    /**
-     * Returns the context of the parent of the current node.
-     */
-    public Map getParentContext() {
-        return (Map) getContextAttribute( PARENT_CONTEXT );
+    public FactoryBuilderSupport getChildBuilder() {
+        return (FactoryBuilderSupport) getContextAttribute( CHILD_BUILDER );
     }
 
     private Object getContextAttribute( String key ) {
@@ -201,7 +292,7 @@ public abstract class FactoryBuilderSupport extends Binding {
 
     public Object invokeMethod( String methodName, Object args ) {
         Object name = proxyBuilder.getName( methodName );
-        Object result = null;
+        Object result;
         Object previousContext = proxyBuilder.getContext();
         try{
             result = proxyBuilder.doInvokeMethod( methodName, name, args );
@@ -222,7 +313,8 @@ public abstract class FactoryBuilderSupport extends Binding {
      * Attribute delegates are fired in a FILO pattern, so that nested delegates
      * get first crack.
      *
-     * @param attrDelegate
+     * @param attrDelegate the closure to be called
+     * @return attrDelegate
      */
     public Closure addAttributeDelegate( Closure attrDelegate ) {
         proxyBuilder.attributeDelegates.addFirst( attrDelegate );
@@ -232,7 +324,7 @@ public abstract class FactoryBuilderSupport extends Binding {
     /**
      * Remove the most recently added instance of the attribute delegate.
      *
-     * @param attrDelegate
+     * @param attrDelegate the instance of the closure to be removed
      */
     public void removeAttributeDelegate( Closure attrDelegate ) {
         proxyBuilder.attributeDelegates.remove( attrDelegate );
@@ -243,7 +335,8 @@ public abstract class FactoryBuilderSupport extends Binding {
      * created. PreInstantiate delegates are fired in a FILO pattern, so that
      * nested delegates get first crack.
      *
-     * @param delegate
+     * @param delegate the closure to invoke
+     * @return delegate
      */
     public Closure addPreInstantiateDelegate( Closure delegate ) {
         proxyBuilder.preInstantiateDelegates.addFirst( delegate );
@@ -253,7 +346,7 @@ public abstract class FactoryBuilderSupport extends Binding {
     /**
      * Remove the most recently added instance of the preInstantiate delegate.
      *
-     * @param delegate
+     * @param delegate the closure to invoke
      */
     public void removePreInstantiateDelegate( Closure delegate ) {
         proxyBuilder.preInstantiateDelegates.remove( delegate );
@@ -264,7 +357,8 @@ public abstract class FactoryBuilderSupport extends Binding {
      * created. PostInstantiate delegates are fired in a FILO pattern, so that
      * nested delegates get first crack.
      *
-     * @param delegate
+     * @param delegate the closure to invoke
+     * @return delegate
      */
     public Closure addPostInstantiateDelegate( Closure delegate ) {
         proxyBuilder.postInstantiateDelegates.addFirst( delegate );
@@ -274,7 +368,7 @@ public abstract class FactoryBuilderSupport extends Binding {
     /**
      * Remove the most recently added instance of the postInstantiate delegate.
      *
-     * @param delegate
+     * @param delegate the closure to invoke
      */
     public void removePostInstantiateDelegate( Closure delegate ) {
         proxyBuilder.postInstantiateDelegates.remove( delegate );
@@ -285,7 +379,8 @@ public abstract class FactoryBuilderSupport extends Binding {
      * with building. NodeCompletion delegates are fired in a FILO pattern, so
      * that nested delegates get first crack.
      *
-     * @param delegate
+     * @param delegate the closure to invoke
+     * @return delegate
      */
     public Closure addPostNodeCompletionDelegate( Closure delegate ) {
         proxyBuilder.postNodeCompletionDelegates.addFirst( delegate );
@@ -295,7 +390,7 @@ public abstract class FactoryBuilderSupport extends Binding {
     /**
      * Remove the most recently added instance of the nodeCompletion delegate.
      *
-     * @param delegate
+     * @param delegate the closure to be removed
      */
     public void removePostNodeCompletionDelegate( Closure delegate ) {
         proxyBuilder.postNodeCompletionDelegates.remove( delegate );
@@ -304,6 +399,9 @@ public abstract class FactoryBuilderSupport extends Binding {
     /**
      * Registers a factory for a JavaBean.<br>
      * The JavaBean clas should have a no-args constructor.
+     *
+     * @param theName name of the node
+     * @param beanClass the factory to handle the name
      */
     public void registerBeanFactory( String theName, final Class beanClass ) {
         proxyBuilder.registerFactory( theName, new AbstractFactory(){
@@ -320,6 +418,9 @@ public abstract class FactoryBuilderSupport extends Binding {
 
     /**
      * Registers a factory for a node name.
+     *
+     * @param name the name of the node
+     * @param factory the factory to return the values
      */
     public void registerFactory( String name, Factory factory ) {
         proxyBuilder.factories.put( name, factory );
@@ -328,9 +429,14 @@ public abstract class FactoryBuilderSupport extends Binding {
     /**
      * This method is responsible for instanciating a node and configure its
      * properties.
+     *
+     * @param name the name of the node
+     * @param attributes the attributes for the node
+     * @param value the value arguments for the node
+     * @return the object return from the factory
      */
     protected Object createNode( Object name, Map attributes, Object value ) {
-        Object node = null;
+        Object node;
 
         Factory factory = proxyBuilder.resolveFactory( name, attributes, value );
         if( factory == null ){
@@ -341,7 +447,7 @@ public abstract class FactoryBuilderSupport extends Binding {
         proxyBuilder.getContext().put( CURRENT_NAME, String.valueOf(name) );
         proxyBuilder.preInstantiate( name, attributes, value );
         try{
-            node = factory.newInstance( this, name, value, attributes );
+            node = factory.newInstance( proxyBuilder.getChildBuilder(), name, value, attributes );
             if( node == null ){
                 LOG.log( Level.WARNING, "Factory for name '" + name + "' returned null" );
                 return null;
@@ -360,19 +466,29 @@ public abstract class FactoryBuilderSupport extends Binding {
     }
 
     /**
-     * Returns the Factory associated with name.<br>
      * This is a hook for subclasses to plugin a custom strategy for mapping
      * names to factories.
+     *
+     * @param name the name of the factory
+     * @param attributes the attributes from the node
+     * @param value value arguments from te node
+     * @return the Factory associated with name.<br>
      */
     protected Factory resolveFactory( Object name, Map attributes, Object value ) {
+        proxyBuilder.getContext().put( CHILD_BUILDER, proxyBuilder);
         return (Factory) proxyBuilder.factories.get( name );
     }
 
     /**
      * This method is the workhorse of the builder.
+     *
+     * @param methodName the name of the method being invoked
+     * @param name the name of the node
+     * @param args the arguemtns passed into the node
+     * @return the object from the factory
      */
     private Object doInvokeMethod( String methodName, Object name, Object args ) {
-        Object node = null;
+        Object node;
         Closure closure = null;
         List list = InvokerHelper.asList( args );
 
@@ -470,6 +586,8 @@ public abstract class FactoryBuilderSupport extends Binding {
             proxyBuilder.getContext().put( PARENT_NODE, current );
             proxyBuilder.getContext().put( PARENT_CONTEXT, parentContext );
             proxyBuilder.getContext().put( PARENT_NAME, parentName );
+            proxyBuilder.getContext().put( PARENT_BUILDER, parentContext.get(CURRENT_BUILDER));
+            proxyBuilder.getContext().put( CURRENT_BUILDER, parentContext.get(CHILD_BUILDER));
             // lets register the builder as the delegate
             proxyBuilder.setClosureDelegate( closure, node );
             closure.call();
@@ -493,7 +611,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      * @param methodName the name of the desired method
      * @return the object representing the name
      */
-    protected Object getName( String methodName ) {
+    public Object getName( String methodName ) {
         if( proxyBuilder.nameMappingClosure != null ){
             return proxyBuilder.nameMappingClosure.call( methodName );
         }
@@ -501,9 +619,9 @@ public abstract class FactoryBuilderSupport extends Binding {
     }
 
     /**
-     * Returns the current builder that serves as a proxy.<br>
      * Proxy builders are useful for changing the building context, thus
      * enabling mix &amp; match builders.
+     * @return the current builder that serves as a proxy.<br>
      */
     protected FactoryBuilderSupport getProxyBuilder() {
         return proxyBuilder;
@@ -513,6 +631,9 @@ public abstract class FactoryBuilderSupport extends Binding {
      * Assigns any existing properties to the node.<br>
      * It will call attributeDelegates before passing control to the factory
      * that built the node.
+     *
+     * @param node the object returned by tne node factory
+     * @param attributes the attributes for the node
      */
     protected void handleNodeAttributes( Object node, Map attributes ) {
         // first, short circuit
@@ -521,10 +642,18 @@ public abstract class FactoryBuilderSupport extends Binding {
         }
 
         for( Iterator iter = proxyBuilder.attributeDelegates.iterator(); iter.hasNext(); ){
-            ((Closure) iter.next()).call( new Object[] { this, node, attributes } );
+            Closure attrDelegate = (Closure) iter.next();
+            FactoryBuilderSupport builder = this;
+            if (attrDelegate.getOwner() instanceof FactoryBuilderSupport) {
+                builder = (FactoryBuilderSupport) attrDelegate.getOwner();
+            } else if (attrDelegate.getDelegate() instanceof FactoryBuilderSupport) {
+                builder = (FactoryBuilderSupport) attrDelegate.getDelegate();
+            }
+
+            attrDelegate.call( new Object[] { builder, node, attributes } );
         }
 
-        if( proxyBuilder.getCurrentFactory().onHandleNodeAttributes( this, node, attributes ) ){
+        if( proxyBuilder.getCurrentFactory().onHandleNodeAttributes( proxyBuilder.getChildBuilder(), node, attributes ) ){
             proxyBuilder.setNodeAttributes( node, attributes );
         }
     }
@@ -544,11 +673,12 @@ public abstract class FactoryBuilderSupport extends Binding {
      * @param parent the parent of the node being processed
      */
     protected void nodeCompleted( Object parent, Object node ) {
-        proxyBuilder.getCurrentFactory().onNodeCompleted( this, parent, node );
+        proxyBuilder.getCurrentFactory().onNodeCompleted( proxyBuilder.getChildBuilder(), parent, node );
     }
 
     /**
      * Removes the last context from the stack.
+     * @return the contet just removed
      */
     protected Map popContext() {
         if( !proxyBuilder.contexts.isEmpty() ){
@@ -561,6 +691,10 @@ public abstract class FactoryBuilderSupport extends Binding {
      * A hook after the factory creates the node and before attributes are set.<br>
      * It will call any registered postInstantiateDelegates, if you override
      * this method be sure to call this impl somewhere in your code.
+     *
+     * @param name the name of the node
+     * @param attributes the attributes for the node
+     * @param node the object created by teh node factory
      */
     protected void postInstantiate( Object name, Map attributes, Object node ) {
         for( Iterator iter = proxyBuilder.postInstantiateDelegates.iterator(); iter.hasNext(); ){
@@ -591,6 +725,10 @@ public abstract class FactoryBuilderSupport extends Binding {
      * A hook before the factory creates the node.<br>
      * It will call any registered preInstantiateDelegates, if you override this
      * method be sure to call this impl somewhere in your code.
+     *
+     * @param name the name of the node
+     * @param attributes the attributes of the node
+     * @param value the value argument(s) of the node
      */
     protected void preInstantiate( Object name, Map attributes, Object value ) {
         for( Iterator iter = proxyBuilder.preInstantiateDelegates.iterator(); iter.hasNext(); ){
@@ -622,6 +760,8 @@ public abstract class FactoryBuilderSupport extends Binding {
 
     /**
      * Maps attributes key/values to properties on node.
+     * @param node the object from the node
+     * @param attributes the attributtes to be set
      */
     protected void setNodeAttributes( Object node, Map attributes ) {
         // set the properties
@@ -636,24 +776,27 @@ public abstract class FactoryBuilderSupport extends Binding {
 
     /**
      * Strategy method to stablish parent/child relationships.
+     * @param parent the object from the parent node
+     * @param child the object from the child node
      */
     protected void setParent( Object parent, Object child ) {
-        proxyBuilder.getCurrentFactory().setParent( this, parent, child );
+        proxyBuilder.getCurrentFactory().setParent( proxyBuilder.getChildBuilder(), parent, child );
         Factory parentFactory = proxyBuilder.getParentFactory();
         if( parentFactory != null ){
-            parentFactory.setChild( this, parent, child );
+            parentFactory.setChild( proxyBuilder.getCurrentBuilder(), parent, child );
         }
     }
 
     /**
      * Sets the builder to be used as a proxy.
+     * @param proxyBuilder the new proxy
      */
     protected void setProxyBuilder( FactoryBuilderSupport proxyBuilder ) {
         this.proxyBuilder = proxyBuilder;
     }
 
     /**
-     * Returns the stack of available contexts.
+     * @return the stack of available contexts.
      */
     protected LinkedList getContexts() {
         return proxyBuilder.contexts;
@@ -814,8 +957,13 @@ class FactoryInterceptorMetaClass extends DelegatingMetaClass {
                     return InvokerHelper.invokeMethod(factory, methodName, arguments);
                 }
             } catch (MissingMethodException mme2) {
+                // chain secondary exception
+                Throwable root = mme.getCause();
+                while (root.getCause() != null) {
+                    root = root.getCause();
+                }
+                root.initCause(mme2);
                 // throw original
-                // should we chain in mme2 somehow?
                 throw mme;
             }
         }
@@ -834,8 +982,13 @@ class FactoryInterceptorMetaClass extends DelegatingMetaClass {
                     return InvokerHelper.invokeMethod(factory, methodName, arguments);
                 }
             } catch (MissingMethodException mme2) {
+                // chain secondary exception
+                Throwable root = mme.getCause();
+                while (root.getCause() != null) {
+                    root = root.getCause();
+                }
+                root.initCause(mme2);
                 // throw original
-                // should we chain in mme2 somehow?
                 throw mme;
             }
         }
