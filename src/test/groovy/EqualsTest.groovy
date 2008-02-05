@@ -20,15 +20,11 @@ class EqualsTest extends GroovyTestCase {
     void testParentChildrenEquals() {
         def x = new Date()
         def y = new java.sql.Time(x.time)
-        def z = new java.sql.Timestamp(x.time)
+        // Gotcha: don't try this with Timestamp,
+        // see: http://mattfleming.com/node/141
+
         assert y == x
         assert x == y
-        assert z == x
-        // assert x != z
-        // Gotcha see: http://mattfleming.com/node/141
-        // Groovy follows Java behaviour for this case which will
-        // pass in negated form (!) for Java 1.6 and fail with a
-        // CCE in earlier versions
     }
 
     void testUnrelatedComparablesShouldNeverBeEqual() {
