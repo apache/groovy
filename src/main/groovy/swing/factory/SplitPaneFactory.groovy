@@ -16,9 +16,9 @@
 
 package groovy.swing.factory
 
-import javax.swing.JSplitPane
-import java.awt.Window
 import java.awt.Component
+import java.awt.Window
+import javax.swing.JSplitPane
 
 public class SplitPaneFactory extends AbstractFactory {
     

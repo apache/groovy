@@ -18,9 +18,7 @@ package groovy.swing.factory
 import groovy.swing.binding.AbstractButtonProperties
 import groovy.swing.binding.JSliderProperties
 import groovy.swing.binding.JTextComponentProperties
-
-import java.util.Map.Entry;
-
+import java.util.Map.Entry
 import org.codehaus.groovy.binding.*
 
 /**

@@ -16,8 +16,8 @@
 
 package groovy.swing.factory
 
-import javax.swing.BorderFactory
 import java.awt.Color
+import javax.swing.BorderFactory
 
 /**
  * accepts no value

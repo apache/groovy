@@ -15,11 +15,10 @@
  */
 package groovy.swing.factory
 
-import javax.swing.border.TitledBorder
 import java.awt.Color
-import javax.swing.border.Border
 import java.awt.Font
-
+import javax.swing.border.Border
+import javax.swing.border.TitledBorder
 
 /**
  * The node must be called with either a value arugment or a title: attribute. <br />
