@@ -26,7 +26,7 @@ import java.util.logging.Logger;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class TableLayoutCell implements ContainerFacade {
+public class TableLayoutCell {
 
     protected static final Logger LOG = Logger.getLogger(TableLayoutCell.class.getName());
     
@@ -68,6 +68,7 @@ public class TableLayoutCell implements ContainerFacade {
 
     /**
      * Sets the horizontal alignment to a case insensitive value of {LEFT, CENTER, RIGHT}
+     * @param align one of  'left', 'center', or 'right'
      */
     public void setAlign(String align) {
         this.align = align;
@@ -75,6 +76,7 @@ public class TableLayoutCell implements ContainerFacade {
 
     /**
      * Sets the vertical alignment to a case insensitive value of {TOP, MIDDLE, BOTTOM}
+     * @param valign one of 'top', 'middle', 'bottom'
      */
     public void setValign(String valign) {
         this.valign = valign;
@@ -83,6 +85,7 @@ public class TableLayoutCell implements ContainerFacade {
     
     /**
      * Sets the number of columns that this cell should span. The default value is 1
+     * @param colspan The default is 1
      */
     public void setColspan(int colspan) {
         this.colspan = colspan;
@@ -90,6 +93,7 @@ public class TableLayoutCell implements ContainerFacade {
 
     /**
      * Sets the number of rows that this cell should span. The default value is 1
+     * @param rowspan The default is 1
      */
     public void setRowspan(int rowspan) {
         this.rowspan = rowspan;
@@ -113,6 +117,7 @@ public class TableLayoutCell implements ContainerFacade {
 
     /**
      * Sets whether or not this column should allow its component to stretch to fill the space available
+     * @param colfill The default is false
      */
     public void setColfill(boolean colfill) {
         this.colfill = colfill;
@@ -120,6 +125,7 @@ public class TableLayoutCell implements ContainerFacade {
 
     /**
      * Sets whether or not this row should allow its component to stretch to fill the space available
+     * @param rowfill The default is false
      */
     public void setRowfill(boolean rowfill) {
         this.rowfill = rowfill;

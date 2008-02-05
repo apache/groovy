@@ -26,10 +26,10 @@ import java.util.List;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class TableLayoutRow implements Startable {
+public class TableLayoutRow {
 
     private final TableLayout parent;
-    private final List cells = new ArrayList();
+    private final List/*<TableLayoutCell>*/ cells = new ArrayList/*<TableLayoutCell>*/();
     private int rowIndex;
     
     public TableLayoutRow(TableLayout tableLayoutTag) {
@@ -38,6 +38,7 @@ public class TableLayoutRow implements Startable {
 
     /**
      * Adds a new cell to this row
+     * @param tag the td element
      */
     public void addCell(TableLayoutCell tag) {
         int gridx = 0;
@@ -49,7 +50,7 @@ public class TableLayoutRow implements Startable {
         cells.add(tag);
     }
     
-    public void start() {
+    public void addComponentsForRow() {
         rowIndex = parent.nextRowIndex();
 
         // iterate through the rows and add each one to the layout...

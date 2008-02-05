@@ -19,10 +19,10 @@ package groovy.swing.factory
 import groovy.model.DefaultTableModel
 import groovy.model.ValueHolder
 import groovy.model.ValueModel
-import javax.swing.table.TableModel
-import javax.swing.JTable
 import java.beans.PropertyChangeListener
 import java.beans.PropertyChangeEvent
+import javax.swing.JTable
+import javax.swing.table.TableModel
 
 public class TableModelFactory extends AbstractFactory {
     

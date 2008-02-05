@@ -51,7 +51,7 @@ public class TRFactory extends AbstractFactory {
     }
 
     public void onNodeCompleted(FactoryBuilderSupport builder, Object parent, Object node) {
-        node.start()
+        node.addComponentsForRow()
     }
 }
 
