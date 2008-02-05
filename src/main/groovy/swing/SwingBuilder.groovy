@@ -20,9 +20,9 @@ import java.awt.*
 import java.lang.reflect.InvocationTargetException
 import java.util.logging.Logger
 import javax.swing.*
-import javax.swing.table.TableColumn
 import javax.swing.border.BevelBorder
 import javax.swing.border.EtchedBorder
+import javax.swing.table.TableColumn
 import org.codehaus.groovy.runtime.MethodClosure
 
 /**
@@ -33,9 +33,6 @@ import org.codehaus.groovy.runtime.MethodClosure
  */
 public class SwingBuilder  extends FactoryBuilderSupport {
 
-    // Properties
-    LinkedList containingWindows = new LinkedList()
-
     // local fields
     private static final Logger LOG = Logger.getLogger(SwingBuilder.name)
     // tracks all containing windows, for auto-owned dialogs
@@ -44,6 +41,7 @@ public class SwingBuilder  extends FactoryBuilderSupport {
     public SwingBuilder() {
         registerWidgets()
         headless = GraphicsEnvironment.isHeadless()
+        containingWindows = new LinkedList()
     }
 
     protected void registerWidgets() {
