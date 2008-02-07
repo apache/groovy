@@ -385,25 +385,27 @@ public class GroovyScriptEngine implements ResourceConnector {
      * Run a script identified by name with a given binding.
      *
      * @param scriptName name of the script to run
-     * @param binding    binding to pass to the script
+     * @param binding    the binding to pass to the script
      * @return an object
      * @throws ResourceException if there is a problem accessing the script
      * @throws ScriptException if there is a problem parsing the script
      */
     public Object run(String scriptName, Binding binding) throws ResourceException, ScriptException {
-        ScriptCacheEntry entry = updateCacheEntry(scriptName);
-        Script scriptObject = createScript(binding, entry);
-        return scriptObject.run();
+        return createScript(scriptName, binding).run();
     }
 
     /**
-     * Creates a Script object given a cache entry object and a binding.
+     * Creates a Script with a given scriptName and binding.
      *
-     * @param binding the binding to use
-     * @param entry the script cache entry
+     * @param scriptName name of the script to run
+     * @param binding    the binding to pass to the script
      * @return the script object
+     * @throws ResourceException if there is a problem accessing the script
+     * @throws ScriptException if there is a problem parsing the script
      */
-    public Script createScript(Binding binding, ScriptCacheEntry entry) {
+    public Script createScript(String scriptName, Binding binding) throws ResourceException, ScriptException {
+        ScriptCacheEntry entry = updateCacheEntry(scriptName);
+        scriptName = scriptName.intern();
         return InvokerHelper.createScript(entry.scriptClass, binding);
     }
 }
