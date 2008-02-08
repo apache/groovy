@@ -35,6 +35,9 @@ class ScrollPaneFactory extends BeanFactory {
         if (!(child instanceof Component) || (child instanceof Window)) {
             return;
         }
+        if (parent.getViewport()?.getView() != null) {
+            throw new RuntimeException("ScrollPane can only have one child component");
+        }
         if (child instanceof JViewport) {
             parent.setViewport(child);
         } else {
