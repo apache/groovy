@@ -16,14 +16,25 @@
 
 package groovy.util;
 
+import groovy.lang.Closure;
+
 import java.util.Map;
 
 /**
  * @author Andres Almiray <aalmiray@users.sourceforge.com>
- */ 
+ * @author Danno Ferrin
+ */
 public abstract class AbstractFactory implements Factory {
     public boolean isLeaf() {
         return false;
+    }
+
+    public boolean isHandlesNodeChildren() {
+        return false;
+    }
+
+    public void onFactoryRegistration(FactoryBuilderSupport builder, String registerdName) {
+        // do nothing
     }
 
     public boolean onHandleNodeAttributes( FactoryBuilderSupport builder, Object node,
@@ -31,16 +42,20 @@ public abstract class AbstractFactory implements Factory {
         return true;
     }
 
-    public void onNodeCompleted( FactoryBuilderSupport builder, Object parent, Object node ) {
+    public boolean onNodeChildren( FactoryBuilderSupport builder, Object node, Closure childContent) {
+        return true;
+    }
 
+    public void onNodeCompleted( FactoryBuilderSupport builder, Object parent, Object node ) {
+        // do nothing
     }
 
     public void setParent( FactoryBuilderSupport builder, Object parent, Object child ) {
-
+        // do nothing
     }
 
     public void setChild( FactoryBuilderSupport builder, Object parent, Object child ) {
-
+        // do nothing
     }
 
 }

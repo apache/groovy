@@ -15,17 +15,34 @@
  */
 package groovy.util;
 
+import groovy.lang.Closure;
+
 import java.util.Map;
 
 /**
  * @author Andres Almiray <aalmiray@users.sourceforge.com>
- */ 
+ * @author Danno Ferrin
+ */
 public interface Factory {
     /**
      *
      * @return true if no child closures should be processed
      */
     boolean isLeaf();
+
+    /**
+     * Does this factory "Own" it's child closure.
+     * @return true  if the factory should have onContentClosure() called,
+     *         false if the builder shouold handle it
+     */
+    boolean isHandlesNodeChildren();
+
+    /**
+     * Called when a factory is registerd to a builder
+     * @param builder the build the factory has been registered to
+     * @param registerdName the name the factory has been registerd under
+     */
+    public void onFactoryRegistration(FactoryBuilderSupport builder, String registerdName);
 
     /**
      *
@@ -48,6 +65,15 @@ public interface Factory {
      * @return true if the factory builder should use standerd bean property matching for the remaining attributes
      */
     boolean onHandleNodeAttributes( FactoryBuilderSupport builder, Object node, Map attributes );
+
+    /**
+     * Only called if it isLeaf is false and isHandlesNodeChildren is true
+     * @param builder the FactoryBuilder
+     * @param node the node (returned from newINstance) to consider the attributes for
+     * @param childContent the child content closure of the builder
+     * @return true if the factory builder should apply default node processing to the content child
+     */
+    boolean onNodeChildren( FactoryBuilderSupport builder, Object node, Closure childContent);
 
     /**
      *
