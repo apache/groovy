@@ -1387,9 +1387,7 @@ public class Sql {
         int i = 1;
         for (Iterator iter = params.iterator(); iter.hasNext();) {
             Object value = iter.next();
-            if (value != null) {
-                setObject(statement, i++, value);
-            }
+            setObject(statement, i++, value);
         }
     }
 
