@@ -1297,8 +1297,8 @@ public class Sql {
                     }
                 } else {
                     nulls = true;
-                    buffer.append("?'\"?"); // will replace these with nullish
-                    // values
+                    iter.remove();
+                    buffer.append("?'\"?"); // will replace these with nullish values
                 }
             }
         }
