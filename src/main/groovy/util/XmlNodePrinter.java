@@ -255,11 +255,44 @@ public class XmlNodePrinter {
             Object value = entry.getValue();
             out.print(quote);
             if (value instanceof String) {
-                out.print((String) value);
+                printEscaped((String) value);
             } else {
-                out.print(InvokerHelper.toString(value));
+                printEscaped(InvokerHelper.toString(value));
             }
             out.print(quote);
+        }
+    }
+
+    // For ' and " we only escape if needed. As far as XML is concerned,
+    // we could always escape if we wanted to.
+    private void printEscaped(String s) {
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            switch (c) {
+                case '<':
+                    out.print("&lt;");
+                    break;
+                case '>':
+                    out.print("&gt;");
+                    break;
+                case '&':
+                    out.print("&amp;");
+                    break;
+                case '\'':
+                    if (quote.equals("'"))
+                        out.print("&apos;");
+                    else
+                        out.print(c);
+                    break;
+                case '"':
+                    if (quote.equals("\""))
+                        out.print("&quot;");
+                    else
+                        out.print(c);
+                    break;
+                default:
+                    out.print(c);
+            }
         }
     }
 
