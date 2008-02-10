@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,10 @@ package groovy.sql;
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyRuntimeException;
+import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.CodeVisitorSupport;
+import org.codehaus.groovy.ast.stmt.Statement;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -27,13 +31,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.stmt.Statement;
-
 /**
  * Represents an extent of objects
- * 
+ *
  * @author Chris Stevenson
  * @author Paul King
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
@@ -42,9 +42,12 @@ import org.codehaus.groovy.ast.stmt.Statement;
 public class DataSet extends Sql {
 
     private Closure where;
+    private Closure sort;
+    private boolean reversed = false;
     private DataSet parent;
     private String table;
     private SqlWhereVisitor visitor;
+    private SqlOrderByVisitor sortVisitor;
     private String sql;
     private List params;
 
@@ -63,11 +66,26 @@ public class DataSet extends Sql {
         this.table = table;
     }
 
-    public DataSet(DataSet parent, Closure where) {
+    private DataSet(DataSet parent, Closure where) {
         super(parent);
         this.table = parent.table;
         this.parent = parent;
         this.where = where;
+    }
+
+    private DataSet(DataSet parent, Closure where, Closure sort) {
+        super(parent);
+        this.table = parent.table;
+        this.parent = parent;
+        this.where = where;
+        this.sort = sort;
+    }
+
+    private DataSet(DataSet parent) {
+        super(parent);
+        this.table = parent.table;
+        this.parent = parent;
+        this.reversed = true;
     }
 
     public void add(Map values) throws SQLException {
@@ -82,8 +100,7 @@ public class DataSet extends Sql {
             if (first) {
                 first = false;
                 paramBuffer.append("?");
-            }
-            else {
+            } else {
                 buffer.append(", ");
                 paramBuffer.append(", ?");
             }
@@ -120,22 +137,62 @@ public class DataSet extends Sql {
         return new DataSet(this, where);
     }
 
+    public DataSet sort(Closure sort) {
+        return new DataSet(this, null, sort);
+    }
+
+    public DataSet reverse() {
+        if (sort == null) {
+            throw new GroovyRuntimeException("reverse() only allowed immediately after a sort()");
+        }
+        return new DataSet(this);
+    }
+
     public void each(Closure closure) throws SQLException {
         eachRow(getSql(), getParameters(), closure);
+    }
+
+    private String getSqlWhere() {
+        String whereClaus = "";
+        String parentClaus = "";
+        if (parent != null) {
+            parentClaus = parent.getSqlWhere();
+        }
+        if (where != null) {
+            whereClaus += getSqlWhereVisitor().getWhere();
+        }
+        if (parentClaus.length() == 0) return whereClaus;
+        if (whereClaus.length() == 0) return parentClaus;
+        return parentClaus + " and " + whereClaus;
+    }
+
+    private String getSqlOrderBy() {
+        String sortByClaus = "";
+        String parentClaus = "";
+        if (parent != null) {
+            parentClaus = parent.getSqlOrderBy();
+        }
+        if (reversed) {
+            if (parentClaus.length() > 0) parentClaus += " DESC";
+        }
+        if (sort != null) {
+            sortByClaus += getSqlOrderByVisitor().getOrderBy();
+        }
+        if (parentClaus.length() == 0) return sortByClaus;
+        if (sortByClaus.length() == 0) return parentClaus;
+        return parentClaus + ", " + sortByClaus;
     }
 
     public String getSql() {
         if (sql == null) {
             sql = "select * from " + table;
-            if (where != null) {
-                String clause = "";
-                if (parent != null && parent.where != null) {
-                    clause += parent.getSqlVisitor().getWhere() + " and ";
-                }
-                clause += getSqlVisitor().getWhere();
-                if (clause.length() > 0) {
-                    sql += " where " + clause;
-                }
+            String whereClaus = getSqlWhere();
+            if (whereClaus.length() > 0) {
+                sql += " where " + whereClaus;
+            }
+            String orerByClaus = getSqlOrderBy();
+            if (orerByClaus.length() > 0) {
+                sql += " order by " + orerByClaus;
             }
         }
         return sql;
@@ -144,48 +201,62 @@ public class DataSet extends Sql {
     public List getParameters() {
         if (params == null) {
             params = new ArrayList();
-            if (parent != null && parent.where != null) {
+            if (parent != null) {
                 params.addAll(parent.getParameters());
             }
-            params.addAll(getSqlVisitor().getParameters());
+            params.addAll(getSqlWhereVisitor().getParameters());
         }
         return params;
     }
 
-    protected SqlWhereVisitor getSqlVisitor() {
+    protected SqlWhereVisitor getSqlWhereVisitor() {
         if (visitor == null) {
             visitor = new SqlWhereVisitor();
-            if (where != null) {
-                ClassNode classNode = where.getMetaClass().getClassNode();
-                if (classNode == null) {
-                    throw new GroovyRuntimeException(
-                        "Could not find the ClassNode for MetaClass: " + where.getMetaClass());
-                }
-                List methods = classNode.getDeclaredMethods("doCall");
-                if (!methods.isEmpty()) {
-                    MethodNode method = (MethodNode) methods.get(0);
-                    if (method != null) {
-                        Statement statement = method.getCode();
-                        if (statement != null) {
-                            statement.visit(visitor);
-                        }
+            visit(where, visitor);
+        }
+        return visitor;
+    }
+
+    protected SqlOrderByVisitor getSqlOrderByVisitor() {
+        if (sortVisitor == null) {
+            sortVisitor = new SqlOrderByVisitor();
+            visit(sort, sortVisitor);
+        }
+        return sortVisitor;
+    }
+
+    private void visit(Closure closure, CodeVisitorSupport visitor) {
+        if (closure != null) {
+            ClassNode classNode = closure.getMetaClass().getClassNode();
+            if (classNode == null) {
+                throw new GroovyRuntimeException(
+                        "Could not find the ClassNode for MetaClass: " + closure.getMetaClass());
+            }
+            List methods = classNode.getDeclaredMethods("doCall");
+            if (!methods.isEmpty()) {
+                MethodNode method = (MethodNode) methods.get(0);
+                if (method != null) {
+                    Statement statement = method.getCode();
+                    if (statement != null) {
+                        statement.visit(visitor);
                     }
                 }
             }
         }
-        return visitor;
     }
+
     /*
-     * create a subset of the original dataset
-     */
+    * create a subset of the original dataset
+    */
     public DataSet createView(Closure criteria) {
-    	return new DataSet(this, criteria);
+        return new DataSet(this, criteria);
     }
-    
+
     /**
      * Returns a List of all of the rows from the table a DataSet
      * represents
-     * @return  Returns a list of GroovyRowResult objects from the dataset
+     *
+     * @return Returns a list of GroovyRowResult objects from the dataset
      * @throws SQLException if a database error occurs
      */
     public List rows() throws SQLException {
@@ -194,13 +265,13 @@ public class DataSet extends Sql {
 
     /**
      * Returns the first row from a DataSet's underlying table
-     * 
-     * @return  Returns the first GroovyRowResult object from the dataset
+     *
+     * @return Returns the first GroovyRowResult object from the dataset
      * @throws SQLException if a database error occurs
      */
-    public Object firstRow() throws SQLException{
+    public Object firstRow() throws SQLException {
         List rows = rows();
         if (rows.isEmpty()) return null;
-        return(rows.get(0));
+        return (rows.get(0));
     }
 }
