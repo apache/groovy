@@ -1610,11 +1610,29 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
             case CLOSURE_LIST:
                 return closureListExpression(node);
-                
+
+            case LBRACK:
+                return tupleExpression(node);
+
             default:
                 unknownAST(node);
         }
         return null;
+    }
+
+    private TupleExpression tupleExpression(AST node) {
+        TupleExpression exp = new TupleExpression();
+        configureAST(exp,node);
+        node = node.getFirstChild();
+        while (node!=null) {
+            assertNodeType(VARIABLE_DEF,node);
+            AST nameNode = node.getFirstChild().getNextSibling();
+            VariableExpression varExp = new VariableExpression(nameNode.getText());
+            configureAST(varExp,nameNode);
+            exp.addExpression(varExp);
+            node = node.getNextSibling();
+        }
+        return exp;
     }
     
     private ClosureListExpression closureListExpression(AST node) {
@@ -1856,10 +1874,13 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
 
         if (Types.ofType(type, Types.ASSIGNMENT_OPERATOR)) {
-            if (leftExpression instanceof VariableExpression || leftExpression.getClass() == PropertyExpression.class
-                                                             || leftExpression instanceof FieldExpression
-                                                             || leftExpression instanceof AttributeExpression
-                                                             || leftExpression instanceof DeclarationExpression) {
+            if (leftExpression instanceof VariableExpression || 
+                leftExpression.getClass() == PropertyExpression.class ||
+                leftExpression instanceof FieldExpression ||
+                leftExpression instanceof AttributeExpression ||
+                leftExpression instanceof DeclarationExpression ||
+                leftExpression instanceof TupleExpression)
+            {
                 // Do nothing.
             }
             else if (leftExpression instanceof ConstantExpression) {

@@ -3660,10 +3660,33 @@ public class AsmClassGenerator extends ClassGenerator {
             visitAndAutoboxBoolean(rightExpression);
         }
 
-        mv.visitInsn(DUP);  // to leave a copy of the rightexpression value on the stack after the assignment.
-        leftHandExpression = true;
         rightHandType = rightExpression.getType();
-        leftExpression.visit(this);
+        leftHandExpression = true;
+        if (leftExpression instanceof TupleExpression) {
+            TupleExpression tuple = (TupleExpression) leftExpression;
+            int i = 0;
+            Expression lhsExpr = new BytecodeExpression() {
+                public void visit (MethodVisitor mv) {
+                    // copy for method call
+                    mv.visitInsn(SWAP);                           
+                    mv.visitInsn(DUP_X1);
+                }
+            };
+            for (Iterator iterator = tuple.getExpressions().iterator(); iterator.hasNext();) {
+                VariableExpression var = (VariableExpression) iterator.next();
+                visitMethodCallExpression(
+                        new MethodCallExpression(
+                                lhsExpr, "getAt",
+                                new ArgumentListExpression(new ConstantExpression(new Integer(i)))
+                        )
+                );
+                i++;
+                visitVariableExpression(var);
+            }
+        } else {
+            mv.visitInsn(DUP);  // to leave a copy of the rightexpression value on the stack after the assignment.
+            leftExpression.visit(this);
+        }
         rightHandType = null;
         leftHandExpression = false;
     }

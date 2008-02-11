@@ -1236,6 +1236,16 @@ explicitConstructorInvocation
         )
     ;
 
+listOfVariables[AST mods, AST t]
+    :
+        variableDeclarator[getASTFactory().dupTree(mods),
+                           getASTFactory().dupTree(t)]
+        (   COMMA! nls!
+            variableDeclarator[getASTFactory().dupTree(mods),
+                               getASTFactory().dupTree(t)]
+        )*
+    ;
+
 /** The tail of a declaration.
   * Either v1, v2, ... (with possible initializers) or else m(args){body}.
   * The two arguments are the modifier list (if any) and the declaration head (if any).
@@ -1245,12 +1255,8 @@ explicitConstructorInvocation
   * DECIDE:  Method return types default to the type of the method body, as an expression.
   */
 variableDefinitions[AST mods, AST t]  {Token first = LT(1);}
-    :   variableDeclarator[getASTFactory().dupTree(mods),
-                           getASTFactory().dupTree(t)]
-        (   COMMA! nls!
-            variableDeclarator[getASTFactory().dupTree(mods),
-                               getASTFactory().dupTree(t)]
-        )*
+    :
+        listOfVariables[mods,t]
     |
         // The parser allows a method definition anywhere a variable definition is accepted.
 
@@ -1994,7 +2000,16 @@ commandArgument
 // due to possible ambiguities with other kinds of statements.  This nonterminal is used only
 // in contexts where we know we have an expression.  It allows general Java-type expressions.
 expression[int lc_stmt]
-    :   assignmentExpression[lc_stmt]
+    :   
+        (LBRACK nls IDENT (COMMA IDENT)* RBRACK ASSIGN) =>
+        m:multipleAssignment[lc_stmt] {#expression=#m;}
+    |   assignmentExpression[lc_stmt]
+    ;
+
+multipleAssignment[int lc_stmt]
+    :   LBRACK^ nls! listOfVariables[null,null] RBRACK!
+        ASSIGN^ nls!
+        assignmentExpression[lc_stmt]
     ;
 
 // This is a list of expressions.
