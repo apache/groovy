@@ -580,7 +580,7 @@ public abstract class FactoryBuilderSupport extends Binding {
             }
             boolean processContent = true;
             if ( parentFactory.isHandlesNodeChildren() ){
-                processContent = parentFactory.onNodeChildren(this, current, closure);
+                processContent = parentFactory.onNodeChildren(this, node, closure);
             }
             if (processContent) {
                 // push new node on stack

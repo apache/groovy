@@ -34,6 +34,7 @@ import groovy.model.ValueHolder
 import groovy.model.DefaultTableModel
 import groovy.model.DefaultTableColumn
 import groovy.model.PropertyModel
+import java.awt.event.ActionEvent
 
 class SwingBuilderTest extends GroovyTestCase {
 
@@ -480,6 +481,45 @@ class SwingBuilderTest extends GroovyTestCase {
         def values = inputMap.allKeys().toList().collect{ inputMap.get(it) }
         assert values.contains(expected1)
         assert values.contains(expected2)
+    }
+
+    void testActionClosures() {
+        if (headless) return
+
+        def swing = new SwingBuilder()
+        def testTarget = 'blank'
+        swing.actions {
+            action(id:'a', closure: {testTarget = 'A'})
+            action(id:'b') {testTarget = 'B' }
+            action(id:'c', closure: {evt -> testTarget = 'C'})
+            action(id:'d') {evt -> testTarget = 'D' }
+        }
+
+        ActionEvent evt = new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "");
+        assert testTarget == 'blank'
+        swing.a.actionPerformed(evt)
+        assert testTarget == 'A'
+        swing.b.actionPerformed(evt)
+        assert testTarget == 'B'
+        swing.c.actionPerformed(evt)
+        assert testTarget == 'C'
+        swing.d.actionPerformed(evt)
+        assert testTarget == 'D'
+
+        // negative tests
+        swing.actions {
+            action(id:'z')
+            shouldFail(RuntimeException) {
+                action(id:'y', closure:{testTarget = 'Y'}) {testTarget = 'YY'}
+            }
+            shouldFail(RuntimeException) {
+                action([actionPerformed: {testTarget = 'X'} ] as AbstractAction, id:'x') { testTarget = 'XX'}
+            }
+        }
+        shouldFail(NullPointerException) {
+            swing.z.actionPerformed(evt)
+        }
+
     }
 
     void testSetAccelerator() {
