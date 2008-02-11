@@ -28,7 +28,7 @@ package org.codehaus.groovy.runtime.callsite;
  *
  * @author Alex Tkachman
  */
-public class CallSiteArray {
+public final class CallSiteArray {
     public final CallSite[] array;
 
     public static final Object [] NOPARAM = new Object[0];

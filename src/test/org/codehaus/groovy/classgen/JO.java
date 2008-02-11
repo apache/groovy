@@ -12,11 +12,13 @@ import org.codehaus.groovy.runtime.callsite.StaticMetaMethodSite;
 import org.objectweb.asm.Opcodes;
 import org.objectweb.asm.util.ASMifierClassVisitor;
 
+import java.lang.ref.SoftReference;
+
 public class JO extends GeneratedMetaMethod implements Opcodes {
     public static MetaClass staticMetaClass;
     public static Class myMetaClass = initMyClass();
 
-    private static CallSiteArray callSiteArray;
+    private static SoftReference callSiteArray;
 
     private static Class initMyClass() {
         try {
@@ -28,15 +30,13 @@ public class JO extends GeneratedMetaMethod implements Opcodes {
         }
     }
 
-    protected MetaClass getStaticMetaClass () {
-        final Class aClass = getClass();
-        if (aClass == myMetaClass) {
-          if (staticMetaClass == null)
-            staticMetaClass = InvokerHelper.getMetaClass(this);
-          return staticMetaClass;
+    private static CallSite [] getCallSiteArray () {
+        CallSiteArray csa;
+        if (callSiteArray == null || (csa = (CallSiteArray) callSiteArray.get()) == null) {
+           csa = new CallSiteArray(null,null);
+           callSiteArray = new SoftReference(csa);
         }
-        else
-          return InvokerHelper.getMetaClass(aClass);
+        return csa.array;
     }
 
     public JO() {
@@ -56,10 +56,10 @@ public class JO extends GeneratedMetaMethod implements Opcodes {
     }
 
     public static void main(String[] args) throws Exception {
-//        ASMifierClassVisitor.main(new String[]{"target/test-classes/org/codehaus/groovy/classgen/CompiledStaticMetaMethodSite.class"});
+        ASMifierClassVisitor.main(new String[]{"target/test-classes/org/codehaus/groovy/classgen/JO.class"});
 //        ASMifierClassVisitor.main(new String[]{"target/test-classes/org/codehaus/groovy/classgen/TestCallSite.class"});
-        ASMifierClassVisitor.main(new String[]{"target/test-classes/spectralnorm.class"});
-//        ASMifierClassVisitor.main(new String[]{"target/test-classes/groovy/bugs/CustomMetaClassTest.class"});
+//        ASMifierClassVisitor.main(new String[]{"target/test-classes/spectralnorm.class"});
+//        ASMifierClassVisitor.main(new String[]{"target/test-classes/groovy/bugs/Groovy2556Bug.class"});
     }
 }
 

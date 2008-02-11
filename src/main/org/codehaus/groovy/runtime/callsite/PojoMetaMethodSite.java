@@ -39,7 +39,7 @@ public class PojoMetaMethodSite extends MetaMethodSite {
 
     public final CallSite acceptCall(Object receiver, Object[] args) {
         if(receiver.getClass() == metaClass.getTheClass() // meta class match receiver
-//               && ((MetaClassImpl)metaClass).getTheCachedClass().getMetaClassForClass() == metaClass // metaClass still be valid
+               && ((MetaClassImpl)metaClass).getTheCachedClass().getMetaClassForClass() == metaClass // metaClass still be valid
            && MetaClassHelper.sameClasses(params, args)) // right arguments
           return this;
         else
@@ -49,7 +49,7 @@ public class PojoMetaMethodSite extends MetaMethodSite {
     public final CallSite acceptBinop(Object receiver, Object arg) {
         try {
             return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
-//               && ((MetaClassImpl)metaClass).getTheCachedClass().getMetaClassForClass() == metaClass // metaClass still be valid
+               && ((MetaClassImpl)metaClass).getTheCachedClass().getMetaClassForClass() == metaClass // metaClass still be valid
            && MetaClassHelper.sameClass(params, arg) // right arguments
                 ? this
                 : createCallSite(receiver, new Object[]{arg});

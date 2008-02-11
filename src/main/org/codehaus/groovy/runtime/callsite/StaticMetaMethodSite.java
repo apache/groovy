@@ -38,7 +38,7 @@ public class StaticMetaMethodSite extends MetaMethodSite {
 
     public final CallSite acceptStatic(Object receiver, Object[] args) {
         if(receiver == metaClass.getTheClass() // meta class match receiver
-//               && ((MetaClassImpl)metaClass).getTheCachedClass().getMetaClassForClass() == metaClass // metaClass still be valid
+               && ((MetaClassImpl)metaClass).getTheCachedClass().getMetaClassForClass() == metaClass // metaClass still be valid
            && MetaClassHelper.sameClasses(params, args)) // right arguments
           return this;
         else
