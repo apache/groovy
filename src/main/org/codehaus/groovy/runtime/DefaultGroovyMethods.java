@@ -886,8 +886,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return NumberMath.compareTo(caseValue, switchValue) == 0;
     }
 
-    // Collection based methods
-    //-------------------------------------------------------------------------
+    /**
+     * Returns an iterator equivalent to this iterator all duplicated items removed
+     * by using the default comparator.
+     *
+     * @param self an Iterator
+     * @return the modified Iterator
+     */
+    public static Iterator unique(Iterator self) {
+        return toList(unique(toList(self))).listIterator();
+    }
 
     /**
      * Modifies this collection to remove all duplicated items, using the
@@ -920,6 +928,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Returns an iterator equivalent to this iterator all duplicated items
+     * removed by using a closure as a comparator.  If the closure takes a
+     * single parameter, the argument passed will be each element, and the
+     * closure should return a value used for comparison (either using
+     * {@link Comparable#compareTo(Object)} or Object#equals() ).
+     *
+     * @param self an Iterator
+     * @param closure a Closure used as a comparator
+     * @return the modified Iterator
+     */
+    public static Iterator unique(Iterator self, Closure closure) {
+        return toList(unique(toList(self), closure)).listIterator();
+    }
+
+    /**
      * A convenience method for making a collection unique using a closure
      * as a comparator.  If the closure takes a single parameter, the
      * argument passed will be each element, and the closure
@@ -944,6 +967,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             unique(self, new ClosureComparator(closure));
         }
         return self;
+    }
+
+    /**
+     * Returns an iterator equivalent to this iterator with all duplicated
+     * items removed by using the supplied comparator.
+     *
+     * @param self an Iterator
+     * @param comparator a Comparator
+     * @return the modified Iterator
+     */
+    public static Iterator unique(Iterator self, Comparator comparator) {
+        return toList(unique(toList(self), comparator)).listIterator();
     }
 
     /**
@@ -989,7 +1024,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre></code>
      *
      * @param self       a Collection
-     * @param comparator a Comparator.
+     * @param comparator a Comparator
      * @return self       without duplicates
      */
     public static Collection unique(Collection self, Comparator comparator) {
@@ -1759,22 +1794,45 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Sums the items in a collection.  This is equivalent to invoking the
      * "plus" method on all items in the collection.
      *
-     * @param self Collection of values to add together.
-     * @return The sum of all of the list items.
+     * @param self Collection of values to add together
+     * @return The sum of all of the items
      */
     public static Object sum(Collection self) {
         return sum(self, null, true);
     }
 
     /**
+     * Sums the items from an Iterator.  This is equivalent to invoking the
+     * "plus" method on all items from the Iterator.
+     *
+     * @param self an Iterator for the values to add together
+     * @return The sum of all of the items
+     */
+    public static Object sum(Iterator self) {
+        return sum(toList(self), null, true);
+    }
+
+    /**
      * Sums the items in a collection, adding the result to some initial value.
      *
-     * @param self         a collection of values to sum.
+     * @param self         a collection of values to sum
      * @param initialValue the items in the collection will be summed to this initial value
      * @return The sum of all of the collection items.
      */
     public static Object sum(Collection self, Object initialValue) {
         return sum(self, initialValue, false);
+    }
+
+    /**
+     * Sums the items from an Iterator.  This is equivalent to invoking the
+     * "plus" method on all items from the Iterator.
+     *
+     * @param self         an Iterator for the values to add together
+     * @param initialValue the items in the collection will be summed to this initial value
+     * @return The sum of all of the items
+     */
+    public static Object sum(Iterator self, Object initialValue) {
+        return sum(toList(self), initialValue, false);
     }
 
     private static Object sum(Collection self, Object initialValue, boolean first) {
@@ -1895,35 +1953,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Adds max() method to Collection objects.
-     *
-     * @param self a Collection
-     * @return the maximum value
-     * @see groovy.util.GroovyCollections#max(java.util.Collection)
-     */
-    public static Object max(Collection self) {
-        return GroovyCollections.max(self);
-    }
-
-    /**
-     * Selects the maximum value found in the collection using the given comparator.
-     *
-     * @param self       a Collection
-     * @param comparator a Comparator
-     * @return the maximum value
-     */
-    public static Object max(Collection self, Comparator comparator) {
-        Object answer = null;
-        for (Iterator iter = self.iterator(); iter.hasNext();) {
-            Object value = iter.next();
-            if (answer == null || comparator.compare(value, answer) > 0) {
-                answer = value;
-            }
-        }
-        return answer;
-    }
-
-    /**
      * Adds min() method to Collection objects.
      *
      * @param self a Collection
@@ -1932,6 +1961,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Object min(Collection self) {
         return GroovyCollections.min(self);
+    }
+
+    /**
+     * Adds min() method to Iterator objects.
+     *
+     * @param self an Iterator
+     * @return the minimum value
+     * @see #min(java.util.Collection)
+     */
+    public static Object min(Iterator self) {
+        return min(toList(self));
     }
 
     /**
@@ -1950,6 +1990,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         return answer;
+    }
+
+    /**
+     * Selects the minimum value found from the Iterator using the given comparator.
+     *
+     * @param self       an Iterator
+     * @param comparator a Comparator
+     * @return the minimum value
+     * @see #min(java.util.Collection, java.util.Comparator)
+     */
+    public static Object min(Iterator self, Comparator comparator) {
+        return min(toList(self), comparator);
     }
 
     /**
@@ -1982,6 +2034,42 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Selects the minimum value found from the Iteartor using the given closure
+     * as a comparator.  The closure should return a comparable value (i.e. a
+     * number) for each item passed.
+     *
+     * @param self    an Iterator
+     * @param closure a closure used as a comparator
+     * @return the minimum value
+     * @see #min(java.util.Collection, groovy.lang.Closure)
+     */
+    public static Object min(Iterator self, Closure closure) {
+        return min(toList(self), closure);
+    }
+
+    /**
+     * Adds max() method to Collection objects.
+     *
+     * @param self a Collection
+     * @return the maximum value
+     * @see groovy.util.GroovyCollections#max(java.util.Collection)
+     */
+    public static Object max(Collection self) {
+        return GroovyCollections.max(self);
+    }
+
+    /**
+     * Adds max() method to Iterator objects.
+     *
+     * @param self an Iterator
+     * @return the maximum value
+     * @see groovy.util.GroovyCollections#max(java.util.Collection)
+     */
+    public static Object max(Iterator self) {
+        return max(toList(self));
+    }
+
+    /**
      * Selects the maximum value found in the collection using the given closure
      * as a comparator.  The closure should return a comparable value (i.e. a
      * number) for each item passed.  The collection item for which the closure
@@ -2008,6 +2096,64 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
         }
         return answer;
+    }
+
+    /**
+     * Selects the maximum value found from the Iterator using the given closure
+     * as a comparator.  The closure should return a comparable value (i.e. a
+     * number) for each item passed.
+     *
+     * @param self    an Iterator
+     * @param closure a closure used as a comparator
+     * @return the maximum value
+     * @see #max(java.util.Collection, groovy.lang.Closure)
+     */
+    public static Object max(Iterator self, Closure closure) {
+        return max(toList(self), closure);
+    }
+
+    /**
+     * Selects the maximum value found in the collection using the given comparator.
+     *
+     * @param self       a Collection
+     * @param comparator a Comparator
+     * @return the maximum value
+     */
+    public static Object max(Collection self, Comparator comparator) {
+        Object answer = null;
+        for (Iterator iter = self.iterator(); iter.hasNext();) {
+            Object value = iter.next();
+            if (answer == null || comparator.compare(value, answer) > 0) {
+                answer = value;
+            }
+        }
+        return answer;
+    }
+
+    /**
+     * Selects the maximum value found from the Iterator using the given comparator.
+     *
+     * @param self       an Iterator
+     * @param comparator a Comparator
+     * @return the maximum value
+     */
+    public static Object max(Iterator self, Comparator comparator) {
+        return max(toList(self), comparator);
+    }
+
+    /**
+     * Provide the standard Groovy <code>size()</code> method for <code>Iterator</code>.
+     *
+     * @param self an Iterator
+     * @return the length of the Iterator
+     */
+    public static int size(Iterator self) {
+        int count = 0;
+        while (self.hasNext()) {
+            self.next();
+            count++;
+        }
+        return count;
     }
 
     /**
@@ -3161,6 +3307,76 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Sorts the given iterator items into a sorted iterator.  The items are
+     * assumed to be comparable.
+     *
+     * @param self the Iterator to be sorted
+     * @return the sorted items as an Iterator
+     */
+    public static Iterator sort(Iterator self) {
+        return sort(toList(self)).listIterator();
+    }
+
+    /**
+     * Sorts the given iterator items into a sorted iterator using
+     * the comparator.
+     *
+     * @param self       the Iterator to be sorted
+     * @param comparator a Comparator used for comparing items
+     * @return the sorted items as an Iterator
+     */
+    public static Iterator sort(Iterator self, Comparator comparator) {
+        return sort(toList(self), comparator).listIterator();
+    }
+
+    /**
+     * Sorts the Collection using the given comparator.  The elements are
+     * sorted into a new list, and the existing collection is unchanged.
+     *
+     * @param self       a collection to be sorted
+     * @param comparator a Comparator used for the comparison
+     * @return a newly created sorted List
+     */
+    public static List sort(Collection self, Comparator comparator) {
+        List list = asList(self);
+        Collections.sort(list, comparator);
+        return list;
+    }
+
+    /**
+     * Sorts the given iterator items into a sorted iterator using
+     * the closure as a comparator.
+     *
+     * @param self       the Iterator to be sorted
+     * @param closure a Closure used as a comparator
+     * @return the sorted items as an Iterator
+     */
+    public static Iterator sort(Iterator self, Closure closure) {
+        return sort(toList(self), closure).listIterator();
+    }
+
+    /**
+     * Sorts this Collection using the given closure as a comparator.  The
+     * closure is passed each item from the collection, and is assumed to
+     * return a comparable value (i.e. an int).
+     *
+     * @param self    a Collection to be sorted
+     * @param closure a Closure used as a comparator
+     * @return a newly created sorted List
+     */
+    public static List sort(Collection self, Closure closure) {
+        List list = asList(self);
+        // use a comparator of one item or two
+        int params = closure.getMaximumNumberOfParameters();
+        if (params == 1) {
+            Collections.sort(list, new OrderBy(closure));
+        } else {
+            Collections.sort(list, new ClosureComparator(closure));
+        }
+        return list;
+    }
+
+    /**
      * Avoids doing unnecessary work when sorting an already sorted set.
      *
      * @param self an identity function for an already sorted set
@@ -3186,38 +3402,58 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts the Collection using the given comparator.  The elements are
-     * sorted into a new list, and the existing collection is unchanged.
+     * Returns the last item from the List.
      *
-     * @param self       a collection to be sorted
-     * @param comparator a Comparator used for the comparison
-     * @return a newly created sorted List
+     * @param self a List
+     * @return the last item from the List
+     * @throws NoSuchElementException if the list is empty and you try to access the last() item.
      */
-    public static List sort(Collection self, Comparator comparator) {
-        List list = asList(self);
-        Collections.sort(list, comparator);
-        return list;
+    public static Object last(List self) {
+        if (self.isEmpty()) {
+            throw new NoSuchElementException("Cannot access last() element from an empty List");
+        }
+        return self.get(self.size() - 1);
     }
 
     /**
-     * Sorts this Collection using the given closure as a comparator.  The
-     * closure is passed each item from the collection, and is assumed to
-     * return a comparable value (i.e. an int).
+     * Returns the first item from the List.
      *
-     * @param self    a Collection to be sorted
-     * @param closure a Closure used as a comparator
-     * @return a newly created sorted List
+     * @param self a List
+     * @return the first item from the List
+     * @throws NoSuchElementException if the list is empty and you try to access the first() item.
      */
-    public static List sort(Collection self, Closure closure) {
-        List list = asList(self);
-        // use a comparator of one item or two
-        int params = closure.getMaximumNumberOfParameters();
-        if (params == 1) {
-            Collections.sort(list, new OrderBy(closure));
-        } else {
-            Collections.sort(list, new ClosureComparator(closure));
+    public static Object first(List self) {
+        if (self.isEmpty()) {
+            throw new NoSuchElementException("Cannot access first() element from an empty List");
         }
-        return list;
+        return self.get(0);
+    }
+
+    /**
+     * Returns the first item from the List.
+     *
+     * @param self a List
+     * @return the first item from the List
+     * @throws NoSuchElementException if the list is empty and you try to access the head() item.
+     */
+    public static Object head(List self) {
+        return first(self);
+    }
+
+    /**
+     * Returns the item from the List excluding the first item.
+     *
+     * @param self a List
+     * @return the first item from the List
+     * @throws NoSuchElementException if the list is empty and you try to access the head() item.
+     */
+    public static Object tail(List self) {
+        if (self.isEmpty()) {
+            throw new NoSuchElementException("Cannot access tail() for an empty List");
+        }
+        List result = new ArrayList(self);
+        result.remove(0);
+        return result;
     }
 
     /**
@@ -3342,6 +3578,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             answer.add(iter.previous());
         }
         return answer;
+    }
+
+    /**
+     * Reverses the iterator.
+     *
+     * @param self an Iterator
+     * @return a reversed Iterator
+     */
+    public static Iterator reverse(Iterator self) {
+        return new ReverseListIterator(toList(self));
     }
 
     /**

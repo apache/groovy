@@ -87,6 +87,27 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert [[1, 2], [3, 4], [5, 6]].sum {list -> list.collect {it * 2}} == [2, 4, 6, 8, 10, 12]
     }
 
+    void testSumForIteratorWithList() {
+        def result = [1, 2, 3].iterator().sum([])
+        assert result == [1, 2, 3]
+    }
+
+    void testSumForIteratorWithInt() {
+        def result = [1, 2, 3].iterator().sum(0)
+        assert result == 6
+    }
+
+    void testReverseForIterator() {
+        def listIterator = [1, 2, 3].iterator()
+        def result = []
+        def revIterator = listIterator.reverse()
+        assert revIterator instanceof Iterator
+        revIterator.each{
+            result << it
+        }
+        assert result == [3, 2, 1]
+    }
+
     void testJoin() {
         assert [2, 4, 6].join("-") == "2-4-6"
         assert ["edam", "cheddar", "brie"].join(", ") == 'edam, cheddar, brie'
@@ -163,6 +184,12 @@ class GroovyMethodsTest extends GroovyTestCase {
         def l = c.iterator().toList()
         assert l.containsAll(c)
         assert c.size() == l.size()
+    }
+
+    void testIteratorSize() {
+        def c = [1, 2, 3, 4, 5]
+        def it = c.iterator()
+        assert c.size() == it.size()
     }
 
     void testEnumerationToList() {
@@ -369,6 +396,24 @@ class GroovyMethodsTest extends GroovyTestCase {
 
     void testSort() {
         assert [-5, -3, -1, 0, 2, 4].sort {it * it} == [0, -1, 2, -3, 4, -5]
+    }
+
+    void testMaxForIterator() {
+        assert [-5, -3, -1, 0, 2, 4].collect{ it * it }.iterator().max() == 25
+    }
+
+    void testMinForIterator() {
+        assert [-5, -3, -1, 0, 2, 4].collect{ it * it }.iterator().min() == 0
+    }
+
+    void testSortForIterator() {
+        def result = []
+        def iterator = [-5, -3, -1, 0, 2, 4].iterator().sort {it * it}
+        assert iterator instanceof Iterator
+        iterator.each {
+            result << it
+        }
+        assert result == [0, -1, 2, -3, 4, -5]
     }
 
     void testReplaceAllClosure() {

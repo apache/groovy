@@ -37,6 +37,13 @@ class UniqueOnCollectionTest extends GroovyTestCase {
     	assert [1,1,2,2,1,1,2,2].unique() == [1,2]
     }
 
+    void testUniqueOnIterator() {
+    	def it = [1,1,2,2].iterator().unique()
+    	assert it instanceof Iterator
+        def result = it.toList()
+        assert result == [1,2]
+    }
+
     void testUniqueOnOtherCollections() {
     	def a = new HashSet([1,1])
     	assert a.is(a.unique())
