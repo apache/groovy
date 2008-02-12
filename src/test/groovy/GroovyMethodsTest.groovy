@@ -380,6 +380,23 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert !('d' in list)
     }
 
+    void testFirstLastHeadTailForLists() {
+        def list = ['a', 'b', 'c']
+        assert 'a' == list.first()
+        assert 'c' == list.last()
+        assert 'a' == list.head()
+        assert ['b', 'c'] == list.tail()
+        assert list.size() == 3
+    }
+
+    void testPushPopForLists() {
+        def list = ['a', 'b', 'c']
+        assert list.push('d')
+        assert list.size() == 4
+        assert list.pop() == 'd'
+        assert list.size() == 3
+    }
+
     void testInForArrays() {
         String[] array = ['a', 'b', 'c']
         assert 'b' in array
@@ -404,6 +421,14 @@ class GroovyMethodsTest extends GroovyTestCase {
 
     void testMinForIterator() {
         assert [-5, -3, -1, 0, 2, 4].collect{ it * it }.iterator().min() == 0
+    }
+
+    void testCountForIterator() {
+        assert [1, 2, 3, 2, 1].iterator().count(2) == 2
+    }
+
+    void testJoinForIterator() {
+        assert ['a', 'b', 'c', 'a'].iterator().join('-') == 'a-b-c-a'
     }
 
     void testSortForIterator() {

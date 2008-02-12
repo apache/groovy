@@ -1279,6 +1279,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Counts the number of occurrences of the given value from the
+     * items within this Iterator.
+     * Comparison is done using Groovy's == operator (using
+     * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
+     *
+     * @param self  the Iterator from which we count the number of matching occurrences
+     * @param value the value being searched for
+     * @return the number of occurrences
+     */
+    public static int count(Iterator self, Object value) {
+        return count(toList(self), value);
+    }
+
+    /**
      * Counts the number of occurrences of the given value inside this collection.
      * Comparison is done using Groovy's == operator (using
      * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
@@ -1896,6 +1910,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             result = metaClass.invokeMethod(result, "plus", plusParam);
         }
         return result;
+    }
+
+    /**
+     * Concatenates the <code>toString()</code> representation of each
+     * item from theIterator, with the given String as a separator between
+     * each item.
+     *
+     * @param self      an Iterator of items
+     * @param separator a String separator
+     * @return the joined String
+     */
+    public static String join(Iterator self, String separator) {
+        return join(toList(self), separator);
     }
 
     /**
@@ -3399,6 +3426,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             throw new NoSuchElementException("Cannot pop() an empty List");
         }
         return self.remove(self.size() - 1);
+    }
+
+    /**
+     * Appends an item to the List. Synonym for add().
+     *
+     * @param self a List
+     * @param value element to be appended to this list.
+     * @return <tt>true</tt> (as per the general contract of the
+     *            <tt>Collection.add</tt> method).
+     * @throws NoSuchElementException if the list is empty and you try to pop() it.
+     */
+    public static boolean push(List self, Object value) {
+        return self.add(value);
     }
 
     /**
