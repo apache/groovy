@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,7 +31,8 @@ import java.util.*;
  * Typically the name is a String and a value is either a String or a List of other Nodes,
  * though the types are extensible to provide a flexible structure, e.g. you could use a
  * QName as the name which includes a namespace URI and a local name. Or a JMX ObjectName etc.
- * So this class can represent metadata like {foo a=1 b="abc"} or nested metadata like {foo a=1 b="123" { bar x=12 text="hello" }}
+ * So this class can represent metadata like <code>{foo a=1 b="abc"}</code> or nested
+ * metadata like <code>{foo a=1 b="123" { bar x=12 text="hello" }}</code>
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Paul King
@@ -45,9 +46,13 @@ public class Node implements Serializable {
     }
 
     private static final long serialVersionUID = 4121134753270542643L;
+
     private Node parent;
+
     private Object name;
+
     private Map attributes;
+
     private Object value;
 
     public Node(Node parent, Object name) {
@@ -69,17 +74,31 @@ public class Node implements Serializable {
         this.value = value;
 
         if (parent != null) {
-            Object parentValue = parent.value();
-            List parentList;
-            if (parentValue instanceof List) {
-                parentList = (List) parentValue;
-            } else {
-                parentList = new NodeList();
-                parentList.add(parentValue);
-                parent.setValue(parentList);
-            }
-            parentList.add(this);
+            getParentList(parent).add(this);
         }
+    }
+
+    private List getParentList(Node parent) {
+        Object parentValue = parent.value();
+        List parentList;
+        if (parentValue instanceof List) {
+            parentList = (List) parentValue;
+        } else {
+            parentList = new NodeList();
+            parentList.add(parentValue);
+            parent.setValue(parentList);
+        }
+        return parentList;
+    }
+
+    public boolean append(Node child) {
+        child.parent = this;
+        return getParentList(this).add(child);
+    }
+
+    public boolean remove(Node child) {
+        child.parent = null;
+        return getParentList(this).remove(child);
     }
 
     public Node appendNode(Object name, Map attributes) {

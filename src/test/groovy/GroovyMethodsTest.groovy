@@ -251,19 +251,21 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert joined == "a, b, c, d"
     }
 
-    void testReverseEach() {
-        // List
+    void testReverseEachForList() {
         def l = ["cheese", "loves", "Guillaume"]
         def expected = ["Guillaume", "loves", "cheese"]
         def answer = []
         l.reverseEach {answer << it}
         assert answer == expected
+    }
 
-        // Array
-        def ary = l as String[]
-        answer = []
-        ary.reverseEach {answer << it}
+    void testReverseEachForArray() {
+        String[] items = ["cheese", "loves", "Guillaume"]
+        String[] expected = ["Guillaume", "loves", "cheese"]
+        def answer = []
+        items.reverseEach {answer << it}
         assert answer == expected
+        assert items.reverse() == expected
     }
 
     void testGrep() {

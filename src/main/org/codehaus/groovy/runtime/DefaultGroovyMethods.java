@@ -1138,9 +1138,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return self;
     }
 
+    /**
+     * Iterate over each element of the array in the reverse order.
+     *
+     * @param self    an Object array
+     * @param closure a closure to which each item is passed
+     * @return the original array
+     */
     public static Object[] reverseEach(Object[] self, Closure closure) {
         each(new ReverseListIterator(Arrays.asList(self)), closure);
         return self;
+    }
+
+    /**
+     * Reverse the items in an Object array.
+     *
+     * @param self    an Object array
+     * @return an array containing the reversed items
+     */
+    public static Object[] reverse(Object[] self) {
+        return toList(new ReverseListIterator(Arrays.asList(self))).toArray();
     }
 
     /**
