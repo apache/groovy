@@ -38,6 +38,7 @@ public class PogoMetaMethodSite extends MetaMethodSite {
 
     public final CallSite acceptCurrent(Object receiver, Object[] args) {
         if(!GroovyCategorySupport.hasCategoryInAnyThread()
+           && receiver != null
            && receiver.getClass() == metaClass.getTheClass() // meta class match receiver
            && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
            && MetaClassHelper.sameClasses(params, args)) // right arguments
@@ -48,7 +49,8 @@ public class PogoMetaMethodSite extends MetaMethodSite {
 
     public final CallSite acceptCall(Object receiver, Object[] args) {
         if(!GroovyCategorySupport.hasCategoryInAnyThread() &&
-           receiver.getClass() == metaClass.getTheClass() // meta class match receiver
+           receiver != null
+           && receiver.getClass() == metaClass.getTheClass() // meta class match receiver
            && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
            && MetaClassHelper.sameClasses(params, args)) // right arguments
           return this;
