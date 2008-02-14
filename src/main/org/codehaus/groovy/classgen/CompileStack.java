@@ -170,14 +170,13 @@ public class CompileStack implements Opcodes {
     }
 
     public void removeVar(int tempIndex) {
-        for (Iterator iter = temporaryVariables.iterator(); iter.hasNext();) {
-            Variable element = (Variable) iter.next();
-            if (element.getIndex()==tempIndex) {
-                iter.remove();
-                return;
-            }
-        }
-        throw new GroovyBugError("CompileStack#removeVar: tried to remove a temporary variable with a non existent index");
+        final Variable head = (Variable) temporaryVariables.peek();
+        if (head.getIndex() != tempIndex)
+            throw new GroovyBugError("CompileStack#removeVar: tried to remove a temporary variable in wrong order");
+
+        temporaryVariables.removeFirst();
+        currentVariableIndex = head.getPrevIndex ();
+        nextVariableIndex = tempIndex;
     }
 
     private void setEndLabels(){
@@ -427,13 +426,14 @@ public class CompileStack implements Opcodes {
     }
     
     private Variable defineVar(String name, ClassNode type, boolean methodParameterUsedInClosure) {
+        int prevCurrent = currentVariableIndex;
         makeNextVariableID(type);
         int index = currentVariableIndex;
         if (methodParameterUsedInClosure) {
             index = localVariableOffset++;
             type = ClassHelper.getWrapper(type);
         }
-        Variable answer = new Variable(index, type, name);
+        Variable answer = new Variable(index, type, name, prevCurrent);
         usedVariables.add(answer);
         answer.setHolder(methodParameterUsedInClosure);
         return answer;
@@ -521,7 +521,7 @@ public class CompileStack implements Opcodes {
     public boolean containsVariable(String name) {
         return stackVariables.containsKey(name);
     }
-    
+
     /**
      * Calculates the index of the next free register stores ir
      * and sets the current variable index to the old value

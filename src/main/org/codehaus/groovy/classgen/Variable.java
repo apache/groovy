@@ -34,6 +34,7 @@ public class Variable {
     private int index;
     private ClassNode type;
     private String name;
+    private final int prevCurrent;
     private boolean holder;
     private boolean property;
 
@@ -42,18 +43,21 @@ public class Variable {
     private Label startLabel = null;
     private Label endLabel = null;
     private boolean dynamicTyped;
+    private int prevIndex;
 
     private Variable(){
         dynamicTyped = true;
         index=0;
         holder=false;
         property=false;
+        prevCurrent=0;
     }
     
-    public Variable(int index, ClassNode type, String name) {
+    public Variable(int index, ClassNode type, String name, int prevCurrent) {
         this.index = index;
         this.type = type;
         this.name = name;
+        this.prevCurrent = prevCurrent;
     }
 
     public String getName() {
@@ -126,5 +130,9 @@ public class Variable {
     
     public boolean isDynamicTyped() {
         return dynamicTyped;
+    }
+
+    public int getPrevIndex() {
+        return prevIndex;
     }
 }

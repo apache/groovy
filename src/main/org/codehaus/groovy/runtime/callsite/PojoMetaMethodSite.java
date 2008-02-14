@@ -17,6 +17,7 @@ package org.codehaus.groovy.runtime.callsite;
 
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
+import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.NullObject;
 
@@ -38,8 +39,9 @@ public class PojoMetaMethodSite extends MetaMethodSite {
     }
 
     public final CallSite acceptCall(Object receiver, Object[] args) {
-        if(receiver.getClass() == metaClass.getTheClass() // meta class match receiver
-               && ((MetaClassImpl)metaClass).getTheCachedClass().getMetaClassForClass() == metaClass // metaClass still be valid
+        if(!GroovyCategorySupport.hasCategoryInAnyThread()
+           &&receiver.getClass() == metaClass.getTheClass() // meta class match receiver
+           && ((MetaClassImpl)metaClass).getTheCachedClass().getMetaClassForClass() == metaClass // metaClass still be valid
            && MetaClassHelper.sameClasses(params, args)) // right arguments
           return this;
         else
@@ -48,7 +50,8 @@ public class PojoMetaMethodSite extends MetaMethodSite {
 
     public final CallSite acceptBinop(Object receiver, Object arg) {
         try {
-            return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
+            return !GroovyCategorySupport.hasCategoryInAnyThread()
+               && receiver.getClass() == metaClass.getTheClass() // meta class match receiver
                && ((MetaClassImpl)metaClass).getTheCachedClass().getMetaClassForClass() == metaClass // metaClass still be valid
            && MetaClassHelper.sameClass(params, arg) // right arguments
                 ? this

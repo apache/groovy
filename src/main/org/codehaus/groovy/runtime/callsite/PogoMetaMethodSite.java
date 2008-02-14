@@ -18,6 +18,7 @@ package org.codehaus.groovy.runtime.callsite;
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
+import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 
 /**
@@ -36,7 +37,8 @@ public class PogoMetaMethodSite extends MetaMethodSite {
     }
 
     public final CallSite acceptCurrent(Object receiver, Object[] args) {
-        if(receiver.getClass() == metaClass.getTheClass() // meta class match receiver
+        if(!GroovyCategorySupport.hasCategoryInAnyThread()
+           && receiver.getClass() == metaClass.getTheClass() // meta class match receiver
            && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
            && MetaClassHelper.sameClasses(params, args)) // right arguments
           return this;
@@ -45,7 +47,8 @@ public class PogoMetaMethodSite extends MetaMethodSite {
     }
 
     public final CallSite acceptCall(Object receiver, Object[] args) {
-        if(receiver.getClass() == metaClass.getTheClass() // meta class match receiver
+        if(!GroovyCategorySupport.hasCategoryInAnyThread() &&
+           receiver.getClass() == metaClass.getTheClass() // meta class match receiver
            && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
            && MetaClassHelper.sameClasses(params, args)) // right arguments
           return this;

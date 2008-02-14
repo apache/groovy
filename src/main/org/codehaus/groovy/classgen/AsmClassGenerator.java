@@ -186,8 +186,6 @@ public class AsmClassGenerator extends ClassGenerator {
     private List callSites = new ArrayList();
     private int callSiteArrayVarIndex;
     private static final String GRE = BytecodeHelper.getClassInternalName(ClassHelper.make(GroovyRuntimeException.class));
-    private int receiverVarIndex;
-    private int argsVarIndex;
 
     public AsmClassGenerator(
             GeneratorContext context, ClassVisitor classVisitor,
@@ -291,6 +289,28 @@ public class AsmClassGenerator extends ClassGenerator {
 
             generateCreateCallSiteArray();
             generateGetCallSiteArray();
+
+            generateCallSiteMethods();
+        }
+    }
+
+
+    // EXPERIMENTAL
+    private void generateCallSiteMethods() {
+        final int size = callSites.size();
+        for (int i = 0; i < size; i++) {
+            MethodVisitor mv = cv.visitMethod(ACC_PRIVATE+ACC_SYNTHETIC+ACC_STATIC,"$callSite$" + i, "(Lorg/codehaus/groovy/runtime/callsite/CallSite;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", null, null);
+            mv.visitCode();
+            mv.visitVarInsn(ALOAD,0);
+            mv.visitVarInsn(ALOAD,1);
+            mv.visitVarInsn(ALOAD,2);
+            mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "acceptBinop","(Ljava/lang/Object;Ljava/lang/Object;)Lorg/codehaus/groovy/runtime/callsite/CallSite;");
+            mv.visitVarInsn(ALOAD,1);
+            mv.visitVarInsn(ALOAD,2);
+            mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "invokeBinop","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+            mv.visitInsn(ARETURN);
+            mv.visitMaxs(0,0);
+            mv.visitEnd();
         }
     }
 
@@ -520,11 +540,9 @@ public class AsmClassGenerator extends ClassGenerator {
             compileStack.init(node.getVariableScope(), parameters, mv, classNode);
 
 
-            if (isClinit()) {
+            if (isNotClinit()) {
                 mv.visitMethodInsn(INVOKESTATIC,internalClassName,"$getCallSiteArray","()[Lorg/codehaus/groovy/runtime/callsite/CallSite;");
                 callSiteArrayVarIndex = compileStack.defineTemporaryVariable("$local$callSiteArray", ClassHelper.make(CallSite[].class), true);
-                receiverVarIndex = compileStack.defineTemporaryVariable("$local$receiver", ClassHelper.make(CallSite[].class), false);
-                argsVarIndex = compileStack.defineTemporaryVariable("$local$args", ClassHelper.make(CallSite[].class), false);
             }
 
 
@@ -571,7 +589,7 @@ public class AsmClassGenerator extends ClassGenerator {
         mv.visitEnd();
     }
 
-    private boolean isClinit() {
+    private boolean isNotClinit() {
         return methodNode == null || !methodNode.getName().equals("<clinit>");
     }
 
@@ -1242,7 +1260,7 @@ public class AsmClassGenerator extends ClassGenerator {
             type = ClassHelper.getWrapper(type);
         }
 
-        if (forceCast || (type != null && !type.equals(expType))) {
+        if (forceCast || (type != null && !expType.isDerivedFrom(type) && !expType.implementsInterface(type.getName()))) {
             doConvertAndCast(type, coerce);
         }
     }
@@ -1832,7 +1850,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private void makeCallSite(Expression receiver, String message, Expression arguments, boolean safe, boolean implicitThis, boolean callCurrent, boolean callStatic) {
-        if (isClinit()) {
+        if (isNotClinit()) {
             mv.visitVarInsn(ALOAD, callSiteArrayVarIndex);
         }
         else {
@@ -1853,15 +1871,6 @@ public class AsmClassGenerator extends ClassGenerator {
         visitAndAutoboxBoolean(receiver);
         this.implicitThis = oldVal;
 
-//        if (!callCurrent && !safe && !constructor && !callStatic) {
-//            mv.visitInsn(DUP);
-//            Label nonNull = new Label ();
-//            mv.visitJumpInsn(IFNONNULL, nonNull);
-//            mv.visitInsn(POP);
-//            mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/NullObject", "getNullObject", "()Lorg/codehaus/groovy/runtime/NullObject;");
-//            mv.visitLabel(nonNull);
-//        }
-//
         // arguments
         boolean containsSpreadExpression = containsSpreadExpression(arguments);
         int numberOfArguments = containsSpreadExpression ? -1 : argumentSize(arguments);
@@ -1893,11 +1902,16 @@ public class AsmClassGenerator extends ClassGenerator {
         }
 
         if (callStatic) {
-            mv.visitInsn(DUP2_X1);
+            int argsIdx = compileStack.defineTemporaryVariable("$local$args",true);
+            int recIdx = compileStack.defineTemporaryVariable("$local$receiver",true);
+            mv.visitVarInsn(ALOAD,recIdx);
+            mv.visitVarInsn(ALOAD,argsIdx);
             mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "acceptStatic","(Ljava/lang/Object;[Ljava/lang/Object;)Lorg/codehaus/groovy/runtime/callsite/CallSite;");
-            mv.visitInsn(DUP_X2);
-            mv.visitInsn(POP);
+            mv.visitVarInsn(ALOAD,recIdx);
+            mv.visitVarInsn(ALOAD,argsIdx);
             mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "invoke","(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
+            compileStack.removeVar(recIdx);
+            compileStack.removeVar(argsIdx);
         }
         else
             if (constructor) {
@@ -1911,11 +1925,16 @@ public class AsmClassGenerator extends ClassGenerator {
                     if (safe)
                       mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "callSafe","(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
                     else {
-                      mv.visitInsn(DUP2_X1);
+                      int argsIdx = compileStack.defineTemporaryVariable("$local$args",true);
+                      int recIdx = compileStack.defineTemporaryVariable("$local$receiver",true);
+                      mv.visitVarInsn(ALOAD,recIdx);
+                      mv.visitVarInsn(ALOAD,argsIdx);
                       mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "acceptCall","(Ljava/lang/Object;[Ljava/lang/Object;)Lorg/codehaus/groovy/runtime/callsite/CallSite;");
-                      mv.visitInsn(DUP_X2);
-                      mv.visitInsn(POP);
+                      mv.visitVarInsn(ALOAD,recIdx);
+                      mv.visitVarInsn(ALOAD,argsIdx);
                       mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "invoke","(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
+                      compileStack.removeVar(recIdx);
+                      compileStack.removeVar(argsIdx);
                     }
                 }
             }
@@ -1924,13 +1943,14 @@ public class AsmClassGenerator extends ClassGenerator {
 
     private void makeBinopCallSite(Expression receiver, String message, Expression arguments) {
 
-        if (isClinit()) {
+        if (isNotClinit()) {
             mv.visitVarInsn(ALOAD, callSiteArrayVarIndex);
         }
         else {
             mv.visitMethodInsn(INVOKESTATIC,internalClassName,"$getCallSiteArray","()[Lorg/codehaus/groovy/runtime/callsite/CallSite;");
         }
-        mv.visitLdcInsn(new Integer(allocateIndex(message)));
+        final int index = allocateIndex(message);
+        mv.visitLdcInsn(new Integer(index));
         mv.visitInsn(AALOAD);
 
         // site
@@ -1943,24 +1963,17 @@ public class AsmClassGenerator extends ClassGenerator {
         this.implicitThis = false;
         visitAndAutoboxBoolean(receiver);
         this.implicitThis = oldVal;
-        if (isClinit()) {
-            visitAndAutoboxBoolean(arguments);
-            mv.visitInsn(DUP2_X1);
-            mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "acceptBinop","(Ljava/lang/Object;Ljava/lang/Object;)Lorg/codehaus/groovy/runtime/callsite/CallSite;");
-            mv.visitInsn(DUP_X2);
-            mv.visitInsn(POP);
-        }
-        else {
-            mv.visitVarInsn(ASTORE,receiverVarIndex);
-            mv.visitVarInsn(ALOAD,receiverVarIndex);
-            visitAndAutoboxBoolean(arguments);
-            mv.visitVarInsn(ASTORE,argsVarIndex);
-            mv.visitVarInsn(ALOAD,argsVarIndex);
-            mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "acceptBinop","(Ljava/lang/Object;Ljava/lang/Object;)Lorg/codehaus/groovy/runtime/callsite/CallSite;");
-            mv.visitVarInsn(ALOAD,receiverVarIndex);
-            mv.visitVarInsn(ALOAD,argsVarIndex);
-        }
+        int recIdx = compileStack.defineTemporaryVariable("$local$receiver",true);
+        mv.visitVarInsn(ALOAD,recIdx);
+        visitAndAutoboxBoolean(arguments);
+        int argsIdx = compileStack.defineTemporaryVariable("$local$args",true);
+        mv.visitVarInsn(ALOAD,argsIdx);
+        mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "acceptBinop","(Ljava/lang/Object;Ljava/lang/Object;)Lorg/codehaus/groovy/runtime/callsite/CallSite;");
+        mv.visitVarInsn(ALOAD,recIdx);
+        mv.visitVarInsn(ALOAD,argsIdx);
         mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "invokeBinop","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+        compileStack.removeVar(argsIdx);
+        compileStack.removeVar(recIdx);
         leftHandExpression = lhs;
     }
 
@@ -2511,7 +2524,8 @@ public class AsmClassGenerator extends ClassGenerator {
      * Visits a bare (unqualified) variable expression.
      */
 
-    public void visitVariableExpression(VariableExpression expression) {
+    public void
+    visitVariableExpression(VariableExpression expression) {
 
         String variableName = expression.getName();
 
@@ -3782,6 +3796,7 @@ public class AsmClassGenerator extends ClassGenerator {
                         false, false, false, false);
                 mv.visitInsn(POP);
                 setResult = false;
+                compileStack.removeVar(resultIdx);
             } 
         } else if (expression instanceof ConstantExpression) {
             setResult = false;

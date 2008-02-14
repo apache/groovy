@@ -56,7 +56,7 @@ public class JO extends GeneratedMetaMethod implements Opcodes {
     }
 
     public static void main(String[] args) throws Exception {
-        ASMifierClassVisitor.main(new String[]{"target/test-classes/org/codehaus/groovy/classgen/JO.class"});
+        ASMifierClassVisitor.main(new String[]{"target/test-classes/spectralnorm.class"});
 //        ASMifierClassVisitor.main(new String[]{"target/test-classes/org/codehaus/groovy/classgen/TestCallSite.class"});
 //        ASMifierClassVisitor.main(new String[]{"target/test-classes/spectralnorm.class"});
 //        ASMifierClassVisitor.main(new String[]{"target/test-classes/groovy/bugs/Groovy2556Bug.class"});

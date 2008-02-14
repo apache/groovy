@@ -44,7 +44,7 @@ public class CachedClass {
 
     private Reflector reflector;
 
-    private volatile Object metaClassForClass; // either MetaClass or SoftReference<MetaClass>
+    private volatile SoftReference metaClassForClass = new SoftReference(null);
 
     private CachedField[] fields;
     private CachedConstructor[] constructors;
@@ -333,21 +333,11 @@ public class CachedClass {
     }
 
     public MetaClass getMetaClassForClass() {
-        Object cur = metaClassForClass;
-        if (cur == null)
-            return null;
-        if (cur instanceof SoftReference) {
-            SoftReference softReference = (SoftReference) cur;
-            return (MetaClass) softReference.get();
-        }
-        return (MetaClass) metaClassForClass;
+        return (MetaClass) metaClassForClass.get();
     }
 
     public void setMetaClassForClass(MetaClass metaClassForClass, boolean isConst) {
-        if (isConst || metaClassForClass == null)
-            this.metaClassForClass = metaClassForClass;
-        else
-            this.metaClassForClass = new SoftReference(metaClassForClass);
+        this.metaClassForClass = new SoftReference(metaClassForClass);
         setStaticMetaClassField(metaClassForClass);
     }
 

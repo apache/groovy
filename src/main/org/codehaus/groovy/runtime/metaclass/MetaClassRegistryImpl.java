@@ -288,7 +288,13 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             if (GroovySystem.isKeepJavaMetaClasses()) {
                 constantMetaClassCount++;
                 constantMetaClasses.put(theClass,answer);
+                final CachedClass aClass = ReflectionCache.getCachedClass(theClass);
+                aClass.setStaticMetaClassField (answer);
+                aClass.setMetaClassForClass(answer, true);
             } else {
+                final CachedClass aClass = ReflectionCache.getCachedClass(theClass);
+                aClass.setStaticMetaClassField (answer);
+                aClass.setMetaClassForClass(answer, false);
                 weakMetaClasses.put(theClass, answer);
             }
         }
@@ -310,7 +316,9 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             constantMetaClassCount--;
         }
 
-        ReflectionCache.getCachedClass(theClass).setStaticMetaClassField (null);
+        final CachedClass aClass = ReflectionCache.getCachedClass(theClass);
+        aClass.setStaticMetaClassField (null);
+        aClass.setMetaClassForClass(null, true);
     }
 
     /**
@@ -325,7 +333,9 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         constantMetaClassCount++;
         constantMetaClasses.put(theClass, theMetaClass);
 
-        ReflectionCache.getCachedClass(theClass).setStaticMetaClassField (theMetaClass);
+        final CachedClass aClass = ReflectionCache.getCachedClass(theClass);
+        aClass.setStaticMetaClassField (theMetaClass);
+        aClass.setMetaClassForClass(theMetaClass, true);
     }
 
     public boolean useAccessible() {

@@ -252,12 +252,11 @@ public abstract class CallSite {
         
         if (receiver instanceof Class)
           site = createCallStaticSite((Class) receiver, args);
-        else
-            if (!(receiver instanceof GroovyObject)) {
-              site = createPojoSite(receiver, args);
-            }
-            else
-              site = createPogoSite(receiver, args);
+        else if (receiver instanceof GroovyObject) {
+            site = createPogoSite(receiver, args);
+        } else {
+            site = createPojoSite(receiver, args);
+        }
 
         array.array[index] = site;
         return site;

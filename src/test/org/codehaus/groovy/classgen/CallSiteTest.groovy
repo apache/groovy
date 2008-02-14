@@ -38,6 +38,10 @@ class CallSiteTest extends GroovyTestCase {
         GroovySystem.metaClassRegistry.removeMetaClass(Integer)
         assertEquals(8, 5 + 3)
         assertEquals(6, obj.method(3,3))
+
+        use(TestCategory) {
+            assertEquals(3, obj.method(3,3))
+        }
     }
 }
 
@@ -48,5 +52,11 @@ class OBJ {
 
     def mutableMethod (a,b) {
         a + b
+    }
+}
+
+class TestCategory {
+    static def mutableMethod(OBJ obj, a, b) {
+        2 * a - b
     }
 }
