@@ -2283,7 +2283,7 @@ public class AsmClassGenerator extends ClassGenerator {
             prefix += "$";
         }
         if (prefix.length() != 0) prefix = "array" + prefix;
-        String name = prefix + "class$" + makeFieldClassName(componentType);
+        String name = prefix + "$class$" + makeFieldClassName(componentType);
         return name;
     }
 
@@ -2708,7 +2708,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 cv.visitField(ACC_PRIVATE + ACC_STATIC + ACC_SYNTHETIC, staticFieldName, "Ljava/lang/Class;", null, null);
             }
 
-            mv = cv.visitMethod(ACC_PRIVATE + ACC_STATIC + ACC_SYNTHETIC, "get$" + staticFieldName,"()Ljava/lang/Class;",null, null);
+            mv = cv.visitMethod(ACC_PRIVATE + ACC_STATIC + ACC_SYNTHETIC, "$get$" + staticFieldName,"()Ljava/lang/Class;",null, null);
             mv.visitCode();
             mv.visitFieldInsn(GETSTATIC,internalClassName,staticFieldName,"Ljava/lang/Class;");
             mv.visitInsn(DUP);
@@ -2771,7 +2771,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 internalClassName = BytecodeHelper.getClassInternalName(interfaceClassLoadingClass);
             }
 
-            mv.visitMethodInsn(INVOKESTATIC, internalClassName, "get$" + staticFieldName, "()Ljava/lang/Class;");
+            mv.visitMethodInsn(INVOKESTATIC, internalClassName, "$get$" + staticFieldName, "()Ljava/lang/Class;");
         }
     }
 
