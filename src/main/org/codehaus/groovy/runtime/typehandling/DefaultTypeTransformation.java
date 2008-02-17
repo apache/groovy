@@ -323,6 +323,8 @@ public class DefaultTypeTransformation {
             // emulate named params constructor
             args = new Object[1];
             args[0] = object;
+        } else {
+            args = new Object [] { object };
         }
         if (args != null) {
             // lets try invoke the constructor with the list as arguments
