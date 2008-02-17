@@ -170,11 +170,10 @@ public class CompileStack implements Opcodes {
     }
 
     public void removeVar(int tempIndex) {
-        final Variable head = (Variable) temporaryVariables.peek();
+        final Variable head = (Variable) temporaryVariables.removeFirst();
         if (head.getIndex() != tempIndex)
             throw new GroovyBugError("CompileStack#removeVar: tried to remove a temporary variable in wrong order");
 
-        temporaryVariables.removeFirst();
         currentVariableIndex = head.getPrevIndex ();
         nextVariableIndex = tempIndex;
     }
