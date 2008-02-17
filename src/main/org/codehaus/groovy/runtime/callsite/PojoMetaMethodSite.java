@@ -40,7 +40,8 @@ public class PojoMetaMethodSite extends MetaMethodSite {
 
     public final CallSite acceptCall(Object receiver, Object[] args) {
         if(!GroovyCategorySupport.hasCategoryInAnyThread()
-           &&receiver.getClass() == metaClass.getTheClass() // meta class match receiver
+           && receiver != null
+           && receiver.getClass() == metaClass.getTheClass() // meta class match receiver
            && ((MetaClassImpl)metaClass).getTheCachedClass().getMetaClassForClass() == metaClass // metaClass still be valid
            && MetaClassHelper.sameClasses(params, args)) // right arguments
           return this;
