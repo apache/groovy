@@ -29,8 +29,8 @@ import java.lang.annotation.ElementType;
  *
  * Specifically, when the annotated annotation is encountered in the
  * appropriate compilation phase ( see {@link Phases}) then an instance of
- * the {@link #transformationClass} has its
- * {@link org.codehaus.groovy.ast.ASTAnnotationTransformation#visit(AnnotationNode, AnnotatedNode, org.codehaus.groovy.control.SourceUnit, org.codehaus.groovy.classgen.GeneratorContext)}
+ * the {@link #transformationClassName} has its
+ * {@link ASTSingleNodeTransformation#visit(ASTNode, ASTNode,org.codehaus.groovy.control.SourceUnit,org.codehaus.groovy.classgen.GeneratorContext)}
  * method called at that annotation.
  *
  * Note that only the SEMANTIC_ANALYSIS and latter phases are legal for
@@ -48,7 +48,7 @@ import java.lang.annotation.ElementType;
  *
  * It is a compile time error to specify a {@link #phase} that does not exit
  *
- * It is a compile time error to specify a {@link #transformationClass} that
+ * It is a compile time error to specify a {@link #transformationClassName} that
  * is not accessable at compileTime. 
  *
  * @author Danno Ferrin (shemnon)
@@ -56,6 +56,6 @@ import java.lang.annotation.ElementType;
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.ANNOTATION_TYPE)
 public @interface GroovyASTTransformation {
-    Class<? extends ASTAnnotationTransformation> transformationClass();
+    String transformationClassName();
     int phase() default Phases.CANONICALIZATION;
 }

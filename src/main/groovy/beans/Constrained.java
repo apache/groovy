@@ -41,6 +41,6 @@ import java.lang.annotation.Target;
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.FIELD)
-@GroovyASTTransformation(transformationClass = ConstrainedASTTransformation.class, phase = Phases.CANONICALIZATION)
+@GroovyASTTransformation(transformationClassName = "groovy.beans.ConstrainedASTTransformation", phase = Phases.CANONICALIZATION)
 public @interface Constrained {
 }

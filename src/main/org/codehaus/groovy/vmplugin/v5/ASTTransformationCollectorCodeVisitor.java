@@ -27,8 +27,9 @@ import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.GroovyASTTransformation;
-import org.codehaus.groovy.ast.ASTAnnotationTransformation;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ASTSingleNodeTransformation;
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.syntax.SyntaxException;
 
 import java.util.Map;
@@ -44,17 +45,19 @@ import java.util.Collection;
  *
  * @author Danno Ferrin (shemnon)
  */
-public class ASTAnnotationTransformationCollectorCodeVisitor extends ClassCodeVisitorSupport {
+public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSupport {
     private SourceUnit source;
-    private Map<Integer, ASTAnnotationTransformationCodeVisitor> stageVisitors;
+    private CompilationUnit compilationUnit;
+    private Map<Integer, ASTTransformationCodeVisitor> stageVisitors;
 
     /**
      * Create the visitor
      *
-     * @param stageVisitors The map of {@link ASTAnnotationTransformationCodeVisitor}s keyed by phase number.
+     * @param stageVisitors The map of {@link ASTTransformationCodeVisitor}s keyed by phase number.
      */
-    public ASTAnnotationTransformationCollectorCodeVisitor(Map<Integer, ASTAnnotationTransformationCodeVisitor> stageVisitors) {
+    public ASTTransformationCollectorCodeVisitor(Map<Integer, ASTTransformationCodeVisitor> stageVisitors) {
         this.stageVisitors = stageVisitors;
+        this.compilationUnit = compilationUnit;
     }
 
     protected SourceUnit getSourceUnit() {
@@ -73,45 +76,69 @@ public class ASTAnnotationTransformationCollectorCodeVisitor extends ClassCodeVi
             GroovyASTTransformation transformationAnnotation =
                 annotationType.getAnnotation(GroovyASTTransformation.class);
             if (transformationAnnotation == null) {
+                // stop if there is no appropriately typed annotation
                 continue;
             }
-            ASTAnnotationTransformationCodeVisitor stage = stageVisitors.get(
+            ASTTransformationCodeVisitor stage = stageVisitors.get(
                 transformationAnnotation.phase());
             String annotationTypeName = annotationType.getName();
 
             if (stage == null) {
-                try {
-                    String phaseName = Phases.getDescription(transformationAnnotation.phase());
-                    source.getErrorCollector().addErrorAndContinue(
-                        new SyntaxErrorMessage(new SyntaxException(
-                            "@" + annotationTypeName + " cannot be handled in phase " + phaseName,
-                            node.getLineNumber(),
-                            node.getColumnNumber()),
-                            source));
-                } catch (ArrayIndexOutOfBoundsException aiobe) {
-                    source.getErrorCollector().addErrorAndContinue(
-                        new SyntaxErrorMessage(new SyntaxException(
-                            "@" + annotationTypeName + " specifies a phase that does not exist: " + transformationAnnotation.phase(),
-                            node.getLineNumber(),
-                            node.getColumnNumber()),
-                            source));
-                }
+                badStageError(node, transformationAnnotation, annotationTypeName);
             } else if (!stage.hasAnnotation(annotationTypeName)) {
                 try {
+                    Object o = Class.forName(transformationAnnotation.transformationClassName()).newInstance();
+                    if (o instanceof ASTSingleNodeTransformation) {
                     stage.addAnnotation(annotationTypeName,
-                        transformationAnnotation.transformationClass().newInstance());
+                            (ASTSingleNodeTransformation) o);
+                    } else if (o instanceof CompilationUnit.PrimaryClassNodeOperation) {
+                        compilationUnit.addPhaseOperation(
+                            (CompilationUnit.PrimaryClassNodeOperation)o,
+                            transformationAnnotation.phase());
+                    } else if (o instanceof CompilationUnit.SourceUnitOperation) {
+                        compilationUnit.addPhaseOperation(
+                            (CompilationUnit.SourceUnitOperation)o,
+                            transformationAnnotation.phase());
+                    } else if (o instanceof CompilationUnit.GroovyClassOperation) {
+                        compilationUnit.addPhaseOperation(
+                            (CompilationUnit.GroovyClassOperation)o);
+                    }
                 } catch (InstantiationException e) {
                     source.getErrorCollector().addError(
                         new SimpleMessage(
-                            "Could not instantiate Transformation Processor " + transformationAnnotation.transformationClass().getName(),
+                            "Could not instantiate Transformation Processor " + transformationAnnotation.transformationClassName(),
                             source));
                 } catch (IllegalAccessException e) {
                     source.getErrorCollector().addError(
                         new SimpleMessage(
-                            "Could not instantiate Transformation Processor " + transformationAnnotation.transformationClass().getName(),
+                            "Could not instantiate Transformation Processor " + transformationAnnotation.transformationClassName(),
+                            source));
+                } catch (ClassNotFoundException e) {
+                    source.getErrorCollector().addError(
+                        new SimpleMessage(
+                            "Could find class for Transformation Processor " + transformationAnnotation.transformationClassName(),
                             source));
                 }
             }
+        }
+    }
+
+    private void badStageError(ASTNode node, GroovyASTTransformation transformationAnnotation, String annotationTypeName) {
+        try {
+            String phaseName = Phases.getDescription(transformationAnnotation.phase());
+            source.getErrorCollector().addErrorAndContinue(
+                new SyntaxErrorMessage(new SyntaxException(
+                    "@" + annotationTypeName + " cannot be handled in phase " + phaseName,
+                    node.getLineNumber(),
+                    node.getColumnNumber()),
+                    source));
+        } catch (ArrayIndexOutOfBoundsException aiobe) {
+            source.getErrorCollector().addErrorAndContinue(
+                new SyntaxErrorMessage(new SyntaxException(
+                    "@" + annotationTypeName + " specifies a phase that does not exist: " + transformationAnnotation.phase(),
+                    node.getLineNumber(),
+                    node.getColumnNumber()),
+                    source));
         }
     }
 
@@ -122,7 +149,7 @@ public class ASTAnnotationTransformationCollectorCodeVisitor extends ClassCodeVi
     public CompilationUnit.PrimaryClassNodeOperation getOperation() {
         return new CompilationUnit.PrimaryClassNodeOperation() {
             public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
-                ASTAnnotationTransformationCollectorCodeVisitor.this.source = source;
+                ASTTransformationCollectorCodeVisitor.this.source = source;
                 visitClass(classNode);
             }
         };

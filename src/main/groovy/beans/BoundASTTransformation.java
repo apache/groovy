@@ -16,7 +16,7 @@
 
 package groovy.beans;
 
-import org.codehaus.groovy.ast.ASTAnnotationTransformation;
+import org.codehaus.groovy.ast.ASTSingleNodeTransformation;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -43,6 +44,7 @@ import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
+
 import org.objectweb.asm.Opcodes;
 
 import java.beans.PropertyChangeListener;
@@ -65,7 +67,7 @@ import java.util.Collection;
  *
  * @author Danno Ferrin (shemnon)
  */
-public class BoundASTTransformation implements ASTAnnotationTransformation, Opcodes {
+public class BoundASTTransformation implements ASTSingleNodeTransformation, Opcodes {
 
     /**
      * The found or created PropertyChangeSupport field
@@ -90,12 +92,18 @@ public class BoundASTTransformation implements ASTAnnotationTransformation, Opco
     /**
      * Handles the bulk of the processing, mostly delegating to other methods.
      *
-     * @param node
-     * @param parent
+     * @param _node
+     * @param _parent
      * @param source
      * @param context
      */
-    public void visit(AnnotationNode node, AnnotatedNode parent, SourceUnit source, GeneratorContext context) {
+    public void visit(ASTNode _node, ASTNode _parent, SourceUnit source, GeneratorContext context) {
+        if (!(_node instanceof AnnotationNode) || !(_parent instanceof AnnotatedNode)) {
+            throw new RuntimeException("Internal error: wrong types: $node.class / $parent.class");
+        }
+        AnnotationNode node = (AnnotationNode) _node;
+        AnnotatedNode parent = (AnnotatedNode) _parent;
+
         if (ConstrainedASTTransformation.hasConstrainedAnnotation(parent)) {
             // ConstrainedASTTransformation will handle both @Bound and @Constrained
             return;

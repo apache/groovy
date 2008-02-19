@@ -23,7 +23,7 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.ASTAnnotationTransformation;
+import org.codehaus.groovy.ast.ASTSingleNodeTransformation;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.AnnotatedNode;
 
@@ -37,7 +37,7 @@ import java.util.Collection;
  * This class handles the invocation of the ASTAnnotationTransformation
  * when it is encountered by a tree walk.  One instance of each exists
  * for each phase of the compilation it applies to.  Before invocation the
- * @{@link ASTAnnotationTransformationCollectorCodeVisitor} will add a list
+ * @{@link ASTTransformationCollectorCodeVisitor} will add a list
  * of annotations that this cisitor should be concerned about.  All other
  * annotations are ignored, wether or not they are GroovyASTTransformation
  * annotated or not.
@@ -53,15 +53,15 @@ import java.util.Collection;
  *
  * @author Danno Ferrin (shemnon)
  */
-public class ASTAnnotationTransformationCodeVisitor extends ClassCodeVisitorSupport {
+public class ASTTransformationCodeVisitor extends ClassCodeVisitorSupport {
 
     private SourceUnit source;
     private GeneratorContext context;
-    private Map<String, ASTAnnotationTransformation> annotationsMap;
+    private Map<String, ASTSingleNodeTransformation> annotationsMap;
     private List<ASTNode[]> targetNodes;
 
-    public ASTAnnotationTransformationCodeVisitor() {
-        annotationsMap = new HashMap<String, ASTAnnotationTransformation>();
+    public ASTTransformationCodeVisitor() {
+        annotationsMap = new HashMap<String, ASTSingleNodeTransformation>();
     }
 
     protected SourceUnit getSourceUnit() {
@@ -125,7 +125,7 @@ public class ASTAnnotationTransformationCodeVisitor extends ClassCodeVisitorSupp
      * @param name
      * @param transformation
      */
-    public void addAnnotation(String name, ASTAnnotationTransformation transformation) {
+    public void addAnnotation(String name, ASTSingleNodeTransformation transformation) {
         annotationsMap.put(name, transformation);
     }
 
@@ -138,8 +138,8 @@ public class ASTAnnotationTransformationCodeVisitor extends ClassCodeVisitorSupp
     public CompilationUnit.PrimaryClassNodeOperation getOperation() {
         return new CompilationUnit.PrimaryClassNodeOperation() {
             public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
-                ASTAnnotationTransformationCodeVisitor.this.source = source;
-                ASTAnnotationTransformationCodeVisitor.this.context = context;
+                ASTTransformationCodeVisitor.this.source = source;
+                ASTTransformationCodeVisitor.this.context = context;
                 visitClass(classNode);
             }
         };

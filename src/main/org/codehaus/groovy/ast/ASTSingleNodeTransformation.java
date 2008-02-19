@@ -24,7 +24,7 @@ import org.codehaus.groovy.classgen.GeneratorContext;
  *
  * @author Danno Ferrin (shemnon)
  */
-public interface ASTAnnotationTransformation {
+public interface ASTSingleNodeTransformation {
 
     /**
      * The call made when the compiler encounters an AST Transformation Annotation
@@ -34,5 +34,5 @@ public interface ASTAnnotationTransformation {
      * @param source The source unit being compiled
      * @param generatorContext the generation context of the source unit
      */
-    public void visit(AnnotationNode node, AnnotatedNode parent, SourceUnit source, GeneratorContext generatorContext);
+    public void visit(ASTNode node, ASTNode parent, SourceUnit source, GeneratorContext generatorContext);
 }

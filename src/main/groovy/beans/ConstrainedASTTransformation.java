@@ -24,6 +24,7 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -93,12 +94,18 @@ public class ConstrainedASTTransformation extends BoundASTTransformation {
     /**
      * Handles the bulk of the processing, mostly delegating to other methods.
      *
-     * @param node
-     * @param parent
+     * @param _node
+     * @param _parent
      * @param source
      * @param context
      */
-    public void visit(AnnotationNode node, AnnotatedNode parent, SourceUnit source, GeneratorContext context) {
+    public void visit(ASTNode _node, ASTNode _parent, SourceUnit source, GeneratorContext context) {
+        if (!(_node instanceof AnnotationNode) || !(_parent instanceof AnnotatedNode)) {
+            throw new RuntimeException("Internal error: wrong types: $node.class / $parent.class");
+        }
+        AnnotationNode node = (AnnotationNode) _node;
+        AnnotatedNode parent = (AnnotatedNode) _parent;
+
         boolean bound = BoundASTTransformation.hasBoundAnnotation(parent);
 
         ClassNode declaringClass = parent.getDeclaringClass();

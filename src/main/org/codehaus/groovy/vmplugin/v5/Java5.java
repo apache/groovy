@@ -27,8 +27,6 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.vmplugin.v5.ASTAnnotationTransformationCollectorCodeVisitor;
-import org.codehaus.groovy.vmplugin.v5.ASTAnnotationTransformationCodeVisitor;
 
 /**
  * java 5 based functions
@@ -118,11 +116,11 @@ public class Java5 implements VMPlugin {
     }
 
     public void addPhaseOperations(CompilationUnit unit) {
-        Map<Integer, ASTAnnotationTransformationCodeVisitor> transformationVisitors = new HashMap<Integer, ASTAnnotationTransformationCodeVisitor>();
-        ASTAnnotationTransformationCollectorCodeVisitor annotCollector = new ASTAnnotationTransformationCollectorCodeVisitor(transformationVisitors);
+        Map<Integer, ASTTransformationCodeVisitor> transformationVisitors = new HashMap<Integer, ASTTransformationCodeVisitor>();
+        ASTTransformationCollectorCodeVisitor annotCollector = new ASTTransformationCollectorCodeVisitor(transformationVisitors);
         unit.addPhaseOperation(annotCollector.getOperation(), Phases.SEMANTIC_ANALYSIS);
         for (int i = Phases.SEMANTIC_ANALYSIS; i <= Phases.ALL; i++) {
-            ASTAnnotationTransformationCodeVisitor TransformationVisitor = new ASTAnnotationTransformationCodeVisitor();
+            ASTTransformationCodeVisitor TransformationVisitor = new ASTTransformationCodeVisitor();
             transformationVisitors.put(Integer.valueOf(i), TransformationVisitor);
             unit.addPhaseOperation(TransformationVisitor.getOperation(), i);
         }

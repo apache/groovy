@@ -45,13 +45,13 @@ import java.net.URL;
  * Created: 20th June 2006
  */
 public class DefaultGrailsDomainClassInjector implements
-    ASTAnnotationTransformation {
+    ASTSingleNodeTransformation {
         //GrailsDomainClassInjector {
 
     //private static final Log LOG  = LogFactory.getLog(DefaultGrailsDomainClassInjector.class);
 
 
-    public void visit(AnnotationNode node, AnnotatedNode parent, SourceUnit source, GeneratorContext context) {
+    public void visit(ASTNode node, ASTNode parent, SourceUnit source, GeneratorContext context) {
         performInjection(source, context, (ClassNode) parent);
     }
 
