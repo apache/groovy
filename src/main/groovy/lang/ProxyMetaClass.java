@@ -15,8 +15,6 @@
  */
 package groovy.lang;
 
-import org.codehaus.groovy.runtime.callsite.*;
-
 import java.beans.IntrospectionException;
 
 /**
@@ -224,25 +222,5 @@ public class ProxyMetaClass extends MetaClassImpl implements AdaptingMetaClass {
         }
         result = interceptor.afterInvoke(object, methodName, arguments, result);
         return result;
-    }
-
-    public CallSite createPojoCallSite(CallSite site, Object receiver, Object[] args) {
-      return new PojoMetaClassSite(site, this);
-    }
-
-    public CallSite createPogoCallSite(CallSite site, Object[] args) {
-      return new PogoMetaClassSite(site, this);
-    }
-
-    public CallSite createPogoCallCurrentSite(CallSite site, Class sender, Object[] args) {
-        return new PogoMetaClassSite(site, this);
-    }
-
-    public CallSite createStaticSite(CallSite site, Object[] args) {
-        return new StaticMetaClassSite(site, this);
-    }
-
-    public CallSite createConstructorSite(CallSite site, Object[] args) {
-        return new ConstructorMetaClassSite (site, this);
     }
 }

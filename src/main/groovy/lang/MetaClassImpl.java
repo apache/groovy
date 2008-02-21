@@ -2542,53 +2542,59 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     public CallSite createPojoCallSite(CallSite site, Object receiver, Object[] args) {
-          Class [] params = MetaClassHelper.convertToTypeArray(args);
-          MetaMethod metaMethod = getMethodWithCachingInternal(getTheClass(), site.name, params);
-          if (metaMethod != null)
-             return PojoMetaMethodSite.createPojoMetaMethodSite(site, this, metaMethod, params, receiver, args);
-          else
-              return new PojoMetaClassSite(site, this);
+        if (!(this instanceof AdaptingMetaClass)) {
+            Class [] params = MetaClassHelper.convertToTypeArray(args);
+            MetaMethod metaMethod = getMethodWithCachingInternal(getTheClass(), site.name, params);
+            if (metaMethod != null)
+               return PojoMetaMethodSite.createPojoMetaMethodSite(site, this, metaMethod, params, receiver, args);
+        }
+        return new PojoMetaClassSite(site, this);
     }
 
 
     public CallSite createStaticSite(CallSite site, Object[] args) {
-        Class [] params = MetaClassHelper.convertToTypeArray(args);
-        MetaMethod metaMethod = retrieveStaticMethod(site.name, args);
-        if (metaMethod != null)
-           return StaticMetaMethodSite.createStaticMetaMethodSite(site, this, metaMethod, params, args);
-        else
-           return new StaticMetaClassSite(site, this);
+        if (!(this instanceof AdaptingMetaClass)) {
+            Class [] params = MetaClassHelper.convertToTypeArray(args);
+            MetaMethod metaMethod = retrieveStaticMethod(site.name, args);
+            if (metaMethod != null)
+               return StaticMetaMethodSite.createStaticMetaMethodSite(site, this, metaMethod, params, args);
+        }
+        return new StaticMetaClassSite(site, this);
     }
 
     public CallSite createPogoCallSite(CallSite site, Object[] args) {
-        Class [] params = MetaClassHelper.convertToTypeArray(args);
-        MetaMethod metaMethod = getMethodWithCachingInternal(theClass, site.name, params);
-        if (metaMethod != null)
-           return PogoMetaMethodSite.createPogoMetaMethodSite(site, this, metaMethod, params, args);
-        else
-           return new PogoMetaClassSite(site, this);
+        if (!(this instanceof AdaptingMetaClass)) {
+            Class [] params = MetaClassHelper.convertToTypeArray(args);
+            MetaMethod metaMethod = getMethodWithCachingInternal(theClass, site.name, params);
+            if (metaMethod != null)
+               return PogoMetaMethodSite.createPogoMetaMethodSite(site, this, metaMethod, params, args);
+        }
+        return new PogoMetaClassSite(site, this);
     }
 
     public CallSite createPogoCallCurrentSite(CallSite site, Class sender, Object[] args) {
+        if (!(this instanceof AdaptingMetaClass)) {
           Class [] params = MetaClassHelper.convertToTypeArray(args);
           MetaMethod metaMethod = getMethodWithCachingInternal(sender, site.name, params);
           if (metaMethod != null)
             return PogoMetaMethodSite.createPogoMetaMethodSite(site, this, metaMethod, params, args);
-          else
-            return new PogoMetaClassSite(site, this);
+        }
+        return new PogoMetaClassSite(site, this);
     }
 
     public CallSite createConstructorSite(CallSite site, Object[] args) {
-        Class[] params = MetaClassHelper.convertToTypeArray(args);
-        CachedConstructor constructor = (CachedConstructor) chooseMethod("<init>", constructors, params);
-        if (constructor != null) {
-            return ConstructorSite.createConstructorSite(site, this,constructor,params, args);
-        }
-        else {
-            if (args.length == 1 && args[0] instanceof Map) {
-                constructor = (CachedConstructor) chooseMethod("<init>", constructors, MetaClassHelper.EMPTY_TYPE_ARRAY);
-                if (constructor != null) {
-                    return new ConstructorSite.NoParamSite(site, this,constructor,params);
+        if (!(this instanceof AdaptingMetaClass)) {
+            Class[] params = MetaClassHelper.convertToTypeArray(args);
+            CachedConstructor constructor = (CachedConstructor) chooseMethod("<init>", constructors, params);
+            if (constructor != null) {
+                return ConstructorSite.createConstructorSite(site, this,constructor,params, args);
+            }
+            else {
+                if (args.length == 1 && args[0] instanceof Map) {
+                    constructor = (CachedConstructor) chooseMethod("<init>", constructors, MetaClassHelper.EMPTY_TYPE_ARRAY);
+                    if (constructor != null) {
+                        return new ConstructorSite.NoParamSite(site, this,constructor,params);
+                    }
                 }
             }
         }
