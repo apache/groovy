@@ -11,9 +11,9 @@ public class Groovy2568Bug extends GroovyTestCase {
     }
 
     void testAutoboxBytes() {
-        printByte("1", Byte.valueOf((byte) 1));
+        printByte("1", new Byte((byte) 1));
         printByte("1", (byte) 1);
-        print_byte("1", Byte.valueOf((byte) 1));
+        print_byte("1", new Byte((byte) 1));
         print_byte("1", (byte) 1);
     }
 
