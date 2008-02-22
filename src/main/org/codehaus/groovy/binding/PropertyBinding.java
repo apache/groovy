@@ -46,8 +46,7 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
     }
 
     public FullBinding createBinding(SourceBinding source, TargetBinding target) {
-        return new PropertyFullBinding
-                (source, target);
+        return new PropertyFullBinding(source, target);
     }
 
     class PropertyFullBinding extends AbstractFullBinding implements PropertyChangeListener {

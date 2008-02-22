@@ -19,7 +19,12 @@ import groovy.swing.binding.AbstractButtonProperties
 import groovy.swing.binding.JSliderProperties
 import groovy.swing.binding.JTextComponentProperties
 import java.util.Map.Entry
-import org.codehaus.groovy.binding.*
+import org.codehaus.groovy.binding.ClosureSourceBinding
+import org.codehaus.groovy.binding.EventTriggerBinding
+import org.codehaus.groovy.binding.FullBinding
+import org.codehaus.groovy.binding.PropertyBinding
+import org.codehaus.groovy.binding.TargetBinding
+import org.codehaus.groovy.binding.TriggerBinding
 
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
@@ -28,38 +33,38 @@ import org.codehaus.groovy.binding.*
  */
 public class BindFactory extends AbstractFactory {
 
-    final Map/*<String, TriggerBinding*/ syntheticBindings;
+    final Map/*<String, TriggerBinding>*/ syntheticBindings
 
     public BindFactory() {
-        syntheticBindings = new HashMap();
+        syntheticBindings = new HashMap()
 
         // covers JTextField.text
         // covers JTextPane.text
         // covers JTextArea.text
         // covers JEditorPane.text
-        syntheticBindings.putAll(JTextComponentProperties.getSyntheticProperties());
+        syntheticBindings.putAll(JTextComponentProperties.getSyntheticProperties())
 
         // covers JCheckBox.selected
         // covers JChecBoxMenuItem.selected
         // covers JRadioButton.selected
         // covers JRadioButtonMenuItem.selected
         // covers JToggleButton.selected
-        syntheticBindings.putAll(AbstractButtonProperties.getSyntheticProperties());
+        syntheticBindings.putAll(AbstractButtonProperties.getSyntheticProperties())
 
         // covers JSlider.value
-        syntheticBindings.putAll(JSliderProperties.getSyntheticProperties());
+        syntheticBindings.putAll(JSliderProperties.getSyntheticProperties())
 
         // JComboBox.elements
         // JComboBox.selectedElement
-        //syntheticBindings.putAll(JComboBoxProperties.getSyntheticProperties());
+        //syntheticBindings.putAll(JComboBoxProperties.getSyntheticProperties())
 
         // JList.elements
         // JList.selectedElement
         // JList.selectedElements
-        //syntheticBindings.putAll(JListProperties.getSyntheticProperties());
+        //syntheticBindings.putAll(JListProperties.getSyntheticProperties())
 
         // JSpinner.value
-        //syntheticBindings.putAll(JSpinnerProperties.getSyntheticProperties());
+        //syntheticBindings.putAll(JSpinnerProperties.getSyntheticProperties())
 
         // other properties handled in JSR-295
         // JTable.elements
@@ -89,82 +94,128 @@ public class BindFactory extends AbstractFactory {
      */
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         if (value != null) {
-            throw new RuntimeException("$name elements do not accept a value argument.");
+            throw new RuntimeException("$name elements do not accept a value argument.")
         }
-        Object source = attributes.remove("source");
-        Object target = attributes.remove("target");
+        Object source = attributes.remove("source")
+        Object target = attributes.remove("target")
 
-        TargetBinding tb = null;
+        TargetBinding tb = null
         if (target != null) {
-            String targetProperty = (String) attributes.remove("targetProperty");
-            tb = new PropertyBinding(target, targetProperty);
+            String targetProperty = (String) attributes.remove("targetProperty")
+            tb = new PropertyBinding(target, targetProperty)
+            if (source == null) {
+                def newAttributes = [:]
+                newAttributes.putAll(attributes)
+                builder.context.put(tb, newAttributes)
+                attributes.clear()
+                return tb
+            }
         }
-        FullBinding fb;
+        FullBinding fb
 
         if (attributes.containsKey("sourceProperty")) {
             // first check for synthetic properties
-            String property = (String) attributes.remove("sourceProperty");
-            PropertyBinding psb = new PropertyBinding(source, property);
+            String property = (String) attributes.remove("sourceProperty")
+            PropertyBinding psb = new PropertyBinding(source, property)
 
-            TriggerBinding trigger = null;
-            Class currentClass = source.getClass();
-            while ((trigger == null) && (currentClass != null)) {
-                // should we check interfaces as well?  if so at what level?
-                trigger = (TriggerBinding) syntheticBindings.get("$currentClass.name#$property" as String);
-                currentClass = currentClass.getSuperclass();
-            }
-            if (trigger == null) {
-                //TODO inspect the bean info and throw an error if the property is not obserbable and not bind:false?
-                trigger = psb;
-            }
-            fb = trigger.createBinding(psb, tb);
+            TriggerBinding trigger = getTriggerBinding(psb)
+            fb = trigger.createBinding(psb, tb)
         } else if (attributes.containsKey("sourceEvent") && attributes.containsKey("sourceValue")) {
-            Closure queryValue = (Closure) attributes.remove("sourceValue");
-            ClosureSourceBinding psb = new ClosureSourceBinding(queryValue);
-            String trigger = (String) attributes.remove("sourceEvent");
-            EventTriggerBinding etb = new EventTriggerBinding(source, trigger);
-            fb = etb.createBinding(psb, tb);
+            Closure queryValue = (Closure) attributes.remove("sourceValue")
+            ClosureSourceBinding psb = new ClosureSourceBinding(queryValue)
+            String trigger = (String) attributes.remove("sourceEvent")
+            EventTriggerBinding etb = new EventTriggerBinding(source, trigger)
+            fb = etb.createBinding(psb, tb)
         } else {
-            throw new RuntimeException("$name does not have suffient attributes to initialize");
+            throw new RuntimeException("$name does not have suffient attributes to initialize")
         }
 
-        Object o = attributes.remove("bind");
+        if (attributes.containsKey("value")) {
+            builder.context.put(fb, [value:attributes.remove("value")])
+        }
+
+        Object o = attributes.remove("bind")
         if (    (o == null)
             || ((o instanceof Boolean) && ((Boolean)o).booleanValue()))
         {
-            fb.bind();
+            fb.bind()
         }
         if (target != null) {
-            fb.update();
+            fb.update()
         }
 
         builder.addDisposalClosure(fb.&unbind)
-        return fb;
+        return fb
     }
 
-    public static bindingAttributeDelegate(def builder, def node, def attributes) {
+    public TriggerBinding getTriggerBinding(PropertyBinding psb) {
+        String property = psb.propertyName
+        Class currentClass = psb.bean.getClass()
+        while (currentClass != null) {
+            // should we check interfaces as well?  if so at what level?
+            def trigger = (TriggerBinding) syntheticBindings.get("$currentClass.name#$property" as String)
+            if (trigger != null) {
+                return trigger
+            }
+            currentClass = currentClass.getSuperclass()
+        }
+        //TODO inspect the bean info and throw an error if the property is not obserbable and not bind:false?
+        return psb
+    }
+
+    public bindingAttributeDelegate(FactoryBuilderSupport builder, def node, def attributes) {
         Iterator iter = attributes.entrySet().iterator()
         while (iter.hasNext()) {
             Entry entry = (Entry) iter.next()
-            String property = entry.key.toString();
-            Object value = entry.value;
-            if (value instanceof FullBinding) {
-                FullBinding fb = (FullBinding) value;
-                PropertyBinding ptb = new PropertyBinding(node, property);
-                fb.setTargetBinding(ptb);
-                try {
-                    fb.update();
-                } catch (Exception e) {
-                    // just eat it?
-                }
-                try {
-                    fb.rebind();
-                } catch (Exception e) {
-                    // just eat it?
-                }
-                // this is why we cannot use entrySet().each { }
-                iter.remove();
+            String property = entry.key.toString()
+            Object value = entry.value
+
+            def bindAttrs = builder.getContext().get(value) ?: [:]
+            def id = bindAttrs.remove('id')
+            if (bindAttrs.containsKey("value")) {
+                node."$property" = bindAttrs.remove("value")
             }
+
+            FullBinding fb
+            if (value instanceof FullBinding) {
+                fb = (FullBinding) value
+                fb.setTargetBinding(new PropertyBinding(node, property))
+            } else  if (value instanceof TargetBinding) {
+                PropertyBinding psb = new PropertyBinding(node, property)
+                fb = getTriggerBinding(psb).createBinding(psb, value)
+
+                Object o = bindAttrs.remove("bind")
+
+                if (    (o == null)
+                    || ((o instanceof Boolean) && ((Boolean)o).booleanValue()))
+                {
+                    fb.bind()
+                }
+                fb.update()
+                
+                bindAttrs.each{k, v -> fb."$k" = v}
+
+                builder.addDisposalClosure(fb.&unbind)
+
+                // replaces ourselves in the variables
+                // id: is lost to us by now, so we just assume that any storage of us is a goner as well
+                //builder.getVariables().each{ Map.Entry me -> if (value.is(me.value)) me.setValue fb}
+                if (id) builder.setVariable(id, fb)
+            } else {
+                continue
+            }
+            try {
+                fb.update()
+            } catch (Exception e) {
+                // just eat it?
+            }
+            try {
+                fb.rebind()
+            } catch (Exception e) {
+                // just eat it?
+            }
+            // this is why we cannot use entrySet().each { }
+            iter.remove()
         }
     }
 

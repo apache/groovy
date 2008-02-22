@@ -202,6 +202,69 @@ public class SwingBuilderBindingsTest extends GroovyTestCase {
         assert swing.txt.enabled == swing.cb.enabled
     }
 
+    public void testReversePropertyBinding() {
+        if (isHeadless()) return
+        SwingBuilder swing = new SwingBuilder()
+
+        swing.actions() {
+            textField(id:'txt')
+            checkBox('Button!', id:'cb', enabled:bind(target:txt, targetProperty:'enabled', id:'binding'))
+        }
+        assert swing.txt.enabled == swing.cb.enabled
+        swing.cb.enabled = !swing.cb.enabled
+        assert swing.txt.enabled == swing.cb.enabled
+        swing.cb.enabled = !swing.cb.enabled
+        assert swing.txt.enabled == swing.cb.enabled
+
+        swing.binding.rebind()
+        swing.cb.enabled = !swing.cb.enabled
+        assert swing.txt.enabled == swing.cb.enabled
+        swing.binding.unbind()
+        swing.cb.enabled = !swing.cb.enabled
+        assert swing.txt.enabled != swing.cb.enabled
+        swing.binding.bind()
+        assert swing.txt.enabled != swing.cb.enabled
+        swing.binding.update()
+        assert swing.txt.enabled == swing.cb.enabled
+
+        swing.txt.enabled = !swing.txt.enabled
+        swing.binding.reverseUpdate()
+        assert swing.txt.enabled == swing.cb.enabled
+
+        DefaultButtonModel md = new DefaultButtonModel()
+        md.enabled = !swing.txt.enabled
+        swing.cb.model = md
+        assert swing.txt.enabled == swing.cb.enabled
+    }
+
+    public void testReversePropertyPropertites() {
+        if (isHeadless()) return
+        SwingBuilder swing = new SwingBuilder()
+
+        swing.actions() {
+            textField(id:'txt')
+            checkBox('Button!', id:'cb1', enabled:bind(target:txt, targetProperty:'enabled', converter: {it}, id:'binding1'))
+            checkBox('Button!', id:'cb2', enabled:bind(target:txt, targetProperty:'enabled', id:'binding2'))
+        }
+        assert swing.binding1.converter != null
+        assert swing.binding2.converter == null
+    }
+
+    public void testPropertyValuePassthrough() {
+        if (isHeadless()) return
+        SwingBuilder swing = new SwingBuilder()
+
+        swing.actions() {
+            spinner(id:'spin1', value:4)
+            spinner(id:'spin2', value:8)
+            slider(id:'s1', value:bind(target:spin1, targetProperty:'value', id:'binding1', value:15))
+            slider(id:'s2', value:bind(source:spin2, sourceProperty:'value', id:'binding2', value:16))
+        }
+        // s1 is the source, so it's value should be reflected
+        assert swing.s1.value == 15
+        // s2 is target, not source, so it's value setting should have no effect
+        assert swing.s2.value == 8
+    }
 
     public void testModel() {
         if (isHeadless()) return

@@ -59,8 +59,9 @@ public class SwingBuilder  extends FactoryBuilderSupport {
         addAttributeDelegate(SwingBuilder.&objectIDAttributeDelegate)
 
         // binding related classes
-        registerFactory("bind", new BindFactory())
-        addAttributeDelegate(BindFactory.&bindingAttributeDelegate)
+        BindFactory bindFactory = new BindFactory()
+        registerFactory("bind", bindFactory)
+        addAttributeDelegate(bindFactory.&bindingAttributeDelegate)
         registerFactory("model", new ModelFactory())
 
         // ulimate pass through types
