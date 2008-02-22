@@ -244,6 +244,11 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             answer = (MetaClass) weakMetaClasses.get(theClass);
             if (answer!=null) return answer;
     
+            // We've got a lock on the Class and we need to be sure that we're in
+            // the ReflectionCache before we call MetaClass.initialize().
+            // There is probably another place to do this, but I want to be sure...
+            final CachedClass forEffect = ReflectionCache.getCachedClass(theClass);
+            
             answer = metaClassCreationHandle.create(theClass, this);
             answer.initialize();
             if (GroovySystem.isKeepJavaMetaClasses()) {

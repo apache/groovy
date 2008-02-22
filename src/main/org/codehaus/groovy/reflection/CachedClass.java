@@ -117,17 +117,42 @@ public class CachedClass {
         isInterface = klazz.isInterface();
         isNumber = Number.class.isAssignableFrom(klazz);
 
+    }
+
+    /**
+     * Initialization involves making calls back to ReflectionCache to popuplate
+     * the "assignable from" structure.
+     * Package scoped (like our constructor) because ReflectionCache is really the
+     * only place we should be called from.
+     *
+     * We don't need to be synchronized here because ReflectionCache is careful to
+     * make sure we're called exactly once.
+     * By the same token we could however safely lock ourself.
+     * But the idea here is to take out the bad locks.
+     */
+    final void initialize() {
         for (Iterator it = getInterfaces().iterator(); it.hasNext(); ) {
             CachedClass inf = (CachedClass) it.next();
-            ReflectionCache.isAssignableFrom(klazz, inf.cachedClass);
+            ReflectionCache.isAssignableFrom(cachedClass, inf.cachedClass);
         }
 
+        // If we *were* going to lock the Class/CachedClass of our parents,
+        // it would probably be a better idea to climb to the top then do the
+        // locking from the top down to here.
+        // But that shouldn't really be necessary since this is the wrong place for that.
+        // One of the keys is probably that the constructor and initialization need to be
+        // separated (like with MetaClassImpl).
         for (CachedClass cur = this; cur != null; cur = cur.getCachedSuperClass()) {
-            ReflectionCache.setAssignableFrom(cur.cachedClass, klazz);
+            ReflectionCache.setAssignableFrom(cur.cachedClass, cachedClass);
         }
     }
 
-    public synchronized CachedClass getCachedSuperClass() {
+    /**
+     * This can't be final because ReflectionClass has an inner class that extends
+     * CachedClass for java.lang.Object (ReflectionClass.OBJECT_CLASS) that returns
+     * null for this method.
+     */
+    public CachedClass getCachedSuperClass() {
         if (cachedSuperClass == null) {
             if (!isArray)
               cachedSuperClass = ReflectionCache.getCachedClass(getCachedClass().getSuperclass());
@@ -229,16 +254,17 @@ public class CachedClass {
         return res;
     }
 
-    public int getModifiers() {
+    public final int getModifiers() {
         return modifiers;
     }
 
     public Object coerceArgument(Object argument) {
         return argument;
     }
-    
+
     public int getSuperClassDistance() {
-        synchronized (getCachedClass()) {
+     // This method is idempotent.  Don't put a dangerous lock here!
+     // synchronized (getCachedClass()) {
             if (distance == -1) {
                 int distance = 0;
                 for (Class klazz= getCachedClass(); klazz != null; klazz = klazz.getSuperclass()) {
@@ -247,7 +273,7 @@ public class CachedClass {
                 this.distance = distance;
             }
             return distance;
-        }
+      //  }
     }
 
     public int hashCode() {
@@ -291,7 +317,7 @@ public class CachedClass {
         return BytecodeHelper.getTypeDescription(getCachedClass());
     }
 
-    public synchronized Reflector getReflector() {
+    public Reflector getReflector() {
         /*if (reflector == null) {
             final MetaClassRegistry metaClassRegistry = MetaClassRegistryImpl.getInstance(MetaClassRegistryImpl.LOAD_DEFAULT);
             reflector = ((MetaClassRegistryImpl)metaClassRegistry).loadReflector(getCachedClass(), Arrays.asList(getMethods()));
