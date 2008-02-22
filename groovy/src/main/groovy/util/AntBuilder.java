@@ -168,19 +168,21 @@ public class AntBuilder extends BuilderSupport {
             lastCompletedNode = task;
             // UnknownElement may wrap everything: task, path, ...
             if (task instanceof Task) {
-                // save the original input stream for System.in and the project default stream
-                InputStream originalIn = System.in;
-                InputStream projectDefaultStream = this.project.getDefaultInputStream();
-                
-                this.project.setDefaultInputStream(originalIn);
-                System.setIn(new DemuxInputStream(this.project));
+                // save original streams
+                InputStream savedIn = System.in;
+                InputStream savedProjectInputStream = project.getDefaultInputStream();
 
-                ((Task) task).perform();
-
-                // restore original input streams for System.in and the project default stream
-                System.setIn(originalIn);
-                this.project.setDefaultInputStream(projectDefaultStream);
-
+                if (!(savedIn instanceof DemuxInputStream)) {
+                    project.setDefaultInputStream(savedIn);
+                    System.setIn(new DemuxInputStream(project));
+                }
+                try {
+                    ((Task) task).perform();
+                } finally {
+                    // restore original streams
+                    project.setDefaultInputStream(savedProjectInputStream);
+                    System.setIn(savedIn);
+                }
             }
         }
         else {
