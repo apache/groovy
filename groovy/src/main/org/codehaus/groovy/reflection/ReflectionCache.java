@@ -78,11 +78,13 @@ public class ReflectionCache {
     static TripleKeyHashMap mopNames = new TripleKeyHashMap();
 
     public static String getMOPMethodName(CachedClass declaringClass, String name, boolean useThis) {
+      synchronized (mopNames) {
         TripleKeyHashMap.Entry mopNameEntry = mopNames.getOrPut(declaringClass, name, Boolean.valueOf(useThis));
         if (mopNameEntry.value == null) {
             mopNameEntry.value = new StringBuffer().append(useThis ? "this$" : "super$").append(declaringClass.getSuperClassDistance()).append("$").append(name).toString();
         }
         return (String) mopNameEntry.value;
+      }
     }
 
     static final Map /*<Class,SoftReference<CachedClass>>*/ CACHED_CLASS_MAP = new WeakHashMap();
@@ -98,22 +100,26 @@ public class ReflectionCache {
     }
 
     static void setAssignableFrom(Class klazz, Class aClass) {
+      synchronized (assignableMap) {
         WeakDoubleKeyHashMap.Entry val = assignableMap.getOrPut(klazz, aClass);
         if (val.value == null) {
             val.value = Boolean.TRUE;
         }
+      }
     }
 
     public static boolean isAssignableFrom(Class klazz, Class aClass) {
         if (klazz == aClass)
           return true;
 
+      synchronized (assignableMap) {
         WeakDoubleKeyHashMap.Entry val = assignableMap.getOrPut(klazz, aClass);
         if (val.value == null) {
             val.value = Boolean.valueOf(klazz.isAssignableFrom(aClass));
         }
         return ((Boolean)val.value).booleanValue();
 //        return klazz.isAssignableFrom(aClass);
+      }
     }
 
     static boolean arrayContentsEq(Object[] a1, Object[] a2) {
@@ -150,6 +156,12 @@ public class ReflectionCache {
 
     public static final CachedClass OBJECT_ARRAY_CLASS = getCachedClass(Object[].class);
 
+    /**
+     * Get the CachedClass for a the given Class (which may be a Type).
+     *   
+     * @param klazz
+     * @return
+     */
     public static CachedClass getCachedClass(Class klazz) {
         if (klazz == null)
             return null;
@@ -161,9 +173,14 @@ public class ReflectionCache {
             return STRING_CLASS;
 
         CachedClass cachedClass;
+        SoftReference ref;
+
         synchronized (CACHED_CLASS_MAP) {
-            SoftReference ref = (SoftReference) CACHED_CLASS_MAP.get(klazz);
-            if (ref == null || (cachedClass = (CachedClass) ref.get()) == null) {
+            ref = (SoftReference) CACHED_CLASS_MAP.get(klazz);
+        }
+
+        if (ref == null || (cachedClass = (CachedClass) ref.get()) == null) {
+            {
                 if (klazz.isPrimitive()) {
                     if (klazz == Integer.TYPE)
                        cachedClass = new CachedClass.IntegerCachedClass(klazz);
@@ -188,8 +205,10 @@ public class ReflectionCache {
                                             else
                                                 if (klazz == Byte.TYPE)
                                                    cachedClass = new CachedClass.ByteCachedClass(klazz);
-                                                else
+                                                else {
+                                                   //!FIXME: This shouldn't happen.  assert false or throw exception...
                                                    cachedClass = new CachedClass(klazz);
+                                                }
                 }
                 else
                 if (Number.class.isAssignableFrom(klazz)) {
@@ -233,9 +252,31 @@ public class ReflectionCache {
                               cachedClass = new CachedClass.CharacterCachedClass(klazz);
                             else
                               cachedClass = new CachedClass(klazz);
-                CACHED_CLASS_MAP.put(klazz, new SoftReference(cachedClass));
+            }
+
+
+            CachedClass fasterCachedClass = null;
+
+            // Double-check put.
+            synchronized (CACHED_CLASS_MAP) {
+                ref = (SoftReference) CACHED_CLASS_MAP.get(klazz);
+
+                if (ref == null || (fasterCachedClass = (CachedClass) ref.get()) == null) {
+                    CACHED_CLASS_MAP.put(klazz, new SoftReference(cachedClass));
+                } else {
+                    // We must use the one that there first, we should be able to safely toss the one we made.
+                    // By locking Class we would eliminate this race, but until the design is corrected we risk
+                    // deadlock.
+                    cachedClass = fasterCachedClass;
+                }
+            }
+
+            if (null == fasterCachedClass) {
+                // We've got a new CacheClass, now get loaded into the assignableMap.
+            	cachedClass.initialize();
             }
         }
+
         return cachedClass;
     }
 }

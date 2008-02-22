@@ -67,6 +67,8 @@ public final class ClosureMetaClass extends MetaClassImpl {
 
     private static synchronized MetaClass getStaticMetaClass() {
         if (classMetaClass == null) {
+            //!FIXME: It isn't the ClosureMetaClass.class that should be locked here.
+            // We should just be locking Class.class.
             classMetaClass = new MetaClassImpl(Class.class);
             classMetaClass.initialize();
         }
