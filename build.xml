@@ -268,7 +268,7 @@ $Date$
 
     </target>
 
-    <target name="compileExamples" depends="compileMain" unless="_skipExamples_"
+    <target name="compileExamples" depends="compileMain,-includeExamplesResources" unless="_skipExamples_"
             description="Compile the Java and Groovy code in the examples source directory.">
         <mkdir dir="${examplesClassesDirectory}"/>
         <echo message="Compiling example code."/>
@@ -532,6 +532,14 @@ org.codehaus.groovy.vmplugin.v5" />
                 <include name="groovy/ui/**/*.png"/>
                 <include name="org/codehaus/groovy/tools/shell/**/*.properties"/>
                 <include name="org/codehaus/groovy/tools/shell/**/*.xml"/>
+            </fileset>
+        </copy>
+    </target>
+
+    <target name="-includeExamplesResources" depends="-includeGroovyDocTemplates">
+        <copy todir="${examplesClassesDirectory}">
+            <fileset dir="${examplesSourceDirectory}">
+                <include name="/swing/binding/caricature/resources/*.gif"/>
             </fileset>
         </copy>
     </target>
