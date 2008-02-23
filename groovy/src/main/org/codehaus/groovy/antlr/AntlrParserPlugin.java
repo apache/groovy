@@ -1030,7 +1030,13 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             forParameter = new Parameter(type,variable);
         }
 
-        Statement block = statement(inNode.getNextSibling());
+        final AST node = inNode.getNextSibling();
+        Statement block;
+        if (isType(SEMI, node)) {
+            block = EmptyStatement.INSTANCE;
+        } else {
+            block = statement(node);
+        }
         ForStatement forStatement = new ForStatement(forParameter, collectionExpression, block);
         configureAST(forStatement, forNode);
         return forStatement;
@@ -1264,7 +1270,12 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         BooleanExpression booleanExpression = booleanExpression(node);
 
         node = node.getNextSibling();
-        Statement block = statement(node);
+        Statement block;
+        if (isType(SEMI, node)) {
+            block = EmptyStatement.INSTANCE;
+        } else {
+            block = statement(node);
+        }
         WhileStatement whileStatement = new WhileStatement(booleanExpression, block);
         configureAST(whileStatement, whileNode);
         return whileStatement;
