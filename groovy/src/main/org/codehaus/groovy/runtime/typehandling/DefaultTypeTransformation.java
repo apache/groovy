@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -513,6 +513,10 @@ public class DefaultTypeTransformation {
      * Compares the two objects handling nulls gracefully and performing numeric type coercion if required
      */
     public static int compareTo(Object left, Object right) {
+        return compareToWithEqualityCheck(left, right, false);
+    }
+
+    private static int compareToWithEqualityCheck(Object left, Object right, boolean equalityCheckOnly) {
         if (left == right) {
             return 0;
         }
@@ -526,7 +530,8 @@ public class DefaultTypeTransformation {
             if (left instanceof Number) {
                 if (isValidCharacterString(right)) {
                     return castToChar(left) - castToChar(right);
-                } else if (right instanceof Character || right instanceof Number) {
+                }
+                if (right instanceof Character || right instanceof Number) {
                     return DefaultGroovyMethods.compareTo((Number) left, castToNumber(right));
                 }
             }
@@ -534,14 +539,14 @@ public class DefaultTypeTransformation {
                 if (isValidCharacterString(right)) {
                     return castToChar(left) - castToChar(right);
                 }
-                else if (right instanceof Number) {
+                if (right instanceof Number) {
                     return castToChar(left) - castToChar(right);
                 }
             }
             else if (right instanceof Number) {
                 if (isValidCharacterString(left)) {
                     return castToChar(left) - castToChar(right);
-                } 
+                }
             }
             else if (left instanceof String && right instanceof Character) {
                 return ((String) left).compareTo(right.toString());
@@ -549,19 +554,26 @@ public class DefaultTypeTransformation {
             else if (left instanceof String && right instanceof GString) {
                 return ((String) left).compareTo(right.toString());
             }
-            Comparable comparable = (Comparable) left;
-            return comparable.compareTo(right);
+            if (!equalityCheckOnly || left.getClass().isAssignableFrom(right.getClass())
+                    || right.getClass().isAssignableFrom(left.getClass())
+                    || (left instanceof GString && right instanceof String)) {
+                Comparable comparable = (Comparable) left;
+                return comparable.compareTo(right);
+            }
         }
 
+        if (equalityCheckOnly) {
+            return -1; // anything other than 0
+        }
         throw new GroovyRuntimeException("Cannot compare " + left.getClass().getName() + " with value '" +
                 left + "' and " + right.getClass().getName() + " with value '" + right + "'");
     }
-    
+
     public static boolean compareEqual(Object left, Object right) {
         if (left == right) return true;
         if (left == null || right == null) return false;
         if (left instanceof Comparable) {
-            return compareTo(left, right) == 0;
+            return compareToWithEqualityCheck(left, right, true) == 0;
         }
         // handle arrays on both sides as special case for efficiency
         Class leftClass = left.getClass();
