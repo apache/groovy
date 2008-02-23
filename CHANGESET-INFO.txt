@@ -12,6 +12,11 @@ change sets from trunk NOT in 1.5.x:
 * 10554: First step for special call sites for binops
 * 10562: More about call sites
 * 10566: bemchmarks for call site
+* 10634: Annotation AST macros
+* 10638: Call site optimization continuation
+* 10647: fix 1.4 breakage
+* 10673: Macro -> Transformation
+* 10674: another ASTTransformation example: use the AST Transformation to do the Grails GORM injection
+* 10687: multiple annotations no longer inappropriately multiply added, with test case, error checking on phases in GroovyASTTransformation handling,  more generics silliness, javadoc
 
-
-Last change set applied to 1.5.x: 10613
+Last change set applied to 1.5.x: 10715
