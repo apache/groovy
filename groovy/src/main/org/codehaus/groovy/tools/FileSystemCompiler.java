@@ -74,7 +74,7 @@ public class FileSystemCompiler
     {
         String version = InvokerHelper.getVersion();
         System.err.println("Groovy compiler version " + version);
-        System.err.println("Copyright 2003-2007 The Codehaus. http://groovy.codehaus.org/");
+        System.err.println("Copyright 2003-2008 The Codehaus. http://groovy.codehaus.org/");
         System.err.println("");
     }
 
