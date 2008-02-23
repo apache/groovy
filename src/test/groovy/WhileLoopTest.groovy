@@ -7,6 +7,12 @@ class WhileLoopTest extends GroovyTestCase {
         println(val)
     }
 
+    void testWhileWithEmptyBody() {
+        int x = 3
+        while (--x);
+        assert x == 0
+    }
+
     void testMoreComplexWhile() {
         def x = 0
         def y = 5
