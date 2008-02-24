@@ -17,10 +17,9 @@ package groovy.swing
 
 import javax.swing.LookAndFeel
 import javax.swing.UIManager
+import javax.swing.plaf.metal.DefaultMetalTheme
 import javax.swing.plaf.metal.MetalLookAndFeel
 import javax.swing.plaf.metal.MetalTheme
-import javax.swing.plaf.metal.DefaultMetalTheme
-
 
 class LookAndFeelHelper {
 
@@ -146,7 +145,7 @@ class LookAndFeelHelper {
 
     static String getNimbusLAFName() {
         for (klass in [
-            'com.sun.swing.plaf.nimbus.NimbusLookAndFeel',
+            'com.sun.java.swing.plaf.nimbus.NimbusLookAndFeel',
             'sun.swing.plaf.nimbus.NimbusLookAndFeel',
             'org.jdesktop.swingx.plaf.nimbus.NimbusLookAndFeel'
         ]) {

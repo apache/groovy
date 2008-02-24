@@ -18,8 +18,11 @@ change sets from trunk NOT in 1.5.x:
 * 10673: Macro -> Transformation
 * 10674: another ASTTransformation example: use the AST Transformation to do the Grails GORM injection
 * 10687: multiple annotations no longer inappropriately multiply added, with test case, error checking on phases in GroovyASTTransformation handling,  more generics silliness, javadoc
-
-unsure, currently NOT in 1_5_X:
-10738, 10739, 10740, 10744, 10757, 10768, 10775 groovy.swing/FactoryBuilder changes
+* 10738: FactoryBuilderSuppoet changes for CompositeBuilder
+* 10739: import cleanups
+* 10740: remove local property
+* 10744: deprecate Component/ContainerFacad & Startable, refactor
+* 10768: FactoryBuilderSupport ehnahcements
+* 10775: test cases for 10768
 
 Last change set applied to 1.5.x: 10783
