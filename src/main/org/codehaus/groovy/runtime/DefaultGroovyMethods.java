@@ -1293,16 +1293,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Iterates through this object transforming each item into a new value using the closure
-     * as a transformer, returning a list of transformed values.
+     * Iterates through this object transforming each value into a new value using the
+     * closure as a transformer, returning a list of transformed values.
      * Example:
      * <pre>def list = [1, 'a', 1.23, true ]
      * def types = list.collect { it.class }
      * </pre>
      *
-     * @param self    the values of the object to map
+     * @param self    the values of the object to transform
      * @param closure the closure used to transform each element of the collection
-     * @return a List of the mapped values
+     * @return a List of the transformed values
      */
     public static List collect(Object self, Closure closure) {
         return (List) collect(self, new ArrayList(), closure);
@@ -1312,10 +1312,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through this object transforming each object into a new value using the closure
      * as a transformer and adding it to the collection, returning the resulting collection.
      *
-     * @param self       the values of the object to map
+     * @param self       the values of the object to transform
      * @param collection the Collection to which the transformed values are added
      * @param closure    the closure used to map each element of the collection
-     * @return the given collection after the items are added
+     * @return the given collection after the transformed values are added
      */
     public static Collection collect(Object self, Collection collection, Closure closure) {
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
@@ -1330,20 +1330,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self    a collection
      * @param closure the closure used for mapping
-     * @return a List of the mapped values
+     * @return a List of the transformed values
      */
     public static List collect(Collection self, Closure closure) {
         return (List) collect(self, new ArrayList(self.size()), closure);
     }
 
     /**
-     * Iterates through this collection transforming each entry into a new value using the closure
-     * as a transformer, returning a list of transformed values.
+     * Iterates through this collection transforming each value into a new value using the closure
+     * as a transformer, returning an initial collection plus the transformed values.
      *
      * @param self       a collection
      * @param collection an initial Collection to which the transformed values are added
      * @param closure    the closure used to transform each element of the collection
-     * @return the resultant collection
+     * @return the resulting collection of transformed values
      */
     public static Collection collect(Collection self, Collection collection, Closure closure) {
         for (Iterator iter = self.iterator(); iter.hasNext();) {
@@ -1356,7 +1356,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Recursively iterates through this collection transforming each non-Collection entry
+     * Recursively iterates through this collection transforming each non-Collection value
      * into a new value using the closure as a transformer. Returns a potentially nested
      * list of transformed values.
      *
@@ -1369,7 +1369,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Recursively iterates through this collection transforming each non-Collection entry
+     * Recursively iterates through this collection transforming each non-Collection value
      * into a new value using the closure as a transformer. Returns a potentially nested
      * list of transformed values.
      *
@@ -1400,7 +1400,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self       a Map
      * @param collection the Collection to which the mapped values are added
-     * @param closure    the closure used for mapping, which can be with one(Map.Entry) or two(key, value) parameters
+     * @param closure    the closure used for mapping, which can take one (Map.Entry) or two (key, value) parameters
      * @return a List of the mapped values
      */
     public static Collection collect(Map self, Collection collection, Closure closure) {
@@ -2001,7 +2001,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Makes a String look like a Collection by adding support for the size() method
+     * Provide the standard Groovy <code>size()</code> method for <code>String</code>.
      *
      * @param text a String
      * @return the length of the String
@@ -2011,7 +2011,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Provide standard Groovy size() method for StringBuffers
+     * Provide the standard Groovy <code>size()</code> method for <code>StringBuffer</code>.
      *
      * @param buffer a StringBuffer
      * @return the length of the StringBuffer
@@ -2021,7 +2021,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Provide the standard Groovy size method for a file.
+     * Provide the standard Groovy <code>size()</code> method for <code>File</code>.
      *
      * @param self a file object
      * @return the file's size (length)
@@ -2032,7 +2032,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
 
     /**
-     * Provide the standard Groovy size method for a matcher.
+     * Provide the standard Groovy <code>size()</code> method for <code>Matcher</code>.
      *
      * @param self a matcher object
      * @return the matcher's size (count)
@@ -2042,7 +2042,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Provide the standard Groovy size method for an array.
+     * Provide the standard Groovy <code>size()</code> method for an array.
      *
      * @param self an Array of objects
      * @return the size (length) of the Array
