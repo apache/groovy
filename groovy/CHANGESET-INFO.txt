@@ -19,4 +19,7 @@ change sets from trunk NOT in 1.5.x:
 * 10674: another ASTTransformation example: use the AST Transformation to do the Grails GORM injection
 * 10687: multiple annotations no longer inappropriately multiply added, with test case, error checking on phases in GroovyASTTransformation handling,  more generics silliness, javadoc
 
-Last change set applied to 1.5.x: 10724
+unsure, currently NOT in 1_5_X:
+10738, 10739, 10740, 10744, 10757, 10768, 10775 groovy.swing/FactoryBuilder changes
+
+Last change set applied to 1.5.x: 10783

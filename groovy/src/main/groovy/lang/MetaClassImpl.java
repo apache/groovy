@@ -802,7 +802,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             final boolean isClosureNotOwner = owner != closure;
             final int resolveStrategy = closure.getResolveStrategy();
 
-        final Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
+            final Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
 
             switch (resolveStrategy) {
                 case Closure.TO_SELF:

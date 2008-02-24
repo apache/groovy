@@ -56,6 +56,10 @@ public class IndentPrinter {
         out.print(text);
     }
 
+    public void print(char c) {
+        out.print(c);
+    }
+
     public void printIndent() {
         for (int i = 0; i < indentLevel; i++) {
             out.print(indent);

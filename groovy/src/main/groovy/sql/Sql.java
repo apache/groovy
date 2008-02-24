@@ -1297,8 +1297,8 @@ public class Sql {
                     }
                 } else {
                     nulls = true;
-                    buffer.append("?'\"?"); // will replace these with nullish
-                    // values
+                    iter.remove();
+                    buffer.append("?'\"?"); // will replace these with nullish values
                 }
             }
         }
@@ -1387,9 +1387,7 @@ public class Sql {
         int i = 1;
         for (Iterator iter = params.iterator(); iter.hasNext();) {
             Object value = iter.next();
-            if (value != null) {
-                setObject(statement, i++, value);
-            }
+            setObject(statement, i++, value);
         }
     }
 
