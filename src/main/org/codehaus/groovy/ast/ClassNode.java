@@ -103,7 +103,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     private boolean scriptBody = false;
     private boolean script;
     private ClassNode superClass;
-    boolean isPrimaryNode;
+    protected boolean isPrimaryNode;
     
     // use this to synchronize access for the lazy intit
     protected Object lazyInitLock = new Object();
