@@ -7,7 +7,7 @@ change sets from trunk NOT in 1.5.x:
 * 10389: Continuation of call site caching patch
 * 10393: Continuation of call site caching.
 * 10398: Static fields for numerical constants brings noticable performance improvements. 
-* 10403: All most important (in some non-defined sense) paths of call dispatch is covered by call site caching. In fact it brings 2x-4x performance improvement for several benchmarks we have.
+* 10403: All most important (in some non-defined sense) paths of call dispatch is covered by call site caching...
 * 10522: Some more call site optimizations
 * 10554: First step for special call sites for binops
 * 10562: More about call sites
@@ -17,7 +17,7 @@ change sets from trunk NOT in 1.5.x:
 * 10647: fix 1.4 breakage
 * 10673: Macro -> Transformation
 * 10674: another ASTTransformation example: use the AST Transformation to do the Grails GORM injection
-* 10687: multiple annotations no longer inappropriately multiply added, with test case, error checking on phases in GroovyASTTransformation handling,  more generics silliness, javadoc
+* 10687: multiple annotations no longer inappropriately multiply added, ...
 * 10738: FactoryBuilderSuppoet changes for CompositeBuilder
 * 10739: import cleanups
 * 10740: remove local property
@@ -29,5 +29,17 @@ change sets from trunk NOT in 1.5.x:
 * 10795: GROOVY-2595 - actions may now use child closure as action closure
 * 10799: GROOVY-2595 - actions may now use child closure as action closure
 * 10822: fix nimbus plaf name, re: http://forums.java.net/jive/thread.jspa?messageID=258478&tstart=0#258478
+* 10831: Intermediate commit regarding call sites
+* 10837: Fix for bug cuasing NPE on Gant tests
+* 10854: class constants getters names starts with $ to avoid property creation
+* 10855: additional null check
+* 10856: try cast by invoking constructor in one arg
+* 10857: Let it be compiled by 1.4
+* 10872: roll-back of too agressive type cast
+* 10877: Start to generift AST Annotation Macros ...
+* 10885: Fix for some problems in Grails
+* 10890: Binding / Caricature demo
+* 10897: 'reverse' bind() declerations in swing builder ...
+* 10927: It is tiny change, which imrove perf a bit.
 
-Last change set applied to 1.5.x: 10826
+Last change set applied to 1.5.x: 10941

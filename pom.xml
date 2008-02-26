@@ -655,7 +655,7 @@
         <dependency>
             <groupId>jline</groupId>
             <artifactId>jline</artifactId>
-            <version>0.9.93</version>
+            <version>0.9.94</version>
             <scope>compile</scope>
         </dependency>
     </dependencies>

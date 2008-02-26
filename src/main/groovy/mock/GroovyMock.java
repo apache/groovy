@@ -27,7 +27,8 @@ import com.mockobjects.dynamic.*;
  * 
  * @author Joe Walnes
  * @author Chris Stevenson
- * @version $Revision$
+ * @deprecated  As of Groovy 1.5 replaced by MockFor (or use an external mocking package)
+ *              {@link groovy.mock.interceptor.MockFor}
  */
 public class GroovyMock extends GroovyObjectSupport implements Verifiable {
 
