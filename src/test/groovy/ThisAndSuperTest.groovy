@@ -88,6 +88,14 @@ class ThisAndSuperTest extends GroovyTestCase{
         assertEquals "end of each in subclass", x.res [2]
     }
 
+// GROOVY-2555
+//    void testCallToAbstractSuperMethodShouldResultInMissingMethod () {
+//        def x = new TestForSuperHelper6()
+//        shouldFail(MissingMethodException) {
+//            x.theMethod()
+//        }
+//    }
+
     void testDgm () {
       assertEquals A.empty(), '123'
     }
@@ -142,11 +150,21 @@ class TestForSuperHelper3 {
   }
 }
 
-class TestForSuperHelper4 extends TestForSuperHelper3{
+class TestForSuperHelper4 extends TestForSuperHelper3 {
   TestForSuperHelper4() {
     super(1)
   }
   TestForSuperHelper4(Object j) {
     super(j)
   }
+}
+
+abstract class TestForSuperHelper5 {
+    abstract void theMethod()
+}
+
+class TestForSuperHelper6 extends TestForSuperHelper5 {
+    void theMethod() {
+        super.theMethod()
+    }
 }

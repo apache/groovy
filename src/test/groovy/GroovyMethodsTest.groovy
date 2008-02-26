@@ -87,6 +87,27 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert [[1, 2], [3, 4], [5, 6]].sum {list -> list.collect {it * 2}} == [2, 4, 6, 8, 10, 12]
     }
 
+    void testSumForIteratorWithList() {
+        def result = [1, 2, 3].iterator().sum([])
+        assert result == [1, 2, 3]
+    }
+
+    void testSumForIteratorWithInt() {
+        def result = [1, 2, 3].iterator().sum(0)
+        assert result == 6
+    }
+
+    void testReverseForIterator() {
+        def listIterator = [1, 2, 3].iterator()
+        def result = []
+        def revIterator = listIterator.reverse()
+        assert revIterator instanceof Iterator
+        revIterator.each{
+            result << it
+        }
+        assert result == [3, 2, 1]
+    }
+
     void testJoin() {
         assert [2, 4, 6].join("-") == "2-4-6"
         assert ["edam", "cheddar", "brie"].join(", ") == 'edam, cheddar, brie'
@@ -165,6 +186,12 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert c.size() == l.size()
     }
 
+    void testIteratorSize() {
+        def c = [1, 2, 3, 4, 5]
+        def it = c.iterator()
+        assert c.size() == it.size()
+    }
+
     void testEnumerationToList() {
         def c = [1, 2, 3, 4, 5]
         def v = new Vector()
@@ -224,19 +251,21 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert joined == "a, b, c, d"
     }
 
-    void testReverseEach() {
-        // List
+    void testReverseEachForList() {
         def l = ["cheese", "loves", "Guillaume"]
         def expected = ["Guillaume", "loves", "cheese"]
         def answer = []
         l.reverseEach {answer << it}
         assert answer == expected
+    }
 
-        // Array
-        def ary = l as String[]
-        answer = []
-        ary.reverseEach {answer << it}
+    void testReverseEachForArray() {
+        String[] items = ["cheese", "loves", "Guillaume"]
+        String[] expected = ["Guillaume", "loves", "cheese"]
+        def answer = []
+        items.reverseEach {answer << it}
         assert answer == expected
+        assert items.reverse() == expected
     }
 
     void testGrep() {
@@ -353,6 +382,23 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert !('d' in list)
     }
 
+    void testFirstLastHeadTailForLists() {
+        def list = ['a', 'b', 'c']
+        assert 'a' == list.first()
+        assert 'c' == list.last()
+        assert 'a' == list.head()
+        assert ['b', 'c'] == list.tail()
+        assert list.size() == 3
+    }
+
+    void testPushPopForLists() {
+        def list = ['a', 'b', 'c']
+        assert list.push('d')
+        assert list.size() == 4
+        assert list.pop() == 'd'
+        assert list.size() == 3
+    }
+
     void testInForArrays() {
         String[] array = ['a', 'b', 'c']
         assert 'b' in array
@@ -369,6 +415,32 @@ class GroovyMethodsTest extends GroovyTestCase {
 
     void testSort() {
         assert [-5, -3, -1, 0, 2, 4].sort {it * it} == [0, -1, 2, -3, 4, -5]
+    }
+
+    void testMaxForIterator() {
+        assert [-5, -3, -1, 0, 2, 4].collect{ it * it }.iterator().max() == 25
+    }
+
+    void testMinForIterator() {
+        assert [-5, -3, -1, 0, 2, 4].collect{ it * it }.iterator().min() == 0
+    }
+
+    void testCountForIterator() {
+        assert [1, 2, 3, 2, 1].iterator().count(2) == 2
+    }
+
+    void testJoinForIterator() {
+        assert ['a', 'b', 'c', 'a'].iterator().join('-') == 'a-b-c-a'
+    }
+
+    void testSortForIterator() {
+        def result = []
+        def iterator = [-5, -3, -1, 0, 2, 4].iterator().sort {it * it}
+        assert iterator instanceof Iterator
+        iterator.each {
+            result << it
+        }
+        assert result == [0, -1, 2, -3, 4, -5]
     }
 
     void testReplaceAllClosure() {

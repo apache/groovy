@@ -1,66 +1,27 @@
 /*
- $Id$
-
- Copyright 2003 (C) James Strachan and Bob Mcwhirter. All Rights Reserved.
-
- Redistribution and use of this software and associated documentation
- ("Software"), with or without modification, are permitted provided
- that the following conditions are met:
-
- 1. Redistributions of source code must retain copyright
-    statements and notices.  Redistributions must also contain a
-    copy of this document.
-
- 2. Redistributions in binary form must reproduce the
-    above copyright notice, this list of conditions and the
-    following disclaimer in the documentation and/or other
-    materials provided with the distribution.
-
- 3. The name "groovy" must not be used to endorse or promote
-    products derived from this Software without prior written
-    permission of The Codehaus.  For written permission,
-    please contact info@codehaus.org.
-
- 4. Products derived from this Software may not be called "groovy"
-    nor may "groovy" appear in their names without prior written
-    permission of The Codehaus. "groovy" is a registered
-    trademark of The Codehaus.
-
- 5. Due credit should be given to The Codehaus -
-    http://groovy.codehaus.org/
-
- THIS SOFTWARE IS PROVIDED BY THE CODEHAUS AND CONTRIBUTORS
- ``AS IS'' AND ANY EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT
- NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND
- FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.  IN NO EVENT SHALL
- THE CODEHAUS OR ITS CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
- INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
- (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
- SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
- STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
- ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED
- OF THE POSSIBILITY OF SUCH DAMAGE.
-
+ * Copyright 2003-2008 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.E
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
+package groovy.util
 
-package groovy.util;
-
-
-import groovy.util.GroovyTestCase;
-import groovy.util.Node;
-import groovy.xml.QName;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
+import groovy.xml.QName
 
 /**
  * Tests the use of the structured Attribute type
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author Paul King
  * @version $Revision$
  */
 public class NodeTest extends GroovyTestCase {
@@ -135,8 +96,7 @@ public class NodeTest extends GroovyTestCase {
         assertEquals("value", 5, attribute.children().size());
         assertEquals("text", "someTextmoreTextmoreText", attribute.text());
         
-        
-        // lets test get
+        // let's test get
         List list = (List) attribute.get("person");
         assertEquals("Expected list size: " + list, 2, list.size());
         
@@ -159,25 +119,77 @@ public class NodeTest extends GroovyTestCase {
         
         node.children().add(child);
 
-        // lets look up by QName
+        // let's look up by QName
         Object value = node.getAt(name1);
         assertTrue("Should return a list: " + value, value instanceof NodeList);
         NodeList list = (NodeList) value;
         assertEquals("Size", 1, list.size());
         
         Node answer = (Node) list.get(0);
+        // check node
         assertNotNull("Node is null!", answer);
-        
-        System.out.println("Found node: " + answer);
-        
-        // now lets navigate the list
+        assertEquals("namespace of node", "http://something", answer.name().namespaceURI);
+        assertEquals("localPart of node", "foo", answer.name().localPart);
+
+        // check grandchild
         NodeList gc = list.getAt(new QName("http://something", "bar"));
         assertEquals("grand children size", 1, gc.size());
-        
-        System.out.println("Found grandChild: " + gc);
-        
-        String text= gc.text();
-        assertEquals("text of grandchild", "I am a youngling", text);
+        assertEquals("text of grandchildren", "I am a youngling", gc.text());
+        assertEquals("namespace of grandchild[0]", "http://something", gc[0].name().namespaceURI);
+    }
+
+    public void testRemove() {
+        def xml = '''
+        <foo>
+            <bar id="1" />
+            <bar id="2" />
+            <bar id="3" />
+            <bar id="4" />
+        </foo>'''
+        Node foo = new XmlParser().parseText(xml)
+
+        assert foo.bar.size() == 4
+        assert foo.children().size() == 4
+        assert foo.children().collect{ it.@id.toInteger() } == [1, 2, 3, 4]
+
+        def bar2 = foo.bar.find {it.@id == '2'}
+        bar2.parent().remove(bar2)
+        assert ! bar2.parent()
+        assert foo.bar.size() == 3
+        assert foo.children().size() == 3
+        assert foo.children().collect{ it.@id.toInteger() } == [1, 3, 4]
+        assert ! foo.bar.contains(bar2)
+
+        def bar3 = foo.children().get(1)
+        foo.remove(bar3)
+        assert ! bar3.parent()
+        assert foo.bar.size() == 2
+        assert foo.children().size() == 2
+        assert foo.children().collect{ it.@id.toInteger() } == [1, 4]
+        assert ! foo.bar.contains(bar3)
+    }
+
+    public void testMove() {
+        def xml = '''
+        <foo>
+            <bar id="1" />
+            <bar id="2" />
+            <baz/>
+        </foo>'''
+        Node foo = new XmlParser().parseText(xml)
+
+        assert foo.bar.size() == 2
+        assert foo.children().size() == 3
+        assert foo.children().collect{ it.@id?.toInteger() }.grep{it} == [1, 2]
+
+        def bar2 = foo.bar.find {it.@id == '2'}
+        bar2.parent().remove(bar2)
+        def baz = foo.baz[0]
+        assert ! bar2.parent()
+        baz.append(bar2)
+        assert bar2.parent() == baz
+        assert foo.children().collect{ it.@id?.toInteger() }.grep{it} == [1]
+        assert foo.baz.bar[0] == bar2
     }
 
     protected void dump(Node node) {
