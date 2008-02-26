@@ -23,7 +23,9 @@ import com.mockobjects.constraint.Constraint;
  * 
  * @author Joe Walnes
  * @author Chris Stevenson
- * @version $Revision$
+ * @deprecated  As of Groovy 1.5 replaced by MockFor (or use an external mocking package)
+ *              {@link groovy.mock.interceptor.MockFor}
+
  */
 public class ClosureConstraintMatcher implements Constraint {
     private final Closure closure;

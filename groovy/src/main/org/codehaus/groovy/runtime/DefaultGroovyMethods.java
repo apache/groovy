@@ -878,7 +878,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns an iterator equivalent to this iterator all duplicated items removed
-     * by using the default comparator.
+     * by using the default comparator. The original iterator will become
+     * exhausted of elements after determining the unique values. A new iterator
+     * for the unique values will be returned.
      *
      * @param self an Iterator
      * @return the modified Iterator
@@ -1290,6 +1292,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * items within this Iterator.
      * Comparison is done using Groovy's == operator (using
      * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
+     * The iterator will become exhausted of elements after determining the count value.
      *
      * @param self  the Iterator from which we count the number of matching occurrences
      * @param value the value being searched for
@@ -1331,7 +1334,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Convert an iterator to a List.
+     * Convert an iterator to a List. The iterator will become
+     * exhausted of elements after making this conversion.
      *
      * @param self an iterator
      * @return a List
@@ -1832,7 +1836,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Sums the items from an Iterator.  This is equivalent to invoking the
-     * "plus" method on all items from the Iterator.
+     * "plus" method on all items from the Iterator. The iterator will become
+     * exhausted of elements after determining the sum value.
      *
      * @param self an Iterator for the values to add together
      * @return The sum of all of the items
@@ -1929,8 +1934,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Concatenates the <code>toString()</code> representation of each
-     * item from theIterator, with the given String as a separator between
-     * each item.
+     * item from the iterator, with the given String as a separator between
+     * each item. The iterator will become exhausted of elements after
+     * determining the resulting conjoined value.
      *
      * @param self      an Iterator of items
      * @param separator a String separator
@@ -2006,7 +2012,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Adds min() method to Iterator objects.
+     * Adds min() method to Iterator objects. The iterator will become
+     * exhausted of elements after determining the minimum value.
      *
      * @param self an Iterator
      * @return the minimum value
@@ -2101,7 +2108,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Adds max() method to Iterator objects.
+     * Adds max() method to Iterator objects. The iterator will become
+     * exhausted of elements after determining the maximum value.
      *
      * @param self an Iterator
      * @return the maximum value
@@ -2185,6 +2193,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Provide the standard Groovy <code>size()</code> method for <code>Iterator</code>.
+     * The iterator will become exhausted of elements after determining the size value.
      *
      * @param self an Iterator
      * @return the length of the Iterator
@@ -3377,7 +3386,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Sorts the given iterator items into a sorted iterator.  The items are
-     * assumed to be comparable.
+     * assumed to be comparable.  The original iterator will become
+     * exhausted of elements after completing this method call. A new iterator
+     * is produced that traverses the items in sorted order.
      *
      * @param self the Iterator to be sorted
      * @return the sorted items as an Iterator
@@ -3663,7 +3674,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Reverses the iterator.
+     * Reverses the iterator. The original iterator will become
+     * exhausted of elements after determining the reversed values.
+     * A new iterator for iterating through the reversed values is returned.
      *
      * @param self an Iterator
      * @return a reversed Iterator
@@ -7891,7 +7904,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Common code for {@link #eachFileMatch(File,Object,Closure)} and {@link #eachDirMatch(File,Object,Closure)}
      *
      * @param self    a file
-     * @param filter  the filter to perform on the directory (using the isCase(object) method)
+     * @param filter  the filter to perform on the file/directory (using the isCase(object) method)
      * @param closure the closure to invoke
      * @param onlyDir if normal file should be skipped
      * @throws FileNotFoundException    if the given directory does not exist
@@ -7914,9 +7927,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Invokes the closure for each file matching the given filter in the given directory
-     * - calling the isCase() method used by switch statements.  This method can be used
-     * with different kinds of filters like regular expresions, classes, ranges etc.
+     * Invokes the closure for each file whose name (file.name) matches the given filter in the given directory
+     * - calling the isCase() method to determine if a match occurs.  This method can be used
+     * with different kinds of filters like regular expressions, classes, ranges etc.
      *
      * @param self    a file
      * @param filter  the filter to perform on the directory (using the isCase(object) method)
@@ -7930,9 +7943,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Invokes the closure for each directory matching the given filter in the given directory
-     * - calling the isCase() method used by switch statements.  This method can be used
-     * with different kinds of filters like regular expresions, classes, ranges etc.
+     * Invokes the closure for each directory whose name (dir.name) matches the given filter in the given directory
+     * - calling the isCase() method to determine if a match occurs.  This method can be used
+     * with different kinds of filters like regular expressions, classes, ranges etc.
      *
      * @param self    a file
      * @param filter  the filter to perform on the directory (using the isCase(object) method)
@@ -9710,8 +9723,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 while ((next = br.readLine()) != null) {
                     if (sb != null) {
                         sb.append(next);
+                        sb.append("\n");
                     } else {
                         w.write(next);
+                        w.write("\n");
                     }
                 }
             } catch (IOException e) {
