@@ -34,17 +34,17 @@ import java.awt.GridBagConstraints as gb
 import java.awt.Insets
 
 sb = SwingBuilder.build() {
-    frame(id:'frame', defaultCloseOperation:javax.swing.JFrame.DISPOSE_ON_CLOSE) {
+    frame = frame(defaultCloseOperation:javax.swing.JFrame.DISPOSE_ON_CLOSE) {
         gridBagLayout()
 
         label("Text:", constraints:gbc(anchor:gb.WEST, insets:[6,6,3,3] as Insets))
-        textField("Change Me!", id:'textField', constraints:gbc(fill:gb.HORIZONTAL, gridwidth:gb.REMAINDER, insets:[6,3,3,6] as Insets))
+        textField = textField("Change Me!", constraints:gbc(fill:gb.HORIZONTAL, gridwidth:gb.REMAINDER, insets:[6,3,3,6] as Insets))
 
         label("Margin:", constraints:gbc(anchor:gb.WEST, insets:[3,6,3,3] as Insets))
-        slider(id:'slider', value:5, constraints:gbc(fill:gb.HORIZONTAL, gridwidth:gb.REMAINDER, insets:[3,3,3,6] as Insets))
+        slider = slider(value:5, constraints:gbc(fill:gb.HORIZONTAL, gridwidth:gb.REMAINDER, insets:[3,3,3,6] as Insets))
 
         panel()
-        checkBox("Enbled", id:'checkBox', constraints:gbc(anchor:gb.WEST, gridwidth:gb.REMAINDER, insets:[3,3,3,6] as Insets))
+        checkBox = checkBox("Enbled", constraints:gbc(anchor:gb.WEST, gridwidth:gb.REMAINDER, insets:[3,3,3,6] as Insets))
 
         separator(constraints:gbc(fill:gb.HORIZONTAL, gridwidth:gb.REMAINDER))
 
@@ -55,7 +55,7 @@ sb = SwingBuilder.build() {
         )
     }
 }
-frame = sb.frame
+
 frame.pack()
 frame.setSize(frame.width + 100, frame.height + 200)
 frame.show()

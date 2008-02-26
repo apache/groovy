@@ -5,18 +5,17 @@ import static java.awt.GridBagConstraints.*
 def bean = new ObservableMap([name:'Alice', phone:'719-555-1212', addr:'42 Other Way'])
 
 def swing = SwingBuilder.build {
- frame(id:'frame', 
+ frame = frame(
        pack:true, 
        show:true,
        defaultCloseOperation:DISPOSE_ON_CLOSE)
  {
-  model(bean, id:'beanModel', bind:false)
+  beanModel = model(bean, bind:false)
 
   gridBagLayout()
 
   label('Name:', constraints:gbc(insets:[6,6,3,3]))
-  textField(text:beanModel.name,
-            id:'name',
+  name = textField(text:beanModel.name,
             columns:20,
             constraints:gbc(gridwidth:REMAINDER,
                             fill:HORIZONTAL,
@@ -24,18 +23,16 @@ def swing = SwingBuilder.build {
                             insets:[6,3,3,6]))
 
   label('Phone:', constraints:gbc(insets:[3,6,3,3]))
-  textField(text:beanModel.phone, 
-            id:'phone', 
-            columns:20, 
+  phone = textField(text:beanModel.phone,
+            columns:20,
             constraints:gbc(gridwidth:REMAINDER, 
                             fill:HORIZONTAL, 
                             weightx:1, 
                             insets:[3,3,3,6]))
 
   label('Address:', constraints:gbc(insets:[3,6,3,3]))
-  textField(text:beanModel.addr, 
-            id:'addr', 
-            columns:20, 
+  addr = textField(text:beanModel.addr,
+            columns:20,
             constraints:gbc(gridwidth:REMAINDER, 
                             fill:HORIZONTAL, 
                             weightx:1, 
@@ -65,7 +62,7 @@ def swing = SwingBuilder.build {
                              weighty:1, 
                              insets:[3,6,6,6])) 
   {
-   textArea(id:'output')
+   output = textArea()
   }
  }
 }

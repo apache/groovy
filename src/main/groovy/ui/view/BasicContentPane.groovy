@@ -8,12 +8,12 @@ import javax.swing.text.Style
 import javax.swing.text.StyleContext
 import javax.swing.text.StyledDocument
 
-splitPane(id: 'splitPane', resizeWeight: 0.50F,
+splitPane = splitPane(resizeWeight: 0.50F,
     orientation: VERTICAL_SPLIT)
 {
-    widget(new ConsoleTextEditor(), border:emptyBorder(0), id:'inputEditor', constraints:BorderLayout.CENTER)
+    inputEditor = widget(new ConsoleTextEditor(), border:emptyBorder(0), constraints:BorderLayout.CENTER)
     scrollPane(border:emptyBorder(0)) {
-        textPane(id: 'outputArea',
+        outputArea = textPane(
             editable: false,
             background: new Color(255,255,218),
             font:new Font("Monospaced", Font.PLAIN, 12),

@@ -20,7 +20,7 @@ import java.awt.event.InputEvent
 import java.awt.event.KeyEvent
 import javax.swing.KeyStroke
 
-action(id: 'newFileAction',
+newFileAction = action(
     name: 'New File',
     closure: controller.&fileNewFile,
     mnemonic: 'N',
@@ -29,14 +29,14 @@ action(id: 'newFileAction',
     shortDescription: 'New Groovy Script'
 )
 
-action(id: 'newWindowAction',
+newWindowAction = action(
     name: 'New Window',
     closure: controller.&fileNewWindow,
     mnemonic: 'W',
     accelerator: shortcut('shift N')
 )
 
-action(id: 'openAction',
+openAction = action(
     name: 'Open',
     closure: controller.&fileOpen,
     mnemonic: 'O',
@@ -45,7 +45,7 @@ action(id: 'openAction',
     shortDescription: 'Open Groovy Script'
 )
 
-action(id: 'saveAction',
+saveAction = action(
     name: 'Save',
     closure: controller.&fileSave,
     mnemonic: 'S',
@@ -55,20 +55,20 @@ action(id: 'saveAction',
     enabled: false // controller will enable as needed
 )
 
-action(id: 'saveAsAction',
+saveAsAction = action(
     name: 'Save As...',
     closure: controller.&fileSaveAs,
     mnemonic: 'A',
 )
 
-action(id: 'printAction',
+printAction = action(
     name: 'Print...',
     closure: controller.&print,
     mnemonic: 'P',
     accelerator: shortcut('P')
 )
 
-action(id: 'exitAction',
+exitAction = action(
     name: 'Exit',
     closure: controller.&exit,
     mnemonic: 'X'
@@ -78,7 +78,7 @@ action(id: 'exitAction',
 //accelerator: shortcut('Q')
 )
 
-action(id: 'undoAction',
+undoAction = action(
     name: 'Undo',
     closure: controller.&undo,
     mnemonic: 'U',
@@ -87,7 +87,7 @@ action(id: 'undoAction',
     shortDescription: 'Undo'
 )
 
-action(id: 'redoAction',
+redoAction = action(
     name: 'Redo',
     closure: controller.&redo,
     mnemonic: 'R',
@@ -96,7 +96,7 @@ action(id: 'redoAction',
     shortDescription: 'Redo'
 )
 
-action(id: 'findAction',
+findAction = action(
     name: 'Find...',
     closure: controller.&find,
     mnemonic: 'F',
@@ -105,21 +105,21 @@ action(id: 'findAction',
     shortDescription: 'Find'
 )
 
-action(id: 'findNextAction',
+findNextAction = action(
     name: 'Find Next',
     closure: controller.&findNext,
     mnemonic: 'N',
     accelerator: KeyStroke.getKeyStroke(KeyEvent.VK_F3, 0)
 )
 
-action(id: 'findPreviousAction',
+findPreviousAction = action(
     name: 'Find Previous',
     closure: controller.&findPrevious,
     mnemonic: 'V',
     accelerator: KeyStroke.getKeyStroke(KeyEvent.VK_F3, InputEvent.SHIFT_DOWN_MASK)
 )
 
-action(id: 'replaceAction',
+replaceAction = action(
     name: 'Replace...',
     closure: controller.&replace,
     mnemonic: 'E',
@@ -128,7 +128,7 @@ action(id: 'replaceAction',
     shortDescription: 'Replace'
 )
 
-action(id: 'cutAction',
+cutAction = action(
     name: 'Cut',
     closure: controller.&cut,
     mnemonic: 'T',
@@ -137,7 +137,7 @@ action(id: 'cutAction',
     shortDescription: 'Cut'
 )
 
-action(id: 'copyAction',
+copyAction = action(
     name: 'Copy',
     closure: controller.&copy,
     mnemonic: 'C',
@@ -146,7 +146,7 @@ action(id: 'copyAction',
     shortDescription: 'Copy'
 )
 
-action(id: 'pasteAction',
+pasteAction = action(
     name: 'Paste',
     closure: controller.&paste,
     mnemonic: 'P',
@@ -155,14 +155,14 @@ action(id: 'pasteAction',
     shortDescription: 'Paste'
 )
 
-action(id: 'selectAllAction',
+selectAllAction = action(
     name: 'Select All',
     closure: controller.&selectAll,
     mnemonic: 'A',
     accelerator: shortcut('A')
 )
 
-action(id: 'historyPrevAction',
+historyPrevAction = action(
     name: 'Previous',
     closure: controller.&historyPrev,
     mnemonic: 'P',
@@ -172,7 +172,7 @@ action(id: 'historyPrevAction',
     enabled: false // controller will enable as needed
 )
 
-action(id: 'historyNextAction',
+historyNextAction = action(
     name: 'Next',
     closure: controller.&historyNext,
     mnemonic: 'N',
@@ -182,14 +182,14 @@ action(id: 'historyNextAction',
     enabled: false // controller will enable as needed
 )
 
-action(id: 'clearOutputAction',
+clearOutputAction = action(
     name: 'Clear Output',
     closure: controller.&clearOutput,
     mnemonic: 'O',
     accelerator: shortcut('W')
 )
 
-action(id: 'runAction',
+runAction = action(
     name: 'Run',
     closure: controller.&runScript,
     mnemonic: 'R',
@@ -199,7 +199,7 @@ action(id: 'runAction',
     shortDescription: 'Execute Groovy Script'
 )
 
-action(id: 'runSelectionAction',
+runSelectionAction = action(
     name: 'Run Selection',
     closure: controller.&runSelectedScript,
     mnemonic: 'E',
@@ -207,77 +207,77 @@ action(id: 'runSelectionAction',
     accelerator: shortcut('shift R')
 )
 
-action(id: 'addClasspathJar',
+addClasspathJar = action(
     name: 'Add Jar to ClassPath',
     closure: controller.&addClasspathJar,
     mnemonic: 'J',
 )
 
-action(id: 'addClasspathDir',
+addClasspathDir = action(
     name: 'Add Directory to ClassPath',
     closure: controller.&addClasspathDir,
     mnemonic: 'D',
 )
 
-action(id: 'clearClassloader',
+clearClassloader = action(
     name: 'Clear Script Context',
     closure: controller.&clearContext,
     mnemonic: 'C',
 )
 
-action(id: 'inspectLastAction',
+inspectLastAction = action(
     name: 'Inspect Last',
     closure: controller.&inspectLast,
     mnemonic: 'I',
     accelerator: shortcut('I')
 )
 
-action(id: 'inspectVariablesAction',
+inspectVariablesAction = action(
     name: 'Inspect Variables',
     closure: controller.&inspectVariables,
     mnemonic: 'V',
     accelerator: shortcut('J')
 )
 
-action(id: 'captureStdOutAction',
+captureStdOutAction = action(
     name: 'Capture Standard Output',
     closure: controller.&captureStdOut,
     mnemonic: 'C'
 )
 
-action(id: 'fullStackTracesAction',
+fullStackTracesAction = action(
     name: 'Show Full Stack Traces',
     closure: controller.&fullStackTraces,
     mnemonic: 'F'
 )
 
-action(id:'showToolbarAction',
+showToolbarAction = action(
     name: 'Show Toolbar',
     closure: controller.&showToolbar,
     mnemonic: 'T'
 )
 
-action(id: 'largerFontAction',
+largerFontAction = action(
     name: 'Larger Font',
     closure: controller.&largerFont,
     mnemonic: 'L',
     accelerator: shortcut('shift L')
 )
 
-action(id: 'smallerFontAction',
+smallerFontAction = action(
     name: 'Smaller Font',
     closure: controller.&smallerFont,
     mnemonic: 'S',
     accelerator: shortcut('shift S')
 )
 
-action(id: 'aboutAction',
+aboutAction = action(
     name: 'About',
     closure: controller.&showAbout,
     mnemonic: 'A'
 )
 
-action(id: 'interruptAction',
+interruptAction = action(
     name: 'Interrupt',
     closure: controller.&confirmRunInterrupt
 )

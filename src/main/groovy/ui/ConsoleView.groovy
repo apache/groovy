@@ -40,12 +40,11 @@ switch (UIManager.getSystemLookAndFeelClassName()) {
         break
 }
 
-frame(
+consoleFrame = frame(
     title: 'GroovyConsole',
     location: [100,100], // in groovy 2.0 use platform default location
     iconImage: imageIcon("/groovy/ui/ConsoleIcon.png").image,
     defaultCloseOperation: DO_NOTHING_ON_CLOSE,
-    id:'consoleFrame'
 ) {
     build(menuBarClass)
 
@@ -55,10 +54,10 @@ frame(
 
     build(statusBarClass)
 
-    dialog(title: 'Groovy executing',
+    runWaitDialog = dialog(
+        title: 'Groovy executing',
         modal: true,
-        id:'runWaitDialog',
-        pack:true
+        pack:true,
     ) {
         vbox(border: emptyBorder(6)) {
             label(text: "Groovy is now executing. Please wait.", alignmentX: 0.5f)
