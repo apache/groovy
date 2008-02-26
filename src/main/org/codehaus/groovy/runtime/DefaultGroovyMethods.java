@@ -9658,8 +9658,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 while ((next = br.readLine()) != null) {
                     if (sb != null) {
                         sb.append(next);
+                        sb.append("\n");
                     } else {
                         w.write(next);
+                        w.append("\n");
                     }
                 }
             } catch (IOException e) {
