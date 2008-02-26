@@ -9661,7 +9661,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                         sb.append("\n");
                     } else {
                         w.write(next);
-                        w.append("\n");
+                        w.write("\n");
                     }
                 }
             } catch (IOException e) {
