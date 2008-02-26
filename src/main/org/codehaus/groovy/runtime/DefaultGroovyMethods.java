@@ -1729,6 +1729,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return closure.call(entry);
     }
 
+    // internal helper method
+    protected static Object callClosureForLine(Closure closure, String line, int counter) {
+        if (closure.getMaximumNumberOfParameters() == 2) {
+            return closure.call(new Object[]{line, new Integer(counter)});
+        }
+        return closure.call(line);
+    }
+
     protected static Object callClosureForMapEntryAndCounter(Closure closure, Map.Entry entry, int counter) {
         if (closure.getMaximumNumberOfParameters() == 3) {
             return closure.call(new Object[]{entry.getKey(), entry.getValue(), new Integer(counter)});
@@ -7272,7 +7280,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      */
     public static void eachLine(Reader self, Closure closure) throws IOException {
-        BufferedReader br /* = null */;
+        BufferedReader br;
+        int count = 0;
 
         if (self instanceof BufferedReader)
             br = (BufferedReader) self;
@@ -7285,7 +7294,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 if (line == null) {
                     break;
                 } else {
-                    closure.call(line);
+                    count++;
+                    callClosureForLine(closure, line, count);
                 }
             }
             Reader temp = self;

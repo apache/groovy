@@ -1,3 +1,18 @@
+/*
+ * Copyright 2003-2008 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package groovy
 
 /** 
@@ -164,44 +179,6 @@ class ClosureMethodTest extends GroovyTestCase {
         assert text == '[1, 2, "three"]'
     }
 
-    void testEachLine() {
-        def file = new File("src/test/groovy/Bar.groovy")
-        if(file.exists() == false) {
-            file = new File("Bar.groovy")
-        }
-        file.eachLine { line -> println(line) }
-    }
-
-    void testForEachLine() {
-        def file = new File("src/test/groovy/Bar.groovy")
-        if(file.exists() == false) {
-            file = new File("Bar.groovy")
-        }
-        shouldFail (DeprecationException) {
-          for (line in file) { println(line) }
-        }
-    }
-
-    void testReadLines() {
-        def file = new File("src/test/groovy/Bar.groovy")
-        if(file.exists() == false) {
-            file = new File("Bar.groovy")
-        }
-        def lines = file.readLines()
-        assert lines != null
-        assert lines.size() > 0, "File has: ${lines.size()} line(s)"
-    }
-
-    void testEachFile() {
-        def file = new File("src/test/groovy")
-        if(!file.exists()) {
-            file = new File(".")
-        }
-        println("Closure loop to display contents of dir: " + file)
-        file.eachFile { f -> println(f.getName()) }
-        println("")
-    }
-    
     void testTokenize() {
         def text = "hello-there-how-are-you"
         def answer = []
