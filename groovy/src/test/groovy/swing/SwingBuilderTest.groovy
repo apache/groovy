@@ -400,6 +400,18 @@ class SwingBuilderTest extends GroovyTestCase {
 
     }
 
+    void testScrollPane() {
+        if (headless) return
+
+        def swing = new SwingBuilder()
+        shouldFail {
+            swing.scrollPane {
+                button("OK")
+                button("Cancel")
+            }
+        }
+    }
+
     void testComboBox() {
         if (headless) return
 
@@ -519,15 +531,16 @@ class SwingBuilderTest extends GroovyTestCase {
             rigidArea(id:'area2', constraints:BorderLayout.SOUTH, width:30, height:40)
             scrollPane(id:'scrollId', constraints:BorderLayout.CENTER,
                 border:BorderFactory.createRaisedBevelBorder()) {
-                glue()
-                vglue()
-                hglue()
-                vstrut()
-                vstrut(height:8)
-                hstrut()
-                hstrut(width:8)
-                rigidArea(id:'area3')
-                viewport()
+                panel() {
+                    glue()
+                    vglue()
+                    hglue()
+                    vstrut()
+                    vstrut(height:8)
+                    hstrut()
+                    hstrut(width:8)
+                    rigidArea(id:'area3')
+                }
             }
         }
         assert swing.vboxId.parent == swing.frameId.contentPane
