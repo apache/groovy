@@ -78,6 +78,7 @@ if "%eval[2+2]" == "4" goto 4NT_args
 @rem Slurp the command line arguments.  
 set CMD_LINE_ARGS=
 set _SKIP=2
+if not "x" == "x%CP%" set _SKIP=4
 
 :win9xME_args_slurp
 if "x%~1" == "x" goto execute
@@ -128,21 +129,15 @@ rem now unescape -q, -d, -s
 set _ARG=%_ARG:-q="%
 set _ARG=%_ARG:-d=-%
 set _ARG=%_ARG:-s=*%
-if "x2" == "x%_SKIP%" goto skip_path
-if "x1" == "x%_SKIP%" goto skip_main
+if %_SKIP% GTR 0 goto skip_arg
 
 set CMD_LINE_ARGS=%CMD_LINE_ARGS% %_ARG%
 set _ARG=
 goto win9xME_args_loop
 
-:skip_path
+:skip_arg
 set _ARG=
-set _SKIP=1
-goto win9xME_args_loop
-
-:skip_main
-set _ARG=
-set _SKIP=0
+set /a _SKIP -= 1
 goto win9xME_args_loop
 
 :4NT_args
