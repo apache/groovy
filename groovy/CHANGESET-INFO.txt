@@ -42,4 +42,4 @@ change sets from trunk NOT in 1.5.x:
 * 10897: 'reverse' bind() declerations in swing builder ...
 * 10927: It is tiny change, which imrove perf a bit.
 
-Last change set applied to 1.5.x: 10941
+Last change set applied to 1.5.x: 10959
