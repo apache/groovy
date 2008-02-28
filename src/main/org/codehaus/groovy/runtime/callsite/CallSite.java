@@ -114,7 +114,7 @@ public abstract class CallSite {
         return acceptCall(receiver, args).invoke(receiver, args);
     }
 
-    public final Object callCurrent (Object receiver, Object [] args) throws Throwable {
+    public Object callCurrent (Object receiver, Object [] args) throws Throwable {
         return acceptCurrent(receiver, args).invoke(receiver, args);
     }
     
@@ -210,6 +210,10 @@ public abstract class CallSite {
         return true;
     }
 
+    public boolean wantProvideCallSite() {
+        return false;
+    }
+
     /**
      * Call site which never accept any receiver/arguments.
      * We use it as initial value for any call site.
@@ -260,5 +264,21 @@ public abstract class CallSite {
 
         array.array[index] = site;
         return site;
+    }
+
+    public Object plus (Object a, Object b) {
+        return acceptBinop(a,b).invokeBinop(a,b);
+    }
+
+    public Object div (Object a, Object b) {
+        return acceptBinop(a,b).invokeBinop(a,b);
+    }
+
+    public Object minus (Object a, Object b) {
+        return acceptBinop(a,b).invokeBinop(a,b);
+    }
+
+    public Object multiply (Object a, Object b) {
+        return acceptBinop(a,b).invokeBinop(a,b);
     }
 }

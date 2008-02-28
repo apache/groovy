@@ -32,7 +32,7 @@ public final class CallSiteArray {
     public final CallSite[] array;
 
     public static final Object [] NOPARAM = new Object[0];
-    final Class owner;
+    public final Class owner;
 
     public CallSiteArray(Class owner, String [] names) {
         this.owner = owner;

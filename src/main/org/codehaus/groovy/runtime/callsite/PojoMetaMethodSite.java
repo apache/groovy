@@ -17,6 +17,7 @@ package org.codehaus.groovy.runtime.callsite;
 
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
+import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.NullObject;
@@ -29,8 +30,11 @@ import org.codehaus.groovy.runtime.NullObject;
  * @author Alex Tkachman
 */
 public class PojoMetaMethodSite extends MetaMethodSite {
+    protected final CachedClass theCachedClass;
+
     public PojoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
         super(site, metaClass, metaMethod, params);
+        theCachedClass = metaClass.getTheCachedClass();
     }
 
     public Object invoke(Object receiver, Object[] args) {
@@ -42,11 +46,15 @@ public class PojoMetaMethodSite extends MetaMethodSite {
         return checkAcceptCall(receiver, args) ? this : createCallSite(receiver, args);
     }
 
+    protected final boolean checkMetaClass () {
+        return !GroovyCategorySupport.hasCategoryInAnyThread()
+            && theCachedClass.getMetaClassForClass() == metaClass;
+    }
+
     private boolean checkAcceptCall(Object receiver, Object[] args) {
         try {
-            return !GroovyCategorySupport.hasCategoryInAnyThread()
-           && receiver.getClass() == metaClass.getTheClass() // meta class match receiver
-           && ((MetaClassImpl)metaClass).getTheCachedClass().getMetaClassForClass() == metaClass // metaClass still be valid
+            return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
+               && checkMetaClass()
                && MetaClassHelper.sameClasses(params, args);
     }
         catch (NullPointerException e) {
@@ -59,9 +67,8 @@ public class PojoMetaMethodSite extends MetaMethodSite {
 
     public final CallSite acceptBinop(Object receiver, Object arg) {
         try {
-            return !GroovyCategorySupport.hasCategoryInAnyThread()
-               && receiver.getClass() == metaClass.getTheClass() // meta class match receiver
-               && ((MetaClassImpl)metaClass).getTheCachedClass().getMetaClassForClass() == metaClass // metaClass still be valid
+            return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
+               && checkMetaClass()
            && MetaClassHelper.sameClass(params, arg) // right arguments
                 ? this
                 : createCallSite(receiver, new Object[]{arg});

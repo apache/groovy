@@ -22,7 +22,6 @@ import org.codehaus.groovy.classgen.BytecodeHelper;
 import org.codehaus.groovy.runtime.Reflector;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
-import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -44,7 +43,7 @@ public class CachedClass {
 
     private Reflector reflector;
 
-    private volatile SoftReference metaClassForClass = new SoftReference(null);
+    private volatile MetaClass metaClassForClass;
 
     private CachedField[] fields;
     private CachedConstructor[] constructors;
@@ -333,11 +332,11 @@ public class CachedClass {
     }
 
     public MetaClass getMetaClassForClass() {
-        return (MetaClass) metaClassForClass.get();
+        return metaClassForClass;
     }
 
     public void setMetaClassForClass(MetaClass metaClassForClass, boolean isConst) {
-        this.metaClassForClass = new SoftReference(metaClassForClass);
+        this.metaClassForClass = metaClassForClass;
         setStaticMetaClassField(metaClassForClass);
     }
 

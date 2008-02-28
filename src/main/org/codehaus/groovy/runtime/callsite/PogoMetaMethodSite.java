@@ -18,6 +18,7 @@ package org.codehaus.groovy.runtime.callsite;
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
+import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 
@@ -37,19 +38,23 @@ public class PogoMetaMethodSite extends MetaMethodSite {
     }
 
     public final CallSite acceptCurrent(Object receiver, Object[] args) {
-        if(!GroovyCategorySupport.hasCategoryInAnyThread()
-           && receiver != null
-           && receiver.getClass() == metaClass.getTheClass() // meta class match receiver
-           && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
-           && MetaClassHelper.sameClasses(params, args)) // right arguments
+        if(/*!wantProvideCallSite() &&*/ checkCallCurrent(receiver, args)) // right arguments
           return this;
         else
           return createCallCurrentSite(receiver, args, array.owner);
     }
 
+    protected boolean checkCallCurrent(Object receiver, Object[] args) {
+        return !GroovyCategorySupport.hasCategoryInAnyThread()
+           && receiver != null
+           && receiver.getClass() == metaClass.getTheClass() // meta class match receiver
+           && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
+           && MetaClassHelper.sameClasses(params, args);
+    }
+
     public final CallSite acceptCall(Object receiver, Object[] args) {
-        if(!GroovyCategorySupport.hasCategoryInAnyThread() &&
-           receiver != null
+        if(!GroovyCategorySupport.hasCategoryInAnyThread()
+           && receiver != null
            && receiver.getClass() == metaClass.getTheClass() // meta class match receiver
            && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
            && MetaClassHelper.sameClasses(params, args)) // right arguments
@@ -59,6 +64,9 @@ public class PogoMetaMethodSite extends MetaMethodSite {
     }
 
     public static CallSite createPogoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object[] args) {
+//        if (site.wantProvideCallSite())
+//          return ((CachedMethod)metaMethod).createPogoMetaMethodSite(site, metaClass, metaMethod, params, site.array.owner);
+
         if (metaMethod.correctArguments(args) == args) {
             if (noWrappers(args)) {
                 if (noCoerce(metaMethod,args))
@@ -78,6 +86,10 @@ public class PogoMetaMethodSite extends MetaMethodSite {
             }
         }
         return new PogoMetaMethodSite(site, metaClass, metaMethod, params);
+    }
+
+    public boolean wantProvideCallSite() {
+        return metaMethod.getClass() == CachedMethod.class && ((CachedMethod)metaMethod).pogoCallSiteClassLoader != null;
     }
 
     /**

@@ -1955,26 +1955,44 @@ public class AsmClassGenerator extends ClassGenerator {
 
         // site
 
-        // ensure VariableArguments are read, not stored
-        boolean lhs = leftHandExpression;
-        leftHandExpression = false;
+        if (!message.equals("plus")
+         && !message.equals("div")
+         && !message.equals("minus")
+         && !message.equals("multiply")
+        ) {
+            // ensure VariableArguments are read, not stored
+            boolean lhs = leftHandExpression;
+            leftHandExpression = false;
 
-        boolean oldVal = this.implicitThis;
-        this.implicitThis = false;
-        visitAndAutoboxBoolean(receiver);
-        this.implicitThis = oldVal;
-        int recIdx = compileStack.defineTemporaryVariable("$local$receiver",true);
-        mv.visitVarInsn(ALOAD,recIdx);
-        visitAndAutoboxBoolean(arguments);
-        int argsIdx = compileStack.defineTemporaryVariable("$local$args",true);
-        mv.visitVarInsn(ALOAD,argsIdx);
-        mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "acceptBinop","(Ljava/lang/Object;Ljava/lang/Object;)Lorg/codehaus/groovy/runtime/callsite/CallSite;");
-        mv.visitVarInsn(ALOAD,recIdx);
-        mv.visitVarInsn(ALOAD,argsIdx);
-        mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "invokeBinop","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
-        compileStack.removeVar(argsIdx);
-        compileStack.removeVar(recIdx);
-        leftHandExpression = lhs;
+            boolean oldVal = this.implicitThis;
+            this.implicitThis = false;
+            visitAndAutoboxBoolean(receiver);
+            this.implicitThis = oldVal;
+            int recIdx = compileStack.defineTemporaryVariable("$local$receiver",true);
+            mv.visitVarInsn(ALOAD,recIdx);
+            visitAndAutoboxBoolean(arguments);
+            int argsIdx = compileStack.defineTemporaryVariable("$local$args",true);
+            mv.visitVarInsn(ALOAD,argsIdx);
+            mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "acceptBinop","(Ljava/lang/Object;Ljava/lang/Object;)Lorg/codehaus/groovy/runtime/callsite/CallSite;");
+            mv.visitVarInsn(ALOAD,recIdx);
+            mv.visitVarInsn(ALOAD,argsIdx);
+            mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "invokeBinop","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+            compileStack.removeVar(argsIdx);
+            compileStack.removeVar(recIdx);
+            leftHandExpression = lhs;
+        }
+        else {
+            // ensure VariableArguments are read, not stored
+            boolean lhs = leftHandExpression;
+            leftHandExpression = false;
+            boolean oldVal = this.implicitThis;
+            this.implicitThis = false;
+            visitAndAutoboxBoolean(receiver);
+            this.implicitThis = oldVal;
+            visitAndAutoboxBoolean(arguments);
+            mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", message,"(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+            leftHandExpression = lhs;
+        }
     }
 
     private int allocateIndex(String name) {
@@ -3582,13 +3600,7 @@ public class AsmClassGenerator extends ClassGenerator {
                         indexExpression
                 );
                 leftExpr.setSourcePosition(leftExpression);
-                MethodCallExpression methodCall =
-                        new MethodCallExpression(
-                                leftExpr,
-                                method,
-                                new ArgumentListExpression(expression.getRightExpression()));
-
-                methodCall.visit(this);
+                makeBinopCallSite(leftExpr, method, expression.getRightExpression());
                 final int resultVar = compileStack.defineTemporaryVariable("$result", true);
                 Expression resultExpression = new BytecodeExpression() {
                     public void visit(MethodVisitor mv) {

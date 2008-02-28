@@ -70,7 +70,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     protected static final Logger LOG = Logger.getLogger(MetaClass.class.getName());
     protected final Class theClass;
 
-    public CachedClass getTheCachedClass() {
+    public final CachedClass getTheCachedClass() {
         return theCachedClass;
     }
 
