@@ -231,7 +231,7 @@ $Date$
     <target name="compileTest" depends="compileMain" unless="_skipTests_"
             description="Compile the Java and Groovy code in the test source.">
         <mkdir dir="${testClassesDirectory}"/>
-        <antforked target="realCompileTest"/>
+        <antcall target="realCompileTest"/>
     </target>
 
     <property name="vm5GroovySourceFiles" value="gls/**/vm5/*Test.groovy,org/codehaus/groovy/**/vm5/**/*.groovy,groovy/**/vm5/**/*.groovy"/>
@@ -243,13 +243,14 @@ $Date$
         <!-- compile Groovy test files excluding ones which we want to pick up from the file system -->
         <groovyc srcdir="${testSourceDirectory}"
                  destdir="${testClassesDirectory}"
-                 excludes="${antGroovySourceFiles},${vm5GroovySourceFiles}" >
+                 excludes="${antGroovySourceFiles},${vm5GroovySourceFiles}" 
+                 stacktrace="true">
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
                 <pathelement path="${testClassesDirectory}"/>
                 <path refid="testPath"/>
             </classpath>
-            <javac source="1.4" target="1.4" fork="true" memorymaximumsize="64m" excludes="${vm5JavaSourceFiles}"/>
+            <javac source="1.4" target="1.4" fork="true" memorymaximumsize="128m" excludes="${vm5JavaSourceFiles}"/>
         </groovyc>
         <antcall target="realCompileTest_vm5"/>
     </target>
