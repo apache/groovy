@@ -41,6 +41,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     
     // type spec for generics
     private GenericsType[] genericsTypes=null;
+    private boolean hasDefault;
 
     public MethodNode(String name, int modifiers, ClassNode returnType, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
         this.name = name;
@@ -51,7 +52,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
         VariableScope scope = new VariableScope();
         setVariableScope(scope);
         setParameters(parameters);
-        
+        this.hasDefault = false;       
         this.exceptions = exceptions;
     }
 
@@ -194,5 +195,13 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
 
     public void setGenericsTypes(GenericsType[] genericsTypes) {
         this.genericsTypes = genericsTypes;
+    }
+
+    public void setAnnotationDefault(boolean b) {
+        this.hasDefault = b;
+    }
+
+    public boolean hasAnnotationDefault() {
+        return hasDefault;
     }
 }

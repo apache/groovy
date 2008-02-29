@@ -71,7 +71,7 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
      */
     public void visitAnnotations(AnnotatedNode node) {
         super.visitAnnotations(node);
-        for (AnnotationNode annotation : (Collection<AnnotationNode>) node.getAnnotations().values()) {
+        for (AnnotationNode annotation : (Collection<AnnotationNode>) node.getAnnotations()) {
             Class<? extends GroovyASTTransformation> annotationType = annotation.getClassNode().getTypeClass();
             GroovyASTTransformation transformationAnnotation =
                 annotationType.getAnnotation(GroovyASTTransformation.class);

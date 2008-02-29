@@ -798,7 +798,9 @@ modifiersInternal
             // Note: Duplication of modifiers is detected when walking the AST.
             modifier nls!
         |
-            {LA(1)==AT && !LT(2).getText().equals("interface")}?
+            {break; /* go out of the ()+ loop*/}
+            AT "interface"
+        |    
             annotation nls!
         )+
     ;

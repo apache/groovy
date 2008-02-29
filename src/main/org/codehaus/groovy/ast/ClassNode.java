@@ -17,6 +17,7 @@ package org.codehaus.groovy.ast;
 
 import groovy.lang.GroovyObject;
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
@@ -218,6 +219,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             for (int i=0;i<methods.length;i++){
                 Method m = methods[i];
                 MethodNode mn = new MethodNode(m.getName(), m.getModifiers(), ClassHelper.make(m.getReturnType()), createParameters(m.getParameterTypes()), ClassHelper.make(m.getExceptionTypes()), null);
+                VMPluginFactory.getPlugin().setMethodDefaultValue(mn,m);
                 addMethod(mn);
             }
             Constructor[] constructors = clazz.getDeclaredConstructors();
@@ -227,7 +229,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             }
             Class sc = clazz.getSuperclass();
             if (sc!=null) superClass = ClassHelper.make(sc);
-            buildInterfaceTypes(clazz);       
+            buildInterfaceTypes(clazz);
+            VMPluginFactory.getPlugin().setAnnotationMetaData(this);
             lazyInitDone=true;
         }
     }
@@ -1078,5 +1081,21 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         n.isPrimaryNode = false;
         n.setRedirect(this.redirect);
         return n;
+    }
+
+    public boolean isAnnotationDefinition() {
+        return redirect().isPrimaryNode && 
+               isInterface() && 
+               (getModifiers() & Opcodes.ACC_ANNOTATION)!=0;
+    }
+
+    public List getAnnotations() {
+        lazyClassInit();
+        return super.getAnnotations();
+    }
+
+    public List getAnnotations(ClassNode type) {
+        lazyClassInit();
+        return super.getAnnotations(type);
     }
 }

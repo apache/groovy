@@ -81,7 +81,7 @@ public class BoundASTTransformation implements ASTSingleNodeTransformation, Opco
      * @return
      */
     public static boolean hasBoundAnnotation(AnnotatedNode node) {
-        for (AnnotationNode annotation : (Collection<AnnotationNode>) node.getAnnotations().values()) {
+        for (AnnotationNode annotation : (Collection<AnnotationNode>) node.getAnnotations()) {
             if (Bound.class.getName().equals(annotation.getClassNode().getName())) {
                 return true;
             }

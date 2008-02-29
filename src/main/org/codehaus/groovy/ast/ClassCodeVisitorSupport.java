@@ -54,9 +54,9 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
     }
     
     public void visitAnnotations(AnnotatedNode node) {
-        Map annotionMap = node.getAnnotations();
-        if (annotionMap.isEmpty()) return;
-        Iterator it = annotionMap.values().iterator(); 
+        List annotions = node.getAnnotations();
+        if (annotions.isEmpty()) return;
+        Iterator it = annotions.iterator();
         while (it.hasNext()) {
             AnnotationNode an = (AnnotationNode) it.next();
             //skip builtin properties

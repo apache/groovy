@@ -83,7 +83,7 @@ public class ConstrainedASTTransformation extends BoundASTTransformation {
      * @return
      */
     public static boolean hasConstrainedAnnotation(AnnotatedNode node) {
-        for (AnnotationNode annotation : (Collection<AnnotationNode>) node.getAnnotations().values()) {
+        for (AnnotationNode annotation : (Collection<AnnotationNode>) node.getAnnotations()) {
             if (Constrained.class.getName().equals(annotation.getClassNode().getName())) {
                 return true;
             }

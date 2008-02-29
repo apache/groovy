@@ -38,15 +38,14 @@ public class AnnotationNode extends ASTNode {
     public static final int PARAMETER_TARGET =  1 << 4;
     public static final int LOCAL_VARIABLE_TARGET = 1 << 5;
     public static final int ANNOTATION_TARGET = 1 << 6;
+    public static final int PACKAGE_TARGET = 1 << 7;
     private static final int ALL_TARGETS = TYPE_TARGET | CONSTRUCTOR_TARGET | METHOD_TARGET
         | FIELD_TARGET | PARAMETER_TARGET | LOCAL_VARIABLE_TARGET | ANNOTATION_TARGET;
     
     private final ClassNode classNode;
     private Map members = new HashMap();
-    private boolean runtimeRetention= false;
-    private boolean sourceRetention= false;
+    private boolean runtimeRetention= false, sourceRetention= false, classRetention = false;
     private int allowedTargets = ALL_TARGETS;
-    private boolean valid;
 
     public AnnotationNode(ClassNode classNode) {
         this.classNode = classNode;
@@ -63,7 +62,7 @@ public class AnnotationNode extends ASTNode {
     public Expression getMember(String name) {
         return (Expression) members.get(name);
     }
-    
+
     public void addMember(String name, Expression value) {
         Expression oldValue = (Expression) members.get(name);
         if (oldValue == null) {
@@ -129,28 +128,29 @@ public class AnnotationNode extends ASTNode {
         this.sourceRetention = flag;
     }
 
+    /**
+     * Flag corresponding to <code>RetentionPolicy.CLASS</code>.
+     * @return <tt>true</tt> if the annotation is recorded by the compiler,
+     *                       but not visible at runtime     *
+      *        <tt>false</tt> otherwise
+     */
+    public boolean hasClassRetention() {
+        return this.classRetention;
+    }
+
+    /** Sets the internal flag if the current annotation has
+     * <code>RetentionPolicy.CLASS</code>.
+     */
+    public void setClassRetention(boolean flag) {
+        this.classRetention = flag;
+    }
+
     public void setAllowedTargets(int bitmap) {
         this.allowedTargets = bitmap;
     }
     
     public boolean isTargetAllowed(int target) {
         return (this.allowedTargets & target) == target;
-    }
-    
-    /**
-     * Set if the current annotation is verified and passed all
-     * validations
-     * @param flag
-     */
-    public void setValid(boolean flag) {
-        this.valid = flag;
-    }
-    
-    /**
-     * Returns the state of this annotation (verified and all verification passed).
-     */
-    public boolean isValid() {
-        return this.valid;
     }
     
     public static final String targetToName(int target) {
@@ -169,6 +169,8 @@ public class AnnotationNode extends ASTNode {
                 return "LOCAL_VARIABLE";
             case ANNOTATION_TARGET:
                 return "ANNOTATION";
+            case PACKAGE_TARGET:
+                return "PACKAGE";
             default:
                 return "unknown target";
         }

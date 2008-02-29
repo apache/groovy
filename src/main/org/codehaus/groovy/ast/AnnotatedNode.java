@@ -24,61 +24,40 @@ import java.util.*;
  * @version $Revision$
  */
 public class AnnotatedNode extends ASTNode {
-    private Map annotations = Collections.EMPTY_MAP;
-    private Map annotationClasses = Collections.EMPTY_MAP;
+    private List annotations = Collections.EMPTY_LIST;
     private boolean synthetic;
     ClassNode declaringClass;
 
     public AnnotatedNode() {
     }
 
-    public Map getAnnotations() {
+    public List getAnnotations() {
         return annotations;
     }
 
-    public AnnotationNode getAnnotations(String name) {
-        return annotations == Collections.EMPTY_MAP ? null : (AnnotationNode) annotations.get(name);
-    }
-    
-    public ClassNode getAnnotationClass(String name) {
-        return annotationClasses == Collections.EMPTY_MAP ? null : (ClassNode) annotationClasses.get(name);
+    public List getAnnotations(ClassNode type) {
+        List ret = new ArrayList(annotations.size());
+        for (Iterator it = annotations.iterator(); it.hasNext();) {
+            AnnotationNode node = (AnnotationNode) it.next();
+            if (type.equals(node.getClassNode())) ret.add(node);
+        }
+        return ret;
     }
 
-    public void addAnnotation(String name, AnnotationNode value) {
+    public void addAnnotation(AnnotationNode value) {
         checkInit();
-
-        annotationClasses.put(name,value.getClassNode());
-        AnnotationNode oldValue = (AnnotationNode) annotations.get(name);
-
-        // TODO can we support many annotations of the same name?
-        if (oldValue == null) {
-            annotations.put(name, value);
-        }
-        else {
-            List list = null;
-            if (oldValue instanceof List) {
-                list = (List) oldValue;
-            }
-            else {
-                list = new ArrayList();
-                list.add(oldValue);
-                annotations.put(name, list);
-            }
-            list.add(value);
-        }
+        annotations.add(value);
     }
 
     private void checkInit() {
-        if (annotations == Collections.EMPTY_MAP)
-          annotations = new HashMap();
-        if (annotationClasses == Collections.EMPTY_MAP)
-          annotationClasses = new HashMap();
+        if (annotations == Collections.EMPTY_LIST)
+          annotations = new ArrayList(3);
     }
 
     public void addAnnotations(List annotations) {
         for (Iterator iter = annotations.iterator(); iter.hasNext();) {
             AnnotationNode node = (AnnotationNode) iter.next();
-            addAnnotation(node.getClassNode().getName(), node);
+            addAnnotation(node);
         }
     }
 

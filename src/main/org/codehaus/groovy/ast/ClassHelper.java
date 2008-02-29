@@ -80,10 +80,12 @@ public class ClassHelper {
         
         CLASS_Type = new ClassNode(Class.class),        METACLASS_TYPE = new ClassNode(MetaClass.class),
         GENERATED_CLOSURE_Type = new ClassNode(GeneratedClosure.class),
-        Enum_Type = new ClassNode("java.lang.Enum",0,OBJECT_TYPE);
+        Enum_Type = new ClassNode("java.lang.Enum",0,OBJECT_TYPE),
+        Annotation_TYPE = new ClassNode("java.lang.annotation.Annotation",0,OBJECT_TYPE);
         
     static {
         Enum_Type.isPrimaryNode = false;
+        Annotation_TYPE.isPrimaryNode = false;
     }
     
     private static ClassNode[] types = new ClassNode[] {
@@ -96,7 +98,7 @@ public class ClassHelper {
         Byte_TYPE, Short_TYPE, Integer_TYPE, Long_TYPE,
         Double_TYPE, Float_TYPE, BigDecimal_TYPE, BigInteger_TYPE, 
         void_WRAPPER_TYPE, REFERENCE_TYPE, CLASS_Type, METACLASS_TYPE,
-        GENERATED_CLOSURE_Type, Enum_Type
+        GENERATED_CLOSURE_Type, Enum_Type, Annotation_TYPE
     };
 
     
@@ -158,7 +160,7 @@ public class ClassHelper {
     
     public static ClassNode makeWithoutCaching(Class c, boolean includeGenerics){
         ClassNode t = new ClassNode(c);
-        if (includeGenerics) VMPluginFactory.getPlugin().setGenericsTypes(t);
+        if (includeGenerics) VMPluginFactory.getPlugin().setAdditionalClassInformation(t);
         return t;
     }
     
@@ -168,7 +170,7 @@ public class ClassHelper {
      * Unlike make(String) this method will not use the cache
      * to create the ClassNode. This means the ClassNode created
      * from this method using the same name will have a different
-     * references
+     * reference
      * 
      * @see #make(String)
      * @param name of the class the ClassNode is representing
@@ -270,13 +272,4 @@ public class ClassHelper {
     public static ClassNode makeReference() {
         return make(Reference.class);
     }
-
-    public static boolean isUnresolvedEnum(ClassNode node) {
-        if (Enum_Type.isResolved()) return false;
-        if (node.isResolved()) return false;
-        ClassNode superClass = node.getSuperClass();
-        if (superClass==null) return false;
-        return superClass.redirect()==Enum_Type;
-    }
-
 }

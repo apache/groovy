@@ -16,8 +16,11 @@
 package org.codehaus.groovy.vmplugin.v4;
 
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.control.CompilationUnit;
+
+import java.lang.reflect.Method;
 
 /**
  * java 4 based functions
@@ -27,7 +30,7 @@ import org.codehaus.groovy.control.CompilationUnit;
 public class Java4 implements VMPlugin {
     private static Class[] EMPTY_CLASS_ARRAY = new Class[0];
     
-    public void setGenericsTypes(ClassNode c) {
+    public void setAdditionalClassInformation(ClassNode c) {
         return;        
     }
     
@@ -37,5 +40,13 @@ public class Java4 implements VMPlugin {
 
     public void addPhaseOperations(CompilationUnit unit) {
         // add nothing
+    }
+
+    public void setMethodDefaultValue(MethodNode mn, Method m) {
+        // do nothing
+    }
+
+    public void setAnnotationMetaData(ClassNode cn) {
+        // do nothing
     }
 }

@@ -210,7 +210,6 @@ public class AsmClassGenerator extends ClassGenerator {
     // GroovyClassVisitor interface
     //-------------------------------------------------------------------------
     public void visitClass(ClassNode classNode) {
-
         try {
             callSites.clear();
 
@@ -525,7 +524,10 @@ public class AsmClassGenerator extends ClassGenerator {
             visitParameterAnnotations(parameters[i], i, mv);
         }
         helper = new BytecodeHelper(mv);
-        if (!node.isAbstract()) {
+        
+        if (classNode.isAnnotationDefinition()) {
+            visitAnnotationDefault(node, mv);
+        } else if (!node.isAbstract()) {
             Statement code = node.getCode();
             
             final Label tryStart = new Label();
@@ -588,6 +590,47 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         mv.visitEnd();
     }
+
+   void visitAnnotationDefaultExpression(AnnotationVisitor av, ClassNode type, Expression exp) {
+       if (type.isArray()) {
+           ListExpression list = (ListExpression) exp;
+           AnnotationVisitor avl = av.visitArray(null);
+           ClassNode componentType = type.getComponentType();
+           for (Iterator it = list.getExpressions().iterator(); it.hasNext();) {
+               Expression lExp = (Expression) it.next();
+               visitAnnotationDefaultExpression(avl,componentType, lExp);
+           }
+       } else if (ClassHelper.isPrimitiveType(type) || type.equals(ClassHelper.STRING_TYPE)) {
+           ConstantExpression constExp = (ConstantExpression) exp;
+           av.visit(null, constExp.getValue());
+       } else if (ClassHelper.CLASS_Type == type) {
+           ClassExpression cexp = (ClassExpression) exp;
+           ClassNode clazz = exp.getType();
+           Type t = Type.getType(BytecodeHelper.getClassInternalName(clazz));
+           av.visit(null, t);
+       } else if (type.isDerivedFrom(ClassHelper.Enum_Type)) {
+           PropertyExpression pExp = (PropertyExpression) exp;
+           ClassExpression cExp = (ClassExpression) pExp.getObjectExpression();
+           String desc = BytecodeHelper.getClassInternalName(cExp.getType());
+           String name = pExp.getPropertyAsString();
+           av.visitEnum(null, desc, name);
+       } else if (type.implementsInterface("java.lang.annotation.Annotation")) {
+           AnnotationConstantExpression avExp = (AnnotationConstantExpression) exp;
+           AnnotationVisitor avc = av.visitAnnotation(null, BytecodeHelper.getClassInternalName(avExp.getType()));
+           visitAnnotationDefaultExpression(avc,avExp.getType(),avExp);
+       } else {
+           throw new GroovyBugError("unexpected annotation type " + type.getName());
+       }
+       av.visitEnd();
+   }
+
+    private void visitAnnotationDefault(MethodNode node, MethodVisitor mv) {
+        if (!node.hasAnnotationDefault()) return;
+        Expression exp = ((ReturnStatement) node.getCode()).getExpression();
+        AnnotationVisitor av = mv.visitAnnotationDefault();
+        visitAnnotationDefaultExpression(av,node.getReturnType(),exp);
+    }
+
 
     private boolean isNotClinit() {
         return methodNode == null || !methodNode.getName().equals("<clinit>");
@@ -3165,10 +3208,10 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private void visitAnnotations(AnnotatedNode targetNode, Object visitor) {
-        Map annotionMap = targetNode.getAnnotations();
-        if (annotionMap.isEmpty()) return;
+        List annotions = targetNode.getAnnotations();
+        if (annotions.isEmpty()) return;
 
-        Iterator it = annotionMap.values().iterator();
+        Iterator it = annotions.iterator();
         while (it.hasNext()) {
             AnnotationNode an = (AnnotationNode) it.next();
             //skip builtin properties
@@ -3183,10 +3226,10 @@ public class AsmClassGenerator extends ClassGenerator {
 
     // TODO remove dup between this and visitAnnotations
     private void visitParameterAnnotations(Parameter parameter, int paramNumber, MethodVisitor mv) {
-        Map annotionMap = parameter.getAnnotations();
-        if (annotionMap.isEmpty()) return;
+        List annotions = parameter.getAnnotations();
+        if (annotions.isEmpty()) return;
 
-        Iterator it = annotionMap.values().iterator();
+        Iterator it = annotions.iterator();
         while (it.hasNext()) {
             AnnotationNode an = (AnnotationNode) it.next();
             //skip builtin properties
@@ -4091,8 +4134,10 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected int getBytecodeVersion() {
-        if (!classNode.isUsingGenerics() &&
-                !classNode.isAnnotated()) {
+        if ( !classNode.isUsingGenerics() &&
+             !classNode.isAnnotated()  &&
+             !classNode.isAnnotationDefinition() ) 
+        {
             return Opcodes.V1_3;
         }
 

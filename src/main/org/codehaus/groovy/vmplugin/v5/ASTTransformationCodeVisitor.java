@@ -96,12 +96,12 @@ public class ASTTransformationCodeVisitor extends ClassCodeVisitorSupport {
     }
 
     /**
-     * Addes the annotation to the internal target list if a match is found
+     * Adds the annotation to the internal target list if a match is found
      * @param node
      */
     public void visitAnnotations(AnnotatedNode node) {
         super.visitAnnotations(node);
-        for (AnnotationNode annotation : (Collection<AnnotationNode>) node.getAnnotations().values()) {
+        for (AnnotationNode annotation : (Collection<AnnotationNode>) node.getAnnotations()) {
             String name = annotation.getClassNode().getName();
             if (annotationsMap.containsKey(name)) {
                 targetNodes.add(new ASTNode[] {annotation, node});

@@ -220,6 +220,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                     enumDef(node);
                     break;
 
+                case ANNOTATION_DEF:
+                    annotationDef(node);
+                    break;
+                    
                 default:
                     {
                         Statement statement = statement(node);
@@ -299,6 +303,46 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
     }
 
+    protected void annotationDef(AST classDef) {
+        List annotations = new ArrayList();
+        AST node = classDef.getFirstChild();
+        int modifiers = Opcodes.ACC_PUBLIC;
+        if (isType(MODIFIERS, node)) {
+            modifiers = modifiers(node, annotations, modifiers);
+            checkNoInvalidModifier(classDef, "Annotation Definition", modifiers, Opcodes.ACC_SYNCHRONIZED, "synchronized");
+            node = node.getNextSibling();
+        }
+        modifiers |= Opcodes.ACC_ABSTRACT | Opcodes.ACC_INTERFACE | Opcodes.ACC_ANNOTATION;
+
+        String name = identifier(node);
+        node = node.getNextSibling();
+        ClassNode superClass = ClassHelper.OBJECT_TYPE;
+
+        GenericsType[] genericsType = null;
+        if (isType(TYPE_PARAMETERS,node)) {
+            genericsType = makeGenericsType(node);
+            node = node.getNextSibling();
+        }
+        
+        ClassNode[] interfaces = ClassNode.EMPTY_ARRAY;
+        if (isType(EXTENDS_CLAUSE, node)) {
+            interfaces = interfaces(node);
+            node = node.getNextSibling();
+        }
+
+        addNewClassName(name);
+        classNode = new ClassNode(dot(getPackageName(), name), modifiers, superClass, interfaces, null);
+        classNode.addAnnotations(annotations);
+        classNode.setGenericsTypes(genericsType);
+        classNode.addInterface(ClassHelper.Annotation_TYPE);
+        configureAST(classNode, classDef);
+
+        assertNodeType(OBJBLOCK, node);
+        objectBlock(node);
+        output.addClass(classNode);
+        classNode = null;
+    }
+    
     protected void interfaceDef(AST classDef) {
         List annotations = new ArrayList();
         AST node = classDef.getFirstChild();
@@ -392,6 +436,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                     objectBlock(node);
                     break;
 
+                case ANNOTATION_FIELD_DEF:
                 case METHOD_DEF:
                     methodDef(node);
                     break;
@@ -516,21 +561,27 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             }
         }
         node = node.getNextSibling();
-
-        assertNodeType(PARAMETERS, node);
-        Parameter[] parameters = parameters(node);
-        if (parameters==null) parameters = Parameter.EMPTY_ARRAY;
-        node = node.getNextSibling();
         
+        Parameter[] parameters = Parameter.EMPTY_ARRAY;
         ClassNode[] exceptions= ClassNode.EMPTY_ARRAY;
-        if (isType(LITERAL_throws, node)) {
-        	AST throwsNode = node.getFirstChild();
-        	List exceptionList = new ArrayList();
-        	throwsList(throwsNode, exceptionList);
-        	exceptions = (ClassNode[]) exceptionList.toArray(exceptions);
-        	node = node.getNextSibling();
+        
+        if (classNode==null || !classNode.isAnnotationDefinition()) {
+            
+            assertNodeType(PARAMETERS, node);
+            parameters = parameters(node);
+            if (parameters==null) parameters = Parameter.EMPTY_ARRAY;
+            node = node.getNextSibling();
+            
+            if (isType(LITERAL_throws, node)) {
+            	AST throwsNode = node.getFirstChild();
+            	List exceptionList = new ArrayList();
+            	throwsList(throwsNode, exceptionList);
+            	exceptions = (ClassNode[]) exceptionList.toArray(exceptions);
+            	node = node.getNextSibling();
+            }
         }
 
+        boolean hasAnnotationDefault = false;
         Statement code = null;
         if ((modifiers & Opcodes.ACC_ABSTRACT) == 0) {
             if (node==null) {
@@ -538,12 +589,17 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             }
             assertNodeType(SLIST, node);
             code = statementList(node);
+        }  else if (node!=null && classNode.isAnnotationDefinition()) {
+            code = statement(node);
+            hasAnnotationDefault = true;
         }
 
         MethodNode methodNode = new MethodNode(name, modifiers, returnType, parameters, exceptions, code);
         methodNode.addAnnotations(annotations);
         methodNode.setGenericsTypes(generics);
+        methodNode.setAnnotationDefault(hasAnnotationDefault);
         configureAST(methodNode, methodDef);
+
         if (classNode != null) {
             classNode.addMethod(methodNode);
         }
@@ -870,8 +926,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 String param = identifier(memberNode);
                 Expression expression = expression(memberNode.getNextSibling());
                 annotatedNode.addMember(param, expression);
-            }
-            else {
+            } else {
                 break;
             }
         }

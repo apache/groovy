@@ -19,6 +19,7 @@ import java.util.Collection;
 import java.util.Iterator;
 
 import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
@@ -65,6 +66,15 @@ public class ExtendedVerifier implements GroovyClassVisitor {
             Parameter parameter = node.getParameters()[i];
             visitAnnotations(parameter, AnnotationNode.PARAMETER_TARGET);
         }
+        if (this.currentClass.isAnnotationDefinition()) {
+            ReturnStatement code = (ReturnStatement) node.getCode();
+            if (code!=null) {
+                ErrorCollector errorCollector = new ErrorCollector(this.source.getConfiguration());
+                AnnotationVisitor visitor = new AnnotationVisitor(this.source, errorCollector);
+                visitor.visitExpression(node.getName(),code.getExpression(),node.getReturnType());
+                this.source.getErrorCollector().addCollectorContents(errorCollector);
+            }
+        }
     }
 
     public void visitProperty(PropertyNode node) {
@@ -83,14 +93,11 @@ public class ExtendedVerifier implements GroovyClassVisitor {
             return;
         }
         
-        Collection annotations = node.getAnnotations().values();
+        Collection annotations = node.getAnnotations();
         for(Iterator it = annotations.iterator(); it.hasNext(); ) {
             AnnotationNode an = (AnnotationNode) it.next();
 
             AnnotationNode annotation = visitAnnotation(an);
-            if(!annotation.isValid()) {
-                return;
-            }
             if(!annotation.isTargetAllowed(target)) {
                 addError("Annotation @" + annotation.getClassNode().getName()
                         + " is not allowed on element " + AnnotationNode.targetToName(target),

@@ -16,7 +16,10 @@
 package org.codehaus.groovy.vmplugin;
 
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.control.CompilationUnit;
+
+import java.lang.reflect.Method;
 
 /**
  * Interface to access VM version based actions.
@@ -26,7 +29,9 @@ import org.codehaus.groovy.control.CompilationUnit;
  */
 public interface VMPlugin {
 
-    void setGenericsTypes(ClassNode c);
+    void setAdditionalClassInformation(ClassNode c);
     Class[] getPluginDefaultGroovyMethods();
     void addPhaseOperations(CompilationUnit unit);
+    public void setMethodDefaultValue(MethodNode mn, Method m);
+    public void setAnnotationMetaData(ClassNode cn);
 }

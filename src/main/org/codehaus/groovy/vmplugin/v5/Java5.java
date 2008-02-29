@@ -17,15 +17,17 @@
 package org.codehaus.groovy.vmplugin.v5;
 
 import java.lang.reflect.*;
+import java.lang.annotation.*;
 import java.util.Map;
 import java.util.HashMap;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.CompilationUnit;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.vmplugin.VMPlugin;
+import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.ClassHelper;
 
 /**
@@ -36,11 +38,14 @@ import org.codehaus.groovy.ast.ClassHelper;
 public class Java5 implements VMPlugin { 
     private static Class[] PLUGIN_DGM={PluginDefaultGroovyMethods.class};
 
-    public void setGenericsTypes(ClassNode cn) {
+    public void setAdditionalClassInformation(ClassNode cn) {
+        setGenericsTypes(cn);
+    }
+
+    private void setGenericsTypes(ClassNode cn) {
         TypeVariable[] tvs = cn.getTypeClass().getTypeParameters();
         GenericsType[] gts = configureTypeVariable(tvs);
         cn.setGenericsTypes(gts);
-        Object a = Enum.class;
     }
     
     private GenericsType[] configureTypeVariable(TypeVariable[] tvs) {
@@ -125,4 +130,54 @@ public class Java5 implements VMPlugin {
             unit.addPhaseOperation(TransformationVisitor.getOperation(), i);
         }
     }
+
+    public void setAnnotationMetaData(ClassNode cn) {
+        Annotation[] annotations =  cn.getTypeClass().getAnnotations();
+        for (int i=0; i<annotations.length; i++) {
+            Annotation annotation = annotations[i];
+            Class type = annotation.annotationType();
+            cn.addAnnotation(makeAnnotationNode(annotation));
+        }
+    }
+
+    private AnnotationNode makeAnnotationNode(Annotation annotation) {
+        AnnotationNode node = new AnnotationNode(ClassHelper.make(annotation.annotationType()));
+        Class type = annotation.annotationType();
+        if (type == Retention.class) {
+            Retention r = (Retention) annotation;
+            switch (r.value()) {
+              case RUNTIME: node.setRuntimeRetention(true); break;
+              case SOURCE:  node.setSourceRetention(true); break;
+              case CLASS:   node.setClassRetention(true); break;
+              default: throw new GroovyBugError("unsupported Retention "+r.value());
+            }
+        } else if (type == Target.class) {
+            Target t = (Target) annotation;
+            ElementType[] elements = t.value();
+            int bitmap = 0;
+            for (int i=0; i<elements.length; i++) {
+                switch (elements[i]) {
+                    case TYPE: bitmap |= AnnotationNode.TYPE_TARGET; break;
+                    case CONSTRUCTOR: bitmap |= AnnotationNode.CONSTRUCTOR_TARGET; break;
+                    case METHOD: bitmap |= AnnotationNode.METHOD_TARGET; break;
+                    case FIELD: bitmap |= AnnotationNode.FIELD_TARGET; break;
+                    case PARAMETER: bitmap |= AnnotationNode.PARAMETER_TARGET; break;
+                    case LOCAL_VARIABLE: bitmap |= AnnotationNode.LOCAL_VARIABLE_TARGET; break;
+                    case ANNOTATION_TYPE: bitmap |= AnnotationNode.ANNOTATION_TARGET; break;
+                    case PACKAGE: bitmap |= AnnotationNode.PACKAGE_TARGET; break;
+                    default: throw new GroovyBugError("unsupported Target "+elements[i]);
+                }
+            }
+            node.setAllowedTargets(bitmap);
+        }
+
+        return node;
+    }
+
+    public void setMethodDefaultValue(MethodNode mn, Method m) {
+        Object defaultValue = m.getDefaultValue();
+        mn.setCode(new ExpressionStatement(new ConstantExpression(defaultValue)));
+        mn.setAnnotationDefault(true);
+    }
+
 }
