@@ -55,7 +55,7 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
      *
      * @param stageVisitors The map of {@link ASTTransformationCodeVisitor}s keyed by phase number.
      */
-    public ASTTransformationCollectorCodeVisitor(Map<Integer, ASTTransformationCodeVisitor> stageVisitors) {
+    public ASTTransformationCollectorCodeVisitor(Map<Integer, ASTTransformationCodeVisitor> stageVisitors, CompilationUnit compilationUnit) {
         this.stageVisitors = stageVisitors;
         this.compilationUnit = compilationUnit;
     }
@@ -72,10 +72,10 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
     public void visitAnnotations(AnnotatedNode node) {
         super.visitAnnotations(node);
         for (AnnotationNode annotation : (Collection<AnnotationNode>) node.getAnnotations()) {
-            ClassNode cn = annotation.getClassNode();
-            if (!cn.isResolved()) continue;
+            ClassNode annotationClassNode = annotation.getClassNode();
+            if (!annotationClassNode.isResolved()) continue;
             //TODO: change this code to use the Groovy AST isntead of direct usage of Class 
-            Class<? extends GroovyASTTransformation> annotationType = cn.getTypeClass();
+            Class<? extends GroovyASTTransformation> annotationType = annotationClassNode.getTypeClass();
             GroovyASTTransformation transformationAnnotation =
                 annotationType.getAnnotation(GroovyASTTransformation.class);
             if (transformationAnnotation == null) {
@@ -84,15 +84,14 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
             }
             ASTTransformationCodeVisitor stage = stageVisitors.get(
                 transformationAnnotation.phase());
-            String annotationTypeName = annotationType.getName();
 
             if (stage == null) {
-                badStageError(node, transformationAnnotation, annotationTypeName);
-            } else if (!stage.hasAnnotation(annotationTypeName)) {
+                badStageError(node, transformationAnnotation, annotationClassNode);
+            } else if (!stage.hasAnnotation(annotationClassNode)) {
                 try {
                     Object o = Class.forName(transformationAnnotation.transformationClassName()).newInstance();
                     if (o instanceof ASTSingleNodeTransformation) {
-                    stage.addAnnotation(annotationTypeName,
+                        stage.addAnnotation(annotationClassNode,
                             (ASTSingleNodeTransformation) o);
                     } else if (o instanceof CompilationUnit.PrimaryClassNodeOperation) {
                         compilationUnit.addPhaseOperation(
@@ -126,19 +125,19 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
         }
     }
 
-    private void badStageError(ASTNode node, GroovyASTTransformation transformationAnnotation, String annotationTypeName) {
+    private void badStageError(ASTNode node, GroovyASTTransformation transformationAnnotation, ClassNode annotationClassNode) {
         try {
             String phaseName = Phases.getDescription(transformationAnnotation.phase());
             source.getErrorCollector().addErrorAndContinue(
                 new SyntaxErrorMessage(new SyntaxException(
-                    "@" + annotationTypeName + " cannot be handled in phase " + phaseName,
+                    "@" + annotationClassNode.getName() + " cannot be handled in phase " + phaseName,
                     node.getLineNumber(),
                     node.getColumnNumber()),
                     source));
         } catch (ArrayIndexOutOfBoundsException aiobe) {
             source.getErrorCollector().addErrorAndContinue(
                 new SyntaxErrorMessage(new SyntaxException(
-                    "@" + annotationTypeName + " specifies a phase that does not exist: " + transformationAnnotation.phase(),
+                    "@" + annotationClassNode.getName() + " specifies a phase that does not exist: " + transformationAnnotation.phase(),
                     node.getLineNumber(),
                     node.getColumnNumber()),
                     source));

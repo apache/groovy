@@ -68,6 +68,8 @@ import java.util.Collection;
  */
 public class ConstrainedASTTransformation extends BoundASTTransformation {
 
+    protected static ClassNode constrainedClassNode = new ClassNode(Constrained.class);
+    protected ClassNode vcsClassNode = new ClassNode(VetoableChangeSupport.class);
     /**
      * Convienience method to see if an annotatied node is @Bound
      *
@@ -84,7 +86,7 @@ public class ConstrainedASTTransformation extends BoundASTTransformation {
      */
     public static boolean hasConstrainedAnnotation(AnnotatedNode node) {
         for (AnnotationNode annotation : (Collection<AnnotationNode>) node.getAnnotations()) {
-            if (Constrained.class.getName().equals(annotation.getClassNode().getName())) {
+            if (constrainedClassNode.equals(annotation.getClassNode())) {
                 return true;
             }
         }
@@ -204,7 +206,7 @@ public class ConstrainedASTTransformation extends BoundASTTransformation {
                 if (field.getType() == null) {
                     continue;
                 }
-                if (VetoableChangeSupport.class.getName().equals(field.getType().getName())) {
+                if (vcsClassNode.equals(field.getType())) {
                     vcsField = field;
                     return false;
                 }

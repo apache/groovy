@@ -122,7 +122,7 @@ public class Java5 implements VMPlugin {
 
     public void addPhaseOperations(CompilationUnit unit) {
         Map<Integer, ASTTransformationCodeVisitor> transformationVisitors = new HashMap<Integer, ASTTransformationCodeVisitor>();
-        ASTTransformationCollectorCodeVisitor annotCollector = new ASTTransformationCollectorCodeVisitor(transformationVisitors);
+        ASTTransformationCollectorCodeVisitor annotCollector = new ASTTransformationCollectorCodeVisitor(transformationVisitors, unit);
         unit.addPhaseOperation(annotCollector.getOperation(), Phases.SEMANTIC_ANALYSIS);
         for (int i = Phases.SEMANTIC_ANALYSIS; i <= Phases.ALL; i++) {
             ASTTransformationCodeVisitor TransformationVisitor = new ASTTransformationCodeVisitor();

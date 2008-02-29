@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package groovy.beans
+package groovy.beans.vm5
 
 import org.codehaus.groovy.control.CompilationFailedException
 

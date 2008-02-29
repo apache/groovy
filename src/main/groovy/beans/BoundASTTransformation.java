@@ -74,6 +74,9 @@ public class BoundASTTransformation implements ASTSingleNodeTransformation, Opco
      */
     protected FieldNode pcsField;
 
+    protected static ClassNode boundClassNode = new ClassNode(Bound.class);
+    protected ClassNode pcsClassNode = new ClassNode(PropertyChangeSupport.class);
+
     /**
      * Convienience method to see if an annotatied node is @Bound
      *
@@ -82,7 +85,7 @@ public class BoundASTTransformation implements ASTSingleNodeTransformation, Opco
      */
     public static boolean hasBoundAnnotation(AnnotatedNode node) {
         for (AnnotationNode annotation : (Collection<AnnotationNode>) node.getAnnotations()) {
-            if (Bound.class.getName().equals(annotation.getClassNode().getName())) {
+            if (boundClassNode.equals(annotation.getClassNode())) {
                 return true;
             }
         }
@@ -198,7 +201,7 @@ public class BoundASTTransformation implements ASTSingleNodeTransformation, Opco
                 if (field.getType() == null) {
                     continue;
                 }
-                if (PropertyChangeSupport.class.getName().equals(field.getType().getName())) {
+                if (pcsClassNode.equals(field.getType())) {
                     //pcsFieldName = field.getName();
                     pcsField = field;
                     return false;

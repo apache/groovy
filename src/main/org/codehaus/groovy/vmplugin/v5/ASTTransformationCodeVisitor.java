@@ -57,11 +57,11 @@ public class ASTTransformationCodeVisitor extends ClassCodeVisitorSupport {
 
     private SourceUnit source;
     private GeneratorContext context;
-    private Map<String, ASTSingleNodeTransformation> annotationsMap;
+    private Map<ClassNode, ASTSingleNodeTransformation> annotationsMap;
     private List<ASTNode[]> targetNodes;
 
     public ASTTransformationCodeVisitor() {
-        annotationsMap = new HashMap<String, ASTSingleNodeTransformation>();
+        annotationsMap = new HashMap<ClassNode, ASTSingleNodeTransformation>();
     }
 
     protected SourceUnit getSourceUnit() {
@@ -89,8 +89,8 @@ public class ASTTransformationCodeVisitor extends ClassCodeVisitorSupport {
 
             // second pass, call visit on all of the collected nodes
             for (ASTNode[] node : targetNodes) {
-                annotationsMap.get(((AnnotationNode) node[0]).getClassNode().getName())
-                    .visit((AnnotationNode) node[0], (AnnotatedNode) node[1], source, context);
+                annotationsMap.get(((AnnotationNode) node[0]).getClassNode())
+                    .visit(node[0], node[1], source, context);
             }
         }
     }
@@ -102,8 +102,7 @@ public class ASTTransformationCodeVisitor extends ClassCodeVisitorSupport {
     public void visitAnnotations(AnnotatedNode node) {
         super.visitAnnotations(node);
         for (AnnotationNode annotation : (Collection<AnnotationNode>) node.getAnnotations()) {
-            String name = annotation.getClassNode().getName();
-            if (annotationsMap.containsKey(name)) {
+            if (annotationsMap.containsKey(annotation.getClassNode())) {
                 targetNodes.add(new ASTNode[] {annotation, node});
             }
         }
@@ -112,21 +111,21 @@ public class ASTTransformationCodeVisitor extends ClassCodeVisitorSupport {
     /**
      * Used to see if the annotation is already added.
      *
-     * @param annotationTypeName
+     * @param annotationClassNode
      * @return
      */
-    public boolean hasAnnotation(String annotationTypeName) {
-        return annotationsMap.containsKey(annotationTypeName);
+    public boolean hasAnnotation(ClassNode annotationClassNode) {
+        return annotationsMap.containsKey(annotationClassNode);
     }
 
     /**
      * Adds the particular transformation to this phase.
      *
-     * @param name
+     * @param annotationClassNode
      * @param transformation
      */
-    public void addAnnotation(String name, ASTSingleNodeTransformation transformation) {
-        annotationsMap.put(name, transformation);
+    public void addAnnotation(ClassNode annotationClassNode, ASTSingleNodeTransformation transformation) {
+        annotationsMap.put(annotationClassNode, transformation);
     }
 
     /**
