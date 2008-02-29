@@ -165,7 +165,12 @@ $Date$
         </javac>
 
         <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}" classpathref="runtimePath"/>
-        <groovyc srcdir="${mainSourceDirectory}" destdir="${mainClassesDirectory}" classpathref="compilePath"/>
+        <groovyc srcdir="${mainSourceDirectory}" destdir="${mainClassesDirectory}">
+            <classpath>
+                <pathelement path="${mainClassesDirectory}"/>
+                <path refid="compilePath"/>
+            </classpath>
+        </groovyc>
     </target>
 
     <target name="ubercompile:bootstrap" depends="-init,-includeResources,ensureGrammars" if="uber">
@@ -228,29 +233,28 @@ $Date$
         </ubercompile>
     </target>
 
-    <target name="compileTest" depends="compileMain" unless="_skipTests_"
-            description="Compile the Java and Groovy code in the test source.">
-        <mkdir dir="${testClassesDirectory}"/>
-        <antcall target="realCompileTest"/>
-    </target>
-
     <property name="vm5GroovySourceFiles" value="gls/**/vm5/*Test.groovy,org/codehaus/groovy/**/vm5/**/*.groovy,groovy/**/vm5/**/*.groovy"/>
     <property name="vm5JavaSourceFiles" value="org/codehaus/groovy/**/vm5/**/*.java,groovy/**/vm5/**/*.java"/>
     <property name="antGroovySourceFiles" value="org/codehaus/groovy/ant/**/GroovyTest*.groovy"/>
 
-    <target name="realCompileTest">
+    <target name="compileTest" depends="compileMain" unless="_skipTests_"
+            description="Compile the Java and Groovy code in the test source.">
+        <mkdir dir="${testClassesDirectory}"/>
+
         <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}" classpathref="testPath"/>
         <!-- compile Groovy test files excluding ones which we want to pick up from the file system -->
         <groovyc srcdir="${testSourceDirectory}"
                  destdir="${testClassesDirectory}"
-                 excludes="${antGroovySourceFiles},${vm5GroovySourceFiles}" 
-                 stacktrace="true">
+                 excludes="${antGroovySourceFiles},${vm5GroovySourceFiles},${vm5JavaSourceFiles}"
+                 stacktrace="true"
+                 fork="true"
+                 memorymaximumsize="128M">
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
                 <pathelement path="${testClassesDirectory}"/>
                 <path refid="testPath"/>
             </classpath>
-            <javac source="1.4" target="1.4" fork="true" memorymaximumsize="128m" excludes="${vm5JavaSourceFiles}"/>
+            <javac source="1.4" target="1.4"/>
         </groovyc>
         <antcall target="realCompileTest_vm5"/>
     </target>
@@ -258,13 +262,15 @@ $Date$
     <target name="realCompileTest_vm5" if="groovy.build.vm5">
         <groovyc srcdir="${testSourceDirectory}"
                  destdir="${testClassesDirectory}"
-                 includes="${vm5GroovySourceFiles},${vm5JavaSourceFiles}" >
+                 includes="${vm5GroovySourceFiles},${vm5JavaSourceFiles}"
+                 fork="true"
+                 memorymaximumsize="96m">
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
                 <pathelement path="${testClassesDirectory}"/>
                 <path refid="testPath"/>
             </classpath>
-            <javac fork="true" memorymaximumsize="64m"/>
+            <javac source="1.5" target="1.5"/>
         </groovyc>
 
     </target>
@@ -273,13 +279,12 @@ $Date$
             description="Compile the Java and Groovy code in the examples source directory.">
         <mkdir dir="${examplesClassesDirectory}"/>
         <echo message="Compiling example code."/>
-        <antforked target="realCompileExamples"/>
-    </target>
 
-    <target name="realCompileExamples">
-        <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}"/>
+        <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}" classpathref="compilePath"/>
         <groovyc srcdir="${examplesSourceDirectory}/webapps/groovlet-examples/WEB-INF/groovy"
-                 destdir="${examplesClassesDirectory}">
+                 destdir="${examplesClassesDirectory}"
+                 fork="true"
+                 memorymaximumsize="96m">
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
                 <path refid="compilePath"/>
@@ -301,16 +306,14 @@ $Date$
         </javac>
         <groovyc srcdir="${examplesSourceDirectory}"
                 destdir="${examplesClassesDirectory}"
-                excludes="webapps/groovlet-examples/WEB-INF/groovy/**">
+                excludes="webapps/groovlet-examples/WEB-INF/groovy/**/*.groovy,org/codehaus/groovy/grails/compiler/injection/**/*.java">
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
                 <pathelement path="${examplesClassesDirectory}"/>
                 <path refid="compilePath"/>
                 <path refid="examplesPath"/>
             </classpath>
-            <javac source="1.4" target="1.4" fork="true" memorymaximumsize="64m">
-                <exclude name="org/codehaus/groovy/grails/compiler/injection/**"/>
-            </javac>
+            <javac source="1.4" target="1.4"/>
         </groovyc>
 
     </target>

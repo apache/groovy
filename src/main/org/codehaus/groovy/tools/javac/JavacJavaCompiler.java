@@ -22,6 +22,7 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
+import java.lang.reflect.InvocationTargetException;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Locale;
@@ -60,6 +61,8 @@ public class JavacJavaCompiler implements JavaCompiler {
                 javacReturnValue = ((Integer) ret).intValue();
             }
             cu.getConfiguration().getOutput();
+        } catch (InvocationTargetException ite) {
+            cu.getErrorCollector().addFatalError(new ExceptionMessage((Exception) ite.getCause(), true, cu));
         } catch (Exception e) {
             cu.getErrorCollector().addFatalError(new ExceptionMessage(e, true, cu));
         }

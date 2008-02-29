@@ -60,6 +60,7 @@ public abstract class ProcessingUnit {
     public ProcessingUnit(CompilerConfiguration configuration, GroovyClassLoader classLoader, ErrorCollector er) {
 
         this.phase = Phases.INITIALIZATION;
+        this.configuration = configuration;
         this.setClassLoader(classLoader);
         configure((configuration == null ? new CompilerConfiguration() : configuration));
         if (er==null) er = new ErrorCollector(getConfiguration());

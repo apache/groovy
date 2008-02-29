@@ -18,8 +18,12 @@ package org.codehaus.groovy.tools;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.BufferedReader;
+import java.io.FileReader;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
@@ -108,8 +112,7 @@ public class FileSystemCompiler
     *  (using the groovyc script).
     */
     
-    public static void main( String[] args )
-    {
+    public static void main( String[] args ) {
         boolean displayStackTraceOnError = false;
         boolean jointCompilation;
         
@@ -199,30 +202,62 @@ public class FileSystemCompiler
             // Load the file name list
             
             String[] filenames = cli.getArgs();
-            if( filenames.length == 0 ) 
+            List fileList = new ArrayList(filenames.length);
+            int errors = 0;
+            for (int i = 0; i < filenames.length; i++) {
+                if (filenames[i].startsWith("@")) {
+                    try {
+                        BufferedReader br = new BufferedReader(new FileReader(filenames[i].substring(1)));
+                        String file;
+                        while ((file = br.readLine()) != null) {
+                            fileList.add(file);
+                        }
+                    } catch (IOException ioe) {
+                        System.err.println( "error: file not readable: " + filenames[i].substring(1) );
+                        errors++;
+                    }
+                } else {
+                    fileList.add(filenames);
+                }
+            }
+            filenames = (String[]) fileList.toArray(new String[fileList.size()]);
+            if( filenames.length == 0 )
             {
                 displayHelp(options);
                 return;
             }
     
-            int errors = checkFiles( filenames );
+            errors += checkFiles( filenames );
     
             //
             // Create and start the compiler
-            
-            if( errors == 0 ) 
+
+            if( errors == 0 )
             {
+                File tmpDir = null;
                 if (jointCompilation) {
-                    File tmpDir = createTempDir();
+                    tmpDir = createTempDir();
                     configuration.getJointCompilationOptions().put("stubDir",tmpDir);
                 }
                 FileSystemCompiler compiler = new FileSystemCompiler(configuration);
                 compiler.compile( filenames );
+                if (tmpDir != null) deleteRecursive(tmpDir);
             }
         }
-        catch( Throwable e ) 
+        catch( Throwable e )
         {
-            new ErrorReporter( e, displayStackTraceOnError ).write( System.err );
+            RuntimeException re = new RuntimeException();
+            if (re.getStackTrace().length > 1) {
+                if (e instanceof RuntimeException) {
+                    re = (RuntimeException) e;
+                } else {
+                    re.initCause(e);
+                }
+                throw re;
+            } else {
+                new ErrorReporter( e, displayStackTraceOnError ).write( System.err );
+                System.exit(1);
+            }
         }
     }
 
@@ -231,5 +266,20 @@ public class FileSystemCompiler
         tempFile.delete();
         tempFile.mkdirs();
         return tempFile;
+    }
+
+    public static void deleteRecursive(File file) {
+        if (!file.exists()) {
+            return;
+        }
+        if (file.isFile()) {
+            file.delete();
+        } else if (file.isDirectory()) {
+            File[] files = file.listFiles();
+            for (int i = 0; i < files.length; i++) {
+                deleteRecursive(files[i]);
+            }
+            file.delete();
+        }
     }
 }
