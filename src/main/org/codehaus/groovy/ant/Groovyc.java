@@ -39,8 +39,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeSet;
-import java.util.Set;
 
 /**
  * Compiles Groovy source files. This task can take the following arguments:
@@ -713,17 +711,23 @@ public class Groovyc extends MatchingTask {
             }
 
             File tempFile = null;
-            try {
-                tempFile = File.createTempFile("groovyc-files-", ".txt");
-                tempFile.deleteOnExit();
-                PrintWriter pw = new PrintWriter(new FileWriter(tempFile));
-                for (int i = 0; i < compileList.length; i++) {
-                    pw.println(compileList[i].getPath());
+            if (fork) {
+                try {
+                    tempFile = File.createTempFile("groovyc-files-", ".txt");
+                    tempFile.deleteOnExit();
+                    PrintWriter pw = new PrintWriter(new FileWriter(tempFile));
+                    for (int i = 0; i < compileList.length; i++) {
+                        pw.println(compileList[i].getPath());
+                    }
+                    pw.close();
+                    commandLineList.add("@" + tempFile.getPath());
+                } catch (IOException e) {
+                    log("Error createing file list", e, Project.MSG_ERR);
                 }
-                pw.close();
-                commandLineList.add("@" + tempFile.getPath());
-            } catch (IOException e) {
-                log("Error createing file list", e, Project.MSG_ERR);
+            } else {
+                for (int i = 0; i < compileList.length; i++) {
+                    commandLineList.add(compileList[i].getPath());
+                }
             }
             final String[] commandLine = new String[commandLineList.size()];
             for (int i = 0; i < commandLine.length; ++i) {

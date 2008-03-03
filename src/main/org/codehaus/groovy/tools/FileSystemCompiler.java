@@ -16,25 +16,28 @@
 
 package org.codehaus.groovy.tools;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.BufferedReader;
-import java.io.FileReader;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.ArrayList;
-import java.util.List;
-
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.HelpFormatter;
 import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.PosixParser;
+
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ConfigurationException;
-import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+import java.io.IOException;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * Command-line compiler (aka. <tt>groovyc</tt>).
@@ -217,7 +220,7 @@ public class FileSystemCompiler
                         errors++;
                     }
                 } else {
-                    fileList.add(filenames);
+                    fileList.addAll(Arrays.asList(filenames));
                 }
             }
             filenames = (String[]) fileList.toArray(new String[fileList.size()]);
