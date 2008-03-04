@@ -711,7 +711,22 @@ public class Groovyc extends MatchingTask {
             }
 
             File tempFile = null;
+            // check to see if an external file is needed
+            int count = 0;
             if (fork) {
+
+                for (int i = 0; i <  compileList.length; i++) {
+                    count += compileList[i].getPath().length();
+                }
+                for (Iterator iter = commandLineList.iterator(); iter.hasNext(); ) {
+                    count += iter.next().toString().length();
+                }
+                count += compileList.length;
+                count += commandLineList.size();
+                System.out.println("Fork limit is " + count);
+            }
+            // 32767 is the command line length limit on Windows
+            if (fork && (count > 32767)) {
                 try {
                     tempFile = File.createTempFile("groovyc-files-", ".txt");
                     tempFile.deleteOnExit();
