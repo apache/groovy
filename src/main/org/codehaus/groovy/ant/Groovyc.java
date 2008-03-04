@@ -723,7 +723,6 @@ public class Groovyc extends MatchingTask {
                 }
                 count += compileList.length;
                 count += commandLineList.size();
-                System.out.println("Fork limit is " + count);
             }
             // 32767 is the command line length limit on Windows
             if (fork && (count > 32767)) {
