@@ -20,13 +20,13 @@ $Date: 2007-11-02 04:51:05 -0600 (Fri, 02 Nov 2007) $
 
 <project name="build-retro" default="" basedir="../..">
 
-    <target name="-check14">
-        <fail unless="java.home.1.4">
-A 1.4 JDK needs to be set to java.home.1.4
+    <target name="-checkjdk14home">
+        <fail unless="jdk14home">
+A 1.4 JDK needs to be set to jdk14home
         </fail>
     </target>
 
-    <target name="retroJars" depends="-check14,createJars" description="RetroTranslates 1.4 compatible jars">
+    <target name="retroJars" depends="-checkjdk14home,createJars" description="RetroTranslates 1.4 compatible jars">
         <path id="retroLibPath">
             <fileset dir="${toolsLibDirectory}">
                 <include name="retrotranslator-transformer-1.2.4.jar" />
@@ -35,7 +35,7 @@ A 1.4 JDK needs to be set to java.home.1.4
             </fileset>
         </path>
         <path id="retroJVMLibPath">
-            <fileset dir="${java.home.1.4}/jre/lib">
+            <fileset dir="${jdk14home}/jre/lib">
                 <include name="rt.jar"/>
                 <include name="jce.jar"/>
                 <include name="jsse.jar"/>
@@ -46,10 +46,9 @@ A 1.4 JDK needs to be set to java.home.1.4
 
         <retrotranslator target="1.4"
                          srcjar="${targetDistDirectory}/groovy-${groovyVersion}.jar"
-                         destjar="${targetDistDirectory}/groovy-retro-${groovyVersion}.jar"
+                         destjar="${targetDistDirectory}/groovy-${groovyVersion}-java1.4.jar"
                          smart="true"
                          verify="true"
-                         embed="groovyjarjarretro"
                          failonwarning="false">
             <classpath>
                 <path refid="retroLibPath"/>
@@ -60,10 +59,9 @@ A 1.4 JDK needs to be set to java.home.1.4
 
         <retrotranslator target="1.4"
                          srcjar="${targetDistDirectory}/groovy-all-${groovyVersion}.jar"
-                         destjar="${targetDistDirectory}/groovy-all-retro-${groovyVersion}.jar"
+                         destjar="${targetDistDirectory}/groovy-all-${groovyVersion}-java1.4.jar"
                          smart="true"
                          verify="false"
-                         embed="groovyjarjarretro"
                          failonwarning="false">
             <classpath>
                 <path refid="retroLibPath"/>
@@ -72,12 +70,17 @@ A 1.4 JDK needs to be set to java.home.1.4
             </classpath>
         </retrotranslator>
 
+        <!-- skip the jarjar, just include the runtimes wholesale -->
+        <jar jarfile="${targetDistDirectory}/groovy-all-${groovyVersion}-java1.4.jar" update="true">
+            <zipfileset src="${toolsLibDirectory}/retrotranslator-runtime-1.2.4.jar"/>
+            <zipfileset src="${toolsLibDirectory}/backport-util-concurrent-3.1.jar"/>
+        </jar>
+
         <retrotranslator target="1.4"
                          srcjar="${targetDistDirectory}/groovy-all-minimal-${groovyVersion}.jar"
-                         destjar="${targetDistDirectory}/groovy-all-minimal-retro-${groovyVersion}.jar"
+                         destjar="${targetDistDirectory}/groovy-all-minimal-${groovyVersion}-java1.4.jar"
                          smart="true"
                          verify="false"
-                         embed="groovyjarjarretro"
                          failonwarning="false">
             <classpath>
                 <path refid="retroLibPath"/>
@@ -85,11 +88,17 @@ A 1.4 JDK needs to be set to java.home.1.4
                 <path refid="compilePath"/>
             </classpath>
         </retrotranslator>
+
+        <!-- skip the jarjar, just include the runtimes wholesale -->
+        <jar jarfile="${targetDistDirectory}/groovy-all-minimal-${groovyVersion}-java1.4.jar" update="true">
+            <zipfileset src="${toolsLibDirectory}/retrotranslator-runtime-1.2.4.jar"/>
+            <zipfileset src="${toolsLibDirectory}/backport-util-concurrent-3.1.jar"/>
+        </jar>
 
     </target>
 
 
-    <target name="retroCompileTest" depends="-check14,retroJars,compileTest">
+    <target name="retroCompileTest" depends="-checkjdk14home,retroJars,compileTest">
         <mkdir dir="${testClassesDirectoryRetro}"/>
         <retrotranslator target="1.4"
                          destdir="${testClassesDirectoryRetro}"
@@ -98,7 +107,7 @@ A 1.4 JDK needs to be set to java.home.1.4
                          uptodatecheck="true"
                          failonwarning="false">
             <classpath>
-                <path location="${targetDistDirectory}/groovy-all-retro-${groovyVersion}.jar"/>
+                <path location="${targetDistDirectory}/groovy-all-${groovyVersion}-java1.4.jar"/>
                 <path refid="retroLibPath"/>
                 <path refid="retroJVMLibPath"/>
                 <path refid="compilePath"/>
@@ -109,15 +118,15 @@ A 1.4 JDK needs to be set to java.home.1.4
 
     </target>
 
-    <target name="retroTest" depends="-check14,-testInit,retroCompileTest">
+    <target name="retroTest" depends="-checkjdk14home,-testInit,retroCompileTest">
         <!-- dump jar top a dir, GroovyClasslaoderTest fails w/o it -->
         <mkdir dir="${mainClassesDirectoryRetro}"/>
-        <unjar src="${targetDistDirectory}/groovy-retro-${groovyVersion}.jar" dest="${mainClassesDirectoryRetro}"/>
+        <unjar src="${targetDistDirectory}/groovy-${groovyVersion}-java1.4.jar" dest="${mainClassesDirectoryRetro}"/>
 
         <mkdir dir="${junitRawDirectoryRetro}"/>
         <junit printsummary="true"
                fork="true"
-               jvm="${java.home.1.4}/bin/java"
+               jvm="${jdk14home}/bin/java"
                includeantruntime="false"
                failureproperty="testFailed"
                maxmemory="${groovyJUnit_mx}"
@@ -139,11 +148,6 @@ A 1.4 JDK needs to be set to java.home.1.4
                 <path location="${testClassesDirectoryRetro}"/>
                 <pathelement path="src/test"/>
                 <path refid="retroLibPath"/>
-<!--
-                <path refid="retroLibPath"/>
-                <path refid="retroJVMLibPath"/>
-                <path refid="compilePath"/>
--->
             </classpath>
         </junit>
         <mkdir dir="${junitReportsDirectoryRetro}"/>
@@ -151,6 +155,8 @@ A 1.4 JDK needs to be set to java.home.1.4
             <fileset dir="${junitRawDirectoryRetro}" includes="TEST-*.xml"/>
             <report format="frames" todir="${junitReportsDirectoryRetro}"/>
         </junitreport>
+
+        <fail if="testFailed">Test failed, not processing further targets.</fail>
     </target>
 
 </project>
