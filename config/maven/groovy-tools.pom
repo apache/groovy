@@ -49,6 +49,18 @@
             <artifactId>qdox</artifactId>
             <version>1.5</version>
             <scope>compile</scope>
+        </dependency>        
+        <dependency>
+            <groupId>net.sf.retrotranslator</groupId>
+            <artifactId>retrotranslator-transformer</artifactId>
+            <version>1.2.4</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.retrotranslator</groupId>
+            <artifactId>retrotranslator-runtime</artifactId>
+            <version>1.2.4</version>
+            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>

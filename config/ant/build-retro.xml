@@ -1,0 +1,156 @@
+<?xml version="1.0"?>
+
+<!--
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+compliance with the License. You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed under the License is
+distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+implied. See the License for the specific language governing permissions and limitations under the License.
+
+This work is copyright by the author(s) and is part of a greater work collectively copyright by the
+Groovy community. See the NOTICE.txt file distributed with this work for additional information.
+
+Author : Danno Ferrin
+$Revision: 8999 $ ($LastChangedBy: paulk $)
+$Date: 2007-11-02 04:51:05 -0600 (Fri, 02 Nov 2007) $
+-->
+
+<project name="build-retro" default="" basedir="../..">
+
+    <target name="-check14">
+        <fail unless="java.home.1.4">
+A 1.4 JDK needs to be set to java.home.1.4
+        </fail>
+    </target>
+
+    <target name="retroJars" depends="-check14,createJars" description="RetroTranslates 1.4 compatible jars">
+        <path id="retroLibPath">
+            <fileset dir="${toolsLibDirectory}">
+                <include name="retrotranslator-transformer-1.2.4.jar" />
+                <include name="retrotranslator-runtime-1.2.4.jar" />
+                <include name="backport-util-concurrent-3.1.jar" />
+            </fileset>
+        </path>
+        <path id="retroJVMLibPath">
+            <fileset dir="${java.home.1.4}/jre/lib">
+                <include name="rt.jar"/>
+                <include name="jce.jar"/>
+                <include name="jsse.jar"/>
+            </fileset>
+        </path>
+
+        <taskdef name="retrotranslator" classname="net.sf.retrotranslator.transformer.RetrotranslatorTask" classpathref="retroLibPath"/>
+
+        <retrotranslator target="1.4"
+                         srcjar="${targetDistDirectory}/groovy-${groovyVersion}.jar"
+                         destjar="${targetDistDirectory}/groovy-retro-${groovyVersion}.jar"
+                         smart="true"
+                         verify="true"
+                         embed="groovyjarjarretro"
+                         failonwarning="false">
+            <classpath>
+                <path refid="retroLibPath"/>
+                <path refid="retroJVMLibPath"/>
+                <path refid="compilePath"/>
+            </classpath>
+        </retrotranslator>
+
+        <retrotranslator target="1.4"
+                         srcjar="${targetDistDirectory}/groovy-all-${groovyVersion}.jar"
+                         destjar="${targetDistDirectory}/groovy-all-retro-${groovyVersion}.jar"
+                         smart="true"
+                         verify="false"
+                         embed="groovyjarjarretro"
+                         failonwarning="false">
+            <classpath>
+                <path refid="retroLibPath"/>
+                <path refid="retroJVMLibPath"/>
+                <path refid="compilePath"/>
+            </classpath>
+        </retrotranslator>
+
+        <retrotranslator target="1.4"
+                         srcjar="${targetDistDirectory}/groovy-all-minimal-${groovyVersion}.jar"
+                         destjar="${targetDistDirectory}/groovy-all-minimal-retro-${groovyVersion}.jar"
+                         smart="true"
+                         verify="false"
+                         embed="groovyjarjarretro"
+                         failonwarning="false">
+            <classpath>
+                <path refid="retroLibPath"/>
+                <path refid="retroJVMLibPath"/>
+                <path refid="compilePath"/>
+            </classpath>
+        </retrotranslator>
+
+    </target>
+
+
+    <target name="retroCompileTest" depends="-check14,retroJars,compileTest">
+        <mkdir dir="${testClassesDirectoryRetro}"/>
+        <retrotranslator target="1.4"
+                         destdir="${testClassesDirectoryRetro}"
+                         smart="true"
+                         verify="false"
+                         uptodatecheck="true"
+                         failonwarning="false">
+            <classpath>
+                <path location="${targetDistDirectory}/groovy-all-retro-${groovyVersion}.jar"/>
+                <path refid="retroLibPath"/>
+                <path refid="retroJVMLibPath"/>
+                <path refid="compilePath"/>
+                <path refid="testPath"/>
+            </classpath>
+            <fileset dir="${testClassesDirectory}" includes="**/*.class" excludes="${antGroovySourceFiles},${vm5GroovySourceFiles},${vm5JavaSourceFiles}"/>
+        </retrotranslator>
+
+    </target>
+
+    <target name="retroTest" depends="-check14,-testInit,retroCompileTest">
+        <!-- dump jar top a dir, GroovyClasslaoderTest fails w/o it -->
+        <mkdir dir="${mainClassesDirectoryRetro}"/>
+        <unjar src="${targetDistDirectory}/groovy-retro-${groovyVersion}.jar" dest="${mainClassesDirectoryRetro}"/>
+
+        <mkdir dir="${junitRawDirectoryRetro}"/>
+        <junit printsummary="true"
+               fork="true"
+               jvm="${java.home.1.4}/bin/java"
+               includeantruntime="false"
+               failureproperty="testFailed"
+               maxmemory="${groovyJUnit_mx}"
+               dir="${basedir}">
+            <jvmarg line="${junitJvmArgs}"/>
+            <formatter type="xml"/>
+            <formatter type="plain" unless="noTextReports"/>
+            <batchtest todir="${junitRawDirectoryRetro}">
+                <fileset dir="${testClassesDirectory}">
+                    <include name="UberTest*.class"/>
+                    <!-- all 16 security tests have been failing in the test setup, so the tests cannot run -->
+                    <exclude name="UberTestCaseJavaSourceGroovyPackagesSecurity.class"/>
+                    <exclude name="Uber*VM5.class"/>
+                </fileset>
+            </batchtest>
+            <classpath>
+                <path refid="testPath"/>
+                <path location="${mainClassesDirectoryRetro}"/>
+                <path location="${testClassesDirectoryRetro}"/>
+                <pathelement path="src/test"/>
+                <path refid="retroLibPath"/>
+<!--
+                <path refid="retroLibPath"/>
+                <path refid="retroJVMLibPath"/>
+                <path refid="compilePath"/>
+-->
+            </classpath>
+        </junit>
+        <mkdir dir="${junitReportsDirectoryRetro}"/>
+        <junitreport tofile="${junitRawDirectoryRetro}/Results.xml">
+            <fileset dir="${junitRawDirectoryRetro}" includes="TEST-*.xml"/>
+            <report format="frames" todir="${junitReportsDirectoryRetro}"/>
+        </junitreport>
+    </target>
+
+</project>

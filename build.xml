@@ -31,6 +31,7 @@ $Date$
     <import file="config/ant/build-maven.xml"/>
     <import file="config/ant/build-checkstyle.xml"/>
     <import file="config/ant/build-cobertura.xml"/>
+    <import file="config/ant/build-retro.xml"/>
 
     <condition property="_skipTests_">
         <or>
