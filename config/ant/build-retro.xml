@@ -13,150 +13,47 @@ implied. See the License for the specific language governing permissions and lim
 This work is copyright by the author(s) and is part of a greater work collectively copyright by the
 Groovy community. See the NOTICE.txt file distributed with this work for additional information.
 
-Author : Danno Ferrin
+Author : Paul King
 $Revision: 8999 $ ($LastChangedBy: paulk $)
-$Date: 2007-11-02 04:51:05 -0600 (Fri, 02 Nov 2007) $
+$Date: 2007-11-02 20:51:05 +1000 (Fri, 02 Nov 2007) $
 -->
 
 <project name="build-retro" default="" basedir="../..">
 
-    <target name="-checkjdk14home">
-        <fail unless="jdk14home">
-A 1.4 JDK needs to be set to jdk14home
-        </fail>
-    </target>
+    <import file="build-setup.xml"/>
 
-    <target name="retroJars" depends="-checkjdk14home,createJars" description="RetroTranslates 1.4 compatible jars">
-        <path id="retroLibPath">
-            <fileset dir="${toolsLibDirectory}">
-                <include name="retrotranslator-transformer-1.2.4.jar" />
-                <include name="retrotranslator-runtime-1.2.4.jar" />
-                <include name="backport-util-concurrent-3.1.jar" />
-            </fileset>
-        </path>
-        <path id="retroJVMLibPath">
-            <fileset dir="${jdk14home}/jre/lib">
-                <include name="rt.jar"/>
-                <include name="jce.jar"/>
-                <include name="jsse.jar"/>
-            </fileset>
-        </path>
+    <target name="-retroInit" depends="-retroTaskdef"/>
 
-        <taskdef name="retrotranslator" classname="net.sf.retrotranslator.transformer.RetrotranslatorTask" classpathref="retroLibPath"/>
-
-        <retrotranslator target="1.4"
-                         srcjar="${targetDistDirectory}/groovy-${groovyVersion}.jar"
-                         destjar="${targetDistDirectory}/groovy-${groovyVersion}-java1.4.jar"
-                         smart="true"
-                         verify="true"
-                         failonwarning="false">
+    <target name="-retroTaskdef">
+        <taskdef name="retrotranslator" classname="net.sf.retrotranslator.transformer.RetrotranslatorTask">
             <classpath>
-                <path refid="retroLibPath"/>
-                <path refid="retroJVMLibPath"/>
-                <path refid="compilePath"/>
-            </classpath>
-        </retrotranslator>
-
-        <retrotranslator target="1.4"
-                         srcjar="${targetDistDirectory}/groovy-all-${groovyVersion}.jar"
-                         destjar="${targetDistDirectory}/groovy-all-${groovyVersion}-java1.4.jar"
-                         smart="true"
-                         verify="false"
-                         failonwarning="false">
-            <classpath>
-                <path refid="retroLibPath"/>
-                <path refid="retroJVMLibPath"/>
-                <path refid="compilePath"/>
-            </classpath>
-        </retrotranslator>
-
-        <!-- skip the jarjar, just include the runtimes wholesale -->
-        <jar jarfile="${targetDistDirectory}/groovy-all-${groovyVersion}-java1.4.jar" update="true">
-            <zipfileset src="${toolsLibDirectory}/retrotranslator-runtime-1.2.4.jar"/>
-            <zipfileset src="${toolsLibDirectory}/backport-util-concurrent-3.1.jar"/>
-        </jar>
-
-        <retrotranslator target="1.4"
-                         srcjar="${targetDistDirectory}/groovy-all-minimal-${groovyVersion}.jar"
-                         destjar="${targetDistDirectory}/groovy-all-minimal-${groovyVersion}-java1.4.jar"
-                         smart="true"
-                         verify="false"
-                         failonwarning="false">
-            <classpath>
-                <path refid="retroLibPath"/>
-                <path refid="retroJVMLibPath"/>
-                <path refid="compilePath"/>
-            </classpath>
-        </retrotranslator>
-
-        <!-- skip the jarjar, just include the runtimes wholesale -->
-        <jar jarfile="${targetDistDirectory}/groovy-all-minimal-${groovyVersion}-java1.4.jar" update="true">
-            <zipfileset src="${toolsLibDirectory}/retrotranslator-runtime-1.2.4.jar"/>
-            <zipfileset src="${toolsLibDirectory}/backport-util-concurrent-3.1.jar"/>
-        </jar>
-
-    </target>
-
-
-    <target name="retroCompileTest" depends="-checkjdk14home,retroJars,compileTest">
-        <mkdir dir="${testClassesDirectoryRetro}"/>
-        <retrotranslator target="1.4"
-                         destdir="${testClassesDirectoryRetro}"
-                         smart="true"
-                         verify="false"
-                         uptodatecheck="true"
-                         failonwarning="false">
-            <classpath>
-                <path location="${targetDistDirectory}/groovy-all-${groovyVersion}-java1.4.jar"/>
-                <path refid="retroLibPath"/>
-                <path refid="retroJVMLibPath"/>
-                <path refid="compilePath"/>
-                <path refid="testPath"/>
-            </classpath>
-            <fileset dir="${testClassesDirectory}" includes="**/*.class" excludes="${antGroovySourceFiles},${vm5GroovySourceFiles},${vm5JavaSourceFiles}"/>
-        </retrotranslator>
-
-    </target>
-
-    <target name="retroTest" depends="-checkjdk14home,-testInit,retroCompileTest">
-        <!-- dump jar top a dir, GroovyClasslaoderTest fails w/o it -->
-        <mkdir dir="${mainClassesDirectoryRetro}"/>
-        <unjar src="${targetDistDirectory}/groovy-${groovyVersion}-java1.4.jar" dest="${mainClassesDirectoryRetro}"/>
-
-        <mkdir dir="${junitRawDirectoryRetro}"/>
-        <junit printsummary="true"
-               fork="true"
-               jvm="${jdk14home}/bin/java"
-               includeantruntime="false"
-               failureproperty="testFailed"
-               maxmemory="${groovyJUnit_mx}"
-               dir="${basedir}">
-            <jvmarg line="${junitJvmArgs}"/>
-            <formatter type="xml"/>
-            <formatter type="plain" unless="noTextReports"/>
-            <batchtest todir="${junitRawDirectoryRetro}">
-                <fileset dir="${testClassesDirectory}">
-                    <include name="UberTest*.class"/>
-                    <!-- all 16 security tests have been failing in the test setup, so the tests cannot run -->
-                    <exclude name="UberTestCaseJavaSourceGroovyPackagesSecurity.class"/>
-                    <exclude name="Uber*VM5.class"/>
+                <fileset dir="${toolsLibDirectory}">
+                    <include name="retrotranslator-transformer-*.jar" />
+                    <include name="retrotranslator-runtime-*.jar" />
+                    <include name="backport-util-concurrent-*.jar" />
                 </fileset>
-            </batchtest>
-            <classpath>
-                <path refid="testPath"/>
-                <path location="${mainClassesDirectoryRetro}"/>
-                <path location="${testClassesDirectoryRetro}"/>
-                <pathelement path="src/test"/>
-                <path refid="retroLibPath"/>
             </classpath>
-        </junit>
-        <mkdir dir="${junitReportsDirectoryRetro}"/>
-        <junitreport tofile="${junitRawDirectoryRetro}/Results.xml">
-            <fileset dir="${junitRawDirectoryRetro}" includes="TEST-*.xml"/>
-            <report format="frames" todir="${junitReportsDirectoryRetro}"/>
-        </junitreport>
-
-        <fail if="testFailed">Test failed, not processing further targets.</fail>
+        </taskdef>
     </target>
+
+    <macrodef name="retroArtifact">
+        <attribute name="version"/>
+        <attribute name="artifact"/>
+        <attribute name="basedir"/>
+        <sequential>
+            <retrotranslator target="1.4" destjar="@{basedir}/@{artifact}-jdk14-@{version}.jar"
+                             smart="true" verify="false" failonwarning="false">
+                <jarfileset dir="@{basedir}" includes="@{artifact}-@{version}.jar" />
+                <classpath>
+                    <fileset dir="${jdk14home}/jre/lib" includes="**/*.jar"/>
+                    <fileset dir="${toolsLibDirectory}">
+                        <include name="retrotranslator-runtime-*.jar" />
+                        <include name="backport-util-concurrent-*.jar" />
+                    </fileset>
+                    <path refid="runtimePath"/>
+                </classpath>
+            </retrotranslator>
+        </sequential>
+    </macrodef>
 
 </project>

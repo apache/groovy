@@ -447,13 +447,13 @@
         <dependency>
             <groupId>antlr</groupId>
             <artifactId>antlr</artifactId>
-            <version>2.7.6</version>
+            <version>2.7.7</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>asm</groupId>
             <artifactId>asm</artifactId>
-            <version>2.2</version>
+            <version>2.2.3</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
@@ -535,25 +535,25 @@
         <dependency>
             <groupId>asm</groupId>
             <artifactId>asm-util</artifactId>
-            <version>2.2</version>
+            <version>2.2.3</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>asm</groupId>
             <artifactId>asm-attrs</artifactId>
-            <version>2.2</version>
+            <version>2.2.3</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>asm</groupId>
             <artifactId>asm-analysis</artifactId>
-            <version>2.2</version>
+            <version>2.2.3</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>asm</groupId>
             <artifactId>asm-tree</artifactId>
-            <version>2.2</version>
+            <version>2.2.3</version>
             <scope>compile</scope>
         </dependency>
 

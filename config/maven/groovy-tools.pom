@@ -9,11 +9,13 @@
     <packaging>jar</packaging>
     <!-- intentionally leaving off scope here as scope is probably overkill for tools -->
     <dependencies>
+<!-- TODO: add this back in once a new version is available in a repo
         <dependency>
             <groupId>com.tonicsystems</groupId>
             <artifactId>jarjar</artifactId>
-            <version>0.6</version>
+            <version>1.0rc6</version>
         </dependency>
+-->
         <dependency>
             <groupId>checkstyle</groupId>
             <artifactId>checkstyle</artifactId>
@@ -25,6 +27,7 @@
                 </exclusion>
             </exclusions>
         </dependency>
+        <!-- TODO: upgrade to a recent version (has Groovy support!!) once in a repo -->
         <dependency>
             <groupId>redhill</groupId>
             <artifactId>simian</artifactId>
@@ -39,28 +42,36 @@
         </dependency>
         -->
         <dependency>
+            <groupId>asm</groupId>
+            <artifactId>asm</artifactId>
+            <version>2.2.3</version>
+        </dependency>
+        <dependency>
             <groupId>cobertura</groupId>
             <artifactId>cobertura</artifactId>
             <version>1.8</version>
+            <exclusions>
+                <exclusion>
+                  <groupId>asm</groupId>
+                  <artifactId>asm</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <!-- used for the JavaDoc generator script -->
         <dependency>
             <groupId>qdox</groupId>
             <artifactId>qdox</artifactId>
             <version>1.6.1</version>
-            <scope>compile</scope>
-        </dependency>        
+        </dependency>
         <dependency>
             <groupId>net.sf.retrotranslator</groupId>
             <artifactId>retrotranslator-transformer</artifactId>
             <version>1.2.4</version>
-            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>net.sf.retrotranslator</groupId>
             <artifactId>retrotranslator-runtime</artifactId>
             <version>1.2.4</version>
-            <scope>compile</scope>
         </dependency>
     </dependencies>
 </project>

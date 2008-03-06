@@ -5,11 +5,8 @@
 
     <!-- rename artifactId -->
     <xsl:template match="/*[local-name() = 'project']/*[local-name() = 'artifactId']">
-        <artifactId>groovy-all-minimal</artifactId>
+        <artifactId>groovy-all-jdk14</artifactId>
     </xsl:template>
-
-    <!-- remove dependencies  -->
-    <xsl:template match="/*[local-name() = 'project']/*[local-name() = 'dependencies']"/>
 
     <xsl:template match="@*|node()">
         <xsl:copy>

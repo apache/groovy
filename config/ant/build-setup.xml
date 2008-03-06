@@ -57,11 +57,6 @@ $Date: 2007-03-11 19:14:07 +1000 (Sun, 11 Mar 2007) $
     <property name="junitRawDirectory" value="${targetDirectory}/test-reports"/>
     <property name="junitReportsDirectory" value="${reportsDirectory}/junit"/>
 
-    <property name="mainClassesDirectoryRetro" value="${targetDirectory}/classes-retro"/>
-    <property name="testClassesDirectoryRetro" value="${targetDirectory}/test-classes-retro"/>
-    <property name="junitRawDirectoryRetro" value="${targetDirectory}/test-reports-retro"/>
-    <property name="junitReportsDirectoryRetro" value="${reportsDirectory}/junit-retro"/>
-
     <macrodef name="antforked">
         <attribute name="target"/>
         <attribute name="maxmemory" default="256m"/>

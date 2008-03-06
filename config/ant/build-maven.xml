@@ -88,15 +88,19 @@ $Date$
 
     <target name="-mavenPomDefinitions">
         <maven.pom file="pom.xml" id="groovy.pom"/>
-        
         <xslt in="pom.xml" out="${targetDirectory}/groovy-all.pom" style="config/maven/groovy-all.xsl"/>
         <maven.pom file="${targetDirectory}/groovy-all.pom" id="groovy-all.pom"/>
-        
-        <xslt in="pom.xml" out="${targetDirectory}/groovy-all-minimal.pom" style="config/maven/groovy-all-minimal.xsl"/>
-        <maven.pom file="${targetDirectory}/groovy-all-minimal.pom" id="groovy-all-minimal.pom"/>
-        
         <maven.pom file="config/maven/groovy-tools.pom" id="groovy-tools.pom"/>
         <maven.pom file="config/maven/groovy-examples.pom" id="groovy-examples.pom"/>
+        <antcall target="-mavenPomDefinitionsRetro"/>
+    </target>
+
+    <target name="-mavenPomDefinitionsRetro" if="_forceRetro_">
+        <xslt in="pom.xml" out="${targetDirectory}/groovy-jdk14.pom" style="config/maven/groovy-jdk14.xsl"/>
+        <xslt in="${targetDirectory}/groovy-all.pom" out="${targetDirectory}/groovy-all-jdk14.pom" style="config/maven/groovy-all-jdk14.xsl"/>
+        <!-- TODO: work out why setting these here get overriden; currently set in build.xml -->
+        <!--<maven.pom file="${targetDirectory}/groovy-jdk14.pom" id="groovy-jdk14.pom"/>-->
+        <!--<maven.pom file="${targetDirectory}/groovy-all-jdk14.pom" id="groovy-all-jdk14.pom"/>-->
     </target>
 
     <target name="-mavenRepositoryDefinitions">
@@ -104,13 +108,13 @@ $Date$
         <maven.remote.repository id="ibiblio.remote.repository" url="http://ibiblio.org/maven2/"/>
     </target>
 
-    <target name="-mavenFetchAllModules" depends="-mavenInit">
+    <target name="-mavenFetchAllModules" depends="-mavenInit" unless="_skipFetch_">
         <fetch.maven.all.modules/>
     </target>
 
     <target name="-fetchDependencies" depends="-mavenFetchAllModules,-copyLibraries"/>
 
-    <target name="-copyLibraries">
+    <target name="-copyLibraries" unless="_skipFetch_">
         <delete dir="${compileLibDirectory}"/>
         <delete dir="${testLibDirectory}"/>
         <delete dir="${runtimeLibDirectory}"/>
@@ -134,7 +138,7 @@ $Date$
             <mapper type="flatten"/>
             <fileset refid="fs.test.groovy"/>
         </copy>
-        <path id="testPath">
+        <path id="testLibPath">
             <fileset dir="${testLibDirectory}" includes="**/*.jar"/>
         </path>
         <copy todir="${runtimeLibDirectory}">
@@ -166,24 +170,24 @@ $Date$
 
     <macrodef name="mavenDeploy">
         <attribute name="version"/>
-        <attribute name="artifact"/>
+        <attribute name="prefix"/>
         <sequential>
-            <artifact:deploy file="${targetDistDirectory}/@{artifact}-@{version}.jar">
-                <pom refid="@{artifact}.pom"/>
-                <attach file="${targetDistDirectory}/@{artifact}-@{version}-sources.jar" classifier="sources"/>
-                <attach file="${targetDistDirectory}/@{artifact}-@{version}-javadoc.jar" classifier="javadoc"/>
+            <artifact:deploy file="${targetDistDirectory}/@{prefix}-@{version}.jar">
+                <pom refid="@{prefix}.pom"/>
+                <attach file="${targetDistDirectory}/@{prefix}-@{version}-sources.jar" classifier="sources"/>
+                <attach file="${targetDistDirectory}/@{prefix}-@{version}-javadoc.jar" classifier="javadoc"/>
             </artifact:deploy>
         </sequential>
     </macrodef>
 
     <macrodef name="mavenInstallRepo">
         <attribute name="version"/>
-        <attribute name="artifact"/>
+        <attribute name="prefix"/>
         <sequential>
-            <artifact:install file="${targetDistDirectory}/@{artifact}-@{version}.jar">
-                <pom refid="@{artifact}.pom"/>
-                <attach file="${targetDistDirectory}/@{artifact}-@{version}-sources.jar" classifier="sources"/>
-                <attach file="${targetDistDirectory}/@{artifact}-@{version}-javadoc.jar" classifier="javadoc"/>
+            <artifact:install file="${targetDistDirectory}/@{prefix}-@{version}.jar">
+                <pom refid="@{prefix}.pom"/>
+                <attach file="${targetDistDirectory}/@{prefix}-@{version}-sources.jar" classifier="sources"/>
+                <attach file="${targetDistDirectory}/@{prefix}-@{version}-javadoc.jar" classifier="javadoc"/>
             </artifact:install>
         </sequential>
     </macrodef>

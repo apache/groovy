@@ -40,8 +40,19 @@ $Date$
         </or>
     </condition>
 
+    <condition property="_forceRetro_">
+        <and>
+            <isset property="jdk14home"/>
+            <istrue value="${forceRetro}"/>
+        </and>
+    </condition>
+
     <condition property="_skipExamples_">
         <istrue value="${skipExamples}"/>
+    </condition>
+
+    <condition property="_skipFetch_">
+        <istrue value="${skipFetch}"/>
     </condition>
 
     <condition property="groovy.build.vm5">
@@ -81,23 +92,13 @@ $Date$
     </target>
 
     <target name="-jvm14BuildWarning" unless="groovy.build.vm5">
-        <echo>
-===================================================================
-  WARNING: You are building Groovy with a 1.4 JDK - the resulting
-           jar will be missing some Java 1.5+ specific features.
-===================================================================
-        </echo>
-    </target>
+        <fail>Aborting!
 
-    <!-- will go away after 1.1 final -->
-    <target name="-jvm15BuildWarning" if="groovy.build.vm5">
-        <echo>
-===================================================================
-  WARNING: You are building Groovy with a 1.5+ JDK - please check
-           that you are not using any 1.5+ classes directly in a
-           way that would break the 1.4 build.
-===================================================================
-        </echo>
+=================================================================
+  ERROR: You must build Groovy with a 1.5+ JDK - but you can
+         run tests and some other targets using Java 1.4.
+=================================================================
+        </fail>
     </target>
 
     <target name="-checkAntVersion" depends="-excludeLegacyAntVersion"
@@ -146,26 +147,16 @@ $Date$
             description="Compile the Java and Groovy code in the main source.">
     </target>
 
-    <target name="stagedcompile" depends="-init,-includeResources,ensureGrammars,-jvm14BuildWarning,-jvm15BuildWarning" unless="uber">
+    <target name="stagedcompile" depends="-init,-includeResources,ensureGrammars,-jvm14BuildWarning" unless="uber">
         <mkdir dir="${mainClassesDirectory}"/>
         <mkdir dir="${toolsClassesDirectory}"/>
 
         <javac srcdir="${mainSourceDirectory}" includeantruntime="false" destdir="${mainClassesDirectory}"
-               deprecation="on" debug="yes" source="1.4" target="1.4" fork="true" classpathref="compilePath">
-               <exclude name="groovy/beans/*.java"/>
-               <exclude name="org/codehaus/groovy/ast/GroovyASTTransformation.java"/>
-               <exclude name="**/vmplugin/v5/**"/>
-        </javac>
+               deprecation="on" debug="yes" source="1.5" target="1.5" fork="true" classpathref="compilePath"/>
+        <antcall target="-stagedcompile-groovy"/>
+    </target>
 
-        <!-- compile annotations -->
-        <javac srcdir="${mainSourceDirectory}" includeantruntime="false" destdir="${mainClassesDirectory}"
-               deprecation="on" debug="yes" source="1.5" target="1.5" fork="true" classpathref="compilePath">
-            <include name="groovy/beans/*.java" if="groovy.build.vm5"/>
-            <include name="org/codehaus/groovy/ast/GroovyASTTransformation.java" if="groovy.build.vm5"/>
-            <include name="**/vmplugin/v5/**" if="groovy.build.vm5"/>
-        </javac>
-
-        <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}" classpathref="runtimePath"/>
+    <target name="-stagedcompile-groovy" depends="-initGroovyc">
         <groovyc srcdir="${mainSourceDirectory}" destdir="${mainClassesDirectory}">
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
@@ -174,16 +165,11 @@ $Date$
         </groovyc>
     </target>
 
-    <target name="ubercompile:bootstrap" depends="-init,-includeResources,ensureGrammars" if="uber">
+    <target name="-ubercompile:bootstrap" depends="-init,-includeResources,ensureGrammars" if="uber">
         <mkdir dir="${mainClassesDirectory}"/>
 
-        <javac destdir="${mainClassesDirectory}"
-               deprecation="on"
-               debug="yes"
-               source="1.4"
-               target="1.4"
-               fork="true"
-               includeantruntime="false">
+        <javac destdir="${mainClassesDirectory}" deprecation="on" debug="yes" source="1.5"
+               target="1.5" fork="true" includeantruntime="false">
             <classpath refid="compilePath"/>
             <src location="${mainSourceDirectory}"/>
 
@@ -213,7 +199,7 @@ $Date$
         </taskdef>
     </target>
 
-    <target name="ubercompile" depends="ubercompile:bootstrap" if="uber">
+    <target name="ubercompile" depends="-ubercompile:bootstrap" if="uber">
         <mkdir dir="${mainStubsDirectory}"/>
 
         <ubercompile destdir="${mainClassesDirectory}">
@@ -224,10 +210,10 @@ $Date$
             <src location="${mainSourceDirectory}"/>
 
             <generatestubs destdir="${mainStubsDirectory}" includes="**/*.groovy">
-                <configuration targetBytecode="1.4"/>
+                <configuration targetBytecode="1.5"/>
             </generatestubs>
 
-            <javac includeantruntime="false" deprecation="on" debug="yes" source="1.4" target="1.4" fork="true"/>
+            <javac includeantruntime="false" deprecation="on" debug="yes" source="1.5" target="1.5" fork="true"/>
             <groovyc includes="**/*.groovy">
                 <configuration debug="true" verbose="true"/>
             </groovyc>
@@ -238,11 +224,19 @@ $Date$
     <property name="vm5JavaSourceFiles" value="org/codehaus/groovy/**/vm5/**/*.java,groovy/**/vm5/**/*.java"/>
     <property name="antGroovySourceFiles" value="org/codehaus/groovy/ant/**/GroovyTest*.groovy"/>
 
+    <target name="-initGroovyc">
+        <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc"
+                 classpath="${mainClassesDirectory}" classpathref="testLibPath"/>
+    </target>
+
     <target name="compileTest" depends="compileMain" unless="_skipTests_"
             description="Compile the Java and Groovy code in the test source.">
         <mkdir dir="${testClassesDirectory}"/>
+        <antcall target="-compileTest_all"/>
+        <antcall target="-compileTest_vm5"/>
+    </target>
 
-        <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}" classpathref="testPath"/>
+    <target name="-compileTest_all" depends="-initGroovyc">
         <!-- compile Groovy test files excluding ones which we want to pick up from the file system -->
         <groovyc srcdir="${testSourceDirectory}"
                  destdir="${testClassesDirectory}"
@@ -253,14 +247,13 @@ $Date$
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
                 <pathelement path="${testClassesDirectory}"/>
-                <path refid="testPath"/>
+                <path refid="testLibPath"/>
             </classpath>
-            <javac source="1.4" target="1.4"/>
+            <javac source="1.5" target="1.5"/>
         </groovyc>
-        <antcall target="realCompileTest_vm5"/>
     </target>
 
-    <target name="realCompileTest_vm5" if="groovy.build.vm5">
+    <target name="-compileTest_vm5" depends="-initGroovyc" if="groovy.build.vm5">
         <groovyc srcdir="${testSourceDirectory}"
                  destdir="${testClassesDirectory}"
                  includes="${vm5GroovySourceFiles},${vm5JavaSourceFiles}"
@@ -269,19 +262,17 @@ $Date$
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
                 <pathelement path="${testClassesDirectory}"/>
-                <path refid="testPath"/>
+                <path refid="testLibPath"/>
             </classpath>
             <javac source="1.5" target="1.5"/>
         </groovyc>
-
     </target>
 
-    <target name="compileExamples" depends="compileMain,-includeExamplesResources" unless="_skipExamples_"
+    <target name="compileExamples" depends="-initGroovyc,compileMain,-includeExamplesResources" unless="_skipExamples_"
             description="Compile the Java and Groovy code in the examples source directory.">
         <mkdir dir="${examplesClassesDirectory}"/>
         <echo message="Compiling example code."/>
 
-        <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}" classpathref="compilePath"/>
         <groovyc srcdir="${examplesSourceDirectory}/webapps/groovlet-examples/WEB-INF/groovy"
                  destdir="${examplesClassesDirectory}"
                  fork="true"
@@ -359,12 +350,12 @@ $Date$
 
     <target name="-testOne" if="_testOne_">
         <mkdir dir="${junitRawDirectory}"/>
-        <junit printsummary="true" fork="true" includeantruntime="false" maxmemory="${groovyJUnit_mx}" dir="${basedir}">
+        <junit printsummary="true" fork="true" includeantruntime="false" failureproperty="testFailed" maxmemory="${groovyJUnit_mx}" dir="${basedir}">
             <jvmarg line="${junitJvmArgs}"/>
             <test name="${testCase}" todir="${junitRawDirectory}"/>
             <formatter type="brief" usefile="false"/>
             <classpath>
-                <path refid="testPath"/>
+                <path refid="testLibPath"/>
                 <pathelement path="${instrumentedClassesDirectory}"/>
                 <pathelement path="${mainClassesDirectory}"/>
                 <pathelement path="${testClassesDirectory}"/>
@@ -403,7 +394,7 @@ $Date$
                 <fileset refid="ubertests.fileset"/>
             </batchtest>
             <classpath>
-                <path refid="testPath"/>
+                <path refid="testLibPath"/>
                 <pathelement path="${instrumentedClassesDirectory}"/>
                 <pathelement path="${mainClassesDirectory}"/>
                 <pathelement path="${testClassesDirectory}"/>
@@ -558,6 +549,7 @@ org.codehaus.groovy.vmplugin.v5" />
     </target>
 
     <target name="-initializeJars" depends="test">
+        <delete dir="${targetDistDirectory}" quiet="true"/>
         <mkdir dir="${targetDistDirectory}"/>
     </target>
 
@@ -565,10 +557,20 @@ org.codehaus.groovy.vmplugin.v5" />
         <jar destfile="${targetDistDirectory}/groovy-${groovyVersion}.jar" basedir="${mainClassesDirectory}"
              excludes="*.groovy" manifest="${mainClassesDirectory}/META-INF/MANIFEST.MF"/>
         <jar destfile="${targetDistDirectory}/groovy-${groovyVersion}-sources.jar" basedir="${mainSourceDirectory}"/>
+        <antcall target="-createBaseJarRetro"/>
+    </target>
+
+    <target name="-createBaseJarRetro" if="_forceRetro_">
+        <copy file="${targetDistDirectory}/groovy-${groovyVersion}-sources.jar"
+              tofile="${targetDistDirectory}/groovy-jdk14-${groovyVersion}-sources.jar"/>
     </target>
 
     <target name="-jarjarInit">
-        <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpathref="toolsPath"/>
+        <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask">
+            <classpath>
+                <fileset dir="${bootstrapDirectory}" includes="jarjar-*.jar"/>
+            </classpath>
+        </taskdef>
     </target>
 
     <target name="-createEmbeddableJar" depends="-jarjarInit" unless="testFailed">
@@ -593,16 +595,6 @@ org.codehaus.groovy.vmplugin.v5" />
                 <include name="ASM-LICENSE.txt"/>
             </fileset>
         </copy>
-        <mkdir dir="${targetDistDirectory}"/>
-    	<makemanifest dependencies="org.apache.ant;resolution:=optional,
-org.apache.commons.cli;resolution:=optional,
-org.junit;resolution:=optional" file="${stagingDirectory}/META-INF/MANIFEST.MF"/>
-        <jarjar jarfile="${targetDistDirectory}/groovy-all-minimal-${groovyVersion}.jar"
-                manifest="${stagingDirectory}/META-INF/MANIFEST.MF">
-            <fileset dir="${stagingDirectory}"/>
-            <rule pattern="antlr.**" result="groovyjarjarantlr.@1"/>
-            <rule pattern="org.objectweb.**" result="groovyjarjarasm.@1"/>
-        </jarjar>
         <!-- add commons-cli -->
         <unzip dest="${stagingDirectory}">
             <patternset>
@@ -616,6 +608,7 @@ org.junit;resolution:=optional" file="${stagingDirectory}/META-INF/MANIFEST.MF"/
         </unzip>
     	<makemanifest dependencies="org.apache.ant;resolution:=optional,
 org.junit;resolution:=optional" file="${stagingDirectory}/META-INF/MANIFEST.MF"/>
+        <!-- TODO try to make use of jarjar keep ability -->
         <jarjar jarfile="${targetDistDirectory}/groovy-all-${groovyVersion}.jar"
                 manifest="${stagingDirectory}/META-INF/MANIFEST.MF">
             <fileset dir="${stagingDirectory}" excludes="groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class"/>
@@ -627,15 +620,49 @@ org.junit;resolution:=optional" file="${stagingDirectory}/META-INF/MANIFEST.MF"/
              basedir="${stagingDirectory}" includes="groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class"/>
         <copy file="${targetDistDirectory}/groovy-${groovyVersion}-sources.jar"
               tofile="${targetDistDirectory}/groovy-all-${groovyVersion}-sources.jar"/>
-        <copy file="${targetDistDirectory}/groovy-all-${groovyVersion}-sources.jar"
-              tofile="${targetDistDirectory}/groovy-all-minimal-${groovyVersion}-sources.jar"/>
         <delete dir="${stagingDirectory}" quiet="true"/>
+        <antcall target="-createEmbeddableJarRetro"/>
+    </target>
+    
+    <target name="-createEmbeddableJarRetro" if="_forceRetro_">
+        <copy file="${targetDistDirectory}/groovy-all-${groovyVersion}-sources.jar"
+              tofile="${targetDistDirectory}/groovy-all-jdk14-${groovyVersion}-sources.jar"/>
     </target>
 
     <target name="createJars" depends="-checkAntVersion,-reportTestFailed,-actuallyCreateJars"
             description="Build Groovy and create the jarfiles."/>
 
-    <target name="install" depends="createJars" unless="testFailed"
+    <target name="updateJarsForRetro" if="_forceRetro_">
+        <delete dir="${stagingDirectory}" quiet="true"/>
+        <mkdir dir="${stagingDirectory}"/>
+        <unzip dest="${stagingDirectory}">
+            <patternset>
+                <!-- we already have this -->
+                <exclude name="ASM-LICENSE.txt"/>
+                <!-- we don't need this -->
+                <exclude name="META-INF/maven/**/*"/>
+            </patternset>
+            <globmapper from="RETROTRANSLATOR-LICENSE.txt" to="META-INF/RETROTRANSLATOR-LICENSE.txt"/>
+            <fileset dir="${toolsLibDirectory}">
+                <include name="retrotranslator-runtime-*.jar" />
+                <include name="backport-util-concurrent-*.jar" />
+            </fileset>
+        </unzip>
+        <unzip dest="${stagingDirectory}">
+            <fileset dir="${targetDistDirectory}">
+                <include name="groovy-all-jdk14-${groovyVersion}.jar"/>
+            </fileset>
+        </unzip>
+        <jarjar jarfile="${targetDistDirectory}/groovy-all-jdk14-${groovyVersion}.jar"
+                manifest="${stagingDirectory}/META-INF/MANIFEST.MF">
+            <fileset dir="${stagingDirectory}"/>
+            <rule pattern="net.sf.retrotranslator.runtime.**" result="groovyjarjarretroruntime.@1"/>
+            <rule pattern="edu.emory.mathcs.backport.**" result="groovyjarjarbackport.@1"/>
+        </jarjar>
+        <delete dir="${stagingDirectory}" quiet="true"/>
+    </target>
+
+    <target name="install" depends="createJars,translate,updateJarsForRetro" unless="testFailed"
             description="Create an installation hierarchy in target/install.">
 
         <!--
@@ -658,14 +685,15 @@ org.junit;resolution:=optional" file="${stagingDirectory}/META-INF/MANIFEST.MF"/
         <!-- Install generated artifacts and runtime dependencies -->
         <mkdir dir="${installDirectory}/lib"/>
         <copy todir="${installDirectory}/lib">
-            <fileset file="${targetDistDirectory}/groovy-${groovyVersion}.jar"/>
+            <fileset dir="${targetDistDirectory}" includes="groovy-${groovyVersion}.jar"/>
             <fileset dir="${runtimeLibDirectory}" includes="*.jar"/>
         </copy>
 
         <!-- Install the embeddable bits -->
         <mkdir dir="${installDirectory}/embeddable"/>
         <copy todir="${installDirectory}/embeddable">
-            <fileset file="${targetDistDirectory}/groovy-all-${groovyVersion}.jar"/>
+            <fileset dir="${targetDistDirectory}" includes="groovy-all-${groovyVersion}.jar"/>
+            <fileset dir="${targetDistDirectory}" includes="groovy-all-${groovyVersion}.jar"/>
         </copy>
 
         <!-- Install configuration files -->
@@ -699,31 +727,12 @@ org.junit;resolution:=optional" file="${stagingDirectory}/META-INF/MANIFEST.MF"/
                 excludes="org/codehaus/groovy/antlr/parser/*,org/codehaus/groovy/antlr/java/*,org/codehaus/groovy/syntax/Types.java">
             <path>
                 <pathelement path="${mainClassesDirectory}"/>
-                <path refid="testPath"/>
+                <path refid="testLibPath"/>
             </path>
         </checkAndReport>
     </target>
 
-    <target name="-compileTools" depends="compileMain">
-
-<!--
-
-Use the shiny new groovyc fork mode :-)
-
-        <echo message="Groovyc of tools code."/>
-        <java classname="org.codehaus.groovy.ant.Groovyc" fork="true">
-            <classpath>
-                <path refid="toolsPath"/>
-                <pathelement path="${mainClassesDirectory}"/>
-                <path refid="compilePath"/>
-            </classpath>
-            <arg value="${toolsClassesDirectory}"/>
-            <arg value="${toolsSourceDirectory}"/>
-        </java>
--->
-
-        <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}"
-                 classpathref="compilePath"/>
+    <target name="-compileTools" depends="-initGroovyc,compileMain">
         <groovyc srcdir="${toolsSourceDirectory}" destdir="${toolsClassesDirectory}" fork="true">
             <classpath>
                 <path refid="toolsPath"/>
@@ -731,7 +740,6 @@ Use the shiny new groovyc fork mode :-)
                 <path refid="compilePath"/>
             </classpath>
         </groovyc>
-
         <copy todir="${toolsClassesDirectory}">
             <fileset dir="${toolsSourceDirectory}">
                 <include name="**/*.html"/>
@@ -761,7 +769,8 @@ Use the shiny new groovyc fork mode :-)
 
     <target name="doc" depends="javadoc, groovydoc" description="Create the documentation."/>
 
-    <target name="javadoc" depends="-fetchDependencies,-docInit" description="Create the javadoc documentation.">
+    <target name="javadoc" depends="-fetchDependencies,-docInit,-jvm14BuildWarning"
+            description="Create the javadoc documentation.">
         <property name="title" value="Groovy"/>
         <javadoc destdir="${docsDirectory}/api" author="true" version="true"
                  windowtitle="${title} (${groovyVersion})" doctitle="${title} (${groovyVersion})"
@@ -782,7 +791,14 @@ Use the shiny new groovyc fork mode :-)
         <copy toFile="${targetDistDirectory}/groovy-all-${groovyVersion}-javadoc.jar">
             <fileset file="${targetDistDirectory}/groovy-${groovyVersion}-javadoc.jar"/>
         </copy>
-        <copy toFile="${targetDistDirectory}/groovy-all-minimal-${groovyVersion}-javadoc.jar">
+        <antcall target="-javadocRetro"/>
+    </target>
+
+    <target name="-javadocRetro" if="_forceRetro_">
+        <copy toFile="${targetDistDirectory}/groovy-all-jdk14-${groovyVersion}-javadoc.jar">
+            <fileset file="${targetDistDirectory}/groovy-all-${groovyVersion}-javadoc.jar"/>
+        </copy>
+        <copy toFile="${targetDistDirectory}/groovy-jdk14-${groovyVersion}-javadoc.jar">
             <fileset file="${targetDistDirectory}/groovy-${groovyVersion}-javadoc.jar"/>
         </copy>
     </target>
@@ -816,12 +832,6 @@ Use the shiny new groovyc fork mode :-)
         </groovydoc>
     </target>
 
-    <macrodef name="commonLinks">
-        <sequential>
-
-        </sequential>
-    </macrodef>
-
     <target name="docGDK" depends="-compileTools" description="Create the GDK documentation">
         <java classname="org.codehaus.groovy.tools.DocGenerator" fork="yes" failonerror="true">
             <classpath>
@@ -836,7 +846,7 @@ Use the shiny new groovyc fork mode :-)
         <copy todir="target/html/groovy-jdk" file="src/tools/org/codehaus/groovy/tools/groovy.ico"/>
     </target>
 
-    <target name="clean" description="Clean out the built materials.">
+    <target name="clean" description="Clean up build artifacts.">
         <delete dir="${targetDirectory}" quiet="true"/>
         <delete quiet="true">
             <fileset dir="." includes="**/*~"/>
@@ -847,16 +857,35 @@ Use the shiny new groovyc fork mode :-)
 
     <target name="deploy" depends="-mavenDeployInit,install,doc"
             description="Deploy jars to maven repository.">
-        <mavenDeploy version="${groovyVersion}" artifact="groovy"/>
-        <mavenDeploy version="${groovyVersion}" artifact="groovy-all"/>
-        <mavenDeploy version="${groovyVersion}" artifact="groovy-all-minimal"/>
+        <mavenDeploy version="${groovyVersion}" prefix="groovy"/>
+        <mavenDeploy version="${groovyVersion}" prefix="groovy-all"/>
+        <antcall target="-deployRetro"/>
+    </target>
+
+    <target name="-deployRetro" if="_forceRetro_">
+        <maven.pom file="${targetDirectory}/groovy-jdk14.pom" id="groovy-jdk14.pom"/>
+        <mavenDeploy version="${groovyVersion}" prefix="groovy-jdk14"/>
+        <maven.pom file="${targetDirectory}/groovy-all-jdk14.pom" id="groovy-all-jdk14.pom"/>
+        <mavenDeploy version="${groovyVersion}" prefix="groovy-all-jdk14"/>
     </target>
 
     <target name="installRepo" depends="-mavenInit,install,doc"
             description="Deploy artifacts to local maven repository.">
-        <mavenInstallRepo version="${groovyVersion}" artifact="groovy"/>
-        <mavenInstallRepo version="${groovyVersion}" artifact="groovy-all"/>
-        <mavenInstallRepo version="${groovyVersion}" artifact="groovy-all-minimal"/>
+        <mavenInstallRepo version="${groovyVersion}" prefix="groovy"/>
+        <mavenInstallRepo version="${groovyVersion}" prefix="groovy-all"/>
+        <antcall target="-installRepoRetro"/>
+    </target>
+
+    <target name="-installRepoRetro" if="_forceRetro_">
+        <maven.pom file="${targetDirectory}/groovy-jdk14.pom" id="groovy-jdk14.pom"/>
+        <mavenInstallRepo version="${groovyVersion}" prefix="groovy-jdk14"/>
+        <maven.pom file="${targetDirectory}/groovy-all-jdk14.pom" id="groovy-all-jdk14.pom"/>
+        <mavenInstallRepo version="${groovyVersion}" prefix="groovy-all-jdk14"/>
+    </target>
+
+    <target name="translate" depends="-retroInit" if="_forceRetro_">
+        <retroArtifact version="${groovyVersion}" basedir="${targetDistDirectory}" artifact="groovy"/>
+        <retroArtifact version="${groovyVersion}" basedir="${targetDistDirectory}" artifact="groovy-all"/>
     </target>
 
     <target name="distribution" depends="install,doc" description="Create everything needed for a distribution.">
@@ -870,13 +899,13 @@ Use the shiny new groovyc fork mode :-)
                 <exclude name="bin/startGroovy*"/>
             </zipfileset>
 
-            <!-- Include the other scripts asis -->
+            <!-- Include the other scripts as is -->
             <zipfileset dir="${installDirectory}" prefix="groovy-${groovyVersion}">
                 <include name="bin/*.*"/>
                 <include name="bin/startGroovy*"/>
             </zipfileset>
 
-            <!-- Include everything else asis too -->
+            <!-- Include everything else as is too -->
             <zipfileset dir="${installDirectory}" prefix="groovy-${groovyVersion}">
                 <exclude name="bin/**"/>
                 <include name="**"/>
