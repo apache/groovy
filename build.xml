@@ -855,17 +855,23 @@ org.junit;resolution:=optional" file="${stagingDirectory}/META-INF/MANIFEST.MF"/
         </delete>
     </target>
 
-    <target name="deploy" depends="-mavenDeployInit,install,doc"
-            description="Deploy jars to maven repository.">
+    <target name="deploy" depends="-mavenDeployInit,install,doc,-deployPlainOnly,-deployPlainAndRetro"
+            description="Deploy jars to maven repository."/>
+
+    <target name="-deployPlainOnly" unless="_forceRetro_">
         <mavenDeploy version="${groovyVersion}" prefix="groovy"/>
         <mavenDeploy version="${groovyVersion}" prefix="groovy-all"/>
-        <antcall target="-deployRetro"/>
     </target>
 
-    <target name="-deployRetro" if="_forceRetro_">
+    <target name="-deployPlainAndRetro" if="_forceRetro_">
+        <!-- these were overwritten, so set them again -->
         <maven.pom file="${targetDirectory}/groovy-jdk14.pom" id="groovy-jdk14.pom"/>
-        <mavenDeploy version="${groovyVersion}" prefix="groovy-jdk14"/>
         <maven.pom file="${targetDirectory}/groovy-all-jdk14.pom" id="groovy-all-jdk14.pom"/>
+
+        <!-- do them all in one hit like this because the maven ant libs like it that way -->
+        <mavenDeploy version="${groovyVersion}" prefix="groovy"/>
+        <mavenDeploy version="${groovyVersion}" prefix="groovy-all"/>
+        <mavenDeploy version="${groovyVersion}" prefix="groovy-jdk14"/>
         <mavenDeploy version="${groovyVersion}" prefix="groovy-all-jdk14"/>
     </target>
 
