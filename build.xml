@@ -85,7 +85,7 @@ $Date$
     <target name="updatePolicy">
         <move file="security/groovy.policy" tofile="security/groovy.policy.template"/>
         <copy tofile="security/groovy.policy">
-            <fileset file="groovy.policy.template"/>
+            <fileset file="security/groovy.policy.template"/>
             <filterset>
                 <filter token="relativePathToRealBasedir" value="${relativePathToRealBasedir}"/>
             </filterset>
