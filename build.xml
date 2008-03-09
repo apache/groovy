@@ -376,11 +376,11 @@ Not found: ${groovyJar14path}
     </target>
 
     <target name="test"
-            depends="-checkAntVersion,-initializeReports,compileTest,-coverageInstrument,-testInit,-testOne,-testAll"
+            depends="-checkAntVersion,-initializeReports,compileTest,-coverageInstrument,-testInit,-testOne,-testAll,-reportTestFailed"
             description="Compile and test all the classes (or just one class if testCase property is defined)."/>
 
     <target name="testOnly"
-            depends="-init,-checkAntVersion,-initializeReports,-cleanTest,compileTestOnly,-coverageInstrument,-testInit,-testOne,-testAll"/>
+            depends="-init,-checkAntVersion,-initializeReports,-cleanTest,compileTestOnly,-coverageInstrument,-testInit,-testOne,-testAll,-reportTestFailed"/>
 
     <target name="clean-test" depends="clean,test"
             description="Clean and compile and test all the classes (or just one class if testCase property is defined)."/>
@@ -456,7 +456,7 @@ Not found: ${groovyJar14path}
     </target>
 
     <!-- TODO: move this so that 'ant test' fails -->
-    <target name="-reportTestFailed" depends="test,-coverageReport" if="testFailed">
+    <target name="-reportTestFailed" depends="-coverageReport" if="testFailed">
         <fail message="Test failed, not processing further targets."/>
     </target>
 
@@ -676,7 +676,7 @@ org.junit;resolution:=optional" file="${stagingDirectory}/META-INF/MANIFEST.MF"/
               tofile="${targetDistDirectory}/groovy-all-jdk14-${groovyVersion}-sources.jar"/>
     </target>
 
-    <target name="createJars" depends="-checkAntVersion,-reportTestFailed,-actuallyCreateJars"
+    <target name="createJars" depends="-checkAntVersion,test,-actuallyCreateJars"
             description="Build Groovy and create the jarfiles."/>
 
     <target name="updateJarsForRetro" if="_forceRetro_">
