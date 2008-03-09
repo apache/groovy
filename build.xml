@@ -82,6 +82,16 @@ $Date$
         </antlr>
     </target>
 
+    <target name="updatePolicy">
+        <move file="security/groovy.policy" tofile="security/groovy.policy.template"/>
+        <copy tofile="security/groovy.policy">
+            <fileset file="groovy.policy.template"/>
+            <filterset>
+                <filter token="relativePathToRealBasedir" value="${relativePathToRealBasedir}"/>
+            </filterset>
+        </copy>
+    </target>
+
     <target name="-init" depends="-fetchDependencies">
         <echo message="Java Runtime Environment version: ${java.version}"/>
         <echo message="Java Runtime Environment vendor: ${java.vendor}"/>
