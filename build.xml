@@ -89,6 +89,8 @@ $Date$
         <echo message="Operating system name: ${os.name}"/>
         <echo message="Operating system architecture: ${os.arch}"/>
         <echo message="Operating system version: ${os.version}"/>
+        <echo message="Base directory: ${basedir}"/>
+        <echo message="Java Home: ${java.home}"/>
     </target>
 
     <target name="-jvm14BuildWarning" unless="groovy.build.vm5">
@@ -96,7 +98,7 @@ $Date$
 
 =================================================================
   ERROR: You must build Groovy with a 1.5+ JDK - but you can
-         run tests and some other targets using Java 1.4.
+         run the 'testOnly' target using Java 1.4.
 =================================================================
         </fail>
     </target>
@@ -225,18 +227,58 @@ $Date$
     <property name="antGroovySourceFiles" value="org/codehaus/groovy/ant/**/GroovyTest*.groovy"/>
 
     <target name="-initGroovyc">
-        <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc"
-                 classpath="${mainClassesDirectory}" classpathref="testLibPath"/>
+        <path id="groovyMainClasses">
+            <pathelement path="${mainClassesDirectory}"/>
+            <path refid="compilePath"/>
+        </path>
+        <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="groovyMainClasses"/>
     </target>
 
-    <target name="compileTest" depends="compileMain" unless="_skipTests_"
+    <target name="-initGroovyc_vm4">
+        <property name="groovyJar14path" location="${basedir}/${relativePathToRealBasedir}/target/dist/groovy-jdk14-${groovyVersion}.jar"/>
+        <condition property="groovyJar14Found">
+            <available file="${groovyJar14path}"/>
+        </condition>
+        <fail unless="groovyJar14Found">Aborting!
+
+Not found: ${groovyJar14path}
+
+=================================================================
+  ERROR: First build Groovy with a 1.5+ JDK:
+           use the 'install' target
+           set the flag: -DforceRetro=true
+           set the -Djdk14home variable your 1.4 JDK basedir
+         then you can run the 'testOnly' target on a 1.4 jvm.
+=================================================================
+        </fail>
+        <path id="groovyMainClasses">
+            <pathelement path="${basedir}/${relativePathToRealBasedir}/target/dist/groovy-jdk14-${groovyVersion}.jar"/>
+            <fileset dir="${toolsLibDirectory}">
+                <include name="backport-util-concurrent-3.1.jar"/>
+                <include name="retrotranslator-runtime-1.2.4.jar"/>
+            </fileset>
+            <path refid="runtimePath"/>
+        </path>
+        <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="groovyMainClasses"/>
+    </target>
+
+    <target name="compileTest"
             description="Compile the Java and Groovy code in the test source.">
+        <antcall target="compileMain"/>
+        <antcall target="compileTestOnly"/>
+    </target>
+
+    <target name="-cleanTest">
+        <delete dir="${testClassesDirectory}"/>
+    </target>
+
+    <target name="compileTestOnly" unless="_skipTests_">
         <mkdir dir="${testClassesDirectory}"/>
-        <antcall target="-compileTest_all"/>
+        <antcall target="-compileTest_vm4"/>
         <antcall target="-compileTest_vm5"/>
     </target>
 
-    <target name="-compileTest_all" depends="-initGroovyc">
+    <target name="-compileTest_vm4" depends="-initGroovyc_vm4" unless="groovy.build.vm5">
         <!-- compile Groovy test files excluding ones which we want to pick up from the file system -->
         <groovyc srcdir="${testSourceDirectory}"
                  destdir="${testClassesDirectory}"
@@ -245,23 +287,24 @@ $Date$
                  fork="true"
                  memorymaximumsize="128M">
             <classpath>
-                <pathelement path="${mainClassesDirectory}"/>
                 <pathelement path="${testClassesDirectory}"/>
+                <path refid="groovyMainClasses"/>
                 <path refid="testLibPath"/>
             </classpath>
-            <javac source="1.5" target="1.5"/>
+            <javac source="1.4" target="1.4"/>
         </groovyc>
     </target>
 
-    <target name="-compileTest_vm5" depends="-initGroovyc" if="groovy.build.vm5">
+    <target name="-compileTest_vm5" if="groovy.build.vm5">
+        <antcall target="-initGroovyc"/>
         <groovyc srcdir="${testSourceDirectory}"
                  destdir="${testClassesDirectory}"
                  includes="${vm5GroovySourceFiles},${vm5JavaSourceFiles}"
                  fork="true"
                  memorymaximumsize="96m">
             <classpath>
-                <pathelement path="${mainClassesDirectory}"/>
                 <pathelement path="${testClassesDirectory}"/>
+                <path refid="groovyMainClasses"/>
                 <path refid="testLibPath"/>
             </classpath>
             <javac source="1.5" target="1.5"/>
@@ -336,6 +379,9 @@ $Date$
             depends="-checkAntVersion,-initializeReports,compileTest,-coverageInstrument,-testInit,-testOne,-testAll"
             description="Compile and test all the classes (or just one class if testCase property is defined)."/>
 
+    <target name="testOnly"
+            depends="-init,-checkAntVersion,-initializeReports,-cleanTest,compileTestOnly,-coverageInstrument,-testInit,-testOne,-testAll"/>
+
     <target name="clean-test" depends="clean,test"
             description="Clean and compile and test all the classes (or just one class if testCase property is defined)."/>
 
@@ -355,11 +401,11 @@ $Date$
             <test name="${testCase}" todir="${junitRawDirectory}"/>
             <formatter type="brief" usefile="false"/>
             <classpath>
-                <path refid="testLibPath"/>
                 <pathelement path="${instrumentedClassesDirectory}"/>
-                <pathelement path="${mainClassesDirectory}"/>
-                <pathelement path="${testClassesDirectory}"/>
                 <pathelement path="src/test"/>
+                <path refid="groovyMainClasses"/>
+                <path refid="testLibPath"/>
+                <pathelement path="${testClassesDirectory}"/>
                 <path refid="coberturaPath"/>
             </classpath>
         </junit>
@@ -394,11 +440,11 @@ $Date$
                 <fileset refid="ubertests.fileset"/>
             </batchtest>
             <classpath>
-                <path refid="testLibPath"/>
                 <pathelement path="${instrumentedClassesDirectory}"/>
-                <pathelement path="${mainClassesDirectory}"/>
-                <pathelement path="${testClassesDirectory}"/>
                 <pathelement path="src/test"/>
+                <path refid="groovyMainClasses"/>
+                <path refid="testLibPath"/>
+                <pathelement path="${testClassesDirectory}"/>
                 <path refid="coberturaPath"/>
             </classpath>
         </junit>
@@ -409,6 +455,7 @@ $Date$
         </junitreport>
     </target>
 
+    <!-- TODO: move this so that 'ant test' fails -->
     <target name="-reportTestFailed" depends="test,-coverageReport" if="testFailed">
         <fail message="Test failed, not processing further targets."/>
     </target>
@@ -692,7 +739,6 @@ org.junit;resolution:=optional" file="${stagingDirectory}/META-INF/MANIFEST.MF"/
         <!-- Install the embeddable bits -->
         <mkdir dir="${installDirectory}/embeddable"/>
         <copy todir="${installDirectory}/embeddable">
-            <fileset dir="${targetDistDirectory}" includes="groovy-all-${groovyVersion}.jar"/>
             <fileset dir="${targetDistDirectory}" includes="groovy-all-${groovyVersion}.jar"/>
         </copy>
 

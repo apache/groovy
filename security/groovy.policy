@@ -28,23 +28,27 @@ keystore "file:${user.dir}/security/groovykeys";
 //in his 7/13/04 update to the eclipse .classpath.  This permission allows the 
 //Security tests to run properly in eclipse (they were unaffected when running from maven)
 grant codeBase "file:${user.dir}/bin/-" {
-	permission java.security.AllPermission;
+    permission java.security.AllPermission;
 };
 
 grant codeBase "file:${user.dir}/target/classes/-" {
-	permission java.security.AllPermission;
+    permission java.security.AllPermission;
+};
+
+grant codeBase "file:${user.dir}/target/dist/-" {
+    permission java.security.AllPermission;
 };
 
 grant codeBase "file:${user.dir}/target/instrumented-classes/-" {
-	permission java.security.AllPermission;
+    permission java.security.AllPermission;
 };
 
 grant codeBase "file:${user.dir}/target/test-classes/-" {
-	permission java.security.AllPermission;
+    permission java.security.AllPermission;
 };
 
 grant codeBase "file:${groovy.lib}/-" {
-	permission java.security.AllPermission;
+    permission java.security.AllPermission;
 };
 
 /*
@@ -52,7 +56,7 @@ grant codeBase "file:${groovy.lib}/-" {
  * If not running from maven, the codesource will not be found, but will not cause an error.
  */
 grant codeBase "file:${maven.home}/-" {
-	permission java.security.AllPermission;
+    permission java.security.AllPermission;
 };
 
 /*
@@ -61,7 +65,7 @@ grant codeBase "file:${maven.home}/-" {
  * TODO: narrow this down to specific jars
  */
 grant codeBase "file:${user.dir}/target/lib/-" {
-	permission java.security.AllPermission;
+    permission java.security.AllPermission;
 };
 
 /*
@@ -69,7 +73,7 @@ grant codeBase "file:${user.dir}/target/lib/-" {
  * If not running from eclipse, the codesource will not be found, but will not cause an error.
  */
 grant codeBase "file:${user.dir}/../../plugins/-" {
-	permission java.security.AllPermission;
+    permission java.security.AllPermission;
 };
 
 /*
@@ -84,7 +88,7 @@ grant codeBase "file:${user.dir}/../../plugins/-" {
  * the shell in the form of a string or other groovy code of unknown provenance.
  */
 grant codeBase "file:/groovy/shell" {
-	permission java.lang.RuntimePermission "accessDeclaredMembers";
+    permission java.lang.RuntimePermission "accessDeclaredMembers";
 };
 
 /*
@@ -92,8 +96,8 @@ grant codeBase "file:/groovy/shell" {
  * passing through GroovyShell.
  */
 grant codeBase "file:/groovy/script" {
-	permission java.lang.RuntimePermission "accessDeclaredMembers";
-	//permission java.util.PropertyPermission "groovy.output.dir", "read";
+    permission java.lang.RuntimePermission "accessDeclaredMembers";
+    //permission java.util.PropertyPermission "groovy.output.dir", "read";
 };
 
 /*
@@ -102,7 +106,7 @@ grant codeBase "file:/groovy/script" {
  * set to "/groovy/testSupport".
  */
 grant codeBase "file:/groovy/testSupport" {
-	permission java.lang.RuntimePermission "accessDeclaredMembers";
+    permission java.lang.RuntimePermission "accessDeclaredMembers";
 };
 
 /*
@@ -120,19 +124,19 @@ grant codeBase "file:/groovy/testSupport" {
 //Since a codebase is a URL, we can make use of the natural hierarchy permission implications
 //to grant a 'global' accessDeclaredPermission here.
 grant codeBase "file:/groovy/security/-" {
-	permission java.lang.RuntimePermission "accessDeclaredMembers";
+    permission java.lang.RuntimePermission "accessDeclaredMembers";
 };
 
 grant codeBase "file:/groovy/security/testForbiddenPackage" {
-	//permission java.lang.RuntimePermission "accessClassInPackage.sun.*";
+    //permission java.lang.RuntimePermission "accessClassInPackage.sun.*";
 };
 
 grant codeBase "file:/groovy/security/javax/print/deny" {
-	//permission java.lang.RuntimePermission "accessClassInPackage.javax.print";
+    //permission java.lang.RuntimePermission "accessClassInPackage.javax.print";
 };
 
 grant codeBase "file:/groovy/security/javax/print/allow" {
-	permission java.lang.RuntimePermission "accessClassInPackage.javax.print";
+    permission java.lang.RuntimePermission "accessClassInPackage.javax.print";
 };
 
 /*
@@ -143,107 +147,107 @@ grant codeBase "file:/groovy/security/javax/print/allow" {
  * information.
  */
 grant codeBase "file:${user.dir}/src/test/-" {
-	// Required by most groovy scripts during execution because of the heavy use of reflection/
- 	// introspection.  The groovy code could potentially be changed to eliminate this requirement
- 	// by adding privileged operations in many places.
-	permission java.lang.RuntimePermission "accessDeclaredMembers";
+    // Required by most groovy scripts during execution because of the heavy use of reflection/
+    // introspection.  The groovy code could potentially be changed to eliminate this requirement
+    // by adding privileged operations in many places.
+    permission java.lang.RuntimePermission "accessDeclaredMembers";
 
-	// SHOULD NOT HAVE TO DO THIS! - Level.getLocalizedName() should have a doPrivileged block.
-	// Any test that logs, will encounter this (although it will be masked by the method
-	permission java.lang.RuntimePermission "accessClassInPackage.sun.util.logging.resources";
+    // SHOULD NOT HAVE TO DO THIS! - Level.getLocalizedName() should have a doPrivileged block.
+    // Any test that logs, will encounter this (although it will be masked by the method
+    permission java.lang.RuntimePermission "accessClassInPackage.sun.util.logging.resources";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/security/forbiddenCodeBase.gvy" {
-	//The following grant is commented out so that the test case will throw an AccessControlException
-	permission groovy.security.GroovyCodeSourcePermission "groovy/security/forbiddenCodeBase";
+    //The following grant is commented out so that the test case will throw an AccessControlException
+    permission groovy.security.GroovyCodeSourcePermission "groovy/security/forbiddenCodeBase";
 };
 
 // Grant permission to .groovy files extracted from a signed jar that has been signedBy "Groovy"
 grant signedBy "Groovy" {
-	permission java.lang.RuntimePermission "accessDeclaredMembers";
-	permission java.util.PropertyPermission "user.home", "read";
+    permission java.lang.RuntimePermission "accessDeclaredMembers";
+    permission java.util.PropertyPermission "user.home", "read";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/bugs/BadScriptNameBug.groovy" {
-	permission java.util.PropertyPermission "java.class.path", "read";
-	permission java.io.FilePermission "<<ALL FILES>>", "read";
-	permission java.lang.RuntimePermission "createClassLoader";
+    permission java.util.PropertyPermission "java.class.path", "read";
+    permission java.io.FilePermission "<<ALL FILES>>", "read";
+    permission java.lang.RuntimePermission "createClassLoader";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/ClosureListenerTest.groovy" {
-	permission java.util.PropertyPermission "java.awt.headless", "read";
-	// below seems like a new requirement in jdk 1.6/1.7
-	permission java.util.PropertyPermission "os.version", "read";
+    permission java.util.PropertyPermission "java.awt.headless", "read";
+    // below seems like a new requirement in jdk 1.6/1.7
+    permission java.util.PropertyPermission "os.version", "read";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/ClosureMethodTest.groovy" {
-	permission java.io.FilePermission "${user.dir}${/}src${/}test${/}-", "read";
-	permission java.util.PropertyPermission "file.encoding", "read";
+    permission java.io.FilePermission "${user.dir}${/}src${/}test${/}-", "read";
+    permission java.util.PropertyPermission "file.encoding", "read";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/GroovyMethodsTest.groovy" {
-	permission java.util.PropertyPermission "*", "read,write";
-	//spg 2006-02-09 added ALL FILES execute because a test case 
-	//invokes Runtime.exec().  This is OK and permission should be granted here.
-	permission java.io.FilePermission "<<ALL FILES>>", "execute";
+    permission java.util.PropertyPermission "*", "read,write";
+    //spg 2006-02-09 added ALL FILES execute because a test case 
+    //invokes Runtime.exec().  This is OK and permission should be granted here.
+    permission java.io.FilePermission "<<ALL FILES>>", "execute";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/ClosureWithDefaultParamTest.groovy" {
-	permission java.io.FilePermission "src${/}test${/}-", "read";
-	permission java.util.PropertyPermission "file.encoding", "read";
+    permission java.io.FilePermission "src${/}test${/}-", "read";
+    permission java.util.PropertyPermission "file.encoding", "read";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/bugs/ConstructorBug.groovy" {
-	permission java.lang.RuntimePermission "createClassLoader";
-	permission java.io.FilePermission "src${/}test${/}groovy${/}bugs${/}TestBase.groovy", "read";
-	permission java.io.FilePermission "src${/}test${/}groovy${/}bugs${/}TestDerived.groovy", "read";
+    permission java.lang.RuntimePermission "createClassLoader";
+    permission java.io.FilePermission "src${/}test${/}groovy${/}bugs${/}TestBase.groovy", "read";
+    permission java.io.FilePermission "src${/}test${/}groovy${/}bugs${/}TestDerived.groovy", "read";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/bugs/ForAndSqlBug.groovy" {
-	permission java.io.FilePermission "target${/}test-classes${/}*", "read, write";
+    permission java.io.FilePermission "target${/}test-classes${/}*", "read, write";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/bugs/ForLoopBug.groovy" {
-	permission java.io.FilePermission "target${/}test-classes${/}*", "read, write";
-	permission java.io.FilePermission "target${/}test-classes${/}*", "read, write";
+    permission java.io.FilePermission "target${/}test-classes${/}*", "read, write";
+    permission java.io.FilePermission "target${/}test-classes${/}*", "read, write";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/bugs/Groovy303_Bug.groovy" {
-	permission java.awt.AWTPermission "showWindowWithoutWarningBanner";
-	// below seems like a new requirement in jdk 1.5
-	permission java.util.PropertyPermission "os.version", "read";
+    permission java.awt.AWTPermission "showWindowWithoutWarningBanner";
+    // below seems like a new requirement in jdk 1.5
+    permission java.util.PropertyPermission "os.version", "read";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/script/ScriptTest.groovy" {
-	permission java.io.FilePermission "src${/}test${/}groovy${/}-", "read";
+    permission java.io.FilePermission "src${/}test${/}groovy${/}-", "read";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/script/EvalInScript.groovy" {
-	permission java.io.FilePermission "src${/}test${/}groovy${/}script${/}HelloWorld.groovy", "read";
+    permission java.io.FilePermission "src${/}test${/}groovy${/}script${/}HelloWorld.groovy", "read";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/sql/PersonTest.groovy" {
-	permission java.io.FilePermission "target${/}test-classes${/}groovy${/}sql${/}-", "read";
+    permission java.io.FilePermission "target${/}test-classes${/}groovy${/}sql${/}-", "read";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/sql/SqlCompleteTest.groovy" {
-	permission java.io.FilePermission "target${/}test-classes${/}groovy${/}sql${/}-", "read";
+    permission java.io.FilePermission "target${/}test-classes${/}groovy${/}sql${/}-", "read";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/sql/SqlCompleteWithoutDataSourceTest.groovy" {
     //TODO: what should this be see other TODO about narrowing down main directories
-	//permission java.io.FilePermission "${groovy.lib}${/}axion${/}jars${/}axion-1.0-M3-dev.jar", "read";
+    //permission java.io.FilePermission "${groovy.lib}${/}axion${/}jars${/}axion-1.0-M3-dev.jar", "read";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/sql/SqlTest.groovy" {
-	permission java.io.FilePermission "target${/}test-classes${/}groovy${/}sql${/}-", "read";
+    permission java.io.FilePermission "target${/}test-classes${/}groovy${/}sql${/}-", "read";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/util/AntTest.groovy" {
-	permission java.security.AllPermission;
+    permission java.security.AllPermission;
 };
 
 grant codeBase "file:${user.dir}/src/test/org/codehaus/groovy/classgen/MetaClassTest.groovy" {
-	permission java.io.FilePermission "target${/}test-classes${/}-", "read";
+    permission java.io.FilePermission "target${/}test-classes${/}-", "read";
 };
 

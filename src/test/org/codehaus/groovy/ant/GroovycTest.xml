@@ -21,11 +21,7 @@
   <property name="destPath" value="${user.dir}/target/test-classes"/>
 
   <path id="groovyMaterials">
-    <pathelement location="${user.dir}/target/classes"/>
-    <pathelement location="${user.dir}/target/test-classes"/>
-    <fileset dir="${user.dir}/target/lib/test">
-      <include name="asm*.jar"/>
-    </fileset>
+      <pathelement path="${java.class.path}"/>
   </path>
 
   <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="groovyMaterials"/>

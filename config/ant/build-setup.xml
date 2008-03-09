@@ -56,6 +56,7 @@ $Date: 2007-03-11 19:14:07 +1000 (Sun, 11 Mar 2007) $
     <property name="examplesLibDirectory" value="${targetLibDirectory}/examples"/>
     <property name="junitRawDirectory" value="${targetDirectory}/test-reports"/>
     <property name="junitReportsDirectory" value="${reportsDirectory}/junit"/>
+    <property name="relativePathToRealBasedir" value="."/>
 
     <macrodef name="antforked">
         <attribute name="target"/>
