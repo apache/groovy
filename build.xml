@@ -155,7 +155,7 @@ $Date$
 
         <javac srcdir="${mainSourceDirectory}" includeantruntime="false" destdir="${mainClassesDirectory}"
                deprecation="on" debug="yes" source="1.5" target="1.5" fork="true" classpathref="compilePath"/>
-        <antcall target="-stagedcompile-groovy"/>
+        <antcall inheritall="true" target="-stagedcompile-groovy"/>
     </target>
 
     <target name="-stagedcompile-groovy" depends="-initGroovyc">
@@ -226,7 +226,7 @@ $Date$
     <property name="vm5JavaSourceFiles" value="org/codehaus/groovy/**/vm5/**/*.java,groovy/**/vm5/**/*.java"/>
     <property name="antGroovySourceFiles" value="org/codehaus/groovy/ant/**/GroovyTest*.groovy"/>
 
-    <target name="-initGroovyc">
+    <target name="-initGroovyc" if="groovy.build.vm5">
         <path id="groovyMainClasses">
             <pathelement path="${mainClassesDirectory}"/>
             <path refid="compilePath"/>
@@ -234,7 +234,7 @@ $Date$
         <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="groovyMainClasses"/>
     </target>
 
-    <target name="-initGroovyc_vm4">
+    <target name="-initGroovyc_vm4" unless="groovy.build.vm5">
         <property name="groovyJar14path" location="${basedir}/${relativePathToRealBasedir}/target/dist/groovy-jdk14-${groovyVersion}.jar"/>
         <condition property="groovyJar14Found">
             <available file="${groovyJar14path}"/>
@@ -264,8 +264,8 @@ Not found: ${groovyJar14path}
 
     <target name="compileTest"
             description="Compile the Java and Groovy code in the test source.">
-        <antcall target="compileMain"/>
-        <antcall target="compileTestOnly"/>
+        <antcall inheritall="true" target="compileMain"/>
+        <antcall inheritall="true" target="compileTestOnly"/>
     </target>
 
     <target name="-cleanTest">
@@ -274,8 +274,8 @@ Not found: ${groovyJar14path}
 
     <target name="compileTestOnly" unless="_skipTests_">
         <mkdir dir="${testClassesDirectory}"/>
-        <antcall target="-compileTest_vm4"/>
-        <antcall target="-compileTest_vm5"/>
+        <antcall inheritall="true" target="-compileTest_vm4"/>
+        <antcall inheritall="true" target="-compileTest_vm5"/>
     </target>
 
     <target name="-compileTest_vm4" depends="-initGroovyc_vm4" unless="groovy.build.vm5">
@@ -295,13 +295,12 @@ Not found: ${groovyJar14path}
         </groovyc>
     </target>
 
-    <target name="-compileTest_vm5" if="groovy.build.vm5">
-        <antcall target="-initGroovyc"/>
+    <target name="-compileTest_vm5" depends="-initGroovyc" if="groovy.build.vm5">
         <groovyc srcdir="${testSourceDirectory}"
                  destdir="${testClassesDirectory}"
-                 includes="${vm5GroovySourceFiles},${vm5JavaSourceFiles}"
+                 excludes="${antGroovySourceFiles}"
                  fork="true"
-                 memorymaximumsize="96m">
+                 memorymaximumsize="128m">
             <classpath>
                 <pathelement path="${testClassesDirectory}"/>
                 <path refid="groovyMainClasses"/>
@@ -394,7 +393,7 @@ Not found: ${groovyJar14path}
         </and>
     </condition>
 
-    <target name="-testOne" if="_testOne_">
+    <target name="-testOne" if="_testOne_" depends="-initGroovyc_vm4,-initGroovyc">
         <mkdir dir="${junitRawDirectory}"/>
         <junit printsummary="true" fork="true" includeantruntime="false" failureproperty="testFailed" maxmemory="${groovyJUnit_mx}" dir="${basedir}">
             <jvmarg line="${junitJvmArgs}"/>
@@ -430,7 +429,7 @@ Not found: ${groovyJar14path}
         <fileset id="ubertests.fileset" dir="${testClassesDirectory}" includes="UberTest*.class"/>
     </target>
 
-    <target name="-testAll" if="_testAll_" depends="-collect14tests,-collect15tests">
+    <target name="-testAll" if="_testAll_" depends="-collect14tests,-collect15tests,-initGroovyc_vm4,-initGroovyc">
         <mkdir dir="${junitRawDirectory}"/>
         <junit printsummary="true" fork="true" includeantruntime="false" failureproperty="testFailed" maxmemory="${groovyJUnit_mx}" dir="${basedir}">
             <jvmarg line="${junitJvmArgs}"/>
