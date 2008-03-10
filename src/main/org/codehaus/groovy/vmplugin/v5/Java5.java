@@ -20,6 +20,8 @@ import java.lang.reflect.*;
 import java.lang.annotation.*;
 import java.util.Map;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.control.Phases;
@@ -27,7 +29,10 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.ClassHelper;
 
 /**
@@ -135,48 +140,91 @@ public class Java5 implements VMPlugin {
         Annotation[] annotations =  cn.getTypeClass().getAnnotations();
         for (int i=0; i<annotations.length; i++) {
             Annotation annotation = annotations[i];
-            Class type = annotation.annotationType();
-            cn.addAnnotation(makeAnnotationNode(annotation));
+            AnnotationNode node = new AnnotationNode(ClassHelper.make(annotation.annotationType()));
+            configureAnnotation(node,annotation);
+            cn.addAnnotation(node);
         }
     }
 
-    private AnnotationNode makeAnnotationNode(Annotation annotation) {
-        AnnotationNode node = new AnnotationNode(ClassHelper.make(annotation.annotationType()));
+    private void configureAnnotationFromDefinition(AnnotationNode definition, AnnotationNode root) {
+        ClassNode type = definition.getClassNode();
+        if (!type.isResolved()) return;
+        Class clazz = type.getTypeClass();
+        if (clazz==Retention.class) {
+            Expression exp = definition.getMember("value");
+            if (!(exp instanceof PropertyExpression)) return;
+            PropertyExpression pe = (PropertyExpression) exp;
+            String name = pe.getPropertyAsString();
+            RetentionPolicy policy = RetentionPolicy.valueOf(name);
+            setRetentionPolicy(policy,root);
+        } else if (clazz==Target.class) {
+            Expression exp = definition.getMember("value");
+            if (!(exp instanceof ListExpression)) return;
+            ListExpression le = (ListExpression) exp;
+            int bitmap = 0;
+            for (Iterator it=le.getExpressions().iterator(); it.hasNext();) {
+                PropertyExpression element = (PropertyExpression) it.next();
+                String name = element.getPropertyAsString();
+                ElementType value = ElementType.valueOf(name);
+                bitmap |= getElementCode(value);
+            }
+            root.setAllowedTargets(bitmap);
+        }
+    }
+
+    public void configureAnnotation(AnnotationNode node) {
+        ClassNode type = node.getClassNode();
+        List annotations = type.getAnnotations();
+        for (Iterator it=annotations.iterator(); it.hasNext();) {
+            AnnotationNode an = (AnnotationNode) it.next();
+            configureAnnotationFromDefinition(an,node);
+        }
+
+        configureAnnotationFromDefinition(node,node);
+    }
+    
+    private void configureAnnotation(AnnotationNode node, Annotation annotation) {
         Class type = annotation.annotationType();
         if (type == Retention.class) {
             Retention r = (Retention) annotation;
-            switch (r.value()) {
-              case RUNTIME: node.setRuntimeRetention(true); break;
-              case SOURCE:  node.setSourceRetention(true); break;
-              case CLASS:   node.setClassRetention(true); break;
-              default: throw new GroovyBugError("unsupported Retention "+r.value());
-            }
+            setRetentionPolicy(r.value(),node);
         } else if (type == Target.class) {
             Target t = (Target) annotation;
             ElementType[] elements = t.value();
             int bitmap = 0;
             for (int i=0; i<elements.length; i++) {
-                switch (elements[i]) {
-                    case TYPE: bitmap |= AnnotationNode.TYPE_TARGET; break;
-                    case CONSTRUCTOR: bitmap |= AnnotationNode.CONSTRUCTOR_TARGET; break;
-                    case METHOD: bitmap |= AnnotationNode.METHOD_TARGET; break;
-                    case FIELD: bitmap |= AnnotationNode.FIELD_TARGET; break;
-                    case PARAMETER: bitmap |= AnnotationNode.PARAMETER_TARGET; break;
-                    case LOCAL_VARIABLE: bitmap |= AnnotationNode.LOCAL_VARIABLE_TARGET; break;
-                    case ANNOTATION_TYPE: bitmap |= AnnotationNode.ANNOTATION_TARGET; break;
-                    case PACKAGE: bitmap |= AnnotationNode.PACKAGE_TARGET; break;
-                    default: throw new GroovyBugError("unsupported Target "+elements[i]);
-                }
+                bitmap |= getElementCode(elements[i]);
             }
             node.setAllowedTargets(bitmap);
         }
+    }
 
-        return node;
+    private void setRetentionPolicy(RetentionPolicy value,  AnnotationNode node) {
+        switch (value) {
+          case RUNTIME: node.setRuntimeRetention(true); break;
+          case SOURCE:  node.setSourceRetention(true); break;
+          case CLASS:   node.setClassRetention(true); break;
+          default: throw new GroovyBugError("unsupported Retention "+value);
+        }
+    }
+
+    private int getElementCode(ElementType value) {
+        switch (value) {
+            case TYPE:            return AnnotationNode.TYPE_TARGET;
+            case CONSTRUCTOR:     return AnnotationNode.CONSTRUCTOR_TARGET;
+            case METHOD:          return AnnotationNode.METHOD_TARGET;
+            case FIELD:           return AnnotationNode.FIELD_TARGET;
+            case PARAMETER:       return AnnotationNode.PARAMETER_TARGET;
+            case LOCAL_VARIABLE:  return AnnotationNode.LOCAL_VARIABLE_TARGET;
+            case ANNOTATION_TYPE: return AnnotationNode.ANNOTATION_TARGET;
+            case PACKAGE:         return AnnotationNode.PACKAGE_TARGET;
+            default: throw new GroovyBugError("unsupported Target " + value);
+        }
     }
 
     public void setMethodDefaultValue(MethodNode mn, Method m) {
         Object defaultValue = m.getDefaultValue();
-        mn.setCode(new ExpressionStatement(new ConstantExpression(defaultValue)));
+        mn.setCode(new ReturnStatement(new ConstantExpression(defaultValue)));
         mn.setAnnotationDefault(true);
     }
 

@@ -15,20 +15,16 @@
  */
 package org.codehaus.groovy.classgen;
 
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.ListExpression;
-import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
 
 /**
@@ -44,16 +40,20 @@ public class AnnotationVisitor {
     private ErrorCollector errorCollector;
     
     private AnnotationNode annotation;
-    private ClassNode annotationClass;
+    private ClassNode reportClass;
     
     public AnnotationVisitor(SourceUnit source, ErrorCollector errorCollector) {
         this.source = source;
         this.errorCollector = errorCollector;
     }
-    
+
+    public void setReportClass(ClassNode cn) {
+        reportClass = cn;
+    }
+
     public AnnotationNode visit(AnnotationNode node) {
         this.annotation = node;
-        this.annotationClass = node.getClassNode();
+        this.reportClass = node.getClassNode();
 
         if(!isValidAnnotationClass(node.getClassNode())) {
             addError("class "+node.getClassNode().getName()+" is no annotation");
@@ -68,7 +68,9 @@ public class AnnotationVisitor {
             ClassNode attrType = getAttributeType(node, attrName);
             visitExpression(attrName, attrExpr, attrType);
         }
-        
+
+        VMPluginFactory.getPlugin().configureAnnotation(node);
+
         return this.annotation;
     }
 
@@ -98,25 +100,49 @@ public class AnnotationVisitor {
             // check needed as @Test(attr = {"elem"}) passes through the parser
             if(attrExp instanceof ListExpression) {
                 visitListExpression(attrName, (ListExpression) attrExp, attrType.getComponentType());
-            }
-            else {
+            } else {
                 addError("Annotation list attributes must use Groovy notation [el1, el2]", attrExp);
             }
-        }
-        if (ClassHelper.isPrimitiveType(attrType)) {
+        } else if (ClassHelper.isPrimitiveType(attrType)) {
             visitConstantExpression(attrName, getConstantExpression(attrExp), ClassHelper.getWrapper(attrType));
-        } else if (ClassHelper.STRING_TYPE==attrType) {
+        } else if (ClassHelper.STRING_TYPE.equals(attrType)) {
             visitConstantExpression(attrName, getConstantExpression(attrExp), ClassHelper.STRING_TYPE);
-        } else if (ClassHelper.CLASS_Type==attrType) {
-            // there is nothing to check about ClassExpressions
+        } else if (ClassHelper.CLASS_Type.equals(attrType)) {
+            if (!(attrExp instanceof ClassExpression)) {
+                addError("Only classes can be used for attribute '"+attrName+"'",attrExp);
+            }
         } else if (attrType.isDerivedFrom(ClassHelper.Enum_Type)) {
-            if(attrExp instanceof PropertyExpression) {
+            if (attrExp instanceof PropertyExpression) {
                 visitEnumExpression(attrName, (PropertyExpression) attrExp, attrType);
             } else {
-                addError("Value not defined for annotation attribute " + attrName, attrExp);
+                addError("Expected enum value for attribute " + attrName, attrExp);
             }
         } else if (isValidAnnotationClass(attrType)) {
-            visitAnnotationExpression(attrName, (AnnotationConstantExpression) attrExp, attrType);
+            if (attrExp instanceof AnnotationConstantExpression) {
+                visitAnnotationExpression(attrName, (AnnotationConstantExpression) attrExp, attrType);
+            } else {
+                addError("Expected annotation of type '"+attrType.getName()+"' for attribute "+attrName, attrExp);
+            }
+        } else {
+            addError("Unexpected type "+attrType.getName(),attrExp); 
+        }
+    }
+
+    public void checkReturnType(ClassNode attrType,ASTNode node) {
+        if(attrType.isArray()) {
+             checkReturnType(attrType.getComponentType(),node);
+        } else if (ClassHelper.isPrimitiveType(attrType)) {
+             return;
+        } else if (ClassHelper.STRING_TYPE.equals(attrType)) {
+             return;
+        } else if (ClassHelper.CLASS_Type.equals(attrType)) {
+             return;
+        } else if (attrType.isDerivedFrom(ClassHelper.Enum_Type)) {
+             return;
+        } else if (isValidAnnotationClass(attrType)) {
+            return;
+        } else {
+            addError("Unexpected return type "+attrType.getName(),node);
         }
     }
 
@@ -170,9 +196,32 @@ public class AnnotationVisitor {
     protected void addError(String msg, ASTNode expr) {
         this.errorCollector.addErrorAndContinue(
           new SyntaxErrorMessage(new SyntaxException(msg 
-                  + " in @" + this.annotationClass.getName() + '\n',
+                  + " in @" + this.reportClass.getName() + '\n',
                   expr.getLineNumber(), 
                   expr.getColumnNumber()), this.source)
         );
     }
+
+    public void checkcircularReference(ClassNode searchClass, ClassNode attrType,Expression startExp) {
+        if (!isValidAnnotationClass(attrType)) return;
+        AnnotationConstantExpression ace = (AnnotationConstantExpression) startExp;
+        AnnotationNode annotationNode = (AnnotationNode) ace.getValue();
+        if (annotationNode.getClassNode().equals(searchClass)) {
+            addError ("Cirecular reference discovered in "+searchClass.getName(),startExp);
+            return;
+        }
+        ClassNode cn = annotationNode.getClassNode();
+        List methods = cn.getMethods();
+        for(Iterator it=methods.iterator(); it.hasNext();) {
+            MethodNode method = (MethodNode) it.next();
+            if (method.getReturnType().equals(searchClass)) {
+                addError ("Cirecular reference discovered in "+cn.getName(),startExp);
+            }
+                        
+            ReturnStatement code = (ReturnStatement) method.getCode();
+            if (code==null) continue;
+            checkcircularReference(searchClass,method.getReturnType(),code.getExpression());
+        }
+    }
+
 }

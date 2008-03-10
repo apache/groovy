@@ -1090,11 +1090,13 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public List getAnnotations() {
+        if (redirect!=null) return redirect.getAnnotations();
         lazyClassInit();
         return super.getAnnotations();
     }
 
     public List getAnnotations(ClassNode type) {
+        if (redirect!=null) return redirect.getAnnotations(type);        
         lazyClassInit();
         return super.getAnnotations(type);
     }

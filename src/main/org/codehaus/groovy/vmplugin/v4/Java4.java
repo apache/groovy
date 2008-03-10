@@ -17,6 +17,7 @@ package org.codehaus.groovy.vmplugin.v4;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.control.CompilationUnit;
 
@@ -48,5 +49,9 @@ public class Java4 implements VMPlugin {
 
     public void setAnnotationMetaData(ClassNode cn) {
         // do nothing
+    }
+
+    public void configureAnnotation(AnnotationNode an) {
+        // do nothing        
     }
 }

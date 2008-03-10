@@ -603,21 +603,21 @@ public class AsmClassGenerator extends ClassGenerator {
        } else if (ClassHelper.isPrimitiveType(type) || type.equals(ClassHelper.STRING_TYPE)) {
            ConstantExpression constExp = (ConstantExpression) exp;
            av.visit(null, constExp.getValue());
-       } else if (ClassHelper.CLASS_Type == type) {
-           ClassExpression cexp = (ClassExpression) exp;
+       } else if (ClassHelper.CLASS_Type.equals(type)) {
            ClassNode clazz = exp.getType();
-           Type t = Type.getType(BytecodeHelper.getClassInternalName(clazz));
+           Type t = Type.getType(BytecodeHelper.getTypeDescription(clazz));
            av.visit(null, t);
        } else if (type.isDerivedFrom(ClassHelper.Enum_Type)) {
            PropertyExpression pExp = (PropertyExpression) exp;
            ClassExpression cExp = (ClassExpression) pExp.getObjectExpression();
-           String desc = BytecodeHelper.getClassInternalName(cExp.getType());
+           String desc = BytecodeHelper.getTypeDescription(cExp.getType());
            String name = pExp.getPropertyAsString();
            av.visitEnum(null, desc, name);
        } else if (type.implementsInterface("java.lang.annotation.Annotation")) {
            AnnotationConstantExpression avExp = (AnnotationConstantExpression) exp;
-           AnnotationVisitor avc = av.visitAnnotation(null, BytecodeHelper.getClassInternalName(avExp.getType()));
-           visitAnnotationDefaultExpression(avc,avExp.getType(),avExp);
+           AnnotationNode value = (AnnotationNode) avExp.getValue();
+           AnnotationVisitor avc = av.visitAnnotation(null, BytecodeHelper.getTypeDescription(avExp.getType()));
+           visitAnnotationAttributes(value,avc);
        } else {
            throw new GroovyBugError("unexpected annotation type " + type.getName());
        }

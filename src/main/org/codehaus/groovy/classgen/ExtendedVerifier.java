@@ -66,14 +66,30 @@ public class ExtendedVerifier implements GroovyClassVisitor {
             Parameter parameter = node.getParameters()[i];
             visitAnnotations(parameter, AnnotationNode.PARAMETER_TARGET);
         }
+
         if (this.currentClass.isAnnotationDefinition()) {
+
+            ErrorCollector errorCollector = new ErrorCollector(this.source.getConfiguration());
+            AnnotationVisitor visitor = new AnnotationVisitor(this.source, errorCollector);
+            visitor.setReportClass(currentClass);
+
+            visitor.checkReturnType(node.getReturnType(),node);
+            
+            if (node.getParameters().length>0) {
+                addError ("Annotation members may not have parameters.",node.getParameters()[0]);
+            }
+
+            if (node.getExceptions().length>0) {
+                addError ("Annotation members may not have a throws clause.",node.getExceptions()[0]);
+            }
+            
             ReturnStatement code = (ReturnStatement) node.getCode();
             if (code!=null) {
-                ErrorCollector errorCollector = new ErrorCollector(this.source.getConfiguration());
-                AnnotationVisitor visitor = new AnnotationVisitor(this.source, errorCollector);
                 visitor.visitExpression(node.getName(),code.getExpression(),node.getReturnType());
-                this.source.getErrorCollector().addCollectorContents(errorCollector);
+                visitor.checkcircularReference(currentClass,node.getReturnType(),code.getExpression());
             }
+
+            this.source.getErrorCollector().addCollectorContents(errorCollector);
         }
     }
 
