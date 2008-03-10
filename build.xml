@@ -295,7 +295,8 @@ Not found: ${groovyJar14path}
                  excludes="${antGroovySourceFiles},${vm5GroovySourceFiles},${vm5JavaSourceFiles}"
                  stacktrace="true"
                  fork="true"
-                 memorymaximumsize="128M">
+                 memorymaximumsize="256M">
+<!-- memorymaximumsize=128M does not work for me (blackdrag) on 64bit --> 
             <classpath>
                 <pathelement path="${testClassesDirectory}"/>
                 <path refid="groovyMainClasses"/>
@@ -310,7 +311,8 @@ Not found: ${groovyJar14path}
                  destdir="${testClassesDirectory}"
                  excludes="${antGroovySourceFiles}"
                  fork="true"
-                 memorymaximumsize="128m">
+                 memorymaximumsize="256m">
+<!-- memorymaximumsize=128M does not work for me (blackdrag) on 64bit --> 
             <classpath>
                 <pathelement path="${testClassesDirectory}"/>
                 <path refid="groovyMainClasses"/>
