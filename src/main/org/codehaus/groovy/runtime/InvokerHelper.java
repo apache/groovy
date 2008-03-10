@@ -579,6 +579,8 @@ public class InvokerHelper {
                 return (String) arguments;
             }
         }
+        // TODO: For GROOVY-2599 do we need something like:
+//        return (String) invokeMethod(arguments, "toString", EMPTY_ARGS);
         return arguments.toString();
     }
 
