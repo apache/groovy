@@ -20,12 +20,14 @@ import groovy.lang.Binding;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyShell;
 import groovy.lang.Script;
+import groovy.lang.MissingMethodException;
 import groovy.util.AntBuilder;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Task;
 import org.apache.tools.ant.types.*;
+import org.apache.tools.ant.types.Reference;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -346,6 +348,10 @@ public class Groovy extends Task
                 script.setProperty("pom", mavenPom);
             }
             script.run();
+        }
+        catch (final MissingMethodException e) {
+            // not a script, try running through run method but properties will not be available
+            groovy.run(txt, scriptName, cmdline.getCommandline());
         }
         catch (final CompilationFailedException e) {
             StringWriter writer = new StringWriter();
