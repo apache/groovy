@@ -73,6 +73,7 @@ public class JavaStubGenerator
             public void addCovariantMethods(ClassNode cn) {}
             protected void addTimeStamp(ClassNode node) {}
             protected void addInitialization(ClassNode node) {}
+            public void visitProperty(PropertyNode node) {}            
         };
         verifier.visitClass(classNode);
         
