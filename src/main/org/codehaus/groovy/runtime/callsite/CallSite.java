@@ -110,7 +110,7 @@ public abstract class CallSite {
         return acceptCall(receiver, args).invoke(receiver, args);
     }
 
-    public final Object call(Object receiver, Object[] args) throws Throwable {
+    public Object call(Object receiver, Object[] args) {
         return acceptCall(receiver, args).invoke(receiver, args);
     }
 
@@ -118,6 +118,10 @@ public abstract class CallSite {
         return acceptCurrent(receiver, args).invoke(receiver, args);
     }
     
+    public Object callBinop (Object receiver, Object arg) {
+        return acceptBinop(receiver, arg).invokeBinop(receiver, arg);
+    }
+
     public final Object callConstructor (Object receiver, Object [] args) throws Throwable {
         return acceptConstructor((Class) receiver, args).invoke(receiver, args);
     }
@@ -264,21 +268,5 @@ public abstract class CallSite {
 
         array.array[index] = site;
         return site;
-    }
-
-    public Object plus (Object a, Object b) {
-        return acceptBinop(a,b).invokeBinop(a,b);
-    }
-
-    public Object div (Object a, Object b) {
-        return acceptBinop(a,b).invokeBinop(a,b);
-    }
-
-    public Object minus (Object a, Object b) {
-        return acceptBinop(a,b).invokeBinop(a,b);
-    }
-
-    public Object multiply (Object a, Object b) {
-        return acceptBinop(a,b).invokeBinop(a,b);
     }
 }

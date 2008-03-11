@@ -77,7 +77,7 @@ public class IntRange extends AbstractList implements Range {
                     }
                 }
             }
-            return new Integer(value);
+            return Integer.valueOf(value);
         }
 
         /**

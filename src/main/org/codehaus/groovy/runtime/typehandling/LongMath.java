@@ -46,7 +46,7 @@ public class LongMath extends NumberMath {
 		return BigDecimalMath.INSTANCE.divideImpl(left, right);
 	}
 	
-	protected int compareToImpl(Number left, Number right) {
+	public int compareToImpl(Number left, Number right) {
 		long leftVal = left.longValue();
 		long rightVal = right.longValue();
 		return (leftVal<rightVal ? -1 : (leftVal==rightVal ? 0 : 1));

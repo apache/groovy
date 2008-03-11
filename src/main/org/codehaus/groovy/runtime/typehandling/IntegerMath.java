@@ -46,7 +46,7 @@ public class IntegerMath extends NumberMath {
 		return BigDecimalMath.INSTANCE.divideImpl(left, right);
 	}
 	
-	protected int compareToImpl(Number left, Number right) {
+	public int compareToImpl(Number left, Number right) {
 		int leftVal = left.intValue();
 		int rightVal = right.intValue();
 		return (leftVal<rightVal ? -1 : (leftVal==rightVal ? 0 : 1));

@@ -214,7 +214,7 @@ public abstract class NumberMath {
 	public abstract Number subtractImpl(Number left, Number right);
 	public abstract Number multiplyImpl(Number left, Number right);
 	public abstract Number divideImpl(Number left, Number right);
-	protected abstract int compareToImpl(Number left, Number right);
+	public abstract int compareToImpl(Number left, Number right);
     protected abstract Number unaryMinusImpl(Number left);
 
 

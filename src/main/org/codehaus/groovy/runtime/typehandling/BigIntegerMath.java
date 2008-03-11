@@ -46,7 +46,7 @@ public class BigIntegerMath extends NumberMath {
 		return BigDecimalMath.INSTANCE.divideImpl(left, right);
 	}
 	
-	protected int compareToImpl(Number left, Number right) {
+	public int compareToImpl(Number left, Number right) {
 		return toBigInteger(left).compareTo(toBigInteger(right));
 	}
 

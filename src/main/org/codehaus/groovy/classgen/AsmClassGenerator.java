@@ -1968,16 +1968,16 @@ public class AsmClassGenerator extends ClassGenerator {
                     if (safe)
                       mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "callSafe","(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
                     else {
-                      int argsIdx = compileStack.defineTemporaryVariable("$local$args",true);
-                      int recIdx = compileStack.defineTemporaryVariable("$local$receiver",true);
-                      mv.visitVarInsn(ALOAD,recIdx);
-                      mv.visitVarInsn(ALOAD,argsIdx);
-                      mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "acceptCall","(Ljava/lang/Object;[Ljava/lang/Object;)Lorg/codehaus/groovy/runtime/callsite/CallSite;");
-                      mv.visitVarInsn(ALOAD,recIdx);
-                      mv.visitVarInsn(ALOAD,argsIdx);
-                      mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "invoke","(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
-                      compileStack.removeVar(recIdx);
-                      compileStack.removeVar(argsIdx);
+//                      int argsIdx = compileStack.defineTemporaryVariable("$local$args",true);
+//                      int recIdx = compileStack.defineTemporaryVariable("$local$receiver",true);
+//                      mv.visitVarInsn(ALOAD,recIdx);
+//                      mv.visitVarInsn(ALOAD,argsIdx);
+//                      mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "acceptCall","(Ljava/lang/Object;[Ljava/lang/Object;)Lorg/codehaus/groovy/runtime/callsite/CallSite;");
+//                      mv.visitVarInsn(ALOAD,recIdx);
+//                      mv.visitVarInsn(ALOAD,argsIdx);
+                      mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "call","(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
+//                      compileStack.removeVar(recIdx);
+//                      compileStack.removeVar(argsIdx);
                     }
                 }
             }
@@ -2002,6 +2002,7 @@ public class AsmClassGenerator extends ClassGenerator {
          && !message.equals("div")
          && !message.equals("minus")
          && !message.equals("multiply")
+         && !message.equals("getAt")
         ) {
             // ensure VariableArguments are read, not stored
             boolean lhs = leftHandExpression;
@@ -2033,7 +2034,7 @@ public class AsmClassGenerator extends ClassGenerator {
             visitAndAutoboxBoolean(receiver);
             this.implicitThis = oldVal;
             visitAndAutoboxBoolean(arguments);
-            mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", message,"(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+            mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "callBinop","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
             leftHandExpression = lhs;
         }
     }

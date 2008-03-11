@@ -61,7 +61,7 @@ public class BigDecimalMath extends NumberMath {
 		return normalize(bigLeft.divide(bigRight, Math.max(scale, MAX_DIVISION_SCALE), BigDecimal.ROUND_HALF_UP));
 	}
 	
-	protected int compareToImpl(Number left, Number right) {
+	public int compareToImpl(Number left, Number right) {
 		return toBigDecimal(left).compareTo(toBigDecimal(right));
 	}
 	

@@ -601,20 +601,36 @@ public class ScriptBytecodeAdapter {
 
     //TODO: refactor
     public static List createRange(Object from, Object to, boolean inclusive) throws Throwable {
-        if (!inclusive) {
-            if (compareEqual(from, to)) {
-                return new EmptyRange((Comparable) from);
-            }
-            if (compareGreaterThan(from, to)) {
-                to = invokeMethod0(ScriptBytecodeAdapter.class, to, "next");
-            } else {
-                to = invokeMethod0(ScriptBytecodeAdapter.class, to, "previous");
-            }
-        }
         if (from instanceof Integer && to instanceof Integer) {
-            return new IntRange(DefaultTypeTransformation.intUnbox(from), DefaultTypeTransformation.intUnbox(to));
+            int ito = ((Integer) to).intValue();
+            int ifrom = ((Integer) from).intValue();
+            if (!inclusive) {
+                if (ifrom == ito) {
+                    return new EmptyRange((Comparable) from);
+                }
+                if (ifrom > ito) {
+                    ito++;
+                } else {
+                    ito--;
+                }
+            }
+            return new IntRange(ifrom, ito);
         } else {
-            return new ObjectRange((Comparable) from, (Comparable) to);
+            if (!inclusive) {
+                if (compareEqual(from, to)) {
+                    return new EmptyRange((Comparable) from);
+                }
+                if (compareGreaterThan(from, to)) {
+                    to = invokeMethod0(ScriptBytecodeAdapter.class, to, "next");
+                } else {
+                    to = invokeMethod0(ScriptBytecodeAdapter.class, to, "previous");
+                }
+            }
+
+            if (from instanceof Integer && to instanceof Integer)
+              return new IntRange(DefaultTypeTransformation.intUnbox(from), DefaultTypeTransformation.intUnbox(from));
+            else
+              return new ObjectRange((Comparable) from, (Comparable) to);
         }
     }
 

@@ -46,7 +46,8 @@ public class FloatingPointMath extends NumberMath {
 	public Number divideImpl(Number left, Number right) {
 		return new Double(left.doubleValue() / right.doubleValue());
 	}
-	protected int compareToImpl(Number left, Number right) {
+
+    public int compareToImpl(Number left, Number right) {
 		return Double.compare(left.doubleValue(), right.doubleValue());
 	}
     

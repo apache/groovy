@@ -48,11 +48,11 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
         if (receiver instanceof Integer) {
             if (args[0] instanceof Float)
                 return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-                    public final Object div(Object receiver, Object arg) {
+                    public final Object callBinop(Object receiver, Object arg) {
                         return (receiver instanceof Integer && arg instanceof Float)
                                 && checkMetaClass()
                               ? new Double(((Integer) receiver).doubleValue() / ((Float) arg).doubleValue())
-                              : super.div(receiver,arg);
+                              : super.callBinop(receiver,arg);
                     }
 
                     public final Object invoke(Object receiver, Object[] args) {
@@ -66,11 +66,11 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
 
             if (args[0] instanceof Double)
                 return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-                    public final Object div(Object receiver, Object arg) {
+                    public final Object callBinop(Object receiver, Object arg) {
                         return (receiver instanceof Integer && arg instanceof Double)
                                 && checkMetaClass()
                               ? new Double((double) ((Integer) receiver).intValue() / ((Double) arg).doubleValue())
-                              : super.div(receiver,arg);
+                              : super.callBinop(receiver,arg);
                     }
 
                     public final Object invoke(Object receiver, Object[] args) {
@@ -86,11 +86,11 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
         if (receiver instanceof Long) {
             if (args[0] instanceof Float)
                 return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-                    public final Object div(Object receiver, Object arg) {
+                    public final Object callBinop(Object receiver, Object arg) {
                         return (receiver instanceof Long && arg instanceof Float)
                                 && checkMetaClass()
                               ? new Double(((Long) receiver).doubleValue() / ((Float) arg).doubleValue())
-                              : super.div(receiver,arg);
+                              : super.callBinop(receiver,arg);
                     }
 
                     public final Object invoke(Object receiver, Object[] args) {
@@ -104,11 +104,11 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
 
             if (args[0] instanceof Double)
                 return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-                    public final Object div(Object receiver, Object arg) {
+                    public final Object callBinop(Object receiver, Object arg) {
                         return (receiver instanceof Long && arg instanceof Double)
                                 && checkMetaClass()
                               ? new Double(((Long) receiver).doubleValue() / ((Double) arg).doubleValue())
-                              : super.div(receiver,arg);
+                              : super.callBinop(receiver,arg);
                     }
 
                     public final Object invoke(Object receiver, Object[] args) {
@@ -124,11 +124,11 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
         if (receiver instanceof Float) {
             if (args[0] instanceof Integer)
                 return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-                    public final Object div(Object receiver, Object arg) {
+                    public final Object callBinop(Object receiver, Object arg) {
                         return (receiver instanceof Float && arg instanceof Integer)
                                 && checkMetaClass()
                               ? new Double(((Float) receiver).doubleValue() / ((Integer) arg).doubleValue())
-                              : super.div(receiver,arg);
+                              : super.callBinop(receiver,arg);
                     }
 
                     public final Object invoke(Object receiver, Object[] args) {
@@ -142,11 +142,11 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
 
             if (args[0] instanceof Long)
                 return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-                    public final Object div(Object receiver, Object arg) {
+                    public final Object callBinop(Object receiver, Object arg) {
                         return (receiver instanceof Float && arg instanceof Long)
                                 && checkMetaClass()
                               ? new Double(((Float) receiver).doubleValue() / ((Long) arg).doubleValue())
-                              : super.div(receiver,arg);
+                              : super.callBinop(receiver,arg);
                     }
 
                     public final Object invoke(Object receiver, Object[] args) {
@@ -160,11 +160,11 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
 
             if (args[0] instanceof Float)
                 return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-                    public final Object div(Object receiver, Object arg) {
+                    public final Object callBinop(Object receiver, Object arg) {
                         return (receiver instanceof Float && arg instanceof Float)
                                 && checkMetaClass()
                               ? new Double(((Float) receiver).doubleValue() / ((Float) arg).doubleValue())
-                              : super.div(receiver,arg);
+                              : super.callBinop(receiver,arg);
                     }
 
                     public final Object invoke(Object receiver, Object[] args) {
@@ -178,11 +178,11 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
 
             if (args[0] instanceof Double)
                 return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-                    public final Object div(Object receiver, Object arg) {
+                    public final Object callBinop(Object receiver, Object arg) {
                         return (receiver instanceof Float && arg instanceof Double)
                                 && checkMetaClass()
                               ? new Double(((Float) receiver).doubleValue() / ((Double) arg).doubleValue())
-                              : super.div(receiver,arg);
+                              : super.callBinop(receiver,arg);
                     }
 
                     public final Object invoke(Object receiver, Object[] args) {
@@ -198,11 +198,11 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
         if (receiver instanceof Double) {
             if (args[0] instanceof Integer)
                 return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-                    public final Object div(Object receiver, Object arg) {
+                    public final Object callBinop(Object receiver, Object arg) {
                         return (receiver instanceof Double && arg instanceof Integer)
                                 && checkMetaClass()
                               ? new Double(((Double) receiver).doubleValue() / ((Integer) arg).doubleValue())
-                              : super.div(receiver,arg);
+                              : super.callBinop(receiver,arg);
                     }
 
                     public final Object invoke(Object receiver, Object[] args) {
@@ -216,11 +216,11 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
 
             if (args[0] instanceof Long)
                 return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-                    public final Object div(Object receiver, Object arg) {
+                    public final Object callBinop(Object receiver, Object arg) {
                         return (receiver instanceof Double && arg instanceof Long)
                                 && checkMetaClass()
                               ? new Double(((Double) receiver).doubleValue() / ((Long) arg).doubleValue())
-                              : super.div(receiver,arg);
+                              : super.callBinop(receiver,arg);
                     }
 
                     public final Object invoke(Object receiver, Object[] args) {
@@ -234,11 +234,11 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
 
             if (args[0] instanceof Float)
                 return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-                    public final Object div(Object receiver, Object arg) {
+                    public final Object callBinop(Object receiver, Object arg) {
                         return (receiver instanceof Double && arg instanceof Float)
                                 && checkMetaClass()
                               ? new Double(((Double) receiver).doubleValue() / ((Float) arg).doubleValue())
-                              : super.div(receiver,arg);
+                              : super.callBinop(receiver,arg);
                     }
 
                     public final Object invoke(Object receiver, Object[] args) {
@@ -252,11 +252,11 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
 
             if (args[0] instanceof Double)
                 return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-                    public final Object div(Object receiver, Object arg) {
+                    public final Object callBinop(Object receiver, Object arg) {
                         return (receiver instanceof Double && arg instanceof Double)
                                 && checkMetaClass()
                               ? new Double(((Double) receiver).doubleValue() / ((Double) arg).doubleValue())
-                              : super.div(receiver,arg);
+                              : super.callBinop(receiver,arg);
                     }
 
                     public final Object invoke(Object receiver, Object[] args) {
