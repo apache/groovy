@@ -22,8 +22,6 @@ import java.util.regex.Pattern;
 
 import org.codehaus.groovy.groovydoc.*;
 import org.codehaus.groovy.ant.Groovydoc;
-import groovy.lang.Closure;
-import groovy.text.RegexUtils;
 
 public class SimpleGroovyDoc implements GroovyDoc {
 	private String name;
@@ -35,6 +33,7 @@ public class SimpleGroovyDoc implements GroovyDoc {
     public SimpleGroovyDoc(String name, List links) {
         this.name = name;
         this.links = links;
+        this.setRawCommentText("");  // default to no comments (good for default constructors which will not have a reason to call this)
     }
 
     public SimpleGroovyDoc(String name) {
