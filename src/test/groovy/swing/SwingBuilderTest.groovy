@@ -93,6 +93,32 @@ class SwingBuilderTest extends GroovyTestCase {
         }
     }
 
+    void testGridBagFactory() {
+        if (headless) return
+        def swing = new SwingBuilder()
+
+        swing.frame {
+            gridBagLayout()
+            label(fill:BOTH)
+        }
+        shouldFail {
+            swing.frame {
+                flowLayout()
+                label(fill:BOTH)
+            }
+        }
+        shouldFail {
+            swing.frame {
+                label(fill:BOTH)
+            }
+        }
+        shouldFail {
+            swing.frame {
+                label(fill:GridBagConstraints.BOTH)
+            }
+        }
+    }
+
     void testWidgetCreation() {
         if (headless) return
 

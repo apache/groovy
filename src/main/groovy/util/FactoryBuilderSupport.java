@@ -161,7 +161,11 @@ public abstract class FactoryBuilderSupport extends Binding {
         try {
             return proxyBuilder.doGetProperty(property);
         } catch (MissingPropertyException mpe) {
-            return getMetaClass().getProperty(this, property);
+            if (getContext().containsKey(property)) {
+                return getContext().get(property);
+            } else {
+                return getMetaClass().getProperty(this, property);
+            }
         }
     }
 

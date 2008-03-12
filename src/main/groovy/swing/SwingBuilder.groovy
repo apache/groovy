@@ -147,13 +147,16 @@ public class SwingBuilder  extends FactoryBuilderSupport {
         registerFactory("borderLayout", new LayoutFactory(BorderLayout))
         registerFactory("cardLayout", new LayoutFactory(CardLayout))
         registerFactory("flowLayout", new LayoutFactory(FlowLayout))
-        registerFactory("gridBagLayout", new LayoutFactory(GridBagLayout))
         registerFactory("gridLayout", new LayoutFactory(GridLayout))
         registerFactory("overlayLayout", new LayoutFactory(OverlayLayout))
         registerFactory("springLayout", new LayoutFactory(SpringLayout))
+
+        registerFactory("gridBagLayout", new GridBagFactory())
         registerBeanFactory("gridBagConstraints", GridBagConstraints)
         registerBeanFactory("gbc", GridBagConstraints) // shortcut name
         // constraints delegate
+        addAttributeDelegate(GridBagFactory.&processGridBagConstraintsAttributes)
+
         addAttributeDelegate(SwingBuilder.&constraintsAttributeDelegate)
 
 

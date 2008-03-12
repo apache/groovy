@@ -21,12 +21,38 @@ import javax.swing.RootPaneContainer
 
 class LayoutFactory extends BeanFactory {
 
+    def contextProps
+
     public LayoutFactory(Class klass) {
         super(klass)
     }
 
     public LayoutFactory(Class klass, boolean leaf) {
         super(klass, leaf)
+    }
+
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) {
+        Object o = super.newInstance(builder, name, value, attributes); //To change body of overridden methods use File | Settings | File Templates.
+        addLayoutProperties(builder.getContext());
+        return o;
+    }
+
+    public void addLayoutProperties(context, Class layoutClass) {
+        if (contextProps == null) {
+            contextProps = [:]
+            layoutClass.fields.each {
+                def name = it.name
+                if (name.toUpperCase() == name) {
+                    contextProps.put(name, layoutClass."$name")
+                }
+            }
+        }
+
+        context.putAll(contextProps)
+    }
+
+    public void addLayoutProperties(context) {
+        addLayoutProperties(context, beanClass)
     }
 
     public void setParent(FactoryBuilderSupport builder, Object parent, Object child) {
