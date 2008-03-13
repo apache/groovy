@@ -91,7 +91,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
         String categoryMethodDocument = output.getText(MOCK_DIR + "/org/codehaus/groovy/runtime/CategoryMethod.html"); // todo - figure out how to get xml extension for templates
 
-        assertTrue(categoryMethodDocument.indexOf("<method returns=\"boolean\" name=\"hasCategoryInAnyThread\">") > 0);
+        assertTrue(categoryMethodDocument.indexOf("<method modifiers=\"static\" returns=\"boolean\" name=\"hasCategoryInAnyThread\">") > 0);
 
         String packageDocument = output.getText(MOCK_DIR + "/org/codehaus/groovy/runtime/packageDocStructuredData.xml");
         assertTrue(packageDocument.indexOf("<class name=\"CategoryMethod\" />") > 0);
@@ -164,5 +164,13 @@ public class GroovyDocToolTest extends GroovyTestCase {
         xmlToolForTests.renderToOutput(output, MOCK_DIR);
         String domBuilderDoc = output.getText(MOCK_DIR + "/DefaultPackage/UberTestCaseBugs.html");
         assertTrue(domBuilderDoc.indexOf("<extends>TestCase</extends>") > 0);    	
+    }
+
+    public void testStaticModifier() throws Exception {
+        xmlTool.add("groovy/swing/binding/AbstractButtonProperties.java");
+        MockOutputTool output = new MockOutputTool();
+        xmlTool.renderToOutput(output, MOCK_DIR);
+        String abstractButtonPropertiesDoc = output.getText(MOCK_DIR + "/groovy/swing/binding/AbstractButtonProperties.html");
+        assertTrue(abstractButtonPropertiesDoc.indexOf("static") > 0);
     }
 }

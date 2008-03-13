@@ -25,6 +25,7 @@ import org.codehaus.groovy.antlr.SourceBuffer;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 import org.codehaus.groovy.antlr.treewalker.VisitorAdapter;
 import org.codehaus.groovy.groovydoc.GroovyConstructorDoc;
+import antlr.collections.AST;
 
 public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
     private Stack stack;
@@ -138,8 +139,18 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
     		// comments
     		String commentText = getJavaDocCommentsBeforeNode(t);
     		currentMethodDoc.setRawCommentText(commentText);
-    		
-    		// return type
+
+            // modifiers
+            GroovySourceAST modifiers = t.childOfType(GroovyTokenTypes.MODIFIERS);
+            if (modifiers != null) {
+                AST currentModifier = modifiers.getFirstChild();
+                while (currentModifier != null) {
+                    if (currentModifier.getType() == GroovyTokenTypes.LITERAL_static) {currentMethodDoc.setStatic(true);}
+                    currentModifier = currentModifier.getNextSibling();
+                }
+            }
+
+            // return type
     		String returnTypeName = getTypeNodeAsText(t.childOfType(GroovyTokenTypes.TYPE),"def");
         	SimpleGroovyType returnType = new SimpleGroovyType(returnTypeName); // todo !!!
         	currentMethodDoc.setReturnType(returnType);
@@ -150,8 +161,8 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
         	currentClassDoc.add(currentMethodDoc);
     	}
 	}
-	
-	// todo - If no comment before node, then get comment from same node on parent class - ouch!
+
+    // todo - If no comment before node, then get comment from same node on parent class - ouch!
 	
 	private String getJavaDocCommentsBeforeNode(GroovySourceAST t) {
 		String returnValue = "";
