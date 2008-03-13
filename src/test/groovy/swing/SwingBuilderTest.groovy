@@ -109,12 +109,22 @@ class SwingBuilderTest extends GroovyTestCase {
         }
         shouldFail {
             swing.frame {
-                label(fill:BOTH)
+                label(fill:GridBagConstraints.BOTH)
             }
+        }
+    }
+
+    public void testBorderLayout() {    
+        if (headless) return
+        def swing = new SwingBuilder()
+
+        swing.frame {
+          borderLayout()
+          label("x", constraints:NORTH)
         }
         shouldFail {
             swing.frame {
-                label(fill:GridBagConstraints.BOTH)
+              label("x", constraints:NORTH)
             }
         }
     }
