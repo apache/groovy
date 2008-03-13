@@ -17,4 +17,16 @@ class InnerClassResolvingTest extends GroovyTestCase {
             new GroovyShell().evaluate(script)
         }
     }
+
+    public void testInnerClassWithPartialMatchOnImport() {
+        if (System.properties.'java.version'[2] >= '5') {
+            def script = '''
+                import java.lang.Thread as X
+                X.UncaughtExceptionHandler y = null
+            '''
+            new GroovyShell().evaluate(script)
+        }
+    }
+
+
 }

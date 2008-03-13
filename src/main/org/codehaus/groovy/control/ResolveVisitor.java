@@ -435,8 +435,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     // Since we do not want to have useless lookups we create the name
                     // completely and use a ConstructedClassWithPackage to prevent lookups against the package.
                     String className = aliasedNode.getNameWithoutPackage() + '$' +
-                                       name.substring(pname.length()).replace('.', '$');
-                    ConstructedClassWithPackage tmp = new ConstructedClassWithPackage(aliasedNode.getPackageName(), className);
+                                       name.substring(pname.length()+1).replace('.', '$');
+                    ConstructedClassWithPackage tmp = new ConstructedClassWithPackage(aliasedNode.getPackageName()+".", className);
                     if (resolve(tmp, true, true, false)) {
                         type.setRedirect(tmp.redirect());
                         return true;
@@ -773,7 +773,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         Expression left = transform(oldLeft);
         if (left != oldLeft) {
             ClassExpression ce = (ClassExpression) left;
-            addError("you tried to assign a value to " + ce.getType().getName(), oldLeft);
+            addError("you tried to assign a value to the class " + ce.getType().getName(), oldLeft);
             return de;
         }
         Expression right = transform(de.getRightExpression());
@@ -784,7 +784,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     protected Expression transformAnnotationConstantExpression(AnnotationConstantExpression ace) {
         AnnotationNode an = (AnnotationNode) ace.getValue();
         ClassNode type = an.getClassNode();
-        resolveOrFail(type, "unable to find class for annotation", an);
+        resolveOrFail(type, ", unable to find class for annotation", an);
         for (Iterator iter = an.getMembers().entrySet().iterator(); iter.hasNext();) {
             Map.Entry member = (Map.Entry) iter.next();
             Expression memberValue = (Expression) member.getValue();
@@ -803,7 +803,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             //skip builtin properties
             if (an.isBuiltIn()) continue;
             ClassNode type = an.getClassNode();
-            resolveOrFail(type, "unable to find class for annotation", an);
+            resolveOrFail(type, ",  unable to find class for annotation", an);
             for (Iterator iter = an.getMembers().entrySet().iterator(); iter.hasNext();) {
                 Map.Entry member = (Map.Entry) iter.next();
                 Expression memberValue = (Expression) member.getValue();
