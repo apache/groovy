@@ -78,7 +78,7 @@ ${classDoc.commentText()}
 
   <TR BGCOLOR="white" CLASS="TableRowColor">
     <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1" CLASS="ClassItemFont">
-    <CODE>${method.isStatic()?"static":""}&nbsp;${method.returnTypeName()}</CODE></FONT></TD>
+    <CODE>${method.isStatic()?"static&nbsp;":""}${method.returnTypeName()}</CODE></FONT></TD>
     <TD><FONT CLASS="ClassItemFont"><CODE><B><a href="">${method.name()}</a></B>(<%= method.parameters().collect{ param -> "${param.typeName()} ${param.name()}" }.join(", ") %>)</CODE></FONT>
 
     <BR>
@@ -107,8 +107,7 @@ ${classDoc.commentText()}
 <% for (constructor in classDoc.constructors()) { %>
 <A NAME="QName(java.lang.String)"><!-- --></A><H3>
 ${constructor.name()}</H3>
-<PRE>
-<!-- todo - public--> <B>${constructor.name()}</B>(<%= constructor.parameters().collect{ param -> "${param.typeName()} ${param.name()}" }.join(", ") %>)</PRE>
+<PRE>${constructor.isPublic()?"public ":""}<B>${constructor.name()}</B>(<%= constructor.parameters().collect{ param -> "${param.typeName()} ${param.name()}" }.join(", ") %>)</PRE>
 <DL>
 <DD>${constructor.commentText()}
 <P>
@@ -131,8 +130,7 @@ ${constructor.name()}</H3>
 <% for (method in classDoc.methods()) { %>
 <A NAME="${method.name()}"><!-- --></A><H3>
 ${method.name()}</H3>
-<PRE>
-<!-- todo - public-->${method.isStatic()?"static":""} ${method.returnTypeName()} <B>${method.name()}</B>(<%= method.parameters().collect{ param -> "${param.typeName()} ${param.name()}" }.join(", ") %>)</PRE>
+<PRE>${method.isPublic()?"public ":""}${method.isStatic()?"static ":""}${method.returnTypeName()} <B>${method.name()}</B>(<%= method.parameters().collect{ param -> "${param.typeName()} ${param.name()}" }.join(", ") %>)</PRE>
 
 <DL>
 <DD>${method.commentText()}

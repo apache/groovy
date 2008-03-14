@@ -20,6 +20,7 @@ import java.util.List;
 
 public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements GroovyProgramElementDoc {
 	private GroovyPackageDoc packageDoc;
+    private boolean publicElement;
     private boolean staticElement;
 
     public SimpleGroovyProgramElementDoc(String name) {
@@ -36,6 +37,14 @@ public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements Gr
 	public void setContainingPackage(GroovyPackageDoc packageDoc) {
 		this.packageDoc = packageDoc;
 	}
+
+    public void setPublic(boolean publicElement) {
+        this.publicElement = publicElement;
+    }
+    public boolean isPublic() {
+        return publicElement;
+    }
+
     public void setStatic(boolean staticElement) {
         this.staticElement = staticElement;
     }
@@ -49,7 +58,6 @@ public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements Gr
 	public boolean isPackagePrivate() {/*todo*/return false;}
 	public boolean isPrivate() {/*todo*/return false;}
 	public boolean isProtected() {/*todo*/return false;}
-	public boolean isPublic() {/*todo*/return false;}
 	public String modifiers() {/*todo*/return null;}
 	public int modifierSpecifier() {/*todo*/return 0;}
 	public String qualifiedName() {/*todo*/return null;}

@@ -118,6 +118,9 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
     		String commentText = getJavaDocCommentsBeforeNode(t);
     		currentConstructorDoc.setRawCommentText(commentText);
     		
+            // modifiers
+            processModifiers(t, currentConstructorDoc);
+
     		addParametersTo(currentConstructorDoc, t, visit);
     		
         	// don't forget to tell the class about this constructor.
@@ -141,14 +144,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
     		currentMethodDoc.setRawCommentText(commentText);
 
             // modifiers
-            GroovySourceAST modifiers = t.childOfType(GroovyTokenTypes.MODIFIERS);
-            if (modifiers != null) {
-                AST currentModifier = modifiers.getFirstChild();
-                while (currentModifier != null) {
-                    if (currentModifier.getType() == GroovyTokenTypes.LITERAL_static) {currentMethodDoc.setStatic(true);}
-                    currentModifier = currentModifier.getNextSibling();
-                }
-            }
+            processModifiers(t, currentMethodDoc);
 
             // return type
     		String returnTypeName = getTypeNodeAsText(t.childOfType(GroovyTokenTypes.TYPE),"def");
@@ -161,6 +157,31 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
         	currentClassDoc.add(currentMethodDoc);
     	}
 	}
+
+    private void processModifiers(GroovySourceAST t,SimpleGroovyProgramElementDoc programElementDoc) {
+        GroovySourceAST modifiers = t.childOfType(GroovyTokenTypes.MODIFIERS);
+        if (modifiers != null) {
+            AST currentModifier = modifiers.getFirstChild();
+            boolean seenNonPublicVisibilityModifier = false;
+            while (currentModifier != null) {
+                int type = currentModifier.getType();
+                switch (type) {
+                    case GroovyTokenTypes.LITERAL_protected:
+                    case GroovyTokenTypes.LITERAL_private:
+                        seenNonPublicVisibilityModifier = true;
+                        break;
+                    case GroovyTokenTypes.LITERAL_static:
+                        programElementDoc.setStatic(true);
+                        break;
+                }
+                currentModifier = currentModifier.getNextSibling();
+            }
+            if (!seenNonPublicVisibilityModifier) {
+                // in groovy (and java asts turned into groovy by Groovifier), methods are assumed public, unless informed otherwise
+                programElementDoc.setPublic(true);
+            }
+        }
+    }
 
     // todo - If no comment before node, then get comment from same node on parent class - ouch!
 	

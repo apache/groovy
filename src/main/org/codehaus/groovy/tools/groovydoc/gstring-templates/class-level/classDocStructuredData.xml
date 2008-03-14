@@ -3,7 +3,7 @@
   <extends>${classDoc.superclass().name()}</extends>
   <comment>${classDoc.commentText()}</comment>
   <constructors><% for (constructor in classDoc.constructors()) { %>
-    <constructor name="${constructor.name()}">
+    <constructor modifiers="${constructor.isPublic()?'public ':''}" name="${constructor.name()}">
       <parameters><% for (parameter in constructor.parameters()) { %>
         <parameter type="${parameter.typeName()}" name="${parameter.name()}" /><% } %>
       </parameters>
@@ -13,7 +13,7 @@
   </constructors>
 
   <methods><% for (method in classDoc.methods()) { %>
-    <method modifiers="${method.isStatic()?'static':''}" returns="${method.returnType().typeName()}" name="${method.name()}">
+    <method modifiers="${method.isPublic()?'public ':''}${method.isStatic()?'static ':''}" returns="${method.returnType().typeName()}" name="${method.name()}">
       <parameters><% for (parameter in method.parameters()) { %>
         <parameter type="${parameter.typeName()}" name="${parameter.name()}" /><% } %>
       </parameters>
