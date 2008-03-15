@@ -213,24 +213,26 @@ public class CompileStack implements Opcodes {
     }
 
     /**
-     * returns a normal variable, that was defined before.
-     * If mustExist is
-     * to false, then this method will throw a GroovyBugError. It is no the
-     * intention of this method to let this happen! And the exception
-     * should never be used for flow control. If the exception is thrown
-     * then it is a bug in the class using CompileStack. This mehod can also
-     * not be used to return a temporary variable. Temporary variables are not
-     * normal variables.
+     * Returns a normal variable.
+     * <p/>
+     * If <code>mustExist</code> is true and the normal variable doesn't exist,
+     * then this method will throw a GroovyBugError. It is not the intention of
+     * this method to let this happen! And the exception should not be used for
+     * flow control - it is just acting as an assertion. If the exception is thrown
+     * then it indicates a bug in the class using CompileStack.
+     * This method can also not be used to return a temporary variable.
+     * Temporary variables are not normal variables.
      *
      * @param variableName name of the variable
-     * @param mustExist  throw exception if variable does not exist
-     * @return
+     * @param mustExist    throw exception if variable does not exist
+     * @return the normal variable or null if not found (and <code>mustExist</code> not true)
      */
     public Variable getVariable(String variableName, boolean mustExist) {
         if (variableName.equals("this")) return Variable.THIS_VARIABLE;
         if (variableName.equals("super")) return Variable.SUPER_VARIABLE;
         Variable v = (Variable) stackVariables.get(variableName);
-        if (v==null && mustExist)  throw new GroovyBugError("tried to get a variable with the name "+variableName+" as stack variable, but a variable with this name was not created");
+        if (v == null && mustExist)
+            throw new GroovyBugError("tried to get a variable with the name " + variableName + " as stack variable, but a variable with this name was not created");
         return v;
     }
 
