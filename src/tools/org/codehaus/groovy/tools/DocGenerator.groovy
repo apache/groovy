@@ -303,7 +303,7 @@ class DocGenerator
             Class[] classes = DefaultGroovyMethods.additionals
             classes.each {
                 def name = it.name
-                if (name.indexOf('$')) {
+                if (name.indexOf('$') > 0) {
                     name = name.tokenize('$')[0]
                 }
                 def newFile = getSourceFile(name)
