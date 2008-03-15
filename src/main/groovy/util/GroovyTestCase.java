@@ -316,7 +316,7 @@ public class GroovyTestCase extends TestCase {
         final Method testMethod = findRunningJUnitTestMethod(caller.getClass());
         try {
             log.info("Running " + testMethod.getName() + " as not yet implemented");
-            testMethod.invoke(caller, new Class[] {});
+            testMethod.invoke(caller, (Object[]) new Class[] {});
             fail(testMethod.getName() + " is marked as not yet implemented but passes unexpectedly");
         }
         catch (final Exception e) {
