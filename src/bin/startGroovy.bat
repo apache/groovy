@@ -125,10 +125,10 @@ goto :EOF
 :process_arg
 if "%_ARG%" == "" goto execute
 
-rem now unescape -q, -d, -s
+rem now unescape -q, is, -d
 set _ARG=%_ARG:-q="%
-set _ARG=%_ARG:-d=-%
 set _ARG=%_ARG:-s=*%
+set _ARG=%_ARG:-d=-%
 
 if "x4" == "x%_SKIP%" goto skip_4
 if "x3" == "x%_SKIP%" goto skip_3
