@@ -56,10 +56,9 @@ change sets from trunk NOT in 1.5.x:
 * 11035: increase memory for javac for 64bit VMs
 * 11039, 11044: merge of changeset 10631 back into 1.6 line (synchronization bug)
 * 11054: funkuch benchmark and arrays operations optimization
+* 11055: when using layouts import the layout constants into the current context's properties...
+* 11060: extend test to include borderlayout
 * 11063, 11064: build improvement: make DocGenerator handle inner classes
 * 11070: javadoc only - remove warning and tidy up wording
 
-Unsure:
-* 11055, 11060
-
-Last change set applied to 1.5.x: 11091
+Last change set applied to 1.5.x: 11094
