@@ -25,6 +25,7 @@ import org.codehaus.groovy.antlr.SourceBuffer;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 import org.codehaus.groovy.antlr.treewalker.VisitorAdapter;
 import org.codehaus.groovy.groovydoc.GroovyConstructorDoc;
+import antlr.collections.AST;
 
 public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
     private Stack stack;
@@ -117,6 +118,9 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
     		String commentText = getJavaDocCommentsBeforeNode(t);
     		currentConstructorDoc.setRawCommentText(commentText);
     		
+            // modifiers
+            processModifiers(t, currentConstructorDoc);
+
     		addParametersTo(currentConstructorDoc, t, visit);
     		
         	// don't forget to tell the class about this constructor.
@@ -138,8 +142,11 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
     		// comments
     		String commentText = getJavaDocCommentsBeforeNode(t);
     		currentMethodDoc.setRawCommentText(commentText);
-    		
-    		// return type
+
+            // modifiers
+            processModifiers(t, currentMethodDoc);
+
+            // return type
     		String returnTypeName = getTypeNodeAsText(t.childOfType(GroovyTokenTypes.TYPE),"def");
         	SimpleGroovyType returnType = new SimpleGroovyType(returnTypeName); // todo !!!
         	currentMethodDoc.setReturnType(returnType);
@@ -150,8 +157,33 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
         	currentClassDoc.add(currentMethodDoc);
     	}
 	}
-	
-	// todo - If no comment before node, then get comment from same node on parent class - ouch!
+
+    private void processModifiers(GroovySourceAST t,SimpleGroovyProgramElementDoc programElementDoc) {
+        GroovySourceAST modifiers = t.childOfType(GroovyTokenTypes.MODIFIERS);
+        if (modifiers != null) {
+            AST currentModifier = modifiers.getFirstChild();
+            boolean seenNonPublicVisibilityModifier = false;
+            while (currentModifier != null) {
+                int type = currentModifier.getType();
+                switch (type) {
+                    case GroovyTokenTypes.LITERAL_protected:
+                    case GroovyTokenTypes.LITERAL_private:
+                        seenNonPublicVisibilityModifier = true;
+                        break;
+                    case GroovyTokenTypes.LITERAL_static:
+                        programElementDoc.setStatic(true);
+                        break;
+                }
+                currentModifier = currentModifier.getNextSibling();
+            }
+            if (!seenNonPublicVisibilityModifier) {
+                // in groovy (and java asts turned into groovy by Groovifier), methods are assumed public, unless informed otherwise
+                programElementDoc.setPublic(true);
+            }
+        }
+    }
+
+    // todo - If no comment before node, then get comment from same node on parent class - ouch!
 	
 	private String getJavaDocCommentsBeforeNode(GroovySourceAST t) {
 		String returnValue = "";
