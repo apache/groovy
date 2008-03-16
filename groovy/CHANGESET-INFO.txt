@@ -61,4 +61,4 @@ change sets from trunk NOT in 1.5.x:
 * 11063, 11064: build improvement: make DocGenerator handle inner classes
 * 11070: javadoc only - remove warning and tidy up wording
 
-Last change set applied to 1.5.x: 11094
+Last change set applied to 1.5.x: 11103
