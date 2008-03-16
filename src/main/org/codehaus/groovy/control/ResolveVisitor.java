@@ -560,26 +560,29 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     public Expression transform(Expression exp) {
         if (exp == null) return null;
+        Expression ret = null;
         if (exp instanceof VariableExpression) {
-            return transformVariableExpression((VariableExpression) exp);
+            ret = transformVariableExpression((VariableExpression) exp);
         } else if (exp.getClass() == PropertyExpression.class) {
-            return transformPropertyExpression((PropertyExpression) exp);
+            ret = transformPropertyExpression((PropertyExpression) exp);
         } else if (exp instanceof DeclarationExpression) {
-            return transformDeclarationExpression((DeclarationExpression) exp);
+            ret = transformDeclarationExpression((DeclarationExpression) exp);
         } else if (exp instanceof BinaryExpression) {
-            return transformBinaryExpression((BinaryExpression) exp);
+            ret = transformBinaryExpression((BinaryExpression) exp);
         } else if (exp instanceof MethodCallExpression) {
-            return transformMethodCallExpression((MethodCallExpression) exp);
+            ret = transformMethodCallExpression((MethodCallExpression) exp);
         } else if (exp instanceof ClosureExpression) {
-            return transformClosureExpression((ClosureExpression) exp);
+            ret = transformClosureExpression((ClosureExpression) exp);
         } else if (exp instanceof ConstructorCallExpression) {
-            return transformConstructorCallExpression((ConstructorCallExpression) exp);
+            ret = transformConstructorCallExpression((ConstructorCallExpression) exp);
         } else if (exp instanceof AnnotationConstantExpression) {
-            return transformAnnotationConstantExpression((AnnotationConstantExpression) exp);
+            ret = transformAnnotationConstantExpression((AnnotationConstantExpression) exp);
         } else {
             resolveOrFail(exp.getType(), exp);
-            return exp.transformExpression(this);
+            ret = exp.transformExpression(this);
         }
+        if (ret!=null && ret!=exp) ret.setSourcePosition(exp);
+        return ret;
     }
 
     private String lookupClassName(PropertyExpression pe) {
@@ -661,19 +664,29 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         inPropertyExpression = ipe;
 
         boolean spreadSafe = pe.isSpreadSafe();
+        PropertyExpression old = pe;
         pe = new PropertyExpression(objectExpression, property, pe.isSafe());
         pe.setSpreadSafe(spreadSafe);
+        pe.setSourcePosition(old);
 
         String className = lookupClassName(pe);
         if (className != null) {
             ClassNode type = ClassHelper.make(className);
-            if (resolve(type)) return new ClassExpression(type);
+            if (resolve(type)) {
+                Expression ret =  new ClassExpression(type);
+                ret.setSourcePosition(pe);
+                return ret;
+            }
         }
         if (objectExpression instanceof ClassExpression && pe.getPropertyAsString() != null) {
             // possibly an inner class
             ClassExpression ce = (ClassExpression) objectExpression;
             ClassNode type = ClassHelper.make(ce.getType().getName() + "$" + pe.getPropertyAsString());
-            if (resolve(type, false, false, false)) return new ClassExpression(type);
+            if (resolve(type, false, false, false)) {
+                Expression ret = new ClassExpression(type);
+                ret.setSourcePosition(ce);
+                return ret;
+            }
         }
         Expression ret = pe;
         if (isTopLevelProperty) ret = correctClassClassChain(pe);
@@ -807,7 +820,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             for (Iterator iter = an.getMembers().entrySet().iterator(); iter.hasNext();) {
                 Map.Entry member = (Map.Entry) iter.next();
                 Expression memberValue = (Expression) member.getValue();
-                member.setValue(transform(memberValue));
+                Expression newValue = transform(memberValue);
+                member.setValue(newValue);
+                if (newValue instanceof PropertyExpression) {
+                    PropertyExpression pe = (PropertyExpression) newValue;
+                    if (!(pe.getObjectExpression() instanceof ClassExpression)) {
+                        addError("unable to find class for enum",pe.getObjectExpression());
+                    }
+                }
             }
         }
     }
