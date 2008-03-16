@@ -85,7 +85,7 @@ if "x%~1" == "x" goto execute
 
 rem horrible roll your own arg processing inspired by jruby equivalent
 
-rem escape quotes (-q), minus (-d), star (-s).
+rem escape minus (-d), quotes (-q), star (-s).
 set _ARGS=%*
 if not defined _ARGS goto execute
 set _ARGS=%_ARGS:-=-d%
