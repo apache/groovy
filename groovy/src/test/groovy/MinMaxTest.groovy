@@ -21,7 +21,7 @@ class MinMaxTest extends GroovyTestCase {
     void testMinMaxWithComparator() {
         def people = getPeople()
 
-        // lets find the maximum by name
+        // let's find the maximum by name
 
         def order = new OrderBy( { it.get('@cheese') } )
 
@@ -37,6 +37,24 @@ class MinMaxTest extends GroovyTestCase {
         assert p.get("@name") == "Chris" , "found person ${p}"
     }
     
+    void testMinMaxOnArraysWithComparator() {
+        Person[] people = [
+            new Person(name:'James', cheese:'Edam', location:'London'),
+            new Person(name:'Bob', cheese:'Cheddar', location:'Atlanta'),
+            new Person(name:'Chris', cheese:'Red Leicester', location:'London'),
+            new Person(name:'Joe', cheese:'Brie', location:'London')
+        ]
+
+        // let's find the maximum by name
+        def order = new OrderBy( { it.cheese } )
+
+        def p = people.min(order)
+        assert p.name == "Joe", "Expected to find Joe but found person ${p}"
+
+        p = people.max(order)
+        assert p.name == "Chris", "Expected to find Chris but found person ${p}"
+    }
+
     def getPeople() {
         def builder = new NodeBuilder()
         def tree = builder.people {
@@ -49,4 +67,10 @@ class MinMaxTest extends GroovyTestCase {
         return tree.children()
     }
 
+}
+
+class Person {
+    String name
+    String cheese
+    String location
 }

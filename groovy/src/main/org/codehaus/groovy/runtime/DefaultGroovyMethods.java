@@ -2024,6 +2024,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Adds min() method to Object arrays.
+     *
+     * @param self an Object array
+     * @return the minimum value
+     * @see #min(java.util.Collection)
+     */
+    public static Object min(Object[] self) {
+        return min(toList(self));
+    }
+
+    /**
      * Selects the minimum value found in the collection using the given comparator.
      *
      * @param self       a Collection
@@ -2050,6 +2061,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #min(java.util.Collection, java.util.Comparator)
      */
     public static Object min(Iterator self, Comparator comparator) {
+        return min(toList(self), comparator);
+    }
+
+    /**
+     * Selects the minimum value found from the Object array using the given comparator.
+     *
+     * @param self       an Object array
+     * @param comparator a Comparator
+     * @return the minimum value
+     * @see #min(java.util.Collection, java.util.Comparator)
+     */
+    public static Object min(Object[] self, Comparator comparator) {
         return min(toList(self), comparator);
     }
 
@@ -2083,9 +2106,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Selects the minimum value found from the Iteartor using the given closure
+     * Selects the minimum value found from the Iterator using the given closure
      * as a comparator.  The closure should return a comparable value (i.e. a
-     * number) for each item passed.
+     * number) for each item passed. The iterator will become
+     * exhausted of elements after this operation.
      *
      * @param self    an Iterator
      * @param closure a closure used as a comparator
@@ -2093,6 +2117,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #min(java.util.Collection, groovy.lang.Closure)
      */
     public static Object min(Iterator self, Closure closure) {
+        return min(toList(self), closure);
+    }
+
+    /**
+     * Selects the minimum value found from the Object array using the given closure
+     * as a comparator.  The closure should return a comparable value (i.e. a
+     * number) for each item passed.
+     *
+     * @param self    an Object array
+     * @param closure a closure used as a comparator
+     * @return the minimum value
+     * @see #min(java.util.Collection, groovy.lang.Closure)
+     */
+    public static Object min(Object[] self, Closure closure) {
         return min(toList(self), closure);
     }
 
@@ -2116,6 +2154,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see groovy.util.GroovyCollections#max(java.util.Collection)
      */
     public static Object max(Iterator self) {
+        return max(toList(self));
+    }
+
+    /**
+     * Adds max() method to Object arrays.
+     *
+     * @param self an Object array
+     * @return the maximum value
+     * @see #max(java.util.Collection)
+     */
+    public static Object max(Object[] self) {
         return max(toList(self));
     }
 
@@ -2151,7 +2200,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Selects the maximum value found from the Iterator using the given closure
      * as a comparator.  The closure should return a comparable value (i.e. a
-     * number) for each item passed.
+     * number) for each item passed. The iterator will become
+     * exhausted of elements after this operation.
      *
      * @param self    an Iterator
      * @param closure a closure used as a comparator
@@ -2159,6 +2209,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #max(java.util.Collection, groovy.lang.Closure)
      */
     public static Object max(Iterator self, Closure closure) {
+        return max(toList(self), closure);
+    }
+
+    /**
+     * Selects the maximum value found from the Object array using the given closure
+     * as a comparator.  The closure should return a comparable value (i.e. a
+     * number) for each item passed.
+     *
+     * @param self    an Object array
+     * @param closure a closure used as a comparator
+     * @return the maximum value
+     * @see #max(java.util.Collection, groovy.lang.Closure)
+     */
+    public static Object max(Object[] self, Closure closure) {
         return max(toList(self), closure);
     }
 
@@ -2188,6 +2252,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the maximum value
      */
     public static Object max(Iterator self, Comparator comparator) {
+        return max(toList(self), comparator);
+    }
+
+    /**
+     * Selects the maximum value found from the Object array using the given comparator.
+     *
+     * @param self       an Object array
+     * @param comparator a Comparator
+     * @return the maximum value
+     */
+    public static Object max(Object[] self, Comparator comparator) {
         return max(toList(self), comparator);
     }
 
