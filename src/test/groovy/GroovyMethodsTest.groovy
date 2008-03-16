@@ -108,6 +108,12 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert result == [3, 2, 1]
     }
 
+    void testReverseForObjectArrays() {
+        Object[] numbers = [1, 2, 3]
+        def result = numbers.reverse()
+        assert result == [3, 2, 1]
+    }
+
     void testJoin() {
         assert [2, 4, 6].join("-") == "2-4-6"
         assert ["edam", "cheddar", "brie"].join(", ") == 'edam, cheddar, brie'
@@ -423,6 +429,22 @@ class GroovyMethodsTest extends GroovyTestCase {
 
     void testMinForIterator() {
         assert [-5, -3, -1, 0, 2, 4].collect{ it * it }.iterator().min() == 0
+    }
+
+    void testMinForObjectArray() {
+        Integer[] numbers = [-5, -3, -1, 0, 2, 4]
+        def result = numbers.min()
+        assert result == -5
+        result = numbers.min{it * it}
+        assert result == 0
+    }
+
+    void testMaxForObjectArray() {
+        Integer[] numbers = [-5, -3, -1, 0, 2, 4]
+        def result = numbers.max()
+        assert result == 4
+        result = numbers.max{it * it}
+        assert result == -5
     }
 
     void testCountForIterator() {
