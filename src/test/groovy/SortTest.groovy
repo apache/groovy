@@ -42,7 +42,7 @@ class SortTest extends GroovyTestCase {
         def words = s.split()
         assert words.sort() == ['The', 'brown', 'dog', 'fox', 'jumped', 'lazy', 'over', 'quick', 'the'] as String[]
         assert words.sort(new IgnoreCaseComparator()) == ['brown', 'dog', 'fox', 'jumped', 'lazy', 'over', 'quick', 'The', 'the'] as String[]
-        words = s.split()
+        words = s.split() // back to a known order
         assert words.sort{ it.size() } == ['The', 'fox', 'the', 'dog', 'over', 'lazy', 'quick', 'brown', 'jumped'] as String[]
     }
 
