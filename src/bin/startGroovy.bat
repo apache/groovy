@@ -85,7 +85,7 @@ if "x%~1" == "x" goto execute
 
 rem horrible roll your own arg processing inspired by jruby equivalent
 
-rem escape quotes (-q), minus (-d), star (-s).
+rem escape minus (-d), quotes (-q), star (-s).
 set _ARGS=%*
 if not defined _ARGS goto execute
 set _ARGS=%_ARGS:-=-d%
@@ -125,10 +125,10 @@ goto :EOF
 :process_arg
 if "%_ARG%" == "" goto execute
 
-rem now unescape -q, -d, -s
+rem now unescape -q, -s, -d
 set _ARG=%_ARG:-q="%
-set _ARG=%_ARG:-d=-%
 set _ARG=%_ARG:-s=*%
+set _ARG=%_ARG:-d=-%
 
 if "x4" == "x%_SKIP%" goto skip_4
 if "x3" == "x%_SKIP%" goto skip_3

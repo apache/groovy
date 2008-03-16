@@ -44,9 +44,9 @@ class TryCatchTest extends GroovyTestCase {
 	     finally {
 		     onFinally()
 	     }
-	     assert exceptionCalled == false , "should not invoked the catch clause"
-	     assert finallyCalled , "should have invoked the finally clause"
-	     println("After try/catch")
+	     assert !exceptionCalled, "should not invoked the catch clause"
+	     assert finallyCalled, "should have invoked the finally clause"
+	     println "After try/catch"
     }
     
     void failingMethod() {
@@ -139,9 +139,9 @@ class TryCatchTest extends GroovyTestCase {
       assert false
     }
     
-    void testTryCatchInConstrcutor() {
+    void testTryCatchInConstructor() {
       // the super() call construction left an
-      // element on the stack, causing a inconsisitent
+      // element on the stack, causing an inconsistent
       // stack height problem for the try-catch
       // this ensures the stack is clean after the call
       assertScript """

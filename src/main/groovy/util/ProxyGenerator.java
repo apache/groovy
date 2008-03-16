@@ -196,6 +196,11 @@ public class ProxyGenerator {
     }
 
     public static Object instantiateDelegateWithBaseClass(Map closureMap, List interfaces, Object delegate, Class baseClass) {
+        String name = shortName(delegate.getClass().getName()) + "_delegateProxy";
+        return instantiateDelegateWithBaseClass(closureMap, interfaces, delegate, baseClass, name);
+    }
+
+    public static Object instantiateDelegateWithBaseClass(Map closureMap, List interfaces, Object delegate, Class baseClass, String name) {
         Map map = new HashMap();
         if (closureMap != null) {
             map = closureMap;
@@ -205,7 +210,6 @@ public class ProxyGenerator {
         if (interfaces != null) {
             interfacesToImplement = interfaces;
         }
-        String name = shortName(delegate.getClass().getName()) + "_delegateProxy";
         StringBuffer buffer = new StringBuffer();
 
         // add class header and fields
