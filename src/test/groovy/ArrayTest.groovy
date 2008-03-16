@@ -61,6 +61,17 @@ class ArrayTest extends GroovyTestCase {
         assert array[1] == 67
     }
 
+    void testEachByteForByteArray() {
+        byte[] array1 = [2, 4]
+        def sum = 0
+        array1.eachByte { sum += it }
+        assert sum == 6
+        Byte[] array2 = [2, 4]
+        def result = 1
+        array2.eachByte { result *= it }
+        assert result == 8
+    }
+
     void testDoubleArrayCreate() {
          def array  = new double[3]
          assert array.size() == 3
