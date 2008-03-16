@@ -3473,6 +3473,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Sorts the given Object array into sorted order.  The array items are
+     * assumed to be comparable.
+     *
+     * @param self the array to be sorted
+     * @return the sorted array
+     */
+    public static Object[] sort(Object[] self) {
+        Arrays.sort(self, new NumberAwareComparator());
+        return self;
+    }
+
+    /**
      * Sorts the given iterator items into a sorted iterator.  The items are
      * assumed to be comparable.  The original iterator will become
      * exhausted of elements after completing this method call. A new iterator
@@ -3512,6 +3524,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Sorts the given Object array into sorted order using the given comparator.
+     *
+     * @param self the array to be sorted
+     * @param comparator a Comparator used for the comparison
+     * @return the sorted array
+     */
+    public static Object[] sort(Object[] self, Comparator comparator) {
+        Arrays.sort(self, comparator);
+        return self;
+    }
+
+    /**
      * Sorts the given iterator items into a sorted iterator using
      * the closure as a comparator.
      *
@@ -3521,6 +3545,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Iterator sort(Iterator self, Closure closure) {
         return sort(toList(self), closure).listIterator();
+    }
+
+    /**
+     * Sorts the given Object array into a newly created array using the given comparator.
+     *
+     * @param self the array to be sorted
+     * @param closure a Closure used as a comparator
+     * @return the sorted array
+     */
+    public static Object[] sort(Object[] self, Closure closure) {
+        return sort(toList(self), closure).toArray();
     }
 
     /**

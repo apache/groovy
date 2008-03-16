@@ -37,6 +37,15 @@ class SortTest extends GroovyTestCase {
         assert list.name == ['Joe', 'Bob', 'James', 'Chris']
     }
 
+    void testArraySort() {
+        def s = "The quick brown fox jumped over the lazy dog"
+        def words = s.split()
+        assert words.sort() == ['The', 'brown', 'dog', 'fox', 'jumped', 'lazy', 'over', 'quick', 'the'] as String[]
+        assert words.sort(new IgnoreCaseComparator()) == ['brown', 'dog', 'fox', 'jumped', 'lazy', 'over', 'quick', 'The', 'the'] as String[]
+        words = s.split()
+        assert words.sort{ it.size() } == ['The', 'fox', 'the', 'dog', 'over', 'lazy', 'quick', 'brown', 'jumped'] as String[]
+    }
+
     void testSortClassHierarchy() {
         def aFooList = [
                 new AFoo(5),
@@ -69,4 +78,10 @@ class AFoo implements Comparable {
 
 class ABar extends AFoo {
     public ABar(int x) {super(x)}
+}
+
+class IgnoreCaseComparator implements Comparator {
+    public int compare(Object o1, Object o2) {
+        return o1.toUpperCase() <=> o2.toUpperCase()
+    }
 }
