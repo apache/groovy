@@ -8620,6 +8620,28 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Traverse through each byte of this Byte array. Alias for each.
+     *
+     * @param self    a Byte array
+     * @param closure a closure
+     * @see #each(Object,Closure)
+     */
+    public static void eachByte(Byte[] self, Closure closure) {
+        each(self, closure);
+    }
+
+    /**
+     * Traverse through each byte of this byte array. Alias for each.
+     *
+     * @param self    a byte array
+     * @param closure a closure
+     * @see #each(Object,Closure)
+     */
+    public static void eachByte(byte[] self, Closure closure) {
+        each(self, closure);
+    }
+
+    /**
      * Traverse through each byte of the specified stream. The
      * stream is closed after the closure returns.
      *
