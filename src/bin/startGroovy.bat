@@ -125,7 +125,7 @@ goto :EOF
 :process_arg
 if "%_ARG%" == "" goto execute
 
-rem now unescape -q, is, -d
+rem now unescape -q, -s, -d
 set _ARG=%_ARG:-q="%
 set _ARG=%_ARG:-s=*%
 set _ARG=%_ARG:-d=-%
