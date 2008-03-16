@@ -712,7 +712,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             for (Iterator iter = an.getMembers().entrySet().iterator(); iter.hasNext();) {
                 Map.Entry member = (Map.Entry) iter.next();
                 Expression memberValue = (Expression) member.getValue();
-                member.setValue(transform(memberValue));
+                Expression newValue = transform(memberValue);
+                member.setValue(newValue);
+                if (newValue instanceof PropertyExpression) {
+                    PropertyExpression pe = (PropertyExpression) newValue;
+                    if (!(pe.getObjectExpression() instanceof ClassExpression)) {
+                        addError("unable to find class for enum",pe.getObjectExpression());
+                    }
+                }
             }
         }
     }
