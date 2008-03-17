@@ -217,6 +217,53 @@ finished: echo[message:after groovy task]
 
          assertEquals expectedSpoof, customListener.spoof.toString()
      }
+     
+    /**
+     * Test usage of import
+     */
+    void testImport()
+    {
+        def antFile = new File("src/test/groovy/util/AntTest_import.xml")
+        assertTrue "Couldn't find ant test script", antFile.exists()
+
+        def ant = new AntBuilder()
+		def customListener = new SimpleListener()
+ 		ant.project.addBuildListener customListener
+
+ 		ant.'import'(file: antFile.absolutePath)
+ 		def expectedSpoof =
+"""started: import[file:${antFile.absolutePath}]
+started: echo[message:outside targets, at the top]
+finished: echo[message:outside targets, at the top]
+finished: import[file:${antFile.absolutePath}]
+"""
+		assertEquals expectedSpoof, customListener.spoof.toString()
+
+		customListener.spoof.length = 0
+		ant.project.executeTarget('firstTarget')
+ 		expectedSpoof =
+"""started: echo[message:inside firstTarget]
+finished: echo[message:inside firstTarget]
+"""
+		assertEquals expectedSpoof, customListener.spoof.toString()
+
+		customListener.spoof.length = 0
+		ant.target(name: "myTestTarget", depends: "2ndTarget") {
+        	echo(message: "echo from AntBuilder's target foo")
+        }
+ 		expectedSpoof =
+"""started: echo[message:inside 2ndTarget]
+finished: echo[message:inside 2ndTarget]
+started: echo[message:echo from AntBuilder's target foo]
+finished: echo[message:echo from AntBuilder's target foo]
+"""
+		assertEquals expectedSpoof, customListener.spoof.toString()
+		
+		// test that the previously created target can be called
+		customListener.spoof.length = 0
+		ant.project.executeTarget('myTestTarget')
+		assertEquals expectedSpoof, customListener.spoof.toString()
+    }
 }
 
 
