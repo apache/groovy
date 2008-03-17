@@ -52,17 +52,17 @@ import java.beans.PropertyChangeSupport;
 import java.util.Collection;
 
 /**
- * Handles genration of code for the @Bound annotation when @Constrained
+ * Handles generation of code for the @Bound annotation when @Constrained
  * is not present.
- *
+ * <p/>
  * Generally, it adds (if needed) a PropertyChangeSupport field and
  * the needed add/removePropertyChangeListener methods to support the
  * listeners.
- *
+ * <p/>
  * It also generates the setter and wires the setter through the
  * PropertyChangeSupport.
- *
- * If a @{@link Constrained} annotaton is detected it does noting and
+ * <p/>
+ * If a @{@link Constrained} annotaton is detected it does nothing and
  * lets the {@link ConstrainedASTTransformation} handle all the changes.
  *
  * @author Danno Ferrin (shemnon)
@@ -78,10 +78,10 @@ public class BoundASTTransformation implements ASTSingleNodeTransformation, Opco
     protected ClassNode pcsClassNode = new ClassNode(PropertyChangeSupport.class);
 
     /**
-     * Convienience method to see if an annotatied node is @Bound
+     * Convenience method to see if an annotated node is @Bound.
      *
-     * @param node
-     * @return
+     * @param node the node to check
+     * @return true if the node is bound
      */
     public static boolean hasBoundAnnotation(AnnotatedNode node) {
         for (AnnotationNode annotation : (Collection<AnnotationNode>) node.getAnnotations()) {
@@ -95,10 +95,10 @@ public class BoundASTTransformation implements ASTSingleNodeTransformation, Opco
     /**
      * Handles the bulk of the processing, mostly delegating to other methods.
      *
-     * @param _node
-     * @param _parent
-     * @param source
-     * @param context
+     * @param _node   the node to visit
+     * @param _parent the parent node
+     * @param source  the source unit for the nodes
+     * @param context the generator context
      */
     public void visit(ASTNode _node, ASTNode _parent, SourceUnit source, GeneratorContext context) {
         if (!(_node instanceof AnnotationNode) || !(_parent instanceof AnnotatedNode)) {
@@ -113,7 +113,7 @@ public class BoundASTTransformation implements ASTSingleNodeTransformation, Opco
         }
 
         ClassNode declaringClass = parent.getDeclaringClass();
-        FieldNode field = ((FieldNode)parent);
+        FieldNode field = ((FieldNode) parent);
         String fieldName = field.getName();
         for (PropertyNode propertyNode : (Collection<PropertyNode>) declaringClass.getProperties()) {
             if (propertyNode.getName().equals(fieldName)) {
@@ -129,60 +129,59 @@ public class BoundASTTransformation implements ASTSingleNodeTransformation, Opco
                     createSetterMethod(declaringClass, field, setterName, setterBlock);
                 } else {
                     source.getErrorCollector().addErrorAndContinue(
-                        new SyntaxErrorMessage(new SyntaxException(
-                            "@groovy.beans.Bound cannot handle user generated setters.",
-                            node.getLineNumber(),
-                            node.getColumnNumber()),
-                            source));
+                            new SyntaxErrorMessage(new SyntaxException(
+                                    "@groovy.beans.Bound cannot handle user generated setters.",
+                                    node.getLineNumber(),
+                                    node.getColumnNumber()),
+                                    source));
                 }
                 return;
             }
         }
         source.getErrorCollector().addErrorAndContinue(
-            new SyntaxErrorMessage(new SyntaxException(
-                "@groovy.beans.Bound must be on a property, not a field.  Try removing the private, protected, or public modifier.",
-                node.getLineNumber(),
-                node.getColumnNumber()),
-            source));
+                new SyntaxErrorMessage(new SyntaxException(
+                        "@groovy.beans.Bound must be on a property, not a field.  Try removing the private, protected, or public modifier.",
+                        node.getLineNumber(),
+                        node.getColumnNumber()),
+                        source));
     }
 
     /**
-     * Creates a statement body silimar to
+     * Creates a statement body similar to:
+     * <code>pcsField.firePropertyChange("field", field, field = value)</code>
      *
-     * pcsField.firePropertyChange("field", field, field = value);
-     *
-     * @param field the field node for the proeprty
+     * @param field           the field node for the property
      * @param fieldExpression a field expression for setting the property value
-     * @return
+     * @return the created statement
      */
     protected Statement createBoundStatement(FieldNode field, Expression fieldExpression) {
         // create statementBody
         return new ExpressionStatement(
-            new MethodCallExpression(
-                new FieldExpression(pcsField),
-                    "firePropertyChange",
+                new MethodCallExpression(
+                        new FieldExpression(pcsField),
+                        "firePropertyChange",
                         new ArgumentListExpression(
-                            new Expression[] {
-                                new ConstantExpression(field.getName()),
-                                fieldExpression,
-                                new BinaryExpression(
-                                    fieldExpression,
-                                    Token.newSymbol(Types.EQUAL, 0, 0),
-                                    new VariableExpression("value"))})));
+                                new Expression[]{
+                                        new ConstantExpression(field.getName()),
+                                        fieldExpression,
+                                        new BinaryExpression(
+                                                fieldExpression,
+                                                Token.newSymbol(Types.EQUAL, 0, 0),
+                                                new VariableExpression("value"))})));
     }
 
     /**
-     * Creates a seter method with the given body
+     * Creates a setter method with the given body.
      *
-     * @param declaringClass
-     * @param field
-     * @param setterName
-     * @param setterBlock
+     * @param declaringClass the class to which we will add the setter
+     * @param field          the field to back the setter
+     * @param setterName     the name of the setter
+     * @param setterBlock    the statement representing the setter block
      */
     protected void createSetterMethod(ClassNode declaringClass, FieldNode field, String setterName, Statement setterBlock) {
-        Parameter[] setterParameterTypes = { new Parameter(field.getType(), "value")};
+        Parameter[] setterParameterTypes = {new Parameter(field.getType(), "value")};
         MethodNode setter =
-            new MethodNode(setterName, field.getModifiers(), ClassHelper.VOID_TYPE, setterParameterTypes, ClassNode.EMPTY_ARRAY, setterBlock);
+                new MethodNode(setterName, field.getModifiers(), ClassHelper.VOID_TYPE, setterParameterTypes, ClassNode.EMPTY_ARRAY, setterBlock);
         setter.setSynthetic(true);
         // add it to the class
         declaringClass.addMethod(setter);
@@ -190,10 +189,12 @@ public class BoundASTTransformation implements ASTSingleNodeTransformation, Opco
 
     /**
      * Snoops through the declaring class and all parents looking for a field
-     * of type PropertyChangeSupport.  Returns the field if found
+     * of type PropertyChangeSupport.  Remembers the field and returns false
+     * if found otherwise returns true to indicate that such support should
+     * be added.
      *
-     * @param declaringClass
-     * @return
+     * @param declaringClass the class to search
+     * @return true if property change support should be added
      */
     protected boolean needsPropertyChangeSupport(ClassNode declaringClass) {
         while (declaringClass != null) {
@@ -214,108 +215,119 @@ public class BoundASTTransformation implements ASTSingleNodeTransformation, Opco
     }
 
     /**
-     * Adds a new field "protpected final java.beans.PropertyChangeSupport this$PropertyChangeSupport = new java.beans.PropertyChangeSupport(this)"
+     * Adds the necessary field and methods to support property change support.
+     * <p/>
+     * Adds a new field:
+     * <code>protected final java.beans.PropertyChangeSupport this$PropertyChangeSupport = new java.beans.PropertyChangeSupport(this)</code>"
+     * <p/>
+     * Also adds support methods:
+     * <code>public void addPropertyChangeListener(java.beans.PropertyChangeListener)</code>
+     * <code>public void addPropertyChangeListener(String, java.beans.PropertyChangeListener)</code>
+     * <code>public void removePropertyChangeListener(java.beans.PropertyChangeListener)</code>
+     * <code>public void removePropertyChangeListener(String, java.beans.PropertyChangeListener)</code>
+     * <code>public java.beans.PropertyChangeListener[] getPropertyChangeListeners()</code>
      *
-     * Also adds support methods...
-     *  public void addPropertyChangeListener(java.beans.PropertyChangeListener)
-     *  public void addPropertyChangeListener(String, java.beans.PropertyChangeListener)
-     *  public void removePropertyChangeListener(java.beans.PropertyChangeListener)
-     *  public void removePropertyChangeListener(String, java.beans.PropertyChangeListener)
-     *  public java.beans.PropertyChangeListener[] getPropertyChangeListeners()
-     *
-     * @param declaringClass
+     * @param declaringClass the class to which we add the support field and methods
      */
     protected void addPropertyChangeSupport(ClassNode declaringClass) {
         ClassNode pcsClassNode = ClassHelper.make(PropertyChangeSupport.class);
         ClassNode pclClassNode = ClassHelper.make(PropertyChangeListener.class);
         //String pcsFieldName = "this$propertyChangeSupport";
 
-        // add field protected final PropertyChangeSupport this$propertyChangeSupport = new java.beans.PropertyChangeSupport(this)
+        // add field:
+        // protected final PropertyChangeSupport this$propertyChangeSupport = new java.beans.PropertyChangeSupport(this)
         pcsField = declaringClass.addField(
-            "this$propertyChangeSupport",
-            ACC_FINAL | ACC_PROTECTED | ACC_SYNTHETIC,
-            pcsClassNode,
-            new ConstructorCallExpression(pcsClassNode,
-                new ArgumentListExpression(new Expression[] {new VariableExpression("this")})));
+                "this$propertyChangeSupport",
+                ACC_FINAL | ACC_PROTECTED | ACC_SYNTHETIC,
+                pcsClassNode,
+                new ConstructorCallExpression(pcsClassNode,
+                        new ArgumentListExpression(new Expression[]{new VariableExpression("this")})));
 
-        // add method void addPropertyChangeListener(listner) {
+        // add method:
+        // void addPropertyChangeListener(listener) {
         //     this$propertyChangeSupport.addPropertyChangeListner(listener)
         //  }
         declaringClass.addMethod(
-            new MethodNode(
-                "addPropertyChangeListener",
-                ACC_PUBLIC | ACC_SYNTHETIC,
-                ClassHelper.VOID_TYPE,
-                new Parameter[] {new Parameter(pclClassNode, "listener")},
-                ClassNode.EMPTY_ARRAY,
-                new ExpressionStatement(
-                    new MethodCallExpression(
-                        new FieldExpression(pcsField),
+                new MethodNode(
                         "addPropertyChangeListener",
-                        new ArgumentListExpression(
-                            new Expression[] {new VariableExpression("listener")})))));
-        // add method void addPropertyChangeListener(name, listner) {
+                        ACC_PUBLIC | ACC_SYNTHETIC,
+                        ClassHelper.VOID_TYPE,
+                        new Parameter[]{new Parameter(pclClassNode, "listener")},
+                        ClassNode.EMPTY_ARRAY,
+                        new ExpressionStatement(
+                                new MethodCallExpression(
+                                        new FieldExpression(pcsField),
+                                        "addPropertyChangeListener",
+                                        new ArgumentListExpression(
+                                                new Expression[]{new VariableExpression("listener")})))));
+
+        // add method:
+        // void addPropertyChangeListener(name, listener) {
         //     this$propertyChangeSupport.addPropertyChangeListner(name, listener)
         //  }                           
         declaringClass.addMethod(
-            new MethodNode(
-                "addPropertyChangeListener",
-                ACC_PUBLIC | ACC_SYNTHETIC,
-                ClassHelper.VOID_TYPE,
-                new Parameter[] {new Parameter(ClassHelper.STRING_TYPE, "name"), new Parameter(pclClassNode, "listener")},
-                ClassNode.EMPTY_ARRAY,
-                new ExpressionStatement(
-                    new MethodCallExpression(
-                        new FieldExpression(pcsField),
+                new MethodNode(
                         "addPropertyChangeListener",
-                        new ArgumentListExpression(
-                            new Expression[] {new VariableExpression("name"), new VariableExpression("listener")})))));
+                        ACC_PUBLIC | ACC_SYNTHETIC,
+                        ClassHelper.VOID_TYPE,
+                        new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "name"), new Parameter(pclClassNode, "listener")},
+                        ClassNode.EMPTY_ARRAY,
+                        new ExpressionStatement(
+                                new MethodCallExpression(
+                                        new FieldExpression(pcsField),
+                                        "addPropertyChangeListener",
+                                        new ArgumentListExpression(
+                                                new Expression[]{new VariableExpression("name"), new VariableExpression("listener")})))));
 
-        // add method boolean removePropertyChangeListener(listner) {
+        // add method:
+        // boolean removePropertyChangeListener(listener) {
         //    return this$propertyChangeSupport.removePropertyChangeListener(listener);
         // }
         declaringClass.addMethod(
-            new MethodNode(
-                "removePropertyChangeListener",
-                ACC_PUBLIC | ACC_SYNTHETIC,
-                ClassHelper.VOID_TYPE,
-                new Parameter[] {new Parameter(pclClassNode, "listener")},
-                ClassNode.EMPTY_ARRAY,
-                new ExpressionStatement(
-                    new MethodCallExpression(
-                        new FieldExpression(pcsField),
+                new MethodNode(
                         "removePropertyChangeListener",
-                        new ArgumentListExpression(
-                            new Expression[] {new VariableExpression("listener")})))));
-        // add method void removePropertyChangeListener(name, listner)
+                        ACC_PUBLIC | ACC_SYNTHETIC,
+                        ClassHelper.VOID_TYPE,
+                        new Parameter[]{new Parameter(pclClassNode, "listener")},
+                        ClassNode.EMPTY_ARRAY,
+                        new ExpressionStatement(
+                                new MethodCallExpression(
+                                        new FieldExpression(pcsField),
+                                        "removePropertyChangeListener",
+                                        new ArgumentListExpression(
+                                                new Expression[]{new VariableExpression("listener")})))));
+
+        // add method: void removePropertyChangeListener(name, listener)
         declaringClass.addMethod(
-            new MethodNode(
-                "removePropertyChangeListener",
-                ACC_PUBLIC | ACC_SYNTHETIC,
-                ClassHelper.VOID_TYPE,
-                new Parameter[] {new Parameter(ClassHelper.STRING_TYPE, "name"), new Parameter(pclClassNode, "listener")},
-                ClassNode.EMPTY_ARRAY,
-                new ExpressionStatement(
-                    new MethodCallExpression(
-                        new FieldExpression(pcsField),
+                new MethodNode(
                         "removePropertyChangeListener",
-                        new ArgumentListExpression(
-                            new Expression[] {new VariableExpression("name"), new VariableExpression("listener")})))));
-        // add PropertyChangeSupport[] getPropertyChangeListeners() {
+                        ACC_PUBLIC | ACC_SYNTHETIC,
+                        ClassHelper.VOID_TYPE,
+                        new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "name"), new Parameter(pclClassNode, "listener")},
+                        ClassNode.EMPTY_ARRAY,
+                        new ExpressionStatement(
+                                new MethodCallExpression(
+                                        new FieldExpression(pcsField),
+                                        "removePropertyChangeListener",
+                                        new ArgumentListExpression(
+                                                new Expression[]{new VariableExpression("name"), new VariableExpression("listener")})))));
+
+        // add method:
+        // PropertyChangeSupport[] getPropertyChangeListeners() {
         //   return this$propertyChangeSupport.getPropertyChangeListeners
         // }
         declaringClass.addMethod(
-            new MethodNode(
-                "getPropertyChangeListeners",
-                ACC_PUBLIC | ACC_SYNTHETIC,
-                pclClassNode.makeArray(),
-                Parameter.EMPTY_ARRAY,
-                ClassNode.EMPTY_ARRAY,
-                new ReturnStatement(
-                    new ExpressionStatement(
-                        new MethodCallExpression(
-                            new FieldExpression(pcsField),
-                            "getPropertyChangeListeners",
-                            ArgumentListExpression.EMPTY_ARGUMENTS)))));
+                new MethodNode(
+                        "getPropertyChangeListeners",
+                        ACC_PUBLIC | ACC_SYNTHETIC,
+                        pclClassNode.makeArray(),
+                        Parameter.EMPTY_ARRAY,
+                        ClassNode.EMPTY_ARRAY,
+                        new ReturnStatement(
+                                new ExpressionStatement(
+                                        new MethodCallExpression(
+                                                new FieldExpression(pcsField),
+                                                "getPropertyChangeListeners",
+                                                ArgumentListExpression.EMPTY_ARGUMENTS)))));
     }
 }

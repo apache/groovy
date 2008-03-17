@@ -37,19 +37,20 @@ import java.util.Collection;
  * This class handles the invocation of the ASTAnnotationTransformation
  * when it is encountered by a tree walk.  One instance of each exists
  * for each phase of the compilation it applies to.  Before invocation the
- * @{@link ASTTransformationCollectorCodeVisitor} will add a list
- * of annotations that this cisitor should be concerned about.  All other
- * annotations are ignored, wether or not they are GroovyASTTransformation
+ * <p/>
+ * {@link ASTTransformationCollectorCodeVisitor} will add a list
+ * of annotations that this visitor should be concerned about.  All other
+ * annotations are ignored, whether or not they are GroovyASTTransformation
  * annotated or not.
- *
- * A Two-pass method is used, first all candidate annotations are added to a
+ * <p/>
+ * A Two-pass method is used. First all candidate annotations are added to a
  * list then the transformations are called on those collected annotations.
- * This is done to avoid concurrent modification exceptions durring the AST tree
+ * This is done to avoid concurrent modification exceptions during the AST tree
  * walk and allows the transformations to alter any portion of the AST tree.
  * Hence annotations that are added in this phase will not be processed as
  * transformations.  They will only be handled in later phases (and then only
  * if the type was in the AST prior to any AST transformations being run
- * against it)
+ * against it).
  *
  * @author Danno Ferrin (shemnon)
  */
@@ -70,14 +71,14 @@ public class ASTTransformationCodeVisitor extends ClassCodeVisitorSupport {
 
     /**
      * Main loop entry.
-     *
-     * First, it delegates to teh super visitClass so we can collect the
+     * <p/>
+     * First, it delegates to the super visitClass so we can collect the
      * relevant annotations in an AST tree walk.
-     *
-     * Second, calls the visit method on the transformation for each relevant
+     * <p/>
+     * Second, it calls the visit method on the transformation for each relevant
      * annotation found.
      *
-     * @param classNode
+     * @param classNode the class to visit
      */
     public void visitClass(ClassNode classNode) {
         // only descend if we have annotations to look for
@@ -90,20 +91,21 @@ public class ASTTransformationCodeVisitor extends ClassCodeVisitorSupport {
             // second pass, call visit on all of the collected nodes
             for (ASTNode[] node : targetNodes) {
                 annotationsMap.get(((AnnotationNode) node[0]).getClassNode())
-                    .visit(node[0], node[1], source, context);
+                        .visit(node[0], node[1], source, context);
             }
         }
     }
 
     /**
-     * Adds the annotation to the internal target list if a match is found
-     * @param node
+     * Adds the annotation to the internal target list if a match is found.
+     *
+     * @param node the node to be processed
      */
     public void visitAnnotations(AnnotatedNode node) {
         super.visitAnnotations(node);
         for (AnnotationNode annotation : (Collection<AnnotationNode>) node.getAnnotations()) {
             if (annotationsMap.containsKey(annotation.getClassNode())) {
-                targetNodes.add(new ASTNode[] {annotation, node});
+                targetNodes.add(new ASTNode[]{annotation, node});
             }
         }
     }
@@ -111,8 +113,8 @@ public class ASTTransformationCodeVisitor extends ClassCodeVisitorSupport {
     /**
      * Used to see if the annotation is already added.
      *
-     * @param annotationClassNode
-     * @return
+     * @param annotationClassNode the node to check
+     * @return true if an annotation was found
      */
     public boolean hasAnnotation(ClassNode annotationClassNode) {
         return annotationsMap.containsKey(annotationClassNode);
@@ -121,18 +123,18 @@ public class ASTTransformationCodeVisitor extends ClassCodeVisitorSupport {
     /**
      * Adds the particular transformation to this phase.
      *
-     * @param annotationClassNode
-     * @param transformation
+     * @param annotationClassNode the node to process
+     * @param transformation      the transformation to remember
      */
     public void addAnnotation(ClassNode annotationClassNode, ASTSingleNodeTransformation transformation) {
         annotationsMap.put(annotationClassNode, transformation);
     }
 
     /**
-     * Wraps itself as a PrimaryClassNodeOperation, suitable for inserton into
+     * Wraps itself as a PrimaryClassNodeOperation, suitable for insertion into
      * the CompilationUnit's phase operations.
      *
-     * @return
+     * @return the resulting PrimaryClassNodeOperation
      */
     public CompilationUnit.PrimaryClassNodeOperation getOperation() {
         return new CompilationUnit.PrimaryClassNodeOperation() {

@@ -37,9 +37,9 @@ import java.util.Collection;
 
 /**
  * This visitor walks the AST tree and collects references to Annotations that
- * are annotated themselves by @{@link GroovyASTTransformation}.  Each such
- * annotation is added
- *
+ * are annotated themselves by {@link GroovyASTTransformation}. Each such
+ * annotation is added.
+ * <p/>
  * This visitor is only intended to be executed once, durring the
  * SEMANTIC_ANALYSIS phase of compilation.
  *
@@ -51,9 +51,10 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
     private Map<Integer, ASTTransformationCodeVisitor> stageVisitors;
 
     /**
-     * Create the visitor
+     * Create the visitor.
      *
-     * @param stageVisitors The map of {@link ASTTransformationCodeVisitor}s keyed by phase number.
+     * @param stageVisitors   The map of {@link ASTTransformationCodeVisitor}s keyed by phase number.
+     * @param compilationUnit the compilation unit
      */
     public ASTTransformationCollectorCodeVisitor(Map<Integer, ASTTransformationCodeVisitor> stageVisitors, CompilationUnit compilationUnit) {
         this.stageVisitors = stageVisitors;
@@ -65,25 +66,26 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
     }
 
     /**
-     * If the annotaiton is annotated with @{@link org.codehaus.groovy.ast.GroovyASTTransformation}
-     * the annotation is added to stageVisitors at the appropriate processor visitor.
-     * @param node
+     * If the annotation is annotated with {@link org.codehaus.groovy.ast.GroovyASTTransformation}
+     * the annotation is added to <code>stageVisitors</code> at the appropriate processor visitor.
+     *
+     * @param node the node to process
      */
     public void visitAnnotations(AnnotatedNode node) {
         super.visitAnnotations(node);
         for (AnnotationNode annotation : (Collection<AnnotationNode>) node.getAnnotations()) {
             ClassNode annotationClassNode = annotation.getClassNode();
             if (!annotationClassNode.isResolved()) continue;
-            //TODO: change this code to use the Groovy AST isntead of direct usage of Class 
+            //TODO: change this code to use the Groovy AST instead of direct usage of Class
             Class<? extends GroovyASTTransformation> annotationType = annotationClassNode.getTypeClass();
             GroovyASTTransformation transformationAnnotation =
-                annotationType.getAnnotation(GroovyASTTransformation.class);
+                    annotationType.getAnnotation(GroovyASTTransformation.class);
             if (transformationAnnotation == null) {
                 // stop if there is no appropriately typed annotation
                 continue;
             }
             ASTTransformationCodeVisitor stage = stageVisitors.get(
-                transformationAnnotation.phase());
+                    transformationAnnotation.phase());
 
             if (stage == null) {
                 badStageError(node, transformationAnnotation, annotationClassNode);
@@ -92,34 +94,34 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
                     Object o = Class.forName(transformationAnnotation.transformationClassName()).newInstance();
                     if (o instanceof ASTSingleNodeTransformation) {
                         stage.addAnnotation(annotationClassNode,
-                            (ASTSingleNodeTransformation) o);
+                                (ASTSingleNodeTransformation) o);
                     } else if (o instanceof CompilationUnit.PrimaryClassNodeOperation) {
                         compilationUnit.addPhaseOperation(
-                            (CompilationUnit.PrimaryClassNodeOperation)o,
-                            transformationAnnotation.phase());
+                                (CompilationUnit.PrimaryClassNodeOperation) o,
+                                transformationAnnotation.phase());
                     } else if (o instanceof CompilationUnit.SourceUnitOperation) {
                         compilationUnit.addPhaseOperation(
-                            (CompilationUnit.SourceUnitOperation)o,
-                            transformationAnnotation.phase());
+                                (CompilationUnit.SourceUnitOperation) o,
+                                transformationAnnotation.phase());
                     } else if (o instanceof CompilationUnit.GroovyClassOperation) {
                         compilationUnit.addPhaseOperation(
-                            (CompilationUnit.GroovyClassOperation)o);
+                                (CompilationUnit.GroovyClassOperation) o);
                     }
                 } catch (InstantiationException e) {
                     source.getErrorCollector().addError(
-                        new SimpleMessage(
-                            "Could not instantiate Transformation Processor " + transformationAnnotation.transformationClassName(),
-                            source));
+                            new SimpleMessage(
+                                    "Could not instantiate Transformation Processor " + transformationAnnotation.transformationClassName(),
+                                    source));
                 } catch (IllegalAccessException e) {
                     source.getErrorCollector().addError(
-                        new SimpleMessage(
-                            "Could not instantiate Transformation Processor " + transformationAnnotation.transformationClassName(),
-                            source));
+                            new SimpleMessage(
+                                    "Could not instantiate Transformation Processor " + transformationAnnotation.transformationClassName(),
+                                    source));
                 } catch (ClassNotFoundException e) {
                     source.getErrorCollector().addError(
-                        new SimpleMessage(
-                            "Could find class for Transformation Processor " + transformationAnnotation.transformationClassName(),
-                            source));
+                            new SimpleMessage(
+                                    "Could find class for Transformation Processor " + transformationAnnotation.transformationClassName(),
+                                    source));
                 }
             }
         }
@@ -129,24 +131,25 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
         try {
             String phaseName = Phases.getDescription(transformationAnnotation.phase());
             source.getErrorCollector().addErrorAndContinue(
-                new SyntaxErrorMessage(new SyntaxException(
-                    "@" + annotationClassNode.getName() + " cannot be handled in phase " + phaseName,
-                    node.getLineNumber(),
-                    node.getColumnNumber()),
-                    source));
+                    new SyntaxErrorMessage(new SyntaxException(
+                            "@" + annotationClassNode.getName() + " cannot be handled in phase " + phaseName,
+                            node.getLineNumber(),
+                            node.getColumnNumber()),
+                            source));
         } catch (ArrayIndexOutOfBoundsException aiobe) {
             source.getErrorCollector().addErrorAndContinue(
-                new SyntaxErrorMessage(new SyntaxException(
-                    "@" + annotationClassNode.getName() + " specifies a phase that does not exist: " + transformationAnnotation.phase(),
-                    node.getLineNumber(),
-                    node.getColumnNumber()),
-                    source));
+                    new SyntaxErrorMessage(new SyntaxException(
+                            "@" + annotationClassNode.getName() + " specifies a phase that does not exist: " + transformationAnnotation.phase(),
+                            node.getLineNumber(),
+                            node.getColumnNumber()),
+                            source));
         }
     }
 
     /**
-     * Wraps itself in a PrimaryClassNodeOpration
-     * @return
+     * Helper method to wrap itself in a PrimaryClassNodeOperation.
+     *
+     * @return the created PrimaryClassNodeOperation
      */
     public CompilationUnit.PrimaryClassNodeOperation getOperation() {
         return new CompilationUnit.PrimaryClassNodeOperation() {

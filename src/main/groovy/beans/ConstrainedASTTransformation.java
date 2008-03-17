@@ -51,17 +51,17 @@ import java.beans.VetoableChangeSupport;
 import java.util.Collection;
 
 /**
- * Handles genration of code for the @Constrained annotation, and @Bound
+ * Handles generation of code for the @Constrained annotation, and @Bound
  * if also present.
- *
+ * <p/>
  * Generally, it adds (if needed) a VetoableChangeSupport field and
  * the needed add/removeVetoableChangeListener methods to support the
  * listeners.
- *
+ * <p/>
  * It also generates the setter and wires the setter through the
  * VetoableChangeSupport.
- *
- * If a @{@link Bound} annotaton is detected it also adds support similar
+ * <p/>
+ * If a {@link Bound} annotaton is detected it also adds support similar
  * to what {@link BoundASTTransformation} would do.
  *
  * @author Danno Ferrin (shemnon)
@@ -71,18 +71,15 @@ public class ConstrainedASTTransformation extends BoundASTTransformation {
     protected static ClassNode constrainedClassNode = new ClassNode(Constrained.class);
     protected ClassNode vcsClassNode = new ClassNode(VetoableChangeSupport.class);
     /**
-     * Convienience method to see if an annotatied node is @Bound
-     *
-     * @param node
-     * @return
+     * Field use to remember a discovered vcs field
      */
     protected FieldNode vcsField;
 
     /**
-     * Convienience method to see if an annotatied node is @Constrained
+     * Convienience method to see if an annotatied node is @Constrained.
      *
-     * @param node
-     * @return
+     * @param node the node to check
+     * @return true if the node is constrained
      */
     public static boolean hasConstrainedAnnotation(AnnotatedNode node) {
         for (AnnotationNode annotation : (Collection<AnnotationNode>) node.getAnnotations()) {
@@ -96,10 +93,10 @@ public class ConstrainedASTTransformation extends BoundASTTransformation {
     /**
      * Handles the bulk of the processing, mostly delegating to other methods.
      *
-     * @param _node
-     * @param _parent
-     * @param source
-     * @param context
+     * @param _node   the node to visit
+     * @param _parent the parent node
+     * @param source  the source unit for the nodes
+     * @param context the generator context
      */
     public void visit(ASTNode _node, ASTNode _parent, SourceUnit source, GeneratorContext context) {
         if (!(_node instanceof AnnotationNode) || !(_parent instanceof AnnotatedNode)) {
@@ -111,7 +108,7 @@ public class ConstrainedASTTransformation extends BoundASTTransformation {
         boolean bound = BoundASTTransformation.hasBoundAnnotation(parent);
 
         ClassNode declaringClass = parent.getDeclaringClass();
-        FieldNode field = ((FieldNode)parent);
+        FieldNode field = ((FieldNode) parent);
         String fieldName = field.getName();
         for (PropertyNode propertyNode : (Collection<PropertyNode>) declaringClass.getProperties()) {
             if (propertyNode.getName().equals(fieldName)) {
@@ -137,68 +134,68 @@ public class ConstrainedASTTransformation extends BoundASTTransformation {
                     createSetterMethod(declaringClass, field, setterName, setterBlock);
                 } else {
                     source.getErrorCollector().addErrorAndContinue(
-                        new SyntaxErrorMessage(new SyntaxException(
-                            "@groovy.beans.Constrained cannot handle user generated setters.",
-                            node.getLineNumber(),
-                            node.getColumnNumber()),
-                            source));
+                            new SyntaxErrorMessage(new SyntaxException(
+                                    "@groovy.beans.Constrained cannot handle user generated setters.",
+                                    node.getLineNumber(),
+                                    node.getColumnNumber()),
+                                    source));
                 }
                 return;
             }
         }
         source.getErrorCollector().addErrorAndContinue(
-            new SyntaxErrorMessage(new SyntaxException(
-                "@groovy.beans.Constrained must be on a property, not a field.  Try removing the private, protected, or public modifier.",
-                node.getLineNumber(),
-                node.getColumnNumber()),
-            source));
+                new SyntaxErrorMessage(new SyntaxException(
+                        "@groovy.beans.Constrained must be on a property, not a field.  Try removing the private, protected, or public modifier.",
+                        node.getLineNumber(),
+                        node.getColumnNumber()),
+                        source));
     }
 
     /**
-     * Creates a statement body silimar to
+     * Creates a statement body silimar to:
+     * <code>vcsField.fireVetoableChange("field", field, field = value)</code>
      *
-     * vcsField.fireVetoableChange("field", field, field = value);
-     *
-     * @param field the field node for the proeprty
+     * @param field           the field node for the property
      * @param fieldExpression a field expression for setting the property value
-     * @return
+     * @return the created statement
      */
     protected Statement createConstrainedStatement(FieldNode field, Expression fieldExpression) {
         return new ExpressionStatement(
-            new MethodCallExpression(
-                new FieldExpression(vcsField),
-                    "fireVetoableChange",
+                new MethodCallExpression(
+                        new FieldExpression(vcsField),
+                        "fireVetoableChange",
                         new ArgumentListExpression(
-                            new Expression[] {
-                                new ConstantExpression(field.getName()),
-                                fieldExpression,
-                                new VariableExpression("value")})));
+                                new Expression[]{
+                                        new ConstantExpression(field.getName()),
+                                        fieldExpression,
+                                        new VariableExpression("value")})));
     }
 
     /**
-     * Creates a statement body silimar to
-     *
-     * field = value
-     *
+     * Creates a statement body similar to:
+     * <code>field = value</code>
+     * <p/>
      * Used when the field is not also @Bound
      *
      * @param fieldExpression a field expression for setting the property value
-     * @return
+     * @return the created statement
      */
     protected Statement createSetStatement(Expression fieldExpression) {
         return new ExpressionStatement(
-            new BinaryExpression(
-                fieldExpression,
-                Token.newSymbol(Types.EQUAL, 0, 0),
-                new VariableExpression("value")));
+                new BinaryExpression(
+                        fieldExpression,
+                        Token.newSymbol(Types.EQUAL, 0, 0),
+                        new VariableExpression("value")));
     }
 
     /**
      * Snoops through the declaring class and all parents looking for a field
-     * of type VetoableChangeSupport.  Returns the field if found
+     * of type VetoableChangeSupport.  Remembers the field and returns false
+     * if found otherwise returns true to indicate that such support should
+     * be added.
      *
-     * @param declaringClass
-     * @return
+     * @param declaringClass the class to search
+     * @return true if vetoable change support should be added
      */
     protected boolean needsVetoableChangeSupport(ClassNode declaringClass) {
         while (declaringClass != null) {
@@ -218,129 +215,140 @@ public class ConstrainedASTTransformation extends BoundASTTransformation {
     }
 
     /**
-     * Creates a seter method with the given body.
-     *
+     * Creates a setter method with the given body.
+     * <p/>
      * This differs from normal setters in that we need to add a declared
      * exception java.beans.PropertyVetoException
      *
-     * @param declaringClass
-     * @param field
-     * @param setterName
-     * @param setterBlock
+     * @param declaringClass the class to which we will add the setter
+     * @param field          the field to back the setter
+     * @param setterName     the name of the setter
+     * @param setterBlock    the statement representing the setter block
      */
     protected void createSetterMethod(ClassNode declaringClass, FieldNode field, String setterName, Statement setterBlock) {
-        Parameter[] setterParameterTypes = { new Parameter(field.getType(), "value")};
+        Parameter[] setterParameterTypes = {new Parameter(field.getType(), "value")};
         ClassNode[] exceptions = {new ClassNode(PropertyVetoException.class)};
         MethodNode setter =
-            new MethodNode(setterName, field.getModifiers(), ClassHelper.VOID_TYPE, setterParameterTypes, exceptions, setterBlock);
+                new MethodNode(setterName, field.getModifiers(), ClassHelper.VOID_TYPE, setterParameterTypes, exceptions, setterBlock);
         setter.setSynthetic(true);
         // add it to the class
         declaringClass.addMethod(setter);
     }
 
     /**
-     * Adds a new field "protpected final java.beans.VetoableChangeSupport this$vetoableChangeSupport = new java.beans.VetoableChangeSupport(this)"
+     * Adds the necessary field and methods to support vetoable change support.
+     * <p/>
+     * Adds a new field:
+     * <code>"protected final java.beans.VetoableChangeSupport this$vetoableChangeSupport = new java.beans.VetoableChangeSupport(this)"</code>
+     * <p/>
+     * Also adds support methods:
+     * <code>public void addVetoableChangeListener(java.beans.VetoableChangeListener)</code>
+     * <code>public void addVetoableChangeListener(String, java.beans.VetoableChangeListener)</code>
+     * <code>public void removeVetoableChangeListener(java.beans.VetoableChangeListener)</code>
+     * <code>public void removeVetoableChangeListener(String, java.beans.VetoableChangeListener)</code>
+     * <code>public java.beans.VetoableChangeListener[] getVetoableChangeListeners()</code>
      *
-     * Also adds support methods...
-     *  public void addVetoableChangeListener(java.beans.VetoableChangeListener)
-     *  public void addVetoableChangeListener(String, java.beans.VetoableChangeListener)
-     *  public void removeVetoableChangeListener(java.beans.VetoableChangeListener)
-     *  public void removeVetoableChangeListener(String, java.beans.VetoableChangeListener)
-     *  public java.beans.VetoableChangeListener[] getVetoableChangeListeners()
-     *
-     * @param declaringClass
+     * @param declaringClass the class to which we add the support field and methods
      */
     protected void addVetoableChangeSupport(ClassNode declaringClass) {
         ClassNode vcsClassNode = ClassHelper.make(VetoableChangeSupport.class);
         ClassNode vclClassNode = ClassHelper.make(VetoableChangeListener.class);
 
-        // add field protected static VetoableChangeSupport this$vetoableChangeSupport = new java.beans.VetoableChangeSupport(this)
+        // add field:
+        // protected static VetoableChangeSupport this$vetoableChangeSupport = new java.beans.VetoableChangeSupport(this)
         vcsField = declaringClass.addField(
-            "this$vetoableChangeSupport",
-            ACC_FINAL | ACC_PROTECTED | ACC_SYNTHETIC,
-            vcsClassNode,
-            new ConstructorCallExpression(vcsClassNode,
-                new ArgumentListExpression(new Expression[] {new VariableExpression("this")})));
+                "this$vetoableChangeSupport",
+                ACC_FINAL | ACC_PROTECTED | ACC_SYNTHETIC,
+                vcsClassNode,
+                new ConstructorCallExpression(vcsClassNode,
+                        new ArgumentListExpression(new Expression[]{new VariableExpression("this")})));
 
-        // add method void addVetoableChangeListener(listner) {
+        // add method:
+        // void addVetoableChangeListener(listener) {
         //     this$vetoableChangeSupport.addVetoableChangeListner(listener)
         //  }
         declaringClass.addMethod(
-            new MethodNode(
-                "addVetoableChangeListener",
-                ACC_PUBLIC | ACC_SYNTHETIC,
-                ClassHelper.VOID_TYPE,
-                new Parameter[] {new Parameter(vclClassNode, "listener")},
-                ClassNode.EMPTY_ARRAY,
-                new ExpressionStatement(
-                    new MethodCallExpression(
-                        new FieldExpression(vcsField),
+                new MethodNode(
                         "addVetoableChangeListener",
-                        new ArgumentListExpression(
-                            new Expression[] {new VariableExpression("listener")})))));
-        // add method void addVetoableChangeListener(name, listner) {
+                        ACC_PUBLIC | ACC_SYNTHETIC,
+                        ClassHelper.VOID_TYPE,
+                        new Parameter[]{new Parameter(vclClassNode, "listener")},
+                        ClassNode.EMPTY_ARRAY,
+                        new ExpressionStatement(
+                                new MethodCallExpression(
+                                        new FieldExpression(vcsField),
+                                        "addVetoableChangeListener",
+                                        new ArgumentListExpression(
+                                                new Expression[]{new VariableExpression("listener")})))));
+
+        // add method:
+        // void addVetoableChangeListener(name, listener) {
         //     this$vetoableChangeSupport.addVetoableChangeListner(name, listener)
         //  }
         declaringClass.addMethod(
-            new MethodNode(
-                "addVetoableChangeListener",
-                ACC_PUBLIC | ACC_SYNTHETIC,
-                ClassHelper.VOID_TYPE,
-                new Parameter[] {new Parameter(ClassHelper.STRING_TYPE, "name"), new Parameter(vclClassNode, "listener")},
-                ClassNode.EMPTY_ARRAY,
-                new ExpressionStatement(
-                    new MethodCallExpression(
-                        new FieldExpression(vcsField),
+                new MethodNode(
                         "addVetoableChangeListener",
-                        new ArgumentListExpression(
-                            new Expression[] {new VariableExpression("name"), new VariableExpression("listener")})))));
+                        ACC_PUBLIC | ACC_SYNTHETIC,
+                        ClassHelper.VOID_TYPE,
+                        new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "name"), new Parameter(vclClassNode, "listener")},
+                        ClassNode.EMPTY_ARRAY,
+                        new ExpressionStatement(
+                                new MethodCallExpression(
+                                        new FieldExpression(vcsField),
+                                        "addVetoableChangeListener",
+                                        new ArgumentListExpression(
+                                                new Expression[]{new VariableExpression("name"), new VariableExpression("listener")})))));
 
-        // add method boolean removeVetoableChangeListener(listner) {
+        // add method:
+        // boolean removeVetoableChangeListener(listener) {
         //    return this$vetoableChangeSupport.removeVetoableChangeListener(listener);
         // }
         declaringClass.addMethod(
-            new MethodNode(
-                "removeVetoableChangeListener",
-                ACC_PUBLIC | ACC_SYNTHETIC,
-                ClassHelper.VOID_TYPE,
-                new Parameter[] {new Parameter(vclClassNode, "listener")},
-                ClassNode.EMPTY_ARRAY,
-                new ExpressionStatement(
-                    new MethodCallExpression(
-                        new FieldExpression(vcsField),
+                new MethodNode(
                         "removeVetoableChangeListener",
-                        new ArgumentListExpression(
-                            new Expression[] {new VariableExpression("listener")})))));
-        // add method void removeVetoableChangeListener(name, listner)
+                        ACC_PUBLIC | ACC_SYNTHETIC,
+                        ClassHelper.VOID_TYPE,
+                        new Parameter[]{new Parameter(vclClassNode, "listener")},
+                        ClassNode.EMPTY_ARRAY,
+                        new ExpressionStatement(
+                                new MethodCallExpression(
+                                        new FieldExpression(vcsField),
+                                        "removeVetoableChangeListener",
+                                        new ArgumentListExpression(
+                                                new Expression[]{new VariableExpression("listener")})))));
+
+        // add method: void removeVetoableChangeListener(name, listener)
         declaringClass.addMethod(
-            new MethodNode(
-                "removeVetoableChangeListener",
-                ACC_PUBLIC | ACC_SYNTHETIC,
-                ClassHelper.VOID_TYPE,
-                new Parameter[] {new Parameter(ClassHelper.STRING_TYPE, "name"), new Parameter(vclClassNode, "listener")},
-                ClassNode.EMPTY_ARRAY,
-                new ExpressionStatement(
-                    new MethodCallExpression(
-                        new FieldExpression(vcsField),
+                new MethodNode(
                         "removeVetoableChangeListener",
-                        new ArgumentListExpression(
-                            new Expression[] {new VariableExpression("name"), new VariableExpression("listener")})))));
-        // add VetoableChangeSupport[] getVetoableChangeListeners() {
+                        ACC_PUBLIC | ACC_SYNTHETIC,
+                        ClassHelper.VOID_TYPE,
+                        new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "name"), new Parameter(vclClassNode, "listener")},
+                        ClassNode.EMPTY_ARRAY,
+                        new ExpressionStatement(
+                                new MethodCallExpression(
+                                        new FieldExpression(vcsField),
+                                        "removeVetoableChangeListener",
+                                        new ArgumentListExpression(
+                                                new Expression[]{new VariableExpression("name"), new VariableExpression("listener")})))));
+
+        // add method:
+        // VetoableChangeSupport[] getVetoableChangeListeners() {
         //   return this$vetoableChangeSupport.getVetoableChangeListeners
         // }
         declaringClass.addMethod(
-            new MethodNode(
-                "getVetoableChangeListeners",
-                ACC_PUBLIC | ACC_SYNTHETIC,
-                vclClassNode.makeArray(),
-                Parameter.EMPTY_ARRAY,
-                ClassNode.EMPTY_ARRAY,
-                new ReturnStatement(
-                    new ExpressionStatement(
-                        new MethodCallExpression(
-                            new FieldExpression(vcsField),
-                            "getVetoableChangeListeners",
-                            ArgumentListExpression.EMPTY_ARGUMENTS)))));
+                new MethodNode(
+                        "getVetoableChangeListeners",
+                        ACC_PUBLIC | ACC_SYNTHETIC,
+                        vclClassNode.makeArray(),
+                        Parameter.EMPTY_ARRAY,
+                        ClassNode.EMPTY_ARRAY,
+                        new ReturnStatement(
+                                new ExpressionStatement(
+                                        new MethodCallExpression(
+                                                new FieldExpression(vcsField),
+                                                "getVetoableChangeListeners",
+                                                ArgumentListExpression.EMPTY_ARGUMENTS)))));
     }
 
 }
