@@ -109,55 +109,66 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
 
 	public void visitCtorIdent(GroovySourceAST t,int visit) {
     	if (visit == OPENING_VISIT) {
-        	// now... get relevant values from the AST
+            if (!insideAnonymousInnerClass()) {
+                // now... get relevant values from the AST
 
-    		// name of class for the constructor
-    		currentConstructorDoc = new SimpleGroovyConstructorDoc(currentClassDoc.name());
+                // name of class for the constructor
+                currentConstructorDoc = new SimpleGroovyConstructorDoc(currentClassDoc.name());
 
-    		// comments
-    		String commentText = getJavaDocCommentsBeforeNode(t);
-    		currentConstructorDoc.setRawCommentText(commentText);
-    		
-            // modifiers
-            processModifiers(t, currentConstructorDoc);
+                // comments
+                String commentText = getJavaDocCommentsBeforeNode(t);
+                currentConstructorDoc.setRawCommentText(commentText);
 
-    		addParametersTo(currentConstructorDoc, t, visit);
-    		
-        	// don't forget to tell the class about this constructor.
-        	currentClassDoc.add(currentConstructorDoc);
-    	}		
+                // modifiers
+                processModifiers(t, currentConstructorDoc);
+
+                addParametersTo(currentConstructorDoc, t, visit);
+
+                // don't forget to tell the class about this constructor.
+                currentClassDoc.add(currentConstructorDoc);
+            }
+    	}
 	}
 
 
 	public void visitMethodDef(GroovySourceAST t, int visit) {
     	if (visit == OPENING_VISIT) {
-        	// init
+            if (!insideAnonymousInnerClass()) {
+                // init
 
-        	// now... get relevant values from the AST
+                // now... get relevant values from the AST
 
-    		// method name
-    		String methodName = t.childOfType(GroovyTokenTypes.IDENT).getText();
-    		currentMethodDoc = new SimpleGroovyMethodDoc(methodName, links);
+                // method name
+                String methodName = t.childOfType(GroovyTokenTypes.IDENT).getText();
+                currentMethodDoc = new SimpleGroovyMethodDoc(methodName, links);
 
-    		// comments
-    		String commentText = getJavaDocCommentsBeforeNode(t);
-    		currentMethodDoc.setRawCommentText(commentText);
+                // comments
+                String commentText = getJavaDocCommentsBeforeNode(t);
+                currentMethodDoc.setRawCommentText(commentText);
 
-            // modifiers
-            processModifiers(t, currentMethodDoc);
+                // modifiers
+                processModifiers(t, currentMethodDoc);
 
-            // return type
-    		String returnTypeName = getTypeNodeAsText(t.childOfType(GroovyTokenTypes.TYPE),"def");
-        	SimpleGroovyType returnType = new SimpleGroovyType(returnTypeName); // todo !!!
-        	currentMethodDoc.setReturnType(returnType);
+                // return type
+                String returnTypeName = getTypeNodeAsText(t.childOfType(GroovyTokenTypes.TYPE),"def");
+                SimpleGroovyType returnType = new SimpleGroovyType(returnTypeName); // todo !!!
+                currentMethodDoc.setReturnType(returnType);
 
-    		addParametersTo(currentMethodDoc, t, visit);
-    		
-        	// don't forget to tell the class about this method so carefully constructed.
-        	currentClassDoc.add(currentMethodDoc);
-    	}
+                addParametersTo(currentMethodDoc, t, visit);
+
+                // don't forget to tell the class about this method so carefully constructed.
+                currentClassDoc.add(currentMethodDoc);
+            }
+        }
 	}
 
+    private boolean insideAnonymousInnerClass() {
+        GroovySourceAST grandParentNode = getGrandParentNode();
+        if (grandParentNode != null && grandParentNode.getType() == GroovyTokenTypes.LITERAL_new) {
+            return true;
+        }
+        return false;
+    }
     private void processModifiers(GroovySourceAST t,SimpleGroovyProgramElementDoc programElementDoc) {
         GroovySourceAST modifiers = t.childOfType(GroovyTokenTypes.MODIFIERS);
         if (modifiers != null) {
@@ -272,12 +283,28 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
     }
 
     private GroovySourceAST getParentNode() {
-    	Object parentNode = null;
-    	Object currentNode = stack.pop();
+        Object parentNode = null;
+        Object currentNode = stack.pop();
         if (!stack.empty()) {
-        	parentNode = stack.peek();
+            parentNode = stack.peek();
         }
-    	stack.push(currentNode);
+        stack.push(currentNode);
         return (GroovySourceAST) parentNode;
     }
+
+    private GroovySourceAST getGrandParentNode() {
+        Object grandParentNode = null;
+        Object parentNode;
+        Object currentNode = stack.pop();
+        if (!stack.empty()) {
+            parentNode = stack.pop();
+            if (!stack.empty()) {
+                grandParentNode = stack.peek();
+            }
+            stack.push(parentNode);
+        }
+        stack.push(currentNode);
+        return (GroovySourceAST) grandParentNode;
+    }
+
 }
