@@ -1,4 +1,4 @@
-package org.codehaus.groovy.runtime.dgmimpl;
+package org.codehaus.groovy.runtime.dgmimpl.arrays;
 
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ReflectionCache;

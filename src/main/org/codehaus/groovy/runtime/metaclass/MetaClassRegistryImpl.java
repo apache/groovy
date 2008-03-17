@@ -16,10 +16,7 @@
 package org.codehaus.groovy.runtime.metaclass;
 
 import groovy.lang.*;
-import org.codehaus.groovy.reflection.CachedClass;
-import org.codehaus.groovy.reflection.CachedMethod;
-import org.codehaus.groovy.reflection.FastArray;
-import org.codehaus.groovy.reflection.ReflectionCache;
+import org.codehaus.groovy.reflection.*;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
@@ -43,10 +40,6 @@ import java.util.*;
  * @version $Revision$
  */
 public class MetaClassRegistryImpl implements MetaClassRegistry{
-    private volatile int constantMetaClassCount = 0;
-    private ConcurrentReaderHashMap constantMetaClasses = new ConcurrentReaderHashMap();
-    private MemoryAwareConcurrentReadMap weakMetaClasses = new MemoryAwareConcurrentReadMap();
-    private MemoryAwareConcurrentReadMap loaderMap = new MemoryAwareConcurrentReadMap();
     private boolean useAccessible;
 
     private FastArray instanceMethods = new FastArray();
@@ -183,8 +176,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
 
         final MetaClass emcMetaClass = metaClassCreationHandle.create(ExpandoMetaClass.class, this);
         emcMetaClass.initialize();
-        constantMetaClasses.put(ExpandoMetaClass.class,emcMetaClass);
-        constantMetaClassCount = 1;
+        ClassInfo.getClassInfo(ExpandoMetaClass.class).setStrongMetaClass(emcMetaClass);
    }
 
     /**
@@ -273,32 +265,42 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     }
 
     private MetaClass getGlobalMetaClass (Class theClass) {
-        MetaClass answer=null;
-        if (constantMetaClassCount!=0) answer = (MetaClass) constantMetaClasses.get(theClass);
-        if (answer!=null) return answer;
-        answer = (MetaClass) weakMetaClasses.get(theClass);
-        if (answer!=null) return answer;
+        final ClassInfo info = ClassInfo.getClassInfo(theClass);
 
-        synchronized (theClass) {
-            answer = (MetaClass) weakMetaClasses.get(theClass);
-            if (answer!=null) return answer;
-    
+        MetaClass answer = info.getStrongMetaClass();
+        if (answer != null)
+          return answer;
+
+        answer = info.getWeakMetaClass();
+        if (answer != null)
+          return answer;
+
+        info.lock();
+        try {
+            answer = info.getStrongMetaClass();
+            if (answer != null)
+              return answer;
+
+            answer = info.getWeakMetaClass();
+            if (answer != null)
+              return answer;
+
             answer = metaClassCreationHandle.create(theClass, this);
             answer.initialize();
+
             if (GroovySystem.isKeepJavaMetaClasses()) {
-                constantMetaClassCount++;
-                constantMetaClasses.put(theClass,answer);
-                final CachedClass aClass = ReflectionCache.getCachedClass(theClass);
-                aClass.setStaticMetaClassField (answer);
-                aClass.setMetaClassForClass(answer, true);
+                info.setStrongMetaClass(answer);
             } else {
-                final CachedClass aClass = ReflectionCache.getCachedClass(theClass);
-                aClass.setStaticMetaClassField (answer);
-                aClass.setMetaClassForClass(answer, false);
-                weakMetaClasses.put(theClass, answer);
+                info.setWeakMetaClass(answer);
             }
+            final CachedClass aClass = info.getCachedClass(theClass);
+            aClass.setStaticMetaClassField (answer);
+            aClass.setMetaClassForClass(answer, true);
+            return answer;
         }
-        return answer;
+        finally {
+            info.unlock();
+        }
     }
 
     public final MetaClass getMetaClass(Class theClass) {
@@ -308,17 +310,20 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     public synchronized void removeMetaClass(Class theClass) {
         version = new Integer (version.intValue()+1);
 
-        Object answer=null;
-        if (constantMetaClassCount!=0) answer = constantMetaClasses.remove(theClass);
-        if (answer==null) {
-            weakMetaClasses.remove(theClass);
-        } else {
-            constantMetaClassCount--;
-        }
+        final ClassInfo info = ClassInfo.getClassInfo(theClass);
 
-        final CachedClass aClass = ReflectionCache.getCachedClass(theClass);
-        aClass.setStaticMetaClassField (null);
-        aClass.setMetaClassForClass(null, true);
+        info.lock();
+        try {
+            info.setStrongMetaClass(null);
+            info.setWeakMetaClass(null);
+
+            final CachedClass aClass = info.getCachedClass(theClass);
+            aClass.setStaticMetaClassField (null);
+            aClass.setMetaClassForClass(null, true);
+        }
+        finally {
+            info.unlock();
+        }
     }
 
     /**
@@ -330,12 +335,20 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     public synchronized void setMetaClass(Class theClass, MetaClass theMetaClass) {
         version = new Integer (version.intValue()+1);
 
-        constantMetaClassCount++;
-        constantMetaClasses.put(theClass, theMetaClass);
+        final ClassInfo info = ClassInfo.getClassInfo(theClass);
 
-        final CachedClass aClass = ReflectionCache.getCachedClass(theClass);
-        aClass.setStaticMetaClassField (theMetaClass);
-        aClass.setMetaClassForClass(theMetaClass, true);
+        info.lock();
+        try {
+            info.setStrongMetaClass(theMetaClass);
+            info.setWeakMetaClass(null);
+
+            final CachedClass aClass = info.getCachedClass(theClass);
+            aClass.setStaticMetaClassField (theMetaClass);
+            aClass.setMetaClassForClass(theMetaClass, true);
+        }
+        finally {
+            info.unlock();
+        }
     }
 
     public boolean useAccessible() {

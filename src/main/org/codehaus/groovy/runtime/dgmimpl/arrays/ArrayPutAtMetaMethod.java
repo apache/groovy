@@ -1,4 +1,4 @@
-package org.codehaus.groovy.runtime.dgmimpl;
+package org.codehaus.groovy.runtime.dgmimpl.arrays;
 
 /**
  * Created by IntelliJ IDEA.

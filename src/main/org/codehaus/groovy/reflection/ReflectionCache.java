@@ -15,12 +15,8 @@
  */
 package org.codehaus.groovy.reflection;
 
-import java.lang.ref.SoftReference;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.WeakHashMap;
 
 public class ReflectionCache {
     private static Map primitiveTypesMap = new HashMap();
@@ -39,40 +35,6 @@ public class ReflectionCache {
     public static Class autoboxType(Class type) {
         final Class res = (Class) primitiveTypesMap.get(type);
         return res == null ? type : res;
-/*
-    final String name = type.getName();
-    switch (name.charAt(0)) {
-       case 'b':
-           if ("boolean".equals(name))
-             return Boolean.class;
-           else
-             if ("byte".equals(name))
-               return Byte.class;
-             else
-               return null;
-
-       case 'c':
-         return "char".equals(name) ? Character.class : null;
-
-       case 'd':
-          return "double".equals(name) ? Double.class : null;
-
-      case 'f':
-        return "float".equals(name) ? Float.class : null;
-
-      case 'i':
-        return "int".equals(name) ? Integer.class : null;
-
-      case 'l':
-        return "long".equals(name) ? Long.class : null;
-
-      case 's':
-        return "short".equals(name) ? Short.class : null;
-
-       default:
-         return null;
-    }
-*/
     }
 
     static TripleKeyHashMap mopNames = new TripleKeyHashMap();
@@ -85,15 +47,11 @@ public class ReflectionCache {
         return (String) mopNameEntry.value;
     }
 
-    static final Map /*<Class,SoftReference<CachedClass>>*/ CACHED_CLASS_MAP = new WeakHashMap();
-
     static WeakDoubleKeyHashMap assignableMap = new WeakDoubleKeyHashMap();
 
-    private static final CachedClass STRING_CLASS = new CachedClass.StringCachedClass();
+    static final CachedClass STRING_CLASS = new CachedClass.StringCachedClass();
 
     public static boolean isArray(Class klazz) {
-//        CachedClass cachedClass = getCachedClass(klazz);
-//        return cachedClass.isArray;
       return klazz.getName().charAt(0) == '[';
     }
 
@@ -152,68 +110,8 @@ public class ReflectionCache {
 
     public static CachedClass getCachedClass(Class klazz) {
         if (klazz == null)
-            return null;
-
-        if (klazz == Object.class)
-            return OBJECT_CLASS;
-
-        if (klazz == String.class)
-            return STRING_CLASS;
-
-        CachedClass cachedClass;
-        synchronized (CACHED_CLASS_MAP) {
-            SoftReference ref = (SoftReference) CACHED_CLASS_MAP.get(klazz);
-            if (ref == null || (cachedClass = (CachedClass) ref.get()) == null) {
-                if (Number.class.isAssignableFrom(klazz) || klazz.isPrimitive()) {
-                    if (klazz == Number.class)
-                      cachedClass = new CachedClass.NumberCachedClass(klazz);
-                    else
-                        if (klazz == Integer.class || klazz == Integer.TYPE)
-                          cachedClass = new CachedClass.IntegerCachedClass(klazz);
-                        else
-                          if (klazz == Double.class || klazz == Double.TYPE )
-                            cachedClass = new CachedClass.DoubleCachedClass(klazz);
-                          else
-                              if (klazz == BigDecimal.class )
-                                cachedClass = new CachedClass.BigDecimalCachedClass(klazz);
-                              else
-                                  if (klazz == Long.class || klazz == Long.TYPE)
-                                    cachedClass = new CachedClass.LongCachedClass(klazz);
-                                  else
-                                      if (klazz == Float.class || klazz == Float.TYPE)
-                                        cachedClass = new CachedClass.FloatCachedClass(klazz);
-                                      else
-                                          if (klazz == Short.class || klazz == Short.TYPE)
-                                            cachedClass = new CachedClass.ShortCachedClass(klazz);
-                                          else
-                                              if (klazz == Boolean.TYPE)
-                                                cachedClass = new CachedClass.BooleanCachedClass(klazz);
-                                              else
-                                                  if (klazz == Character.TYPE)
-                                                    cachedClass = new CachedClass.CharacterCachedClass(klazz);
-                                                  else
-                                                      if (klazz == BigInteger.class)
-                                                        cachedClass = new CachedClass.BigIntegerCachedClass(klazz);
-                                                      else
-                                                        if (klazz == Byte.class)
-                                                          cachedClass = new CachedClass.ByteCachedClass(klazz);
-                                                        else
-                                                          cachedClass = new CachedClass(klazz);
-                }
-                else
-                    if (klazz.getName().charAt(0) == '[')
-                      cachedClass = new CachedClass.ArrayCachedClass (klazz);
-                    else
-                        if (klazz == Boolean.class)
-                          cachedClass = new CachedClass.BooleanCachedClass(klazz);
-                        else
-                            if (klazz == Character.class)
-                              cachedClass = new CachedClass.CharacterCachedClass(klazz);
-                            else
-                              cachedClass = new CachedClass(klazz);
-                CACHED_CLASS_MAP.put(klazz, new SoftReference(cachedClass));
-            }
-        }
-        return cachedClass;
+          return null;
+        
+        return ClassInfo.getClassInfo(klazz).getCachedClass (klazz);
     }
 }

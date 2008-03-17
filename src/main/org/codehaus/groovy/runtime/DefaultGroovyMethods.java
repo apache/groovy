@@ -17,7 +17,11 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.*;
 import groovy.util.*;
-import org.codehaus.groovy.runtime.dgmimpl.*;
+import org.codehaus.groovy.runtime.dgmimpl.NumberNumberDiv;
+import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMinus;
+import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMultiply;
+import org.codehaus.groovy.runtime.dgmimpl.NumberNumberPlus;
+import org.codehaus.groovy.runtime.dgmimpl.arrays.*;
 import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
@@ -76,22 +80,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             NumberNumberDiv.class,
             ObjectArrayGetAtMetaMethod.class,
             ObjectArrayPutAtMetaMethod.class,
-            ArrayOperations.BooleanArrayGetAtMetaMethod.class,
-            ArrayOperations.BooleanArrayPutAtMetaMethod.class,
-            ArrayOperations.ByteArrayGetAtMetaMethod.class,
-            ArrayOperations.ByteArrayPutAtMetaMethod.class,
-            ArrayOperations.CharacterArrayGetAtMetaMethod.class,
-            ArrayOperations.CharacterArrayPutAtMetaMethod.class,
-            ArrayOperations.ShortArrayGetAtMetaMethod.class,
-            ArrayOperations.ShortArrayPutAtMetaMethod.class,
-            ArrayOperations.IntegerArrayGetAtMetaMethod.class,
-            ArrayOperations.IntegerArrayPutAtMetaMethod.class,
-            ArrayOperations.LongArrayGetAtMetaMethod.class,
-            ArrayOperations.LongArrayPutAtMetaMethod.class,
-            ArrayOperations.FloatArrayGetAtMetaMethod.class,
-            ArrayOperations.FloatArrayPutAtMetaMethod.class,
-            ArrayOperations.DoubleArrayGetAtMetaMethod.class,
-            ArrayOperations.DoubleArrayPutAtMetaMethod.class,
+            BooleanArrayGetAtMetaMethod.class,
+            BooleanArrayPutAtMetaMethod.class,
+            ByteArrayGetAtMetaMethod.class,
+            ByteArrayPutAtMetaMethod.class,
+            CharacterArrayGetAtMetaMethod.class,
+            CharacterArrayPutAtMetaMethod.class,
+            ShortArrayGetAtMetaMethod.class,
+            ShortArrayPutAtMetaMethod.class,
+            IntegerArrayGetAtMetaMethod.class,
+            IntegerArrayPutAtMetaMethod.class,
+            LongArrayGetAtMetaMethod.class,
+            LongArrayPutAtMetaMethod.class,
+            FloatArrayGetAtMetaMethod.class,
+            FloatArrayPutAtMetaMethod.class,
+            DoubleArrayGetAtMetaMethod.class,
+            DoubleArrayPutAtMetaMethod.class,
     };
 
     /**

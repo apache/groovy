@@ -1,4 +1,4 @@
-package org.codehaus.groovy.runtime.dgmimpl;
+package org.codehaus.groovy.runtime.dgmimpl.arrays;
 
 public abstract class ArrayGetAtMetaMethod extends ArrayMetaMethod {
     protected ArrayGetAtMetaMethod() {

@@ -21,7 +21,7 @@ class WeakMapTest extends GroovyTestCase{
            ReflectionCache.isAssignableFrom s.class, s.class.superclass
            if (i % 10 == 0) {
                System.gc ()
-             println "${i} ${ReflectionCache.assignableMap.size()} ${ReflectionCache.CACHED_CLASS_MAP.size()}"
+               println "${i} ${ReflectionCache.assignableMap.size()} ${ClassInfo.size()} ${ClassInfo.fullSize()}"
            }
 
            shell.classLoader.clearCache()
@@ -29,6 +29,6 @@ class WeakMapTest extends GroovyTestCase{
            GroovySystem.metaClassRegistry.removeMetaClass s.class
        }
 
-       println "${SIZE} ${ReflectionCache.assignableMap.size()} ${ReflectionCache.CACHED_CLASS_MAP.size()}"
+       println "${SIZE} ${ReflectionCache.assignableMap.size()} ${ClassInfo.size()}"
    }
 }
