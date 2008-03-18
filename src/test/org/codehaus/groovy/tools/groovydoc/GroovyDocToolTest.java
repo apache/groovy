@@ -173,4 +173,11 @@ public class GroovyDocToolTest extends GroovyTestCase {
         String abstractButtonPropertiesDoc = output.getText(MOCK_DIR + "/groovy/swing/binding/AbstractButtonProperties.html");
         assertTrue(abstractButtonPropertiesDoc.indexOf("static") > 0);
     }
+    public void testAnonymousInnerClassMethodsNotIncluded() throws Exception {
+        xmlTool.add("groovy/swing/binding/AbstractButtonProperties.java");
+        MockOutputTool output = new MockOutputTool();
+        xmlTool.renderToOutput(output, MOCK_DIR);
+        String abstractButtonPropertiesDoc = output.getText(MOCK_DIR + "/groovy/swing/binding/AbstractButtonProperties.html");
+        assertTrue(abstractButtonPropertiesDoc.indexOf("createBinding") < 0);
+    }
 }

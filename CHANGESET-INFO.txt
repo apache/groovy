@@ -60,5 +60,6 @@ change sets from trunk NOT in 1.5.x:
 * 11060: extend test to include borderlayout
 * 11063, 11064: build improvement: make DocGenerator handle inner classes
 * 11070: javadoc only - remove warning and tidy up wording
+* 11116: Some bits of performance
 
-Last change set applied to 1.5.x: 11103
+Last change set applied to 1.5.x: 11117
