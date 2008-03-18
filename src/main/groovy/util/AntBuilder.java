@@ -29,8 +29,11 @@ import org.xml.sax.helpers.AttributesImpl;
 
 import java.io.InputStream;
 import java.util.Collections;
+import java.util.Enumeration;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.Vector;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -38,6 +41,7 @@ import java.util.logging.Logger;
  * Allows Ant tasks to be used with GroovyMarkup 
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>, changes by Dierk Koenig (dk)
+ * @author Marc Guillemot
  * @version $Revision$
  */
 public class AntBuilder extends BuilderSupport {
@@ -48,7 +52,9 @@ public class AntBuilder extends BuilderSupport {
     private Project project;
     private final AntXMLContext antXmlContext;
     private final ProjectHelper2.ElementHandler antElementHandler = new ProjectHelper2.ElementHandler();
+    private final ProjectHelper2.TargetHandler antTargetHandler = new ProjectHelper2.TargetHandler();
     private final Target collectorTarget;
+    private final Target implicitTarget;
     private Object lastCompletedNode;
 
 
@@ -71,7 +77,13 @@ public class AntBuilder extends BuilderSupport {
         collectorTarget.setProject(project);
         antXmlContext.setCurrentTarget(collectorTarget);
         antXmlContext.setLocator(new AntBuilderLocator());
+        antXmlContext.setCurrentTargets(new HashMap());
         
+        implicitTarget = new Target();
+        implicitTarget.setProject(project);
+        implicitTarget.setName("");
+        antXmlContext.setImplicitTarget(implicitTarget);
+
         // FileScanner is a Groovy hack (utility?)
         project.addDataTypeDefinition("fileScanner", FileScanner.class);
     }
@@ -105,8 +117,13 @@ public class AntBuilder extends BuilderSupport {
      * @return Factory method to create new Project instances
      */
     protected static Project createProject() {
-        Project project = new Project();
-        BuildLogger logger = new NoBannerLogger();
+        final Project project = new Project();
+
+        final ProjectHelper helper = ProjectHelper.getProjectHelper();
+        project.addReference(ProjectHelper.PROJECTHELPER_REFERENCE, helper);
+        helper.getImportStack().addElement("AntBuilder"); // import checks that stack is not empty 
+
+        final BuildLogger logger = new NoBannerLogger();
 
         logger.setMessageOutputLevel(org.apache.tools.ant.Project.MSG_INFO);
         logger.setOutputPrintStream(System.out);
@@ -150,7 +167,7 @@ public class AntBuilder extends BuilderSupport {
     	antElementHandler.onEndElement(null, null, antXmlContext);
 
     	lastCompletedNode = node;
-        if (parent != null) {
+        if (parent != null && !(parent instanceof Target)) {
             log.finest("parent is not null: no perform on nodeCompleted");
             return; // parent will care about when children perform
         }
@@ -168,6 +185,7 @@ public class AntBuilder extends BuilderSupport {
             lastCompletedNode = task;
             // UnknownElement may wrap everything: task, path, ...
             if (task instanceof Task) {
+            	final String taskName = ((Task) task).getTaskName();
                 // save original streams
                 InputStream savedIn = System.in;
                 InputStream savedProjectInputStream = project.getDefaultInputStream();
@@ -176,6 +194,7 @@ public class AntBuilder extends BuilderSupport {
                     project.setDefaultInputStream(savedIn);
                     System.setIn(new DemuxInputStream(project));
                 }
+                
                 try {
                     ((Task) task).perform();
                 } finally {
@@ -183,7 +202,16 @@ public class AntBuilder extends BuilderSupport {
                     project.setDefaultInputStream(savedProjectInputStream);
                     System.setIn(savedIn);
                 }
+
+                // restore dummy collector target
+            	if ("import".equals(taskName)) {
+            		antXmlContext.setCurrentTarget(collectorTarget);
+            	}
             }
+        }
+        else if (node instanceof Target) {
+        	// restore dummy collector target
+        	antXmlContext.setCurrentTarget(collectorTarget);
         }
         else {
             final RuntimeConfigurable r = (RuntimeConfigurable) node;
@@ -226,18 +254,27 @@ public class AntBuilder extends BuilderSupport {
 
     protected Object createNode(final Object name, final Map attributes) {
 
+        final Attributes attrs = buildAttributes(attributes);
         String tagName = name.toString();
         String ns = "";
 
-        if(name instanceof QName) {
+        if (name instanceof QName) {
             QName q = (QName)name;
             tagName = q.getLocalPart();
             ns = q.getNamespaceURI();
         }
 
+        // import can be used only as top level element
+    	if ("import".equals(name)) {
+    		antXmlContext.setCurrentTarget(implicitTarget);
+    	}
+    	else if ("target".equals(name)) {
+            return onStartTarget(attrs, tagName, ns);
+    	}
+
         try
 		{
-			antElementHandler.onStartElement(ns, tagName, tagName, buildAttributes(attributes), antXmlContext);
+			antElementHandler.onStartElement(ns, tagName, tagName, attrs, antXmlContext);
 		}
 		catch (final SAXParseException e)
 		{
@@ -247,6 +284,32 @@ public class AntBuilder extends BuilderSupport {
 		final RuntimeConfigurable wrapper = (RuntimeConfigurable) antXmlContext.getWrapperStack().lastElement();
     	return wrapper.getProxy();
     }
+
+	private Target onStartTarget(final Attributes attrs, String tagName, String ns) {
+		final Target target = new Target();
+		target.setProject(project);
+		target.setLocation(new Location(antXmlContext.getLocator()));
+		try {
+			antTargetHandler.onStartElement(ns, tagName, tagName, attrs, antXmlContext);
+			final Target newTarget = (Target) getProject().getTargets().get(attrs.getValue("name"));
+
+			// execute dependencies (if any)
+			final Vector targets = new Vector();
+			for (final Enumeration deps=newTarget.getDependencies(); deps.hasMoreElements();)
+			{
+				final String targetName = (String) deps.nextElement();
+				targets.add(project.getTargets().get(targetName));
+			}
+			getProject().executeSortedTargets(targets);
+			
+			antXmlContext.setCurrentTarget(newTarget);
+			return newTarget;
+		} 
+		catch (final SAXParseException e) {
+		    log.log(Level.SEVERE, "Caught: " + e, e);
+		}
+		return null;
+	}
 
     protected void setText(Object task, String text) {
     	final char[] characters = text.toCharArray();
