@@ -8636,12 +8636,37 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Creates a buffered input stream for this URL.
      *
      * @param url a URL
-     * @return a BufferedInputStream of the URL
+     * @return a BufferedInputStream for the URL
      * @throws MalformedURLException is thrown if the URL is not well formed
      * @throws IOException if an I/O error occurs while creating the input stream
      */
     public static BufferedInputStream newInputStream(URL url) throws MalformedURLException, IOException {
         return new BufferedInputStream(url.openConnection().getInputStream());
+    }
+
+    /**
+     * Creates a buffered reader for this URL.
+     *
+     * @param url a URL
+     * @return a BufferedReader for the URL
+     * @throws MalformedURLException is thrown if the URL is not well formed
+     * @throws IOException if an I/O error occurs while creating the input stream
+     */
+    public static BufferedReader newReader(URL url) throws MalformedURLException, IOException {
+        return newReader(url.openConnection().getInputStream());
+    }
+
+    /**
+     * Creates a buffered reader for this URL using the given encoding.
+     *
+     * @param url a URL
+     * @param charset opens the stream with a specified charset
+     * @return a BufferedReader for the URL
+     * @throws MalformedURLException is thrown if the URL is not well formed
+     * @throws IOException if an I/O error occurs while creating the input stream
+     */
+    public static BufferedReader newReader(URL url, String charset) throws MalformedURLException, IOException {
+        return new BufferedReader(new InputStreamReader(url.openConnection().getInputStream(), charset));
     }
 
     /**
