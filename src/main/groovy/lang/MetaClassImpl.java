@@ -39,7 +39,6 @@ import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.*;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -731,9 +730,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (object == null) {
             throw new NullPointerException("Cannot invoke method: " + methodName + " on null object");
         }
-        if (LOG.isLoggable(Level.FINER)) {
-            MetaClassHelper.logMethodCall(object, methodName, originalArguments);
-        }
+
         final Object[] arguments = originalArguments == null ? EMPTY_ARGUMENTS : originalArguments;
 //        final Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
 //
@@ -1090,9 +1087,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     public Object invokeStaticMethod(Object object, String methodName, Object[] arguments) {
         checkInitalised();
-        if (LOG.isLoggable(Level.FINER)) {
-            MetaClassHelper.logMethodCall(object, methodName, arguments);
-        }
 
         final Class sender = object instanceof Class ? (Class) object : object.getClass();
         if (sender != theClass) {
