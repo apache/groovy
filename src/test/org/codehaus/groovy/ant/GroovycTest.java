@@ -44,7 +44,7 @@ public class GroovycTest extends GroovyTestCase {
     ProjectHelper.getProjectHelper ( ).parse ( project , antFile ) ;
     project.executeTarget ( "clean" ) ;
     String altJavaHome = System.getProperty("java.home");
-    if (altJavaHome.contains("jre")) {
+    if (altJavaHome.lastIndexOf("jre") >= 0) {
         altJavaHome = altJavaHome.substring(0, altJavaHome.lastIndexOf("jre"));
     } else {
         altJavaHome = altJavaHome + "/jre";
