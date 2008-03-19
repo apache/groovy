@@ -43,6 +43,13 @@ public class GroovycTest extends GroovyTestCase {
     project.init ( ) ;
     ProjectHelper.getProjectHelper ( ).parse ( project , antFile ) ;
     project.executeTarget ( "clean" ) ;
+    String altJavaHome = System.getProperty("java.home");
+    if (altJavaHome.contains("jre")) {
+        altJavaHome = altJavaHome.substring(0, altJavaHome.lastIndexOf("jre"));
+    } else {
+        altJavaHome = altJavaHome + "/jre";
+    }
+    project.setProperty("alt.java.home", altJavaHome);
   }
   private void ensureNotPresent ( final String classname ) {
     if ( ! ( new File ( classDirectory + "GroovycTest.class" ) ).exists ( ) ) {
@@ -151,5 +158,29 @@ public class GroovycTest extends GroovyTestCase {
     project.executeTarget ( "GroovycTest1_Joint_ForkGroovy_WithBothClasspath" ) ;
     ensureResultOK ( "GroovycTest1" ) ;
   }
+
+
+    public void testGroovycTest1_ForkGroovy_NoClasspath_WithJavaHome ( ) {
+      ensureNotPresent ( "GroovycTest1" ) ;
+      project.executeTarget ( "GroovycTest1_ForkGroovy_NoClasspath_WithJavaHome" ) ;
+      ensureResultOK ( "GroovycTest1" ) ;
+    }
+    public void testGroovycTest1_ForkGroovy_WithGroovyClasspath_WithJavaHome ( ) {
+      ensureNotPresent ( "GroovycTest1" ) ;
+      project.executeTarget ( "GroovycTest1_ForkGroovy_WithGroovyClasspath_WithJavaHome" ) ;
+      ensureResultOK ( "GroovycTest1" ) ;
+
+    }
+    public void testGroovycTest1_ForkGroovy_WithJavaClasspath_WithJavaHome ( ) {
+      ensureNotPresent ( "GroovycTest1" ) ;
+      project.executeTarget ( "GroovycTest1_ForkGroovy_WithJavaClasspath_WithJavaHome" ) ;
+      ensureResultOK ( "GroovycTest1" ) ;
+    }
+    public void testGroovycTest1_ForkGroovy_WithBothClasspath_WithJavaHome ( ) {
+      ensureNotPresent ( "GroovycTest1" ) ;
+      project.executeTarget ( "GroovycTest1_ForkGroovy_WithBothClasspath_WithJavaHome" ) ;
+      ensureResultOK ( "GroovycTest1" ) ;
+    }
+
 
 }

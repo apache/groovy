@@ -82,6 +82,7 @@ public class Groovyc extends MatchingTask {
     private boolean includeAntRuntime = true;
     private boolean includeJavaRuntime = false;
     private boolean fork = false;
+    private File forkJDK;
     private String memoryInitialSize;
     private String memoryMaximumSize;
 
@@ -431,6 +432,13 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
+     * The JDK Home to use when forked.
+     * @param home the java.home value to use, default is the current JDK's home
+     */
+    public void setJavaHome(File home) {
+        forkJDK = home;
+    }
+    /**
      * The property to set on compliation success.
      * This property will not be set if the compilation
      * fails, or if there are no files to compile.
@@ -675,6 +683,12 @@ public class Groovyc extends MatchingTask {
             ArrayList commandLineList = new ArrayList();
 
             if (fork) {
+                String javaHome;
+                if (forkJDK != null) {
+                    javaHome = forkJDK.getPath();
+                } else {
+                    javaHome = System.getProperty("java.home");
+                }
                 if (includeAntRuntime) {
                     classpath.addExisting((new Path(getProject())).concatSystemClasspath("last"));
                 }
@@ -682,7 +696,7 @@ public class Groovyc extends MatchingTask {
                     classpath.addJavaRuntime();
                 }
 
-                commandLineList.add(System.getProperty("java.home") + separator + "bin" + separator + "java");
+                commandLineList.add(javaHome + separator + "bin" + separator + "java");
                 commandLineList.add("-classpath");
                 commandLineList.add(classpath.toString());
                 if ((memoryInitialSize != null) && !memoryInitialSize.equals("")) {
