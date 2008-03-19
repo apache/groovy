@@ -520,9 +520,6 @@ public class MetaClassHelper {
 
     public static Object doConstructorInvoke(CachedConstructor constructor, Object[] argumentArray) {
         final Constructor constr = constructor.cachedConstructor;
-        if (LOG.isLoggable(Level.FINER)) {
-            logMethodCall(constr.getDeclaringClass(), constr.getName(), argumentArray);
-        }
         argumentArray = constructor.coerceArgumentsToClasses(argumentArray);
         try {
             return constr.newInstance(argumentArray);
