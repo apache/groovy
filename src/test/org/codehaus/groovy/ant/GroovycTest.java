@@ -45,11 +45,19 @@ public class GroovycTest extends GroovyTestCase {
     project.executeTarget ( "clean" ) ;
     String altJavaHome = System.getProperty("java.home");
     if (altJavaHome.lastIndexOf("jre") >= 0) {
-        altJavaHome = altJavaHome.substring(0, altJavaHome.lastIndexOf("jre"));
+      altJavaHome = altJavaHome.substring(0, altJavaHome.lastIndexOf("jre"));
     } else {
-        altJavaHome = altJavaHome + "/jre";
+      altJavaHome = altJavaHome + File.separator + "jre";
     }
-    project.setProperty("alt.java.home", altJavaHome);
+    try {
+      File altFile = new File(altJavaHome);
+      if (altFile.exists()) {
+        project.setProperty("alt.java.home", altJavaHome);
+      }
+    } catch (Exception e) {
+      // could be security, io, etc.  Ignore it.  
+      // End result is as if .exists() returned null
+    }
   }
   private void ensureNotPresent ( final String classname ) {
     if ( ! ( new File ( classDirectory + "GroovycTest.class" ) ).exists ( ) ) {
@@ -161,25 +169,34 @@ public class GroovycTest extends GroovyTestCase {
 
 
     public void testGroovycTest1_ForkGroovy_NoClasspath_WithJavaHome ( ) {
-      ensureNotPresent ( "GroovycTest1" ) ;
-      project.executeTarget ( "GroovycTest1_ForkGroovy_NoClasspath_WithJavaHome" ) ;
-      ensureResultOK ( "GroovycTest1" ) ;
+      if (project.getProperty("alt.java.home") != null) {
+        ensureNotPresent ( "GroovycTest1" ) ;
+        project.executeTarget ( "GroovycTest1_ForkGroovy_NoClasspath_WithJavaHome" ) ;
+        ensureResultOK ( "GroovycTest1" ) ;
+      } else {
+        System.out.println("Forked Java tests skiped, not a sun JDK layout");
+      }
     }
     public void testGroovycTest1_ForkGroovy_WithGroovyClasspath_WithJavaHome ( ) {
-      ensureNotPresent ( "GroovycTest1" ) ;
-      project.executeTarget ( "GroovycTest1_ForkGroovy_WithGroovyClasspath_WithJavaHome" ) ;
-      ensureResultOK ( "GroovycTest1" ) ;
-
+      if (project.getProperty("alt.java.home") != null) {
+        ensureNotPresent ( "GroovycTest1" ) ;
+        project.executeTarget ( "GroovycTest1_ForkGroovy_WithGroovyClasspath_WithJavaHome" ) ;
+        ensureResultOK ( "GroovycTest1" ) ;
+      }
     }
     public void testGroovycTest1_ForkGroovy_WithJavaClasspath_WithJavaHome ( ) {
-      ensureNotPresent ( "GroovycTest1" ) ;
-      project.executeTarget ( "GroovycTest1_ForkGroovy_WithJavaClasspath_WithJavaHome" ) ;
-      ensureResultOK ( "GroovycTest1" ) ;
+      if (project.getProperty("alt.java.home") != null) {
+        ensureNotPresent ( "GroovycTest1" ) ;
+        project.executeTarget ( "GroovycTest1_ForkGroovy_WithJavaClasspath_WithJavaHome" ) ;
+        ensureResultOK ( "GroovycTest1" ) ;
+      }
     }
     public void testGroovycTest1_ForkGroovy_WithBothClasspath_WithJavaHome ( ) {
-      ensureNotPresent ( "GroovycTest1" ) ;
-      project.executeTarget ( "GroovycTest1_ForkGroovy_WithBothClasspath_WithJavaHome" ) ;
-      ensureResultOK ( "GroovycTest1" ) ;
+      if (project.getProperty("alt.java.home") != null) {
+        ensureNotPresent ( "GroovycTest1" ) ;
+        project.executeTarget ( "GroovycTest1_ForkGroovy_WithBothClasspath_WithJavaHome" ) ;
+        ensureResultOK ( "GroovycTest1" ) ;
+      }
     }
 
 
