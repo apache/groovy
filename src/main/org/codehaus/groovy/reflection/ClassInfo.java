@@ -16,10 +16,8 @@ public class ClassInfo extends ReentrantLock {
     private MetaClass strongMetaClass;
     SoftReference<CachedClass> cachedClassRef;
     SoftReference<MetaClass> weakMetaClass;
-    private final MultiClassInfoRecord mcir;
 
     public ClassInfo(Class klazz, MultiClassInfoRecord mcir) {
-        this.mcir = mcir;
         cachedClassRef = new SoftRef<CachedClass> (createCachedClass(klazz), mcir);
     }
 
@@ -151,6 +149,7 @@ public class ClassInfo extends ReentrantLock {
 
     public void setStrongMetaClass(MetaClass strongMetaClass) {
         this.strongMetaClass = strongMetaClass;
+        weakMetaClass = null;
     }
 
     public MetaClass getStrongMetaClass() {
@@ -161,7 +160,15 @@ public class ClassInfo extends ReentrantLock {
         return weakMetaClass == null ? null : weakMetaClass.get();
     }
 
+    
+    public MetaClass getMetaClassForClass() {
+        return strongMetaClass != null ? strongMetaClass : weakMetaClass == null ? null : weakMetaClass.get();
+    }
+
+
+
     public void setWeakMetaClass(MetaClass answer) {
+        strongMetaClass = null;
         if (answer == null) {
            weakMetaClass = null;
         }else {
@@ -274,6 +281,7 @@ public class ClassInfo extends ReentrantLock {
                 final ClassInfo res = new ClassInfo(klazz, this);
                 resArr [0] = res;
                 System.arraycopy(d, 0, resArr, 1, d.length);
+                this.data = resArr;
                 return res;
             }
             finally {

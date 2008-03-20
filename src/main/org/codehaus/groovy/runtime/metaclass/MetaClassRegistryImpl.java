@@ -25,6 +25,7 @@ import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A registry of MetaClass instances which caches introspection &
@@ -45,7 +46,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     private FastArray instanceMethods = new FastArray();
     private FastArray staticMethods = new FastArray();
 
-    private volatile Integer version = new Integer(0);
+    private AtomicInteger version = new AtomicInteger();
 
     /*
        We keep references to meta classes already known to this thread.
@@ -104,7 +105,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         private MetaClass getFromGlobal(Class theClass) {
             MetaClass answer = getGlobalMetaClass(theClass);
             put(theClass, answer);
-            version = MetaClassRegistryImpl.this.version.intValue();
+            version = MetaClassRegistryImpl.this.version.get();
             return answer;
         }
 
@@ -267,21 +268,13 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     private MetaClass getGlobalMetaClass (Class theClass) {
         final ClassInfo info = ClassInfo.getClassInfo(theClass);
 
-        MetaClass answer = info.getStrongMetaClass();
-        if (answer != null)
-          return answer;
-
-        answer = info.getWeakMetaClass();
+        MetaClass answer = info.getMetaClassForClass();
         if (answer != null)
           return answer;
 
         info.lock();
         try {
-            answer = info.getStrongMetaClass();
-            if (answer != null)
-              return answer;
-
-            answer = info.getWeakMetaClass();
+            answer = info.getMetaClassForClass();
             if (answer != null)
               return answer;
 
@@ -295,31 +288,30 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             }
             final CachedClass aClass = info.getCachedClass(theClass);
             aClass.setStaticMetaClassField (answer);
-            aClass.setMetaClassForClass(answer, true);
+            aClass.setMetaClassForClass(answer);
             return answer;
         }
         finally {
-            info.unlock();
+            info.unlock();                       
         }
     }
 
     public final MetaClass getMetaClass(Class theClass) {
-        return locallyKnown.getMetaClass(theClass);
+         return locallyKnown.getMetaClass(theClass);
     }
 
     public synchronized void removeMetaClass(Class theClass) {
-        version = new Integer (version.intValue()+1);
+        version.incrementAndGet();
 
         final ClassInfo info = ClassInfo.getClassInfo(theClass);
 
         info.lock();
         try {
             info.setStrongMetaClass(null);
-            info.setWeakMetaClass(null);
 
             final CachedClass aClass = info.getCachedClass(theClass);
             aClass.setStaticMetaClassField (null);
-            aClass.setMetaClassForClass(null, true);
+            aClass.setMetaClassForClass(null);
         }
         finally {
             info.unlock();
@@ -333,18 +325,17 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      * @param theMetaClass
      */
     public synchronized void setMetaClass(Class theClass, MetaClass theMetaClass) {
-        version = new Integer (version.intValue()+1);
+        version.incrementAndGet();
 
         final ClassInfo info = ClassInfo.getClassInfo(theClass);
 
         info.lock();
         try {
             info.setStrongMetaClass(theMetaClass);
-            info.setWeakMetaClass(null);
 
             final CachedClass aClass = info.getCachedClass(theClass);
             aClass.setStaticMetaClassField (theMetaClass);
-            aClass.setMetaClassForClass(theMetaClass, true);
+            aClass.setMetaClassForClass(theMetaClass);
         }
         finally {
             info.unlock();

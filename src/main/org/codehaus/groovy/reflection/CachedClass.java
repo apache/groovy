@@ -335,7 +335,7 @@ public class CachedClass {
         return metaClassForClass;
     }
 
-    public void setMetaClassForClass(MetaClass metaClassForClass, boolean isConst) {
+    public void setMetaClassForClass(MetaClass metaClassForClass) {
         this.metaClassForClass = metaClassForClass;
         setStaticMetaClassField(metaClassForClass);
     }
@@ -352,7 +352,7 @@ public class CachedClass {
         public static final Comparator INSTANCE = new CachedMethodComparatorByName();
 
         public int compare(Object o1, Object o2) {
-            return ((CachedMethod)o1).getName().compareTo(((CachedMethod)o2).getName());
+              return ((CachedMethod)o1).getName().compareTo(((CachedMethod)o2).getName());
         }
     }
 
@@ -360,7 +360,10 @@ public class CachedClass {
         public static final Comparator INSTANCE = new CachedMethodComparatorWithString();
 
         public int compare(Object o1, Object o2) {
-            return ((CachedMethod)o1).getName().compareTo((String)o2);
+            if (o1 instanceof CachedMethod)
+              return ((CachedMethod)o1).getName().compareTo((String)o2);
+            else
+              return ((String)o1).compareTo(((CachedMethod)o2).getName());
         }
     }
 

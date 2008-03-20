@@ -16,9 +16,9 @@
 package groovy.lang;
 
 import groovy.lang.MetaClassRegistry.MetaClassCreationHandle;
-import org.codehaus.groovy.runtime.metaclass.ConcurrentReaderHashMap;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * <p>A handle for the MetaClassRegistry that changes all classes loaded into the Grails VM
@@ -40,7 +40,7 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
 
     public static final ExpandoMetaClassCreationHandle instance = new ExpandoMetaClassCreationHandle();
 
-	private final Map modifiedExpandos = new ConcurrentReaderHashMap();
+	private final Map<Class,ExpandoMetaClass> modifiedExpandos = new ConcurrentHashMap<Class,ExpandoMetaClass>();
 
 
 	/* (non-Javadoc)
@@ -99,8 +99,10 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
      * @param emc The EMC
      */
     public void registerModifiedMetaClass(ExpandoMetaClass emc) {
-        modifiedExpandos.put(emc.getJavaClass(), emc);
-	}
+        final Class klazz = emc.getJavaClass();
+        modifiedExpandos.put(klazz, emc);
+        GroovySystem.getMetaClassRegistry().setMetaClass(klazz,emc);
+    }
 
 	public boolean hasModifiedMetaClass(ExpandoMetaClass emc) {
 		return modifiedExpandos.containsKey(emc.getJavaClass());
@@ -115,16 +117,21 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
     public static void enable() {
         final MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
         if (metaClassRegistry.getMetaClassCreationHandler() != instance) {
-           instance.modifiedExpandos.clear();
-           metaClassRegistry.setMetaClassCreationHandle(instance);
+            clearModifiedExpandos();
+            metaClassRegistry.setMetaClassCreationHandle(instance);
         }
     }
 
     public static void disable() {
         final MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
         if (metaClassRegistry.getMetaClassCreationHandler() == instance) {
-            instance.modifiedExpandos.clear();
+            clearModifiedExpandos();
             metaClassRegistry.setMetaClassCreationHandle(new MetaClassCreationHandle());
         }
+    }
+
+    private static void clearModifiedExpandos() {
+        final MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
+        instance.modifiedExpandos.clear();
     }
 }
