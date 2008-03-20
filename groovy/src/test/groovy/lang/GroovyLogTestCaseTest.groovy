@@ -22,12 +22,13 @@ class GroovyLogTestCaseTest extends GroovyLogTestCase {
         assertTrue result, result.contains('some log entry')
     }
 
-    void testCombinedUsageForMetaClass(){
-        def result = withLevel(Level.FINER, 'groovy.lang.MetaClass') {
-            stringLog(Level.FINER, 'methodCalls'){
-                'hi'.toString()
-            }
-        }
-        assertTrue result, result.contains('java.lang.String toString()')
-    }
+// src/main/groovy/lang/MetaClassImpl.java r11137 ait : Getting rid of logMethodCall
+//    void testCombinedUsageForMetaClass(){
+//        def result = withLevel(Level.FINER, 'groovy.lang.MetaClass') {
+//            stringLog(Level.FINER, 'methodCalls'){
+//                'hi'.toString()
+//            }
+//        }
+//        assertTrue result, result.contains('java.lang.String toString()')
+//    }
 }
