@@ -4176,12 +4176,36 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Create an array composed of the elements of the first array minus the
+     * elements of the given collection.
+     *
+     * @param self     an object array
+     * @param removeMe a Collection of elements to remove
+     * @return an array with the supplied elements removed
+     */
+    public static Object[] minus(Object[] self, Collection removeMe) {
+        return minus(toList(self), removeMe).toArray();
+    }
+
+    /**
+     * Create an array composed of the elements of the first array minus the
+     * elements of the given array.
+     *
+     * @param self     an object array
+     * @param removeMe an array of elements to remove
+     * @return an array with the supplied elements removed
+     */
+    public static Object[] minus(Object[] self, Object[] removeMe) {
+        return minus(toList(self), toList(removeMe)).toArray();
+    }
+
+    /**
      * Create a List composed of the elements of the first list minus the
      * elements of the given collection.
      *
      * @param self     a List
      * @param removeMe a Collection of elements to remove
-     * @return a List with the common elements removed
+     * @return a List with the supplied elements removed
      */
     public static List minus(List self, Collection removeMe) {
 
@@ -4267,6 +4291,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             if (numberComparator.compare(o, operand) != 0) ansList.add(o);
         }
         return ansList;
+    }
+
+    /**
+     * Create a new object array composed of the elements of the first array
+     * minus the operand.
+     *
+     * @param self    an object array
+     * @param operand an element to remove from the array
+     * @return a new array with the operand removed
+     */
+    public static Object[] minus(Object[] self, Object operand) {
+        return minus(toList(self), operand).toArray();
     }
 
     /**

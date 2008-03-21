@@ -81,4 +81,13 @@ class MinusTest extends GroovyTestCase {
 	    doTestMinusDupplicates('Mixed', a, b, c, d)
 	    doTestMinusWithNull('Mixed', a, b, c, d)
 	}
+
+    void testArrayMinus() {
+        def x = [1, 2, 3] as Object[]
+        def y = [1, 2] as Object[]
+        def z = [2, 3]
+        assert x - 2 == [1, 3] as Object[]
+        assert x - y == [3] as Object[]
+        assert x - z == [1] as Object[]
+    }
 }
