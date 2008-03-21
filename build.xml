@@ -92,7 +92,9 @@ $Date$
         </copy>
     </target>
 
-    <target name="-init" depends="-fetchDependencies">
+    <target name="-init" depends="-fetchDependencies"/>
+
+    <target name="-banner">
         <echo message="Java Runtime Environment version: ${java.version}"/>
         <echo message="Java Runtime Environment vendor: ${java.vendor}"/>
         <echo message="Ant version: ${ant.version}"/>
@@ -272,11 +274,8 @@ Not found: ${groovyJar14path}
         <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="groovyMainClasses"/>
     </target>
 
-    <target name="compileTest"
-            description="Compile the Java and Groovy code in the test source.">
-        <antcall inheritall="true" target="compileMain"/>
-        <antcall inheritall="true" target="compileTestOnly"/>
-    </target>
+    <target name="compileTest" depends="compileMain,compileTestOnly"
+            description="Compile the Java and Groovy code in the test source."/>
 
     <target name="-cleanTest">
         <delete dir="${testClassesDirectory}"/>
@@ -387,7 +386,7 @@ Not found: ${groovyJar14path}
     </target>
 
     <target name="test"
-            depends="-checkAntVersion,-initializeReports,compileTest,-coverageInstrument,-testInit,-testOne,-testAll,-reportTestFailed"
+            depends="-banner,-checkAntVersion,-initializeReports,compileTest,-coverageInstrument,-testInit,-testOne,-testAll,-reportTestFailed"
             description="Compile and test all the classes (or just one class if testCase property is defined)."/>
 
     <target name="testOnly"
@@ -860,7 +859,7 @@ org.junit;resolution:=optional" file="${stagingDirectory}/META-INF/MANIFEST.MF"/
         </copy>
     </target>
 
-    <target name="groovydoc" depends="-docInit,-includeGroovyDocTemplates,docGDK">
+    <target name="groovydoc" depends="-fetchDependencies,-docInit,-includeGroovyDocTemplates,docGDK">
         <path id="groovydocpath">
             <path path="${mainClassesDirectory}"/>
             <path refid="runtimePath"/>
@@ -889,7 +888,7 @@ org.junit;resolution:=optional" file="${stagingDirectory}/META-INF/MANIFEST.MF"/
         </groovydoc>
     </target>
 
-    <target name="docGDK" depends="-compileTools" description="Create the GDK documentation">
+    <target name="docGDK" depends="-fetchDependencies,-compileTools" description="Create the GDK documentation">
         <java classname="org.codehaus.groovy.tools.DocGenerator" fork="yes" failonerror="true">
             <classpath>
                 <pathelement path="${toolsClassesDirectory}"/>
