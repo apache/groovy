@@ -23,7 +23,7 @@ import gls.scope.CompilableTestSupport
  *
  * @author Jochen Theodorou
  */
-class Annotationest extends CompilableTestSupport {
+class AnnotationTest extends CompilableTestSupport {
 
   void testPrimitiveDefault() {
     // NOTE: for int anything else than a plain number will fail.
@@ -218,6 +218,27 @@ assert my.defaultClass() == Integer
 
 assert my.defaultEnum() == ElementType.TYPE
 assert my.defaultAnnotation() instanceof Target
+    """
+  }
+
+  void testSingletonArrayUsage() {
+    assertScript """
+import java.lang.annotation.*
+
+// a random annnotation type
+@Retention(RetentionPolicy.RUNTIME)
+@interface MyAnnotation {
+  String[] things()
+}
+
+@MyAnnotation(things = "x")
+class Foo {}
+
+Annotation[] annotations = Foo.class.annotations
+assert annotations.size() == 1
+MyAnnotation my = annotations[0]
+assert my.things().size() == 1
+assert my.things()[0] == "x"
     """
   }
 }

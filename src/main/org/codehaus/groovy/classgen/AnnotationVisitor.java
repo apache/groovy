@@ -56,7 +56,7 @@ public class AnnotationVisitor {
         this.reportClass = node.getClassNode();
 
         if(!isValidAnnotationClass(node.getClassNode())) {
-            addError("class "+node.getClassNode().getName()+" is no annotation");
+            addError("class " + node.getClassNode().getName() + " is not an annotation");
             return node;
         }
         
@@ -76,32 +76,37 @@ public class AnnotationVisitor {
 
     private ClassNode getAttributeType(AnnotationNode node, String attrName) {
         List methods = node.getClassNode().getMethods(attrName);
-        // if size is >1, then the method was overwriten or something, we ignore that
+        // if size is >1, then the method was overwritten or something, we ignore that
         // if it is an error, we have to test it at another place. But size==0 is
         // an error, because it means that no such attribute exists.
-        if (methods.size()==0) {
-            addError("'"+attrName+"'is not aprt of the annotation "+node.getClassNode(),node);
+        if (methods.size() == 0) {
+            addError("'" + attrName + "'is not part of the annotation " + node.getClassNode(), node);
             return ClassHelper.OBJECT_TYPE;
         }
         MethodNode method = (MethodNode) methods.get(0);
         return method.getReturnType();
     }
 
-    /**
-     * @param node
-     * @return
-     */
     private boolean isValidAnnotationClass(ClassNode node) {
         return node.implementsInterface("java.lang.annotation.Annotation");
     }
 
     protected void visitExpression(String attrName, Expression attrExp, ClassNode attrType) {
-        if(attrType.isArray()) {
+        if (attrType.isArray()) {
             // check needed as @Test(attr = {"elem"}) passes through the parser
-            if(attrExp instanceof ListExpression) {
+            if (attrExp instanceof ListExpression) {
+                ListExpression le = (ListExpression) attrExp;
                 visitListExpression(attrName, (ListExpression) attrExp, attrType.getComponentType());
-            } else {
+            } else if (attrExp instanceof ClosureExpression) {
                 addError("Annotation list attributes must use Groovy notation [el1, el2]", attrExp);
+            } else {
+                // treat like a singleton list as per Java
+                ListExpression listExp = new ListExpression();
+                listExp.addExpression(attrExp);
+                if (annotation != null) {
+                    annotation.setMember(attrName, listExp);
+                }
+                visitExpression(attrName, listExp, attrType);
             }
         } else if (ClassHelper.isPrimitiveType(attrType)) {
             visitConstantExpression(attrName, getConstantExpression(attrExp), ClassHelper.getWrapper(attrType));

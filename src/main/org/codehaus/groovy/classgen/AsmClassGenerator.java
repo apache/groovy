@@ -3371,7 +3371,7 @@ public class AsmClassGenerator extends ClassGenerator {
     protected ClassNode createClosureClass(ClosureExpression expression) {
         ClassNode outerClass = getOutermostClass();
         String name = outerClass.getName() + "$"
-                + context.getNextClosureInnerName(outerClass, classNode, methodNode); // br added a more infomative name
+                + context.getNextClosureInnerName(outerClass, classNode, methodNode); // add a more informative name
         boolean staticMethodOrInStaticClass = isStaticMethod() || classNode.isStaticClass();
 
         Parameter[] parameters = expression.getParameters();
