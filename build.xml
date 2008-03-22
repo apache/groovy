@@ -465,7 +465,6 @@ Not found: ${groovyJar14path}
         </junitreport>
     </target>
 
-    <!-- TODO: move this so that 'ant test' fails -->
     <target name="-reportTestFailed" depends="-coverageReport" if="testFailed">
         <fail message="Test failed, not processing further targets."/>
     </target>
