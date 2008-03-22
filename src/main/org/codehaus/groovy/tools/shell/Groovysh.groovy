@@ -402,7 +402,7 @@ class Groovysh
             throw new IllegalStateException("Result hook is not set")
         }
 
-        resultHook.call(result)
+        resultHook.call((Object)result)
 
         interp.context['_'] = result
 

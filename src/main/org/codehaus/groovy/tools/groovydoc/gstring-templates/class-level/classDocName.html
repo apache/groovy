@@ -79,7 +79,7 @@ ${classDoc.commentText()}
   <TR BGCOLOR="white" CLASS="TableRowColor">
     <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1" CLASS="ClassItemFont">
     <CODE>${method.isStatic()?"static&nbsp;":""}${method.returnTypeName()}</CODE></FONT></TD>
-    <TD><FONT CLASS="ClassItemFont"><CODE><B><a href="">${method.name()}</a></B>(<%= method.parameters().collect{ param -> "${param.typeName()} ${param.name()}" }.join(", ") %>)</CODE></FONT>
+    <TD><FONT CLASS="ClassItemFont"><CODE><B><a href="#${method.name()}()">${method.name()}</a></B>(<%= method.parameters().collect{ param -> "${param.typeName()} ${param.name()}" }.join(", ") %>)</CODE></FONT>
 
     <BR>
     <FONT CLASS="ClassItemFont">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${method.firstSentenceCommentText()}</FONT>
@@ -128,7 +128,7 @@ ${constructor.name()}</H3>
 </TR>
 </TABLE>
 <% for (method in classDoc.methods()) { %>
-<A NAME="${method.name()}"><!-- --></A><H3>
+<A NAME="${method.name()}()"><!-- --></A><H3>
 ${method.name()}</H3>
 <PRE>${method.isPublic()?"public ":""}${method.isStatic()?"static ":""}${method.returnTypeName()} <B>${method.name()}</B>(<%= method.parameters().collect{ param -> "${param.typeName()} ${param.name()}" }.join(", ") %>)</PRE>
 

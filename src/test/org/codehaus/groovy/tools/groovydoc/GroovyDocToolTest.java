@@ -126,7 +126,6 @@ public class GroovyDocToolTest extends GroovyTestCase {
         xmlTool.renderToOutput(output, MOCK_DIR);
 
         String defTabColDoc = output.getText(MOCK_DIR + "/groovy/model/DefaultTableColumn.html");
-        System.out.println(defTabColDoc);
 
         assertTrue(defTabColDoc.indexOf("Evaluates the value of a cell") > 0);
     }
@@ -179,5 +178,12 @@ public class GroovyDocToolTest extends GroovyTestCase {
         xmlTool.renderToOutput(output, MOCK_DIR);
         String abstractButtonPropertiesDoc = output.getText(MOCK_DIR + "/groovy/swing/binding/AbstractButtonProperties.html");
         assertTrue(abstractButtonPropertiesDoc.indexOf("createBinding") < 0);
+    }
+    public void testMultipleConstructorError() throws Exception {
+        xmlTool.add("groovy/sql/Sql.java");
+        MockOutputTool output = new MockOutputTool();
+        xmlTool.renderToOutput(output, MOCK_DIR);
+        String sqlDoc = output.getText(MOCK_DIR + "/groovy/sql/Sql.html");
+        assertTrue(sqlDoc.indexOf("<method modifiers=\"public static \" returns=\"InParameter\" name=\"VARBINARY\">") > 0); // VARBINARY() and other methods in Sql.java were assumed to be Constructors, make sure they aren't anymore...
     }
 }

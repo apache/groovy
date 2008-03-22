@@ -61,5 +61,9 @@ change sets from trunk NOT in 1.5.x:
 * 11063, 11064: build improvement: make DocGenerator handle inner classes
 * 11070: javadoc only - remove warning and tidy up wording
 * 11116: Some bits of performance
+* 11141: cehck for null context before checking for context proeprties
+* 11142: add javahome= to groovyc to allow groovyc to execute on different JVMs when forked
+* 11146: String.contains(String) is not a 1.4 method...
+* 11160: play nicer on OSX
 
-Last change set applied to 1.5.x: 11128
+Last change set applied to 1.5.x: 11174

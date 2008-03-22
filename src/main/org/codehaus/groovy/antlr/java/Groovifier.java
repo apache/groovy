@@ -22,11 +22,17 @@ import org.codehaus.groovy.antlr.treewalker.VisitorAdapter;
 
 public class Groovifier extends VisitorAdapter implements GroovyTokenTypes {
     private String[] tokenNames;
-    
-	public Groovifier(String[] tokenNames) {
+    private String currentClassName = "";
+
+    public Groovifier(String[] tokenNames) {
 		this.tokenNames = tokenNames;
 	}
-	
+
+    public void visitClassDef(GroovySourceAST t,int visit) {
+        if (visit == OPENING_VISIT) {
+        	currentClassName = t.childOfType(GroovyTokenTypes.IDENT).getText();
+        }
+    }
     public void visitDefault(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
             // only want to do this once per node...
@@ -40,7 +46,7 @@ public class Groovifier extends VisitorAdapter implements GroovyTokenTypes {
         	if (t.getType() == METHOD_DEF) {
         		String methodName = t.childOfType(IDENT).getText();
         		if (methodName != null && methodName.length() > 0) {
-        			if (Character.isUpperCase(methodName.charAt(0))) { // todo - replace naive uppercase check for constructors with check for current classname
+        			if (methodName.equals(currentClassName)) {
         				t.setType(CTOR_IDENT);
         			}
         		}

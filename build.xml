@@ -70,7 +70,9 @@ $Date$
         </antlr>
     </target>
 
-    <target name="-init" depends="-fetchDependencies">
+    <target name="-init" depends="-fetchDependencies"/>
+
+    <target name="-banner">
         <echo message="Java Runtime Environment version: ${java.version}"/>
         <echo message="Java Runtime Environment vendor: ${java.vendor}"/>
         <echo message="Ant version: ${ant.version}"/>
@@ -301,7 +303,7 @@ $Date$
     </target>
 
     <target name="test"
-            depends="-checkAntVersion,-initializeReports,compileTest,-coverageInstrument,-testInit,-testOne,-testAll"
+            depends="-banner,-checkAntVersion,-initializeReports,compileTest,-coverageInstrument,-testInit,-testOne,-testAll,-reportTestFailed"
             description="Compile and test all the classes (or just one class if testCase property is defined)."/>
 
     <target name="clean-test" depends="clean,test"
@@ -377,7 +379,7 @@ $Date$
         </junitreport>
     </target>
 
-    <target name="-reportTestFailed" depends="test,-coverageReport" if="testFailed">
+    <target name="-reportTestFailed" depends="-coverageReport" if="testFailed">
         <fail message="Test failed, not processing further targets."/>
     </target>
 
@@ -397,17 +399,17 @@ $Date$
     <target name="-makeManifest">
         <mkdir dir="${mainClassesDirectory}/META-INF"/>
         <copy todir="${mainClassesDirectory}/META-INF" file="LICENSE.txt"/>
-    	<makemanifest dependencies="antlr,
+        <makemanifest dependencies="antlr,
 org.objectweb.asm,
 org.apache.ant;resolution:=optional,
 org.apache.commons.cli;resolution:=optional,
 org.junit;resolution:=optional" file="${mainClassesDirectory}/META-INF/MANIFEST.MF"/>
-	</target>
+    </target>
 
     <!-- TODO: investigate whether we can generate package list not hard-code it -->
     <macrodef name="makemanifest">
         <attribute name="dependencies"/>
-    	<attribute name="file"/>
+        <attribute name="file"/>
         <sequential>
             <manifest file="@{file}">
                 <attribute name="Built-By" value="${user.name}"/>
@@ -545,7 +547,7 @@ org.codehaus.groovy.vmplugin.v5" />
             </fileset>
         </copy>
         <mkdir dir="${targetDistDirectory}"/>
-    	<makemanifest dependencies="org.apache.ant;resolution:=optional,
+        <makemanifest dependencies="org.apache.ant;resolution:=optional,
 org.apache.commons.cli;resolution:=optional,
 org.junit;resolution:=optional" file="${stagingDirectory}/META-INF/MANIFEST.MF"/>
         <jarjar jarfile="${targetDistDirectory}/groovy-all-minimal-${groovyVersion}.jar"
@@ -565,7 +567,7 @@ org.junit;resolution:=optional" file="${stagingDirectory}/META-INF/MANIFEST.MF"/
                 <include name="commons-cli-*.jar"/>
             </fileset>
         </unzip>
-    	<makemanifest dependencies="org.apache.ant;resolution:=optional,
+        <makemanifest dependencies="org.apache.ant;resolution:=optional,
 org.junit;resolution:=optional" file="${stagingDirectory}/META-INF/MANIFEST.MF"/>
         <jarjar jarfile="${targetDistDirectory}/groovy-all-${groovyVersion}.jar"
                 manifest="${stagingDirectory}/META-INF/MANIFEST.MF">
@@ -657,22 +659,6 @@ org.junit;resolution:=optional" file="${stagingDirectory}/META-INF/MANIFEST.MF"/
 
     <target name="-compileTools" depends="compileMain">
 
-<!--
-
-Use the shiny new groovyc fork mode :-)
-
-        <echo message="Groovyc of tools code."/>
-        <java classname="org.codehaus.groovy.ant.Groovyc" fork="true">
-            <classpath>
-                <path refid="toolsPath"/>
-                <pathelement path="${mainClassesDirectory}"/>
-                <path refid="compilePath"/>
-            </classpath>
-            <arg value="${toolsClassesDirectory}"/>
-            <arg value="${toolsSourceDirectory}"/>
-        </java>
--->
-
         <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpath="${mainClassesDirectory}"
                  classpathref="compilePath"/>
         <groovyc srcdir="${toolsSourceDirectory}" destdir="${toolsClassesDirectory}" fork="true">
@@ -738,7 +724,7 @@ Use the shiny new groovyc fork mode :-)
         </copy>
     </target>
 
-    <target name="groovydoc" depends="-docInit,-includeGroovyDocTemplates,docGDK">
+    <target name="groovydoc" depends="-fetchDependencies,-docInit,-includeGroovyDocTemplates,docGDK">
         <path id="groovydocpath">
             <path path="${mainClassesDirectory}"/>
             <path refid="runtimePath"/>
@@ -767,13 +753,7 @@ Use the shiny new groovyc fork mode :-)
         </groovydoc>
     </target>
 
-    <macrodef name="commonLinks">
-        <sequential>
-
-        </sequential>
-    </macrodef>
-
-    <target name="docGDK" depends="-compileTools" description="Create the GDK documentation">
+    <target name="docGDK" depends="-fetchDependencies,-compileTools" description="Create the GDK documentation">
         <java classname="org.codehaus.groovy.tools.DocGenerator" fork="yes" failonerror="true">
             <classpath>
                 <pathelement path="${toolsClassesDirectory}"/>
