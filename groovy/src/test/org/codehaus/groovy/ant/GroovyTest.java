@@ -32,6 +32,12 @@ public class GroovyTest extends GroovyTestCase {
         FLAG = null;
     }
 
+    protected void tearDown() throws Exception {
+        super.tearDown();
+        // helps if we don't do a clean between runs
+        new File("target/test-classes/GroovyTest3Class.class").delete();
+    }
+
     public void testGroovyCodeWithinTag() {
         assertNull(FLAG);
         project.executeTarget("groovyCodeWithinTask");

@@ -104,11 +104,11 @@ $Date$
         <maven.remote.repository id="ibiblio.remote.repository" url="http://ibiblio.org/maven2/"/>
     </target>
 
+    <target name="-fetchDependencies" depends="-mavenFetchAllModules,-copyLibraries"/>
+
     <target name="-mavenFetchAllModules" depends="-mavenInit">
         <fetch.maven.all.modules/>
     </target>
-
-    <target name="-fetchDependencies" depends="-mavenFetchAllModules,-copyLibraries"/>
 
     <target name="-copyLibraries">
         <delete dir="${compileLibDirectory}"/>

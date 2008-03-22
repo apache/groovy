@@ -10,7 +10,7 @@ class MinusTest extends GroovyTestCase {
 		assertEquals(type, [], [] - [ a, b, c ])
 	}
 
-	void doTestMinusDupplicates(String type, def a, b, c, d) {
+	void doTestMinusDuplicates(String type, def a, b, c, d) {
 		assertEquals(type, [a, a], [a, a] - [])
 		assertEquals(type, [a, b, b, c], [a, b, b, c] - [])
 		assertEquals(type, [b, b, c], [a, b, b, c] - [a])
@@ -34,7 +34,7 @@ class MinusTest extends GroovyTestCase {
 	    def d = 'd'
 	    
 	    doTestMinus('Comparable', a, b, c, d)
-	    doTestMinusDupplicates('Comparable', a, b, c, d)
+	    doTestMinusDuplicates('Comparable', a, b, c, d)
 	    doTestMinusWithNull('Comparable', a, b, c, d)
 	}
 	
@@ -45,7 +45,7 @@ class MinusTest extends GroovyTestCase {
 	    def d = 4
 	    
 	    doTestMinus('Number', a, b, c, d)
-	    doTestMinusDupplicates('Number', a, b, c, d)
+	    doTestMinusDuplicates('Number', a, b, c, d)
 	    doTestMinusWithNull('Number', a, b, c, d)
 	}
 
@@ -56,7 +56,7 @@ class MinusTest extends GroovyTestCase {
 	    def d = new BigDecimal('4.0')
 	    
 	    doTestMinus('NumbersMixed', a, b, c, d)
-	    doTestMinusDupplicates('NumbersMixed', a, b, c, d)
+	    doTestMinusDuplicates('NumbersMixed', a, b, c, d)
 	    doTestMinusWithNull('NumbersMixed', a, b, c, d)
 	}
 
@@ -67,7 +67,7 @@ class MinusTest extends GroovyTestCase {
 	    def d = new Object()
 	    
 	    doTestMinus('NonComparable', a, b, c, d)
-	    doTestMinusDupplicates('NonComparable', a, b, c, d)
+	    doTestMinusDuplicates('NonComparable', a, b, c, d)
 	    doTestMinusWithNull('NonComparable', a, b, c, d)
 	}
 	    
@@ -78,7 +78,16 @@ class MinusTest extends GroovyTestCase {
 	    def d = new BigDecimal('4.0')
 	    
 	    doTestMinus('Mixed', a, b, c, d)
-	    doTestMinusDupplicates('Mixed', a, b, c, d)
+	    doTestMinusDuplicates('Mixed', a, b, c, d)
 	    doTestMinusWithNull('Mixed', a, b, c, d)
 	}
+
+    void testArrayMinus() {
+        def x = [1, 2, 3] as Object[]
+        def y = [1, 2] as Object[]
+        def z = [2, 3]
+        assert x - 2 == [1, 3] as Object[]
+        assert x - y == [3] as Object[]
+        assert x - z == [1] as Object[]
+    }
 }
