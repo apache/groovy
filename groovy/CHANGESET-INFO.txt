@@ -65,5 +65,7 @@ change sets from trunk NOT in 1.5.x:
 * 11142: add javahome= to groovyc to allow groovyc to execute on different JVMs when forked
 * 11146: String.contains(String) is not a 1.4 method...
 * 11160: play nicer on OSX
+* 11181: GROOVY-2679: Allow to omit square brackets in annotations when list has just one element (similar to Java)
+* 11182: remove some dup only
 
-Last change set applied to 1.5.x: 11174
+Last change set applied to 1.5.x: 11182
