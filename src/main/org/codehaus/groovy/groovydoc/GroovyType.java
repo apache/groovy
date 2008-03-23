@@ -26,4 +26,7 @@ public interface GroovyType {
 	String qualifiedTypeName();
 	String simpleTypeName();
 	String typeName();
+
+    // ----
+    String fullDottedName();
 }

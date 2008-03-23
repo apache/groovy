@@ -29,9 +29,12 @@ public class SimpleGroovyMethodDoc extends SimpleGroovyExecutableMemberDoc imple
 	}
 	private GroovyType returnType;
 	public GroovyType returnType() {return returnType;}
+
     // TODO need returnType.qualifiedTypeName() here
-    public String returnTypeName() {return getDocUrl(returnType.typeName());}
-	public void setReturnType(GroovyType returnType) {
+
+    // TODO - is this needed, I'm not sure this is the best way?  public String returnTypeName() {return getDocUrl(returnType.typeName());}
+
+    public void setReturnType(GroovyType returnType) {
 		this.returnType = returnType;
 	}
 	

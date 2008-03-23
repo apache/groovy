@@ -186,4 +186,13 @@ public class GroovyDocToolTest extends GroovyTestCase {
         String sqlDoc = output.getText(MOCK_DIR + "/groovy/sql/Sql.html");
         assertTrue(sqlDoc.indexOf("<method modifiers=\"public static \" returns=\"InParameter\" name=\"VARBINARY\">") > 0); // VARBINARY() and other methods in Sql.java were assumed to be Constructors, make sure they aren't anymore...
     }
+
+    public void testReturnTypeResolution() throws Exception {
+        xmlTool.add("org/codehaus/groovy/tools/groovydoc/SimpleGroovyRootDoc.java");
+        xmlTool.add("org/codehaus/groovy/groovydoc/GroovyClassDoc.java");
+        MockOutputTool output = new MockOutputTool();
+        xmlTool.renderToOutput(output, MOCK_DIR);
+        String text = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/SimpleGroovyRootDoc.html");
+        assertTrue(text.indexOf("org.codehaus.groovy.groovydoc.GroovyClassDoc") > 0);
+    }
 }

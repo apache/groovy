@@ -22,8 +22,9 @@ public class SimpleGroovyType implements GroovyType {
 	}
 	private String typeName;
 	public String typeName() {return typeName;}
-	
-//	public GroovyAnnotationTypeDoc asAnnotationTypeDoc() {/*todo*/return null;}
+
+
+    //	public GroovyAnnotationTypeDoc asAnnotationTypeDoc() {/*todo*/return null;}
 	public GroovyClassDoc asClassDoc() {/*todo*/return null;}
 //	public GroovyParameterizedType asParameterizedType() {/*todo*/return null;}
 //	public GroovyTypeVariable asTypeVariable() {/*todo*/return null;}
@@ -32,4 +33,10 @@ public class SimpleGroovyType implements GroovyType {
 	public boolean isPrimitive() {/*todo*/return false;}
 	public String qualifiedTypeName() {/*todo*/return null;}
 	public String simpleTypeName() {/*todo*/return null;}
+
+
+    // ----
+    public String fullDottedName() {
+        return typeName;  // todo - package name prefixed
+    }
 }
