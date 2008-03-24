@@ -79,7 +79,9 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
         Iterator itr = classDocs.keySet().iterator();
         while (itr.hasNext()) {
             String fullClassName = (String) itr.next();
-            if (importedClassesAndPackages.contains(fullClassName)) { // todo "import foo.*"
+            String equivalentPackageImport = fullClassName.replaceAll("[^/]+$","*");
+            if (importedClassesAndPackages.contains(fullClassName) ||
+                    importedClassesAndPackages.contains(equivalentPackageImport)) {
                 GroovyClassDoc classDoc = (GroovyClassDoc) classDocs.get(fullClassName);
                 visibleClasses.put(classDoc.name(), classDoc);
             }

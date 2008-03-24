@@ -130,7 +130,7 @@ ${constructor.name()}</H3>
 <% for (method in classDoc.methods()) { %>
 <A NAME="${method.name()}()"><!-- --></A><H3>
 ${method.name()}</H3>
-<PRE>${method.isPublic()?"public ":""}${method.isStatic()?"static ":""}${method.returnType().fullDottedName()} <B>${method.name()}</B>(<%= method.parameters().collect{ param -> "${param.typeName()} ${param.name()}" }.join(", ") %>)</PRE>
+<PRE>${method.isPublic()?"public ":""}${method.isStatic()?"static ":""}${method.isReturnTypeAvailable()?'<a href="' + classDoc.getRelativeRootPath() + method.returnType().getFullPathName() + '.html">' + method.returnType().name() + '</a>':method.returnType().fullDottedName()} <B>${method.name()}</B>(<%= method.parameters().collect{ param -> "${param.typeName()} ${param.name()}" }.join(", ") %>)</PRE>
 
 <DL>
 <DD>${method.commentText()}
