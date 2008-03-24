@@ -34,6 +34,15 @@ public class SimpleGroovyMethodDoc extends SimpleGroovyExecutableMemberDoc imple
 
     // TODO - is this needed, I'm not sure this is the best way?  public String returnTypeName() {return getDocUrl(returnType.typeName());}
 
+    public boolean isReturnTypeAvailable() {
+        if (returnType != null) {
+            if (returnType instanceof SimpleGroovyClassDoc) {
+                return true;
+            }
+        }
+        return false;
+    }
+    
     public void setReturnType(GroovyType returnType) {
 		this.returnType = returnType;
 	}

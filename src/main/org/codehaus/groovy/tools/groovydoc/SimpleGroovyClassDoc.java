@@ -91,7 +91,10 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
 	public String getRelativeRootPath() {
 		StringTokenizer tokenizer = new StringTokenizer(fullPathName, "/"); // todo windows??
 		StringBuffer sb = new StringBuffer();
-		while (tokenizer.hasMoreTokens()) {
+        if (tokenizer.hasMoreTokens()) {
+            tokenizer.nextToken(); // ignore the first token, as we want n-1 parent dirs
+        }
+        while (tokenizer.hasMoreTokens()) {
 			tokenizer.nextToken();
 			sb.append("../");
 		}
