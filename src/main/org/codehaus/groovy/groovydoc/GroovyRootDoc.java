@@ -16,6 +16,9 @@
 
 package org.codehaus.groovy.groovydoc;
 
+import java.util.List;
+import java.util.Map;
+
 public interface GroovyRootDoc extends GroovyDoc, GroovyDocErrorReporter {
 	GroovyClassDoc classNamed(String arg0);
 	GroovyClassDoc[] classes();
@@ -23,4 +26,6 @@ public interface GroovyRootDoc extends GroovyDoc, GroovyDocErrorReporter {
 	GroovyPackageDoc packageNamed(String arg0);
 	GroovyClassDoc[] specifiedClasses();
 	GroovyPackageDoc[] specifiedPackages();
+
+    Map getVisibleClasses(List importedClassesAndPackages);
 }

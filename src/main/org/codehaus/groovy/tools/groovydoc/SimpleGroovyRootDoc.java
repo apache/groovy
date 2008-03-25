@@ -51,7 +51,7 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
 		}		
 		return null;
 	}
-	public GroovyClassDoc[] classes() {
+    public GroovyClassDoc[] classes() {
 		List classDocValues = new ArrayList(classDocs.values());
 		Collections.sort(classDocValues); // todo - performance / maybe move into a sortMe() method
 		return (GroovyClassDoc[]) classDocValues.toArray(new GroovyClassDoc[classDocValues.size()]);		
@@ -74,9 +74,23 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
 		return (GroovyPackageDoc[]) packageDocValues.toArray(new GroovyPackageDoc[packageDocValues.size()]);
 	}
 
-	
-	
-// GroovyDocErrorReporter interface
+    public Map getVisibleClasses(List importedClassesAndPackages) {
+        Map visibleClasses = new HashMap();
+        Iterator itr = classDocs.keySet().iterator();
+        while (itr.hasNext()) {
+            String fullClassName = (String) itr.next();
+            String equivalentPackageImport = fullClassName.replaceAll("[^/]+$","*");
+            if (importedClassesAndPackages.contains(fullClassName) ||
+                    importedClassesAndPackages.contains(equivalentPackageImport)) {
+                GroovyClassDoc classDoc = (GroovyClassDoc) classDocs.get(fullClassName);
+                visibleClasses.put(classDoc.name(), classDoc);
+            }
+        }
+        return visibleClasses;
+    }
+
+
+    // GroovyDocErrorReporter interface
 	public void printError(String arg0) {/*todo*/}
 //	public void printError(GroovySourcePosition arg0, String arg1) {/*todo*/}
 	public void printNotice(String arg0) {/*todo*/}

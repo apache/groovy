@@ -15,12 +15,10 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.StringTokenizer;
-
 import org.codehaus.groovy.groovydoc.*;
+
+import java.util.*;
+
 
 public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implements GroovyClassDoc {
 	private final List constructors;
@@ -30,16 +28,18 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
 
 	private String superClassName;
 	private GroovyClassDoc superClass;
-	
-	public SimpleGroovyClassDoc(String name, List links) {
+    private List importedClassesAndPackages;
+
+    public SimpleGroovyClassDoc(List importedClassesAndPackages, String name, List links) {
         super(name, links);
+        this.importedClassesAndPackages = importedClassesAndPackages;
         constructors = new ArrayList();
         fields = new ArrayList();
         methods = new ArrayList();
     }
 
-	public SimpleGroovyClassDoc(String name) {
-		this(name, new ArrayList());
+	public SimpleGroovyClassDoc(List importedClassesAndPackages, String name) {
+		this(importedClassesAndPackages, name, new ArrayList());
 	}
 
 	/**
@@ -85,7 +85,10 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
 	public String getRelativeRootPath() {
 		StringTokenizer tokenizer = new StringTokenizer(fullPathName, "/"); // todo windows??
 		StringBuffer sb = new StringBuffer();
-		while (tokenizer.hasMoreTokens()) {
+        if (tokenizer.hasMoreTokens()) {
+            tokenizer.nextToken(); // ignore the first token, as we want n-1 parent dirs
+        }
+        while (tokenizer.hasMoreTokens()) {
 			tokenizer.nextToken();
 			sb.append("../");
 		}
@@ -100,15 +103,40 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
 	}
 	
 	void resolve(GroovyRootDoc rootDoc) {
-		//resolve type references
+        Map visibleClasses = rootDoc.getVisibleClasses(importedClassesAndPackages);
+
+        // resolve method return types and parameter types
+        Iterator methodItr = methods.iterator();
+        while (methodItr.hasNext()) {
+            GroovyMethodDoc method = (GroovyMethodDoc) methodItr.next();
+
+            // return types
+            GroovyType returnType = method.returnType();
+            String typeName = returnType.typeName();
+            if (visibleClasses.containsKey(typeName)) {
+                method.setReturnType((GroovyType) visibleClasses.get(typeName));
+            }
+
+            // parameters
+            Iterator paramItr = Arrays.asList(method.parameters()).iterator();
+            while (paramItr.hasNext()) {
+                SimpleGroovyParameter param = (SimpleGroovyParameter) paramItr.next();
+                String paramTypeName = param.typeName();
+                if (visibleClasses.containsKey(paramTypeName)) {
+                    param.setType((GroovyType) visibleClasses.get(paramTypeName));
+                }
+            }
+        }
+
+        //resolve type references
 		if (superClassName != null) {
 			superClass = rootDoc.classNamed(superClassName); // todo - take package names into account ?!
 			if (superClass == null) {
 				// The superClass is not in the tree being documented
-				superClass = new SimpleGroovyClassDoc(superClassName); // dummy class with name, not to be put into main tree
+				superClass = new SimpleGroovyClassDoc(null, superClassName); // dummy class with name, not to be put into main tree
 			}
 		} else {
-			superClass = new SimpleGroovyClassDoc("Object"); // dummy class representing java.lang.Object, not to be put into main tree
+			superClass = new SimpleGroovyClassDoc(null, "Object"); // dummy class representing java.lang.Object, not to be put into main tree
 		}
 	}
 	// methods from GroovyClassDoc
@@ -149,5 +177,11 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
 	public String qualifiedTypeName() {/*todo*/return null;}
 	public String simpleTypeName() {/*todo*/return null;}
 	public String typeName() {/*todo*/return null;}
+
+    // ----
+    public String fullDottedName() {
+        String fullDottedName = fullPathName.replaceAll("/",".");
+        return fullDottedName;
+    }
 
 }

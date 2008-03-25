@@ -22,4 +22,8 @@ public interface GroovyMethodDoc extends GroovyExecutableMemberDoc {
     GroovyType overriddenType();
     boolean overrides(GroovyMethodDoc arg0);
     GroovyType returnType();
+
+    //---- additional
+
+    void setReturnType(GroovyType o);
 }
