@@ -129,7 +129,7 @@ ${classDoc.commentText()}
   <TR BGCOLOR="white" CLASS="TableRowColor">
     <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1" CLASS="ClassItemFont">
     <CODE>${method.isStatic()?"static&nbsp;":""}${method.isReturnTypeAvailable()?'<a href="' + classDoc.getRelativeRootPath() + method.returnType().getFullPathName() + '.html">' + method.returnType().name() + '</a>':method.returnType().fullDottedName()}</CODE></FONT></TD>
-    <TD><FONT CLASS="ClassItemFont"><CODE><B><a href="#${method.name()}()">${method.name()}</a></B>(<%= method.parameters().collect{ param -> "${param.isTypeAvailable()?'<a href="' + classDoc.getRelativeRootPath() + param.type().getFullPathName() + '.html">' + param.type().name() + '</a>':param.typeName()} ${param.name()}" }.join(", ") %>)</CODE></FONT>
+    <TD><FONT CLASS="ClassItemFont"><CODE><B><a href="#${method.name()}(<%= method.parameters().collect{ param -> param.isTypeAvailable()?param.type().fullDottedName():param.typeName() }.join(', ') %>)">${method.name()}</a></B>(<%= method.parameters().collect{ param -> "${param.isTypeAvailable()?'<a href="' + classDoc.getRelativeRootPath() + param.type().getFullPathName() + '.html">' + param.type().name() + '</a>':param.typeName()} ${param.name()}" }.join(", ") %>)</CODE></FONT>
 
     <BR>
     <FONT CLASS="ClassItemFont">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${method.firstSentenceCommentText()}</FONT>
@@ -178,7 +178,7 @@ ${constructor.name()}</H3>
 </TR>
 </TABLE>
 <% for (method in classDoc.methods()) { %>
-<A NAME="${method.name()}()"><!-- --></A><H3>
+<A NAME="${method.name()}(<%= method.parameters().collect{ param -> param.isTypeAvailable()?param.type().fullDottedName():param.typeName() }.join(', ') %>)"><!-- --></A><H3>
 ${method.name()}</H3>
 <PRE>${method.isPublic()?"public ":""}${method.isStatic()?"static ":""}${method.isReturnTypeAvailable()?'<a href="' + classDoc.getRelativeRootPath() + method.returnType().getFullPathName() + '.html">' + method.returnType().name() + '</a>':method.returnType().fullDottedName()} <B>${method.name()}</B>(<%= method.parameters().collect{ param -> "${param.isTypeAvailable()?'<a href="' + classDoc.getRelativeRootPath() + param.type().getFullPathName() + '.html">' + param.type().name() + '</a>':param.typeName()} ${param.name()}" }.join(", ") %>)</PRE>
 
