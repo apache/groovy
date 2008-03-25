@@ -15,7 +15,7 @@
   <methods><% for (method in classDoc.methods()) { %>
     <method modifiers="${method.isPublic()?'public ':''}${method.isStatic()?'static ':''}" returns="${method.returnType().fullDottedName()}" name="${method.name()}">
       <parameters><% for (parameter in method.parameters()) { %>
-        <parameter type="${parameter.typeName()}" name="${parameter.name()}" /><% } %>
+        <parameter type="${parameter.isTypeAvailable()?parameter.type().fullDottedName():parameter.typeName()}" name="${parameter.name()}" /><% } %>
       </parameters>
       <comment>${method.commentText()}</comment>
     </method>
