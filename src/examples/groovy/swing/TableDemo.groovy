@@ -28,8 +28,9 @@ class TableDemo {
                     }
                 }
             }
-            panel(layout:new BorderLayout()) {
-                scrollPane(constraints:BorderLayout.CENTER) {
+            panel {
+                borderLayout()
+                scrollPane(constraints:CENTER) {
                     table() {
                         def model = [['name':'James', 'location':'London'], ['name':'Bob', 'location':'Atlanta'], ['name':'Geir', 'location':'New York']]
 

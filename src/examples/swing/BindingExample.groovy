@@ -37,18 +37,18 @@ sb = SwingBuilder.build() {
     frame = frame(defaultCloseOperation:javax.swing.JFrame.DISPOSE_ON_CLOSE) {
         gridBagLayout()
 
-        label("Text:", constraints:gbc(anchor:gb.WEST, insets:[6,6,3,3] as Insets))
-        textField = textField("Change Me!", constraints:gbc(fill:gb.HORIZONTAL, gridwidth:gb.REMAINDER, insets:[6,3,3,6] as Insets))
+        label("Text:", anchor:gb.WEST, insets:[6,6,3,3] as Insets)
+        textField = textField("Change Me!", fill:gb.HORIZONTAL, gridwidth:gb.REMAINDER, insets:[6,3,3,6] as Insets)
 
-        label("Margin:", constraints:gbc(anchor:gb.WEST, insets:[3,6,3,3] as Insets))
-        slider = slider(value:5, constraints:gbc(fill:gb.HORIZONTAL, gridwidth:gb.REMAINDER, insets:[3,3,3,6] as Insets))
+        label("Margin:", anchor:gb.WEST, insets:[3,6,3,3] as Insets)
+        slider = slider(value:5, fill:gb.HORIZONTAL, gridwidth:gb.REMAINDER, insets:[3,3,3,6] as Insets)
 
         panel()
-        checkBox = checkBox("Enbled", constraints:gbc(anchor:gb.WEST, gridwidth:gb.REMAINDER, insets:[3,3,3,6] as Insets))
+        checkBox = checkBox("Enbled", anchor:gb.WEST, gridwidth:gb.REMAINDER, insets:[3,3,3,6] as Insets)
 
-        separator(constraints:gbc(fill:gb.HORIZONTAL, gridwidth:gb.REMAINDER))
+        separator(fill:gb.HORIZONTAL, gridwidth:gb.REMAINDER)
 
-        button(constraints:gbc(anchor:gb.CENTER, gridwidth:gb.REMAINDER, gridheight:gb.REMAINDER, weightx:1.0, weighty:1.0, insets:[3,6,6,6] as Insets),
+        button(anchor:gb.CENTER, gridwidth:gb.REMAINDER, gridheight:gb.REMAINDER, weightx:1.0, weighty:1.0, insets:[3,6,6,6] as Insets,
             text: bind(source:textField, sourceProperty:'text'),
             margin: bind(source:slider, sourceProperty:'value', converter:{[it, it, it, it] as Insets}),
             enabled: bind(source:checkBox, sourceProperty:'selected')

@@ -63,13 +63,13 @@ class ObjectBrowser {
                 borderLayout()
                 panel(  name:"Class Info",
                         border: emptyBorder([5,10,5,10]),
-                        constraints:BorderLayout.NORTH) {
+                        constraints:NORTH) {
                     flowLayout(alignment:FlowLayout.LEFT)
                     def props = inspector.classProps
                     def classLabel = '<html>' + props.join('<br>')
                     label(classLabel)
                 }
-                tabbedPane(constraints:BorderLayout.CENTER){
+                tabbedPane(constraints:CENTER){
                     if (inspector.object instanceof Collection) {
 	                    scrollPane(name: ' Collection data ') {
 	                        itemTable = table() {

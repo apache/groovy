@@ -1,8 +1,6 @@
 package swing
 
-import java.awt.BorderLayout
 import java.awt.Color
-import java.awt.GridBagConstraints
 import javax.swing.SwingConstants
 import javax.swing.WindowConstants
 import groovy.swing.SwingBuilder
@@ -119,69 +117,69 @@ class Widgets {
                     gridBagLayout()
                     label(
                         text:"Tempuature in London:",
-                        constraints: gbc(insets:[12, 12, 2, 2], 
-                            anchor: GridBagConstraints.EAST,
-                            gridx: 0))
+                        insets:[12, 12, 2, 2],
+                        anchor: EAST,
+                        gridx: 0)
                     spinner(
                         model:spinnerNumberModel(minimum:-10, 
                             maximum: 40, 
                             value:20,
                             stepSize:5),
-                        constraints: gbc(insets:[12, 3, 2, 12], 
-                            anchor: GridBagConstraints.WEST,
-                            gridx: 1,
-                            fill: GridBagConstraints.HORIZONTAL))
+                        insets:[12, 3, 2, 12],
+                        anchor: WEST,
+                        gridx: 1,
+                        fill: HORIZONTAL)
                     label(
                         text:"Baseball Leagues:",
-                        constraints: gbc(insets:[3, 12, 2, 2], 
-                            anchor: GridBagConstraints.EAST,
-                            gridx: 0))
+                        insets:[3, 12, 2, 2],
+                        anchor: EAST,
+                        gridx: 0)
                     spinner(
                         model:spinnerListModel(
                             list: ["Major League", "AAA", "AA", "A", "Rookie", "Semi-Pro", "Rec A", "Rec B"],
                             value: "AA"),
-                        constraints: gbc(insets:[3, 3, 2, 12], 
-                            anchor: GridBagConstraints.WEST,
-                            gridx: 1,
-                            fill: GridBagConstraints.HORIZONTAL))
+                        insets:[3, 3, 2, 12],
+                        anchor: WEST,
+                        gridx: 1,
+                        fill: HORIZONTAL)
                     label(
                         text:"Today's Date:",
-                        constraints: gbc(insets:[3, 12, 2, 2], 
-                            anchor: GridBagConstraints.EAST,
-                            gridx: 0))
+                        insets:[3, 12, 2, 2],
+                        anchor: EAST,
+                        gridx: 0)
                     spinner(
                         model:spinnerDateModel(calendarField: Calendar.HOUR_OF_DAY),
-                        constraints: gbc(insets:[3, 3, 2, 12], 
-                            anchor: GridBagConstraints.WEST,
-                            gridx: 1,
-                            fill: GridBagConstraints.HORIZONTAL))
+                        insets:[3, 3, 2, 12],
+                        anchor: WEST,
+                        gridx: 1,
+                        fill: HORIZONTAL)
                 }
 
                 panel(name:"Border Layout") {
                     borderLayout()
                     label(text:"Border Layout", 
-                          constraints:BorderLayout.NORTH, 
+                          constraints:NORTH,
                           horizontalAlignment:SwingConstants.CENTER)
                     label(text:"South", 
-                          constraints:BorderLayout.SOUTH, 
+                          constraints:SOUTH,
                           background:Color.YELLOW,
                           opaque:true,
                           horizontalAlignment:SwingConstants.CENTER,
                           toolTipText:"Tooltip on south")
                     label(text:"West", 
-                          constraints:BorderLayout.WEST, 
+                          constraints:WEST,
                           background:Color.ORANGE,
                           opaque:true,
                           horizontalAlignment:SwingConstants.CENTER,
                           toolTipText:"Tooltip on west")
                     label(text:"East", 
-                          constraints:BorderLayout.EAST, 
+                          constraints:EAST,
                           background:Color.GREEN,
                           opaque:true,
                           horizontalAlignment:SwingConstants.CENTER,
                           toolTipText:"Tooltip on east")
                     label(text:"Center", 
-                          constraints:BorderLayout.CENTER, 
+                          constraints:CENTER,
                           background:Color.WHITE,
                           opaque:true,
                           horizontalAlignment:SwingConstants.CENTER,

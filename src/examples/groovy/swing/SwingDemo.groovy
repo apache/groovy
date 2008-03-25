@@ -52,19 +52,22 @@ class SwingDemo {
                 }
             }
             splitPane {
-                panel(layout:new BorderLayout(), border:BorderFactory.createTitledBorder(BorderFactory.createLoweredBevelBorder(), 'titled border')) {
-                    vbox(constraints:BorderLayout.NORTH) {
-                        panel(layout:new BorderLayout()) {
-                            label(text:'Name', constraints:BorderLayout.WEST, toolTipText:'This is the name field')
-                            textField(text:'James', constraints:BorderLayout.CENTER, toolTipText:'Enter the name into this field')
+                panel(border:BorderFactory.createTitledBorder(BorderFactory.createLoweredBevelBorder(), 'titled border')) {
+                    borderLayout()
+                    vbox(constraints:NORTH) {
+                        panel {
+                            borderLayout()
+                            label(text:'Name', constraints:WEST, toolTipText:'This is the name field')
+                            textField(text:'James', constraints:CENTER, toolTipText:'Enter the name into this field')
                         }
-                        panel(layout:new BorderLayout()) {
-                            label(text:'Location', constraints:BorderLayout.WEST, toolTipText:'This is the location field')
-                            comboBox(items:['Atlanta', 'London', 'New York'], constraints:BorderLayout.CENTER, toolTipText:'Choose the location into this field')
+                        panel {
+                            borderLayout()
+                            label(text:'Location', constraints:WEST, toolTipText:'This is the location field')
+                            comboBox(items:['Atlanta', 'London', 'New York'], constraints:CENTER, toolTipText:'Choose the location into this field')
                         }
                         button(text:'Click Me', actionPerformed:{event -> println("closure fired with event: " + event) })
                     }
-                    scrollPane(constraints:BorderLayout.CENTER, border:BorderFactory.createRaisedBevelBorder()) {
+                    scrollPane(constraints:CENTER, border:BorderFactory.createRaisedBevelBorder()) {
                         textArea(text:'Some text goes here', toolTipText:'This is a large text area to type in text')
                     }
                 }

@@ -12,7 +12,7 @@ class MvcDemo {
     def swing
     
     void run() {
-        def swing = new SwingBuilder()
+        swing = new SwingBuilder()
         
         def frame = swing.frame(title:'MVC Demo', location:[200,200], size:[300,200]) {
             menuBar {
@@ -22,8 +22,9 @@ class MvcDemo {
 		            }
 		        }
 		    }
-		    panel(layout:new BorderLayout()) {
-    	        scrollPane(constraints:BorderLayout.CENTER) {
+		    panel {
+                borderLayout()
+                scrollPane(constraints:CENTER) {
     	            table() {
     	                tableModel(list:[ ['name':'James', 'location':'London'], ['name':'Bob', 'location':'Atlanta'] ]) {
                             propertyColumn(header:'Name', propertyName:'name')
