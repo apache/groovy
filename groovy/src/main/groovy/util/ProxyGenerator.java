@@ -338,7 +338,7 @@ public class ProxyGenerator {
                 Method method = protectedMethods[i];
                 if (method.getName().indexOf('$') != -1)
                   continue;
-                if (Modifier.isProtected(method.getModifiers()))
+                if (Modifier.isProtected(method.getModifiers()) && !containsEquivalentMethod(protectedMethodList, method))
                     protectedMethodList.add(method);
             }
             currentClass = currentClass.getSuperclass();
