@@ -15,13 +15,7 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
-import org.codehaus.groovy.groovydoc.GroovyClassDoc;
-import org.codehaus.groovy.groovydoc.GroovyConstructorDoc;
-import org.codehaus.groovy.groovydoc.GroovyFieldDoc;
-import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
-import org.codehaus.groovy.groovydoc.GroovyRootDoc;
-import org.codehaus.groovy.groovydoc.GroovyType;
-import org.codehaus.groovy.groovydoc.GroovyPackageDoc;
+import org.codehaus.groovy.groovydoc.*;
 
 import java.util.*;
 
@@ -111,14 +105,26 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
 	void resolve(GroovyRootDoc rootDoc) {
         Map visibleClasses = rootDoc.getVisibleClasses(importedClassesAndPackages);
 
-        // resolve method return types and (todo: parameter types)
+        // resolve method return types and parameter types
         Iterator methodItr = methods.iterator();
         while (methodItr.hasNext()) {
             GroovyMethodDoc method = (GroovyMethodDoc) methodItr.next();
+
+            // return types
             GroovyType returnType = method.returnType();
             String typeName = returnType.typeName();
             if (visibleClasses.containsKey(typeName)) {
                 method.setReturnType((GroovyType) visibleClasses.get(typeName));
+            }
+
+            // parameters
+            Iterator paramItr = Arrays.asList(method.parameters()).iterator();
+            while (paramItr.hasNext()) {
+                SimpleGroovyParameter param = (SimpleGroovyParameter) paramItr.next();
+                String paramTypeName = param.typeName();
+                if (visibleClasses.containsKey(paramTypeName)) {
+                    param.setType((GroovyType) visibleClasses.get(paramTypeName));
+                }
             }
         }
 
