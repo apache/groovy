@@ -195,4 +195,12 @@ public class GroovyDocToolTest extends GroovyTestCase {
         String text = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/SimpleGroovyRootDoc.html");
         assertTrue(text.indexOf("org.codehaus.groovy.groovydoc.GroovyClassDoc") > 0);
     }
+    public void testParameterTypeResolution() throws Exception {
+        xmlTool.add("org/codehaus/groovy/tools/groovydoc/SimpleGroovyRootDoc.java");
+        xmlTool.add("org/codehaus/groovy/groovydoc/GroovyPackageDoc.java");
+        MockOutputTool output = new MockOutputTool();
+        xmlTool.renderToOutput(output, MOCK_DIR);
+        String text = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/SimpleGroovyRootDoc.html");
+        assertTrue(text.indexOf("<parameter type=\"org.codehaus.groovy.groovydoc.GroovyPackageDoc\"") > 0);
+    }
 }
