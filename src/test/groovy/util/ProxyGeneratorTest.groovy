@@ -82,6 +82,19 @@ class ProxyGeneratorTest extends GroovyTestCase {
         assert testClass.myMethodX() == "the injected X"
         assert testClass.myMethodE() == "the injected E"
     }
+    
+    void testDelegateForGROOVY_2705() {
+        def delegate = [1, 2, 3, 4, 5]
+        def testClass = ProxyGenerator.instantiateDelegate([List], delegate)
+        assert testClass instanceof List
+        assert 5 == testClass.size() 
+        assert [1, 2, 3, 4, 5] == testClass.iterator().collect { it }
+        assert 3 == testClass[2]
+        testClass[3] = 99
+        assert 99 == testClass[3]
+        testClass.removeRange(1, 3)
+        assert [1, 99, 5] == testClass
+    }
 }
 
 class TestClass {
