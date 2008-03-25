@@ -20,7 +20,7 @@ public interface GroovyExecutableMemberDoc extends GroovyMemberDoc {
     boolean isNative();
     boolean isSynchronized();
     boolean isVarArgs();
-//    GroovyParameter[] parameters();
+    GroovyParameter[] parameters();
 //    GroovyParamTag[] paramTags();
     String signature();
     GroovyClassDoc[] thrownExceptions();

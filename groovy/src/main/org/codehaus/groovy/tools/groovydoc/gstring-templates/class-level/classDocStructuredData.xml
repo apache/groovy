@@ -13,7 +13,7 @@
   </constructors>
 
   <methods><% for (method in classDoc.methods()) { %>
-    <method modifiers="${method.isPublic()?'public ':''}${method.isStatic()?'static ':''}" returns="${method.returnType().typeName()}" name="${method.name()}">
+    <method modifiers="${method.isPublic()?'public ':''}${method.isStatic()?'static ':''}" returns="${method.returnType().fullDottedName()}" name="${method.name()}">
       <parameters><% for (parameter in method.parameters()) { %>
         <parameter type="${parameter.typeName()}" name="${parameter.name()}" /><% } %>
       </parameters>

@@ -37,6 +37,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
 	private String packagePath;
 	private Pattern previousJavaDocCommentPattern;
 	private static final String FS = "/";
+    private List importedClassesAndPackages;
     private List links;
 
     public SimpleGroovyClassDocAssembler(String packagePath, String file, SourceBuffer sourceBuffer, List links) {
@@ -52,12 +53,17 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
         	int idx = file.lastIndexOf(".");
         	className = file.substring(0,idx);
         }
-		currentClassDoc = new SimpleGroovyClassDoc(className, links);
+
+        importedClassesAndPackages = new ArrayList();
+        importedClassesAndPackages.add(packagePath + "/*");  // everything in this package is automatically imported
+
+		currentClassDoc = new SimpleGroovyClassDoc(importedClassesAndPackages, className, links);
 		currentClassDoc.setFullPathName(packagePath + FS + className);
 		classDocs.put(currentClassDoc.getFullPathName(),currentClassDoc);
 		
 		previousJavaDocCommentPattern = Pattern.compile("(?s)/\\*\\*(.*?)\\*/");
-	}
+
+    }
 	
 	public Map getGroovyClassDocs() {
 		postProcessClassDocs();
@@ -79,7 +85,33 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
 			}
 		}
 	}
-	
+
+    public void visitImport(GroovySourceAST t, int visit) {
+        if (visit == OPENING_VISIT) {
+            GroovySourceAST child = t.childOfType(GroovyTokenTypes.DOT);
+            if (child == null) {
+                child = t.childOfType(GroovyTokenTypes.IDENT);
+            }
+            String importTextWithSlashesInsteadOfDots = recurseDownImportBranch(child);
+            importedClassesAndPackages.add(importTextWithSlashesInsteadOfDots);
+        }
+    }
+    public String recurseDownImportBranch(GroovySourceAST t) {
+        if (t != null) {
+            if (t.getType() == GroovyTokenTypes.DOT) {
+                GroovySourceAST firstChild = (GroovySourceAST) t.getFirstChild();
+                GroovySourceAST secondChild = (GroovySourceAST) firstChild.getNextSibling();
+                return (recurseDownImportBranch(firstChild) + "/" + recurseDownImportBranch(secondChild));
+            }
+            if (t.getType() == GroovyTokenTypes.IDENT) {
+                return t.getText();
+            }
+            if (t.getType() == GroovyTokenTypes.STAR) {
+                return t.getText();
+            }
+        }
+        return "";
+    }
     public void visitExtendsClause(GroovySourceAST t,int visit) {
         if (visit == OPENING_VISIT) {
         	GroovySourceAST superClassNode = t.childOfType(GroovyTokenTypes.IDENT);
@@ -96,7 +128,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
         	String className = t.childOfType(GroovyTokenTypes.IDENT).getText();
         	currentClassDoc = (SimpleGroovyClassDoc) classDocs.get(packagePath + FS + className);
         	if (currentClassDoc == null) {
-        		currentClassDoc = new SimpleGroovyClassDoc(className);
+        		currentClassDoc = new SimpleGroovyClassDoc(importedClassesAndPackages, className, importedClassesAndPackages);
         	}
     		// comments
     		String commentText = getJavaDocCommentsBeforeNode(t);
