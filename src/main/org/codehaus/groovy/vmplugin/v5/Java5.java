@@ -28,10 +28,7 @@ import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.ast.*;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.PropertyExpression;
-import org.codehaus.groovy.ast.expr.ListExpression;
+import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.ClassHelper;
 
@@ -187,7 +184,11 @@ public class Java5 implements VMPlugin {
         Class type = annotation.annotationType();
         if (type == Retention.class) {
             Retention r = (Retention) annotation;
-            setRetentionPolicy(r.value(),node);
+            RetentionPolicy value = r.value();
+            setRetentionPolicy(value,node);
+            node.setMember("value",new PropertyExpression(
+                    new ClassExpression(ClassHelper.makeWithoutCaching(RetentionPolicy.class,false)),
+                    value.toString()));
         } else if (type == Target.class) {
             Target t = (Target) annotation;
             ElementType[] elements = t.value();

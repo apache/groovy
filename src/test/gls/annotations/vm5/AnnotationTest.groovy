@@ -221,6 +221,17 @@ assert my.defaultAnnotation() instanceof Target
     """
   }
 
+  void testUsageOnClass() {
+    assertScript """
+import java.lang.annotation.*
+
+@Deprecated
+class Foo{}
+
+assert Foo.class.annotations.size() == 1
+  """
+  }
+
   void testSingletonArrayUsage() {
     assertScript """
 import java.lang.annotation.*
