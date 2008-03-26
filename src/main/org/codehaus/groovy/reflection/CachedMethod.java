@@ -280,7 +280,7 @@ public class CachedMethod extends MetaMethod implements Comparable, Opcodes{
         if (staticMetaMethodLoader == null || (loader = (MyClassLoader) staticMetaMethodLoader.get()) == null ) {
             ClassWriter cw = new ClassWriter(true);
 
-            final String name = getDeclaringClass().getCachedClass().getName().replace('.','_') + "$" + getName();
+            final String name = getDeclaringClass().getTheClass().getName().replace('.','_') + "$" + getName();
             byte[] bytes = genStaticMetaMethodSite(cw, name);
 
             loader = new MyClassLoader(owner.getClassLoader(), name, bytes);
@@ -332,7 +332,7 @@ public class CachedMethod extends MetaMethod implements Comparable, Opcodes{
 
         BytecodeHelper helper = new BytecodeHelper(mv);
 
-        Class callClass = getDeclaringClass().getCachedClass();
+        Class callClass = getDeclaringClass().getTheClass();
         boolean useInterface = callClass.isInterface();
 
         String type = BytecodeHelper.getClassInternalName(callClass.getName());
@@ -460,7 +460,7 @@ public class CachedMethod extends MetaMethod implements Comparable, Opcodes{
                     if (method != null) {
                         ClassWriter cw = new ClassWriter(true);
 
-                        final Class acls = method.getDeclaringClass().getCachedClass();
+                        final Class acls = method.getDeclaringClass().getTheClass();
                         final String name = acls.getName().replace('.','_') + "$" + method.getName();
                         byte[] bytes = method.genPogoMetaMethodSite(cw, name);
 
@@ -503,7 +503,7 @@ public class CachedMethod extends MetaMethod implements Comparable, Opcodes{
     protected void genInvokeMethod(MethodVisitor mv) {
         BytecodeHelper helper = new BytecodeHelper(mv);
         // compute class to make the call on
-        Class callClass = getDeclaringClass().getCachedClass();
+        Class callClass = getDeclaringClass().getTheClass();
         boolean useInterface = callClass.isInterface();
 //        if (callClass == null) {
 //            callClass = method.getCallClass();
@@ -542,7 +542,7 @@ public class CachedMethod extends MetaMethod implements Comparable, Opcodes{
 
             // cast argument to parameter class, inclusive unboxing
             // for methods with primitive types
-            Class type = parameters[i].getCachedClass();
+            Class type = parameters[i].getTheClass();
             if (type.isPrimitive()) {
                 helper.unbox(type);
             } else {

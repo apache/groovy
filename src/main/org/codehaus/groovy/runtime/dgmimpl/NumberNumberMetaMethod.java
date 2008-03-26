@@ -99,7 +99,7 @@ public abstract class NumberNumberMetaMethod extends CallSiteAwareMetaMethod {
     }
 
     public Class getReturnType() {
-        return NUMBER_CLASS.getCachedClass();
+        return NUMBER_CLASS.getTheClass();
     }
 
     public final CachedClass getDeclaringClass() {

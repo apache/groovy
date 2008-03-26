@@ -1,6 +1,22 @@
+/*
+ * Copyright 2003-2007 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.codehaus.groovy.reflection;
 
 import groovy.lang.MetaClass;
+import org.codehaus.groovy.reflection.stdclasses.*;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
@@ -8,9 +24,11 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
 
+/**
+ * @author Alex.Tkachman
+ */
 public class ClassInfo extends ReentrantLock {
 
     private MetaClass strongMetaClass;
@@ -18,7 +36,7 @@ public class ClassInfo extends ReentrantLock {
     SoftReference<MetaClass> weakMetaClass;
 
     public ClassInfo(Class klazz, MultiClassInfoRecord mcir) {
-        cachedClassRef = new SoftRef<CachedClass> (createCachedClass(klazz), mcir);
+        cachedClassRef = new SoftRef<CachedClass> (createCachedClass(klazz,this), mcir);
     }
 
     private static class SoftRef<T> extends SoftReference<T> {
@@ -52,7 +70,7 @@ public class ClassInfo extends ReentrantLock {
         SoftReference<CachedClass> ccr;
         CachedClass cc;
         if ((ccr = cachedClassRef) != null && (cc = ccr.get()) != null)
-          return cc.getCachedClass();
+          return cc.getTheClass();
 
         SoftReference<MetaClass> mcr;
         MetaClass mc;
@@ -73,72 +91,13 @@ public class ClassInfo extends ReentrantLock {
             if ((ccr = cachedClassRef) != null && (cc = ccr.get()) != null)
               return cc;
 
-            cc = createCachedClass(klazz);
+            cc = createCachedClass(klazz, this);
             cachedClassRef = new SoftReference<CachedClass> (cc);
             return cc;
         }
         finally {
             unlock();
         }
-    }
-
-    private static CachedClass createCachedClass(Class klazz) {
-        if (klazz == Object.class)
-            return ReflectionCache.OBJECT_CLASS;
-
-        if (klazz == String.class)
-            return ReflectionCache.STRING_CLASS;
-
-        CachedClass cachedClass;
-        if (Number.class.isAssignableFrom(klazz) || klazz.isPrimitive()) {
-            if (klazz == Number.class)
-              cachedClass = new CachedClass.NumberCachedClass(klazz);
-            else
-                if (klazz == Integer.class || klazz == Integer.TYPE)
-                  cachedClass = new CachedClass.IntegerCachedClass(klazz);
-                else
-                  if (klazz == Double.class || klazz == Double.TYPE )
-                    cachedClass = new CachedClass.DoubleCachedClass(klazz);
-                  else
-                      if (klazz == BigDecimal.class )
-                        cachedClass = new CachedClass.BigDecimalCachedClass(klazz);
-                      else
-                          if (klazz == Long.class || klazz == Long.TYPE)
-                            cachedClass = new CachedClass.LongCachedClass(klazz);
-                          else
-                              if (klazz == Float.class || klazz == Float.TYPE)
-                                cachedClass = new CachedClass.FloatCachedClass(klazz);
-                              else
-                                  if (klazz == Short.class || klazz == Short.TYPE)
-                                    cachedClass = new CachedClass.ShortCachedClass(klazz);
-                                  else
-                                      if (klazz == Boolean.TYPE)
-                                        cachedClass = new CachedClass.BooleanCachedClass(klazz);
-                                      else
-                                          if (klazz == Character.TYPE)
-                                            cachedClass = new CachedClass.CharacterCachedClass(klazz);
-                                          else
-                                              if (klazz == BigInteger.class)
-                                                cachedClass = new CachedClass.BigIntegerCachedClass(klazz);
-                                              else
-                                                if (klazz == Byte.class)
-                                                  cachedClass = new CachedClass.ByteCachedClass(klazz);
-                                                else
-                                                  cachedClass = new CachedClass(klazz);
-        }
-        else
-            if (klazz.getName().charAt(0) == '[')
-              cachedClass = new CachedClass.ArrayCachedClass (klazz);
-            else
-                if (klazz == Boolean.class)
-                  cachedClass = new CachedClass.BooleanCachedClass(klazz);
-                else
-                    if (klazz == Character.class)
-                      cachedClass = new CachedClass.CharacterCachedClass(klazz);
-                    else
-                      cachedClass = new CachedClass(klazz);
-
-        return cachedClass;
     }
 
     private static ClassMap classMap = new ClassMap();
@@ -196,26 +155,14 @@ public class ClassInfo extends ReentrantLock {
 
     private static class ClassMap extends ConcurrentHashMap<String,MultiClassInfoRecord> {
 
-        MultiClassInfoRecord DUMMY = new MultiClassInfoRecord();
-        Lock lock = new ReentrantLock();
-
         ClassInfo getClassInfo (Class cls) {
             final String name = cls.getName();
-            MultiClassInfoRecord infoRecord = putIfAbsent(name, DUMMY);
-            if (infoRecord == null || infoRecord == DUMMY) {
-                SoftRef.expungeStaleEntries();
-
+            MultiClassInfoRecord infoRecord = get(name);
+            if (infoRecord == null) {
                 MultiClassInfoRecord newRecord = new MultiClassInfoRecord();
                 infoRecord = putIfAbsent(name, newRecord);
-                if (infoRecord == DUMMY) {
-                    lock.lock();
-                    try {
-                       put (name, newRecord);
-                       infoRecord = newRecord;
-                    }
-                    finally {
-                        lock.unlock();
-                    }
+                if (infoRecord == null) {
+                    infoRecord = newRecord;
                 }
             }
 
@@ -225,9 +172,9 @@ public class ClassInfo extends ReentrantLock {
 
     public static class MultiClassInfoRecord extends ReentrantLock{
         /**
-         * Either ClassInfo or ClassInfo []
+         * Either null or ClassInfo or ClassInfo []
          */
-        private Object data;
+        private volatile Object data;
 
         public ClassInfo get (Class klazz) {
             final ClassInfo info = getUnlocked(data, klazz);
@@ -376,10 +323,68 @@ public class ClassInfo extends ReentrantLock {
 
             ClassInfo d [] = (ClassInfo[]) data;
             int count = 0;
-            for (ClassInfo classInfo : d)
-              count += d.length;
+            count += d.length;
 
             return count;
         }
+    }
+
+    private static CachedClass createCachedClass(Class klazz, ClassInfo classInfo) {
+        if (klazz == Object.class)
+            return new ObjectCachedClass(classInfo);
+
+        if (klazz == String.class)
+            return new StringCachedClass(classInfo);
+
+        CachedClass cachedClass;
+        if (Number.class.isAssignableFrom(klazz) || klazz.isPrimitive()) {
+            if (klazz == Number.class)
+              cachedClass = new NumberCachedClass(klazz, classInfo);
+            else
+                if (klazz == Integer.class || klazz == Integer.TYPE)
+                  cachedClass = new IntegerCachedClass(klazz, classInfo);
+                else
+                  if (klazz == Double.class || klazz == Double.TYPE )
+                    cachedClass = new DoubleCachedClass(klazz, classInfo);
+                  else
+                      if (klazz == BigDecimal.class )
+                        cachedClass = new BigDecimalCachedClass(klazz, classInfo);
+                      else
+                          if (klazz == Long.class || klazz == Long.TYPE)
+                            cachedClass = new LongCachedClass(klazz, classInfo);
+                          else
+                              if (klazz == Float.class || klazz == Float.TYPE)
+                                cachedClass = new FloatCachedClass(klazz, classInfo);
+                              else
+                                  if (klazz == Short.class || klazz == Short.TYPE)
+                                    cachedClass = new ShortCachedClass(klazz, classInfo);
+                                  else
+                                      if (klazz == Boolean.TYPE)
+                                        cachedClass = new BooleanCachedClass(klazz, classInfo);
+                                      else
+                                          if (klazz == Character.TYPE)
+                                            cachedClass = new CharacterCachedClass(klazz, classInfo);
+                                          else
+                                              if (klazz == BigInteger.class)
+                                                cachedClass = new BigIntegerCachedClass(klazz, classInfo);
+                                              else
+                                                if (klazz == Byte.class)
+                                                  cachedClass = new ByteCachedClass(klazz, classInfo);
+                                                else
+                                                  cachedClass = new CachedClass(klazz, classInfo);
+        }
+        else
+            if (klazz.getName().charAt(0) == '[')
+              cachedClass = new ArrayCachedClass(klazz, classInfo);
+            else
+                if (klazz == Boolean.class)
+                  cachedClass = new BooleanCachedClass(klazz, classInfo);
+                else
+                    if (klazz == Character.class)
+                      cachedClass = new CharacterCachedClass(klazz, classInfo);
+                    else
+                      cachedClass = new CachedClass(klazz, classInfo);
+
+        return cachedClass;
     }
 }

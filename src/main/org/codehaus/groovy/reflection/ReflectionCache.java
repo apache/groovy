@@ -49,7 +49,7 @@ public class ReflectionCache {
 
     static WeakDoubleKeyHashMap assignableMap = new WeakDoubleKeyHashMap();
 
-    static final CachedClass STRING_CLASS = new CachedClass.StringCachedClass();
+    static final CachedClass STRING_CLASS = getCachedClass(String.class);
 
     public static boolean isArray(Class klazz) {
       return klazz.getName().charAt(0) == '[';
@@ -96,15 +96,7 @@ public class ReflectionCache {
         return true;
     }
 
-    public static final CachedClass OBJECT_CLASS = new CachedClass(Object.class) {
-        public synchronized CachedClass getCachedSuperClass() {
-            return null;
-        }
-
-        public boolean isAssignableFrom(Class argument) {
-            return true;
-        }
-    };
+    public static final CachedClass OBJECT_CLASS = getCachedClass(Object.class);
 
     public static final CachedClass OBJECT_ARRAY_CLASS = getCachedClass(Object[].class);
 
@@ -114,4 +106,5 @@ public class ReflectionCache {
         
         return ClassInfo.getClassInfo(klazz).getCachedClass (klazz);
     }
+
 }

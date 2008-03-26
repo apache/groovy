@@ -47,7 +47,7 @@ public class DgmConverter implements Opcodes{
             helper = new BytecodeHelper(mv);
             mv.visitCode();
             mv.visitVarInsn(ALOAD,1);
-            helper.doCast(method.getParameterTypes()[0].getCachedClass());
+            helper.doCast(method.getParameterTypes()[0].getTheClass());
             loadParameters(method,2,mv);
             mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/DefaultGroovyMethods", method.getName(), methodDescriptor);
             helper.box(returnType);
@@ -63,7 +63,7 @@ public class DgmConverter implements Opcodes{
             mv.visitCode();
             if (method.getParamsCount() == 2 && method.getParameterTypes()[0].isNumber && method.getParameterTypes()[1].isNumber) {
                 mv.visitVarInsn(ALOAD,1);
-                helper.doCast(method.getParameterTypes()[0].getCachedClass());
+                helper.doCast(method.getParameterTypes()[0].getTheClass());
 
                 mv.visitVarInsn(ALOAD, 0);
                 mv.visitMethodInsn(INVOKEVIRTUAL, className, "getParameterTypes", "()[Lorg/codehaus/groovy/reflection/CachedClass;");
@@ -76,7 +76,7 @@ public class DgmConverter implements Opcodes{
 
                 // cast argument to parameter class, inclusive unboxing
                 // for methods with primitive types
-                Class type = method.getParameterTypes()[1].getCachedClass();
+                Class type = method.getParameterTypes()[1].getTheClass();
                 if (type.isPrimitive()) {
                     helper.unbox(type);
                 } else {
@@ -89,7 +89,7 @@ public class DgmConverter implements Opcodes{
                 mv.visitMethodInsn(INVOKEVIRTUAL, className, "coerceArgumentsToClasses", "([Ljava/lang/Object;)[Ljava/lang/Object;");
                 mv.visitVarInsn(ASTORE, 2);
                 mv.visitVarInsn(ALOAD,1);
-                helper.doCast(method.getParameterTypes()[0].getCachedClass());
+                helper.doCast(method.getParameterTypes()[0].getTheClass());
                 loadParameters(method,2,mv);
             }
             mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/DefaultGroovyMethods", method.getName(), methodDescriptor);
@@ -191,7 +191,7 @@ public class DgmConverter implements Opcodes{
 
             // cast argument to parameter class, inclusive unboxing
             // for methods with primitive types
-            Class type = parameters[i+1].getCachedClass();
+            Class type = parameters[i+1].getTheClass();
             if (type.isPrimitive()) {
                 helper.unbox(type);
             } else {

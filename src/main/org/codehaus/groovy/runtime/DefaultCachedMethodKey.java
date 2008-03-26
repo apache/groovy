@@ -40,6 +40,6 @@ public class DefaultCachedMethodKey extends MethodKey{
     public Class getParameterType(int index) {
         CachedClass c = parameterTypes[index];
         if (c==null) return Object.class;
-        return c.getCachedClass();
+        return c.getTheClass();
     }
 }

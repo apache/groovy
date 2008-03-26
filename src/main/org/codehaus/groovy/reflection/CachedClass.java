@@ -15,18 +15,13 @@
  */
 package org.codehaus.groovy.reflection;
 
-import groovy.lang.GString;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.classgen.BytecodeHelper;
-import org.codehaus.groovy.runtime.Reflector;
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.*;
@@ -41,63 +36,20 @@ public class CachedClass {
 
     int hashCode;
 
-    private Reflector reflector;
-
     private volatile MetaClass metaClassForClass;
 
     private CachedField[] fields;
     private CachedConstructor[] constructors;
     private CachedMethod[] methods;
     private final Class cachedClass;
+    private final ClassInfo classInfo;
     private MetaMethod[] newMetaMethods = EMPTY;
     public  CachedMethod [] mopMethods;
     public static final CachedClass[] EMPTY_ARRAY = new CachedClass[0];
     private Object staticMetaClassField;
     private static final Object NONE = new Object();
 
-    public Set getInterfaces() {
-        if (interfaces == null)  {
-            interfaces = new HashSet (0);
-
-            if (getCachedClass().isInterface())
-              interfaces.add(this);
-
-            Class[] classes = getCachedClass().getInterfaces();
-            for (int i = 0; i < classes.length; i++) {
-                final CachedClass aClass = ReflectionCache.getCachedClass(classes[i]);
-                if (!interfaces.contains(aClass))
-                  interfaces.addAll(aClass.getInterfaces());
-            }
-
-            final CachedClass superClass = getCachedSuperClass();
-            if (superClass != null)
-              interfaces.addAll(superClass.getInterfaces());
-        }
-        return interfaces;
-    }
-
     private Set ownInterfaces;
-
-    public Set getOwnInterfaces() {
-        if (ownInterfaces == null)  {
-            ownInterfaces = new HashSet (0);
-
-            if (getCachedClass().isInterface())
-              ownInterfaces.add(this);
-
-            Class[] classes = getCachedClass().getInterfaces();
-            for (int i = 0; i < classes.length; i++) {
-                final CachedClass aClass = ReflectionCache.getCachedClass(classes[i]);
-                if (!ownInterfaces.contains(aClass))
-                  ownInterfaces.addAll(aClass.getInterfaces());
-            }
-
-            final CachedClass superClass = getCachedSuperClass();
-            if (superClass != null)
-              ownInterfaces.addAll(superClass.getInterfaces());
-        }
-        return ownInterfaces;
-    }
 
     private Set interfaces;
 
@@ -108,8 +60,9 @@ public class CachedClass {
     public final boolean isInterface;
     public final boolean isNumber;
 
-    CachedClass(Class klazz) {
+    public CachedClass(Class klazz, ClassInfo classInfo) {
         cachedClass = klazz;
+        this.classInfo = classInfo;
         isArray = klazz.isArray();
         isPrimitive = klazz.isPrimitive();
         modifiers = klazz.getModifiers();
@@ -129,7 +82,7 @@ public class CachedClass {
     public synchronized CachedClass getCachedSuperClass() {
         if (cachedSuperClass == null) {
             if (!isArray)
-              cachedSuperClass = ReflectionCache.getCachedClass(getCachedClass().getSuperclass());
+              cachedSuperClass = ReflectionCache.getCachedClass(getTheClass().getSuperclass());
             else
               if (cachedClass.getComponentType().isPrimitive() || cachedClass.getComponentType() == Object.class)
                 cachedSuperClass = ReflectionCache.OBJECT_CLASS;
@@ -140,12 +93,54 @@ public class CachedClass {
         return cachedSuperClass;
     }
 
+    public Set getInterfaces() {
+        if (interfaces == null)  {
+            interfaces = new HashSet (0);
+
+            if (getTheClass().isInterface())
+              interfaces.add(this);
+
+            Class[] classes = getTheClass().getInterfaces();
+            for (int i = 0; i < classes.length; i++) {
+                final CachedClass aClass = ReflectionCache.getCachedClass(classes[i]);
+                if (!interfaces.contains(aClass))
+                  interfaces.addAll(aClass.getInterfaces());
+            }
+
+            final CachedClass superClass = getCachedSuperClass();
+            if (superClass != null)
+              interfaces.addAll(superClass.getInterfaces());
+        }
+        return interfaces;
+    }
+
+    public Set getOwnInterfaces() {
+        if (ownInterfaces == null)  {
+            ownInterfaces = new HashSet (0);
+
+            if (getTheClass().isInterface())
+              ownInterfaces.add(this);
+
+            Class[] classes = getTheClass().getInterfaces();
+            for (int i = 0; i < classes.length; i++) {
+                final CachedClass aClass = ReflectionCache.getCachedClass(classes[i]);
+                if (!ownInterfaces.contains(aClass))
+                  ownInterfaces.addAll(aClass.getInterfaces());
+            }
+
+            final CachedClass superClass = getCachedSuperClass();
+            if (superClass != null)
+              ownInterfaces.addAll(superClass.getInterfaces());
+        }
+        return ownInterfaces;
+    }
+
     public synchronized CachedMethod[] getMethods() {
         if (methods == null) {
             final Method[] declaredMethods = (Method[])
                AccessController.doPrivileged(new PrivilegedAction/*<Method[]>*/() {
                    public /*Method[]*/ Object run() {
-                       return getCachedClass().getDeclaredMethods();
+                       return getTheClass().getDeclaredMethods();
                    }
                });
             ArrayList methods = new ArrayList(declaredMethods.length);
@@ -188,7 +183,7 @@ public class CachedClass {
             final Field[] declaredFields = (Field[])
                AccessController.doPrivileged(new PrivilegedAction/*<Field[]>*/() {
                    public /*Field[]*/ Object run() {
-                       return getCachedClass().getDeclaredFields();
+                       return getTheClass().getDeclaredFields();
                    }
                });
             fields = new CachedField[declaredFields.length];
@@ -203,7 +198,7 @@ public class CachedClass {
             final Constructor[] declaredConstructors = (Constructor[])
                AccessController.doPrivileged(new PrivilegedAction/*<Constructor[]>*/() {
                    public /*Constructor[]*/ Object run() {
-                       return getCachedClass().getDeclaredConstructors();
+                       return getTheClass().getDeclaredConstructors();
                    }
                });
             constructors = new CachedConstructor[declaredConstructors.length];
@@ -237,10 +232,10 @@ public class CachedClass {
     }
     
     public int getSuperClassDistance() {
-        synchronized (getCachedClass()) {
+        synchronized (getTheClass()) {
             if (distance == -1) {
                 int distance = 0;
-                for (Class klazz= getCachedClass(); klazz != null; klazz = klazz.getSuperclass()) {
+                for (Class klazz= getTheClass(); klazz != null; klazz = klazz.getSuperclass()) {
                     distance++;
                 }
                 this.distance = distance;
@@ -263,15 +258,15 @@ public class CachedClass {
     }
 
     public boolean isVoid() {
-        return getCachedClass() == void.class;
+        return getTheClass() == void.class;
     }
 
     public void box(BytecodeHelper helper) {
-        helper.box(getCachedClass());
+        helper.box(getTheClass());
     }
 
     public void unbox(BytecodeHelper helper) {
-        helper.unbox(getCachedClass());
+        helper.unbox(getTheClass());
     }
 
     public boolean isInterface() {
@@ -279,26 +274,18 @@ public class CachedClass {
     }
 
     public void doCast(BytecodeHelper helper) {
-        helper.doCast(getCachedClass());
+        helper.doCast(getTheClass());
     }
 
     public String getName() {
-        return getCachedClass().getName();
+        return getTheClass().getName();
     }
 
     public String getTypeDescription() {
-        return BytecodeHelper.getTypeDescription(getCachedClass());
+        return BytecodeHelper.getTypeDescription(getTheClass());
     }
 
-    public synchronized Reflector getReflector() {
-        /*if (reflector == null) {
-            final MetaClassRegistry metaClassRegistry = MetaClassRegistryImpl.getInstance(MetaClassRegistryImpl.LOAD_DEFAULT);
-            reflector = ((MetaClassRegistryImpl)metaClassRegistry).loadReflector(getCachedClass(), Arrays.asList(getMethods()));
-        }*/
-        return reflector;
-    }
-
-    public final Class getCachedClass() {
+    public final Class getTheClass() {
         return cachedClass;
     }
 
@@ -341,11 +328,11 @@ public class CachedClass {
     }
 
     public boolean isAssignableFrom(Class argument) {
-        return argument == null || ReflectionCache.isAssignableFrom(getCachedClass(), argument);
+        return argument == null || ReflectionCache.isAssignableFrom(getTheClass(), argument);
     }
 
     public boolean isDirectlyAssignable(Object argument) {
-        return ReflectionCache.isAssignableFrom(getCachedClass(), argument.getClass());
+        return ReflectionCache.isAssignableFrom(getTheClass(), argument.getClass());
     }
 
     public static class CachedMethodComparatorByName implements Comparator {
@@ -369,365 +356,5 @@ public class CachedClass {
 
     public String toString() {
         return cachedClass.toString();
-    }
-
-    public static class NumberCachedClass extends CachedClass {
-
-        NumberCachedClass(Class klazz) {
-            super(klazz);
-        }
-
-        public Object coerceArgument(Object argument) {
-            if (argument instanceof Number) {
-                return coerceNumber(argument);
-            }
-            return argument;
-
-        }
-
-        public boolean isAssignableFrom(Class classToTransformFrom) {
-            return classToTransformFrom == null
-                || Number.class.isAssignableFrom(classToTransformFrom)
-                || classToTransformFrom == Byte.TYPE
-                || classToTransformFrom == Short.TYPE
-                || classToTransformFrom == Integer.TYPE
-                || classToTransformFrom == Long.TYPE
-                || classToTransformFrom == Float.TYPE
-                || classToTransformFrom == Double.TYPE
-                    ;
-        }
-
-        private Object coerceNumber(Object argument) {
-            Class param = getCachedClass();
-            if (param == Byte.class /*|| param == Byte.TYPE*/) {
-                argument = new Byte(((Number) argument).byteValue());
-            } else if (param == BigInteger.class) {
-                argument = new BigInteger(String.valueOf((Number) argument));
-            }
-
-            return argument;
-        }
-    }
-
-    public static class IntegerCachedClass extends NumberCachedClass {  // int, Integer
-        IntegerCachedClass(Class klazz) {
-            super(klazz);
-        }
-
-        public Object coerceArgument(Object argument) {
-            if (argument instanceof Integer) {
-                return argument;
-            }
-
-            return new Integer(((Number) argument).intValue());
-        }
-
-        public boolean isDirectlyAssignable(Object argument) {
-            return argument == null || argument instanceof Integer;
-        }
-
-        public boolean isAssignableFrom(Class classToTransformFrom) {
-            return classToTransformFrom == null
-                || classToTransformFrom == Integer.class
-                || classToTransformFrom == Short.class
-                || classToTransformFrom == Byte.class
-                || classToTransformFrom == BigInteger.class
-                || classToTransformFrom == Integer.TYPE
-                || classToTransformFrom == Short.TYPE
-                || classToTransformFrom == Byte.TYPE;
-        }
-    }
-
-    public static class BigIntegerCachedClass extends NumberCachedClass {
-        BigIntegerCachedClass(Class klazz) {
-            super(klazz);
-        }
-
-        public boolean isDirectlyAssignable(Object argument) {
-            return argument instanceof BigInteger;
-        }
-
-        public boolean isAssignableFrom(Class classToTransformFrom) {
-            return classToTransformFrom == null
-                || classToTransformFrom == Integer.class
-                || classToTransformFrom == Short.class
-                || classToTransformFrom == Byte.class
-                || classToTransformFrom == BigInteger.class
-                || classToTransformFrom == Long.class
-                || classToTransformFrom == Integer.TYPE
-                || classToTransformFrom == Short.TYPE
-                || classToTransformFrom == Byte.TYPE
-                || classToTransformFrom == Long.TYPE;
-        }
-    }
-
-    public static class ByteCachedClass extends NumberCachedClass {
-        ByteCachedClass(Class klazz) {
-            super(klazz);
-        }
-
-        public Object coerceArgument(Object argument) {
-            if (argument instanceof Byte) {
-                return argument;
-            }
-
-            return new Byte(((Number) argument).byteValue());
-        }
-
-        public boolean isDirectlyAssignable(Object argument) {
-            return argument instanceof Short;
-        }
-
-        public boolean isAssignableFrom(Class classToTransformFrom) {
-            return classToTransformFrom == null
-                || classToTransformFrom == Byte.class
-                || classToTransformFrom == Byte.TYPE;
-        }
-    }
-
-    public static class ShortCachedClass extends NumberCachedClass {
-        ShortCachedClass(Class klazz) {
-            super(klazz);
-        }
-
-        public Object coerceArgument(Object argument) {
-            if (argument instanceof Short) {
-                return argument;
-            }
-
-            return new Short(((Number) argument).shortValue());
-        }
-
-        public boolean isDirectlyAssignable(Object argument) {
-            return argument instanceof Short;
-        }
-
-        public boolean isAssignableFrom(Class classToTransformFrom) {
-            return classToTransformFrom == null
-                || classToTransformFrom == Short.class
-                || classToTransformFrom == Byte.class
-                || classToTransformFrom == Short.TYPE
-                || classToTransformFrom == Byte.TYPE;
-        }
-    }
-
-    public static class LongCachedClass extends NumberCachedClass {
-        LongCachedClass(Class klazz) {
-            super(klazz);
-        }
-
-
-        public Object coerceArgument(Object argument) {
-            if (argument instanceof Long) {
-                return argument;
-            }
-
-            return new Long(((Number) argument).longValue());
-        }
-
-        public boolean isDirectlyAssignable(Object argument) {
-            return argument instanceof Long;
-        }
-
-        public boolean isAssignableFrom(Class classToTransformFrom) {
-            return  classToTransformFrom == null
-                    || classToTransformFrom == Integer.class
-                    || classToTransformFrom == Long.class
-                    || classToTransformFrom == Short.class
-                    || classToTransformFrom == Byte.class
-                    || classToTransformFrom == Integer.TYPE
-                    || classToTransformFrom == Long.TYPE
-                    || classToTransformFrom == Short.TYPE
-                    || classToTransformFrom == Byte.TYPE;
-        }
-    }
-
-    public static class FloatCachedClass extends NumberCachedClass {
-        FloatCachedClass(Class klazz) {
-            super(klazz);
-        }
-
-        public Object coerceArgument(Object argument) {
-            if (argument instanceof Float) {
-                return argument;
-            }
-
-            Float res = new Float(((Number) argument).floatValue());
-            if (argument instanceof BigDecimal && res.isInfinite()) {
-                throw new IllegalArgumentException(Float.class + " out of range while converting from BigDecimal");
-            }
-            return res;
-        }
-
-        public boolean isDirectlyAssignable(Object argument) {
-            return argument instanceof Float;
-        }
-
-        public boolean isAssignableFrom(Class classToTransformFrom) {
-            return  classToTransformFrom == null
-                    || classToTransformFrom == Float.class
-                    || classToTransformFrom == Integer.class
-                    || classToTransformFrom == Long.class
-                    || classToTransformFrom == Short.class
-                    || classToTransformFrom == Byte.class
-                    || classToTransformFrom == Float.TYPE
-                    || classToTransformFrom == Integer.TYPE
-                    || classToTransformFrom == Long.TYPE
-                    || classToTransformFrom == Short.TYPE
-                    || classToTransformFrom == Byte.TYPE;
-        }
-    }
-
-    public static class DoubleCachedClass extends NumberCachedClass { // Double, double
-        DoubleCachedClass(Class klazz) {
-            super(klazz);
-        }
-
-        public boolean isDirectlyAssignable(Object argument) {
-            return argument instanceof Double;
-        }
-
-        public Object coerceArgument(Object argument) {
-            if (argument instanceof Double) {
-                return argument;
-            }
-
-            Double res = new Double(((Number) argument).doubleValue());
-            if (argument instanceof BigDecimal && res.isInfinite()) {
-                throw new IllegalArgumentException(Double.class + " out of range while converting from BigDecimal");
-            }
-            return res;
-        }
-
-        public boolean isAssignableFrom(Class classToTransformFrom) {
-            return  classToTransformFrom == null
-                    || classToTransformFrom == Double.class
-                    || classToTransformFrom == Integer.class
-                    || classToTransformFrom == Long.class
-                    || classToTransformFrom == Short.class
-                    || classToTransformFrom == Byte.class
-                    || classToTransformFrom == Float.class
-                    || classToTransformFrom == Double.TYPE
-                    || classToTransformFrom == Integer.TYPE
-                    || classToTransformFrom == Long.TYPE
-                    || classToTransformFrom == Short.TYPE
-                    || classToTransformFrom == Byte.TYPE
-                    || classToTransformFrom == Float.TYPE
-                    || classToTransformFrom == BigDecimal.class
-                    || classToTransformFrom == BigInteger.class;
-        }
-    }
-
-    public static class BigDecimalCachedClass extends DoubleCachedClass {
-        BigDecimalCachedClass(Class klazz) {
-            super(klazz);
-        }
-
-        public boolean isDirectlyAssignable(Object argument) {
-            return argument instanceof BigDecimal;
-        }
-
-        public Object coerceArgument(Object argument) {
-            if (argument instanceof BigDecimal) {
-                return argument;
-            }
-
-            return new BigDecimal(((Number) argument).doubleValue());
-        }
-    }
-
-    public static class StringCachedClass extends CachedClass {
-        private static final Class STRING_CLASS = String.class;
-        private static final Class GSTRING_CLASS = GString.class;
-
-        StringCachedClass() {
-            super(STRING_CLASS);
-        }
-
-        public boolean isDirectlyAssignable(Object argument) {
-            return argument instanceof String;
-        }
-
-        public boolean isAssignableFrom(Class classToTransformFrom) {
-            return  classToTransformFrom == null
-                  || classToTransformFrom == STRING_CLASS
-                  || ReflectionCache.isAssignableFrom(GSTRING_CLASS,classToTransformFrom);
-        }
-
-        public Object coerceArgument(Object argument) {
-            return argument instanceof GString ? argument.toString() : argument;
-        }
-    }
-
-    public static class BooleanCachedClass extends CachedClass {
-        BooleanCachedClass(Class klazz) {
-            super(klazz);
-        }
-
-        public boolean isAssignableFrom(Class classToTransformFrom) {
-            return classToTransformFrom == null
-                  || classToTransformFrom == Boolean.class
-                  || classToTransformFrom == Boolean.TYPE;
-        }
-    }
-
-    public static class CharacterCachedClass extends CachedClass {
-        public CharacterCachedClass(Class klazz) {
-            super(klazz);
-        }
-
-        public boolean isAssignableFrom(Class classToTransformFrom) {
-            return  classToTransformFrom == null
-                  ||classToTransformFrom == Character.class
-                  ||classToTransformFrom == Character.TYPE;
-        }
-    }
-
-    public static class ArrayCachedClass extends CachedClass {
-        ArrayCachedClass(Class klazz) {
-            super(klazz);
-        }
-
-        public Object coerceArgument(Object argument) {
-            Class argumentClass = argument.getClass();
-            if (argumentClass.getName().charAt(0) != '[') return argument;
-            Class argumentComponent = argumentClass.getComponentType();
-
-            Class paramComponent = getCachedClass().getComponentType();
-            if (paramComponent.isPrimitive()) {
-                if (paramComponent == boolean.class && argumentClass == Boolean[].class) {
-                    argument = DefaultTypeTransformation.convertToBooleanArray(argument);
-                } else if (paramComponent == byte.class && argumentClass == Byte[].class) {
-                    argument = DefaultTypeTransformation.convertToByteArray(argument);
-                } else if (paramComponent == char.class && argumentClass == Character[].class) {
-                    argument = DefaultTypeTransformation.convertToCharArray(argument);
-                } else if (paramComponent == short.class && argumentClass == Short[].class) {
-                    argument = DefaultTypeTransformation.convertToShortArray(argument);
-                } else if (paramComponent == int.class && argumentClass == Integer[].class) {
-                    argument = DefaultTypeTransformation.convertToIntArray(argument);
-                } else if (paramComponent == long.class &&
-                        (argumentClass == Long[].class || argumentClass == Integer[].class)) {
-                    argument = DefaultTypeTransformation.convertToLongArray(argument);
-                } else if (paramComponent == float.class &&
-                        (argumentClass == Float[].class || argumentClass == Integer[].class)) {
-                    argument = DefaultTypeTransformation.convertToFloatArray(argument);
-                } else if (paramComponent == double.class &&
-                        (argumentClass == Double[].class || argumentClass == Float[].class
-                                || BigDecimal[].class.isAssignableFrom(argumentClass))) {
-                    argument = DefaultTypeTransformation.convertToDoubleArray(argument);
-                }
-            } else if (paramComponent == String.class && argument instanceof GString[]) {
-                GString[] strings = (GString[]) argument;
-                String[] ret = new String[strings.length];
-                for (int i = 0; i < strings.length; i++) {
-                    ret[i] = strings[i].toString();
-                }
-                argument = ret;
-            } else if (paramComponent==Object.class && argumentComponent.isPrimitive()){
-                argument = DefaultTypeTransformation.primitiveArrayBox(argument);
-            }
-            return argument;
-        }
-
     }
 }
