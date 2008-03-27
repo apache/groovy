@@ -1133,9 +1133,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     protected Expression declarationExpression(AST variableDef) {
         AST node = variableDef.getFirstChild();
         ClassNode type = null;
+        List annotations = new ArrayList();
         if (isType(MODIFIERS, node)) {
             // force check of modifier conflicts
-            modifiers(node, null, 0);
+            modifiers(node, annotations, 0);
             node = node.getNextSibling();
         }
         if (isType(TYPE, node)) {
