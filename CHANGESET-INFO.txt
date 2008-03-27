@@ -67,5 +67,8 @@ change sets from trunk NOT in 1.5.x:
 * 11160: play nicer on OSX
 * 11181: GROOVY-2679: Allow to omit square brackets in annotations when list has just one element (similar to Java)
 * 11182: remove some dup only
+* 11221: deeper use of automated layout variables in SwingBuilder...
+* 11230: Some housekeeping and bits of performance
+* 11236: fixes RetentionPolicy usage for precompiled classes (should fix GROOVY-2691)
 
-Last change set applied to 1.5.x: 11182
+Last trunk change set examined for inclusion in 1.5.x: 11252
