@@ -71,4 +71,4 @@ change sets from trunk NOT in 1.5.x:
 * 11230: Some housekeeping and bits of performance
 * 11236: fixes RetentionPolicy usage for precompiled classes (should fix GROOVY-2691)
 
-Last trunk change set examined for inclusion in 1.5.x: 11252
+Last trunk change set examined for inclusion in 1.5.x: 11254
