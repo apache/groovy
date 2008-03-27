@@ -556,11 +556,37 @@ class ExpandoMetaClassTest extends GroovyTestCase {
 
             Circle circle = new Circle()
             // closure will try to access prop1 on script, which does not have such
-            // a property, thus a MissingMethodException will be thrown
+            // a property, thus a MissingPropertyException will be thrown
             // causing the closure code to select the delegate to resolve the property
             Closure cl = {prop1}
             cl.delegate = circle
             assert cl.call()=='value1'
+        """
+    }
+
+    void testMissingMethodClosure() {
+        assertScript """
+            class Circle {
+                def m1(){1}
+            }
+
+            ExpandoMetaClass emc = new ExpandoMetaClass(this.class, false)
+            emc.methodMissing = {String name, args ->
+                throw new MissingMethodException(name, Script, args)
+            }
+            emc.propertyMissing = {String name ->
+                throw new MissingPropertyException(name, Script)
+            }
+            emc.initialize()
+           this.metaClass = emc
+
+            Circle circle = new Circle()
+            // closure will try to call m1 on script, which does not have such
+            // a method, thus a MissingMethodException will be thrown
+            // causing the closure code to select the delegate to call the method
+            Closure cl = {m1()}
+            cl.delegate = circle
+            assert cl.call()== 1
         """
     }
 

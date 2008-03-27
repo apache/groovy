@@ -666,7 +666,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 }
             }
         } catch (InvokerInvocationException iie) {
-            if (iie.getCause() instanceof MissingPropertyException) {
+            boolean shouldHandle = isGetter && propertyMissingGet instanceof ClosureMetaMethod;
+            if (!shouldHandle) shouldHandle = !isGetter && propertyMissingSet instanceof ClosureMetaMethod;
+            if (shouldHandle &&  iie.getCause() instanceof MissingPropertyException) {
                 throw (MissingPropertyException) iie.getCause();
             }
             throw iie;
@@ -677,7 +679,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private Object invokeMissingMethod(Object instance, String methodName, Object[] arguments, RuntimeException original) {
         if (methodMissing != null) {
-            return methodMissing.invoke(instance, new Object[]{methodName, arguments});
+            try {
+                return methodMissing.invoke(instance, new Object[]{methodName, arguments});
+            } catch (InvokerInvocationException iie) {
+                if (methodMissing instanceof ClosureMetaMethod && iie.getCause() instanceof MissingMethodException) {
+                    throw (MissingMethodException) iie.getCause();
+                }
+                throw iie;
+            }
         } else if (original != null) throw original;
         else throw new MissingMethodExceptionNoStack(methodName, theClass, arguments, false);
     }
