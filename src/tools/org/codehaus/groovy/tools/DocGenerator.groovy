@@ -22,7 +22,8 @@ import java.util.*
  */
 class DocGenerator
 {
-	def sourceFiles = []
+    private static final String PRIMITIVE_TYPE_PSEUDO_PACKAGE = 'primitive-types'
+    def sourceFiles = []
 	File outputFolder
 	JavaDocBuilder builder
 	// categorize all groovy methods per core JDK class to which it applies
@@ -119,7 +120,8 @@ class DocGenerator
 		// the allclasses-frame.html
 		def templateAllClasses = createTemplate(engine, 'template.allclasses-frame.html')
 		out = new File(outputFolder, 'allclasses-frame.html')
-		binding = [classes: jdkEnhancedClasses.keySet().sort { it.replaceAll('.*\\.', '')}]
+        def fixPrimitivePackage = { className -> className.contains('.') ? className : "${PRIMITIVE_TYPE_PSEUDO_PACKAGE}.$className" }
+        binding = [classes: jdkEnhancedClasses.keySet().collect(fixPrimitivePackage).sort { it.replaceAll('.*\\.', '')}]
 		out.withWriter {
 			it << templateAllClasses.make(binding)
 		}
@@ -127,14 +129,14 @@ class DocGenerator
 		// the package-frame.html for each package
 		def templatePackageFrame = createTemplate(engine, 'template.package-frame.html')
 		packages.each { curPackage, packageClasses ->
-			def packageName = curPackage ? curPackage : "primitive-types"
+			def packageName = curPackage ?: PRIMITIVE_TYPE_PSEUDO_PACKAGE
 			generatePackageFrame(templatePackageFrame, packageName, packageClasses)
 		}		
 		
 		// the class.html for each class
 		def templateClass = createTemplate(engine, 'template.class.html')
 		packages.each { curPackage, packageClasses ->
-			def packageName = curPackage ? curPackage : "primitive-types"
+			def packageName = curPackage ?: PRIMITIVE_TYPE_PSEUDO_PACKAGE
 			packageClasses.each {
 				generateClassDetails(templateClass, packageName, it)
 			}
