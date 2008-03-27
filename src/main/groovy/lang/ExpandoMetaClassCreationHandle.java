@@ -16,9 +16,11 @@
 package groovy.lang;
 
 import groovy.lang.MetaClassRegistry.MetaClassCreationHandle;
+import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.ClassInfo;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * <p>A handle for the MetaClassRegistry that changes all classes loaded into the Grails VM
@@ -40,9 +42,6 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
 
     public static final ExpandoMetaClassCreationHandle instance = new ExpandoMetaClassCreationHandle();
 
-	private final Map<Class,ExpandoMetaClass> modifiedExpandos = new ConcurrentHashMap<Class,ExpandoMetaClass>();
-
-
 	/* (non-Javadoc)
 	 * @see groovy.lang.MetaClassRegistry.MetaClassCreationHandle#create(java.lang.Class, groovy.lang.MetaClassRegistry)
 	 */
@@ -62,17 +61,16 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
      * Looks for modified super class ExpandoMetaClass instances for the given child ExpandoMetaClass
      */
     private Set retrieveModifiedSuperExpandos(ExpandoMetaClass child) {
-		Set modifiedSupers = new HashSet();
-		List superClasses = child.getSuperClasses();
-		for (Iterator i = superClasses.iterator(); i.hasNext();) {
-			Class c = (Class) i.next();
-            Class[] interfaces = c.getInterfaces();
+		Set<MetaClass> modifiedSupers = new HashSet<MetaClass>();
+        for (CachedClass c : child.getSuperClasses()) {
+            Set<CachedClass> interfaces = c.getInterfaces();
             populateSupersFromInterfaces(modifiedSupers, interfaces);
-            if(modifiedExpandos.containsKey(c)) {
-				modifiedSupers.add(modifiedExpandos.get(c));
+            final ClassInfo info = c.classInfo;
+            if(info.isModifiedExpando()) {
+				modifiedSupers.add(info.getMetaClassForClass());
 			}
 		}
-        Class[] interfaces = child.getJavaClass().getInterfaces();
+        Set<CachedClass> interfaces = child.getTheCachedClass().getDeclaredInterfaces();
         populateSupersFromInterfaces(modifiedSupers, interfaces);
         return modifiedSupers;
 	}
@@ -80,14 +78,15 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
     /*
      * Searches through a given array of interfaces for modified ExpandoMetaClass instances for each interface
      */
-    private void populateSupersFromInterfaces(Set modifiedSupers, Class[] interfaces) {
-        for (int i = 0; i < interfaces.length; i++) {
-            Class anInterface = interfaces[i];
-            final Class[] superInterfaces = anInterface.getInterfaces();
-            if(modifiedExpandos.containsKey(anInterface)) {
-                modifiedSupers.add(modifiedExpandos.get(anInterface));
-            }
-            if(superInterfaces.length > 0)
+    private void populateSupersFromInterfaces(Set<MetaClass> modifiedSupers, Set<CachedClass> interfaces) {
+        for (CachedClass anInterface : interfaces) {
+            final ClassInfo info = anInterface.classInfo;
+            if(info.isModifiedExpando()) {
+				modifiedSupers.add(info.getMetaClassForClass());
+			}
+
+            final Set<CachedClass> superInterfaces = anInterface.getDeclaredInterfaces();
+            if(superInterfaces.size() > 0)
                 populateSupersFromInterfaces(modifiedSupers, superInterfaces);
         }
     }
@@ -100,12 +99,12 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
      */
     public void registerModifiedMetaClass(ExpandoMetaClass emc) {
         final Class klazz = emc.getJavaClass();
-        modifiedExpandos.put(klazz, emc);
+        emc.getClassInfo().setModifiedExpando(true);
         GroovySystem.getMetaClassRegistry().setMetaClass(klazz,emc);
     }
 
 	public boolean hasModifiedMetaClass(ExpandoMetaClass emc) {
-		return modifiedExpandos.containsKey(emc.getJavaClass());
+		return emc.getClassInfo().isModifiedExpando();
 	}
 
     /**
@@ -131,7 +130,6 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
     }
 
     private static void clearModifiedExpandos() {
-        final MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
-        instance.modifiedExpandos.clear();
+        ClassInfo.clearModifiedExpandos();
     }
 }

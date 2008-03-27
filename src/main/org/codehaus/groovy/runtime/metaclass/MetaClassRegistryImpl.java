@@ -21,10 +21,12 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 
-import java.lang.ref.SoftReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -47,88 +49,6 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     private FastArray staticMethods = new FastArray();
 
     private AtomicInteger version = new AtomicInteger();
-
-    /*
-       We keep references to meta classes already known to this thread.
-       It allows us to avoid synchronization. When we need to ask global registry
-       we do sync but usually it is enough to check if global registry has the
-       same version as when we asked last time (neither removeMetaClass
-       nor setMetaClass were called), if version changed we prefer to forget
-       everything we know in the thread and start again (most likely it happens not too often).
-       Unfortunately, we have to keep it in weak map to avoid possible leak of classes.
-     */
-    private class LocallyKnownClasses extends WeakHashMap {
-        int version;
-
-        public static final int CACHE_SIZE = 5;
-        final MetaClass cache [] = new MetaClass[CACHE_SIZE];
-        int nextCacheEntry;
-
-        public MetaClass getMetaClass(Class theClass) {
-            final int regv = MetaClassRegistryImpl.this.version.intValue();
-            if (version != regv) {
-              clear ();
-            }
-            else {
-                MetaClass mc = checkCache(theClass);
-                if (mc != null)
-                  return mc;
-
-                mc = checkMap(theClass);
-                if (mc != null)
-                  return mc;
-            }
-
-            return getFromGlobal(theClass);
-        }
-
-        private MetaClass checkCache(Class theClass) {
-            for (int i = 0; i != CACHE_SIZE; i++) {
-                final MetaClass metaClass = cache[i];
-                if (metaClass != null && metaClass.getTheClass() == theClass) {
-                    return metaClass;
-                }
-            }
-            return null;
-        }
-
-        private MetaClass checkMap(Class theClass) {
-            MetaClass mc;
-            final SoftReference ref = (SoftReference) get(theClass);
-            if (ref != null && (mc = (MetaClass) ref.get()) != null) {
-                putToCache(mc);
-                return mc;
-            }
-            return null;
-        }
-
-        private MetaClass getFromGlobal(Class theClass) {
-            MetaClass answer = getGlobalMetaClass(theClass);
-            put(theClass, answer);
-            version = MetaClassRegistryImpl.this.version.get();
-            return answer;
-        }
-
-        public Object put(Object key, Object value) {
-            putToCache((MetaClass) value);
-            return super.put(key, new SoftReference(value));
-        }
-
-        private void putToCache(MetaClass value) {
-            cache [nextCacheEntry++] = value;
-            if (nextCacheEntry == CACHE_SIZE)
-              nextCacheEntry = 0;
-        }
-
-        public void clear() {
-            for (int i = 0; i < cache.length; i++) {
-                cache [i] = null;
-            }
-            super.clear();
-        }
-    }
-
-    private final MyThreadLocal locallyKnown = new MyThreadLocal();
 
     public static final int LOAD_DEFAULT = 0;
     public static final int DONT_LOAD_DEFAULT = 1;
@@ -265,18 +185,19 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         }
     }
 
-    private MetaClass getGlobalMetaClass (Class theClass) {
+    public final MetaClass getMetaClass(Class theClass) {
+
         final ClassInfo info = ClassInfo.getClassInfo(theClass);
 
         MetaClass answer = info.getMetaClassForClass();
         if (answer != null)
-          return answer;
+            return answer;
 
         info.lock();
         try {
             answer = info.getMetaClassForClass();
             if (answer != null)
-              return answer;
+                return answer;
 
             answer = metaClassCreationHandle.create(theClass, this);
             answer.initialize();
@@ -286,21 +207,14 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             } else {
                 info.setWeakMetaClass(answer);
             }
-            final CachedClass aClass = info.getCachedClass(theClass);
-            aClass.setStaticMetaClassField (answer);
-            aClass.setMetaClassForClass(answer);
             return answer;
         }
         finally {
-            info.unlock();                       
+            info.unlock();
         }
     }
 
-    public final MetaClass getMetaClass(Class theClass) {
-         return locallyKnown.getMetaClass(theClass);
-    }
-
-    public synchronized void removeMetaClass(Class theClass) {
+    public void removeMetaClass(Class theClass) {
         version.incrementAndGet();
 
         final ClassInfo info = ClassInfo.getClassInfo(theClass);
@@ -308,10 +222,6 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         info.lock();
         try {
             info.setStrongMetaClass(null);
-
-            final CachedClass aClass = info.getCachedClass(theClass);
-            aClass.setStaticMetaClassField (null);
-            aClass.setMetaClassForClass(null);
         }
         finally {
             info.unlock();
@@ -324,7 +234,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      * @param theClass
      * @param theMetaClass
      */
-    public synchronized void setMetaClass(Class theClass, MetaClass theMetaClass) {
+    public void setMetaClass(Class theClass, MetaClass theMetaClass) {
         version.incrementAndGet();
 
         final ClassInfo info = ClassInfo.getClassInfo(theClass);
@@ -332,10 +242,6 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         info.lock();
         try {
             info.setStrongMetaClass(theMetaClass);
-
-            final CachedClass aClass = info.getCachedClass(theClass);
-            aClass.setStaticMetaClassField (theMetaClass);
-            aClass.setMetaClassForClass(theMetaClass);
         }
         finally {
             info.unlock();
@@ -395,25 +301,5 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
 
     public FastArray getStaticMethods() {
         return staticMethods;
-    }
-
-    private class MyThreadLocal extends ThreadLocal {
-        private volatile LocallyKnownClasses myClasses = new LocallyKnownClasses();
-        private Thread myThread = Thread.currentThread();
-
-        protected Object initialValue() {
-            return new LocallyKnownClasses();
-        }
-
-        public final MetaClass getMetaClass (Class theClass) {
-            return ((LocallyKnownClasses)get()).getMetaClass(theClass);
-        }
-
-        public final Object get() {
-            if (Thread.currentThread() != myThread)
-              return super.get();
-            else
-              return myClasses;
-        }
     }
 }

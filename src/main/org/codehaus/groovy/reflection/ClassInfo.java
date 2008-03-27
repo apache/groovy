@@ -23,28 +23,64 @@ import java.lang.ref.SoftReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.locks.ReentrantLock;
 
 /**
  * @author Alex.Tkachman
  */
-public class ClassInfo extends ReentrantLock {
+public class ClassInfo extends LockableObject {
 
-    private MetaClass strongMetaClass;
-    SoftReference<CachedClass> cachedClassRef;
-    SoftReference<MetaClass> weakMetaClass;
+    private volatile MetaClass strongMetaClass;
+    private volatile SoftReference<CachedClass> cachedClassRef;
+    private volatile SoftReference<MetaClass> weakMetaClass;
 
-    public ClassInfo(Class klazz, MultiClassInfoRecord mcir) {
-        cachedClassRef = new SoftRef<CachedClass> (createCachedClass(klazz,this), mcir);
+    private static final Object NONE = new Object();
+
+    private final LazyReference staticMetaClassField = new LazyReference() {
+        public Object initValue() {
+            final CachedClass aClass = getCachedClass(getCls());
+
+            final CachedField[] cachedFields = aClass.getFields();
+            for (CachedField cachedField : cachedFields) {
+                if (cachedField.getName().startsWith("$staticMetaClass") && cachedField.getType() == MetaClass.class && cachedField.isStatic()) {
+                    return cachedField;
+                }
+            }
+
+            return NONE;
+        }
+    };
+
+    private int version;
+    private boolean modifiedExpando;
+
+    public ClassInfo(Class klazz, GlobalMultiClassInfoRecord mcir) {
+        final CachedClass aClass = createCachedClass(klazz, this);
+        cachedClassRef = new SoftRef<CachedClass> (aClass, mcir);
+    }
+
+    public int getVersion() {
+        return version;
+    }
+
+    public boolean isModifiedExpando() {
+        return modifiedExpando;
+    }
+
+    public void setModifiedExpando(boolean modifiedExpando) {
+        this.modifiedExpando = modifiedExpando;
+    }
+
+    public static void clearModifiedExpandos() {
     }
 
     private static class SoftRef<T> extends SoftReference<T> {
         private static ReferenceQueue queue = new ReferenceQueue();
 
-        private MultiClassInfoRecord mcir;
+        private GlobalMultiClassInfoRecord mcir;
 
-        public SoftRef(T referent, MultiClassInfoRecord mcir) {
+        public SoftRef(T referent, GlobalMultiClassInfoRecord mcir) {
             super(referent, queue);
             this.mcir = mcir;
         }
@@ -100,44 +136,57 @@ public class ClassInfo extends ReentrantLock {
         }
     }
 
-    private static ClassMap classMap = new ClassMap();
+    private static final GlobalClassMap globalClassMap = new GlobalClassMap();
 
     public static ClassInfo getClassInfo (Class cls) {
-        return classMap.getClassInfo (cls);
-    }
-
-    public void setStrongMetaClass(MetaClass strongMetaClass) {
-        this.strongMetaClass = strongMetaClass;
-        weakMetaClass = null;
+        return localClassMap.get().getClassInfo (cls);
     }
 
     public MetaClass getStrongMetaClass() {
         return strongMetaClass;
     }
 
+    public void setStrongMetaClass(MetaClass answer) {
+        version++;
+
+        this.strongMetaClass = answer;
+        weakMetaClass = null;
+
+        updateMetaClass(answer);
+    }
+
+    private void updateMetaClass(MetaClass answer) {
+        final Object smf = staticMetaClassField.get();
+        if (smf != NONE)
+          ((CachedField)smf).setProperty(null,answer);
+
+        modifiedExpando = false;
+    }
+
     public MetaClass getWeakMetaClass() {
         return weakMetaClass == null ? null : weakMetaClass.get();
     }
 
-    
-    public MetaClass getMetaClassForClass() {
-        return strongMetaClass != null ? strongMetaClass : weakMetaClass == null ? null : weakMetaClass.get();
-    }
-
-
-
     public void setWeakMetaClass(MetaClass answer) {
+        version++;
+
         strongMetaClass = null;
         if (answer == null) {
            weakMetaClass = null;
         }else {
            weakMetaClass = new SoftReference<MetaClass> (answer);
         }
+
+        updateMetaClass(answer);
+    }
+
+    public MetaClass getMetaClassForClass() {
+        return strongMetaClass != null ? strongMetaClass : weakMetaClass == null ? null : weakMetaClass.get();
     }
 
     public static int size () {
         int count = 0;
-        for (MultiClassInfoRecord infoRecord : classMap.values()) {
+        for (GlobalMultiClassInfoRecord infoRecord : globalClassMap.values()) {
             count += infoRecord.size ();
         }
 
@@ -146,20 +195,20 @@ public class ClassInfo extends ReentrantLock {
 
     public static int fullSize () {
         int count = 0;
-        for (MultiClassInfoRecord infoRecord : classMap.values()) {
+        for (GlobalMultiClassInfoRecord infoRecord : globalClassMap.values()) {
             count += infoRecord.fullSize ();
         }
 
         return count;
     }
 
-    private static class ClassMap extends ConcurrentHashMap<String,MultiClassInfoRecord> {
+    private static class GlobalClassMap extends ConcurrentHashMap<String, GlobalMultiClassInfoRecord> {
 
         ClassInfo getClassInfo (Class cls) {
             final String name = cls.getName();
-            MultiClassInfoRecord infoRecord = get(name);
+            GlobalMultiClassInfoRecord infoRecord = get(name);
             if (infoRecord == null) {
-                MultiClassInfoRecord newRecord = new MultiClassInfoRecord();
+                GlobalMultiClassInfoRecord newRecord = new GlobalMultiClassInfoRecord();
                 infoRecord = putIfAbsent(name, newRecord);
                 if (infoRecord == null) {
                     infoRecord = newRecord;
@@ -170,7 +219,93 @@ public class ClassInfo extends ReentrantLock {
         }
     }
 
-    public static class MultiClassInfoRecord extends ReentrantLock{
+    private static class LocalClassMap extends HashMap<String,LocalMultiClassInfoRecord> {
+
+        private static final int CACHE_SIZE = 5;
+        private final ClassInfo cache [] = new ClassInfo [CACHE_SIZE];
+        private int nextCacheEntry;
+
+        ClassInfo getClassInfo (Class cls) {
+
+            for (int i = 0; i != CACHE_SIZE; ++i) {
+                final ClassInfo info = cache[i];
+                if (info != null && info.getCls() == cls)
+                  return info;
+            }
+
+            final String name = cls.getName();
+            LocalMultiClassInfoRecord infoRecord = get(name);
+            if (infoRecord == null) {
+                infoRecord = new LocalMultiClassInfoRecord();
+                put(name, infoRecord);
+            }
+
+            final ClassInfo info = infoRecord.getIfPresent(infoRecord.data, cls);
+            if (info != null) {
+                return putToCache(info);
+            }
+
+            return putToCache(infoRecord.put(globalClassMap.getClassInfo(cls)));
+        }
+
+        private ClassInfo putToCache(ClassInfo info) {
+            cache [nextCacheEntry++] = info;
+            if (nextCacheEntry == CACHE_SIZE)
+              nextCacheEntry = 0;
+            return info;
+        }
+    }
+
+    public static class LocalMultiClassInfoRecord {
+        /**
+         * Either null or ClassInfo or ClassInfo []
+         */
+        private Object data;
+
+        ClassInfo put(ClassInfo ci) {
+            if (data == null) {
+              data = ci;
+              return ci;
+            }
+
+            if (data instanceof ClassInfo) {
+                data = new ClassInfo[] { ci, (ClassInfo)data };
+                return ci;
+            }
+
+            ClassInfo d [] = (ClassInfo[])data;
+            final ClassInfo [] resArr = new ClassInfo[d.length+1];
+            resArr [0] = ci;
+            System.arraycopy(d, 0, resArr, 1, d.length);
+            this.data = resArr;
+
+            return ci;
+        }
+
+        private ClassInfo getIfPresent(Object data, Class klazz) {
+            if (data == null) {
+              return null;
+            }
+
+            if (data instanceof ClassInfo) {
+                ClassInfo classInfo = (ClassInfo) data;
+                if (classInfo.getCls () == klazz)
+                  return classInfo;
+
+                return null;
+            }
+
+            ClassInfo d [] = (ClassInfo[]) data;
+            for (ClassInfo classInfo : d) {
+                if (classInfo.getCls () == klazz)
+                    return classInfo;
+            }
+
+            return null;
+        }
+    }
+
+    public static class GlobalMultiClassInfoRecord extends LockableObject {
         /**
          * Either null or ClassInfo or ClassInfo []
          */
@@ -189,51 +324,55 @@ public class ClassInfo extends ReentrantLock {
 
             lock ();
             try {
-                final Object data = this.data;
-                if (data == null) {
+                return getOrPutWithoutLock(klazz);
+            }
+            finally {
+                unlock();
+            }
+        }
+
+        private ClassInfo getOrPutWithoutLock(Class klazz) {
+            final Object data = this.data;
+            if (data == null) {
+                final ClassInfo res = new ClassInfo(klazz, this);
+                this.data = res;
+                return res;
+            }
+
+            if (data instanceof ClassInfo) {
+                ClassInfo classInfo = (ClassInfo) data;
+                final Class cls = classInfo.getCls();
+                if (cls == klazz)
+                  return classInfo;
+
+                if (cls == null) {
                     final ClassInfo res = new ClassInfo(klazz, this);
                     this.data = res;
                     return res;
                 }
 
-                if (data instanceof ClassInfo) {
-                    ClassInfo classInfo = (ClassInfo) data;
-                    final Class cls = classInfo.getCls();
-                    if (cls == klazz)
-                      return classInfo;
-
-                    if (cls == null) {
-                        final ClassInfo res = new ClassInfo(klazz, this);
-                        this.data = res;
-                        return res;
-                    }
-
-                    ClassInfo [] d = new ClassInfo[2];
-                    final ClassInfo res = new ClassInfo(klazz, this);
-                    d [0] = res;
-                    d [1] = classInfo;
-                    this.data = d;
-                    return res;
-                }
-
-                ClassInfo d [] = (ClassInfo[]) data;
-                for (ClassInfo classInfo : d) {
-                    final Class cls = classInfo.getCls();
-                    if (cls == klazz) {
-                        return classInfo;
-                    }
-                }
-
-                final ClassInfo [] resArr = new ClassInfo[d.length+1];
+                ClassInfo [] d = new ClassInfo[2];
                 final ClassInfo res = new ClassInfo(klazz, this);
-                resArr [0] = res;
-                System.arraycopy(d, 0, resArr, 1, d.length);
-                this.data = resArr;
+                d [0] = res;
+                d [1] = classInfo;
+                this.data = d;
                 return res;
             }
-            finally {
-                unlock();
+
+            ClassInfo d [] = (ClassInfo[]) data;
+            for (ClassInfo classInfo : d) {
+                final Class cls = classInfo.getCls();
+                if (cls == klazz) {
+                    return classInfo;
+                }
             }
+
+            final ClassInfo [] resArr = new ClassInfo[d.length+1];
+            final ClassInfo res = new ClassInfo(klazz, this);
+            resArr [0] = res;
+            System.arraycopy(d, 0, resArr, 1, d.length);
+            this.data = resArr;
+            return res;
         }
 
         private void optimize() {
@@ -328,6 +467,25 @@ public class ClassInfo extends ReentrantLock {
             return count;
         }
     }
+
+    private static final ThreadLocal<LocalClassMap> localClassMap = new ThreadLocal<LocalClassMap> () {
+        private final Thread myThread = Thread.currentThread();
+        private final LocalClassMap myMap = new LocalClassMap();
+
+        protected LocalClassMap initialValue() {
+            if (Thread.currentThread() == myThread)
+              return myMap;
+            else
+              return new LocalClassMap();
+        }
+
+        public LocalClassMap get() {
+            if (Thread.currentThread() == myThread)
+              return myMap;
+            else
+              return super.get();
+        }
+    };
 
     private static CachedClass createCachedClass(Class klazz, ClassInfo classInfo) {
         if (klazz == Object.class)

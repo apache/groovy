@@ -15,7 +15,6 @@
  */
 package org.codehaus.groovy.reflection;
 
-import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.classgen.BytecodeHelper;
 
@@ -30,28 +29,106 @@ import java.util.*;
  * @author Alex.Tkachman
  */
 public class CachedClass {
-    private CachedClass cachedSuperClass;
+    private final Class cachedClass;
+    public final ClassInfo classInfo;
+
+    private final LazyReference<CachedField[]> fields = new LazyReference<CachedField[]>() {
+        public CachedField[] initValue() {
+            final Field[] declaredFields = (Field[])
+               AccessController.doPrivileged(new PrivilegedAction/*<Field[]>*/() {
+                   public /*Field[]*/ Object run() {
+                       return getTheClass().getDeclaredFields();
+                   }
+               });
+            CachedField [] fields = new CachedField[declaredFields.length];
+            for (int i = 0; i != fields.length; ++i)
+                fields[i] = new CachedField(CachedClass.this, declaredFields[i]);
+            return fields;
+        }
+    };
+
+    private LazyReference<CachedConstructor[]> constructors = new LazyReference<CachedConstructor[]> () {
+        public CachedConstructor[] initValue() {
+            final Constructor[] declaredConstructors = (Constructor[])
+               AccessController.doPrivileged(new PrivilegedAction/*<Constructor[]>*/() {
+                   public /*Constructor[]*/ Object run() {
+                       return getTheClass().getDeclaredConstructors();
+                   }
+               });
+            CachedConstructor [] constructors = new CachedConstructor[declaredConstructors.length];
+            for (int i = 0; i != constructors.length; ++i)
+                constructors[i] = new CachedConstructor(CachedClass.this, declaredConstructors[i]);
+            return constructors;
+        }
+    };
+
+    private LazyReference<CachedMethod[]> methods = new LazyReference<CachedMethod[]> () {
+        public CachedMethod[] initValue() {
+            final Method[] declaredMethods = (Method[])
+               AccessController.doPrivileged(new PrivilegedAction/*<Method[]>*/() {
+                   public /*Method[]*/ Object run() {
+                       return getTheClass().getDeclaredMethods();
+                   }
+               });
+            ArrayList methods = new ArrayList(declaredMethods.length);
+            ArrayList mopMethods = new ArrayList(declaredMethods.length);
+            for (int i = 0; i != declaredMethods.length; ++i) {
+                final CachedMethod cachedMethod = new CachedMethod(CachedClass.this, declaredMethods[i]);
+                final String name = cachedMethod.getName();
+
+                if (name.indexOf('+') >= 0) {
+                    // Skip Synthetic methods inserted by JDK 1.5 compilers and later
+                    continue;
+                } /*else if (Modifier.isAbstract(reflectionMethod.getModifiers())) {
+                   continue;
+                }*/
+
+                if (name.startsWith("this$") || name.startsWith("super$"))
+                  mopMethods.add(cachedMethod);
+                else
+                  methods.add(cachedMethod);
+            }
+            CachedMethod [] resMethods = (CachedMethod[]) methods.toArray(new CachedMethod[methods.size()]);
+            Arrays.sort(resMethods);
+
+            final CachedClass superClass = getCachedSuperClass();
+            if (superClass != null) {
+                superClass.getMethods();
+                final CachedMethod[] superMopMethods = superClass.mopMethods;
+                for (int i = 0; i != superMopMethods.length; ++i)
+                  mopMethods.add(superMopMethods[i]);
+            }
+            CachedClass.this.mopMethods = (CachedMethod[]) mopMethods.toArray(new CachedMethod[mopMethods.size()]);
+            Arrays.sort(CachedClass.this.mopMethods, CachedMethodComparatorByName.INSTANCE);
+
+            return resMethods;
+        }
+    };
+
+    private MetaMethod[] newMetaMethods = EMPTY;
+
+    private LazyReference<CachedClass> cachedSuperClass = new LazyReference<CachedClass> () {
+        public CachedClass initValue() {
+            if (!isArray)
+              return ReflectionCache.getCachedClass(getTheClass().getSuperclass());
+            else
+              if (cachedClass.getComponentType().isPrimitive() || cachedClass.getComponentType() == Object.class)
+                return ReflectionCache.OBJECT_CLASS;
+              else
+                return ReflectionCache.OBJECT_ARRAY_CLASS;
+        }
+    };
 
     private static final MetaMethod[] EMPTY = new MetaMethod[0];
 
     int hashCode;
 
-    private volatile MetaClass metaClassForClass;
-
-    private CachedField[] fields;
-    private CachedConstructor[] constructors;
-    private CachedMethod[] methods;
-    private final Class cachedClass;
-    private final ClassInfo classInfo;
-    private MetaMethod[] newMetaMethods = EMPTY;
     public  CachedMethod [] mopMethods;
     public static final CachedClass[] EMPTY_ARRAY = new CachedClass[0];
-    private Object staticMetaClassField;
-    private static final Object NONE = new Object();
 
-    private Set ownInterfaces;
+    private Set<CachedClass> ownInterfaces;
 
-    private Set interfaces;
+    private Set<CachedClass> interfaces;
 
     public final boolean isArray;
     public final boolean isPrimitive;
@@ -79,23 +156,13 @@ public class CachedClass {
         }
     }
 
-    public synchronized CachedClass getCachedSuperClass() {
-        if (cachedSuperClass == null) {
-            if (!isArray)
-              cachedSuperClass = ReflectionCache.getCachedClass(getTheClass().getSuperclass());
-            else
-              if (cachedClass.getComponentType().isPrimitive() || cachedClass.getComponentType() == Object.class)
-                cachedSuperClass = ReflectionCache.OBJECT_CLASS;
-              else
-                cachedSuperClass = ReflectionCache.OBJECT_ARRAY_CLASS;
-        }
-
-        return cachedSuperClass;
+    public CachedClass getCachedSuperClass() {
+        return cachedSuperClass.get();
     }
 
-    public Set getInterfaces() {
+    public Set<CachedClass> getInterfaces() {
         if (interfaces == null)  {
-            interfaces = new HashSet (0);
+            interfaces = new HashSet<CachedClass> (0);
 
             if (getTheClass().isInterface())
               interfaces.add(this);
@@ -114,98 +181,28 @@ public class CachedClass {
         return interfaces;
     }
 
-    public Set getOwnInterfaces() {
+    public Set<CachedClass> getDeclaredInterfaces() {
         if (ownInterfaces == null)  {
-            ownInterfaces = new HashSet (0);
-
-            if (getTheClass().isInterface())
-              ownInterfaces.add(this);
+            ownInterfaces = new HashSet<CachedClass> (0);
 
             Class[] classes = getTheClass().getInterfaces();
             for (int i = 0; i < classes.length; i++) {
-                final CachedClass aClass = ReflectionCache.getCachedClass(classes[i]);
-                if (!ownInterfaces.contains(aClass))
-                  ownInterfaces.addAll(aClass.getInterfaces());
+                ownInterfaces.add(ReflectionCache.getCachedClass(classes[i]));
             }
-
-            final CachedClass superClass = getCachedSuperClass();
-            if (superClass != null)
-              ownInterfaces.addAll(superClass.getInterfaces());
         }
         return ownInterfaces;
     }
 
-    public synchronized CachedMethod[] getMethods() {
-        if (methods == null) {
-            final Method[] declaredMethods = (Method[])
-               AccessController.doPrivileged(new PrivilegedAction/*<Method[]>*/() {
-                   public /*Method[]*/ Object run() {
-                       return getTheClass().getDeclaredMethods();
-                   }
-               });
-            ArrayList methods = new ArrayList(declaredMethods.length);
-            ArrayList mopMethods = new ArrayList(declaredMethods.length);
-            for (int i = 0; i != declaredMethods.length; ++i) {
-                final CachedMethod cachedMethod = new CachedMethod(this, declaredMethods[i]);
-                final String name = cachedMethod.getName();
-
-                if (name.indexOf('+') >= 0) {
-                    // Skip Synthetic methods inserted by JDK 1.5 compilers and later
-                    continue;
-                } /*else if (Modifier.isAbstract(reflectionMethod.getModifiers())) {
-                   continue;
-                }*/
-
-                if (name.startsWith("this$") || name.startsWith("super$"))
-                  mopMethods.add(cachedMethod);
-                else
-                  methods.add(cachedMethod);
-            }
-            this.methods = (CachedMethod[]) methods.toArray(new CachedMethod[methods.size()]);
-            Arrays.sort(this.methods);
-
-            final CachedClass superClass = getCachedSuperClass();
-            if (superClass != null) {
-                superClass.getMethods();
-                final CachedMethod[] superMopMethods = superClass.mopMethods;
-                for (int i = 0; i != superMopMethods.length; ++i)
-                  mopMethods.add(superMopMethods[i]);
-            }
-            this.mopMethods = (CachedMethod[]) mopMethods.toArray(new CachedMethod[mopMethods.size()]);
-            Arrays.sort(this.mopMethods, CachedMethodComparatorByName.INSTANCE);
-        }
-        return methods;
+    public CachedMethod[] getMethods() {
+        return methods.get();
     }
 
-    public synchronized CachedField[] getFields() {
-        if (fields == null) {
-
-            final Field[] declaredFields = (Field[])
-               AccessController.doPrivileged(new PrivilegedAction/*<Field[]>*/() {
-                   public /*Field[]*/ Object run() {
-                       return getTheClass().getDeclaredFields();
-                   }
-               });
-            fields = new CachedField[declaredFields.length];
-            for (int i = 0; i != fields.length; ++i)
-                fields[i] = new CachedField(this, declaredFields[i]);
-        }
-        return fields;
+    public CachedField[] getFields() {
+        return fields.get();
     }
 
-    public synchronized CachedConstructor[] getConstructors() {
-        if (constructors == null) {
-            final Constructor[] declaredConstructors = (Constructor[])
-               AccessController.doPrivileged(new PrivilegedAction/*<Constructor[]>*/() {
-                   public /*Constructor[]*/ Object run() {
-                       return getTheClass().getDeclaredConstructors();
-                   }
-               });
-            constructors = new CachedConstructor[declaredConstructors.length];
-            for (int i = 0; i != constructors.length; ++i)
-                constructors[i] = new CachedConstructor(this, declaredConstructors[i]);
-        }
-        return constructors;
+    public CachedConstructor[] getConstructors() {
+        return constructors.get();
     }
 
     public CachedMethod searchMethods(String name, CachedClass[] parameterTypes) {
@@ -295,36 +292,6 @@ public class CachedClass {
 
     public void setNewMopMethods(ArrayList arr) {
         newMetaMethods = (MetaMethod[]) arr.toArray(new MetaMethod[arr.size()]);
-    }
-
-    public synchronized void setStaticMetaClassField(MetaClass mc) {
-        if (staticMetaClassField == NONE)
-          return;
-        if (staticMetaClassField == null) {
-            final CachedField[] cachedFields = getFields();
-            for (int i = 0; i < cachedFields.length; i++) {
-                CachedField cachedField = cachedFields[i];
-                if (cachedField.getName().startsWith("$staticMetaClass") && cachedField.getType() == MetaClass.class && cachedField.isStatic()) {
-                    staticMetaClassField = cachedField;
-                    break;
-                }
-            }
-        }
-        if (staticMetaClassField == null) {
-          staticMetaClassField = NONE;
-          return;
-        }
-
-        ((CachedField)staticMetaClassField).setProperty(null,mc);
-    }
-
-    public MetaClass getMetaClassForClass() {
-        return metaClassForClass;
-    }
-
-    public void setMetaClassForClass(MetaClass metaClassForClass) {
-        this.metaClassForClass = metaClassForClass;
-        setStaticMetaClassField(metaClassForClass);
     }
 
     public boolean isAssignableFrom(Class argument) {

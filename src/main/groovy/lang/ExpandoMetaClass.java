@@ -21,13 +21,13 @@ import org.codehaus.groovy.runtime.*;
 import org.codehaus.groovy.runtime.callsite.*;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.ClosureStaticMetaMethod;
-import org.codehaus.groovy.runtime.metaclass.ConcurrentReaderHashMap;
 import org.codehaus.groovy.runtime.metaclass.ThreadManagedMetaBeanProperty;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * A MetaClass that implements GroovyObject and behaves like an Expando, allowing the addition of new methods on the fly
@@ -104,10 +104,10 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     private boolean modified;
     private boolean inRegistry;
     private final Set inheritedMetaMethods = new HashSet();
-    private final Map beanPropertyCache = new ConcurrentReaderHashMap();
-    private final Map staticBeanPropertyCache = new ConcurrentReaderHashMap();
-    private final Map expandoMethods = new ConcurrentReaderHashMap();
-    private final Map expandoProperties = new ConcurrentReaderHashMap();
+    private final Map beanPropertyCache = new ConcurrentHashMap();
+    private final Map staticBeanPropertyCache = new ConcurrentHashMap();
+    private final Map expandoMethods = new ConcurrentHashMap();
+    private final Map expandoProperties = new ConcurrentHashMap();
     private ClosureMetaMethod getPropertyMethod;
     private ClosureMetaMethod invokeMethodMethod;
     private ClosureMetaMethod setPropertyMethod;
@@ -525,22 +525,6 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 		return super.invokeConstructor(arguments);
 	}
 
-
-	/**
-	 * Retrieves a list of super classes. Taken from MetaClassImpl. Ideally this method should be protected
-	 *
-	 * @return A list of super classes
-	 */
-   protected LinkedList getSuperClasses() {
-       LinkedList superClasses = new LinkedList();
-       for (Class c = theClass; c!= null; c = c.getSuperclass()) {
-           superClasses.addFirst(c);
-       }
-       if (getJavaClass().isArray() && getJavaClass()!=Object[].class && !getJavaClass().getComponentType().isPrimitive()) {
-           superClasses.addFirst(Object[].class);
-       }
-       return superClasses;
-   }
 	/**
 	 * Handles the ability to use the left shift operator to append new constructors
 	 *

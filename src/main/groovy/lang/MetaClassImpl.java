@@ -39,7 +39,6 @@ import java.security.PrivilegedAction;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.*;
-import java.util.logging.Logger;
 
 /**
  * Allows methods to be dynamically added to existing classes at runtime
@@ -66,14 +65,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private static final Class[] GETTER_MISSING_ARGS = new Class[]{String.class};
     private static final Class[] SETTER_MISSING_ARGS = METHOD_MISSING_ARGS;
 
-    protected static final Logger LOG = Logger.getLogger(MetaClass.class.getName());
     protected final Class theClass;
+    protected final ClassInfo classInfo;
+    protected final CachedClass theCachedClass;
 
     public final CachedClass getTheCachedClass() {
         return theCachedClass;
     }
-
-    protected final CachedClass theCachedClass;
 
     protected MetaClassRegistry registry;
     protected final boolean isGroovyObject;
@@ -108,6 +106,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     public MetaClassImpl(final Class theClass) {
         this.theClass = theClass;
         theCachedClass = ReflectionCache.getCachedClass(theClass);
+        classInfo = theCachedClass.classInfo;
         this.isGroovyObject = GroovyObject.class.isAssignableFrom(theClass);
         this.isMap = Map.class.isAssignableFrom(theClass);
         this.registry = GroovySystem.getMetaClassRegistry();
@@ -285,8 +284,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
-    private LinkedList getSuperClasses() {
-        LinkedList superClasses = new LinkedList();
+    protected LinkedList<CachedClass> getSuperClasses() {
+        LinkedList<CachedClass> superClasses = new LinkedList<CachedClass>();
 
         if (theClass.isInterface()) {
             superClasses.addFirst(ReflectionCache.OBJECT_CLASS);
@@ -2605,6 +2604,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
         }
         return new MetaClassConstructorSite(site, this);
+    }
+
+    public ClassInfo getClassInfo() {
+        return classInfo;
+    }
+
+    public int getVersion() {
+        return classInfo.getVersion();
     }
 
     private abstract class MethodIndexAction {

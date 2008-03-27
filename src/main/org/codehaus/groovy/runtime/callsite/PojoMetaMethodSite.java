@@ -17,7 +17,6 @@ package org.codehaus.groovy.runtime.callsite;
 
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
-import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.NullObject;
@@ -30,11 +29,12 @@ import org.codehaus.groovy.runtime.NullObject;
  * @author Alex Tkachman
 */
 public class PojoMetaMethodSite extends MetaMethodSite {
-    protected final CachedClass theCachedClass;
+
+    private final int version;
 
     public PojoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
         super(site, metaClass, metaMethod, params);
-        theCachedClass = metaClass.getTheCachedClass();
+        version = metaClass.getVersion();
     }
 
     public Object invoke(Object receiver, Object[] args) {
@@ -48,7 +48,7 @@ public class PojoMetaMethodSite extends MetaMethodSite {
 
     protected final boolean checkMetaClass () {
         return !GroovyCategorySupport.hasCategoryInAnyThread()
-            && theCachedClass.getMetaClassForClass() == metaClass;
+            && ((MetaClassImpl)metaClass).getVersion() == version;
     }
 
     private boolean checkAcceptCall(Object receiver, Object[] args) {
@@ -56,7 +56,7 @@ public class PojoMetaMethodSite extends MetaMethodSite {
             return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
                && checkMetaClass()
                && MetaClassHelper.sameClasses(params, args);
-    }
+        }
         catch (NullPointerException e) {
             if (receiver == null)
               return checkAcceptCall(NullObject.getNullObject(), args);

@@ -27,8 +27,11 @@ import org.codehaus.groovy.runtime.MetaClassHelper;
  * @author Alex Tkachman
 */
 public class StaticMetaMethodSite extends MetaMethodSite {
+    private final int version;
+
     public StaticMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
         super(site, metaClass, metaMethod, params);
+        version = metaClass.getVersion ();
     }
 
     public Object invoke(Object receiver, Object[] args) {
@@ -38,7 +41,7 @@ public class StaticMetaMethodSite extends MetaMethodSite {
 
     public final CallSite acceptStatic(Object receiver, Object[] args) {
         if(receiver == metaClass.getTheClass() // meta class match receiver
-               && ((MetaClassImpl)metaClass).getTheCachedClass().getMetaClassForClass() == metaClass // metaClass still be valid
+               && ((MetaClassImpl)metaClass).getVersion() == version // metaClass still be valid
            && MetaClassHelper.sameClasses(params, args)) // right arguments
           return this;
         else
