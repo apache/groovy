@@ -27,7 +27,23 @@ class StackTraceTest extends GroovyTestCase {
 		    }
 		  }
 		}
-		assert assertDone==true
+		assert assertDone
 	}
 
+
+    public void testMissingProperty() {
+        def assertDone = false
+        def script = new GroovyShell().parse('println(unknownProp)','testMissingProperty.tst')
+        try {
+            script.run()
+        } catch (MissingPropertyException mpe) {
+            assert mpe.message.indexOf('unknownProp')>0
+            def found = mpe.stackTrace.find {
+              it.lineNumber==1   &&
+              it.fileName=='testMissingProperty.tst'
+            }
+            assertDone = found!=null
+        }
+        assert assertDone
+    }
 }
