@@ -418,6 +418,17 @@ public class JavaStubGenerator
 
         printParams(methodNode, out);
 
+        ClassNode[] exceptions = methodNode.getExceptions();
+        for (int i=0; i<exceptions.length; i++) {
+            ClassNode exception = exceptions[i];
+            if (i==0) {
+                out.print("throws ");
+            } else {
+                out.print(", ");
+            }
+            printType(exception,out);
+        }
+
         if ((methodNode.getModifiers() & Opcodes.ACC_ABSTRACT) != 0) {
             out.println(";");
         } else {
