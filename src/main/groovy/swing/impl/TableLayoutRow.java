@@ -29,7 +29,7 @@ import java.util.List;
 public class TableLayoutRow {
 
     private final TableLayout parent;
-    private final List/*<TableLayoutCell>*/ cells = new ArrayList/*<TableLayoutCell>*/();
+    private final List<TableLayoutCell> cells = new ArrayList<TableLayoutCell>();
     private int rowIndex;
     
     public TableLayoutRow(TableLayout tableLayoutTag) {

@@ -20,7 +20,6 @@ import groovy.lang.ReadOnlyPropertyException;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -34,8 +33,8 @@ public class ModelBinding extends GroovyObjectSupport implements BindingUpdatabl
     Object model;
     boolean bound;
 
-    final Map/*<String, PropertyBinding>*/ propertyBindings = new HashMap/*<String, PropertyBinding>*/();
-    final List/*<FullBinding>*/ generatedBindings = new ArrayList/*<FullBinding>*/();
+    final Map<String, PropertyBinding> propertyBindings = new HashMap<String, PropertyBinding>();
+    final List<FullBinding> generatedBindings = new ArrayList<FullBinding>();
 
     public ModelBinding(Object model) {
         this.model = model;
@@ -51,9 +50,8 @@ public class ModelBinding extends GroovyObjectSupport implements BindingUpdatabl
         this.model = model;
         //TODO see if bound, mark if so
         unbind();
-        Iterator iter = propertyBindings.values().iterator();
-        while (iter.hasNext()) {
-            ((PropertyBinding)iter.next()).setBean(model);
+        for (PropertyBinding propertyBinding : propertyBindings.values()) {
+            (propertyBinding).setBean(model);
         }
 
         rebind();
@@ -64,12 +62,11 @@ public class ModelBinding extends GroovyObjectSupport implements BindingUpdatabl
         PropertyBinding pb;
         synchronized (propertyBindings) {
             // should we verify the property is valid?
-            Object o = propertyBindings.get(property);
-            if (o == null) {
-                o = new ModelBindingPropertyBinding(model, property);
-                propertyBindings.put(property, o);
+            pb = propertyBindings.get(property);
+            if (pb == null) {
+                pb = new ModelBindingPropertyBinding(model, property);
+                propertyBindings.put(property, pb);
             }
-            pb = (PropertyBinding)o;
         }
         FullBinding fb = pb.createBinding(pb, null);
         if (bound) {
@@ -86,9 +83,8 @@ public class ModelBinding extends GroovyObjectSupport implements BindingUpdatabl
         synchronized (generatedBindings) {
             if (!bound) {
                 bound = true;
-                Iterator iter = generatedBindings.iterator();
-                while (iter.hasNext()) {
-                    ((FullBinding)iter.next()).bind();
+                for (FullBinding generatedBinding : generatedBindings) {
+                    (generatedBinding).bind();
                     // should we trap exceptions and do an each?
                 }
             }
@@ -99,9 +95,8 @@ public class ModelBinding extends GroovyObjectSupport implements BindingUpdatabl
         synchronized (generatedBindings) {
             if (bound) {
                 bound = false;
-                Iterator iter = generatedBindings.iterator();
-                while (iter.hasNext()) {
-                    ((FullBinding)iter.next()).unbind();
+                for (FullBinding generatedBinding : generatedBindings) {
+                    (generatedBinding).unbind();
                     // should we trap exceptions and do an each?
                 }
             }
@@ -111,9 +106,8 @@ public class ModelBinding extends GroovyObjectSupport implements BindingUpdatabl
     public void rebind() {
         synchronized (generatedBindings) {
             if (bound) {
-                Iterator iter = generatedBindings.iterator();
-                while (iter.hasNext()) {
-                    ((FullBinding)iter.next()).rebind();
+                for (FullBinding generatedBinding : generatedBindings) {
+                    (generatedBinding).rebind();
                     // should we trap exceptions and do an each?
                 }
             }
@@ -122,9 +116,8 @@ public class ModelBinding extends GroovyObjectSupport implements BindingUpdatabl
 
     public void update() {
         synchronized (generatedBindings) {
-            Iterator iter = generatedBindings.iterator();
-            while (iter.hasNext()) {
-                ((FullBinding)iter.next()).update();
+            for (FullBinding generatedBinding : generatedBindings) {
+                (generatedBinding).update();
                 // should we trap exceptions and do an each?
             }
         }
@@ -132,9 +125,8 @@ public class ModelBinding extends GroovyObjectSupport implements BindingUpdatabl
 
     public void reverseUpdate() {
         synchronized (generatedBindings) {
-            Iterator iter = generatedBindings.iterator();
-            while (iter.hasNext()) {
-                ((FullBinding)iter.next()).reverseUpdate();
+            for (FullBinding generatedBinding : generatedBindings) {
+                (generatedBinding).reverseUpdate();
                 // should we trap exceptions and do an each?
             }
         }

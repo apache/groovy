@@ -101,15 +101,15 @@ public abstract class FactoryBuilderSupport extends Binding {
         }
     }
 
-    private LinkedList/* <Map<String,Object>> */contexts = new LinkedList/* <Map<String,Object>> */();
-    private LinkedList/* <Closure> */attributeDelegates = new LinkedList/* <Closure> */(); //
-    private List/* <Closure> */disposalClosures = new ArrayList/* <Closure> */(); // because of reverse iteration use ArrayList
-    private Map/* <String,Factory> */factories = new HashMap/* <String,Factory> */();
+    private LinkedList <Map<String,Object>>contexts = new LinkedList <Map<String,Object>> ();
+    private LinkedList <Closure> attributeDelegates = new LinkedList <Closure> (); //
+    private List <Closure> disposalClosures = new ArrayList <Closure> (); // because of reverse iteration use ArrayList
+    private Map <String,Factory> factories = new HashMap <String,Factory> ();
     private Closure nameMappingClosure;
     private FactoryBuilderSupport proxyBuilder;
-    private LinkedList/* <Closure> */preInstantiateDelegates = new LinkedList/* <Closure> */();
-    private LinkedList/* <Closure> */postInstantiateDelegates = new LinkedList/* <Closure> */();
-    private LinkedList/* <Closure> */postNodeCompletionDelegates = new LinkedList/* <Closure> */();
+    private LinkedList <Closure> preInstantiateDelegates = new LinkedList <Closure> ();
+    private LinkedList <Closure> postInstantiateDelegates = new LinkedList <Closure> ();
+    private LinkedList <Closure> postNodeCompletionDelegates = new LinkedList <Closure> ();
 
     public FactoryBuilderSupport() {
         this.proxyBuilder = this;
@@ -187,32 +187,32 @@ public abstract class FactoryBuilderSupport extends Binding {
     /**
      * @return the factory map (Unmodifiable Map).
      */
-    public Map/*<String, Factory>*/ getFactories() {
+    public Map<String, Factory> getFactories() {
         return Collections.unmodifiableMap( proxyBuilder.factories );
     }
 
-    public List/*<Closure>*/ getAttributeDelegates() {
+    public List<Closure> getAttributeDelegates() {
         return Collections.unmodifiableList(attributeDelegates);
     }
 
-    public List/*<Closure>*/ getPreInstantiateDelegates() {
+    public List<Closure> getPreInstantiateDelegates() {
         return Collections.unmodifiableList(preInstantiateDelegates);
     }
 
-    public List/*<Closure>*/ getPostInstantiateDelegates() {
+    public List<Closure> getPostInstantiateDelegates() {
         return Collections.unmodifiableList(postInstantiateDelegates);
     }
 
-    public List/*<Closure>*/ getPostNodeCompletionDelegates() {
+    public List<Closure> getPostNodeCompletionDelegates() {
         return Collections.unmodifiableList(postNodeCompletionDelegates);
     }
 
     /**
      * @return the context of the current node.
      */
-    public Map getContext() {
+    public Map<String, Object> getContext() {
         if( !proxyBuilder.contexts.isEmpty() ){
-            return (Map) proxyBuilder.contexts.getFirst();
+            return proxyBuilder.contexts.getFirst();
         }
         return null;
     }
@@ -279,7 +279,7 @@ public abstract class FactoryBuilderSupport extends Binding {
 
     private Object getContextAttribute( String key ) {
         if( !proxyBuilder.contexts.isEmpty() ){
-            Map context = (Map) proxyBuilder.contexts.getFirst();
+            Map context = proxyBuilder.contexts.getFirst();
             return context.get( key );
         }
         return null;
@@ -482,7 +482,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      */
     protected Factory resolveFactory( Object name, Map attributes, Object value ) {
         proxyBuilder.getContext().put( CHILD_BUILDER, proxyBuilder);
-        return (Factory) proxyBuilder.factories.get( name );
+        return proxyBuilder.factories.get( name );
     }
 
     /**
@@ -653,8 +653,7 @@ public abstract class FactoryBuilderSupport extends Binding {
             return;
         }
 
-        for( Iterator iter = proxyBuilder.attributeDelegates.iterator(); iter.hasNext(); ){
-            Closure attrDelegate = (Closure) iter.next();
+        for (Closure attrDelegate : proxyBuilder.attributeDelegates) {
             FactoryBuilderSupport builder = this;
             if (attrDelegate.getOwner() instanceof FactoryBuilderSupport) {
                 builder = (FactoryBuilderSupport) attrDelegate.getOwner();
@@ -662,7 +661,7 @@ public abstract class FactoryBuilderSupport extends Binding {
                 builder = (FactoryBuilderSupport) attrDelegate.getDelegate();
             }
 
-            attrDelegate.call( new Object[] { builder, node, attributes } );
+            attrDelegate.call(new Object[] {builder, node, attributes});
         }
 
         if( proxyBuilder.getCurrentFactory().onHandleNodeAttributes( proxyBuilder.getChildBuilder(), node, attributes ) ){
@@ -674,7 +673,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      * Pushes a new context on the stack.
      */
     protected void newContext() {
-        proxyBuilder.contexts.addFirst( new HashMap() );
+        proxyBuilder.contexts.addFirst( new HashMap<String, Object>() );
     }
 
     /**
@@ -692,9 +691,9 @@ public abstract class FactoryBuilderSupport extends Binding {
      * Removes the last context from the stack.
      * @return the contet just removed
      */
-    protected Map popContext() {
+    protected Map<String, Object> popContext() {
         if( !proxyBuilder.contexts.isEmpty() ){
-            return (Map) proxyBuilder.contexts.removeFirst();
+            return proxyBuilder.contexts.removeFirst();
         }
         return null;
     }
@@ -709,8 +708,8 @@ public abstract class FactoryBuilderSupport extends Binding {
      * @param node the object created by teh node factory
      */
     protected void postInstantiate( Object name, Map attributes, Object node ) {
-        for( Iterator iter = proxyBuilder.postInstantiateDelegates.iterator(); iter.hasNext(); ){
-            ((Closure) iter.next()).call( new Object[] { this, node, attributes } );
+        for (Closure postInstantiateDelegate : proxyBuilder.postInstantiateDelegates) {
+            (postInstantiateDelegate).call(new Object[] {this, node, attributes});
         }
     }
 
@@ -726,8 +725,8 @@ public abstract class FactoryBuilderSupport extends Binding {
      * @return the node, possibly new, that represents the markup element
      */
     protected Object postNodeCompletion( Object parent, Object node ) {
-        for( Iterator iter = proxyBuilder.postNodeCompletionDelegates.iterator(); iter.hasNext(); ){
-            ((Closure) iter.next()).call( new Object[] { this, parent, node } );
+        for (Closure postNodeCompletionDelegate : proxyBuilder.postNodeCompletionDelegates) {
+            (postNodeCompletionDelegate).call(new Object[] {this, parent, node});
         }
 
         return node;
@@ -743,8 +742,8 @@ public abstract class FactoryBuilderSupport extends Binding {
      * @param value the value argument(s) of the node
      */
     protected void preInstantiate( Object name, Map attributes, Object value ) {
-        for( Iterator iter = proxyBuilder.preInstantiateDelegates.iterator(); iter.hasNext(); ){
-            ((Closure) iter.next()).call( new Object[] { this, value, attributes } );
+        for (Closure preInstantiateDelegate : proxyBuilder.preInstantiateDelegates) {
+            (preInstantiateDelegate).call(new Object[] {this, value, attributes});
         }
     }
 
@@ -777,9 +776,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      */
     protected void setNodeAttributes( Object node, Map attributes ) {
         // set the properties
-        for( Iterator iter = attributes.entrySet()
-                .iterator(); iter.hasNext(); ){
-            Map.Entry entry = (Map.Entry) iter.next();
+        for(Map.Entry entry : (Set<Map.Entry>) attributes.entrySet()) {
             String property = entry.getKey().toString();
             Object value = entry.getValue();
             InvokerHelper.setProperty( node, property, value );
@@ -810,7 +807,7 @@ public abstract class FactoryBuilderSupport extends Binding {
     /**
      * @return the stack of available contexts.
      */
-    protected LinkedList getContexts() {
+    protected LinkedList<? extends Map<String, Object>> getContexts() {
         return proxyBuilder.contexts;
     }
 
@@ -942,7 +939,7 @@ public abstract class FactoryBuilderSupport extends Binding {
 
     public void dispose() {
         for (int i = disposalClosures.size() - 1; i >= 0; i--) {
-            ((Closure)disposalClosures.get(i)).call();
+            disposalClosures.get(i).call();
         }
     }
 }

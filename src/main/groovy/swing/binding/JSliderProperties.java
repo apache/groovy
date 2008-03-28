@@ -37,8 +37,8 @@ import java.util.Map;
  * @since Groovy 1.1
  */
 public class JSliderProperties {
-    public static Map/*<String, TriggerBinding>*/ getSyntheticProperties() {
-        Map/*<String, TriggerBinding>*/ result = new HashMap/*<String, TriggerBinding>*/();
+    public static Map<String, TriggerBinding> getSyntheticProperties() {
+        Map<String, TriggerBinding> result = new HashMap<String, TriggerBinding>();
         result.put(JSlider.class.getName() + "#value",
                 new TriggerBinding() {
                     public FullBinding createBinding(SourceBinding source, TargetBinding target) {

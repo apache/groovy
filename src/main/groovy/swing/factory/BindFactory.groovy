@@ -34,7 +34,7 @@ import org.codehaus.groovy.binding.TriggerBinding
  */
 public class BindFactory extends AbstractFactory {
 
-    final Map/*<String, TriggerBinding>*/ syntheticBindings
+    final Map<String, TriggerBinding> syntheticBindings
 
     public BindFactory() {
         syntheticBindings = new HashMap()

@@ -52,7 +52,7 @@ public class JScrollBarProperties {
 
 class JScrollBarValueBinding extends AbstractFullBinding implements PropertyChangeListener, ChangeListener {
     boolean bound;
-    JScrollBar boundSlider;
+    JScrollBar boundScrollBar;
 
 
     public JScrollBarValueBinding(PropertyBinding source, TargetBinding target) {
@@ -63,15 +63,15 @@ class JScrollBarValueBinding extends AbstractFullBinding implements PropertyChan
 
     public synchronized void bind() {
         if (!bound) {
-            boundSlider = (JScrollBar) ((PropertyBinding)sourceBinding).getBean();
+            boundScrollBar = (JScrollBar) ((PropertyBinding)sourceBinding).getBean();
             try {
-                boundSlider.addPropertyChangeListener("model", this);
-                boundSlider.getModel().addChangeListener(this);
+                boundScrollBar.addPropertyChangeListener("model", this);
+                boundScrollBar.getModel().addChangeListener(this);
                 bound = true;
             } catch (RuntimeException re) {
                 try {
-                    boundSlider.removePropertyChangeListener("model", this);
-                    boundSlider.getModel().removeChangeListener(this);
+                    boundScrollBar.removePropertyChangeListener("model", this);
+                    boundScrollBar.getModel().removeChangeListener(this);
                 } catch (Exception e) {
                     // ignore as we are re-throwing the original cause
                 }
@@ -84,9 +84,9 @@ class JScrollBarValueBinding extends AbstractFullBinding implements PropertyChan
         if (bound) {
             bound = false;
             // fail dirty, no checks
-            boundSlider.removePropertyChangeListener("model", this);
-            boundSlider.getModel().removeChangeListener(this);
-            boundSlider = null;
+            boundScrollBar.removePropertyChangeListener("model", this);
+            boundScrollBar.getModel().removeChangeListener(this);
+            boundScrollBar = null;
         }
     }
 
