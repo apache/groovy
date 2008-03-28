@@ -57,7 +57,11 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
         importedClassesAndPackages = new ArrayList();
         importedClassesAndPackages.add(packagePath + "/*");  // everything in this package is automatically imported
 
-		currentClassDoc = new SimpleGroovyClassDoc(importedClassesAndPackages, className, links);
+        importedClassesAndPackages.add("groovy/lang/*");     // default imports in Groovy, from org.codehaus.groovy.control.ResolveVisitor.DEFAULT_IMPORTS
+        importedClassesAndPackages.add("groovy/util/*");     // todo - non Groovy source files shouldn't import these, but let us import them for now, it won't hurt...
+
+
+        currentClassDoc = new SimpleGroovyClassDoc(importedClassesAndPackages, className, links);
 		currentClassDoc.setFullPathName(packagePath + FS + className);
 		classDocs.put(currentClassDoc.getFullPathName(),currentClassDoc);
 		

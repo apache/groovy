@@ -107,7 +107,7 @@ ${classDoc.commentText()}
 </TR>
 <% for (constructor in classDoc.constructors()) { %>
 <TR BGCOLOR="white" CLASS="TableRowColor">
-<TD><CODE><B><a href="">${constructor.name()}</a></B>(<%= constructor.parameters().collect{ param -> "${param.typeName()} ${param.name()}" }.join(", ") %>)</CODE>
+<TD><CODE><B><a href="">${constructor.name()}</a></B>(<%= constructor.parameters().collect{ param -> "${param.isTypeAvailable()?'<a href="' + classDoc.getRelativeRootPath() + param.type().getFullPathName() + '.html">' + param.type().name() + '</a>':param.typeName()} ${param.name()}" }.join(", ") %>)</CODE>
 
 <BR>
 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${constructor.firstSentenceCommentText()}</TD>
@@ -157,7 +157,7 @@ ${classDoc.commentText()}
 <% for (constructor in classDoc.constructors()) { %>
 <A NAME="QName(java.lang.String)"><!-- --></A><H3>
 ${constructor.name()}</H3>
-<PRE>${constructor.isPublic()?"public ":""}<B>${constructor.name()}</B>(<%= constructor.parameters().collect{ param -> "${param.typeName()} ${param.name()}" }.join(", ") %>)</PRE>
+<PRE>${constructor.isPublic()?"public ":""}<B>${constructor.name()}</B>(<%= constructor.parameters().collect{ param -> "${param.isTypeAvailable()?'<a href="' + classDoc.getRelativeRootPath() + param.type().getFullPathName() + '.html">' + param.type().name() + '</a>':param.typeName()} ${param.name()}" }.join(", ") %>)</PRE>
 <DL>
 <DD>${constructor.commentText()}
 <P>
