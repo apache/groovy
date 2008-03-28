@@ -528,7 +528,11 @@ public class ScriptBytecodeAdapter {
     //  --------------------------------------------------------
 
     public static Object getGroovyObjectProperty(Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
-        return receiver.getProperty(messageName);
+        try {
+            return receiver.getProperty(messageName);
+        } catch (GroovyRuntimeException gre) {
+            throw unwrap(gre);
+        }
     }
 
     public static Object getGroovyObjectPropertySafe(Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
