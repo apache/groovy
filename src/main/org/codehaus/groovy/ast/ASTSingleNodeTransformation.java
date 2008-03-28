@@ -29,10 +29,9 @@ public interface ASTSingleNodeTransformation {
     /**
      * The call made when the compiler encounters an AST Transformation Annotation
      *
-     * @param node The actual annotation node that triggered the call
-     * @param parent The node that was being annotated by the AST Transformation Annotation
+     * @param nodes The ASTnodes when the call was triggered
      * @param source The source unit being compiled
      * @param generatorContext the generation context of the source unit
      */
-    public void visit(ASTNode node, ASTNode parent, SourceUnit source, GeneratorContext generatorContext);
+    public void visit(ASTNode nodes[], SourceUnit source, GeneratorContext generatorContext);
 }

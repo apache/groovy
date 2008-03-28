@@ -91,7 +91,7 @@ public class ASTTransformationCodeVisitor extends ClassCodeVisitorSupport {
             // second pass, call visit on all of the collected nodes
             for (ASTNode[] node : targetNodes) {
                 annotationsMap.get(((AnnotationNode) node[0]).getClassNode())
-                        .visit(node[0], node[1], source, context);
+                        .visit(node, source, context);
             }
         }
     }

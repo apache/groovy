@@ -51,8 +51,8 @@ public class DefaultGrailsDomainClassInjector implements
     //private static final Log LOG  = LogFactory.getLog(DefaultGrailsDomainClassInjector.class);
 
 
-    public void visit(ASTNode node, ASTNode parent, SourceUnit source, GeneratorContext context) {
-        performInjection(source, context, (ClassNode) parent);
+    public void visit(ASTNode[] nodes, SourceUnit source, GeneratorContext context) {
+        performInjection(source, context, (ClassNode) nodes[1]);
     }
 
     public void performInjection(SourceUnit source, GeneratorContext context,

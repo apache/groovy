@@ -95,17 +95,16 @@ public class BoundASTTransformation implements ASTSingleNodeTransformation, Opco
     /**
      * Handles the bulk of the processing, mostly delegating to other methods.
      *
-     * @param _node   the node to visit
-     * @param _parent the parent node
+     * @param nodes   the ast nodes
      * @param source  the source unit for the nodes
      * @param context the generator context
      */
-    public void visit(ASTNode _node, ASTNode _parent, SourceUnit source, GeneratorContext context) {
-        if (!(_node instanceof AnnotationNode) || !(_parent instanceof AnnotatedNode)) {
+    public void visit(ASTNode[] nodes, SourceUnit source, GeneratorContext context) {
+        if (!(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
             throw new RuntimeException("Internal error: wrong types: $node.class / $parent.class");
         }
-        AnnotationNode node = (AnnotationNode) _node;
-        AnnotatedNode parent = (AnnotatedNode) _parent;
+        AnnotationNode node = (AnnotationNode) nodes[0];
+        AnnotatedNode parent = (AnnotatedNode) nodes[1];
 
         if (ConstrainedASTTransformation.hasConstrainedAnnotation(parent)) {
             // ConstrainedASTTransformation will handle both @Bound and @Constrained
