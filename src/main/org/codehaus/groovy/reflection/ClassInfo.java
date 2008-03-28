@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.reflection;
 
+import groovy.lang.ExpandoMetaClass;
 import groovy.lang.MetaClass;
 import org.codehaus.groovy.reflection.stdclasses.*;
 
@@ -24,9 +25,12 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
+ * It is container for all information we want to know about the class
+ *
  * @author Alex.Tkachman
  */
 public class ClassInfo extends LockableObject {
@@ -53,7 +57,9 @@ public class ClassInfo extends LockableObject {
     };
 
     private int version;
-    private boolean modifiedExpando;
+    private ExpandoMetaClass modifiedExpando;
+
+    private static final HashSet<ClassInfo> modifiedExpandos = new HashSet<ClassInfo>();
 
     public ClassInfo(Class klazz, GlobalMultiClassInfoRecord mcir) {
         final CachedClass aClass = createCachedClass(klazz, this);
@@ -64,15 +70,21 @@ public class ClassInfo extends LockableObject {
         return version;
     }
 
-    public boolean isModifiedExpando() {
+    public ExpandoMetaClass getModifiedExpando() {
         return modifiedExpando;
     }
 
-    public void setModifiedExpando(boolean modifiedExpando) {
+    public void setModifiedExpando(ExpandoMetaClass modifiedExpando) {
         this.modifiedExpando = modifiedExpando;
+        if (modifiedExpando != null)
+          modifiedExpandos.add (this);
     }
 
     public static void clearModifiedExpandos() {
+        for (ClassInfo info : modifiedExpandos) {
+            info.setModifiedExpando(null);
+        }
+        modifiedExpandos.clear();
     }
 
     private static class SoftRef<T> extends SoftReference<T> {
@@ -159,8 +171,6 @@ public class ClassInfo extends LockableObject {
         final Object smf = staticMetaClassField.get();
         if (smf != NONE)
           ((CachedField)smf).setProperty(null,answer);
-
-        modifiedExpando = false;
     }
 
     public MetaClass getWeakMetaClass() {

@@ -66,8 +66,9 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
             Set<CachedClass> interfaces = c.getInterfaces();
             populateSupersFromInterfaces(modifiedSupers, interfaces);
             final ClassInfo info = c.classInfo;
-            if(info.isModifiedExpando()) {
-				modifiedSupers.add(info.getMetaClassForClass());
+            final ExpandoMetaClass expando = info.getModifiedExpando();
+            if(expando != null) {
+				modifiedSupers.add(expando);
 			}
 		}
         Set<CachedClass> interfaces = child.getTheCachedClass().getDeclaredInterfaces();
@@ -81,8 +82,9 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
     private void populateSupersFromInterfaces(Set<MetaClass> modifiedSupers, Set<CachedClass> interfaces) {
         for (CachedClass anInterface : interfaces) {
             final ClassInfo info = anInterface.classInfo;
-            if(info.isModifiedExpando()) {
-				modifiedSupers.add(info.getMetaClassForClass());
+            final ExpandoMetaClass expando = info.getModifiedExpando();
+            if(expando != null) {
+				modifiedSupers.add(expando);
 			}
 
             final Set<CachedClass> superInterfaces = anInterface.getDeclaredInterfaces();
@@ -99,12 +101,12 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
      */
     public void registerModifiedMetaClass(ExpandoMetaClass emc) {
         final Class klazz = emc.getJavaClass();
-        emc.getClassInfo().setModifiedExpando(true);
+        emc.getClassInfo().setModifiedExpando(emc);
         GroovySystem.getMetaClassRegistry().setMetaClass(klazz,emc);
     }
 
 	public boolean hasModifiedMetaClass(ExpandoMetaClass emc) {
-		return emc.getClassInfo().isModifiedExpando();
+		return emc.getClassInfo().getModifiedExpando() != null;
 	}
 
     /**
