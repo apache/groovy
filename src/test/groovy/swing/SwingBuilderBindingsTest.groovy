@@ -76,6 +76,43 @@ public class SwingBuilderBindingsTest extends GroovyTestCase {
         assert swing.sl.value == 21
     }
 
+    public void testScrollBarValueBinding() {
+        if (isHeadless()) return
+        SwingBuilder swing = new SwingBuilder()
+
+        swing.actions() {
+            scrollBar(id:'sl')
+            textField(id:'txt', text:bind(source:sl, sourceProperty:'value', id:'binding'))
+            scrollBar(id:'slReverse', value:bind(source:sl, sourceProperty:'value', id:'bindingReverse'))
+            // need to use a second scrollBar for reverse test, because string->int autobox, not so happy
+        }
+
+        swing.sl.value = 10
+        assert swing.txt.text == '10'
+        swing.sl.value = 85
+        assert swing.txt.text == '85'
+
+        swing.binding.rebind()
+        swing.sl.value = 42
+        assert swing.txt.text == '42'
+        swing.binding.unbind()
+        swing.sl.value = 13
+        assert swing.txt.text == '42'
+        swing.binding.bind()
+        assert swing.txt.text == '42'
+        swing.binding.update()
+        assert swing.txt.text == '13'
+
+        swing.sl.model = new DefaultBoundedRangeModel(30, 1, 20, 40)
+        assert swing.txt.text == '30'
+
+        // first make sure we've been fireing
+        assert swing.slReverse.value == 30
+        swing.slReverse.value = 21
+        swing.bindingReverse.reverseUpdate()
+        assert swing.sl.value == 21
+    }
+
     public void testTextFieldTextBinding() {
         if (isHeadless()) return
         SwingBuilder swing = new SwingBuilder()
