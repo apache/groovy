@@ -47,10 +47,16 @@ class EnumTest extends GroovyTestCase {
 
     void testMinValue() {
         assert UsCoin.MIN_VALUE == UsCoin.penny
+        shouldFail {
+           EmptyEnum.MIN_VALUE
+        }
     }
 
     void testMaxValue() {
         assert UsCoin.MAX_VALUE == UsCoin.quarter
+        shouldFail {
+           EmptyEnum.MAX_VALUE
+        }
     }
 
     void testComparators() {
@@ -102,6 +108,7 @@ class EnumTest extends GroovyTestCase {
         coins = coinRange2.step(-4)
         assert coins == [UsCoin.nickel]
     }
+
 }
 
 enum UsCoin {
@@ -110,3 +117,5 @@ enum UsCoin {
     private final int value
     int getValue() { value }
 }
+
+enum EmptyEnum{}

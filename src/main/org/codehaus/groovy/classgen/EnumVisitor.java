@@ -252,7 +252,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
             initMethod.setCode(code);
             enumClass.addMethod(initMethod);
         }
-        
+
         {
             // static init
             List fields = enumClass.getFields();
@@ -291,24 +291,29 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
                 );
                 arrayInit.add(new FieldExpression(field));
             }
-            block.add(
-                    new ExpressionStatement(
-                            new BinaryExpression(
-                                    new FieldExpression(minValue),
-                                    assign,
-                                    new FieldExpression(tempMin)
-                            )
-                    )
-            );
-            block.add(
-                    new ExpressionStatement(
-                            new BinaryExpression(
-                                    new FieldExpression(maxValue),
-                                    assign,
-                                    new FieldExpression(tempMax)
-                            )
-                    )
-            );
+            
+            if (tempMin!=null) {
+                block.add(
+                        new ExpressionStatement(
+                                new BinaryExpression(
+                                        new FieldExpression(minValue),
+                                        assign,
+                                        new FieldExpression(tempMin)
+                                )
+                        )
+                );
+                block.add(
+                        new ExpressionStatement(
+                                new BinaryExpression(
+                                        new FieldExpression(maxValue),
+                                        assign,
+                                        new FieldExpression(tempMax)
+                                )
+                        )
+                );
+                enumClass.addField(minValue);
+                enumClass.addField(maxValue);
+            }
 
             block.add(
                     new ExpressionStatement(
@@ -317,8 +322,6 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
             );
             enumClass.addStaticInitializerStatements(block, true);
             enumClass.addField(values);
-            enumClass.addField(minValue);
-            enumClass.addField(maxValue);
         }
         
         
