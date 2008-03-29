@@ -105,6 +105,22 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
 	void resolve(GroovyRootDoc rootDoc) {
         Map visibleClasses = rootDoc.getVisibleClasses(importedClassesAndPackages);
 
+        // resolve constructor parameter types
+        Iterator constructorItr = constructors.iterator();
+        while (constructorItr.hasNext()) {
+            GroovyConstructorDoc constructor = (GroovyConstructorDoc) constructorItr.next();
+
+            // parameters
+            Iterator paramItr = Arrays.asList(constructor.parameters()).iterator();
+            while (paramItr.hasNext()) {
+                SimpleGroovyParameter param = (SimpleGroovyParameter) paramItr.next();
+                String paramTypeName = param.typeName();
+                if (visibleClasses.containsKey(paramTypeName)) {
+                    param.setType((GroovyType) visibleClasses.get(paramTypeName));
+                }
+            }
+        }
+
         // resolve method return types and parameter types
         Iterator methodItr = methods.iterator();
         while (methodItr.hasNext()) {
