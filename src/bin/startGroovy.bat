@@ -5,9 +5,9 @@
 @rem                                                                         ##
 @rem ##########################################################################
 
-@rem 
+@rem
 @rem $Revision$ $Date$
-@rem 
+@rem
 
 @rem Set local scope for the variables with windows NT shell
 if "%OS%"=="Windows_NT" setlocal
@@ -60,15 +60,14 @@ goto end
 if "%GROOVY_HOME%" == "" set GROOVY_HOME=%DIRNAME%..
 
 @rem classpath handling
-set _SKIP=2
+set _SKIP=1
 set CP=
 if "x%~1" == "x-cp" set CP=%~2
 if "x%~1" == "x-classpath" set CP=%~2
 if "x" == "x%CP%" goto init
-set _SKIP=4
 shift
 shift
- 
+
 :init
 @rem get name of script to launch with full path
 set GROOVY_SCRIPT_NAME=%~f1
@@ -125,38 +124,25 @@ goto :EOF
 :process_arg
 if "%_ARG%" == "" goto execute
 
+if "x%_ARG%" == "x%CLASS%" goto found_class
+if "x1" == "x%_SKIP%" goto skip
+
 rem now unescape -q, -s, -d
 set _ARG=%_ARG:-q="%
 set _ARG=%_ARG:-s=*%
 set _ARG=%_ARG:-d=-%
 
-if "x4" == "x%_SKIP%" goto skip_4
-if "x3" == "x%_SKIP%" goto skip_3
-if "x2" == "x%_SKIP%" goto skip_2
-if "x1" == "x%_SKIP%" goto skip_1
-
 set CMD_LINE_ARGS=%CMD_LINE_ARGS% %_ARG%
 set _ARG=
 goto win9xME_args_loop
 
-:skip_4
-set _ARG=
-set _SKIP=3
-goto win9xME_args_loop
-
-:skip_3
-set _ARG=
-set _SKIP=2
-goto win9xME_args_loop
-
-:skip_2
-set _ARG=
-set _SKIP=1
-goto win9xME_args_loop
-
-:skip_1
-set _ARG=
+:found_class
 set _SKIP=0
+set _ARG=
+goto win9xME_args_loop
+
+:skip
+set _ARG=
 goto win9xME_args_loop
 
 :4NT_args
@@ -170,7 +156,7 @@ set STARTER_CLASSPATH=%GROOVY_HOME%\lib\@GROOVYJAR@
 if exist "%USERPROFILE%/.groovy/init.bat" call "%USERPROFILE%/.groovy/init.bat"
 
 @rem Setting a classpath using the -cp or -classpath option means not to use
-@rem the global classpath. Groovy behaves then the same as the java 
+@rem the global classpath. Groovy behaves then the same as the java
 @rem interpreter
 if "x" == "x%CP%" goto empty_cp
 :non_empty_cp
