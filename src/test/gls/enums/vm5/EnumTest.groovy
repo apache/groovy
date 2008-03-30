@@ -47,14 +47,14 @@ class EnumTest extends GroovyTestCase {
 
     void testMinValue() {
         assert UsCoin.MIN_VALUE == UsCoin.penny
-        shouldFail {
+        shouldFail(MissingPropertyException) {
            EmptyEnum.MIN_VALUE
         }
     }
 
     void testMaxValue() {
         assert UsCoin.MAX_VALUE == UsCoin.quarter
-        shouldFail {
+        shouldFail(MissingPropertyException) {
            EmptyEnum.MAX_VALUE
         }
     }
