@@ -30,7 +30,7 @@ import java.lang.annotation.ElementType;
  * Specifically, when the annotated annotation is encountered in the
  * appropriate compilation phase ( see {@link Phases}) then an instance of
  * the {@link #transformationClassName} has its
- * {@link ASTSingleNodeTransformation#visit(ASTNode, ASTNode,org.codehaus.groovy.control.SourceUnit,org.codehaus.groovy.classgen.GeneratorContext)}
+ * {@link ASTSingleNodeTransformation#visit(ASTNode[],org.codehaus.groovy.control.SourceUnit,org.codehaus.groovy.classgen.GeneratorContext)}
  * method called at that annotation.
  *
  * Note that only the SEMANTIC_ANALYSIS and latter phases are legal for
