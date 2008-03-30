@@ -1,22 +1,17 @@
 package gls.generics.vm5;
 
 
-import java.util.HashMap;
-import java.util.Map;
-
+import groovy.lang.GroovyClassLoader;
+import groovy.lang.GroovyClassLoader.InnerLoader;
+import groovy.util.GroovyTestCase;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
-import org.objectweb.asm.ClassAdapter;
-import org.objectweb.asm.ClassReader;
-import org.objectweb.asm.ClassVisitor;
-import org.objectweb.asm.FieldVisitor;
-import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.*;
 
-import groovy.lang.GroovyClassLoader;
-import groovy.lang.GroovyClassLoader.InnerLoader;
-import groovy.util.GroovyTestCase;
+import java.util.HashMap;
+import java.util.Map;
 
 
 public class GenericsTestBase extends GroovyTestCase {
@@ -54,7 +49,7 @@ public class GenericsTestBase extends GroovyTestCase {
         }
         public FieldVisitor visitField(int access, String name, String desc,
                 String signature, Object value) {
-            if (signature!=null) signatures.put(name,signature);
+            if (!name.startsWith("$staticMetaClass") && signature!=null) signatures.put(name,signature);
             return super.visitField(access, name, desc, signature, value);
         }
         public MethodVisitor visitMethod(int access, String name, String desc,

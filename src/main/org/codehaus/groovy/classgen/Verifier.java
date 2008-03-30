@@ -31,6 +31,7 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
+import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
@@ -94,39 +95,43 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         final String classInternalName = BytecodeHelper.getClassInternalName(node);
 
-        FieldNode myClassField = node.addField(myClassFieldName, ACC_PRIVATE|ACC_STATIC, ClassHelper.CLASS_Type, new ClassExpression(node));
-        myClassField.setSynthetic(true);
+//        FieldNode myClassField = node.addField(myClassFieldName, ACC_PRIVATE|ACC_STATIC, ClassHelper.CLASS_Type, new ClassExpression(node));
+//        myClassField.setSynthetic(true);
 
         String _staticMetaClassFieldName = "$staticMetaClass";
         while (node.getField(_staticMetaClassFieldName) != null)
           _staticMetaClassFieldName = _staticMetaClassFieldName + "$";
         final String staticMetaClassFieldName = _staticMetaClassFieldName;
 
-        FieldNode staticMetaClassField = node.addField(staticMetaClassFieldName, ACC_PUBLIC|ACC_STATIC, ClassHelper.make(MetaClass.class), null);
+        FieldNode staticMetaClassField = node.addField(staticMetaClassFieldName, ACC_PUBLIC|ACC_STATIC, ClassHelper.make(SoftReference.class), null);
         staticMetaClassField.setSynthetic(true);
 
         List getStaticMetaClassCode = new LinkedList();
         getStaticMetaClassCode.add( new BytecodeInstruction(){
             public void visit(MethodVisitor mv) {
-                mv.visitVarInsn(ALOAD, 0);
-                mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;");
+                mv.visitFieldInsn(GETSTATIC, classInternalName, staticMetaClassFieldName, "Ljava/lang/ref/SoftReference;");
                 mv.visitVarInsn(ASTORE, 1);
                 mv.visitVarInsn(ALOAD, 1);
-                mv.visitFieldInsn(GETSTATIC, classInternalName, myClassFieldName, "Ljava/lang/Class;");
                 Label l0 = new Label();
-                mv.visitJumpInsn(IF_ACMPNE, l0);
-                mv.visitFieldInsn(GETSTATIC, classInternalName, staticMetaClassFieldName, "Lgroovy/lang/MetaClass;");
+                mv.visitJumpInsn(IFNULL, l0);
+                mv.visitVarInsn(ALOAD, 1);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/ref/SoftReference", "get", "()Ljava/lang/Object;");
+                mv.visitTypeInsn(CHECKCAST, "groovy/lang/MetaClass");
+                mv.visitInsn(DUP);
+                mv.visitVarInsn(ASTORE, 1);
                 Label l1 = new Label();
                 mv.visitJumpInsn(IFNONNULL, l1);
+                mv.visitLabel(l0);
                 mv.visitVarInsn(ALOAD, 0);
                 mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/InvokerHelper", "getMetaClass", "(Ljava/lang/Object;)Lgroovy/lang/MetaClass;");
-                mv.visitFieldInsn(PUTSTATIC, classInternalName, staticMetaClassFieldName, "Lgroovy/lang/MetaClass;");
-                mv.visitLabel(l1);
-                mv.visitFieldInsn(GETSTATIC, classInternalName, staticMetaClassFieldName, "Lgroovy/lang/MetaClass;");
-                mv.visitInsn(ARETURN);
-                mv.visitLabel(l0);
+                mv.visitVarInsn(ASTORE, 1);
+                mv.visitTypeInsn(NEW, "java/lang/ref/SoftReference");
+                mv.visitInsn(DUP);
                 mv.visitVarInsn(ALOAD, 1);
-                mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/InvokerHelper", "getMetaClass", "(Ljava/lang/Class;)Lgroovy/lang/MetaClass;");
+                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/ref/SoftReference", "<init>", "(Ljava/lang/Object;)V");
+                mv.visitFieldInsn(PUTSTATIC, classInternalName, staticMetaClassFieldName, "Ljava/lang/ref/SoftReference;");
+                mv.visitLabel(l1);
+                mv.visitVarInsn(ALOAD, 1);
                 mv.visitInsn(ARETURN);
             }
         });

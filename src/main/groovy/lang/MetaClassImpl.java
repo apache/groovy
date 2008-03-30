@@ -66,7 +66,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private static final Class[] SETTER_MISSING_ARGS = METHOD_MISSING_ARGS;
 
     protected final Class theClass;
-    protected final ClassInfo classInfo;
     protected final CachedClass theCachedClass;
 
     public final CachedClass getTheCachedClass() {
@@ -106,7 +105,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     public MetaClassImpl(final Class theClass) {
         this.theClass = theClass;
         theCachedClass = ReflectionCache.getCachedClass(theClass);
-        classInfo = theCachedClass.classInfo;
         this.isGroovyObject = GroovyObject.class.isAssignableFrom(theClass);
         this.isMap = Map.class.isAssignableFrom(theClass);
         this.registry = GroovySystem.getMetaClassRegistry();
@@ -2607,11 +2605,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     public ClassInfo getClassInfo() {
-        return classInfo;
+        return theCachedClass.classInfo;
     }
 
     public int getVersion() {
-        return classInfo.getVersion();
+        return theCachedClass.classInfo.getVersion();
     }
 
     private abstract class MethodIndexAction {

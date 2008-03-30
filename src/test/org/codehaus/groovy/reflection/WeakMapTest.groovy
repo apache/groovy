@@ -3,7 +3,7 @@ package org.codehaus.groovy.reflection
 class WeakMapTest extends GroovyTestCase{
    void testClassUnload () {
        GroovyShell shell = new GroovyShell()
-       int SIZE = 100
+       int SIZE = 1000
        for (int i = 0; i != SIZE; ++i) {
            Object s = shell.parse ("""
               class A extends B {

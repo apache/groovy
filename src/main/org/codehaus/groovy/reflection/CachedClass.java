@@ -30,9 +30,9 @@ import java.util.*;
  */
 public class CachedClass {
     private final Class cachedClass;
-    public final ClassInfo classInfo;
+    public ClassInfo classInfo;
 
-    private final LazyReference<CachedField[]> fields = new LazyReference<CachedField[]>() {
+    private final LazySoftReference<CachedField[]> fields = new LazySoftReference<CachedField[]>() {
         public CachedField[] initValue() {
             final Field[] declaredFields = (Field[])
                AccessController.doPrivileged(new PrivilegedAction/*<Field[]>*/() {
@@ -47,7 +47,7 @@ public class CachedClass {
         }
     };
 
-    private LazyReference<CachedConstructor[]> constructors = new LazyReference<CachedConstructor[]> () {
+    private LazySoftReference<CachedConstructor[]> constructors = new LazySoftReference<CachedConstructor[]>() {
         public CachedConstructor[] initValue() {
             final Constructor[] declaredConstructors = (Constructor[])
                AccessController.doPrivileged(new PrivilegedAction/*<Constructor[]>*/() {
@@ -62,7 +62,7 @@ public class CachedClass {
         }
     };
 
-    private LazyReference<CachedMethod[]> methods = new LazyReference<CachedMethod[]> () {
+    private LazySoftReference<CachedMethod[]> methods = new LazySoftReference<CachedMethod[]>() {
         public CachedMethod[] initValue() {
             final Method[] declaredMethods = (Method[])
                AccessController.doPrivileged(new PrivilegedAction/*<Method[]>*/() {
@@ -107,7 +107,7 @@ public class CachedClass {
 
     private MetaMethod[] newMetaMethods = EMPTY;
 
-    private LazyReference<CachedClass> cachedSuperClass = new LazyReference<CachedClass> () {
+    private LazySoftReference<CachedClass> cachedSuperClass = new LazySoftReference<CachedClass>() {
         public CachedClass initValue() {
             if (!isArray)
               return ReflectionCache.getCachedClass(getTheClass().getSuperclass());

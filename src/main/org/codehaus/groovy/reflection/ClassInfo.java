@@ -19,35 +19,39 @@ import groovy.lang.ExpandoMetaClass;
 import groovy.lang.MetaClass;
 import org.codehaus.groovy.reflection.stdclasses.*;
 
-import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * It is container for all information we want to know about the class
+ * It is handle for all information we want to keep about the class
  *
  * @author Alex.Tkachman
  */
-public class ClassInfo extends LockableObject {
+public class ClassInfo extends SoftReference<Class> {
 
-    private volatile MetaClass strongMetaClass;
-    private volatile SoftReference<CachedClass> cachedClassRef;
-    private volatile SoftReference<MetaClass> weakMetaClass;
+    private Class strongClass;
+
+    private MetaClass strongMetaClass;
+
+    private SoftReference<CachedClass> cachedClassRef;
+
+    private SoftReference<MetaClass> weakMetaClass;
 
     private static final Object NONE = new Object();
 
-    private final LazyReference staticMetaClassField = new LazyReference() {
+    private volatile int version;
+
+    private ExpandoMetaClass modifiedExpando;
+
+    private final LazySoftReference staticMetaClassField = new LazySoftReference() {
         public Object initValue() {
-            final CachedClass aClass = getCachedClass(getCls());
+            final CachedClass aClass = getCachedClass(ClassInfo.this.get());
 
             final CachedField[] cachedFields = aClass.getFields();
             for (CachedField cachedField : cachedFields) {
-                if (cachedField.getName().startsWith("$staticMetaClass") && cachedField.getType() == MetaClass.class && cachedField.isStatic()) {
+                if (cachedField.getName().startsWith("$staticMetaClass") && cachedField.getType() == SoftReference.class && cachedField.isStatic()) {
                     return cachedField;
                 }
             }
@@ -56,14 +60,31 @@ public class ClassInfo extends LockableObject {
         }
     };
 
-    private int version;
-    private ExpandoMetaClass modifiedExpando;
-
     private static final HashSet<ClassInfo> modifiedExpandos = new HashSet<ClassInfo>();
 
-    public ClassInfo(Class klazz, GlobalMultiClassInfoRecord mcir) {
-        final CachedClass aClass = createCachedClass(klazz, this);
-        cachedClassRef = new SoftRef<CachedClass> (aClass, mcir);
+    private final LockableObject lock = new LockableObject();
+
+    public final int hash;
+    public ClassInfo next;
+
+    public ClassInfo(Class klazz, int hash, ClassInfo next) {
+        super (klazz);
+        this.next = next;
+        this.hash = hash;
+    }
+
+    public ClassInfo(ClassInfo src, ClassInfo next) {
+        this(src.get(), src.hash, next);
+        cachedClassRef = src.cachedClassRef;
+        weakMetaClass = src.weakMetaClass;
+        strongMetaClass = src.strongMetaClass;
+        strongClass = src.strongClass;
+        version = src.version;
+        modifiedExpando = src.modifiedExpando;
+
+        CachedClass cc;
+        if (cachedClassRef != null && (cc = cachedClassRef.get()) != null)
+          cc.classInfo = this;
     }
 
     public int getVersion() {
@@ -87,71 +108,30 @@ public class ClassInfo extends LockableObject {
         modifiedExpandos.clear();
     }
 
-    private static class SoftRef<T> extends SoftReference<T> {
-        private static ReferenceQueue queue = new ReferenceQueue();
-
-        private GlobalMultiClassInfoRecord mcir;
-
-        public SoftRef(T referent, GlobalMultiClassInfoRecord mcir) {
-            super(referent, queue);
-            this.mcir = mcir;
-        }
-
-        public void clear() {
-            super.clear();
-            mcir.optimize();
-            mcir = null;
-        }
-
-        public static void expungeStaleEntries() {
-            SoftRef ref;
-            while ((ref=(SoftRef)queue.poll())!=null) {
-                ref.clear();
-            }
-        }
-    }
-
-    public Class getCls () {
-        if (strongMetaClass != null)
-          return strongMetaClass.getTheClass();
-
-        SoftReference<CachedClass> ccr;
-        CachedClass cc;
-        if ((ccr = cachedClassRef) != null && (cc = ccr.get()) != null)
-          return cc.getTheClass();
-
-        SoftReference<MetaClass> mcr;
-        MetaClass mc;
-        if ((mcr = weakMetaClass) != null && (mc = mcr.get()) != null)
-          return mc.getTheClass();
-
-        return null;
-    }
-
     public CachedClass getCachedClass(Class klazz) {
         SoftReference<CachedClass> ccr;
         CachedClass cc;
         if ((ccr = cachedClassRef) != null && (cc = ccr.get()) != null)
           return cc;
 
-        lock ();
+        lock.lock();
         try {
             if ((ccr = cachedClassRef) != null && (cc = ccr.get()) != null)
               return cc;
 
             cc = createCachedClass(klazz, this);
-            cachedClassRef = new SoftReference<CachedClass> (cc);
+            cachedClassRef = new SoftReference (cc);
             return cc;
         }
         finally {
-            unlock();
+            lock.unlock();
         }
     }
 
-    private static final GlobalClassMap globalClassMap = new GlobalClassMap();
+    private static ClassSet globalClassSet = new ClassSet ();
 
     public static ClassInfo getClassInfo (Class cls) {
-        return localClassMap.get().getClassInfo (cls);
+        return globalClassSet.get(cls);
     }
 
     public MetaClass getStrongMetaClass() {
@@ -169,8 +149,8 @@ public class ClassInfo extends LockableObject {
 
     private void updateMetaClass(MetaClass answer) {
         final Object smf = staticMetaClassField.get();
-        if (smf != NONE)
-          ((CachedField)smf).setProperty(null,answer);
+        if (smf != null && smf != NONE)
+          ((CachedField)smf).setProperty(null,null);
     }
 
     public MetaClass getWeakMetaClass() {
@@ -183,7 +163,7 @@ public class ClassInfo extends LockableObject {
         strongMetaClass = null;
         if (answer == null) {
            weakMetaClass = null;
-        }else {
+        } else {
            weakMetaClass = new SoftReference<MetaClass> (answer);
         }
 
@@ -195,307 +175,12 @@ public class ClassInfo extends LockableObject {
     }
 
     public static int size () {
-        int count = 0;
-        for (GlobalMultiClassInfoRecord infoRecord : globalClassMap.values()) {
-            count += infoRecord.size ();
-        }
-
-        return count;
+        return globalClassSet.size();
     }
 
     public static int fullSize () {
-        int count = 0;
-        for (GlobalMultiClassInfoRecord infoRecord : globalClassMap.values()) {
-            count += infoRecord.fullSize ();
-        }
-
-        return count;
+        return globalClassSet.fullSize();
     }
-
-    private static class GlobalClassMap extends ConcurrentHashMap<String, GlobalMultiClassInfoRecord> {
-
-        ClassInfo getClassInfo (Class cls) {
-            final String name = cls.getName();
-            GlobalMultiClassInfoRecord infoRecord = get(name);
-            if (infoRecord == null) {
-                GlobalMultiClassInfoRecord newRecord = new GlobalMultiClassInfoRecord();
-                infoRecord = putIfAbsent(name, newRecord);
-                if (infoRecord == null) {
-                    infoRecord = newRecord;
-                }
-            }
-
-            return infoRecord.get(cls);
-        }
-    }
-
-    private static class LocalClassMap extends HashMap<String,LocalMultiClassInfoRecord> {
-
-        private static final int CACHE_SIZE = 5;
-        private final ClassInfo cache [] = new ClassInfo [CACHE_SIZE];
-        private int nextCacheEntry;
-
-        ClassInfo getClassInfo (Class cls) {
-
-            for (int i = 0; i != CACHE_SIZE; ++i) {
-                final ClassInfo info = cache[i];
-                if (info != null && info.getCls() == cls)
-                  return info;
-            }
-
-            final String name = cls.getName();
-            LocalMultiClassInfoRecord infoRecord = get(name);
-            if (infoRecord == null) {
-                infoRecord = new LocalMultiClassInfoRecord();
-                put(name, infoRecord);
-            }
-
-            final ClassInfo info = infoRecord.getIfPresent(infoRecord.data, cls);
-            if (info != null) {
-                return putToCache(info);
-            }
-
-            return putToCache(infoRecord.put(globalClassMap.getClassInfo(cls)));
-        }
-
-        private ClassInfo putToCache(ClassInfo info) {
-            cache [nextCacheEntry++] = info;
-            if (nextCacheEntry == CACHE_SIZE)
-              nextCacheEntry = 0;
-            return info;
-        }
-    }
-
-    public static class LocalMultiClassInfoRecord {
-        /**
-         * Either null or ClassInfo or ClassInfo []
-         */
-        private Object data;
-
-        ClassInfo put(ClassInfo ci) {
-            if (data == null) {
-              data = ci;
-              return ci;
-            }
-
-            if (data instanceof ClassInfo) {
-                data = new ClassInfo[] { ci, (ClassInfo)data };
-                return ci;
-            }
-
-            ClassInfo d [] = (ClassInfo[])data;
-            final ClassInfo [] resArr = new ClassInfo[d.length+1];
-            resArr [0] = ci;
-            System.arraycopy(d, 0, resArr, 1, d.length);
-            this.data = resArr;
-
-            return ci;
-        }
-
-        private ClassInfo getIfPresent(Object data, Class klazz) {
-            if (data == null) {
-              return null;
-            }
-
-            if (data instanceof ClassInfo) {
-                ClassInfo classInfo = (ClassInfo) data;
-                if (classInfo.getCls () == klazz)
-                  return classInfo;
-
-                return null;
-            }
-
-            ClassInfo d [] = (ClassInfo[]) data;
-            for (ClassInfo classInfo : d) {
-                if (classInfo.getCls () == klazz)
-                    return classInfo;
-            }
-
-            return null;
-        }
-    }
-
-    public static class GlobalMultiClassInfoRecord extends LockableObject {
-        /**
-         * Either null or ClassInfo or ClassInfo []
-         */
-        private volatile Object data;
-
-        public ClassInfo get (Class klazz) {
-            final ClassInfo info = getUnlocked(data, klazz);
-            if (info != null)
-              return info;
-
-            return getLocked(klazz);
-        }
-
-        private ClassInfo getLocked(Class klazz) {
-            SoftRef.expungeStaleEntries();
-
-            lock ();
-            try {
-                return getOrPutWithoutLock(klazz);
-            }
-            finally {
-                unlock();
-            }
-        }
-
-        private ClassInfo getOrPutWithoutLock(Class klazz) {
-            final Object data = this.data;
-            if (data == null) {
-                final ClassInfo res = new ClassInfo(klazz, this);
-                this.data = res;
-                return res;
-            }
-
-            if (data instanceof ClassInfo) {
-                ClassInfo classInfo = (ClassInfo) data;
-                final Class cls = classInfo.getCls();
-                if (cls == klazz)
-                  return classInfo;
-
-                if (cls == null) {
-                    final ClassInfo res = new ClassInfo(klazz, this);
-                    this.data = res;
-                    return res;
-                }
-
-                ClassInfo [] d = new ClassInfo[2];
-                final ClassInfo res = new ClassInfo(klazz, this);
-                d [0] = res;
-                d [1] = classInfo;
-                this.data = d;
-                return res;
-            }
-
-            ClassInfo d [] = (ClassInfo[]) data;
-            for (ClassInfo classInfo : d) {
-                final Class cls = classInfo.getCls();
-                if (cls == klazz) {
-                    return classInfo;
-                }
-            }
-
-            final ClassInfo [] resArr = new ClassInfo[d.length+1];
-            final ClassInfo res = new ClassInfo(klazz, this);
-            resArr [0] = res;
-            System.arraycopy(d, 0, resArr, 1, d.length);
-            this.data = resArr;
-            return res;
-        }
-
-        private void optimize() {
-            lock ();
-            try {
-                if (data == null)
-                  return;
-
-                if (data instanceof ClassInfo) {
-                    ClassInfo classInfo = (ClassInfo) data;
-                    if (classInfo.getCls() == null)
-                       data = null;
-                    return;
-                }
-
-                ClassInfo d [] = (ClassInfo[])data;
-                ArrayList<ClassInfo> list = new ArrayList<ClassInfo> (d.length);
-                for (ClassInfo classInfo : d) {
-                    final Class cls = classInfo.getCls();
-                    if (cls != null)
-                        list.add(classInfo);
-                }
-
-                if (list.size() == 0)
-                  this.data = null;
-                else
-                    if (list.size() == 1)
-                      this.data = list.get(0);
-                    else
-                      this.data = list.toArray(new ClassInfo[list.size()]);
-            }
-            finally {
-                unlock();
-            }
-        }
-
-        private ClassInfo getUnlocked(Object data, Class klazz) {
-            if (data == null) {
-              return null;
-            }
-
-            if (data instanceof ClassInfo) {
-                ClassInfo classInfo = (ClassInfo) data;
-                if (classInfo.getCls () == klazz)
-                  return classInfo;
-
-                return null;
-            }
-
-            ClassInfo d [] = (ClassInfo[]) data;
-            for (ClassInfo classInfo : d) {
-                if (classInfo.getCls () == klazz)
-                    return classInfo;
-            }
-
-            return null;
-        }
-
-        public int size() {
-            Object data = this.data;
-            if (data == null) {
-              return 0;
-            }
-
-            if (data instanceof ClassInfo) {
-                ClassInfo classInfo = (ClassInfo) data;
-                return classInfo.getCls() != null ? 1 : 0;
-            }
-
-            ClassInfo d [] = (ClassInfo[]) data;
-            int count = 0;
-            for (ClassInfo classInfo : d)
-              count += classInfo.getCls() != null ? 1 : 0;
-
-            return count;
-        }
-
-        public int fullSize() {
-            Object data = this.data;
-            if (data == null) {
-              return 0;
-            }
-
-            if (data instanceof ClassInfo) {
-                return 1;
-            }
-
-            ClassInfo d [] = (ClassInfo[]) data;
-            int count = 0;
-            count += d.length;
-
-            return count;
-        }
-    }
-
-    private static final ThreadLocal<LocalClassMap> localClassMap = new ThreadLocal<LocalClassMap> () {
-        private final Thread myThread = Thread.currentThread();
-        private final LocalClassMap myMap = new LocalClassMap();
-
-        protected LocalClassMap initialValue() {
-            if (Thread.currentThread() == myThread)
-              return myMap;
-            else
-              return new LocalClassMap();
-        }
-
-        public LocalClassMap get() {
-            if (Thread.currentThread() == myThread)
-              return myMap;
-            else
-              return super.get();
-        }
-    };
 
     private static CachedClass createCachedClass(Class klazz, ClassInfo classInfo) {
         if (klazz == Object.class)
@@ -554,5 +239,205 @@ public class ClassInfo extends LockableObject {
                       cachedClass = new CachedClass(klazz, classInfo);
 
         return cachedClass;
+    }
+
+    public void lock () {
+        lock.lock();
+    }
+
+    public void unlock () {
+        lock.unlock();
+    }
+
+    public static class ClassSet {
+
+        static final int MAXIMUM_CAPACITY = 1 << 30;
+        static final int MAX_SEGMENTS = 1 << 16;
+        static final int RETRIES_BEFORE_LOCK = 2;
+
+        final int segmentMask;
+        final int segmentShift;
+        final Segment[] segments;
+
+        public ClassSet () {
+
+            int sshift = 0;
+            int ssize = 1;
+            while (ssize < 16) {
+                ++sshift;
+                ssize <<= 1;
+            }
+            segmentShift = 32 - sshift;
+            segmentMask = ssize - 1;
+            this.segments = new Segment[ssize];
+
+            int c = 512 / ssize;
+            if (c * ssize < 512)
+                ++c;
+            int cap = 1;
+            while (cap < c)
+                cap <<= 1;
+
+            for (int i = 0; i < this.segments.length; ++i)
+                this.segments[i] = new Segment(cap);
+        }
+
+        static int hash(Class x) {
+            int h = x.getName().hashCode();
+            h += ~(h << 9);
+            h ^=  (h >>> 14);
+            h +=  (h << 4);
+            h ^=  (h >>> 10);
+            return h;
+        }
+
+        final Segment segmentFor(int hash) {
+            return segments[(hash >>> segmentShift) & segmentMask];
+        }
+
+        static final class Segment extends LockableObject {
+
+            volatile int count;
+
+            int threshold;
+
+            volatile ClassInfo[] table;
+
+            Segment(int initialCapacity) {
+                setTable(new ClassInfo[initialCapacity]);
+            }
+
+            void setTable(ClassInfo[] newTable) {
+                threshold = (int)(newTable.length * 0.75f);
+                table = newTable;
+            }
+
+            ClassInfo getFirst(int hash) {
+                ClassInfo[] tab = table;
+                return tab[hash & (tab.length - 1)];
+            }
+
+            ClassInfo get(Class key, int hash) {
+                ClassInfo e = getFirst(hash);
+                while (e != null) {
+                    if (e.hash == hash && e.get() == key) {
+                        return e;
+                    }
+                    e = e.next;
+                }
+                return put (key, hash);
+            }
+
+            ClassInfo put(Class key, int hash) {
+                lock();
+                try {
+                    int c = count;
+                    if (c++ > threshold) {
+                        rehash();
+                    }
+
+                    ClassInfo[] tab = table;
+                    int index = hash & (tab.length - 1);
+                    ClassInfo first = tab[index];
+                    ClassInfo e = first;
+                    while (e != null) {
+                        if (e.hash == hash && e.get() == key) {
+                            return e;
+                        }
+                        e = e.next;
+                    }
+
+                    e = new ClassInfo(key, hash, first);
+                    tab[index] = e;
+                    count = c; // write-volatile
+                    return e;
+                } finally {
+                    unlock();
+                }
+            }
+
+            void rehash() {
+                ClassInfo[] oldTable = table;
+                int oldCapacity = oldTable.length;
+                if (oldCapacity >= MAXIMUM_CAPACITY)
+                    return;
+
+                int newCount = 0;
+                for (int i = 0; i < oldCapacity ; i++) {
+                    ClassInfo first = null;
+                    for (ClassInfo e = oldTable[i]; e != null; ) {
+                       if (e.get() != null) {
+                           if (first == null)
+                             first = e;
+                                                     
+                           ClassInfo ee = e.next;
+                           while (ee != null && ee.get() == null)
+                             ee = ee.next;
+                           e.next = ee;
+                           e = ee;
+                           newCount++;
+                       }
+                       else {
+                         e = e.next;
+                       }
+                    }
+
+                    oldTable [i] = first;
+                }
+
+                if (newCount+1 < threshold) {
+                    count = newCount;
+                    return;
+                }
+
+                ClassInfo[] newTable = new ClassInfo[oldCapacity << 1];
+                int sizeMask = newTable.length - 1;
+                newCount = 0;
+                for (int i = 0; i < oldCapacity ; i++) {
+                    for (ClassInfo e = oldTable[i]; e != null; e = e.next) {
+                       int idx = e.hash & sizeMask;
+                       final ClassInfo next = newTable[idx];
+                       if (next == null && e.next == null)
+                         newTable[idx] = e;
+                       else
+                         newTable[idx] = new ClassInfo(e, next);
+                       newCount++;
+                    }
+                }
+
+                threshold = (int)(newTable.length * 0.75f);
+
+                table = newTable;
+                count = newCount;
+            }
+        }
+
+        public int fullSize() {
+            int count = 0;
+            for (int i = 0; i < segments.length; i++) {
+                for (int j = 0; j < segments[i].table.length; j++) {
+                    for (ClassInfo e = segments[i].table[j]; e != null; e = e.next)
+                        count++;
+                }
+            }
+            return count;
+        }
+
+        public int size() {
+            int count = 0;
+            for (int i = 0; i < segments.length; i++) {
+                for (int j = 0; j < segments[i].table.length; j++) {
+                    for (ClassInfo e = segments[i].table[j]; e != null; e = e.next)
+                      if (e.get() != null)
+                        count++;
+                }
+            }
+            return count;
+        }
+
+        public ClassInfo get(Class key) {
+            int hash = hash(key);
+            return segmentFor(hash).get(key, hash);
+        }
     }
 }
