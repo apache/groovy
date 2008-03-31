@@ -144,10 +144,10 @@ public class ClassInfo extends SoftReference<Class> {
         this.strongMetaClass = answer;
         weakMetaClass = null;
 
-        updateMetaClass(answer);
+        updateMetaClass();
     }
 
-    private void updateMetaClass(MetaClass answer) {
+    private void updateMetaClass() {
         final Object smf = staticMetaClassField.get();
         if (smf != null && smf != NONE)
           ((CachedField)smf).setProperty(null,null);
@@ -167,7 +167,7 @@ public class ClassInfo extends SoftReference<Class> {
            weakMetaClass = new SoftReference<MetaClass> (answer);
         }
 
-        updateMetaClass(answer);
+        updateMetaClass();
     }
 
     public MetaClass getMetaClassForClass() {

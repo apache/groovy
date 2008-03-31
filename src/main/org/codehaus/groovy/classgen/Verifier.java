@@ -103,7 +103,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
           _staticMetaClassFieldName = _staticMetaClassFieldName + "$";
         final String staticMetaClassFieldName = _staticMetaClassFieldName;
 
-        FieldNode staticMetaClassField = node.addField(staticMetaClassFieldName, ACC_PUBLIC|ACC_STATIC, ClassHelper.make(SoftReference.class), null);
+        FieldNode staticMetaClassField = node.addField(staticMetaClassFieldName, ACC_PUBLIC|ACC_STATIC, ClassHelper.make(SoftReference.class,false), null);
         staticMetaClassField.setSynthetic(true);
 
         List getStaticMetaClassCode = new LinkedList();

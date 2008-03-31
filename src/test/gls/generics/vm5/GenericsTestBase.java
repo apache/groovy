@@ -49,7 +49,7 @@ public class GenericsTestBase extends GroovyTestCase {
         }
         public FieldVisitor visitField(int access, String name, String desc,
                 String signature, Object value) {
-            if (!name.startsWith("$staticMetaClass") && signature!=null) signatures.put(name,signature);
+            if (signature!=null) signatures.put(name,signature);
             return super.visitField(access, name, desc, signature, value);
         }
         public MethodVisitor visitMethod(int access, String name, String desc,
