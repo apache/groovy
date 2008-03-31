@@ -22,6 +22,7 @@ import org.codehaus.groovy.reflection.stdclasses.*;
 import java.lang.ref.SoftReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.HashMap;
 import java.util.HashSet;
 
 /**
@@ -31,11 +32,9 @@ import java.util.HashSet;
  */
 public class ClassInfo extends SoftReference<Class> {
 
-    private Class strongClass;
+    private final LazyCachedClassRef cachedClassRef;
 
     private MetaClass strongMetaClass;
-
-    private SoftReference<CachedClass> cachedClassRef;
 
     private SoftReference<MetaClass> weakMetaClass;
 
@@ -45,20 +44,7 @@ public class ClassInfo extends SoftReference<Class> {
 
     private ExpandoMetaClass modifiedExpando;
 
-    private final LazySoftReference staticMetaClassField = new LazySoftReference() {
-        public Object initValue() {
-            final CachedClass aClass = getCachedClass(ClassInfo.this.get());
-
-            final CachedField[] cachedFields = aClass.getFields();
-            for (CachedField cachedField : cachedFields) {
-                if (cachedField.getName().startsWith("$staticMetaClass") && cachedField.getType() == SoftReference.class && cachedField.isStatic()) {
-                    return cachedField;
-                }
-            }
-
-            return NONE;
-        }
-    };
+    private final LazySoftReference staticMetaClassField;
 
     private static final HashSet<ClassInfo> modifiedExpandos = new HashSet<ClassInfo>();
 
@@ -67,24 +53,24 @@ public class ClassInfo extends SoftReference<Class> {
     public final int hash;
     public ClassInfo next;
 
-    public ClassInfo(Class klazz, int hash, ClassInfo next) {
+    ClassInfo(Class klazz, int hash, ClassInfo next) {
         super (klazz);
         this.next = next;
         this.hash = hash;
+        cachedClassRef = new LazyCachedClassRef(this);
+        staticMetaClassField = new LazyStaticMetaClassFiledRef(this);
     }
 
-    public ClassInfo(ClassInfo src, ClassInfo next) {
-        this(src.get(), src.hash, next);
-        cachedClassRef = src.cachedClassRef;
+    ClassInfo(ClassInfo src, ClassInfo next) {
+        super(src.get());
+        this.next = next;
+        this.hash = src.hash;
+        cachedClassRef = new LazyCachedClassRef(this, src);
         weakMetaClass = src.weakMetaClass;
         strongMetaClass = src.strongMetaClass;
-        strongClass = src.strongClass;
         version = src.version;
         modifiedExpando = src.modifiedExpando;
-
-        CachedClass cc;
-        if (cachedClassRef != null && (cc = cachedClassRef.get()) != null)
-          cc.classInfo = this;
+        staticMetaClassField = new LazyStaticMetaClassFiledRef(this);
     }
 
     public int getVersion() {
@@ -108,30 +94,15 @@ public class ClassInfo extends SoftReference<Class> {
         modifiedExpandos.clear();
     }
 
-    public CachedClass getCachedClass(Class klazz) {
-        SoftReference<CachedClass> ccr;
-        CachedClass cc;
-        if ((ccr = cachedClassRef) != null && (cc = ccr.get()) != null)
-          return cc;
-
-        lock.lock();
-        try {
-            if ((ccr = cachedClassRef) != null && (cc = ccr.get()) != null)
-              return cc;
-
-            cc = createCachedClass(klazz, this);
-            cachedClassRef = new SoftReference (cc);
-            return cc;
-        }
-        finally {
-            lock.unlock();
-        }
+    public CachedClass getCachedClass() {
+        return cachedClassRef.get();
     }
 
     private static ClassSet globalClassSet = new ClassSet ();
 
     public static ClassInfo getClassInfo (Class cls) {
-        return globalClassSet.get(cls);
+//        return globalClassSet.get(cls);
+        return localMap.get().get(cls);
     }
 
     public MetaClass getStrongMetaClass() {
@@ -438,6 +409,119 @@ public class ClassInfo extends SoftReference<Class> {
         public ClassInfo get(Class key) {
             int hash = hash(key);
             return segmentFor(hash).get(key, hash);
+        }
+    }
+
+    private static class LocalMap extends HashMap<Class,ClassInfo> {
+
+        private static final int CACHE_SIZE = 5;
+
+        public final Thread myThread = Thread.currentThread();
+
+        private int nextCacheEntry;
+
+        private final ClassInfo[] cache = new ClassInfo[CACHE_SIZE];
+
+        private LocalMap() {
+            for (int i = 0; i < cache.length; i++) {
+                cache[i] = new ClassInfo(null,0,null);
+            }
+        }
+
+        public ClassInfo get(Class key) {
+            ClassInfo info = getFromCache(key);
+            if (info != null)
+              return info;
+
+            info = super.get(key);
+            if (info != null)
+              return putToCache(info);
+
+            return putToCache(globalClassSet.get(key));
+        }
+
+        private ClassInfo getFromCache (Class klazz) {
+            for (int i = 0, k = nextCacheEntry-1; i < cache.length; i++, k--) {
+                if (k < 0)
+                  k += CACHE_SIZE;
+
+                final ClassInfo info = cache[k];
+                if (klazz == info.get()) {
+                    nextCacheEntry = k+1;
+                    if (nextCacheEntry == CACHE_SIZE)
+                      nextCacheEntry = 0;
+                    return info;
+                }
+            }
+            return null;
+        }
+
+        private ClassInfo putToCache (ClassInfo classInfo) {
+            cache [nextCacheEntry++] = classInfo;
+            if (nextCacheEntry == CACHE_SIZE)
+              nextCacheEntry = 0;
+            return classInfo;
+        }
+    }
+
+    private static ThreadLocal<LocalMap> localMap = new ThreadLocal<LocalMap> () {
+        LocalMap recentThreadMap;
+
+        protected LocalMap initialValue() {
+            return new LocalMap();
+        }
+
+        public LocalMap get() {
+            LocalMap recent = recentThreadMap;
+            if (recent != null && recent.myThread == Thread.currentThread())
+              return recent;
+            else {
+                final LocalMap res = super.get();
+                recentThreadMap = res;
+                return res;
+            }
+        }
+    };
+
+    private static class LazyCachedClassRef extends LazySoftReference<CachedClass> {
+        private final ClassInfo info;
+
+        LazyCachedClassRef(ClassInfo info) {
+            this.info = info;
+        }
+
+        LazyCachedClassRef(ClassInfo info, ClassInfo src) {
+            this.info = info;
+            final CachedClass cc = src.cachedClassRef.getNullable();
+            if (cc != null) {
+                cc.classInfo = info;
+                set (cc);
+            }
+        }
+
+        public CachedClass initValue() {
+            return createCachedClass(info.get(), info);
+        }
+    }
+
+    private static class LazyStaticMetaClassFiledRef extends LazySoftReference {
+        private final ClassInfo info;
+
+        LazyStaticMetaClassFiledRef(ClassInfo info) {
+            this.info = info;
+        }
+
+        public Object initValue() {
+            final CachedClass aClass = info.getCachedClass();
+
+            final CachedField[] cachedFields = aClass.getFields();
+            for (CachedField cachedField : cachedFields) {
+                if (cachedField.getName().startsWith("$staticMetaClass") && cachedField.getType() == SoftReference.class && cachedField.isStatic()) {
+                    return cachedField;
+                }
+            }
+
+            return NONE;
         }
     }
 }

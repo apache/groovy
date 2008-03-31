@@ -126,9 +126,39 @@ public class CachedClass {
     public  CachedMethod [] mopMethods;
     public static final CachedClass[] EMPTY_ARRAY = new CachedClass[0];
 
-    private Set<CachedClass> ownInterfaces;
+    private final LazySoftReference<Set<CachedClass>> declaredInterfaces = new LazySoftReference<Set<CachedClass>> () {
+        public Set<CachedClass> initValue() {
+            HashSet<CachedClass> res = new HashSet<CachedClass> (0);
 
-    private Set<CachedClass> interfaces;
+            Class[] classes = getTheClass().getInterfaces();
+            for (int i = 0; i < classes.length; i++) {
+                res.add(ReflectionCache.getCachedClass(classes[i]));
+            }
+            return res;
+        }
+    };
+
+    private final LazySoftReference<Set<CachedClass>> interfaces = new LazySoftReference<Set<CachedClass>> () {
+        public Set<CachedClass> initValue() {
+            HashSet<CachedClass> res = new HashSet<CachedClass> (0);
+
+            if (getTheClass().isInterface())
+              res.add(CachedClass.this);
+
+            Class[] classes = getTheClass().getInterfaces();
+            for (int i = 0; i < classes.length; i++) {
+                final CachedClass aClass = ReflectionCache.getCachedClass(classes[i]);
+                if (!res.contains(aClass))
+                  res.addAll(aClass.getInterfaces());
+            }
+
+            final CachedClass superClass = getCachedSuperClass();
+            if (superClass != null)
+              res.addAll(superClass.getInterfaces());
+
+            return res;
+        }
+    };
 
     public final boolean isArray;
     public final boolean isPrimitive;
@@ -161,36 +191,11 @@ public class CachedClass {
     }
 
     public Set<CachedClass> getInterfaces() {
-        if (interfaces == null)  {
-            interfaces = new HashSet<CachedClass> (0);
-
-            if (getTheClass().isInterface())
-              interfaces.add(this);
-
-            Class[] classes = getTheClass().getInterfaces();
-            for (int i = 0; i < classes.length; i++) {
-                final CachedClass aClass = ReflectionCache.getCachedClass(classes[i]);
-                if (!interfaces.contains(aClass))
-                  interfaces.addAll(aClass.getInterfaces());
-            }
-
-            final CachedClass superClass = getCachedSuperClass();
-            if (superClass != null)
-              interfaces.addAll(superClass.getInterfaces());
-        }
-        return interfaces;
+        return interfaces.get();
     }
 
     public Set<CachedClass> getDeclaredInterfaces() {
-        if (ownInterfaces == null)  {
-            ownInterfaces = new HashSet<CachedClass> (0);
-
-            Class[] classes = getTheClass().getInterfaces();
-            for (int i = 0; i < classes.length; i++) {
-                ownInterfaces.add(ReflectionCache.getCachedClass(classes[i]));
-            }
-        }
-        return ownInterfaces;
+        return declaredInterfaces.get();
     }
 
     public CachedMethod[] getMethods() {

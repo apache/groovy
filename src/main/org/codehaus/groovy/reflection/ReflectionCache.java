@@ -104,7 +104,7 @@ public class ReflectionCache {
         if (klazz == null)
           return null;
         
-        return ClassInfo.getClassInfo(klazz).getCachedClass (klazz);
+        return ClassInfo.getClassInfo(klazz).getCachedClass ();
     }
 
 }

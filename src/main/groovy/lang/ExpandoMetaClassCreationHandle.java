@@ -118,7 +118,7 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
     public static void enable() {
         final MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
         if (metaClassRegistry.getMetaClassCreationHandler() != instance) {
-            clearModifiedExpandos();
+            ClassInfo.clearModifiedExpandos();
             metaClassRegistry.setMetaClassCreationHandle(instance);
         }
     }
@@ -126,12 +126,8 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
     public static void disable() {
         final MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
         if (metaClassRegistry.getMetaClassCreationHandler() == instance) {
-            clearModifiedExpandos();
+            ClassInfo.clearModifiedExpandos();
             metaClassRegistry.setMetaClassCreationHandle(new MetaClassCreationHandle());
         }
-    }
-
-    private static void clearModifiedExpandos() {
-        ClassInfo.clearModifiedExpandos();
     }
 }
