@@ -29,6 +29,7 @@ public class SimpleGroovyDoc implements GroovyDoc {
 	private String rawCommentText;
 	private String firstSentenceCommentText;
     private List links;
+    private boolean interfaceFlag;
 
     public SimpleGroovyDoc(String name, List links) {
         this.name = name;
@@ -128,6 +129,14 @@ public class SimpleGroovyDoc implements GroovyDoc {
         return type;
     }
 
+    public boolean isInterface() {
+        return interfaceFlag;
+    }
+    public void setInterface(boolean interfaceFlag) {
+        this.interfaceFlag = interfaceFlag;
+    }
+
+
     // Methods from Comparable
 	public int compareTo(Object that) {
 		if (that instanceof SimpleGroovyDoc) {
@@ -137,7 +146,7 @@ public class SimpleGroovyDoc implements GroovyDoc {
 		}
 	}
 
-	// Methods from GroovyDoc
+    // Methods from GroovyDoc
 //	public GroovyTag[] firstSentenceTags() {/*todo*/return null;}
 //	public GroovyTag[] inlineTags() {/*todo*/return null;}
 	public boolean isAnnotationType() {/*todo*/return false;}
@@ -150,7 +159,6 @@ public class SimpleGroovyDoc implements GroovyDoc {
 	public boolean isException() {/*todo*/return false;}
 	public boolean isField() {/*todo*/return false;}
 	public boolean isIncluded() {/*todo*/return false;}
-	public boolean isInterface() {/*todo*/return false;}
 	public boolean isMethod() {/*todo*/return false;}
 	public boolean isOrdinaryClass() {/*todo*/return false;}
 //	public GroovySourcePosition position() {/*todo*/return null;}

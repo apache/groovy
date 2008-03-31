@@ -90,6 +90,10 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
 		}
 	}
 
+    public void visitInterfaceDef(GroovySourceAST t, int visit) {
+        currentClassDoc.setInterface(true);
+    }
+
     public void visitImport(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
             GroovySourceAST child = t.childOfType(GroovyTokenTypes.DOT);
