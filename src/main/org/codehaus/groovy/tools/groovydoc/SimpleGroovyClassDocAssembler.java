@@ -79,19 +79,22 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
 		Iterator classDocIterator = classDocs.values().iterator();
 		while (classDocIterator.hasNext()) {
 			SimpleGroovyClassDoc classDoc = (SimpleGroovyClassDoc) classDocIterator.next();
-			
-			GroovyConstructorDoc[] constructors = classDoc.constructors();
-			if (constructors != null && constructors.length == 0) { // add default constructor to doc
-	    		// name of class for the constructor
-	    		GroovyConstructorDoc constructorDoc = new SimpleGroovyConstructorDoc(classDoc.name());
-	        	// don't forget to tell the class about this default constructor.
-	        	classDoc.add(constructorDoc);				
-			}
-		}
+
+            // potentially add default constructor to class docs (but not interfaces)
+            if (classDoc.isClass()) {               // todo Enums, @Interfaces etc 
+                GroovyConstructorDoc[] constructors = classDoc.constructors();
+                if (constructors != null && constructors.length == 0) { // add default constructor to doc
+                    // name of class for the constructor
+                    GroovyConstructorDoc constructorDoc = new SimpleGroovyConstructorDoc(classDoc.name());
+                    // don't forget to tell the class about this default constructor.
+                    classDoc.add(constructorDoc);
+                }
+            }
+        }
 	}
 
     public void visitInterfaceDef(GroovySourceAST t, int visit) {
-        currentClassDoc.setInterface(true);
+        currentClassDoc.setAsInterfaceDefinition();
     }
 
     public void visitImport(GroovySourceAST t, int visit) {

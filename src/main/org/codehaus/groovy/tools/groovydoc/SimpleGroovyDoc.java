@@ -29,12 +29,16 @@ public class SimpleGroovyDoc implements GroovyDoc {
 	private String rawCommentText;
 	private String firstSentenceCommentText;
     private List links;
-    private boolean interfaceFlag;
+    private int definitionType;
+
+    private final int CLASS = 0;
+    private final int INTERFACE = 1;
 
     public SimpleGroovyDoc(String name, List links) {
         this.name = name;
         this.links = links;
         this.setRawCommentText("");  // default to no comments (good for default constructors which will not have a reason to call this)
+        definitionType = CLASS; // default this instance to a class, unless told otherwise
     }
 
     public SimpleGroovyDoc(String name) {
@@ -129,11 +133,14 @@ public class SimpleGroovyDoc implements GroovyDoc {
         return type;
     }
 
-    public boolean isInterface() {
-        return interfaceFlag;
+    public boolean isClass() {
+        return definitionType == CLASS;
     }
-    public void setInterface(boolean interfaceFlag) {
-        this.interfaceFlag = interfaceFlag;
+    public boolean isInterface() {
+        return definitionType == INTERFACE;
+    }
+    public void setAsInterfaceDefinition() {
+        definitionType = INTERFACE;
     }
 
 
@@ -151,7 +158,6 @@ public class SimpleGroovyDoc implements GroovyDoc {
 //	public GroovyTag[] inlineTags() {/*todo*/return null;}
 	public boolean isAnnotationType() {/*todo*/return false;}
 	public boolean isAnnotationTypeElement() {/*todo*/return false;}
-	public boolean isClass() {/*todo*/return false;}
 	public boolean isConstructor() {/*todo*/return false;}
 	public boolean isEnum() {/*todo*/return false;}
 	public boolean isEnumConstant() {/*todo*/return false;}

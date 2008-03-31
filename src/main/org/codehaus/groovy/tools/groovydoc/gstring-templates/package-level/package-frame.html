@@ -19,10 +19,14 @@ ${packageDoc.nameWithDots()}
 <TR>
 <TD NOWRAP><FONT size="+1" CLASS="FrameHeadingFont">
 Interfaces</FONT>&nbsp;
-<FONT CLASS="FrameItemFont">
+<FONT CLASS="FrameItemFont"><%
+    for (classDoc in packageDoc.ordinaryClasses()) {
+        if (classDoc.isInterface()) { %>
 <BR>
-<!--<A HREF="Pausable.html" title="interface in com.javanicus.redbook" target="classFrame"><I>Pausable</I></A>-->
-</FONT></TD>
+<A HREF="${classDoc.name()}.html" title="interface in ${packageDoc.name()}" target="classFrame"><I>${classDoc.name()}</I></A><%
+        }
+    }
+%></FONT></TD>
 </TR>
 </TABLE>
 
@@ -31,13 +35,14 @@ Interfaces</FONT>&nbsp;
 <TR>
 <TD NOWRAP><FONT size="+1" CLASS="FrameHeadingFont">
 Classes</FONT>&nbsp;
-<FONT CLASS="FrameItemFont">
-<!--<BR>
-<A HREF="SimpleFrame.html" title="class in com.javanicus.redbook" target="classFrame">SimpleFrame</A>-->
-<% for (classDoc in packageDoc.ordinaryClasses()) { %>
+<FONT CLASS="FrameItemFont"><%
+    for (classDoc in packageDoc.ordinaryClasses()) {
+        if (classDoc.isClass()) { %>
 <BR>
-<A HREF="${classDoc.name()}.html" title="class in ${packageDoc.name()}" target="classFrame">${classDoc.name()}</A>
-<% } %>
+<A HREF="${classDoc.name()}.html" title="class in ${packageDoc.name()}" target="classFrame">${classDoc.name()}</A><%
+        }
+    }
+%></FONT></TD>
 </TR>
 </TABLE>
 
