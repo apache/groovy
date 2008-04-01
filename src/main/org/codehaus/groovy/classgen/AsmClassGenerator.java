@@ -1824,20 +1824,7 @@ public class AsmClassGenerator extends ClassGenerator {
             boolean safe, boolean spreadSafe, boolean implicitThis
     ) {
         if ((adapter == invokeMethod || adapter == invokeMethodOnCurrent || adapter == invokeStaticMethod)&& !spreadSafe) {
-            String methodName = null;
-            if (message instanceof CastExpression) {
-                CastExpression msg = (CastExpression) message;
-                if (msg.getType() == ClassHelper.STRING_TYPE) {
-                    final Expression methodExpr = msg.getExpression();
-                    if (methodExpr instanceof ConstantExpression)
-                      methodName = methodExpr.getText();
-                }
-            }
-
-            if (methodName == null && message instanceof ConstantExpression) {
-                ConstantExpression constantExpression = (ConstantExpression) message;
-                methodName = constantExpression.getText();
-            }
+            String methodName = getMethodName(message);
 
             if (methodName != null) {
                 makeCallSite(receiver, methodName, arguments, safe, implicitThis, adapter == invokeMethodOnCurrent, adapter == invokeStaticMethod);
@@ -1890,6 +1877,50 @@ public class AsmClassGenerator extends ClassGenerator {
         adapter.call(mv, numberOfArguments, safe, spreadSafe);
 
         leftHandExpression = lhs;
+    }
+
+    private void makeGetPropertySite(Expression receiver, String methodName, boolean safe, boolean implicitThis) {
+        if (isNotClinit()) {
+            mv.visitVarInsn(ALOAD, callSiteArrayVarIndex);
+        }
+        else {
+            mv.visitMethodInsn(INVOKESTATIC,internalClassName,"$getCallSiteArray","()[Lorg/codehaus/groovy/runtime/callsite/CallSite;");
+        }
+        final int index = allocateIndex(methodName);
+        mv.visitLdcInsn(index);
+        mv.visitInsn(AALOAD);
+
+        // site
+        boolean lhs = leftHandExpression;
+        leftHandExpression = false;
+        boolean oldVal = this.implicitThis;
+        this.implicitThis = implicitThis;
+        visitAndAutoboxBoolean(receiver);
+        this.implicitThis = oldVal;
+        if (!safe)
+          mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "callGetProperty","(Ljava/lang/Object;)Ljava/lang/Object;");
+        else {
+          mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "callGetPropertySafe","(Ljava/lang/Object;)Ljava/lang/Object;");
+        }
+        leftHandExpression = lhs;
+    }
+
+    private String getMethodName(Expression message) {
+        String methodName = null;
+        if (message instanceof CastExpression) {
+            CastExpression msg = (CastExpression) message;
+            if (msg.getType() == ClassHelper.STRING_TYPE) {
+                final Expression methodExpr = msg.getExpression();
+                if (methodExpr instanceof ConstantExpression)
+                  methodName = methodExpr.getText();
+            }
+        }
+
+        if (methodName == null && message instanceof ConstantExpression) {
+            ConstantExpression constantExpression = (ConstantExpression) message;
+            methodName = constantExpression.getText();
+        }
+        return methodName;
     }
 
     private void makeCallSite(Expression receiver, String message, Expression arguments, boolean safe, boolean implicitThis, boolean callCurrent, boolean callStatic) {
@@ -2379,14 +2410,20 @@ public class AsmClassGenerator extends ClassGenerator {
             }
         }
 
-        // arguments already on stack if any
-        makeCall(
-                objectExpression, // receiver
-                new CastExpression(ClassHelper.STRING_TYPE, expression.getProperty()), // messageName
-                MethodCallExpression.NO_ARGUMENTS,
-                adapter,
-                expression.isSafe(), expression.isSpreadSafe(), expression.isImplicitThis()
-        );
+        final String methodName = expression.getPropertyAsString();
+        if (adapter == getProperty && !expression.isSpreadSafe() && methodName != null) {
+            makeGetPropertySite(objectExpression, methodName, expression.isSafe(), expression.isImplicitThis());
+        }
+        else {
+            // arguments already on stack if any
+            makeCall(
+                    objectExpression, // receiver
+                    new CastExpression(ClassHelper.STRING_TYPE, expression.getProperty()), // messageName
+                    MethodCallExpression.NO_ARGUMENTS,
+                    adapter,
+                    expression.isSafe(), expression.isSpreadSafe(), expression.isImplicitThis()
+            );
+        }
     }
 
     private boolean isStaticContext() {

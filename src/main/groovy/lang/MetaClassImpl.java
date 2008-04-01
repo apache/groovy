@@ -901,7 +901,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private Object invokePropertyOrMissing(Object object, String methodName, Object[] originalArguments, boolean fromInsideClass) {
         // if no method was found, try to find a closure defined as a field of the class and run it
         Object value = null;
-        final MetaProperty metaProperty = this.getMetaProperty(theCachedClass, methodName, false, false);
+        final MetaProperty metaProperty = this.getMetaProperty(methodName, false);
         if (metaProperty != null)
           value = metaProperty.getProperty(object);
         else {
@@ -1326,7 +1326,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         // getter
         //----------------------------------------------------------------------
-        MetaProperty mp = getMetaProperty(ReflectionCache.getCachedClass(sender), name, useSuper, isStatic);
+        MetaProperty mp = getMetaProperty(sender, name, useSuper, isStatic);
         if (mp != null) {
             if (mp instanceof MetaBeanProperty) {
                 MetaBeanProperty mbp = (MetaBeanProperty) mp;
@@ -1405,6 +1405,176 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         else
             return invokeMissingProperty(object, name, null, true);
     }
+
+    public MetaProperty getEffectiveGetMetaProperty(final Class sender, final Object object, String name, final boolean useSuper) {
+
+        //----------------------------------------------------------------------
+        // handling of static
+        //----------------------------------------------------------------------
+        boolean isStatic = theClass != Class.class && object instanceof Class;
+        if (isStatic && object != theClass) {
+            return new MetaProperty(name, Object.class) {
+                final MetaClass mc = registry.getMetaClass((Class) object);
+
+                public Object getProperty(Object object) {
+                    return mc.getProperty(sender, object, name, useSuper,false);
+                }
+
+                public void setProperty(Object object, Object newValue) {
+                    throw new UnsupportedOperationException();
+                }
+            };
+        }
+
+        checkInitalised();
+
+        //----------------------------------------------------------------------
+        // turn getProperty on a Map to get on the Map itself
+        //----------------------------------------------------------------------
+        if (!isStatic && this.isMap) {
+            return new MetaProperty(name, Object.class) {
+                public Object getProperty(Object object) {
+                    return ((Map) object).get(name);
+                }
+
+                public void setProperty(Object object, Object newValue) {
+                    throw new UnsupportedOperationException();
+                }
+            };
+        }
+
+        MetaMethod method = null;
+
+        //----------------------------------------------------------------------
+        // getter
+        //----------------------------------------------------------------------
+        MetaProperty mp = getMetaProperty(sender, name, useSuper, isStatic);
+        if (mp != null) {
+            if (mp instanceof MetaBeanProperty) {
+                MetaBeanProperty mbp = (MetaBeanProperty) mp;
+                method = mbp.getGetter();
+                mp = mbp.getField();
+            }
+        }
+
+        // check for a category method named like a getter
+        if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInAnyThread()) {
+            String getterName = "get" + MetaClassHelper.capitalize(name);
+            MetaMethod categoryMethod = getCategoryMethodGetter(sender, getterName, false);
+            if (categoryMethod != null)
+              method = categoryMethod;
+        }
+
+        //----------------------------------------------------------------------
+        // field
+        //----------------------------------------------------------------------
+        if (method != null)
+            return new GetBeanMethodMetaProperty(name, method);
+
+        if (mp != null) {
+            return mp;
+//            try {
+//                return mp.getProperty(object);
+//            } catch (IllegalArgumentException e) {
+//                // can't access the field directly but there may be a getter
+//                mp = null;
+//            }
+        }
+
+        //----------------------------------------------------------------------
+        // generic get method
+        //----------------------------------------------------------------------
+        // check for a generic get method provided through a category
+        if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInAnyThread()) {
+            method = getCategoryMethodGetter(sender, "get", true);
+            if (method != null)
+                return new GetMethodMetaProperty(name, method);
+        }
+
+        // the generic method is valid, if available (!=null), if static or
+        // if it is not static and we do no static access
+        if (genericGetMethod != null && !(!genericGetMethod.isStatic() && isStatic)) {
+            method = genericGetMethod;
+            if (method != null)
+                return new GetMethodMetaProperty(name, method);
+        }
+
+        //----------------------------------------------------------------------
+        // special cases
+        //----------------------------------------------------------------------
+        /** todo these special cases should be special MetaClasses maybe */
+        if (theClass != Class.class && object instanceof Class) {
+            return new MetaProperty(name, Object.class) {
+                public Object getProperty(Object object) {
+                    MetaClass mc = registry.getMetaClass(Class.class);
+                    return mc.getProperty(Class.class, object, name, useSuper, false);
+                }
+
+                public void setProperty(Object object, Object newValue) {
+                    throw new UnsupportedOperationException();
+                }
+            };
+        } else if (object instanceof Collection) {
+            return new MetaProperty(name, Object.class) {
+                public Object getProperty(Object object) {
+                    return DefaultGroovyMethods.getAt((Collection) object, name);
+                }
+
+                public void setProperty(Object object, Object newValue) {
+                    throw new UnsupportedOperationException();
+                }
+            };
+        } else if (object instanceof Object[]) {
+            return new MetaProperty(name, Object.class) {
+                public Object getProperty(Object object) {
+                    return DefaultGroovyMethods.getAt(Arrays.asList((Object[]) object), name);
+                }
+
+                public void setProperty(Object object, Object newValue) {
+                    throw new UnsupportedOperationException();
+                }
+            };
+        } else {
+            MetaMethod addListenerMethod = (MetaMethod) listeners.get(name);
+            if (addListenerMethod != null) {
+                //TODO: one day we could try return the previously registered Closure listener for easy removal
+                return new MetaProperty(name, Object.class) {
+                    public Object getProperty(Object object) {
+                        return null;
+                    }
+
+                    public void setProperty(Object object, Object newValue) {
+                        throw new UnsupportedOperationException();
+                    }
+                };
+            }
+        }
+
+        //----------------------------------------------------------------------
+        // error due to missing method/field
+        //----------------------------------------------------------------------
+        if (isStatic || object instanceof Class)
+            return new MetaProperty(name, Object.class) {
+                public Object getProperty(Object object) {
+                    return invokeStaticMissingProperty(object, name, null, true);
+                }
+
+                public void setProperty(Object object, Object newValue) {
+                    throw new UnsupportedOperationException();
+                }
+            };
+        else
+            return new MetaProperty(name, Object.class) {
+                public Object getProperty(Object object) {
+                    return invokeMissingProperty(object, name, null, true);
+                }
+
+                public void setProperty(Object object, Object newValue) {
+                    throw new UnsupportedOperationException();
+                }
+            };
+    }
+
 
 
     private MetaMethod getCategoryMethodGetter(Class sender, String name, boolean useLongVersion) {
@@ -1922,7 +2092,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         // setter
         //----------------------------------------------------------------------
-        MetaProperty mp = getMetaProperty(ReflectionCache.getCachedClass(sender), name, useSuper, isStatic);
+        MetaProperty mp = getMetaProperty(sender, name, useSuper, isStatic);
         MetaProperty field = null;
         if (mp != null) {
             if (mp instanceof MetaBeanProperty) {
@@ -2026,7 +2196,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         invokeMissingProperty(object, name, newValue, false);
     }
 
-    private MetaProperty getMetaProperty(CachedClass clazz, String name, boolean useSuper, boolean useStatic) {
+    private MetaProperty getMetaProperty(Class _clazz, String name, boolean useSuper, boolean useStatic) {
+        if (_clazz == theClass)
+          return getMetaProperty(name, useStatic);
+
+        CachedClass clazz = ReflectionCache.getCachedClass(_clazz);
         while (true) {
             SingleKeyHashMap propertyMap;
             if (useStatic) {
@@ -2049,6 +2223,21 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
 
+    private MetaProperty getMetaProperty(String name, boolean useStatic) {
+        CachedClass clazz = theCachedClass;
+        SingleKeyHashMap propertyMap;
+        if (useStatic) {
+            propertyMap = staticPropertyIndex;
+        } else {
+            propertyMap = classPropertyIndex.getNullable(clazz);
+        }
+        if (propertyMap == null) {
+            return null;
+        }
+        return (MetaProperty) propertyMap.get(name);
+    }
+
+
     public Object getAttribute(Class sender, Object receiver, String messageName, boolean useSuper) {
         return getAttribute(receiver, messageName);
     }
@@ -2065,7 +2254,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return mc.getAttribute(sender, object, attribute, useSuper);
         }
 
-        MetaProperty mp = getMetaProperty(ReflectionCache.getCachedClass(sender), attribute, useSuper, isStatic);
+        MetaProperty mp = getMetaProperty(sender, attribute, useSuper, isStatic);
 
         if (mp != null) {
             if (mp instanceof MetaBeanProperty) {
@@ -2096,7 +2285,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return;
         }
 
-        MetaProperty mp = getMetaProperty(ReflectionCache.getCachedClass(sender), attribute, useSuper, isStatic);
+        MetaProperty mp = getMetaProperty(sender, attribute, useSuper, isStatic);
 
         if (mp != null) {
             if (mp instanceof MetaBeanProperty) {
@@ -2772,4 +2961,37 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
     }
 
+    private static class GetMethodMetaProperty extends MetaProperty {
+        private final MetaMethod theMethod;
+
+        public GetMethodMetaProperty(String name, MetaMethod theMethod) {
+            super(name, Object.class);
+            this.theMethod = theMethod;
+        }
+
+        public Object getProperty(Object object) {
+            return theMethod.doMethodInvoke(object, new Object[]{name});
+        }
+
+        public void setProperty(Object object, Object newValue) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    private static class GetBeanMethodMetaProperty extends MetaProperty {
+        private final MetaMethod theMethod;
+
+        public GetBeanMethodMetaProperty(String name, MetaMethod theMethod) {
+            super(name, Object.class);
+            this.theMethod = theMethod;
+        }
+
+        public Object getProperty(Object object) {
+            return theMethod.doMethodInvoke(object, EMPTY_ARGUMENTS);
+        }
+
+        public void setProperty(Object object, Object newValue) {
+            throw new UnsupportedOperationException();
+        }
+    }
 }

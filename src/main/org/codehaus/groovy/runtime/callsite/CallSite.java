@@ -15,15 +15,15 @@
  */
 package org.codehaus.groovy.runtime.callsite;
 
-import groovy.lang.GroovyInterceptable;
-import groovy.lang.GroovyObject;
-import groovy.lang.MetaClass;
-import groovy.lang.MetaClassImpl;
+import groovy.lang.*;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ParameterTypes;
+import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
+
+import java.lang.reflect.Method;
 
 /**
  * Base class for all call sites
@@ -34,6 +34,7 @@ public abstract class CallSite {
     protected final int index;
     public final String name;
     protected final CallSiteArray array;
+    private MetaClass metaClass;
 
     public CallSite(CallSiteArray array, int index, String name) {
         this.name = name;
@@ -268,5 +269,143 @@ public abstract class CallSite {
 
         array.array[index] = site;
         return site;
+    }
+
+    public Object callGetProperty (Object receiver) {
+        final Class aClass = receiver.getClass();
+        if (receiver instanceof GroovyObject) {
+            try {
+                final Method method = aClass.getMethod("getProperty", String.class);
+                if (method != null && method.isSynthetic())
+                  return createPogoMetaClassGetPropertySite ((GroovyObject)receiver).callGetProperty(receiver);
+            } catch (NoSuchMethodException e) {
+            }
+            return createPogoGetPropertySite (aClass).callGetProperty(receiver);
+        }
+        if (receiver instanceof Class) {
+            return createClassMetaClassGetPropertySite ((Class) receiver).callGetProperty(receiver);
+        }
+        return createMetaClassGetPropertySite (aClass).callGetProperty(receiver);
+    }
+
+    private CallSite createMetaClassGetPropertySite(final Class aClass) {
+        CallSite site = new CallSite (this) {
+            MetaClass metaClass = InvokerHelper.getMetaClass(aClass);
+
+            public Object invoke(Object receiver, Object[] args) {
+                return null;
+            }
+
+            public Object callGetProperty(Object receiver) {
+                if (receiver.getClass() != aClass)
+                  return super.callGetProperty(receiver);
+                return metaClass.getProperty(receiver, name);
+            }
+        };
+
+        array.array[index] = site;
+        return site;
+    }
+
+    private CallSite createClassMetaClassGetPropertySite(final Class aClass) {
+        CallSite site = new CallSite (this) {
+            final MetaClass metaClass = InvokerHelper.getMetaClass(aClass);
+
+            public Object invoke(Object receiver, Object[] args) {
+                return null;
+            }
+
+            public Object callGetProperty(Object receiver) {
+                if (receiver != aClass)
+                  return super.callGetProperty(receiver);
+
+                return metaClass.getProperty(aClass, name);
+            }
+        };
+
+        array.array[index] = site;
+        return site;
+    }
+
+    private CallSite createPogoMetaClassGetPropertySite(final GroovyObject receiver) {
+        final MetaClass metaClass = receiver.getMetaClass();
+
+        CallSite site;
+        if (metaClass.getClass() != MetaClassImpl.class) {
+            site = new CallSite(this) {
+                public Object invoke(Object receiver, Object[] args) {
+                    return null;
+                }
+
+                public Object callGetProperty(Object receiver) {
+                    if (((GroovyObject)receiver).getMetaClass() != metaClass)
+                      return super.callGetProperty(receiver);
+
+                    return metaClass.getProperty(receiver, name);
+                }
+            };
+        }
+        else {
+            final MetaProperty effective = ((MetaClassImpl) metaClass).getEffectiveGetMetaProperty(metaClass.getClass(), receiver, name, false);
+            if (effective != null) {
+                site = new CallSite(this) {
+                    public Object invoke(Object receiver, Object[] args) {
+                        return null;
+                    }
+
+                    public Object callGetProperty(Object receiver) {
+                        if (((GroovyObject)receiver).getMetaClass() != metaClass)
+                          return super.callGetProperty(receiver);
+
+                        if (GroovyCategorySupport.hasCategoryInAnyThread())
+                            return metaClass.getProperty(receiver, name);
+
+                        return effective.getProperty(receiver);
+                    }
+                };
+            }
+            else {
+                site = new CallSite(this) {
+                    public Object invoke(Object receiver, Object[] args) {
+                        return null;
+                    }
+
+                    public Object callGetProperty(Object receiver) {
+                        if (((GroovyObject)receiver).getMetaClass() != metaClass)
+                          return super.callGetProperty(receiver);
+
+                        return metaClass.getProperty(receiver, name);
+                    }
+                };
+            }
+        }
+
+        array.array[index] = site;
+        return site;
+    }
+
+    private CallSite createPogoGetPropertySite(final Class aClass) {
+        CallSite site = new CallSite (this) {
+            public Object invoke(Object receiver, Object[] args) {
+                return null;
+            }
+
+            public Object callGetProperty(Object receiver) {
+                if (receiver.getClass() != aClass)
+                  return super.callGetProperty(receiver);
+
+                return ((GroovyObject)receiver).getProperty(name);
+            }
+        };
+
+        array.array[index] = site;
+        return site;
+    }
+
+    public final Object callGetPropertySafe (Object receiver) {
+        if (receiver == null)
+          return null;
+        else
+          return callGetProperty(receiver);
     }
 }

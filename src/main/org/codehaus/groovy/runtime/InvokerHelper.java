@@ -43,7 +43,7 @@ public class InvokerHelper {
     protected static final Object[] EMPTY_ARGUMENTS = EMPTY_ARGS;
     protected static final Class[]  EMPTY_TYPES = {};
 
-    static final MetaClassRegistry metaRegistry = GroovySystem.getMetaClassRegistry();
+    public static final MetaClassRegistry metaRegistry = GroovySystem.getMetaClassRegistry();
 
     public static void removeClass(Class clazz) {
         metaRegistry.removeMetaClass(clazz);
