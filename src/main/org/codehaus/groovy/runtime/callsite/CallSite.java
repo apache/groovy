@@ -338,7 +338,7 @@ public abstract class CallSite {
                 }
 
                 public Object callGetProperty(Object receiver) {
-                    if (((GroovyObject)receiver).getMetaClass() != metaClass)
+                    if (!(receiver instanceof GroovyObject) || ((GroovyObject)receiver).getMetaClass() != metaClass)
                       return super.callGetProperty(receiver);
 
                     return metaClass.getProperty(receiver, name);
@@ -354,7 +354,7 @@ public abstract class CallSite {
                     }
 
                     public Object callGetProperty(Object receiver) {
-                        if (((GroovyObject)receiver).getMetaClass() != metaClass)
+                        if (!(receiver instanceof GroovyObject) || ((GroovyObject)receiver).getMetaClass() != metaClass)
                           return super.callGetProperty(receiver);
 
                         if (GroovyCategorySupport.hasCategoryInAnyThread())
@@ -371,7 +371,7 @@ public abstract class CallSite {
                     }
 
                     public Object callGetProperty(Object receiver) {
-                        if (((GroovyObject)receiver).getMetaClass() != metaClass)
+                        if (!(receiver instanceof GroovyObject) || ((GroovyObject)receiver).getMetaClass() != metaClass)
                           return super.callGetProperty(receiver);
 
                         return metaClass.getProperty(receiver, name);
