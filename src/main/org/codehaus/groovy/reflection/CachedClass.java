@@ -18,6 +18,7 @@ package org.codehaus.groovy.reflection;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.classgen.BytecodeHelper;
 
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
@@ -37,12 +38,14 @@ public class CachedClass {
             final Field[] declaredFields = (Field[])
                AccessController.doPrivileged(new PrivilegedAction/*<Field[]>*/() {
                    public /*Field[]*/ Object run() {
-                       return getTheClass().getDeclaredFields();
+                       final Field[] df = getTheClass().getDeclaredFields();
+                       AccessibleObject.setAccessible(df, true);
+                       return df;                                                   
                    }
                });
             CachedField [] fields = new CachedField[declaredFields.length];
             for (int i = 0; i != fields.length; ++i)
-                fields[i] = new CachedField(CachedClass.this, declaredFields[i]);
+                fields[i] = new CachedField(declaredFields[i]);
             return fields;
         }
     };

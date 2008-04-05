@@ -17,13 +17,13 @@ package org.codehaus.groovy.ast;
 
 import groovy.lang.GroovyObject;
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Array;
@@ -491,7 +491,18 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                                     Statement setterBlock) {
     	for (Iterator iter = getProperties().iterator(); iter.hasNext();) {
             PropertyNode pn = (PropertyNode) iter.next();
-            if (pn.getName().equals(name)) return pn;
+            if (pn.getName().equals(name)) {
+                if (pn.getInitialExpression() == null && initialValueExpression != null)
+                  pn.getField().setInitialValueExpression(initialValueExpression);
+
+                if (pn.getGetterBlock() == null && getterBlock != null)
+                  pn.setGetterBlock(getterBlock);
+
+                if (pn.getSetterBlock() == null && setterBlock != null)
+                  pn.setSetterBlock(setterBlock);
+                
+                return pn;
+            }
         }
         PropertyNode node =
                 new PropertyNode(name, modifiers, type, redirect(), initialValueExpression, getterBlock, setterBlock);

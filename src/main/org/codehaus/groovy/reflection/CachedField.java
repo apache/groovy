@@ -21,20 +21,13 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 
 public class CachedField extends MetaProperty {
     public final Field field;
 
-    CachedClass cachedClass;
-    boolean alreadySetAccessible;
-
-    public CachedField(CachedClass clazz, Field field) {
+    public CachedField(Field field) {
         super (field.getName(), field.getType());
         this.field = field;
-        cachedClass = clazz;
-        alreadySetAccessible = Modifier.isPublic(field.getModifiers()) && Modifier.isPublic(field.getDeclaringClass().getModifiers());
     }
 
     public boolean isStatic() {
@@ -50,16 +43,6 @@ public class CachedField extends MetaProperty {
      * @throws Exception if the property could not be evaluated
      */
     public Object getProperty(final Object object) {
-        if ( !alreadySetAccessible ) {
-            AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-                    field.setAccessible(true);
-                    return null;
-                }
-            });
-            alreadySetAccessible = true;
-        }
-
         try {
             return field.get(object);
         } catch (IllegalAccessException e) {
@@ -76,16 +59,6 @@ public class CachedField extends MetaProperty {
      */
     public void setProperty(final Object object, Object newValue) {
         final Object goalValue = DefaultTypeTransformation.castToType(newValue, field.getType());
-
-        if ( !alreadySetAccessible ) {
-            AccessController.doPrivileged(new PrivilegedAction() {
-                public Object run() {
-                    field.setAccessible(true);
-                    return null;
-                }
-            });
-            alreadySetAccessible = true;
-        }
 
         try {
             field.set(object, goalValue);

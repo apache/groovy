@@ -15,8 +15,8 @@
  */
 package org.codehaus.groovy.ast;
 
-import org.codehaus.groovy.ast.expr.*;
-import org.codehaus.groovy.ast.stmt.*;
+import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.objectweb.asm.Opcodes;
 
 /**
@@ -28,8 +28,9 @@ import org.objectweb.asm.Opcodes;
 public class PropertyNode extends AnnotatedNode implements Opcodes,Variable {
 
     private final FieldNode field;
-    private final Statement getterBlock;
-    private final Statement setterBlock;
+
+    private Statement getterBlock;
+    private Statement setterBlock;
     private final int modifiers;
     private boolean closureShare = false;
 
@@ -54,6 +55,14 @@ public class PropertyNode extends AnnotatedNode implements Opcodes,Variable {
 
     public Expression getInitialExpression() {
         return field.getInitialExpression();
+    }
+
+    public void setGetterBlock(Statement getterBlock) {
+        this.getterBlock = getterBlock;
+    }
+
+    public void setSetterBlock(Statement setterBlock) {
+        this.setterBlock = setterBlock;
     }
 
     public int getModifiers() {

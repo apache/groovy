@@ -16,12 +16,13 @@
 
 package org.codehaus.groovy.classgen;
 
-import java.util.Iterator;
-import java.util.List;
-
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.stmt.Statement;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * This class repersents a sequence of BytecodeInstructions
@@ -34,10 +35,16 @@ import org.codehaus.groovy.ast.stmt.Statement;
 
 public class BytecodeSequence extends Statement {
     private final List instructions;
+
     public BytecodeSequence(List instructions) {
         this.instructions = instructions;
     }
     
+    public BytecodeSequence(BytecodeInstruction instruction) {
+        this.instructions = new ArrayList(1);
+        this.instructions.add(instruction);
+    }
+
     /**
      * Delegates to the visit method used for this class.
      * If the visitor is a ClassGenerator, then 
