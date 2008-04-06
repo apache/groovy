@@ -43,6 +43,9 @@ echo.
 goto end
 
 :have_JAVA_HOME
+@rem Remove trailing slash from JAVA_HOME if found
+if "%JAVA_HOME:~-1%"=="\" SET JAVA_HOME=%JAVA_HOME:~0,-1%
+
 @rem Validate JAVA_HOME
 %COMMAND_COM% /C DIR "%JAVA_HOME%" 2>&1 | %FIND_EXE% /I /C "%JAVA_HOME%" >nul
 if not errorlevel 1 goto check_GROOVY_HOME
@@ -58,6 +61,9 @@ goto end
 :check_GROOVY_HOME
 @rem Define GROOVY_HOME if not set
 if "%GROOVY_HOME%" == "" set GROOVY_HOME=%DIRNAME%..
+
+@rem Remove trailing slash from GROOVY_HOME if found
+if "%GROOVY_HOME:~-1%"=="\" SET GROOVY_HOME=%GROOVY_HOME:~0,-1%
 
 @rem classpath handling
 set _SKIP=1
