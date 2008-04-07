@@ -20,7 +20,6 @@ package org.codehaus.groovy.control;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CompileUnit;
@@ -166,7 +165,7 @@ public class CompilationUnit extends ProcessingUnit {
         addPhaseOperation(classgen, Phases.CLASS_GENERATION);
         addPhaseOperation(output);
 
-        VMPluginFactory.getPlugin().addPhaseOperations(this);
+        ASTTransformationVisitor.addPhaseOperations(this);
 
         this.classgenCallback = null;
     }

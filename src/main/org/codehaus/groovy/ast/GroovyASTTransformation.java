@@ -16,7 +16,7 @@
 
 package org.codehaus.groovy.ast;
 
-import org.codehaus.groovy.control.Phases;
+import org.codehaus.groovy.control.CompilePhase;
 
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
@@ -24,17 +24,17 @@ import java.lang.annotation.Target;
 import java.lang.annotation.ElementType;
 
 /**
- * This is an annotaton on an annotaiton.  This indicates that the annotated
- * annotation be handeled specially by the groovy compiler.
+ * This is an annotaton on a class, specifically one of
+ * {@link ASTSingleNodeTransformation},
+ * {@link org.codehaus.groovy.control.CompilationUnit.SourceUnitOperation},
+ * or {@link org.codehaus.groovy.control.CompilationUnit.PrimaryClassNodeOperation}.
+ * This proviceds information about how and when to apply the transformation,
+ * such as what phase it should be applied in.
  *
- * Specifically, when the annotated annotation is encountered in the
- * appropriate compilation phase ( see {@link Phases}) then an instance of
- * the {@link #transformationClassName} has its
- * {@link ASTSingleNodeTransformation#visit(ASTNode[],org.codehaus.groovy.control.SourceUnit,org.codehaus.groovy.classgen.GeneratorContext)}
- * method called at that annotation.
- *
- * Note that only the SEMANTIC_ANALYSIS and latter phases are legal for
- * the phase().  This is because the annotations are not inspected until
+ * The allowed phase is a function of how the transformation is introduced
+ * into the compile process.  If the transform is automatically added via a
+ * marker annotation only the SEMANTIC_ANALYSIS and latter phases are legal
+ * for the phase().  This is because the annotations are not inspected until
  * after the classes are all resolved.
  *
  * Also, only annotation types present durring the SEMANTIC_ANALYSIS phase
@@ -43,19 +43,10 @@ import java.lang.annotation.ElementType;
  * latter phases, and only if the type was present in the source unit
  * durring SEMANTIC_ANALYSIS.
  *
- * It is a compile time error to specify {@link Phases#INITIALIZATION},
- * {@link Phases#PARSING}, or {@link Phases#CONVERSION} as a {@link #phase}.
- *
- * It is a compile time error to specify a {@link #phase} that does not exit
- *
- * It is a compile time error to specify a {@link #transformationClassName} that
- * is not accessable at compileTime. 
- *
  * @author Danno Ferrin (shemnon)
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.ANNOTATION_TYPE)
+@Target(ElementType.TYPE)
 public @interface GroovyASTTransformation {
-    String transformationClassName();
-    int phase() default Phases.CANONICALIZATION;
+    CompilePhase phase() default CompilePhase.CANONICALIZATION;
 }

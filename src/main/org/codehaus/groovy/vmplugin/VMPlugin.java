@@ -32,7 +32,6 @@ public interface VMPlugin {
 
     void setAdditionalClassInformation(ClassNode c);
     Class[] getPluginDefaultGroovyMethods();
-    void addPhaseOperations(CompilationUnit unit);
     public void setMethodDefaultValue(MethodNode mn, Method m);
     public void setAnnotationMetaData(ClassNode cn);
     public void configureAnnotation(AnnotationNode an);

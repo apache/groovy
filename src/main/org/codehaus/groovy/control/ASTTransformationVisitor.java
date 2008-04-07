@@ -14,12 +14,9 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.vmplugin.v5;
+package org.codehaus.groovy.control;
 
 import org.codehaus.groovy.classgen.GeneratorContext;
-import org.codehaus.groovy.control.CompilationFailedException;
-import org.codehaus.groovy.control.CompilationUnit;
-import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ASTNode;
@@ -32,6 +29,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Collection;
+import java.util.ArrayList;
 
 /**
  * This class handles the invocation of the ASTAnnotationTransformation
@@ -54,15 +52,16 @@ import java.util.Collection;
  *
  * @author Danno Ferrin (shemnon)
  */
-public class ASTTransformationCodeVisitor extends ClassCodeVisitorSupport {
+public class ASTTransformationVisitor extends ClassCodeVisitorSupport {
 
+    CompilePhase phase;
     private SourceUnit source;
     private GeneratorContext context;
-    private Map<ClassNode, ASTSingleNodeTransformation> annotationsMap;
     private List<ASTNode[]> targetNodes;
+    private Map<ASTNode, List<ASTSingleNodeTransformation>> transforms;
 
-    public ASTTransformationCodeVisitor() {
-        annotationsMap = new HashMap<ClassNode, ASTSingleNodeTransformation>();
+    public ASTTransformationVisitor(CompilePhase phase) {
+        this.phase = phase;
     }
 
     protected SourceUnit getSourceUnit() {
@@ -82,7 +81,19 @@ public class ASTTransformationCodeVisitor extends ClassCodeVisitorSupport {
      */
     public void visitClass(ClassNode classNode) {
         // only descend if we have annotations to look for
-        if (!annotationsMap.isEmpty()) {
+        Map<ASTSingleNodeTransformation, ASTNode> baseTransforms = classNode.getModule().getSingleNodeTransforms(phase);
+        if (!baseTransforms.isEmpty()) {
+            // invert the map, is now one to many
+            transforms = new HashMap<ASTNode, List<ASTSingleNodeTransformation>>();
+            for (Map.Entry<ASTSingleNodeTransformation, ASTNode> entry : baseTransforms.entrySet()) {
+                List<ASTSingleNodeTransformation> list = transforms.get(entry.getValue());
+                if (list == null)  {
+                    list = new ArrayList<ASTSingleNodeTransformation>();
+                    transforms.put(entry.getValue(), list);
+                }
+                list.add(entry.getKey());
+            }
+
             targetNodes = new LinkedList<ASTNode[]>();
 
             // fist pass, collect nodes
@@ -90,8 +101,9 @@ public class ASTTransformationCodeVisitor extends ClassCodeVisitorSupport {
 
             // second pass, call visit on all of the collected nodes
             for (ASTNode[] node : targetNodes) {
-                annotationsMap.get(((AnnotationNode) node[0]).getClassNode())
-                        .visit(node, source, context);
+                for (ASTSingleNodeTransformation snt : transforms.get(((AnnotationNode) node[0]))) {
+                    snt.visit(node, source, context);
+                }
             }
         }
     }
@@ -104,30 +116,12 @@ public class ASTTransformationCodeVisitor extends ClassCodeVisitorSupport {
     public void visitAnnotations(AnnotatedNode node) {
         super.visitAnnotations(node);
         for (AnnotationNode annotation : (Collection<AnnotationNode>) node.getAnnotations()) {
-            if (annotationsMap.containsKey(annotation.getClassNode())) {
+            if (transforms.containsKey(annotation)) {
+                System.out.println("My kingdom for a match");
                 targetNodes.add(new ASTNode[]{annotation, node});
+                System.out.println("Matchy match match");
             }
         }
-    }
-
-    /**
-     * Used to see if the annotation is already added.
-     *
-     * @param annotationClassNode the node to check
-     * @return true if an annotation was found
-     */
-    public boolean hasAnnotation(ClassNode annotationClassNode) {
-        return annotationsMap.containsKey(annotationClassNode);
-    }
-
-    /**
-     * Adds the particular transformation to this phase.
-     *
-     * @param annotationClassNode the node to process
-     * @param transformation      the transformation to remember
-     */
-    public void addAnnotation(ClassNode annotationClassNode, ASTSingleNodeTransformation transformation) {
-        annotationsMap.put(annotationClassNode, transformation);
     }
 
     /**
@@ -136,14 +130,48 @@ public class ASTTransformationCodeVisitor extends ClassCodeVisitorSupport {
      *
      * @return the resulting PrimaryClassNodeOperation
      */
-    public CompilationUnit.PrimaryClassNodeOperation getOperation() {
+    public CompilationUnit.PrimaryClassNodeOperation getPrimaryClassOperation() {
         return new CompilationUnit.PrimaryClassNodeOperation() {
             public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
-                ASTTransformationCodeVisitor.this.source = source;
-                ASTTransformationCodeVisitor.this.context = context;
+                ASTTransformationVisitor.this.source = source;
+                ASTTransformationVisitor.this.context = context;
+                for (CompilationUnit.PrimaryClassNodeOperation pcno : classNode.getModule().getClassTransforms(phase)) {
+                    pcno.call(source, context, classNode);
+                }
                 visitClass(classNode);
             }
         };
+    }
+
+    public CompilationUnit.SourceUnitOperation getSourceOperation() {
+        return new CompilationUnit.SourceUnitOperation() {
+            public void call(SourceUnit source) throws CompilationFailedException {
+                for (CompilationUnit.SourceUnitOperation suo : source.getAST().getSourceUnitTransforms(phase)) {
+                    suo.call(source);
+                }
+            }
+        };
+    }
+
+
+    static void addPhaseOperations(CompilationUnit compilationUnit) {
+        compilationUnit.addPhaseOperation(new ASTTransformationCollectorCodeVisitor().getOperation(), Phases.SEMANTIC_ANALYSIS);
+        for (CompilePhase phase : CompilePhase.values()) {
+            ASTTransformationVisitor visitor = new ASTTransformationVisitor(phase);
+            switch (phase) {
+                case INITIALIZATION:
+                case PARSING:
+                case CONVERSION:
+                    // with transform detection alone these phases are inaccessible, so don't add it
+                    break;
+
+                default:
+                    compilationUnit.addPhaseOperation(visitor.getSourceOperation(), phase.getPhaseNumber());
+                    compilationUnit.addPhaseOperation(visitor.getPrimaryClassOperation(), phase.getPhaseNumber());
+                    break;
+
+            }
+        }
     }
 
 }

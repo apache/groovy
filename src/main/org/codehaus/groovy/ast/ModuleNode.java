@@ -24,6 +24,8 @@ import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.CompilePhase;
+import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.objectweb.asm.Opcodes;
 
@@ -58,13 +60,37 @@ public class ModuleNode extends ASTNode implements Opcodes {
     private boolean importsResolved = false;
     private static final String[] EMPTY_STRING_ARRAY = new String[] { /* class names, not qualified */ };
 
+    /**
+     * The ASTSingleNodeTransformations to be applied to the source unit
+     */
+    private Map<CompilePhase, Map<ASTSingleNodeTransformation, ASTNode>> singleNodeTransformInstances;
+    private Map<CompilePhase, List<CompilationUnit.SourceUnitOperation>> sourceUnitTransforms;
+    private Map<CompilePhase, List<CompilationUnit.PrimaryClassNodeOperation>> classTransforms;
+
 
     public ModuleNode (SourceUnit context ) {
         this.context = context;
+        initTransforms();
     }
 
     public ModuleNode (CompileUnit unit) {
         this.unit = unit;
+        initTransforms();
+    }
+
+    private void initTransforms() {
+        singleNodeTransformInstances = new EnumMap<CompilePhase, Map<ASTSingleNodeTransformation, ASTNode>>(CompilePhase.class);
+        for (CompilePhase phase : CompilePhase.values()) {
+            singleNodeTransformInstances.put(phase, new HashMap<ASTSingleNodeTransformation, ASTNode>());
+        }
+        sourceUnitTransforms = new EnumMap<CompilePhase, List<CompilationUnit.SourceUnitOperation>>(CompilePhase.class);
+        for (CompilePhase phase : CompilePhase.values()) {
+            sourceUnitTransforms.put(phase, new ArrayList<CompilationUnit.SourceUnitOperation>());
+        }
+        classTransforms = new EnumMap<CompilePhase, List<CompilationUnit.PrimaryClassNodeOperation>>(CompilePhase.class);
+        for (CompilePhase phase : CompilePhase.values()) {
+            classTransforms.put(phase, new ArrayList<CompilationUnit.PrimaryClassNodeOperation>());
+        }
     }
 
     public BlockStatement getStatementBlock() {
@@ -325,4 +351,32 @@ public class ModuleNode extends ASTNode implements Opcodes {
     public void addStaticImportClass(String name, ClassNode type) {
         staticImportClasses.put(name, type);
     }
+
+    public void addSingleNodeTransform(ASTSingleNodeTransformation transform, ASTNode node) {
+        GroovyASTTransformation annotation = transform.getClass().getAnnotation(GroovyASTTransformation.class);
+        singleNodeTransformInstances.get(annotation.phase()).put(transform, node);
+    }
+
+    public Map<ASTSingleNodeTransformation, ASTNode> getSingleNodeTransforms(CompilePhase phase) {
+        return singleNodeTransformInstances.get(phase);
+    }
+
+    public void addSourceUnitOperation(CompilationUnit.SourceUnitOperation transform) {
+        GroovyASTTransformation annotation = transform.getClass().getAnnotation(GroovyASTTransformation.class);
+        sourceUnitTransforms.get(annotation.phase()).add(transform);
+    }
+
+    public List<CompilationUnit.SourceUnitOperation> getSourceUnitTransforms(CompilePhase phase) {
+        return sourceUnitTransforms.get(phase);
+    }
+
+    public void addClassTransform(CompilationUnit.PrimaryClassNodeOperation transform) {
+        GroovyASTTransformation annotation = transform.getClass().getAnnotation(GroovyASTTransformation.class);
+        classTransforms.get(annotation.phase()).add(transform);
+    }
+
+    public List<CompilationUnit.PrimaryClassNodeOperation> getClassTransforms(CompilePhase phase) {
+        return classTransforms.get(phase);
+    }
+
 }

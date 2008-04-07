@@ -39,10 +39,6 @@ public class Java4 implements VMPlugin {
         return EMPTY_CLASS_ARRAY;
     }
 
-    public void addPhaseOperations(CompilationUnit unit) {
-        // add nothing
-    }
-
     public void setMethodDefaultValue(MethodNode mn, Method m) {
         // do nothing
     }

@@ -18,14 +18,10 @@ package org.codehaus.groovy.vmplugin.v5;
 
 import java.lang.reflect.*;
 import java.lang.annotation.*;
-import java.util.Map;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.control.Phases;
-import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.vmplugin.VMPlugin;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
@@ -120,17 +116,6 @@ public class Java5 implements VMPlugin {
 
     public Class[] getPluginDefaultGroovyMethods() {
         return PLUGIN_DGM;
-    }
-
-    public void addPhaseOperations(CompilationUnit unit) {
-        Map<Integer, ASTTransformationCodeVisitor> transformationVisitors = new HashMap<Integer, ASTTransformationCodeVisitor>();
-        ASTTransformationCollectorCodeVisitor annotCollector = new ASTTransformationCollectorCodeVisitor(transformationVisitors, unit);
-        unit.addPhaseOperation(annotCollector.getOperation(), Phases.SEMANTIC_ANALYSIS);
-        for (int i = Phases.SEMANTIC_ANALYSIS; i <= Phases.ALL; i++) {
-            ASTTransformationCodeVisitor TransformationVisitor = new ASTTransformationCodeVisitor();
-            transformationVisitors.put(Integer.valueOf(i), TransformationVisitor);
-            unit.addPhaseOperation(TransformationVisitor.getOperation(), i);
-        }
     }
 
     public void setAnnotationMetaData(ClassNode cn) {
