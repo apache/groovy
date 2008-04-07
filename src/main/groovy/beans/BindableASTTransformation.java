@@ -115,29 +115,21 @@ public class BindableASTTransformation implements ASTSingleNodeTransformation, O
         }
 
         ClassNode declaringClass = parent.getDeclaringClass();
-        FieldNode field = ((FieldNode) parent);
+        if (parent instanceof FieldNode) {
+            addListenerToProperty(source, node, declaringClass, (FieldNode) parent);
+        } else if (parent instanceof ClassNode) {
+            addListenerToClass(source, node, (ClassNode) parent);
+        }
+    }
+
+    private void addListenerToProperty(SourceUnit source, AnnotationNode node, ClassNode declaringClass, FieldNode field) {
         String fieldName = field.getName();
         for (PropertyNode propertyNode : (Collection<PropertyNode>) declaringClass.getProperties()) {
             if (propertyNode.getName().equals(fieldName)) {
                 if (needsPropertyChangeSupport(declaringClass)) {
                     addPropertyChangeSupport(declaringClass);
                 }
-                String setterName = "set" + MetaClassHelper.capitalize(propertyNode.getName());
-                if (declaringClass.getMethods(setterName).isEmpty()) {
-                    Expression fieldExpression = new FieldExpression(field);
-                    Statement setterBlock = createBindableStatement(field, fieldExpression);
-
-                    // create method void <setter>(<type> fieldName)
-                    createSetterMethod(declaringClass, field, setterName, setterBlock);
-                } else {
-                    //noinspection ThrowableInstanceNeverThrown
-                    source.getErrorCollector().addErrorAndContinue(
-                            new SyntaxErrorMessage(new SyntaxException(
-                                    "@groovy.beans.Bindable cannot handle user generated setters.",
-                                    node.getLineNumber(),
-                                    node.getColumnNumber()),
-                                    source));
-                }
+                createListenerSetter(source, node, declaringClass, propertyNode);
                 return;
             }
         }
@@ -150,15 +142,46 @@ public class BindableASTTransformation implements ASTSingleNodeTransformation, O
                         source));
     }
 
+    private void addListenerToClass(SourceUnit source, AnnotationNode node, ClassNode classNode) {
+        if (needsPropertyChangeSupport(classNode)) {
+            addPropertyChangeSupport(classNode);
+        }
+        for (PropertyNode propertyNode : (Collection<PropertyNode>) classNode.getProperties()) {
+            FieldNode field = propertyNode.getField();
+            // look to see if per-field handlers will catch this one...
+            if (hasBindableAnnotation(field)) continue;
+            createListenerSetter(source, node, classNode, propertyNode);
+        }
+    }
+
+    private void createListenerSetter(SourceUnit source, AnnotationNode node, ClassNode classNode, PropertyNode propertyNode) {
+        String setterName = "set" + MetaClassHelper.capitalize(propertyNode.getName());
+        if (classNode.getMethods(setterName).isEmpty()) {
+            Expression fieldExpression = new FieldExpression(propertyNode.getField());
+            Statement setterBlock = createBindableStatement(propertyNode, fieldExpression);
+
+            // create method void <setter>(<type> fieldName)
+            createSetterMethod(classNode, propertyNode, setterName, setterBlock);
+        } else {
+            //noinspection ThrowableInstanceNeverThrown
+            source.getErrorCollector().addErrorAndContinue(
+                    new SyntaxErrorMessage(new SyntaxException(
+                            "@groovy.beans.Bindable cannot handle user generated setters.",
+                            node.getLineNumber(),
+                            node.getColumnNumber()),
+                            source));
+        }
+    }
+
     /**
      * Creates a statement body similar to:
      * <code>pcsField.firePropertyChange("field", field, field = value)</code>
      *
-     * @param field           the field node for the property
+     * @param propertyNode           the field node for the property
      * @param fieldExpression a field expression for setting the property value
      * @return the created statement
      */
-    protected Statement createBindableStatement(FieldNode field, Expression fieldExpression) {
+    protected Statement createBindableStatement(PropertyNode propertyNode, Expression fieldExpression) {
         // create statementBody
         return new ExpressionStatement(
                 new MethodCallExpression(
@@ -166,7 +189,7 @@ public class BindableASTTransformation implements ASTSingleNodeTransformation, O
                         "firePropertyChange",
                         new ArgumentListExpression(
                                 new Expression[]{
-                                        new ConstantExpression(field.getName()),
+                                        new ConstantExpression(propertyNode.getName()),
                                         fieldExpression,
                                         new BinaryExpression(
                                                 fieldExpression,
@@ -178,14 +201,14 @@ public class BindableASTTransformation implements ASTSingleNodeTransformation, O
      * Creates a setter method with the given body.
      *
      * @param declaringClass the class to which we will add the setter
-     * @param field          the field to back the setter
+     * @param propertyNode          the field to back the setter
      * @param setterName     the name of the setter
      * @param setterBlock    the statement representing the setter block
      */
-    protected void createSetterMethod(ClassNode declaringClass, FieldNode field, String setterName, Statement setterBlock) {
-        Parameter[] setterParameterTypes = {new Parameter(field.getType(), "value")};
+    protected void createSetterMethod(ClassNode declaringClass, PropertyNode propertyNode, String setterName, Statement setterBlock) {
+        Parameter[] setterParameterTypes = {new Parameter(propertyNode.getType(), "value")};
         MethodNode setter =
-                new MethodNode(setterName, field.getModifiers(), ClassHelper.VOID_TYPE, setterParameterTypes, ClassNode.EMPTY_ARRAY, setterBlock);
+                new MethodNode(setterName, propertyNode.getModifiers(), ClassHelper.VOID_TYPE, setterParameterTypes, ClassNode.EMPTY_ARRAY, setterBlock);
         setter.setSynthetic(true);
         // add it to the class
         declaringClass.addMethod(setter);

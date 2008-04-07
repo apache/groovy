@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package groovy.beans
+package groovy.beans.vm5
 
 import org.codehaus.groovy.control.CompilationFailedException
 
@@ -135,4 +135,46 @@ class VetoableTest extends GroovyTestCase {
             """)
         }
     }
+
+    public void testInheritance() {
+        for (int i = 0; i < 15; i++) {
+            boolean bindParent = i & 1
+            boolean bindChild  = i & 2
+            boolean vetoParent = i & 4
+            boolean vetoChild  = i & 8
+            int count = (bindParent?1:0) + (bindChild?1:0) + (vetoParent?1:0) + (vetoChild?1:0)
+            String script = """
+                    import groovy.beans.Bindable
+                    import groovy.beans.Vetoable
+
+                    class ParentBean {
+                        ${bindParent?'@Bindable':''} String bp
+                        ${vetoParent?'@Vetoable':''} String vp
+                    }
+
+                    class ChildBean extends ParentBean {
+                        ${bindChild?'@Bindable':''} String bc
+                        ${vetoChild?'@Vetoable':''} String vc
+                    }
+
+                    cb = new ChildBean(bp:'a', vp:'b', bc:'c', vc:'d')
+                    changed = 0
+                    ${bindParent|bindChild?'cb.propertyChange = { changed++ }':''}
+                    ${vetoParent|vetoChild?'cb.vetoableChange = { changed++ }':''}
+                    cb.bp = 'e'
+                    cb.vp = 'f'
+                    cb.bc = 'g'
+                    cb.vc = 'h'
+                    assert changed == $count
+                """
+            try {
+                GroovyShell shell = new GroovyShell()
+                shell.evaluate(script);
+            } catch (Throwable t) {
+                System.out.println("Failed Script: $script")
+                throw t
+            }
+        }
+    }
+
 }

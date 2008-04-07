@@ -37,8 +37,8 @@ class BindableTest extends GroovyTestCase {
             changed = false
             sb.propertyChange = {changed = true}
             sb.name = "foo"
+            assert changed
         """)
-        assert shell.changed
     }
 
     public void testMultipleBindableProperty() {
@@ -56,9 +56,8 @@ class BindableTest extends GroovyTestCase {
             sb.propertyChange = {changed++}
             sb.name = "baz"
             sb.value = "biff"
-
+            assert changed == 2
         """)
-        assert shell.changed == 2
     }
 
     public void testExisingSetter() {
@@ -83,5 +82,62 @@ class BindableTest extends GroovyTestCase {
                 }
             """)
         }
+    }
+
+    public void testOnClass() {
+        GroovyShell shell = new GroovyShell()
+        shell.evaluate("""
+            import groovy.beans.Bindable
+
+            @Bindable
+            class SimpleBean {
+                String name
+                String value
+            }
+
+            sb = new SimpleBean(name:"foo", value:"bar")
+            changed = 0
+            sb.propertyChange = {changed++}
+            sb.name = "baz"
+            sb.value = "biff"
+            assert changed == 2
+        """)
+
+        shell = new GroovyShell()
+        shell.evaluate("""
+            import groovy.beans.Bindable
+
+            @Bindable
+            class SimpleBean {
+                String name
+                @Bindable String value
+            }
+
+            sb = new SimpleBean(name:"foo", value:"bar")
+            changed = 0
+            sb.propertyChange = {changed++}
+            sb.name = "baz"
+            sb.value = "biff"
+            assert changed == 2
+        """)
+
+        shell = new GroovyShell()
+        shell.evaluate("""
+            import groovy.beans.Bindable
+
+            @Bindable
+            class SimpleBean {
+                @Bindable String name
+                @Bindable String value
+            }
+
+            sb = new SimpleBean(name:"foo", value:"bar")
+            changed = 0
+            sb.propertyChange = {changed++}
+            sb.name = "baz"
+            sb.value = "biff"
+            assert changed == 2
+        """)
+
     }
 }

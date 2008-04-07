@@ -125,15 +125,15 @@ public class VetoableASTTransformation extends BindableASTTransformation {
                 if (declaringClass.getMethods(setterName).isEmpty()) {
                     Expression fieldExpression = new FieldExpression(field);
                     BlockStatement setterBlock = new BlockStatement();
-                    setterBlock.addStatement(createConstrainedStatement(field, fieldExpression));
+                    setterBlock.addStatement(createConstrainedStatement(propertyNode, fieldExpression));
                     if (bindable) {
-                        setterBlock.addStatement(createBindableStatement(field, fieldExpression));
+                        setterBlock.addStatement(createBindableStatement(propertyNode, fieldExpression));
                     } else {
                         setterBlock.addStatement(createSetStatement(fieldExpression));
                     }
 
                     // create method void <setter>(<type> fieldName)
-                    createSetterMethod(declaringClass, field, setterName, setterBlock);
+                    createSetterMethod(declaringClass, propertyNode, setterName, setterBlock);
                 } else {
                     //noinspection ThrowableInstanceNeverThrown
                     source.getErrorCollector().addErrorAndContinue(
@@ -159,18 +159,18 @@ public class VetoableASTTransformation extends BindableASTTransformation {
      * Creates a statement body silimar to:
      * <code>vcsField.fireVetoableChange("field", field, field = value)</code>
      *
-     * @param field           the field node for the property
+     * @param propertyNode           the field node for the property
      * @param fieldExpression a field expression for setting the property value
      * @return the created statement
      */
-    protected Statement createConstrainedStatement(FieldNode field, Expression fieldExpression) {
+    protected Statement createConstrainedStatement(PropertyNode propertyNode, Expression fieldExpression) {
         return new ExpressionStatement(
                 new MethodCallExpression(
                         new FieldExpression(vcsField),
                         "fireVetoableChange",
                         new ArgumentListExpression(
                                 new Expression[]{
-                                        new ConstantExpression(field.getName()),
+                                        new ConstantExpression(propertyNode.getName()),
                                         fieldExpression,
                                         new VariableExpression("value")})));
     }
@@ -225,15 +225,15 @@ public class VetoableASTTransformation extends BindableASTTransformation {
      * exception java.beans.PropertyVetoException
      *
      * @param declaringClass the class to which we will add the setter
-     * @param field          the field to back the setter
+     * @param propertyNode          the field to back the setter
      * @param setterName     the name of the setter
      * @param setterBlock    the statement representing the setter block
      */
-    protected void createSetterMethod(ClassNode declaringClass, FieldNode field, String setterName, Statement setterBlock) {
-        Parameter[] setterParameterTypes = {new Parameter(field.getType(), "value")};
+    protected void createSetterMethod(ClassNode declaringClass, PropertyNode propertyNode, String setterName, Statement setterBlock) {
+        Parameter[] setterParameterTypes = {new Parameter(propertyNode.getType(), "value")};
         ClassNode[] exceptions = {new ClassNode(PropertyVetoException.class)};
         MethodNode setter =
-                new MethodNode(setterName, field.getModifiers(), ClassHelper.VOID_TYPE, setterParameterTypes, exceptions, setterBlock);
+                new MethodNode(setterName, propertyNode.getModifiers(), ClassHelper.VOID_TYPE, setterParameterTypes, exceptions, setterBlock);
         setter.setSynthetic(true);
         // add it to the class
         declaringClass.addMethod(setter);
