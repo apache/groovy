@@ -34,12 +34,12 @@ import java.lang.annotation.Target;
  * It is a compilation error to place this annotation on a property with
  * a user defined settter.
  *
- * @see BoundASTTransformation 
+ * @see BindableASTTransformation
  *
  * @author Danno Ferrin (shemnon)
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.FIELD)
-@GroovyASTTransformationClass("groovy.beans.BoundASTTransformation")
-public @interface Bound {
+@GroovyASTTransformationClass("groovy.beans.BindableASTTransformation")
+public @interface Bindable {
 }

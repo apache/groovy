@@ -21,15 +21,15 @@ import org.codehaus.groovy.control.CompilationFailedException
 /**
  * @author Danno Ferrin (shemnon)
  */
-class BoundTest extends GroovyTestCase {
+class BindableTest extends GroovyTestCase {
 
-    public void testSimpleBoundProperty() {
+    public void testSimpleBindableProperty() {
         GroovyShell shell = new GroovyShell()
         shell.evaluate("""
-            import groovy.beans.Bound
+            import groovy.beans.Bindable
 
             class SimpleBean {
-                @Bound String name
+                @Bindable String name
             }
 
             sb = new SimpleBean()
@@ -41,14 +41,14 @@ class BoundTest extends GroovyTestCase {
         assert shell.changed
     }
 
-    public void testMultipleBoundProperty() {
+    public void testMultipleBindableProperty() {
         GroovyShell shell = new GroovyShell()
         shell.evaluate("""
-            import groovy.beans.Bound
+            import groovy.beans.Bindable
 
             class SimpleBean {
-                @Bound String name
-                @Bound String value
+                @Bindable String name
+                @Bindable String value
             }
 
             sb = new SimpleBean(name:"foo", value:"bar")
@@ -66,7 +66,7 @@ class BoundTest extends GroovyTestCase {
         shouldFail(CompilationFailedException) {
             shell.evaluate("""
                 class SimpleBean {
-                    @groovy.beans.Bound String name
+                    @groovy.beans.Bindable String name
                     void setName() { }
                 }
             """)
@@ -78,7 +78,7 @@ class BoundTest extends GroovyTestCase {
         shouldFail(CompilationFailedException) {
             shell.evaluate("""
                 class SimpleBean {
-                    public @groovy.beans.Bound String name
+                    public @groovy.beans.Bindable String name
                     void setName() { }
                 }
             """)

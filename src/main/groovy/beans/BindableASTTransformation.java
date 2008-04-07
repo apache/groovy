@@ -16,16 +16,17 @@
 
 package groovy.beans;
 
-import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.ASTSingleNodeTransformation;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.GroovyASTTransformation;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.GroovyASTTransformation;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
@@ -34,59 +35,60 @@ import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
-import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.GeneratorContext;
-import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 
-import java.beans.PropertyVetoException;
-import java.beans.VetoableChangeListener;
-import java.beans.VetoableChangeSupport;
+import org.objectweb.asm.Opcodes;
+
+import java.beans.PropertyChangeListener;
+import java.beans.PropertyChangeSupport;
 import java.util.Collection;
 
 /**
- * Handles generation of code for the @Constrained annotation, and @Bound
- * if also present.
+ * Handles generation of code for the @Bindable annotation when @Vetoable
+ * is not present.
  * <p/>
- * Generally, it adds (if needed) a VetoableChangeSupport field and
- * the needed add/removeVetoableChangeListener methods to support the
+ * Generally, it adds (if needed) a PropertyChangeSupport field and
+ * the needed add/removePropertyChangeListener methods to support the
  * listeners.
  * <p/>
  * It also generates the setter and wires the setter through the
- * VetoableChangeSupport.
+ * PropertyChangeSupport.
  * <p/>
- * If a {@link Bound} annotaton is detected it also adds support similar
- * to what {@link BoundASTTransformation} would do.
+ * If a @{@link Vetoable} annotaton is detected it does nothing and
+ * lets the {@link VetoableASTTransformation} handle all the changes.
  *
  * @author Danno Ferrin (shemnon)
  */
-@GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
-public class ConstrainedASTTransformation extends BoundASTTransformation {
+@GroovyASTTransformation(phase= CompilePhase.CANONICALIZATION)
+public class BindableASTTransformation implements ASTSingleNodeTransformation, Opcodes {
 
-    protected static ClassNode constrainedClassNode = new ClassNode(Constrained.class);
-    protected ClassNode vcsClassNode = new ClassNode(VetoableChangeSupport.class);
     /**
-     * Field use to remember a discovered vcs field
+     * The found or created PropertyChangeSupport field
      */
-    protected FieldNode vcsField;
+    protected FieldNode pcsField;
+
+    protected static ClassNode boundClassNode = new ClassNode(Bindable.class);
+    protected ClassNode pcsClassNode = new ClassNode(PropertyChangeSupport.class);
 
     /**
-     * Convienience method to see if an annotatied node is @Constrained.
+     * Convenience method to see if an annotated node is @Bindable.
      *
      * @param node the node to check
-     * @return true if the node is constrained
+     * @return true if the node is bindable
      */
-    public static boolean hasConstrainedAnnotation(AnnotatedNode node) {
+    public static boolean hasBindableAnnotation(AnnotatedNode node) {
         for (AnnotationNode annotation : (Collection<AnnotationNode>) node.getAnnotations()) {
-            if (constrainedClassNode.equals(annotation.getClassNode())) {
+            if (boundClassNode.equals(annotation.getClassNode())) {
                 return true;
             }
         }
@@ -96,7 +98,7 @@ public class ConstrainedASTTransformation extends BoundASTTransformation {
     /**
      * Handles the bulk of the processing, mostly delegating to other methods.
      *
-     * @param nodes   the AST nodes
+     * @param nodes   the ast nodes
      * @param source  the source unit for the nodes
      * @param context the generator context
      */
@@ -107,37 +109,31 @@ public class ConstrainedASTTransformation extends BoundASTTransformation {
         AnnotationNode node = (AnnotationNode) nodes[0];
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
 
-        boolean bound = BoundASTTransformation.hasBoundAnnotation(parent);
+        if (VetoableASTTransformation.hasConstrainedAnnotation(parent)) {
+            // VetoableASTTransformation will handle both @Bindable and @Vetoable
+            return;
+        }
 
         ClassNode declaringClass = parent.getDeclaringClass();
         FieldNode field = ((FieldNode) parent);
         String fieldName = field.getName();
         for (PropertyNode propertyNode : (Collection<PropertyNode>) declaringClass.getProperties()) {
             if (propertyNode.getName().equals(fieldName)) {
-
-                if (bound && needsPropertyChangeSupport(declaringClass)) {
+                if (needsPropertyChangeSupport(declaringClass)) {
                     addPropertyChangeSupport(declaringClass);
-                }
-                if (needsVetoableChangeSupport(declaringClass)) {
-                    addVetoableChangeSupport(declaringClass);
                 }
                 String setterName = "set" + MetaClassHelper.capitalize(propertyNode.getName());
                 if (declaringClass.getMethods(setterName).isEmpty()) {
                     Expression fieldExpression = new FieldExpression(field);
-                    BlockStatement setterBlock = new BlockStatement();
-                    setterBlock.addStatement(createConstrainedStatement(field, fieldExpression));
-                    if (bound) {
-                        setterBlock.addStatement(createBoundStatement(field, fieldExpression));
-                    } else {
-                        setterBlock.addStatement(createSetStatement(fieldExpression));
-                    }
+                    Statement setterBlock = createBindableStatement(field, fieldExpression);
 
                     // create method void <setter>(<type> fieldName)
                     createSetterMethod(declaringClass, field, setterName, setterBlock);
                 } else {
+                    //noinspection ThrowableInstanceNeverThrown
                     source.getErrorCollector().addErrorAndContinue(
                             new SyntaxErrorMessage(new SyntaxException(
-                                    "@groovy.beans.Constrained cannot handle user generated setters.",
+                                    "@groovy.beans.Bindable cannot handle user generated setters.",
                                     node.getLineNumber(),
                                     node.getColumnNumber()),
                                     source));
@@ -145,68 +141,74 @@ public class ConstrainedASTTransformation extends BoundASTTransformation {
                 return;
             }
         }
+        //noinspection ThrowableInstanceNeverThrown
         source.getErrorCollector().addErrorAndContinue(
                 new SyntaxErrorMessage(new SyntaxException(
-                        "@groovy.beans.Constrained must be on a property, not a field.  Try removing the private, protected, or public modifier.",
+                        "@groovy.beans.Bindable must be on a property, not a field.  Try removing the private, protected, or public modifier.",
                         node.getLineNumber(),
                         node.getColumnNumber()),
                         source));
     }
 
     /**
-     * Creates a statement body silimar to:
-     * <code>vcsField.fireVetoableChange("field", field, field = value)</code>
+     * Creates a statement body similar to:
+     * <code>pcsField.firePropertyChange("field", field, field = value)</code>
      *
      * @param field           the field node for the property
      * @param fieldExpression a field expression for setting the property value
      * @return the created statement
      */
-    protected Statement createConstrainedStatement(FieldNode field, Expression fieldExpression) {
+    protected Statement createBindableStatement(FieldNode field, Expression fieldExpression) {
+        // create statementBody
         return new ExpressionStatement(
                 new MethodCallExpression(
-                        new FieldExpression(vcsField),
-                        "fireVetoableChange",
+                        new FieldExpression(pcsField),
+                        "firePropertyChange",
                         new ArgumentListExpression(
                                 new Expression[]{
                                         new ConstantExpression(field.getName()),
                                         fieldExpression,
-                                        new VariableExpression("value")})));
+                                        new BinaryExpression(
+                                                fieldExpression,
+                                                Token.newSymbol(Types.EQUAL, 0, 0),
+                                                new VariableExpression("value"))})));
     }
 
     /**
-     * Creates a statement body similar to:
-     * <code>field = value</code>
-     * <p/>
-     * Used when the field is not also @Bound
+     * Creates a setter method with the given body.
      *
-     * @param fieldExpression a field expression for setting the property value
-     * @return the created statement
+     * @param declaringClass the class to which we will add the setter
+     * @param field          the field to back the setter
+     * @param setterName     the name of the setter
+     * @param setterBlock    the statement representing the setter block
      */
-    protected Statement createSetStatement(Expression fieldExpression) {
-        return new ExpressionStatement(
-                new BinaryExpression(
-                        fieldExpression,
-                        Token.newSymbol(Types.EQUAL, 0, 0),
-                        new VariableExpression("value")));
+    protected void createSetterMethod(ClassNode declaringClass, FieldNode field, String setterName, Statement setterBlock) {
+        Parameter[] setterParameterTypes = {new Parameter(field.getType(), "value")};
+        MethodNode setter =
+                new MethodNode(setterName, field.getModifiers(), ClassHelper.VOID_TYPE, setterParameterTypes, ClassNode.EMPTY_ARRAY, setterBlock);
+        setter.setSynthetic(true);
+        // add it to the class
+        declaringClass.addMethod(setter);
     }
 
     /**
      * Snoops through the declaring class and all parents looking for a field
-     * of type VetoableChangeSupport.  Remembers the field and returns false
+     * of type PropertyChangeSupport.  Remembers the field and returns false
      * if found otherwise returns true to indicate that such support should
      * be added.
      *
      * @param declaringClass the class to search
-     * @return true if vetoable change support should be added
+     * @return true if property change support should be added
      */
-    protected boolean needsVetoableChangeSupport(ClassNode declaringClass) {
+    protected boolean needsPropertyChangeSupport(ClassNode declaringClass) {
         while (declaringClass != null) {
             for (FieldNode field : (Collection<FieldNode>) declaringClass.getFields()) {
                 if (field.getType() == null) {
                     continue;
                 }
-                if (vcsClassNode.equals(field.getType())) {
-                    vcsField = field;
+                if (pcsClassNode.equals(field.getType())) {
+                    //pcsFieldName = field.getName();
+                    pcsField = field;
                     return false;
                 }
             }
@@ -217,140 +219,119 @@ public class ConstrainedASTTransformation extends BoundASTTransformation {
     }
 
     /**
-     * Creates a setter method with the given body.
-     * <p/>
-     * This differs from normal setters in that we need to add a declared
-     * exception java.beans.PropertyVetoException
-     *
-     * @param declaringClass the class to which we will add the setter
-     * @param field          the field to back the setter
-     * @param setterName     the name of the setter
-     * @param setterBlock    the statement representing the setter block
-     */
-    protected void createSetterMethod(ClassNode declaringClass, FieldNode field, String setterName, Statement setterBlock) {
-        Parameter[] setterParameterTypes = {new Parameter(field.getType(), "value")};
-        ClassNode[] exceptions = {new ClassNode(PropertyVetoException.class)};
-        MethodNode setter =
-                new MethodNode(setterName, field.getModifiers(), ClassHelper.VOID_TYPE, setterParameterTypes, exceptions, setterBlock);
-        setter.setSynthetic(true);
-        // add it to the class
-        declaringClass.addMethod(setter);
-    }
-
-    /**
-     * Adds the necessary field and methods to support vetoable change support.
+     * Adds the necessary field and methods to support property change support.
      * <p/>
      * Adds a new field:
-     * <code>"protected final java.beans.VetoableChangeSupport this$vetoableChangeSupport = new java.beans.VetoableChangeSupport(this)"</code>
+     * <code>protected final java.beans.PropertyChangeSupport this$PropertyChangeSupport = new java.beans.PropertyChangeSupport(this)</code>"
      * <p/>
      * Also adds support methods:
-     * <code>public void addVetoableChangeListener(java.beans.VetoableChangeListener)</code>
-     * <code>public void addVetoableChangeListener(String, java.beans.VetoableChangeListener)</code>
-     * <code>public void removeVetoableChangeListener(java.beans.VetoableChangeListener)</code>
-     * <code>public void removeVetoableChangeListener(String, java.beans.VetoableChangeListener)</code>
-     * <code>public java.beans.VetoableChangeListener[] getVetoableChangeListeners()</code>
+     * <code>public void addPropertyChangeListener(java.beans.PropertyChangeListener)</code>
+     * <code>public void addPropertyChangeListener(String, java.beans.PropertyChangeListener)</code>
+     * <code>public void removePropertyChangeListener(java.beans.PropertyChangeListener)</code>
+     * <code>public void removePropertyChangeListener(String, java.beans.PropertyChangeListener)</code>
+     * <code>public java.beans.PropertyChangeListener[] getPropertyChangeListeners()</code>
      *
      * @param declaringClass the class to which we add the support field and methods
      */
-    protected void addVetoableChangeSupport(ClassNode declaringClass) {
-        ClassNode vcsClassNode = ClassHelper.make(VetoableChangeSupport.class);
-        ClassNode vclClassNode = ClassHelper.make(VetoableChangeListener.class);
+    protected void addPropertyChangeSupport(ClassNode declaringClass) {
+        ClassNode pcsClassNode = ClassHelper.make(PropertyChangeSupport.class);
+        ClassNode pclClassNode = ClassHelper.make(PropertyChangeListener.class);
+        //String pcsFieldName = "this$propertyChangeSupport";
 
         // add field:
-        // protected static VetoableChangeSupport this$vetoableChangeSupport = new java.beans.VetoableChangeSupport(this)
-        vcsField = declaringClass.addField(
-                "this$vetoableChangeSupport",
+        // protected final PropertyChangeSupport this$propertyChangeSupport = new java.beans.PropertyChangeSupport(this)
+        pcsField = declaringClass.addField(
+                "this$propertyChangeSupport",
                 ACC_FINAL | ACC_PROTECTED | ACC_SYNTHETIC,
-                vcsClassNode,
-                new ConstructorCallExpression(vcsClassNode,
+                pcsClassNode,
+                new ConstructorCallExpression(pcsClassNode,
                         new ArgumentListExpression(new Expression[]{new VariableExpression("this")})));
 
         // add method:
-        // void addVetoableChangeListener(listener) {
-        //     this$vetoableChangeSupport.addVetoableChangeListner(listener)
+        // void addPropertyChangeListener(listener) {
+        //     this$propertyChangeSupport.addPropertyChangeListner(listener)
         //  }
         declaringClass.addMethod(
                 new MethodNode(
-                        "addVetoableChangeListener",
+                        "addPropertyChangeListener",
                         ACC_PUBLIC | ACC_SYNTHETIC,
                         ClassHelper.VOID_TYPE,
-                        new Parameter[]{new Parameter(vclClassNode, "listener")},
+                        new Parameter[]{new Parameter(pclClassNode, "listener")},
                         ClassNode.EMPTY_ARRAY,
                         new ExpressionStatement(
                                 new MethodCallExpression(
-                                        new FieldExpression(vcsField),
-                                        "addVetoableChangeListener",
+                                        new FieldExpression(pcsField),
+                                        "addPropertyChangeListener",
                                         new ArgumentListExpression(
                                                 new Expression[]{new VariableExpression("listener")})))));
 
         // add method:
-        // void addVetoableChangeListener(name, listener) {
-        //     this$vetoableChangeSupport.addVetoableChangeListner(name, listener)
-        //  }
+        // void addPropertyChangeListener(name, listener) {
+        //     this$propertyChangeSupport.addPropertyChangeListner(name, listener)
+        //  }                           
         declaringClass.addMethod(
                 new MethodNode(
-                        "addVetoableChangeListener",
+                        "addPropertyChangeListener",
                         ACC_PUBLIC | ACC_SYNTHETIC,
                         ClassHelper.VOID_TYPE,
-                        new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "name"), new Parameter(vclClassNode, "listener")},
+                        new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "name"), new Parameter(pclClassNode, "listener")},
                         ClassNode.EMPTY_ARRAY,
                         new ExpressionStatement(
                                 new MethodCallExpression(
-                                        new FieldExpression(vcsField),
-                                        "addVetoableChangeListener",
+                                        new FieldExpression(pcsField),
+                                        "addPropertyChangeListener",
                                         new ArgumentListExpression(
                                                 new Expression[]{new VariableExpression("name"), new VariableExpression("listener")})))));
 
         // add method:
-        // boolean removeVetoableChangeListener(listener) {
-        //    return this$vetoableChangeSupport.removeVetoableChangeListener(listener);
+        // boolean removePropertyChangeListener(listener) {
+        //    return this$propertyChangeSupport.removePropertyChangeListener(listener);
         // }
         declaringClass.addMethod(
                 new MethodNode(
-                        "removeVetoableChangeListener",
+                        "removePropertyChangeListener",
                         ACC_PUBLIC | ACC_SYNTHETIC,
                         ClassHelper.VOID_TYPE,
-                        new Parameter[]{new Parameter(vclClassNode, "listener")},
+                        new Parameter[]{new Parameter(pclClassNode, "listener")},
                         ClassNode.EMPTY_ARRAY,
                         new ExpressionStatement(
                                 new MethodCallExpression(
-                                        new FieldExpression(vcsField),
-                                        "removeVetoableChangeListener",
+                                        new FieldExpression(pcsField),
+                                        "removePropertyChangeListener",
                                         new ArgumentListExpression(
                                                 new Expression[]{new VariableExpression("listener")})))));
 
-        // add method: void removeVetoableChangeListener(name, listener)
+        // add method: void removePropertyChangeListener(name, listener)
         declaringClass.addMethod(
                 new MethodNode(
-                        "removeVetoableChangeListener",
+                        "removePropertyChangeListener",
                         ACC_PUBLIC | ACC_SYNTHETIC,
                         ClassHelper.VOID_TYPE,
-                        new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "name"), new Parameter(vclClassNode, "listener")},
+                        new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "name"), new Parameter(pclClassNode, "listener")},
                         ClassNode.EMPTY_ARRAY,
                         new ExpressionStatement(
                                 new MethodCallExpression(
-                                        new FieldExpression(vcsField),
-                                        "removeVetoableChangeListener",
+                                        new FieldExpression(pcsField),
+                                        "removePropertyChangeListener",
                                         new ArgumentListExpression(
                                                 new Expression[]{new VariableExpression("name"), new VariableExpression("listener")})))));
 
         // add method:
-        // VetoableChangeSupport[] getVetoableChangeListeners() {
-        //   return this$vetoableChangeSupport.getVetoableChangeListeners
+        // PropertyChangeSupport[] getPropertyChangeListeners() {
+        //   return this$propertyChangeSupport.getPropertyChangeListeners
         // }
         declaringClass.addMethod(
                 new MethodNode(
-                        "getVetoableChangeListeners",
+                        "getPropertyChangeListeners",
                         ACC_PUBLIC | ACC_SYNTHETIC,
-                        vclClassNode.makeArray(),
+                        pclClassNode.makeArray(),
                         Parameter.EMPTY_ARRAY,
                         ClassNode.EMPTY_ARRAY,
                         new ReturnStatement(
                                 new ExpressionStatement(
                                         new MethodCallExpression(
-                                                new FieldExpression(vcsField),
-                                                "getVetoableChangeListeners",
+                                                new FieldExpression(pcsField),
+                                                "getPropertyChangeListeners",
                                                 ArgumentListExpression.EMPTY_ARGUMENTS)))));
     }
-
 }

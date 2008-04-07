@@ -34,12 +34,12 @@ import java.lang.annotation.Target;
  * It is a compilation error to place this annotation on a property with
  * a user defined settter.
  *
- * @see ConstrainedASTTransformation
+ * @see VetoableASTTransformation
  *
  * @author Danno Ferrin (shemnon)
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.FIELD)
-@GroovyASTTransformationClass("groovy.beans.ConstrainedASTTransformation")
-public @interface Constrained {
+@GroovyASTTransformationClass("groovy.beans.VetoableASTTransformation")
+public @interface Vetoable {
 }

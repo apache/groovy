@@ -21,15 +21,15 @@ import org.codehaus.groovy.control.CompilationFailedException
 /**
  * @author Danno Ferrin (shemnon)
  */
-class ConstrainedTest extends GroovyTestCase {
+class VetoableTest extends GroovyTestCase {
 
     public void testSimpleConstrainedProperty() {
         GroovyShell shell = new GroovyShell()
         shell.evaluate("""
-            import groovy.beans.Constrained
+            import groovy.beans.Vetoable
 
             class SimpleBean {
-                @Constrained String name
+                @Vetoable String name
             }
 
             sb = new SimpleBean()
@@ -54,14 +54,14 @@ class ConstrainedTest extends GroovyTestCase {
         assert shell.changed
     }
 
-    public void testBoundConstrainedProperty() {
+    public void testBindableVetoableProperty() {
         GroovyShell shell = new GroovyShell()
         shell.evaluate("""
-            import groovy.beans.Bound
-            import groovy.beans.Constrained
+            import groovy.beans.Bindable
+            import groovy.beans.Vetoable
 
             class SimpleBean {
-                @Bound @Constrained String name
+                @Bindable @Vetoable String name
             }
 
             sb = new SimpleBean()
@@ -82,18 +82,18 @@ class ConstrainedTest extends GroovyTestCase {
     public void testMultipleProperties() {
         GroovyShell shell = new GroovyShell()
         shell.evaluate("""
-            import groovy.beans.Bound
-            import groovy.beans.Constrained
+            import groovy.beans.Bindable
+            import groovy.beans.Vetoable
 
             class SimpleBean {
                 String u1
-                @Bound String b1
-                @Constrained String c1
-                @Bound @Constrained String bc1
+                @Bindable String b1
+                @Vetoable String c1
+                @Bindable @Vetoable String bc1
                 String u2
-                @Bound String b2
-                @Constrained String c2
-                @Bound @Constrained String bc2
+                @Bindable String b2
+                @Vetoable String c2
+                @Bindable @Vetoable String bc2
             }
 
             sb = new SimpleBean(u1:'a', b1:'b', c1:'c', bc1:'d', u2:'e', b2:'f', c2:'g', bc2:'h')
@@ -117,7 +117,7 @@ class ConstrainedTest extends GroovyTestCase {
         shouldFail(CompilationFailedException) {
             shell.evaluate("""
                 class SimpleBean {
-                    @groovy.beans.Constrained String name
+                    @groovy.beans.Vetoable String name
                     void setName() { }
                 }
             """)
@@ -129,7 +129,7 @@ class ConstrainedTest extends GroovyTestCase {
         shouldFail(CompilationFailedException) {
             shell.evaluate("""
                 class SimpleBean {
-                    public @groovy.beans.Constrained String name
+                    public @groovy.beans.Vetoable String name
                     void setName() { }
                 }
             """)
