@@ -54,13 +54,13 @@ import java.util.ArrayList;
  */
 public class ASTTransformationVisitor extends ClassCodeVisitorSupport {
 
-    CompilePhase phase;
+    private CompilePhase phase;
     private SourceUnit source;
     private GeneratorContext context;
     private List<ASTNode[]> targetNodes;
     private Map<ASTNode, List<ASTSingleNodeTransformation>> transforms;
 
-    public ASTTransformationVisitor(CompilePhase phase) {
+    private ASTTransformationVisitor(CompilePhase phase) {
         this.phase = phase;
     }
 
@@ -101,7 +101,7 @@ public class ASTTransformationVisitor extends ClassCodeVisitorSupport {
 
             // second pass, call visit on all of the collected nodes
             for (ASTNode[] node : targetNodes) {
-                for (ASTSingleNodeTransformation snt : transforms.get(((AnnotationNode) node[0]))) {
+                for (ASTSingleNodeTransformation snt : transforms.get(node[0])) {
                     snt.visit(node, source, context);
                 }
             }
@@ -117,9 +117,7 @@ public class ASTTransformationVisitor extends ClassCodeVisitorSupport {
         super.visitAnnotations(node);
         for (AnnotationNode annotation : (Collection<AnnotationNode>) node.getAnnotations()) {
             if (transforms.containsKey(annotation)) {
-                System.out.println("My kingdom for a match");
                 targetNodes.add(new ASTNode[]{annotation, node});
-                System.out.println("Matchy match match");
             }
         }
     }
@@ -130,7 +128,7 @@ public class ASTTransformationVisitor extends ClassCodeVisitorSupport {
      *
      * @return the resulting PrimaryClassNodeOperation
      */
-    public CompilationUnit.PrimaryClassNodeOperation getPrimaryClassOperation() {
+    CompilationUnit.PrimaryClassNodeOperation getPrimaryClassOperation() {
         return new CompilationUnit.PrimaryClassNodeOperation() {
             public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
                 ASTTransformationVisitor.this.source = source;
@@ -143,7 +141,7 @@ public class ASTTransformationVisitor extends ClassCodeVisitorSupport {
         };
     }
 
-    public CompilationUnit.SourceUnitOperation getSourceOperation() {
+    CompilationUnit.SourceUnitOperation getSourceOperation() {
         return new CompilationUnit.SourceUnitOperation() {
             public void call(SourceUnit source) throws CompilationFailedException {
                 for (CompilationUnit.SourceUnitOperation suo : source.getAST().getSourceUnitTransforms(phase)) {

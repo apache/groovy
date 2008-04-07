@@ -56,40 +56,37 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
         for (AnnotationNode annotation : (Collection<AnnotationNode>) node.getAnnotations()) {
             ClassNode annotationClassNode = annotation.getClassNode();
             if (!annotationClassNode.isResolved()) continue;
-            Class<? extends GroovyASTTransformation> annotationType = annotationClassNode.getTypeClass();
             GroovyASTTransformationClass transformClassAnnotation =
                 (GroovyASTTransformationClass) annotation.getClassNode().getTypeClass().getAnnotation(GroovyASTTransformationClass.class);
             if (transformClassAnnotation == null) {
                 // stop if there is no appropriately typed annotation
                 continue;
             }
-            if (transformClassAnnotation != null) {
-                for (String transformClass : transformClassAnnotation.value()) {
-                    try {
-                        Object o = source.getClassLoader().loadClass(transformClass, false, true, false).newInstance();
-                        if (o instanceof ASTSingleNodeTransformation) {
-                            node.getDeclaringClass().getModule().addSingleNodeTransform((ASTSingleNodeTransformation) o, annotation);
-                        } else if (o instanceof CompilationUnit.PrimaryClassNodeOperation) {
-                            node.getDeclaringClass().getModule().addClassTransform((CompilationUnit.PrimaryClassNodeOperation) o);
-                        } else if (o instanceof CompilationUnit.SourceUnitOperation) {
-                            node.getDeclaringClass().getModule().addSourceUnitOperation((CompilationUnit.SourceUnitOperation) o);
-                        }
-                    } catch (InstantiationException e) {
-                        source.getErrorCollector().addError(
-                                new SimpleMessage(
-                                        "Could not instantiate Transformation Processor " + transformClass,
-                                        source));
-                    } catch (IllegalAccessException e) {
-                        source.getErrorCollector().addError(
-                                new SimpleMessage(
-                                        "Could not instantiate Transformation Processor " + transformClass,
-                                        source));
-                    } catch (ClassNotFoundException e) {
-                        source.getErrorCollector().addError(
-                                new SimpleMessage(
-                                        "Could find class for Transformation Processor " + transformClass,
-                                        source));
+            for (String transformClass : transformClassAnnotation.value()) {
+                try {
+                    Object o = source.getClassLoader().loadClass(transformClass, false, true, false).newInstance();
+                    if (o instanceof ASTSingleNodeTransformation) {
+                        node.getDeclaringClass().getModule().addSingleNodeTransform((ASTSingleNodeTransformation) o, annotation);
+                    } else if (o instanceof CompilationUnit.PrimaryClassNodeOperation) {
+                        node.getDeclaringClass().getModule().addClassTransform((CompilationUnit.PrimaryClassNodeOperation) o);
+                    } else if (o instanceof CompilationUnit.SourceUnitOperation) {
+                        node.getDeclaringClass().getModule().addSourceUnitOperation((CompilationUnit.SourceUnitOperation) o);
                     }
+                } catch (InstantiationException e) {
+                    source.getErrorCollector().addError(
+                            new SimpleMessage(
+                                    "Could not instantiate Transformation Processor " + transformClass,
+                                    source));
+                } catch (IllegalAccessException e) {
+                    source.getErrorCollector().addError(
+                            new SimpleMessage(
+                                    "Could not instantiate Transformation Processor " + transformClass,
+                                    source));
+                } catch (ClassNotFoundException e) {
+                    source.getErrorCollector().addError(
+                            new SimpleMessage(
+                                    "Could find class for Transformation Processor " + transformClass,
+                                    source));
                 }
             }
         }
