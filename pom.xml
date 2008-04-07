@@ -439,6 +439,10 @@
             <name>Mike Dillon</name>
             <email></email>
         </contributor>
+        <contributor>
+            <name>Bernhard Huber</name>
+            <email></email>
+        </contributor>
     </contributors>
 
     <dependencies>
