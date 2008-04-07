@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.GroovyASTTransformation;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ASTSingleNodeTransformation;
 import org.codehaus.groovy.ast.GroovyASTTransformationClass;
+import org.codehaus.groovy.ast.ModuleNode;
 
 import java.util.Collection;
 
@@ -65,12 +66,18 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
             for (String transformClass : transformClassAnnotation.value()) {
                 try {
                     Object o = source.getClassLoader().loadClass(transformClass, false, true, false).newInstance();
+                    ModuleNode mn;
+                    if (node instanceof ClassNode) {
+                        mn = ((ClassNode)node).getModule();
+                    } else {
+                        mn = node.getDeclaringClass().getModule();
+                    }
                     if (o instanceof ASTSingleNodeTransformation) {
-                        node.getDeclaringClass().getModule().addSingleNodeTransform((ASTSingleNodeTransformation) o, annotation);
+                        mn.addSingleNodeTransform((ASTSingleNodeTransformation) o, annotation);
                     } else if (o instanceof CompilationUnit.PrimaryClassNodeOperation) {
-                        node.getDeclaringClass().getModule().addClassTransform((CompilationUnit.PrimaryClassNodeOperation) o);
+                        mn.addClassTransform((CompilationUnit.PrimaryClassNodeOperation) o);
                     } else if (o instanceof CompilationUnit.SourceUnitOperation) {
-                        node.getDeclaringClass().getModule().addSourceUnitOperation((CompilationUnit.SourceUnitOperation) o);
+                        mn.addSourceUnitOperation((CompilationUnit.SourceUnitOperation) o);
                     }
                 } catch (InstantiationException e) {
                     source.getErrorCollector().addError(
