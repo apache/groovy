@@ -177,4 +177,48 @@ class VetoableTest extends GroovyTestCase {
         }
     }
 
+    public void testClassMarkers() {
+        for (int i = 0; i < /*15*/ 7; i++) {
+            boolean bindField  = i & 1
+            boolean bindClass  = i & 2
+            boolean vetoField  = i & 4
+            boolean vetoClass  = i & 8
+            int vetoCount = vetoClass?4:(vetoField?2:0);
+            int bindCount = bindClass?4:(bindField?2:0);
+
+            String script = """
+                    import groovy.beans.Bindable
+                    import groovy.beans.Vetoable
+
+                    ${vetoClass?'@Vetoable ':''}${bindClass?'@Bindable ':''}class ChocolateBean {
+                        String neither
+
+                        ${vetoField?'@Vetoable ':''}String veto
+
+                        ${bindField?'@Bindable ':''}String bind
+
+                        ${vetoField?'@Vetoable ':''}${bindField?'@Bindable ':''}String both
+                    }
+
+                    cb = new ChocolateBean(neither:'a', veto:'b', bind:'c', both:'d')
+                    vetoCount = 0
+                    bindCount = 0
+                    ${bindClass|bindField?'cb.propertyChange = { bindCount++ }':''}
+                    ${vetoClass|vetoField?'cb.vetoableChange = { vetoCount++ }':''}
+                    cb.neither = 'e'
+                    cb.bind = 'f'
+                    cb.veto = 'g'
+                    cb.both = 'h'
+                    assert vetoCount == $vetoCount
+                    assert bindCount == $bindCount
+                """
+            try {
+                GroovyShell shell = new GroovyShell()
+                shell.evaluate(script);
+            } catch (Throwable t) {
+                System.out.println("Failed Script: $script")
+                throw t
+            }
+        }
+    }
 }

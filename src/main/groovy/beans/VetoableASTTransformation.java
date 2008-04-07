@@ -84,7 +84,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
      * @param node the node to check
      * @return true if the node is constrained
      */
-    public static boolean hasConstrainedAnnotation(AnnotatedNode node) {
+    public static boolean hasVetoableAnnotation(AnnotatedNode node) {
         for (AnnotationNode annotation : (Collection<AnnotationNode>) node.getAnnotations()) {
             if (constrainedClassNode.equals(annotation.getClassNode())) {
                 return true;
@@ -107,7 +107,8 @@ public class VetoableASTTransformation extends BindableASTTransformation {
         AnnotationNode node = (AnnotationNode) nodes[0];
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
 
-        boolean bindable = BindableASTTransformation.hasBindableAnnotation(parent);
+        boolean bindable = BindableASTTransformation.hasBindableAnnotation(parent)
+            || BindableASTTransformation.hasBindableAnnotation(parent.getDeclaringClass());
 
         ClassNode declaringClass = parent.getDeclaringClass();
         FieldNode field = ((FieldNode) parent);

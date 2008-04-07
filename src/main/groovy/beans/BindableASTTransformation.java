@@ -109,15 +109,21 @@ public class BindableASTTransformation implements ASTSingleNodeTransformation, O
         AnnotationNode node = (AnnotationNode) nodes[0];
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
 
-        if (VetoableASTTransformation.hasConstrainedAnnotation(parent)) {
+        if (VetoableASTTransformation.hasVetoableAnnotation(parent)) {
             // VetoableASTTransformation will handle both @Bindable and @Vetoable
             return;
         }
 
         ClassNode declaringClass = parent.getDeclaringClass();
         if (parent instanceof FieldNode) {
+            if (VetoableASTTransformation.hasVetoableAnnotation(parent.getDeclaringClass()))
+            {
+                // VetoableASTTransformation will handle both @Bindable and @Vetoable
+                return;
+            }
             addListenerToProperty(source, node, declaringClass, (FieldNode) parent);
         } else if (parent instanceof ClassNode) {
+
             addListenerToClass(source, node, (ClassNode) parent);
         }
     }
@@ -149,7 +155,12 @@ public class BindableASTTransformation implements ASTSingleNodeTransformation, O
         for (PropertyNode propertyNode : (Collection<PropertyNode>) classNode.getProperties()) {
             FieldNode field = propertyNode.getField();
             // look to see if per-field handlers will catch this one...
-            if (hasBindableAnnotation(field)) continue;
+            if (hasBindableAnnotation(field) ||
+                VetoableASTTransformation.hasVetoableAnnotation(field))
+            {
+                // VetoableASTTransformation will handle both @Bindable and @Vetoable
+                continue;
+            }
             createListenerSetter(source, node, classNode, propertyNode);
         }
     }
