@@ -84,6 +84,7 @@ change sets from trunk NOT in 1.5.x:
 * 11404: ray benchmark and start of work on property access caching
 * 11408: Fix for Grails build broken by last optimization
 * 11418: Fix for class leak created by property sites
+* 11428: move transformation core logic out of vm5 plugin since we are 5.0 basline now ...
 
 Pending/Partial changes:
 * 11283: fix for GROOVY-2637. This will remove the MIN_VALUE and MAX_VALUE fields from enums if they are empty
@@ -91,4 +92,4 @@ Pending/Partial changes:
 empty enum in the first place which didn't get merged - plus the test matching this needs to have commented
 out parts reinstated once this change is done)
 
-Last trunk change set examined for inclusion in 1.5.x: 11422
+Last trunk change set examined for inclusion in 1.5.x: 11437
