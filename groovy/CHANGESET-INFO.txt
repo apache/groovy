@@ -77,5 +77,18 @@ change sets from trunk NOT in 1.5.x:
 * 11292: GROOVY-2712
 * 11297: Test for GROOVY-2712
 * 11298: unleash the <generic> Hounds!
+* 11322: ClassInfo rewritten
+* 11326: remove javadoc warning
+* 11327: fix for broken Grails build
+* 11346: Some performance tuning in ClassInfo
+* 11404: ray benchmark and start of work on property access caching
+* 11408: Fix for Grails build broken by last optimization
+* 11418: Fix for class leak created by property sites
 
-Last trunk change set examined for inclusion in 1.5.x: 11313
+Pending/Partial changes:
+* 11283: fix for GROOVY-2637. This will remove the MIN_VALUE and MAX_VALUE fields from enums if they are empty
+(only partially complete - the above changes are in but there have been earlier changes to allow an
+empty enum in the first place which didn't get merged - plus the test matching this needs to have commented
+out parts reinstated once this change is done)
+
+Last trunk change set examined for inclusion in 1.5.x: 11422

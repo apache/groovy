@@ -47,7 +47,7 @@ class EnumTest extends GroovyTestCase {
 
     void testMinValue() {
         assert UsCoin.MIN_VALUE == UsCoin.penny
-// uncomment below once empty enum is supported
+// uncomment below once empty enum is supported (merge of GROOVY-2637)
 //        shouldFail(MissingPropertyException) {
 //            EmptyEnum.MIN_VALUE
 //        }
@@ -55,7 +55,7 @@ class EnumTest extends GroovyTestCase {
 
     void testMaxValue() {
         assert UsCoin.MAX_VALUE == UsCoin.quarter
-// uncomment below once empty enum is supported
+// uncomment below once empty enum is supported (merge of GROOVY-2637)
 //        shouldFail(MissingPropertyException) {
 //            EmptyEnum.MAX_VALUE
 //        }
@@ -119,4 +119,5 @@ enum UsCoin {
     int getValue() { value }
 }
 
+// uncomment below once empty enum is supported (merge of GROOVY-2637)
 //enum EmptyEnum{}
