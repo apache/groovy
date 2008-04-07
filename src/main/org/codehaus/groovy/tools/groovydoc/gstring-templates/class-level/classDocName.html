@@ -92,7 +92,7 @@ DETAIL:&nbsp;<A HREF="#field_detail">FIELD</A>&nbsp;|&nbsp;<A HREF="#constructor
 <FONT SIZE="-1">
 ${classDoc.containingPackage().nameWithDots()}</FONT>
 <BR>
-<FONT CLASS="ClassTitleFont">Class ${classDoc.name()}</FONT></H2>
+<FONT CLASS="ClassTitleFont">${classDoc.isInterface()?'Interface':'Class'} ${classDoc.name()}</FONT></H2>
 <P>
 ${classDoc.commentText()}
 </P>
@@ -100,11 +100,13 @@ ${classDoc.commentText()}
 
 <A NAME="constructor_summary"><!-- --></A>
 <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
+<% if (classDoc.constructors().length > 0) { %>
 <TR BGCOLOR="#D5D5FF" CLASS="TableHeadingColor">
 <TD COLSPAN=2><FONT SIZE="+2">
 <B>Constructor Summary</B></FONT></TD>
-
 </TR>
+<% } %>
+
 <% for (constructor in classDoc.constructors()) { %>
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD><CODE><B><a href="">${constructor.name()}</a></B>(<%= constructor.parameters().collect{ param -> "${param.isTypeAvailable()?'<a href="' + classDoc.getRelativeRootPath() + param.type().getFullPathName() + '.html">' + param.type().name() + '</a>':param.typeName()} ${param.name()}" }.join(", ") %>)</CODE>
@@ -148,12 +150,14 @@ ${classDoc.commentText()}
 <!-- ========= CONSTRUCTOR DETAIL ======== -->
 
 <A NAME="constructor_detail"><!-- --></A>
+<% if (classDoc.constructors().length > 0) { %>
 <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
 <TR BGCOLOR="#CCCCFF" CLASS="TableHeadingColor">
 <TH ALIGN="left" COLSPAN="1"><FONT SIZE="+2">
 <B>Constructor Detail</B></FONT></TH>
 </TR>
 </TABLE>
+<% } %>
 <% for (constructor in classDoc.constructors()) { %>
 <A NAME="QName(java.lang.String)"><!-- --></A><H3>
 ${constructor.name()}</H3>

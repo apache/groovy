@@ -29,11 +29,16 @@ public class SimpleGroovyDoc implements GroovyDoc {
 	private String rawCommentText;
 	private String firstSentenceCommentText;
     private List links;
+    private int definitionType;
+
+    private final int CLASS = 0;
+    private final int INTERFACE = 1;
 
     public SimpleGroovyDoc(String name, List links) {
         this.name = name;
         this.links = links;
         this.setRawCommentText("");  // default to no comments (good for default constructors which will not have a reason to call this)
+        definitionType = CLASS; // default this instance to a class, unless told otherwise
     }
 
     public SimpleGroovyDoc(String name) {
@@ -128,6 +133,17 @@ public class SimpleGroovyDoc implements GroovyDoc {
         return type;
     }
 
+    public boolean isClass() {
+        return definitionType == CLASS;
+    }
+    public boolean isInterface() {
+        return definitionType == INTERFACE;
+    }
+    public void setAsInterfaceDefinition() {
+        definitionType = INTERFACE;
+    }
+
+
     // Methods from Comparable
 	public int compareTo(Object that) {
 		if (that instanceof SimpleGroovyDoc) {
@@ -137,12 +153,11 @@ public class SimpleGroovyDoc implements GroovyDoc {
 		}
 	}
 
-	// Methods from GroovyDoc
+    // Methods from GroovyDoc
 //	public GroovyTag[] firstSentenceTags() {/*todo*/return null;}
 //	public GroovyTag[] inlineTags() {/*todo*/return null;}
 	public boolean isAnnotationType() {/*todo*/return false;}
 	public boolean isAnnotationTypeElement() {/*todo*/return false;}
-	public boolean isClass() {/*todo*/return false;}
 	public boolean isConstructor() {/*todo*/return false;}
 	public boolean isEnum() {/*todo*/return false;}
 	public boolean isEnumConstant() {/*todo*/return false;}
@@ -150,7 +165,6 @@ public class SimpleGroovyDoc implements GroovyDoc {
 	public boolean isException() {/*todo*/return false;}
 	public boolean isField() {/*todo*/return false;}
 	public boolean isIncluded() {/*todo*/return false;}
-	public boolean isInterface() {/*todo*/return false;}
 	public boolean isMethod() {/*todo*/return false;}
 	public boolean isOrdinaryClass() {/*todo*/return false;}
 //	public GroovySourcePosition position() {/*todo*/return null;}

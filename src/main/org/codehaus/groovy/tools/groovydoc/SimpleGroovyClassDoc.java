@@ -156,8 +156,9 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
 		}
 	}
 	// methods from GroovyClassDoc
-	
-	public GroovyConstructorDoc[] constructors(boolean filter) {/*todo*/return null;}
+
+
+    public GroovyConstructorDoc[] constructors(boolean filter) {/*todo*/return null;}
 	public boolean definesSerializableFields() {/*todo*/return false;}
 	public GroovyFieldDoc[] enumConstants() {/*todo*/return null;}
 	public GroovyFieldDoc[] fields(boolean filter) {/*todo*/return null;}
