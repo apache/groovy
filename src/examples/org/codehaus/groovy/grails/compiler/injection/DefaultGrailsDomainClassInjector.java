@@ -23,6 +23,7 @@ import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.CompilePhase;
 //import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty;
 //import org.codehaus.groovy.grails.commons.GrailsDomainConfigurationUtil;
 //import org.codehaus.groovy.grails.commons.GrailsResourceUtils;
@@ -44,6 +45,7 @@ import java.net.URL;
  *
  * Created: 20th June 2006
  */
+@GroovyASTTransformation(phase= CompilePhase.CANONICALIZATION)
 public class DefaultGrailsDomainClassInjector implements
     ASTSingleNodeTransformation {
         //GrailsDomainClassInjector {

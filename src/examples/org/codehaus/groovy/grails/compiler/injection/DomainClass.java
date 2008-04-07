@@ -1,6 +1,7 @@
 package org.codehaus.groovy.grails.compiler.injection;
 
 import org.codehaus.groovy.ast.GroovyASTTransformation;
+import org.codehaus.groovy.ast.GroovyASTTransformationClass;
 import org.codehaus.groovy.control.Phases;
 
 import java.lang.annotation.Retention;
@@ -16,6 +17,6 @@ import java.lang.annotation.ElementType;
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
-@GroovyASTTransformation(transformationClassName = "org.codehaus.groovy.grails.compiler.injection.DefaultGrailsDomainClassInjector", phase = Phases.CANONICALIZATION)
+@GroovyASTTransformationClass("org.codehaus.groovy.grails.compiler.injection.DefaultGrailsDomainClassInjector")
 public @interface DomainClass {
 }
