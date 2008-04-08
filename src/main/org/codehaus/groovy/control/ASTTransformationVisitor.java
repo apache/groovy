@@ -81,7 +81,7 @@ public class ASTTransformationVisitor extends ClassCodeVisitorSupport {
      */
     public void visitClass(ClassNode classNode) {
         // only descend if we have annotations to look for
-        Map<ASTSingleNodeTransformation, ASTNode> baseTransforms = classNode.getModule().getSingleNodeTransforms(phase);
+        Map<ASTSingleNodeTransformation, ASTNode> baseTransforms = classNode.getSingleNodeTransforms(phase);
         if (!baseTransforms.isEmpty()) {
             // invert the map, is now one to many
             transforms = new HashMap<ASTNode, List<ASTSingleNodeTransformation>>();
@@ -133,7 +133,7 @@ public class ASTTransformationVisitor extends ClassCodeVisitorSupport {
             public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
                 ASTTransformationVisitor.this.source = source;
                 ASTTransformationVisitor.this.context = context;
-                for (CompilationUnit.PrimaryClassNodeOperation pcno : classNode.getModule().getClassTransforms(phase)) {
+                for (CompilationUnit.PrimaryClassNodeOperation pcno : classNode.getClassTransforms(phase)) {
                     pcno.call(source, context, classNode);
                 }
                 visitClass(classNode);

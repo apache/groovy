@@ -41,9 +41,17 @@ import java.util.Collection;
  */
 public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSupport {
     private SourceUnit source;
+    private ClassNode classNode;
 
     protected SourceUnit getSourceUnit() {
         return source;
+    }
+
+    public void visitClass(ClassNode klassNode) {
+        ClassNode oldClass = classNode;
+        classNode = klassNode;
+        super.visitClass(classNode);
+        classNode = oldClass;
     }
 
     /**
@@ -66,33 +74,30 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
             for (String transformClass : transformClassAnnotation.value()) {
                 try {
                     Object o = source.getClassLoader().loadClass(transformClass, false, true, false).newInstance();
-                    ModuleNode mn;
-                    if (node instanceof ClassNode) {
-                        mn = ((ClassNode)node).getModule();
-                    } else {
-                        mn = node.getDeclaringClass().getModule();
-                    }
                     if (o instanceof ASTSingleNodeTransformation) {
-                        mn.addSingleNodeTransform((ASTSingleNodeTransformation) o, annotation);
+                        classNode.addSingleNodeTransform((ASTSingleNodeTransformation) o, annotation);
                     } else if (o instanceof CompilationUnit.PrimaryClassNodeOperation) {
-                        mn.addClassTransform((CompilationUnit.PrimaryClassNodeOperation) o);
+                        classNode.addClassTransform((CompilationUnit.PrimaryClassNodeOperation) o);
                     } else if (o instanceof CompilationUnit.SourceUnitOperation) {
-                        mn.addSourceUnitOperation((CompilationUnit.SourceUnitOperation) o);
+                        classNode.getModule().addSourceUnitOperation((CompilationUnit.SourceUnitOperation) o);
                     }
                 } catch (InstantiationException e) {
                     source.getErrorCollector().addError(
                             new SimpleMessage(
-                                    "Could not instantiate Transformation Processor " + transformClass,
+                                    "Could not instantiate Transformation Processor " + transformClass
+                                    + " declared by " + annotation.getClassNode().getName(),
                                     source));
                 } catch (IllegalAccessException e) {
                     source.getErrorCollector().addError(
                             new SimpleMessage(
-                                    "Could not instantiate Transformation Processor " + transformClass,
+                                    "Could not instantiate Transformation Processor " + transformClass
+                                    + " declared by " + annotation.getClassNode().getName(),
                                     source));
                 } catch (ClassNotFoundException e) {
                     source.getErrorCollector().addError(
                             new SimpleMessage(
-                                    "Could find class for Transformation Processor " + transformClass,
+                                    "Could find class for Transformation Processor " + transformClass
+                                    + " declared by " + annotation.getClassNode().getName(),
                                     source));
                 }
             }

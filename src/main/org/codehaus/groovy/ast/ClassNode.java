@@ -23,6 +23,8 @@ import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;
 
@@ -105,7 +107,17 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     private boolean script;
     private ClassNode superClass;
     boolean isPrimaryNode;
-    
+
+    /**
+     * The ASTSingleNodeTransformations to be applied to the Class
+     */
+    private Map<CompilePhase, Map<ASTSingleNodeTransformation, ASTNode>> singleNodeTransformInstances;
+    /**
+     * The PrimaryClassNodeOperations to be applied as a transformation
+     */
+    private Map<CompilePhase, List<CompilationUnit.PrimaryClassNodeOperation>> classTransforms;
+
+
     // use this to synchronize access for the lazy intit
     protected Object lazyInitLock = new Object();
 
@@ -295,6 +307,15 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
         if ((modifiers & ACC_INTERFACE) == 0)
           addField("$ownClass", ACC_STATIC|ACC_PUBLIC|ACC_FINAL|ACC_SYNTHETIC, ClassHelper.CLASS_Type, new ClassExpression(this)).setSynthetic(true);
+
+        singleNodeTransformInstances = new EnumMap<CompilePhase, Map<ASTSingleNodeTransformation, ASTNode>>(CompilePhase.class);
+        for (CompilePhase phase : CompilePhase.values()) {
+            singleNodeTransformInstances.put(phase, new HashMap<ASTSingleNodeTransformation, ASTNode>());
+        }
+        classTransforms = new EnumMap<CompilePhase, List<CompilationUnit.PrimaryClassNodeOperation>>(CompilePhase.class);
+        for (CompilePhase phase : CompilePhase.values()) {
+            classTransforms.put(phase, new ArrayList<CompilationUnit.PrimaryClassNodeOperation>());
+        }
     }
 
     
@@ -1110,5 +1131,23 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         if (redirect!=null) return redirect.getAnnotations(type);        
         lazyClassInit();
         return super.getAnnotations(type);
+    }
+
+    public void addSingleNodeTransform(ASTSingleNodeTransformation transform, ASTNode node) {
+        GroovyASTTransformation annotation = transform.getClass().getAnnotation(GroovyASTTransformation.class);
+        singleNodeTransformInstances.get(annotation.phase()).put(transform, node);
+    }
+
+    public Map<ASTSingleNodeTransformation, ASTNode> getSingleNodeTransforms(CompilePhase phase) {
+        return singleNodeTransformInstances.get(phase);
+    }
+
+    public void addClassTransform(CompilationUnit.PrimaryClassNodeOperation transform) {
+        GroovyASTTransformation annotation = transform.getClass().getAnnotation(GroovyASTTransformation.class);
+        classTransforms.get(annotation.phase()).add(transform);
+    }
+
+    public List<CompilationUnit.PrimaryClassNodeOperation> getClassTransforms(CompilePhase phase) {
+        return classTransforms.get(phase);
     }
 }
