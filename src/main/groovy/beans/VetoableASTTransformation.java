@@ -105,55 +105,77 @@ public class VetoableASTTransformation extends BindableASTTransformation {
             throw new RuntimeException("Internal error: wrong types: $node.class / $parent.class");
         }
         AnnotationNode node = (AnnotationNode) nodes[0];
-        AnnotatedNode parent = (AnnotatedNode) nodes[1];
 
-        boolean bindable = BindableASTTransformation.hasBindableAnnotation(parent)
-            || BindableASTTransformation.hasBindableAnnotation(parent.getDeclaringClass());
+        if (nodes[1] instanceof ClassNode) {
+            addListenerToClass(source, node, (ClassNode) nodes[1]);
+        } else {
+            addListenerToProperty(source, node, (AnnotatedNode) nodes[1]);
+        }
+    }
 
+    private void addListenerToProperty(SourceUnit source, AnnotationNode node, AnnotatedNode parent) {
         ClassNode declaringClass = parent.getDeclaringClass();
         FieldNode field = ((FieldNode) parent);
         String fieldName = field.getName();
         for (PropertyNode propertyNode : (Collection<PropertyNode>) declaringClass.getProperties()) {
+            boolean bindable = BindableASTTransformation.hasBindableAnnotation(parent)
+                || BindableASTTransformation.hasBindableAnnotation(parent.getDeclaringClass());
+
             if (propertyNode.getName().equals(fieldName)) {
-
-                if (bindable && needsPropertyChangeSupport(declaringClass)) {
-                    addPropertyChangeSupport(declaringClass);
-                }
-                if (needsVetoableChangeSupport(declaringClass)) {
-                    addVetoableChangeSupport(declaringClass);
-                }
-                String setterName = "set" + MetaClassHelper.capitalize(propertyNode.getName());
-                if (declaringClass.getMethods(setterName).isEmpty()) {
-                    Expression fieldExpression = new FieldExpression(field);
-                    BlockStatement setterBlock = new BlockStatement();
-                    setterBlock.addStatement(createConstrainedStatement(propertyNode, fieldExpression));
-                    if (bindable) {
-                        setterBlock.addStatement(createBindableStatement(propertyNode, fieldExpression));
-                    } else {
-                        setterBlock.addStatement(createSetStatement(fieldExpression));
-                    }
-
-                    // create method void <setter>(<type> fieldName)
-                    createSetterMethod(declaringClass, propertyNode, setterName, setterBlock);
-                } else {
-                    //noinspection ThrowableInstanceNeverThrown
-                    source.getErrorCollector().addErrorAndContinue(
-                            new SyntaxErrorMessage(new SyntaxException(
-                                    "@groovy.beans.Vetoable cannot handle user generated setters.",
-                                    node.getLineNumber(),
-                                    node.getColumnNumber()),
-                                    source));
-                }
+                createListenerSetter(source, node, bindable, declaringClass,  propertyNode);
                 return;
             }
         }
         //noinspection ThrowableInstanceNeverThrown
         source.getErrorCollector().addErrorAndContinue(
-                new SyntaxErrorMessage(new SyntaxException(
+                    new SyntaxErrorMessage(new SyntaxException(
                         "@groovy.beans.Vetoable must be on a property, not a field.  Try removing the private, protected, or public modifier.",
                         node.getLineNumber(),
                         node.getColumnNumber()),
                         source));
+    }
+
+
+    private void addListenerToClass(SourceUnit source, AnnotationNode node, ClassNode classNode) {
+        boolean bindable = BindableASTTransformation.hasBindableAnnotation(classNode);
+        for (PropertyNode propertyNode : (Collection<PropertyNode>) classNode.getProperties()) {
+            if (!hasVetoableAnnotation(propertyNode.getField())) {
+                createListenerSetter(source, node,
+                    bindable || BindableASTTransformation.hasBindableAnnotation(propertyNode.getField()),
+                    classNode, propertyNode);
+            }
+        }
+    }
+
+    private void createListenerSetter(SourceUnit source, AnnotationNode node, boolean bindable, ClassNode declaringClass, PropertyNode propertyNode) {
+        if (bindable && needsPropertyChangeSupport(declaringClass)) {
+            addPropertyChangeSupport(declaringClass);
+        }
+        if (needsVetoableChangeSupport(declaringClass)) {
+            addVetoableChangeSupport(declaringClass);
+        }
+        String setterName = "set" + MetaClassHelper.capitalize(propertyNode.getName());
+        if (declaringClass.getMethods(setterName).isEmpty()) {
+            Expression fieldExpression = new FieldExpression(propertyNode.getField());
+            BlockStatement setterBlock = new BlockStatement();
+            setterBlock.addStatement(createConstrainedStatement(propertyNode, fieldExpression));
+            if (bindable) {
+                setterBlock.addStatement(createBindableStatement(propertyNode, fieldExpression));
+            } else {
+                setterBlock.addStatement(createSetStatement(fieldExpression));
+            }
+
+            // create method void <setter>(<type> fieldName)
+            createSetterMethod(declaringClass, propertyNode, setterName, setterBlock);
+        } else {
+            //noinspection ThrowableInstanceNeverThrown
+            source.getErrorCollector().addErrorAndContinue(
+                    new SyntaxErrorMessage(new SyntaxException(
+                            "@groovy.beans.Vetoable cannot handle user generated setters.",
+                            node.getLineNumber(),
+                            node.getColumnNumber()),
+                            source));
+        }
     }
 
     /**

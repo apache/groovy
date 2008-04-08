@@ -178,7 +178,7 @@ class VetoableTest extends GroovyTestCase {
     }
 
     public void testClassMarkers() {
-        for (int i = 0; i < /*15*/ 7; i++) {
+        for (int i = 0; i < 15; i++) {
             boolean bindField  = i & 1
             boolean bindClass  = i & 2
             boolean vetoField  = i & 4
