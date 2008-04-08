@@ -14,7 +14,7 @@ import java.lang.annotation.ElementType;
  * accessible at compile time.  It need not be available at runtime.
  *
  * Each of the class names in the value must be annotated with
- * @{@link GroovyASTTransformation}
+ * {@link GroovyASTTransformation}
  *
  * @author Danno Ferrin (shemnon)
  */
