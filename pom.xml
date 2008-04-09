@@ -646,15 +646,21 @@
             <optional>true</optional>
         </dependency>
 
-        <!-- used to dump out the AST -->
+        <!-- used to dump out the AST, xpp only needed for reading -->
         <dependency>
             <groupId>com.thoughtworks.xstream</groupId>
             <artifactId>xstream</artifactId>
-            <version>1.2.2</version>
+            <version>1.3</version>
             <scope>compile</scope>
             <optional>true</optional>
+            <exclusions>
+                <exclusion>
+                    <groupId>xpp3</groupId>
+                    <artifactId>xpp3_min</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
-        
+
         <!-- Used for richer interactive groovysh support -->
         <dependency>
             <groupId>jline</groupId>
