@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -407,5 +407,15 @@ public class GroovyScriptEngine implements ResourceConnector {
         ScriptCacheEntry entry = updateCacheEntry(scriptName);
         scriptName = scriptName.intern();
         return InvokerHelper.createScript(entry.scriptClass, binding);
+    }
+
+    /**
+     * Returns the GroovyClassLoader associated with this script engine instance.
+     * Useful if you need to pass the class loader to another library.
+     *
+     * @return the GroovyClassLoader
+     */
+    public GroovyClassLoader getGroovyClassLoader() {
+        return groovyLoader;
     }
 }
