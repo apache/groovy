@@ -215,7 +215,7 @@ public class PropertyTest extends GroovyTestCase {
     }
 
     public void testUsingInPropertyOnProcessViaGroovyMethod() throws Exception {
-        Process process = DefaultGroovyMethods.execute("java -version");
+        Process process = DefaultGroovyMethods.execute(System.getProperty("java.home") + "/bin/java -version");
         Object value = InvokerHelper.getProperty(process, "in");
         assertNotNull(value);
 

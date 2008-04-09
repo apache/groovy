@@ -85,6 +85,17 @@ change sets from trunk NOT in 1.5.x:
 * 11408: Fix for Grails build broken by last optimization
 * 11418: Fix for class leak created by property sites
 * 11428: move transformation core logic out of vm5 plugin since we are 5.0 basline now ...
+* 11439: fix broken example
+* 11448: some code anaysis changes...
+* 11452: Rename beans annotations: Bound->Bindable, Constrained->Vetoable...
+* 11459: fix NPE on class annotaitons
+* 11460: @Bindable on class declerations...
+* 11461: fix bindable/vetoable class interactions, with test
+* 11468: vetoable on class nodes as well
+* 11484: javadoc fix
+* 11492: Move transforms into class nodes where appropriate
+* 11496: Performance and 1st draft of mixins together
+* 11500: tweak [build] memory values
 
 Pending/Partial changes:
 * 11283: fix for GROOVY-2637. This will remove the MIN_VALUE and MAX_VALUE fields from enums if they are empty
@@ -92,4 +103,4 @@ Pending/Partial changes:
 empty enum in the first place which didn't get merged - plus the test matching this needs to have commented
 out parts reinstated once this change is done)
 
-Last trunk change set examined for inclusion in 1.5.x: 11437
+Last trunk change set examined for inclusion in 1.5.x: 11504
