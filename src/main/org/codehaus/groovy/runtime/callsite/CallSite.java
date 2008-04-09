@@ -227,7 +227,7 @@ public abstract class CallSite {
      * We use it as initial value for any call site.
      * It allow us to avoid additional null check on each call
      */
-    static class DummyCallSite extends CallSite {
+    public static class DummyCallSite extends CallSite {
         public DummyCallSite(CallSiteArray array, int index, String name) {
             super(array, index,name);
         }
@@ -274,38 +274,69 @@ public abstract class CallSite {
         return site;
     }
 
-    public final Object callGetProperty (Object receiver) {
+    public Object callGetProperty (Object receiver) {
         return acceptGetProperty(receiver).getProperty(receiver);
+    }
+
+    public Object callGroovyObjectGetProperty (Object receiver) {
+        return acceptGroovyObjectGetProperty(receiver).getProperty(receiver);
     }
 
     public CallSite acceptGetProperty(Object receiver) {
         return createGetPropertySite(receiver);
     }
 
+    public CallSite acceptGroovyObjectGetProperty(Object receiver) {
+        return createGroovyObjectGetPropertySite(receiver);
+    }
+
     protected final CallSite createGetPropertySite(Object receiver) {
-        final Class aClass = receiver.getClass();
         if (receiver instanceof GroovyObject) {
-            try {
-                final Method method = aClass.getMethod("getProperty", String.class);
-                if (method != null && method.isSynthetic())
-                  return createPogoMetaClassGetPropertySite ((GroovyObject)receiver);
-            } catch (NoSuchMethodException e) {
-                // fall threw
-            }
-            return createPogoGetPropertySite (aClass);
+            return createGroovyObjectGetPropertySite(receiver);
         }
         if (receiver instanceof Class) {
             return createClassMetaClassGetPropertySite ((Class) receiver);
         }
-        return createMetaClassGetPropertySite (aClass);
+        return createPojoMetaClassGetPropertySite(receiver);
+    }
+
+    protected final CallSite createGroovyObjectGetPropertySite(Object receiver) {
+        Class aClass = receiver.getClass();
+        try {
+            final Method method = aClass.getMethod("getProperty", String.class);
+            if (method != null && method.isSynthetic())
+              return createPogoMetaClassGetPropertySite ((GroovyObject)receiver);
+        } catch (NoSuchMethodException e) {
+            // fall threw
+        }
+        return createPogoGetPropertySite (aClass);
     }
 
     public Object getProperty(Object receiver) {
         throw new UnsupportedOperationException();
     }
 
-    private CallSite createMetaClassGetPropertySite(Class aClass) {
-        CallSite site = new MetaClassGetPropertySite(this, aClass);
+    private CallSite createPojoMetaClassGetPropertySite(Object receiver) {
+        final Class aClass = receiver.getClass();
+        final MetaClass metaClass = InvokerHelper.getMetaClass(aClass);
+
+        CallSite site;
+        if (metaClass.getClass() != MetaClassImpl.class || GroovyCategorySupport.hasCategoryInAnyThread()) {
+            site = new PojoMetaClassGetPropertySite(this, metaClass);
+        }
+        else {
+            final MetaProperty effective = ((MetaClassImpl) metaClass).getEffectiveGetMetaProperty(aClass, receiver, name, false);
+            if (effective != null) {
+                if (effective instanceof CachedField)
+                    site = new GetEffectivePojoFieldSite(this, metaClass, (CachedField) effective);
+                else
+                    site = new GetEffectivePojoPropertySite(this, metaClass, effective);
+            }
+            else {
+                site = new PojoMetaClassGetPropertySite(this, metaClass);
+            }
+        }
+
         array.array[index] = site;
         return site;
     }
@@ -320,16 +351,16 @@ public abstract class CallSite {
         final MetaClass metaClass = receiver.getMetaClass();
 
         CallSite site;
-        if (metaClass.getClass() != MetaClassImpl.class) {
+        if (metaClass.getClass() != MetaClassImpl.class || GroovyCategorySupport.hasCategoryInAnyThread()) {
             site = new PogoMetaClassGetPropertySite(this, metaClass);
         }
         else {
             final MetaProperty effective = ((MetaClassImpl) metaClass).getEffectiveGetMetaProperty(metaClass.getClass(), receiver, name, false);
             if (effective != null) {
                 if (effective instanceof CachedField)
-                    site = new GetEffectiveFieldSite(this, metaClass, (CachedField) effective);
+                    site = new GetEffectivePogoFieldSite(this, metaClass, (CachedField) effective);
                 else
-                    site = new GetEffectivePropertySite(this, metaClass, effective);
+                    site = new GetEffectivePogoPropertySite(this, metaClass, effective);
             }
             else {
                 site = new PogoMetaClassGetPropertySite(this, metaClass);
@@ -353,45 +384,125 @@ public abstract class CallSite {
           return callGetProperty(receiver);
     }
 
-    private static class GetEffectivePropertySite extends CallSite {
+    public final Object callGroovyObjectGetPropertySafe (Object receiver) {
+        if (receiver == null)
+          return null;
+        else
+          return callGroovyObjectGetProperty(receiver);
+    }
+
+    private static class GetEffectivePogoPropertySite extends CallSite {
         private final MetaClass metaClass;
         private final MetaProperty effective;
 
-        public GetEffectivePropertySite(CallSite site, MetaClass metaClass, MetaProperty effective) {
+        public GetEffectivePogoPropertySite(CallSite site, MetaClass metaClass, MetaProperty effective) {
             super(site);
             this.metaClass = metaClass;
             this.effective = effective;
         }
 
-        public final CallSite acceptGetProperty(Object receiver) {
-            if (receiver instanceof GroovyObject && ((GroovyObject)receiver).getMetaClass() == metaClass) {
-                return this;
-            } else {
-                return createGetPropertySite(receiver);
-            }
-        }
-
-        public final Object getProperty(Object receiver) {
-            if (GroovyCategorySupport.hasCategoryInAnyThread())
-                return metaClass.getProperty(receiver, name);
-
-            return effective.getProperty(receiver);
-        }
-    }
-
-    private static class GetEffectiveFieldSite extends CallSite {
-        private final MetaClass metaClass;
-        private final Field effective;
-
-        public GetEffectiveFieldSite(CallSite site, MetaClass metaClass, CachedField effective) {
-            super(site);
-            this.metaClass = metaClass;
-            this.effective = effective.field;
+        public final Object callGetProperty (Object receiver) {
+            if (GroovyCategorySupport.hasCategoryInAnyThread() || !(receiver instanceof GroovyObject) || ((GroovyObject) receiver).getMetaClass() != metaClass) {
+                return createGetPropertySite(receiver).getProperty(receiver);
+            } else
+                return effective.getProperty(receiver);
         }
 
         public final CallSite acceptGetProperty(Object receiver) {
             if (GroovyCategorySupport.hasCategoryInAnyThread() || !(receiver instanceof GroovyObject) || ((GroovyObject)receiver).getMetaClass() != metaClass) {
                 return createGetPropertySite(receiver);
+            } else {
+                return this;
+            }
+        }
+
+        public final Object callGroovyObjectGetProperty (Object receiver) {
+            if (GroovyCategorySupport.hasCategoryInAnyThread() || !(receiver instanceof GroovyObject) || ((GroovyObject) receiver).getMetaClass() != metaClass) {
+                return createGetPropertySite(receiver).getProperty(receiver);
+            } else
+                return effective.getProperty(receiver);
+        }
+
+        public final CallSite acceptGroovyObjectGetProperty(Object receiver) {
+            if (GroovyCategorySupport.hasCategoryInAnyThread() || !(receiver instanceof GroovyObject) || ((GroovyObject)receiver).getMetaClass() != metaClass) {
+                return createGroovyObjectGetPropertySite(receiver);
+            } else {
+                return this;
+            }
+        }
+
+        public final Object getProperty(Object receiver) {
+            return effective.getProperty(receiver);
+        }
+    }
+
+    private static class GetEffectivePojoPropertySite extends CallSite {
+        private final MetaClass metaClass;
+        private final MetaProperty effective;
+
+        public GetEffectivePojoPropertySite(CallSite site, MetaClass metaClass, MetaProperty effective) {
+            super(site);
+            this.metaClass = metaClass;
+            this.effective = effective;
+        }
+
+        public final Object callGetProperty (Object receiver) {
+            if (GroovyCategorySupport.hasCategoryInAnyThread() || receiver.getClass() != metaClass.getTheClass()) {
+                return createGetPropertySite(receiver).getProperty(receiver);
+            } else
+                return effective.getProperty(receiver);
+        }
+
+        public final CallSite acceptGetProperty(Object receiver) {
+            if (GroovyCategorySupport.hasCategoryInAnyThread() || !(receiver instanceof GroovyObject) || ((GroovyObject)receiver).getMetaClass() != metaClass) {
+                return createGetPropertySite(receiver);
+            } else {
+                return this;
+            }
+        }
+
+        public final Object getProperty(Object receiver) {
+            return effective.getProperty(receiver);
+        }
+    }
+
+    private static class GetEffectivePogoFieldSite extends CallSite {
+        private final MetaClass metaClass;
+        private final Field effective;
+
+        public GetEffectivePogoFieldSite(CallSite site, MetaClass metaClass, CachedField effective) {
+            super(site);
+            this.metaClass = metaClass;
+            this.effective = effective.field;
+        }
+
+        public final Object callGetProperty (Object receiver) {
+            if (GroovyCategorySupport.hasCategoryInAnyThread() || !(receiver instanceof GroovyObject) || ((GroovyObject) receiver).getMetaClass() != metaClass) {
+                return createGetPropertySite(receiver).getProperty(receiver);
+            } else {
+                return getProperty(receiver);
+            }
+        }
+
+        public final CallSite acceptGetProperty(Object receiver) {
+            if (GroovyCategorySupport.hasCategoryInAnyThread() || !(receiver instanceof GroovyObject) || ((GroovyObject)receiver).getMetaClass() != metaClass) {
+                return createGetPropertySite(receiver);
+            } else {
+                return this;
+            }
+        }
+
+        public final Object callGroovyObjectGetProperty (Object receiver) {
+            if (GroovyCategorySupport.hasCategoryInAnyThread() || ((GroovyObject) receiver).getMetaClass() != metaClass) {
+                return createGroovyObjectGetPropertySite(receiver).getProperty(receiver);
+            } else {
+                return getProperty(receiver);
+            }
+        }
+
+        public final CallSite acceptGroovyObjectGetProperty(Object receiver) {
+            if (GroovyCategorySupport.hasCategoryInAnyThread() || !(receiver instanceof GroovyObject) || ((GroovyObject)receiver).getMetaClass() != metaClass) {
+                return createGroovyObjectGetPropertySite(receiver);
             } else {
                 return this;
             }
@@ -406,25 +517,34 @@ public abstract class CallSite {
         }
     }
 
-    private static class MetaClassGetPropertySite extends CallSite {
-        MetaClass metaClass;
-        private final Class aClass;
+    private static class GetEffectivePojoFieldSite extends CallSite {
+        private final MetaClass metaClass;
+        private final Field effective;
 
-        public MetaClassGetPropertySite(CallSite parent, Class aClass) {
-            super(parent);
-            this.aClass = aClass;
-            metaClass = InvokerHelper.getMetaClass(aClass);
+        public GetEffectivePojoFieldSite(CallSite site, MetaClass metaClass, CachedField effective) {
+            super(site);
+            this.metaClass = metaClass;
+            this.effective = effective.field;
         }
 
-        public CallSite acceptGetProperty(Object receiver) {
-            if (receiver.getClass() != aClass)
+        public final Object callGetProperty (Object receiver) {
+            return acceptGetProperty(receiver).getProperty(receiver);
+        }
+
+        public final CallSite acceptGetProperty(Object receiver) {
+            if (GroovyCategorySupport.hasCategoryInAnyThread() || receiver.getClass() != metaClass.getTheClass()) {
                 return createGetPropertySite(receiver);
-            else
-              return this;
+            } else {
+                return this;
+            }
         }
 
-        public Object getProperty(Object receiver) {
-            return metaClass.getProperty(receiver, name);
+        public final Object getProperty(Object receiver) {
+            try {
+                return effective.get(receiver);
+            } catch (IllegalAccessException e) {
+                throw new GroovyRuntimeException("Cannot get the property '" + name + "'.", e);
+            }
         }
     }
 
@@ -465,6 +585,33 @@ public abstract class CallSite {
               return this;
         }
 
+        public final CallSite acceptGroovyObjectGetProperty(Object receiver) {
+            if (!(receiver instanceof GroovyObject) || ((GroovyObject)receiver).getMetaClass() != metaClass)
+                return createGroovyObjectGetPropertySite(receiver);
+            else
+              return this;
+        }
+
+        public final Object getProperty(Object receiver) {
+            return metaClass.getProperty(receiver, name);
+        }
+    }
+
+    private static class PojoMetaClassGetPropertySite extends CallSite {
+        private final MetaClass metaClass;
+
+        public PojoMetaClassGetPropertySite(CallSite parent, MetaClass metaClass) {
+            super(parent);
+            this.metaClass = metaClass;
+        }
+
+        public final CallSite acceptGetProperty(Object receiver) {
+            if (receiver.getClass() != metaClass.getTheClass())
+              return createGetPropertySite(receiver);
+            else
+              return this;
+        }
+
         public final Object getProperty(Object receiver) {
             return metaClass.getProperty(receiver, name);
         }
@@ -481,6 +628,13 @@ public abstract class CallSite {
         public CallSite acceptGetProperty(Object receiver) {
             if (receiver.getClass() != aClass)
                 return createGetPropertySite(receiver);
+            else
+              return this;
+        }
+
+        public CallSite acceptGroovyObjectGetProperty(Object receiver) {
+            if (receiver.getClass() != aClass)
+                return createGroovyObjectGetPropertySite(receiver);
             else
               return this;
         }

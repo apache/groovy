@@ -15,7 +15,7 @@
  */
 package org.codehaus.groovy.reflection;
 
-import groovy.lang.MetaMethod;
+import groovy.lang.*;
 import org.codehaus.groovy.classgen.BytecodeHelper;
 
 import java.lang.reflect.AccessibleObject;
@@ -32,6 +32,17 @@ import java.util.*;
 public class CachedClass {
     private final Class cachedClass;
     public ClassInfo classInfo;
+
+    public static boolean SunVM;
+
+    static {
+        try {
+           Class.forName("sun.misc.Unsafe");
+           SunVM = true;
+        } catch (ClassNotFoundException e) {
+           SunVM = false;
+        }
+    }
 
     private final LazySoftReference<CachedField[]> fields = new LazySoftReference<CachedField[]>() {
         public CachedField[] initValue() {
@@ -70,7 +81,9 @@ public class CachedClass {
             final Method[] declaredMethods = (Method[])
                AccessController.doPrivileged(new PrivilegedAction/*<Method[]>*/() {
                    public /*Method[]*/ Object run() {
-                       return getTheClass().getDeclaredMethods();
+                       final Method[] dm = getTheClass().getDeclaredMethods();
+                       AccessibleObject.setAccessible(dm, true);
+                       return dm;
                    }
                });
             ArrayList methods = new ArrayList(declaredMethods.length);
@@ -108,9 +121,7 @@ public class CachedClass {
         }
     };
 
-    private MetaMethod[] newMetaMethods = EMPTY;
-
-    private LazySoftReference<CachedClass> cachedSuperClass = new LazySoftReference<CachedClass>() {
+    private LazyReference<CachedClass> cachedSuperClass = new LazyReference<CachedClass>() {
         public CachedClass initValue() {
             if (!isArray)
               return ReflectionCache.getCachedClass(getTheClass().getSuperclass());
@@ -122,14 +133,14 @@ public class CachedClass {
         }
     };
 
-    private static final MetaMethod[] EMPTY = new MetaMethod[0];
+    static final MetaMethod[] EMPTY = new MetaMethod[0];
 
     int hashCode;
 
     public  CachedMethod [] mopMethods;
     public static final CachedClass[] EMPTY_ARRAY = new CachedClass[0];
 
-    private final LazySoftReference<Set<CachedClass>> declaredInterfaces = new LazySoftReference<Set<CachedClass>> () {
+    private final LazyReference<Set<CachedClass>> declaredInterfaces = new LazyReference<Set<CachedClass>> () {
         public Set<CachedClass> initValue() {
             HashSet<CachedClass> res = new HashSet<CachedClass> (0);
 
@@ -295,11 +306,83 @@ public class CachedClass {
     }
 
     public MetaMethod[] getNewMetaMethods() {
-        return newMetaMethods;
+        return classInfo.newMetaMethods;
     }
 
-    public void setNewMopMethods(ArrayList arr) {
-        newMetaMethods = (MetaMethod[]) arr.toArray(new MetaMethod[arr.size()]);
+    public void setNewMopMethods(List arr) {
+        final MetaClass metaClass = classInfo.getStrongMetaClass();
+        if (metaClass != null) {
+          if (metaClass.getClass() == MetaClassImpl.class) {
+              classInfo.setStrongMetaClass(null);
+              updateSetNewMopMethods(arr);
+              classInfo.setStrongMetaClass(new MetaClassImpl(metaClass.getTheClass()));
+              return;
+          }
+
+          if (metaClass.getClass() == ExpandoMetaClass.class) {
+              classInfo.setStrongMetaClass(null);
+              updateSetNewMopMethods(arr);
+              ExpandoMetaClass newEmc = new ExpandoMetaClass(metaClass.getTheClass());
+              newEmc.initialize();
+              classInfo.setStrongMetaClass(newEmc);
+              return;
+          }
+
+          throw new GroovyRuntimeException("Can't add methods to class " + getTheClass().getName() + ". Strong custom meta class already set.");
+        }
+
+        classInfo.setWeakMetaClass(null);
+        updateSetNewMopMethods(arr);
+    }
+
+    private void updateSetNewMopMethods(List arr) {
+        if (arr != null) {
+            final MetaMethod[] metaMethods = (MetaMethod[]) arr.toArray(new MetaMethod[arr.size()]);
+            classInfo.dgmMetaMethods = metaMethods;
+            classInfo.newMetaMethods = metaMethods;
+        }
+        else
+            classInfo.newMetaMethods = classInfo.dgmMetaMethods;
+    }
+
+    public void addNewMopMethods(List arr) {
+        final MetaClass metaClass = classInfo.getStrongMetaClass();
+        if (metaClass != null) {
+          if (metaClass.getClass() == MetaClassImpl.class) {
+              classInfo.setStrongMetaClass(null);
+              updateAddNewMopMethods(arr);
+              classInfo.setStrongMetaClass(new MetaClassImpl(metaClass.getTheClass()));
+              return;
+          }
+
+          if (metaClass.getClass() == ExpandoMetaClass.class) {
+              ExpandoMetaClass emc = (ExpandoMetaClass)metaClass;
+              classInfo.setStrongMetaClass(null);
+              updateAddNewMopMethods(arr);
+              ExpandoMetaClass newEmc = new ExpandoMetaClass(metaClass.getTheClass());
+              for (Iterator it = emc.getExpandoMethods().iterator(); it.hasNext(); ) {
+                  newEmc.registerInstanceMethod((MetaMethod) it.next());
+              }
+              newEmc.initialize();
+              classInfo.setStrongMetaClass(newEmc);
+              return;
+          }
+
+          throw new GroovyRuntimeException("Can't add methods to class " + getTheClass().getName() + ". Strong custom meta class already set.");
+        }
+
+        classInfo.setWeakMetaClass(null);
+
+        updateAddNewMopMethods(arr);
+    }
+
+    private void updateAddNewMopMethods(List arr) {
+        ArrayList res = new ArrayList();
+        res.addAll(Arrays.asList(classInfo.newMetaMethods));
+        res.addAll(arr);
+
+        final MetaMethod[] metaMethods = (MetaMethod[]) res.toArray(new MetaMethod[res.size()]);
+        classInfo.newMetaMethods = metaMethods;
     }
 
     public boolean isAssignableFrom(Class argument) {

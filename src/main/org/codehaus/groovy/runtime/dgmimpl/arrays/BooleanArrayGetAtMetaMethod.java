@@ -42,7 +42,7 @@ public class BooleanArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
 
                public Object callBinop(Object receiver, Object arg) {
                    if ((receiver instanceof boolean[] && arg instanceof Integer)
-                           && checkMetaClass()) {
+                           && checkPojoMetaClass()) {
                        final boolean[] objects = (boolean[]) receiver;
                        return objects[normaliseIndex(((Integer) arg).intValue(), objects.length)];
                    }

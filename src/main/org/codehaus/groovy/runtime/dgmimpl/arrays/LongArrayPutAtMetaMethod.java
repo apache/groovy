@@ -47,7 +47,7 @@ public class LongArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
                 return new PojoMetaMethodSite(site, metaClass, metaMethod, params) {
                     public Object call(Object receiver, Object[] args) {
                         if ((receiver instanceof long[] && args[0] instanceof Integer && args[1] instanceof Long )
-                                && checkMetaClass()) {
+                                && checkPojoMetaClass()) {
                             final long[] objects = (long[]) receiver;
                             objects[normaliseIndex(((Integer) args[0]).intValue(), objects.length)] = ((Long)args[1]).longValue();
                             return null;

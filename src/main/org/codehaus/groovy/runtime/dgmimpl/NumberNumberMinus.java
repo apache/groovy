@@ -49,7 +49,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
                 return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
                     public final Object callBinop(Object receiver, Object arg) {
                         return (receiver instanceof Integer && arg instanceof Integer)
-                                && checkMetaClass()
+                                && checkPojoMetaClass()
                               ? new Integer(((Integer) receiver).intValue() - ((Integer) arg).intValue())
                               : super.callBinop(receiver,arg);
                     }
@@ -67,7 +67,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
                 return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
                     public final Object callBinop(Object receiver, Object arg) {
                         return (receiver instanceof Integer && arg instanceof Long)
-                                && checkMetaClass()
+                                && checkPojoMetaClass()
                               ? new Long(((Integer) receiver).longValue() - ((Long) arg).longValue())
                               : super.callBinop(receiver,arg);
                     }
@@ -85,7 +85,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
                 return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
                     public final Object callBinop(Object receiver, Object arg) {
                         return (receiver instanceof Integer && arg instanceof Float)
-                                && checkMetaClass()
+                                && checkPojoMetaClass()
                               ? new Double(((Integer) receiver).doubleValue() - ((Float) arg).doubleValue())
                               : super.callBinop(receiver,arg);
                     }
@@ -103,7 +103,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
                 return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
                     public final Object callBinop(Object receiver, Object arg) {
                         return (receiver instanceof Integer && arg instanceof Double)
-                                && checkMetaClass()
+                                && checkPojoMetaClass()
                               ? new Double(((Integer) receiver).doubleValue() - ((Double) arg).doubleValue())
                               : super.callBinop(receiver,arg);
                     }
@@ -123,7 +123,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
                 return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
                     public final Object callBinop(Object receiver, Object arg) {
                         return (receiver instanceof Long && arg instanceof Integer)
-                                && checkMetaClass()
+                                && checkPojoMetaClass()
                               ? new Long(((Long) receiver).longValue() - ((Integer) arg).longValue())
                               : super.callBinop(receiver,arg);
                     }
@@ -141,7 +141,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
                 return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
                     public final Object callBinop(Object receiver, Object arg) {
                         return (receiver instanceof Long && arg instanceof Long)
-                                && checkMetaClass()
+                                && checkPojoMetaClass()
                               ? new Long(((Long) receiver).longValue() - ((Long) arg).longValue())
                               : super.callBinop(receiver,arg);
                     }
@@ -159,7 +159,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
                 return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
                     public final Object callBinop(Object receiver, Object arg) {
                         return (receiver instanceof Long && arg instanceof Float)
-                                && checkMetaClass()
+                                && checkPojoMetaClass()
                               ? new Double(((Long) receiver).doubleValue() - ((Float) arg).doubleValue())
                               : super.callBinop(receiver,arg);
                     }
@@ -177,7 +177,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
                 return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
                     public final Object callBinop(Object receiver, Object arg) {
                         return (receiver instanceof Long && arg instanceof Double)
-                                && checkMetaClass()
+                                && checkPojoMetaClass()
                               ? new Double(((Long) receiver).doubleValue() - ((Double) arg).doubleValue())
                               : super.callBinop(receiver,arg);
                     }
@@ -197,7 +197,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
                 return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
                     public final Object callBinop(Object receiver, Object arg) {
                         return (receiver instanceof Float && arg instanceof Integer)
-                                && checkMetaClass()
+                                && checkPojoMetaClass()
                               ? new Double(((Float) receiver).doubleValue() - ((Integer) arg).doubleValue())
                               : super.callBinop(receiver,arg);
                     }
@@ -215,7 +215,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
                 return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
                     public final Object callBinop(Object receiver, Object arg) {
                         return (receiver instanceof Float && arg instanceof Long)
-                                && checkMetaClass()
+                                && checkPojoMetaClass()
                               ? new Double(((Float) receiver).doubleValue() - ((Long) arg).doubleValue())
                               : super.callBinop(receiver,arg);
                     }
@@ -233,7 +233,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
                 return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
                     public final Object callBinop(Object receiver, Object arg) {
                         return (receiver instanceof Float && arg instanceof Float)
-                                && checkMetaClass()
+                                && checkPojoMetaClass()
                               ? new Double(((Float) receiver).doubleValue() - ((Float) arg).doubleValue())
                               : super.callBinop(receiver,arg);
                     }
@@ -251,7 +251,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
                 return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
                     public final Object callBinop(Object receiver, Object arg) {
                         return (receiver instanceof Float && arg instanceof Double)
-                                && checkMetaClass()
+                                && checkPojoMetaClass()
                               ? new Double(((Float) receiver).doubleValue() - ((Double) arg).doubleValue())
                               : super.callBinop(receiver,arg);
                     }
@@ -271,7 +271,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
                 return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
                     public final Object callBinop(Object receiver, Object arg) {
                         return (receiver instanceof Double && arg instanceof Integer)
-                                && checkMetaClass()
+                                && checkPojoMetaClass()
                               ? new Double(((Double) receiver).doubleValue() - ((Integer) arg).doubleValue())
                               : super.callBinop(receiver,arg);
                     }
@@ -289,7 +289,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
                 return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
                     public final Object callBinop(Object receiver, Object arg) {
                         return (receiver instanceof Double && arg instanceof Long)
-                                && checkMetaClass()
+                                && checkPojoMetaClass()
                               ? new Double(((Double) receiver).doubleValue() - ((Long) arg).doubleValue())
                               : super.callBinop(receiver,arg);
                     }
@@ -307,7 +307,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
                 return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
                     public final Object callBinop(Object receiver, Object arg) {
                         return (receiver instanceof Double && arg instanceof Float)
-                                && checkMetaClass()
+                                && checkPojoMetaClass()
                               ? new Double(((Double) receiver).doubleValue() - ((Float) arg).doubleValue())
                               : super.callBinop(receiver,arg);
                     }
@@ -325,7 +325,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
                 return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
                     public final Object callBinop(Object receiver, Object arg) {
                         return (receiver instanceof Double && arg instanceof Double)
-                                && checkMetaClass()
+                                && checkPojoMetaClass()
                               ? new Double(((Double) receiver).doubleValue() - ((Double) arg).doubleValue())
                               : super.callBinop(receiver,arg);
                     }

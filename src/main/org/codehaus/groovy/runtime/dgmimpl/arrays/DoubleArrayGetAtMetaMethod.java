@@ -42,7 +42,7 @@ public class DoubleArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
 
                     public Object callBinop(Object receiver, Object arg) {
                         if ((receiver instanceof double[] && arg instanceof Integer)
-                                && checkMetaClass()) {
+                                && checkPojoMetaClass()) {
                             final double[] objects = (double[]) receiver;
                             return objects[normaliseIndex(((Integer) arg).intValue(), objects.length)];
                         }

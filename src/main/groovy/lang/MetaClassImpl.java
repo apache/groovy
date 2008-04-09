@@ -67,6 +67,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     protected final Class theClass;
     protected final CachedClass theCachedClass;
+    private static final MetaMethod[] EMPTY = new MetaMethod[0];
 
     public final CachedClass getTheCachedClass() {
         return theCachedClass;
@@ -101,20 +102,42 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private MetaMethodIndex.Header mainClassMethodHeader;
     private final MetaMethodIndex metaMethodIndex;
 
+    private final MetaMethod [] myNewMetaMethods;
+    private final MetaMethod [] additionalMetaMethods;
 
-    public MetaClassImpl(final Class theClass) {
+    public MetaClassImpl(final Class theClass, MetaMethod [] add) {
         this.theClass = theClass;
         theCachedClass = ReflectionCache.getCachedClass(theClass);
         this.isGroovyObject = GroovyObject.class.isAssignableFrom(theClass);
         this.isMap = Map.class.isAssignableFrom(theClass);
         this.registry = GroovySystem.getMetaClassRegistry();
         metaMethodIndex = new MetaMethodIndex(theCachedClass);
+        final MetaMethod[] metaMethods = theCachedClass.getNewMetaMethods();
+        if (add != null && !(add.length == 0)) {
+            ArrayList arr = new ArrayList();
+            arr.addAll(Arrays.asList(metaMethods));
+            arr.addAll(Arrays.asList(add));
+            myNewMetaMethods = (MetaMethod[])arr.toArray(new MetaMethod[arr.size()]);
+            additionalMetaMethods = metaMethods;
+        }
+        else {
+            myNewMetaMethods = metaMethods;
+            additionalMetaMethods = EMPTY;
+        }
+    }
+
+    public MetaClassImpl(final Class theClass) {
+        this(theClass, null);
+    }
+
+    public MetaClassImpl(MetaClassRegistry registry, final Class theClass, MetaMethod add []) {
+        this(theClass, add);
+        this.registry = registry;
+        this.constructors = new FastArray(theCachedClass.getConstructors());
     }
 
     public MetaClassImpl(MetaClassRegistry registry, final Class theClass) {
-        this(theClass);
-        this.registry = registry;
-        this.constructors = new FastArray(theCachedClass.getConstructors());
+        this(registry, theClass, null);
     }
 
     /**
@@ -225,7 +248,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                   addMetaMethodToIndex(metaMethod, header);
             }
 
-            MetaMethod[] cachedMethods1 = c.getNewMetaMethods();
+            MetaMethod[] cachedMethods1 = getNewMetaMethods(c);
             for (int i = 0; i < cachedMethods1.length; i++) {
                 final MetaMethod method = cachedMethods1[i];
 
@@ -256,7 +279,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 addMetaMethodToIndex(metaMethod, header);
             }
 
-            MetaMethod[] cachedMethods1 = c.getNewMetaMethods();
+            MetaMethod[] cachedMethods1 = getNewMetaMethods(c);
             for (int i = 0; i < cachedMethods1.length; i++) {
                 final MetaMethod method = cachedMethods1[i];
 
@@ -266,6 +289,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 }
             }
         }
+    }
+
+    private MetaMethod[] getNewMetaMethods(CachedClass c) {
+        if (theCachedClass != c)
+          return c.getNewMetaMethods();
+
+        return myNewMetaMethods;
     }
 
     private void addInterfaceMethods(Set interfaces) {
@@ -462,7 +492,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // add methods declared by DGM for interfaces
         for (Iterator it = interfaces.iterator(); it.hasNext(); ) {
             CachedClass cls = (CachedClass) it.next();
-            MetaMethod methods [] = cls.getNewMetaMethods();
+            MetaMethod methods [] = getNewMetaMethods(cls);
             for (int i = 0; i < methods.length; i++) {
                 MetaMethod method = methods[i];
                 if (!newGroovyMethodsSet.contains(method)) {
@@ -497,25 +527,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
             if (c == firstGroovyClass)
               break;
-        }
-    }
-
-    private void inheritMethods(Collection superClasses, CachedClass firstGroovySuper) {
-        Iterator iter = superClasses.iterator();
-        for (; iter.hasNext();) {
-            CachedClass c = (CachedClass) iter.next();
-            if (c == firstGroovySuper.getCachedSuperClass())
-              break;
-        }
-
-        MetaMethodIndex.Header last = null;
-        for (; iter.hasNext();) {
-            CachedClass c = (CachedClass) iter.next();
-            MetaMethodIndex.Header methodIndex = metaMethodIndex.getHeader(c.getTheClass());
-            if (last != null) {
-                metaMethodIndex.copyNonPrivateMethods(last, methodIndex);
-            }
-            last = methodIndex;
         }
     }
 
@@ -2799,6 +2810,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     public int getVersion() {
         return theCachedClass.classInfo.getVersion();
+    }
+
+    public MetaMethod[] getAdditionalMetaMethods() {
+        return additionalMetaMethods;
     }
 
     private abstract class MethodIndexAction {

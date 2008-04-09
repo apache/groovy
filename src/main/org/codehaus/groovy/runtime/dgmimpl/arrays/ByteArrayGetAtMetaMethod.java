@@ -42,7 +42,7 @@ public class ByteArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
 
                     public Object callBinop(Object receiver, Object arg) {
                         if ((receiver instanceof byte[] && arg instanceof Integer)
-                                && checkMetaClass()) {
+                                && checkPojoMetaClass()) {
                             final byte[] objects = (byte[]) receiver;
                             return objects[normaliseIndex(((Integer) arg).intValue(), objects.length)];
                         }

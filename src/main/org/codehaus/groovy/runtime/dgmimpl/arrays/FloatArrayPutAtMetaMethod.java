@@ -47,7 +47,7 @@ public class FloatArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
                 return new PojoMetaMethodSite(site, metaClass, metaMethod, params) {
                     public Object call(Object receiver, Object[] args) {
                         if ((receiver instanceof float[] && args[0] instanceof Integer && args[1] instanceof Float )
-                                && checkMetaClass()) {
+                                && checkPojoMetaClass()) {
                             final float[] objects = (float[]) receiver;
                             objects[normaliseIndex(((Integer) args[0]).intValue(), objects.length)] = ((Float)args[1]).floatValue();
                             return null;

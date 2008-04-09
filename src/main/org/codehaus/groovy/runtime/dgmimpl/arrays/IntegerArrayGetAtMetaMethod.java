@@ -42,7 +42,7 @@ public class IntegerArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
 
                     public Object callBinop(Object receiver, Object arg) {
                         if ((receiver instanceof int[] && arg instanceof Integer)
-                                && checkMetaClass()) {
+                                && checkPojoMetaClass()) {
                             final int[] objects = (int[]) receiver;
                             return objects[normaliseIndex(((Integer) arg).intValue(), objects.length)];
                         }

@@ -47,7 +47,7 @@ public class ShortArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
                 return new PojoMetaMethodSite(site, metaClass, metaMethod, params) {
                     public Object call(Object receiver, Object[] args) {
                         if ((receiver instanceof short[] && args[0] instanceof Integer && args[1] instanceof Short )
-                                && checkMetaClass()) {
+                                && checkPojoMetaClass()) {
                             final short[] objects = (short[]) receiver;
                             objects[normaliseIndex(((Integer) args[0]).intValue(), objects.length)] = ((Short)args[1]).shortValue();
                             return null;

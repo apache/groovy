@@ -17,6 +17,7 @@ package org.codehaus.groovy.reflection;
 
 import groovy.lang.ExpandoMetaClass;
 import groovy.lang.MetaClass;
+import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.stdclasses.*;
 
 import java.lang.ref.SoftReference;
@@ -26,7 +27,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 
 /**
- * It is handle for all information we want to keep about the class
+ * Handle for all information we want to keep about the class
  *
  * @author Alex.Tkachman
  */
@@ -50,6 +51,10 @@ public class ClassInfo extends SoftReference<Class> {
 
     private final LockableObject lock = new LockableObject();
 
+    MetaMethod[] dgmMetaMethods = CachedClass.EMPTY;
+
+    MetaMethod[] newMetaMethods = CachedClass.EMPTY;
+
     public final int hash;
     public ClassInfo next;
 
@@ -58,7 +63,7 @@ public class ClassInfo extends SoftReference<Class> {
         this.next = next;
         this.hash = hash;
         cachedClassRef = new LazyCachedClassRef(this);
-        staticMetaClassField = new LazyStaticMetaClassFiledRef(this);
+        staticMetaClassField = new LazyStaticMetaClassFieldRef(this);
     }
 
     ClassInfo(ClassInfo src, ClassInfo next) {
@@ -70,7 +75,9 @@ public class ClassInfo extends SoftReference<Class> {
         strongMetaClass = src.strongMetaClass;
         version = src.version;
         modifiedExpando = src.modifiedExpando;
-        staticMetaClassField = new LazyStaticMetaClassFiledRef(this);
+        staticMetaClassField = new LazyStaticMetaClassFieldRef(this);
+        dgmMetaMethods = src.dgmMetaMethods;
+        newMetaMethods = src.newMetaMethods;
     }
 
     public int getVersion() {
@@ -98,10 +105,9 @@ public class ClassInfo extends SoftReference<Class> {
         return cachedClassRef.get();
     }
 
-    private static ClassSet globalClassSet = new ClassSet ();
+    private static final ClassSet globalClassSet = new ClassSet ();
 
     public static ClassInfo getClassInfo (Class cls) {
-//        return globalClassSet.get(cls);
         return localMap.get().get(cls);
     }
 
@@ -410,6 +416,10 @@ public class ClassInfo extends SoftReference<Class> {
             int hash = hash(key);
             return segmentFor(hash).get(key, hash);
         }
+
+        public ClassInfo get(Class key, int hash) {
+            return segmentFor(hash).get(key, hash);
+        }
     }
 
     private static class LocalMap extends HashMap<Class,ClassInfo> {
@@ -421,10 +431,11 @@ public class ClassInfo extends SoftReference<Class> {
         private int nextCacheEntry;
 
         private final ClassInfo[] cache = new ClassInfo[CACHE_SIZE];
+        private static final ClassInfo NOINFO = new ClassInfo(null,0,null);
 
         private LocalMap() {
             for (int i = 0; i < cache.length; i++) {
-                cache[i] = new ClassInfo(null,0,null);
+                cache[i] = NOINFO;
             }
         }
 
@@ -464,7 +475,7 @@ public class ClassInfo extends SoftReference<Class> {
         }
     }
 
-    private static ThreadLocal<LocalMap> localMap = new ThreadLocal<LocalMap> () {
+    private static final ThreadLocal<LocalMap> localMap = new ThreadLocal<LocalMap> () {
         LocalMap recentThreadMap;
 
         protected LocalMap initialValue() {
@@ -504,10 +515,10 @@ public class ClassInfo extends SoftReference<Class> {
         }
     }
 
-    private static class LazyStaticMetaClassFiledRef extends LazySoftReference {
+    private static class LazyStaticMetaClassFieldRef extends LazySoftReference {
         private final ClassInfo info;
 
-        LazyStaticMetaClassFiledRef(ClassInfo info) {
+        LazyStaticMetaClassFieldRef(ClassInfo info) {
             this.info = info;
         }
 

@@ -3,7 +3,7 @@ package org.codehaus.groovy.reflection;
 import java.lang.ref.SoftReference;
 
 /**
- * Reference with lazy initialization under lock
+ * Soft reference with lazy initialization under lock
  */
 public abstract class LazySoftReference<T> extends LockableObject {
     private SoftReference<T> value;

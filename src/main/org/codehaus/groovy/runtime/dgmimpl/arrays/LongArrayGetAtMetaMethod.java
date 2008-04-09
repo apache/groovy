@@ -42,7 +42,7 @@ public class LongArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
 
                     public Object callBinop(Object receiver, Object arg) {
                         if ((receiver instanceof long[] && arg instanceof Integer)
-                                && checkMetaClass()) {
+                                && checkPojoMetaClass()) {
                             final long[] objects = (long[]) receiver;
                             return objects[normaliseIndex(((Integer) arg).intValue(), objects.length)];
                         }

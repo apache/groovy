@@ -42,7 +42,7 @@ public class CharacterArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
 
                     public Object callBinop(Object receiver, Object arg) {
                         if ((receiver instanceof char[] && arg instanceof Integer)
-                                && checkMetaClass()) {
+                                && checkPojoMetaClass()) {
                             final char[] objects = (char[]) receiver;
                             return objects[normaliseIndex(((Integer) arg).intValue(), objects.length)];
                         }

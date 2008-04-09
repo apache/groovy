@@ -17,12 +17,16 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.*;
 import groovy.util.*;
+import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.CachedMethod;
+import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberDiv;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMinus;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMultiply;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberPlus;
 import org.codehaus.groovy.runtime.dgmimpl.arrays.*;
 import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack;
+import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
@@ -299,6 +303,129 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Object use(Object self, Class categoryClass, Closure closure) {
         return GroovyCategorySupport.use(categoryClass, closure);
+    }
+
+    /**
+     * Extend class globally with category methods.
+     * All methods for given class and all super classes will be added to the class.
+     *
+     * @param self          any Class
+     * @param categoryClasses a category classes to use
+     */
+    public static void mixin(Class self, List categoryClasses) {
+        final CachedClass selfCached;
+        selfCached = ReflectionCache.getCachedClass(self);
+        ArrayList arr = findCategoryMethods(self, categoryClasses);
+        selfCached.addNewMopMethods(arr);
+    }
+
+    /**
+     * Extend groovy object with category methods.
+     * All methods for given class and all super classes will be added to the object.
+     *
+     * @param self          any Class
+     * @param categoryClasses a category classes to use
+     */
+    public static void mixin(GroovyObject self, List categoryClasses) {
+        final Class selfClass = self.getClass();
+        ArrayList arr = findCategoryMethods(selfClass, categoryClasses);
+
+        MetaClass metaClass = self.getMetaClass();
+
+        if (metaClass.getClass() == MetaClassImpl.class) {
+            MetaClassImpl mc = (MetaClassImpl)metaClass;
+            MetaMethod mm [] = mc.getAdditionalMetaMethods();
+            arr.addAll(0, Arrays.asList(mm));
+            final MetaClassImpl newMetaClass = new MetaClassImpl(mc.getTheClass(), (MetaMethod[]) arr.toArray(new MetaMethod[arr.size()]));
+            newMetaClass.initialize();
+            self.setMetaClass(newMetaClass);
+            return;
+        }
+
+        if (metaClass.getClass() == ExpandoMetaClass.class) {
+            ExpandoMetaClass mc = (ExpandoMetaClass)metaClass;
+            MetaMethod mm [] = mc.getAdditionalMetaMethods();
+            arr.addAll(0, Arrays.asList(mm));
+            final ExpandoMetaClass newMetaClass = new ExpandoMetaClass(mc.getTheClass(), (MetaMethod[]) arr.toArray(new MetaMethod[arr.size()]));
+            for (Iterator it = mc.getExpandoMethods().iterator(); it.hasNext(); ) {
+                newMetaClass.registerInstanceMethod((MetaMethod) it.next());
+            }
+            newMetaClass.initialize();
+            self.setMetaClass(newMetaClass);
+            return;
+        }
+
+        throw new GroovyRuntimeException ("Can't mixin " + selfClass + ". Meta class: " + metaClass);
+    }
+
+    private static ArrayList findCategoryMethods(Class self, List categoryClasses) {
+        ArrayList arr = new ArrayList(4);
+        for (Iterator it = categoryClasses.iterator(); it.hasNext(); ) {
+            Class categoryClass = (Class) it.next();
+            CachedMethod[] methods = ReflectionCache.getCachedClass(categoryClass).getMethods();
+
+            for (int i = 0; i < methods.length; i++) {
+                CachedMethod method = methods[i];
+                final int mod = method.getModifiers();
+                if (Modifier.isStatic(mod) && Modifier.isPublic(mod)) {
+                    CachedClass[] paramTypes = method.getParameterTypes();
+
+                    if (paramTypes.length == 0)
+                      continue;
+
+                    if (paramTypes[0].isAssignableFrom(self)) {
+                        final NewInstanceMetaMethod metaMethod = new NewInstanceMetaMethod(method);
+                        arr.add(metaMethod);
+                    }
+                }
+            }
+
+        }
+        return arr;
+    }
+
+    /**
+     * Extend class globally with category methods.
+     *
+     * @param self          any Class
+     * @param categoryClass a category class to use
+     */
+    public static void mixin(Class self, Class categoryClass) {
+        ArrayList ar = new ArrayList(1);
+        ar.add(categoryClass);
+        mixin(self, ar);
+    }
+
+    /**
+     * Extend class globally with category methods.
+     *
+     * @param self          any Class
+     * @param categoryClass a category class to use
+     */
+    public static void mixin(Class self, Class [] categoryClass) {
+        mixin(self, Arrays.asList(categoryClass));
+    }
+
+    /**
+     * Extend class globally with category methods.
+     *
+     * @param self          any Class
+     * @param categoryClass a category class to use
+     */
+    public static void mixin(GroovyObject self, Class categoryClass) {
+        ArrayList ar = new ArrayList(1);
+        ar.add(categoryClass);
+        mixin(self, ar);
+    }
+
+    /**
+     * Extend class globally with category methods.
+     *
+     * @param self          any Class
+     * @param categoryClass a category class to use
+     */
+    public static void mixin(GroovyObject self, Class [] categoryClass) {
+        mixin(self, Arrays.asList(categoryClass));
     }
 
     /**

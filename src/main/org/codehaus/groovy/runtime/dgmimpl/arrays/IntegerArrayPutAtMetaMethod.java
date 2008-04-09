@@ -47,7 +47,7 @@ public class IntegerArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
                 return new PojoMetaMethodSite(site, metaClass, metaMethod, params) {
                     public Object call(Object receiver, Object[] args) {
                         if ((receiver instanceof int[] && args[0] instanceof Integer && args[1] instanceof Integer )
-                                && checkMetaClass()) {
+                                && checkPojoMetaClass()) {
                             final int[] objects = (int[]) receiver;
                             objects[normaliseIndex(((Integer) args[0]).intValue(), objects.length)] = ((Integer)args[1]).intValue();
                             return null;

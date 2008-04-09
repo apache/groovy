@@ -46,7 +46,7 @@ public class PojoMetaMethodSite extends MetaMethodSite {
         return checkAcceptCall(receiver, args) ? this : createCallSite(receiver, args);
     }
 
-    protected final boolean checkMetaClass () {
+    protected final boolean checkPojoMetaClass() {
         return !GroovyCategorySupport.hasCategoryInAnyThread()
             && ((MetaClassImpl)metaClass).getVersion() == version;
     }
@@ -54,7 +54,7 @@ public class PojoMetaMethodSite extends MetaMethodSite {
     private boolean checkAcceptCall(Object receiver, Object[] args) {
         try {
             return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
-               && checkMetaClass()
+               && checkPojoMetaClass()
                && MetaClassHelper.sameClasses(params, args);
         }
         catch (NullPointerException e) {
@@ -68,7 +68,7 @@ public class PojoMetaMethodSite extends MetaMethodSite {
     public final CallSite acceptBinop(Object receiver, Object arg) {
         try {
             return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
-               && checkMetaClass()
+               && checkPojoMetaClass()
            && MetaClassHelper.sameClass(params, arg) // right arguments
                 ? this
                 : createCallSite(receiver, new Object[]{arg});

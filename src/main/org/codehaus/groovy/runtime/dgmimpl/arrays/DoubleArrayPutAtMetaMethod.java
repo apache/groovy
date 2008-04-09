@@ -47,7 +47,7 @@ public class DoubleArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
                 return new PojoMetaMethodSite(site, metaClass, metaMethod, params) {
                     public Object call(Object receiver, Object[] args) {
                         if ((receiver instanceof double[] && args[0] instanceof Integer && args[1] instanceof Double )
-                                && checkMetaClass()) {
+                                && checkPojoMetaClass()) {
                             final double[] objects = (double[]) receiver;
                             objects[normaliseIndex(((Integer) args[0]).intValue(), objects.length)] = ((Double)args[1]).doubleValue();
                             return null;

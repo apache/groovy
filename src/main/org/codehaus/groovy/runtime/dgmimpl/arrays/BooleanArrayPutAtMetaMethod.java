@@ -41,7 +41,7 @@ public class BooleanArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
                 return new PojoMetaMethodSite(site, metaClass, metaMethod, params) {
                     public Object call(Object receiver, Object[] args) {
                         if ((receiver instanceof boolean[] && args[0] instanceof Integer && args[1] instanceof Boolean )
-                                && checkMetaClass()) {
+                                && checkPojoMetaClass()) {
                             final boolean[] objects = (boolean[]) receiver;
                             objects[normaliseIndex(((Integer) args[0]).intValue(), objects.length)] = ((Boolean)args[1]).booleanValue();
                             return null;

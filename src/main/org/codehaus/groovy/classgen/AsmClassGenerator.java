@@ -314,7 +314,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private void generateGetCallSiteArray() {
-        MethodVisitor mv = cv.visitMethod(ACC_PUBLIC+ACC_SYNTHETIC+ACC_STATIC,"$getCallSiteArray", "()[Lorg/codehaus/groovy/runtime/callsite/CallSite;", null, null);
+        MethodVisitor mv = cv.visitMethod(ACC_PRIVATE+ACC_SYNTHETIC+ACC_STATIC,"$getCallSiteArray", "()[Lorg/codehaus/groovy/runtime/callsite/CallSite;", null, null);
         mv.visitCode();
         mv.visitFieldInsn(GETSTATIC, internalClassName, "$callSiteArray", "Ljava/lang/ref/SoftReference;");
         Label l0 = new Label();
@@ -1737,12 +1737,12 @@ public class AsmClassGenerator extends ClassGenerator {
         bitwiseNegate.call(mv);
     }
 
-    public void visitCastExpression(CastExpression expression) {
-        ClassNode type = expression.getType();
-        visitAndAutoboxBoolean(expression.getExpression());
+    public void visitCastExpression(CastExpression castExpression) {
+        ClassNode type = castExpression.getType();
+        visitAndAutoboxBoolean(castExpression.getExpression());
         final ClassNode rht = rightHandType;
-        rightHandType = expression.getExpression().getType();
-        doConvertAndCast(type, expression.getExpression(), expression.isIgnoringAutoboxing(), false, expression.isCoerce());
+        rightHandType = castExpression.getExpression().getType();
+        doConvertAndCast(type, castExpression.getExpression(), castExpression.isIgnoringAutoboxing(), false, castExpression.isCoerce());
         rightHandType = rht;
     }
 
@@ -1901,6 +1901,32 @@ public class AsmClassGenerator extends ClassGenerator {
           mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "callGetProperty","(Ljava/lang/Object;)Ljava/lang/Object;");
         else {
           mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "callGetPropertySafe","(Ljava/lang/Object;)Ljava/lang/Object;");
+        }
+        leftHandExpression = lhs;
+    }
+
+    private void makeGroovyObjectGetPropertySite(Expression receiver, String methodName, boolean safe, boolean implicitThis) {
+        if (isNotClinit()) {
+            mv.visitVarInsn(ALOAD, callSiteArrayVarIndex);
+        }
+        else {
+            mv.visitMethodInsn(INVOKESTATIC,internalClassName,"$getCallSiteArray","()[Lorg/codehaus/groovy/runtime/callsite/CallSite;");
+        }
+        final int index = allocateIndex(methodName);
+        mv.visitLdcInsn(index);
+        mv.visitInsn(AALOAD);
+
+        // site
+        boolean lhs = leftHandExpression;
+        leftHandExpression = false;
+        boolean oldVal = this.implicitThis;
+        this.implicitThis = implicitThis;
+        visitAndAutoboxBoolean(receiver);
+        this.implicitThis = oldVal;
+        if (!safe)
+          mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "callGroovyObjectGetProperty","(Ljava/lang/Object;)Ljava/lang/Object;");
+        else {
+          mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "callGroovyObjectGetPropertySafe","(Ljava/lang/Object;)Ljava/lang/Object;");
         }
         leftHandExpression = lhs;
     }
@@ -2416,13 +2442,18 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         else {
             // arguments already on stack if any
-            makeCall(
-                    objectExpression, // receiver
-                    new CastExpression(ClassHelper.STRING_TYPE, expression.getProperty()), // messageName
-                    MethodCallExpression.NO_ARGUMENTS,
-                    adapter,
-                    expression.isSafe(), expression.isSpreadSafe(), expression.isImplicitThis()
-            );
+            if (adapter == getGroovyObjectProperty && !expression.isSpreadSafe() && methodName != null) {
+                makeGroovyObjectGetPropertySite(objectExpression, methodName, expression.isSafe(), expression.isImplicitThis());
+            }
+            else {
+                makeCall(
+                        objectExpression, // receiver
+                        new CastExpression(ClassHelper.STRING_TYPE, expression.getProperty()), // messageName
+                        MethodCallExpression.NO_ARGUMENTS,
+                        adapter,
+                        expression.isSafe(), expression.isSpreadSafe(), expression.isImplicitThis()
+                );
+            }
         }
     }
 
@@ -2463,7 +2494,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected boolean isGroovyObject(Expression objectExpression) {
-        return isThisExpression(objectExpression);
+        return isThisExpression(objectExpression) || objectExpression.getType().isDerivedFromGroovyObject() && !(objectExpression instanceof ClassExpression);
     }
 
     public void visitFieldExpression(FieldExpression expression) {
@@ -3571,7 +3602,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
     protected void doConvertAndCast(ClassNode type, boolean coerce) {
         if (type == ClassHelper.OBJECT_TYPE) return;
-        if (rightHandType == null || !rightHandType.isDerivedFrom(type)) {
+        if (rightHandType == null || !rightHandType.isDerivedFrom(type) || !rightHandType.implementsInterface(type.getName())) {
             if (isValidTypeForCast(type)) {
                 visitClassExpression(new ClassExpression(type));
                 if (coerce) {

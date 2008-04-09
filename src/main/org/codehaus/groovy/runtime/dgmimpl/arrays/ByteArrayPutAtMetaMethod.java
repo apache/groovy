@@ -47,7 +47,7 @@ public class ByteArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
                 return new PojoMetaMethodSite(site, metaClass, metaMethod, params) {
                     public Object call(Object receiver, Object[] args) {
                         if ((receiver instanceof byte[] && args[0] instanceof Integer && args[1] instanceof Byte )
-                                && checkMetaClass()) {
+                                && checkPojoMetaClass()) {
                             final byte[] objects = (byte[]) receiver;
                             objects[normaliseIndex(((Integer) args[0]).intValue(), objects.length)] = ((Byte)args[1]).byteValue();
                             return null;
