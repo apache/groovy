@@ -50,15 +50,7 @@ public class GroovyScriptEngine implements ResourceConnector {
      * @throws Exception if something goes wrong
      */
     public static void main(String[] urls) throws Exception {
-        URL[] roots = new URL[urls.length];
-        for (int i = 0; i < roots.length; i++) {
-            if(urls[i].indexOf("://") != -1) {
-                roots[i] = new URL(urls[i]);
-            } else {
-                roots[i] = new File(urls[i]).toURI().toURL();
-            }
-        }
-        GroovyScriptEngine gse = new GroovyScriptEngine(roots);
+        GroovyScriptEngine gse = new GroovyScriptEngine(urls);
         BufferedReader br = new BufferedReader(new InputStreamReader(System.in));
         String line;
         while (true) {
@@ -134,7 +126,7 @@ public class GroovyScriptEngine implements ResourceConnector {
 
     /**
      * Get a resource connection as a <code>URLConnection</code> to retrieve a script
-     * from the <code>ResourceConnector</code>
+     * from the <code>ResourceConnector</code>.
      *
      * @param resourceName name of the resource to be retrieved
      * @return a URLConnection to the resource
@@ -147,15 +139,13 @@ public class GroovyScriptEngine implements ResourceConnector {
         ResourceException se = null;
         for (int i = 0; i < roots.length; i++) {
             URL scriptURL = null;
-            InputStream in = null;
             try {
                 scriptURL = new URL(roots[i], resourceName);
-
                 groovyScriptConn = scriptURL.openConnection();
 
                 // Make sure we can open it, if we can't it doesn't exist.
                 // Could be very slow if there are any non-file:// URLs in there
-                in = groovyScriptConn.getInputStream();
+                groovyScriptConn.getInputStream();
 
                 break; // Now this is a bit unusual
 
@@ -206,7 +196,11 @@ public class GroovyScriptEngine implements ResourceConnector {
     public GroovyScriptEngine(String[] urls) throws IOException {
         roots = new URL[urls.length];
         for (int i = 0; i < roots.length; i++) {
-            roots[i] = new File(urls[i]).toURI().toURL();
+            if(urls[i].indexOf("://") != -1) {
+                roots[i] = new URL(urls[i]);
+            } else {
+                roots[i] = new File(urls[i]).toURI().toURL();
+            }
         }
         this.rc = this;
         initGroovyLoader(getClass().getClassLoader());
@@ -218,10 +212,7 @@ public class GroovyScriptEngine implements ResourceConnector {
     }
 
     public GroovyScriptEngine(String url) throws IOException {
-        roots = new URL[1];
-        roots[0] = new File(url).toURI().toURL();
-        this.rc = this;
-        initGroovyLoader(getClass().getClassLoader());
+        this(new String[]{url});
     }
 
     public GroovyScriptEngine(String url, ClassLoader parentClassLoader) throws IOException {
