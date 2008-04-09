@@ -399,4 +399,14 @@ public class GroovyScriptEngine implements ResourceConnector {
         scriptName = scriptName.intern();
         return InvokerHelper.createScript(entry.scriptClass, binding);
     }
+
+    /**
+     * Returns the GroovyClassLoader associated with this script engine instance.
+     * Useful if you need to pass the class loader to another library.
+     *
+     * @return the GroovyClassLoader
+     */
+    public GroovyClassLoader getGroovyClassLoader() {
+        return groovyLoader;
+    }
 }
