@@ -87,5 +87,28 @@ public class MethodSelectionTest extends CompilableTestSupport {
 
       assert foo(new Subthing())==1
     """
-  }  
+  }
+
+  void testComplexInterfaceInheritance() {
+    // GROOVY-2698
+    assertScript """
+        import javax.swing.*
+
+        interface ISub extends Action {}
+
+        class Super extends AbstractAction {
+        void actionPerformed(java.awt.event.ActionEvent e){}
+        }
+        class Sub extends AbstractAction implements ISub {
+        void actionPerformed(java.awt.event.ActionEvent e){}
+        }
+
+        static String foo(Action x) { "super" }
+        static String foo(ISub x) { "sub" }
+
+        def result = [new Super(), new Sub()].collect { foo(it) }
+
+        assert ["super","sub"] == result
+    """
+  }
 }
