@@ -242,6 +242,12 @@ public class ParameterTypes
         return true;
     }
 
+    private final static boolean testComponentAssignable(Class toTestAgainst, Class toTest) {
+        Class component = toTest.getComponentType();
+        if (component==null) return false;
+        return MetaClassHelper.isAssignableFrom(toTestAgainst, component);
+    }
+
     private boolean isValidVarargsMethod(Class[] arguments, int size, CachedClass[] pt, int paramMinus1) {
         // first check normal number of parameters
         for (int i = 0; i < paramMinus1; i++) {
@@ -254,7 +260,7 @@ public class ParameterTypes
         Class clazz = varg.getTheClass().getComponentType();
         if ( size==pt.length &&
              (varg.isAssignableFrom(arguments[paramMinus1]) ||
-              MetaClassHelper.isAssignableFrom(clazz, arguments[paramMinus1].getComponentType())))
+              testComponentAssignable(clazz, arguments[paramMinus1])))
         {
             return true;
         }
@@ -289,7 +295,7 @@ public class ParameterTypes
             Class clazz = varg.getTheClass().getComponentType();
             if ( size==paramTypes.length && 
                  (varg.isAssignableFrom(getArgClass(arguments[paramMinus1])) ||
-                  MetaClassHelper.isAssignableFrom(clazz, getArgClass(arguments[paramMinus1]).getComponentType()))) 
+                  testComponentAssignable(clazz, getArgClass(arguments[paramMinus1])))) 
             {
                 return true;
             }

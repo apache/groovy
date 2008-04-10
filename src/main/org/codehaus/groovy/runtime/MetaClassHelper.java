@@ -590,19 +590,16 @@ public class MetaClassHelper {
     }
 
     public static boolean isAssignableFrom(Class classToTransformTo, Class classToTransformFrom) {
-        if (classToTransformTo == classToTransformFrom) {
-            return true;
-        }
+        if (classToTransformTo == classToTransformFrom) return true;
         if (classToTransformFrom == null) return true;
         if (classToTransformTo == Object.class) return true;
+
         classToTransformTo = ReflectionCache.autoboxType(classToTransformTo);
         classToTransformFrom = ReflectionCache.autoboxType(classToTransformFrom);
+        if (classToTransformTo == classToTransformFrom) return true;
 
-        if (classToTransformTo == classToTransformFrom) {
-            return true;
-        }
-        // note: there is not coercion for boolean and char. Range matters, precision doesn't
-        else if (classToTransformTo == Integer.class) {
+        // note: there is no coercion for boolean and char. Range matters, precision doesn't
+        if (classToTransformTo == Integer.class) {
             if (classToTransformFrom == Integer.class
                     || classToTransformFrom == Short.class
                     || classToTransformFrom == Byte.class
