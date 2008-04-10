@@ -70,7 +70,6 @@ change sets from trunk NOT in 1.5.x:
 * 11221: deeper use of automated layout variables in SwingBuilder...
 * 11230: Some housekeeping and bits of performance
 * 11236: fixes RetentionPolicy usage for precompiled classes (should fix GROOVY-2691)
-* 11263: work around for GROOVY-2604 (avoids NPE)
 * 11267: Faster class info access
 * 11271: more general case AST transformation
 * 11275: Grails expects that modified EMC are kept in the registry
