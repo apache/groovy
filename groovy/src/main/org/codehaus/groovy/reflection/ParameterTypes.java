@@ -252,7 +252,7 @@ public class ParameterTypes
         Class clazz = varg.getCachedClass().getComponentType();
         if ( size==pt.length &&
              (varg.isAssignableFrom(arguments[paramMinus1]) ||
-              MetaClassHelper.isAssignableFrom(clazz, arguments[paramMinus1].getComponentType())))
+              testComponentAssignable(clazz, arguments[paramMinus1])))
         {
             return true;
         }
@@ -263,6 +263,12 @@ public class ParameterTypes
             return false;
         }
         return true;
+    }
+
+    private final static boolean testComponentAssignable(Class toTestAgainst, Class toTest) {
+        Class component = toTest.getComponentType();
+        if (component==null) return false;
+        return MetaClassHelper.isAssignableFrom(toTestAgainst, component);
     }
 
     public boolean isValidMethod(Object[] arguments) {
@@ -287,7 +293,7 @@ public class ParameterTypes
             Class clazz = varg.getCachedClass().getComponentType();
             if ( size==paramTypes.length && 
                  (varg.isAssignableFrom(getArgClass(arguments[paramMinus1])) ||
-                  MetaClassHelper.isAssignableFrom(clazz, getArgClass(arguments[paramMinus1]).getComponentType()))) 
+                  testComponentAssignable(clazz,getArgClass(arguments[paramMinus1]))))
             {
                 return true;
             }
