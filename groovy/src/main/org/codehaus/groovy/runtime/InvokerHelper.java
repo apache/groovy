@@ -142,11 +142,11 @@ public class InvokerHelper {
 
         if (object instanceof Class) {
             return metaRegistry.getMetaClass((Class) object).getAttribute(object, attribute);
-        }
-        if (object instanceof GroovyObject) {
+        } else if (object instanceof GroovyObject) {
             return ((GroovyObject) object).getMetaClass().getAttribute(object, attribute);
+        } else {
+            return metaRegistry.getMetaClass(object.getClass()).getAttribute(object, attribute);
         }
-        return metaRegistry.getMetaClass(object.getClass()).getAttribute(object, attribute);
     }
 
     public static void setAttribute(Object object, String attribute, Object newValue) {
@@ -156,11 +156,11 @@ public class InvokerHelper {
 
         if (object instanceof Class) {
             metaRegistry.getMetaClass((Class) object).setAttribute(object, attribute, newValue);
-        }
-        if (object instanceof GroovyObject) {
+        } else if (object instanceof GroovyObject) {
             ((GroovyObject) object).getMetaClass().setAttribute(object, attribute, newValue);
+        } else {
+            metaRegistry.getMetaClass(object.getClass()).setAttribute(object, attribute, newValue);
         }
-        metaRegistry.getMetaClass(object.getClass()).setAttribute(object, attribute, newValue);
     }
 
     public static Object getProperty(Object object, String property) {
@@ -170,12 +170,12 @@ public class InvokerHelper {
         if (object instanceof GroovyObject) {
             GroovyObject pogo = (GroovyObject) object;
             return pogo.getProperty(property);
-        }
-        if (object instanceof Class) {
+        } else if (object instanceof Class) {
             Class c = (Class) object;
             return metaRegistry.getMetaClass(c).getProperty(object, property);
+        } else {
+            return metaRegistry.getMetaClass(object.getClass()).getProperty(object, property);
         }
-        return metaRegistry.getMetaClass(object.getClass()).getProperty(object, property);
     }
 
     public static Object getPropertySafe(Object object, String property) {
@@ -192,12 +192,10 @@ public class InvokerHelper {
         if (object instanceof GroovyObject) {
             GroovyObject pogo = (GroovyObject) object;
             pogo.setProperty(property, newValue);
-        }
-        else {
-            if (object instanceof Class)
-                metaRegistry.getMetaClass((Class) object).setProperty((Class) object, property, newValue);
-            else
-                metaRegistry.getMetaClass(object.getClass()).setProperty(object, property, newValue);
+        } else if (object instanceof Class) {
+            metaRegistry.getMetaClass((Class) object).setProperty((Class) object, property, newValue);
+        } else {
+            metaRegistry.getMetaClass(object.getClass()).setProperty(object, property, newValue);
         }
     }
 
