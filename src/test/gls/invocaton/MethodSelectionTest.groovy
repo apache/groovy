@@ -75,5 +75,18 @@ public class MethodSelectionTest extends CompilableTestSupport {
     
     """  
   }
+
+  void testMethodSelectionWithInterfaceVargsMethod() {
+    // GROOVY-2719
+    assertScript """
+      public class Thing {}
+      public class Subthing extends Thing {}
+
+      def foo(Thing i) {1}
+      def foo(Runnable[] l) {2}
+
+      assert foo(new Subthing())==1
+    """
+  }
   
 }
