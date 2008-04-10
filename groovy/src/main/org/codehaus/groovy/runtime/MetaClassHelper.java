@@ -230,15 +230,25 @@ public class MetaClassHelper {
     }
 
     private static int getMaximumInterfaceDistance(Class c, Class interfaceClass) {
+        // -1 means a mismatch
         if (c == null) return -1;
+        // 0 means a direct match
         if (c == interfaceClass) return 0;
         Class[] interfaces = c.getInterfaces();
         int max = -1;
         for (int i = 0; i < interfaces.length; i++) {
-            int sub = 1 + getMaximumInterfaceDistance(interfaces[i], interfaceClass);
+            int sub = getMaximumInterfaceDistance(interfaces[i], interfaceClass);
+            // we need to keep the -1 to track the mismatch, a +1
+            // by any means could let it look like a direct match
+            // we want to add one, because there is an interface between
+            // the interface we search for and the interface we are in.
+            if (sub!=-1) sub++;
+            // we are interested in the longest path only
             max = Math.max(max, sub);
         }
-        return Math.max(max, getMaximumInterfaceDistance(c.getSuperclass(), interfaceClass));
+        // we do not add one for super classes, only for interfaces
+        int superClassMax = getMaximumInterfaceDistance(c.getSuperclass(), interfaceClass);
+        return Math.max(max, superClassMax);
     }
 
     private static long calculateParameterDistance(Class argument, CachedClass parameter) {
