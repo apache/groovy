@@ -240,18 +240,31 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                 addConstructor(ctor.getModifiers(),createParameters(ctor.getParameterTypes()),ClassHelper.make(ctor.getExceptionTypes()),null);
             }
             Class sc = clazz.getSuperclass();
-            if (sc!=null) superClass = ClassHelper.make(sc);
+            if (sc!=null) superClass = getPrimaryClassNode(sc);
+
             buildInterfaceTypes(clazz);
             VMPluginFactory.getPlugin().setAnnotationMetaData(this);
             lazyInitDone=true;
         }
     }
+
+    private ClassNode getPrimaryClassNode(Class clazz) {
+        // there might be a new super class from the compile unit,
+        // we want to use this instead of simply referencing the old
+        // class
+        ClassNode result = null;
+        if (compileUnit!=null) {
+            result = compileUnit.getClass(clazz.getName());
+        }
+        if (result==null) result = ClassHelper.make(clazz);
+        return result;
+    }    
     
     private void buildInterfaceTypes(Class c) {
         Class[] interfaces = c.getInterfaces();
         ClassNode[] ret = new ClassNode[interfaces.length];
         for (int i=0;i<interfaces.length;i++){
-            ret[i] = ClassHelper.make(interfaces[i]);
+            ret[i] = getPrimaryClassNode(interfaces[i]);
         }
         this.interfaces = ret;
     }
