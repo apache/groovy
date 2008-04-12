@@ -15,7 +15,7 @@
  */
 package groovy
 
-import static groovy.util.ProxyGenerator.*
+import static groovy.util.ProxyGenerator.INSTANCE
 
 /**
  * This test verifies the behaviour of ProxyGenerator#getSimpleName(Class) used in Map of closures coercion to classes.
@@ -26,41 +26,41 @@ import static groovy.util.ProxyGenerator.*
 class ClassGetSimpleNameTest extends GroovyTestCase {
 
     void testPrimitiveTypes() {
-        assert "boolean" == getSimpleName(boolean)
-        assert "byte"    == getSimpleName(byte)
-        assert "char"    == getSimpleName(char)
-        assert "double"  == getSimpleName(double)
-        assert "float"   == getSimpleName(float)
-        assert "int"     == getSimpleName(int)
-        assert "long"    == getSimpleName(long)
-        assert "short"   == getSimpleName(short)
-        assert "void"    == getSimpleName(void)
+        assert "boolean" == INSTANCE.getSimpleName(boolean)
+        assert "byte"    == INSTANCE.getSimpleName(byte)
+        assert "char"    == INSTANCE.getSimpleName(char)
+        assert "double"  == INSTANCE.getSimpleName(double)
+        assert "float"   == INSTANCE.getSimpleName(float)
+        assert "int"     == INSTANCE.getSimpleName(int)
+        assert "long"    == INSTANCE.getSimpleName(long)
+        assert "short"   == INSTANCE.getSimpleName(short)
+        assert "void"    == INSTANCE.getSimpleName(void)
     }
 
     void testNormalClasses() {
-        assert "java.lang.Class"             == getSimpleName(java.lang.Class)
-        assert "java.lang.String"            == getSimpleName(java.lang.String)
-        assert "java.lang.Runnable"          == getSimpleName(java.lang.Runnable)
-        assert "groovy.SimpleNameDummyClass" == getSimpleName(groovy.SimpleNameDummyClass)
-        assert "java.util.Map.Entry"         == getSimpleName(Map.Entry)
+        assert "java.lang.Class"             == INSTANCE.getSimpleName(java.lang.Class)
+        assert "java.lang.String"            == INSTANCE.getSimpleName(java.lang.String)
+        assert "java.lang.Runnable"          == INSTANCE.getSimpleName(java.lang.Runnable)
+        assert "groovy.SimpleNameDummyClass" == INSTANCE.getSimpleName(groovy.SimpleNameDummyClass)
+        assert "java.util.Map.Entry"         == INSTANCE.getSimpleName(Map.Entry)
     }
 
     void testArrayOfPrimitives() {
-        assert "boolean[]"     == getSimpleName(boolean[])
-        assert "byte[][]"      == getSimpleName(byte[][])
-        assert "char[]"        == getSimpleName(char[])
-        assert "double[][][]"  == getSimpleName(double[][][])
-        assert "float[]"       == getSimpleName(float[])
-        assert "int[]"         == getSimpleName(int[])
-        assert "long[][]"      == getSimpleName(long[][])
-        assert "short[][]"     == getSimpleName(short[][])
+        assert "boolean[]"     == INSTANCE.getSimpleName(boolean[])
+        assert "byte[][]"      == INSTANCE.getSimpleName(byte[][])
+        assert "char[]"        == INSTANCE.getSimpleName(char[])
+        assert "double[][][]"  == INSTANCE.getSimpleName(double[][][])
+        assert "float[]"       == INSTANCE.getSimpleName(float[])
+        assert "int[]"         == INSTANCE.getSimpleName(int[])
+        assert "long[][]"      == INSTANCE.getSimpleName(long[][])
+        assert "short[][]"     == INSTANCE.getSimpleName(short[][])
     }
 
     void testArrayOfNormalClasses() {
-        assert "java.lang.String[]"                == getSimpleName(String[])
-        assert "java.lang.Boolean[][]"             == getSimpleName(Boolean[][])
-        assert "groovy.SimpleNameDummyClass[][][]" == getSimpleName(groovy.SimpleNameDummyClass[][][])
-        assert "java.lang.Integer[][]"             == getSimpleName(java.lang.Integer[][])
+        assert "java.lang.String[]"                == INSTANCE.getSimpleName(String[])
+        assert "java.lang.Boolean[][]"             == INSTANCE.getSimpleName(Boolean[][])
+        assert "groovy.SimpleNameDummyClass[][][]" == INSTANCE.getSimpleName(groovy.SimpleNameDummyClass[][][])
+        assert "java.lang.Integer[][]"             == INSTANCE.getSimpleName(java.lang.Integer[][])
     }
 }
 

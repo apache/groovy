@@ -18,6 +18,7 @@ package groovy.util;
 import groovy.lang.*;
 import org.codehaus.groovy.control.MultipleCompilationErrorsException;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
@@ -31,43 +32,67 @@ import java.util.*;
  * @author Guillaume Laforge
  */
 public class ProxyGenerator {
-    public static boolean debug = false;
+    public static final ProxyGenerator INSTANCE = new ProxyGenerator();
 
-    public static Object instantiateAggregateFromBaseClass(Class clazz) {
+    static {
+        // wrap the standard MetaClass with the delegate
+        setMetaClass(GroovySystem.getMetaClassRegistry().getMetaClass(ProxyGenerator.class));
+    }
+
+    private ClassLoader override = null;
+    private boolean debug = false;
+
+    public boolean getDebug() {
+        return debug;
+    }
+
+    public void setDebug(boolean debug) {
+        this.debug = debug;
+    }
+
+    public ClassLoader getOverride() {
+        return override;
+    }
+
+    public void setOverride(ClassLoader override) {
+        this.override = override;
+    }
+
+    public Object instantiateAggregateFromBaseClass(Class clazz) {
         return instantiateAggregateFromBaseClass(null, clazz);
     }
 
-    public static Object instantiateAggregateFromBaseClass(Map map, Class clazz) {
+    public Object instantiateAggregateFromBaseClass(Map map, Class clazz) {
         return instantiateAggregateFromBaseClass(map, clazz, null);
     }
 
-    public static Object instantiateAggregateFromBaseClass(Map map, Class clazz, Object[] constructorArgs) {
+    public Object instantiateAggregateFromBaseClass(Map map, Class clazz, Object[] constructorArgs) {
         return instantiateAggregate(map, null, clazz, constructorArgs);
     }
 
-    public static Object instantiateAggregateFromInterface(Class clazz) {
+    public Object instantiateAggregateFromInterface(Class clazz) {
         return instantiateAggregateFromInterface(null, clazz);
     }
 
-    public static Object instantiateAggregateFromInterface(Map map, Class clazz) {
+    public Object instantiateAggregateFromInterface(Map map, Class clazz) {
         List interfaces = new ArrayList();
         interfaces.add(clazz);
         return instantiateAggregate(map, interfaces);
     }
 
-    public static Object instantiateAggregate(List interfaces) {
+    public Object instantiateAggregate(List interfaces) {
         return instantiateAggregate(null, interfaces);
     }
 
-    public static Object instantiateAggregate(Map closureMap, List interfaces) {
+    public Object instantiateAggregate(Map closureMap, List interfaces) {
         return instantiateAggregate(closureMap, interfaces, null);
     }
 
-    public static Object instantiateAggregate(Map closureMap, List interfaces, Class clazz) {
+    public Object instantiateAggregate(Map closureMap, List interfaces, Class clazz) {
         return instantiateAggregate(closureMap, interfaces, clazz, null);
     }
 
-    public static Object instantiateAggregate(Map closureMap, List interfaces, Class clazz, Object[] constructorArgs) {
+    public Object instantiateAggregate(Map closureMap, List interfaces, Class clazz, Object[] constructorArgs) {
         Map map = new HashMap();
         if (closureMap != null) {
             map = closureMap;
@@ -164,7 +189,7 @@ public class ProxyGenerator {
         Binding binding = new Binding();
         binding.setVariable("map", map);
         binding.setVariable("constructorArgs", constructorArgs);
-        ClassLoader cl = baseClass.getClassLoader();
+        ClassLoader cl = override != null ? override : baseClass.getClassLoader();
         if (clazz == null && interfacesToImplement.size() > 0) {
             Class c = (Class) interfacesToImplement.get(0);
             cl = c.getClassLoader();
@@ -179,28 +204,28 @@ public class ProxyGenerator {
         }
     }
 
-    public static Object instantiateDelegate(Object delegate) {
+    public Object instantiateDelegate(Object delegate) {
         return instantiateDelegate(null, delegate);
     }
 
-    public static Object instantiateDelegate(List interfaces, Object delegate) {
+    public Object instantiateDelegate(List interfaces, Object delegate) {
         return instantiateDelegate(null, interfaces, delegate);
     }
 
-    public static Object instantiateDelegate(Map closureMap, List interfaces, Object delegate) {
+    public Object instantiateDelegate(Map closureMap, List interfaces, Object delegate) {
         return instantiateDelegateWithBaseClass(closureMap, interfaces, delegate, null);
     }
 
-    public static Object instantiateDelegateWithBaseClass(Map closureMap, List interfaces, Object delegate) {
+    public Object instantiateDelegateWithBaseClass(Map closureMap, List interfaces, Object delegate) {
         return instantiateDelegateWithBaseClass(closureMap, interfaces, delegate, delegate.getClass());
     }
 
-    public static Object instantiateDelegateWithBaseClass(Map closureMap, List interfaces, Object delegate, Class baseClass) {
+    public Object instantiateDelegateWithBaseClass(Map closureMap, List interfaces, Object delegate, Class baseClass) {
         String name = shortName(delegate.getClass().getName()) + "_delegateProxy";
         return instantiateDelegateWithBaseClass(closureMap, interfaces, delegate, baseClass, name);
     }
 
-    public static Object instantiateDelegateWithBaseClass(Map closureMap, List interfaces, Object delegate, Class baseClass, String name) {
+    public Object instantiateDelegateWithBaseClass(Map closureMap, List interfaces, Object delegate, Class baseClass, String name) {
         Map map = new HashMap();
         if (closureMap != null) {
             map = closureMap;
@@ -286,7 +311,7 @@ public class ProxyGenerator {
         Binding binding = new Binding();
         binding.setVariable("map", map);
         binding.setVariable("delegate", delegate);
-        ClassLoader cl = delegate.getClass().getClassLoader();
+        ClassLoader cl = override != null ? override : delegate.getClass().getClassLoader();
         GroovyShell shell = new GroovyShell(cl, binding);
         if (debug)
             System.out.println("proxy source:\n------------------\n" + buffer.toString() + "\n------------------");
@@ -297,7 +322,7 @@ public class ProxyGenerator {
         }
     }
 
-    private static void addWrappedCall(StringBuffer buffer, Method method, Map map) {
+    private void addWrappedCall(StringBuffer buffer, Method method, Map map) {
         if (map.containsKey(method.getName())) {
             addOverridingMapCall(buffer, method);
         } else {
@@ -307,7 +332,7 @@ public class ProxyGenerator {
         }
     }
 
-    private static boolean containsEquivalentMethod(List publicAndProtectedMethods, Method candidate) {
+    private boolean containsEquivalentMethod(List publicAndProtectedMethods, Method candidate) {
         for (int i = 0; i < publicAndProtectedMethods.size(); i++) {
             Method method = (Method) publicAndProtectedMethods.get(i);
             if (candidate.getName().equals(method.getName()) &&
@@ -319,7 +344,7 @@ public class ProxyGenerator {
         return false;
     }
 
-    private static boolean hasMatchingParameterTypes(Method method, Method candidate) {
+    private boolean hasMatchingParameterTypes(Method method, Method candidate) {
         Class[] candidateParamTypes = candidate.getParameterTypes();
         Class[] methodParamTypes = method.getParameterTypes();
         if (candidateParamTypes.length != methodParamTypes.length) return false;
@@ -329,7 +354,7 @@ public class ProxyGenerator {
         return true;
     }
 
-    private static List getInheritedMethods(Class baseClass) {
+    private List getInheritedMethods(Class baseClass) {
         List protectedMethodList = new ArrayList();
         Class currentClass = baseClass;
         while (currentClass != null) {
@@ -346,18 +371,18 @@ public class ProxyGenerator {
         return protectedMethodList;
     }
 
-    private static void addNewMapCall(StringBuffer buffer, String methodName) {
+    private void addNewMapCall(StringBuffer buffer, String methodName) {
         buffer.append("    def ").append(methodName).append("(Object[] args) {\n")
                 .append("        this.@closureMap['").append(methodName).append("'] (*args)\n    }\n");
     }
 
-    private static void addOverridingMapCall(StringBuffer buffer, Method method) {
+    private void addOverridingMapCall(StringBuffer buffer, Method method) {
         Class[] parameterTypes = addMethodPrefix(buffer, method);
         addMethodBody(buffer, method, parameterTypes);
         addMethodSuffix(buffer);
     }
 
-    private static void addMapOrDummyCall(Map map, StringBuffer buffer, Method method) {
+    private void addMapOrDummyCall(Map map, StringBuffer buffer, Method method) {
         Class[] parameterTypes = addMethodPrefix(buffer, method);
         if (map.containsKey(method.getName())) {
             addMethodBody(buffer, method, parameterTypes);
@@ -365,7 +390,7 @@ public class ProxyGenerator {
         addMethodSuffix(buffer);
     }
 
-    private static Class[] addMethodPrefix(StringBuffer buffer, Method method) {
+    private Class[] addMethodPrefix(StringBuffer buffer, Method method) {
         buffer.append("    ").append(getSimpleName(method.getReturnType()))
                 .append(" ").append(method.getName()).append("(");
         Class[] parameterTypes = method.getParameterTypes();
@@ -381,7 +406,7 @@ public class ProxyGenerator {
         return parameterTypes;
     }
 
-    private static void addMethodBody(StringBuffer buffer, Method method, Class[] parameterTypes) {
+    private void addMethodBody(StringBuffer buffer, Method method, Class[] parameterTypes) {
         buffer.append("this.@closureMap['").append(method.getName()).append("'] (");
         for (int j = 0; j < parameterTypes.length; j++) {
             if (j != 0) {
@@ -392,7 +417,7 @@ public class ProxyGenerator {
         buffer.append(")");
     }
 
-    private static void addWrappedMethodBody(StringBuffer buffer, Method method, Class[] parameterTypes) {
+    private void addWrappedMethodBody(StringBuffer buffer, Method method, Class[] parameterTypes) {
         buffer.append("\n        Object[] args = [");
         for (int j = 0; j < parameterTypes.length; j++) {
             if (j != 0) {
@@ -404,7 +429,7 @@ public class ProxyGenerator {
         buffer.append("InvokerHelper.invokeMethod(delegate, '").append(method.getName()).append("', args)\n");
     }
 
-    private static void addMethodSuffix(StringBuffer buffer) {
+    private void addMethodSuffix(StringBuffer buffer) {
         buffer.append("    }\n");
     }
 
@@ -414,7 +439,7 @@ public class ProxyGenerator {
      * @param c the class of which we want the readable simple name
      * @return the readable simple name
      */
-    private static String getSimpleName(Class c) {
+    public String getSimpleName(Class c) {
         if (c.isArray()) {
             int dimension = 0;
             Class componentClass = c;
@@ -429,10 +454,22 @@ public class ProxyGenerator {
         }
     }
 
-    public static String shortName(String name) {
+    public String shortName(String name) {
         int index = name.lastIndexOf('.');
         if (index == -1) return name;
         return name.substring(index + 1, name.length());
+    }
+
+    private static void setMetaClass(final MetaClass metaClass) {
+        final MetaClass newMetaClass = new DelegatingMetaClass(metaClass) {
+            /* (non-Javadoc)
+            * @see groovy.lang.MetaClass#invokeStaticMethod(java.lang.Object, java.lang.String, java.lang.Object[])
+            */
+            public Object invokeStaticMethod(Object object, String methodName, Object[] arguments) {
+                return InvokerHelper.invokeMethod(INSTANCE, methodName, arguments);
+            }
+        };
+        GroovySystem.getMetaClassRegistry().setMetaClass(ProxyGenerator.class, newMetaClass);
     }
 
 }
