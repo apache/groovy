@@ -39,7 +39,8 @@ class CliBuilder {
 
     // default settings: use setters to override
     String usage             = 'groovy'
-    CommandLineParser parser = new PosixParser()
+    CommandLineParser parser = null
+    boolean posix            = true
     HelpFormatter formatter  = new HelpFormatter()
     PrintWriter writer       = new PrintWriter(System.out)
 
@@ -61,6 +62,9 @@ class CliBuilder {
         Returns null on bad command lines.
     */
     OptionAccessor parse(args) {
+        if (!parser) {
+            parser = posix ? new PosixParser() : new GnuParser()
+        }
         try {
             return new OptionAccessor( parser.parse(options, args as String[], true) )
         } catch (ParseException pe) {
