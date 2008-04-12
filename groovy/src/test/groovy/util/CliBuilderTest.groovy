@@ -150,7 +150,7 @@ class CliBuilderTest extends GroovyTestCase {
   void testFailedParsePrintsUsage ( ) {
     def cli = new CliBuilder ( writer : printWriter )
     cli.x ( required : true , 'message' )
-    def options = cli.parse ( [ ] )
+    cli.parse ( [ ] )
 
     //
     // FIXME: This test is very fragile and is bound to fail on different locales and versions of commons-cli... :-(
@@ -168,7 +168,7 @@ usage: groovy
     def options = cli.parse ( [ '-v' , '--anOption' , 'something' ] )
     
     assert options.getOptionValue ( 'anOption' ) == null
-    assert false == options.anOption
+    assert !options.anOption
   }
   
   void testLongOptsOnly_PosixParser ( ) {
@@ -182,6 +182,16 @@ usage: groovy
     assert 'something' == options.anOption
     
     assert ! options.v
+  }
+
+  void testLongOptsOnly_GnuParser_settingPosixBooleanFalse ( ) {
+    def cli = new CliBuilder ( writer : printWriter , posix : false )
+    def anOption = OptionBuilder.withLongOpt ( 'anOption' ).hasArg ( ).withDescription ( 'An option.' ).create ( )
+    cli.options.addOption ( anOption )
+    def options = cli.parse ( [ '-v' , '--anOption' , 'something' ] )
+
+    assert options.getOptionValue ( 'anOption' ) == null
+    assert !options.anOption
   }
 
   private createOptionsWithLongAndShortOpts ( parser ) {
