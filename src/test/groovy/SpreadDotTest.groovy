@@ -92,6 +92,13 @@ public class SpreadDotTest extends GroovyTestCase {
         assertEquals "Hello, groovy.Book2", new Book2 ().foo ()
         assertEquals "Hello, groovy.Book3", new Book3 ().foo ()
     }
+
+    public void testSpreadDotMap () {
+        def map = [A:"one", B:"two", C:"three"]
+        assert map.collect { child ->  child.value.size() } == [3, 3, 5]
+        assert map*.value*.size() == [3, 3, 5]
+        assert map*.getKey() == ['A', 'B', 'C']
+    }
 }
 
 class SpreadDotDemo {

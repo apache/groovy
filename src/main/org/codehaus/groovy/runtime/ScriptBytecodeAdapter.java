@@ -798,6 +798,7 @@ public class ScriptBytecodeAdapter {
 
     private static boolean isSpreadable (Object receiver) {
         return (receiver instanceof Collection)
+          || (receiver instanceof Map)
           || (receiver instanceof Iterator)
           || receiver.getClass().isArray();
     }
