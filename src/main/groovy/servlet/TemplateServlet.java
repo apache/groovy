@@ -178,6 +178,7 @@ public class TemplateServlet extends AbstractHttpServlet {
      */
     private boolean generateBy;
 
+    private String encoding = "UTF-8";
     /**
      * Create new TemplateSerlvet.
      */
@@ -300,6 +301,10 @@ public class TemplateServlet extends AbstractHttpServlet {
         if (value != null) {
             this.generateBy = Boolean.valueOf(value).booleanValue();
         }
+        value = config.getInitParameter("encoding");
+        if (value != null) {
+            this.encoding = value;
+        }
         log("Servlet " + getClass().getName() + " initialized on " + engine.getClass());
     }
 
@@ -386,7 +391,7 @@ public class TemplateServlet extends AbstractHttpServlet {
         // Prepare the response buffer content type _before_ getting the writer.
         // and set status code to ok
         //
-        response.setContentType(CONTENT_TYPE_TEXT_HTML);
+        response.setContentType(CONTENT_TYPE_TEXT_HTML+"; charset="+encoding);
         response.setStatus(HttpServletResponse.SC_OK);
 
         //
