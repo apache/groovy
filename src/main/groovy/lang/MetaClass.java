@@ -201,9 +201,9 @@ public interface MetaClass extends MetaObjectProtocol {
      * Selects a method by name and argument classes. This method
      * does not search for an exact match, it searches for a compatible
      * method. For this the method selection mechanism is used as provided
-     * bye the implementation of this MetaClass. pickMethod may or may
-     * not used during the method selection process when invoking a method
-     * thereis no warranty for that.
+     * by the implementation of this MetaClass. pickMethod may or may
+     * not be used during the method selection process when invoking a method.
+     * There is no warranty for that.
      *
      * @return a matching MetaMethod or null
      * @throws GroovyRuntimeException if there is more than one matching method
