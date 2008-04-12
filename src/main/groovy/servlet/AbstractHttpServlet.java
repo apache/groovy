@@ -134,6 +134,11 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
     protected boolean verbose;
 
     /**
+     * Encoding to use, becomes charset part of contentType.
+     */
+    protected String encoding = "UTF-8";
+
+    /**
      * Mirrors the static value of the reflection flag in MetaClass.
      * See AbstractHttpServlet#logGROOVY861
      */
@@ -301,17 +306,19 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
          */
         this.servletContext = config.getServletContext();
 
-        /*
-         * Get verbosity hint.
-         */
+        // Get verbosity hint.
         String value = config.getInitParameter("verbose");
         if (value != null) {
             this.verbose = Boolean.valueOf(value).booleanValue();
         }
 
-        /*
-         * And now the real init work...
-         */
+        // get encoding
+        value = config.getInitParameter("encoding");
+        if (value != null) {
+            this.encoding = value;
+        }
+
+        // And now the real init work...
         if (verbose) {
             log("Parsing init parameters...");
         }
