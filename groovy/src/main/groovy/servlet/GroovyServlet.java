@@ -105,7 +105,7 @@ public class GroovyServlet extends AbstractHttpServlet {
         final String scriptUri = getScriptUri(request);
 
         // Set it to HTML by default
-        response.setContentType("text/html");
+        response.setContentType("text/html; charset="+encoding);
 
         // Set up the script context
         final Binding binding = new ServletBinding(request, response, servletContext);
