@@ -20,9 +20,11 @@ package groovy.util
  */
 class ProxyGeneratorTest extends GroovyTestCase {
 
+    ProxyGenerator generator = ProxyGenerator.INSTANCE
+
     void testAggregateFromBaseClass() {
         Map map = [myMethodB: {"the new B"}, myMethodX: {"the injected X"}]
-        def testClass = ProxyGenerator.instantiateAggregateFromBaseClass(map, TestClass)
+        def testClass = generator.instantiateAggregateFromBaseClass(map, TestClass)
         assert testClass instanceof TestClass
         assert testClass.myMethodA() == "the original A"
         assert testClass.myMethodB() == "the new B"
@@ -31,7 +33,7 @@ class ProxyGeneratorTest extends GroovyTestCase {
 
     void testAggregateFromAbstractBaseClass() {
         Map map = [myMethodG: {"the concrete G"}, myMethodX: {"the injected X"}]
-        def testClass = ProxyGenerator.instantiateAggregateFromBaseClass(map, AbstractClass)
+        def testClass = generator.instantiateAggregateFromBaseClass(map, AbstractClass)
         assert testClass instanceof AbstractClass
         assert testClass.myMethodA() == "the original A"
         assert testClass.myMethodG() == "the concrete G"
@@ -40,7 +42,7 @@ class ProxyGeneratorTest extends GroovyTestCase {
 
     void testAggregateFromInterface() {
         Map map = [myMethodC: {"the injected C"}]
-        def testClass = ProxyGenerator.instantiateAggregateFromInterface(map, TestInterface)
+        def testClass = generator.instantiateAggregateFromInterface(map, TestInterface)
         assert testClass instanceof TestInterface
         assert testClass instanceof GroovyObject
         assert testClass.myMethodC() == "the injected C"
@@ -48,7 +50,7 @@ class ProxyGeneratorTest extends GroovyTestCase {
 
     void testAggregate() {
         Map map = [myMethodE: {"the injected E"}, myMethodB: {"the new B"}, myMethodX: {"the injected X"}]
-        def testClass = ProxyGenerator.instantiateAggregate(map, [TestInterface, TestOtherInterface], TestClass)
+        def testClass = generator.instantiateAggregate(map, [TestInterface, TestOtherInterface], TestClass)
         assert testClass instanceof TestInterface
         assert testClass instanceof TestOtherInterface
         assert testClass instanceof TestClass
@@ -61,7 +63,7 @@ class ProxyGeneratorTest extends GroovyTestCase {
     void testDelegate() {
         def delegate = new TestClass()
         Map map = [myMethodE: {"the injected E"}, myMethodB: {"the new B"}, myMethodX: {"the injected X"}]
-        def testClass = ProxyGenerator.instantiateDelegate(map, [TestInterface, TestOtherInterface], delegate)
+        def testClass = generator.instantiateDelegate(map, [TestInterface, TestOtherInterface], delegate)
         assert testClass instanceof TestInterface
         assert testClass instanceof TestOtherInterface
         assert testClass.myMethodA() == "the original A"
@@ -71,10 +73,9 @@ class ProxyGeneratorTest extends GroovyTestCase {
     }
 
     void testDelegateWithBaseClass() {
-        ProxyGenerator.debug = true;
         def delegate = new TestClass()
         Map map = [myMethodE: {"the injected E"}, myMethodB: {"the new B"}, myMethodX: {"the injected X"}]
-        TestClass testClass = ProxyGenerator.instantiateDelegateWithBaseClass(map, [TestInterface, TestOtherInterface], delegate)
+        TestClass testClass = generator.instantiateDelegateWithBaseClass(map, [TestInterface, TestOtherInterface], delegate)
         assert testClass instanceof TestInterface
         assert testClass instanceof TestOtherInterface
         assert testClass.myMethodA() == "the original A"
@@ -85,7 +86,7 @@ class ProxyGeneratorTest extends GroovyTestCase {
     
     void testDelegateForGROOVY_2705() {
         def delegate = [1, 2, 3, 4, 5]
-        def testClass = ProxyGenerator.instantiateDelegate([List], delegate)
+        def testClass = generator.instantiateDelegate([List], delegate)
         assert testClass instanceof List
         assert 5 == testClass.size() 
         assert [1, 2, 3, 4, 5] == testClass.iterator().collect { it }

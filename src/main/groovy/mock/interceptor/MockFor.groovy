@@ -84,9 +84,9 @@ class MockFor {
         instance.metaClass = thisproxy
         def wrapped = null
         if (clazz.isInterface()) {
-            wrapped = ProxyGenerator.instantiateDelegate([clazz], instance)
+            wrapped = ProxyGenerator.INSTANCE.instantiateDelegate([clazz], instance)
         } else {
-            wrapped = ProxyGenerator.instantiateDelegate(instance)
+            wrapped = ProxyGenerator.INSTANCE.instantiateDelegate(instance)
         }
         instanceExpectations[wrapped] = thisexpect
         return wrapped
@@ -95,20 +95,20 @@ class MockFor {
     private getInstance(Class clazz, args) {
         def instance = null
         if (clazz.isInterface()) {
-            instance = ProxyGenerator.instantiateAggregateFromInterface(clazz)
+            instance = ProxyGenerator.INSTANCE.instantiateAggregateFromInterface(clazz)
         } else if (Modifier.isAbstract(clazz.modifiers)) {
-            instance = ProxyGenerator.instantiateAggregateFromBaseClass(clazz, args)
+            instance = ProxyGenerator.INSTANCE.instantiateAggregateFromBaseClass(clazz, args)
         } else if (args != null) {
             if (clazz instanceof GroovyObject) {
                 instance = clazz.newInstance(args)
             } else {
-                instance = ProxyGenerator.instantiateDelegate(clazz.newInstance(args))
+                instance = ProxyGenerator.INSTANCE.instantiateDelegate(clazz.newInstance(args))
             }
         } else {
             if (clazz instanceof GroovyObject) {
                 instance = clazz.newInstance()
             } else {
-                instance = ProxyGenerator.instantiateDelegate(clazz.newInstance())
+                instance = ProxyGenerator.INSTANCE.instantiateDelegate(clazz.newInstance())
             }
         }
         return instance
