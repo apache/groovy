@@ -178,7 +178,6 @@ public class TemplateServlet extends AbstractHttpServlet {
      */
     private boolean generateBy;
 
-    private String encoding = "UTF-8";
     /**
      * Create new TemplateSerlvet.
      */
@@ -300,10 +299,6 @@ public class TemplateServlet extends AbstractHttpServlet {
         String value = config.getInitParameter("generated.by");
         if (value != null) {
             this.generateBy = Boolean.valueOf(value).booleanValue();
-        }
-        value = config.getInitParameter("encoding");
-        if (value != null) {
-            this.encoding = value;
         }
         log("Servlet " + getClass().getName() + " initialized on " + engine.getClass());
     }
