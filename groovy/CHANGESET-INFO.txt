@@ -1,0 +1,105 @@
+change sets from trunk NOT in 1.5.x:
+
+* 9967:  Fix for GROOVY-2331: Println behavior for collections, strings and gstrings
+* 10003: Binarytrees benchmark and performance improvements for it. On my hardware it impoves 103sec to 47sec.
+* 10315: 1st approximation of call site caching on existing MOP and some other performance improvements
+* 10320: A bit more about caching call site
+* 10389: Continuation of call site caching patch
+* 10393: Continuation of call site caching.
+* 10398: Static fields for numerical constants brings noticable performance improvements. 
+* 10403: All most important (in some non-defined sense) paths of call dispatch is covered by call site caching...
+* 10522: Some more call site optimizations
+* 10554: First step for special call sites for binops
+* 10562: More about call sites
+* 10566: bemchmarks for call site
+* 10634: Annotation AST macros
+* 10638: Call site optimization continuation
+* 10647: fix 1.4 breakage
+* 10673: Macro -> Transformation
+* 10674: another ASTTransformation example: use the AST Transformation to do the Grails GORM injection
+* 10687: multiple annotations no longer inappropriately multiply added, ...
+* 10738: FactoryBuilderSuppoet changes for CompositeBuilder
+* 10739: import cleanups
+* 10740: remove local property
+* 10744: deprecate Component/ContainerFacad & Startable, refactor
+* 10768: FactoryBuilderSupport ehnahcements
+* 10775: test cases for 10768
+* 10787: a first try of the multiple assignment implementation
+* 10791: More careful handling of meta class changes
+* 10795: GROOVY-2595 - actions may now use child closure as action closure
+* 10799: GROOVY-2595 - actions may now use child closure as action closure
+* 10822: fix nimbus plaf name, re: http://forums.java.net/jive/thread.jspa?messageID=258478&tstart=0#258478
+* 10831: Intermediate commit regarding call sites
+* 10837: Fix for bug cuasing NPE on Gant tests
+* 10854: class constants getters names starts with $ to avoid property creation
+* 10855: additional null check
+* 10856: try cast by invoking constructor in one arg
+* 10857: Let it be compiled by 1.4
+* 10872: roll-back of too agressive type cast
+* 10877: Start to generift AST Annotation Macros ...
+* 10885: Fix for some problems in Grails
+* 10890: Binding / Caricature demo
+* 10897: 'reverse' bind() declerations in swing builder ...
+* 10927: It is tiny change, which imrove perf a bit.
+* 10966: Optimization of ariphmetics on call sites
+* 10972: more memroy for javac (needed on 64 bit systems)
+* 10976: initial code for annotation definitions ...
+* 10977: ensure getTypeClass is only called if there is a actual class behind it
+* 10981: unify groovyc to use FileSystemCompiler wether forked or not ...
+* 10989: in AST Transforms, rely less on ClassNode.getName and more on ClassNode itself.
+* 10993: non-fork optimization.
+* 10997: move javadoc to 1.5
+* 11003: only trigger file mode if the command line would be greate than 32K (a MS Windows limit)
+* 11004: remove println
+* 11005, 11008, 11009, 11011, 11014, 11016, 11017, 11020, 11021, 11022: retro'fy build
+* 11034: adds a test case for annotations definitions and fixes some bugs discovered by this test.
+* 11035: increase memory for javac for 64bit VMs
+* 11039, 11044: merge of changeset 10631 back into 1.6 line (synchronization bug)
+* 11054: funkuch benchmark and arrays operations optimization
+* 11055: when using layouts import the layout constants into the current context's properties...
+* 11060: extend test to include borderlayout
+* 11063, 11064: build improvement: make DocGenerator handle inner classes
+* 11070: javadoc only - remove warning and tidy up wording
+* 11116: Some bits of performance
+* 11141: cehck for null context before checking for context proeprties
+* 11142: add javahome= to groovyc to allow groovyc to execute on different JVMs when forked
+* 11146: String.contains(String) is not a 1.4 method...
+* 11160: play nicer on OSX
+* 11181: GROOVY-2679: Allow to omit square brackets in annotations when list has just one element (similar to Java)
+* 11182: remove some dup only
+* 11221: deeper use of automated layout variables in SwingBuilder...
+* 11230: Some housekeeping and bits of performance
+* 11236: fixes RetentionPolicy usage for precompiled classes (should fix GROOVY-2691)
+* 11267: Faster class info access
+* 11271: more general case AST transformation
+* 11275: Grails expects that modified EMC are kept in the registry
+* 11292: GROOVY-2712
+* 11297: Test for GROOVY-2712
+* 11298: unleash the <generic> Hounds!
+* 11322: ClassInfo rewritten
+* 11326: remove javadoc warning
+* 11327: fix for broken Grails build
+* 11346: Some performance tuning in ClassInfo
+* 11404: ray benchmark and start of work on property access caching
+* 11408: Fix for Grails build broken by last optimization
+* 11418: Fix for class leak created by property sites
+* 11428: move transformation core logic out of vm5 plugin since we are 5.0 basline now ...
+* 11439: fix broken example
+* 11448: some code anaysis changes...
+* 11452: Rename beans annotations: Bound->Bindable, Constrained->Vetoable...
+* 11459: fix NPE on class annotaitons
+* 11460: @Bindable on class declerations...
+* 11461: fix bindable/vetoable class interactions, with test
+* 11468: vetoable on class nodes as well
+* 11484: javadoc fix
+* 11492: Move transforms into class nodes where appropriate
+* 11496: Performance and 1st draft of mixins together
+* 11500: tweak [build] memory values
+
+Pending/Partial changes:
+* 11283: fix for GROOVY-2637. This will remove the MIN_VALUE and MAX_VALUE fields from enums if they are empty
+(only partially complete - the above changes are in but there have been earlier changes to allow an
+empty enum in the first place which didn't get merged - plus the test matching this needs to have commented
+out parts reinstated once this change is done)
+
+Last trunk change set examined for inclusion in 1.5.x: 11504

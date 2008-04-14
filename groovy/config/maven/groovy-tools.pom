@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>groovy</groupId>
+    <artifactId>groovy-tools</artifactId>
+    <version>internal</version>
+    <packaging>jar</packaging>
+    <!-- intentionally leaving off scope here as scope is probably overkill for tools -->
+    <dependencies>
+        <dependency>
+            <groupId>com.tonicsystems</groupId>
+            <artifactId>jarjar</artifactId>
+            <version>0.6</version>
+        </dependency>
+        <dependency>
+            <groupId>checkstyle</groupId>
+            <artifactId>checkstyle</artifactId>
+            <version>4.3</version>
+            <exclusions>
+                <exclusion>
+                  <groupId>junit</groupId>
+                  <artifactId>junit</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>redhill</groupId>
+            <artifactId>simian</artifactId>
+            <version>2.2.4</version>
+        </dependency>
+<!-- TODO upgrade to 1.9 but first work out a couple of issues
+     leading to failed tests
+        <dependency>
+            <groupId>net.sourceforge.cobertura</groupId>
+            <artifactId>cobertura</artifactId>
+            <version>1.9</version>
+        </dependency>
+        -->
+        <dependency>
+            <groupId>cobertura</groupId>
+            <artifactId>cobertura</artifactId>
+            <version>1.8</version>
+        </dependency>
+        <!-- used for the JavaDoc generator script -->
+        <dependency>
+            <groupId>qdox</groupId>
+            <artifactId>qdox</artifactId>
+            <version>1.6.1</version>
+            <scope>compile</scope>
+        </dependency>
+    </dependencies>
+</project>
