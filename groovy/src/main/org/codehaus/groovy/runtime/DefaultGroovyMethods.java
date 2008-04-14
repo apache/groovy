@@ -7452,7 +7452,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      */
     public static void eachLine(String self, Closure closure) {
-        each(lines(self), closure);
+        each(readLines(self), closure);
     }
 
     /**
@@ -7608,7 +7608,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see String#split(String)
      */
     public static void splitEachLine(String self, String sep, Closure closure) {
-        final List list = lines(self);
+        final List list = readLines(self);
         for (int i = 0; i < list.size(); i++) {
             String line = (String) list.get(i);
             List vals = Arrays.asList(line.split(sep));
@@ -7750,6 +7750,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                         "Either use a Reader or encapsulate the InputStream" +
                         "with a BufferedReader and an InputStreamReader."
         );
+    }
+
+    /**
+     * Return the lines of a String as a List of Strings.
+     *
+     * @param self a String object
+     * @return a list of lines
+     */
+    public static List readLines(String self) {
+        return tokenize(self, "\n\r");
     }
 
     /**
@@ -10265,29 +10275,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                         "Use File.eachLine() instead. Alternatively you can use FileReader.iterator() " +
                         "and provide your own exception handling."
         );
-    }
-
-    /**
-     * Return the lines of a file. May consume a lot of memory for large files,
-     * so you may wish to consider the eachLine closure on files instead.
-     *
-     * @param self a File object
-     * @return a list of lines
-     * @throws IOException if there is a problem processing the file (e.g. file is not found)
-     * @see #eachLine(File)
-     */
-    public static List lines(File self) throws IOException {
-        return lines(getText(self));
-    }
-
-    /**
-     * Return the lines of a String.
-     *
-     * @param self a String object
-     * @return a list of lines
-     */
-    public static List lines(String self) {
-        return tokenize(self, "\n\r");
     }
 
     /**
