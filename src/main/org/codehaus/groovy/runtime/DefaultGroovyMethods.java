@@ -7433,10 +7433,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    a File
      * @param closure a closure
      * @throws IOException if an IOException occurs.
+     * @return the last value returned by the closure
      * @see #eachLine(Reader,Closure)
      */
-    public static void eachLine(File self, Closure closure) throws IOException {
-        eachLine(newReader(self), closure);
+    public static Object eachLine(File self, Closure closure) throws IOException {
+        return eachLine(newReader(self), closure);
     }
 
     /**
@@ -7445,9 +7446,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self    a String
      * @param closure a closure
+     * @return the self Object
      */
-    public static void eachLine(String self, Closure closure) {
+    public static Object eachLine(String self, Closure closure) {
         each(readLines(self), closure);
+        return self;
     }
 
     /**
@@ -7455,23 +7458,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * stream is closed after the closure returns.
      *
      * @param stream  a stream
+     * @param charset opens the stream with a specified charset
      * @param closure a closure
      * @throws IOException if an IOException occurs.
+     * @return the last value returned by the closure
      * @see #eachLine(Reader,Closure)
      */
-    public static void eachLine(InputStream stream, Closure closure) throws IOException {
-        eachLine(new InputStreamReader(stream), closure);
-    }
-
-    /**
-     * Iterates through the lines read from the URL's associated input stream
-     *
-     * @param url     a URL to open and read
-     * @param closure a closure to apply on each line
-     * @throws IOException if an IOException occurs.
-     */
-    public static void eachLine(URL url, Closure closure) throws IOException {
-        eachLine(url.openConnection().getInputStream(), closure);
+    public static Object eachLine(InputStream stream, String charset, Closure closure) throws IOException {
+        return eachLine(new InputStreamReader(stream, charset), closure);
     }
 
     /**
@@ -7481,10 +7475,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    a Reader, closed after the method returns
      * @param closure a closure
      * @throws IOException if an IOException occurs.
+     * @return the last value returned by the closure
      */
-    public static void eachLine(Reader self, Closure closure) throws IOException {
+    public static Object eachLine(Reader self, Closure closure) throws IOException {
         BufferedReader br;
         int count = 0;
+        Object result = null;
 
         if (self instanceof BufferedReader)
             br = (BufferedReader) self;
@@ -7498,12 +7494,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     break;
                 } else {
                     count++;
-                    callClosureForLine(closure, line, count);
+                    result = callClosureForLine(closure, line, count);
                 }
             }
             Reader temp = self;
             self = null;
             temp.close();
+            return result;
         } finally {
             closeReaderWithWarning(self);
             closeReaderWithWarning(br);
@@ -7518,10 +7515,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param sep     a String separator
      * @param closure a closure
      * @throws IOException if an IOException occurs.
+     * @return the last value returned by the closure
      * @see #splitEachLine(Reader,String,Closure)
      */
-    public static void splitEachLine(File self, String sep, Closure closure) throws IOException {
-        splitEachLine(newReader(self), sep, closure);
+    public static Object splitEachLine(File self, String sep, Closure closure) throws IOException {
+        return splitEachLine(newReader(self), sep, closure);
     }
 
     /**
@@ -7533,10 +7531,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param sep     a String separator
      * @param closure a closure
      * @throws IOException if an IOException occurs.
+     * @return the last value returned by the closure
      * @see String#split(String)
      */
-    public static void splitEachLine(Reader self, String sep, Closure closure) throws IOException {
+    public static Object splitEachLine(Reader self, String sep, Closure closure) throws IOException {
         BufferedReader br /* = null */;
+        Object result = null;
 
         if (self instanceof BufferedReader)
             br = (BufferedReader) self;
@@ -7550,12 +7550,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     break;
                 } else {
                     List vals = Arrays.asList(line.split(sep));
-                    closure.call(vals);
+                    result = closure.call(vals);
                 }
             }
             Reader temp = self;
             self = null;
             temp.close();
+            return result;
         } finally {
             closeReaderWithWarning(self);
             closeReaderWithWarning(br);
@@ -7569,27 +7570,25 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param stream  an InputStream
      * @param sep     a String separator
+     * @param charset opens the stream with a specified charset
      * @param closure a closure
      * @throws IOException if an IOException occurs.
+     * @return the last value returned by the closure
      * @see #splitEachLine(Reader,Closure)
      */
-    public static void splitEachLine(InputStream stream, String sep, Closure closure) throws IOException {
-        splitEachLine(new BufferedReader(new InputStreamReader(stream)), sep, closure);
+    public static Object splitEachLine(InputStream stream, String sep, String charset, Closure closure) throws IOException {
+        return splitEachLine(new BufferedReader(new InputStreamReader(stream)), sep, closure);
     }
 
     /**
-     * Iterates through the stream from the given URL line by line, splitting each line
-     * using the given separator.  The list of tokens for each line is then passed to
-     * the given closure.
+     * Gets the input stream for a URL.
      *
      * @param url     a URL to open and read
-     * @param sep     a String separator
-     * @param closure a closure
      * @throws IOException if an IOException occurs.
-     * @see #splitEachLine(InputStream,Closure)
+     * @return the resulting input stream
      */
-    public static void splitEachLine(URL url, String sep, Closure closure) throws IOException {
-        splitEachLine(url.openConnection().getInputStream(), sep, closure);
+    public static InputStream toInputStream(URL url) throws IOException {
+        return url.openConnection().getInputStream();
     }
 
     /**
@@ -7600,15 +7599,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    a String
      * @param sep     a String separator
      * @param closure a closure
+     * @return the last value returned by the closure
      * @see String#split(String)
      */
-    public static void splitEachLine(String self, String sep, Closure closure) {
+    public static Object splitEachLine(String self, String sep, Closure closure) {
         final List list = readLines(self);
+        Object result = null;
         for (int i = 0; i < list.size(); i++) {
             String line = (String) list.get(i);
             List vals = Arrays.asList(line.split(sep));
-            closure.call(vals);
+            result = closure.call(vals);
         }
+        return result;
     }
 
     /**
