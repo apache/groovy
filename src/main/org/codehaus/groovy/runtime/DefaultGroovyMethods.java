@@ -7581,17 +7581,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Gets the input stream for a URL.
-     *
-     * @param url     a URL to open and read
-     * @throws IOException if an IOException occurs.
-     * @return the resulting input stream
-     */
-    public static InputStream toInputStream(URL url) throws IOException {
-        return url.openConnection().getInputStream();
-    }
-
-    /**
      * Iterates through the given String line by line, splitting each line using
      * the given separator.  The list of tokens for each line is then passed to
      * the given closure.
@@ -7624,7 +7613,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (self instanceof BufferedReader) {
             BufferedReader br = (BufferedReader) self;
             return br.readLine();
-        } else if (self.markSupported()) {
+        }
+        if (self.markSupported()) {
             return readLineFromReaderWithMark(self);
         }
         return readLineFromReaderWithoutMark(self);
@@ -7745,7 +7735,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         throw new DeprecationException(
                 "readLine() on InputStream is no longer supported. " +
                         "Either use a Reader or encapsulate the InputStream" +
-                        "with a BufferedReader and an InputStreamReader."
+                        " with a BufferedReader and an InputStreamReader."
         );
     }
 
