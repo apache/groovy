@@ -7454,7 +7454,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Iterates through this stream, passing each line to the closure.  The
+     * Iterates through this stream reading with the provided charset, passing each line to the closure.  The
      * stream is closed after the closure returns.
      *
      * @param stream  a stream
@@ -7466,6 +7466,45 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Object eachLine(InputStream stream, String charset, Closure closure) throws IOException {
         return eachLine(new InputStreamReader(stream, charset), closure);
+    }
+
+    /**
+     * Iterates through this stream, passing each line to the closure.  The
+     * stream is closed after the closure returns.
+     *
+     * @param stream  a stream
+     * @param closure a closure
+     * @throws IOException if an IOException occurs.
+     * @return the last value returned by the closure
+     * @see #eachLine(Reader,Closure)
+     */
+    public static Object eachLine(InputStream stream, Closure closure) throws IOException {
+        return eachLine(new InputStreamReader(stream), closure);
+    }
+
+    /**
+     * Iterates through the lines read from the URL's associated input stream
+     *
+     * @param url     a URL to open and read
+     * @param closure a closure to apply on each line
+     * @return the last value returned by the closure
+     * @throws IOException if an IOException occurs.
+     */
+    public static Object eachLine(URL url, Closure closure) throws IOException {
+        return eachLine(url.openConnection().getInputStream(), closure);
+    }
+
+    /**
+     * Iterates through the lines read from the URL's associated input stream
+     *
+     * @param url     a URL to open and read
+     * @param charset opens the stream with a specified charset
+     * @param closure a closure to apply on each line
+     * @return the last value returned by the closure
+     * @throws IOException if an IOException occurs.
+     */
+    public static Object eachLine(URL url, String charset, Closure closure) throws IOException {
+        return eachLine(new InputStreamReader(url.openConnection().getInputStream(), charset), closure);
     }
 
     /**
@@ -7564,9 +7603,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Iterates through the given InputStream line by line, splitting each line using
-     * the given separator.  The list of tokens for each line is then passed to
-     * the given closure.
+     * Iterates through the given InputStream line by line using the specified
+     * encoding, splitting each line using the given separator.  The list of tokens
+     * for each line is then passed to the given closure.
      *
      * @param stream  an InputStream
      * @param sep     a String separator
@@ -7574,9 +7613,25 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @throws IOException if an IOException occurs.
      * @return the last value returned by the closure
-     * @see #splitEachLine(Reader,Closure)
+     * @see #splitEachLine(Reader,String,Closure)
      */
     public static Object splitEachLine(InputStream stream, String sep, String charset, Closure closure) throws IOException {
+        return splitEachLine(new BufferedReader(new InputStreamReader(stream, charset)), sep, closure);
+    }
+
+    /**
+     * Iterates through the given InputStream line by line, splitting each line using
+     * the given separator.  The list of tokens for each line is then passed to
+     * the given closure.
+     *
+     * @param stream  an InputStream
+     * @param sep     a String separator
+     * @param closure a closure
+     * @throws IOException if an IOException occurs.
+     * @return the last value returned by the closure
+     * @see #splitEachLine(Reader,String,Closure)
+     */
+    public static Object splitEachLine(InputStream stream, String sep, Closure closure) throws IOException {
         return splitEachLine(new BufferedReader(new InputStreamReader(stream)), sep, closure);
     }
 
@@ -8649,6 +8704,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Helper method to create a new BufferedReader for a URL and then
+     * passes it to the closure.  The reader is closed after the closure returns.
+     *
+     * @param url     a URL
+     * @param charset the charset used
+     * @param closure the closure to invoke with the reader
+     * @return the value returned by the closure
+     * @throws IOException if an IOException occurs.
+     */
+    public static Object withReader(URL url, String charset, Closure closure) throws IOException {
+        return withReader(url.openConnection().getInputStream(), charset, closure);
+    }
+
+    /**
      * Helper method to create a new BufferedReader for a stream and then
      * passes it into the closure.  The reader is closed after the closure returns.
      *
@@ -8659,6 +8728,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Object withReader(InputStream in, Closure closure) throws IOException {
         return withReader(new InputStreamReader(in), closure);
+    }
+
+    /**
+     * Helper method to create a new BufferedReader for a stream and then
+     * passes it into the closure.  The reader is closed after the closure returns.
+     *
+     * @param in      a stream
+     * @param charset the charset used
+     * @param closure the closure to invoke with the InputStream
+     * @return the value returned by the closure
+     * @throws IOException if an IOException occurs.
+     */
+    public static Object withReader(InputStream in, String charset, Closure closure) throws IOException {
+        return withReader(new InputStreamReader(in, charset), closure);
     }
 
     /**
