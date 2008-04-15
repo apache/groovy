@@ -8291,11 +8291,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create a buffered reader for this file, with using specified
+     * Create a buffered reader for this file, using the specified
      * charset as the encoding.
      *
      * @param file    a File
-     * @param charset the charset with which we want to write in the File
+     * @param charset the charset for this File
      * @return a BufferedReader
      * @throws FileNotFoundException        if the File was not found
      * @throws UnsupportedEncodingException if the encoding specified is not supported
@@ -8313,6 +8313,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static BufferedReader newReader(InputStream self) {
         return new BufferedReader(new InputStreamReader(self));
+    }
+
+    /**
+     * Creates a reader for this input stream, using the specified
+     * charset as the encoding.
+     *
+     * @param self an input stream
+     * @param charset the charset for this input stream
+     * @return a reader
+     * @throws UnsupportedEncodingException if the encoding specified is not supported
+     */
+    public static BufferedReader newReader(InputStream self, String charset) throws UnsupportedEncodingException {
+        return new BufferedReader(new InputStreamReader(self, charset));
     }
 
     /**
