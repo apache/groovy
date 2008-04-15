@@ -170,8 +170,6 @@ set CP=%CP%;.
 goto after_cp
 :empty_cp
 set CP=.
-if "x" == "x%CLASSPATH%" goto after_cp
-set STARTER_CLASSPATH=%STARTER_CLASSPATH%;%CLASSPATH%
 :after_cp
 
 set STARTER_MAIN_CLASS=org.codehaus.groovy.tools.GroovyStarter
