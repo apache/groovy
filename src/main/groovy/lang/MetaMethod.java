@@ -129,6 +129,10 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
         return (getModifiers() & Modifier.STATIC) != 0;
     }
 
+    public boolean isAbstract() {
+        return (getModifiers() & Modifier.ABSTRACT) != 0;
+    }
+
     public final boolean isPrivate() {
         return (getModifiers() & Modifier.PRIVATE) != 0;
     }

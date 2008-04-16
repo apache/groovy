@@ -757,7 +757,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         MetaClassHelper.unwrap(arguments);
 
         if (method == null)
-          method = tryListParamMetaMethod(sender, methodName, isCallToSuper, arguments);
+            method = tryListParamMetaMethod(sender, methodName, isCallToSuper, arguments);
 
         final boolean isClosure = object instanceof Closure;
         if (isClosure) {
@@ -1025,6 +1025,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         final Class[] classes = MetaClassHelper.convertToTypeArray(arguments);
         cacheEntry.params = classes;
         cacheEntry.method = (MetaMethod) chooseMethod(e.name, e.methodsForSuper, classes);
+        if (cacheEntry.method.isAbstract()) cacheEntry.method = null;
 
         e.cachedMethodForSuper = cacheEntry;
 
