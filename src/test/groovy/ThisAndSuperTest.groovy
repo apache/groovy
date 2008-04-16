@@ -99,6 +99,12 @@ class ThisAndSuperTest extends GroovyTestCase{
     void testDgm () {
       assertEquals A.empty(), '123'
     }
+
+    void testAbstractSuperMethodShouldBeTreatedLikeMissingMethod() {
+        shouldFail(MissingMethodException) {
+            new TestForSuperHelper6().theMethod()
+        }
+    }
 }
 
 class A {
