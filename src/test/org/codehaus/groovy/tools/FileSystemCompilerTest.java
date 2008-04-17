@@ -72,7 +72,7 @@ public class FileSystemCompilerTest extends GroovyTestCase {
         runTest("tree/NestedClosureBugTest.groovy");
         runTest("tree/SmallTreeTest.groovy");
         runTest("LittleClosureTest.groovy");
-        //runTest("JointJava.java", "JointGroovy.groovy");
+        runTest("JointJava.java", "JointGroovy.groovy");
     }
 
     protected void runTest(String... names) throws Exception {
