@@ -40,6 +40,7 @@ import org.codehaus.groovy.tools.Utilities;
 
 import antlr.CharScanner;
 import antlr.MismatchedTokenException;
+import antlr.MismatchedCharException;
 import antlr.NoViableAltException;
 import antlr.NoViableAltForCharException;
 
@@ -168,6 +169,9 @@ public class SourceUnit extends ProcessingUnit {
                     return isEofToken(((NoViableAltException) cause).token);
             	} else if (cause instanceof NoViableAltForCharException) {
             		char badChar = ((NoViableAltForCharException) cause).foundChar;
+            		return badChar == CharScanner.EOF_CHAR;
+            	} else if (cause instanceof MismatchedCharException) {
+            		char badChar = (char) ((MismatchedCharException) cause).foundChar;
             		return badChar == CharScanner.EOF_CHAR;
                 } else if (cause instanceof MismatchedTokenException) {
                     return isEofToken(((MismatchedTokenException) cause).token);
