@@ -184,7 +184,8 @@ class Groovysh
             if (parser.errorCollector.errorCount > 1 || !parser.failedWithUnexpectedEOF()) {
                 //
                 // HACK: Super insane hack... if we detect a syntax error, but the last line of the
-                //       buffer ends with a '{' or '[' then ignore... and pretend its okay, cause it might be...
+                //       buffer ends with a {, [, ''', """ or \ then ignore...
+                //       and pretend its okay, cause it might be...
                 //
                 //       This seems to get around the problem with things like:
                 //
@@ -195,6 +196,15 @@ class Groovysh
                     // ignore, this blows
                 }
                 else if (buffer[-1].trim().endsWith('[')) {
+                    // ignore, this blows
+                }
+                else if (buffer[-1].trim().endsWith("'''")) {
+                    // ignore, this blows
+                }
+                else if (buffer[-1].trim().endsWith('"""')) {
+                    // ignore, this blows
+                }
+                else if (buffer[-1].trim().endsWith('\\')) {
                     // ignore, this blows
                 }
                 else {
