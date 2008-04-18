@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.io.Reader;
 import antlr.InputBuffer;
 import antlr.LexerSharedInputState;
+import antlr.CommonToken;
 }
 
 /** JSR-241 Groovy Recognizer
@@ -30,6 +31,8 @@ import antlr.LexerSharedInputState;
  *              John Rose               rose00@mac.com
  *              Jeremy Rayner           groovy@ross-rayner.com
  *              Alex Popescu            the.mindstorm@gmail.com
+ *              Martin Kempf            mkempf@hsr.ch
+ *              Reto Kleeb              rkleeb@hsr.ch
  *
  * Version 1.00 December 9, 1997 -- initial release
  * Version 1.01 December 10, 1997
@@ -183,6 +186,11 @@ import antlr.LexerSharedInputState;
  *      back onto the new root (1.22.4) - Jeremy Rayner (Jan 2005)
  *    o for a map of the task see...
  *      http://groovy.javanicus.com/java-g.png
+ * 
+ * Version 1.22.4.g.2
+ *    o mkempf, rkleeb, Dec 2007
+ *    o fixed various rules so that they call the correct Create Method
+ *      to make sure that the line information are correct
  *
  * This grammar is in the PUBLIC DOMAIN
  */
@@ -273,6 +281,16 @@ tokens {
             // but it bulks up the AST too much for production code.
         }
         return t;
+    }
+    
+    /** 
+    *   Clones the token
+    */
+    public Token cloneToken(Token t) {
+        CommonToken clone = new CommonToken(t.getType(),t.getText());
+        clone.setLine(t.getLine());
+        clone.setColumn(t.getColumn());
+        return clone;
     }
 
 
@@ -421,8 +439,12 @@ packageDefinition
 // Import statement: import followed by a package or class name
 importStatement
         //TODO? options {defaultErrorHandler = true;}
-        { boolean isStatic = false; }
-    :   i:"import"^ {#i.setType(IMPORT);} ( "static"! {#i.setType(STATIC_IMPORT);} )? identifierStar
+        { Token first = LT(1); boolean isStatic = false; }
+    :   "import"! ( "static"! {isStatic=true;} )? is:identifierStar!
+        {if (isStatic) 
+            #importStatement = #(create(STATIC_IMPORT,"static_import",first,LT(1)),is);
+         else
+            #importStatement = #(create(IMPORT,"import",first,LT(1)),is);}
     ;
 
 // TODO REMOVE
@@ -908,7 +930,11 @@ superClassClause!
 
 // Definition of a Java class
 classDefinition![AST modifiers]
-{Token first = LT(1);AST prevCurrentClass = currentClass; }
+{Token first = cloneToken(LT(1));AST prevCurrentClass = currentClass; 
+if (modifiers != null) {
+     first.setLine(modifiers.getLine());
+     first.setColumn(modifiers.getColumn());
+}}
     :   "class" IDENT nls!
        { currentClass = #IDENT; }
         // it _might_ have type paramaters
@@ -927,7 +953,11 @@ classDefinition![AST modifiers]
 //TODO - where has superClassClause! production gone???
 
 // Definition of a Java Interface
-interfaceDefinition![AST modifiers]  {Token first = LT(1);}
+interfaceDefinition![AST modifiers]  {Token first = cloneToken(LT(1));
+                                      if (modifiers != null) {
+                                          first.setLine(modifiers.getLine());
+                                          first.setColumn(modifiers.getColumn());
+                                      }}
     :   "interface" IDENT nls!
         // it _might_ have type paramaters
         (tp:typeParameters)?
@@ -939,7 +969,11 @@ interfaceDefinition![AST modifiers]  {Token first = LT(1);}
                                   modifiers,IDENT,tp,ie,ib);}
     ;
 
-enumDefinition![AST modifiers]  {Token first = LT(1); AST prevCurrentClass = currentClass;}
+enumDefinition![AST modifiers]  {Token first = cloneToken(LT(1)); AST prevCurrentClass = currentClass;
+                                 if (modifiers != null) {
+                                     first.setLine(modifiers.getLine());
+                                     first.setColumn(modifiers.getColumn());
+                                 }}
     :   "enum" IDENT
             { currentClass = #IDENT; }
         nls!
@@ -953,7 +987,11 @@ enumDefinition![AST modifiers]  {Token first = LT(1); AST prevCurrentClass = cur
         { currentClass = prevCurrentClass; }
     ;
 
-annotationDefinition![AST modifiers]  {Token first = LT(1);}
+annotationDefinition![AST modifiers]  {Token first = cloneToken(LT(1));
+                                      if (modifiers != null) {
+                                          first.setLine(modifiers.getLine());
+                                          first.setColumn(modifiers.getColumn());
+                                      }}
     :   AT "interface" IDENT
         // now parse the body of the annotation
         ab:annotationBlock
@@ -1218,14 +1256,18 @@ interfaceField!
         )
     ;
 
-constructorBody
-    :   lc:LCURLY^ nls!         {#lc.setType(SLIST);}
-        (   (explicitConstructorInvocation) =>   // Java compatibility hack
-                explicitConstructorInvocation (sep! blockBody[sepToken])?
-            |   blockBody[EOF]
-        )
-        RCURLY!
-;
+constructorBody  {Token first = LT(1);}
+     :   LCURLY! nls!         
+         (   (explicitConstructorInvocation) =>   // Java compatibility hack
+                 eci:explicitConstructorInvocation! (sep! bb1:blockBody[sepToken]!)?
+             |   bb2:blockBody[EOF]!
+         )
+         RCURLY!
+         {if (#eci != null) 
+              #constructorBody = #(create(SLIST,"{",first,LT(1)),eci,bb1);
+          else
+              #constructorBody = #(create(SLIST,"{",first,LT(1)),bb2);}
+     ;
 
 
 /** Catch obvious constructor calls, but not the expr.super(...) calls */
@@ -1238,13 +1280,14 @@ explicitConstructorInvocation
         )
     ;
 
-listOfVariables[AST mods, AST t]
+listOfVariables[AST mods, AST t, Token first]
     :
         variableDeclarator[getASTFactory().dupTree(mods),
-                           getASTFactory().dupTree(t)]
+                           getASTFactory().dupTree(t),first]
         (   COMMA! nls!
+            {first = LT(1);}
             variableDeclarator[getASTFactory().dupTree(mods),
-                               getASTFactory().dupTree(t)]
+                               getASTFactory().dupTree(t),first]
         )*
     ;
 
@@ -1256,9 +1299,16 @@ listOfVariables[AST mods, AST t]
   * Otherwise, the variable type defaults to 'any'.
   * DECIDE:  Method return types default to the type of the method body, as an expression.
   */
-variableDefinitions[AST mods, AST t]  {Token first = LT(1);}
+variableDefinitions[AST mods, AST t]  {Token first = cloneToken(LT(1));
+                       if (mods != null) {
+				           first.setLine(mods.getLine());
+					   first.setColumn(mods.getColumn());
+				       } else if (t != null) {
+				           first.setLine(t.getLine());
+				           first.setColumn(t.getColumn());
+				       }}         
     :
-        listOfVariables[mods,t]
+        listOfVariables[mods,t,first]
     |
         // The parser allows a method definition anywhere a variable definition is accepted.
 
@@ -1293,7 +1343,11 @@ variableDefinitions[AST mods, AST t]  {Token first = LT(1);}
 /** I've split out constructors separately; we could maybe integrate back into variableDefinitions
  *  later on if we maybe simplified 'def' to be a type declaration?
  */
-constructorDefinition[AST mods]  {Token first = LT(1);}
+constructorDefinition[AST mods]  {Token first = cloneToken(LT(1));
+                                  if (mods != null) {
+                                           first.setLine(mods.getLine());
+                                           first.setColumn(mods.getColumn());
+                                  }}
     :
         id:IDENT
 
@@ -1320,7 +1374,7 @@ constructorDefinition[AST mods]  {Token first = LT(1);}
  *  or a local variable in a method
  *  It can also include possible initialization.
  */
-variableDeclarator![AST mods, AST t]  {Token first = LT(1);}
+variableDeclarator![AST mods, AST t,Token first]  
     :
         id:variableName
         /*OBS*d:declaratorBrackets[t]*/
@@ -1524,11 +1578,13 @@ compoundStatement
     ;
 
 /** An open block is not allowed to have closure arguments. */
-openBlock
-    :   lc:LCURLY^ nls!     {#lc.setType(SLIST);}
+openBlock  {Token first = LT(1);}
+    :   LCURLY! nls! 
         // AST type of SLIST means "never gonna be a closure"
-        blockBody[EOF]
+        bb:blockBody[EOF]!
         RCURLY!
+        {#openBlock = #(create(SLIST,"{",first,LT(1)),bb);}
+        
     ;
 
 /** A block body is a parade of zero or more statements or expressions. */
@@ -1541,11 +1597,12 @@ blockBody[int prevToken]
  *  A block inside an expression or after a method call is always assumed to be a closure.
  *  Only labeled, unparameterized blocks which occur directly as substatements are kept open.
  */
-closableBlock
-    :   lc:LCURLY^ nls!     {#lc.setType(CLOSABLE_BLOCK);}
-        closableBlockParamsOpt[true]
-        blockBody[EOF]
+closableBlock  {Token first = LT(1);}
+    :   LCURLY! nls!
+        cbp:closableBlockParamsOpt[true]!
+        bb:blockBody[EOF]!
         RCURLY!
+        {#closableBlock = #(create(CLOSABLE_BLOCK,"{",first,LT(1)),cbp,bb);}
     ;
 
 /** A block known to be a closure, but which omits its arguments, is given this placeholder.
@@ -1561,14 +1618,14 @@ implicitParameters  {Token first = LT(1);}
  *  Compare this to a block which is appended to a method call,
  *  which is given closure arguments, even if they are not explicit in the code.
  */
-openOrClosableBlock
-    :   lc:LCURLY^ nls!
-        cp:closableBlockParamsOpt[false]
-        {   if (#cp == null)    #lc.setType(SLIST);
-            else                #lc.setType(CLOSABLE_BLOCK);
-        }
-        blockBody[EOF]
+openOrClosableBlock  {Token first = LT(1);}
+    :   LCURLY! nls!
+        cp:closableBlockParamsOpt[false]!
+        bb:blockBody[EOF]!
         RCURLY!
+        {   if (#cp == null)    #openOrClosableBlock = #(create(SLIST,"{",first,LT(1)),bb);
+	    else                #openOrClosableBlock = #(create(CLOSABLE_BLOCK,"{",first,LT(1)),cp,bb);
+        }
     ;
 
 /** A statement is an element of a block.
@@ -1576,7 +1633,7 @@ openOrClosableBlock
  *  and expressions.
  */
 statement[int prevToken]
-{boolean sce=false;}
+{boolean sce=false; Token first = LT(1); AST casesGroup_AST = null;}
     // prevToken is NLS if previous statement is separated only by a newline
 
     :   (genericMethodStart)=>
@@ -1604,13 +1661,14 @@ statement[int prevToken]
     // assignment statement, or any other expression evaluated for
     // side-effects.
     // The prevToken is used to check for dumb expressions like +1.
-    |    expressionStatement[prevToken]
+    |    es:expressionStatement[prevToken]
+    	//{#statement = #(create(EXPR,"EXPR",first,LT(1)),es);}
 
     // class definition
     |    m:modifiersOpt! typeDefinitionInternal[#m]
 
     // If-else statement
-    |   "if"^ LPAREN! assignmentLessExpression RPAREN! nlsWarn! compatibleBodyStatement
+    |   "if"! LPAREN! ale:assignmentLessExpression! RPAREN! nlsWarn! ifCbs:compatibleBodyStatement!
         (
             // CONFLICT: the old "dangling-else" problem...
             //           ANTLR generates proper code matching
@@ -1621,15 +1679,22 @@ statement[int prevToken]
         :   // lookahead to check if we're entering an 'else' clause
             ( (sep!)? "else"! )=>
             (sep!)?  // allow SEMI here for compatibility with Java
-            "else"! nlsWarn! compatibleBodyStatement
+            "else"! nlsWarn! elseCbs:compatibleBodyStatement!
         )?
+        {#statement = #(create(LITERAL_if,"if",first,LT(1)),ale,ifCbs,elseCbs);}
 
     // For statement
     |   forStatement
 
     // While statement
-    |   "while"^ LPAREN! sce=strictContextExpression[false] RPAREN! nlsWarn!
-        (SEMI | compatibleBodyStatement)
+    |   "while"! LPAREN! sce=while_sce:strictContextExpression[false]! RPAREN! nlsWarn!
+        (s:SEMI! | while_cbs:compatibleBodyStatement!)
+    	{
+    	    if (#s != null) 
+    	        #statement = #(create(LITERAL_while,"Literal_while",first,LT(1)),while_sce,s);
+    	    else
+    	        #statement = #(create(LITERAL_while,"Literal_while",first,LT(1)),while_sce,while_cbs);
+    	}
 
     /*OBS* no do-while statement in Groovy (too ambiguous)
     // do-while statement
@@ -1640,16 +1705,19 @@ statement[int prevToken]
     |   importStatement
 
     // switch/case statement
-    |   "switch"^ LPAREN! sce=strictContextExpression[false] RPAREN! nlsWarn! LCURLY! nls!
-        ( casesGroup )*
+    |   "switch"! LPAREN! sce=switchSce:strictContextExpression[false]! RPAREN! nlsWarn! LCURLY! nls!
+        ( cg:casesGroup! 
+          //expand the list of nodes for each catch statement
+              {casesGroup_AST = #(null,casesGroup_AST,cg);})*
         RCURLY!
+        {#statement = #(create(LITERAL_switch,"switch",first,LT(1)),switchSce,casesGroup_AST);}
 
     // exception try-catch block
     |   tryBlock
 
     // synchronize a statement
-    |   "synchronized"^ LPAREN! sce=strictContextExpression[false] RPAREN! nlsWarn! compoundStatement
-
+    |   "synchronized"! LPAREN! sce=synch_sce:strictContextExpression[false]! RPAREN! nlsWarn! synch_cs:compoundStatement!
+    	{#statement = #(create(LITERAL_synchronized,"synchronized",first,LT(1)),synch_sce,synch_cs);}
 
     /*OBS*
     // empty statement
@@ -1659,20 +1727,33 @@ statement[int prevToken]
     |   branchStatement
     ;
 
-forStatement
-    :   f:"for"^
+forStatement {Token first = LT(1);}
+    :   "for"!
         LPAREN!
-        (   (SEMI |(strictContextExpression[true] SEMI))=>closureList
+        (   (SEMI |(strictContextExpression[true] SEMI))=>cl:closureList!
             // *OBS*
             // There's no need at all for squeezing in the new Java 5 "for"
             // syntax, since Groovy's is a suitable alternative.
             // |   (parameterDeclaration COLON)=> forEachClause
             // *OBS*
         |   // the coast is clear; it's a modern Groovy for statement
-            forInClause
+            fic:forInClause!
         )
         RPAREN! nls!
-        (SEMI | compatibleBodyStatement)                          // statement to loop over
+        (s:SEMI! | forCbs:compatibleBodyStatement!)                                  // statement to loop over
+        { if (#cl != null) {
+        	if (#s != null) 
+        	    #forStatement = #(create(LITERAL_for,"for",first,LT(1)),cl,s);
+        	else
+        	    #forStatement = #(create(LITERAL_for,"for",first,LT(1)),cl,forCbs);
+          } else {
+          	if (#s != null) 
+          	    #forStatement = #(create(LITERAL_for,"for",first,LT(1)),fic,s);
+          	else
+          	    #forStatement = #(create(LITERAL_for,"for",first,LT(1)),fic,forCbs);
+          }
+        }
+        
     ;
 
 closureList
@@ -1735,19 +1816,27 @@ compatibleBodyStatement
  *  Example:  println (x || (return));  println assert x, "won't print a false value!"
  *  If an optional expression is missing, its value is void (this coerces to null when a value is required).
  */
-branchStatement
+branchStatement {Token first = LT(1);}
     :
     // Return an expression
-        "return"^
-        ( expression[0] )?
+        "return"!
+        ( returnE:expression[0]! )?
+        {#branchStatement = #(create(LITERAL_return,"return",first,LT(1)),returnE);}
+        
 
     // break:  get out of a loop, or switch, or method call
     // continue:  do next iteration of a loop, or leave a closure
-    |   ("break"^ | "continue"^)
-        ( IDENT )?
+    |   "break"!
+        ( breakI:IDENT! )?
+        {#branchStatement = #(create(LITERAL_break,"break",first,LT(1)),breakI);}
+    
+    | "continue"!
+    	( contI:IDENT! )?
+    	{#branchStatement = #(create(LITERAL_continue,"continue",first,LT(1)),contI);}
 
     // throw an exception
-    |   "throw"^ expression[0]
+    |   "throw"! throwE:expression[0]!
+        {#branchStatement = #(create(LITERAL_throw,"throw",first,LT(1)),throwE);}
 
 
     // TODO - decide on definitive 'assert' statement in groovy (1.4 and|or groovy)
@@ -1756,13 +1845,14 @@ branchStatement
     //      |   "assert"^ expression[0] ( COLON! expression[0] )?
 
     // groovy assertion...
-    |   "assert"^ assignmentLessExpression
+    |   "assert"! assertAle: assignmentLessExpression!
         (   options {greedy=true;} :
             (   COMMA!  // TODO:  gratuitous change caused failures
             |   COLON!  // standard Java syntax, but looks funny in Groovy
             )
-            expression[0]
+            assertE:expression[0]!
         )?
+        {#branchStatement = #(create(LITERAL_assert,"assert",first,LT(1)),assertAle,assertE);}
     ;
 
 /** A labeled statement, consisting of a vanilla identifier followed by a colon. */
@@ -1908,19 +1998,26 @@ forIter  {Token first = LT(1);}
     ;
 
 // an exception handler try/catch block
-tryBlock
-    :   "try"^ nlsWarn! compoundStatement
-            ( options {greedy=true;} :  nls! handler)*
-            ( options {greedy=true;} :  nls! finallyClause)?
+tryBlock {Token first = LT(1);List catchNodes = new ArrayList();AST newHandler_AST = null;}
+    :   "try"! nlsWarn! tryCs:compoundStatement!
+            ( options {greedy=true;} :  nls! h:handler!
+            
+              //expand the list of nodes for each catch statement
+              {newHandler_AST = #(null,newHandler_AST,h);}   )*
+            ( options {greedy=true;} :  nls! fc:finallyClause!)?
+        
+        {#tryBlock = #(create(LITERAL_try,"try",first,LT(1)),tryCs,newHandler_AST,fc);}
     ;
 
-finallyClause
-    :   "finally"^ nlsWarn! compoundStatement
+finallyClause {Token first = LT(1);}
+    :   "finally"! nlsWarn! finallyCs:compoundStatement!
+        {#finallyClause = #(create(LITERAL_finally,"finally",first,LT(1)),finallyCs);}
     ;
 
 // an exception handler
-handler
-    :   "catch"^ LPAREN! parameterDeclaration RPAREN! nlsWarn! compoundStatement
+handler {Token first = LT(1);}
+    :   "catch"! LPAREN! pd:parameterDeclaration! RPAREN! nlsWarn! handlerCs:compoundStatement!
+        {#handler = #(create(LITERAL_catch,"catch",first,LT(1)),pd,handlerCs);}
     ;
 
 /** A member name (x.y) or element name (x[y]) can serve as a command name,
@@ -2008,8 +2105,8 @@ expression[int lc_stmt]
     |   assignmentExpression[lc_stmt]
     ;
 
-multipleAssignment[int lc_stmt]
-    :   LBRACK^ nls! listOfVariables[null,null] RBRACK!
+multipleAssignment[int lc_stmt] {Token first = cloneToken(LT(1));}
+    :   LBRACK^ nls! listOfVariables[null,null,first] RBRACK!
         ASSIGN^ nls!
         assignmentExpression[lc_stmt]
     ;
