@@ -212,7 +212,7 @@ $Date$
     <target name="compileTest" depends="compileMain" unless="_skipTests_"
             description="Compile the Java and Groovy code in the test source.">
         <mkdir dir="${testClassesDirectory}"/>
-        <antforked target="realCompileTest"/>
+        <antforked target="realCompileTest" maxmemory="${groovycTest_mx}"/>
     </target>
 
     <property name="vm5GroovySourceFiles" value="gls/**/vm5/*Test.groovy,org/codehaus/groovy/**/vm5/**/*.groovy,groovy/**/vm5/**/*.groovy"/>
@@ -253,7 +253,7 @@ $Date$
             description="Compile the Java and Groovy code in the examples source directory.">
         <mkdir dir="${examplesClassesDirectory}"/>
         <echo message="Compiling example code."/>
-        <antforked target="realCompileExamples"/>
+        <antforked target="realCompileExamples" maxmemory="${groovycExamples_mx}"/>
     </target>
 
     <target name="realCompileExamples">
