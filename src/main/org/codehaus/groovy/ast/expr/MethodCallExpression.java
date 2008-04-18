@@ -67,6 +67,7 @@ public class MethodCallExpression extends Expression {
             new MethodCallExpression(transformer.transform(objectExpression), transformer.transform(method), transformer.transform(arguments));
         answer.setSafe(safe);
         answer.setSpreadSafe(spreadSafe);
+        answer.setImplicitThis(implicitThis);
         answer.setSourcePosition(this);
         return answer;
     }
