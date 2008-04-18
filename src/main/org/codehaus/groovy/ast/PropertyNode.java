@@ -116,4 +116,8 @@ public class PropertyNode extends AnnotatedNode implements Opcodes,Variable {
     public void setClosureSharedVariable(boolean inClosure) {
         closureShare = inClosure;        
     }
+
+	public ClassNode getOriginType() {
+		return getType();
+	}
 }
