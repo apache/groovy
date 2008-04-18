@@ -2276,7 +2276,8 @@ keywordPropertyNames
  *  and the member selection is done only at runtime.  This forces a statically unchecked member access.
  */
 dynamicMemberName  {Token first = LT(1);}
-    :   (   parenthesizedExpression
+    :   (   pe:parenthesizedExpression!
+            {#dynamicMemberName = #(create(EXPR,"EXPR",first,LT(1)),pe);}
         |   stringConstructorExpression
         )
         { #dynamicMemberName = #(create(DYNAMIC_MEMBER, "DYNAMIC_MEMBER",first,LT(1)), #dynamicMemberName); }
@@ -2554,7 +2555,7 @@ postfixExpression[int lc_stmt]
 // TODO:  Move pathExpression to this point in the file.
 
 // the basic element of an expression
-primaryExpression
+primaryExpression {Token first = LT(1);}
     :   IDENT
         /*OBS*  //keywords can follow dot in Groovy; no need for this special case
         ( options {greedy=true;} : DOT^ "class" )?
@@ -2563,7 +2564,8 @@ primaryExpression
     |   newExpression
     |   "this"
     |   "super"
-    |   parenthesizedExpression             // (general stuff...)
+    |   pe:parenthesizedExpression!             // (general stuff...)
+        {#primaryExpression = #(create(EXPR,"EXPR",first,LT(1)),pe);}
     |   closableBlockConstructorExpression
     |   listOrMapConstructorExpression
     |   stringConstructorExpression         // "foo $bar baz"; presented as multiple tokens
