@@ -11,9 +11,11 @@ class ClosureListenerTest extends GroovyTestCase {
 
     static {
         try {
-            new javax.swing.JFrame("testing")
+            Class.forName "javax.swing.JButton"
             headless = false
-        } catch (java.awt.HeadlessException he) {
+        } catch (java.awt.HeadlessException e) {
+            headless = true
+        } catch (java.lang.UnsatisfiedLinkError e) {
             headless = true
         }
     }
