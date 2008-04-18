@@ -1,0 +1,173 @@
+###FieldNode:::
+public class Test {
+	public attribute = 6, second = 9
+	String prop = "property"
+}
+:::[FieldNode,(2:2),(2:22)][ConstantExpression,(2:21),(2:24)];
+[FieldNode,(2:24),(2:34)][ConstantExpression,(2:33),(3:2)];
+[FieldNode,(3:2),(3:26)][ConstantExpression,(3:16),(0:0)]
+###ifelse:::
+if (expression) {
+	
+} else {
+	
+}
+:::[IfStatement,(1:1),(5:2)];[BlockStatement,(1:17),(3:3)];
+[BlockStatement,(3:8),(5:2)]
+###ifwithoutElse:::
+if (expression) {
+	
+	
+}
+:::[IfStatement,(1:1),(4:2)];[BlockStatement,(1:17),(4:2)]
+###ifElseif:::
+if (expression) {
+
+	
+} else if (expression2) {
+
+
+}
+:::[IfStatement,(1:1),(7:2)];[BlockStatement,(1:17),(4:3)];
+[IfStatement,(4:8),(7:2)];[BlockStatement,(4:25),(7:2)]
+###ifNested:::
+if (expression) {
+
+	if (expression2) {
+		
+	}
+}
+:::[IfStatement,(1:1),(6:2)];[BlockStatement,(1:17),(6:2)];
+[IfStatement,(3:2),(5:3)];[BlockStatement,(3:19),(5:3)]
+###whileLoop:::
+while (expression) {
+
+
+}
+:::[WhileStatement,(1:1),(4:2)];[BlockStatement,(1:20),(4:2)]
+###forLoopClosureList:::
+for (int i = 0; i < 10; i++) {
+	
+	
+}
+:::[ForStatement,(1:1),(4:2)];[BlockStatement,(1:30),(4:2)]
+###forLoopInClause:::
+for (a in (1..42)) {
+
+
+}
+:::[ForStatement,(1:1),(4:2)];[BlockStatement,(1:20),(4:2)]
+###tryCatch:::
+try {
+	
+} catch(e) {
+	
+	
+}
+:::[TryCatchStatement,(1:1),(6:2)][BlockStatement,(1:5),(3:3)];
+[CatchStatement,(3:3),(6:2)][BlockStatement,(3:12),(6:2)]
+###tryFinally:::
+try {
+
+	
+} finally {
+
+}
+:::[TryCatchStatement,(1:1),(6:2)][BlockStatement,(1:5),(4:3)];
+[BlockStatement,(4:3),(6:2)][BlockStatement,(4:11),(6:2)]
+###tryCatchFinally():::
+try {
+
+} catch(e) {
+
+} finally {
+
+}
+:::[TryCatchStatement,(1:1),(7:2)][BlockStatement,(1:5),(3:3)];
+[CatchStatement,(3:3),(5:3)][BlockStatement,(3:12),(5:3)];
+[BlockStatement,(5:3),(7:2)][BlockStatement,(5:11),(7:2)]
+###tryMultiCatchFinally:::
+try {
+
+} catch(e) {
+	
+} catch(e) {
+	
+} finally {
+	
+}
+:::[TryCatchStatement,(1:1),(9:2)][BlockStatement,(1:5),(3:3)];
+[CatchStatement,(3:3),(5:3)][BlockStatement,(3:12),(5:3)];
+[CatchStatement,(5:3),(7:3)][BlockStatement,(5:12),(7:3)];
+[BlockStatement,(7:3),(9:2)][BlockStatement,(7:11),(9:2)]
+###switchCase:::
+switch (expression) {
+	case 1 : log = 1
+	case 2 : log = 2
+}
+:::[SwitchStatement,(1:1),(4:2)];
+[CaseStatement,(2:2),(2:7)];[BlockStatement,(2:11),(3:2)];
+[CaseStatement,(3:2),(3:7)];[BlockStatement,(3:11),(4:1)]
+###switchCaseDefault:::
+switch (expression) {
+	case 1 : log = 1 ; break
+	case 2 : log = 2 ; break
+	default : log = 6
+}
+:::[SwitchStatement,(1:1),(5:2)];
+[CaseStatement,(2:2),(2:7)];[BlockStatement,(2:11),(3:2)];[BreakStatement,(2:21),(2:26)];
+[CaseStatement,(3:2),(3:7)];[BlockStatement,(3:11),(4:2)];[BreakStatement,(3:21),(3:26)];
+[BlockStatement,(4:12),(5:1)]
+###synchronizedStatement:::
+synchronized (obj) {
+
+
+}
+:::[SynchronizedStatement,(1:1),(4:2)];[BlockStatement,(1:20),(4:2)]
+###breakStatement:::
+break label
+:::[BreakStatement,(1:1),(1:12)]
+###continueStatement:::
+continue label
+:::[ContinueStatement,(1:1),(1:15)]
+###assertStatement():::
+assert (expression)
+:::[AssertStatement,(1:1),(1:20)]
+###assertStatementAdv:::
+assert (expression) , "AssertTest"
+:::[AssertStatement,(1:1),(1:35)][BooleanExpression,(1:8),(1:21)];
+[VariableExpression,(1:8),(1:21)][ConstantExpression,(1:23),(0:0)]
+###throwStatement:::
+throw new Exception("exception")
+:::[ThrowStatement,(1:1),(1:33)][ConstructorCallExpression,(1:7),(1:11)];
+[ArgumentListExpression,(1:21),(1:32)][ConstantExpression,(1:21),(1:32)]
+###nonBracedStatementIf:::
+if (expression) 
+	while (expression2) 
+		i++
+:::[IfStatement,(1:1),(3:6)];[WhileStatement,(2:2),(3:6)]	
+###nonBracedStatementWhile:::
+while (expression) 
+	if (expression2) 
+		i++
+:::[WhileStatement,(1:1),(3:6)];[IfStatement,(2:2),(3:6)]
+###nonBracedStatementfor:::
+for (def i = 1; i < 42; i++) 
+	if (expression) 
+		k++
+:::[ForStatement,(1:1),(3:6)];[IfStatement,(2:2),(3:6)]	
+###oneLineMultiDef:::
+Integer i = 0, j = 42, k = 6
+:::[ExpressionStatement,(1:1),(1:14)][DeclarationExpression,(1:1),(1:14)];
+[VariableExpression,(1:9),(1:11)][ConstantExpression,(1:13),(1:16)];
+[ExpressionStatement,(1:16),(1:22)][DeclarationExpression,(1:16),(1:22)];
+[VariableExpression,(1:16),(1:18)][ConstantExpression,(1:20),(1:24)];
+[ExpressionStatement,(1:24),(1:29)][DeclarationExpression,(1:24),(1:29)];
+[VariableExpression,(1:24),(1:26)][ConstantExpression,(1:28),(0:0)]
+###oneLineDef:::
+Integer onLine = 42
+def ii = 17
+:::[ExpressionStatement,(1:1),(1:20)][DeclarationExpression,(1:1),(1:20)];
+[VariableExpression,(1:9),(1:16)][ConstantExpression,(1:18),(2:1)];
+[ExpressionStatement,(2:1),(2:12)][DeclarationExpression,(2:1),(2:12)];
+[VariableExpression,(2:5),(2:8)][ConstantExpression,(2:10),(0:0)]
