@@ -4,61 +4,6 @@ import org.codehaus.groovy.reflection.ReflectionCache
 
 class MixinTest extends GroovyTestCase {
 
-    void testMe () {
-        new GroovyShell ().evaluate """
-
-class CategoryToUse {
-    static def asText (Object self) {
-        "under category: " + self
-    }
-}
-
-@Mixin(CategoryToUse)
-class ClassToExtend {
-    String toString () {
-        "object of ClassToExtend"
-    }
-}
-
-        GroovyTestCase.assertEquals("under category: object of ClassToExtend", new ClassToExtend().asText ())
-
-        boolean failed = false;
-        try {
-            new Object().asText ()
-        }
-        catch (MissingMethodException e) {
-          failed = true;
-        }
-        assert failed
-
-        """
-    }
-
-    void testMulti () {
-        new GroovyShell ().evaluate """
-
-class CategoryToUse1 {
-    static def asText (Object self) {
-        "under category: " + self.asBiggerText ()
-    }
-}
-
-class CategoryToUse2 {
-    static def asBiggerText (Object self) {
-        "under BIG category: " + self
-    }
-}
-
-@Mixin([CategoryToUse1, CategoryToUse2])
-class ClassToExtend {
-    String toString () {
-        "object of ClassToExtend"
-    }
-}
-
-        GroovyTestCase.assertEquals("under category: under BIG category: object of ClassToExtend", new ClassToExtend().asText ())
-        """
-    }
     protected void setUp() {
     }
 

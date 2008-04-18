@@ -76,7 +76,7 @@ public class LineColumnChecker extends ASTTest {
 		//comment out next line to view the output of the visitor
 		//System.out.println(name + ": " + was);
 		for (int i = 0; i < expected.length; i++) {
-			assertTrue(expected[i] + " not found in" + was, was.contains(expected[i].trim()));
+			assertTrue(expected[i] + " not found in" + was, was.indexOf(expected[i].trim()) != -1);
 		}
 	}
 }
@@ -89,7 +89,7 @@ public class LineColumnChecker extends ASTTest {
  */
 class LineCheckVisitor extends ClassCodeVisitorSupport {
 	
-	private StringBuilder astString = new StringBuilder();
+	private StringBuffer astString = new StringBuffer();
 	
 	public String getASTString() {
 		return astString.toString();

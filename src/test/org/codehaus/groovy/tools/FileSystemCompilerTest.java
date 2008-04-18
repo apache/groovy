@@ -76,14 +76,15 @@ public class FileSystemCompilerTest extends GroovyTestCase {
     }
 
     protected void runTest(String[] names) throws Exception {
-        List<File> files = new ArrayList<File>();
-        for (String name : names) {
+        List files = new ArrayList();
+        for (int i = 0; i < names.length; i++) {
+            String name = names[i];
             File file = new File("src/test/groovy/" + name);
             files.add(file);
             assertTrue("Could not find source file: " + file, file.exists());
         }
 
-        compiler.compile(files.toArray(new File[names.length]));
+        compiler.compile((File[]) files.toArray(new File[names.length]));
     }
 
     protected void setUp() throws Exception {

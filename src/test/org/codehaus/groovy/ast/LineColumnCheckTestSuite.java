@@ -66,7 +66,7 @@ public class LineColumnCheckTestSuite extends TestSuite {
 
 	private static String getContent(Reader reader) {
 		int character;
-		StringBuilder content = new StringBuilder();
+		StringBuffer content = new StringBuffer();
 		try {
 			while ((character = reader.read()) != -1) {
 				content.append((char) character);

@@ -283,11 +283,10 @@ Not found: ${groovyJar14path}
 
     <target name="compileTestOnly" unless="_skipTests_">
         <mkdir dir="${testClassesDirectory}"/>
-        <antcall inheritall="true" target="-compileTest_vm4"/>
-        <antcall inheritall="true" target="-compileTest_vm5"/>
+        <antcall inheritall="true" target="-compileTest"/>
     </target>
 
-    <target name="-compileTest_vm4" depends="-initGroovyc_vm4" unless="groovy.build.vm5">
+    <target name="-compileTest_vm4" depends="-initGroovyc_vm4">
         <!-- compile Groovy test files excluding ones which we want to pick up from the file system -->
         <groovyc srcdir="${testSourceDirectory}"
                  destdir="${testClassesDirectory}"
@@ -304,10 +303,10 @@ Not found: ${groovyJar14path}
         </groovyc>
     </target>
 
-    <target name="-compileTest_vm5" depends="-initGroovyc" if="groovy.build.vm5">
+    <target name="-compileTest" depends="-initGroovyc,-compileTest_vm4" if="groovy.build.vm5">
         <groovyc srcdir="${testSourceDirectory}"
                  destdir="${testClassesDirectory}"
-                 excludes="${antGroovySourceFiles}"
+                 includes="${vm5GroovySourceFiles},${vm5JavaSourceFiles}"
                  fork="true"
                  memorymaximumsize="${groovycTest_mx}">
             <classpath>
