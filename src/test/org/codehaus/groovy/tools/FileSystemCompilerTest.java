@@ -67,15 +67,15 @@ public class FileSystemCompilerTest extends GroovyTestCase {
     final boolean dumpClass = true;
 
     public void testMethodCall() throws Exception {
-        runTest("ClosureMethodTest.groovy");
-        runTest("tree/VerboseTreeTest.groovy");
-        runTest("tree/NestedClosureBugTest.groovy");
-        runTest("tree/SmallTreeTest.groovy");
-        runTest("LittleClosureTest.groovy");
-        runTest("JointJava.java", "JointGroovy.groovy");
+        runTest(new String[] {"ClosureMethodTest.groovy"});
+        runTest(new String[] {"tree/VerboseTreeTest.groovy"});
+        runTest(new String[] {"tree/NestedClosureBugTest.groovy"});
+        runTest(new String[] {"tree/SmallTreeTest.groovy"});
+        runTest(new String[] {"LittleClosureTest.groovy"});
+        runTest(new String[] {"JointJava.java", "JointGroovy.groovy"});
     }
 
-    protected void runTest(String... names) throws Exception {
+    protected void runTest(String[] names) throws Exception {
         List<File> files = new ArrayList<File>();
         for (String name : names) {
             File file = new File("src/test/groovy/" + name);

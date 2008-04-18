@@ -171,7 +171,7 @@ $Date$
     </target>
 
     <target name="-stagedcompile-groovy" depends="-initGroovyc">
-        <groovyc srcdir="${mainSourceDirectory}" destdir="${mainClassesDirectory}" fork="true" memorymaximumsize="256m">
+        <groovyc srcdir="${mainSourceDirectory}" destdir="${mainClassesDirectory}" fork="true" memorymaximumsize="${groovycMain_mx}">
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
                 <path refid="compilePath"/>
@@ -294,8 +294,7 @@ Not found: ${groovyJar14path}
                  excludes="${antGroovySourceFiles},${vm5GroovySourceFiles},${vm5JavaSourceFiles}"
                  stacktrace="true"
                  fork="true"
-                 memorymaximumsize="512M">
-<!-- memorymaximumsize=128M does not work for me (blackdrag) on 64bit --> 
+                 memorymaximumsize="${groovycTest_mx}">
             <classpath>
                 <pathelement path="${testClassesDirectory}"/>
                 <path refid="groovyMainClasses"/>
@@ -310,8 +309,7 @@ Not found: ${groovyJar14path}
                  destdir="${testClassesDirectory}"
                  excludes="${antGroovySourceFiles}"
                  fork="true"
-                 memorymaximumsize="512m">
-<!-- memorymaximumsize=128M does not work for me (blackdrag) on 64bit --> 
+                 memorymaximumsize="${groovycTest_mx}">
             <classpath>
                 <pathelement path="${testClassesDirectory}"/>
                 <path refid="groovyMainClasses"/>
@@ -329,7 +327,7 @@ Not found: ${groovyJar14path}
         <groovyc srcdir="${examplesSourceDirectory}/webapps/groovlet-examples/WEB-INF/groovy"
                  destdir="${examplesClassesDirectory}"
                  fork="true"
-                 memorymaximumsize="192m">
+                 memorymaximumsize="${groovycExamples_mx}">
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
                 <path refid="compilePath"/>
@@ -352,7 +350,7 @@ Not found: ${groovyJar14path}
         <groovyc srcdir="${examplesSourceDirectory}"
                 destdir="${examplesClassesDirectory}"
                  fork="true"
-                 memorymaximumsize="96m"
+                 memorymaximumsize="${groovycExamples_mx}"
                  excludes="webapps/groovlet-examples/WEB-INF/groovy/**/*.groovy,org/codehaus/groovy/grails/compiler/injection/**/*.java">
             <classpath>
                 <pathelement path="${mainClassesDirectory}"/>
