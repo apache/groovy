@@ -103,4 +103,8 @@ public class Parameter extends AnnotatedNode implements Variable {
     public void setClosureSharedVariable(boolean inClosure) {
         closureShare = inClosure;        
     }
+
+	public ClassNode getOriginType() {
+		return getType();
+	}
 }

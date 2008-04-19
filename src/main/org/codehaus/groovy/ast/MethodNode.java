@@ -46,8 +46,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
         this.name = name;
         this.modifiers = modifiers;
         this.code = code;
-        this.returnType = returnType;
-        if (returnType==null) this.returnType = ClassHelper.OBJECT_TYPE; 
+        setReturnType(returnType); 
         VariableScope scope = new VariableScope();
         setVariableScope(scope);
         setParameters(parameters);
@@ -167,7 +166,9 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     }
 
     public void setReturnType(ClassNode returnType) {
+    	dynamicReturnType |= ClassHelper.DYNAMIC_TYPE==returnType;
         this.returnType = returnType;
+        if (returnType==null) this.returnType = ClassHelper.OBJECT_TYPE;
     }
 
     public ClassNode[] getExceptions() {
