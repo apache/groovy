@@ -36,6 +36,7 @@ public class VariableExpression extends Expression implements Variable {
     private boolean isDynamicTyped=false;
     private Variable accessedVariable;
     boolean closureShare=false;
+    private ClassNode originType;
 
     public Variable getAccessedVariable() {
         return accessedVariable;
@@ -47,6 +48,7 @@ public class VariableExpression extends Expression implements Variable {
 
     public VariableExpression(String variable, ClassNode type) {
         this.variable = variable;
+        originType = type;
         setType(ClassHelper.getWrapper(type));
     }
     
@@ -55,7 +57,7 @@ public class VariableExpression extends Expression implements Variable {
     }
     
     public VariableExpression(Variable variable) {
-        this(variable.getName(), variable.getType());
+        this(variable.getName(), variable.getOriginType());
         setAccessedVariable(variable);
     }
 
@@ -120,5 +122,9 @@ public class VariableExpression extends Expression implements Variable {
     public ClassNode getType() {
         if (accessedVariable!=null && accessedVariable!=this) return accessedVariable.getType();
         return super.getType();
+    }
+    
+    public ClassNode getOriginType() {
+    	return originType;
     }
 }
