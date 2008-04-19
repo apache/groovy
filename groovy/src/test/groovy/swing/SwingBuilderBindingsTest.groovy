@@ -22,22 +22,7 @@ import javax.swing.DefaultButtonModel
 import javax.swing.JFrame
 import javax.swing.text.PlainDocument
 
-public class SwingBuilderBindingsTest extends GroovyTestCase {
-
-    private Boolean isHeadless
-
-    private Boolean isHeadless() {
-        if (isHeadless != null)
-          return isHeadless;
-
-        try {
-            new JFrame("testing")
-            isHeadless = false
-        } catch (java.awt.HeadlessException he) {
-            isHeadless = true
-        }
-        return isHeadless
-    }
+public class SwingBuilderBindingsTest extends GroovySwingTestCase {
 
     public void testSliderValueBinding() {
         if (isHeadless()) return

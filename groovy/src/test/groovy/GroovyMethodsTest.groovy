@@ -28,7 +28,7 @@ import org.codehaus.groovy.runtime.typehandling.GroovyCastException
  * @author Joachim Baumann
  * @version $Revision$
  */
-class GroovyMethodsTest extends GroovyTestCase {
+class GroovyMethodsTest extends GroovySwingTestCase {
     void testCollect() {
         assert [2, 4, 6].collect {it * 2} == [4, 8, 12]
         def answer = [2, 4, 6].collect(new Vector()) {it * 2}
@@ -47,6 +47,8 @@ class GroovyMethodsTest extends GroovyTestCase {
     }
 
     void testAsCoercion() {
+        if (headless) return
+
         def d0 = new Dimension(100, 200)
         assert d0 == new Dimension(width: 100, height: 200)
         assert d0 == [100, 200] as Dimension

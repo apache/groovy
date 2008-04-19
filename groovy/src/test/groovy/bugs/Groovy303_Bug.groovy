@@ -9,18 +9,7 @@ import javax.swing.*
  * @author Andy Dwelly
  * @version $Revision$
  */
-class Groovy303_Bug extends GroovyTestCase {
-
-    private static boolean headless
-
-    static {
-        try {
-            new JFrame("testing")
-            headless = false
-        } catch (HeadlessException he) {
-            headless = true
-        }
-    }
+class Groovy303_Bug extends GroovySwingTestCase {
 
     void testBug() {
         if (headless) return

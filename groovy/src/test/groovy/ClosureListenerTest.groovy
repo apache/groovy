@@ -5,12 +5,11 @@ import javax.swing.JButton
 /**
  * @version $Revision$
  */
-class ClosureListenerTest extends GroovyTestCase {
-     
+class ClosureListenerTest extends GroovySwingTestCase {
+
     void testAddingAndRemovingAClosureListener() {
-        def value = System.getProperty('java.awt.headless')
-        println("Value of java.awt.headless = ${value}")
-        
+        if (isHeadless()) return
+
         def b = new JButton("foo")
         b.actionPerformed = { println("Found ${it}") }
 
@@ -24,7 +23,7 @@ class ClosureListenerTest extends GroovyTestCase {
         
         assert l.toString() != "null"
         
-        assert l.equals(b) == false
+        assert !l.equals(b)
         assert l.equals(l)
         
         assert l.hashCode() != 0
@@ -38,12 +37,15 @@ class ClosureListenerTest extends GroovyTestCase {
     }
     
     void testGettingAListenerProperty() {
+        if (headless) return
+
     	def b = new JButton("foo")
     	def foo = b.actionPerformed
     	assert foo == null
     }
     
     void testNonStandardListener() {
+        if (isHeadless()) return
         def myWhat = null
         def myWhere = null
 

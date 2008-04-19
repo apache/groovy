@@ -6,9 +6,11 @@ import javax.swing.JPanel
 /**
  * @version $Revision$
  */
-class PropertyBug extends GroovyTestCase {
+class PropertyBug extends GroovySwingTestCase {
      
     void testBug() {
+        if (isHeadless()) return
+
         def panel = new JPanel()
         def bean = new JButton()
         

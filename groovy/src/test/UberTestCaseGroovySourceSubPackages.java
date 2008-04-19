@@ -9,33 +9,39 @@
 import groovy.util.AllTestSuite;
 import junit.framework.Test;
 import junit.framework.TestCase;
+import junit.framework.TestSuite;
 
 public class UberTestCaseGroovySourceSubPackages extends TestCase {
+    private static final String EXCLUDES = "groovy/**/vm5/*Test.groovy";
+    private static final String BASE = "src/test";
     public static Test suite() {
-        return AllTestSuite.suite("src/test", "groovy/*/**/*Test.groovy", "groovy/**/vm5/*Test.groovy");
+        TestSuite suite = new TestSuite();
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/A*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/B*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/C*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/D*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/E*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/F*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/G*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/H*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/I*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/J*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/K*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/L*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/M*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/N*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/O*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/P*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/Q*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/R*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/S*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/T*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/U*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/V*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/W*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/X*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/Y*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/Z*Test.groovy", EXCLUDES));
+        return suite;
     }
-
-// no tests inside (should we have an AbstractGroovyTestCase???)
-//
-//        suite.addTestSuite(org.codehaus.groovy.classgen.DummyTestDerivation.class);
-//        suite.addTestSuite(org.codehaus.groovy.classgen.TestSupport.class);
-
-//  The following classes appear in target/test-classes but do not extend junit.framework.TestCase
-//
-//        suite.addTestSuite(org.codehaus.groovy.classgen.DerivedBean.class);
-//        suite.addTestSuite(org.codehaus.groovy.classgen.DummyReflector.class);
-//        suite.addTestSuite(org.codehaus.groovy.classgen.DumpClass.class);
-//        suite.addTestSuite(org.codehaus.groovy.classgen.DumpClass2.class);
-//        suite.addTestSuite(org.codehaus.groovy.classgen.DumpClass3.class);
-//        suite.addTestSuite(org.codehaus.groovy.classgen.DumpClass4.class);
-//        suite.addTestSuite(org.codehaus.groovy.classgen.DumpingClassLoader.class);
-//        suite.addTestSuite(org.codehaus.groovy.classgen.Main.class);
-//        suite.addTestSuite(org.codehaus.groovy.classgen.MyBean.class);
-//        suite.addTestSuite(org.codehaus.groovy.classgen.SimpleBean.class);
-//        suite.addTestSuite(org.codehaus.groovy.dummy.FooHandler.class);
-//        suite.addTestSuite(org.codehaus.groovy.runtime.DummyBean.class);
-//        suite.addTestSuite(org.codehaus.groovy.runtime.MockGroovyObject.class);
-//        suite.addTestSuite(org.codehaus.groovy.syntax.parser.TestParserSupport.class);
-//        suite.addTestSuite(org.codehaus.groovy.tools.DocGeneratorMain.class);
-
 }
