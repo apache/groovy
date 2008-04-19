@@ -2,8 +2,8 @@ package groovy
 
 import static java.lang.Boolean.FALSE as F
 import static java.text.DateFormat.MEDIUM as M
+import static java.util.regex.Pattern.*
 import static java.text.DateFormat.MEDIUM
-import static java.awt.Color.*
 import static junit.framework.Assert.format
 import static junit.framework.Assert.assertEquals
 import static StaticImportTarget.x
@@ -11,7 +11,7 @@ import static java.lang.Math.*
 import static java.util.Calendar.getInstance as now
 import static API.*
 
-class StaticImportTest extends GroovySwingTestCase {
+class StaticImportTest extends GroovyTestCase {
     void testFieldWithAliasInExpression() {
         assert !F
     }
@@ -52,8 +52,7 @@ class StaticImportTest extends GroovySwingTestCase {
     }
 
     void testWildCardAliasing() {
-        if (headless) return
-        assert LIGHT_GRAY == java.awt.Color.LIGHT_GRAY
+        assert MULTILINE == java.util.regex.Pattern.MULTILINE
     }
 
     private format(a, b, c, ignored) { format(a, b, c) }
