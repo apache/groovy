@@ -8,7 +8,7 @@ import javax.swing.JButton
 class ClosureListenerTest extends GroovySwingTestCase {
 
     void testAddingAndRemovingAClosureListener() {
-        if (headless) return
+        if (isHeadless()) return
 
         def b = new JButton("foo")
         b.actionPerformed = { println("Found ${it}") }

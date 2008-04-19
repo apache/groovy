@@ -6,7 +6,7 @@ import java.lang.reflect.InvocationTargetException;
 public class GroovySwingTestCase extends GroovyTestCase {
     private static boolean headless;
 
-    public static boolean getHeadless() {
+    public static boolean isHeadless() {
         return headless;
     }
 
