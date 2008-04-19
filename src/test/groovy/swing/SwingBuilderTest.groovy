@@ -36,20 +36,7 @@ import groovy.model.DefaultTableColumn
 import groovy.model.PropertyModel
 import java.awt.event.ActionEvent
 
-class SwingBuilderTest extends GroovyTestCase {
-
-    private static boolean headless
-
-    static {
-        try {
-            Class.forName "javax.swing.JButton"
-            headless = false
-        } catch (java.awt.HeadlessException e) {
-            headless = true
-        } catch (java.lang.UnsatisfiedLinkError e) {
-            headless = true
-        }
-    }
+class SwingBuilderTest extends GroovySwingTestCase {
 
     void testNamedWidgetCreation() {
         if (headless) return

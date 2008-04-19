@@ -9,20 +9,7 @@ import javax.swing.*
  * @author Andy Dwelly
  * @version $Revision$
  */
-class Groovy303_Bug extends GroovyTestCase {
-
-    private static boolean headless
-
-    static {
-        try {
-            Class.forName "javax.swing.JButton"
-            headless = false
-        } catch (java.awt.HeadlessException e) {
-            headless = true
-        } catch (java.lang.UnsatisfiedLinkError e) {
-            headless = true
-        }
-    }
+class Groovy303_Bug extends GroovySwingTestCase {
 
     void testBug() {
         if (headless) return

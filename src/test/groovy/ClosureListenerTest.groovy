@@ -5,20 +5,7 @@ import javax.swing.JButton
 /**
  * @version $Revision$
  */
-class ClosureListenerTest extends GroovyTestCase {
-
-    private static boolean headless
-
-    static {
-        try {
-            Class.forName "javax.swing.JButton"
-            headless = false
-        } catch (java.awt.HeadlessException e) {
-            headless = true
-        } catch (java.lang.UnsatisfiedLinkError e) {
-            headless = true
-        }
-    }
+class ClosureListenerTest extends GroovySwingTestCase {
 
     void testAddingAndRemovingAClosureListener() {
         if (headless) return
