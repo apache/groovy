@@ -918,6 +918,8 @@ class SwingBuilderTest extends GroovySwingTestCase {
     }
 
     void testFactoryLogging() {
+        if (headless) return
+
         def logger = java.util.logging.Logger.getLogger(SwingBuilder.class.name)
         def oldLevel = logger.getLevel()
         logger.setLevel(java.util.logging.Level.FINE)
