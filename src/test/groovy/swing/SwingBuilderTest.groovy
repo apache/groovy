@@ -35,18 +35,7 @@ import groovy.model.DefaultTableModel
 import groovy.model.DefaultTableColumn
 import groovy.model.PropertyModel
 
-class SwingBuilderTest extends GroovyTestCase {
-
-    private static boolean headless
-
-    static {
-        try {
-            new JFrame("testing")
-            headless = false
-        } catch (java.awt.HeadlessException he) {
-            headless = true
-        }
-    }
+class SwingBuilderTest extends GroovySwingTestCase {
 
     void testNamedWidgetCreation() {
         if (headless) return
@@ -853,6 +842,8 @@ class SwingBuilderTest extends GroovyTestCase {
     }
 
     void testFactoryLogging() {
+        if (headless) return
+
         def logger = java.util.logging.Logger.getLogger(SwingBuilder.class.name)
         def oldLevel = logger.getLevel()
         logger.setLevel(java.util.logging.Level.FINE)

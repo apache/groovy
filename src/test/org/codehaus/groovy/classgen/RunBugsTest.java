@@ -47,7 +47,6 @@ import groovy.lang.GroovyObject;
  */
 public class RunBugsTest extends TestSupport {
 
-    /*
     public void testStaticMethodCall() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/StaticMethodCallBug.groovy");
         object.invokeMethod("testBug", null);
@@ -137,8 +136,6 @@ public class RunBugsTest extends TestSupport {
         GroovyObject object = compile("src/test/groovy/bugs/Groovy252_Bug.groovy");
         object.invokeMethod("testBug", null);
     }
-    
-    */
 
     public void testGroovy303_Bug() throws Exception {
         GroovyObject object = compile("src/test/groovy/bugs/Groovy303_Bug.groovy");
