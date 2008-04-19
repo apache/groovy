@@ -38,6 +38,8 @@ public class GroovySwingTestCase extends GroovyTestCase {
             headless = true;
         } catch (ClassNotFoundException e) {
             headless = true;
+        } catch (NoClassDefFoundError e) {
+            headless = true;
         } catch (IllegalAccessException e) {
             headless = true;
         } catch (InstantiationException e) {

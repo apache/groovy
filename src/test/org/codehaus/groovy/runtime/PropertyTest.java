@@ -47,7 +47,7 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.MissingMethodException;
-import groovy.util.GroovyTestCase;
+import groovy.util.GroovySwingTestCase;
 import groovy.util.Node;
 
 import javax.swing.*;
@@ -63,7 +63,7 @@ import java.util.Map;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class PropertyTest extends GroovyTestCase {
+public class PropertyTest extends GroovySwingTestCase {
 
     public void testMapProperties() throws Exception {
         Map map = new HashMap();
@@ -149,6 +149,8 @@ public class PropertyTest extends GroovyTestCase {
     }
 
     public void testListCoercionPropertyOnJFrame() throws Exception {
+        if (isHeadless()) return;
+
         try {
             JFrame bean = new JFrame();
             List list = new ArrayList();
@@ -157,12 +159,6 @@ public class PropertyTest extends GroovyTestCase {
 
             InvokerHelper.setProperty(bean, "location", list);
             assertEquals("Should have set a point", new Point(10, 20), bean.getLocation());
-        }
-        catch (HeadlessException e) {
-            // it's fine to not run this test on headless environments
-        }
-        catch (UnsatisfiedLinkError e) {
-            // it's fine to not run this test on headless environments
         }
         catch (MissingMethodException e) {
             System.out.println("Failed with cause: " + e);
@@ -232,6 +228,8 @@ public class PropertyTest extends GroovyTestCase {
     }
 
     public void testComponentParent() {
+        if (isHeadless()) return;
+
         JPanel panel = new JPanel();
         JButton bean = new JButton();
 
