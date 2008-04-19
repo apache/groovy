@@ -9763,25 +9763,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    the source string
      * @param regex   a Regex string
      * @param closure a closure with one parameter or as much parameters as groups
+     * @return the source string
      */
-    public static void eachMatch(String self, String regex, Closure closure) {
+    public static String eachMatch(String self, String regex, Closure closure) {
         Pattern p = Pattern.compile(regex);
         Matcher m = p.matcher(self);
-        while (m.find()) {
-            int count = m.groupCount();
-            List groups = new ArrayList();
-            for (int i = 0; i <= count; i++) {
-                groups.add(m.group(i));
-            }
-            if (groups.size() == 1 || closure.getMaximumNumberOfParameters() < groups.size()) {
-                // not enough parameters there to give each group part
-                // it's own parameter, so try a closure with one parameter
-                // and give it all groups as a array
-                closure.call((Object) groups.toArray());
-            } else {
-                closure.call(groups.toArray());
-            }
-        }
+        each(m, closure);
+        return self;
     }
 
     /**
@@ -9795,15 +9783,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static Matcher each(Matcher self, Closure closure) {
         self.reset();
         while (self.find()) {
+            int closureParams = closure.getMaximumNumberOfParameters();
             int count = self.groupCount();
+            if (closureParams != 1 && closureParams != count + 1) {
+                throw new GroovyRuntimeException("Matcher matched " + count + " groups. Expecting to call a "
+                        + (count + 1) + "-arg closure. Instead found a " + closureParams + "-arg closure.");
+            }
             List groups = new ArrayList();
             for (int i = 0; i <= count; i++) {
                 groups.add(self.group(i));
             }
-            if (groups.size() == 1 || closure.getMaximumNumberOfParameters() < groups.size()) {
-                // not enough parameters there to give each group part
-                // it's own parameter, so try a closure with one parameter
-                // and give it all groups as a array
+            if (count > 0 && closureParams == 1) {
+                // give a 1-arg closure all groups as a array
                 closure.call((Object) groups.toArray());
             } else {
                 closure.call(groups.toArray());

@@ -68,13 +68,13 @@ class RegularExpressionsTest extends GroovyTestCase {
     void testMatcherEach() {
         def count = 0
         def result = []
-        ("cheesecheese" =~ "cheese").each {value -> result += value[0]; count = count + 1}
+        ("cheesecheese" =~ "cheese").each {value -> result += value; count = count + 1}
         assert count == 2
         assert result == ['cheese', 'cheese']
 
         count = 0
         result = []
-        ("cheesecheese" =~ "ee+").each { result += it[0]; count = count + 1}
+        ("cheesecheese" =~ "ee+").each { result += it; count = count + 1}
         assert count == 2
         assert result == ['ee', 'ee']
     }
@@ -135,13 +135,13 @@ class RegularExpressionsTest extends GroovyTestCase {
         def rhyme = /$BOUNDS\w*ain$BOUNDS/
         def found = ''
         myFairStringy.eachMatch(rhyme) {match ->
-            found += match[0] + ' '
+            found += match + ' '
         }
         assert found == 'rain Spain plain '
         // a second way that is equivalent
         found = ''
         (myFairStringy =~ rhyme).each {match ->
-            found += match[0] + ' '
+            found += match + ' '
         }
         assert found == 'rain Spain plain '
     }
@@ -149,14 +149,14 @@ class RegularExpressionsTest extends GroovyTestCase {
     void testFindOperatorCollect() {
         def m = 'coffee' =~ /ee/
         def result = ''
-        m.each { result += it[0] }
+        m.each { result += it }
         assert result == 'ee'
         result = ''
-        m.each { result += it[0] }
+        m.each { result += it }
         assert result == 'ee'
         m.reset()
         result = ''
-        m.each { result += it[0] }
+        m.each { result += it }
         assert result == 'ee'
 
         m = 'reek coffee' =~ /ee/
