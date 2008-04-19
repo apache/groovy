@@ -159,7 +159,10 @@ public class PropertyTest extends GroovyTestCase {
             assertEquals("Should have set a point", new Point(10, 20), bean.getLocation());
         }
         catch (HeadlessException e) {
-            // its fine to not run this test on headless environments
+            // it's fine to not run this test on headless environments
+        }
+        catch (UnsatisfiedLinkError e) {
+            // it's fine to not run this test on headless environments
         }
         catch (MissingMethodException e) {
             System.out.println("Failed with cause: " + e);

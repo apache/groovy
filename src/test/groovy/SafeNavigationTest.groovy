@@ -1,6 +1,6 @@
 package groovy
 
-class SafeNavigationTest extends GroovyTestCase {
+class SafeNavigationTest extends GroovySwingTestCase {
 
     void testNullNavigation() {
         def x = null
@@ -20,6 +20,8 @@ class SafeNavigationTest extends GroovyTestCase {
     }
 
     void testNullPropertyNavigation() {
+        if (headless) return
+
         def x = null
         
         def y = x?.foo?.bar

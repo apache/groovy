@@ -6,7 +6,7 @@ package groovy
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-class PropertyTest extends GroovyTestCase {
+class PropertyTest extends GroovySwingTestCase {
 
     void testNormalPropertyGettersAndSetters() {
         def foo = new Foo()
@@ -30,6 +30,7 @@ class PropertyTest extends GroovyTestCase {
 
     // GROOVY-1809
     void testClassWithPrivateFieldAndGetter() {
+        if (headless) return
         assert java.awt.Font.getName() == 'java.awt.Font'
         assert java.awt.Font.name == 'java.awt.Font'
     }

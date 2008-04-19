@@ -11,7 +11,7 @@ import static java.lang.Math.*
 import static java.util.Calendar.getInstance as now
 import static API.*
 
-class StaticImportTest extends GroovyTestCase {
+class StaticImportTest extends GroovySwingTestCase {
     void testFieldWithAliasInExpression() {
         assert !F
     }
@@ -52,6 +52,7 @@ class StaticImportTest extends GroovyTestCase {
     }
 
     void testWildCardAliasing() {
+        if (headless) return
         assert LIGHT_GRAY == java.awt.Color.LIGHT_GRAY
     }
 
