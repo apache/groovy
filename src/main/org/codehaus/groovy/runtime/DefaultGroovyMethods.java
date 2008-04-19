@@ -2907,7 +2907,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         while (matcher.find()) {
             counter++;
         }
-        matcher.reset();
         return counter;
     }
 
@@ -9794,13 +9793,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the matcher
      */
     public static Matcher each(Matcher self, Closure closure) {
+        self.reset();
         while (self.find()) {
             int count = self.groupCount();
             List groups = new ArrayList();
             for (int i = 0; i <= count; i++) {
                 groups.add(self.group(i));
             }
-            closure.call(groups.toArray());
+            if (groups.size() == 1 || closure.getMaximumNumberOfParameters() < groups.size()) {
+                // not enough parameters there to give each group part
+                // it's own parameter, so try a closure with one parameter
+                // and give it all groups as a array
+                closure.call((Object) groups.toArray());
+            } else {
+                closure.call(groups.toArray());
+            }
         }
         return self;
     }
@@ -10195,6 +10202,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see Matcher#group()
      */
     public static Iterator iterator(final Matcher matcher) {
+        matcher.reset();
         return new Iterator() {
             private boolean found /* = false */;
             private boolean done /* = false */;
