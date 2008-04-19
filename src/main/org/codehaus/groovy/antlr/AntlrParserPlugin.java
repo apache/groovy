@@ -632,7 +632,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         Expression initialValue = null;
         if (node != null) {
             assertNodeType(ASSIGN, node);
-            initialValue = expression(node.getFirstChild());
+            initialValue = expression(node);
         }
 
         if (classNode.isInterface() && initialValue == null && type != null) {
@@ -1090,10 +1090,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
 
         String name = identifier(node);
-        VariableExpression leftExpression = new VariableExpression(name, type);
-        configureAST(leftExpression, node);
-        
         node = node.getNextSibling();
+
+        VariableExpression leftExpression = new VariableExpression(name, type);
+        configureAST(leftExpression, variableDef);
 
         Expression rightExpression = ConstantExpression.NULL;
         if (node != null) {
