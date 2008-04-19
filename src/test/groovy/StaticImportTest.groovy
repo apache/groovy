@@ -9,7 +9,7 @@ import static junit.framework.Assert.assertEquals
 import static StaticImportTarget.x
 import static java.lang.Math.*
 import static java.util.Calendar.getInstance as now
-import static API.*
+import static groovy.API.*
 
 class StaticImportTest extends GroovyTestCase {
     void testFieldWithAliasInExpression() {

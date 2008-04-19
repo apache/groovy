@@ -45,6 +45,7 @@ class ClosureListenerTest extends GroovySwingTestCase {
     }
     
     void testNonStandardListener() {
+        if (isHeadless()) return
         def myWhat = null
         def myWhere = null
 

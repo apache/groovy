@@ -32,21 +32,7 @@ public class GroovySwingTestCase extends GroovyTestCase {
             final Constructor constructor = jframe.getConstructor(new Class[]{String.class});
             constructor.newInstance(new String[]{"testing"});
             headless = false;
-        } catch (java.awt.HeadlessException e) {
-            headless = true;
-        } catch (UnsatisfiedLinkError e) {
-            headless = true;
-        } catch (ClassNotFoundException e) {
-            headless = true;
-        } catch (NoClassDefFoundError e) {
-            headless = true;
-        } catch (IllegalAccessException e) {
-            headless = true;
-        } catch (InstantiationException e) {
-            headless = true;
-        } catch (NoSuchMethodException e) {
-            headless = true;
-        } catch (InvocationTargetException e) {
+        } catch (Exception e) {
             headless = true;
         }
     }

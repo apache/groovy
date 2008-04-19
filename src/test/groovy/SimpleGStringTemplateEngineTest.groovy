@@ -4,7 +4,6 @@ import java.io.StringWriter;
 
 import groovy.text.Template;
 import groovy.text.GStringTemplateEngine;
-import junit.framework.TestCase;
 
 /**
  * @author andy
