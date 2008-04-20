@@ -29,22 +29,22 @@ import java.util.*;
 
 /**
  * This class is a helper for AsmClassGenerator. It manages
- * different aspects of the code of a code block like 
- * handling labels, defining variables, and scopes. 
- * After a MethodNode is visited clear should be called, for 
+ * different aspects of the code of a code block like
+ * handling labels, defining variables, and scopes.
+ * After a MethodNode is visited clear should be called, for
  * initialization the method init should be used.
- * <p> 
+ * <p>
  * Some Notes:
  * <ul>
  * <li> every push method will require a later pop call
  * <li> method parameters may define a category 2 variable, so
  *      don't ignore the type stored in the variable object
  * <li> the index of the variable may not be as assumed when
- *      the variable is a parameter of a method because the 
+ *      the variable is a parameter of a method because the
  *      parameter may be used in a closure, so don't ignore
  *      the stored variable index
  * <li> the names of temporary variables can be ignored. The names
- *      are only used for debugging and do not conflict with each 
+ *      are only used for debugging and do not conflict with each
  *      other or normal variables. For accessing the index of the
  *      variable must be used.
  * <li> never mix temporary and normal variables by changes to this class.
@@ -52,19 +52,19 @@ import java.util.*;
  *      helper construct for temporary variables. That means for example a
  *      name for a temporary variable can be used multiple times without
  *      conflict. So mixing them both may lead to the problem that a normal
- *      or temporary variable is hidden or even removed. that must not happen!       
+ *      or temporary variable is hidden or even removed. that must not happen!
  * </ul>
- * 
- * 
+ *
+ *
  * @see org.codehaus.groovy.classgen.AsmClassGenerator
  * @author Jochen Theodorou
  */
 public class CompileStack implements Opcodes {
     /**
      * @TODO remove optimization of this.foo -> this.@foo
-     * 
+     *
      */
-    
+
     // state flag
     private boolean clear=true;
     // current scope
@@ -91,22 +91,22 @@ public class CompileStack implements Opcodes {
     // such a block is created by synchronized or finally and
     // must be called for break/continue/return
     private LinkedList finallyBlocks = new LinkedList();
-    // a list of blocks already visiting. 
+    // a list of blocks already visiting.
     private final List visitedBlocks = new LinkedList();
-    
+
     private Label thisStartLabel, thisEndLabel;
 
     // current class index
     private int currentClassIndex , currentMetaClassIndex;
-    
+
     private MethodVisitor mv;
     private BytecodeHelper helper;
-    
-    // helper to handle different stack based variables    
+
+    // helper to handle different stack based variables
     private final LinkedList stateStack = new LinkedList();
-    
+
     // defines the first variable index useable after
-    // all parameters of a method 
+    // all parameters of a method
     private int localVariableOffset;
     // this is used to store the goals for a "break foo" call
     // in a loop where foo is a label.
@@ -115,7 +115,7 @@ public class CompileStack implements Opcodes {
     // in a loop where foo is a label.
 	private final Map namedLoopContinueLabel = new HashMap();
     private String className;
-	
+
     private class StateStackElement {
         final VariableScope scope;
         final Label continueLabel;
@@ -129,7 +129,7 @@ public class CompileStack implements Opcodes {
         final Map superBlockNamedLabels;
         final Map currentBlockNamedLabels;
         final LinkedList finallyBlocks;
-        
+
         StateStackElement() {
             scope = CompileStack.this.scope;
             continueLabel = CompileStack.this.continueLabel;
@@ -143,13 +143,13 @@ public class CompileStack implements Opcodes {
             finallyBlocks = CompileStack.this.finallyBlocks;
         }
     }
-    
+
     private void pushState() {
         stateStack.add(new StateStackElement());
         stackVariables = new HashMap(stackVariables);
         finallyBlocks = new LinkedList(finallyBlocks);
     }
-    
+
     private void popState() {
         if (stateStack.size()==0) {
              throw new GroovyBugError("Tried to do a pop on the compile stack without push.");
@@ -163,7 +163,7 @@ public class CompileStack implements Opcodes {
         nextVariableIndex = element.nextVariableIndex;
         finallyBlocks = element.finallyBlocks;
     }
-    
+
     public Label getContinueLabel() {
         return continueLabel;
     }
@@ -192,7 +192,7 @@ public class CompileStack implements Opcodes {
         }
         thisEndLabel = endLabel;
     }
-    
+
     public void pop() {
         setEndLabels();
         popState();
@@ -203,8 +203,8 @@ public class CompileStack implements Opcodes {
     }
 
     /**
-     * creates a temporary variable. 
-     * 
+     * creates a temporary variable.
+     *
      * @param var defines type and name
      * @param store defines if the toplevel argument of the stack should be stored
      * @return the index used for this temporary variable
@@ -229,7 +229,7 @@ public class CompileStack implements Opcodes {
      *
      * @param variableName name of the variable
      * @param mustExist  throw exception if variable does not exist
-     * @return
+     * @return the normal variable or null if not found (and <code>mustExist</code> not true)
      */
     public Variable getVariable(String variableName, boolean mustExist) {
         if (variableName.equals("this")) return Variable.THIS_VARIABLE;
@@ -249,8 +249,8 @@ public class CompileStack implements Opcodes {
     }
 
     /**
-     * creates a temporary variable. 
-     * 
+     * creates a temporary variable.
+     *
      * @param name defines type and name
      * @param store defines if the toplevel argument of the stack should be stored
      * @return the index used for this temporary variable
@@ -260,23 +260,23 @@ public class CompileStack implements Opcodes {
     }
 
     /**
-     * creates a temporary variable. 
-     * 
+     * creates a temporary variable.
+     *
      * @param name defines the name
      * @param node defines the node
-     * @param store defines if the toplevel argument of the stack should be stored 
+     * @param store defines if the toplevel argument of the stack should be stored
      * @return the index used for this temporary variable
      */
     public int defineTemporaryVariable(String name, ClassNode node, boolean store) {
         Variable answer = defineVar(name,node,false);
         temporaryVariables.addFirst(answer); // TRICK: we add at the beginning so when we find for remove or get we always have the last one
         usedVariables.removeLast();
-        
+
         if (store) mv.visitVarInsn(ASTORE, currentVariableIndex);
-        
+
         return answer.getIndex();
     }
-    
+
     private void resetVariableIndex(boolean isStatic) {
         if (!isStatic) {
             currentVariableIndex=1;
@@ -286,9 +286,9 @@ public class CompileStack implements Opcodes {
             nextVariableIndex=0;
         }
     }
-  
+
     /**
-     * Clears the state of the class. This method should be called 
+     * Clears the state of the class. This method should be called
      * after a MethodNode is visited. Note that a call to init will
      * fail if clear is not called before
      */
@@ -301,12 +301,12 @@ public class CompileStack implements Opcodes {
         // br experiment with local var table so debuggers can retrieve variable names
         if (true) {//AsmClassGenerator.CREATE_DEBUG_INFO) {
             if (thisEndLabel==null) setEndLabels();
-            
+
             if (!scope.isInStaticContext()) {
                 // write "this"
                 mv.visitLocalVariable("this", className, null, thisStartLabel, thisEndLabel, 0);
             }
-           
+
             for (Iterator iterator = usedVariables.iterator(); iterator.hasNext();) {
                 Variable v = (Variable) iterator.next();
                 String type = BytecodeHelper.getTypeDescription(v.getType());
@@ -331,13 +331,13 @@ public class CompileStack implements Opcodes {
         thisStartLabel=null;
         thisEndLabel=null;
     }
-    
+
     /**
      * initializes this class for a MethodNode. This method will
      * automatically define varibales for the method parameters
      * and will create references if needed. the created variables
      * can be get by getVariable
-     * 
+     *
      */
     protected void init(VariableScope el, Parameter[] parameters, MethodVisitor mv, ClassNode cn) {
         if (!clear) throw new GroovyBugError("CompileStack#init called without calling clear before");
@@ -352,7 +352,7 @@ public class CompileStack implements Opcodes {
 
     /**
      * Causes the statestack to add an element and sets
-     * the given scope as new current variable scope. Creates 
+     * the given scope as new current variable scope. Creates
      * a element for the state stack so pop has to be called later
      */
     protected void pushVariableScope(VariableScope el) {
@@ -362,12 +362,12 @@ public class CompileStack implements Opcodes {
         superBlockNamedLabels.putAll(currentBlockNamedLabels);
         currentBlockNamedLabels = new HashMap();
     }
-    
+
     /**
      * Should be called when decending into a loop that defines
-     * also a scope. Calls pushVariableScope and prepares labels 
+     * also a scope. Calls pushVariableScope and prepares labels
      * for a loop structure. Creates a element for the state stack
-     * so pop has to be called later 
+     * so pop has to be called later
      */
     protected void pushLoop(VariableScope el, String labelName) {
         pushVariableScope(el);
@@ -382,9 +382,9 @@ public class CompileStack implements Opcodes {
         	namedLoopContinueLabel.put(labelName,continueLabel);
         }
     }
-    
+
     /**
-     * Should be called when decending into a loop that does 
+     * Should be called when decending into a loop that does
      * not define a scope. Creates a element for the state stack
      * so pop has to be called later
      */
@@ -392,7 +392,7 @@ public class CompileStack implements Opcodes {
         pushState();
         initLoopLabels(labelName);
     }
-    
+
     /**
      * Used for <code>break foo</code> inside a loop to end the
      * execution of the marked loop. This method will return the
@@ -406,11 +406,11 @@ public class CompileStack implements Opcodes {
     	if (endLabel!=null) label = endLabel;
         return label;
     }
-    
+
     /**
      * Used for <code>continue foo</code> inside a loop to continue
-     * the execution of the marked loop. This method will return 
-     * the break label of the loop if there is one found for the 
+     * the execution of the marked loop. This method will return
+     * the break label of the loop if there is one found for the
      * name. If not, getLabel is used.
      */
     protected Label getNamedContinueLabel(String name) {
@@ -419,8 +419,8 @@ public class CompileStack implements Opcodes {
         if (name!=null) endLabel = (Label) namedLoopContinueLabel.get(name);
     	if (endLabel!=null) label = endLabel;
         return label;
-    }    
-    
+    }
+
     /**
      * Creates a new break label and a element for the state stack
      * so pop has to be called later
@@ -430,7 +430,7 @@ public class CompileStack implements Opcodes {
         breakLabel = new Label();
         return breakLabel;
     }
-    
+
     /**
      * because a boolean Expression may not be evaluated completly
      * it is important to keep the registers clean
@@ -438,7 +438,7 @@ public class CompileStack implements Opcodes {
     protected void pushBooleanExpression(){
         pushState();
     }
-    
+
     private Variable defineVar(String name, ClassNode type, boolean methodParameterUsedInClosure) {
         makeNextVariableID(type);
         int index = currentVariableIndex;
@@ -451,25 +451,25 @@ public class CompileStack implements Opcodes {
         answer.setHolder(methodParameterUsedInClosure);
         return answer;
     }
-    
+
     private void makeLocalVariablesOffset(Parameter[] paras,boolean isInStaticContext) {
         resetVariableIndex(isInStaticContext);
-        
+
         for (int i = 0; i < paras.length; i++) {
             makeNextVariableID(paras[i].getType());
         }
         localVariableOffset = nextVariableIndex;
-        
+
         resetVariableIndex(isInStaticContext);
     }
-    
+
     private void defineMethodVariables(Parameter[] paras,boolean isInStaticContext) {
         Label startLabel  = new Label();
         thisStartLabel = startLabel;
         mv.visitLabel(startLabel);
-        
-        makeLocalVariablesOffset(paras,isInStaticContext);      
-        
+
+        makeLocalVariablesOffset(paras,isInStaticContext);
+
         boolean hasHolder = false;
         for (int i = 0; i < paras.length; i++) {
             String name = paras[i].getName();
@@ -487,7 +487,7 @@ public class CompileStack implements Opcodes {
             answer.setStartLabel(startLabel);
             stackVariables.put(name, answer);
         }
-        
+
         if (hasHolder) {
             nextVariableIndex = localVariableOffset;
         }
@@ -500,10 +500,10 @@ public class CompileStack implements Opcodes {
         mv.visitMethodInsn(INVOKESPECIAL, "groovy/lang/Reference", "<init>", "(Ljava/lang/Object;)V");
         mv.visitVarInsn(ASTORE, reference.getIndex());
     }
-    
+
     /**
      * Defines a new Variable using an AST variable.
-     * @param initFromStack if true the last element of the 
+     * @param initFromStack if true the last element of the
      *                      stack will be used to initilize
      *                      the new variable. If false null
      *                      will be used.
@@ -513,7 +513,7 @@ public class CompileStack implements Opcodes {
         Variable answer = defineVar(name,v.getType(),false);
         if (v.isClosureSharedVariable()) answer.setHolder(true);
         stackVariables.put(name, answer);
-        
+
         Label startLabel  = new Label();
         answer.setStartLabel(startLabel);
         if (answer.isHolder())  {
@@ -521,8 +521,8 @@ public class CompileStack implements Opcodes {
             createReference(answer);
         } else {
             if (!initFromStack) mv.visitInsn(ACONST_NULL);
-            mv.visitVarInsn(ASTORE, currentVariableIndex);            
-        } 
+            mv.visitVarInsn(ASTORE, currentVariableIndex);
+        }
         mv.visitLabel(startLabel);
         return answer;
     }
@@ -534,7 +534,7 @@ public class CompileStack implements Opcodes {
     public boolean containsVariable(String name) {
         return stackVariables.containsKey(name);
     }
-    
+
     /**
      * Calculates the index of the next free register stores ir
      * and sets the current variable index to the old value
@@ -546,9 +546,9 @@ public class CompileStack implements Opcodes {
         }
         nextVariableIndex++;
     }
-    
+
     /**
-     * Returns the label for the given name 
+     * Returns the label for the given name
      */
     public Label getLabel(String name) {
         if (name==null) return null;
@@ -556,7 +556,7 @@ public class CompileStack implements Opcodes {
         if (l==null) l = createLocalLabel(name);
         return l;
     }
-    
+
     /**
      * creates a new named label
      */
@@ -568,19 +568,19 @@ public class CompileStack implements Opcodes {
         }
         return l;
     }
-    
+
     public int getCurrentClassIndex(){
         return currentClassIndex;
     }
-    
+
     public void setCurrentClassIndex(int index){
         currentClassIndex=index;
     }
-    
+
     public int getCurrentMetaClassIndex(){
         return currentMetaClassIndex;
     }
-    
+
     public void setCurrentMetaClassIndex(int index){
         currentMetaClassIndex=index;
     }
@@ -604,7 +604,7 @@ public class CompileStack implements Opcodes {
                 }
             }
         }
-        
+
         List blocksToRemove;
         if (result==null) {
             // all Blocks do know the label, so use all finally blocks
@@ -612,7 +612,7 @@ public class CompileStack implements Opcodes {
         } else {
             blocksToRemove = result.finallyBlocks;
         }
-        
+
         ArrayList blocks = new ArrayList(finallyBlocks);
         blocks.removeAll(blocksToRemove);
         applyFinallyBlocks(blocks);
@@ -623,11 +623,11 @@ public class CompileStack implements Opcodes {
             Runnable block = (Runnable) iter.next();
             if (visitedBlocks.contains(block)) continue;
             block.run();
-        }     
+        }
     }
-    
+
     public void applyFinallyBlocks() {
-        applyFinallyBlocks(finallyBlocks); 
+        applyFinallyBlocks(finallyBlocks);
     }
 
     public boolean hasFinallyBlocks() {
@@ -647,7 +647,7 @@ public class CompileStack implements Opcodes {
     public void pushFinallyBlockVisit(Runnable block) {
         visitedBlocks.add(block);
     }
-    
+
     public void popFinallyBlockVisit(Runnable block) {
         visitedBlocks.remove(block);
     }
