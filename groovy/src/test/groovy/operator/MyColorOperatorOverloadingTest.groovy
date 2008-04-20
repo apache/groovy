@@ -2,8 +2,10 @@ package groovy.operator
 
 import static java.awt.Color.*
 
-class MyColorOperatorOverloadingTest extends GroovyTestCase {
+class MyColorOperatorOverloadingTest extends GroovySwingTestCase {
     void testAll() {
+        if (headless) return
+
         def c = new MyColor(128, 128, 128)
         assert c.delegate == GRAY
         def c2 = -c
