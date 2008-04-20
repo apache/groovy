@@ -82,14 +82,22 @@ public class DefaultGroovyMethodsSupport {
         return answer;
     }
 
-    protected static Collection createSimilarCollection(Collection left, int newCapacity) {
-        Collection answer;
-        if (left instanceof SortedSet) {
-            answer = new TreeSet();
-        } else if (left instanceof Set) {
-            answer = new HashSet();
-        } else if (left instanceof LinkedList) {
+    protected static Collection createSimilarCollection(Collection collection, int newCapacity) {
+        if (collection instanceof Set) {
+            return createSimilarSet((Set) collection);
+        }
+        if (collection instanceof List) {
+            return createSimilarList((List) collection, newCapacity);
+        }
+        return new ArrayList(newCapacity);
+    }
+
+    protected static List createSimilarList(List left, int newCapacity) {
+        List answer;
+        if (left instanceof LinkedList) {
             answer = new LinkedList();
+        } else if (left instanceof Vector) {
+            answer = new Vector();
         } else {
             answer = new ArrayList(newCapacity);
         }
@@ -116,6 +124,8 @@ public class DefaultGroovyMethodsSupport {
         final Set ansSet;
         if (self instanceof SortedSet) {
             ansSet = new TreeSet();
+        } else if (self instanceof LinkedHashSet) {
+            ansSet = new LinkedHashSet();
         } else {
             ansSet = new HashSet();
         }
