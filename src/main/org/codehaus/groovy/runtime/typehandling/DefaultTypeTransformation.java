@@ -30,14 +30,14 @@ import java.util.*;
 import java.util.regex.Matcher;
 
 public class DefaultTypeTransformation {
-    
+
     protected static final Object[] EMPTY_ARGUMENTS = {};
     protected static final BigInteger ONE_NEG = new BigInteger("-1");
-    
+
     //  --------------------------------------------------------
     //                  unboxing methods
-    //  --------------------------------------------------------       
-    
+    //  --------------------------------------------------------
+
     public static byte byteUnbox(Object value) {
         Number n = castToNumber(value);
         return n.byteValue();
@@ -74,12 +74,12 @@ public class DefaultTypeTransformation {
     public static double doubleUnbox(Object value) {
         Number n = castToNumber(value);
         return n.doubleValue();
-    } 
+    }
 
     //  --------------------------------------------------------
     //                  boxing methods
-    //  --------------------------------------------------------       
-    
+    //  --------------------------------------------------------
+
     public static Object box(boolean value) {
         return value ? Boolean.TRUE : Boolean.FALSE;
     }
@@ -111,7 +111,7 @@ public class DefaultTypeTransformation {
     public static Object box(double value) {
         return new Double(value);
     }
-    
+
     public static Number castToNumber(Object object) {
         if (object instanceof Number)
             return (Number) object;
@@ -129,7 +129,7 @@ public class DefaultTypeTransformation {
         }
         throw new GroovyCastException(object,Number.class);
     }
-    
+
     public static boolean castToBoolean(Object object) {
     	if (object == null) {
     		return false;
@@ -162,11 +162,11 @@ public class DefaultTypeTransformation {
         if (object instanceof CharSequence) {
         	CharSequence string =  (CharSequence) object;
             return string.length() > 0;
-        } 
+        }
         if (object instanceof Object[]) {
         	Object[] array =  (Object[]) object;
             return array.length > 0;
-        } 
+        }
         if (object instanceof Character) {
             Character c = (Character) object;
             return c.charValue() != 0;
@@ -177,10 +177,10 @@ public class DefaultTypeTransformation {
         }
         return true;
     }
-    
+
     public static char castToChar(Object object) {
         if (object instanceof Character) {
-            return ((Character) object).charValue();            
+            return ((Character) object).charValue();
         } else if (object instanceof Number) {
             Number value = (Number) object;
             return (char) value.intValue();
@@ -194,7 +194,7 @@ public class DefaultTypeTransformation {
             }
         }
     }
-    
+
     public static Object castToType(Object object, Class type) {
         if (object == null) {
             return null;
@@ -289,7 +289,7 @@ public class DefaultTypeTransformation {
             }
         } else if (type.isPrimitive()) {
             if (type == boolean.class) {
-               return box(booleanUnbox(object)); 
+               return box(booleanUnbox(object));
             } else if (type == byte.class) {
                 return box(byteUnbox(object));
             } else if (type == char.class) {
@@ -315,8 +315,13 @@ public class DefaultTypeTransformation {
         }
         Object[] args = null;
         if (object instanceof Collection) {
-            Collection list = (Collection) object;
-            args = list.toArray();
+            if (Set.class.isAssignableFrom(type) || List.class.isAssignableFrom(type)) {
+                args = new Object[1];
+                args [0] = object;
+            } else {
+                Collection coll = (Collection) object;
+                args = coll.toArray();
+            }
         } else if (object instanceof Object[]) {
             args = (Object[]) object;
         } else if (object instanceof Map) {
@@ -325,7 +330,7 @@ public class DefaultTypeTransformation {
             args[0] = object;
         }
         if (args != null) {
-            // lets try invoke the constructor with the list as arguments
+            // let's try invoke the constructor with the list as arguments
             // such as for creating a Dimension, Point, Color etc.
             try {
                 return InvokerHelper.invokeConstructorOf(type, args);
@@ -415,7 +420,7 @@ public class DefaultTypeTransformation {
         }
         return array;
     }
-    
+
     public static Collection asCollection(Object value) {
         if (value == null) {
             return Collections.EMPTY_LIST;
@@ -481,7 +486,7 @@ public class DefaultTypeTransformation {
 
         return false;
     }
-    
+
     /**
      * Allows conversion of arrays into a mutable List
      *
@@ -499,7 +504,7 @@ public class DefaultTypeTransformation {
         }
         return list;
     }
-    
+
     public static Object[] primitiveArrayBox(Object array) {
         int size = Array.getLength(array);
         Object[] ret = (Object[]) Array.newInstance(ReflectionCache.autoboxType(array.getClass().getComponentType()), size);
@@ -508,7 +513,7 @@ public class DefaultTypeTransformation {
         }
         return ret;
     }
-    
+
     /**
      * Compares the two objects handling nulls gracefully and performing numeric type coercion if required
      */
