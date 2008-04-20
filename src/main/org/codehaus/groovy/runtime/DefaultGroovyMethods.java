@@ -1051,12 +1051,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * default comparator.
      *
      * @param self a collection
-     * @return this collection
+     * @return the now modified collection
      */
     public static Collection unique(Collection self) {
         if (self instanceof Set)
             return self;
-        List answer = new ArrayList();
+        Collection answer = createSimilarCollection(self);
         NumberAwareComparator numberAwareComparator = new NumberAwareComparator();
         for (Iterator it = self.iterator(); it.hasNext();) {
             Object o = it.next();
@@ -1174,12 +1174,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self       a Collection
      * @param comparator a Comparator
-     * @return self       without duplicates
+     * @return self       the now modified collection without duplicates
      */
     public static Collection unique(Collection self, Comparator comparator) {
         if (self instanceof Set)
             return self;
-        List answer = new ArrayList();
+        Collection answer = createSimilarCollection(self);
         for (Iterator it = self.iterator(); it.hasNext();) {
             Object o = it.next();
             boolean duplicated = false;
@@ -1734,10 +1734,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self    a Collection
      * @param closure a closure condition
-     * @return a List of the values found
+     * @return a Collection of matching values
      */
-    public static List findAll(Collection self, Closure closure) {
-        List answer = new ArrayList(self.size());
+    public static Collection findAll(Collection self, Closure closure) {
+        Collection answer = createSimilarCollection(self);
         for (Iterator iter = self.iterator(); iter.hasNext();) {
             Object value = iter.next();
             if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
