@@ -3370,24 +3370,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * This converts a possibly negative index to a real index into the array.
-     *
-     * @param i    the unnormalised index
-     * @param size the array size
-     * @return the normalised index
-     */
-    protected static int normaliseIndex(int i, int size) {
-        int temp = i;
-        if (i < 0) {
-            i += size;
-        }
-        if (i < 0) {
-            throw new ArrayIndexOutOfBoundsException("Negative array index [" + temp + "] too large for array size " + size);
-        }
-        return i;
-    }
-
-    /**
      * Support the subscript operator for List
      *
      * @param coll     a Collection

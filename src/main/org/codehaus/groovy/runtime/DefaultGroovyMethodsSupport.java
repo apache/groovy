@@ -28,8 +28,8 @@ public class DefaultGroovyMethodsSupport {
 
     // helper method for getAt and putAt
     protected static RangeInfo subListBorders(int size, IntRange range) {
-        int from = DefaultGroovyMethods.normaliseIndex(DefaultTypeTransformation.intUnbox(range.getFrom()), size);
-        int to = DefaultGroovyMethods.normaliseIndex(DefaultTypeTransformation.intUnbox(range.getTo()), size);
+        int from = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getFrom()), size);
+        int to = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getTo()), size);
         boolean reverse = range.isReverse();
         if (from > to) {
             // support list[1..-1]
@@ -43,8 +43,26 @@ public class DefaultGroovyMethodsSupport {
 
     // helper method for getAt and putAt
     protected static RangeInfo subListBorders(int size, EmptyRange range) {
-        int from = DefaultGroovyMethods.normaliseIndex(DefaultTypeTransformation.intUnbox(range.getFrom()), size);
+        int from = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getFrom()), size);
         return new RangeInfo(from, from, false);
+    }
+
+    /**
+     * This converts a possibly negative index to a real index into the array.
+     *
+     * @param i    the unnormalised index
+     * @param size the array size
+     * @return the normalised index
+     */
+    protected static int normaliseIndex(int i, int size) {
+        int temp = i;
+        if (i < 0) {
+            i += size;
+        }
+        if (i < 0) {
+            throw new ArrayIndexOutOfBoundsException("Negative array index [" + temp + "] too large for array size " + size);
+        }
+        return i;
     }
 
     protected static class RangeInfo {
