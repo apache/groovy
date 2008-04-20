@@ -315,17 +315,22 @@ public class DefaultTypeTransformation {
         }
         Object[] args = null;
         if (object instanceof Collection) {
-            Collection list = (Collection) object;
-            args = list.toArray();
+            if (Set.class.isAssignableFrom(type) || List.class.isAssignableFrom(type)) {
+                args = new Object[1];
+                args [0] = object;
+            } else {
+                Collection coll = (Collection) object;
+                args = coll.toArray();
+            }
         } else if (object instanceof Object[]) {
             args = (Object[]) object;
         } else if (object instanceof Map) {
             // emulate named params constructor
             args = new Object[1];
             args [0] = object;
-        } 
+        }
         if (args != null) {
-            // lets try invoke the constructor with the list as arguments
+            // let's try invoke the constructor with the list as arguments
             // such as for creating a Dimension, Point, Color etc.
             try {
                 return InvokerHelper.invokeConstructorOf(type, args);

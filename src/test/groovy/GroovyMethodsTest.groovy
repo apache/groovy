@@ -237,9 +237,9 @@ class GroovyMethodsTest extends GroovySwingTestCase {
 
     void testArrayListAsLinkedList() {
         ArrayList nums = [1, 2, 3, 4, 5]
-        shouldFail(GroovyCastException.class) {
-            def numList = nums as LinkedList
-        }
+        def result = nums as LinkedList
+        assert result == [1, 2, 3, 4, 5]
+        assert result.class == LinkedList
     }
 
     void testFileSize() {
