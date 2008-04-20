@@ -158,9 +158,9 @@ public class ReflectionCache {
 
     /**
      * Get the CachedClass for a the given Class (which may be a Type).
-     *   
+     *
      * @param klazz
-     * @return
+     * @return the class
      */
     public static CachedClass getCachedClass(Class klazz) {
         if (klazz == null)
