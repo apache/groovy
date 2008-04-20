@@ -14,18 +14,17 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.control;
+package org.codehaus.groovy.transform;
 
-import org.codehaus.groovy.classgen.GeneratorContext;
-import org.codehaus.groovy.control.messages.SimpleMessage;
-import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
-import org.codehaus.groovy.ast.GroovyASTTransformation;
+import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ASTSingleNodeTransformation;
-import org.codehaus.groovy.ast.GroovyASTTransformationClass;
-import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.classgen.GeneratorContext;
+import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.messages.SimpleMessage;
 
 import java.util.Collection;
 
@@ -55,7 +54,7 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
     }
 
     /**
-     * If the annotation is annotated with {@link org.codehaus.groovy.ast.GroovyASTTransformation}
+     * If the annotation is annotated with {@link GroovyASTTransformation}
      * the annotation is added to <code>stageVisitors</code> at the appropriate processor visitor.
      *
      * @param node the node to process

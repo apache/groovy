@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.ast;
+package org.codehaus.groovy.transform;
 
 import org.codehaus.groovy.control.CompilePhase;
 
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.annotation.ElementType;
 
 /**
  * This is an annotaton on a class, specifically one of

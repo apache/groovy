@@ -10,6 +10,8 @@ import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.transform.ASTSingleNodeTransformation;
+import org.codehaus.groovy.transform.GroovyASTTransformation;
 import org.objectweb.asm.Opcodes;
 
 import java.util.Iterator;

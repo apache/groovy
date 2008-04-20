@@ -17,20 +17,20 @@ package org.codehaus.groovy.grails.compiler.injection;
 
 //import org.apache.commons.logging.Log;
 //import org.apache.commons.logging.LogFactory;
+
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.GeneratorContext;
-import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.CompilePhase;
-//import org.codehaus.groovy.grails.commons.GrailsDomainClassProperty;
-//import org.codehaus.groovy.grails.commons.GrailsDomainConfigurationUtil;
-//import org.codehaus.groovy.grails.commons.GrailsResourceUtils;
+import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.transform.ASTSingleNodeTransformation;
+import org.codehaus.groovy.transform.GroovyASTTransformation;
 
 import java.lang.reflect.Modifier;
-import java.util.*;
 import java.net.URL;
+import java.util.*;
 
 /**
  * This is substantially the same code from Grails, except some references de-referenced

@@ -14,29 +14,20 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.control;
+package org.codehaus.groovy.transform;
 
+import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.classgen.GeneratorContext;
-import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.ASTSingleNodeTransformation;
-import org.codehaus.groovy.ast.AnnotationNode;
-import org.codehaus.groovy.ast.AnnotatedNode;
+import org.codehaus.groovy.control.*;
 
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Collection;
-import java.util.ArrayList;
+import java.util.*;
 
 /**
  * This class handles the invocation of the ASTAnnotationTransformation
  * when it is encountered by a tree walk.  One instance of each exists
  * for each phase of the compilation it applies to.  Before invocation the
  * <p/>
- * {@link ASTTransformationCollectorCodeVisitor} will add a list
+ * {@link org.codehaus.groovy.transform.ASTTransformationCollectorCodeVisitor} will add a list
  * of annotations that this visitor should be concerned about.  All other
  * annotations are ignored, whether or not they are GroovyASTTransformation
  * annotated or not.
@@ -152,7 +143,7 @@ public class ASTTransformationVisitor extends ClassCodeVisitorSupport {
     }
 
 
-    static void addPhaseOperations(CompilationUnit compilationUnit) {
+    public static void addPhaseOperations(CompilationUnit compilationUnit) {
         compilationUnit.addPhaseOperation(new ASTTransformationCollectorCodeVisitor().getOperation(), Phases.SEMANTIC_ANALYSIS);
         for (CompilePhase phase : CompilePhase.values()) {
             ASTTransformationVisitor visitor = new ASTTransformationVisitor(phase);

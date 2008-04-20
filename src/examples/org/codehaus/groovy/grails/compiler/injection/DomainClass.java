@@ -1,13 +1,11 @@
 package org.codehaus.groovy.grails.compiler.injection;
 
-import org.codehaus.groovy.ast.GroovyASTTransformation;
-import org.codehaus.groovy.ast.GroovyASTTransformationClass;
-import org.codehaus.groovy.control.Phases;
+import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.annotation.ElementType;
 
 /**
  * Created by IntelliJ IDEA.

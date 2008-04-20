@@ -1,9 +1,9 @@
-package org.codehaus.groovy.ast;
+package org.codehaus.groovy.transform;
 
+import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
-import java.lang.annotation.ElementType;
 
 /**
  * This annotation is an annotation on some item that indicated that when it

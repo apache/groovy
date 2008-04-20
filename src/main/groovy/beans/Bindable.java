@@ -16,7 +16,7 @@
 
 package groovy.beans;
 
-import org.codehaus.groovy.ast.GroovyASTTransformationClass;
+import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
