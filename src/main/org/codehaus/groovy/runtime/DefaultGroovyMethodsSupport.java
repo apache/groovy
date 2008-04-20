@@ -59,6 +59,12 @@ public class DefaultGroovyMethodsSupport {
     }
 
     protected static Collection cloneSimilarCollection(Collection left, int newCapacity) {
+        Collection answer = createSimilarCollection(left, newCapacity);
+        answer.addAll(left);
+        return answer;
+    }
+
+    protected static Collection createSimilarCollection(Collection left, int newCapacity) {
         Collection answer;
         if (left instanceof SortedSet) {
             answer = new TreeSet();
@@ -69,7 +75,6 @@ public class DefaultGroovyMethodsSupport {
         } else {
             answer = new ArrayList(newCapacity);
         }
-        answer.addAll(left);
         return answer;
     }
 

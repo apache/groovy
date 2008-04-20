@@ -3992,16 +3992,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create a List composed of the intersection of both collections.  Any
-     * elements that exist in both collections are added to the resultant list.
+     * Create a Collection composed of the intersection of both collections.  Any
+     * elements that exist in both collections are added to the resultant collection.
      *
      * @param left  a Collection
      * @param right a Collection
-     * @return a List as an intersection of both collections
+     * @return a Collection as an intersection of both collections
      */
-    public static List intersect(Collection left, Collection right) {
+    public static Collection intersect(Collection left, Collection right) {
         if (left.isEmpty())
-            return new ArrayList();
+            return createSimilarCollection(left, 0);
 
         if (left.size() < right.size()) {
             Collection swaptemp = left;
@@ -4012,7 +4012,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         // TODO optimise if same type?
         // boolean nlgnSort = sameType(new Collection[]{left, right});
 
-        List result = new ArrayList();
+        Collection result = createSimilarCollection(left, left.size());
         //creates the collection to look for values.
         Collection pickFrom = new TreeSet(new NumberAwareComparator());
         pickFrom.addAll(left);
