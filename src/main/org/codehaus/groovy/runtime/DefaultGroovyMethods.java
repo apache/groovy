@@ -3204,14 +3204,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * <p/>
-     * Returns a new Map containg all entries from <code>left</code> and <code>right</code>,
+     * Returns a new Map containing all entries from <code>left</code> and <code>right</code>,
      * giving precedence to <code>right</code>.  Any keys appearing in both Maps
      * will appear in the resultant map with values from the <code>right</code>
-     * operand.
+     * operand. If the <code>left</code> map is one of TreeMap, LinkedHashMap, Hashtable
+     * or Properties, the returned Map will preserve that type, otherwise a HashMap will
+     * be returned.
      * </p>
      * <p/>
-     * <p/>
-     * Equivalent to <code>Map m = new HashMap(); m.putAll(left); m.putAll(right); return m;</code>
+     * Roughly equivalent to <code>Map m = new HashMap(); m.putAll(left); m.putAll(right); return m;</code>
+     * but with some additional logic to preserve the <code>left</code> Map type for common cases as
+     * described above.
      * </p>
      *
      * @param left  a Map
@@ -3219,7 +3222,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a new Map containing all entries from left and right
      */
     public static Map plus(Map left, Map right) {
-        Map map = new TreeMap(left);
+        Map map = cloneSimilarMap(left);
         map.putAll(right);
         return map;
     }
@@ -3235,24 +3238,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static Object putAt(Map self, Object key, Object value) {
         self.put(key, value);
         return value;
-    }
-
-    /**
-     * This converts a possibly negative index to a real index into the array.
-     *
-     * @param i    the unnormalised index
-     * @param size the array size
-     * @return the normalised index
-     */
-    protected static int normaliseIndex(int i, int size) {
-        int temp = i;
-        if (i < 0) {
-            i += size;
-        }
-        if (i < 0) {
-            throw new ArrayIndexOutOfBoundsException("Negative array index [" + temp + "] too large for array size " + size);
-        }
-        return i;
     }
 
     /**
@@ -3820,15 +3805,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the merged Collection
      */
     public static Collection plus(Collection left, Collection right) {
-        final Collection answer;
-        if (left instanceof SortedSet) {
-            answer = new TreeSet();
-        } else if (left instanceof Set) {
-            answer = new HashSet();
-        } else {
-            answer = new ArrayList(left.size() + right.size());
-        }
-        answer.addAll(left);
+        final Collection answer = cloneSimilarCollection(left, left.size() + right.size());
         answer.addAll(right);
         return answer;
     }
@@ -3844,15 +3821,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the resulting Collection
      */
     public static Collection plus(Collection left, Object right) {
-        final Collection answer;
-        if(left instanceof SortedSet) {
-            answer = new TreeSet();
-        } else if (left instanceof Set) {
-            answer = new HashSet();
-        } else {
-            answer = new ArrayList(left.size() + 1);
-        }
-        answer.addAll(left);
+        final Collection answer = cloneSimilarCollection(left, left.size() + 1);
         answer.add(right);
         return answer;
     }
@@ -3876,16 +3845,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create a List composed of the intersection of both collections.  Any
-     * elements that exist in both collections are added to the resultant list.
+     * Create a Collection composed of the intersection of both collections.  Any
+     * elements that exist in both collections are added to the resultant collection.
      *
      * @param left  a Collection
      * @param right a Collection
-     * @return a List as an intersection of both collections
+     * @return a Collection as an intersection of both collections
      */
-    public static List intersect(Collection left, Collection right) {
+    public static Collection intersect(Collection left, Collection right) {
         if (left.isEmpty())
-            return new ArrayList();
+            return createSimilarCollection(left, 0);
 
         if (left.size() < right.size()) {
             Collection swaptemp = left;
@@ -3896,7 +3865,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         // TODO optimise if same type?
         // boolean nlgnSort = sameType(new Collection[]{left, right});
 
-        List result = new ArrayList();
+        Collection result = createSimilarCollection(left, left.size());
         //creates the collection to look for values.
         Collection pickFrom = new TreeSet(new NumberAwareComparator());
         pickFrom.addAll(left);
@@ -4138,12 +4107,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the resulting set
      */
     public static Set minus(Set self, Collection operands) {
-        final Set ansSet;
-        if (self instanceof SortedSet) {
-            ansSet = new TreeSet(self);
-        } else {
-            ansSet = new HashSet(self);
-        }
+        final Set ansSet = createSimilarSet(self);
+        ansSet.addAll(self);
         if (self.size() > 0) {
             ansSet.removeAll(operands);
         }
@@ -4158,12 +4123,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the resulting set
      */
     public static Set minus(Set self, Object operand) {
-        final Set ansSet;
-        if(self instanceof SortedSet) {
-            ansSet = new TreeSet();
-        } else {
-            ansSet = new HashSet();
-        }
+        final Set ansSet = createSimilarSet(self);
         Comparator numberComparator = new NumberAwareComparator();
         for (Iterator it = self.iterator(); it.hasNext();) {
             Object o = it.next();
@@ -4511,40 +4471,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         self.write(value);
         self.flush();
         return self;
-    }
-
-    /**
-     * Determines if all items of this array are of the same type.
-     * @param cols an array of collections
-     * @return true if the collections are all of the same type
-     */
-    private static boolean sameType(Collection[] cols) {
-        List all = new LinkedList();
-        for (int i = 0; i < cols.length; i++) {
-            all.addAll(cols[i]);
-        }
-        if (all.size() == 0)
-            return true;
-
-        Object first = all.get(0);
-
-        //trying to determine the base class of the collections
-        //special case for Numbers
-        Class baseClass;
-        if (first instanceof Number) {
-            baseClass = Number.class;
-        } else {
-            baseClass = first.getClass();
-        }
-
-        for (int i = 0; i < cols.length; i++) {
-            for (Iterator iter = cols[i].iterator(); iter.hasNext();) {
-                if (!baseClass.isInstance(iter.next())) {
-                    return false;
-                }
-            }
-        }
-        return true;
     }
 
     // Primitive type array methods

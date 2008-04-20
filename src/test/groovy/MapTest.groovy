@@ -53,7 +53,7 @@ class MapTest extends GroovyTestCase {
             assert false , "should contain 3!"
         }
     }
-    
+
     void testEmptyMap() {
         def m = [:]
 
@@ -99,14 +99,24 @@ class MapTest extends GroovyTestCase {
         assert [:]   == ['a':1].findAll {false}
     }
 
-    void testMapAddition() {
+    void testMapAdditionProducesCorrectValueAndPreservesOriginalMaps() {
         def left = [a:1, b:2]
         def right = [c:3]
         assert left + right == [a:1, b:2, c:3], "should contain all entries from both maps"
         assert left == [a:1, b:2] && right == [c:3], "LHS/RHS should not be modified"
+    }
 
-        left = [a:1, b:1]
-        right = [a:2]
+    void testMapAdditionGivesPrecedenceOfOverlappingValuesToRightMap() {
+        def left = [a:1, b:1]
+        def right = [a:2]
         assert left + right == [a:2, b:1], "RHS should take precedence when entries have same key"
+    }
+
+    void testMapAdditionPreservesOriginalTypeForCommonCases() {
+        def other = [c: 3]
+        assert ([a: 1, b: 2] as Properties)    + other == [a:1, b:2, c:3] as Properties
+        assert ([a: 1, b: 2] as Hashtable)     + other == [a:1, b:2, c:3] as Hashtable
+        assert ([a: 1, b: 2] as LinkedHashMap) + other == [a:1, b:2, c:3] as LinkedHashMap
+        assert ([a: 1, b: 2] as TreeMap)       + other == [a:1, b:2, c:3] as TreeMap
     }
 }
