@@ -1056,7 +1056,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static Collection unique(Collection self) {
         if (self instanceof Set)
             return self;
-        Collection answer = createSimilarCollection(self);
+        List answer = new ArrayList();
         NumberAwareComparator numberAwareComparator = new NumberAwareComparator();
         for (Iterator it = self.iterator(); it.hasNext();) {
             Object o = it.next();
@@ -1179,7 +1179,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static Collection unique(Collection self, Comparator comparator) {
         if (self instanceof Set)
             return self;
-        Collection answer = createSimilarCollection(self);
+        List answer = new ArrayList();
         for (Iterator it = self.iterator(); it.hasNext();) {
             Object o = it.next();
             boolean duplicated = false;
