@@ -85,6 +85,10 @@ if [ -z "$JAVA_HOME" ] ; then
     fi
 fi
 
+if [ -n "$GROOVY_HOME" -a `expr "$GROOVY_HOME":'\/$'` ] ; then
+    GROOVY_HOME=`echo $GROOVY_HOME | sed -e 's/\/$//'`
+fi
+
 # For Cygwin, ensure paths are in UNIX format before anything is touched.
 if $cygwin ; then
     [ -n "$GROOVY_HOME" ] && GROOVY_HOME=`cygpath --unix "$GROOVY_HOME"`
