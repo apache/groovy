@@ -64,6 +64,8 @@ public class DefaultGroovyMethodsSupport {
             answer = new TreeSet();
         } else if (left instanceof Set) {
             answer = new HashSet();
+        } else if (left instanceof LinkedList) {
+            answer = new LinkedList();
         } else {
             answer = new ArrayList(newCapacity);
         }
@@ -87,7 +89,7 @@ public class DefaultGroovyMethodsSupport {
         return map;
     }
 
-    protected static Set createLikeSet(Set self) {
+    protected static Set createSimilarSet(Set self) {
         final Set ansSet;
         if (self instanceof SortedSet) {
             ansSet = new TreeSet();

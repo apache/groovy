@@ -4254,7 +4254,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the resulting set
      */
     public static Set minus(Set self, Collection operands) {
-        final Set ansSet = createLikeSet(self);
+        final Set ansSet = createSimilarSet(self);
         ansSet.addAll(self);
         if (self.size() > 0) {
             ansSet.removeAll(operands);
@@ -4270,7 +4270,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the resulting set
      */
     public static Set minus(Set self, Object operand) {
-        final Set ansSet = createLikeSet(self);
+        final Set ansSet = createSimilarSet(self);
         Comparator numberComparator = new NumberAwareComparator();
         for (Iterator it = self.iterator(); it.hasNext();) {
             Object o = it.next();
