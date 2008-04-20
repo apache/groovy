@@ -3333,14 +3333,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * <p/>
-     * Returns a new Map containg all entries from <code>left</code> and <code>right</code>,
+     * Returns a new Map containing all entries from <code>left</code> and <code>right</code>,
      * giving precedence to <code>right</code>.  Any keys appearing in both Maps
      * will appear in the resultant map with values from the <code>right</code>
-     * operand.
+     * operand. If the <code>left</code> map is one of TreeMap, LinkedHashMap, Hashtable
+     * or Properties, the returned Map will preserve that type, otherwise a HashMap will
+     * be returned.
      * </p>
      * <p/>
-     * <p/>
-     * Equivalent to <code>Map m = new HashMap(); m.putAll(left); m.putAll(right); return m;</code>
+     * Roughly equivalent to <code>Map m = new HashMap(); m.putAll(left); m.putAll(right); return m;</code>
+     * but with some additional logic to preserve the <code>left</code> Map type for common cases as
+     * described above.
      * </p>
      *
      * @param left  a Map
@@ -3348,7 +3351,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a new Map containing all entries from left and right
      */
     public static Map plus(Map left, Map right) {
-        Map map = new TreeMap(left);
+        Map map;
+        if (left instanceof TreeMap)
+            map = new TreeMap(left);
+        else if (left instanceof LinkedHashMap)
+            map = new LinkedHashMap(left);
+        else if (left instanceof Properties) {
+            map = new Properties();
+            map.putAll(left);
+        }
+        else if (left instanceof Hashtable)
+            map = new Hashtable(left);
+        else
+            map = new HashMap(left);
         map.putAll(right);
         return map;
     }
