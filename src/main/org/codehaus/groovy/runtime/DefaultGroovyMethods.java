@@ -3351,19 +3351,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a new Map containing all entries from left and right
      */
     public static Map plus(Map left, Map right) {
-        Map map;
-        if (left instanceof TreeMap)
-            map = new TreeMap(left);
-        else if (left instanceof LinkedHashMap)
-            map = new LinkedHashMap(left);
-        else if (left instanceof Properties) {
-            map = new Properties();
-            map.putAll(left);
-        }
-        else if (left instanceof Hashtable)
-            map = new Hashtable(left);
-        else
-            map = new HashMap(left);
+        Map map = cloneSimilarMap(left);
         map.putAll(right);
         return map;
     }
@@ -3964,15 +3952,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the merged Collection
      */
     public static Collection plus(Collection left, Collection right) {
-        final Collection answer;
-        if (left instanceof SortedSet) {
-            answer = new TreeSet();
-        } else if (left instanceof Set) {
-            answer = new HashSet();
-        } else {
-            answer = new ArrayList(left.size() + right.size());
-        }
-        answer.addAll(left);
+        final Collection answer = cloneSimilarCollection(left, left.size() + right.size());
         answer.addAll(right);
         return answer;
     }
@@ -3988,15 +3968,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the resulting Collection
      */
     public static Collection plus(Collection left, Object right) {
-        final Collection answer;
-        if(left instanceof SortedSet) {
-            answer = new TreeSet();
-        } else if (left instanceof Set) {
-            answer = new HashSet();
-        } else {
-            answer = new ArrayList(left.size() + 1);
-        }
-        answer.addAll(left);
+        final Collection answer = cloneSimilarCollection(left, left.size() + 1);
         answer.add(right);
         return answer;
     }
@@ -4282,12 +4254,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the resulting set
      */
     public static Set minus(Set self, Collection operands) {
-        final Set ansSet;
-        if (self instanceof SortedSet) {
-            ansSet = new TreeSet(self);
-        } else {
-            ansSet = new HashSet(self);
-        }
+        final Set ansSet = createLikeSet(self);
+        ansSet.addAll(self);
         if (self.size() > 0) {
             ansSet.removeAll(operands);
         }
@@ -4302,12 +4270,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the resulting set
      */
     public static Set minus(Set self, Object operand) {
-        final Set ansSet;
-        if(self instanceof SortedSet) {
-            ansSet = new TreeSet();
-        } else {
-            ansSet = new HashSet();
-        }
+        final Set ansSet = createLikeSet(self);
         Comparator numberComparator = new NumberAwareComparator();
         for (Iterator it = self.iterator(); it.hasNext();) {
             Object o = it.next();
@@ -4655,40 +4618,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         self.write(value);
         self.flush();
         return self;
-    }
-
-    /**
-     * Determines if all items of this array are of the same type.
-     * @param cols an array of collections
-     * @return true if the collections are all of the same type
-     */
-    private static boolean sameType(Collection[] cols) {
-        List all = new LinkedList();
-        for (int i = 0; i < cols.length; i++) {
-            all.addAll(cols[i]);
-        }
-        if (all.size() == 0)
-            return true;
-
-        Object first = all.get(0);
-
-        //trying to determine the base class of the collections
-        //special case for Numbers
-        Class baseClass;
-        if (first instanceof Number) {
-            baseClass = Number.class;
-        } else {
-            baseClass = first.getClass();
-        }
-
-        for (int i = 0; i < cols.length; i++) {
-            for (Iterator iter = cols[i].iterator(); iter.hasNext();) {
-                if (!baseClass.isInstance(iter.next())) {
-                    return false;
-                }
-            }
-        }
-        return true;
     }
 
     // Primitive type array methods
