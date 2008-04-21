@@ -225,7 +225,7 @@ public class DefaultTypeTransformation {
                 if (type.isAssignableFrom(ArrayList.class) && (Modifier.isAbstract(modifiers) || Modifier.isInterface(modifiers))) {
                     answer = new ArrayList();
                 } else {
-                    // lets call the collections constructor
+                    // let's call the collections constructor
                     // passing in the list wrapper
                     try {
                         answer = (Collection) type.newInstance();
@@ -315,13 +315,10 @@ public class DefaultTypeTransformation {
         }
         Object[] args = null;
         if (object instanceof Collection) {
-            if (Set.class.isAssignableFrom(type) || List.class.isAssignableFrom(type)) {
-                args = new Object[1];
-                args [0] = object;
-            } else {
-                Collection coll = (Collection) object;
-                args = coll.toArray();
-            }
+            // let's try invoke the constructor with the list as arguments
+            // such as for creating a Dimension, Point, Color etc.
+            Collection collection = (Collection) object;
+            args = collection.toArray();
         } else if (object instanceof Object[]) {
             args = (Object[]) object;
         } else if (object instanceof Map) {
@@ -330,14 +327,12 @@ public class DefaultTypeTransformation {
             args[0] = object;
         }
         if (args != null) {
-            // let's try invoke the constructor with the list as arguments
-            // such as for creating a Dimension, Point, Color etc.
             try {
                 return InvokerHelper.invokeConstructorOf(type, args);
             } catch (InvokerInvocationException iie){
                 throw iie;
             } catch (Exception e) {
-                // lets ignore exception and return the original object
+                // let's ignore exception and return the original object
                 // as the caller has more context to be able to throw a more
                 // meaningful exception
             }
