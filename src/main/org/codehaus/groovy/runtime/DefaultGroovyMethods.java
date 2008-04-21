@@ -1430,10 +1430,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self   the object over which we iterate
      * @param filter the filter to perform on the collection (using the isCase(object) method)
-     * @return a list of objects which match the filter
+     * @return a collection of objects which match the filter
      */
-    public static List grep(Object self, Object filter) {
-        List answer = new ArrayList();
+    public static Collection grep(Object self, Object filter) {
+        Collection answer = createSimilarOrDefaultCollection(self);
         MetaClass metaClass = InvokerHelper.getMetaClass(filter);
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
             Object object = iter.next();
@@ -1591,14 +1591,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure    the closure used to transform each element of the collection
      * @return the resultant collection
      */
-    public static Collection collectAll(Collection self, Closure closure) {
-        return collectAll(self, new ArrayList(self.size()), closure);
+    public static List collectAll(Collection self, Closure closure) {
+        return (List) collectAll(self, new ArrayList(self.size()), closure);
     }
 
     /**
      * Recursively iterates through this collection transforming each non-Collection value
      * into a new value using the closure as a transformer. Returns a potentially nested
-     * list of transformed values.
+     * collection of transformed values.
      *
      * @param self       a collection
      * @param collection an initial Collection to which the transformed values are added
@@ -1610,7 +1610,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             final Object o = iter.next();
             if (o instanceof Collection) {
                 Collection c = (Collection) o;
-                collection.add(collectAll(c, new ArrayList(c.size()), closure));
+                collection.add(collectAll(c, createSimilarCollection(collection, c.size()), closure));
             } else {
                 collection.add(closure.call(o));
             }
@@ -3772,13 +3772,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Returns the item from the List excluding the first item.
+     * Returns the items from the List excluding the first item.
      *
      * @param self a List
-     * @return the first item from the List
-     * @throws NoSuchElementException if the list is empty and you try to access the head() item.
+     * @return a list without its first element
+     * @throws NoSuchElementException if the list is empty and you try to access the tail() item.
      */
-    public static Object tail(List self) {
+    public static List tail(List self) {
         if (self.isEmpty()) {
             throw new NoSuchElementException("Cannot access tail() for an empty List");
         }
@@ -3957,7 +3957,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Create a List composed of the elements of this list, repeated
-     * a certain number of times.  Note that for non- primitive
+     * a certain number of times.  Note that for non-primitive
      * elements, multiple references to the same instance will be added.
      *
      * @param self   a Collection
