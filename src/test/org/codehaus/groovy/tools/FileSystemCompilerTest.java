@@ -52,6 +52,8 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  * Tests the compiling & running of GroovyTestCases
@@ -65,19 +67,24 @@ public class FileSystemCompilerTest extends GroovyTestCase {
     final boolean dumpClass = true;
 
     public void testMethodCall() throws Exception {
-        //runTest("ClosureMethodTest.groovy");
-        //runTest("tree/VerboseTreeTest.groovy");
-        //runTest("tree/NestedClosureBugTest.groovy");
-        runTest("tree/SmallTreeTest.groovy");
-        //runTest("LittleClosureTest.groovy");
+        runTest(new String[] {"ClosureMethodTest.groovy"});
+        runTest(new String[] {"tree/VerboseTreeTest.groovy"});
+        runTest(new String[] {"tree/NestedClosureBugTest.groovy"});
+        runTest(new String[] {"tree/SmallTreeTest.groovy"});
+        runTest(new String[] {"LittleClosureTest.groovy"});
+        runTest(new String[] {"JointJava.java", "JointGroovy.groovy"});
     }
 
-    protected void runTest(String name) throws Exception {
-        File file = new File("src/test/groovy/" + name);
+    protected void runTest(String[] names) throws Exception {
+        List files = new ArrayList();
+        for (int i = 0; i < names.length; i++) {
+            String name = names[i];
+            File file = new File("src/test/groovy/" + name);
+            files.add(file);
+            assertTrue("Could not find source file: " + file, file.exists());
+        }
 
-        assertTrue("Could not find source file: " + file, file.exists());
-
-        compiler.compile(new File[]{file});
+        compiler.compile((File[]) files.toArray(new File[names.length]));
     }
 
     protected void setUp() throws Exception {
@@ -95,3 +102,4 @@ public class FileSystemCompilerTest extends GroovyTestCase {
     }
 
 }
+
