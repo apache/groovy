@@ -1,10 +1,11 @@
-/* Copyright 2006-2007 Graeme Rocher
+/*
+ * Copyright 2003-2007 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -130,8 +131,6 @@ smtp.dummy = null
 ''')
 
         assert config
-        println config
-        println config.smtp.server
         assertEquals "localhost", config.smtp.server.url
         assertEquals "fred", config.smtp.username
         assertNull config.smtp.dummy
@@ -151,7 +150,6 @@ smtp.dummy = null
         assertEquals "smtp.myisp.com", config.smtp.mail.host
         assertEquals "server", config.smtp.mail.auth.user
         assertEquals "http://localhost:80/resources", config.resources.URL                
-
     }
 
     void testScopedPropertiesWithNesting() {
@@ -170,7 +168,6 @@ smtp.dummy = null
         assert "smtp.myisp.com" == config.smtp.mail.host
         assertEquals "server", config.smtp.mail.auth.user
         assertEquals "http://localhost:80/resources", config.resources.URL
-
     }
     
     void testScopedVariableReusage() {
@@ -229,7 +226,7 @@ log4j {
 
         assert config
 
-        println config
+        //println config
 
         assertEquals "org.apache.log4j.ConsoleAppender", config.log4j.appender.stdout
         assertEquals "org.apache.log4j.PatternLayout", config.log4j.appender."stdout.layout"
@@ -308,9 +305,7 @@ environments {
         assertEquals "error,stdout", config.log4j.rootLogger
         assertEquals "debug,stdout", config.log4j.logger.org.codehaus.groovy.grails
         assertEquals false, config.log4j.additivity.org.codehaus.groovy.grails
-
     }
-
 
     void testFlattenConfig() {
         def slurper = new ConfigSlurper()
@@ -335,14 +330,11 @@ log4j {
 
         config = config.flatten()
 
-
         assertEquals "org.apache.log4j.ConsoleAppender", config."log4j.appender.stdout"
         assertEquals "org.apache.log4j.PatternLayout", config."log4j.appender.stdout.layout"
         assertEquals "error,stdout", config."log4j.rootLogger"
         assertEquals "info,stdout", config."log4j.logger.org.codehaus.groovy.grails"
         assertEquals false, config."log4j.additivity.org.codehaus.groovy.grails"              
-
-
     }
 
 
@@ -413,7 +405,6 @@ log4j {
 		assertEquals 5, config.var.one
 		assertEquals 10, config.var.two
 	}
-        
 
 	void testSerializeConfig() {   
 		def text = '''
@@ -437,22 +428,33 @@ log4j {
 		                                   
 		def sw = new StringWriter()
 
-
 		config.writeTo(sw)
 
 		def newText = sw.toString()
 
-		println newText
+		//println newText
 
 		config = slurper.parse(newText)
-
 
         assertEquals "org.apache.log4j.ConsoleAppender", config.log4j.appender.stdout
         assertEquals "org.apache.log4j.PatternLayout", config.log4j.appender."stdout.layout"
         assertEquals "error,stdout", config.log4j.rootLogger
         assertEquals "info,stdout", config.log4j.logger.org.codehaus.groovy.grails
         assertEquals false, config.log4j.additivity.org.codehaus.groovy.grails
-
-		
 	}
+
+    public void testNotProperlyNestedPropertiesArePreserved() throws IOException{
+        Properties props = new Properties()
+        props.load(ConfigSlurperTest.class.getResourceAsStream("system.properties"))
+        assertEquals("false", props.get("catalog.prov"))
+        assertEquals("sa", props.get("catalog.prov.db.user"))
+
+        // now round-trip via ConfigSlurper
+        ConfigSlurper configSlurper = new ConfigSlurper()
+        ConfigObject newConfig = configSlurper.parse(props)
+        props = newConfig.toProperties()
+        assertEquals("false", props.get("catalog.prov"))
+        assertEquals("sa", props.get("catalog.prov.db.user"))
+    }
+
 }
