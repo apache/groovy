@@ -20,6 +20,7 @@ import groovy.xml.dom.DOMUtil;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.IntegerCache;
 import org.codehaus.groovy.runtime.wrappers.PojoWrapper;
+import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
 import org.w3c.dom.Element;
 
 import java.beans.Introspector;
@@ -776,11 +777,14 @@ public class InvokerHelper {
             //else try a statically typed method or a GDK method
             return groovy.getMetaClass().invokeMethod(object, methodName, asArray(arguments));
         } catch (MissingMethodException e) {
-            if (!intercepting && e.getMethod().equals(methodName) && object.getClass() == e.getType()) {
+            if (e instanceof MissingMethodExecutionFailed) {
+                throw (MissingMethodException) e.getCause();
+            } else if (!intercepting && e.getMethod().equals(methodName) && object.getClass() == e.getType()) {
                 // in case there's nothing else, invoke the object's own invokeMethod()
                 return groovy.invokeMethod(methodName, asUnwrappedArray(arguments));
+            } else {
+                throw e;
             }
-            throw e;
         }
     }
 

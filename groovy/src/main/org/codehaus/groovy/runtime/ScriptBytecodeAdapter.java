@@ -19,6 +19,7 @@ import groovy.lang.*;
 
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
 import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack;
+import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.wrappers.GroovyObjectWrapper;
 import org.codehaus.groovy.runtime.wrappers.PojoWrapper;
@@ -77,7 +78,9 @@ public class ScriptBytecodeAdapter {
                     result = receiver.getMetaClass().invokeMethod(senderClass, receiver, messageName, messageArguments, false, true);
                 }
             } catch (MissingMethodException e) {
-                if (!intercepting && receiver.getClass() == e.getType() && e.getMethod().equals(messageName)) {
+                if (e instanceof MissingMethodExecutionFailed) {
+                    throw e.getCause();
+                } else if (!intercepting && receiver.getClass() == e.getType() && e.getMethod().equals(messageName)) {
                     // in case there's nothing else, invoke the object's own invokeMethod()
                     result = receiver.invokeMethod(messageName, messageArguments);
                 } else {
