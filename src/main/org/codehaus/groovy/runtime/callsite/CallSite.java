@@ -26,6 +26,7 @@ import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Base class for all call sites
@@ -36,17 +37,20 @@ public abstract class CallSite {
     protected final int index;
     public final String name;
     protected final CallSiteArray array;
+    public final AtomicInteger usage;
 
     public CallSite(CallSiteArray array, int index, String name) {
         this.name = name;
         this.index = index;
         this.array = array;
+        this.usage = GroovyCategorySupport.getCategoryNameUsage(name);
     }
 
     public CallSite(CallSite prev) {
         this.name = prev.name;
         this.index = prev.index;
         this.array = prev.array;
+        this.usage = prev.usage;
     }
 
     /**
@@ -179,7 +183,7 @@ public abstract class CallSite {
     final CallSite createPojoSite(Object receiver, Object[] args) {
         MetaClass metaClass = InvokerHelper.getMetaClass(receiver.getClass());
 
-        if (metaClass instanceof MetaClassImpl) {
+        if (usage.get() == 0 && metaClass instanceof MetaClassImpl) {
           return ((MetaClassImpl)metaClass).createPojoCallSite(this, receiver, args);
         }
 
@@ -321,7 +325,7 @@ public abstract class CallSite {
         final MetaClass metaClass = InvokerHelper.getMetaClass(aClass);
 
         CallSite site;
-        if (metaClass.getClass() != MetaClassImpl.class || GroovyCategorySupport.hasCategoryInAnyThread()) {
+        if (metaClass.getClass() != MetaClassImpl.class || GroovyCategorySupport.hasCategoryInCurrentThread()) {
             site = new PojoMetaClassGetPropertySite(this, metaClass);
         }
         else {
@@ -351,7 +355,7 @@ public abstract class CallSite {
         final MetaClass metaClass = receiver.getMetaClass();
 
         CallSite site;
-        if (metaClass.getClass() != MetaClassImpl.class || GroovyCategorySupport.hasCategoryInAnyThread()) {
+        if (metaClass.getClass() != MetaClassImpl.class || GroovyCategorySupport.hasCategoryInCurrentThread()) {
             site = new PogoMetaClassGetPropertySite(this, metaClass);
         }
         else {
@@ -402,14 +406,14 @@ public abstract class CallSite {
         }
 
         public final Object callGetProperty (Object receiver) {
-            if (GroovyCategorySupport.hasCategoryInAnyThread() || !(receiver instanceof GroovyObject) || ((GroovyObject) receiver).getMetaClass() != metaClass) {
+            if (GroovyCategorySupport.hasCategoryInCurrentThread() || !(receiver instanceof GroovyObject) || ((GroovyObject) receiver).getMetaClass() != metaClass) {
                 return createGetPropertySite(receiver).getProperty(receiver);
             } else
                 return effective.getProperty(receiver);
         }
 
         public final CallSite acceptGetProperty(Object receiver) {
-            if (GroovyCategorySupport.hasCategoryInAnyThread() || !(receiver instanceof GroovyObject) || ((GroovyObject)receiver).getMetaClass() != metaClass) {
+            if (GroovyCategorySupport.hasCategoryInCurrentThread() || !(receiver instanceof GroovyObject) || ((GroovyObject)receiver).getMetaClass() != metaClass) {
                 return createGetPropertySite(receiver);
             } else {
                 return this;
@@ -417,14 +421,14 @@ public abstract class CallSite {
         }
 
         public final Object callGroovyObjectGetProperty (Object receiver) {
-            if (GroovyCategorySupport.hasCategoryInAnyThread() || !(receiver instanceof GroovyObject) || ((GroovyObject) receiver).getMetaClass() != metaClass) {
+            if (GroovyCategorySupport.hasCategoryInCurrentThread() || !(receiver instanceof GroovyObject) || ((GroovyObject) receiver).getMetaClass() != metaClass) {
                 return createGetPropertySite(receiver).getProperty(receiver);
             } else
                 return effective.getProperty(receiver);
         }
 
         public final CallSite acceptGroovyObjectGetProperty(Object receiver) {
-            if (GroovyCategorySupport.hasCategoryInAnyThread() || !(receiver instanceof GroovyObject) || ((GroovyObject)receiver).getMetaClass() != metaClass) {
+            if (GroovyCategorySupport.hasCategoryInCurrentThread() || !(receiver instanceof GroovyObject) || ((GroovyObject)receiver).getMetaClass() != metaClass) {
                 return createGroovyObjectGetPropertySite(receiver);
             } else {
                 return this;
@@ -447,14 +451,14 @@ public abstract class CallSite {
         }
 
         public final Object callGetProperty (Object receiver) {
-            if (GroovyCategorySupport.hasCategoryInAnyThread() || receiver.getClass() != metaClass.getTheClass()) {
+            if (GroovyCategorySupport.hasCategoryInCurrentThread() || receiver.getClass() != metaClass.getTheClass()) {
                 return createGetPropertySite(receiver).getProperty(receiver);
             } else
                 return effective.getProperty(receiver);
         }
 
         public final CallSite acceptGetProperty(Object receiver) {
-            if (GroovyCategorySupport.hasCategoryInAnyThread() || !(receiver instanceof GroovyObject) || ((GroovyObject)receiver).getMetaClass() != metaClass) {
+            if (GroovyCategorySupport.hasCategoryInCurrentThread() || !(receiver instanceof GroovyObject) || ((GroovyObject)receiver).getMetaClass() != metaClass) {
                 return createGetPropertySite(receiver);
             } else {
                 return this;
@@ -477,7 +481,7 @@ public abstract class CallSite {
         }
 
         public final Object callGetProperty (Object receiver) {
-            if (GroovyCategorySupport.hasCategoryInAnyThread() || !(receiver instanceof GroovyObject) || ((GroovyObject) receiver).getMetaClass() != metaClass) {
+            if (GroovyCategorySupport.hasCategoryInCurrentThread() || !(receiver instanceof GroovyObject) || ((GroovyObject) receiver).getMetaClass() != metaClass) {
                 return createGetPropertySite(receiver).getProperty(receiver);
             } else {
                 return getProperty(receiver);
@@ -485,7 +489,7 @@ public abstract class CallSite {
         }
 
         public final CallSite acceptGetProperty(Object receiver) {
-            if (GroovyCategorySupport.hasCategoryInAnyThread() || !(receiver instanceof GroovyObject) || ((GroovyObject)receiver).getMetaClass() != metaClass) {
+            if (GroovyCategorySupport.hasCategoryInCurrentThread() || !(receiver instanceof GroovyObject) || ((GroovyObject)receiver).getMetaClass() != metaClass) {
                 return createGetPropertySite(receiver);
             } else {
                 return this;
@@ -493,7 +497,7 @@ public abstract class CallSite {
         }
 
         public final Object callGroovyObjectGetProperty (Object receiver) {
-            if (GroovyCategorySupport.hasCategoryInAnyThread() || ((GroovyObject) receiver).getMetaClass() != metaClass) {
+            if (GroovyCategorySupport.hasCategoryInCurrentThread() || ((GroovyObject) receiver).getMetaClass() != metaClass) {
                 return createGroovyObjectGetPropertySite(receiver).getProperty(receiver);
             } else {
                 return getProperty(receiver);
@@ -501,7 +505,7 @@ public abstract class CallSite {
         }
 
         public final CallSite acceptGroovyObjectGetProperty(Object receiver) {
-            if (GroovyCategorySupport.hasCategoryInAnyThread() || !(receiver instanceof GroovyObject) || ((GroovyObject)receiver).getMetaClass() != metaClass) {
+            if (GroovyCategorySupport.hasCategoryInCurrentThread() || !(receiver instanceof GroovyObject) || ((GroovyObject)receiver).getMetaClass() != metaClass) {
                 return createGroovyObjectGetPropertySite(receiver);
             } else {
                 return this;
@@ -532,7 +536,7 @@ public abstract class CallSite {
         }
 
         public final CallSite acceptGetProperty(Object receiver) {
-            if (GroovyCategorySupport.hasCategoryInAnyThread() || receiver.getClass() != metaClass.getTheClass()) {
+            if (GroovyCategorySupport.hasCategoryInCurrentThread() || receiver.getClass() != metaClass.getTheClass()) {
                 return createGetPropertySite(receiver);
             } else {
                 return this;

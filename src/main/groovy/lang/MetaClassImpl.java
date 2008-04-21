@@ -577,8 +577,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         if (answer == null) answer = FastArray.EMPTY_LIST;
 
-        if (!isCallToSuper && GroovyCategorySupport.hasCategoryInAnyThread()) {
-            List used = GroovyCategorySupport.getCategoryMethods(sender, name);
+        if (!isCallToSuper) {
+            List used = GroovyCategorySupport.getCategoryMethods(name);
             if (used != null) {
                 FastArray arr;
                 if (answer instanceof MetaMethod) {
@@ -590,6 +590,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
                 for (Iterator iter = used.iterator(); iter.hasNext();) {
                     MetaMethod element = (MetaMethod) iter.next();
+                    if (!element.getDeclaringClass().getTheClass().isAssignableFrom(sender))
+                      continue;
                     filterMatchingMethodForCategory(arr, element);
                 }
                 answer = arr;
@@ -947,7 +949,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     public MetaMethod getMethodWithCaching(Class sender, String methodName, Object[] arguments, boolean isCallToSuper) {
         // lets try use the cache to find the method
-        if (GroovyCategorySupport.hasCategoryInAnyThread() && !isCallToSuper) {
+        if (!isCallToSuper && GroovyCategorySupport.hasCategoryInCurrentThread()) {
             return getMethodWithoutCaching(sender, methodName, MetaClassHelper.convertToTypeArray(arguments), isCallToSuper);
         } else {
             final MetaMethodIndex.Entry e = metaMethodIndex.getMethods(sender, methodName);
@@ -981,13 +983,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     // This method should be called by CallSite only
-    public MetaMethod getMethodWithCachingInternal (Class sender, String methodName, Class [] params) {
-        if (GroovyCategorySupport.hasCategoryInAnyThread())
-            return getMethodWithoutCaching(sender, methodName, params, false);
+    private MetaMethod getMethodWithCachingInternal (Class sender, CallSite site, Class [] params) {
+        if (site.usage.get() != 0 && GroovyCategorySupport.hasCategoryInCurrentThread())
+            return getMethodWithoutCaching(sender, site.name, params, false);
 
-        final MetaMethodIndex.Entry e = metaMethodIndex.getMethods(sender, methodName);
-        if (e == null)
-          return null;
+        final MetaMethodIndex.Entry e = metaMethodIndex.getMethods(sender, site.name);
+        if (e == null) {
+            return null;
+        }
 
         MetaMethodIndex.CacheEntry cacheEntry;
         final Object methods = e.methods;
@@ -1348,7 +1351,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         // check for a category method named like a getter
-        if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInAnyThread()) {
+        if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
             String getterName = "get" + MetaClassHelper.capitalize(name);
             MetaMethod categoryMethod = getCategoryMethodGetter(sender, getterName, false);
             if (categoryMethod != null) method = categoryMethod;
@@ -1370,7 +1373,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // generic get method
         //----------------------------------------------------------------------
         // check for a generic get method provided through a category
-        if (method == null && !useSuper && !isStatic && GroovyCategorySupport.hasCategoryInAnyThread()) {
+        if (method == null && !useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
             method = getCategoryMethodGetter(sender, "get", true);
             if (method != null) arguments = new Object[]{name};
         }
@@ -1470,7 +1473,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         // check for a category method named like a getter
-        if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInAnyThread()) {
+        if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
             String getterName = "get" + MetaClassHelper.capitalize(name);
             MetaMethod categoryMethod = getCategoryMethodGetter(sender, getterName, false);
             if (categoryMethod != null)
@@ -1497,7 +1500,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // generic get method
         //----------------------------------------------------------------------
         // check for a generic get method provided through a category
-        if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInAnyThread()) {
+        if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
             method = getCategoryMethodGetter(sender, "get", true);
             if (method != null)
                 return new GetMethodMetaProperty(name, method);
@@ -1590,10 +1593,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
 
     private MetaMethod getCategoryMethodGetter(Class sender, String name, boolean useLongVersion) {
-        List possibleGenericMethods = GroovyCategorySupport.getCategoryMethods(sender, name);
+        List possibleGenericMethods = GroovyCategorySupport.getCategoryMethods(name);
         if (possibleGenericMethods != null) {
             for (Iterator iter = possibleGenericMethods.iterator(); iter.hasNext();) {
                 MetaMethod mmethod = (MetaMethod) iter.next();
+                if (!mmethod.getDeclaringClass().getTheClass().isAssignableFrom(sender))
+                  continue;
+
                 CachedClass[] paramTypes = mmethod.getParameterTypes();
                 if (useLongVersion) {
                     if (paramTypes.length == 1 && paramTypes[0].getTheClass() == String.class) {
@@ -1608,10 +1614,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private MetaMethod getCategoryMethodSetter(Class sender, String name, boolean useLongVersion) {
-        List possibleGenericMethods = GroovyCategorySupport.getCategoryMethods(sender, name);
+        List possibleGenericMethods = GroovyCategorySupport.getCategoryMethods(name);
         if (possibleGenericMethods != null) {
             for (Iterator iter = possibleGenericMethods.iterator(); iter.hasNext();) {
                 MetaMethod mmethod = (MetaMethod) iter.next();
+                if (!mmethod.getDeclaringClass().getTheClass().isAssignableFrom(sender))
+                  continue;
+
                 CachedClass[] paramTypes = mmethod.getParameterTypes();
                 if (useLongVersion) {
                     if (paramTypes.length == 2 && paramTypes[0].getTheClass() == String.class) {
@@ -2121,7 +2130,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         // check for a category method named like a setter
-        if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInAnyThread()) {
+        if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
             String getterName = "set" + MetaClassHelper.capitalize(name);
             MetaMethod categoryMethod = getCategoryMethodSetter(sender, getterName, false);
             if (categoryMethod != null) {
@@ -2164,7 +2173,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // generic set method
         //----------------------------------------------------------------------
         // check for a generic get method provided through a category
-        if (method == null && !useSuper && !isStatic && GroovyCategorySupport.hasCategoryInAnyThread()) {
+        if (method == null && !useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
             method = getCategoryMethodSetter(sender, "set", true);
             if (method != null) arguments = new Object[]{name, newValue};
         }
@@ -2748,7 +2757,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     public CallSite createPojoCallSite(CallSite site, Object receiver, Object[] args) {
         if (!(this instanceof AdaptingMetaClass)) {
             Class [] params = MetaClassHelper.convertToTypeArray(args);
-            MetaMethod metaMethod = getMethodWithCachingInternal(getTheClass(), site.name, params);
+            MetaMethod metaMethod = getMethodWithCachingInternal(getTheClass(), site, params);
             if (metaMethod != null)
                return PojoMetaMethodSite.createPojoMetaMethodSite(site, this, metaMethod, params, receiver, args);
         }
@@ -2769,7 +2778,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     public CallSite createPogoCallSite(CallSite site, Object[] args) {
         if (!(this instanceof AdaptingMetaClass)) {
             Class [] params = MetaClassHelper.convertToTypeArray(args);
-            MetaMethod metaMethod = getMethodWithCachingInternal(theClass, site.name, params);
+            MetaMethod metaMethod = getMethodWithCachingInternal(theClass, site, params);
             if (metaMethod != null)
                return PogoMetaMethodSite.createPogoMetaMethodSite(site, this, metaMethod, params, args);
         }
@@ -2779,7 +2788,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     public CallSite createPogoCallCurrentSite(CallSite site, Class sender, Object[] args) {
         if (!(this instanceof AdaptingMetaClass)) {
           Class [] params = MetaClassHelper.convertToTypeArray(args);
-          MetaMethod metaMethod = getMethodWithCachingInternal(sender, site.name, params);
+          MetaMethod metaMethod = getMethodWithCachingInternal(sender, site, params);
           if (metaMethod != null)
             return PogoMetaMethodSite.createPogoMetaMethodSite(site, this, metaMethod, params, args);
         }

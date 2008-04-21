@@ -19,7 +19,6 @@ import groovy.lang.GroovyObject;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedMethod;
-import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 
 /**
@@ -45,7 +44,7 @@ public class PogoMetaMethodSite extends MetaMethodSite {
     }
 
     protected boolean checkCallCurrent(Object receiver, Object[] args) {
-        return !GroovyCategorySupport.hasCategoryInAnyThread()
+        return usage.get() == 0
            && receiver != null
            && receiver.getClass() == metaClass.getTheClass() // meta class match receiver
            && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
@@ -53,7 +52,7 @@ public class PogoMetaMethodSite extends MetaMethodSite {
     }
 
     public final CallSite acceptCall(Object receiver, Object[] args) {
-        if(!GroovyCategorySupport.hasCategoryInAnyThread()
+        if(usage.get() == 0
            && receiver != null
            && receiver.getClass() == metaClass.getTheClass() // meta class match receiver
            && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid

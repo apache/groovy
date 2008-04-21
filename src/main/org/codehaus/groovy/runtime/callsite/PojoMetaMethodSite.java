@@ -17,7 +17,6 @@ package org.codehaus.groovy.runtime.callsite;
 
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
-import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.NullObject;
 
@@ -47,7 +46,7 @@ public class PojoMetaMethodSite extends MetaMethodSite {
     }
 
     protected final boolean checkPojoMetaClass() {
-        return !GroovyCategorySupport.hasCategoryInAnyThread()
+        return usage.get() == 0
             && ((MetaClassImpl)metaClass).getVersion() == version;
     }
 

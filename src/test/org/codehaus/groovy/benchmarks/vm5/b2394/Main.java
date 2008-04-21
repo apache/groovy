@@ -78,10 +78,16 @@ public class Main
 
     public static void main(String[] args)
     {
+        String name = (args == null || args.length == 0) ? "script300.groovy" : args [0];
+        int numIter = (args == null || args.length < 2) ? 100000 : Integer.parseInt(args[1]);
+
         if (args == null || args.length != 3)
         {
             for (int i = 1; i <= 50; ) {
-              new Main("script300.groovy", (5000*20)/i, i);
+              new Main(name, (numIter)/i, i);
+              new Main(name, (numIter)/i, i);
+              new Main(name, (numIter)/i, i);
+              new Main(name, (numIter)/i, i);
               if (i < 10)
                 i++;
               else
@@ -95,7 +101,10 @@ public class Main
         }
         else
         {
-            new Main(args[0], Integer.parseInt(args[1]), Integer.parseInt(args[2]));
+            new Main(args[0], numIter, Integer.parseInt(args[2]));
+            new Main(args[0], numIter, Integer.parseInt(args[2]));
+            new Main(args[0], numIter, Integer.parseInt(args[2]));
+            new Main(args[0], numIter, Integer.parseInt(args[2]));
         }
     }
 }

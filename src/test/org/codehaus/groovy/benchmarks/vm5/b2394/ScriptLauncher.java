@@ -3,15 +3,10 @@ package org.codehaus.groovy.benchmarks.vm5.b2394;
 import groovy.lang.Binding;
 import groovy.lang.Script;
 
-import java.lang.management.ManagementFactory;
-import java.lang.management.ThreadInfo;
-import java.lang.management.ThreadMXBean;
 import java.util.concurrent.CountDownLatch;
 
 public class ScriptLauncher extends Thread
 {
-    final static ThreadMXBean tmxBean = ManagementFactory.getThreadMXBean();
-
     Class scriptClass;
 
     Script script;
@@ -24,7 +19,6 @@ public class ScriptLauncher extends Thread
     public ScriptLauncher(Class scriptClass, int numIter, CountDownLatch latch, long[] tids)
     {
         this.tids = tids;
-        tmxBean.setThreadContentionMonitoringEnabled (true);
         this.scriptClass = scriptClass;
         this.numIter = numIter;
         this.latch = latch;
@@ -55,11 +49,6 @@ public class ScriptLauncher extends Thread
 
             script.run();
         }
-
-        final ThreadInfo threadInfo = tmxBean.getThreadInfo(id);
-        System.out.println(threadInfo.getBlockedCount()
-                + " " + threadInfo.getBlockedTime()
-        );
 
         latch.countDown();
     }
