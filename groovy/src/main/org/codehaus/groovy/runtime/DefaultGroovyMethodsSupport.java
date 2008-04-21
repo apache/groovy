@@ -82,6 +82,13 @@ public class DefaultGroovyMethodsSupport {
         return answer;
     }
 
+    protected static Collection createSimilarOrDefaultCollection(Object object) {
+        if (object instanceof Collection) {
+            return createSimilarCollection((Collection) object);
+        }
+        return new ArrayList();
+    }
+
     protected static Collection createSimilarCollection(Collection collection) {
         return createSimilarCollection(collection, collection.size());
     }
