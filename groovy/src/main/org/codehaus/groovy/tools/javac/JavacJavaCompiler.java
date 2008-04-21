@@ -22,10 +22,12 @@ import java.io.File;
 import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.lang.reflect.Method;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.lang.reflect.InvocationTargetException;
+import java.util.*;
+import java.net.URLClassLoader;
+import java.net.URL;
+import java.net.URI;
+import java.net.URISyntaxException;
 
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -41,7 +43,7 @@ public class JavacJavaCompiler implements JavaCompiler {
     }
 
     public void compile(List files, CompilationUnit cu) {
-        String[] javacParameters = makeParameters(files);
+        String[] javacParameters = makeParameters(files, cu.getClassLoader());
         StringWriter javacOutput=null;
         int javacReturnValue = 0;
         try {
@@ -60,6 +62,8 @@ public class JavacJavaCompiler implements JavaCompiler {
                 javacReturnValue = ((Integer) ret).intValue();
             }
             cu.getConfiguration().getOutput();
+        } catch (InvocationTargetException ite) {
+            cu.getErrorCollector().addFatalError(new ExceptionMessage((Exception) ite.getCause(), true, cu));
         } catch (Exception e) {
             cu.getErrorCollector().addFatalError(new ExceptionMessage(e, true, cu));
         }
@@ -87,7 +91,7 @@ public class JavacJavaCompiler implements JavaCompiler {
     }
     
 
-    private String[] makeParameters(List files) {
+    private String[] makeParameters(List files, GroovyClassLoader parentClassLoader) {
         Map options = config.getJointCompilationOptions();
         LinkedList paras = new LinkedList();
 
@@ -122,10 +126,26 @@ public class JavacJavaCompiler implements JavaCompiler {
         
         // append classpath if not already defined
         if (!hadClasspath) {
+            // add all classpaths that compilation unit sees
+            StringBuffer resultPath = new StringBuffer(DefaultGroovyMethods.join(config.getClasspath(), File.pathSeparator));
+            ClassLoader cl = parentClassLoader;
+            while (cl != null) {
+                if (cl instanceof URLClassLoader) {
+                    URL[] urls = ((URLClassLoader)cl).getURLs();
+                    for (int i = 0; i < urls.length; i++) {
+                        try {
+                            resultPath.append(File.pathSeparator);
+                            resultPath.append(new File(new URI(urls[i].toExternalForm())).getPath());
+                        } catch (URISyntaxException e) {
+                            // ignore it
+                        }
+                    }
+                }
+                cl = cl.getParent();
+            }
+
             paras.add("-classpath");
-            List classpath = config.getClasspath();
-            String resultPath = DefaultGroovyMethods.join(classpath, File.pathSeparator);
-            paras.add(resultPath);
+            paras.add(resultPath.toString());
         }
         
         // files to compile
@@ -170,3 +190,4 @@ public class JavacJavaCompiler implements JavaCompiler {
         throw new ClassNotFoundException("unable to locate the java compiler com.sun.tools.javac.Main, please change your classloader settings");
     }
 }
+
