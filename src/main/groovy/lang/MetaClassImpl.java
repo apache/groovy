@@ -2312,6 +2312,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @return the matching method which should be found
      */
     private MetaMethod findMethod(CachedMethod aMethod) {
+        if (aMethod == null) return null;
         Object methods = getMethods(theClass, aMethod.getName(), false);
         if (methods instanceof FastArray) {
             FastArray m  = (FastArray) methods;
