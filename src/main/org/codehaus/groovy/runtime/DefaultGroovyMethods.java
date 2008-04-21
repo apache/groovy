@@ -3802,8 +3802,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Converts the given collection to either a List, Set, or
-     * SortedSet.  If the given class is something else, the
+     * Converts the given collection to another type. A default concrete
+     * type is used for List, Set, or SortedSet. If the given type has
+     * a constructor taking a collection, that is used. Otherwise, the
      * call is deferred to {link #asType(Object,Class)}.  If this
      * collection is already of the given type, the same instance is
      * returned.
@@ -3814,14 +3815,25 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #asType(Object,Class)
      */
     public static Object asType(Collection col, Class clazz) {
+        if (col.getClass() == clazz) {
+            return col;
+        }
         if (clazz == List.class) {
             return asList(col);
-        } else if (clazz == Set.class) {
+        }
+        if (clazz == Set.class) {
             if (col instanceof Set) return col;
             return new HashSet(col);
-        } else if (clazz == SortedSet.class) {
+        }
+        if (clazz == SortedSet.class) {
             if (col instanceof SortedSet) return col;
             return new TreeSet(col);
+        }
+        Object[] args = {col};
+        try {
+            return InvokerHelper.invokeConstructorOf(clazz, args);
+        } catch (Exception e) {
+            // ignore
         }
         return asType((Object) col, clazz);
     }
