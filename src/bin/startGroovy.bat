@@ -33,14 +33,15 @@ if exist "%SystemRoot%\command\find.exe" set FIND_EXE="%SystemRoot%\command\find
 :check_JAVA_HOME
 @rem Make sure we have a valid JAVA_HOME
 if not "%JAVA_HOME%" == "" goto have_JAVA_HOME
+for %%P in (%PATH%) do if exist %%P\..\bin\java.exe set JAVA_HOME=%%P\..
+if not "%JAVA_HOME%" == "" goto valid_JAVA_HOME
+java -version 2>NUL
+if not ERRORLEVEL 1 goto default_JAVA_EXE
 
 echo.
 echo ERROR: Environment variable JAVA_HOME has not been set.
-echo.
-echo Please set the JAVA_HOME variable in your environment to match the
-echo location of your Java installation.
-echo.
-goto end
+echo Attempting to find JAVA_HOME from PATH also failed.
+goto common_error
 
 :have_JAVA_HOME
 @rem Remove trailing slash from JAVA_HOME if found
@@ -48,15 +49,30 @@ if "%JAVA_HOME:~-1%"=="\" SET JAVA_HOME=%JAVA_HOME:~0,-1%
 
 @rem Validate JAVA_HOME
 %COMMAND_COM% /C DIR "%JAVA_HOME%" 2>&1 | %FIND_EXE% /I /C "%JAVA_HOME%" >nul
-if not errorlevel 1 goto check_GROOVY_HOME
+if not errorlevel 1 goto valid_JAVA_HOME_DIR
 
 echo.
 echo ERROR: JAVA_HOME is set to an invalid directory: %JAVA_HOME%
-echo.
-echo Please set the JAVA_HOME variable in your environment to match the
-echo location of your Java installation.
-echo.
+
+:common_error
+echo Please set the JAVA_HOME variable in your environment
+echo to match the location of your Java installation.
 goto end
+
+:default_JAVA_EXE
+set JAVA_EXE=java.exe
+goto check_GROOVY_HOME
+
+:valid_JAVA_HOME_DIR
+set JAVA_EXE=%JAVA_HOME%\bin\java.exe
+if exist "%JAVA_EXE%" goto valid_JAVA_HOME
+
+echo.
+echo ERROR: No java.exe found at: %JAVA_EXE%
+goto common_error
+
+:valid_JAVA_HOME
+if exist "%JAVA_HOME%\lib\tools.jar" set TOOLS_JAR=%JAVA_HOME%\lib\tools.jar
 
 :check_GROOVY_HOME
 @rem Define GROOVY_HOME if not set
@@ -175,13 +191,10 @@ set CP=.
 set STARTER_MAIN_CLASS=org.codehaus.groovy.tools.GroovyStarter
 set STARTER_CONF=%GROOVY_HOME%\conf\groovy-starter.conf
 
-set JAVA_EXE=%JAVA_HOME%\bin\java.exe
-set TOOLS_JAR=%JAVA_HOME%\lib\tools.jar
-
 if "%JAVA_OPTS%" == "" set JAVA_OPTS="-Xmx128m"
 set JAVA_OPTS=%JAVA_OPTS% -Dprogram.name="%PROGNAME%"
 set JAVA_OPTS=%JAVA_OPTS% -Dgroovy.home="%GROOVY_HOME%"
-set JAVA_OPTS=%JAVA_OPTS% -Dtools.jar="%TOOLS_JAR%"
+if not "%TOOLS_JAR%" == "" set JAVA_OPTS=%JAVA_OPTS% -Dtools.jar="%TOOLS_JAR%"
 set JAVA_OPTS=%JAVA_OPTS% -Dgroovy.starter.conf="%STARTER_CONF%"
 set JAVA_OPTS=%JAVA_OPTS% -Dscript.name="%GROOVY_SCRIPT_NAME%"
 
