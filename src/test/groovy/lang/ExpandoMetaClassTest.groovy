@@ -586,7 +586,52 @@ class ExpandoMetaClassTest extends GroovyTestCase {
             // causing the closure code to select the delegate to call the method
             Closure cl = {m1()}
             cl.delegate = circle
-            assert cl.call()== 1
+            assert cl.call() == 1
+        """
+    }
+
+    void testMissingMethodExceptionThrownFromMissingMethod() {
+        assertScript """
+           class Circle {
+                def invokeMethodInvocations = 0
+                def invokeMethod(String name, Object[] args) {
+                    invokeMethodInvocations++;
+                }
+                def callNonExistingMethod() {
+                  m1()
+                }
+            }
+
+            ExpandoMetaClass emc = new ExpandoMetaClass(Circle.class, false)
+            def exception = new MissingMethodException("m1", Circle, null)
+            emc.methodMissing = {String name, args ->
+                throw exception
+            }
+            emc.initialize()
+
+            Circle circle = new Circle()
+            circle.metaClass = emc
+
+            assert circle.invokeMethodInvocations == 0
+            def gotException=true
+            try {
+               circle.callNonExistingMethod()
+               gotException=false
+            } catch (MissingMethodException mme) {
+               gotException=true
+               assert mme == exception
+            }
+            assert gotException,"MissingMethodException expected, but got something else"
+
+            assert circle.invokeMethodInvocations == 0
+            gotException=true
+            try {
+               circle.m1()
+               gotException=false
+            } catch (MissingMethodException mme) {
+               assert mme == exception
+            }
+            assert gotException,"MissingMethodException expected, but got something else"
         """
     }
 

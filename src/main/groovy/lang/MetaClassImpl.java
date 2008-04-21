@@ -707,7 +707,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 return methodMissing.invoke(instance, new Object[]{methodName, arguments});
             } catch (InvokerInvocationException iie) {
                 if (methodMissing instanceof ClosureMetaMethod && iie.getCause() instanceof MissingMethodException) {
-                    throw (MissingMethodException) iie.getCause();
+                    MissingMethodException mme =  (MissingMethodException) iie.getCause();
+                    throw new MissingMethodExecutionFailed (mme.getMethod(), mme.getClass(),
+                                                            mme.getArguments(),mme.isStatic(),mme);
                 }
                 throw iie;
             }
