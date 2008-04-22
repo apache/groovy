@@ -8,6 +8,23 @@
         <artifactId>groovy-all-jdk14</artifactId>
     </xsl:template>
 
+    <!-- TODO: pull these in from tools pom? -->
+    <xsl:template match="/*[local-name() = 'project']/*[local-name() = 'dependencies']">
+        <dependencies>
+
+            <dependency>
+                <groupId>mx4j</groupId>
+                <artifactId>mx4j</artifactId>
+                <version>3.0.2</version>
+                <scope>compile</scope>
+                <optional>true</optional>
+            </dependency>
+
+            <xsl:apply-templates select="node()"/>
+
+        </dependencies>
+    </xsl:template>
+
     <xsl:template match="@*|node()">
         <xsl:copy>
             <xsl:apply-templates select="@*|node()"/>

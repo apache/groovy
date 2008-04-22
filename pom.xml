@@ -487,7 +487,14 @@
                 </exclusion>
             </exclusions>
         </dependency>
-
+        <!--<dependency>
+            <groupId>net.sf.jopt-simple</groupId>
+            <artifactId>jopt-simple</artifactId>
+            <version>2.4-SNAPSHOT</version>
+            <scope>compile</scope>
+            <optional>true</optional>
+        </dependency>
+-->
         <!-- only used for Ant tasks & scripting tools -->
         <dependency>
             <groupId>org.apache.ant</groupId>
@@ -596,23 +603,6 @@
                     <artifactId>avalon-framework</artifactId>
                 </exclusion>
             </exclusions>
-        </dependency>
-
-        <!-- only used for JMX utilities -->
-        <dependency>
-            <groupId>mx4j</groupId>
-            <artifactId>mx4j</artifactId>
-            <version>3.0.2</version>
-            <scope>compile</scope>
-            <optional>true</optional>
-        </dependency>
-
-        <dependency>
-            <groupId>mockobjects</groupId>
-            <artifactId>mockobjects-core</artifactId>
-            <version>0.09</version>
-            <scope>compile</scope>
-            <optional>true</optional>
         </dependency>
 
         <dependency>
