@@ -9,6 +9,7 @@ import org.codehaus.groovy.antlr.SourceBufferTest;
 import org.codehaus.groovy.antlr.treewalker.*;
 import org.codehaus.groovy.ast.ClassNodeTest;
 import org.codehaus.groovy.ast.LineColumnCheckTestSuite;
+import org.codehaus.groovy.ast.MethodCallExpressionTest;
 import org.codehaus.groovy.ast.MethodNodeTest;
 import org.codehaus.groovy.ast.ModuleNodeTest;
 import org.codehaus.groovy.ast.VariableExpressionTest;
@@ -90,6 +91,7 @@ public class JavaSourceCodehausPackagesSuite {
         suite.addTestSuite(MethodNodeTest.class);
         suite.addTestSuite(VariableExpressionTest.class);
         suite.addTest(LineColumnCheckTestSuite.suite());
+        suite.addTestSuite(MethodCallExpressionTest.class);
         return suite;
     }
 }
