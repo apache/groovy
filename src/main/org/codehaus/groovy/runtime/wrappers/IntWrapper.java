@@ -24,6 +24,6 @@ package org.codehaus.groovy.runtime.wrappers;
 
 public class IntWrapper extends PojoWrapper {
   public IntWrapper(final int wrapped) {
-    super(new Integer(wrapped), int.class);
+    super(Integer.valueOf(wrapped), int.class);
   }
 }

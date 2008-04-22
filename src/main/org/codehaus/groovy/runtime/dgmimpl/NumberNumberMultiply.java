@@ -37,16 +37,16 @@ public final class NumberNumberMultiply extends NumberNumberMetaMethod {
                     public final Object callBinop(Object receiver, Object arg) {
                         return (receiver instanceof Integer && arg instanceof Integer)
                                 && checkPojoMetaClass()
-                              ? new Integer(((Integer) receiver).intValue() * ((Integer) arg).intValue())
+                              ? Integer.valueOf(((Integer) receiver).intValue() * ((Integer) arg).intValue())
                               : super.callBinop(receiver,arg);
                     }
 
                     public final Object invoke(Object receiver, Object[] args) {
-                        return new Integer(((Integer) receiver).intValue() * ((Integer) args[0]).intValue());
+                        return Integer.valueOf(((Integer) receiver).intValue() * ((Integer) args[0]).intValue());
                     }
 
                     public final Object invokeBinop(Object receiver, Object arg) {
-                        return new Integer(((Integer) receiver).intValue() * ((Integer) arg).intValue());
+                        return Integer.valueOf(((Integer) receiver).intValue() * ((Integer) arg).intValue());
                     }
                 };
 

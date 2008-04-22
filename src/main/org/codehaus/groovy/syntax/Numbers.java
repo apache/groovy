@@ -205,7 +205,7 @@ public class Numbers
         switch (type)
         {
             case 'i':
-                return new Integer( Integer.parseInt(text, radix) );
+                return Integer.valueOf( Integer.parseInt(text, radix) );
 
             case 'l':
                 return new Long( Long.parseLong(text, radix) );
@@ -223,7 +223,7 @@ public class Numbers
 
                 if( value.compareTo(MAX_INTEGER) <= 0 && value.compareTo(MIN_INTEGER) >= 0 )
                 {
-                    return new Integer(value.intValue());
+                    return Integer.valueOf(value.intValue());
                 }
                 else if( value.compareTo(MAX_LONG) <= 0 && value.compareTo(MIN_LONG) >= 0 )
                 {

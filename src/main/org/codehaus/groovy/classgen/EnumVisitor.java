@@ -98,7 +98,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
             BlockStatement ifStatement = new BlockStatement();
             ifStatement.addStatement(
                     new ExpressionStatement(
-                            new BinaryExpression(new VariableExpression("ordinal"), assign, new ConstantExpression(new Integer(0)))
+                            new BinaryExpression(new VariableExpression("ordinal"), assign, new ConstantExpression(Integer.valueOf(0)))
                     )
             );
 
@@ -165,7 +165,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
                                                     MethodCallExpression.NO_ARGUMENTS
                                             ),
                                             "minus",
-                                            new ConstantExpression(new Integer(1))
+                                            new ConstantExpression(Integer.valueOf(1))
                                     )
                             )
                     )
@@ -192,7 +192,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
                             new BooleanExpression(new BinaryExpression(
                                     new VariableExpression("ordinal"),
                                     lt,
-                                    new ConstantExpression(new Integer(0))
+                                    new ConstantExpression(Integer.valueOf(0))
                             )),
                             ifStatement,
                             EmptyStatement.INSTANCE
@@ -271,7 +271,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
 
                 ArgumentListExpression args = new ArgumentListExpression();
                 args.addExpression(new ConstantExpression(field.getName()));
-                args.addExpression(new ConstantExpression(new Integer(value)));
+                args.addExpression(new ConstantExpression(Integer.valueOf(value)));
                 if (field.getInitialExpression()!=null) {
                     ListExpression oldArgs = (ListExpression) field.getInitialExpression();
                     for (Iterator oldArgsIterator = oldArgs.getExpressions().iterator(); oldArgsIterator.hasNext();) {

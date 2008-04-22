@@ -35,7 +35,7 @@ public final class CurriedClosure extends Closure {
     }
     
     public CurriedClosure(Closure uncurriedClosure, int i) {
-        this(uncurriedClosure, new Object[]{new Integer(i)});
+        this(uncurriedClosure, new Object[]{Integer.valueOf(i)});
     }
 
     public Object[] getUncurriedArguments(Object[] arguments) {

@@ -27,19 +27,19 @@ public class IntegerMath extends NumberMath {
 	private IntegerMath() {}
 					
 	protected Number absImpl(Number number) {
-		return new Integer(Math.abs(number.intValue()));
+		return Integer.valueOf(Math.abs(number.intValue()));
 	}
 	
 	public Number addImpl(Number left, Number right) {
-		return new Integer(left.intValue() + right.intValue());
+		return Integer.valueOf(left.intValue() + right.intValue());
 	}
 
 	public Number subtractImpl(Number left, Number right) {
-		return new Integer(left.intValue() - right.intValue());
+		return Integer.valueOf(left.intValue() - right.intValue());
 	}
 
 	public Number multiplyImpl(Number left, Number right) {
-		return new Integer(left.intValue() * right.intValue());
+		return Integer.valueOf(left.intValue() * right.intValue());
 	}
 
 	public Number divideImpl(Number left, Number right) {
@@ -53,42 +53,42 @@ public class IntegerMath extends NumberMath {
 	}
 
     protected Number orImpl(Number left, Number right) {
-        return new Integer(left.intValue() | right.intValue());
+        return Integer.valueOf(left.intValue() | right.intValue());
     }
 
     protected Number andImpl(Number left, Number right) {
-        return new Integer(left.intValue() & right.intValue());
+        return Integer.valueOf(left.intValue() & right.intValue());
     }
 
     protected Number xorImpl(Number left, Number right) {
-        return new Integer(left.intValue() ^ right.intValue());
+        return Integer.valueOf(left.intValue() ^ right.intValue());
     }
 
     protected Number intdivImpl(Number left, Number right) {
-        return new Integer(left.intValue() / right.intValue());
+        return Integer.valueOf(left.intValue() / right.intValue());
     }
 	
     protected Number modImpl(Number left, Number right) {
-        return new Integer(left.intValue() % right.intValue());
+        return Integer.valueOf(left.intValue() % right.intValue());
     }
 
     protected Number unaryMinusImpl(Number left) {
-        return new Integer(-left.intValue());
+        return Integer.valueOf(-left.intValue());
     }
 
     protected Number bitwiseNegateImpl(Number left) {
-        return new Integer(~left.intValue());
+        return Integer.valueOf(~left.intValue());
     }
 
     protected Number leftShiftImpl(Number left, Number right) {
-        return new Integer(left.intValue() << right.intValue());
+        return Integer.valueOf(left.intValue() << right.intValue());
     }
 
     protected Number rightShiftImpl(Number left, Number right) {
-        return new Integer(left.intValue() >> right.intValue());
+        return Integer.valueOf(left.intValue() >> right.intValue());
     }
 
     protected Number rightShiftUnsignedImpl(Number left, Number right) {
-        return new Integer(left.intValue() >>> right.intValue());
+        return Integer.valueOf(left.intValue() >>> right.intValue());
     }
 }

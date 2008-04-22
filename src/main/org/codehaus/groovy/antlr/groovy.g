@@ -328,11 +328,11 @@ tokens {
         if (lt == null)  lt = Token.badToken;
 
         Map row = new HashMap();
-        row.put("warning" ,warning);
-        row.put("solution",solution);
-        row.put("filename",getFilename());
-        row.put("line"    ,new Integer(lt.getLine()));
-        row.put("column"  ,new Integer(lt.getColumn()));
+        row.put("warning",  warning);
+        row.put("solution", solution);
+        row.put("filename", getFilename());
+        row.put("line",     Integer.valueOf(lt.getLine()));
+        row.put("column",   Integer.valueOf(lt.getColumn()));
         // System.out.println(row);
         warningList.add(row);
     }
@@ -3121,7 +3121,7 @@ options {
     protected int lastSigTokenType = EOF;  // last returned non-whitespace token
 
     protected void pushParenLevel() {
-        parenLevelStack.add(new Integer(parenLevel*SCS_LIMIT + stringCtorState));
+        parenLevelStack.add(Integer.valueOf(parenLevel*SCS_LIMIT + stringCtorState));
         parenLevel = 0;
         stringCtorState = 0;
     }
@@ -3321,7 +3321,7 @@ options {
             }
             ttypes = map;
         }
-        Integer tt = new Integer(t.getType());
+        Integer tt = Integer.valueOf(t.getType());
         Object ttn = ttypes.get(tt);
         if (ttn == null)  ttn = "<"+tt+">";
         return "["+ttn+",\""+t.getText()+"\"]";

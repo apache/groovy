@@ -75,7 +75,7 @@ import java.util.regex.Pattern;
 public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     private static final Logger LOG = Logger.getLogger(DefaultGroovyMethods.class.getName());
-    private static final Integer ONE = new Integer(1);
+    private static final Integer ONE = Integer.valueOf(1);
 
     public static final Class [] additionals = {
             NumberNumberPlus.class,
@@ -717,7 +717,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             int[] ia = (int[]) arg;
             ans = new Integer[ia.length];
             for (int i = 0; i < ia.length; i++) {
-                ans[i] = new Integer(ia[i]);
+                ans[i] = Integer.valueOf(ia[i]);
             }
         } else if (elemType.equals("[C")) {
             char[] ia = (char[]) arg;
@@ -799,7 +799,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             int[] ia = (int[]) arg;
             ans = new Integer[ia.length];
             for (int i = 0; i < ia.length; i++) {
-                ans[i] = new Integer(ia[i]);
+                ans[i] = Integer.valueOf(ia[i]);
             }
         } else if (elemType.equals("[C")) {
             char[] ia = (char[]) arg;
@@ -1225,7 +1225,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static Object eachWithIndex(Object self, Closure closure) {
         int counter = 0;
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
-            closure.call(new Object[]{iter.next(), new Integer(counter++)});
+            closure.call(new Object[]{iter.next(), Integer.valueOf(counter++)});
         }
         return self;
     }
@@ -1893,17 +1893,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     // internal helper method
     protected static Object callClosureForLine(Closure closure, String line, int counter) {
         if (closure.getMaximumNumberOfParameters() == 2) {
-            return closure.call(new Object[]{line, new Integer(counter)});
+            return closure.call(new Object[]{line, Integer.valueOf(counter)});
         }
         return closure.call(line);
     }
 
     protected static Object callClosureForMapEntryAndCounter(Closure closure, Map.Entry entry, int counter) {
         if (closure.getMaximumNumberOfParameters() == 3) {
-            return closure.call(new Object[]{entry.getKey(), entry.getValue(), new Integer(counter)});
+            return closure.call(new Object[]{entry.getKey(), entry.getValue(), Integer.valueOf(counter)});
         }
         if (closure.getMaximumNumberOfParameters() == 2) {
-            return closure.call(new Object[]{entry, new Integer(counter)});
+            return closure.call(new Object[]{entry, Integer.valueOf(counter)});
         }
         return closure.call(entry);
     }
@@ -2704,7 +2704,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     private static String getPadding(String padding, int length) {
         if (padding.length() < length) {
-            return multiply(padding, new Integer(length / padding.length() + 1)).substring(0, length);
+            return multiply(padding, Integer.valueOf(length / padding.length() + 1)).substring(0, length);
         } else {
             return padding.substring(0, length);
         }
@@ -5045,7 +5045,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 //    public static Integer putAt(int[] array, int idx, Object newValue) {
 //        if (!(newValue instanceof Integer)) {
 //            Number n = (Number) newValue;
-//            newValue = new Integer(n.intValue());
+//            newValue = Integer.valueOf(n.intValue());
 //        }
 //        array [normaliseIndex(idx,array.length)] = ((Integer)newValue).intValue();
 //        return (Integer) newValue;
@@ -5948,7 +5948,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the addition of the Character and the Number
      */
     public static Number plus(Character left, Number right) {
-        return NumberNumberPlus.plus(new Integer(left.charValue()), right);
+        return NumberNumberPlus.plus(Integer.valueOf(left.charValue()), right);
     }
 
     /**
@@ -5959,7 +5959,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the addition of the Character and the Number
      */
     public static Number plus(Number left, Character right) {
-        return NumberNumberPlus.plus(left, new Integer(right.charValue()));
+        return NumberNumberPlus.plus(left, Integer.valueOf(right.charValue()));
     }
 
     /**
@@ -5972,7 +5972,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the addition of both Characters
      */
     public static Number plus(Character left, Character right) {
-        return plus(new Integer(left.charValue()), right);
+        return plus(Integer.valueOf(left.charValue()), right);
     }
 
     /**
@@ -5983,7 +5983,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the result of the comparison
      */
     public static int compareTo(Character left, Number right) {
-        return compareTo(new Integer(left.charValue()), right);
+        return compareTo(Integer.valueOf(left.charValue()), right);
     }
 
     /**
@@ -5994,7 +5994,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the result of the comparison
      */
     public static int compareTo(Number left, Character right) {
-        return compareTo(left, new Integer(right.charValue()));
+        return compareTo(left, Integer.valueOf(right.charValue()));
     }
 
     /**
@@ -6005,7 +6005,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the result of the comparison
      */
     public static int compareTo(Character left, Character right) {
-        return compareTo(new Integer(left.charValue()), right);
+        return compareTo(Integer.valueOf(left.charValue()), right);
     }
 
     /**
@@ -6028,7 +6028,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the addition of the Character and the Number
      */
     public static Number minus(Character left, Number right) {
-        return NumberNumberMinus.minus(new Integer(left.charValue()), right);
+        return NumberNumberMinus.minus(Integer.valueOf(left.charValue()), right);
     }
 
     /**
@@ -6039,7 +6039,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the addition of the Character and the Number
      */
     public static Number minus(Number left, Character right) {
-        return NumberNumberMinus.minus(left, new Integer(right.charValue()));
+        return NumberNumberMinus.minus(left, Integer.valueOf(right.charValue()));
     }
 
     /**
@@ -6050,7 +6050,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the addition of both Characters
      */
     public static Number minus(Character left, Character right) {
-        return minus(new Integer(left.charValue()), right);
+        return minus(Integer.valueOf(left.charValue()), right);
     }
 
     /**
@@ -6061,7 +6061,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the multiplication of both
      */
     public static Number multiply(Character left, Number right) {
-        return NumberNumberMultiply.multiply(new Integer(left.charValue()), right);
+        return NumberNumberMultiply.multiply(Integer.valueOf(left.charValue()), right);
     }
 
     /**
@@ -6072,7 +6072,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the multiplication of both
      */
     public static Number multiply(Number left, Character right) {
-        return NumberNumberMultiply.multiply(left, new Integer(right.charValue()));
+        return NumberNumberMultiply.multiply(left, Integer.valueOf(right.charValue()));
     }
 
     /**
@@ -6083,7 +6083,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the multiplication of both
      */
     public static Number multiply(Character left, Character right) {
-        return multiply(new Integer(left.charValue()), right);
+        return multiply(Integer.valueOf(left.charValue()), right);
     }
 
     /**
@@ -6135,7 +6135,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
         answer = Math.pow(base, exp);
         if ((double) ((int) answer) == answer) {
-            return new Integer((int) answer);
+            return Integer.valueOf((int) answer);
         } else if ((double) ((long) answer) == answer) {
             return new Long((long) answer);
         } else {
@@ -6151,7 +6151,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the multiplication of both
      */
     public static Number div(Character left, Number right) {
-        return NumberNumberDiv.div(new Integer(left.charValue()), right);
+        return NumberNumberDiv.div(Integer.valueOf(left.charValue()), right);
     }
 
     /**
@@ -6162,7 +6162,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the multiplication of both
      */
     public static Number div(Number left, Character right) {
-        return NumberNumberDiv.div(left, new Integer(right.charValue()));
+        return NumberNumberDiv.div(left, Integer.valueOf(right.charValue()));
     }
 
     /**
@@ -6173,7 +6173,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the multiplication of both
      */
     public static Number div(Character left, Character right) {
-        return div(new Integer(left.charValue()), right);
+        return div(Integer.valueOf(left.charValue()), right);
     }
 
     /**
@@ -6184,7 +6184,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the integer division of both
      */
     public static Number intdiv(Character left, Number right) {
-        return intdiv(new Integer(left.charValue()), right);
+        return intdiv(Integer.valueOf(left.charValue()), right);
     }
 
     /**
@@ -6195,7 +6195,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the integer division of both
      */
     public static Number intdiv(Number left, Character right) {
-        return intdiv(left, new Integer(right.charValue()));
+        return intdiv(left, Integer.valueOf(right.charValue()));
     }
 
     /**
@@ -6206,7 +6206,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the integer division of both
      */
     public static Number intdiv(Character left, Character right) {
-        return intdiv(new Integer(left.charValue()), right);
+        return intdiv(Integer.valueOf(left.charValue()), right);
     }
 
     /**
@@ -6343,7 +6343,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static void times(Number self, Closure closure) {
         for (int i = 0, size = self.intValue(); i < size; i++) {
-            closure.call(new Integer(i));
+            closure.call(Integer.valueOf(i));
             if (closure.getDirective() == Closure.DONE) {
                 break;
             }
@@ -6363,7 +6363,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         int to1 = to.intValue();
         if (self1 <= to1) {
             for (int i = self1; i <= to1; i++) {
-                closure.call(new Integer(i));
+                closure.call(Integer.valueOf(i));
             }
         } else
             throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
@@ -6578,7 +6578,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         int to1 = to.intValue();
         if (self1 >= to1) {
             for (int i = self1; i >= to1; i--) {
-                closure.call(new Integer(i));
+                closure.call(Integer.valueOf(i));
             }
         } else
             throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
@@ -6827,11 +6827,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             int stepNumber1 = stepNumber.intValue();
             if (stepNumber1 > 0 && to1 > self1) {
                 for (int i = self1; i < to1; i += stepNumber1) {
-                    closure.call(new Integer(i));
+                    closure.call(Integer.valueOf(i));
                 }
             } else if (stepNumber1 < 0 && to1 < self1) {
                 for (int i = self1; i > to1; i += stepNumber1) {
-                    closure.call(new Integer(i));
+                    closure.call(Integer.valueOf(i));
                 }
             } else
                 throw new GroovyRuntimeException("Infinite loop in " + self1 + ".step(" + to1 + ", " + stepNumber1 + ")");
@@ -7069,7 +7069,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return an Integer
      */
     public static Integer toInteger(Number self) {
-        return new Integer(self.intValue());
+        return Integer.valueOf(self.intValue());
     }
 
     /**
@@ -9847,7 +9847,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 continue;
             }
             if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
-                result.add(new Integer(i));
+                result.add(Integer.valueOf(i));
             }
         }
         return result;

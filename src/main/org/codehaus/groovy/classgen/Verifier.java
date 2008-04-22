@@ -534,7 +534,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 for (int i = size - 1; i >= 0; i--) {
                     Parameter parameter = parameters[i];
                     if (parameter != null && parameter.hasInitialExpression()) {
-                        paramValues.add(new Integer(i));
+                        paramValues.add(Integer.valueOf(i));
                         paramValues.add(parameter.getInitialExpression());
                         counter++;
                     }

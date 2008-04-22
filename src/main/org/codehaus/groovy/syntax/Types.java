@@ -1137,7 +1137,7 @@ public class Types
     */
 
     public static String getText( int type ) {
-        Integer key = new Integer( type );
+        Integer key = Integer.valueOf( type );
         String text = "";
 
         if( TEXTS.containsKey(key) ) {
@@ -1153,7 +1153,7 @@ public class Types
     */
 
     private static void addTranslation( String text, int type ) {
-        Integer key = new Integer( type );
+        Integer key = Integer.valueOf( type );
 
         TEXTS.put( key, text );
         LOOKUP.put( text, key );
@@ -1326,7 +1326,7 @@ public class Types
     */
 
     public static String getDescription( int type ) {
-        Integer typeKey = new Integer(type);
+        Integer typeKey = Integer.valueOf(type);
 
         if (DESCRIPTIONS.containsKey(typeKey)) {
             return (String)DESCRIPTIONS.get(typeKey);
@@ -1341,7 +1341,7 @@ public class Types
     */
 
     private static void addDescription(int type, String description) {
-        addDescription(new Integer(type), description);
+        addDescription(Integer.valueOf(type), description);
     }
 
 

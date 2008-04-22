@@ -174,7 +174,7 @@ public class ANSI
          * Returns the symbolic name for the given ANSI code.
          */
         public static String name(final int code) throws IllegalArgumentException {
-            String name = (String) CODES_TO_NAMES.get(new Integer(code));
+            String name = (String) CODES_TO_NAMES.get(Integer.valueOf(code));
 
             if (name == null) {
                 throw new IllegalArgumentException("Invalid ANSI code: " + code);

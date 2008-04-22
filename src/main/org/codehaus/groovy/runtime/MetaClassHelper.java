@@ -125,7 +125,7 @@ public class MetaClassHelper {
             int[] array = (int[]) parameters;
             ret = new Object[array.length];
             for (int i = 0; i < array.length; i++) {
-                ret[i] = new Integer(array[i]);
+                ret[i] = Integer.valueOf(array[i]);
             }
         } else if (componentType == short.class) {
             short[] array = (short[]) parameters;

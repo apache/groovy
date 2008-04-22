@@ -18,7 +18,6 @@ package org.codehaus.groovy.runtime;
 import groovy.lang.*;
 import groovy.xml.dom.DOMUtil;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
-import org.codehaus.groovy.runtime.typehandling.IntegerCache;
 import org.codehaus.groovy.runtime.wrappers.PojoWrapper;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
 import org.w3c.dom.Element;
@@ -225,7 +224,7 @@ public class InvokerHelper {
     public static Object unaryMinus(Object value) {
         if (value instanceof Integer) {
             Integer number = (Integer) value;
-            return IntegerCache.integerValue(-number.intValue());
+            return Integer.valueOf(-number.intValue());
         }
         if (value instanceof Long) {
             Long number = (Long) value;
@@ -684,7 +683,7 @@ public class InvokerHelper {
     public static Object bitwiseNegate(Object value) {
         if (value instanceof Integer) {
             Integer number = (Integer) value;
-            return new Integer(~number.intValue());
+            return Integer.valueOf(~number.intValue());
         }
         if (value instanceof Long) {
             Long number = (Long) value;

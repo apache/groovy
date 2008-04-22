@@ -350,11 +350,11 @@ public class AsmClassGenerator extends ClassGenerator {
         mv.visitFieldInsn(GETSTATIC, internalClassName, "$ownClass", "Ljava/lang/Class;");
 
         final int size = callSites.size();
-        mv.visitLdcInsn(new Integer(size));
+        mv.visitLdcInsn(Integer.valueOf(size));
         mv.visitTypeInsn(ANEWARRAY, "java/lang/String");
         for (int i = 0; i < size; i++) {
             mv.visitInsn(DUP);
-            mv.visitLdcInsn(new Integer(i));
+            mv.visitLdcInsn(Integer.valueOf(i));
             mv.visitLdcInsn(callSites.get(i));
             mv.visitInsn(AASTORE);
         }
@@ -1956,7 +1956,7 @@ public class AsmClassGenerator extends ClassGenerator {
         else {
             mv.visitMethodInsn(INVOKESTATIC,internalClassName,"$getCallSiteArray","()[Lorg/codehaus/groovy/runtime/callsite/CallSite;");
         }
-        mv.visitLdcInsn(new Integer(allocateIndex(message)));
+        mv.visitLdcInsn(Integer.valueOf(allocateIndex(message)));
         mv.visitInsn(AALOAD);
 
         boolean constructor = message.equals(CONSTRUCTOR);
@@ -2050,7 +2050,7 @@ public class AsmClassGenerator extends ClassGenerator {
             mv.visitMethodInsn(INVOKESTATIC,internalClassName,"$getCallSiteArray","()[Lorg/codehaus/groovy/runtime/callsite/CallSite;");
         }
         final int index = allocateIndex(message);
-        mv.visitLdcInsn(new Integer(index));
+        mv.visitLdcInsn(Integer.valueOf(index));
         mv.visitInsn(AALOAD);
 
         // site
@@ -2111,7 +2111,7 @@ public class AsmClassGenerator extends ClassGenerator {
             if (!(expr instanceof SpreadExpression)) {
                 normalArguments.add(expr);
             } else {
-                spreadIndexes.add(new ConstantExpression(new Integer(i - spreadExpressions.size())));
+                spreadIndexes.add(new ConstantExpression(Integer.valueOf(i - spreadExpressions.size())));
                 spreadExpressions.add(((SpreadExpression) expr).getExpression());
             }
         }
@@ -3815,7 +3815,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 visitMethodCallExpression(
                         new MethodCallExpression(
                                 lhsExpr, "getAt",
-                                new ArgumentListExpression(new ConstantExpression(new Integer(i)))
+                                new ArgumentListExpression(new ConstantExpression(Integer.valueOf(i)))
                         )
                 );
                 i++;

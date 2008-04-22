@@ -36,9 +36,9 @@ import java.util.regex.Pattern;
  */
 public class ScriptBytecodeAdapter {
     public static final Object[] EMPTY_ARGS = {};
-    private static final Integer ZERO = new Integer(0);
-    private static final Integer MINUS_ONE = new Integer(-1);
-    private static final Integer ONE = new Integer(1);
+    private static final Integer ZERO = Integer.valueOf(0);
+    private static final Integer MINUS_ONE = Integer.valueOf(-1);
+    private static final Integer ONE = Integer.valueOf(1);
 
     //  --------------------------------------------------------
     //                   exception handling

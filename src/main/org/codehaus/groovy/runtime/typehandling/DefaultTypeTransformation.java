@@ -97,7 +97,7 @@ public class DefaultTypeTransformation {
     }
 
     public static Object box(int value) {
-        return IntegerCache.integerValue(value);
+        return Integer.valueOf(value);
     }
 
     public static Object box(long value) {
@@ -116,12 +116,12 @@ public class DefaultTypeTransformation {
         if (object instanceof Number)
             return (Number) object;
         if (object instanceof Character) {
-            return new Integer(((Character) object).charValue());
+            return Integer.valueOf(((Character) object).charValue());
         }
         if (object instanceof String) {
             String c = (String) object;
             if (c.length() == 1) {
-                return new Integer(c.charAt(0));
+                return Integer.valueOf(c.charAt(0));
             }
             else {
                 throw new GroovyCastException(c,Integer.class);
@@ -261,7 +261,7 @@ public class DefaultTypeTransformation {
             } else if (type == Short.class) {
                 return new Short(n.shortValue());
             } else if (type == Integer.class) {
-                return new Integer(n.intValue());
+                return Integer.valueOf(n.intValue());
             } else if (type == Long.class) {
                 return new Long(n.longValue());
             } else if (type == Float.class) {
