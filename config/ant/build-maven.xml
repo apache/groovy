@@ -63,6 +63,7 @@ $Date$
     <macrodef name="fetch.maven.all.modules">
         <sequential>
             <fetch.maven.all.scopes module="groovy"/>
+            <fetch.maven scope="runtime" module="groovy-jdk14-extras"/>
             <fetch.maven scope="runtime" module="groovy-tools"/>
             <fetch.maven scope="runtime" module="groovy-examples"/>
         </sequential>
@@ -92,6 +93,7 @@ $Date$
         <maven.pom file="${targetDirectory}/groovy-all.pom" id="groovy-all.pom"/>
         <maven.pom file="config/maven/groovy-tools.pom" id="groovy-tools.pom"/>
         <maven.pom file="config/maven/groovy-examples.pom" id="groovy-examples.pom"/>
+        <maven.pom file="config/maven/groovy-jdk14-extras.pom" id="groovy-jdk14-extras.pom"/>
         <antcall target="-mavenPomDefinitionsRetro"/>
     </target>
 
@@ -120,12 +122,14 @@ $Date$
         <delete dir="${runtimeLibDirectory}"/>
         <delete dir="${toolsLibDirectory}"/>
         <delete dir="${examplesLibDirectory}"/>
+        <delete dir="${extrasLibDirectory}"/>
 
         <mkdir dir="${compileLibDirectory}"/>
         <mkdir dir="${testLibDirectory}"/>
         <mkdir dir="${runtimeLibDirectory}"/>
         <mkdir dir="${toolsLibDirectory}"/>
         <mkdir dir="${examplesLibDirectory}"/>
+        <mkdir dir="${extrasLibDirectory}"/>
 
         <copy todir="${compileLibDirectory}">
             <mapper type="flatten"/>
@@ -161,6 +165,13 @@ $Date$
         </copy>
         <path id="examplesPath">
             <fileset dir="${examplesLibDirectory}" includes="**/*.jar"/>
+        </path>
+        <copy todir="${extrasLibDirectory}">
+            <mapper type="flatten"/>
+            <fileset refid="fs.runtime.groovy-jdk14-extras"/>
+        </copy>
+        <path id="extrasPath">
+            <fileset dir="${extrasLibDirectory}" includes="**/*.jar"/>
         </path>
     </target>
 
