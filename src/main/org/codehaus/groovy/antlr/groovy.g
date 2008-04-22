@@ -266,6 +266,10 @@ tokens {
      * todo - change antlr.ASTFactory to do this instead...
      */
     public AST create(int type, String txt, Token first, Token last) {
+        return create(type, txt, astFactory.create(first), last);
+    }
+    
+    public AST create(int type, String txt, AST first, Token last) {
         AST t = astFactory.create(type,txt);
         if ( t != null && first != null) {
             // first copy details from first token
@@ -1394,7 +1398,10 @@ declaratorBrackets[AST typ]
         (
             // A following list constructor might conflict with index brackets; prefer the declarator.
             options {greedy=true;} :
-            lb:LBRACK^ {#lb.setType(ARRAY_DECLARATOR);} RBRACK!
+            LBRACK!
+            RBRACK!
+            {#declaratorBrackets = #(create(ARRAY_DECLARATOR,"[",typ,LT(1)),
+                               #declaratorBrackets);}
         )*
     ;
 
@@ -2290,12 +2297,20 @@ dynamicMemberName  {Token first = LT(1);}
 // AST is [METHOD_CALL, callee, ELIST? CLOSABLE_BLOCK?].
 // Note that callee is often of the form x.y but not always.
 // If the callee is not of the form x.y, then an implicit .call is needed.
+// Parameter callee is only "null" when called from newExpression
 methodCallArgs[AST callee]
     :
-        {#methodCallArgs = callee;}
-        lp:LPAREN^ {#lp.setType(METHOD_CALL);}
-        argList
+        LPAREN!
+        al:argList!
         RPAREN!
+        { if (callee != null && callee.getFirstChild() != null) {
+              //method call like obj.method()
+              #methodCallArgs = #(create(METHOD_CALL, "(",callee.getFirstChild(),LT(1)), callee, al); 
+          } else {
+              //method call like method() or new Expr(), in the latter case "callee" is null
+              #methodCallArgs = #(create(METHOD_CALL, "(",callee, LT(1)), callee, al);
+          }
+        }
     ;
 
 /** An appended block follows any expression.
@@ -2303,22 +2318,20 @@ methodCallArgs[AST callee]
  */
 appendedBlock[AST callee]
     :
-        {
-            // If the callee is itself a call, flatten the AST.
-            if (callee != null && callee.getType() == METHOD_CALL) {
-                #appendedBlock = callee;
-            } else {
-                AST lbrace = getASTFactory().create(LT(1));
-                lbrace.setType(METHOD_CALL);
-                if (callee != null)  lbrace.addChild(callee);
-                #appendedBlock = lbrace;
-            }
-        }
         /*  FIXME DECIDE: should appended blocks accept labels?
         (   (IDENT COLON nls LCURLY)=>
             IDENT c:COLON^ {#c.setType(LABELED_ARG);} nls!
         )? */
-        closableBlock
+        cb:closableBlock!
+        {
+            // If the callee is itself a call, flatten the AST.
+            if (callee != null && callee.getType() == METHOD_CALL) {
+                #appendedBlock = #(create(METHOD_CALL, "(",callee,LT(1)),
+                                   callee.getFirstChild(), cb);
+            } else {
+                #appendedBlock = #(create(METHOD_CALL, "{",callee,LT(1)), callee, cb);
+            }
+        }
     ;
 
 /** An expression may be followed by [...].
@@ -2329,10 +2342,17 @@ appendedBlock[AST callee]
  */
 indexPropertyArgs[AST indexee]
     :
-        {#indexPropertyArgs = indexee;}
-        lb:LBRACK^ {#lb.setType(INDEX_OP);}
-        argList
+        LBRACK!
+        al:argList!
         RBRACK!
+        { if (indexee != null && indexee.getFirstChild() != null) {
+              //expression like obj.index[]
+              #indexPropertyArgs = #(create(INDEX_OP, "INDEX_OP",indexee.getFirstChild(),LT(1)), indexee, al); 
+          } else {
+              //expression like obj[]
+              #indexPropertyArgs = #(create(INDEX_OP, "INDEX_OP",indexee,LT(1)), indexee, al);
+          }
+        }
     ;
 
 // assignment expression (level 15)
@@ -2783,8 +2803,8 @@ identPrimary
  *                         2
  *
  */
-newExpression
-    :   "new"^ nls! (typeArguments)? type
+newExpression {Token first = LT(1);}
+    :   "new"! nls! (ta:typeArguments!)? t:type!
         (   nls!
             mca:methodCallArgs[null]!
 
@@ -2794,7 +2814,8 @@ newExpression
                 { #mca = #apb1; }
             )?
 
-            {#newExpression.addChild(#mca.getFirstChild());}
+            {#mca = #mca.getFirstChild();
+            #newExpression = #(create(LITERAL_new,"new",first,LT(1)),#ta,#t,#mca);}
 
         //|
         //from blackrag: new Object.f{} matches this part here
@@ -2814,9 +2835,10 @@ newExpression
             // to make sure:
             //   a) [ expr ] and [ ] are not mixed
             //   b) [ expr ] and an init are not used together
-        |   newArrayDeclarator //(arrayInitializer)?
+        |   ad:newArrayDeclarator! //(arrayInitializer)?
             // Groovy does not support Java syntax for initialized new arrays.
             // Use sequence constructors instead.
+            {#newExpression = #(create(LITERAL_new,"new",first,LT(1)),#ta,#t,#ad);}
 
         )
         // DECIDE:  Keep 'new x()' syntax?
