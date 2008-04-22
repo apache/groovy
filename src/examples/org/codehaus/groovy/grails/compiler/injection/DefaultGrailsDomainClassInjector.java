@@ -22,10 +22,9 @@ import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.transform.ASTSingleNodeTransformation;
+import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 
 import java.lang.reflect.Modifier;
@@ -46,19 +45,17 @@ import java.util.*;
  * Created: 20th June 2006
  */
 @GroovyASTTransformation(phase= CompilePhase.CANONICALIZATION)
-public class DefaultGrailsDomainClassInjector implements
-    ASTSingleNodeTransformation {
+public class DefaultGrailsDomainClassInjector implements ASTTransformation {
         //GrailsDomainClassInjector {
 
     //private static final Log LOG  = LogFactory.getLog(DefaultGrailsDomainClassInjector.class);
 
 
-    public void visit(ASTNode[] nodes, SourceUnit source, GeneratorContext context) {
-        performInjection(source, context, (ClassNode) nodes[1]);
+    public void visit(ASTNode[] nodes, SourceUnit source) {
+        performInjection((ClassNode) nodes[1]);
     }
 
-    public void performInjection(SourceUnit source, GeneratorContext context,
-			ClassNode classNode) {
+    public void performInjection(ClassNode classNode) {
         if(shouldInject(classNode)) {
 			injectIdProperty(classNode);
 

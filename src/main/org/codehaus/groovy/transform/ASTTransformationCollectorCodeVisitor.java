@@ -20,9 +20,6 @@ import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.classgen.GeneratorContext;
-import org.codehaus.groovy.control.CompilationFailedException;
-import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SimpleMessage;
 
@@ -41,6 +38,10 @@ import java.util.Collection;
 public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSupport {
     private SourceUnit source;
     private ClassNode classNode;
+
+    public ASTTransformationCollectorCodeVisitor(SourceUnit source) {
+        this.source = source;
+    }
 
     protected SourceUnit getSourceUnit() {
         return source;
@@ -73,12 +74,14 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
             for (String transformClass : transformClassAnnotation.value()) {
                 try {
                     Object o = source.getClassLoader().loadClass(transformClass, false, true, false).newInstance();
-                    if (o instanceof ASTSingleNodeTransformation) {
-                        classNode.addSingleNodeTransform((ASTSingleNodeTransformation) o, annotation);
-                    } else if (o instanceof CompilationUnit.PrimaryClassNodeOperation) {
-                        classNode.addClassTransform((CompilationUnit.PrimaryClassNodeOperation) o);
-                    } else if (o instanceof CompilationUnit.SourceUnitOperation) {
-                        classNode.getModule().addSourceUnitOperation((CompilationUnit.SourceUnitOperation) o);
+                    if (o instanceof ASTTransformation) {
+                        classNode.addTransform((ASTTransformation) o, annotation);
+                    } else {
+                        source.getErrorCollector().addError(
+                                new SimpleMessage(
+                                        "Not an ASTTransformatnion: " + transformClass
+                                        + " declared by " + annotation.getClassNode().getName(),
+                                        source));
                     }
                 } catch (InstantiationException e) {
                     source.getErrorCollector().addError(
@@ -103,18 +106,4 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
         }
     }
 
-
-    /**
-     * Helper method to wrap itself in a PrimaryClassNodeOperation.
-     *
-     * @return the created PrimaryClassNodeOperation
-     */
-    public CompilationUnit.PrimaryClassNodeOperation getOperation() {
-        return new CompilationUnit.PrimaryClassNodeOperation() {
-            public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
-                ASTTransformationCollectorCodeVisitor.this.source = source;
-                visitClass(classNode);
-            }
-        };
-    }
 }

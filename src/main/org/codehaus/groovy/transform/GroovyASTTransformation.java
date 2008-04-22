@@ -24,10 +24,7 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * This is an annotaton on a class, specifically one of
- * {@link ASTSingleNodeTransformation},
- * {@link org.codehaus.groovy.control.CompilationUnit.SourceUnitOperation},
- * or {@link org.codehaus.groovy.control.CompilationUnit.PrimaryClassNodeOperation}.
+ * This is an annotaton on a class, currently just {@link ASTTransformation}.
  * This proviceds information about how and when to apply the transformation,
  * such as what phase it should be applied in.
  *

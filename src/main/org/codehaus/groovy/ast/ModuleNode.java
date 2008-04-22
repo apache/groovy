@@ -23,11 +23,8 @@ import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.control.CompilationUnit;
-import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.transform.GroovyASTTransformation;
 import org.objectweb.asm.Opcodes;
 
 import java.io.File;
@@ -61,27 +58,13 @@ public class ModuleNode extends ASTNode implements Opcodes {
     private boolean importsResolved = false;
     private static final String[] EMPTY_STRING_ARRAY = new String[] { /* class names, not qualified */ };
 
-    /**
-     * The ASTSingleNodeTransformations to be applied to the source unit
-     */
-    private Map<CompilePhase, List<CompilationUnit.SourceUnitOperation>> sourceUnitTransforms;
-
 
     public ModuleNode (SourceUnit context ) {
         this.context = context;
-        initTransforms();
     }
 
     public ModuleNode (CompileUnit unit) {
         this.unit = unit;
-        initTransforms();
-    }
-
-    private void initTransforms() {
-        sourceUnitTransforms = new EnumMap<CompilePhase, List<CompilationUnit.SourceUnitOperation>>(CompilePhase.class);
-        for (CompilePhase phase : CompilePhase.values()) {
-            sourceUnitTransforms.put(phase, new ArrayList<CompilationUnit.SourceUnitOperation>());
-        }
     }
 
     public BlockStatement getStatementBlock() {
@@ -341,14 +324,5 @@ public class ModuleNode extends ASTNode implements Opcodes {
 
     public void addStaticImportClass(String name, ClassNode type) {
         staticImportClasses.put(name, type);
-    }
-
-    public void addSourceUnitOperation(CompilationUnit.SourceUnitOperation transform) {
-        GroovyASTTransformation annotation = transform.getClass().getAnnotation(GroovyASTTransformation.class);
-        sourceUnitTransforms.get(annotation.phase()).add(transform);
-    }
-
-    public List<CompilationUnit.SourceUnitOperation> getSourceUnitTransforms(CompilePhase phase) {
-        return sourceUnitTransforms.get(phase);
     }
 }

@@ -17,7 +17,6 @@
 package org.codehaus.groovy.transform;
 
 import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.SourceUnit;
 
 /**
@@ -25,14 +24,13 @@ import org.codehaus.groovy.control.SourceUnit;
  *
  * @author Danno Ferrin (shemnon)
  */
-public interface ASTSingleNodeTransformation {
+public interface ASTTransformation {
 
     /**
      * The call made when the compiler encounters an AST Transformation Annotation
      *
      * @param nodes The ASTnodes when the call was triggered
      * @param source The source unit being compiled
-     * @param generatorContext the generation context of the source unit
      */
-    public void visit(ASTNode nodes[], SourceUnit source, GeneratorContext generatorContext);
+    public void visit(ASTNode nodes[], SourceUnit source);
 }

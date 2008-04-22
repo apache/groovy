@@ -21,7 +21,6 @@ import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
@@ -29,7 +28,7 @@ import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
-import org.codehaus.groovy.transform.ASTSingleNodeTransformation;
+import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 import org.objectweb.asm.Opcodes;
 
@@ -54,7 +53,7 @@ import java.util.Collection;
  * @author Danno Ferrin (shemnon)
  */
 @GroovyASTTransformation(phase= CompilePhase.CANONICALIZATION)
-public class BindableASTTransformation implements ASTSingleNodeTransformation, Opcodes {
+public class BindableASTTransformation implements ASTTransformation, Opcodes {
 
     /**
      * The found or created PropertyChangeSupport field
@@ -84,9 +83,8 @@ public class BindableASTTransformation implements ASTSingleNodeTransformation, O
      *
      * @param nodes   the ast nodes
      * @param source  the source unit for the nodes
-     * @param context the generator context
      */
-    public void visit(ASTNode[] nodes, SourceUnit source, GeneratorContext context) {
+    public void visit(ASTNode[] nodes, SourceUnit source) {
         if (!(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
             throw new RuntimeException("Internal error: wrong types: $node.class / $parent.class");
         }

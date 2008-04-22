@@ -23,9 +23,8 @@ import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
-import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilePhase;
-import org.codehaus.groovy.transform.ASTSingleNodeTransformation;
+import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;
@@ -111,13 +110,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     boolean isPrimaryNode;
 
     /**
-     * The ASTSingleNodeTransformations to be applied to the Class
+     * The ASTTransformations to be applied to the Class
      */
-    private Map<CompilePhase, Map<ASTSingleNodeTransformation, ASTNode>> singleNodeTransformInstances;
-    /**
-     * The PrimaryClassNodeOperations to be applied as a transformation
-     */
-    private Map<CompilePhase, List<CompilationUnit.PrimaryClassNodeOperation>> classTransforms;
+    private Map<CompilePhase, Map<ASTTransformation, ASTNode>> transformInstances;
 
 
     // use this to synchronize access for the lazy intit
@@ -243,7 +238,6 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             }
             Class sc = clazz.getSuperclass();
             if (sc!=null) superClass = getPrimaryClassNode(sc);
-
             buildInterfaceTypes(clazz);
             VMPluginFactory.getPlugin().setAnnotationMetaData(this);
             lazyInitDone=true;
@@ -323,13 +317,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         if ((modifiers & ACC_INTERFACE) == 0)
           addField("$ownClass", ACC_STATIC|ACC_PUBLIC|ACC_FINAL|ACC_SYNTHETIC, ClassHelper.CLASS_Type, new ClassExpression(this)).setSynthetic(true);
 
-        singleNodeTransformInstances = new EnumMap<CompilePhase, Map<ASTSingleNodeTransformation, ASTNode>>(CompilePhase.class);
+        transformInstances = new EnumMap<CompilePhase, Map<ASTTransformation, ASTNode>>(CompilePhase.class);
         for (CompilePhase phase : CompilePhase.values()) {
-            singleNodeTransformInstances.put(phase, new HashMap<ASTSingleNodeTransformation, ASTNode>());
-        }
-        classTransforms = new EnumMap<CompilePhase, List<CompilationUnit.PrimaryClassNodeOperation>>(CompilePhase.class);
-        for (CompilePhase phase : CompilePhase.values()) {
-            classTransforms.put(phase, new ArrayList<CompilationUnit.PrimaryClassNodeOperation>());
+            transformInstances.put(phase, new HashMap<ASTTransformation, ASTNode>());
         }
     }
 
@@ -1148,21 +1138,12 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return super.getAnnotations(type);
     }
 
-    public void addSingleNodeTransform(ASTSingleNodeTransformation transform, ASTNode node) {
+    public void addTransform(ASTTransformation transform, ASTNode node) {
         GroovyASTTransformation annotation = transform.getClass().getAnnotation(GroovyASTTransformation.class);
-        singleNodeTransformInstances.get(annotation.phase()).put(transform, node);
+        transformInstances.get(annotation.phase()).put(transform, node);
     }
 
-    public Map<ASTSingleNodeTransformation, ASTNode> getSingleNodeTransforms(CompilePhase phase) {
-        return singleNodeTransformInstances.get(phase);
-    }
-
-    public void addClassTransform(CompilationUnit.PrimaryClassNodeOperation transform) {
-        GroovyASTTransformation annotation = transform.getClass().getAnnotation(GroovyASTTransformation.class);
-        classTransforms.get(annotation.phase()).add(transform);
-    }
-
-    public List<CompilationUnit.PrimaryClassNodeOperation> getClassTransforms(CompilePhase phase) {
-        return classTransforms.get(phase);
+    public Map<ASTTransformation, ASTNode> getTransforms(CompilePhase phase) {
+        return transformInstances.get(phase);
     }
 }
