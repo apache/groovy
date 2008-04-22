@@ -911,7 +911,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
         Expression right = transform(de.getRightExpression());
         if (right == de.getRightExpression()) return de;
-        return new DeclarationExpression((VariableExpression) left, de.getOperation(), right);
+        DeclarationExpression newDeclExpr = new DeclarationExpression((VariableExpression) left, de.getOperation(), right);
+        newDeclExpr.setSourcePosition(de);
+        return newDeclExpr;
     }
 
     protected Expression transformAnnotationConstantExpression(AnnotationConstantExpression ace) {
