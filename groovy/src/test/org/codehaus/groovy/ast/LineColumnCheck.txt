@@ -171,3 +171,10 @@ def ii = 17
 [VariableExpression,(1:9),(1:16)][ConstantExpression,(1:18),(2:1)];
 [ExpressionStatement,(2:1),(2:12)][DeclarationExpression,(2:1),(2:12)];
 [VariableExpression,(2:5),(2:8)][ConstantExpression,(2:10),(0:0)]
+###parenthisedExpressionVariable:::
+myMap = [(key):value]
+:::[VariableExpression,(1:10),(1:15)]
+###parenthisedExpressionOperatorPreference:::
+xy = (1 * (2 + 3))
+:::[BinaryExpression,(1:6),(1:19)];[BinaryExpression,(1:11),(1:18)]
+###
