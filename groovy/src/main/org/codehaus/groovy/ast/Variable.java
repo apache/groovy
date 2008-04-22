@@ -31,6 +31,11 @@ public interface Variable {
     ClassNode getType();
     
     /**
+     * the type before wrapping primitives type of the variable
+     */
+    ClassNode getOriginType();
+    
+    /**
      * the name of the variable
      */
     String getName();
