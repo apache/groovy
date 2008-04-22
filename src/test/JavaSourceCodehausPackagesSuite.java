@@ -8,7 +8,9 @@ import org.codehaus.groovy.antlr.GroovySourceASTTest;
 import org.codehaus.groovy.antlr.SourceBufferTest;
 import org.codehaus.groovy.antlr.treewalker.*;
 import org.codehaus.groovy.ast.ClassNodeTest;
+import org.codehaus.groovy.ast.MethodNodeTest;
 import org.codehaus.groovy.ast.ModuleNodeTest;
+import org.codehaus.groovy.ast.VariableExpressionTest;
 import org.codehaus.groovy.bsf.BSFTest;
 import org.codehaus.groovy.bsf.CacheBSFTest;
 import org.codehaus.groovy.classgen.*;
@@ -84,6 +86,8 @@ public class JavaSourceCodehausPackagesSuite {
         suite.addTestSuite(VerifierCodeVisitorTest.class);
         suite.addTestSuite(JdkDynamicProxyTest.class);
         suite.addTestSuite(CompilerConfigurationTest.class);
+        suite.addTestSuite(MethodNodeTest.class);
+        suite.addTestSuite(VariableExpressionTest.class);
         return suite;
     }
 }

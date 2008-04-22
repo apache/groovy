@@ -60,4 +60,8 @@ public class DynamicVariable implements Variable {
         closureShare = inClosure;        
     }
 
+	public ClassNode getOriginType() {
+		return getType();
+	}
+
 }
