@@ -89,10 +89,10 @@ public class ObjectRange extends AbstractList implements Range {
 
     private void constructorHelper(Comparable from, Comparable to) {
         if (from instanceof Short) {
-            from = new Integer(((Short) from).intValue());
+            from = Integer.valueOf(((Short) from).intValue());
         }
         if (to instanceof Short) {
-            to = new Integer(((Short) to).intValue());
+            to = Integer.valueOf(((Short) to).intValue());
         }
         if (from instanceof Float) {
             from = new Double(((Float) from).doubleValue());
@@ -394,12 +394,12 @@ public class ObjectRange extends AbstractList implements Range {
 
     private static Comparable normaliseStringType(final Comparable operand) {
         if (operand instanceof Character) {
-            return new Integer(((Character) operand).charValue());
+            return Integer.valueOf(((Character) operand).charValue());
         } else if (operand instanceof String) {
             final String string = (String) operand;
 
             if (string.length() == 1)
-                return new Integer(string.charAt(0));
+                return Integer.valueOf(string.charAt(0));
             else
                 return string;
         } else {

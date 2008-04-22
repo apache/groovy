@@ -674,12 +674,12 @@ public class InteractiveShell
 
     static {
         for (int i = 0; i <= LAST_COMMAND_ID; i++) {
-            COMMAND_MAPPINGS.put(COMMANDS[i], new Integer(i));
+            COMMAND_MAPPINGS.put(COMMANDS[i], Integer.valueOf(i));
         }
 
         // A few synonyms
-        COMMAND_MAPPINGS.put("quit", new Integer(COMMAND_ID_EXIT));
-        COMMAND_MAPPINGS.put("go", new Integer(COMMAND_ID_EXECUTE));
+        COMMAND_MAPPINGS.put("quit", Integer.valueOf(COMMAND_ID_EXIT));
+        COMMAND_MAPPINGS.put("go", Integer.valueOf(COMMAND_ID_EXECUTE));
     }
 
     private static final Map COMMAND_HELP = new HashMap();
@@ -733,7 +733,7 @@ public class InteractiveShell
             // Dump the current buffer with a line number prefix
             for (int i = 0; i < lines.length; i++) {
                 // Normalize the field size of the line number
-                String lineno = DefaultGroovyMethods.padLeft(String.valueOf(i + 1), new Integer(padsize), " ");
+                String lineno = DefaultGroovyMethods.padLeft(String.valueOf(i + 1), Integer.valueOf(padsize), " ");
                 
                 out.print(lineno);
                 out.print("> ");

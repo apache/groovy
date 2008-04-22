@@ -448,7 +448,7 @@ public class ProxyGenerator {
                 dimension++;
             }
             return componentClass.getName().replaceAll("\\$", "\\.") +
-                    DefaultGroovyMethods.multiply("[]", new Integer(dimension));
+                    DefaultGroovyMethods.multiply("[]", Integer.valueOf(dimension));
         } else {
             return c.getName().replaceAll("\\$", "\\.");
         }

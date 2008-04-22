@@ -123,7 +123,7 @@ public class LexerFrame extends JFrame implements ActionListener{
 
         while(true){
             token = lexer.nextToken();
-            JToggleButton tokenButton = new JToggleButton((String) tokens.get(new Integer(token.getType())));
+            JToggleButton tokenButton = new JToggleButton((String) tokens.get(Integer.valueOf(token.getType())));
             bg.add(tokenButton);
             tokenButton.addActionListener(this);
             tokenButton.setToolTipText(token.getText());

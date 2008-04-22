@@ -34,7 +34,7 @@ public class MetaArrayLengthProperty extends MetaProperty {
      * @throws Exception if the property could not be evaluated
      */
     public Object getProperty(Object object) {
-        return new Integer(java.lang.reflect.Array.getLength(object));
+        return Integer.valueOf(java.lang.reflect.Array.getLength(object));
     }
 
     /**

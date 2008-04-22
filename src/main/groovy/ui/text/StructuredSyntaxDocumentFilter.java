@@ -117,7 +117,7 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
     private MultiLineRun getMultiLineRun(int offset) {
         MultiLineRun ml = null;
         if (offset > 0) {
-            Integer os = new Integer(offset);
+            Integer os = Integer.valueOf(offset);
 
             SortedSet set = mlTextRunSet.headSet(os);
             if (!set.isEmpty()) {
@@ -190,8 +190,8 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
             
             // clean the tree by ensuring multi line styles are reset in area
             // of parsing
-            SortedSet set = mlTextRunSet.subSet(new Integer(offset),
-                                                new Integer(offset + length));
+            SortedSet set = mlTextRunSet.subSet(Integer.valueOf(offset),
+                                                Integer.valueOf(offset + length));
             if (set != null) {
                 set.clear();
             }

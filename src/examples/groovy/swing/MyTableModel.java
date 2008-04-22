@@ -19,14 +19,14 @@ public class MyTableModel extends AbstractTableModel {
     }
 
     final String[] columnNames = { "First Name", "Last Name", "Sport", "# of Years", "Vegetarian" };
-    final Object[][] data = { { "Mary", "Campione", "Snowboarding", new Integer(5), new Boolean(false)}, {
-            "Alison", "Huml", "Rowing", new Integer(3), new Boolean(true)
+    final Object[][] data = { { "Mary", "Campione", "Snowboarding", Integer.valueOf(5), new Boolean(false)}, {
+            "Alison", "Huml", "Rowing", Integer.valueOf(3), new Boolean(true)
             }, {
-            "Kathy", "Walrath", "Chasing toddlers", new Integer(2), new Boolean(false)
+            "Kathy", "Walrath", "Chasing toddlers", Integer.valueOf(2), new Boolean(false)
             }, {
-            "Mark", "Andrews", "Speed reading", new Integer(20), new Boolean(true)
+            "Mark", "Andrews", "Speed reading", Integer.valueOf(20), new Boolean(true)
             }, {
-            "Angela", "Lih", "Teaching high school", new Integer(4), new Boolean(false)
+            "Angela", "Lih", "Teaching high school", Integer.valueOf(4), new Boolean(false)
             }
     };
 
@@ -90,7 +90,7 @@ public class MyTableModel extends AbstractTableModel {
             //'if' block.                                          
             //XXX: See TableEditDemo.java for a better solution!!!
             try {
-                data[row][col] = new Integer(value.toString());
+                data[row][col] = Integer.valueOf(value.toString());
                 fireTableCellUpdated(row, col);
             }
             catch (NumberFormatException e) {

@@ -184,14 +184,14 @@ public class IntRange extends AbstractList implements Range {
      * {@inheritDoc}
      */
     public Comparable getFrom() {
-        return new Integer(from);
+        return Integer.valueOf(from);
     }
 
     /**
      * {@inheritDoc}
      */
     public Comparable getTo() {
-        return new Integer(to);
+        return Integer.valueOf(to);
     }
 
     /**
@@ -234,7 +234,7 @@ public class IntRange extends AbstractList implements Range {
             throw new IndexOutOfBoundsException("Index: " + index + " too big for range: " + this);
         }
         int value = reverse ? to - index : index + from;
-        return new Integer(value);
+        return Integer.valueOf(value);
     }
 
     /**
@@ -266,7 +266,7 @@ public class IntRange extends AbstractList implements Range {
         }
 
         if (fromIndex == toIndex) {
-            return new EmptyRange(new Integer(from));
+            return new EmptyRange(Integer.valueOf(from));
         }
 
         return new IntRange(fromIndex + this.from, toIndex + this.from - 1, reverse);
@@ -324,13 +324,13 @@ public class IntRange extends AbstractList implements Range {
         if (step >= 0) {
             int value = from;
             while (value <= to) {
-                closure.call(new Integer(value));
+                closure.call(Integer.valueOf(value));
                 value = value + step;
             }
         } else {
             int value = to;
             while (value >= from) {
-                closure.call(new Integer(value));
+                closure.call(Integer.valueOf(value));
                 value = value + step;
             }
         }
