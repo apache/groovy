@@ -298,6 +298,7 @@ Not found: ${groovyJar14path}
                 <pathelement path="${testClassesDirectory}"/>
                 <path refid="groovyMainClasses"/>
                 <path refid="testLibPath"/>
+                <path refid="jdk14ExtrasPath"/>
             </classpath>
             <javac source="1.4" target="1.4"/>
         </groovyc>
@@ -415,7 +416,7 @@ Not found: ${groovyJar14path}
                 <path refid="groovyMainClasses"/>
                 <path refid="testLibPath"/>
                 <!-- TODO: extras only for JDK14 -->
-                <path refid="extrasPath"/>
+                <path refid="jdk14ExtrasPath"/>
                 <pathelement path="${testClassesDirectory}"/>
                 <path refid="coberturaPath"/>
             </classpath>
@@ -456,7 +457,7 @@ Not found: ${groovyJar14path}
                 <path refid="groovyMainClasses"/>
                 <path refid="testLibPath"/>
                 <!-- TODO: extras only for JDK14 -->
-                <path refid="extrasPath"/>
+                <path refid="jdk14ExtrasPath"/>
                 <pathelement path="${testClassesDirectory}"/>
                 <path refid="coberturaPath"/>
             </classpath>

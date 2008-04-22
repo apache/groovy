@@ -170,7 +170,7 @@ $Date$
             <mapper type="flatten"/>
             <fileset refid="fs.runtime.groovy-jdk14-extras"/>
         </copy>
-        <path id="extrasPath">
+        <path id="jdk14ExtrasPath">
             <fileset dir="${extrasLibDirectory}" includes="**/*.jar"/>
         </path>
     </target>
