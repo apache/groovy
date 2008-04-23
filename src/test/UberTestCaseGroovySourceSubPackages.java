@@ -59,8 +59,8 @@ public class UberTestCaseGroovySourceSubPackages extends TestCase {
         suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/St*Test.groovy", EXCLUDES));
         suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/Su*Test.groovy", EXCLUDES));
         suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/Sv*Test.groovy", EXCLUDES));
-        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/SwingBuilderTest.groovy", EXCLUDES));
         suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/SwingBuilderBindingsTest.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/SwingBuilderTest.groovy", EXCLUDES));
         suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/Sx*Test.groovy", EXCLUDES));
         suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/Sy*Test.groovy", EXCLUDES));
         suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/Sz*Test.groovy", EXCLUDES));
