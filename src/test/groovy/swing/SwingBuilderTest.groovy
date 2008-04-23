@@ -1,6 +1,6 @@
 /*
- * $Id:  $
- * 
+ * Copyright 2003-2008 the original author or authors.
+ *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
@@ -12,7 +12,6 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
 package groovy.swing
@@ -559,7 +558,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         assert aboutKeyStroke.keyCode == KeyEvent.VK_SPACE
         assert(aboutKeyStroke.modifiers & InputEvent.CTRL_MASK) != 0
     }
-
+/*
     private verifyAccel(action, int mustHave = 0) {
         int mods = action.getValue(Action.ACCELERATOR_KEY).modifiers
         assert mods != 0
@@ -582,7 +581,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
             verifyAccel(action(accelerator: shortcut('DELETE', InputEvent.SHIFT_DOWN_MASK)), InputEvent.SHIFT_DOWN_MASK)
         }
     }
-
+*/
     void testBorderLayoutConstraints() {
         if (headless) return
 
