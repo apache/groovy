@@ -25,6 +25,7 @@ import org.codehaus.groovy.antlr.SourceBuffer;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 import org.codehaus.groovy.antlr.treewalker.VisitorAdapter;
 import org.codehaus.groovy.groovydoc.GroovyConstructorDoc;
+import org.codehaus.groovy.groovydoc.GroovyFieldDoc;
 import antlr.collections.AST;
 
 public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
@@ -204,6 +205,38 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
             }
         }
 	}
+
+    public void visitVariableDef(GroovySourceAST t, int visit) {
+        if (visit == OPENING_VISIT) {
+            if (!insideAnonymousInnerClass()) {
+                GroovySourceAST parentNode = getParentNode();
+
+                // todo - what about fields in interfaces/enums etc
+                if (parentNode != null && parentNode.getType() == GroovyTokenTypes.OBJBLOCK) {  // this should restrict us to just field definitions, and not local variable definitions
+
+                    // field name
+                    String fieldName = t.childOfType(GroovyTokenTypes.IDENT).getText();
+                    SimpleGroovyFieldDoc currentFieldDoc = new SimpleGroovyFieldDoc(fieldName);
+
+                    // comments - todo check this is doing the right thing for fields...
+                    String commentText = getJavaDocCommentsBeforeNode(t);
+                    currentFieldDoc.setRawCommentText(commentText);
+
+                    // modifiers
+                    processModifiers(t, currentFieldDoc);
+
+                    // type
+                    String typeName = getTypeNodeAsText(t.childOfType(GroovyTokenTypes.TYPE),"def");
+                    SimpleGroovyType type = new SimpleGroovyType(typeName); // todo !!!
+                    currentFieldDoc.setType(type);
+
+                    // don't forget to tell the class about this field so carefully constructed.
+                    currentClassDoc.add(currentFieldDoc);
+                }
+            }
+        }
+    }
+
 
     private boolean insideAnonymousInnerClass() {
         GroovySourceAST grandParentNode = getGrandParentNode();
