@@ -7723,7 +7723,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Read a single, whole line from the given InputStream
+     * Just throws a DeprecationException.  DO NOT USE.  It used to read a single, whole line from the given InputStream.
      *
      * @param stream an InputStream
      * @return a line
@@ -10288,7 +10288,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Standard iterator for a text file which iterates through the file content
+     * Just throws a DeprecationException.  DO NOT USE.  It used to provide an iterator for text file content
      * one line at a time.
      *
      * @param self a file object
