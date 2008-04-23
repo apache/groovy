@@ -96,6 +96,30 @@ ${classDoc.containingPackage().nameWithDots()}</FONT>
 <P>
 ${classDoc.commentText()}
 </P>
+
+<!-- =========== FIELD SUMMARY =========== -->
+
+<A NAME="field_summary"><!-- --></A>
+<TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
+<% if (classDoc.fields().length > 0) { %>
+<TR BGCOLOR="#CCCCFF" CLASS="TableHeadingColor">
+<TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2">
+<B>Field Summary</B></FONT></TH>
+
+</TR>
+  <% for (field in classDoc.fields()) { %>
+    <TR BGCOLOR="white" CLASS="TableRowColor">
+    <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
+    <CODE><!--todo visibility e.g. protected--> &nbsp;${field.type().typeName()}</CODE></FONT></TD>
+    <TD><CODE><B><A HREF="#${field.name()}">${field.name()}</A></B></CODE>
+
+    <BR>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TD>
+    </TR>
+  <% } %>
+<% } %>
+</TABLE>
+&nbsp;
 <!-- ======== CONSTRUCTOR SUMMARY ======== -->
 
 <A NAME="constructor_summary"><!-- --></A>
