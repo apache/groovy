@@ -18,6 +18,7 @@ package org.codehaus.groovy.runtime;
 import groovy.lang.*;
 import groovy.util.*;
 import groovy.text.RegexUtils;
+import groovy.io.EncodingAwareBufferedWriter;
 import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
@@ -343,7 +344,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             System.out.print(InvokerHelper.toString(value));
         }
     }
-    
+
     /**
      * Print a value to the standard output stream.
      * This method delegates to the owner to execute the method.
@@ -423,7 +424,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             System.out.println(InvokerHelper.toString(value));
         }
     }
-    
+
     /**
      * Print a value (followed by a newline) to the standard output stream.
      * This method delegates to the owner to execute the method.
@@ -3809,7 +3810,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a Collection as a union of two collections. If the left collection
      * is a Set, then the returned collection will be a Set otherwise a List.
-     * This operation will always create a new object for the result, 
+     * This operation will always create a new object for the result,
      * while the operands remain unchanged.
      *
      * @param left  the left Collection
@@ -3825,7 +3826,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a collection as a union of a Collection and an Object. If the collection
      * is a Set, then the returned collection will be a Set otherwise a List.
-     * This operation will always create a new object for the result, 
+     * This operation will always create a new object for the result,
      * while the operands remain unchanged.
      *
      * @param left  a Collection
@@ -5898,7 +5899,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Add a Character and a Number.
-     * This operation will always create a new object for the result, 
+     * This operation will always create a new object for the result,
      * while the operands remain unchanged.
      *
      * @param left  a Character
@@ -5922,7 +5923,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Add two Characters.
-     * This operation will always create a new object for the result, 
+     * This operation will always create a new object for the result,
      * while the operands remain unchanged.
      *
      * @param left  a Character
@@ -8409,7 +8410,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static BufferedWriter newWriter(File file, String charset, boolean append) throws IOException {
         if (append) {
-            return new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, append), charset));
+            return new EncodingAwareBufferedWriter(new OutputStreamWriter(new FileOutputStream(file, append), charset));
         } else {
             // first write the Byte Order Mark for Unicode encodings
             FileOutputStream stream = new FileOutputStream(file);
@@ -8418,7 +8419,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             } else if ("UTF-16LE".equals(charset)) {
                 writeUtf16Bom(stream, false);
             }
-            return new BufferedWriter(new OutputStreamWriter(stream, charset));
+            return new EncodingAwareBufferedWriter(new OutputStreamWriter(stream, charset));
         }
     }
 
@@ -9885,7 +9886,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             if(current.getName().equals(RootLoader.class.getName())) return true;
             current = current.getSuperclass();
         }
-        
+
         return false;
     }
 
