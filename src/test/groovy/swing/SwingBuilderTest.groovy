@@ -17,8 +17,8 @@
 
 package groovy.swing
 
-import javax.swing.JPopupMenu.Separator as JPopupMenu_Separator
-import javax.swing.JToolBar.Separator as JToolBar_Separator
+//import javax.swing.JPopupMenu.Separator as JPopupMenu_Separator
+//import javax.swing.JToolBar.Separator as JToolBar_Separator
 
 import groovy.ui.Console
 import java.awt.*
@@ -891,8 +891,8 @@ class SwingBuilderTest extends GroovySwingTestCase {
             }
             separator(id:"sep")
         }
-        assert swing.menuSep instanceof JPopupMenu_Separator
-        assert swing.tbSep instanceof JToolBar_Separator
+        assert swing.menuSep instanceof JPopupMenu.Separator
+        assert swing.tbSep instanceof JToolBar.Separator
         assert swing.sep instanceof JSeparator
     }
 
