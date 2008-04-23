@@ -18,7 +18,7 @@ package org.codehaus.groovy.runtime.callsite;
 import groovy.lang.GroovyObject;
 import groovy.lang.MetaClass;
 import groovy.lang.MissingMethodException;
-import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
 
 /**
  *
@@ -33,11 +33,14 @@ public class PogoMetaClassSite extends MetaClassSite {
         try {
             return metaClass.invokeMethod(receiver, name, args);
         } catch (MissingMethodException e) {
-            GroovyObject groovy = (GroovyObject) receiver;
-            if (e.getMethod().equals(name) && receiver.getClass() == e.getType()) {
-                return groovy.invokeMethod(name, InvokerHelper.asUnwrappedArray(args));
+            if (e instanceof MissingMethodExecutionFailed) {
+                throw (MissingMethodException)e.getCause();
+            } else if (receiver.getClass() == e.getType() && e.getMethod().equals(name)) {
+                // in case there's nothing else, invoke the object's own invokeMethod()
+                return ((GroovyObject)receiver).invokeMethod(name, args);
+            } else {
+                throw e;
             }
-            throw e;
         }
     }
 

@@ -19,7 +19,11 @@ import groovy.lang.GroovyObject;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedMethod;
+import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.MetaClassHelper;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 /**
  * POGO call site
@@ -37,49 +41,64 @@ public class PogoMetaMethodSite extends MetaMethodSite {
     }
 
     public final CallSite acceptCurrent(Object receiver, Object[] args) {
-        if(/*!wantProvideCallSite() &&*/ checkCallCurrent(receiver, args)) // right arguments
+        if(checkCall(receiver, args))
           return this;
         else
           return createCallCurrentSite(receiver, args, array.owner);
     }
 
-    protected boolean checkCallCurrent(Object receiver, Object[] args) {
-        return usage.get() == 0
-           && receiver != null
-           && receiver.getClass() == metaClass.getTheClass() // meta class match receiver
-           && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
-           && MetaClassHelper.sameClasses(params, args);
-    }
-
     public final CallSite acceptCall(Object receiver, Object[] args) {
-        if(usage.get() == 0
-           && receiver != null
-           && receiver.getClass() == metaClass.getTheClass() // meta class match receiver
-           && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
-           && MetaClassHelper.sameClasses(params, args)) // right arguments
+        if(checkCall(receiver, args))
           return this;
         else
           return createCallSite(receiver, args);
     }
 
-    public static CallSite createPogoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object[] args) {
-//        if (site.wantProvideCallSite())
-//          return ((CachedMethod)metaMethod).createPogoMetaMethodSite(site, metaClass, metaMethod, params, site.array.owner);
+    public Object callCurrent(Object receiver, Object[] args) throws Throwable {
+        if(checkCall(receiver, args))
+          return invoke(receiver,args);
+        else
+          return createCallCurrentSite(receiver, args, array.owner).invoke(receiver,args);
+    }
 
+    public Object call(Object receiver, Object[] args) {
+        if(checkCall(receiver, args))
+          return invoke(receiver,args);
+        else
+          return createCallSite(receiver, args).invoke(receiver,args);
+    }
+
+    protected boolean checkCall(Object receiver, Object[] args) {
+        try {
+            return usage.get() == 0
+               && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
+               && MetaClassHelper.sameClasses(params, args);
+        }
+        catch (NullPointerException e) {
+            if (receiver == null)
+              return false;
+            throw e;
+        }
+        catch (ClassCastException e) {
+            if (!(receiver instanceof GroovyObject))
+              return false;
+            throw e;
+        }
+    }
+
+    public static CallSite createPogoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object[] args) {
+        if (metaMethod.getClass() == CachedMethod.class)
+          return createCachedMethodSite (site, metaClass, (CachedMethod) metaMethod, params, args);
+
+        return createNonAwareCallSite(site, metaClass, metaMethod, params, args);
+    }
+
+    private static CallSite createNonAwareCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object[] args) {
         if (metaMethod.correctArguments(args) == args) {
             if (noWrappers(args)) {
                 if (noCoerce(metaMethod,args))
                     return new PogoMetaMethodSiteNoUnwrap(site, metaClass, metaMethod, params);
                 else {
-//                    if (metaMethod.getClass() == CachedMethod.class) {
-//                        CachedMethod m = (CachedMethod)metaMethod;
-//                        if (m.isPublic()) {
-//                            final PogoMetaMethodSite res = m.createPogoMetaMethodSite(site, metaClass, metaMethod, params, site.array.owner);
-//                            if (res != null)
-//                              return res;
-//                        }
-//                    }
-//
                     return new PogoMetaMethodSiteNoUnwrapNoCoerce(site, metaClass, metaMethod, params);
                 }
             }
@@ -87,8 +106,99 @@ public class PogoMetaMethodSite extends MetaMethodSite {
         return new PogoMetaMethodSite(site, metaClass, metaMethod, params);
     }
 
-    public boolean wantProvideCallSite() {
-        return metaMethod.getClass() == CachedMethod.class && ((CachedMethod)metaMethod).pogoCallSiteClassLoader != null;
+    public static CallSite createCachedMethodSite(CallSite site, MetaClassImpl metaClass, CachedMethod metaMethod, Class[] params, Object[] args) {
+        if (metaMethod.correctArguments(args) == args) {
+            if (noWrappers(args)) {
+                if (noCoerce(metaMethod,args))
+                    return new PogoCachedMethodSiteNoUnwrap(site, metaClass, metaMethod, params);
+                else {
+                    return metaMethod.createPogoMetaMethodSite(site, metaClass, params);
+                }
+            }
+        }
+        return new PogoCachedMethodSite(site, metaClass, metaMethod, params);
+    }
+
+    public static class PogoCachedMethodSite extends PogoMetaMethodSite {
+        final Method reflect;
+        boolean compiled;
+
+        public PogoCachedMethodSite(CallSite site, MetaClassImpl metaClass, CachedMethod metaMethod, Class[] params) {
+            super(site, metaClass, metaMethod, params);
+            reflect = metaMethod.setAccessible();
+        }
+
+        public Object invoke(Object receiver, Object[] args) {
+            MetaClassHelper.unwrap(args);
+            args = metaMethod.coerceArgumentsToClasses(args);
+            try {
+                try {
+                    return reflect.invoke(receiver, args);
+                } catch (IllegalArgumentException e) {
+                    throw new InvokerInvocationException(e);
+                } catch (IllegalAccessException e) {
+                    throw new InvokerInvocationException(e);
+                } catch (InvocationTargetException e) {
+                    throw new InvokerInvocationException(e);
+                }
+            } catch (Exception e) {
+                throw metaMethod.processDoMethodInvokeException(e, receiver, args);
+            }
+        }
+    }
+
+    public static class PogoCachedMethodSiteNoUnwrap extends PogoCachedMethodSite {
+
+        public PogoCachedMethodSiteNoUnwrap(CallSite site, MetaClassImpl metaClass, CachedMethod metaMethod, Class params[]) {
+            super(site, metaClass, metaMethod, params);
+        }
+
+        public final Object invoke(Object receiver, Object[] args) {
+            args = metaMethod.coerceArgumentsToClasses(args);
+            try {
+                try {
+                    return reflect.invoke(receiver, args);
+                } catch (IllegalArgumentException e) {
+                    throw new InvokerInvocationException(e);
+                } catch (IllegalAccessException e) {
+                    throw new InvokerInvocationException(e);
+                } catch (InvocationTargetException e) {
+                    throw new InvokerInvocationException(e);
+                }
+            } catch (Exception e) {
+                throw metaMethod.processDoMethodInvokeException(e, receiver, args);
+            }
+        }
+    }
+
+    public static class PogoCachedMethodSiteNoUnwrapNoCoerce extends PogoCachedMethodSite {
+
+        public PogoCachedMethodSiteNoUnwrapNoCoerce(CallSite site, MetaClassImpl metaClass, CachedMethod metaMethod, Class params[]) {
+            super(site, metaClass, metaMethod, params);
+        }
+
+        public final Object invoke(Object receiver, Object[] args) {
+            try {
+                return reflect.invoke(receiver, args);
+            } catch (IllegalArgumentException e) {
+                throw new InvokerInvocationException(e);
+            } catch (IllegalAccessException e) {
+                throw new InvokerInvocationException(e);
+            } catch (InvocationTargetException e) {
+                throw new InvokerInvocationException(e);
+            }
+        }
+
+        public CallSite acceptCurrentTyped(Object receiver, Object[] args, Class types[]) {
+            if(checkCall(receiver, args)) {
+                if (!typesChecked) {
+                    checkTypes(types);
+                }
+                return (typesValid ? null : this);
+            }
+            else
+              return createCallCurrentSite(receiver, args, array.owner);
+        }
     }
 
     /**

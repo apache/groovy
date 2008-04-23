@@ -19,7 +19,7 @@ public class JO {
     }
 
     public static void main(String[] args) throws Exception {
-        ASMifierClassVisitor.main(new String[]{"target/test-classes/org/codehaus/groovy/classgen/JO.class"});
+        ASMifierClassVisitor.main(new String[]{"target/test-classes/spectralnorm.class"});
 //        ASMifierClassVisitor.main(new String[]{"target/test-classes/spectralnorm.class"});
 //        ASMifierClassVisitor.main(new String[]{"target/classes/org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite.class"});
 //        ASMifierClassVisitor.main(new String[]{"target/test-classes/spectralnorm.class"});

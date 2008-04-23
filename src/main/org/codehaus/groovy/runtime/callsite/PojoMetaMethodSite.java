@@ -17,8 +17,13 @@ package org.codehaus.groovy.runtime.callsite;
 
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
+import org.codehaus.groovy.reflection.CachedMethod;
+import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.NullObject;
+
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 
 /**
  * POJO call site
@@ -29,7 +34,7 @@ import org.codehaus.groovy.runtime.NullObject;
 */
 public class PojoMetaMethodSite extends MetaMethodSite {
 
-    private final int version;
+    protected final int version;
 
     public PojoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
         super(site, metaClass, metaMethod, params);
@@ -84,7 +89,23 @@ public class PojoMetaMethodSite extends MetaMethodSite {
         if (metaMethod instanceof CallSiteAwareMetaMethod) {
             return ((CallSiteAwareMetaMethod)metaMethod).createPojoCallSite(site, metaClass, metaMethod, params, receiver, args);
         }
+
+        if (metaMethod.getClass() == CachedMethod.class)
+          return createCachedMethodSite (site, metaClass, metaMethod, params, args);
+
         return createNonAwareCallSite(site, metaClass, metaMethod, params, args);
+    }
+
+    public static CallSite createCachedMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object[] args) {
+        if (metaMethod.correctArguments(args) == args) {
+            if (noWrappers(args)) {
+                if (noCoerce(metaMethod,args))
+                    return new PojoCachedMethodSiteNoUnwrap(site, metaClass, metaMethod, params);
+                else
+                    return new PojoCachedMethodSiteNoUnwrapNoCoerce(site, metaClass, metaMethod, params);
+            }
+        }
+        return new PojoCachedMethodSite(site, metaClass, metaMethod, params);
     }
 
     public static CallSite createNonAwareCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object[] args) {
@@ -97,6 +118,76 @@ public class PojoMetaMethodSite extends MetaMethodSite {
             }
         }
         return new PojoMetaMethodSite(site, metaClass, metaMethod, params);
+    }
+
+    public static class PojoCachedMethodSite extends PojoMetaMethodSite {
+        final Method reflect;
+
+        public PojoCachedMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params) {
+            super(site, metaClass, metaMethod, params);
+            reflect = ((CachedMethod)metaMethod).setAccessible();
+        }
+
+        public Object invoke(Object receiver, Object[] args) {
+            MetaClassHelper.unwrap(args);
+            args = metaMethod.coerceArgumentsToClasses(args);
+            try {
+                try {
+                    return reflect.invoke(receiver, args);
+                } catch (IllegalArgumentException e) {
+                    throw new InvokerInvocationException(e);
+                } catch (IllegalAccessException e) {
+                    throw new InvokerInvocationException(e);
+                } catch (InvocationTargetException e) {
+                    throw new InvokerInvocationException(e);
+                }
+            } catch (Exception e) {
+                throw metaMethod.processDoMethodInvokeException(e, receiver, args);
+            }
+        }
+    }
+
+    public static class PojoCachedMethodSiteNoUnwrap extends PojoCachedMethodSite {
+
+        public PojoCachedMethodSiteNoUnwrap(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
+            super(site, metaClass, metaMethod, params);
+        }
+
+        public final Object invoke(Object receiver, Object[] args) {
+            args = metaMethod.coerceArgumentsToClasses(args);
+            try {
+                try {
+                    return reflect.invoke(receiver, args);
+                } catch (IllegalArgumentException e) {
+                    throw new InvokerInvocationException(e);
+                } catch (IllegalAccessException e) {
+                    throw new InvokerInvocationException(e);
+                } catch (InvocationTargetException e) {
+                    throw new InvokerInvocationException(e);
+                }
+            } catch (Exception e) {
+                throw metaMethod.processDoMethodInvokeException(e, receiver, args);
+            }
+        }
+    }
+
+    public static class PojoCachedMethodSiteNoUnwrapNoCoerce extends PojoCachedMethodSite {
+
+        public PojoCachedMethodSiteNoUnwrapNoCoerce(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class params[]) {
+            super(site, metaClass, metaMethod, params);
+        }
+
+        public final Object invoke(Object receiver, Object[] args) {
+            try {
+                return reflect.invoke(receiver, args);
+            } catch (IllegalArgumentException e) {
+                throw new InvokerInvocationException(e);
+            } catch (IllegalAccessException e) {
+                throw new InvokerInvocationException(e);
+            } catch (InvocationTargetException e) {
+                throw new InvokerInvocationException(e);
+            }
+        }
     }
 
     /**

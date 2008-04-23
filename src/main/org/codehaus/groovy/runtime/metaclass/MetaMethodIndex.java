@@ -25,7 +25,6 @@ import java.util.NoSuchElementException;
 
 public class MetaMethodIndex {
     public SingleKeyHashMap methodHeaders = new SingleKeyHashMap();
-    private CachedClass theCachedClass;
 
     public static class Header {
         public Entry head;
@@ -67,7 +66,6 @@ public class MetaMethodIndex {
     }
 
     public MetaMethodIndex(CachedClass theCachedClass) {
-        this.theCachedClass = theCachedClass;
         init(DEFAULT_CAPACITY);
 
         CachedClass last = null;

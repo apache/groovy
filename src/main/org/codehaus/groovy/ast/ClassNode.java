@@ -1017,6 +1017,61 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return false;
     }
     
+    public MethodNode tryFindPossibleMethod(String name, Expression arguments) {
+        int count = 0;
+
+        if (arguments instanceof TupleExpression) {
+            TupleExpression tuple = (TupleExpression) arguments;
+            // TODO this won't strictly be true when using list expansion in argument calls
+            count = tuple.getExpressions().size();
+        }
+        else
+          return null;
+
+        MethodNode res = null;
+        ClassNode node = this;
+        TupleExpression args = (TupleExpression) arguments;
+        do {
+            for (Iterator iter = node.getDeclaredMethods(name).iterator(); iter.hasNext();) {
+                MethodNode method = (MethodNode) iter.next();
+                if (method.getParameters().length == count) {
+                    boolean match = true;
+                    for (int i = 0; i != count; ++i)
+                      if (!args.getType().isDerivedFrom(method.getParameters()[i].getType())) {
+                          match = false;
+                          break;
+                      }
+
+                    if (match) {
+                        if (res == null)
+                          res = method;
+                        else {
+                          if (res.getParameters().length != count)
+                            return null;
+
+                          if (node.equals(this))
+                            return null;
+
+                          match = true;
+                          for (int i = 0; i != count; ++i)
+                            if (!res.getParameters()[i].getType().equals(method.getParameters()[i].getType())) {
+                                match = false;
+                                break;
+                            }
+
+                          if (!match)
+                            return null;
+                        }
+                    }
+                }
+            }
+            node = node.getSuperClass();
+        }
+        while (node != null);
+
+        return res;
+    }
+
     /**
      * Returns true if the given method has a possibly matching static method with the given name and arguments
      */

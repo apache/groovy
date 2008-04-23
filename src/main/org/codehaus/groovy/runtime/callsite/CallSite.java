@@ -91,6 +91,10 @@ public abstract class CallSite {
         throw new UnsupportedOperationException();
     }
 
+    public CallSite acceptCurrentTyped(Object receiver, Object[] args, Class [] types) {
+        return acceptCurrent(receiver, args);
+    }
+
     public CallSite acceptConstructor(Object receiver, Object[] args) {
         throw new UnsupportedOperationException();
     }
@@ -126,6 +130,10 @@ public abstract class CallSite {
         return acceptCurrent(receiver, args).invoke(receiver, args);
     }
     
+    public Object callStatic (Object receiver, Object [] args) {
+        return acceptStatic(receiver, args).invoke(receiver, args);
+    }
+
     public Object callBinop (Object receiver, Object arg) {
         return acceptBinop(receiver, arg).invokeBinop(receiver, arg);
     }

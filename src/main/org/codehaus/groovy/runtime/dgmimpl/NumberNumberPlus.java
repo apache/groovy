@@ -43,298 +43,58 @@ public final class NumberNumberPlus extends NumberNumberMetaMethod {
     public CallSite createPojoCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
         if (receiver instanceof Integer) {
             if (args[0] instanceof Integer)
-                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-                    public final Object callBinop(Object receiver, Object arg) {
-                        return (receiver instanceof Integer && arg instanceof Integer)
-                                && checkPojoMetaClass()
-                        ? Integer.valueOf(((Integer) receiver).intValue() + ((Integer) arg).intValue())
-                        : super.callBinop(receiver,arg);
-                    }
-
-                    public final Object invoke(Object receiver, Object[] args) {
-                        return Integer.valueOf(((Integer) receiver).intValue() + ((Integer) args[0]).intValue());
-                    }
-
-                    public final Object invokeBinop(Object receiver, Object arg) {
-                        return Integer.valueOf(((Integer) receiver).intValue() + ((Integer) arg).intValue());
-                    }
-                };
+                return new IntegerInteger(site, metaClass, metaMethod, params, receiver, args);
 
             if (args[0] instanceof Long)
-                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-                    public final Object callBinop(Object receiver, Object arg) {
-                        return (receiver instanceof Integer && arg instanceof Long)
-                                && checkPojoMetaClass()
-                              ? new Long(((Integer) receiver).longValue() + ((Long) arg).longValue())
-                              : super.callBinop(receiver,arg);
-                    }
-
-                    public final Object invoke(Object receiver, Object[] args) {
-                        return new Long(((Integer) receiver).longValue() + ((Long) args[0]).longValue());
-                    }
-
-                    public final Object invokeBinop(Object receiver, Object arg) {
-                        return new Long(((Integer) receiver).longValue() + ((Long) arg).longValue());
-                    }
-                };
+                return new IntegerLong(site, metaClass, metaMethod, params, receiver, args);
 
             if (args[0] instanceof Float)
-                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-                    public final Object callBinop(Object receiver, Object arg) {
-                        return (receiver instanceof Integer && arg instanceof Float)
-                                && checkPojoMetaClass()
-                              ? new Double(((Integer) receiver).doubleValue() + ((Float) arg).doubleValue())
-                              : super.callBinop(receiver,arg);
-                    }
-
-                    public final Object invoke(Object receiver, Object[] args) {
-                        return new Double(((Integer) receiver).doubleValue() + ((Float) args[0]).doubleValue());
-                    }
-
-                    public final Object invokeBinop(Object receiver, Object arg) {
-                        return new Double(((Integer) receiver).doubleValue() + ((Float) arg).doubleValue());
-                    }
-                };
+                return new IntegerFloat(site, metaClass, metaMethod, params, receiver, args);
 
             if (args[0] instanceof Double)
-                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-                    public final Object callBinop(Object receiver, Object arg) {
-                        return (receiver instanceof Integer && arg instanceof Double)
-                                && checkPojoMetaClass()
-                              ? new Double(((Integer) receiver).doubleValue() + ((Double) arg).doubleValue())
-                              : super.callBinop(receiver,arg);
-                    }
-
-                    public final Object invoke(Object receiver, Object[] args) {
-                        return new Double(((Integer) receiver).doubleValue() + ((Double) args[0]).doubleValue());
-                    }
-
-                    public final Object invokeBinop(Object receiver, Object arg) {
-                        return new Double(((Integer) receiver).doubleValue() + ((Double) arg).doubleValue());
-                    }
-                };
+                return new IntegerDouble(site, metaClass, metaMethod, params, receiver, args);
             }
 
         if (receiver instanceof Long) {
             if (args[0] instanceof Integer)
-                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-                    public final Object callBinop(Object receiver, Object arg) {
-                        return (receiver instanceof Long && arg instanceof Integer)
-                                && checkPojoMetaClass()
-                              ? new Long(((Long) receiver).longValue() + ((Integer) arg).longValue())
-                              : super.callBinop(receiver,arg);
-                    }
-
-                    public final Object invoke(Object receiver, Object[] args) {
-                        return new Long(((Long) receiver).longValue() + ((Integer) args[0]).longValue());
-                    }
-
-                    public final Object invokeBinop(Object receiver, Object arg) {
-                        return new Long(((Long) receiver).longValue() + ((Integer) arg).longValue());
-                    }
-                };
+                return new LongInteger(site, metaClass, metaMethod, params, receiver, args);
 
             if (args[0] instanceof Long)
-                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-                    public final Object callBinop(Object receiver, Object arg) {
-                        return (receiver instanceof Long && arg instanceof Long)
-                                && checkPojoMetaClass()
-                              ? new Long(((Long) receiver).longValue() + ((Long) arg).longValue())
-                              : super.callBinop(receiver,arg);
-                    }
-
-                    public final Object invoke(Object receiver, Object[] args) {
-                        return new Long(((Long) receiver).longValue() + ((Long) args[0]).longValue());
-                    }
-
-                    public final Object invokeBinop(Object receiver, Object arg) {
-                        return new Long(((Long) receiver).longValue() + ((Long) arg).longValue());
-                    }
-                };
+                return new LongLong(site, metaClass, metaMethod, params, receiver, args);
 
             if (args[0] instanceof Float)
-                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-                    public final Object callBinop(Object receiver, Object arg) {
-                        return (receiver instanceof Long && arg instanceof Float)
-                                && checkPojoMetaClass()
-                              ? new Double(((Long) receiver).doubleValue() + ((Float) arg).doubleValue())
-                              : super.callBinop(receiver,arg);
-                    }
-
-                    public final Object invoke(Object receiver, Object[] args) {
-                        return new Double(((Long) receiver).doubleValue() + ((Float) args[0]).doubleValue());
-                    }
-
-                    public final Object invokeBinop(Object receiver, Object arg) {
-                        return new Double(((Long) receiver).doubleValue() + ((Float) arg).doubleValue());
-                    }
-                };
+                return new LongFloat(site, metaClass, metaMethod, params, receiver, args);
 
             if (args[0] instanceof Double)
-                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-                    public final Object callBinop(Object receiver, Object arg) {
-                        return (receiver instanceof Long && arg instanceof Double)
-                                && checkPojoMetaClass()
-                              ? new Double(((Long) receiver).doubleValue() + ((Double) arg).doubleValue())
-                              : super.callBinop(receiver,arg);
-                    }
-
-                    public final Object invoke(Object receiver, Object[] args) {
-                        return new Double(((Long) receiver).doubleValue() + ((Double) args[0]).doubleValue());
-                    }
-
-                    public final Object invokeBinop(Object receiver, Object arg) {
-                        return new Double(((Long) receiver).doubleValue() + ((Double) arg).doubleValue());
-                    }
-                };
+                return new LongDouble(site, metaClass, metaMethod, params, receiver, args);
             }
 
         if (receiver instanceof Float) {
             if (args[0] instanceof Integer)
-                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-                    public final Object callBinop(Object receiver, Object arg) {
-                        return (receiver instanceof Float && arg instanceof Integer)
-                                && checkPojoMetaClass()
-                              ? new Double(((Float) receiver).doubleValue() + ((Integer) arg).doubleValue())
-                              : super.callBinop(receiver,arg);
-                    }
-
-                    public final Object invoke(Object receiver, Object[] args) {
-                        return new Double(((Float) receiver).doubleValue() + ((Integer) args[0]).doubleValue());
-                    }
-
-                    public final Object invokeBinop(Object receiver, Object arg) {
-                        return new Double(((Float) receiver).doubleValue() + ((Integer) arg).doubleValue());
-                    }
-                };
+                return new FloatInteger(site, metaClass, metaMethod, params, receiver, args);
 
             if (args[0] instanceof Long)
-                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-                    public final Object callBinop(Object receiver, Object arg) {
-                        return (receiver instanceof Float && arg instanceof Long)
-                                && checkPojoMetaClass()
-                              ? new Double(((Float) receiver).doubleValue() + ((Long) arg).doubleValue())
-                              : super.callBinop(receiver,arg);
-                    }
-
-                    public final Object invoke(Object receiver, Object[] args) {
-                        return new Double(((Float) receiver).doubleValue() + ((Long) args[0]).doubleValue());
-                    }
-
-                    public final Object invokeBinop(Object receiver, Object arg) {
-                        return new Double(((Float) receiver).doubleValue() + ((Long) arg).doubleValue());
-                    }
-                };
+                return new FloatLong(site, metaClass, metaMethod, params, receiver, args);
 
             if (args[0] instanceof Float)
-                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-                    public final Object callBinop(Object receiver, Object arg) {
-                        return (receiver instanceof Float && arg instanceof Float)
-                                && checkPojoMetaClass()
-                              ? new Double(((Float) receiver).doubleValue() + ((Float) arg).doubleValue())
-                              : super.callBinop(receiver,arg);
-                    }
-
-                    public final Object invoke(Object receiver, Object[] args) {
-                        return new Double(((Float) receiver).doubleValue() + ((Float) args[0]).doubleValue());
-                    }
-
-                    public final Object invokeBinop(Object receiver, Object arg) {
-                        return new Double(((Float) receiver).doubleValue() + ((Float) arg).doubleValue());
-                    }
-                };
+                return new FloatFloat(site, metaClass, metaMethod, params, receiver, args);
 
             if (args[0] instanceof Double)
-                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-                    public final Object callBinop(Object receiver, Object arg) {
-                        return (receiver instanceof Float && arg instanceof Double)
-                                && checkPojoMetaClass()
-                              ? new Double(((Float) receiver).doubleValue() + ((Double) arg).doubleValue())
-                              : super.callBinop(receiver,arg);
-                    }
-
-                    public final Object invoke(Object receiver, Object[] args) {
-                        return new Double(((Float) receiver).doubleValue() + ((Double) args[0]).doubleValue());
-                    }
-
-                    public final Object invokeBinop(Object receiver, Object arg) {
-                        return new Double(((Float) receiver).doubleValue() + ((Double) arg).doubleValue());
-                    }
-                };
+                return new FloatDouble(site, metaClass, metaMethod, params, receiver, args);
             }
 
         if (receiver instanceof Double) {
             if (args[0] instanceof Integer)
-                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-                    public final Object callBinop(Object receiver, Object arg) {
-                        return (receiver instanceof Double && arg instanceof Integer)
-                                && checkPojoMetaClass()
-                              ? new Double(((Double) receiver).doubleValue() + (double) ((Integer) arg).intValue())
-                              : super.callBinop(receiver,arg);
-                    }
-
-                    public final Object invoke(Object receiver, Object[] args) {
-                        return new Double(((Double) receiver).doubleValue() + ((Integer) args[0]).doubleValue());
-                    }
-
-                    public final Object invokeBinop(Object receiver, Object arg) {
-                        return new Double(((Double) receiver).doubleValue() + (double)((Integer) arg).intValue());
-                    }
-                };
+                return new DoubleInteger(site, metaClass, metaMethod, params, receiver, args);
 
             if (args[0] instanceof Long)
-                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-                    public final Object callBinop(Object receiver, Object arg) {
-                        return (receiver instanceof Double && arg instanceof Long)
-                                && checkPojoMetaClass()
-                              ? new Double(((Double) receiver).doubleValue() + ((Long) arg).doubleValue())
-                              : super.callBinop(receiver,arg);
-                    }
-
-                    public final Object invoke(Object receiver, Object[] args) {
-                        return new Double(((Double) receiver).doubleValue() + ((Long) args[0]).doubleValue());
-                    }
-
-                    public final Object invokeBinop(Object receiver, Object arg) {
-                        return new Double(((Double) receiver).doubleValue() + ((Long) arg).doubleValue());
-                    }
-                };
+                return new DoubleLong(site, metaClass, metaMethod, params, receiver, args);
 
             if (args[0] instanceof Float)
-                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-                    public final Object callBinop(Object receiver, Object arg) {
-                        return (receiver instanceof Double && arg instanceof Float)
-                                && checkPojoMetaClass()
-                              ? new Double(((Double) receiver).doubleValue() + ((Float) arg).doubleValue())
-                              : super.callBinop(receiver,arg);
-                    }
-
-                    public final Object invoke(Object receiver, Object[] args) {
-                        return new Double(((Double) receiver).doubleValue() + ((Float) args[0]).doubleValue());
-                    }
-
-                    public final Object invokeBinop(Object receiver, Object arg) {
-                        return new Double(((Double) receiver).doubleValue() + ((Float) arg).doubleValue());
-                    }
-                };
+                return new DoubleFloat(site, metaClass, metaMethod, params, receiver, args);
 
             if (args[0] instanceof Double)
-                return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-                    public final Object callBinop(Object receiver, Object arg) {
-                        return (receiver instanceof Double && arg instanceof Double)
-                                && checkPojoMetaClass()
-                              ? new Double(((Double) receiver).doubleValue() + ((Double) arg).doubleValue())
-                              : super.callBinop(receiver,arg);
-                    }
-
-                    public final Object invoke(Object receiver, Object[] args) {
-                        return new Double(((Double) receiver).doubleValue() + ((Double) args[0]).doubleValue());
-                    }
-
-                    public final Object invokeBinop(Object receiver, Object arg) {
-                        return new Double(((Double) receiver).doubleValue() + ((Double) arg).doubleValue());
-                    }
-                };
+                return new DoubleDouble(site, metaClass, metaMethod, params, receiver, args);
             }
 
         return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
@@ -346,5 +106,405 @@ public final class NumberNumberPlus extends NumberNumberMetaMethod {
                 return math.addImpl((Number)receiver,(Number)arg);
             }
         };
+    }
+
+    private static class DoubleDouble extends NumberNumberCallSite {
+        public DoubleDouble(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
+            super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
+        }
+
+        public final Object callBinop(Object receiver, Object arg) {
+            try {
+                if (checkPojoMetaClass()) {
+                    return new Double(((Double) receiver).doubleValue() + ((Double) arg).doubleValue());
+                }
+            }
+            catch (ClassCastException e) {//
+            }
+            return super.callBinop(receiver, arg);
+        }
+
+        public final Object invoke(Object receiver, Object[] args) {
+            return new Double(((Double) receiver).doubleValue() + ((Double) args[0]).doubleValue());
+        }
+
+        public final Object invokeBinop(Object receiver, Object arg) {
+            return new Double(((Double) receiver).doubleValue() + ((Double) arg).doubleValue());
+        }
+    }
+
+    private static class DoubleFloat extends NumberNumberCallSite {
+        public DoubleFloat(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
+            super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
+        }
+
+        public final Object callBinop(Object receiver, Object arg) {
+            try {
+                if (checkPojoMetaClass()) {
+                    return new Double(((Double) receiver).doubleValue() + ((Float) arg).doubleValue());
+                }
+            }
+            catch (ClassCastException e) {//
+            }
+            return super.callBinop(receiver, arg);
+        }
+
+        public final Object invoke(Object receiver, Object[] args) {
+            return new Double(((Double) receiver).doubleValue() + ((Float) args[0]).doubleValue());
+        }
+
+        public final Object invokeBinop(Object receiver, Object arg) {
+            return new Double(((Double) receiver).doubleValue() + ((Float) arg).doubleValue());
+        }
+    }
+
+    private static class DoubleLong extends NumberNumberCallSite {
+        public DoubleLong(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
+            super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
+        }
+
+        public final Object callBinop(Object receiver, Object arg) {
+            try {
+                if (checkPojoMetaClass()) {
+                    return new Double(((Double) receiver).doubleValue() + ((Long) arg).doubleValue());
+                }
+            }
+            catch (ClassCastException e) {//
+            }
+            return super.callBinop(receiver, arg);
+        }
+
+        public final Object invoke(Object receiver, Object[] args) {
+            return new Double(((Double) receiver).doubleValue() + ((Long) args[0]).doubleValue());
+        }
+
+        public final Object invokeBinop(Object receiver, Object arg) {
+            return new Double(((Double) receiver).doubleValue() + ((Long) arg).doubleValue());
+        }
+    }
+
+    private static class DoubleInteger extends NumberNumberCallSite {
+        public DoubleInteger(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
+            super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
+        }
+
+        public final Object callBinop(Object receiver, Object arg) {
+            try {
+                if (checkPojoMetaClass()) {
+                    return new Double(((Double) receiver).doubleValue() + (double)((Integer) arg).intValue());
+                }
+            }
+            catch (ClassCastException e) {//
+            }
+            return super.callBinop(receiver, arg);
+        }
+
+        public final Object invoke(Object receiver, Object[] args) {
+            return new Double(((Double) receiver).doubleValue() + ((Integer) args[0]).doubleValue());
+        }
+
+        public final Object invokeBinop(Object receiver, Object arg) {
+            return new Double(((Double) receiver).doubleValue() + (double)((Integer) arg).intValue());
+        }
+    }
+
+    private static class FloatDouble extends NumberNumberCallSite {
+        public FloatDouble(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
+            super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
+        }
+
+        public final Object callBinop(Object receiver, Object arg) {
+            try {
+                if (checkPojoMetaClass()) {
+                    return new Double(((Float) receiver).doubleValue() + ((Double) arg).doubleValue());
+                }
+            }
+            catch (ClassCastException e) {//
+            }
+            return super.callBinop(receiver, arg);
+        }
+
+        public final Object invoke(Object receiver, Object[] args) {
+            return new Double(((Float) receiver).doubleValue() + ((Double) args[0]).doubleValue());
+        }
+
+        public final Object invokeBinop(Object receiver, Object arg) {
+            return new Double(((Float) receiver).doubleValue() + ((Double) arg).doubleValue());
+        }
+    }
+
+    private static class FloatFloat extends NumberNumberCallSite {
+        public FloatFloat(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
+            super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
+        }
+
+        public final Object callBinop(Object receiver, Object arg) {
+            try {
+                if (checkPojoMetaClass()) {
+                    return new Double(((Float) receiver).doubleValue() + ((Float) arg).doubleValue());
+                }
+            }
+            catch (ClassCastException e) {//
+            }
+            return super.callBinop(receiver, arg);
+        }
+
+        public final Object invoke(Object receiver, Object[] args) {
+            return new Double(((Float) receiver).doubleValue() + ((Float) args[0]).doubleValue());
+        }
+
+        public final Object invokeBinop(Object receiver, Object arg) {
+            return new Double(((Float) receiver).doubleValue() + ((Float) arg).doubleValue());
+        }
+    }
+
+    private static class FloatLong extends NumberNumberCallSite {
+        public FloatLong(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
+            super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
+        }
+
+        public final Object callBinop(Object receiver, Object arg) {
+            try {
+                if (checkPojoMetaClass()) {
+                    return new Double(((Float) receiver).doubleValue() + ((Long) arg).doubleValue());
+                }
+            }
+            catch (ClassCastException e) {//
+            }
+            return super.callBinop(receiver, arg);
+        }
+
+        public final Object invoke(Object receiver, Object[] args) {
+            return new Double(((Float) receiver).doubleValue() + ((Long) args[0]).doubleValue());
+        }
+
+        public final Object invokeBinop(Object receiver, Object arg) {
+            return new Double(((Float) receiver).doubleValue() + ((Long) arg).doubleValue());
+        }
+    }
+
+    private static class FloatInteger extends NumberNumberCallSite {
+        public FloatInteger(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
+            super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
+        }
+
+        public final Object callBinop(Object receiver, Object arg) {
+            try {
+                if (checkPojoMetaClass()) {
+                    return new Double(((Float) receiver).doubleValue() + ((Integer) arg).doubleValue());
+                }
+            }
+            catch (ClassCastException e) {//
+            }
+            return super.callBinop(receiver, arg);
+        }
+
+        public final Object invoke(Object receiver, Object[] args) {
+            return new Double(((Float) receiver).doubleValue() + ((Integer) args[0]).doubleValue());
+        }
+
+        public final Object invokeBinop(Object receiver, Object arg) {
+            return new Double(((Float) receiver).doubleValue() + ((Integer) arg).doubleValue());
+        }
+    }
+
+    private static class LongDouble extends NumberNumberCallSite {
+        public LongDouble(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
+            super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
+        }
+
+        public final Object callBinop(Object receiver, Object arg) {
+            try {
+                if (checkPojoMetaClass()) {
+                    return new Double(((Long) receiver).doubleValue() + ((Double) arg).doubleValue());
+                }
+            }
+            catch (ClassCastException e) {//
+            }
+            return super.callBinop(receiver, arg);
+        }
+
+        public final Object invoke(Object receiver, Object[] args) {
+            return new Double(((Long) receiver).doubleValue() + ((Double) args[0]).doubleValue());
+        }
+
+        public final Object invokeBinop(Object receiver, Object arg) {
+            return new Double(((Long) receiver).doubleValue() + ((Double) arg).doubleValue());
+        }
+    }
+
+    private static class LongFloat extends NumberNumberCallSite {
+        public LongFloat(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
+            super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
+        }
+
+        public final Object callBinop(Object receiver, Object arg) {
+            try {
+                if (checkPojoMetaClass()) {
+                    return new Double(((Long) receiver).doubleValue() + ((Float) arg).doubleValue());
+                }
+            }
+            catch (ClassCastException e) {//
+            }
+            return super.callBinop(receiver, arg);
+        }
+
+        public final Object invoke(Object receiver, Object[] args) {
+            return new Double(((Long) receiver).doubleValue() + ((Float) args[0]).doubleValue());
+        }
+
+        public final Object invokeBinop(Object receiver, Object arg) {
+            return new Double(((Long) receiver).doubleValue() + ((Float) arg).doubleValue());
+        }
+    }
+
+    private static class LongLong extends NumberNumberCallSite {
+        public LongLong(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
+            super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
+        }
+
+        public final Object callBinop(Object receiver, Object arg) {
+            try {
+                if (checkPojoMetaClass()) {
+                    return new Long(((Long) receiver).longValue() + ((Long) arg).longValue());
+                }
+            }
+            catch (ClassCastException e) {//
+            }
+            return super.callBinop(receiver, arg);
+        }
+
+        public final Object invoke(Object receiver, Object[] args) {
+            return new Long(((Long) receiver).longValue() + ((Long) args[0]).longValue());
+        }
+
+        public final Object invokeBinop(Object receiver, Object arg) {
+            return new Long(((Long) receiver).longValue() + ((Long) arg).longValue());
+        }
+    }
+
+    private static class LongInteger extends NumberNumberCallSite {
+        public LongInteger(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
+            super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
+        }
+
+        public final Object callBinop(Object receiver, Object arg) {
+            try {
+                if (checkPojoMetaClass()) {
+                    return new Long(((Long) receiver).longValue() + ((Integer) arg).longValue());
+                }
+            }
+            catch (ClassCastException e) {//
+            }
+            return super.callBinop(receiver, arg);
+        }
+
+        public final Object invoke(Object receiver, Object[] args) {
+            return new Long(((Long) receiver).longValue() + ((Integer) args[0]).longValue());
+        }
+
+        public final Object invokeBinop(Object receiver, Object arg) {
+            return new Long(((Long) receiver).longValue() + ((Integer) arg).longValue());
+        }
+    }
+
+    private static class IntegerDouble extends NumberNumberCallSite {
+        public IntegerDouble(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
+            super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
+        }
+
+        public final Object callBinop(Object receiver, Object arg) {
+            try {
+                if (checkPojoMetaClass()) {
+                    return new Double(((Integer) receiver).doubleValue() + ((Double) arg).doubleValue());
+                }
+            }
+            catch (ClassCastException e) {//
+            }
+            return super.callBinop(receiver, arg);
+        }
+
+        public final Object invoke(Object receiver, Object[] args) {
+            return new Double(((Integer) receiver).doubleValue() + ((Double) args[0]).doubleValue());
+        }
+
+        public final Object invokeBinop(Object receiver, Object arg) {
+            return new Double(((Integer) receiver).doubleValue() + ((Double) arg).doubleValue());
+        }
+    }
+
+    private static class IntegerFloat extends NumberNumberCallSite {
+        public IntegerFloat(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
+            super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
+        }
+
+        public final Object callBinop(Object receiver, Object arg) {
+            try {
+                if (checkPojoMetaClass()) {
+                    return new Double(((Integer) receiver).doubleValue() + ((Float) arg).doubleValue());
+                }
+            }
+            catch (ClassCastException e) {//
+            }
+            return super.callBinop(receiver, arg);
+        }
+
+        public final Object invoke(Object receiver, Object[] args) {
+            return new Double(((Integer) receiver).doubleValue() + ((Float) args[0]).doubleValue());
+        }
+
+        public final Object invokeBinop(Object receiver, Object arg) {
+            return new Double(((Integer) receiver).doubleValue() + ((Float) arg).doubleValue());
+        }
+    }
+
+    private static class IntegerLong extends NumberNumberCallSite {
+        public IntegerLong(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
+            super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
+        }
+
+        public final Object callBinop(Object receiver, Object arg) {
+            try {
+                if (checkPojoMetaClass()) {
+                    return new Long(((Integer) receiver).longValue() + ((Long) arg).longValue());
+                }
+            }
+            catch (ClassCastException e) {//
+            }
+            return super.callBinop(receiver, arg);
+        }
+
+        public final Object invoke(Object receiver, Object[] args) {
+            return new Long(((Integer) receiver).longValue() + ((Long) args[0]).longValue());
+        }
+
+        public final Object invokeBinop(Object receiver, Object arg) {
+            return new Long(((Integer) receiver).longValue() + ((Long) arg).longValue());
+        }
+    }
+
+    private static class IntegerInteger extends NumberNumberCallSite {
+        public IntegerInteger(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
+            super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
+        }
+
+        public final Object callBinop(Object receiver, Object arg) {
+            try {
+                if (checkPojoMetaClass()) {
+                  return new Integer(((Integer) receiver).intValue() + ((Integer) arg).intValue());
+                }
+            }
+            catch (ClassCastException e) {//
+            }
+            return super.callBinop(receiver, arg);
+        }
+
+        public final Object invoke(Object receiver, Object[] args) {
+            return new Integer(((Integer) receiver).intValue() + ((Integer) args[0]).intValue());
+        }
+
+        public final Object invokeBinop(Object receiver, Object arg) {
+            return new Integer(((Integer) receiver).intValue() + ((Integer) arg).intValue());
+        }
     }
 }

@@ -26,10 +26,32 @@ import groovy.lang.MetaMethod;
 public abstract class MetaMethodSite extends MetaClassSite {
     final MetaMethod metaMethod;
     protected final Class [] params;
+    protected boolean typesChecked, typesValid;
+
 
     public MetaMethodSite(CallSite site, MetaClass metaClass, MetaMethod metaMethod, Class[] params) {
         super(site, metaClass);
         this.metaMethod = metaMethod;
         this.params = params;
+    }
+
+    protected final void checkTypes(Class[] types) {
+        typesChecked = true;
+        typesValid = true;
+        if (metaMethod.getParameterTypes().length != types.length-1) {
+            typesValid = false;
+        }
+        else {
+            if (metaMethod.getDeclaringClass().getTheClass() != types[0]) {
+                typesValid = false;
+            }
+            else {
+                for (int i = 1; i != types.length; ++i)
+                  if (types[i] != metaMethod.getParameterTypes()[i-1].getTheClass()) {
+                      typesValid = false;
+                      break;
+                  }
+            }
+        }
     }
 }
