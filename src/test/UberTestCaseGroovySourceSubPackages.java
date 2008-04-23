@@ -38,7 +38,17 @@ public class UberTestCaseGroovySourceSubPackages extends TestCase {
         suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/Q*Test.groovy", EXCLUDES));
         suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/R*Test.groovy", EXCLUDES));
         // TODO remove comment once bamboo headless issue is fixed
-//        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/S*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/SA*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/SB*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/SC*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/SD*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/SE*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/SF*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/SG*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/SH*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/SI*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/SJ*Test.groovy", EXCLUDES));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/SK*Test.groovy", EXCLUDES));
         suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/T*Test.groovy", EXCLUDES));
         suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/U*Test.groovy", EXCLUDES));
         suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/V*Test.groovy", EXCLUDES));
