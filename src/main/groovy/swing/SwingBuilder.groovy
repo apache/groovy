@@ -104,7 +104,7 @@ public class SwingBuilder  extends FactoryBuilderSupport {
         registerFactory("formattedTextField", new FormattedTextFactory())
         registerFactory("internalFrame", new InternalFrameFactory())
         registerBeanFactory("layeredPane", JLayeredPane)
-        registerBeanFactory("list", JList)
+        registerFactory("list", new ListFactory())
         registerBeanFactory("menu", JMenu)
         registerBeanFactory("menuBar", JMenuBar)
         registerBeanFactory("panel", JPanel)
@@ -217,6 +217,12 @@ public class SwingBuilder  extends FactoryBuilderSupport {
 
     }
 
+    /**
+     * Utilitiy method to run a closure in EDT,
+     * using <code>SwingUtilities.invokeAndWait</cod>.
+     *
+     * @param c this closure is run in the EDT
+     */
     public SwingBuilder edt(Closure c) {
         c.setDelegate(this)
         if (headless || SwingUtilities.isEventDispatchThread()) {
@@ -236,6 +242,12 @@ public class SwingBuilder  extends FactoryBuilderSupport {
         return this
     }
 
+    /**
+     * Utilitiy method to run a closure in EDT,
+     * using <code>SwingUtilities.invokeLater</cod>.
+     *
+     * @param c this closure is run in the EDT
+     */
     public SwingBuilder doLater(Closure c) {
         c.setDelegate(this)
         if (headless) {
@@ -249,15 +261,29 @@ public class SwingBuilder  extends FactoryBuilderSupport {
         return this
     }
 
+    /**
+     * Utility method to run a closure in a separate Thread.
+     * <p>
+     * The closure is wrapped in a thread, and the thread is started
+     * immediatly.
+     *
+     * @param c this closure is started in a separate thread
+     */
     public SwingBuilder doOutside(Closure c) {
         c.setDelegate(this)
         if (!(c instanceof MethodClosure)) {
             c = c.curry([this])
         }
-        new Thread(c).start()
+        Thread.start(c)
         return this
     }
 
+    /**
+     * Utility method to create a SwingBuilder, and run the
+     * the closure in the EDT
+     *
+     * @param c run this closre in the builder using the edt method
+     */
     public static SwingBuilder build(Closure c) {
         SwingBuilder builder = new SwingBuilder()
         return builder.edt(c)

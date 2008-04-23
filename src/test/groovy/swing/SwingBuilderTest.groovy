@@ -231,7 +231,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
         swing.window (id:'root2')
 
-        //assert swing.root.owner == null;
+        //assert swing.root.owner == null
         assert swing.child1.owner == swing.root
         assert swing.child2.owner == null // it's a frame, frames have no owners
         assert swing.child2_1.owner == swing.child2
@@ -369,8 +369,8 @@ class SwingBuilderTest extends GroovySwingTestCase {
             panel(id:'p8', title:'Title 8', tabBackground:Color.GREEN)
             panel(id:'p9', title:'Title 9', tabForeground:Color.GREEN)
             panel(id:'pA', title:'Title A', tabEnabled:false)
-            panel(id:'pB', title:'Title B', tabMnemonic: 'T');
-            panel(id:'pC', title:'Title C', tabDisplayedMnemonicIndex: 2);
+            panel(id:'pB', title:'Title B', tabMnemonic: 'T')
+            panel(id:'pC', title:'Title C', tabDisplayedMnemonicIndex: 2)
         }
 
         assert swing.tp.tabCount == 12 
@@ -447,6 +447,20 @@ class SwingBuilderTest extends GroovySwingTestCase {
         assert swing.comboBox(items:objects).itemCount == 2
         assert swing.comboBox(items:list).itemCount == 3
         assert swing.comboBox(items:vector).itemCount == 4
+        assert swing.comboBox().itemCount == 0
+    }
+
+    void testList() {
+        if (headless) return
+
+        def swing = new SwingBuilder()
+        Object[] objects = ['a','b']
+        def list = ['c', 'd', 'e']
+        def vector = new Vector(['f', 'g', 'h', 'i'])
+        assert swing.list(items:objects).model.size == 2
+        assert swing.list(items:list   ).model.size == 3
+        assert swing.list(items:vector ).model.size == 4
+        assert swing.list(             ).model.size == 0
     }
 
     void testMisplacedActionsAreIgnored() {
@@ -519,7 +533,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
             action(id:'d') {evt -> testTarget = 'D' }
         }
 
-        ActionEvent evt = new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "");
+        ActionEvent evt = new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "")
         assert testTarget == 'blank'
         swing.a.actionPerformed(evt)
         assert testTarget == 'A'
@@ -963,7 +977,6 @@ class SwingBuilderTest extends GroovySwingTestCase {
         def noValueItems = [
             "actions",
             "boxLayout",
-            "comboBox",
             "formattedTextField",
             "glue",
             "hbox",
@@ -996,6 +1009,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
             "cardLayout",
             //"closureColumn",
             "colorChooser",
+            "comboBox",
             //"container",
             "desktopPane",
             "dialog",
@@ -1423,7 +1437,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         if (headless) return
         def swing = new SwingBuilder()
 
-        def oldLAF = UIManager.getLookAndFeel();
+        def oldLAF = UIManager.getLookAndFeel()
         try {
             // test LAFs guaranteed to be everywhere
             swing.lookAndFeel('metal')

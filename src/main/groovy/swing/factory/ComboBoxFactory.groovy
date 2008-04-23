@@ -21,18 +21,20 @@ import javax.swing.JComboBox
 public class ComboBoxFactory extends AbstractFactory {
     
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        FactoryBuilderSupport.checkValueIsNull(value, name);
+        FactoryBuilderSupport.checkValueIsType(value, name, JComboBox)
         //TODO expand to allow the value arg to be items
-        Object items = attributes.remove("items");
+        Object items = attributes.get("items")
         if (items instanceof Vector) {
-            return new JComboBox((Vector) items);
+            return new JComboBox(attributes.remove("items"))
         } else if (items instanceof List) {
-            List list = (List) items;
-            return new JComboBox(list.toArray());
+            List list = (List) attributes.remove("items")
+            return new JComboBox(list.toArray())
         } else if (items instanceof Object[]) {
-            return new JComboBox((Object[]) items);
+            return new JComboBox(attributes.remove("items"))
+        } else if (value instanceof JComboBox) {
+            return value
         } else {
-            return new JComboBox();
+            return new JComboBox()
         }
     }
 
