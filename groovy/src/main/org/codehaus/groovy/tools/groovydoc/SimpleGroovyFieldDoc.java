@@ -17,6 +17,8 @@ package org.codehaus.groovy.tools.groovydoc;
 import org.codehaus.groovy.groovydoc.*;
 
 public class SimpleGroovyFieldDoc extends SimpleGroovyMemberDoc implements GroovyFieldDoc {
+    private GroovyType type;
+
 	public SimpleGroovyFieldDoc(String name) {
 		super(name);
 	}
@@ -25,5 +27,11 @@ public class SimpleGroovyFieldDoc extends SimpleGroovyMemberDoc implements Groov
 	public boolean isTransient() {/*todo*/return false;}
 	public boolean isVolatile() {/*todo*/return false;}
 //	public GroovySerialFieldTag[] serialFieldTags() {/*todo*/return null;}
-	public GroovyType type() {/*todo*/return null;}
+	public GroovyType type() {
+        return type;
+    }
+
+    public void setType(SimpleGroovyType type) {
+        this.type = type;
+    }
 }
