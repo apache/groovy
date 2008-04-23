@@ -16,6 +16,8 @@
 
 package groovy.xml.streamingmarkupsupport;
 
+import groovy.io.EncodingAwareBufferedWriter;
+
 import java.io.IOException;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
@@ -89,7 +91,10 @@ public class StreamingMarkupWriter extends Writer {
             this.encoding = encoding;
             this.encodingKnown = true;
         } else if (writer instanceof OutputStreamWriter) {
-            this.encoding = ((OutputStreamWriter)writer).getEncoding();
+            this.encoding = getNormalizedEncoding(((OutputStreamWriter)writer).getEncoding());
+            this.encodingKnown = true;
+        } else if (writer instanceof EncodingAwareBufferedWriter) {
+            this.encoding = getNormalizedEncoding(((EncodingAwareBufferedWriter)writer).getEncoding());
             this.encodingKnown = true;
         } else {
             this.encoding = "US-ASCII";
@@ -98,7 +103,11 @@ public class StreamingMarkupWriter extends Writer {
         
         this.encoder = Charset.forName(this.encoding).newEncoder();
     }
-    
+
+    private String getNormalizedEncoding(String unnormalized) {
+        return Charset.forName(unnormalized).name();
+    }
+
     public StreamingMarkupWriter(final Writer writer) {
         this(writer, null);
     }
