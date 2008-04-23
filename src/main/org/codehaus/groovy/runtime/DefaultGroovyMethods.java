@@ -17,6 +17,7 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.*;
 import groovy.util.*;
+import groovy.io.EncodingAwareBufferedWriter;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ReflectionCache;
@@ -8403,7 +8404,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static BufferedWriter newWriter(File file, String charset, boolean append) throws IOException {
         if (append) {
-            return new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file, append), charset));
+            return new EncodingAwareBufferedWriter(new OutputStreamWriter(new FileOutputStream(file, append), charset));
         } else {
             // first write the Byte Order Mark for Unicode encodings
             FileOutputStream stream = new FileOutputStream(file);
@@ -8412,7 +8413,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             } else if ("UTF-16LE".equals(charset)) {
                 writeUtf16Bom(stream, false);
             }
-            return new BufferedWriter(new OutputStreamWriter(stream, charset));
+            return new EncodingAwareBufferedWriter(new OutputStreamWriter(stream, charset));
         }
     }
 
