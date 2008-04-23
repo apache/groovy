@@ -1,10 +1,11 @@
-/* Copyright 2006-2007 Graeme Rocher
+/*
+ * Copyright 2003-2007 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -83,12 +84,19 @@ class ConfigSlurper {
             def currentToken
             def last
             def lastToken
+            def foundBase = false
             for(token in tokens) {
-                last = current
-                lastToken = token
-
-                current = current."${token}"
-                if(!(current instanceof ConfigObject)) break
+                if (foundBase) {
+                    // handle not properly nested tokens by ignoring
+                    // hierarchy below this point
+                    lastToken += "." + token
+                    current = last
+                } else {
+                    last = current
+                    lastToken = token
+                    current = current."${token}"
+                    if(!(current instanceof ConfigObject)) foundBase = true
+                }
             }
 
             if(current instanceof ConfigObject) {
