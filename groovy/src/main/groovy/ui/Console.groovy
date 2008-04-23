@@ -106,7 +106,7 @@ class Console implements CaretListener {
     GroovyShell shell
     int scriptNameCounter = 0
     SystemOutputInterceptor systemOutInterceptor
-    def runThread = null
+    Thread runThread = null
     Closure beforeExecution
     Closure afterExecution
 
@@ -276,8 +276,8 @@ class Console implements CaretListener {
     void confirmRunInterrupt(EventObject evt) {
         def rc = JOptionPane.showConfirmDialog(frame, "Attempt to interrupt script?",
             "GroovyConsole", JOptionPane.YES_NO_OPTION)
-        if (rc == JOptionPane.YES_OPTION && runThread != null) {
-            runThread.interrupt()
+        if (rc == JOptionPane.YES_OPTION) {
+            runThread?.interrupt()
         }
     }
 
@@ -496,11 +496,24 @@ class Console implements CaretListener {
             } catch (Throwable t) {
                 SwingUtilities.invokeLater { finishException(t) }
             } finally {
-                SwingUtilities.invokeLater {
-                    runWaitDialog.hide()
-                    runThread = null
+                runThread = null
+            }
+        }
+        // Use a watchdog thread to close waiting dialog
+        // apparently invokeLater paired with show/hide does not insure
+        // ordering or atomic execution, likely because of native AWT issues
+        Thread.start {
+            while (!(runWaitDialog?.visible)) {
+                sleep(10)
+            }
+            while (runThread?.alive) {
+                try {
+                    runThread?.join(100)
+                } catch (InterruptedException ie) {
+                    // we got interrupted, just loop again.
                 }
             }
+            runWaitDialog.hide()
         }
     }
 
