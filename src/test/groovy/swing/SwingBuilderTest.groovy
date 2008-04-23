@@ -17,8 +17,8 @@
 
 package groovy.swing
 
-//import javax.swing.JPopupMenu.Separator as JPopupMenu_Separator
-//import javax.swing.JToolBar.Separator as JToolBar_Separator
+import javax.swing.JPopupMenu.Separator as JPopupMenu_Separator
+import javax.swing.JToolBar.Separator as JToolBar_Separator
 
 import groovy.ui.Console
 import java.awt.*
@@ -103,7 +103,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
-    public void testBorderLayout() {    
+    void testBorderLayout() {
         if (headless) return
         def swing = new SwingBuilder()
 
@@ -560,7 +560,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         assert(aboutKeyStroke.modifiers & InputEvent.CTRL_MASK) != 0
     }
 
-    Action verifyAccel(Action action, int mustHave = 0) {
+    private verifyAccel(action, int mustHave = 0) {
         int mods = action.getValue(Action.ACCELERATOR_KEY).modifiers
         assert mods != 0
         assert (mods & mustHave) == mustHave
@@ -891,8 +891,8 @@ class SwingBuilderTest extends GroovySwingTestCase {
             }
             separator(id:"sep")
         }
-        assert swing.menuSep instanceof JPopupMenu.Separator
-        assert swing.tbSep instanceof JToolBar.Separator
+        assert swing.menuSep instanceof JPopupMenu_Separator
+        assert swing.tbSep instanceof JToolBar_Separator
         assert swing.sep instanceof JSeparator
     }
 
@@ -1119,11 +1119,11 @@ class SwingBuilderTest extends GroovySwingTestCase {
 
     boolean instancePass
 
-    public void markPassed() {
+    void markPassed() {
         instancePass = true
     }
 
-    public void testEDT() {
+    void testEDT() {
         if (headless) return
         def swing = new SwingBuilder()
 
@@ -1140,7 +1140,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         assert instancePass
     }
 
-    public void testDoLater() {
+    void testDoLater() {
         if (headless) return
         def swing = new SwingBuilder()
 
@@ -1181,7 +1181,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         assert instancePass
     }
 
-    public void testDoOutside() {
+    void testDoOutside() {
         if (headless) return
         def swing = new SwingBuilder()
 
@@ -1223,7 +1223,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         assert instancePass
     }
 
-    public void testDispose() {
+    void testDispose() {
         if (headless) return
         def swing = new SwingBuilder()
 
@@ -1244,7 +1244,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
 
     }
 
-    public void testPackAndShow() {
+    void testPackAndShow() {
         if (headless) return
         def swing = new SwingBuilder()
 
@@ -1276,7 +1276,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         swing.dispose()
     }
 
-    public void testContainment() {
+    void testContainment() {
         if (headless) return
         def swing = new SwingBuilder()
 
@@ -1376,7 +1376,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
-    public void testMenus() {
+    void testMenus() {
         if (headless) return
         def swing = new SwingBuilder()
 
@@ -1420,7 +1420,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         assert swing.subMenu.getItem(4) == swing.subSubMenu
     }
 
-    public void testLookAndFeel() {
+    void testLookAndFeel() {
         if (headless) return
         def swing = new SwingBuilder()
 
@@ -1471,7 +1471,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
    }
 
-    public void testBorders() {
+    void testBorders() {
         if (headless) return
         def swing = new SwingBuilder()
 
@@ -1563,7 +1563,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
     }
 
-    public void testBorderAttachment() {
+    void testBorderAttachment() {
         if (headless) return
         def swing = new SwingBuilder()
 
@@ -1588,7 +1588,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         assert swing.panel.border != null
     }
 
-    public void testImageIcon() {
+    void testImageIcon() {
         if (headless) return
         def swing = new SwingBuilder()
 
