@@ -2,7 +2,7 @@ package gls.invocaton
 
 import gls.scope.CompilableTestSupport
 
-public class ConstrcutorDelegationTest extends CompilableTestSupport {
+public class ConstructorDelegationTest extends CompilableTestSupport {
 
   public void testThisCallWithParameter() {
     assertScript """
