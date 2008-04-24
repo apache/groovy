@@ -242,4 +242,31 @@ class GenericsTest extends GenericsTestBase {
         assert "x" == new CallableTask().call();
 	  """
 	}
+
+	void testGenericsInAsType() {
+	  // this is to ensure no regression to GROOVY-2725 will happen
+      // "as ThreadLocal<Integer>\n" did not compile because the nls
+      // was swallowed and could not be used to end the expression
+	   assertScript """
+import java.util.concurrent.atomic.AtomicInteger
+
+ public class ThreadId
+ {
+  private static final AtomicInteger nextId = new AtomicInteger(0)
+  private static final ThreadLocal<Integer> threadId = [
+                  initialValue: { return nextId.getAndIncrement() }
+                  ] as ThreadLocal<Integer>
+
+  public static int get()
+  {
+      System.out.println( "Thread ID: " + threadId.get());
+      return threadId.get();
+  }
+
+ }
+ // we do not actually want to execute something, just
+ // ensure this compiles, so we do a dummy command here
+ assert ThreadId!=null
+	   """
+	}
 }
