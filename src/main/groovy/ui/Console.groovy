@@ -46,10 +46,11 @@ import org.codehaus.groovy.runtime.StackTraceUtils
  */
 class Console implements CaretListener {
 
-    private prefs = Preferences.userNodeForPackage(Console)
+    static private prefs = Preferences.userNodeForPackage(Console)
 
     // Whether or not std output should be captured to the console
-    boolean captureStdOut = prefs.getBoolean('captureStdOut', true)
+    static boolean captureStdOut = prefs.getBoolean('captureStdOut', true)
+    static consoleControllers = []
 
     boolean fullStackTraces = prefs.getBoolean('fullStackTraces',
         Boolean.valueOf(System.getProperty("groovy.full.stacktrace", "false")))
@@ -139,6 +140,7 @@ class Console implements CaretListener {
         } catch (SecurityException se) {
             fullStackTracesAction.enabled = false;
         }
+        consoleControllers += this
     }
 
     void run() {
@@ -243,7 +245,7 @@ class Console implements CaretListener {
     }
 
     // Handles menu event
-    void captureStdOut(EventObject evt) {
+    static void captureStdOut(EventObject evt) {
         captureStdOut = evt.source.selected
         prefs.putBoolean('captureStdOut', captureStdOut)
     }
@@ -286,9 +288,12 @@ class Console implements CaretListener {
             frame.hide()
             frame.dispose()
             FindReplaceUtility.dispose()
+            consoleControllers.remove(this)
+            if (!consoleControllers) {
+                systemOutInterceptor.stop()
+            }
         }
 
-        systemOutInterceptor.stop()
     }
 
     void fileNewFile(EventObject evt = null) {
@@ -312,6 +317,7 @@ class Console implements CaretListener {
         installInterceptor()
         swing.consoleFrame.pack()
         swing.consoleFrame.show()
+        swing.doLater swing.inputArea.&requestFocus
     }
 
     void fileOpen(EventObject evt = null) {
@@ -433,7 +439,7 @@ class Console implements CaretListener {
         outputArea.font = newFont
     }
 
-    Boolean notifySystemOut(String str) {
+    static boolean notifySystemOut(String str) {
         if (!captureStdOut) {
             // Output as normal
             return true
@@ -441,11 +447,11 @@ class Console implements CaretListener {
 
         // Put onto GUI
         if (EventQueue.isDispatchThread()) {
-            appendOutput(str, outputStyle)
+            consoleControllers.each {it.appendOutput(str, it.outputStyle)}
         }
         else {
             SwingUtilities.invokeLater {
-                appendOutput(str, outputStyle)
+                consoleControllers.each {it.appendOutput(str, it.outputStyle)}
             }
         }
         return false
