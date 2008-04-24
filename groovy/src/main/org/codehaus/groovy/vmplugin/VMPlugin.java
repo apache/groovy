@@ -16,6 +16,7 @@
 package org.codehaus.groovy.vmplugin;
 
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.CompileUnit;
 
 /**
  * Interface to access VM version based actions.
@@ -27,4 +28,6 @@ public interface VMPlugin {
 
     void setGenericsTypes(ClassNode c);
     Class[] getPluginDefaultGroovyMethods();
+
+    void configureClassNode(CompileUnit compileUnit, ClassNode classNode);
 }

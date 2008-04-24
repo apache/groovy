@@ -18,17 +18,14 @@ package org.codehaus.groovy.ast;
 import groovy.lang.GroovyObject;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.*;
 
 /**
@@ -209,50 +206,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     private void lazyClassInit() {       
         synchronized (lazyInitLock) {
             if (lazyInitDone) return;
-            
-            Field[] fields = clazz.getDeclaredFields();
-            for (int i=0;i<fields.length;i++){
-                addField(fields[i].getName(),fields[i].getModifiers(),this,null);
-            }
-            Method[] methods = clazz.getDeclaredMethods();
-            for (int i=0;i<methods.length;i++){
-                Method m = methods[i];
-                MethodNode mn = new MethodNode(m.getName(), m.getModifiers(), ClassHelper.make(m.getReturnType()), createParameters(m.getParameterTypes()), ClassHelper.make(m.getExceptionTypes()), null);
-                addMethod(mn);
-            }
-            Constructor[] constructors = clazz.getDeclaredConstructors();
-            for (int i=0;i<constructors.length;i++){
-                Constructor ctor = constructors[i];
-                addConstructor(ctor.getModifiers(),createParameters(ctor.getParameterTypes()),ClassHelper.make(ctor.getExceptionTypes()),null);
-            }
-
-            Class sc = clazz.getSuperclass();
-            if (sc!=null) superClass = getPrimaryClassNode(sc);
-            
-            buildInterfaceTypes(clazz);
-            lazyInitDone=true;
+            VMPluginFactory.getPlugin().configureClassNode(compileUnit,this);
+            lazyInitDone = true;
         }
-    }
-
-    private ClassNode getPrimaryClassNode(Class clazz) {
-        // there might be a new super class from the compile unit,
-        // we want to use this instead of simply referencing the old
-        // class
-        ClassNode result = null;
-        if (compileUnit!=null) {
-            result = compileUnit.getClass(clazz.getName());
-        }
-        if (result==null) result = ClassHelper.make(clazz);
-        return result;
-    }
-    
-    private void buildInterfaceTypes(Class c) {
-        Class[] interfaces = c.getInterfaces();
-        ClassNode[] ret = new ClassNode[interfaces.length];
-        for (int i=0;i<interfaces.length;i++){
-            ret[i] = getPrimaryClassNode(interfaces[i]);
-        }
-        this.interfaces = ret;
     }
     
     
@@ -335,6 +291,14 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         }
         if (redirect!=null) return redirect().getInterfaces();
         return interfaces;
+    }
+
+    public void setInterfaces(ClassNode[] interfaces) {
+        if (redirect!=null) {
+            redirect().setInterfaces(interfaces);
+        } else {
+            this.interfaces = interfaces;
+        }
     }
 
     public MixinNode[] getMixins() {
@@ -781,32 +745,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         }
         return redirect().superClass;
     }
-    
-    /**
-     * Factory method to create a new MethodNode via reflection
-     */
-    protected MethodNode createMethodNode(Method method) {
-        Parameter[] parameters = createParameters(method.getParameterTypes());
-        return new MethodNode(method.getName(), method.getModifiers(), ClassHelper.make(method.getReturnType()), parameters, ClassHelper.make(method.getExceptionTypes()), EmptyStatement.INSTANCE);
-    }
 
-    /**
-     * @param types
-     */
-    protected Parameter[] createParameters(Class[] types) {
-        Parameter[] parameters = Parameter.EMPTY_ARRAY;
-        int size = types.length;
-        if (size > 0) {
-            parameters = new Parameter[size];
-            for (int i = 0; i < size; i++) {
-                parameters[i] = createParameter(types[i], i);
-            }
-        }
-        return parameters;
-    }
-
-    protected Parameter createParameter(Class parameterType, int idx) {
-        return new Parameter(ClassHelper.make(parameterType), "param" + idx);
+    public void setUnresolvedSuperClass(ClassNode sn) {
+        superClass = sn;
     }
 
     public CompileUnit getCompileUnit() {
