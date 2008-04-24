@@ -15,14 +15,12 @@
  */
 package org.codehaus.groovy.ast;
 
-import groovy.lang.GroovyObject;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
-import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.ast.stmt.EmptyStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
@@ -30,24 +28,23 @@ import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Array;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
 import java.util.*;
+
+import groovy.lang.GroovyObject;
 
 /**
  * Represents a class in the AST.<br/>
- * A ClassNode should be created using the methods in ClassHelper. 
+ * A ClassNode should be created using the methods in ClassHelper.
  * This ClassNode may be used to represent a class declaration or
  * any other type. This class uses a proxy meschanism allowing to
- * create a class for a plain name at ast creation time. In another 
+ * create a class for a plain name at ast creation time. In another
  * phase of the compiler the real ClassNode for the plain name may be
- * found. To avoid the need of exchanging this ClassNode with an 
- * instance of the correct ClassNode the correct ClassNode is set as 
+ * found. To avoid the need of exchanging this ClassNode with an
+ * instance of the correct ClassNode the correct ClassNode is set as
  * redirect. Most method calls are then redirected to that ClassNode.
  * <br>
  * <b>Note:</b> the proxy mechanism is only allowed for classes being marked
- * as primary ClassNode which means they represent no actual class. 
+ * as primary ClassNode which means they represent no actual class.
  * The redirect itself can be any type of ClassNode
  * <br>
  * To descirbe generic type signature see {@link #getGenericsTypes()} and
@@ -57,7 +54,7 @@ import java.util.*;
  * by the class are needed, then a call to {@link #redirect()} will help.
  *
  * @see org.codehaus.groovy.ast.ClassHelper
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Jochen Theodorou
  * @version $Revision$
@@ -82,14 +79,14 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                 list.add(value);
                 map.put(key, list);
             }
-        }        
+        }
     }
-    
+
     public static ClassNode[] EMPTY_ARRAY = new ClassNode[0];
-    
+
     public static ClassNode THIS = new ClassNode(Object.class);
     public static ClassNode SUPER = new ClassNode(Object.class);
-    
+
     private String name;
     private final int modifiers;
     private ClassNode[] interfaces;
@@ -107,7 +104,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     private boolean scriptBody = false;
     private boolean script;
     private ClassNode superClass;
-    boolean isPrimaryNode;
+    protected boolean isPrimaryNode;
 
     /**
      * The ASTTransformations to be applied to the Class
@@ -120,24 +117,24 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     // clazz!=null when resolved
     protected Class clazz;
-    // only false when this classNode is constructed from a class 
+    // only false when this classNode is constructed from a class
     private boolean lazyInitDone=true;
-    // not null if if the ClassNode is an array 
+    // not null if if the ClassNode is an array
     private ClassNode componentType = null;
-    // if not null this instance is handled as proxy 
+    // if not null this instance is handled as proxy
     // for the redirect
-    private ClassNode redirect=null; 
+    private ClassNode redirect=null;
     // flag if the classes or its members are annotated
     private boolean annotated;
-    
+
     // type spec for generics
     private GenericsType[] genericsTypes=null;
     private boolean usesGenerics=false;
-    
+
     // if set to true the name getGenericsTypes consists
     // of 1 element describing the name of the placeholder
     private boolean placeholder;
-    
+
     /**
      * Returns the ClassNode this ClassNode is redirecting to.
      */
@@ -145,9 +142,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         if (redirect==null) return this;
         return redirect.redirect();
     }
-    
+
     /**
-     * Sets this instance as proxy for the given ClassNode. 
+     * Sets this instance as proxy for the given ClassNode.
      * @param cn the class to redirect to. If set to null the redirect will be removed
      */
     public void setRedirect(ClassNode cn) {
@@ -156,7 +153,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         if (cn==this) return;
         redirect = cn;
     }
-    
+
     /**
      * Returns a ClassNode representing an array of the class
      * represented by this ClassNode
@@ -173,14 +170,14 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         }
         return cn;
     }
-    
+
     /**
      * Returns if this instance is a primary ClassNode
      */
     public boolean isPrimaryClassNode(){
     	return redirect().isPrimaryNode || (componentType!= null && componentType.isPrimaryClassNode());
     }
-    
+
     /**
      * Constructor used by makeArray() if no real class is available
      */
@@ -189,7 +186,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         this.componentType = componentType.redirect();
         isPrimaryNode=false;
     }
-    
+
     /**
      * Constructor used by makeArray() if a real class is available
      */
@@ -198,9 +195,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         this.componentType = componentType;
         isPrimaryNode=false;
     }
-    
+
     /**
-     * Creates a ClassNode from a real class. The resulting 
+     * Creates a ClassNode from a real class. The resulting
      * ClassNode will be no primary ClassNode.
      */
     public ClassNode(Class c) {
@@ -210,62 +207,20 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         CompileUnit cu = getCompileUnit();
         if (cu!=null) cu.addClass(this);
         isPrimaryNode=false;
-    }    
-    
+    }
+
     /**
      * The complete class structure will be initialized only when really
      * needed to avoid having too much objects during compilation
      */
-    private void lazyClassInit() {       
+    private void lazyClassInit() {
         synchronized (lazyInitLock) {
             if (lazyInitDone) return;
-            
-            Field[] fields = clazz.getDeclaredFields();
-            for (int i=0;i<fields.length;i++){
-                addField(fields[i].getName(),fields[i].getModifiers(),this,null);
-            }
-            Method[] methods = clazz.getDeclaredMethods();
-            for (int i=0;i<methods.length;i++){
-                Method m = methods[i];
-                MethodNode mn = new MethodNode(m.getName(), m.getModifiers(), ClassHelper.make(m.getReturnType()), createParameters(m.getParameterTypes()), ClassHelper.make(m.getExceptionTypes()), null);
-                VMPluginFactory.getPlugin().setMethodDefaultValue(mn,m);
-                addMethod(mn);
-            }
-            Constructor[] constructors = clazz.getDeclaredConstructors();
-            for (int i=0;i<constructors.length;i++){
-                Constructor ctor = constructors[i];
-                addConstructor(ctor.getModifiers(),createParameters(ctor.getParameterTypes()),ClassHelper.make(ctor.getExceptionTypes()),null);
-            }
-            Class sc = clazz.getSuperclass();
-            if (sc!=null) superClass = getPrimaryClassNode(sc);
-            buildInterfaceTypes(clazz);
-            VMPluginFactory.getPlugin().setAnnotationMetaData(this);
-            lazyInitDone=true;
+            VMPluginFactory.getPlugin().configureClassNode(compileUnit,this);
+            lazyInitDone = true;
         }
     }
 
-    private ClassNode getPrimaryClassNode(Class clazz) {
-        // there might be a new super class from the compile unit,
-        // we want to use this instead of simply referencing the old
-        // class
-        ClassNode result = null;
-        if (compileUnit!=null) {
-            result = compileUnit.getClass(clazz.getName());
-        }
-        if (result==null) result = ClassHelper.make(clazz);
-        return result;
-    }    
-    
-    private void buildInterfaceTypes(Class c) {
-        Class[] interfaces = c.getInterfaces();
-        ClassNode[] ret = new ClassNode[interfaces.length];
-        for (int i=0;i<interfaces.length;i++){
-            ret[i] = getPrimaryClassNode(interfaces[i]);
-        }
-        this.interfaces = ret;
-    }
-    
-    
     // added to track the enclosing method for local inner classes
     private MethodNode enclosingMethod = null;
 
@@ -323,7 +278,6 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         }
     }
 
-    
     /**
      * Sets the superclass of this ClassNode
      */
@@ -355,6 +309,14 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return interfaces;
     }
 
+    public void setInterfaces(ClassNode[] interfaces) {
+        if (redirect!=null) {
+            redirect().setInterfaces(interfaces);
+        } else {
+            this.interfaces = interfaces;
+        }
+    }
+
     public MixinNode[] getMixins() {
         return redirect().mixins;
     }
@@ -362,7 +324,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     /**
      * Returns a list containing MethodNode objects for
      * each method in the class represented by this ClassNode
-     */    
+     */
     public List getMethods() {
         if (!lazyInitDone) lazyClassInit();
         if (redirect!=null) return redirect().getMethods();
@@ -371,14 +333,14 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     /**
      * Returns a list containing MethodNode objects for
-     * each abstract method in the class represented by 
+     * each abstract method in the class represented by
      * this ClassNode
-     */   
+     */
     public List getAbstractMethods() {
-        
+
         HashSet abstractNodes = new HashSet();
         // let us collect the abstract super classes and stop at the
-        // first non abstract super class. If such a class still 
+        // first non abstract super class. If such a class still
         // contains abstract methods, then loading that class will fail.
         // No need to be extra careful here for that.
         ClassNode parent = this.redirect();
@@ -394,13 +356,13 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             }
             parent = parent.getSuperClass().redirect();
         } while (parent!=null && ((parent.getModifiers() & Opcodes.ACC_ABSTRACT) != 0));
-        
+
         List result = new ArrayList();
         for (Iterator methIt = getAllDeclaredMethods().iterator(); methIt.hasNext();) {
             MethodNode method = (MethodNode) methIt.next();
             // add only abstract methods from abtract classes that
             // are not overwritten
-            if ( abstractNodes.contains(method.getDeclaringClass().redirect()) && 
+            if ( abstractNodes.contains(method.getDeclaringClass().redirect()) &&
                  (method.getModifiers() & Opcodes.ACC_ABSTRACT) != 0
                ) {
                 result.add(method);
@@ -456,7 +418,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     public String getName() {
         return redirect().name;
     }
-    
+
     public String setName(String name) {
         return redirect().name=name;
     }
@@ -526,7 +488,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
                 if (pn.getSetterBlock() == null && setterBlock != null)
                   pn.setSetterBlock(setterBlock);
-                
+
                 return pn;
             }
         }
@@ -612,10 +574,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             redirect().interfaces = newInterfaces;
         }
     }
-    
+
     public boolean equals(Object o) {
         if (redirect!=null) return redirect().equals(o);
-        ClassNode cn = (ClassNode) o;        
+        ClassNode cn = (ClassNode) o;
         return (cn.getName().equals(getName()));
     }
 
@@ -654,11 +616,11 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     public ClassNode getOuterClass() {
         return null;
     }
-    
+
     public void addObjectInitializerStatements(Statement statements) {
         objectInitializers.add(statements);
     }
-    
+
     public List getObjectInitializerStatements() {
         return objectInitializers;
     }
@@ -686,8 +648,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             block = new BlockStatement();
             block.addStatement(statement);
         }
-        
-        // while anything inside a static initializer block is appended 
+
+        // while anything inside a static initializer block is appended
         // we don't want to append in the case we have a initialization
         // expression of a static field. In that case we want to add
         // before the other statements
@@ -805,7 +767,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         if (sn!=null) sn=sn.redirect();
         return sn;
     }
-    
+
     public ClassNode getUnresolvedSuperClass() {
         return getUnresolvedSuperClass(true);
     }
@@ -817,32 +779,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         }
         return redirect().superClass;
     }
-    
-    /**
-     * Factory method to create a new MethodNode via reflection
-     */
-    protected MethodNode createMethodNode(Method method) {
-        Parameter[] parameters = createParameters(method.getParameterTypes());
-        return new MethodNode(method.getName(), method.getModifiers(), ClassHelper.make(method.getReturnType()), parameters, ClassHelper.make(method.getExceptionTypes()), EmptyStatement.INSTANCE);
-    }
 
-    /**
-     * @param types
-     */
-    protected Parameter[] createParameters(Class[] types) {
-        Parameter[] parameters = Parameter.EMPTY_ARRAY;
-        int size = types.length;
-        if (size > 0) {
-            parameters = new Parameter[size];
-            for (int i = 0; i < size; i++) {
-                parameters[i] = createParameter(types[i], i);
-            }
-        }
-        return parameters;
-    }
-
-    protected Parameter createParameter(Class parameterType, int idx) {
-        return new Parameter(ClassHelper.make(parameterType), "param" + idx);
+    public void setUnresolvedSuperClass(ClassNode sn) {
+        superClass = sn;
     }
 
     public CompileUnit getCompileUnit() {
@@ -852,7 +791,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         }
         return compileUnit;
     }
-    
+
     protected void setCompileUnit(CompileUnit cu) {
         if (redirect!=null) redirect().setCompileUnit(cu);
         if (compileUnit!= null) compileUnit = cu;
@@ -895,7 +834,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public void visitContents(GroovyClassVisitor visitor) {
-        
+
         // now lets visit the contents of the class
         for (Iterator iter = getProperties().iterator(); iter.hasNext();) {
             PropertyNode pn = (PropertyNode) iter.next();
@@ -927,8 +866,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                 return method;
             }
         }
-        ClassNode parent = getSuperClass(); 
-        if (parent!=null) return parent.getGetterMethod(getterName); 
+        ClassNode parent = getSuperClass();
+        if (parent!=null) return parent.getGetterMethod(getterName);
         return null;
     }
 
@@ -941,8 +880,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                 return method;
             }
         }
-        ClassNode parent = getSuperClass(); 
-        if (parent!=null) return parent.getSetterMethod(setterName); 
+        ClassNode parent = getSuperClass();
+        if (parent!=null) return parent.getSetterMethod(setterName);
         return null;
     }
 
@@ -977,7 +916,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public String toString() {
-        String ret = getName(); 
+        String ret = getName();
         if (genericsTypes!=null) {
             ret += " <";
             for (int i = 0; i < genericsTypes.length; i++) {
@@ -1016,7 +955,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         while (node != null);
         return false;
     }
-    
+
     public MethodNode tryFindPossibleMethod(String name, Expression arguments) {
         int count = 0;
 
@@ -1098,21 +1037,21 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public boolean isInterface(){
-        return (getModifiers() & Opcodes.ACC_INTERFACE) > 0; 
+        return (getModifiers() & Opcodes.ACC_INTERFACE) > 0;
     }
-    
+
     public boolean isResolved(){
         return redirect().clazz!=null || (componentType != null && componentType.isResolved());
     }
-    
+
     public boolean isArray(){
         return componentType!=null;
     }
-    
+
     public ClassNode getComponentType() {
         return componentType;
     }
-    
+
     public Class getTypeClass(){
         Class c = redirect().clazz;
         if (c!=null) return c;
@@ -1124,7 +1063,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         }
         throw new GroovyBugError("ClassNode#getTypeClass for "+getName()+" is called before the type class is set ");
     }
-    
+
     public boolean hasPackageName(){
         return redirect().name.indexOf('.')>0;
     }
@@ -1136,7 +1075,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     public void setAnnotated(boolean flag) {
         this.annotated = flag;
     }
-    
+
     public boolean isAnnotated() {
         return this.annotated;
     }
@@ -1154,19 +1093,19 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         usesGenerics = usesGenerics || b;
         placeholder = b;
     }
-    
+
     public boolean isGenericsPlaceHolder() {
         return placeholder;
     }
-    
+
     public boolean isUsingGenerics() {
         return usesGenerics;
     }
-    
+
     public void setUsingGenerics(boolean b) {
         usesGenerics = b;
     }
-    
+
     public ClassNode getPlainNodeReference() {
         if (ClassHelper.isPrimitiveType(this)) return this;
         ClassNode n = new ClassNode(getName(),getModifiers(),getSuperClass(),null,null);
@@ -1176,8 +1115,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public boolean isAnnotationDefinition() {
-        return redirect().isPrimaryNode && 
-               isInterface() && 
+        return redirect().isPrimaryNode &&
+               isInterface() &&
                (getModifiers() & Opcodes.ACC_ANNOTATION)!=0;
     }
 
@@ -1188,7 +1127,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public List getAnnotations(ClassNode type) {
-        if (redirect!=null) return redirect.getAnnotations(type);        
+        if (redirect!=null) return redirect.getAnnotations(type);
         lazyClassInit();
         return super.getAnnotations(type);
     }

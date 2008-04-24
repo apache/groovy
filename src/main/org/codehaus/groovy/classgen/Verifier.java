@@ -760,7 +760,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
         
         ClassNode[] interfaces = classNode.getInterfaces();
-        for (int i=0; i<interfaces.length; i++) {            
+        for (int i=0; i<interfaces.length; i++) {
             Map genericsSpec = createGenericsSpec(interfaces[i],oldGenericsSpec);
             for (Iterator it = declaredMethods.iterator(); it.hasNext();) {
                 MethodNode method = (MethodNode) it.next();
@@ -773,11 +773,22 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
     
     private MethodNode getCovariantImplementation(final MethodNode oldMethod, final MethodNode overridingMethod, Map genericsSpec) {
+        // method name
         if (!oldMethod.getName().equals(overridingMethod.getName())) return null;
-        if (!equalParameters(overridingMethod,oldMethod,genericsSpec)) return null;
+
+        // parameters
+        boolean normalEqualParamerters = equalParametersNormal(overridingMethod,oldMethod);
+        boolean genericEqualParamerters = equalParametersWithGenerics(overridingMethod,oldMethod,genericsSpec);
+        if (!normalEqualParamerters && !genericEqualParamerters) return null;
+
+        // return type
         ClassNode mr = overridingMethod.getReturnType();
         ClassNode omr = oldMethod.getReturnType();
-        if (mr.equals(omr)) return null;
+        boolean equalReturnType = mr.equals(omr);
+        if (equalReturnType && normalEqualParamerters) return null;
+
+        // if we reach this point we have at last one parameter or return type, that
+        // is different in its specified form. That means we have to create a bridge method!
         ClassNode testmr = correctToGenericsSpec(genericsSpec,omr);
         if (!mr.isDerivedFrom(testmr)) {
             throw new RuntimeParserException(
@@ -876,14 +887,27 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         return type;
     }
     
-    private boolean equalParameters(MethodNode m1, MethodNode m2, Map genericsSpec) {
+    private boolean equalParametersNormal(MethodNode m1, MethodNode m2) {
         Parameter[] p1 = m1.getParameters();
         Parameter[] p2 = m2.getParameters();
         if (p1.length!=p2.length) return false;
         for (int i = 0; i < p2.length; i++) {
             ClassNode type = p2[i].getType();
-            type = correctToGenericsSpec(genericsSpec,type);
-            if (!p1[i].getType().equals(type)) return false;
+            ClassNode parameterType = p1[i].getType();
+            if (!parameterType.equals(type)) return false;
+        }
+        return true;
+    }
+
+    private boolean equalParametersWithGenerics(MethodNode m1, MethodNode m2, Map genericsSpec) {
+        Parameter[] p1 = m1.getParameters();
+        Parameter[] p2 = m2.getParameters();
+        if (p1.length!=p2.length) return false;
+        for (int i = 0; i < p2.length; i++) {
+            ClassNode type = p2[i].getType();
+            ClassNode genericsType = correctToGenericsSpec(genericsSpec,type);
+            ClassNode parameterType = p1[i].getType();
+            if (!parameterType.equals(genericsType)) return false;
         }
         return true;
     }
@@ -907,6 +931,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 spec[i]=correctToGenericsSpec(ret, sgts[i]);
             }
             GenericsType[] newGts = current.redirect().getGenericsTypes();
+            if (newGts==null) return ret;
             ret.clear();
             for (int i = 0; i < spec.length; i++) {
                 ret.put(newGts[i].getName(), spec[i]);

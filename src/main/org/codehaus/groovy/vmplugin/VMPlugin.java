@@ -15,11 +15,7 @@
  */
 package org.codehaus.groovy.vmplugin;
 
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.AnnotationNode;
-import org.codehaus.groovy.control.CompilationUnit;
-
+import org.codehaus.groovy.ast.*;
 import java.lang.reflect.Method;
 
 /**
@@ -32,7 +28,6 @@ public interface VMPlugin {
 
     void setAdditionalClassInformation(ClassNode c);
     Class[] getPluginDefaultGroovyMethods();
-    public void setMethodDefaultValue(MethodNode mn, Method m);
-    public void setAnnotationMetaData(ClassNode cn);
     public void configureAnnotation(AnnotationNode an);
+    public void configureClassNode(CompileUnit compileUnit, ClassNode classNode);
 }
