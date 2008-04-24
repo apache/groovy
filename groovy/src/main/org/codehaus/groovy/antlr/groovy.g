@@ -719,9 +719,9 @@ int currentLtLevel = 0;}
 // this gobbles up *some* amount of '>' characters, and counts how many
 // it gobbled.
 protected typeArgumentsOrParametersEnd
-    :   GT! {ltCounter-=1;} nls!
-    |   SR! {ltCounter-=2;} nls!
-    |   BSR! {ltCounter-=3;} nls!
+    :   GT! {ltCounter-=1;}
+    |   SR! {ltCounter-=2;}
+    |   BSR! {ltCounter-=3;}
     ;
 
 // Restriction on wildcard types based on super class or derrived class
@@ -940,7 +940,7 @@ if (modifiers != null) {
     :   "class" IDENT nls!
        { currentClass = #IDENT; }
         // it _might_ have type paramaters
-        (tp:typeParameters)?
+        (tp:typeParameters nls!)?
         // it _might_ have a superclass...
         sc:superClassClause
         // it might implement some interfaces...
