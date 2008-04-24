@@ -4036,7 +4036,8 @@ public class AsmClassGenerator extends ClassGenerator {
         if (setResult) {
             // we want to keep a value on stack, so we have to DUP here
             if (expression instanceof VariableExpression ||
-                expression instanceof PropertyExpression) 
+                expression instanceof FieldExpression || 
+                expression instanceof PropertyExpression)
             {
                 mv.visitInsn(DUP);
             }
@@ -4054,7 +4055,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected void evaluatePostfixMethod(String method, Expression expression) {
-        // load 
+        // load
         expression.visit(this);
 
         // save value for later
