@@ -1969,6 +1969,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // field
         //----------------------------------------------------------------------
         if (method == null && field != null) {
+            if (Modifier.isFinal(field.getModifiers())) {
+                throw new ReadOnlyPropertyException(name, theClass);
+            }
             field.setProperty(object, newValue);
             return;
         }

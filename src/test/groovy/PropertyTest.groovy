@@ -122,6 +122,17 @@ class PropertyTest extends GroovySwingTestCase {
         }
     }
 
+    void testFinalField() {
+        shouldFail {
+            shell.execute """
+          class A {
+            public final foo = 1
+          }
+          new A().foo = 2
+        """
+        }
+    }
+
     void testFinalPropertyWithInheritance() {
         def child = new Child()
         assert child.finalProperty == 1
