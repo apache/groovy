@@ -523,19 +523,20 @@ public class JavaStubGenerator
         if (genericsType.isPlaceholder()) {
             out.print(genericsType.getName());
         } else {
-            printTypeName(genericsType.getType(), out);
-            ClassNode[] upperBounds = genericsType.getUpperBounds();
-            ClassNode lowerBound = genericsType.getLowerBound();
-            if (upperBounds!=null) {
-                out.print(" extends ");
-                for (int i = 0; i < upperBounds.length; i++) {
-                    printType(upperBounds[i],out);
-                    if (i+1<upperBounds.length) out.print(" & ");
-                }
-            } else if (lowerBound!=null) {
-                out.print(" super ");
-                printType(lowerBound,out);
-            }       
+            printType(genericsType.getType(),out);
+        }
+
+        ClassNode[] upperBounds = genericsType.getUpperBounds();
+        ClassNode lowerBound = genericsType.getLowerBound();
+        if (upperBounds != null) {
+            out.print(" extends ");
+            for (int i = 0; i < upperBounds.length; i++) {
+                printType(upperBounds[i], out);
+                if (i + 1 < upperBounds.length) out.print(" & ");
+            }
+        } else if (lowerBound != null) {
+            out.print(" super ");
+            printType(lowerBound, out);
         }
     }
 
