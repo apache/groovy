@@ -76,6 +76,8 @@ public class DefaultGroovyMethodsSupport {
         }
     }
 
+    // TODO make all these createXXX/cloneXXX methods smarter by returning actual types
+
     protected static Collection cloneSimilarCollection(Collection left, int newCapacity) {
         Collection answer = createSimilarCollection(left, newCapacity);
         answer.addAll(left);
@@ -99,6 +101,9 @@ public class DefaultGroovyMethodsSupport {
         }
         if (collection instanceof List) {
             return createSimilarList((List) collection, newCapacity);
+        }
+        if (collection instanceof Queue) {
+            return new LinkedList(collection);
         }
         return new ArrayList(newCapacity);
     }

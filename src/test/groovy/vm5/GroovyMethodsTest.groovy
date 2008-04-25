@@ -70,6 +70,14 @@ class GroovyMethodsTest extends GroovyTestCase {
         result = sb.toString()
         assert result == 'fooabcxyz'
     }
+
+    void testDefiningQueue() {
+        def result = [1, 2, 3, 4, 5] as Queue
+        assert result instanceof Queue
+        assert result.size() == 5
+        assert result.sum() == 15
+    }
+
 }
 
 enum Suit { HEARTS, CLUBS, SPADES, DIAMONDS }

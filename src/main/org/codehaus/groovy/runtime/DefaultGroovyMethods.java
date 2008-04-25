@@ -3830,6 +3830,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             if (col instanceof SortedSet) return col;
             return new TreeSet(col);
         }
+        if (clazz == Queue.class) {
+            if (col instanceof Queue) return col;
+            return new LinkedList(col);
+        }
         Object[] args = {col};
         try {
             return InvokerHelper.invokeConstructorOf(clazz, args);
