@@ -622,6 +622,23 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         assert 'abcda.ce' - /a.c/ == 'abcde'
         assert 'abcda.ce' - ~/a.c/ == 'da.ce'
     }
+
+    void testListDerivativesAreRetainedWithCommonOperators() {
+        def x = new WackyList([1, 2, 3])
+        assert x.size() == 3
+        x += 4
+        assert x.sum() == 10
+        assert x.size() == 4
+        assert x.class == WackyList
+        def y = x.findAll{ it % 2 == 1 }
+        assert y.size() == 2
+        assert y.class == WackyList
+    }
+}
+
+class WackyList extends LinkedList {
+    WackyList(list) {super(list)}
+    WackyList() {this([])}
 }
 
 class WackyHashCode {

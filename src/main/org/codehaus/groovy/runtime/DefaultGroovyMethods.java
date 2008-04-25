@@ -3834,6 +3834,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             if (col instanceof Queue) return col;
             return new LinkedList(col);
         }
+        if (clazz == Stack.class) {
+            if (col instanceof Stack) return col;
+            final Stack stack = new Stack();
+            stack.addAll(col);
+            return stack;
+        }
         Object[] args = {col};
         try {
             return InvokerHelper.invokeConstructorOf(clazz, args);

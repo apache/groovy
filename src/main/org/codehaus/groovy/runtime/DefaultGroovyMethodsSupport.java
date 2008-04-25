@@ -20,6 +20,8 @@ import groovy.lang.EmptyRange;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.util.*;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 
 /**
  * Support methods for DefaultGroovyMethods and PluginDefaultMethods.
@@ -76,12 +78,27 @@ public class DefaultGroovyMethodsSupport {
         }
     }
 
-    // TODO make all these createXXX/cloneXXX methods smarter by returning actual types
+    protected static Collection cloneSimilarCollection(Collection orig, int newCapacity) {
+        Collection answer = (Collection) cloneObject(orig);
+        if (answer != null) return answer;
+        answer = cloneCollectionFromClass(orig);
+        if (answer != null) return answer;
 
-    protected static Collection cloneSimilarCollection(Collection left, int newCapacity) {
-        Collection answer = createSimilarCollection(left, newCapacity);
-        answer.addAll(left);
+        // fall back to creation
+        answer = createSimilarCollection(orig, newCapacity);
+        answer.addAll(orig);
         return answer;
+    }
+
+    private static Object cloneObject(Object orig) {
+        if (orig instanceof Cloneable) {
+            try {
+                return InvokerHelper.invokeMethod(orig, "clone", new Object[0]);
+            } catch (Exception ex) {
+                // ignore
+            }
+        }
+        return null;
     }
 
     protected static Collection createSimilarOrDefaultCollection(Object object) {
@@ -95,24 +112,31 @@ public class DefaultGroovyMethodsSupport {
         return createSimilarCollection(collection, collection.size());
     }
 
-    protected static Collection createSimilarCollection(Collection collection, int newCapacity) {
-        if (collection instanceof Set) {
-            return createSimilarSet((Set) collection);
+    protected static Collection createSimilarCollection(Collection orig, int newCapacity) {
+        if (orig instanceof Set) {
+            return createSimilarSet((Set) orig);
         }
-        if (collection instanceof List) {
-            return createSimilarList((List) collection, newCapacity);
+        if (orig instanceof List) {
+            return createSimilarList((List) orig, newCapacity);
         }
-        if (collection instanceof Queue) {
-            return new LinkedList(collection);
+        Collection answer = createCollectionFromClass(orig);
+        if (answer != null) return answer;
+
+        if (orig instanceof Queue) {
+            return new LinkedList();
         }
         return new ArrayList(newCapacity);
     }
 
-    protected static List createSimilarList(List left, int newCapacity) {
-        List answer;
-        if (left instanceof LinkedList) {
+    protected static List createSimilarList(List orig, int newCapacity) {
+        List answer = (List) createCollectionFromClass(orig);
+        if (answer != null) return answer;
+
+        if (orig instanceof LinkedList) {
             answer = new LinkedList();
-        } else if (left instanceof Vector) {
+        } else if (orig instanceof Stack) {
+            answer = new Stack();
+        } else if (orig instanceof Vector) {
             answer = new Vector();
         } else {
             answer = new ArrayList(newCapacity);
@@ -120,32 +144,99 @@ public class DefaultGroovyMethodsSupport {
         return answer;
     }
 
-    protected static Map cloneSimilarMap(Map left) {
-        Map map;
-        if (left instanceof TreeMap)
-            map = new TreeMap(left);
-        else if (left instanceof LinkedHashMap)
-            map = new LinkedHashMap(left);
-        else if (left instanceof Properties) {
-            map = new Properties();
-            map.putAll(left);
-        } else if (left instanceof Hashtable)
-            map = new Hashtable(left);
-        else
-            map = new HashMap(left);
-        return map;
+    protected static Set createSimilarSet(Set orig) {
+        Set answer = (Set) createCollectionFromClass(orig);
+        if (answer != null) return answer;
+
+        // fall back to some defaults
+        if (orig instanceof SortedSet) {
+            return new TreeSet();
+        }
+        if (orig instanceof LinkedHashSet) {
+            return new LinkedHashSet();
+        }
+        return new HashSet();
     }
 
-    protected static Set createSimilarSet(Set self) {
-        final Set ansSet;
-        if (self instanceof SortedSet) {
-            ansSet = new TreeSet();
-        } else if (self instanceof LinkedHashSet) {
-            ansSet = new LinkedHashSet();
-        } else {
-            ansSet = new HashSet();
+    private static Collection createCollectionFromClass(Collection orig) {
+        try {
+            final Constructor constructor = orig.getClass().getConstructor();
+            return (Collection) constructor.newInstance();
+        } catch (Exception e) {
+            // ignore
         }
-        return ansSet;
+        return null;
+    }
+
+    private static Collection cloneCollectionFromClass(Collection orig) {
+        try {
+            final Constructor constructor = orig.getClass().getConstructor(Collection.class);
+            return (Collection) constructor.newInstance(orig);
+        } catch (Exception e) {
+            // ignore
+        }
+        try {
+            final Constructor constructor = orig.getClass().getConstructor();
+            final Collection result = (Collection) constructor.newInstance();
+            result.addAll(orig);
+            return result;
+        } catch (Exception e) {
+            // ignore
+        }
+        return null;
+    }
+
+    private static Map createMapFromClass(Map orig) {
+        try {
+            final Constructor constructor = orig.getClass().getConstructor();
+            return (Map) constructor.newInstance();
+        } catch (Exception e) {
+            // ignore
+        }
+        return null;
+    }
+
+    private static Map cloneMapFromClass(Map orig) {
+        try {
+            final Constructor constructor = orig.getClass().getConstructor(Map.class);
+            return (Map) constructor.newInstance(orig);
+        } catch (Exception e) {
+            // ignore
+        }
+        try {
+            final Constructor constructor = orig.getClass().getConstructor();
+            final Map result = (Map) constructor.newInstance();
+            result.putAll(orig);
+            return result;
+        } catch (Exception e) {
+            // ignore
+        }
+        return null;
+    }
+
+    protected static Map cloneSimilarMap(Map orig) {
+        Map answer = (Map) cloneObject(orig);
+        if (answer != null) return answer;
+        answer = cloneMapFromClass(orig);
+        if (answer != null) return answer;
+
+        // fall back to some defaults
+        if (orig instanceof TreeMap)
+            return new TreeMap(orig);
+
+        if (orig instanceof LinkedHashMap)
+            return new LinkedHashMap(orig);
+
+        if (orig instanceof Properties) {
+            Map map = new Properties();
+            map.putAll(orig);
+            return map;
+        }
+
+        if (orig instanceof Hashtable)
+            return new Hashtable(orig);
+
+        return new HashMap(orig);
     }
 
     /**

@@ -15,6 +15,8 @@
  */
 package groovy.vm5
 
+import java.util.concurrent.LinkedBlockingQueue
+
 /** 
  * Tests the Java 5 variants of various new Groovy methods.
  *
@@ -78,6 +80,21 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert result.sum() == 15
     }
 
+    void testLinkedBlockingQueue() {
+        def q = [1, 2, 3, 4, 5, 6, 7, 8, 9] as LinkedBlockingQueue
+        assert q.size() == 9
+        assert q.class == LinkedBlockingQueue
+        q += 10
+        assert q.size() == 10
+        assert q.class == LinkedBlockingQueue
+        def r = q.findAll{ it % 2 == 0 }
+        assert r.size() == 5
+        assert r.class == LinkedBlockingQueue
+        def s = ((r as LinkedList) - [4, 6]) as LinkedBlockingQueue
+        assert s.size() == 3
+        assert s.class == LinkedBlockingQueue
+        [2, 8, 10].each{ it in s }
+    }
 }
 
 enum Suit { HEARTS, CLUBS, SPADES, DIAMONDS }
