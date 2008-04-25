@@ -93,7 +93,7 @@ class GroovyMethodsTest extends GroovyTestCase {
         def s = ((r as LinkedList) - [4, 6]) as LinkedBlockingQueue
         assert s.size() == 3
         assert s.class == LinkedBlockingQueue
-        [2, 8, 10].each{ it in s }
+        [2, 8, 10].each{ assert it in s }
     }
 }
 
