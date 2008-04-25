@@ -30,7 +30,7 @@ private def approximate(n) {
 
 
 /* return element i,j of infinite matrix A */
-private def A(i,j) {
+private def A(int i, int j) {
     return 1 / ((i+j)*(i+j+1)/2.0D +i+1)
 }
 
@@ -57,9 +57,20 @@ def MultiplyAtAv(n, v, AtAv){
     MultiplyAtv(n, u, AtAv)
 }
 
-long start = System.currentTimeMillis ()
+//class U {
+//    boolean headless
+//
+//    def m () {
+//        assert headless != false
+//        headless = GraphicsEnvironment.isHeadless()
+//    }
+//}
+//new U()
 
-def n = (args.length == 0 ? 100 : args[(int)0.0d].toInteger())
+long start = System.currentTimeMillis ()
+assert start >= 0
+
+def n = (args.length == 0 ? 100 : args[0/*(int)0.0d*/].toInteger())
 def nf = java.text.NumberFormat.getInstance()
 nf.setMaximumFractionDigits(9)
 nf.setMinimumFractionDigits(9)

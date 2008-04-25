@@ -26,6 +26,7 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.runtime.callsite.CallSite;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
@@ -185,6 +186,7 @@ public class AsmClassGenerator extends ClassGenerator {
     private List callSites = new ArrayList();
     private int callSiteArrayVarIndex;
     private static final String GRE = BytecodeHelper.getClassInternalName(ClassHelper.make(GroovyRuntimeException.class));
+    private static final String DTT = BytecodeHelper.getClassInternalName(DefaultTypeTransformation.class.getName());
 
     public AsmClassGenerator(
             GeneratorContext context, ClassVisitor classVisitor,
@@ -607,6 +609,7 @@ public class AsmClassGenerator extends ClassGenerator {
         int modifiers = node.getModifiers();
         if (isVargs(node.getParameters())) modifiers |= Opcodes.ACC_VARARGS;
         mv = cv.visitMethod(modifiers, node.getName(), methodType, signature, buildExceptions(node.getExceptions()));
+        mv = new MyMethodAdapter();
         visitAnnotations(node, mv);
         for (int i = 0; i < parameters.length; i++) {
             visitParameterAnnotations(parameters[i], i, mv);
@@ -2146,6 +2149,177 @@ public class AsmClassGenerator extends ClassGenerator {
             sig[numberOfArguments] = sb.toString();
         }
         return sig[numberOfArguments];
+    }
+
+    private final static HashSet<String> names = new HashSet<String>();
+    private final static HashSet<String> basic = new HashSet<String>();
+
+    static {
+        Collections.addAll(names, "plus", "minus", "multiply", "div", "compareTo", "or", "and", "xor", "intdiv", "mod", "leftShift", "rightShift", "rightShiftUnsigned");
+        Collections.addAll(basic, "plus", "minus", "multiply", "div");
+    }
+
+    private void makeBinopCallSite(BinaryExpression bin, String message) {
+        final Expression left = bin.getLeftExpression();
+        final Expression right = bin.getRightExpression();
+        if (!names.contains(message)) {
+           makeBinopCallSite(left, message, right);
+        }
+        else {
+            improveExprType(bin);
+
+            ClassNode type1 = getLHSType(left);
+            ClassNode type2 = getLHSType(right);
+            if (ClassHelper.isNumberType(type1) && ClassHelper.isNumberType(type2)) {
+                ClassNode prim1 = ClassHelper.getUnwrapper(type1);
+                ClassNode prim2 = ClassHelper.getUnwrapper(type2);
+
+                if (message.equals("div") && prim1 == ClassHelper.int_TYPE && prim2 == ClassHelper.int_TYPE) {
+                    makeBinopCallSite(left, message, right);
+                    return;
+                }
+
+                ClassNode retType;
+                if (prim1 == ClassHelper.double_TYPE || prim2 == ClassHelper.double_TYPE) {
+                    retType = ClassHelper.double_TYPE;
+                }
+                else
+                if (prim1 == ClassHelper.float_TYPE || prim2 == ClassHelper.float_TYPE) {
+                    retType = ClassHelper.double_TYPE;
+                }
+                else
+                if (prim1 == ClassHelper.long_TYPE || prim2 == ClassHelper.long_TYPE) {
+                    retType = ClassHelper.long_TYPE;
+                }
+                else
+                    retType = ClassHelper.int_TYPE;
+
+                if (retType == ClassHelper.double_TYPE && !basic.contains(message)) {
+                    makeBinopCallSite(left, message, right);
+                    return;
+                }
+
+                if (left instanceof ConstantExpression) {
+                  mv.visitLdcInsn(((ConstantExpression)left).getValue());
+                }
+                else {
+                  visitAndAutoboxBoolean(left);
+                  helper.unbox(prim1);
+                }
+
+                if (right instanceof ConstantExpression) {
+                    mv.visitLdcInsn(((ConstantExpression)right).getValue());
+                }
+                else {
+                  visitAndAutoboxBoolean(right);
+                    helper.unbox(prim2);
+                }
+
+                mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/typehandling/NumberMathModificationInfo", message, "(" + BytecodeHelper.getTypeDescription(prim1) + BytecodeHelper.getTypeDescription(prim2) + ")" + BytecodeHelper.getTypeDescription(retType));
+                helper.box(retType);
+            }
+            else {
+                makeBinopCallSite(left, message, right);
+            }
+        }
+    }
+
+    private void improveExprType(Expression expr) {
+        if (expr instanceof BinaryExpression) {
+            if (ClassHelper.isNumberType(expr.getType()))
+              return;
+
+            final BinaryExpression bin = (BinaryExpression) expr;
+            String message = "";
+            switch (bin.getOperation().getType()) {
+                case Types.BITWISE_AND:
+                    message = "and";
+                    break;
+
+                case Types.BITWISE_OR:
+                    message = "or";
+                    break;
+
+                case Types.BITWISE_XOR:
+                    message = "xor";
+                    break;
+
+                case Types.PLUS:
+                    message = "plus";
+                    break;
+
+                case Types.MINUS:
+                    message = "minus";
+                    break;
+
+                case Types.MULTIPLY:
+                    message = "multiply";
+                    break;
+
+                case Types.DIVIDE:
+                    message = "div";
+                    break;
+
+                case Types.INTDIV:
+                    message = "intdiv";
+                    break;
+
+                case Types.MOD:
+                    message = "mod";
+                    break;
+
+                case Types.LEFT_SHIFT:
+                    message = "leftShift";
+                    break;
+
+                case Types.RIGHT_SHIFT:
+                    message = "rightShift";
+                    break;
+
+                case Types.RIGHT_SHIFT_UNSIGNED:
+                    message = "rightShiftUnsigned";
+                    break;
+            }
+
+            if (!names.contains(message))
+              return;
+
+            improveExprType(bin.getLeftExpression());
+            improveExprType(bin.getRightExpression());
+
+            ClassNode type1 = getLHSType(bin.getLeftExpression());
+            ClassNode type2 = getLHSType(bin.getRightExpression());
+
+            if (ClassHelper.isNumberType(type1) && ClassHelper.isNumberType(type2)) {
+                ClassNode prim1 = ClassHelper.getUnwrapper(type1);
+                ClassNode prim2 = ClassHelper.getUnwrapper(type2);
+
+                if (message.equals("div") && prim1 == ClassHelper.int_TYPE && prim2 == ClassHelper.int_TYPE) {
+                    return;
+                }
+
+                ClassNode retType;
+                if (prim1 == ClassHelper.double_TYPE || prim2 == ClassHelper.double_TYPE) {
+                    retType = ClassHelper.double_TYPE;
+                }
+                else
+                if (prim1 == ClassHelper.float_TYPE || prim2 == ClassHelper.float_TYPE) {
+                    retType = ClassHelper.double_TYPE;
+                }
+                else
+                if (prim1 == ClassHelper.long_TYPE || prim2 == ClassHelper.long_TYPE) {
+                    retType = ClassHelper.long_TYPE;
+                }
+                else
+                    retType = ClassHelper.int_TYPE;
+
+                if (retType == ClassHelper.double_TYPE && !basic.contains(message)) {
+                    return;
+                }
+
+                bin.setType(retType);
+            }
+        }
     }
 
     private void makeBinopCallSite(Expression receiver, String message, Expression arguments) {
@@ -3767,7 +3941,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected void evaluateBinaryExpression(String method, BinaryExpression expression) {
-        makeBinopCallSite(expression.getLeftExpression(), method, expression.getRightExpression());
+        makeBinopCallSite(expression, method);
     }
 
     protected void evaluateCompareTo(BinaryExpression expression) {
@@ -3978,7 +4152,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 return type;
             }
         }
-        return ClassHelper.DYNAMIC_TYPE;
+        return leftExpression.getType();
     }
 
     protected boolean isValidTypeForCast(ClassNode type) {
@@ -4337,6 +4511,113 @@ public class AsmClassGenerator extends ClassGenerator {
 
         public int hashCode() {
             return type.getName().hashCode();
+        }
+    }
+
+    private class MyMethodAdapter extends MethodAdapter {
+        private String boxingDesc = null;
+
+        public MyMethodAdapter() {
+            super(AsmClassGenerator.this.mv);
+        }
+
+        private void dropBoxing () {
+            if (boxingDesc != null) {
+                super.visitMethodInsn(INVOKESTATIC, DTT, "box", boxingDesc);
+                boxingDesc = null;
+            }
+        }
+
+        public void visitInsn(int opcode) {
+            dropBoxing ();
+            super.visitInsn(opcode);    //To change body of overridden methods use File | Settings | File Templates.
+        }
+
+        public void visitIntInsn(int opcode, int operand) {
+            dropBoxing ();
+            super.visitIntInsn(opcode, operand);    //To change body of overridden methods use File | Settings | File Templates.
+        }
+
+        public void visitVarInsn(int opcode, int var) {
+            dropBoxing ();
+            super.visitVarInsn(opcode, var);    //To change body of overridden methods use File | Settings | File Templates.
+        }
+
+        public void visitTypeInsn(int opcode, String desc) {
+            dropBoxing ();
+            super.visitTypeInsn(opcode, desc);    //To change body of overridden methods use File | Settings | File Templates.
+        }
+
+        public void visitFieldInsn(int opcode, String owner, String name, String desc) {
+            dropBoxing ();
+            super.visitFieldInsn(opcode, owner, name, desc);    //To change body of overridden methods use File | Settings | File Templates.
+        }
+
+        public void visitMethodInsn(int opcode, String owner, String name, String desc) {
+            if (boxing(opcode,owner,name)) {
+                dropBoxing();
+                boxingDesc = desc;
+            }
+            else {
+              if (unboxing(opcode, owner, name)) {
+                  if (boxingDesc != null)
+                    boxingDesc = null;
+                  else
+                    super.visitMethodInsn(opcode, owner, name, desc);    //To change body of overridden methods use File | Settings | File Templates.
+              }
+              else {
+                dropBoxing();
+                super.visitMethodInsn(opcode, owner, name, desc);    //To change body of overridden methods use File | Settings | File Templates.
+              }
+            }
+        }
+
+        private boolean boxing(int opcode, String owner, String name) {
+            return opcode == INVOKESTATIC && owner.equals(DTT) && name.equals("box");
+        }
+
+        private boolean unboxing(int opcode, String owner, String name) {
+            return opcode == INVOKESTATIC && owner.equals(DTT) && name.endsWith("Unbox");
+        }
+
+        public void visitJumpInsn(int opcode, Label label) {
+            dropBoxing ();
+            super.visitJumpInsn(opcode, label);    //To change body of overridden methods use File | Settings | File Templates.
+        }
+
+        public void visitLabel(Label label) {
+            dropBoxing ();
+            super.visitLabel(label);    //To change body of overridden methods use File | Settings | File Templates.
+        }
+
+        public void visitLdcInsn(Object cst) {
+            dropBoxing ();
+            super.visitLdcInsn(cst);    //To change body of overridden methods use File | Settings | File Templates.
+        }
+
+        public void visitIincInsn(int var, int increment) {
+            dropBoxing ();
+            super.visitIincInsn(var, increment);    //To change body of overridden methods use File | Settings | File Templates.
+        }
+
+        public void visitTableSwitchInsn(int min, int max, Label dflt, Label labels[]) {
+            dropBoxing ();
+            super.visitTableSwitchInsn(min, max, dflt, labels);    //To change body of overridden methods use File | Settings | File Templates.
+        }
+
+        public void visitLookupSwitchInsn(Label dflt, int keys[], Label labels[]) {
+            dropBoxing ();
+            super.visitLookupSwitchInsn(dflt, keys, labels);    //To change body of overridden methods use File | Settings | File Templates.
+        }
+
+        public void visitMultiANewArrayInsn(String desc, int dims) {
+            dropBoxing ();
+            super.visitMultiANewArrayInsn(desc, dims);    //To change body of overridden methods use File | Settings | File Templates.
+        }
+
+        public void visitTryCatchBlock(Label start, Label end, Label handler, String type) {
+            dropBoxing ();
+            super.visitTryCatchBlock(start, end, handler, type);    //To change body of overridden methods use File | Settings | File Templates.
         }
     }
 }

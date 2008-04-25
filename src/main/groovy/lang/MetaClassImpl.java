@@ -25,6 +25,7 @@ import org.codehaus.groovy.runtime.*;
 import org.codehaus.groovy.runtime.callsite.*;
 import org.codehaus.groovy.runtime.metaclass.*;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
+import org.codehaus.groovy.runtime.typehandling.NumberMathModificationInfo;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import org.objectweb.asm.ClassVisitor;
 
@@ -2417,17 +2418,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         e.methods = metaMethodIndex.addMethodToList(e.methods, method);
     }
 
-    private void addMetaMethodToSuperIndex(MetaMethod method, MetaMethodIndex.Header header) {
-        checkIfStdMethod(method);
-
-        String name = method.getName();
-        MetaMethodIndex.Entry e = metaMethodIndex.getOrPutMethods(name, header);
-        if (method.isStatic()) {
-            e.staticMethods = metaMethodIndex.addMethodToList(e.staticMethods, method);
-        }
-        e.methodsForSuper = metaMethodIndex.addMethodToList(e.methodsForSuper, method);
-    }
-
     private void checkIfStdMethod(MetaMethod method) {
         if (isGenericGetMethod(method) && genericGetMethod == null) {
             genericGetMethod = method;
@@ -2453,6 +2443,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     && parameterTypes[1].getTheClass() == Object.class) {
                 methodMissing = method;
             }
+        }
+
+        if (theCachedClass.isNumber) {
+            NumberMathModificationInfo.instance.checkIfStdMethod (method);
         }
     }
 

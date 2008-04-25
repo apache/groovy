@@ -16,22 +16,16 @@
 
 package org.codehaus.groovy.ast;
 
-import groovy.lang.Closure;
-import groovy.lang.GString;
-import groovy.lang.MetaClass;
-import groovy.lang.Range;
-import groovy.lang.Reference;
-import groovy.lang.Script;
+import groovy.lang.*;
+import org.codehaus.groovy.runtime.GeneratedClosure;
+import org.codehaus.groovy.vmplugin.VMPluginFactory;
+import org.objectweb.asm.Opcodes;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Pattern;
-
-import org.codehaus.groovy.runtime.GeneratedClosure;
-import org.codehaus.groovy.vmplugin.VMPluginFactory;
-import org.objectweb.asm.Opcodes;
 
 /**
  * This class is a Helper for ClassNode and classes handling ClassNodes.
@@ -246,7 +240,33 @@ public class ClassHelper {
             return cn;
         }
     }
-    
+
+    public static ClassNode getUnwrapper(ClassNode cn) {
+        cn = cn.redirect();
+        if (isPrimitiveType(cn)) return cn;
+        if (cn==Boolean_TYPE) {
+            return boolean_TYPE;
+        } else if (cn==Byte_TYPE) {
+            return byte_TYPE;
+        } else if (cn==Character_TYPE) {
+            return char_TYPE;
+        } else if (cn==Short_TYPE) {
+            return short_TYPE;
+        } else if (cn==Integer_TYPE) {
+            return int_TYPE;
+        } else if (cn==Long_TYPE) {
+            return long_TYPE;
+        } else if (cn==Float_TYPE) {
+            return float_TYPE;
+        } else if (cn==Double_TYPE) {
+            return double_TYPE;
+        }
+        else {
+            return cn;
+        }
+    }
+
+
     /**
      * Test to determine if a ClasNode is a primitve type. 
      * Note: this only works for ClassNodes created using a
@@ -267,6 +287,21 @@ public class ClassHelper {
                 cn == float_TYPE ||
                 cn == double_TYPE ||
                 cn == VOID_TYPE;
+    }
+
+    public static boolean isNumberType(ClassNode cn) {
+        return  cn == Byte_TYPE ||
+                cn == Short_TYPE ||
+                cn == Integer_TYPE ||
+                cn == Long_TYPE ||
+                cn == Float_TYPE ||
+                cn == Double_TYPE ||
+                cn == byte_TYPE ||
+                cn == short_TYPE ||
+                cn == int_TYPE ||
+                cn == long_TYPE ||
+                cn == float_TYPE ||
+                cn == double_TYPE;
     }
 
     public static ClassNode makeReference() {

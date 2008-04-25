@@ -13,28 +13,28 @@ import java.text.DecimalFormat
 
 def calculate()
 {
-    final def twothirds = 2.0d/3.0d;
+    final double twothirds = 2.0d/3.0d;
 
     n = Integer.parseInt(args[0])
 
-    def a1 = 0.0d, a2 = 0.0d, a3 = 0.0d, a4 = 0.0d, a5 = 0.0d
-    def a6 = 0.0d, a7 = 0.0d, a8 = 0.0d, a9 = 0.0d, alt = -1.0d
+    double a1 = 0.0d, a2 = 0.0d, a3 = 0.0d, a4 = 0.0d, a5 = 0.0d
+    double a6 = 0.0d, a7 = 0.0d, a8 = 0.0d, a9 = 0.0d, alt = -1.0d
 
-    def k = 1.0d
+    double k = 1.0d
     while (k<=n){
-       def k2 = Math.pow(k,2.0d), k3 = k2*k
-       def sk = Math.sin(k), ck = Math.cos(k)
+       double k2 = Math.pow(k,2.0d), k3 = k2*k
+       double sk = Math.sin(k), ck = Math.cos(k)
        alt = -alt
 
-       a1 += Math.pow(twothirds,k-1.0d)
-       a2 += Math.pow(k,-0.5d)
-       a3 += 1.0d/(k*(k+1.0d))
-       a4 += 1.0d/(k3 * sk*sk)
-       a5 += 1.0d/(k3 * ck*ck)
-       a6 += 1.0d/k
-       a7 += 1.0d/k2
-       a8 += alt/k
-       a9 += alt/(2.0d*k-1.0d)
+       a1 = a1 + Math.pow(twothirds,k-1.0d)
+       a2 = a2 + Math.pow(k,-0.5d)
+       a3 = a3 + 1.0d/(k*(k+1.0d))
+       a4 = a4 + 1.0d/(k3 * sk*sk)
+       a5 = a5 + 1.0d/(k3 * ck*ck)
+       a6 = a6 + 1.0d/k
+       a7 = a7 + 1.0d/k2
+       a8 = a8 + alt/k
+       a9 = a9 + alt/(2.0d*k-1.0d)
        k += 1.0d
     }
 
