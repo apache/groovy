@@ -265,7 +265,7 @@ public class InteractiveShell
      */
     public void run() {
         // Display the startup banner
-        out.println(MESSAGES.format("startup_banner.0", new Object[] { InvokerHelper.getVersion(), System.getProperty("java.vm.version") }));
+        out.println(MESSAGES.format("startup_banner.0", new Object[] { InvokerHelper.getVersion(), System.getProperty("java.version") }));
         out.println(MESSAGES.getMessage("startup_banner.1"));
 
         while (true) {

@@ -104,7 +104,7 @@ public class GroovyMain {
                 printHelp(out, options);
             } else if (cmd.hasOption('v')) {
                 String version = InvokerHelper.getVersion();
-                out.println("Groovy Version: " + version + " JVM: " + System.getProperty("java.vm.version"));
+                out.println("Groovy Version: " + version + " JVM: " + System.getProperty("java.version"));
             } else {
                 // If we fail, then exit with an error so scripting frameworks can catch it
                 // TODO: pass printstream(s) down through process
