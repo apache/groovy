@@ -29,6 +29,19 @@ public enum CompilePhase {
     FINALIZATION(Phases.FINALIZATION),
     ;
 
+    public static CompilePhase[] phases = {
+        null,
+        INITIALIZATION,
+        PARSING,
+        CONVERSION,
+        SEMANTIC_ANALYSIS,
+        CANONICALIZATION,
+        INSTRUCTION_SELECTION,
+        CLASS_GENERATION,
+        OUTPUT,
+        FINALIZATION,
+    };
+
     int phaseNumber;
 
     CompilePhase(int phaseNumber) {

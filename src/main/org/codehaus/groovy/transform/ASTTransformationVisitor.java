@@ -119,7 +119,7 @@ public class ASTTransformationVisitor extends ClassCodeVisitorSupport {
     }
 
     public static void addPhaseOperations(CompilationUnit compilationUnit) {
-        //addGlobalTransforms(compilationUnit);
+        addGlobalTransforms(compilationUnit);
 
         compilationUnit.addPhaseOperation(new CompilationUnit.PrimaryClassNodeOperation() {
             public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
@@ -149,68 +149,68 @@ public class ASTTransformationVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-//    public static void addGlobalTransforms(CompilationUnit compilationUnit) {
-//        GroovyClassLoader cuLoader = compilationUnit.getClassLoader();
-//        Enumeration<URL> globalServices = null;
-//        try {
-//            globalServices = cuLoader.getResources("META-INF/services/org.codehaus.groovy.transform.ASTTransformation");
-//            while (globalServices.hasMoreElements()) {
-//                URL service = globalServices.nextElement();
-//                String className;
-//                BufferedReader svcIn = new BufferedReader(new InputStreamReader(service.openStream()));
-//                try {
-//                    className = svcIn.readLine();
-//                } catch (IOException ioe) {
-//                    compilationUnit.getErrorCollector().addError(new SimpleMessage(
-//                        "IOException reading the service definition at "
-//                        + service.toExternalForm() + " because of exception " + ioe.toString(), null));
-//                    continue;
-//                }
-//                while (className != null) {
-//                    try {
-//                        if (!className.startsWith("#") && className.length() > 0) {
-//                            Class gTransClass = cuLoader.loadClass(className);
-//                            GroovyASTTransformation transformAnnotation = (GroovyASTTransformation) gTransClass.getAnnotation(GroovyASTTransformation.class);
-//                            if (transformAnnotation == null) {
-//                                compilationUnit.getErrorCollector().addError(new SimpleMessage(
-//                                    "Transform Class " + className + " is specified as a global transform in " + service.toExternalForm()
-//                                    + " but it is not annotated by " + GroovyASTTransformation.class.getName(), null));
-//                                continue;
-//                            }
-//                            if (ASTTransformation.class.isAssignableFrom(gTransClass)) {
-//                                final ASTTransformation instance = (ASTTransformation)gTransClass.newInstance();
-//                                compilationUnit.addPhaseOperation(new CompilationUnit.SourceUnitOperation() {
-//                                    public void call(SourceUnit source) throws CompilationFailedException {
-//                                        instance.visit(new ASTNode[] {source.getAST()}, source);
-//                                    }
-//                                }, transformAnnotation.phase().getPhaseNumber());
-//                            } else {
-//                                compilationUnit.getErrorCollector().addError(new SimpleMessage(
-//                                    "Transform Class " + className + " specified at "
-//                                    + service.toExternalForm() + " is not an ASTTransformation.", null));
-//                            }
-//                        }
-//                    } catch (Exception e) {
-//                        compilationUnit.getErrorCollector().addError(new SimpleMessage(
-//                            "Could not instantiate global transform class " + className + " specified at "
-//                            + service.toExternalForm() + "  because of exception " + e.toString(), null));
-//                    }
-//                    try {
-//                        className = svcIn.readLine();
-//                    } catch (IOException ioe) {
-//                        compilationUnit.getErrorCollector().addError(new SimpleMessage(
-//                            "IOException reading the service definition at "
-//                            + service.toExternalForm() + " because of exception " + ioe.toString(), null));
-//                        continue;
-//                    }
-//                }
-//            }
-//        } catch (IOException e) {
-//            //FIXME the warning message will NPE with what I have :(
-//            compilationUnit.getErrorCollector().addError(new SimpleMessage(
-//                "IO Exception attempting to load global transforms:" + e.getMessage(),
-//                null));
-//        }
-//    }
+    public static void addGlobalTransforms(CompilationUnit compilationUnit) {
+        try {
+            GroovyClassLoader cuLoader = compilationUnit.getClassLoader();
+            Enumeration<URL> globalServices = cuLoader.getResources("META-INF/services/org.codehaus.groovy.transform.ASTTransformation");
+            while (globalServices.hasMoreElements()) {
+                URL service = globalServices.nextElement();
+                String className;
+                BufferedReader svcIn = new BufferedReader(new InputStreamReader(service.openStream()));
+                try {
+                    className = svcIn.readLine();
+                } catch (IOException ioe) {
+                    compilationUnit.getErrorCollector().addError(new SimpleMessage(
+                        "IOException reading the service definition at "
+                        + service.toExternalForm() + " because of exception " + ioe.toString(), null));
+                    continue;
+                }
+                while (className != null) {
+                    try {
+                        if (!className.startsWith("#") && className.length() > 0) {
+                            Class gTransClass = cuLoader.loadClass(className);
+                            GroovyASTTransformation transformAnnotation = (GroovyASTTransformation) gTransClass.getAnnotation(GroovyASTTransformation.class);
+                            if (transformAnnotation == null) {
+                                compilationUnit.getErrorCollector().addError(new SimpleMessage(
+                                    "Transform Class " + className + " is specified as a global transform in " + service.toExternalForm()
+                                    + " but it is not annotated by " + GroovyASTTransformation.class.getName(), null));
+                                continue;
+                            }
+                            if (ASTTransformation.class.isAssignableFrom(gTransClass)) {
+                                final ASTTransformation instance = (ASTTransformation)gTransClass.newInstance();
+                                compilationUnit.addPhaseOperation(new CompilationUnit.SourceUnitOperation() {
+                                    public void call(SourceUnit source) throws CompilationFailedException {
+                                        instance.visit(new ASTNode[] {source.getAST()}, source);
+                                    }
+                                }, transformAnnotation.phase().getPhaseNumber());
+                            } else {
+                                compilationUnit.getErrorCollector().addError(new SimpleMessage(
+                                    "Transform Class " + className + " specified at "
+                                    + service.toExternalForm() + " is not an ASTTransformation.", null));
+                            }
+                        }
+                    } catch (Exception e) {
+                        compilationUnit.getErrorCollector().addError(new SimpleMessage(
+                            "Could not instantiate global transform class " + className + " specified at "
+                            + service.toExternalForm() + "  because of exception " + e.toString(), null));
+                    }
+                    try {
+                        className = svcIn.readLine();
+                    } catch (IOException ioe) {
+                        compilationUnit.getErrorCollector().addError(new SimpleMessage(
+                            "IOException reading the service definition at "
+                            + service.toExternalForm() + " because of exception " + ioe.toString(), null));
+                        //noinspection UnnecessaryContinue
+                        continue;
+                    }
+                }
+            }
+        } catch (IOException e) {
+            //FIXME the warning message will NPE with what I have :(
+            compilationUnit.getErrorCollector().addError(new SimpleMessage(
+                "IO Exception attempting to load global transforms:" + e.getMessage(),
+                null));
+        }
+    }
 }
 
