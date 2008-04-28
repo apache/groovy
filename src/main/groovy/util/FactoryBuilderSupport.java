@@ -823,13 +823,9 @@ public abstract class FactoryBuilderSupport extends Binding {
     public Object build(Script script) {
         synchronized (script) {
             MetaClass scriptMetaClass = script.getMetaClass();
-            try {
-                script.setMetaClass(new FactoryInterceptorMetaClass(scriptMetaClass, this));
-                script.setBinding(this);
-                return script.run();
-            } finally {
-                script.setMetaClass(scriptMetaClass);
-            }
+            script.setMetaClass(new FactoryInterceptorMetaClass(scriptMetaClass, this));
+            script.setBinding(this);
+            return script.run();
         }
     }
 
