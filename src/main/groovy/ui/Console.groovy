@@ -334,10 +334,14 @@ class Console implements CaretListener {
     void fileOpen(EventObject evt = null) {
         scriptFile = selectFilename()
         if (scriptFile != null) {
-            inputArea.text = scriptFile.readLines().join('\n')
-            setDirty(false)
-            inputArea.caretPosition = 0
+            loadScriptFile(scriptFile)
         }
+    }
+
+    void loadScriptFile(File scriptFile) {
+        inputArea.text = scriptFile.readLines().join('\n')
+        setDirty(false)
+        inputArea.caretPosition = 0
     }
 
     // Save file - return false if user cancelled save
