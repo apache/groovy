@@ -1,4 +1,4 @@
-package org.codehaus.groovy.transform
+package org.codehaus.groovy.transform.vm5
 /**
  * Created by IntelliJ IDEA.
  * User: Danno.Ferrin
