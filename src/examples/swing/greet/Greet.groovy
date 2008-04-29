@@ -17,6 +17,7 @@ class Greet {
 
     @Bindable boolean allowLogin = true
     @Bindable boolean allowSelection = true
+    @Bindable boolean allowTweet = true
     @Bindable def focusedUser = ""
     @Bindable def friends  = []
     @Bindable def tweets   = []
@@ -24,6 +25,7 @@ class Greet {
 
     void startUp() {
         setAllowSelection(false)
+        setAllowTweet(false)
         view.greetFrame.show()
         view.loginDialog.show()
     }
@@ -33,8 +35,8 @@ class Greet {
         view.doOutside {
             try {
                 if (api.login(view.twitterNameField.text, view.twitterPasswordField.password)) {
-                    setFriends(api.getFriends(api.user))
-                    selectUser(api.user)
+                    setFriends(api.getFriends(api.authenticatedUser))
+                    selectUser(api.authenticatedUser)
                     view.greetFrame.show()
                     view.loginDialog.dispose()
                 } else {
@@ -46,13 +48,15 @@ class Greet {
                 view.edt {
                     setAllowLogin(true)
                     setAllowSelection(true)
+                    setAllowTweet(true)
                 }
             }
         }
     }
 
-    void filterTweets(evt) {
+    void filterTweets(evt = null) {
         setAllowSelection(false)
+        setAllowTweet(false)
         view.doOutside {
             try {
                 setTimeline(
@@ -64,25 +68,45 @@ class Greet {
             } catch (Exception e) {
                 e.printStackTrace()
             } finally {
-                view.edt {setAllowSelection(true)}
+                view.edt {
+                    setAllowSelection(true)
+                    setAllowTweet(true)
+                }
             }
         }
     }
 
     def userSelected(evt) {
         view.doOutside {
-            selectUser(view.users.selectedItem.screen_name)
+            selectUser(view.users.selectedItem)
         }
     }
 
     def selectUser(user) {
         setAllowSelection(false)
+        setAllowTweet(false)
         try {
             setFocusedUser(user)
             setTweets(api.getTweets(focusedUser).findAll {it.text =~ view.searchField.text})
             setTimeline(api.getFriendsTimeline(focusedUser).findAll {it.text =~ view.searchField.text})
         } finally {
-            view.edt {setAllowSelection(true)}
+            view.edt {
+                setAllowSelection(true)
+                setAllowTweet(true)
+            }
+        }
+    }
+
+    def tweet(evt = null) {
+        setAllowTweet(false)
+        view.doOutside {
+            try {
+                api.tweet(view.tweetBox.text)
+                tweetBox.text = ""
+                filterTweets()
+            } finally {
+                setAllowTweet(true)
+            }
         }
     }
 

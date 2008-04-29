@@ -31,6 +31,11 @@ actions() {
         name: 'Select User',
         closure: controller.&userSelected
     )
+
+    tweetAction = action(
+        name: 'Update',
+        closure: controller.&tweet
+    )
 }
 
 tweetLineFont = new java.awt.Font("Ariel", 0, 12)
@@ -83,7 +88,7 @@ greetFrame = frame(title: "Greet - A Groovy Twitter Client",
         label('Search:', insets: [3, 6, 3, 3])
         searchField = textField(columns: 20, action: filterTweets,
             enabled: bind(source: controller, sourceProperty: 'allowSelection'),
-            insets: [3, 3, 3, 3], weightx: 1.0, fill: HORIZONTAL)
+            insets: [3, 3, 3, 3], weightx: 1.0, fill: BOTH)
         button(action: filterTweets,
             enabled: bind(source: controller, sourceProperty: 'allowSelection'),
             gridwidth: REMAINDER, insets: [3, 3, 3, 6]
@@ -100,6 +105,11 @@ greetFrame = frame(title: "Greet - A Groovy Twitter Client",
                     { tweetList.setListData(controller.tweets as Object[])} as PropertyChangeListener)
             }
         }
+        separator(fill: HORIZONTAL, gridwidth: REMAINDER)
+        tweetBox = textField(
+            fill:BOTH, weightx:1.0, insets:[3,3,3,3], gridwidth:2)
+        button(tweetAction,
+            gridwidth:REMAINDER, insets:[3,3,3,3])
         separator(fill: HORIZONTAL, gridwidth: REMAINDER)
         statusLine = label(text: bind(source: controller.api, sourceProperty: 'status'),
             gridwidth: REMAINDER, insets: [3, 6, 3, 6], anchor: WEST
