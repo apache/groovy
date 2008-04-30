@@ -86,7 +86,7 @@ class Greet {
         setAllowSelection(false)
         setAllowTweet(false)
         try {
-            setFocusedUser(user)
+            setFocusedUser(api.getUser(user.screen_name as String))
             setTweets(api.getTweets(focusedUser).findAll {it.text =~ view.searchField.text})
             setTimeline(api.getFriendsTimeline(focusedUser).findAll {it.text =~ view.searchField.text})
         } finally {

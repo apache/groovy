@@ -18,9 +18,12 @@ class TwitterAPI {
     def withStatus(status, c) {
         setStatus(status)
         try {
-            return c()
-        } finally {
+            def o = c()
             setStatus("\u00a0")
+            return o
+        } catch (Throwable t) {
+            setStatus("Error $status : $t")
+            throw t
         }
     }
 
