@@ -30,7 +30,7 @@ private def approximate(n) {
 
 
 /* return element i,j of infinite matrix A */
-private def A(int i, int j) {
+private def A(i,j) {
     return 1 / ((i+j)*(i+j+1)/2.0D +i+1)
 }
 

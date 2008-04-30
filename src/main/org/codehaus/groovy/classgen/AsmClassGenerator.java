@@ -3941,7 +3941,8 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected void evaluateBinaryExpression(String method, BinaryExpression expression) {
-        makeBinopCallSite(expression, method);
+//        makeBinopCallSite(expression, method);
+        makeBinopCallSite(expression.getLeftExpression(), method, expression.getRightExpression());
     }
 
     protected void evaluateCompareTo(BinaryExpression expression) {
