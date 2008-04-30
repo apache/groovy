@@ -7,7 +7,6 @@
 package swing.greet
 
 import java.awt.Cursor
-import java.awt.event.ActionListener
 import java.beans.PropertyChangeListener
 import javax.swing.*
 
@@ -144,6 +143,4 @@ controller.addPropertyChangeListener("friends", {evt ->
     view.edt { users.model = new DefaultComboBoxModel(evt.newValue as Object[]) }
 } as PropertyChangeListener)
 
-new Timer(120000, {
-    controller.filterTweets()
-} as ActionListener).start()
+new Timer(120000, filterTweets).start()
