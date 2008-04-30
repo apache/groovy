@@ -7,11 +7,9 @@
 package swing.greet
 
 import java.awt.Cursor
+import java.awt.event.ActionListener
 import java.beans.PropertyChangeListener
-import javax.swing.DefaultComboBoxModel
-import javax.swing.ListCellRenderer
-import javax.swing.WindowConstants
-import javax.swing.SwingConstants
+import javax.swing.*
 
 //lookAndFeel('nimbus')
 lookAndFeel('metal', boldFonts: false)
@@ -19,21 +17,25 @@ lookAndFeel('metal', boldFonts: false)
 actions() {
     loginAction = action(
         name: 'Login',
+        enabled: bind(source: controller, sourceProperty: 'allowLogin'),
         closure: controller.&login
     )
 
     filterTweets = action(
         name: 'Filter',
+        enabled: bind(source: controller, sourceProperty: 'allowSelection'),
         closure: controller.&filterTweets
     )
 
     userSelected = action(
         name: 'Select User',
+        enabled: bind(source: controller, sourceProperty: 'allowSelection'),
         closure: controller.&userSelected
     )
 
     tweetAction = action(
         name: 'Update',
+        enabled: bind(source: controller, sourceProperty: 'allowTweet'),
         closure: controller.&tweet
     )
 }
@@ -41,9 +43,9 @@ actions() {
 tweetLineFont = new java.awt.Font("Ariel", 0, 12)
 tweetLine = panel(border: emptyBorder(3)) {
     gridBagLayout()
-    //tweetIcon = label(anchor: BASELINE, insets: [3, 3, 3, 3])
     tweetIcon = label(verticalTextPosition:SwingConstants.BOTTOM,
         horizontalTextPosition:SwingConstants.CENTER,
+        //anchor: BASELINE, insets: [3, 3, 3, 3])
         anchor: CENTER, insets: [3, 3, 3, 3])
     tweetText = textArea(rows: 4, lineWrap: true, wrapStyleWord: true,
         opaque: false, editable: false, font: tweetLineFont,
@@ -83,14 +85,11 @@ greetFrame = frame(title: "Greet - A Groovy Twitter Client",
 
         gridBagLayout()
         users = comboBox(renderer: userCellRenderer, action: userSelected,
-            enabled: bind(source: controller, sourceProperty: 'allowSelection'),
             gridwidth: REMAINDER, insets: [6, 6, 3, 6], fill: HORIZONTAL)
         label('Search:', insets: [3, 6, 3, 3])
         searchField = textField(columns: 20, action: filterTweets,
-            enabled: bind(source: controller, sourceProperty: 'allowSelection'),
             insets: [3, 3, 3, 3], weightx: 1.0, fill: BOTH)
         button(action: filterTweets,
-            enabled: bind(source: controller, sourceProperty: 'allowSelection'),
             gridwidth: REMAINDER, insets: [3, 3, 3, 6]
         )
         tabbedPane(gridwidth: REMAINDER, weighty: 1.0, fill: BOTH) {
@@ -106,7 +105,7 @@ greetFrame = frame(title: "Greet - A Groovy Twitter Client",
             }
         }
         separator(fill: HORIZONTAL, gridwidth: REMAINDER)
-        tweetBox = textField(
+        tweetBox = textField(action:tweetAction,
             fill:BOTH, weightx:1.0, insets:[3,3,3,3], gridwidth:2)
         button(tweetAction,
             gridwidth:REMAINDER, insets:[3,3,3,3])
@@ -128,17 +127,14 @@ greetFrame = frame(title: "Greet - A Groovy Twitter Client",
                 gridBagLayout()
                 label("@",
                     anchor: EAST, insets: [3, 3, 3, 3])
-                twitterNameField = textField(columns: 20,
-                    enabled: bind(source: controller, sourceProperty: 'allowLogin'),
+                twitterNameField = textField(action:loginAction, columns: 20,
                     gridwidth: REMAINDER, insets: [3, 3, 3, 3])
                 label("Password:",
                     anchor: EAST, insets: [3, 3, 3, 3])
-                twitterPasswordField = passwordField(columns: 20,
-                    enabled: bind(source: controller, sourceProperty: 'allowLogin'),
+                twitterPasswordField = passwordField(action:loginAction, columns: 20,
                     gridwidth: REMAINDER, insets: [3, 3, 3, 3])
                 panel()
                 button(loginAction, defaultButton: true,
-                    enabled: bind(source: controller, sourceProperty: 'allowLogin'),
                     anchor: EAST, insets: [3, 3, 3, 3])
             }
         }
@@ -147,3 +143,7 @@ greetFrame = frame(title: "Greet - A Groovy Twitter Client",
 controller.addPropertyChangeListener("friends", {evt ->
     view.edt { users.model = new DefaultComboBoxModel(evt.newValue as Object[]) }
 } as PropertyChangeListener)
+
+new Timer(120000, {
+    controller.filterTweets()
+} as ActionListener).start()
