@@ -113,9 +113,15 @@ class TwitterAPI {
 
     def getUser(String screen_name) {
         withStatus("Loading User $screen_name") {
-            return slurper.parse(
-                    new URL("http://twitter.com/users/show/${screen_name}.xml").openStream()
-                )
+            if (screen_name.contains('@')) {
+                return slurper.parse(
+                        new URL("http://twitter.com/users/show.xml?email=${screen_name}").openStream()
+                    )
+            } else {
+                return slurper.parse(
+                        new URL("http://twitter.com/users/show/${screen_name}.xml").openStream()
+                    )
+            }
         }
     }
 

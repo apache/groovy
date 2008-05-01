@@ -127,14 +127,14 @@ greetFrame = frame(title: "Greet - A Groovy Twitter Client",
                 converter: {it ? null : Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)})
         ) {
             gridBagLayout()
-            label("@",
-                anchor: EAST, insets: [3, 3, 3, 0])
+            label("Username:",
+                anchor: EAST, insets: [3, 3, 3, 3])
             twitterNameField = textField(action:loginAction, columns: 20,
-                gridwidth: REMAINDER, insets: [3, 0, 3, 3])
-            label("*",
-                anchor: EAST, insets: [3, 3, 3, 0])
+                gridwidth: REMAINDER, insets: [3, 3, 3, 3])
+            label("Password:",
+                anchor: EAST, insets: [3, 3, 3, 3])
             twitterPasswordField = passwordField(action:loginAction, columns: 20,
-                gridwidth: REMAINDER, insets: [3, 0, 3, 3])
+                gridwidth: REMAINDER, insets: [3, 3, 3, 3])
             panel()
             button(loginAction, defaultButton: true,
                 anchor: EAST, insets: [3, 3, 3, 3])
