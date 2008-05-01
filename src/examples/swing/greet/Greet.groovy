@@ -102,7 +102,8 @@ class Greet {
         view.doOutside {
             try {
                 api.tweet(view.tweetBox.text)
-                tweetBox.text = ""
+                // true story: it froze w/o the EDT call here
+                view.edt {tweetBox.text = ""}
                 filterTweets()
             } finally {
                 setAllowTweet(true)

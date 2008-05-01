@@ -33,7 +33,7 @@ class TwitterAPI {
             Authenticator.setDefault(
                 [getPasswordAuthentication : {
                     return new PasswordAuthentication(name, password) }
-            ] as Authenticator)
+                ] as Authenticator)
             authenticatedUser = getUser(name)
             return true
         }
@@ -76,11 +76,13 @@ class TwitterAPI {
     }
 
     def getFriendsTimeline(user) {
+        def timeline = []
         withStatus("Loading Timeline") {
-            def timeline =  slurper.parse(
+            timeline =  slurper.parse(
                     new URL("http://twitter.com/statuses/friends_timeline/${user.screen_name}.xml").openStream()
                 ).status.collect{it}
-            setStatus("Loading Timeline Images")
+        }
+        withStatus("Loading Timeline Images") {
             return timeline.each {
                 loadImage(it.user.profile_image_url as String)
             }
@@ -96,11 +98,13 @@ class TwitterAPI {
     }
 
     def getTweets(friend) {
+        def tweets = []
         withStatus("Loading Tweets") {
-            def tweets = slurper.parse(
+            tweets = slurper.parse(
                     new URL("http://twitter.com/statuses/user_timeline/${friend.screen_name}.xml").openStream()
                 ).status.collect{it}
-            setStatus("Loading Tweet Images")
+        }
+        withStatus("Loading Tweet Images") {
             return tweets.each {
                 loadImage(it.user.profile_image_url as String)
             }

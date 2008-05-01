@@ -40,7 +40,7 @@ actions() {
 }
 
 tweetLineFont = new java.awt.Font("Ariel", 0, 12)
-tweetLine = panel(border: emptyBorder(3)) {
+tweetLine = panel(border: emptyBorder(3), preferredSize:[250,84]) {
     gridBagLayout()
     tweetIcon = label(verticalTextPosition:SwingConstants.BOTTOM,
         horizontalTextPosition:SwingConstants.CENTER,
@@ -77,7 +77,9 @@ userCellRenderer = {list, user, index, isSelected, isFocused ->
 } as ListCellRenderer
 
 greetFrame = frame(title: "Greet - A Groovy Twitter Client",
-    defaultCloseOperation: javax.swing.JFrame.DISPOSE_ON_CLOSE, size: [320, 480]) {
+    defaultCloseOperation: javax.swing.JFrame.DISPOSE_ON_CLOSE, size: [320, 480],
+    locationByPlatform:true)
+{
     panel(cursor: bind(source: controller, sourceProperty: 'allowSelection',
         converter: {it ? null : Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)})
     ) {
@@ -89,8 +91,7 @@ greetFrame = frame(title: "Greet - A Groovy Twitter Client",
         searchField = textField(columns: 20, action: filterTweets,
             insets: [3, 3, 3, 3], weightx: 1.0, fill: BOTH)
         button(action: filterTweets,
-            gridwidth: REMAINDER, insets: [3, 3, 3, 6]
-        )
+            gridwidth: REMAINDER, insets: [3, 3, 3, 6], fill:HORIZONTAL)
         tabbedPane(gridwidth: REMAINDER, weighty: 1.0, fill: BOTH) {
             scrollPane(title: 'Timeline') {
                 timelineList = list(visibleRowCount: 20, cellRenderer: tweetRenderer)
@@ -106,7 +107,8 @@ greetFrame = frame(title: "Greet - A Groovy Twitter Client",
         separator(fill: HORIZONTAL, gridwidth: REMAINDER)
         tweetBox = textField(action:tweetAction,
             fill:BOTH, weightx:1.0, insets:[3,3,3,3], gridwidth:2)
-        button(tweetAction,
+        tweetButton = button(tweetAction,
+            enabled:bind(source:tweetBox, sourceProperty:'text', converter:{it.length() < 140}),
             gridwidth:REMAINDER, insets:[3,3,3,3])
         separator(fill: HORIZONTAL, gridwidth: REMAINDER)
         statusLine = label(text: bind(source: controller.api, sourceProperty: 'status'),
@@ -117,26 +119,27 @@ greetFrame = frame(title: "Greet - A Groovy Twitter Client",
 
     loginDialog = dialog(
         title: "Login to Greet", pack: true, resizable: false,
-        defaultCloseOperation: WindowConstants.DISPOSE_ON_CLOSE)
-        {
-            panel(border: emptyBorder(3),
-                cursor: bind(source: controller, sourceProperty: 'allowLogin',
-                    converter: {it ? null : Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)})
-            ) {
-                gridBagLayout()
-                label("@",
-                    anchor: EAST, insets: [3, 3, 3, 3])
-                twitterNameField = textField(action:loginAction, columns: 20,
-                    gridwidth: REMAINDER, insets: [3, 3, 3, 3])
-                label("Password:",
-                    anchor: EAST, insets: [3, 3, 3, 3])
-                twitterPasswordField = passwordField(action:loginAction, columns: 20,
-                    gridwidth: REMAINDER, insets: [3, 3, 3, 3])
-                panel()
-                button(loginAction, defaultButton: true,
-                    anchor: EAST, insets: [3, 3, 3, 3])
-            }
+        defaultCloseOperation: WindowConstants.DISPOSE_ON_CLOSE,
+        locationByPlatform:true)
+    {
+        panel(border: emptyBorder(3),
+            cursor: bind(source: controller, sourceProperty: 'allowLogin',
+                converter: {it ? null : Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR)})
+        ) {
+            gridBagLayout()
+            label("@",
+                anchor: EAST, insets: [3, 3, 3, 0])
+            twitterNameField = textField(action:loginAction, columns: 20,
+                gridwidth: REMAINDER, insets: [3, 0, 3, 3])
+            label("*",
+                anchor: EAST, insets: [3, 3, 3, 0])
+            twitterPasswordField = passwordField(action:loginAction, columns: 20,
+                gridwidth: REMAINDER, insets: [3, 0, 3, 3])
+            panel()
+            button(loginAction, defaultButton: true,
+                anchor: EAST, insets: [3, 3, 3, 3])
         }
+    }
 }
 
 controller.addPropertyChangeListener("friends", {evt ->
