@@ -51,9 +51,13 @@ tweetLine = panel(border: emptyBorder(3), preferredSize:[250,84]) {
         gridwidth: REMAINDER, weightx: 1.0, fill: BOTH, insets: [3, 3, 3, 3])
 }
 tweetRenderer = {list, tweet, index, isSelected, isFocused ->
-    if (tweet) {
+    if (tweet?.user as String) {
         tweetIcon.icon = controller.api.imageMap[tweet.user.profile_image_url as String]
         tweetIcon.text = tweet.user.screen_name
+        tweetText.text = tweet.text
+    } else if (tweet?.text as String) {
+        tweetIcon.icon = controller.api.imageMap[tweet.parent().profile_image_url as String]
+        tweetIcon.text = tweet.parent().screen_name
         tweetText.text = tweet.text
     } else {
         tweetIcon.icon = null
@@ -95,13 +99,18 @@ greetFrame = frame(title: "Greet - A Groovy Twitter Client",
         tabbedPane(gridwidth: REMAINDER, weighty: 1.0, fill: BOTH) {
             scrollPane(title: 'Timeline') {
                 timelineList = list(visibleRowCount: 20, cellRenderer: tweetRenderer)
-                controller.addPropertyChangeListener('timeline',
-                    { timelineList.setListData(controller.timeline as Object[])} as PropertyChangeListener)
             }
             scrollPane(title: 'Tweets') {
                 tweetList = list(visibleRowCount: 20, cellRenderer: tweetRenderer)
-                controller.addPropertyChangeListener('tweets',
-                    { tweetList.setListData(controller.tweets as Object[])} as PropertyChangeListener)
+            }
+            scrollPane(title: 'Statuses') {
+                statusList = list(visibleRowCount: 20, cellRenderer: tweetRenderer)
+            }
+            // add data change listeners
+            [timeline:timelineList, tweets:tweetList, statuses:statusList].each {p, w ->
+                controller.addPropertyChangeListener(p,
+                    {evt -> w.listData = evt.newValue as Object[]} as PropertyChangeListener
+                )
             }
         }
         separator(fill: HORIZONTAL, gridwidth: REMAINDER)

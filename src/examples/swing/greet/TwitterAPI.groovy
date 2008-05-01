@@ -22,7 +22,7 @@ class TwitterAPI {
             setStatus("\u00a0")
             return o
         } catch (Throwable t) {
-            setStatus("Error $status : $t")
+            setStatus("Error $status : ${t.message =~ '400'?'Rate Limit Reached':t}")
             throw t
         }
     }

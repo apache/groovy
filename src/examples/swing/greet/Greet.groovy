@@ -22,6 +22,7 @@ class Greet {
     @Bindable def friends  = []
     @Bindable def tweets   = []
     @Bindable def timeline = []
+    @Bindable def statuses = []
 
     void startUp() {
         setAllowSelection(false)
@@ -36,6 +37,8 @@ class Greet {
             try {
                 if (api.login(view.twitterNameField.text, view.twitterPasswordField.password)) {
                     setFriends(api.getFriends(api.authenticatedUser))
+                    friends.each {it.status.user = [screen_name:it.screen_name, profile_image_url:it.profile_image_url] }
+                    setStatuses(friends.collect {it.status})
                     selectUser(api.authenticatedUser)
                     view.greetFrame.show()
                     view.loginDialog.dispose()
@@ -59,6 +62,9 @@ class Greet {
         setAllowTweet(false)
         view.doOutside {
             try {
+                setStatuses(
+                    friends.collect {it.status}.findAll {it.text =~ view.searchField.text}
+                )
                 setTimeline(
                     api.getFriendsTimeline(focusedUser).findAll {it.text =~ view.searchField.text}
                 )
