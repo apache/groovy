@@ -118,6 +118,7 @@ public class AnnotationNode extends ASTNode {
      *      <tt>false</tt> otherwise
      */
     public boolean hasSourceRetention() {
+        if (!runtimeRetention && !classRetention) return true;
         return this.sourceRetention;
     }
 
