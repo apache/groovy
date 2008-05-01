@@ -25,6 +25,8 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.messages.ExceptionMessage;
 import org.codehaus.groovy.syntax.Types;
+import org.codehaus.groovy.GroovyBugError;
+import org.objectweb.asm.Opcodes;
 
 import java.io.File;
 import java.io.IOException;
@@ -61,6 +63,41 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private boolean isSpecialConstructorCall = false;
 
     private Map genericParameterNames = new HashMap();
+
+    /**
+     * we use ConstructedClassWithPackage as to limit the resolving the compiler
+     * does when combining package names and class names. The idea
+     * that if we use a package, then we do not want to replace the
+     * '.' with a '$' for the package part, only for the class name
+     * part. There is also the case of a imported class, so this logic
+     * can't be done in these cases...
+     */
+    private static class ConstructedClassWithPackage extends ClassNode {
+        String prefix;
+        String className;
+        public ConstructedClassWithPackage(String pkg, String name) {
+            super(pkg+name, Opcodes.ACC_PUBLIC,ClassHelper.OBJECT_TYPE);
+            isPrimaryNode = false;
+            this.prefix = pkg;
+            this.className = name;
+        }
+        public String getName() {
+            if (redirect()!=this) return super.getName();
+            return prefix+className;
+        }
+        public boolean hasPackageName() {
+            if (redirect()!=this) return super.hasPackageName();
+            return className.indexOf('.')!=-1;
+        }
+        public String setName(String name) {
+            if (redirect()!=this) {
+                return super.setName(name);
+            } else {
+                throw new GroovyBugError("ConstructedClassWithPackage#setName should not be called");
+            }
+        }
+    }
+
 
     public ResolveVisitor(CompilationUnit cu) {
         compilationUnit = cu;
@@ -112,15 +149,18 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     private boolean resolveToInner (ClassNode type) {
-        String name = type.getName(), saved = name;
+        // we do not do our name mangling to find an inner class
+        // if the type is a ConstructedClassWithPackage, because in this case we
+        // are resolving the name at a different place already
+        if (type instanceof ConstructedClassWithPackage) return false;
+        String name = type.getName();
+        String saved = name;
         while (true) {
             int len = name.lastIndexOf('.');
-            if (len == -1)
-              break;
+            if (len == -1) break;
             name = name.substring(0,len) + "$" + name.substring(len+1);
             type.setName(name);
-            if (resolve(type))
-              return true;
+            if (resolve(type)) return true;
         }
         type.setName(saved);
         return false;
@@ -248,6 +288,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 Class cls = type.getTypeClass();
                 // if the file is not newer we don't want to recompile
                 if (!isSourceNewer(url, cls)) return true;
+                // since we came to this, we want to recompile
                 cachedClasses.remove(type.getName());
                 type.setRedirect(null);
             }
@@ -259,22 +300,39 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return type.isResolved();
     }
 
+    private String replaceLastPoint(String name) {
+        int lastPoint = name.lastIndexOf('.');
+        name = new StringBuffer()
+                .append(name.substring(0, lastPoint))
+                .append("$")
+                .append(name.substring(lastPoint + 1))
+                .toString();
+        return name;
+    }
 
     private boolean resolveFromStaticInnerClasses(ClassNode type, boolean testStaticInnerClasses) {
         // try to resolve a public static inner class' name
         testStaticInnerClasses &= type.hasPackageName();
         if (testStaticInnerClasses) {
-            String name = type.getName();
-            String replacedPointType = name;
-            int lastPoint = replacedPointType.lastIndexOf('.');
-            replacedPointType = new StringBuffer()
-                    .append(replacedPointType.substring(0, lastPoint))
-                    .append("$")
-                    .append(replacedPointType.substring(lastPoint + 1))
-                    .toString();
-            type.setName(replacedPointType);
-            if (resolve(type, false, true, true)) return true;
-            type.setName(name);
+            if (type instanceof ConstructedClassWithPackage) {
+                // we replace '.' only in the className part
+                // with '$' to find an inner class. The case that
+                // the packageis really a class is handled else where
+                ConstructedClassWithPackage tmp = (ConstructedClassWithPackage) type;
+                String name = ((ConstructedClassWithPackage) type).className;
+                tmp.className = replaceLastPoint(name);
+                if (resolve(tmp, false, true, true)) {
+                    type.setRedirect(tmp.redirect());
+                    return true;
+                }
+                tmp.className = name;
+            }   else {
+                String name = type.getName();
+                String replacedPointType = replaceLastPoint(name);
+                type.setName(replacedPointType);
+                if (resolve(type, false, true, true)) return true;
+                type.setName(name);
+            }
         }
         return false;
     }
@@ -286,10 +344,17 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             for (int i = 0, size = DEFAULT_IMPORTS.length; i < size; i++) {
                 String packagePrefix = DEFAULT_IMPORTS[i];
                 String name = type.getName();
-                String fqn = packagePrefix + name;
-                type.setName(fqn);
-                if (resolve(type, false, false, false)) return true;
-                type.setName(name);
+                // We limit the inner class lookups here by using ConstructedClassWithPackage.
+                // This way only the name will change, the packagePrefix will
+                // not be included in the lookup. The case where the
+                // packagePrefix is really a class is handled else where.
+                // WARNING: This code does not expect a class that has an static
+                //          inner class in DEFAULT_IMPORTS
+                ConstructedClassWithPackage tmp =  new ConstructedClassWithPackage(packagePrefix,name);
+                if (resolve(tmp, false, false, false)) {
+                    type.setRedirect(tmp.redirect());
+                    return true;
+                }
             }
             String name = type.getName();
             if (name.equals("BigInteger")) {
@@ -320,8 +385,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         n.setRedirect(cn);
     }
 
-    private void ambiguousClass(ClassNode type, ClassNode iType, String name, boolean resolved) {
-        if (resolved && !type.getName().equals(iType.getName())) {
+    private void ambiguousClass(ClassNode type, ClassNode iType, String name) {
+        if (type.getName().equals(iType.getName())) {
             addError("reference to " + name + " is ambiguous, both class " + type.getName() + " and " + iType.getName() + " match", type);
         } else {
             type.setRedirect(iType);
@@ -329,6 +394,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     private boolean resolveAliasFromModule(ClassNode type) {
+        // In case of getting a ConstructedClassWithPackage here we do not do checks for partial
+        // matches with imported classes. The ConstructedClassWithPackage is already a constructed
+        // node and any subclass resolving will then take elsewhere place
+        if (type instanceof ConstructedClassWithPackage) return false;
+
         ModuleNode module = currentClass.getModule();
         if (module == null) return false;
         String name = type.getName();
@@ -346,18 +416,31 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         while (true) {
             pname = name.substring(0, index);
             ClassNode aliasedNode = module.getImport(pname);
+
             if (aliasedNode != null) {
                 if (pname.length() == name.length()) {
-                    // full match, no need to create a new class
+                    // full match
+
+                    // We can compare here by length, because pname is always
+                    // a sbustring of name, so same length means they are equal.
                     type.setRedirect(aliasedNode);
                     return true;
                 } else {
                     //partial match
-                    String newName = aliasedNode.getName() + name.substring(pname.length());
-                    type.setName(newName);
-                    if (resolve(type, true, true, true)) return true;
-                    // was not resolved so it was a fake match
-                    type.setName(name);
+
+                    // At this point we know that we have a match for pname. This may
+                    // mean, that name[pname.length()..<-1] is a static inner class.
+                    // For this the rest of the name does not need any dots in its name.
+                    // It is either completely a inner static class or it is not.
+                    // Since we do not want to have useless lookups we create the name
+                    // completely and use a ConstructedClassWithPackage to prevent lookups against the package.
+                    String className = aliasedNode.getNameWithoutPackage() + '$' +
+                                       name.substring(pname.length()+1).replace('.', '$');
+                    ConstructedClassWithPackage tmp = new ConstructedClassWithPackage(aliasedNode.getPackageName()+".", className);
+                    if (resolve(tmp, true, true, false)) {
+                        type.setRedirect(tmp.redirect());
+                        return true;
+                    }
                 }
             }
             index = pname.lastIndexOf('.');
@@ -371,8 +454,15 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         ModuleNode module = currentClass.getModule();
         if (module == null) return false;
 
-        if (!type.hasPackageName() && module.hasPackageName()) {
+        boolean newNameUsed = false;
+        // we add a package if there is none yet and the module has one. But we
+        // do not add that if the type is a ConstructedClassWithPackage. The code in ConstructedClassWithPackage
+        // hasPackageName() will return true if ConstructedClassWithPackage#className has no dots.
+        // but since the prefix may have them and the code there does ignore that
+        // fact. We check here for ConstructedClassWithPackage.
+        if (!type.hasPackageName() && module.hasPackageName() && !(type instanceof ConstructedClassWithPackage)) {
             type.setName(module.getPackageName() + name);
+            newNameUsed = true;
         }
         // look into the module node if there is a class with that name
         List moduleClasses = module.getClasses();
@@ -383,39 +473,57 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 return true;
             }
         }
-        type.setName(name);
+        if (newNameUsed) type.setName(name);
 
         if (testModuleImports) {
             if (resolveAliasFromModule(type)) return true;
 
-            boolean resolved = false;
             if (module.hasPackageName()) {
-                // check package this class is defined in
-                type.setName(module.getPackageName() + name);
-                resolved = resolve(type, false, false, false);
-            }
-            // check module node imports packages
-            List packages = module.getImportPackages();
-            ClassNode iType = ClassHelper.makeWithoutCaching(name);
-            for (Iterator iter = packages.iterator(); iter.hasNext();) {
-                String packagePrefix = (String) iter.next();
-                String fqn = packagePrefix + name;
-                iType.setName(fqn);
-                if (resolve(iType, false, false, true)) {
-                    ambiguousClass(type, iType, name, resolved);
+                // check package this class is defined in. The usage of ConstructedClassWithPackage here
+                // means, that the module package will not be involved when the
+                // compiler tries to find an inner class.
+                ConstructedClassWithPackage tmp =  new ConstructedClassWithPackage(module.getPackageName(),name);
+                if (resolve(tmp, false, false, false)) {
+                    type.setRedirect(tmp.redirect());
                     return true;
                 }
-                iType.setName(name);
             }
-            if (!resolved) type.setName(name);
-            return resolved;
+
+            // check module node imports packages
+            List packages = module.getImportPackages();
+            for (Iterator iter = packages.iterator(); iter.hasNext();) {
+                String packagePrefix = (String) iter.next();
+                // We limit the inner class lookups here by using ConstructedClassWithPackage.
+                // This way only the name will change, the packagePrefix will
+                // not be included in the lookup. The case where the
+                // packagePrefix is really a class is handled else where.
+                ConstructedClassWithPackage tmp =  new ConstructedClassWithPackage(packagePrefix,name);
+                if (resolve(tmp, false, false, true)) {
+                    ambiguousClass(type, tmp, name);
+                    type.setRedirect(tmp.redirect());
+                    return true;
+                }
+            }
         }
         return false;
     }
 
     private boolean resolveToClass(ClassNode type) {
         String name = type.getName();
-        if (cachedClasses.get(name) == NO_CLASS) return false;
+
+        // We use here the class cahce cachedClasses to prevent
+        // calls to ClassLoader#loadClass. disabling this cache will
+        // cause a major performance hit. Unlike at the end of this
+        // method we do not return true or false depending on if we
+        // want to recompile or not. If the class was cached, then
+        // we do not want to recompile, recompilation is already
+        // scheduled then
+        Object cached = cachedClasses.get(name);
+        if (cached == NO_CLASS) return false;
+        // cached == SCRIPT should not happen here!
+        if (cached == SCRIPT) throw new GroovyBugError("name "+name+" was marked as script, but was not resolved as such");
+        if (cached != null) return true;
+
         if (currentClass.getModule().hasPackageName() && name.indexOf('.') == -1) return false;
         GroovyClassLoader loader = compilationUnit.getClassLoader();
         Class cls;
@@ -442,10 +550,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (cls == null) return false;
         cachedClasses.put(name, cls);
         setClass(type, cls);
-        //NOTE: we return false here even if we found a class,
-        //but we want to give a possible script a chance to recompile.
-        //this can only be done if the loader was not the instance
-        //defining the class.
+        //NOTE: we might return false here even if we found a class,
+        //      because  we want to give a possible script a chance to
+        //      recompile. This can only be done if the loader was not
+        //      the instance defining the class.
         return cls.getClassLoader() == loader;
     }
 
@@ -678,7 +786,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         Expression left = transform(oldLeft);
         if (left != oldLeft) {
             ClassExpression ce = (ClassExpression) left;
-            addError("you tried to assign a value to " + ce.getType().getName(), oldLeft);
+            addError("you tried to assign a value to the class " + ce.getType().getName(), oldLeft);
             return de;
         }
         Expression right = transform(de.getRightExpression());
@@ -691,7 +799,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     protected Expression transformAnnotationConstantExpression(AnnotationConstantExpression ace) {
         AnnotationNode an = (AnnotationNode) ace.getValue();
         ClassNode type = an.getClassNode();
-        resolveOrFail(type, "unable to find class for annotation", an);
+        resolveOrFail(type, ", unable to find class for annotation", an);
         for (Iterator iter = an.getMembers().entrySet().iterator(); iter.hasNext();) {
             Map.Entry member = (Map.Entry) iter.next();
             Expression memberValue = (Expression) member.getValue();
@@ -710,7 +818,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             //skip builtin properties
             if (an.isBuiltIn()) continue;
             ClassNode type = an.getClassNode();
-            resolveOrFail(type, "unable to find class for annotation", an);
+            resolveOrFail(type, ",  unable to find class for annotation", an);
             for (Iterator iter = an.getMembers().entrySet().iterator(); iter.hasNext();) {
                 Map.Entry member = (Map.Entry) iter.next();
                 Expression memberValue = (Expression) member.getValue();
