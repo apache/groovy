@@ -116,7 +116,7 @@ class LookAndFeelHelper {
             lafClassName = lafInstance.class.name
         } else if (value != null) {
             lafClassName = lafCodeNames[value] ?: value
-            lafInstance = (lafClassName as Class).newInstance()
+            lafInstance = Class.forName(lafClassName, true, getClass().classLoader).newInstance()
         }
 
         // assume all configuration must be done prior to LAF being installed

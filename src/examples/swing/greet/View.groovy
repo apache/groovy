@@ -10,8 +10,7 @@ import java.awt.Cursor
 import java.beans.PropertyChangeListener
 import javax.swing.*
 
-//lookAndFeel('nimbus')
-lookAndFeel('metal', boldFonts: false)
+lookAndFeel('nimbus', 'mac', ['metal', [boldFonts: false]])
 
 actions() {
     loginAction = action(

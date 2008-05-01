@@ -1484,6 +1484,31 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
    }
 
+    void testMultiLookAndFeel() {
+        if (headless) return
+        def swing = new SwingBuilder()
+
+        def oldLAF = UIManager.getLookAndFeel()
+        try {
+            def mlaf = new MetalLookAndFeel()
+            assert swing.lookAndFeel('metal', 'bogus') instanceof MetalLookAndFeel
+            assert swing.lookAndFeel('bogus', 'metal') instanceof MetalLookAndFeel
+            assert swing.lookAndFeel(['metal'], 'bogus') instanceof MetalLookAndFeel
+            assert swing.lookAndFeel('bogus', ['metal']) instanceof MetalLookAndFeel
+            assert swing.lookAndFeel(['metal', [boldFonts:false]], 'bogus') instanceof MetalLookAndFeel
+            assert swing.lookAndFeel('bogus', ['metal', [boldFonts:false]]) instanceof MetalLookAndFeel
+            assert swing.lookAndFeel(mlaf , 'bogus') instanceof MetalLookAndFeel
+            assert swing.lookAndFeel('bogus', mlaf ) instanceof MetalLookAndFeel
+            assert swing.lookAndFeel([mlaf ], 'bogus') instanceof MetalLookAndFeel
+            assert swing.lookAndFeel('bogus', [mlaf ]) instanceof MetalLookAndFeel
+            assert swing.lookAndFeel([mlaf , [boldFonts:false]], 'bogus') instanceof MetalLookAndFeel
+            assert swing.lookAndFeel('bogus', [mlaf , [boldFonts:false]]) instanceof MetalLookAndFeel
+            assert swing.lookAndFeel('bogus', 'fake', 'impossible') == null
+        } finally {
+            UIManager.setLookAndFeel(oldLAF)
+        }
+    }
+
     void testBorders() {
         if (headless) return
         def swing = new SwingBuilder()

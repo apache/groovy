@@ -301,7 +301,7 @@ public class SwingBuilder  extends FactoryBuilderSupport {
             return KeyStroke.getKeyStroke(ks.getKeyCode(), ks.getModifiers() | modifier | Toolkit.getDefaultToolkit().getMenuShortcutKeyMask())        }
     }
 
-    public LookAndFeel lookAndFeel(Object lookAndFeel, Closure initCode = null) {
+    public LookAndFeel lookAndFeel(Object lookAndFeel, Closure initCode) {
         lookAndFeel([:], lookAndFeel, initCode)
     }
 
@@ -312,6 +312,42 @@ public class SwingBuilder  extends FactoryBuilderSupport {
         }
 
         LookAndFeelHelper.instance.lookAndFeel(lookAndFeel, attributes, initCode)
+    }
+
+    public LookAndFeel lookAndFeel(Object... lafs) {
+        if (lafs.length == 1) {
+            lookAndFeel([:], lafs[0], null as Closure);
+        }
+        for (Object laf in lafs) {
+            try {
+                // (ab)use multi-methods
+                return _laf(laf)
+            } catch (Throwable t) {
+                LOG.info "Could not instantiate Look and Feel $laf because of ${t}. Attemting next option."
+            }
+        }
+        LOG.warning "All Look and Feel options failed: $lafs"
+        return null
+    }
+
+    private LookAndFeel _laf(List s) {
+        laf(*l)
+    }
+
+    private LookAndFeel _laf(String s, Map m) {
+        lookAndFeel(m, s, null as Closure)
+    }
+
+    private LookAndFeel _laf(LookAndFeel laf, Map m) {
+        lookAndFeel(m, laf, null as Closure)
+    }
+
+    private LookAndFeel _laf(String s) {
+        lookAndFeel([:], s, null as Closure)
+    }
+
+    private LookAndFeel _laf(LookAndFeel laf) {
+        lookAndFeel([:], laf, null as Closure)
     }
 
     public static buttonGroupAttributeDelegate(def builder, def node, def attributes) {
