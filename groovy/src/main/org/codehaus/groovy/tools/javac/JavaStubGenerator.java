@@ -506,7 +506,12 @@ public class JavaStubGenerator
     
     private void writeGenericsBounds(PrintWriter out, ClassNode type, boolean skipName) {
         if (!skipName) printTypeName(type,out);
-        if (java5 && !type.isGenericsPlaceHolder()) writeGenericsBounds(out,type.getGenericsTypes());
+        if (java5 &&
+            !type.isGenericsPlaceHolder() &&
+            !ClassHelper.isCachedType(type)
+        ) {
+            writeGenericsBounds(out,type.getGenericsTypes());
+        }
     }
     
     private void writeGenericsBounds(PrintWriter out, GenericsType[] genericsTypes) {
