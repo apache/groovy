@@ -123,6 +123,7 @@ class PropertyTest extends GroovySwingTestCase {
     }
 
     void testFinalField() {
+        def shell = new GroovyShell();
         shouldFail {
             shell.execute """
           class A {
