@@ -25,6 +25,10 @@ class LookAndFeelHelper {
 
     // protected so you can subclass and replace the singleton
     protected static LookAndFeelHelper instance;
+    private LookAndFeelHelper() {
+        // linux GTK bug : http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6389282
+        UIManager.getInstalledLookAndFeels();
+    }
 
     public static LookAndFeelHelper getInstance() {
         return instance ?: (instance = new LookAndFeelHelper())
