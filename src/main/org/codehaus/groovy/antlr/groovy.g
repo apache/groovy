@@ -3076,7 +3076,7 @@ options {
     exportVocab=Groovy;             // call the vocabulary "Groovy"
     testLiterals=false;             // don't automatically test for literals
     k=4;                                    // four characters of lookahead
-    charVocabulary='\u0003'..'\uFFFF';
+    charVocabulary='\u0000'..'\uFFFF';
     // without inlining some bitset tests, couldn't do unicode;
     // I need to make ANTLR generate smaller bitsets; see
     // bottom of GroovyLexer.java
