@@ -1713,4 +1713,37 @@ class SwingBuilderTest extends GroovySwingTestCase {
         assert swing.ii.description == '<none>'
 
     }
+
+    void testRenderer() {
+        if (headless) return
+        def swing = new SwingBuilder()
+
+        int count = 0
+        def lcr = swing.listCellRenderer {
+            label()
+            onRender {
+                count++
+            }
+        }
+
+        def f = swing.frame(pack:true, show:true) {
+            ls = list(items:["one", "two"], cellRenderer:lcr)
+        }
+        assert count==2
+        f.dispose()
+
+        count = 0
+        def lcr2 = swing.listCellRenderer {
+            label()
+            button()
+            onRender {
+                count++
+                return (children[row%2])
+            }
+        }
+
+        assert lcr2.getListCellRendererComponent(swing.ls, "x", 0, false, false) instanceof javax.swing.JLabel
+        assert lcr2.getListCellRendererComponent(swing.ls, "x", 1, false, false) instanceof javax.swing.JButton
+
+    }
 }

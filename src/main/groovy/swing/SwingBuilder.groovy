@@ -191,6 +191,13 @@ public class SwingBuilder  extends FactoryBuilderSupport {
         registerFactory("compoundBorder", new CompoundBorderFactory())
         registerFactory("matteBorder", new MatteBorderFactory())
 
+        //
+        // Renderers
+        //
+        RendererFactory renderFactory = new RendererFactory()
+        registerFactory("tableCellRenderer", renderFactory)
+        registerFactory("listCellRenderer", renderFactory)
+        registerFactory("onRender", new RendererUpdateFactory())        
     }
 
     /**
