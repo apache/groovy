@@ -22,9 +22,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.objectweb.asm.Opcodes;
 
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Visitor to produce several optimizations
@@ -36,7 +34,8 @@ public class OptimizerVisitor extends ClassCodeExpressionTransformer {
     private ClassNode currentClass;
     private SourceUnit source;
 
-    Map const2Var = new HashMap();
+    private Map const2Var = new HashMap();
+    private List missingFields = new LinkedList();
 
     public OptimizerVisitor(CompilationUnit cu) {
     }
@@ -45,37 +44,46 @@ public class OptimizerVisitor extends ClassCodeExpressionTransformer {
         this.currentClass = node;
         this.source = source;
         const2Var.clear();
+        missingFields.clear();
         super.visitClass(node);
-        addFields();
+        addMissingFields();
+    }
+
+    private void addMissingFields() {
+        for (Iterator it = missingFields.iterator(); it.hasNext(); ) {
+            FieldNode f = (FieldNode) it.next();
+            currentClass.addField(f);
+        }
+    }
+
+    private void setConstField(ConstantExpression constantExpression) {
+        final Object n = constantExpression.getValue();
+        if (!(n instanceof Number || n instanceof Character)) return;
+        FieldNode field = (FieldNode) const2Var.get(n);
+        if (field!=null) return;
+        final String name = "$const$" + const2Var.size();
+        //TODO: this part here needs a bit of rethinking. If it can happen that the field is defined already,
+        //      then is this code still valid?
+        field = currentClass.getField(name);
+        if (field==null) {
+            field = new FieldNode(name,
+                    Opcodes.ACC_PRIVATE|Opcodes.ACC_STATIC|Opcodes.ACC_SYNTHETIC| Opcodes.ACC_FINAL,
+                    constantExpression.getType(),
+                    currentClass,
+                    constantExpression
+                    );
+            field.setSynthetic(true);
+            missingFields.add(field);
+        }
+        const2Var.put(n, field);
     }
 
     public Expression transform(Expression exp) {
         if (exp == null) return null;
         if (!currentClass.isInterface() && exp.getClass() == ConstantExpression.class) {
-            ConstantExpression constantExpression = (ConstantExpression) exp;
-            final Object n = constantExpression.getValue();
-            if (n instanceof Number || n instanceof Character) {
-                FieldNode field = (FieldNode) const2Var.get(n);
-                if (field == null) {
-                    field = new FieldNode("$const$" + const2Var.size(),
-                            Opcodes.ACC_PRIVATE|Opcodes.ACC_STATIC|Opcodes.ACC_SYNTHETIC| Opcodes.ACC_FINAL,
-                            constantExpression.getType(),
-                            currentClass,
-                            constantExpression
-                            );
-                    field.setSynthetic(true);
-                    const2Var.put(n, field);
-                }
-                constantExpression.setConstantName(field.getName());
-            }
+            setConstField((ConstantExpression)exp);
         }
         return exp.transformExpression(this);
-    }
-
-    private void addFields() {
-        for (Iterator it = const2Var.values().iterator(); it.hasNext(); ) {
-            currentClass.addConstField((FieldNode) it.next());
-        }
     }
 
     protected SourceUnit getSourceUnit() {
