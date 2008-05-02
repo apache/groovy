@@ -219,7 +219,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         // propertiesExpressions will handle the error a bit different
         if (!inSpecialConstructorCall && (inClosure || !ve.isInStaticContext())) return;
         if (stillResolving) return;
-        if (ve == VariableExpression.THIS_EXPRESSION || ve == VariableExpression.SUPER_EXPRESSION) return;
+        if (ve.isThisExpression() || ve.isSuperExpression()) return;
         Variable v = ve.getAccessedVariable();
         if (v != null && !(v instanceof DynamicVariable) && v.isInStaticContext()) return;
         addError("The name " + ve.getName() + " doesn't refer to a declared variable or class. The static" +

@@ -591,7 +591,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             if (it instanceof VariableExpression) {
                 VariableExpression ve = (VariableExpression) it;
                 // stop at super and this
-                if (ve == VariableExpression.SUPER_EXPRESSION || ve == VariableExpression.THIS_EXPRESSION) {
+                if (ve.isSuperExpression() || ve.isThisExpression()) {
                     return null;
                 }
                 name = ve.getName() + "." + name;
@@ -694,8 +694,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     protected Expression transformVariableExpression(VariableExpression ve) {
-        if (ve.getName().equals("this")) return VariableExpression.THIS_EXPRESSION;
-        if (ve.getName().equals("super")) return VariableExpression.SUPER_EXPRESSION;
         Variable v = ve.getAccessedVariable();
         if (v instanceof DynamicVariable) {
             ClassNode t = ClassHelper.make(ve.getName());

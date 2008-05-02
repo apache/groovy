@@ -4403,13 +4403,14 @@ public class AsmClassGenerator extends ClassGenerator {
             return ClassHelper.boolean_TYPE;
         }
         if (expression instanceof VariableExpression) {
-            if (expression == VariableExpression.THIS_EXPRESSION) {
+            VariableExpression varExpr = (VariableExpression)expression;
+
+            if (varExpr.isThisExpression()) {
                 return classNode;
-            } else if (expression == VariableExpression.SUPER_EXPRESSION) {
+            } else if (varExpr.isSuperExpression()) {
                 return classNode.getSuperClass();
             }
 
-            VariableExpression varExpr = (VariableExpression) expression;
             Variable variable = compileStack.getVariable(varExpr.getName(), false);
             if (variable != null && !variable.isHolder()) {
                 ClassNode type = variable.getType();

@@ -25,12 +25,17 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * @version $Revision$
  */
 public class ConstantExpression extends Expression {
-    public static final ConstantExpression VOID = new ConstantExpression(Void.class);
+    // The following fields are only used internally; every occurrence of a user-defined expression of the same kind
+    // has its own instance so as to preserve line information. Consequently, to test for such an expression, don't
+    // compare against the field but call isXXXExpression() instead.
     public static final ConstantExpression NULL = new ConstantExpression(null);
     public static final ConstantExpression TRUE = new ConstantExpression(Boolean.TRUE);
     public static final ConstantExpression FALSE = new ConstantExpression(Boolean.FALSE);
     public static final ConstantExpression EMPTY_STRING = new ConstantExpression("");
     //public static final Expression EMPTY_ARRAY = new PropertyExpression(new ClassExpression(ArgumentListExpression.class.getName()), "EMPTY_ARRAY");
+
+    // the following fields are only used internally; there are no user-defined expressions of the same kind
+    public static final ConstantExpression VOID = new ConstantExpression(Void.class);
     public static final ConstantExpression EMTPY_EXPRESSION = new ConstantExpression(null);
     
     private Object value;
@@ -72,5 +77,21 @@ public class ConstantExpression extends Expression {
 
     public void setConstantName(String constantName) {
         this.constantName = constantName;
+    }
+
+    public boolean isNullExpression() {
+        return value == null;
+    }
+
+    public boolean isTrueExpression() {
+        return Boolean.TRUE.equals(value);
+    }
+
+    public boolean isFalseExpression() {
+        return Boolean.FALSE.equals(value);
+    }
+
+    public boolean isEmptyStringExpression() {
+        return "".equals(value);
     }
 }

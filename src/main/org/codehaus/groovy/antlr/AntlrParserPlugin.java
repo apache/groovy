@@ -1348,16 +1348,13 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     
     protected Expression expression(AST node, boolean convertToConstant) {
         Expression expression = expressionSwitch(node);
-        if (convertToConstant) {
+        if (convertToConstant && expression instanceof VariableExpression) {
             // a method name can never be a VariableExprssion, so it must converted
             // to a ConstantExpression then. This is needed as the expression
             // method doesn't know we want a ConstantExpression instead of a
             // VariableExpression
-            if ( expression != VariableExpression.THIS_EXPRESSION &&
-                 expression != VariableExpression.SUPER_EXPRESSION &&
-                 expression instanceof VariableExpression) 
-            {
-                VariableExpression ve = (VariableExpression) expression;
+            VariableExpression ve = (VariableExpression) expression;
+            if (!ve.isThisExpression() && !ve.isSuperExpression()) {
                 expression = new ConstantExpression(ve.getName());
             }
         }
@@ -1411,6 +1408,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case LITERAL_long:
             case LITERAL_short:
             case LITERAL_void:
+            case LITERAL_this:
+            case LITERAL_super:
                 return variableExpression(node);
 
             case LIST_CONSTRUCTOR:
@@ -1450,18 +1449,13 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 // literals
 
             case LITERAL_true:
-                return ConstantExpression.TRUE;
-
+                return literalExpression(node, Boolean.TRUE);
             case LITERAL_false:
-                return ConstantExpression.FALSE;
-
+                return literalExpression(node, Boolean.FALSE);
             case LITERAL_null:
-                return ConstantExpression.NULL;
-
+                return literalExpression(node, null);
             case STRING_LITERAL:
-                ConstantExpression constantExpression = new ConstantExpression(node.getText());
-                configureAST(constantExpression, node);
-                return constantExpression;
+                return literalExpression(node, node.getText());
 
             case STRING_CONSTRUCTOR:
                 return gstring(node);
@@ -1475,13 +1469,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case NUM_INT:
             case NUM_LONG:
                 return integerExpression(node);
-
-            case LITERAL_this:
-                return VariableExpression.THIS_EXPRESSION;
-
-            case LITERAL_super:
-                return VariableExpression.SUPER_EXPRESSION;
-
 
                 // Unary expressions
             case LNOT:
@@ -1743,6 +1730,12 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         VariableExpression variableExpression = new VariableExpression(text);
         configureAST(variableExpression, node);
         return variableExpression;
+    }
+
+    protected Expression literalExpression(AST node, Object value) {
+        ConstantExpression constantExpression = new ConstantExpression(value);
+        configureAST(constantExpression, node);
+        return constantExpression;
     }
 
     protected Expression rangeExpression(AST rangeNode, boolean inclusive) {
@@ -2068,7 +2061,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         if (isType(LITERAL_super, selector)) {
             implicitThis = true;
             name = new ConstantExpression("super");
-            if (objectExpression == VariableExpression.THIS_EXPRESSION) {
+            if (objectExpression instanceof VariableExpression && ((VariableExpression)objectExpression).isThisExpression()) {
                 objectExpression = VariableExpression.SUPER_EXPRESSION;
             }
         } else if (isPrimitiveTypeLiteral(selector)) {
