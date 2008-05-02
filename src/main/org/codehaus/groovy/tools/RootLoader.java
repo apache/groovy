@@ -17,6 +17,8 @@ package org.codehaus.groovy.tools;
 
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.util.Map;
+import java.util.HashMap;
 
 /**
  * This ClassLoader should be used as root of class loaders. Any
@@ -67,6 +69,8 @@ import java.net.URLClassLoader;
  */
 public class RootLoader extends URLClassLoader {
 
+    private Map customClasses = new HashMap();
+
     /**
      * constructs a new RootLoader without classpath
      *
@@ -82,6 +86,10 @@ public class RootLoader extends URLClassLoader {
      */
     public RootLoader(URL[] urls, ClassLoader parent) {
         super(urls, parent);
+        // major hack here...!
+        try{
+            customClasses.put("org.w3c.dom.Node",super.loadClass("org.w3c.dom.Node",false));
+        } catch (Exception e) {}
     }
 
     private static ClassLoader chooseParent() {
@@ -109,7 +117,9 @@ public class RootLoader extends URLClassLoader {
     protected Class loadClass(final String name, boolean resolve) throws ClassNotFoundException {
         Class c = this.findLoadedClass(name);
         if (c != null) return c;
-
+        c = (Class) customClasses.get(name);
+        if (c != null) return c;
+        
         try {
             c = oldFindClass(name);
         } catch (ClassNotFoundException cnfe) {
