@@ -15,21 +15,6 @@
             <version>1.4.3</version>
         </dependency>
         <dependency>
-            <groupId>org.swinglabs</groupId>
-            <artifactId>swingx</artifactId>
-            <version>0.9.2</version>
-            <exclusions>
-                <exclusion>
-                    <groupId>com.jhlabs</groupId>
-                    <artifactId>filters</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.swinglabs</groupId>
-                    <artifactId>swing-worker</artifactId>
-                </exclusion>
-            </exclusions>
-        </dependency>
-        <dependency>
             <groupId>commons-httpclient</groupId>
             <artifactId>commons-httpclient</artifactId>
             <version>3.0.1</version>
