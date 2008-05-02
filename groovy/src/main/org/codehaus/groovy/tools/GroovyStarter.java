@@ -46,6 +46,7 @@ public class GroovyStarter {
                 }
                 lc.addClassPath(args[argsOffset+1]);
                 argsOffset+=2;
+                hadCP=true;
             } else if (args[argsOffset].equals("--main")) {
                 if (hadMain) break;
                 if (args.length==argsOffset+1) {
@@ -53,6 +54,7 @@ public class GroovyStarter {
                 }
                 lc.setMainClass(args[argsOffset+1]);
                 argsOffset+=2;
+                hadMain=true;
             } else if (args[argsOffset].equals("--conf")) {
                 if (hadConf) break;
                 if (args.length==argsOffset+1) {
@@ -60,11 +62,16 @@ public class GroovyStarter {
                 }
                 conf=args[argsOffset+1];
                 argsOffset+=2;
+                hadConf=true;
             } else {
                 break;
             }            
         }
-        
+
+        // this allows to override the commandline conf
+        String confOverride = System.getProperty("groovy.starter.conf.override",null);
+        if (confOverride!=null) conf = confOverride;
+
         // we need to know the class we want to start
         if (lc.getMainClass()==null && conf==null) {
             exit("no configuration file or main class specified");
@@ -117,13 +124,6 @@ public class GroovyStarter {
         System.err.println(msg);
         System.exit(1);
     }
- 
-    // after migration from classworlds to the rootloader rename
-    // the rootLoader method to main and remove this method as 
-    // well as the classworlds method
-   /* public static void main(String args[],ClassWorld classWorld ) {
-        classworlds(args,classWorld);
-    }*/
     
     public static void main(String args[]) {
         try {
@@ -132,59 +132,4 @@ public class GroovyStarter {
             t.printStackTrace();
         }
     }
-
-    /*public static void classworlds(String oldArgs[],ClassWorld classWorld ) {
-        try {
-            // Creates a realm with *just* the system classloader
-            ClassRealm system = classWorld.newRealm("system");
-     
-            // Get the groovy realm
-            ClassRealm groovy = classWorld.getRealm("groovy");
-           
-            // import everything from the system realm, because imports
-            // are searched *first* in Classworlds
-            groovy.importFrom("system", "");
-            
-            //add tools.jar to classpath
-            String tools = System.getProperty("tools.jar");
-            if (tools!=null) {
-            	URL ref = (new File(tools)).toURI().toURL();
-            	groovy.addConstituent(ref);
-            }
-        
-            if (oldArgs.length==0) {
-                printUsage();
-                System.exit(1);
-            }
-            
-            String program = oldArgs[0].toLowerCase();
-            String[] args = new String[oldArgs.length-1];
-            for (int i=0; i<args.length; i++) {
-                args[i] = oldArgs[i+1];
-            }
-            
-            if (program.equals("groovyc")) {
-                org.codehaus.groovy.tools.FileSystemCompiler.main(args);
-            } else if (program.equals("groovy")) {
-                GroovyMain.main(args);
-            } else if (program.equals("console")) {
-                // work around needed, because the console is compiled after this files
-                Class c = Class.forName("groovy.ui.Console");
-                Method m= c.getMethod("main", new Class[]{String[].class});
-                m.invoke(null, new Object[]{args});
-            } else if (program.equals("groovysh")) {
-                InteractiveShell.main(args);
-            } else {
-                System.out.println("unknown program "+program);
-                printUsage();
-                System.exit(1);
-            }
-        
-        } catch (Exception e) {
-            e.printStackTrace();
-            System.exit(1);
-        }
-        
-    }*/
-    
 }
