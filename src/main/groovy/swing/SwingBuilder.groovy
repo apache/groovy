@@ -36,7 +36,7 @@ public class SwingBuilder  extends FactoryBuilderSupport {
     // local fields
     private static final Logger LOG = Logger.getLogger(SwingBuilder.name)
     // tracks all containing windows, for auto-owned dialogs
-    private boolean headless = false
+    private static boolean headless = false
 
     public SwingBuilder() {
         registerWidgets()
@@ -230,14 +230,16 @@ public class SwingBuilder  extends FactoryBuilderSupport {
      *
      * @param c this closure is run in the EDT
      */
-    public SwingBuilder edt(Closure c) {
-        c.setDelegate(this)
+    public static Binding edt(Binding that, Closure c) {
+        if (that) {
+            c.setDelegate(that)
+        }
         if (headless || SwingUtilities.isEventDispatchThread()) {
-            c.call(this)
+            c.call(that)
         } else {
             try {
                 if (!(c instanceof MethodClosure)) {
-                    c = c.curry([this])
+                    c = c.curry([that])
                 }
                 SwingUtilities.invokeAndWait(c)
             } catch (InterruptedException e) {
@@ -246,7 +248,38 @@ public class SwingBuilder  extends FactoryBuilderSupport {
                 throw new GroovyRuntimeException("exception in event dispatch thread", e.getTargetException())
             }
         }
-        return this
+        return that
+    }
+
+    /**
+     * Utilitiy method to run a closure in EDT,
+     * using <code>SwingUtilities.invokeAndWait</cod>.
+     *
+     * @param c this closure is run in the EDT
+     */
+    public SwingBuilder edt(Closure c) {
+        return SwingBuilder.edt(this, c);
+    }
+
+    /**
+     * Utilitiy method to run a closure in EDT,
+     * using <code>SwingUtilities.invokeLater</cod>.
+     *
+     * @param c this closure is run in the EDT
+     */
+    public static Binding doLater(Binding that, Closure c) {
+        if (that) {
+            c.setDelegate(that)
+        }
+        if (headless) {
+            c.call()
+        } else {
+            if (!(c instanceof MethodClosure)) {
+                c = c.curry([that])
+            }
+            SwingUtilities.invokeLater(c)
+        }
+        return that
     }
 
     /**
@@ -256,16 +289,26 @@ public class SwingBuilder  extends FactoryBuilderSupport {
      * @param c this closure is run in the EDT
      */
     public SwingBuilder doLater(Closure c) {
-        c.setDelegate(this)
-        if (headless) {
-            c.call()
-        } else {
-            if (!(c instanceof MethodClosure)) {
-                c = c.curry([this])
-            }
-            SwingUtilities.invokeLater(c)
+        return SwingBuilder.doLater(this, c);
+    }
+
+    /**
+     * Utility method to run a closure in a separate Thread.
+     * <p>
+     * The closure is wrapped in a thread, and the thread is started
+     * immediatly.
+     *
+     * @param c this closure is started in a separate thread
+     */
+    public static Binding doOutside(Binding that, Closure c) {
+        if (that) {
+            c.setDelegate(that)
         }
-        return this
+        if (!(c instanceof MethodClosure)) {
+            c = c.curry([that])
+        }
+        Thread.start(c)
+        return that
     }
 
     /**
@@ -277,12 +320,7 @@ public class SwingBuilder  extends FactoryBuilderSupport {
      * @param c this closure is started in a separate thread
      */
     public SwingBuilder doOutside(Closure c) {
-        c.setDelegate(this)
-        if (!(c instanceof MethodClosure)) {
-            c = c.curry([this])
-        }
-        Thread.start(c)
-        return this
+        return SwingBuilder.doOutside(this, c)
     }
 
     /**

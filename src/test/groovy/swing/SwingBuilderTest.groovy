@@ -923,7 +923,11 @@ class SwingBuilderTest extends GroovySwingTestCase {
         if (headless) return
 
         def swing = new SwingBuilder()
-        assert swing.bogusWidget() == null
+
+        // change in 1.6, bad node names throw exceptions instead of being ignored
+        shouldFail(MissingMethodException) {
+            swing.bogusWidget() == null
+        }
 
         swing.registerFactory("nullWidget",
             [newInstance:{builder, name, value, props -> null}] as AbstractFactory)

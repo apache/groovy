@@ -18,6 +18,7 @@ package groovy.util;
 
 import groovy.lang.*;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
 
 import java.util.*;
 import java.util.logging.Level;
@@ -102,14 +103,14 @@ public abstract class FactoryBuilderSupport extends Binding {
     }
 
     private LinkedList <Map<String,Object>>contexts = new LinkedList <Map<String,Object>> ();
-    private LinkedList <Closure> attributeDelegates = new LinkedList <Closure> (); //
+    protected LinkedList <Closure> attributeDelegates = new LinkedList <Closure> (); //
     private List <Closure> disposalClosures = new ArrayList <Closure> (); // because of reverse iteration use ArrayList
     private Map <String,Factory> factories = new HashMap <String,Factory> ();
     private Closure nameMappingClosure;
     private FactoryBuilderSupport proxyBuilder;
-    private LinkedList <Closure> preInstantiateDelegates = new LinkedList <Closure> ();
-    private LinkedList <Closure> postInstantiateDelegates = new LinkedList <Closure> ();
-    private LinkedList <Closure> postNodeCompletionDelegates = new LinkedList <Closure> ();
+    protected LinkedList <Closure> preInstantiateDelegates = new LinkedList <Closure> ();
+    protected LinkedList <Closure> postInstantiateDelegates = new LinkedList <Closure> ();
+    protected LinkedList <Closure> postNodeCompletionDelegates = new LinkedList <Closure> ();
 
     public FactoryBuilderSupport() {
         this.proxyBuilder = this;
@@ -447,7 +448,8 @@ public abstract class FactoryBuilderSupport extends Binding {
         Factory factory = proxyBuilder.resolveFactory( name, attributes, value );
         if( factory == null ){
             LOG.log( Level.WARNING, "Could not find match for name '" + name + "'" );
-            return null;
+            throw new MissingMethodExceptionNoStack((String)name, Object.class, new Object[] {attributes, value});
+            //return null;
         }
         proxyBuilder.getContext().put( CURRENT_FACTORY, factory );
         proxyBuilder.getContext().put( CURRENT_NAME, String.valueOf(name) );
@@ -963,7 +965,7 @@ class FactoryInterceptorMetaClass extends DelegatingMetaClass {
                 }
             } catch (MissingMethodException mme2) {
                 // chain secondary exception
-                Throwable root = mme.getCause();
+                Throwable root = mme;
                 while (root.getCause() != null) {
                     root = root.getCause();
                 }
@@ -981,14 +983,14 @@ class FactoryInterceptorMetaClass extends DelegatingMetaClass {
             // attempt factory resolution
             try {
                 if (factory.getMetaClass().respondsTo(factory, methodName).isEmpty()) {
-                    // dispatch to fectories if it is not a literal method
+                    // dispatch to factories if it is not a literal method
                     return factory.invokeMethod(methodName, arguments);
                 } else {
                     return InvokerHelper.invokeMethod(factory, methodName, arguments);
                 }
             } catch (MissingMethodException mme2) {
                 // chain secondary exception
-                Throwable root = mme.getCause();
+                Throwable root = mme;
                 while (root.getCause() != null) {
                     root = root.getCause();
                 }
