@@ -64,10 +64,22 @@ public class Preferences
         });
     }
 
-    public static boolean showLastResult = STORE.getBoolean("show-last-result", true);
+    public static boolean getShowLastResult() {
+        return STORE.getBoolean("show-last-result", true);
+    }
 
-    public static boolean sanitizeStackTrace = STORE.getBoolean("sanitize-stack-trace", true);
+    public static boolean getSanitizeStackTrace() {
+        return STORE.getBoolean("sanitize-stack-trace", true);
+    }
 
+    public static String getEditor() {
+        return STORE.get("editor", System.getenv("EDITOR"));
+    }
+
+    //
+    // Store Access
+    //
+    
     public static String[] keys() throws BackingStoreException {
         return STORE.keys();
     }

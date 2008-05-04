@@ -18,6 +18,7 @@ package org.codehaus.groovy.tools.shell.commands
 
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Shell
+import org.codehaus.groovy.tools.shell.util.Preferences
 
 /**
  * The 'edit' command.
@@ -33,13 +34,11 @@ class EditCommand
     }
     
     private String getEditorCommand() {
-        def editor = System.getenv('EDITOR')
-        
+        def editor = Preferences.editor;
+
+        log.debug("Using editor: $editor")
+
         if (!editor) {
-            //
-            // TODO: Maybe popup a Swing editor here?  Or look for other env vars?  Or use notepad on winblows?
-            //
-            
             fail("Unable to determine which editor to use; check \$EDITOR") // TODO: i18n
         }
         
