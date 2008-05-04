@@ -63,6 +63,8 @@ class EditCommand
             // Wait for it to finishe
             log.debug("Waiting for process: $p")
             p.waitFor()
+
+            log.debug("Editor contents: ${file.text}")
             
             // Load the new lines...
             file.eachLine {
