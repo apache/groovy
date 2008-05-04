@@ -19,28 +19,124 @@ package org.codehaus.groovy.tools.shell
 import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.control.CompilationFailedException
 import org.codehaus.groovy.tools.shell.util.Logger
+import org.codehaus.groovy.tools.shell.util.Preferences
+import org.codehaus.groovy.antlr.SourceBuffer
+import org.codehaus.groovy.antlr.UnicodeEscapingReader
+import org.codehaus.groovy.antlr.parser.GroovyLexer
+import org.codehaus.groovy.antlr.parser.GroovyRecognizer
+import antlr.collections.AST
+import antlr.RecognitionException
+import antlr.TokenStreamException
 
 /**
- * ???
+ * Provides a facade over the parser to recognize valid Groovy syntax.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 class Parser
 {
-    static final String SCRIPT_FILENAME = 'groovysh_parse'
-
     static final String NEWLINE = System.getProperty('line.separator')
+
+    private static final Logger log = Logger.create(Parser.class)
+
+    private final def delegate
+
+    Parser() {
+        def f = Preferences.parserFlavor
+
+        log.debug("Using parser flavor: $f")
+        
+        switch (f) {
+            case 'relaxed':
+                delegate = new RelaxedParser()
+                break
+
+            case 'rigid':
+                delegate = new RigidParser()
+                break
+
+            default:
+                log.error("Invalid parser flavor: $f; using default")
+                delegate = new RigidParser()
+                break
+        }
+    }
     
+    ParseStatus parse(final List buffer) {
+        return delegate.parse(buffer)
+    }
+}
+
+/**
+ * A relaxed parser, which tends to allow more, but won't really catch valid syntax errors.
+ */
+final class RelaxedParser
+{
     private final Logger log = Logger.create(this.class)
 
-    /**
-     * Attempt to parse the given buffer.
-     */
+    private SourceBuffer sourceBuffer
+
+    private String[] tokenNames
+
     ParseStatus parse(final List buffer) {
         assert buffer
 
-        String source = buffer.join(NEWLINE)
+        sourceBuffer = new SourceBuffer()
+
+        def source = buffer.join(Parser.NEWLINE)
+
+        log.debug("Parsing: $source")
+
+        try {
+            doParse(new UnicodeEscapingReader(new StringReader(source), sourceBuffer))
+
+            log.debug('Parse complete')
+
+            return new ParseStatus(ParseCode.COMPLETE)
+        }
+        catch (e) {
+            switch (e.class) {
+                case TokenStreamException:
+                case RecognitionException:
+                    log.debug("Parse incomplete: $e (${e.class.name})")
+    
+                    return new ParseStatus(ParseCode.INCOMPLETE)
+
+                default:
+                    log.debug("Parse error: $e (${e.class.name})")
+
+                    return new ParseStatus(e)
+            }
+        }
+    }
+
+    protected AST doParse(final UnicodeEscapingReader reader) throws Exception {
+        def lexer = new GroovyLexer(reader)
+        reader.setLexer(lexer)
+
+        def parser = GroovyRecognizer.make(lexer)
+        parser.setSourceBuffer(sourceBuffer)
+        tokenNames = parser.getTokenNames()
+
+        parser.compilationUnit()
+        return parser.getAST()
+    }
+}
+
+/**
+ * A more rigid parser which catches more syntax errors, but also tends to barf on stuff that is really valid from time to time.
+ */
+final class RigidParser
+{
+    static final String SCRIPT_FILENAME = 'groovysh_parse'
+
+    private final Logger log = Logger.create(this.class)
+
+    ParseStatus parse(final List buffer) {
+        assert buffer
+
+        String source = buffer.join(Parser.NEWLINE)
 
         log.debug("Parsing: $source")
 
@@ -74,20 +170,14 @@ class Parser
                 //       class a { def b() {
                 //
 
-                if (buffer[-1].trim().endsWith('{')) {
-                    // ignore, this blows
-                }
-                else if (buffer[-1].trim().endsWith('[')) {
-                    // ignore, this blows
-                }
-                else if (buffer[-1].trim().endsWith("'''")) {
-                    // ignore, this blows
-                }
-                else if (buffer[-1].trim().endsWith('"""')) {
-                    // ignore, this blows
-                }
-                else if (buffer[-1].trim().endsWith('\\')) {
-                    // ignore, this blows
+                String tmp = buffer[-1].trim()
+
+                if (tmp.endsWith('{')
+                    || tmp.endsWith('[')
+                    || tmp.endsWith("'''")
+                    || tmp.endsWith('"""')
+                    || tmp.endsWith('\\')) {
+                    log.debug("Ignoring parse failure; might be valid: $e")
                 }
                 else {
                     error = e
@@ -116,13 +206,17 @@ class Parser
  */
 final class ParseCode
 {
-    static final ParseCode COMPLETE = new ParseCode(code: 0)
+    static final ParseCode COMPLETE = new ParseCode(0)
 
-    static final ParseCode INCOMPLETE = new ParseCode(code: 1)
+    static final ParseCode INCOMPLETE = new ParseCode(1)
 
-    static final ParseCode ERROR = new ParseCode(code: 2)
+    static final ParseCode ERROR = new ParseCode(2)
 
-    int code
+    final int code
+
+    private ParseCode(int code) {
+        this.code = code
+    }
 
     String toString() {
         return code

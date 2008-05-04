@@ -68,16 +68,16 @@ public class Preferences
         return STORE.getBoolean("show-last-result", true);
     }
 
-    public static void setShowLastResult(boolean flag) {
-        STORE.putBoolean("show-last-result", flag);
-    }
-
     public static boolean getSanitizeStackTrace() {
         return STORE.getBoolean("sanitize-stack-trace", true);
     }
 
     public static String getEditor() {
         return STORE.get("editor", System.getenv("EDITOR"));
+    }
+
+    public static String getParserFlavor() {
+        return STORE.get("parser-flavor", "rigid");
     }
 
     //
