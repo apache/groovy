@@ -28,7 +28,6 @@ import org.codehaus.groovy.tools.shell.util.Preferences
 import org.codehaus.groovy.tools.shell.Parser
 import org.codehaus.groovy.tools.shell.ParseCode
 
-
 /**
  * An interactive shell for evaluating Groovy code from the command-line (aka. groovysh).
  *
@@ -214,15 +213,16 @@ class Groovysh
             if (command) {
                 log.debug("Loading user-script: $file")
 
-                // Disable showLastResult for profile scripts
-                boolean tmp = Preferences.showLastResult
-                Preferences.showLastResult = false
+                // Disable the result hook for profile scripts
+                def previousHook = resultHook
+                resultHook = { result -> /* nothing */}
 
                 try {
                     command.load(file.toURI().toURL())
                 }
                 finally {
-                    Preferences.showLastResult = tmp
+                    // Restore the result hook
+                    resultHook = previousHook
                 }
             }
             else {
