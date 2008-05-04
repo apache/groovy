@@ -16,22 +16,18 @@
 
 package org.codehaus.groovy.tools.shell
 
-import java.lang.reflect.Method
-
 import jline.Terminal
 import jline.History
 
 import org.codehaus.groovy.runtime.InvokerHelper
-import org.codehaus.groovy.runtime.MethodClosure
-
-import org.codehaus.groovy.control.SourceUnit
-import org.codehaus.groovy.control.CompilationFailedException
-
 import org.codehaus.groovy.tools.shell.util.MessageSource
 import org.codehaus.groovy.tools.shell.util.ANSI.Renderer as AnsiRenderer
 import org.codehaus.groovy.tools.shell.util.XmlCommandRegistrar
 import org.codehaus.groovy.runtime.StackTraceUtils
 import org.codehaus.groovy.tools.shell.util.Preferences
+import org.codehaus.groovy.tools.shell.Parser
+import org.codehaus.groovy.tools.shell.ParseCode
+
 
 /**
  * An interactive shell for evaluating Groovy code from the command-line (aka. groovysh).
@@ -42,13 +38,13 @@ import org.codehaus.groovy.tools.shell.util.Preferences
 class Groovysh
     extends Shell
 {
-    private static final String NEWLINE = System.properties['line.separator']
-    
     private static final MessageSource messages = new MessageSource(Groovysh.class)
 
     private final BufferManager buffers = new BufferManager()
 
-    private final GroovyShell interp
+    private final Parser parser
+
+    private final Interpreter interp
     
     private final List imports = []
     
@@ -61,8 +57,10 @@ class Groovysh
         
         assert classLoader
         assert binding
+
+        parser = new Parser()
         
-        interp = new GroovyShell(classLoader, binding)
+        interp = new Interpreter(classLoader, binding)
 
         //
         // TODO: Change this to be more embed/test friendly
@@ -123,12 +121,20 @@ class Groovysh
         current << line
 
         // Attempt to parse the current buffer
-        def status = parse(current, 1)
+        def status = parser.parse(imports + current)
 
         switch (status.code) {
             case ParseCode.COMPLETE:
-                // Evaluate the current buffer
-                lastResult = result = evaluate(current)
+                log.debug("Evaluating buffer...")
+
+                if (io.verbose) {
+                    displayBuffer(buffer)
+                }
+
+                // Evaluate the current buffer w/imports and dummy statement
+                def buff = imports + [ 'true' ] + current
+
+                lastResult = result = interp.evaluate(buff)
                 buffers.clearSelected()
                 break
 
@@ -150,139 +156,6 @@ class Groovysh
 
     protected Object executeCommand(final String line) {
         return super.execute(line)
-    }
-
-    /**
-     * Attempt to parse the given buffer.
-     */
-    private ParseStatus parse(final List buffer, final int tolerance) {
-        assert buffer
-
-        String source = (imports + buffer).join(NEWLINE)
-
-        log.debug("Parsing: $source")
-
-        SourceUnit parser
-        Throwable error
-
-        try {
-            parser = SourceUnit.create('groovysh_parse', source, tolerance)
-            parser.parse()
-
-            log.debug('Parse complete')
-
-            return new ParseStatus(ParseCode.COMPLETE)
-        }
-        catch (CompilationFailedException e) {
-            //
-            // FIXME: Seems like failedWithUnexpectedEOF() is not always set as expected, as in:
-            //
-            // class a {               <--- is true here
-            //    def b() {            <--- is false here :-(
-            //
-            
-            if (parser.errorCollector.errorCount > 1 || !parser.failedWithUnexpectedEOF()) {
-                //
-                // HACK: Super insane hack... if we detect a syntax error, but the last line of the
-                //       buffer ends with a {, [, ''', """ or \ then ignore...
-                //       and pretend its okay, cause it might be...
-                //
-                //       This seems to get around the problem with things like:
-                //
-                //       class a { def b() {
-                //
-
-                if (buffer[-1].trim().endsWith('{')) {
-                    // ignore, this blows
-                }
-                else if (buffer[-1].trim().endsWith('[')) {
-                    // ignore, this blows
-                }
-                else if (buffer[-1].trim().endsWith("'''")) {
-                    // ignore, this blows
-                }
-                else if (buffer[-1].trim().endsWith('"""')) {
-                    // ignore, this blows
-                }
-                else if (buffer[-1].trim().endsWith('\\')) {
-                    // ignore, this blows
-                }
-                else {
-                    error = e
-                }
-            }
-        }
-        catch (Throwable e) {
-            error = e
-        }
-
-        if (error) {
-            log.debug("Parse error: $error")
-
-            return new ParseStatus(error)
-        }
-        else {
-            log.debug('Parse incomplete')
-
-            return new ParseStatus(ParseCode.INCOMPLETE)
-        }
-    }
-
-    private static final String EVAL_SCRIPT_FILENAME = 'groovysh_evaluate'
-
-    /**
-     * Evaluate the given buffer.  The buffer is assumed to be complete.
-     */
-    private Object evaluate(final List buffer) {
-        assert buffer
-        
-        log.debug("Evaluating buffer...")
-
-        if (io.verbose) {
-            displayBuffer(buffer)
-        }
-
-        //
-        // HACK: Fix for GROOVY-2213.  Insert a runnable statement (ie. 'true') after imports so that we can
-        //       always run the buffer and get any class/enum/whatever defs defined.
-        //
-
-        def source = (imports + [ 'true' ] + buffer).join(NEWLINE)
-        def result
-
-        Class type
-        try {
-            Script script = interp.parse(source, EVAL_SCRIPT_FILENAME)
-            type = script.getClass()
-
-            log.debug("Compiled script: $script")
-
-            if (type.declaredMethods.any { it.name == 'main' }) {
-                result = script.run()
-            }
-
-            // Need to use String.valueOf() here to avoid icky exceptions causes by GString coercion
-            log.debug("Evaluation result: ${String.valueOf(result)} (${result?.getClass()})")
-
-            // Keep only the methods that have been defined in the script
-            type.declaredMethods.each { Method m ->
-                if (!(m.name in [ 'main', 'run' ] || m.name.startsWith('super$') || m.name.startsWith('class$'))) {
-                    log.debug("Saving method definition: $m")
-                    interp.context["${m.name}"] = new MethodClosure(type.newInstance(), m.name)
-                }
-            }
-        }
-        finally {
-            def cache = interp.classLoader.classCache
-            
-            // Remove the script class generated
-            cache.remove(type?.name)
-
-            // Remove the inline closures from the cache as well
-            cache.remove('$_run_closure')
-        }
-        
-        return result
     }
 
     /**
@@ -460,7 +333,7 @@ class Groovysh
                 buff.setLength(0) // Reset the buffer
 
                 // Stop the trace once we find the root of the evaluated script
-                if (e.className == EVAL_SCRIPT_FILENAME && e.methodName == 'run') {
+                if (e.className == Interpreter.SCRIPT_FILENAME && e.methodName == 'run') {
                     io.err.println('        @|bold ...|')
                     break
                 }
@@ -570,43 +443,5 @@ class Groovysh
         assert code != null // This should never happen
 
         return code
-    }
-}
-
-/**
- * Container for the parse code.
- */
-class ParseCode {
-    static final ParseCode COMPLETE = new ParseCode(code: 0)
-    static final ParseCode INCOMPLETE = new ParseCode(code: 1)
-    static final ParseCode ERROR = new ParseCode(code: 2)
-
-    int code
-
-    String toString() {
-        return code
-    }
-}
-
-/**
- * Container for parse status details.
- */
-class ParseStatus
-{
-    final ParseCode code
-
-    final Throwable cause
-
-    ParseStatus(final ParseCode code, final Throwable cause) {
-        this.code = code
-        this.cause = cause
-    }
-
-    ParseStatus(final ParseCode code) {
-        this(code, null)
-    }
-
-    ParseStatus(final Throwable cause) {
-        this(ParseCode.ERROR, cause)
     }
 }
