@@ -51,22 +51,29 @@ class Groovysh
     
     private History history
     
-    Groovysh(final ClassLoader classLoader, final Binding binding, final IO io) {
+    Groovysh(final ClassLoader classLoader, final Binding binding, final IO io, final Closure registrar) {
         super(io)
         
         assert classLoader
         assert binding
+        assert registrar
 
         parser = new Parser()
         
         interp = new Interpreter(classLoader, binding)
 
-        //
-        // TODO: Change this to be more embed/test friendly
-        //
-        
-        def registrar = new XmlCommandRegistrar(this, classLoader)
-        registrar.register(getClass().getResource('commands.xml'))
+        registrar.call(this)
+    }
+
+    private static Closure createDefaultRegistrar() {
+        return { shell ->
+            def r = new XmlCommandRegistrar(shell, classLoader)
+            r.register(getClass().getResource('commands.xml'))
+        }
+    }
+
+    Groovysh(final ClassLoader classLoader, final Binding binding, final IO io) {
+        this(classLoader, binding, io, createDefaultRegistrar())
     }
 
     Groovysh(final Binding binding, final IO io) {
