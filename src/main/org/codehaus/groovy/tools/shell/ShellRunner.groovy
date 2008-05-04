@@ -60,7 +60,7 @@ abstract class ShellRunner
                 throw n
             }
             catch (Throwable t) {
-                log.debug("Work failed: $t")
+                log.debug("Work failed: $t", t)
                 
                 if (errorHandler) {
                     errorHandler.call(t)
