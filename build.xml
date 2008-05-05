@@ -300,7 +300,7 @@ Not found: ${groovyJar14path}
                 <path refid="testLibPath"/>
                 <path refid="jdk14ExtrasPath"/>
             </classpath>
-            <javac source="1.4" target="1.4"/>
+            <javac source="1.4" target="1.4" nowarn="true"/>
         </groovyc>
     </target>
 
@@ -315,7 +315,7 @@ Not found: ${groovyJar14path}
                 <path refid="groovyMainClasses"/>
                 <path refid="testLibPath"/>
             </classpath>
-            <javac source="1.5" target="1.5"/>
+            <javac source="1.5" target="1.5" nowarn="on"/>
         </groovyc>
     </target>
 

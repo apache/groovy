@@ -650,6 +650,7 @@ public class Groovyc extends MatchingTask {
                 {
                     final Map.Entry e = (Map.Entry) i.next();
                     final String key = e.getKey().toString();
+                    final String value = e.getValue().toString();
                     if (key.indexOf("debug") != -1) {
                         String level = "";
                         if (javac.getDebugLevel() != null) {
@@ -658,8 +659,12 @@ public class Groovyc extends MatchingTask {
                         jointOptions.add("-Fg" + level);
                     } else if (key.indexOf("debugLevel") != -1) {
                         // ignore, taken care of in debug
-                    } else if (key.indexOf("nowarn") != -1) {
-                        jointOptions.add("-Fnowarn" + e.getValue());
+                    } else if (((key.indexOf("nowarn") != -1)
+                            || (key.indexOf("verbose") != -1)
+                            || (key.indexOf("deprecation") != -1)
+                        ) && ("on".equalsIgnoreCase(value) || "true".equalsIgnoreCase(value) || "yes".equalsIgnoreCase("value"))
+                    ) {
+                        jointOptions.add("-F" + key);
                     } else if (key.indexOf("classpath") != -1) {
                         classpath.add(javac.getClasspath());
                     } else if ((key.indexOf("depend") != -1)
@@ -670,7 +675,7 @@ public class Groovyc extends MatchingTask {
                         || (key.indexOf("verbose") != -1)
                         || (key.indexOf("depend") != -1))
                     {
-                        jointOptions.add("-J" + key + "=" + e.getValue());
+                        jointOptions.add("-J" + key + "=" + value);
                     } else {
                         log("The option " + key + " cannot be set on the contained <javac> element. The option will be ignored", Project.MSG_WARN);
                     }
