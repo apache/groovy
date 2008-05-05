@@ -300,15 +300,12 @@ public class AsmClassGenerator extends ClassGenerator {
     private void generateCallSiteMethods() {
         final int size = callSites.size();
         for (int i = 0; i < size; i++) {
-            MethodVisitor mv = cv.visitMethod(ACC_PRIVATE+ACC_SYNTHETIC+ACC_STATIC,"$callSite$" + i, "(Lorg/codehaus/groovy/runtime/callsite/CallSite;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", null, null);
+            MethodVisitor mv = cv.visitMethod(ACC_PRIVATE+ACC_SYNTHETIC+ACC_STATIC,"$cs$" + i, "(Lorg/codehaus/groovy/runtime/callsite/CallSite;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", null, null);
             mv.visitCode();
             mv.visitVarInsn(ALOAD,0);
             mv.visitVarInsn(ALOAD,1);
             mv.visitVarInsn(ALOAD,2);
-            mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "acceptBinop","(Ljava/lang/Object;Ljava/lang/Object;)Lorg/codehaus/groovy/runtime/callsite/CallSite;");
-            mv.visitVarInsn(ALOAD,1);
-            mv.visitVarInsn(ALOAD,2);
-            mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "invokeBinop","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+            mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "callBinop","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
             mv.visitInsn(ARETURN);
             mv.visitMaxs(0,0);
             mv.visitEnd();
@@ -2336,45 +2333,17 @@ public class AsmClassGenerator extends ClassGenerator {
 
         // site
 
-        if (!message.equals("plus")
-         && !message.equals("div")
-         && !message.equals("minus")
-         && !message.equals("multiply")
-         && !message.equals("getAt")
-        ) {
-            // ensure VariableArguments are read, not stored
-            boolean lhs = leftHandExpression;
-            leftHandExpression = false;
-
-            boolean oldVal = this.implicitThis;
-            this.implicitThis = false;
-            visitAndAutoboxBoolean(receiver);
-            this.implicitThis = oldVal;
-            int recIdx = compileStack.defineTemporaryVariable("$local$receiver",true);
-            mv.visitVarInsn(ALOAD,recIdx);
-            visitAndAutoboxBoolean(arguments);
-            int argsIdx = compileStack.defineTemporaryVariable("$local$args",true);
-            mv.visitVarInsn(ALOAD,argsIdx);
-            mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "acceptBinop","(Ljava/lang/Object;Ljava/lang/Object;)Lorg/codehaus/groovy/runtime/callsite/CallSite;");
-            mv.visitVarInsn(ALOAD,recIdx);
-            mv.visitVarInsn(ALOAD,argsIdx);
-            mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "invokeBinop","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
-            compileStack.removeVar(argsIdx);
-            compileStack.removeVar(recIdx);
-            leftHandExpression = lhs;
-        }
-        else {
-            // ensure VariableArguments are read, not stored
-            boolean lhs = leftHandExpression;
-            leftHandExpression = false;
-            boolean oldVal = this.implicitThis;
-            this.implicitThis = false;
-            visitAndAutoboxBoolean(receiver);
-            this.implicitThis = oldVal;
-            visitAndAutoboxBoolean(arguments);
-            mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "callBinop","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
-            leftHandExpression = lhs;
-        }
+        // ensure VariableArguments are read, not stored
+        boolean lhs = leftHandExpression;
+        leftHandExpression = false;
+        boolean oldVal = this.implicitThis;
+        this.implicitThis = false;
+        visitAndAutoboxBoolean(receiver);
+        this.implicitThis = oldVal;
+        visitAndAutoboxBoolean(arguments);
+        mv.visitMethodInsn(INVOKESTATIC, internalClassName, "$cs$" + index,"(Lorg/codehaus/groovy/runtime/callsite/CallSite;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+//        mv.visitMethodInsn(INVOKEVIRTUAL, "org/codehaus/groovy/runtime/callsite/CallSite", "callBinop","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+        leftHandExpression = lhs;
     }
 
     private int allocateIndex(String name) {

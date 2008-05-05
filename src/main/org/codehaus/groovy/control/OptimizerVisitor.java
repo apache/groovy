@@ -60,7 +60,10 @@ public class OptimizerVisitor extends ClassCodeExpressionTransformer {
         final Object n = constantExpression.getValue();
         if (!(n instanceof Number || n instanceof Character)) return;
         FieldNode field = (FieldNode) const2Var.get(n);
-        if (field!=null) return;
+        if (field!=null) {
+            constantExpression.setConstantName(field.getName());
+            return;
+        }
         final String name = "$const$" + const2Var.size();
         //TODO: this part here needs a bit of rethinking. If it can happen that the field is defined already,
         //      then is this code still valid?
@@ -75,6 +78,7 @@ public class OptimizerVisitor extends ClassCodeExpressionTransformer {
             field.setSynthetic(true);
             missingFields.add(field);
         }
+        constantExpression.setConstantName(field.getName());
         const2Var.put(n, field);
     }
 
