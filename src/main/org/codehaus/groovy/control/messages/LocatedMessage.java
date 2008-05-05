@@ -52,20 +52,25 @@ public class LocatedMessage extends SimpleMessage
     
     public void write( PrintWriter writer, Janitor janitor )
     {
-        SourceUnit source = (SourceUnit) owner;
-        
-        String name   = source.getName();
-        int    line   = context.getStartLine();
-        int    column = context.getStartColumn();
-        String sample = source.getSample( line, column, janitor );
-        
-        if( sample != null )
-        {
-            writer.println( source.getSample(line, column, janitor) );
+        if (owner instanceof SourceUnit) {
+            SourceUnit source = (SourceUnit) owner;
+
+            String name   = source.getName();
+            int    line   = context.getStartLine();
+            int    column = context.getStartColumn();
+            String sample = source.getSample( line, column, janitor );
+
+            if( sample != null )
+            {
+                writer.println( source.getSample(line, column, janitor) );
+            }
+
+            writer.println( name + ": " + line + ": " + this.message );
+            writer.println("");
+        } else {
+            writer.println( "<No Relevant Source>: " + this.message );
+            writer.println("");
         }
-        
-        writer.println( name + ": " + line + ": " + this.message );
-        writer.println("");
     }
     
 }
