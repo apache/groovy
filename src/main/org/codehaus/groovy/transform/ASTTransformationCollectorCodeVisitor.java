@@ -73,9 +73,9 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
             }
             for (String transformClass : transformClassAnnotation.value()) {
                 try {
-                    Object o = source.getClassLoader().loadClass(transformClass, false, true, false).newInstance();
-                    if (o instanceof ASTTransformation) {
-                        classNode.addTransform((ASTTransformation) o, annotation);
+                    Class klass = source.getClassLoader().loadClass(transformClass, false, true, false);
+                    if (ASTTransformation.class.isAssignableFrom(klass)) {
+                        classNode.addTransform(klass, annotation);
                     } else {
                         source.getErrorCollector().addError(
                                 new SimpleMessage(
@@ -83,18 +83,6 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
                                         + " declared by " + annotation.getClassNode().getName(),
                                         source));
                     }
-                } catch (InstantiationException e) {
-                    source.getErrorCollector().addError(
-                            new SimpleMessage(
-                                    "Could not instantiate Transformation Processor " + transformClass
-                                    + " declared by " + annotation.getClassNode().getName(),
-                                    source));
-                } catch (IllegalAccessException e) {
-                    source.getErrorCollector().addError(
-                            new SimpleMessage(
-                                    "Could not instantiate Transformation Processor " + transformClass
-                                    + " declared by " + annotation.getClassNode().getName(),
-                                    source));
                 } catch (ClassNotFoundException e) {
                     source.getErrorCollector().addError(
                             new SimpleMessage(

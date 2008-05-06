@@ -56,6 +56,7 @@ public class ASTTransformationVisitor extends ClassCodeVisitorSupport {
     private SourceUnit source;
     private List<ASTNode[]> targetNodes;
     private Map<ASTNode, List<ASTTransformation>> transforms;
+    private Map<Class<? extends ASTTransformation>, ASTTransformation> transformInstances;
 
     private ASTTransformationVisitor(CompilePhase phase) {
         this.phase = phase;
@@ -78,17 +79,40 @@ public class ASTTransformationVisitor extends ClassCodeVisitorSupport {
      */
     public void visitClass(ClassNode classNode) {
         // only descend if we have annotations to look for
-        Map<ASTTransformation, ASTNode> baseTransforms = classNode.getTransforms(phase);
+        Map<Class<? extends ASTTransformation>, Set<ASTNode>> baseTransforms = classNode.getTransforms(phase);
         if (!baseTransforms.isEmpty()) {
+            transformInstances = new HashMap<Class<? extends ASTTransformation>, ASTTransformation>();
+            for (Class<? extends ASTTransformation> transformClass : baseTransforms.keySet()) {
+                try {
+                    transformInstances.put(transformClass, transformClass.newInstance());
+                } catch (InstantiationException e) {
+                    source.getErrorCollector().addError(
+                            new SimpleMessage(
+                                    "Could not instantiate Transformation Processor " + transformClass
+                                    , //+ " declared by " + annotation.getClassNode().getName(),
+                                    source));
+                } catch (IllegalAccessException e) {
+                    source.getErrorCollector().addError(
+                            new SimpleMessage(
+                                    "Could not instantiate Transformation Processor " + transformClass
+                                    , //+ " declared by " + annotation.getClassNode().getName(),
+                                    source));
+                }
+            }
+
+
+
             // invert the map, is now one to many
             transforms = new HashMap<ASTNode, List<ASTTransformation>>();
-            for (Map.Entry<ASTTransformation, ASTNode> entry : baseTransforms.entrySet()) {
-                List<ASTTransformation> list = transforms.get(entry.getValue());
-                if (list == null)  {
-                    list = new ArrayList<ASTTransformation>();
-                    transforms.put(entry.getValue(), list);
+            for (Map.Entry<Class<? extends ASTTransformation>, Set<ASTNode>> entry : baseTransforms.entrySet()) {
+                for (ASTNode node : entry.getValue()) {
+                    List<ASTTransformation> list = transforms.get(node);
+                    if (list == null)  {
+                        list = new ArrayList<ASTTransformation>();
+                        transforms.put(node, list);
+                    }
+                    list.add(transformInstances.get(entry.getKey()));
                 }
-                list.add(entry.getKey());
             }
 
             targetNodes = new LinkedList<ASTNode[]>();

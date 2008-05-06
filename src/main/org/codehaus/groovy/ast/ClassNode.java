@@ -109,7 +109,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     /**
      * The ASTTransformations to be applied to the Class
      */
-    private Map<CompilePhase, Map<ASTTransformation, ASTNode>> transformInstances;
+    private Map<CompilePhase, Map<Class<? extends ASTTransformation>, Set<ASTNode>>> transformInstances;
 
 
     // use this to synchronize access for the lazy intit
@@ -272,9 +272,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         if ((modifiers & ACC_INTERFACE) == 0)
           addField("$ownClass", ACC_STATIC|ACC_PUBLIC|ACC_FINAL|ACC_SYNTHETIC, ClassHelper.CLASS_Type, new ClassExpression(this)).setSynthetic(true);
 
-        transformInstances = new EnumMap<CompilePhase, Map<ASTTransformation, ASTNode>>(CompilePhase.class);
+        transformInstances = new EnumMap<CompilePhase, Map<Class <? extends ASTTransformation>, Set<ASTNode>>>(CompilePhase.class);
         for (CompilePhase phase : CompilePhase.values()) {
-            transformInstances.put(phase, new HashMap<ASTTransformation, ASTNode>());
+            transformInstances.put(phase, new HashMap<Class <? extends ASTTransformation>, Set<ASTNode>>());
         }
     }
 
@@ -1125,12 +1125,17 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return super.getAnnotations(type);
     }
 
-    public void addTransform(ASTTransformation transform, ASTNode node) {
-        GroovyASTTransformation annotation = transform.getClass().getAnnotation(GroovyASTTransformation.class);
-        transformInstances.get(annotation.phase()).put(transform, node);
+    public void addTransform(Class<? extends ASTTransformation> transform, ASTNode node) {
+        GroovyASTTransformation annotation = transform.getAnnotation(GroovyASTTransformation.class);
+        Set<ASTNode> nodes = transformInstances.get(annotation.phase()).get(transform);
+        if (nodes == null) {
+            nodes = new LinkedHashSet();
+            transformInstances.get(annotation.phase()).put(transform, nodes);
+        }
+        nodes.add(node);
     }
 
-    public Map<ASTTransformation, ASTNode> getTransforms(CompilePhase phase) {
+    public Map<Class <? extends ASTTransformation>, Set<ASTNode>> getTransforms(CompilePhase phase) {
         return transformInstances.get(phase);
     }
 }
