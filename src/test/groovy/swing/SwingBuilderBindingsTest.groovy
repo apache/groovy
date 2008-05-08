@@ -259,6 +259,42 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         assert swing.txt.enabled == swing.cb.enabled
     }
 
+    public void testValueNodeBinding() {
+        if (isHeadless()) return
+        SwingBuilder swing = new SwingBuilder()
+
+        swing.actions() {
+            checkBox(id:'cb1')
+            checkBox('Button!', id:'cb2', selected:bind(source:cb1, 'selected', id:'binding1'))
+            checkBox(id:'cb3')
+            checkBox('Button!', id:'cb4', selected:bind(target:cb3, 'selected', id:'binding2'))
+        }
+        assert !swing.cb1.selected
+        assert !swing.cb2.selected
+        swing.cb1.selected=true
+        assert swing.cb1.selected
+        assert swing.cb2.selected
+        swing.cb2.selected=false
+        assert swing.cb1.selected
+        assert !swing.cb2.selected
+        swing.cb1.selected=false
+        swing.cb1.selected=true
+        assert swing.cb1.selected
+        assert swing.cb2.selected
+
+        assert !swing.cb3.selected
+        assert !swing.cb4.selected
+        swing.cb3.selected=true
+        assert swing.cb3.selected
+        assert !swing.cb4.selected
+        swing.cb4.selected=true
+        assert swing.cb3.selected
+        assert swing.cb4.selected
+        swing.cb4.selected=false
+        assert !swing.cb3.selected
+        assert !swing.cb4.selected
+    }
+
     public void testReversePropertyPropertites() {
         if (isHeadless()) return
         SwingBuilder swing = new SwingBuilder()
@@ -270,6 +306,47 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         }
         assert swing.binding1.converter != null
         assert swing.binding2.converter == null
+    }
+
+    public void testConverters() {
+        if (isHeadless()) return
+        SwingBuilder swing = new SwingBuilder()
+    
+        swing.actions() {
+            checkBox(id:'doner')
+            checkBox(id:'cb1', enabled:bind(source:doner, sourceProperty:'enabled', converter: {it}, id:'binding1'))
+            checkBox(id:'cb2', enabled:bind(source:doner, sourceProperty:'enabled', id:'binding2') {it})
+            checkBox(id:'cb3', enabled:bind(source:doner, sourceProperty:'enabled', id:'binding3'))
+        }
+        assert swing.binding1.converter != null
+        assert swing.binding2.converter != null
+        assert swing.binding3.converter == null
+        // check double duty
+        shouldFail(RuntimeException) {
+            swing.actions() {
+                checkBox(id:'doner')
+                checkBox(id:'cb1', enabled:bind(source:doner, sourceProperty:'enabled', converter: {it}, id:'binding1') {it})
+            }
+        }
+
+        // check reversed bindings
+        swing.actions() {
+            checkBox(id:'doner')
+            checkBox(id:'cb1', enabled:bind(target:doner, targetProperty:'enabled', converter: {it}, id:'binding1'))
+            checkBox(id:'cb2', enabled:bind(target:doner, targetProperty:'enabled', id:'binding2') {it})
+            checkBox(id:'cb3', enabled:bind(target:doner, targetProperty:'enabled', id:'binding3'))
+        }
+        assert swing.binding1.converter != null
+        assert swing.binding2.converter != null
+        assert swing.binding3.converter == null
+        // check double duty
+        shouldFail(RuntimeException) {
+            swing.actions() {
+                checkBox(id:'doner')
+                checkBox(id:'cb1', enabled:bind(target:doner, targetProperty:'enabled', converter: {it}, id:'binding1') {it})
+            }
+        }
+
     }
 
     public void testPropertyValuePassthrough() {

@@ -97,15 +97,12 @@ public class BindFactory extends AbstractFactory {
      * @throws IllegalAccessException
      */
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
-        if (value != null) {
-            throw new RuntimeException("$name elements do not accept a value argument.")
-        }
         Object source = attributes.remove("source")
         Object target = attributes.remove("target")
 
         TargetBinding tb = null
         if (target != null) {
-            String targetProperty = (String) attributes.remove("targetProperty")
+            String targetProperty = (String) attributes.remove("targetProperty") ?: value
             tb = new PropertyBinding(target, targetProperty)
             if (source == null) {
                 def newAttributes = [:]
@@ -117,19 +114,19 @@ public class BindFactory extends AbstractFactory {
         }
         FullBinding fb
 
-        if (attributes.containsKey("sourceProperty")) {
-            // first check for synthetic properties
-            String property = (String) attributes.remove("sourceProperty")
-            PropertyBinding psb = new PropertyBinding(source, property)
-
-            TriggerBinding trigger = getTriggerBinding(psb)
-            fb = trigger.createBinding(psb, tb)
-        } else if (attributes.containsKey("sourceEvent") && attributes.containsKey("sourceValue")) {
+        if (attributes.containsKey("sourceEvent") && attributes.containsKey("sourceValue")) {
             Closure queryValue = (Closure) attributes.remove("sourceValue")
             ClosureSourceBinding psb = new ClosureSourceBinding(queryValue)
             String trigger = (String) attributes.remove("sourceEvent")
             EventTriggerBinding etb = new EventTriggerBinding(source, trigger)
             fb = etb.createBinding(psb, tb)
+        } else if (attributes.containsKey("sourceProperty") || value) {
+            // first check for synthetic properties
+            String property = (String) attributes.remove("sourceProperty") ?: value
+            PropertyBinding psb = new PropertyBinding(source, property)
+
+            TriggerBinding trigger = getTriggerBinding(psb)
+            fb = trigger.createBinding(psb, tb)
         } else {
             throw new RuntimeException("$name does not have suffient attributes to initialize")
         }
@@ -150,6 +147,29 @@ public class BindFactory extends AbstractFactory {
 
         builder.addDisposalClosure(fb.&unbind)
         return fb
+    }
+
+    public boolean isLeaf() {
+        return false;
+    }
+
+    public boolean isHandlesNodeChildren() {
+        return true;
+    }
+
+    public boolean onNodeChildren(FactoryBuilderSupport builder, Object node, Closure childContent) {
+        if ((node instanceof FullBinding) && (node.converter == null)) {
+            node.converter = childContent
+            return false
+        } else if (node instanceof TriggerBinding) {
+            def bindAttrs = builder.getContext().get(node) ?: [:]
+            if (!bindAttrs.containsKey("converter")) {
+                bindAttrs["converter"] = childContent
+                return false;
+            }
+        }
+
+        throw new RuntimeException("Binding nodes do not accept child content when a converter is already specified")
     }
 
     public TriggerBinding getTriggerBinding(PropertyBinding psb) {
