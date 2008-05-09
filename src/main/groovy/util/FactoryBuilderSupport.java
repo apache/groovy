@@ -504,75 +504,37 @@ public abstract class FactoryBuilderSupport extends Binding {
             // should be called on first build method only
             proxyBuilder.newContext();
         }
-        switch( list.size() ){
-            case 0:
-                node = proxyBuilder.createNode( name, Collections.EMPTY_MAP, null );
-                break;
-            case 1: {
-                Object object = list.get( 0 );
-                if( object instanceof Map ){
-                    node = proxyBuilder.createNode( name, (Map) object, null );
-                }else if( object instanceof Closure ){
-                    closure = (Closure) object;
-                    node = proxyBuilder.createNode( name, Collections.EMPTY_MAP, null );
-                }else{
-                    node = proxyBuilder.createNode( name, Collections.EMPTY_MAP, object );
-                }
-            }
-                break;
-            case 2: {
-                Object object1 = list.get( 0 );
-                Object object2 = list.get( 1 );
-                if( object1 instanceof Map ){
-                    if( object2 instanceof Closure ){
-                        closure = (Closure) object2;
-                        node = proxyBuilder.createNode( name, (Map) object1, null );
-                    }else{
-                        node = proxyBuilder.createNode( name, (Map) object1, object2 );
-                    }
-                }else{
-                    if( object2 instanceof Closure ){
-                        closure = (Closure) object2;
-                        node = proxyBuilder.createNode( name, Collections.EMPTY_MAP, object1 );
-                    }else if( object2 instanceof Map ){
-                        node = proxyBuilder.createNode( name, (Map) object2, object1 );
-                    }else{
-                        throw new MissingMethodException( name.toString(), getClass(),
-                                list.toArray(), false );
-                    }
-                }
-            }
-                break;
-            case 3: {
-                Object arg0 = list.get( 0 );
-                Object arg1 = list.get( 1 );
-                Object arg2 = list.get( 2 );
-                if( arg0 instanceof Map && arg2 instanceof Closure ){
-                    closure = (Closure) arg2;
-                    node = proxyBuilder.createNode( name, (Map) arg0, arg1 );
-                }else if( arg1 instanceof Map && arg2 instanceof Closure ){
-                    closure = (Closure) arg2;
-                    node = proxyBuilder.createNode( name, (Map) arg1, arg0 );
-                }else{
-                    throw new MissingMethodException( name.toString(), getClass(), list.toArray(),
-                            false );
-                }
-            }
-                break;
-            default: {
-                throw new MissingMethodException( name.toString(), getClass(), list.toArray(),
-                        false );
-            }
+        Map namedArgs = Collections.EMPTY_MAP;
 
-        }
+        // the arguments come in like [named_args?, args..., closure?]
+        // so peel off a hashmap from the front,
+        // and a closure from the end
+        // and presume that is what they meant, since there is
+        // no way to distinguish node(a:b,c,d) {..} from node([a:b],[c,d], {..})
+        // i.e. the user can deliberatly confuse the builder and there
+        // is nothing we can really do to prevent that
 
-        if( node == null ){
-            if( proxyBuilder.getContexts().size() == 1 ){
-                // pop the first context
-                proxyBuilder.popContext();
-            }
-            return node;
+        if ((list.size() > 0)
+            && (list.get(0) instanceof LinkedHashMap))
+        {
+            namedArgs = (Map) list.get(0);
+            list = list.subList(1, list.size());
         }
+        if ((list.size() > 0)
+            && (list.get(list.size() - 1) instanceof Closure))
+        {
+            closure = (Closure) list.get(list.size() - 1);
+            list = list.subList(0, list.size() - 1);
+        }
+        Object arg;
+        if (list.size() == 0) {
+            arg = null;
+        } else if (list.size() == 1) {
+            arg = list.get(0);
+        } else {
+            arg = list;
+        }
+        node = proxyBuilder.createNode(name, namedArgs, arg);
 
         Object current = proxyBuilder.getCurrent();
         if( current != null ){

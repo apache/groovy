@@ -152,22 +152,67 @@ class FactoryBuilderSupportTest extends GroovyTestCase{
 
     void testSimpleNodeTwoValues() {
         def b = new SpoofFactoryBuilder()
-        shouldFail(MissingMethodException, {def node = b.foo('arg1', 'arg2')})
+        def node = b.foo('arg1', 'arg2')
+        assert b.@log == [
+                'register', 'foo',
+                'register', 'bar',
+                'register', 'outest',
+                'register', 'outer',
+                'register', 'inner',
+                'new_instance', 'foo', ['arg1', 'arg2'],
+                'handle_node_attributes',node,
+                'node_completed',null,node,
+                'post_node_completion',null, node
+        ]
     }
 
     void testSimpleNodeTwoValuesClosure() {
         def b = new SpoofFactoryBuilder()
-        shouldFail(MissingMethodException, {def node = b.foo('arg1', 'arg2') { 1 } })
+        def node = b.foo('arg1', 'arg2') { 1 }
+        assert b.@log == [
+                'register', 'foo',
+                'register', 'bar',
+                'register', 'outest',
+                'register', 'outer',
+                'register', 'inner',
+                'new_instance', 'foo', ['arg1', 'arg2'],
+                'handle_node_attributes',node,
+                'node_completed',null,node,
+                'post_node_completion',null, node
+        ]
     }
 
     void testSimpleNodeThreeValues() {
         def b = new SpoofFactoryBuilder()
-        shouldFail(MissingMethodException, {def node = b.foo('arg1', 'arg2', 'arg3') })
+        def node = b.foo('arg1', 'arg2', 'arg3')
+        assert b.@log == [
+                'register', 'foo',
+                'register', 'bar',
+                'register', 'outest',
+                'register', 'outer',
+                'register', 'inner',
+                'new_instance', 'foo', ['arg1', 'arg2', 'arg3'],
+                'handle_node_attributes',node,
+                'node_completed',null,node,
+                'post_node_completion',null, node
+        ]
     }
 
     void testSimpleNodeFourValues() {
         def b = new SpoofFactoryBuilder()
-        shouldFail(MissingMethodException, {def node = b.foo('arg1', 'arg2', 'arg3', 'arg4') })
+        def node = b.foo('arg1', 'arg2', 'arg3', 'arg4')
+        assert b.@log == [
+                'register', 'foo',
+                'register', 'bar',
+                'register', 'outest',
+                'register', 'outer',
+                'register', 'inner',
+                'new_instance', 'foo', ['arg1', 'arg2', 'arg3', 'arg4'],
+                'handle_node_attributes',node,
+                'node_completed',null,node,
+                'post_node_completion',null, node
+        ]
+
     }
 
     void testNestedMethodCallsResolution() {
