@@ -34,12 +34,18 @@ public class ObjectArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
         if (!(args [0] instanceof Integer))
           return PojoMetaMethodSite.createNonAwareCallSite(site, metaClass, metaMethod, params, args);
         else
-            return new PojoMetaMethodSite(site, metaClass, metaMethod, params) {
-                public Object invoke(Object receiver, Object[] args) {
-                    final Object[] objects = (Object[]) receiver;
-                    objects[normaliseIndex(((Integer) args[0]).intValue(), objects.length)] = args[1];
-                    return null;
-                }
-            };
+            return new MyPojoMetaMethodSite(site, metaClass, metaMethod, params);
+    }
+
+    private static class MyPojoMetaMethodSite extends PojoMetaMethodSite {
+        public MyPojoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params) {
+            super(site, metaClass, metaMethod, params);
+        }
+
+        public Object invoke(Object receiver, Object[] args) {
+            final Object[] objects = (Object[]) receiver;
+            objects[normaliseIndex(((Integer) args[0]).intValue(), objects.length)] = args[1];
+            return null;
+        }
     }
 }

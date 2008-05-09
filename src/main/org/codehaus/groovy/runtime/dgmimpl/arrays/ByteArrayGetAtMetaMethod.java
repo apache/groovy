@@ -34,26 +34,32 @@ public class ByteArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
             if (!(args [0] instanceof Integer))
               return PojoMetaMethodSite.createNonAwareCallSite(site, metaClass, metaMethod, params, args);
             else
-                return new PojoMetaMethodSite(site, metaClass, metaMethod, params) {
-                    public Object invoke(Object receiver, Object[] args) {
-                        final byte[] objects = (byte[]) receiver;
-                        return objects[normaliseIndex(((Integer) args[0]).intValue(), objects.length)];
-                    }
-
-                    public Object callBinop(Object receiver, Object arg) {
-                        if ((receiver instanceof byte[] && arg instanceof Integer)
-                                && checkPojoMetaClass()) {
-                            final byte[] objects = (byte[]) receiver;
-                            return objects[normaliseIndex(((Integer) arg).intValue(), objects.length)];
-                        }
-                        else
-                          return super.callBinop(receiver,arg);
-                    }
-
-                    public Object invokeBinop(Object receiver, Object arg) {
-                        final byte[] objects = (byte[]) receiver;
-                        return objects[normaliseIndex(((Integer) arg).intValue(), objects.length)];
-                    }
-                };
+                return new MyPojoMetaMethodSite(site, metaClass, metaMethod, params);
         }
-     }
+
+    private static class MyPojoMetaMethodSite extends PojoMetaMethodSite {
+        public MyPojoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params) {
+            super(site, metaClass, metaMethod, params);
+        }
+
+        public Object invoke(Object receiver, Object[] args) {
+            final byte[] objects = (byte[]) receiver;
+            return objects[normaliseIndex(((Integer) args[0]).intValue(), objects.length)];
+        }
+
+        public Object callBinop(Object receiver, Object arg) {
+            if ((receiver instanceof byte[] && arg instanceof Integer)
+                    && checkPojoMetaClass()) {
+                final byte[] objects = (byte[]) receiver;
+                return objects[normaliseIndex(((Integer) arg).intValue(), objects.length)];
+            }
+            else
+              return super.callBinop(receiver,arg);
+        }
+
+        public Object invokeBinop(Object receiver, Object arg) {
+            final byte[] objects = (byte[]) receiver;
+            return objects[normaliseIndex(((Integer) arg).intValue(), objects.length)];
+        }
+    }
+}

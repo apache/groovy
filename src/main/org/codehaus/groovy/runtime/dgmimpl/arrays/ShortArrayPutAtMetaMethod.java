@@ -44,17 +44,23 @@ public class ShortArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
             if (!(args [0] instanceof Integer) || !(args [1] instanceof Short))
               return PojoMetaMethodSite.createNonAwareCallSite(site, metaClass, metaMethod, params, args);
             else
-                return new PojoMetaMethodSite(site, metaClass, metaMethod, params) {
-                    public Object call(Object receiver, Object[] args) {
-                        if ((receiver instanceof short[] && args[0] instanceof Integer && args[1] instanceof Short )
-                                && checkPojoMetaClass()) {
-                            final short[] objects = (short[]) receiver;
-                            objects[normaliseIndex(((Integer) args[0]).intValue(), objects.length)] = ((Short)args[1]).shortValue();
-                            return null;
-                        }
-                        else
-                          return super.call(receiver,args);
-                    }
-                };
+                return new MyPojoMetaMethodSite(site, metaClass, metaMethod, params);
+        }
+
+    private static class MyPojoMetaMethodSite extends PojoMetaMethodSite {
+        public MyPojoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params) {
+            super(site, metaClass, metaMethod, params);
+        }
+
+        public Object call(Object receiver, Object[] args) {
+            if ((receiver instanceof short[] && args[0] instanceof Integer && args[1] instanceof Short )
+                    && checkPojoMetaClass()) {
+                final short[] objects = (short[]) receiver;
+                objects[normaliseIndex(((Integer) args[0]).intValue(), objects.length)] = ((Short)args[1]).shortValue();
+                return null;
+            }
+            else
+              return super.call(receiver,args);
         }
     }
+}

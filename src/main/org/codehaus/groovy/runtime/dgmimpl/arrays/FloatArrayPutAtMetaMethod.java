@@ -44,17 +44,23 @@ public class FloatArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
             if (!(args [0] instanceof Integer) || !(args [1] instanceof Float))
               return PojoMetaMethodSite.createNonAwareCallSite(site, metaClass, metaMethod, params, args);
             else
-                return new PojoMetaMethodSite(site, metaClass, metaMethod, params) {
-                    public Object call(Object receiver, Object[] args) {
-                        if ((receiver instanceof float[] && args[0] instanceof Integer && args[1] instanceof Float )
-                                && checkPojoMetaClass()) {
-                            final float[] objects = (float[]) receiver;
-                            objects[normaliseIndex(((Integer) args[0]).intValue(), objects.length)] = ((Float)args[1]).floatValue();
-                            return null;
-                        }
-                        else
-                          return super.call(receiver,args);
-                    }
-                };
+                return new MyPojoMetaMethodSite(site, metaClass, metaMethod, params);
+        }
+
+    private static class MyPojoMetaMethodSite extends PojoMetaMethodSite {
+        public MyPojoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params) {
+            super(site, metaClass, metaMethod, params);
+        }
+
+        public Object call(Object receiver, Object[] args) {
+            if ((receiver instanceof float[] && args[0] instanceof Integer && args[1] instanceof Float )
+                    && checkPojoMetaClass()) {
+                final float[] objects = (float[]) receiver;
+                objects[normaliseIndex(((Integer) args[0]).intValue(), objects.length)] = ((Float)args[1]).floatValue();
+                return null;
+            }
+            else
+              return super.call(receiver,args);
         }
     }
+}
