@@ -42,10 +42,16 @@ switch (UIManager.getSystemLookAndFeelClassName()) {
 
 consoleFrame = frame(
     title: 'GroovyConsole',
-    location: [100,100], // in groovy 2.0 use platform default location
+    //location: [100,100], // in groovy 2.0 use platform default location
     iconImage: imageIcon("/groovy/ui/ConsoleIcon.png").image,
     defaultCloseOperation: DO_NOTHING_ON_CLOSE,
 ) {
+    try {
+        current.locationByPlatform = true
+    } catch (Exception e) {
+        current.location = [100, 100] // for 1.4 compatibility
+    }
+
     build(menuBarClass)
 
     build(contentPaneClass)
@@ -102,6 +108,42 @@ controller.inputArea.document.addDocumentListener({ controller.setDirty(true) } 
 controller.rootElement = inputArea.document.defaultRootElement
 
 
+import java.awt.dnd.DropTargetEvent
+import java.awt.dnd.DropTarget
+import java.awt.dnd.DropTargetListener
+import java.awt.datatransfer.DataFlavor
+import java.awt.dnd.DropTargetDragEvent
+import java.awt.dnd.DropTargetDropEvent
+import java.awt.dnd.DnDConstants
+
+def dtListener =  [
+    dragEnter:{DropTargetDragEvent evt ->
+        if (evt.dropTargetContext.isDataFlavorSupported(DataFlavor.javaFileListFlavor)) {
+            evt.acceptDrag(DnDConstants.ACTION_COPY)
+        } else {
+            evt.rejectDrag()
+        }
+    },
+    dragOver:{DropTargetDragEvent evt ->
+        //dragEnter(evt)
+    },
+    dropActionChanged:{DropTargetDragEvent evt ->
+        //dragEnter(evt)
+    },
+    dragExit:{DropTargetEvent evt  ->
+    },
+    drop:{DropTargetDropEvent evt  ->
+        evt.acceptDrop DnDConstants.ACTION_COPY
+        //println "Dropping! ${evt.transferable.getTransferData(DataFlavor.javaFileListFlavor)}"
+        if (controller.askToSaveFile()) {
+            controller.loadScriptFile(evt.transferable.getTransferData(DataFlavor.javaFileListFlavor)[0])
+        }
+    },
+] as DropTargetListener
+
+[consoleFrame, inputArea, outputArea].each {
+    new DropTarget(it, DnDConstants.ACTION_COPY, dtListener)
+}
 
 // don't send any return value from the view, all items should be referenced via the bindings
 return null

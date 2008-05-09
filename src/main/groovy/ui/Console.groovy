@@ -124,6 +124,7 @@ class Console implements CaretListener {
 
         def console = new Console(Console.class.classLoader?.getRootLoader())
         console.run()
+        if (args.length == 1) console.loadScriptFile(args[0] as File)
     }
 
     Console() {
@@ -332,16 +333,30 @@ class Console implements CaretListener {
     }
 
     void fileOpen(EventObject evt = null) {
-        scriptFile = selectFilename()
-        if (scriptFile != null) {
-            loadScriptFile(scriptFile)
+        def scriptName = selectFilename()
+        if (scriptName != null) {
+            loadScriptFile(scriptName)
         }
     }
 
-    void loadScriptFile(File scriptFile) {
-        inputArea.text = scriptFile.readLines().join('\n')
-        setDirty(false)
-        inputArea.caretPosition = 0
+    void loadScriptFile(File file) {
+        swing.edt {
+            inputArea.editable = false
+        }
+        swing.doOutside {
+            try {
+                consoleText = file.readLines().join('\n')
+                scriptFile = file
+                swing.edt {
+                    updateTitle()
+                    inputArea.text = consoleText
+                    setDirty(false)
+                    inputArea.caretPosition = 0
+                }
+            } finally {
+                swing.edt { inputArea.editable = true }
+            }
+        }
     }
 
     // Save file - return false if user cancelled save
