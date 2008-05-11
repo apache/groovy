@@ -1305,12 +1305,12 @@ listOfVariables[AST mods, AST t, Token first]
   */
 variableDefinitions[AST mods, AST t]  {Token first = cloneToken(LT(1));
                        if (mods != null) {
-				           first.setLine(mods.getLine());
-					   first.setColumn(mods.getColumn());
-				       } else if (t != null) {
-				           first.setLine(t.getLine());
-				           first.setColumn(t.getColumn());
-				       }}         
+                           first.setLine(mods.getLine());
+                           first.setColumn(mods.getColumn());
+                       } else if (t != null) {
+                           first.setLine(t.getLine());
+                           first.setColumn(t.getColumn());
+                       }}
     :
         listOfVariables[mods,t,first]
     |
@@ -1630,8 +1630,9 @@ openOrClosableBlock  {Token first = LT(1);}
         cp:closableBlockParamsOpt[false]!
         bb:blockBody[EOF]!
         RCURLY!
-        {   if (#cp == null)    #openOrClosableBlock = #(create(SLIST,"{",first,LT(1)),bb);
-	    else                #openOrClosableBlock = #(create(CLOSABLE_BLOCK,"{",first,LT(1)),cp,bb);
+        {
+            if (#cp == null)    #openOrClosableBlock = #(create(SLIST,"{",first,LT(1)),bb);
+            else                #openOrClosableBlock = #(create(CLOSABLE_BLOCK,"{",first,LT(1)),cp,bb);
         }
     ;
 
@@ -1669,7 +1670,7 @@ statement[int prevToken]
     // side-effects.
     // The prevToken is used to check for dumb expressions like +1.
     |    es:expressionStatement[prevToken]
-    	//{#statement = #(create(EXPR,"EXPR",first,LT(1)),es);}
+        //{#statement = #(create(EXPR,"EXPR",first,LT(1)),es);}
 
     // class definition
     |    m:modifiersOpt! typeDefinitionInternal[#m]
@@ -1696,12 +1697,12 @@ statement[int prevToken]
     // While statement
     |   "while"! LPAREN! sce=while_sce:strictContextExpression[false]! RPAREN! nlsWarn!
         (s:SEMI! | while_cbs:compatibleBodyStatement!)
-    	{
-    	    if (#s != null) 
-    	        #statement = #(create(LITERAL_while,"Literal_while",first,LT(1)),while_sce,s);
-    	    else
-    	        #statement = #(create(LITERAL_while,"Literal_while",first,LT(1)),while_sce,while_cbs);
-    	}
+        {
+            if (#s != null)
+                #statement = #(create(LITERAL_while,"Literal_while",first,LT(1)),while_sce,s);
+            else
+                #statement = #(create(LITERAL_while,"Literal_while",first,LT(1)),while_sce,while_cbs);
+        }
 
     /*OBS* no do-while statement in Groovy (too ambiguous)
     // do-while statement
@@ -1724,7 +1725,7 @@ statement[int prevToken]
 
     // synchronize a statement
     |   "synchronized"! LPAREN! sce=synch_sce:strictContextExpression[false]! RPAREN! nlsWarn! synch_cs:compoundStatement!
-    	{#statement = #(create(LITERAL_synchronized,"synchronized",first,LT(1)),synch_sce,synch_cs);}
+        {#statement = #(create(LITERAL_synchronized,"synchronized",first,LT(1)),synch_sce,synch_cs);}
 
     /*OBS*
     // empty statement
@@ -1748,17 +1749,18 @@ forStatement {Token first = LT(1);}
         )
         RPAREN! nls!
         (s:SEMI! | forCbs:compatibleBodyStatement!)                                  // statement to loop over
-        { if (#cl != null) {
-        	if (#s != null) 
-        	    #forStatement = #(create(LITERAL_for,"for",first,LT(1)),cl,s);
-        	else
-        	    #forStatement = #(create(LITERAL_for,"for",first,LT(1)),cl,forCbs);
-          } else {
-          	if (#s != null) 
-          	    #forStatement = #(create(LITERAL_for,"for",first,LT(1)),fic,s);
-          	else
-          	    #forStatement = #(create(LITERAL_for,"for",first,LT(1)),fic,forCbs);
-          }
+        {
+            if (#cl != null) {
+                if (#s != null)
+                    #forStatement = #(create(LITERAL_for,"for",first,LT(1)),cl,s);
+                else
+                    #forStatement = #(create(LITERAL_for,"for",first,LT(1)),cl,forCbs);
+            } else {
+                if (#s != null)
+                    #forStatement = #(create(LITERAL_for,"for",first,LT(1)),fic,s);
+                else
+                    #forStatement = #(create(LITERAL_for,"for",first,LT(1)),fic,forCbs);
+            }
         }
         
     ;
@@ -1838,8 +1840,8 @@ branchStatement {Token first = LT(1);}
         {#branchStatement = #(create(LITERAL_break,"break",first,LT(1)),breakI);}
     
     | "continue"!
-    	( contI:IDENT! )?
-    	{#branchStatement = #(create(LITERAL_continue,"continue",first,LT(1)),contI);}
+        ( contI:IDENT! )?
+        {#branchStatement = #(create(LITERAL_continue,"continue",first,LT(1)),contI);}
 
     // throw an exception
     |   "throw"! throwE:expression[0]!
@@ -2034,8 +2036,8 @@ handler {Token first = LT(1);}
  */
 commandArguments[AST head]
   {
-  	Token first = LT(1);
-  	int hls=0;
+      Token first = LT(1);
+      int hls=0;
   }
     :
         commandArgument ( COMMA! nls! commandArgument )*
