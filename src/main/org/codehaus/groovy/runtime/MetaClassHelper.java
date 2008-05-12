@@ -794,6 +794,101 @@ public class MetaClassHelper {
         return true;
     }
 
+    public static boolean sameClasses(Class[] params) {
+        if (params.length != 0)
+          return false;
+
+        return true;
+    }
+
+    public static boolean sameClasses(Class[] params, Object arg1) {
+        if (params.length != 1)
+          return false;
+
+        if (arg1 == null
+                || (params[0] != arg1.getClass()
+                   &&(    !(arg1 instanceof Wrapper)
+                       || params[0] != ((Wrapper) arg1).getType())))
+          return false;
+
+        return true;
+    }
+
+    public static boolean sameClasses(Class[] params, Object arg1, Object arg2) {
+        if (params.length != 2)
+          return false;
+
+        if (arg1 == null
+                || (params[0] != arg1.getClass()
+                   &&(    !(arg1 instanceof Wrapper)
+                       || params[0] != ((Wrapper)arg1).getType())))
+          return false;
+
+        if (arg2 == null
+                || (params[1] != arg2.getClass()
+                   &&(    !(arg2 instanceof Wrapper)
+                       || params[1] != ((Wrapper)arg2).getType())))
+          return false;
+
+        return true;
+    }
+
+    public static boolean sameClasses(Class[] params, Object arg1, Object arg2, Object arg3) {
+        if (params.length != 3)
+          return false;
+
+        if (arg1 == null
+                || (params[0] != arg1.getClass()
+                   &&(    !(arg1 instanceof Wrapper)
+                       || params[0] != ((Wrapper)arg1).getType())))
+          return false;
+
+        if (arg2 == null
+                || (params[1] != arg2.getClass()
+                   &&(    !(arg2 instanceof Wrapper)
+                       || params[1] != ((Wrapper)arg2).getType())))
+          return false;
+
+        if (arg3 == null
+                || (params[2] != arg3.getClass()
+                   &&(    !(arg3 instanceof Wrapper)
+                       || params[2] != ((Wrapper)arg3).getType())))
+          return false;
+
+        return true;
+    }
+
+    public static boolean sameClasses(Class[] params, Object arg1, Object arg2, Object arg3, Object arg4) {
+        if (params.length != 4)
+          return false;
+
+        if (arg1 == null
+                || (params[0] != arg1.getClass()
+                   &&(    !(arg1 instanceof Wrapper)
+                       || params[0] != ((Wrapper)arg1).getType())))
+          return false;
+
+        if (arg2 == null
+                || (params[1] != arg2.getClass()
+                   &&(    !(arg2 instanceof Wrapper)
+                       || params[1] != ((Wrapper)arg2).getType())))
+          return false;
+
+        if (arg3 == null
+                || (params[2] != arg3.getClass()
+                   &&(    !(arg3 instanceof Wrapper)
+                       || params[2] != ((Wrapper)arg3).getType())))
+          return false;
+
+        if (arg4 == null
+                || (params[3] != arg4.getClass()
+                   &&(    !(arg4 instanceof Wrapper)
+                       || params[3] != ((Wrapper)arg4).getType())))
+          return false;
+
+        return true;
+    }
+
     public static boolean sameClass(Class[] params, Object arg) {
         return !(arg == null
                 || (params[0] != arg.getClass()

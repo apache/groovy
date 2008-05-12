@@ -48,5 +48,19 @@ public class ObjectArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
             final Object[] objects = (Object[]) receiver;
             return objects[normaliseIndex(((Integer) arg).intValue(), objects.length)];
         }
+
+        public Object callBinop(Object receiver, Object arg) {
+            if (checkPojoMetaClass()) {
+                try {
+                    final Object[] objects = (Object[]) receiver;
+                    return objects[normaliseIndex(((Integer) arg).intValue(), objects.length)];
+                }
+                catch (ClassCastException e) {
+                    if ((receiver instanceof Object[]) && (arg instanceof Integer))
+                      throw e;
+                }
+            }
+            return super.callBinop(receiver,arg);
+        }
     }
 }

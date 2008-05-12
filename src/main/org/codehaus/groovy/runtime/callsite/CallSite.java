@@ -19,6 +19,7 @@ import groovy.lang.*;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.reflection.ParameterTypes;
+import org.codehaus.groovy.runtime.ArrayUtil;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.NullObject;
@@ -33,7 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author Alex Tkachman
  */
-public abstract class CallSite {
+public abstract class CallSite /*extends MagicIfSunVm*/ {
     protected final int index;
     public final String name;
     protected final CallSiteArray array;
@@ -115,31 +116,154 @@ public abstract class CallSite {
         }
     }
 
+
     public final Object callSafe(Object receiver, Object[] args) throws Throwable {
         if (receiver == null)
             return null;
 
-        return acceptCall(receiver, args).invoke(receiver, args);
+        return call (receiver, args);
     }
+
+    public Object callSafe (Object receiver) throws Throwable {
+        if (receiver == null)
+            return null;
+
+        return call(receiver);
+    }
+
+    public Object callSafe (Object receiver, Object arg1) throws Throwable {
+        if (receiver == null)
+            return null;
+
+        return call(receiver, arg1);
+    }
+
+    public Object callSafe (Object receiver, Object arg1, Object arg2) throws Throwable {
+        if (receiver == null)
+            return null;
+
+        return call(receiver, arg1, arg2);
+    }
+
+    public Object callSafe (Object receiver, Object arg1, Object arg2, Object arg3) throws Throwable {
+        if (receiver == null)
+            return null;
+
+        return call(receiver, arg1, arg2, arg3);
+    }
+
+    public Object callSafe (Object receiver, Object arg1, Object arg2, Object arg3, Object arg4) throws Throwable {
+        if (receiver == null)
+            return null;
+
+        return call(receiver, arg1, arg2, arg3, arg4);
+    }
+
+
 
     public Object call(Object receiver, Object[] args) {
         return acceptCall(receiver, args).invoke(receiver, args);
     }
 
+    public Object call (Object receiver) throws Throwable {
+        return call(receiver, CallSiteArray.NOPARAM);
+    }
+
+    public Object call (Object receiver, Object arg1) throws Throwable {
+        return call(receiver, ArrayUtil.createArray(arg1));
+    }
+
+    public Object call (Object receiver, Object arg1, Object arg2) throws Throwable {
+        return call(receiver, ArrayUtil.createArray(arg1, arg2));
+    }
+
+    public Object call (Object receiver, Object arg1, Object arg2, Object arg3) throws Throwable {
+        return call(receiver, ArrayUtil.createArray(arg1, arg2, arg3));
+    }
+
+    public Object call (Object receiver, Object arg1, Object arg2, Object arg3, Object arg4) throws Throwable {
+        return call(receiver, ArrayUtil.createArray(arg1, arg2, arg3, arg4));
+    }
+
+
+
     public Object callCurrent (Object receiver, Object [] args) throws Throwable {
         return acceptCurrent(receiver, args).invoke(receiver, args);
     }
     
+    public Object callCurrent (Object receiver) throws Throwable {
+        return callCurrent(receiver, CallSiteArray.NOPARAM);
+    }
+
+    public Object callCurrent (Object receiver, Object arg1) throws Throwable {
+        return callCurrent(receiver, ArrayUtil.createArray(arg1));
+    }
+
+    public Object callCurrent (Object receiver, Object arg1, Object arg2) throws Throwable {
+        return callCurrent(receiver, ArrayUtil.createArray(arg1, arg2));
+    }
+
+    public Object callCurrent (Object receiver, Object arg1, Object arg2, Object arg3) throws Throwable {
+        return callCurrent(receiver, ArrayUtil.createArray(arg1, arg2, arg3));
+    }
+
+    public Object callCurrent (Object receiver, Object arg1, Object arg2, Object arg3, Object arg4) throws Throwable {
+        return callCurrent(receiver, ArrayUtil.createArray(arg1, arg2, arg3, arg4));
+    }
+
+
     public Object callStatic (Object receiver, Object [] args) {
         return acceptStatic(receiver, args).invoke(receiver, args);
     }
 
-    public Object callBinop (Object receiver, Object arg) {
-        return acceptBinop(receiver, arg).invokeBinop(receiver, arg);
+    public Object callStatic (Object receiver) throws Throwable {
+        return callStatic(receiver, CallSiteArray.NOPARAM);
     }
+
+    public Object callStatic (Object receiver, Object arg1) throws Throwable {
+        return callStatic(receiver, ArrayUtil.createArray(arg1));
+    }
+
+    public Object callStatic (Object receiver, Object arg1, Object arg2) throws Throwable {
+        return callStatic(receiver, ArrayUtil.createArray(arg1, arg2));
+    }
+
+    public Object callStatic (Object receiver, Object arg1, Object arg2, Object arg3) throws Throwable {
+        return callStatic(receiver, ArrayUtil.createArray(arg1, arg2, arg3));
+    }
+
+    public Object callStatic (Object receiver, Object arg1, Object arg2, Object arg3, Object arg4) throws Throwable {
+        return callStatic(receiver, ArrayUtil.createArray(arg1, arg2, arg3, arg4));
+    }
+
 
     public final Object callConstructor (Object receiver, Object [] args) throws Throwable {
         return acceptConstructor(receiver, args).invoke(receiver, args);
+    }
+
+    public Object callConstructor (Object receiver) throws Throwable {
+        return callConstructor(receiver, CallSiteArray.NOPARAM);
+    }
+
+    public Object callConstructor (Object receiver, Object arg1) throws Throwable {
+        return callConstructor(receiver, ArrayUtil.createArray(arg1));
+    }
+
+    public Object callConstructor (Object receiver, Object arg1, Object arg2) throws Throwable {
+        return callConstructor(receiver, ArrayUtil.createArray(arg1, arg2));
+    }
+
+    public Object callConstructor (Object receiver, Object arg1, Object arg2, Object arg3) throws Throwable {
+        return callConstructor(receiver, ArrayUtil.createArray(arg1, arg2, arg3));
+    }
+
+    public Object callConstructor (Object receiver, Object arg1, Object arg2, Object arg3, Object arg4) throws Throwable {
+        return callConstructor(receiver, ArrayUtil.createArray(arg1, arg2, arg3, arg4));
+    }
+
+
+    public Object callBinop (Object receiver, Object arg) {
+        return acceptBinop(receiver, arg).invokeBinop(receiver, arg);
     }
 
     final CallSite createCallStaticSite(Class receiver, Object[] args) {

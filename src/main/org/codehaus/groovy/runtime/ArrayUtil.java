@@ -1,6 +1,12 @@
 package org.codehaus.groovy.runtime;
 
 public class ArrayUtil {
+    private static final Object[] EMPTY = new Object[0]
+            ;
+
+    public static Object[] createArray() {
+        return EMPTY;
+    }
 
     public static Object[] createArray(Object arg0) {
         return new Object[]{

@@ -47,5 +47,20 @@ public class ObjectArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
             objects[normaliseIndex(((Integer) args[0]).intValue(), objects.length)] = args[1];
             return null;
         }
+
+        public Object call(Object receiver, Object arg1, Object arg2) throws Throwable {
+            if (checkPojoMetaClass()) {
+                try {
+                    final Object[] objects = (Object[]) receiver;
+                    objects[normaliseIndex(((Integer) arg1).intValue(), objects.length)] = arg2;
+                    return null;
+                }
+                catch (ClassCastException e) {
+                    if ((receiver instanceof Object[]) && (arg1 instanceof Integer))
+                      throw e;
+                }
+            }
+            return super.call(receiver,arg1,arg2);
+        }
     }
 }

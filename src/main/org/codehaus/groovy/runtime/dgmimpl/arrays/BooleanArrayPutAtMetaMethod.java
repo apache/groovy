@@ -56,5 +56,20 @@ public class BooleanArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
             else
               return super.call(receiver,args);
         }
+
+        public Object call(Object receiver, Object arg1, Object arg2) throws Throwable {
+            if (checkPojoMetaClass()) {
+                try {
+                    final boolean[] objects = (boolean[]) receiver;
+                    objects[normaliseIndex(((Integer) arg1).intValue(), objects.length)] = ((Boolean)arg2).booleanValue();
+                    return null;
+                }
+                catch (ClassCastException e) {
+                    if ((receiver instanceof boolean[]) && (arg1 instanceof Integer))
+                      throw e;
+                }
+            }
+            return super.call(receiver,arg1,arg2);
+        }
     }
 }

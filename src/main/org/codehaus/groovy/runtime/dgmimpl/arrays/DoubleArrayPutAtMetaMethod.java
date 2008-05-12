@@ -62,5 +62,20 @@ public class DoubleArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
             else
               return super.call(receiver,args);
         }
+
+        public Object call(Object receiver, Object arg1, Object arg2) throws Throwable {
+            if (checkPojoMetaClass()) {
+                try {
+                    final double[] objects = (double []) receiver;
+                    objects[normaliseIndex(((Integer) arg1).intValue(), objects.length)] = ((Double)arg2).doubleValue();
+                    return null;
+                }
+                catch (ClassCastException e) {
+                    if ((receiver instanceof double[]) && (arg1 instanceof Integer))
+                      throw e;
+                }
+            }
+            return super.call(receiver,arg1,arg2);
+        }
     }
 }

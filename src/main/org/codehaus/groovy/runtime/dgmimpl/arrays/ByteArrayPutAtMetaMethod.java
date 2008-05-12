@@ -62,5 +62,20 @@ public class ByteArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
             else
               return super.call(receiver,args);
         }
+
+        public Object call(Object receiver, Object arg1, Object arg2) throws Throwable {
+            if (checkPojoMetaClass()) {
+                try {
+                    final byte[] objects = (byte[]) receiver;
+                    objects[normaliseIndex(((Integer) arg1).intValue(), objects.length)] = ((Byte)arg2).byteValue();
+                    return null;
+                }
+                catch (ClassCastException e) {
+                    if ((receiver instanceof byte[]) && (arg1 instanceof Integer))
+                      throw e;
+                }
+            }
+            return super.call(receiver,arg1,arg2);
+        }
     }
 }

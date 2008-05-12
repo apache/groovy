@@ -125,7 +125,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
         public final Object callBinop(Object receiver, Object arg) {
             try {
                 if (checkPojoMetaClass()) {
-                    return new Double((double)((Integer) receiver).intValue() / ((Double) arg).doubleValue());
+                    return new Double(((Integer) receiver).intValue() / ((Double) arg).doubleValue());
                 }
             }
             catch (ClassCastException e) {//
@@ -138,7 +138,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
         }
 
         public final Object invokeBinop(Object receiver, Object arg) {
-            return new Double((double)((Integer) receiver).intValue() / ((Double) arg).doubleValue());
+            return new Double(((Integer) receiver).intValue() / ((Double) arg).doubleValue());
         }
     }
 

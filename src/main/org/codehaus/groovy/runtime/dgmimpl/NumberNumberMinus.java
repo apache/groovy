@@ -183,7 +183,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
         public final Object callBinop(Object receiver, Object arg) {
             try {
                 if (checkPojoMetaClass()) {
-                    return new Double(((Double) receiver).doubleValue() - (double)((Integer) arg).intValue());
+                    return new Double(((Double) receiver).doubleValue() - ((Integer) arg).intValue());
                 }
             }
             catch (ClassCastException e) {//
@@ -196,7 +196,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
         }
 
         public final Object invokeBinop(Object receiver, Object arg) {
-            return new Double(((Double) receiver).doubleValue() - (double)((Integer) arg).intValue());
+            return new Double(((Double) receiver).doubleValue() - ((Integer) arg).intValue());
         }
     }
 

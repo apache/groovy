@@ -57,15 +57,6 @@ def MultiplyAtAv(n, v, AtAv){
     MultiplyAtv(n, u, AtAv)
 }
 
-//class U {
-//    boolean headless
-//
-//    def m () {
-//        assert headless != false
-//        headless = GraphicsEnvironment.isHeadless()
-//    }
-//}
-//new U()
 
 long start = System.currentTimeMillis ()
 assert start >= 0

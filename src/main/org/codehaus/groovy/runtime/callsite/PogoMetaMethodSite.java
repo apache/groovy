@@ -65,7 +65,7 @@ public class PogoMetaMethodSite extends MetaMethodSite {
         if(checkCall(receiver, args))
           return invoke(receiver,args);
         else
-          return createCallSite(receiver, args).invoke(receiver,args);
+          return super.call(receiver, args);
     }
 
     protected boolean checkCall(Object receiver, Object[] args) {
@@ -73,6 +73,96 @@ public class PogoMetaMethodSite extends MetaMethodSite {
             return usage.get() == 0
                && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
                && MetaClassHelper.sameClasses(params, args);
+        }
+        catch (NullPointerException e) {
+            if (receiver == null)
+              return false;
+            throw e;
+        }
+        catch (ClassCastException e) {
+            if (!(receiver instanceof GroovyObject))
+              return false;
+            throw e;
+        }
+    }
+
+    protected boolean checkCall(Object receiver) {
+        try {
+            return usage.get() == 0
+               && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
+               && MetaClassHelper.sameClasses(params);
+        }
+        catch (NullPointerException e) {
+            if (receiver == null)
+              return false;
+            throw e;
+        }
+        catch (ClassCastException e) {
+            if (!(receiver instanceof GroovyObject))
+              return false;
+            throw e;
+        }
+    }
+
+    protected boolean checkCall(Object receiver, Object arg1) {
+        try {
+            return usage.get() == 0
+               && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
+               && MetaClassHelper.sameClasses(params, arg1);
+        }
+        catch (NullPointerException e) {
+            if (receiver == null)
+              return false;
+            throw e;
+        }
+        catch (ClassCastException e) {
+            if (!(receiver instanceof GroovyObject))
+              return false;
+            throw e;
+        }
+    }
+
+    protected boolean checkCall(Object receiver, Object arg1, Object arg2) {
+        try {
+            return usage.get() == 0
+               && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
+               && MetaClassHelper.sameClasses(params, arg1, arg2);
+        }
+        catch (NullPointerException e) {
+            if (receiver == null)
+              return false;
+            throw e;
+        }
+        catch (ClassCastException e) {
+            if (!(receiver instanceof GroovyObject))
+              return false;
+            throw e;
+        }
+    }
+
+    protected boolean checkCall(Object receiver, Object arg1, Object arg2, Object arg3) {
+        try {
+            return usage.get() == 0
+               && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
+               && MetaClassHelper.sameClasses(params, arg1, arg2, arg3);
+        }
+        catch (NullPointerException e) {
+            if (receiver == null)
+              return false;
+            throw e;
+        }
+        catch (ClassCastException e) {
+            if (!(receiver instanceof GroovyObject))
+              return false;
+            throw e;
+        }
+    }
+
+    protected boolean checkCall(Object receiver, Object arg1, Object arg2, Object arg3, Object arg4) {
+        try {
+            return usage.get() == 0
+               && ((GroovyObject)receiver).getMetaClass() == metaClass // metaClass still be valid
+               && MetaClassHelper.sameClasses(params, arg1, arg2, arg3, arg4);
         }
         catch (NullPointerException e) {
             if (receiver == null)
@@ -121,7 +211,6 @@ public class PogoMetaMethodSite extends MetaMethodSite {
 
     public static class PogoCachedMethodSite extends PogoMetaMethodSite {
         final Method reflect;
-        boolean compiled;
 
         public PogoCachedMethodSite(CallSite site, MetaClassImpl metaClass, CachedMethod metaMethod, Class[] params) {
             super(site, metaClass, metaMethod, params);
@@ -175,6 +264,10 @@ public class PogoMetaMethodSite extends MetaMethodSite {
 
         public PogoCachedMethodSiteNoUnwrapNoCoerce(CallSite site, MetaClassImpl metaClass, CachedMethod metaMethod, Class params[]) {
             super(site, metaClass, metaMethod, params);
+        }
+
+        protected boolean checkCall(Object receiver, Object[] args) {
+            return ((CachedMethod)metaMethod).pojoCallSiteConstructor == null &&  super.checkCall(receiver, args);
         }
 
         public final Object invoke(Object receiver, Object[] args) {

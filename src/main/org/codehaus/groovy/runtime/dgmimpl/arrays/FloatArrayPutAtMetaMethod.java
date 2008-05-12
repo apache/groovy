@@ -62,5 +62,20 @@ public class FloatArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
             else
               return super.call(receiver,args);
         }
+
+        public Object call(Object receiver, Object arg1, Object arg2) throws Throwable {
+            if (checkPojoMetaClass()) {
+                try {
+                    final float [] objects = (float[]) receiver;
+                    objects[normaliseIndex(((Integer) arg1).intValue(), objects.length)] = ((Float)arg2).floatValue();
+                    return null;
+                }
+                catch (ClassCastException e) {
+                    if ((receiver instanceof float[]) && (arg1 instanceof Integer))
+                      throw e;
+                }
+            }
+            return super.call(receiver,arg1,arg2);
+        }
     }
 }

@@ -33,9 +33,12 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.concurrent.LinkedBlockingQueue;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
  * @author Alex.Tkachman
@@ -47,11 +50,11 @@ public class CachedMethod extends MetaMethod implements Comparable, Opcodes{
     private int methodIndex;
     private int hashCode;
 
-//    private final AtomicBoolean queuedToCompile = new AtomicBoolean(false);
+    private final AtomicBoolean queuedToCompile = new AtomicBoolean();
 
     private static MyComparator comparator = new MyComparator();
 
-    private SoftReference<Constructor> pogoCallSiteConstructor, pojoCallSiteConstructor, staticCallSiteConstructor;
+    public SoftReference<Constructor> pogoCallSiteConstructor, pojoCallSiteConstructor, staticCallSiteConstructor;
 
     public CachedMethod(CachedClass clazz, Method method) {
         this.cachedMethod = method;
@@ -147,17 +150,17 @@ public class CachedMethod extends MetaMethod implements Comparable, Opcodes{
     }
 
     public boolean canBeCalledByReflector () {
-            if (!Modifier.isPublic(cachedClass.getModifiers()))
-                return false;
+        if (!Modifier.isPublic(cachedClass.getModifiers()))
+            return false;
 
-            if (!Modifier.isPublic(getModifiers()))
+        if (!Modifier.isPublic(getModifiers()))
+          return false;
+
+        getParameterTypes();
+        for (int i = 0; i != parameterTypes.length; ++i) {
+            if (!parameterTypes[i].isPrimitive && !Modifier.isPublic(parameterTypes[i].getModifiers()))
               return false;
-
-            getParameterTypes();
-            for (int i = 0; i != parameterTypes.length; ++i) {
-                if (!parameterTypes[i].isPrimitive && !Modifier.isPublic(parameterTypes[i].getModifiers()))
-                  return false;
-            }
+        }
         return true;
     }
 
@@ -342,6 +345,71 @@ public class CachedMethod extends MetaMethod implements Comparable, Opcodes{
         mv.visitEnd();
         }
 
+        if (getParamsCount() <= 4)
+        {
+            StringBuilder pdescb = new StringBuilder();
+            final int pc = getParamsCount();
+            for (int i = 0; i != pc; ++i)
+              pdescb.append("Ljava/lang/Object;");
+
+            String pdesc = pdescb.toString();
+
+        mv = cw.visitMethod(ACC_PUBLIC, "callCurrent", "(Ljava/lang/Object;" + pdesc + ")Ljava/lang/Object;", null, new String[] { "java/lang/Throwable" });
+        mv.visitCode();
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitVarInsn(ALOAD, 1);
+        for (int i = 0; i != pc; ++i)
+            mv.visitVarInsn(ALOAD, i+2);
+        mv.visitMethodInsn(INVOKEVIRTUAL, "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", "checkCall", "(Ljava/lang/Object;" + pdesc + ")Z");
+        Label l0 = new Label();
+        mv.visitJumpInsn(IFEQ, l0);
+
+        BytecodeHelper helper = new BytecodeHelper(mv);
+
+        Class callClass = getDeclaringClass().getTheClass();
+        boolean useInterface = callClass.isInterface();
+
+        String type = BytecodeHelper.getClassInternalName(callClass.getName());
+        String descriptor = BytecodeHelper.getMethodDescriptor(getReturnType(), getNativeParameterTypes());
+
+        // make call
+        if (isStatic()) {
+            genLoadParametersDirect(2, mv, helper);
+            mv.visitMethodInsn(INVOKESTATIC, type, getName(), descriptor);
+        } else {
+            mv.visitVarInsn(ALOAD, 1);
+            helper.doCast(callClass);
+            genLoadParametersDirect(2, mv, helper);
+            mv.visitMethodInsn((useInterface) ? INVOKEINTERFACE : INVOKEVIRTUAL, type, getName(), descriptor);
+        }
+
+        helper.box(getReturnType());
+        if (getReturnType() == void.class) {
+            mv.visitInsn(ACONST_NULL);
+        }
+
+        mv.visitInsn(ARETURN);
+        mv.visitLabel(l0);
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitVarInsn(ALOAD, 1);
+        for (int i = 0; i != pc; ++i)
+            mv.visitVarInsn(ALOAD, i+2);
+        mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/ArrayUtil", "createArray", "(" + pdesc + ")[Ljava/lang/Object;");
+        mv.visitVarInsn(ASTORE, pc + 2);
+        mv.visitVarInsn(ALOAD, pc + 2);
+        mv.visitVarInsn(ALOAD, 0);
+        mv.visitFieldInsn(GETFIELD, "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", "array", "Lorg/codehaus/groovy/runtime/callsite/CallSiteArray;");
+        mv.visitFieldInsn(GETFIELD, "org/codehaus/groovy/runtime/callsite/CallSiteArray", "owner", "Ljava/lang/Class;");
+        mv.visitMethodInsn(INVOKEVIRTUAL, "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", "createCallCurrentSite", "(Ljava/lang/Object;[Ljava/lang/Object;Ljava/lang/Class;)Lorg/codehaus/groovy/runtime/callsite/CallSite;");
+        mv.visitVarInsn(ALOAD, 1);
+        mv.visitVarInsn(ALOAD, pc + 2);
+        mv.visitMethodInsn(INVOKEVIRTUAL, "org/codehaus/groovy/runtime/callsite/CallSite", "invoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
+        mv.visitInsn(ARETURN);
+        mv.visitMaxs(0, 0);
+        mv.visitEnd();
+        }
+
+
         {
         mv = cw.visitMethod(ACC_PUBLIC, "call", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", null, new String[] { "java/lang/Throwable" });
         mv.visitCode();
@@ -393,14 +461,6 @@ public class CachedMethod extends MetaMethod implements Comparable, Opcodes{
         mv.visitEnd();
         }
 
-        {
-        mv = cw.visitMethod(ACC_PUBLIC|ACC_FINAL, "wantProvideCallSite", "()Z", null, null);
-        mv.visitCode();
-        mv.visitInsn(ICONST_0);
-        mv.visitInsn(IRETURN);
-        mv.visitMaxs(0, 0);
-        mv.visitEnd();
-        }
         cw.visitEnd();
 
         byte [] bytes = cw.toByteArray();
@@ -408,6 +468,9 @@ public class CachedMethod extends MetaMethod implements Comparable, Opcodes{
     }
 
     public PogoMetaMethodSite createPogoMetaMethodSite(CallSite site, MetaClassImpl metaClass, Class[] params) {
+        if (!hasPogoCallSiteConstructor())
+          compileMethod();
+
         if (pogoCallSiteConstructor != null) {
             final Constructor constructor = pogoCallSiteConstructor.get();
             if (constructor != null) {
@@ -419,6 +482,9 @@ public class CachedMethod extends MetaMethod implements Comparable, Opcodes{
                 }
             }
         }
+//        if (queuedToCompile.compareAndSet(false,true)) {
+//            CompileThread.addMethod(this);
+//        }
         return new PogoMetaMethodSite.PogoCachedMethodSiteNoUnwrapNoCoerce(site, metaClass, this, params);
     }
 
@@ -458,6 +524,38 @@ public class CachedMethod extends MetaMethod implements Comparable, Opcodes{
         return pogoCallSiteConstructor != null && pogoCallSiteConstructor.get() != null;
     }
 
+    private void compileMethod() {
+        if(!isCompilable())
+          return;
+
+        ClassWriter cw = new ClassWriter(true);
+
+        final CachedClass declClass = getDeclaringClass();
+        final Class acls = declClass.getTheClass();
+        final String name;
+        if (declClass.getName().startsWith("java."))
+          name = acls.getName().replace('.','_') + "$" + getName();
+        else
+          name = declClass.getName() + "$" + getName();
+
+        final byte[] bytes = genPogoMetaMethodSite(cw, name);
+
+        final Class pogoSiteClass = AccessController.doPrivileged( new PrivilegedAction<Class>(){
+            public Class run() {
+                return new MyClassLoader(acls, name, bytes).cls;
+            }
+        });
+
+        if (pogoSiteClass != null) {
+            try {
+                final Constructor constructor = pogoSiteClass.getConstructor(CallSite.class, MetaClassImpl.class, MetaMethod.class, Class[].class);
+                pogoCallSiteConstructor = new SoftReference<Constructor>(constructor);
+            } catch (NoSuchMethodException e) {
+                pogoCallSiteConstructor = null;
+            }
+        }
+    }
+
     private static class MyComparator implements Comparator {
         public int compare(Object o1, Object o2) {
             if (o1 instanceof CachedMethod)
@@ -479,6 +577,7 @@ public class CachedMethod extends MetaMethod implements Comparable, Opcodes{
 
         private CompileThread() {
             setDaemon(true);
+            setPriority(Thread.MAX_PRIORITY-2);
         }
 
         public void run() {
@@ -486,27 +585,7 @@ public class CachedMethod extends MetaMethod implements Comparable, Opcodes{
                 while (true) {
                     final CachedMethod method = (CachedMethod) queue.take();
                     if (method != null) {
-                        ClassWriter cw = new ClassWriter(true);
-
-                        final CachedClass declClass = method.getDeclaringClass();
-                        final Class acls = declClass.getTheClass();
-                        String name;
-                        if (declClass.getName().startsWith("java."))
-                          name = acls.getName().replace('.','_') + "$" + method.getName();
-                        else
-                          name = declClass.getName() + "$" + method.getName();
-                        
-                        byte[] bytes = method.genPogoMetaMethodSite(cw, name);
-
-                        final Class pogoSiteClass = new MyClassLoader(acls.getClassLoader(), name, bytes).cls;
-                        if (pogoSiteClass != null) {
-                            try {
-                                final Constructor constructor = pogoSiteClass.getConstructor(CallSite.class, MetaClassImpl.class, MetaMethod.class, Class[].class);
-                                method.pogoCallSiteConstructor = new SoftReference<Constructor> (constructor);
-                            } catch (NoSuchMethodException e) {
-                                method.pogoCallSiteConstructor = null;
-                            }
-                        }
+                        method.compileMethod();
                     }
                 }
             }
@@ -573,13 +652,26 @@ public class CachedMethod extends MetaMethod implements Comparable, Opcodes{
         }
     }
 
+    protected void genLoadParametersDirect(int argumentIndex, MethodVisitor mv, BytecodeHelper helper) {
+        CachedClass[] parameters = getParameterTypes();
+        int size = parameters.length;
+        for (int i = 0; i < size; i++) {
+            // unpack argument from Object[]
+            mv.visitVarInsn(ALOAD, argumentIndex+i);
+
+            // cast argument to parameter class, inclusive unboxing
+            // for methods with primitive types
+            Class type = parameters[i].getTheClass();
+            if (type.isPrimitive()) {
+                helper.unbox(type);
+            } else {
+                helper.doCast(type);
+            }
+        }
+    }
+
     private boolean isCompilable () {
-        if (getName().startsWith("java.")) {
-            return isPublic() && publicParams ();
-        }
-        else {
-            return isPublic() && publicParams();
-        }
+        return Modifier.isPublic(cachedClass.getModifiers()) && isPublic() && publicParams();
     }
 
     private boolean publicParams() {
@@ -593,9 +685,9 @@ public class CachedMethod extends MetaMethod implements Comparable, Opcodes{
     private static class MyClassLoader extends ClassLoader {
         final Class cls;
 
-        private MyClassLoader(ClassLoader parent, String name, byte bytes []) {
-            super(parent);
-            cls = defineClass(name, bytes, 0, bytes.length);
+        private MyClassLoader(Class parent, String name, byte bytes []) {
+            super(parent.getClassLoader());
+            cls = defineClass(name, bytes, 0, bytes.length, parent.getProtectionDomain());
             resolveClass(cls);
         }
 
