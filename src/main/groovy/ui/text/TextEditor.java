@@ -74,7 +74,8 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
     public static final String FIND_NEXT = "Find Next";
     public static final String FIND_PREVIOUS = "Find Previous";
     public static final String REPLACE = "Replace...";
-    
+    public static final String AUTO_INDENT = "AutoIndent";
+
     private static final String TABBED_SPACES = "    ";
     private static final Pattern TAB_BACK_PATTERN = 
         Pattern.compile("^(([\t])|(    )|(   )|(  )|( ))", Pattern.MULTILINE);
@@ -213,7 +214,13 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
             iMap = iMap.getParent();
         } while (iMap != null);
         getInputMap().put(keyStroke, REPLACE);
-        
+
+        action = new AutoIndentAction();
+        getActionMap().put(AUTO_INDENT, action);
+        keyStroke =
+            KeyStroke.getKeyStroke(KeyEvent.VK_ENTER, 0, false);
+        getInputMap().put(keyStroke, AUTO_INDENT);
+
         setAutoscrolls(true);
         
         defaultCaret = getCaret();

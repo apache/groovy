@@ -166,7 +166,9 @@ $Date$
         <mkdir dir="${toolsClassesDirectory}"/>
 
         <javac srcdir="${mainSourceDirectory}" includeantruntime="false" destdir="${mainClassesDirectory}"
-               deprecation="on" debug="yes" source="1.5" target="1.5" fork="true" classpathref="compilePath"/>
+               deprecation="on" debug="yes" source="1.5" target="1.5" fork="true" classpathref="compilePath">
+            <exclude name="groovy/ui/**/*.java"/>
+        </javac>
         <antcall inheritall="true" target="-stagedcompile-groovy"/>
     </target>
 
@@ -176,6 +178,7 @@ $Date$
                 <pathelement path="${mainClassesDirectory}"/>
                 <path refid="compilePath"/>
             </classpath>
+            <javac deprecation="on" debug="yes" source="1.5" target="1.5"/>
         </groovyc>
     </target>
 
