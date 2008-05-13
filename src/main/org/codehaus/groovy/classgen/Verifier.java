@@ -777,15 +777,15 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         if (!oldMethod.getName().equals(overridingMethod.getName())) return null;
 
         // parameters
-        boolean normalEqualParamerters = equalParametersNormal(overridingMethod,oldMethod);
-        boolean genericEqualParamerters = equalParametersWithGenerics(overridingMethod,oldMethod,genericsSpec);
-        if (!normalEqualParamerters && !genericEqualParamerters) return null;
+        boolean normalEqualParameters = equalParametersNormal(overridingMethod,oldMethod);
+        boolean genericEqualParameters = equalParametersWithGenerics(overridingMethod,oldMethod,genericsSpec);
+        if (!normalEqualParameters && !genericEqualParameters) return null;
 
         // return type
         ClassNode mr = overridingMethod.getReturnType();
         ClassNode omr = oldMethod.getReturnType();
         boolean equalReturnType = mr.equals(omr);
-        if (equalReturnType && normalEqualParamerters) return null;
+        if (equalReturnType && normalEqualParameters) return null;
 
         // if we reach this point we have at last one parameter or return type, that
         // is different in its specified form. That means we have to create a bridge method!
