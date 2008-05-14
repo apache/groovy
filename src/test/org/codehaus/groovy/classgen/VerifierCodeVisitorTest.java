@@ -39,7 +39,6 @@ public class VerifierCodeVisitorTest extends TestCase {
         assertInvalidName("a!");
         assertInvalidName("a.");
         assertInvalidName("$");
-        assertInvalidName("$foo");
     }
 
     protected void assertValidName(String name) {

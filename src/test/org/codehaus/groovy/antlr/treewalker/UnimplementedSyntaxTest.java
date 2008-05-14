@@ -175,15 +175,6 @@ public class UnimplementedSyntaxTest extends GroovyTestCase {
         assertNotNull(compile("public static transient final native threadsafe synchronized volatile strictfp foo() {}")); // fails after parser
     }
 
-    // -------------------------------
-    // feature?: scope escape operator
-    // -------------------------------
-    public void test_ScopeEscape_FAILS() throws Exception {
-        if (notYetImplemented()) return;
-        // Unknown type: SCOPE_ESCAPE
-        assertNotNull(compile("println([$x, x, y])")); // fails after parser
-    }
-
     // --------------------------------------------------
     // bugs?: spread expressions in closures and GStrings
     // --------------------------------------------------

@@ -3388,6 +3388,7 @@ BAND              options {paraphrase="'&'";}           :   '&'             ;
 BAND_ASSIGN       options {paraphrase="'&='";}          :   "&="            ;
 LAND              options {paraphrase="'&&'";}          :   "&&"            ;
 SEMI              options {paraphrase="';'";}           :   ';'             ;
+protected
 DOLLAR            options {paraphrase="'$'";}           :   '$'             ;
 RANGE_INCLUSIVE   options {paraphrase="'..'";}          :   ".."            ;
 RANGE_EXCLUSIVE   options {paraphrase="'..<'";}         :   "..<"           ;
@@ -3756,7 +3757,7 @@ options {
     paraphrase="an identifier";
 }
     //options {testLiterals=true;}  // Actually, this is done manually in the actions below.
-    :   LETTER(LETTER|DIGIT)*
+    :   ( {stringCtorState == 0}? (DOLLAR|LETTER) (LETTER|DIGIT|DOLLAR)* | LETTER (LETTER|DIGIT)* )
         {
             if (stringCtorState != 0) {
                 if (LA(1) == '.' && LA(2) != '$' &&

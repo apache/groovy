@@ -97,7 +97,10 @@ public class VerifierCodeVisitor extends CodeVisitorSupport implements Opcodes {
             throw new RuntimeParserException("Invalid " + message + ". Identifier must not be empty", node);
         }
         char firstCh = name.charAt(0);
-        if (!Character.isJavaIdentifierStart(firstCh) || firstCh == '$') {
+        if (size == 1 && firstCh == '$') {
+            throw new RuntimeParserException("Invalid " + message + ". Must include a letter but only found: " + name, node);
+        }
+        if (!Character.isJavaIdentifierStart(firstCh)) {
             throw new RuntimeParserException("Invalid " + message + ". Must start with a letter but was: " + name, node);
         }
 
