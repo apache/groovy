@@ -47,17 +47,17 @@ public class ShortArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
             return objects[normaliseIndex(((Integer) args[0]).intValue(), objects.length)];
         }
 
-        public Object callBinop(Object receiver, Object arg) {
+        public Object call(Object receiver, Object arg) {
             if ((receiver instanceof short[] && arg instanceof Integer)
                     && checkPojoMetaClass()) {
                 final short[] objects = (short[]) receiver;
                 return objects[normaliseIndex(((Integer) arg).intValue(), objects.length)];
             }
             else
-              return super.callBinop(receiver,arg);
+              return super.call(receiver,arg);
         }
 
-        public Object invokeBinop(Object receiver, Object arg) {
+        public Object invoke(Object receiver, Object arg) {
             final short[] objects = (short[]) receiver;
             return objects[normaliseIndex(((Integer) arg).intValue(), objects.length)];
         }

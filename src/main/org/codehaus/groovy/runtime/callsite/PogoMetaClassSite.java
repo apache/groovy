@@ -44,17 +44,21 @@ public class PogoMetaClassSite extends MetaClassSite {
         }
     }
 
-    public final CallSite acceptCall(Object receiver, Object[] args) {
-        if (receiver instanceof GroovyObject && ((GroovyObject)receiver).getMetaClass() == metaClass)
-          return this;
+    public final Object call(Object receiver, Object[] args) {
+        if (checkCall(receiver))
+          return invoke (receiver, args);
         else
-          return createCallSite(receiver, args);
+          return defaultCall(receiver, args);
     }
 
-    public final CallSite acceptCurrent(Object receiver, Object[] args) {
-        if (receiver instanceof GroovyObject && ((GroovyObject)receiver).getMetaClass() == metaClass)
-          return this;
+    protected final boolean checkCall(Object receiver) {
+        return receiver instanceof GroovyObject && ((GroovyObject)receiver).getMetaClass() == metaClass;
+    }
+
+    public final Object callCurrent(Object receiver, Object[] args) {
+        if (checkCall(receiver))
+          return invoke (receiver, args);
         else
-          return createCallCurrentSite(receiver, args, array.owner);
+          return defaultCallCurrent(receiver, args);
     }
 }

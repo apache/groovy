@@ -18,6 +18,7 @@ package org.codehaus.groovy.runtime.callsite;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedMethod;
+import org.codehaus.groovy.runtime.ArrayUtil;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.NullObject;
@@ -46,8 +47,11 @@ public class PojoMetaMethodSite extends MetaMethodSite {
         return metaMethod.doMethodInvoke(receiver,  args);
     }
 
-    public final CallSite acceptCall(Object receiver, Object[] args) {
-        return checkAcceptCall(receiver, args) ? this : createCallSite(receiver, args);
+    public Object call(Object receiver, Object[] args) {
+        if(checkCall(receiver, args))
+          return invoke(receiver,args);
+        else
+          return defaultCall(receiver, args);
     }
 
     protected final boolean checkPojoMetaClass() {
@@ -55,7 +59,7 @@ public class PojoMetaMethodSite extends MetaMethodSite {
             && ((MetaClassImpl)metaClass).getVersion() == version;
     }
 
-    private boolean checkAcceptCall(Object receiver, Object[] args) {
+    protected final boolean checkCall(Object receiver, Object[] args) {
         try {
             return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
                && checkPojoMetaClass()
@@ -63,26 +67,31 @@ public class PojoMetaMethodSite extends MetaMethodSite {
         }
         catch (NullPointerException e) {
             if (receiver == null)
-              return checkAcceptCall(NullObject.getNullObject(), args);
+              return checkCall(NullObject.getNullObject(), args);
 
             throw e;
         }
     }
 
-    public final CallSite acceptBinop(Object receiver, Object arg) {
+    protected final boolean checkCall(Object receiver, Object arg) {
         try {
             return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
                && checkPojoMetaClass()
-           && MetaClassHelper.sameClass(params, arg) // right arguments
-                ? this
-                : createCallSite(receiver, new Object[]{arg});
+               && MetaClassHelper.sameClasses(params, arg);
         }
         catch (NullPointerException e) {
             if (receiver == null)
-              return acceptBinop(NullObject.getNullObject(), arg);
+              return checkCall(NullObject.getNullObject(), arg);
 
             throw e;
         }
+    }
+
+    public Object call(Object receiver, Object arg) {
+        if (checkCall(receiver, arg))
+          return invoke(receiver, arg);
+        else
+          return defaultCall(receiver, ArrayUtil.createArray(arg));
     }
 
     public static CallSite createPojoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {

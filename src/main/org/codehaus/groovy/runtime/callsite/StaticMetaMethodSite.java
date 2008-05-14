@@ -39,17 +39,24 @@ public class StaticMetaMethodSite extends MetaMethodSite {
         return metaMethod.doMethodInvoke(receiver,  args);
     }
 
-    public final CallSite acceptStatic(Object receiver, Object[] args) {
-        if(receiver == metaClass.getTheClass() // meta class match receiver
+    protected boolean checkCall(Object receiver, Object[] args) {
+        return receiver == metaClass.getTheClass() // meta class match receiver
                && ((MetaClassImpl)metaClass).getVersion() == version // metaClass still be valid
-           && MetaClassHelper.sameClasses(params, args)) // right arguments
-          return this;
-        else
-          return createCallStaticSite((Class) receiver, args);
+           && MetaClassHelper.sameClasses(params, args);
     }
 
-    public final CallSite acceptCall(Object receiver, Object[] args) {
-          return acceptStatic(receiver, args);
+    public final Object call(Object receiver, Object[] args) {
+        if(checkCall(receiver, args))
+          return invoke(receiver, args);
+        else
+          return defaultCallStatic(receiver, args);
+    }
+
+    public final Object callStatic(Object receiver, Object[] args) {
+        if(checkCall(receiver, args))
+          return invoke(receiver, args);
+        else
+          return defaultCallStatic(receiver, args);
     }
 
     public static StaticMetaMethodSite createStaticMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object[] args) {

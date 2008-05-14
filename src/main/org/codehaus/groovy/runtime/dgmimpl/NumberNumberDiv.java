@@ -97,7 +97,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
-        public final Object callBinop(Object receiver, Object arg) {
+        public final Object call(Object receiver, Object arg) {
             try {
                 if (checkPojoMetaClass()) {
                     return new Double(((Integer) receiver).doubleValue() / ((Float) arg).doubleValue());
@@ -105,14 +105,14 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             }
             catch (ClassCastException e) {//
             }
-            return super.callBinop(receiver, arg);
+            return super.call(receiver, arg);
         }
 
         public final Object invoke(Object receiver, Object[] args) {
             return new Double(((Integer) receiver).doubleValue() / ((Float) args[0]).doubleValue());
         }
 
-        public final Object invokeBinop(Object receiver, Object arg) {
+        public final Object invoke(Object receiver, Object arg) {
             return new Double(((Integer) receiver).doubleValue() / ((Float) arg).doubleValue());
         }
     }
@@ -122,7 +122,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
-        public final Object callBinop(Object receiver, Object arg) {
+        public final Object call(Object receiver, Object arg) {
             try {
                 if (checkPojoMetaClass()) {
                     return new Double(((Integer) receiver).intValue() / ((Double) arg).doubleValue());
@@ -130,14 +130,14 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             }
             catch (ClassCastException e) {//
             }
-            return super.callBinop(receiver, arg);
+            return super.call(receiver, arg);
         }
 
         public final Object invoke(Object receiver, Object[] args) {
             return new Double(((Integer) receiver).doubleValue() / ((Double) args[0]).doubleValue());
         }
 
-        public final Object invokeBinop(Object receiver, Object arg) {
+        public final Object invoke(Object receiver, Object arg) {
             return new Double(((Integer) receiver).intValue() / ((Double) arg).doubleValue());
         }
     }
@@ -147,7 +147,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
-        public final Object callBinop(Object receiver, Object arg) {
+        public final Object call(Object receiver, Object arg) {
             try {
                 if (checkPojoMetaClass()) {
                     return new Double(((Long) receiver).doubleValue() / ((Float) arg).doubleValue());
@@ -155,14 +155,14 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             }
             catch (ClassCastException e) {//
             }
-            return super.callBinop(receiver, arg);
+            return super.call(receiver, arg);
         }
 
         public final Object invoke(Object receiver, Object[] args) {
             return new Double(((Long) receiver).doubleValue() / ((Float) args[0]).doubleValue());
         }
 
-        public final Object invokeBinop(Object receiver, Object arg) {
+        public final Object invoke(Object receiver, Object arg) {
             return new Double(((Long) receiver).doubleValue() / ((Float) arg).doubleValue());
         }
     }
@@ -172,7 +172,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
-        public final Object callBinop(Object receiver, Object arg) {
+        public final Object call(Object receiver, Object arg) {
             try {
                 if (checkPojoMetaClass()) {
                     return new Double(((Long) receiver).doubleValue() / ((Double) arg).doubleValue());
@@ -180,14 +180,14 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             }
             catch (ClassCastException e) {//
             }
-            return super.callBinop(receiver, arg);
+            return super.call(receiver, arg);
         }
 
         public final Object invoke(Object receiver, Object[] args) {
             return new Double(((Long) receiver).doubleValue() / ((Double) args[0]).doubleValue());
         }
 
-        public final Object invokeBinop(Object receiver, Object arg) {
+        public final Object invoke(Object receiver, Object arg) {
             return new Double(((Long) receiver).doubleValue() / ((Double) arg).doubleValue());
         }
     }
@@ -197,7 +197,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
-        public final Object callBinop(Object receiver, Object arg) {
+        public final Object call(Object receiver, Object arg) {
             try {
                 if (checkPojoMetaClass()) {
                     return new Double(((Float) receiver).doubleValue() / ((Integer) arg).doubleValue());
@@ -205,14 +205,14 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             }
             catch (ClassCastException e) {//
             }
-            return super.callBinop(receiver, arg);
+            return super.call(receiver, arg);
         }
 
         public final Object invoke(Object receiver, Object[] args) {
             return new Double(((Float) receiver).doubleValue() / ((Integer) args[0]).doubleValue());
         }
 
-        public final Object invokeBinop(Object receiver, Object arg) {
+        public final Object invoke(Object receiver, Object arg) {
             return new Double(((Float) receiver).doubleValue() / ((Integer) arg).doubleValue());
         }
     }
@@ -222,7 +222,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
-        public final Object callBinop(Object receiver, Object arg) {
+        public final Object call(Object receiver, Object arg) {
             try {
                 if (checkPojoMetaClass()) {
                     return new Double(((Float) receiver).doubleValue() / ((Long) arg).doubleValue());
@@ -230,14 +230,14 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             }
             catch (ClassCastException e) {//
             }
-            return super.callBinop(receiver, arg);
+            return super.call(receiver, arg);
         }
 
         public final Object invoke(Object receiver, Object[] args) {
             return new Double(((Float) receiver).doubleValue() / ((Long) args[0]).doubleValue());
         }
 
-        public final Object invokeBinop(Object receiver, Object arg) {
+        public final Object invoke(Object receiver, Object arg) {
             return new Double(((Float) receiver).doubleValue() / ((Long) arg).doubleValue());
         }
     }
@@ -247,7 +247,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
-        public final Object callBinop(Object receiver, Object arg) {
+        public final Object call(Object receiver, Object arg) {
             try {
                 if (checkPojoMetaClass()) {
                     return new Double(((Float) receiver).doubleValue() / ((Float) arg).doubleValue());
@@ -255,14 +255,14 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             }
             catch (ClassCastException e) {//
             }
-            return super.callBinop(receiver, arg);
+            return super.call(receiver, arg);
         }
 
         public final Object invoke(Object receiver, Object[] args) {
             return new Double(((Float) receiver).doubleValue() / ((Float) args[0]).doubleValue());
         }
 
-        public final Object invokeBinop(Object receiver, Object arg) {
+        public final Object invoke(Object receiver, Object arg) {
             return new Double(((Float) receiver).doubleValue() / ((Float) arg).doubleValue());
         }
     }
@@ -272,7 +272,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
-        public final Object callBinop(Object receiver, Object arg) {
+        public final Object call(Object receiver, Object arg) {
             try {
                 if (checkPojoMetaClass()) {
                     return new Double(((Float) receiver).doubleValue() / ((Double) arg).doubleValue());
@@ -280,14 +280,14 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             }
             catch (ClassCastException e) {//
             }
-            return super.callBinop(receiver, arg);
+            return super.call(receiver, arg);
         }
 
         public final Object invoke(Object receiver, Object[] args) {
             return new Double(((Float) receiver).doubleValue() / ((Double) args[0]).doubleValue());
         }
 
-        public final Object invokeBinop(Object receiver, Object arg) {
+        public final Object invoke(Object receiver, Object arg) {
             return new Double(((Float) receiver).doubleValue() / ((Double) arg).doubleValue());
         }
     }
@@ -297,7 +297,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
-        public final Object callBinop(Object receiver, Object arg) {
+        public final Object call(Object receiver, Object arg) {
             try {
                 if (checkPojoMetaClass()) {
                     return new Double(((Double) receiver).doubleValue() / ((Integer) arg).doubleValue());
@@ -305,14 +305,14 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             }
             catch (ClassCastException e) {//
             }
-            return super.callBinop(receiver, arg);
+            return super.call(receiver, arg);
         }
 
         public final Object invoke(Object receiver, Object[] args) {
             return new Double(((Double) receiver).doubleValue() / ((Integer) args[0]).doubleValue());
         }
 
-        public final Object invokeBinop(Object receiver, Object arg) {
+        public final Object invoke(Object receiver, Object arg) {
             return new Double(((Double) receiver).doubleValue() / ((Integer) arg).doubleValue());
         }
     }
@@ -322,7 +322,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
-        public final Object callBinop(Object receiver, Object arg) {
+        public final Object call(Object receiver, Object arg) {
             try {
                 if (checkPojoMetaClass()) {
                     return new Double(((Double) receiver).doubleValue() / ((Long) arg).doubleValue());
@@ -330,14 +330,14 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             }
             catch (ClassCastException e) {//
             }
-            return super.callBinop(receiver, arg);
+            return super.call(receiver, arg);
         }
 
         public final Object invoke(Object receiver, Object[] args) {
             return new Double(((Double) receiver).doubleValue() / ((Long) args[0]).doubleValue());
         }
 
-        public final Object invokeBinop(Object receiver, Object arg) {
+        public final Object invoke(Object receiver, Object arg) {
             return new Double(((Double) receiver).doubleValue() / ((Long) arg).doubleValue());
         }
     }
@@ -347,7 +347,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
-        public final Object callBinop(Object receiver, Object arg) {
+        public final Object call(Object receiver, Object arg) {
             try {
                 if (checkPojoMetaClass()) {
                     return new Double(((Double) receiver).doubleValue() / ((Float) arg).doubleValue());
@@ -355,14 +355,14 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             }
             catch (ClassCastException e) {//
             }
-            return super.callBinop(receiver, arg);
+            return super.call(receiver, arg);
         }
 
         public final Object invoke(Object receiver, Object[] args) {
             return new Double(((Double) receiver).doubleValue() / ((Float) args[0]).doubleValue());
         }
 
-        public final Object invokeBinop(Object receiver, Object arg) {
+        public final Object invoke(Object receiver, Object arg) {
             return new Double(((Double) receiver).doubleValue() / ((Float) arg).doubleValue());
         }
     }
@@ -372,7 +372,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
-        public final Object callBinop(Object receiver, Object arg) {
+        public final Object call(Object receiver, Object arg) {
             try {
                 if (checkPojoMetaClass()) {
                     return new Double(((Double) receiver).doubleValue() / ((Double) arg).doubleValue());
@@ -380,14 +380,14 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             }
             catch (ClassCastException e) {//
             }
-            return super.callBinop(receiver, arg);
+            return super.call(receiver, arg);
         }
 
         public final Object invoke(Object receiver, Object[] args) {
             return new Double(((Double) receiver).doubleValue() / ((Double) args[0]).doubleValue());
         }
 
-        public final Object invokeBinop(Object receiver, Object arg) {
+        public final Object invoke(Object receiver, Object arg) {
             return new Double(((Double) receiver).doubleValue() / ((Double) arg).doubleValue());
         }
     }
@@ -401,7 +401,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
             return math.divideImpl((Number)receiver,(Number)args[0]);
         }
 
-        public final Object invokeBinop(Object receiver, Object arg) {
+        public final Object invoke(Object receiver, Object arg) {
             return math.divideImpl((Number)receiver,(Number)arg);
         }
     }

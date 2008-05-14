@@ -34,7 +34,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author Alex Tkachman
  */
-public abstract class CallSite /*extends MagicIfSunVm*/ {
+public abstract class CallSite {
     protected final int index;
     public final String name;
     protected final CallSiteArray array;
@@ -65,57 +65,16 @@ public abstract class CallSite /*extends MagicIfSunVm*/ {
         throw new UnsupportedOperationException();
     }
 
-    public Object invokeBinop(Object receiver, Object arg) {
+    public Object invoke(Object receiver, Object arg) {
         if (receiver == null)
           receiver = NullObject.getNullObject();
 
-        return invoke(receiver, new Object[] {arg});
-    }
-
-    /**
-     * Check if receiver/arguments are "exactly the same" as when this site was created.
-     *
-     * Exact meaning of "exactly the same" depends on type of the site.
-     * For example, for GroovyInterceptable it is enough to check that receiver is GroovyInterceptable
-     * but for site with meta method we need to be sure that classes of arguments are exactly the same
-     * in the strongest possible meaning.
-     *
-     * @param receiver receiver
-     * @param args arguments
-     * @return if receiver/arguments are valid for this site
-     */
-    public CallSite acceptCall(Object receiver, Object[] args) {
-        throw new UnsupportedOperationException();
-    }
-
-    public CallSite acceptCurrent(Object receiver, Object[] args) {
-        throw new UnsupportedOperationException();
-    }
-
-    public CallSite acceptCurrentTyped(Object receiver, Object[] args, Class [] types) {
-        return acceptCurrent(receiver, args);
+        return invoke(receiver, ArrayUtil.createArray(arg));
     }
 
     public CallSite acceptConstructor(Object receiver, Object[] args) {
         throw new UnsupportedOperationException();
     }
-
-    public CallSite acceptStatic(Object receiver, Object[] args) {
-        throw new UnsupportedOperationException();
-    }
-
-    public CallSite acceptBinop(Object receiver, Object arg) {
-        try {
-            final Object[] args = {arg};
-            return acceptCall(receiver, args);
-        }
-        catch (NullPointerException e) {
-            if (receiver == null)
-              return acceptBinop(NullObject.getNullObject(), arg );
-            throw e;
-        }
-    }
-
 
     public final Object callSafe(Object receiver, Object[] args) throws Throwable {
         if (receiver == null)
@@ -162,7 +121,7 @@ public abstract class CallSite /*extends MagicIfSunVm*/ {
 
 
     public Object call(Object receiver, Object[] args) {
-        return acceptCall(receiver, args).invoke(receiver, args);
+        return defaultCall(receiver, args);
     }
 
     public Object call (Object receiver) throws Throwable {
@@ -188,7 +147,7 @@ public abstract class CallSite /*extends MagicIfSunVm*/ {
 
 
     public Object callCurrent (Object receiver, Object [] args) throws Throwable {
-        return acceptCurrent(receiver, args).invoke(receiver, args);
+        return defaultCallCurrent(receiver, args);
     }
     
     public Object callCurrent (Object receiver) throws Throwable {
@@ -213,7 +172,7 @@ public abstract class CallSite /*extends MagicIfSunVm*/ {
 
 
     public Object callStatic (Object receiver, Object [] args) {
-        return acceptStatic(receiver, args).invoke(receiver, args);
+        return defaultCallStatic(receiver, args);
     }
 
     public Object callStatic (Object receiver) throws Throwable {
@@ -261,9 +220,16 @@ public abstract class CallSite /*extends MagicIfSunVm*/ {
         return callConstructor(receiver, ArrayUtil.createArray(arg1, arg2, arg3, arg4));
     }
 
+    protected final Object defaultCall(Object receiver, Object[] args) {
+        return createCallSite(receiver, args).invoke(receiver, args);
+    }
 
-    public Object callBinop (Object receiver, Object arg) {
-        return acceptBinop(receiver, arg).invokeBinop(receiver, arg);
+    protected final Object defaultCallCurrent(Object receiver, Object[] args) {
+        return createCallCurrentSite(receiver, args, array.owner).invoke(receiver, args);
+    }
+
+    protected final Object defaultCallStatic(Object receiver, Object[] args) {
+        return createCallStaticSite((Class) receiver, args).invoke(receiver,args);
     }
 
     final CallSite createCallStaticSite(Class receiver, Object[] args) {
@@ -354,10 +320,6 @@ public abstract class CallSite /*extends MagicIfSunVm*/ {
         return true;
     }
 
-    public boolean wantProvideCallSite() {
-        return false;
-    }
-
     /**
      * Call site which never accept any receiver/arguments.
      * We use it as initial value for any call site.
@@ -372,20 +334,20 @@ public abstract class CallSite /*extends MagicIfSunVm*/ {
             return null;
         }
 
-        public final CallSite acceptCall(Object receiver, Object[] args) {
-            return createCallSite(receiver, args);
+        public final Object call(Object receiver, Object[] args) {
+            return defaultCall(receiver, args);
         }
 
-        public final CallSite acceptCurrent(Object receiver, Object[] args) {
-            return createCallCurrentSite(receiver, args, array.owner);
+        public final Object callCurrent(Object receiver, Object[] args) {
+            return defaultCallCurrent(receiver, args);
         }
 
         public final CallSite acceptConstructor(Object receiver, Object[] args) {
             return createCallConstructorSite((Class) receiver, args);
         }
 
-        public final CallSite acceptStatic(Object receiver, Object[] args) {
-            return createCallStaticSite((Class) receiver, args);
+        public final Object callStatic(Object receiver, Object[] args) {
+            return defaultCallStatic(receiver, args);
         }
     }
 
@@ -780,3 +742,4 @@ public abstract class CallSite /*extends MagicIfSunVm*/ {
         }
     }
 }
+

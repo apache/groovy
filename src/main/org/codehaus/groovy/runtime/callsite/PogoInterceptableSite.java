@@ -33,9 +33,9 @@ public class PogoInterceptableSite extends CallSite {
       return ((GroovyObject)receiver).invokeMethod(name, InvokerHelper.asUnwrappedArray(args));
     }
 
-    public final CallSite acceptCall(Object receiver, Object[] args) {
+    public final Object call(Object receiver, Object[] args) {
         if(receiver instanceof GroovyInterceptable)
-          return this;
+          return ((GroovyObject) receiver).invokeMethod(name, InvokerHelper.asUnwrappedArray(args));
         else
           return createCallSite(receiver, args);
     }

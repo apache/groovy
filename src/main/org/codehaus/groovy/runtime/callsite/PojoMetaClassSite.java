@@ -33,10 +33,14 @@ public class PojoMetaClassSite extends MetaClassSite{
         return metaClass.invokeMethod(receiver, name, args);
     }
 
-    public CallSite acceptCall(Object receiver, Object[] args) {
-        if(receiver.getClass() == metaClass.getTheClass())
-          return this;
+    public Object call(Object receiver, Object[] args) {
+        if(checkCall(receiver))
+          return invoke(receiver, args);
         else
-          return createCallSite(receiver, args);
+          return defaultCall(receiver, args);
+    }
+
+    protected final boolean checkCall(Object receiver) {
+        return receiver.getClass() == metaClass.getTheClass();
     }
 }

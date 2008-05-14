@@ -40,20 +40,6 @@ public class PogoMetaMethodSite extends MetaMethodSite {
         return metaMethod.doMethodInvoke(receiver,  args);
     }
 
-    public final CallSite acceptCurrent(Object receiver, Object[] args) {
-        if(checkCall(receiver, args))
-          return this;
-        else
-          return createCallCurrentSite(receiver, args, array.owner);
-    }
-
-    public final CallSite acceptCall(Object receiver, Object[] args) {
-        if(checkCall(receiver, args))
-          return this;
-        else
-          return createCallSite(receiver, args);
-    }
-
     public Object callCurrent(Object receiver, Object[] args) throws Throwable {
         if(checkCall(receiver, args))
           return invoke(receiver,args);
@@ -280,17 +266,6 @@ public class PogoMetaMethodSite extends MetaMethodSite {
             } catch (InvocationTargetException e) {
                 throw new InvokerInvocationException(e);
             }
-        }
-
-        public CallSite acceptCurrentTyped(Object receiver, Object[] args, Class types[]) {
-            if(checkCall(receiver, args)) {
-                if (!typesChecked) {
-                    checkTypes(types);
-                }
-                return (typesValid ? null : this);
-            }
-            else
-              return createCallCurrentSite(receiver, args, array.owner);
         }
     }
 

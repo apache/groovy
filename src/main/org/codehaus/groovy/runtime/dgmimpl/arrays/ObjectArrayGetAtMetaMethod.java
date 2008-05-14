@@ -44,12 +44,12 @@ public class ObjectArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
             return objects[normaliseIndex(((Integer) args[0]).intValue(), objects.length)];
         }
 
-        public Object invokeBinop(Object receiver, Object arg) {
+        public Object invoke(Object receiver, Object arg) {
             final Object[] objects = (Object[]) receiver;
             return objects[normaliseIndex(((Integer) arg).intValue(), objects.length)];
         }
 
-        public Object callBinop(Object receiver, Object arg) {
+        public Object call(Object receiver, Object arg) {
             if (checkPojoMetaClass()) {
                 try {
                     final Object[] objects = (Object[]) receiver;
@@ -60,7 +60,7 @@ public class ObjectArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
                       throw e;
                 }
             }
-            return super.callBinop(receiver,arg);
+            return super.call(receiver,arg);
         }
     }
 }

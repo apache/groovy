@@ -304,7 +304,7 @@ public class AsmClassGenerator extends ClassGenerator {
             mv.visitVarInsn(ALOAD,0);
             mv.visitVarInsn(ALOAD,1);
             mv.visitVarInsn(ALOAD,2);
-            mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "callBinop","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+            mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "call","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
             mv.visitInsn(ARETURN);
             mv.visitMaxs(0,0);
             mv.visitEnd();
@@ -2341,7 +2341,7 @@ public class AsmClassGenerator extends ClassGenerator {
         visitAndAutoboxBoolean(receiver);
         this.implicitThis = oldVal;
         visitAndAutoboxBoolean(arguments);
-        mv.visitMethodInsn(INVOKEVIRTUAL, "org/codehaus/groovy/runtime/callsite/CallSite", "callBinop","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+        mv.visitMethodInsn(INVOKEVIRTUAL, "org/codehaus/groovy/runtime/callsite/CallSite", "call","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
         leftHandExpression = lhs;
     }
 
@@ -3961,11 +3961,11 @@ public class AsmClassGenerator extends ClassGenerator {
                 // cs_put cs_method cs_get obj index
                 mv.visitInsn(DUP2_X2);
                 // cs_put obj index cs_method cs_get obj index
-                mv.visitMethodInsn(INVOKEVIRTUAL, "org/codehaus/groovy/runtime/callsite/CallSite", "callBinop","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+                mv.visitMethodInsn(INVOKEVIRTUAL, "org/codehaus/groovy/runtime/callsite/CallSite", "call","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
                 // cs_put obj index cs_method obj[index]
                 visitAndAutoboxBoolean(expression.getRightExpression());
                 // cs_put obj index cs_method obj[index] right
-                mv.visitMethodInsn(INVOKEVIRTUAL, "org/codehaus/groovy/runtime/callsite/CallSite", "callBinop","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+                mv.visitMethodInsn(INVOKEVIRTUAL, "org/codehaus/groovy/runtime/callsite/CallSite", "call","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
                 // cs_put obj index (obj[index] + right)
                 final int resultVar = compileStack.defineTemporaryVariable("$result", true);
                 mv.visitVarInsn(ALOAD, resultVar );
