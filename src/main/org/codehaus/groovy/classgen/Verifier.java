@@ -651,6 +651,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                         expression));
             if (fieldNode.isStatic()) {
                 staticList.add(statement);
+                fieldNode.setInitialValueExpression(null); // to avoid double initialization in case of several constructors
             }
             else {
                 list.add(statement);
