@@ -791,7 +791,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         // if we reach this point we have at last one parameter or return type, that
         // is different in its specified form. That means we have to create a bridge method!
         ClassNode testmr = correctToGenericsSpec(genericsSpec,omr);
-        if (!mr.isDerivedFrom(testmr)) {
+        if (!isAssignable(mr,testmr)){
             throw new RuntimeParserException(
                     "the return type is incompatible with "+
                     oldMethod.getTypeDescriptor()+
@@ -849,7 +849,16 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         newMethod.setCode(new BytecodeSequence(instructions));
         return newMethod;
     }
-    
+
+    private boolean isAssignable(ClassNode node, ClassNode testNode) {
+        if (testNode.isInterface()) {
+            if (node.implementsInterface(testNode.getName())) return true;
+        } else {
+            if (node.isDerivedFrom(testNode)) return true;
+        }
+        return false;
+    }
+
     private Parameter[] cleanParameters(Parameter[] parameters) {
         Parameter[] params = new Parameter[parameters.length];
         for (int i = 0; i < params.length; i++) {
