@@ -112,7 +112,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     private Map<CompilePhase, Map<Class<? extends ASTTransformation>, Set<ASTNode>>> transformInstances;
 
 
-    // use this to synchronize access for the lazy intit
+    // use this to synchronize access for the lazy init
     protected Object lazyInitLock = new Object();
 
     // clazz!=null when resolved

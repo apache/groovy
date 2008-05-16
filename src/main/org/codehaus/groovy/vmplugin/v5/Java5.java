@@ -259,7 +259,9 @@ public class Java5 implements VMPlugin {
         Class clazz = classNode.getTypeClass();
         Field[] fields = clazz.getDeclaredFields();
         for (int i = 0; i < fields.length; i++) {
-            classNode.addField(fields[i].getName(), fields[i].getModifiers(), classNode, null);
+            Field f = fields[i];
+            ClassNode ret = makeClassNode(compileUnit,f.getGenericType(),f.getType());
+            classNode.addField(fields[i].getName(), fields[i].getModifiers(), ret, null);
         }
         Method[] methods = clazz.getDeclaredMethods();
         for (int i = 0; i < methods.length; i++) {
