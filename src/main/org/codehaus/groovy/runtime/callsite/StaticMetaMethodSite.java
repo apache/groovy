@@ -49,7 +49,7 @@ public class StaticMetaMethodSite extends MetaMethodSite {
         if(checkCall(receiver, args))
           return invoke(receiver, args);
         else
-          return defaultCallStatic(receiver, args);
+          return defaultCall(receiver, args);
     }
 
     public final Object callStatic(Object receiver, Object[] args) {

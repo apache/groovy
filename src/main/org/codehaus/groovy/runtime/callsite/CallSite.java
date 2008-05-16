@@ -334,20 +334,12 @@ public abstract class CallSite {
             return null;
         }
 
-        public final Object call(Object receiver, Object[] args) {
-            return defaultCall(receiver, args);
-        }
-
         public final Object callCurrent(Object receiver, Object[] args) {
             return defaultCallCurrent(receiver, args);
         }
 
         public final CallSite acceptConstructor(Object receiver, Object[] args) {
             return createCallConstructorSite((Class) receiver, args);
-        }
-
-        public final Object callStatic(Object receiver, Object[] args) {
-            return defaultCallStatic(receiver, args);
         }
     }
 
