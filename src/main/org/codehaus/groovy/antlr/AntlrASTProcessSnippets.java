@@ -43,13 +43,13 @@ public class AntlrASTProcessSnippets implements AntlrASTProcessor{
     public AST process(AST t) {
         // first visit
         List l = new ArrayList();
-        t = traverse((GroovySourceAST)t,l,null);
+        traverse((GroovySourceAST)t,l,null);
 
         //System.out.println("l:" + l);
         // second visit
         Iterator itr = l.iterator();
         if (itr.hasNext()) { itr.next(); /* discard first */ }
-        t = traverse((GroovySourceAST)t,null,itr);
+        traverse((GroovySourceAST)t,null,itr);
         return t;
     }
 
@@ -61,39 +61,36 @@ public class AntlrASTProcessSnippets implements AntlrASTProcessor{
      * @return A decorated AST node
      */
     private AST traverse(GroovySourceAST t,List l,Iterator itr) {
-        if (t == null) { return t; }
+         while (t != null) {
+             // first visit of node
+             if (l != null) {
+                 l.add(new LineColumn(t.getLine(),t.getColumn()));
+             }
 
-        // first visit of node
-        if (l != null) {
-            l.add(new LineColumn(t.getLine(),t.getColumn()));
-        }
+             // second vist of node
+             if (itr != null && itr.hasNext()) {
+                 LineColumn lc = (LineColumn)itr.next();
+                 if (t.getLineLast() == 0) {
+                     int nextLine = lc.getLine();
+                     int nextColumn = lc.getColumn();
+                     if (nextLine < t.getLine() || (nextLine == t.getLine() && nextColumn < t.getColumn())) {
+                         nextLine = t.getLine();
+                         nextColumn = t.getColumn();
+                     }
+                     t.setLineLast(nextLine);
+                     t.setColumnLast(nextColumn);
+                     // This is a good point to call t.setSnippet(),
+                     // but it bulks up the AST too much for production code.
+                 }
+             }
 
-        // second vist of node
-        if (itr != null && itr.hasNext()) {
-            LineColumn lc = (LineColumn)itr.next();
-            if (t.getLineLast() == 0) {
-                int nextLine = lc.getLine();
-                int nextColumn = lc.getColumn();
-                if (nextLine < t.getLine() || (nextLine == t.getLine() && nextColumn < t.getColumn())) {
-                    nextLine = t.getLine();
-                    nextColumn = t.getColumn();
-                }
-                t.setLineLast(nextLine);
-                t.setColumnLast(nextColumn);
-                // This is a good point to call t.setSnippet(),
-                // but it bulks up the AST too much for production code.
-            }
-        }
+             GroovySourceAST child = (GroovySourceAST)t.getFirstChild();
+             if (child != null) {
+                 traverse(child,l,itr);
+             }
 
-        GroovySourceAST child = (GroovySourceAST)t.getFirstChild();
-        if (child != null) {
-            traverse(child,l,itr);
-        }
-
-        GroovySourceAST sibling = (GroovySourceAST)t.getNextSibling();
-        if (sibling != null) {
-            traverse(sibling,l,itr);
-        }
+             t = (GroovySourceAST)t.getNextSibling();
+         }
 
         return t;
     }
