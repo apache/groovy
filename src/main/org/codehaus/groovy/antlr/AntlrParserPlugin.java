@@ -90,7 +90,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         ast = parser.getAST();
 
-        AntlrASTProcessor snippets = new AntlrASTProcessSnippets(sourceBuffer);
+        AntlrASTProcessor snippets = new AntlrASTProcessSnippets();
         ast = snippets.process(ast);
         
         AccessController.doPrivileged(new PrivilegedAction() {

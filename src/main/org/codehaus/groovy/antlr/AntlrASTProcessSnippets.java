@@ -28,10 +28,8 @@ import antlr.collections.AST;
 import java.util.*;
 
 public class AntlrASTProcessSnippets implements AntlrASTProcessor{
-    private final SourceBuffer sourceBuffer;
 
-    public AntlrASTProcessSnippets(SourceBuffer sourceBuffer) {
-        this.sourceBuffer = sourceBuffer;
+    public AntlrASTProcessSnippets() {
     }
 
     /**
@@ -60,7 +58,7 @@ public class AntlrASTProcessSnippets implements AntlrASTProcessor{
      * @param itr An iterator over a list of line/col
      * @return A decorated AST node
      */
-    private AST traverse(GroovySourceAST t,List l,Iterator itr) {
+    private void traverse(GroovySourceAST t,List l,Iterator itr) {
          while (t != null) {
              // first visit of node
              if (l != null) {
@@ -91,7 +89,5 @@ public class AntlrASTProcessSnippets implements AntlrASTProcessor{
 
              t = (GroovySourceAST)t.getNextSibling();
          }
-
-        return t;
     }
 }
