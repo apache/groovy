@@ -1,4 +1,4 @@
-package gls.invocaton
+package gls.invocation
 
 import gls.scope.CompilableTestSupport
 
