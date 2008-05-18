@@ -88,7 +88,7 @@ public class AnnotationVisitor {
     }
 
     private boolean isValidAnnotationClass(ClassNode node) {
-        return node.implementsInterface("java.lang.annotation.Annotation");
+        return node.implementsInterface(ClassHelper.Annotation_TYPE);
     }
 
     protected void visitExpression(String attrName, Expression attrExp, ClassNode attrType) {

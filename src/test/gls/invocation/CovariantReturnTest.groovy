@@ -60,16 +60,20 @@ public class CovariantReturnTest extends CompilableTestSupport {
     assertScript """
       interface Base {
         List foo()
+        Base baz()
       }
       interface Child extends Base {
         ArrayList foo()
+        Child baz()
       }
       class GroovyChildImpl implements Child {
         ArrayList foo() {}
+        GroovyChildImpl baz() {}
       }
 
       def x = new GroovyChildImpl()
       x.foo()
+      x.baz()
     """
   }
 
@@ -77,6 +81,8 @@ public class CovariantReturnTest extends CompilableTestSupport {
     assertScript """
       interface Base {
         List foo()
+        List bar()
+        Base baz()
       }
       interface Child extends Base {
         ArrayList foo()
@@ -84,9 +90,13 @@ public class CovariantReturnTest extends CompilableTestSupport {
       class MyArrayList extends ArrayList { }
       class GroovyChildImpl implements Child {
         MyArrayList foo() {}
+        MyArrayList bar() {}
+        GroovyChildImpl baz() {}
       }
       def x = new GroovyChildImpl()
       x.foo()
+      x.bar()
+      x.baz()
     """
   }
 

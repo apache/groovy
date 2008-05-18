@@ -244,7 +244,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 createInterfaceSyntheticStaticFields();
             } else {
                 super.visitClass(classNode);
-                if (!classNode.declaresInterface(ClassHelper.GENERATED_CLOSURE_Type.getName())) {
+                if (!classNode.declaresInterface(ClassHelper.GENERATED_CLOSURE_Type)) {
                     createMopMethods();
                 }
                 createSyntheticStaticFields();
@@ -700,7 +700,7 @@ public class AsmClassGenerator extends ClassGenerator {
            String desc = BytecodeHelper.getTypeDescription(cExp.getType());
            String name = pExp.getPropertyAsString();
            av.visitEnum(null, desc, name);
-       } else if (type.implementsInterface("java.lang.annotation.Annotation")) {
+       } else if (type.implementsInterface(ClassHelper.Annotation_TYPE)) {
            AnnotationConstantExpression avExp = (AnnotationConstantExpression) exp;
            AnnotationNode value = (AnnotationNode) avExp.getValue();
            AnnotationVisitor avc = av.visitAnnotation(null, BytecodeHelper.getTypeDescription(avExp.getType()));
@@ -1390,7 +1390,7 @@ public class AsmClassGenerator extends ClassGenerator {
             type = ClassHelper.getWrapper(type);
         }
 
-        if (forceCast || (type != null && !expType.isDerivedFrom(type) && !expType.implementsInterface(type.getName()))) {
+        if (forceCast || (type != null && !expType.isDerivedFrom(type) && !expType.implementsInterface(type))) {
             doConvertAndCast(type, coerce);
         }
     }
@@ -1689,7 +1689,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
         mv.visitTypeInsn(NEW, innerClassinternalName);
         mv.visitInsn(DUP);
-        if (isStaticMethod() && !classNode.declaresInterface(ClassHelper.GENERATED_CLOSURE_Type.getName())) {
+        if (isStaticMethod() && !classNode.declaresInterface(ClassHelper.GENERATED_CLOSURE_Type)) {
             visitClassExpression(new ClassExpression(classNode));
             visitClassExpression(new ClassExpression(getOutermostClass()));
         } else {
@@ -2473,7 +2473,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private void visitSpecialConstructorCall(ConstructorCallExpression call) {
-        if (classNode.declaresInterface(ClassHelper.GENERATED_CLOSURE_Type.getName())) {
+        if (classNode.declaresInterface(ClassHelper.GENERATED_CLOSURE_Type)) {
             addGeneratedClosureConstructorCall(call);
             return;
         }
@@ -3863,7 +3863,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
     protected void doConvertAndCast(ClassNode type, boolean coerce) {
         if (type == ClassHelper.OBJECT_TYPE) return;
-        if (rightHandType == null || !rightHandType.isDerivedFrom(type) || !rightHandType.implementsInterface(type.getName())) {
+        if (rightHandType == null || !rightHandType.isDerivedFrom(type) || !rightHandType.implementsInterface(type)) {
             if (isValidTypeForCast(type)) {
                 visitClassExpression(new ClassExpression(type));
                 if (coerce) {

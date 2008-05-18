@@ -491,6 +491,16 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return node;
     }
 
+    public boolean hasProperty(String name) {
+    	for (Iterator iter = getProperties().iterator(); iter.hasNext();) {
+            PropertyNode pn = (PropertyNode) iter.next();
+            if (pn.getName().equals(name)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public void addConstructor(ConstructorNode node) {
         node.setDeclaringClass(this);
         redirect().constructors.add(node);
@@ -509,10 +519,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     /**
-     * IF a method with the given name and parameters is already defined then it is returned
+     * If a method with the given name and parameters is already defined then it is returned
      * otherwise the given method is added to this node. This method is useful for
      * default method adding like getProperty() or invokeMethod() where there may already
-     * be a method defined in a class and  so the default implementations should not be added
+     * be a method defined in a class and so the default implementations should not be added
      * if already present.
      */
     public MethodNode addMethod(String name,
@@ -522,13 +532,18 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                                 ClassNode[] exceptions,
                                 Statement code) {
         MethodNode other = getDeclaredMethod(name, parameters);
-        // lets not add duplicate methods
+        // let's not add duplicate methods
         if (other != null) {
             return other;
         }
         MethodNode node = new MethodNode(name, modifiers, returnType, parameters, exceptions, code);
         addMethod(node);
         return node;
+    }
+
+    public boolean hasMethod(String name, Parameter[] parameters) {
+        MethodNode other = getDeclaredMethod(name, parameters);
+        return other != null;
     }
 
     /**
@@ -715,17 +730,17 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      *         i.e. it implements GroovyObject
      */
     public boolean isDerivedFromGroovyObject() {
-        return implementsInterface(GroovyObject.class.getName());
+        return implementsInterface(ClassHelper.make(GroovyObject.class));
     }
 
     /**
-     * @param name the fully qualified name of the interface
+     * @param classNode the class node for the interface
      * @return true if this class or any base class implements the given interface
      */
-    public boolean implementsInterface(String name) {
+    public boolean implementsInterface(ClassNode classNode) {
         ClassNode node = redirect();
         do {
-            if (node.declaresInterface(name)) {
+            if (node.declaresInterface(classNode)) {
                 return true;
             }
             node = node.getSuperClass();
@@ -735,14 +750,30 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     /**
-     * @param name the fully qualified name of the interface
+     * @param classNode the class node for the interface
      * @return true if this class declares that it implements the given interface
+     * or if one of its interfaces extends directly or indirectly the interface
      */
-    public boolean declaresInterface(String name) {
+    public boolean declaresInterface(ClassNode classNode) {
         ClassNode[] interfaces = redirect().getInterfaces();
+        if (declaresInterfaceDirect(interfaces, classNode)) return true;
+        List superInterfaces = Arrays.asList(interfaces);
+        while (superInterfaces.size() > 0) {
+            List keep = new ArrayList();
+            for (int i = 0; i < superInterfaces.size(); i++) {
+                ClassNode cn = (ClassNode) superInterfaces.get(i);
+                if (cn.declaresInterface(classNode)) return true;
+                keep.addAll(Arrays.asList(cn.getInterfaces()));
+            }
+            superInterfaces = keep;
+        }
+        return false;
+    }
+
+    private boolean declaresInterfaceDirect(ClassNode[] interfaces, ClassNode classNode) {
         int size = interfaces.length;
         for (int i = 0; i < size; i++) {
-            if (interfaces[i].getName().equals(name)) {
+            if (interfaces[i].equals(classNode)) {
                 return true;
             }
         }
