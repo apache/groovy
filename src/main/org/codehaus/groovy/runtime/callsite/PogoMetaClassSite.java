@@ -29,36 +29,45 @@ public class PogoMetaClassSite extends MetaClassSite {
         super(site, metaClass);
     }
 
-    public final Object invoke(Object receiver, Object[] args) {
-        try {
-            return metaClass.invokeMethod(receiver, name, args);
-        } catch (MissingMethodException e) {
-            if (e instanceof MissingMethodExecutionFailed) {
-                throw (MissingMethodException)e.getCause();
-            } else if (receiver.getClass() == e.getType() && e.getMethod().equals(name)) {
-                // in case there's nothing else, invoke the object's own invokeMethod()
-                return ((GroovyObject)receiver).invokeMethod(name, args);
-            } else {
-                throw e;
+    public final Object call(Object receiver, Object[] args) {
+        if (checkCall(receiver)) {
+            try {
+                return metaClass.invokeMethod(receiver, name, args);
+            } catch (MissingMethodException e) {
+                if (e instanceof MissingMethodExecutionFailed) {
+                    throw (MissingMethodException)e.getCause();
+                } else if (receiver.getClass() == e.getType() && e.getMethod().equals(name)) {
+                    // in case there's nothing else, invoke the object's own invokeMethod()
+                    return ((GroovyObject)receiver).invokeMethod(name, args);
+                } else {
+                    throw e;
+                }
             }
         }
-    }
-
-    public final Object call(Object receiver, Object[] args) {
-        if (checkCall(receiver))
-          return invoke (receiver, args);
         else
-          return defaultCall(receiver, args);
+          return CallSiteArray.defaultCall(this, receiver, args);
     }
 
     protected final boolean checkCall(Object receiver) {
         return receiver instanceof GroovyObject && ((GroovyObject)receiver).getMetaClass() == metaClass;
     }
 
-    public final Object callCurrent(Object receiver, Object[] args) {
-        if (checkCall(receiver))
-          return invoke (receiver, args);
+    public final Object callCurrent(Object receiver, Object[] args) throws Throwable {
+        if (checkCall(receiver)) {
+            try {
+                return metaClass.invokeMethod(receiver, name, args);
+            } catch (MissingMethodException e) {
+                if (e instanceof MissingMethodExecutionFailed) {
+                    throw (MissingMethodException)e.getCause();
+                } else if (receiver.getClass() == e.getType() && e.getMethod().equals(name)) {
+                    // in case there's nothing else, invoke the object's own invokeMethod()
+                    return ((GroovyObject)receiver).invokeMethod(name, args);
+                } else {
+                    throw e;
+                }
+            }
+        }
         else
-          return defaultCallCurrent(receiver, args);
+          return CallSiteArray.defaultCallCurrent(this, receiver, args);
     }
 }

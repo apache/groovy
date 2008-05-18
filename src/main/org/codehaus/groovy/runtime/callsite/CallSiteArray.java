@@ -15,19 +15,13 @@
  */
 package org.codehaus.groovy.runtime.callsite;
 
-/**
- * All call site calls done via CallSiteArray
- * Groovy compiler creates static CallSiteArray field for each compiled class
- * One index in array correspond to one method or constructor call (non-spreaded, spreded ones dispatched regular way)
- *
- * CallSiteArray has several methods of the same type (call, callSafe, callCurrent, callStatic and callConstructor)
- * Each method does more or less the same
- * - ask if existing site is valid for receiver and arguments
- * - if necessary create new site and replace existing one
- * - ask call site to make the call
- *
- * @author Alex Tkachman
- */
+import groovy.lang.MetaClass;
+import groovy.lang.MetaClassImpl;
+import groovy.lang.GroovyInterceptable;
+import groovy.lang.GroovyObject;
+import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.NullObject;
+
 public final class CallSiteArray {
     public final CallSite[] array;
 
@@ -38,7 +32,125 @@ public final class CallSiteArray {
         this.owner = owner;
         array = new CallSite[names.length];
         for (int i = 0; i < array.length; i++) {
-            array[i] = new CallSite.DummyCallSite(this, i, names[i]);
+            array[i] = new AbstractCallSite.DummyCallSite(this, i, names[i]);
+        }
+    }
+
+    public static Object defaultCall(CallSite callSite, Object receiver, Object[] args) {
+        return createCallSite(callSite, receiver, args).call(receiver, args);
+    }
+
+    public static Object defaultCallCurrent(CallSite callSite, Object receiver, Object[] args) throws Throwable {
+        return createCallCurrentSite(callSite, receiver, args, callSite.getArray().owner).callCurrent(receiver, args);
+    }
+
+    public static Object defaultCallStatic(CallSite callSite, Object receiver, Object[] args) {
+        return createCallStaticSite(callSite, (Class) receiver, args).callStatic(receiver,args);
+    }
+
+    public static Object defaultCallConstructor(CallSite callSite, Object receiver, Object[] args) throws Throwable {
+        return createCallConstructorSite(callSite, (Class) receiver, args).callConstructor(receiver, args);
+    }
+
+    private static CallSite createCallStaticSite(CallSite callSite, Class receiver, Object[] args) {
+        CallSite site;
+        MetaClass metaClass = InvokerHelper.getMetaClass(receiver);
+        if (metaClass instanceof MetaClassImpl) {
+            site = ((MetaClassImpl)metaClass).createStaticSite(callSite, args);
+        }
+        else
+          site = new StaticMetaClassSite(callSite, metaClass);
+
+        replaceCallSite(callSite, site);
+        return site;
+    }
+
+    private static CallSite createCallConstructorSite(CallSite callSite, Class receiver, Object[] args) {
+       MetaClass metaClass = InvokerHelper.getMetaClass(receiver);
+
+       CallSite site;
+       if (metaClass instanceof MetaClassImpl) {
+           site = ((MetaClassImpl)metaClass).createConstructorSite(callSite, args);
+       }
+       else
+         site = new MetaClassConstructorSite(callSite, metaClass);
+
+        replaceCallSite(callSite, site);
+        return site;
+    }
+
+    private static CallSite createCallCurrentSite(CallSite callSite, Object receiver, Object[] args, Class sender) {
+        CallSite site;
+        if (receiver instanceof GroovyInterceptable)
+          site = new PogoInterceptableSite(callSite);
+        else {
+            MetaClass metaClass = ((GroovyObject)receiver).getMetaClass();
+            if (metaClass instanceof MetaClassImpl) {
+                site = ((MetaClassImpl)metaClass).createPogoCallCurrentSite(callSite, sender, args);
+            }
+            else
+              site = new PogoMetaClassSite(callSite, metaClass);
+        }
+
+        replaceCallSite(callSite, site);
+        return site;
+    }
+
+    // for MetaClassImpl we try to pick meta method,
+    // otherwise or if method doesn't exist we make call via POJO meta class
+    private static CallSite createPojoSite(CallSite callSite, Object receiver, Object[] args) {
+        MetaClass metaClass = InvokerHelper.getMetaClass(receiver.getClass());
+
+        if (callSite.getUsage().get() == 0 && metaClass instanceof MetaClassImpl) {
+          return ((MetaClassImpl)metaClass).createPojoCallSite(callSite, receiver, args);
+        }
+
+        return new PojoMetaClassSite(callSite, metaClass);
+    }
+
+    private static CallSite createPogoSite(CallSite callSite, Object receiver, Object[] args) {
+        if (receiver instanceof GroovyInterceptable)
+          return new PogoInterceptableSite(callSite);
+
+        MetaClass metaClass = ((GroovyObject)receiver).getMetaClass();
+        if (metaClass instanceof MetaClassImpl) {
+            return ((MetaClassImpl)metaClass).createPogoCallSite(callSite, args);
+        }
+
+        return new PogoMetaClassSite(callSite, metaClass);
+    }
+
+    private static CallSite createCallSite(CallSite callSite, Object receiver, Object[] args) {
+        CallSite site;
+        if (receiver == null)
+          return new NullCallSite(callSite);
+
+        if (receiver instanceof Class)
+          site = createCallStaticSite(callSite, (Class) receiver, args);
+        else if (receiver instanceof GroovyObject) {
+            site = createPogoSite(callSite, receiver, args);
+        } else {
+            site = createPojoSite(callSite, receiver, args);
+        }
+
+        replaceCallSite(callSite, site);
+        return site;
+    }
+
+    private static void replaceCallSite(CallSite oldSite, CallSite newSite) {
+        oldSite.getArray().array [oldSite.getIndex()] = newSite;
+    }
+
+    private static class NullCallSite extends AbstractCallSite {
+        public NullCallSite(CallSite callSite) {
+            super(callSite);
+        }
+
+        public final Object call(Object receiver, Object[] args) {
+            if (receiver == null)
+               return InvokerHelper.invokeMethod(NullObject.getNullObject(), name, args);
+            else
+               return CallSiteArray.defaultCall(this, receiver, args);
         }
     }
 }

@@ -31,17 +31,14 @@ public class ConstructorSite extends MetaClassSite {
         this.params = params;
     }
 
-    public Object invoke(Object receiver, Object[] args) {
-        MetaClassHelper.unwrap(args);
-        return constructor.doConstructorInvoke(args);
-    }
-
-    public final CallSite acceptConstructor(Object receiver, Object[] args) {
+    public Object callConstructor(Object receiver, Object[] args) throws Throwable {
         if (receiver == metaClass.getTheClass() // meta class match receiver
-           && MetaClassHelper.sameClasses(params, args) ) // right arguments
-          return this;
+           && MetaClassHelper.sameClasses(params, args) ) { // right arguments
+            MetaClassHelper.unwrap(args);
+            return constructor.doConstructorInvoke(args);
+        }
         else
-          return createCallConstructorSite((Class)receiver, args);
+          return CallSiteArray.defaultCallConstructor(this, receiver, args);
     }
 
     public static ConstructorSite createConstructorSite(CallSite site, MetaClassImpl metaClass, CachedConstructor constructor, Class[] params, Object[] args) {
@@ -66,8 +63,13 @@ public class ConstructorSite extends MetaClassSite {
             super(site, metaClass, constructor, params);
         }
 
-        public final Object invoke(Object receiver, Object[] args) {
-            return constructor.doConstructorInvoke(args);
+        public final Object callConstructor(Object receiver, Object[] args) throws Throwable {
+            if (receiver == metaClass.getTheClass() // meta class match receiver
+               && MetaClassHelper.sameClasses(params, args) ) { // right arguments
+                return constructor.doConstructorInvoke(args);
+            }
+            else
+              return CallSiteArray.defaultCallConstructor(this, receiver, args);
         }
     }
 
@@ -80,8 +82,13 @@ public class ConstructorSite extends MetaClassSite {
             super(site, metaClass, constructor, params);
         }
 
-        public Object invoke(Object receiver, Object[] args) {
-            return constructor.invoke(args);
+        public Object callConstructor(Object receiver, Object[] args) throws Throwable {
+            if (receiver == metaClass.getTheClass() // meta class match receiver
+               && MetaClassHelper.sameClasses(params, args) ) { // right arguments
+                return constructor.invoke(args);
+            }
+            else
+              return CallSiteArray.defaultCallConstructor(this, receiver, args);
         }
     }
 
@@ -92,10 +99,15 @@ public class ConstructorSite extends MetaClassSite {
             super(site, metaClass, constructor, params);
         }
 
-        public final Object invoke(Object receiver, Object[] args) {
-            final Object bean = constructor.invoke(NO_ARGS);
-            ((MetaClassImpl)metaClass).setProperties(bean, (Map) args[0]);
-            return bean;
+        public final Object callConstructor(Object receiver, Object[] args) throws Throwable {
+            if (receiver == metaClass.getTheClass() // meta class match receiver
+               && MetaClassHelper.sameClasses(params, args) ) { // right arguments
+                final Object bean = constructor.invoke(NO_ARGS);
+                ((MetaClassImpl)metaClass).setProperties(bean, (Map) args[0]);
+                return bean;
+            }
+            else
+              return CallSiteArray.defaultCallConstructor(this, receiver, args);
         }
     }
 }

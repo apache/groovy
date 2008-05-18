@@ -24,7 +24,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  *
  * @author Alex Tkachman
 */
-public class PogoInterceptableSite extends CallSite {
+public class PogoInterceptableSite extends AbstractCallSite {
     public PogoInterceptableSite(CallSite site) {
         super(site);
     }
@@ -37,6 +37,6 @@ public class PogoInterceptableSite extends CallSite {
         if(receiver instanceof GroovyInterceptable)
           return ((GroovyObject) receiver).invokeMethod(name, InvokerHelper.asUnwrappedArray(args));
         else
-          return createCallSite(receiver, args);
+          return CallSiteArray.defaultCall(this, receiver, args);
     }
 }

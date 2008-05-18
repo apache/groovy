@@ -105,7 +105,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
-        public final Object call(Object receiver, Object arg) {
+        public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
                     return new Double(((Double) receiver).doubleValue() - ((Double) arg).doubleValue());
@@ -115,14 +115,6 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             }
             return super.call(receiver, arg);
         }
-
-        public final Object invoke(Object receiver, Object[] args) {
-            return new Double(((Double) receiver).doubleValue() - ((Double) args[0]).doubleValue());
-        }
-
-        public final Object invoke(Object receiver, Object arg) {
-            return new Double(((Double) receiver).doubleValue() - ((Double) arg).doubleValue());
-        }
     }
 
     private static class DoubleFloat extends NumberNumberCallSite {
@@ -130,7 +122,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
-        public final Object call(Object receiver, Object arg) {
+        public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
                     return new Double(((Double) receiver).doubleValue() - ((Float) arg).doubleValue());
@@ -140,14 +132,6 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             }
             return super.call(receiver, arg);
         }
-
-        public final Object invoke(Object receiver, Object[] args) {
-            return new Double(((Double) receiver).doubleValue() - ((Float) args[0]).doubleValue());
-        }
-
-        public final Object invoke(Object receiver, Object arg) {
-            return new Double(((Double) receiver).doubleValue() - ((Float) arg).doubleValue());
-        }
     }
 
     private static class DoubleLong extends NumberNumberCallSite {
@@ -155,7 +139,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
-        public final Object call(Object receiver, Object arg) {
+        public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
                     return new Double(((Double) receiver).doubleValue() - ((Long) arg).doubleValue());
@@ -165,14 +149,6 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             }
             return super.call(receiver, arg);
         }
-
-        public final Object invoke(Object receiver, Object[] args) {
-            return new Double(((Double) receiver).doubleValue() - ((Long) args[0]).doubleValue());
-        }
-
-        public final Object invoke(Object receiver, Object arg) {
-            return new Double(((Double) receiver).doubleValue() - ((Long) arg).doubleValue());
-        }
     }
 
     private static class DoubleInteger extends NumberNumberCallSite {
@@ -180,7 +156,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
-        public final Object call(Object receiver, Object arg) {
+        public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
                     return new Double(((Double) receiver).doubleValue() - ((Integer) arg).intValue());
@@ -190,14 +166,6 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             }
             return super.call(receiver, arg);
         }
-
-        public final Object invoke(Object receiver, Object[] args) {
-            return new Double(((Double) receiver).doubleValue() - ((Integer) args[0]).doubleValue());
-        }
-
-        public final Object invoke(Object receiver, Object arg) {
-            return new Double(((Double) receiver).doubleValue() - ((Integer) arg).intValue());
-        }
     }
 
     private static class FloatDouble extends NumberNumberCallSite {
@@ -205,7 +173,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
-        public final Object call(Object receiver, Object arg) {
+        public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
                     return new Double(((Float) receiver).doubleValue() - ((Double) arg).doubleValue());
@@ -215,14 +183,6 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             }
             return super.call(receiver, arg);
         }
-
-        public final Object invoke(Object receiver, Object[] args) {
-            return new Double(((Float) receiver).doubleValue() - ((Double) args[0]).doubleValue());
-        }
-
-        public final Object invoke(Object receiver, Object arg) {
-            return new Double(((Float) receiver).doubleValue() - ((Double) arg).doubleValue());
-        }
     }
 
     private static class FloatFloat extends NumberNumberCallSite {
@@ -230,7 +190,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
-        public final Object call(Object receiver, Object arg) {
+        public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
                     return new Double(((Float) receiver).doubleValue() - ((Float) arg).doubleValue());
@@ -240,14 +200,6 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             }
             return super.call(receiver, arg);
         }
-
-        public final Object invoke(Object receiver, Object[] args) {
-            return new Double(((Float) receiver).doubleValue() - ((Float) args[0]).doubleValue());
-        }
-
-        public final Object invoke(Object receiver, Object arg) {
-            return new Double(((Float) receiver).doubleValue() - ((Float) arg).doubleValue());
-        }
     }
 
     private static class FloatLong extends NumberNumberCallSite {
@@ -255,7 +207,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
-        public final Object call(Object receiver, Object arg) {
+        public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
                     return new Double(((Float) receiver).doubleValue() - ((Long) arg).doubleValue());
@@ -265,14 +217,6 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             }
             return super.call(receiver, arg);
         }
-
-        public final Object invoke(Object receiver, Object[] args) {
-            return new Double(((Float) receiver).doubleValue() - ((Long) args[0]).doubleValue());
-        }
-
-        public final Object invoke(Object receiver, Object arg) {
-            return new Double(((Float) receiver).doubleValue() - ((Long) arg).doubleValue());
-        }
     }
 
     private static class FloatInteger extends NumberNumberCallSite {
@@ -280,7 +224,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
-        public final Object call(Object receiver, Object arg) {
+        public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
                     return new Double(((Float) receiver).doubleValue() - ((Integer) arg).doubleValue());
@@ -290,14 +234,6 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             }
             return super.call(receiver, arg);
         }
-
-        public final Object invoke(Object receiver, Object[] args) {
-            return new Double(((Float) receiver).doubleValue() - ((Integer) args[0]).doubleValue());
-        }
-
-        public final Object invoke(Object receiver, Object arg) {
-            return new Double(((Float) receiver).doubleValue() - ((Integer) arg).doubleValue());
-        }
     }
 
     private static class LongDouble extends NumberNumberCallSite {
@@ -305,7 +241,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
-        public final Object call(Object receiver, Object arg) {
+        public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
                     return new Double(((Long) receiver).doubleValue() - ((Double) arg).doubleValue());
@@ -315,14 +251,6 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             }
             return super.call(receiver, arg);
         }
-
-        public final Object invoke(Object receiver, Object[] args) {
-            return new Double(((Long) receiver).doubleValue() - ((Double) args[0]).doubleValue());
-        }
-
-        public final Object invoke(Object receiver, Object arg) {
-            return new Double(((Long) receiver).doubleValue() - ((Double) arg).doubleValue());
-        }
     }
 
     private static class LongFloat extends NumberNumberCallSite {
@@ -330,7 +258,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
-        public final Object call(Object receiver, Object arg) {
+        public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
                     return new Double(((Long) receiver).doubleValue() - ((Float) arg).doubleValue());
@@ -340,14 +268,6 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             }
             return super.call(receiver, arg);
         }
-
-        public final Object invoke(Object receiver, Object[] args) {
-            return new Double(((Long) receiver).doubleValue() - ((Float) args[0]).doubleValue());
-        }
-
-        public final Object invoke(Object receiver, Object arg) {
-            return new Double(((Long) receiver).doubleValue() - ((Float) arg).doubleValue());
-        }
     }
 
     private static class LongLong extends NumberNumberCallSite {
@@ -355,7 +275,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
-        public final Object call(Object receiver, Object arg) {
+        public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
                     return new Long(((Long) receiver).longValue() - ((Long) arg).longValue());
@@ -365,14 +285,6 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             }
             return super.call(receiver, arg);
         }
-
-        public final Object invoke(Object receiver, Object[] args) {
-            return new Long(((Long) receiver).longValue() - ((Long) args[0]).longValue());
-        }
-
-        public final Object invoke(Object receiver, Object arg) {
-            return new Long(((Long) receiver).longValue() - ((Long) arg).longValue());
-        }
     }
 
     private static class LongInteger extends NumberNumberCallSite {
@@ -380,7 +292,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
-        public final Object call(Object receiver, Object arg) {
+        public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
                     return new Long(((Long) receiver).longValue() - ((Integer) arg).longValue());
@@ -390,14 +302,6 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             }
             return super.call(receiver, arg);
         }
-
-        public final Object invoke(Object receiver, Object[] args) {
-            return new Long(((Long) receiver).longValue() - ((Integer) args[0]).longValue());
-        }
-
-        public final Object invoke(Object receiver, Object arg) {
-            return new Long(((Long) receiver).longValue() - ((Integer) arg).longValue());
-        }
     }
 
     private static class IntegerDouble extends NumberNumberCallSite {
@@ -405,7 +309,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
-        public final Object call(Object receiver, Object arg) {
+        public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
                     return new Double(((Integer) receiver).doubleValue() - ((Double) arg).doubleValue());
@@ -415,14 +319,6 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             }
             return super.call(receiver, arg);
         }
-
-        public final Object invoke(Object receiver, Object[] args) {
-            return new Double(((Integer) receiver).doubleValue() - ((Double) args[0]).doubleValue());
-        }
-
-        public final Object invoke(Object receiver, Object arg) {
-            return new Double(((Integer) receiver).doubleValue() - ((Double) arg).doubleValue());
-        }
     }
 
     private static class IntegerFloat extends NumberNumberCallSite {
@@ -430,7 +326,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
-        public final Object call(Object receiver, Object arg) {
+        public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
                     return new Double(((Integer) receiver).doubleValue() - ((Float) arg).doubleValue());
@@ -440,14 +336,6 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             }
             return super.call(receiver, arg);
         }
-
-        public final Object invoke(Object receiver, Object[] args) {
-            return new Double(((Integer) receiver).doubleValue() - ((Float) args[0]).doubleValue());
-        }
-
-        public final Object invoke(Object receiver, Object arg) {
-            return new Double(((Integer) receiver).doubleValue() - ((Float) arg).doubleValue());
-        }
     }
 
     private static class IntegerLong extends NumberNumberCallSite {
@@ -455,7 +343,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
-        public final Object call(Object receiver, Object arg) {
+        public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
                     return new Long(((Integer) receiver).longValue() - ((Long) arg).longValue());
@@ -465,14 +353,6 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             }
             return super.call(receiver, arg);
         }
-
-        public final Object invoke(Object receiver, Object[] args) {
-            return new Long(((Integer) receiver).longValue() - ((Long) args[0]).longValue());
-        }
-
-        public final Object invoke(Object receiver, Object arg) {
-            return new Long(((Integer) receiver).longValue() - ((Long) arg).longValue());
-        }
     }
 
     private static class IntegerInteger extends NumberNumberCallSite {
@@ -480,7 +360,7 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             super(site, metaClass, metaMethod, params, (Number) receiver, (Number) args[0]);
         }
 
-        public final Object call(Object receiver, Object arg) {
+        public final Object call(Object receiver, Object arg) throws Throwable {
             try {
                 if (checkPojoMetaClass()) {
                   return new Integer(((Integer) receiver).intValue() - ((Integer) arg).intValue());
@@ -489,14 +369,6 @@ public final class NumberNumberMinus extends NumberNumberMetaMethod {
             catch (ClassCastException e) {//
             }
             return super.call(receiver, arg);
-        }
-
-        public final Object invoke(Object receiver, Object[] args) {
-            return new Integer(((Integer) receiver).intValue() - ((Integer) args[0]).intValue());
-        }
-
-        public final Object invoke(Object receiver, Object arg) {
-            return new Integer(((Integer) receiver).intValue() - ((Integer) arg).intValue());
         }
     }
 

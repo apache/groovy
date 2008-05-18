@@ -22,7 +22,7 @@ import groovy.lang.MetaClass;
  *
  * @author Alex Tkachman
 */
-public abstract class MetaClassSite extends CallSite {
+public abstract class MetaClassSite extends AbstractCallSite {
     protected final MetaClass metaClass;
 
     public MetaClassSite(CallSite site, MetaClass metaClass) {

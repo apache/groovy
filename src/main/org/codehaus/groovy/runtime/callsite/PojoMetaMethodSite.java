@@ -51,7 +51,7 @@ public class PojoMetaMethodSite extends MetaMethodSite {
         if(checkCall(receiver, args))
           return invoke(receiver,args);
         else
-          return defaultCall(receiver, args);
+          return CallSiteArray.defaultCall(this, receiver, args);
     }
 
     protected final boolean checkPojoMetaClass() {
@@ -85,13 +85,6 @@ public class PojoMetaMethodSite extends MetaMethodSite {
 
             throw e;
         }
-    }
-
-    public Object call(Object receiver, Object arg) {
-        if (checkCall(receiver, arg))
-          return invoke(receiver, arg);
-        else
-          return defaultCall(receiver, ArrayUtil.createArray(arg));
     }
 
     public static CallSite createPojoMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {

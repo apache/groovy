@@ -22,11 +22,13 @@ public class ConstructorMetaMethodSite extends MetaMethodSite {
         return metaMethod.doMethodInvoke(metaClass.getTheClass(), args);
     }
 
-    public final CallSite acceptConstructor(Object receiver, Object[] args) {
+    public final Object callConstructor(Object receiver, Object[] args) throws Throwable {
         if (receiver == metaClass.getTheClass() // meta class match receiver
-           && MetaClassHelper.sameClasses(params, args) ) // right arguments
-          return this;
+           && MetaClassHelper.sameClasses(params, args) )  { // right arguments
+            MetaClassHelper.unwrap(args);
+            return metaMethod.doMethodInvoke(metaClass.getTheClass(), args);
+        }
         else
-          return createCallConstructorSite((Class)receiver, args);
+          return CallSiteArray.defaultCallConstructor(this, receiver, args);
     }
 }

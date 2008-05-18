@@ -35,8 +35,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.util.Arrays;
-import java.util.Comparator;
+import java.util.*;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -49,8 +48,6 @@ public class CachedMethod extends MetaMethod implements Comparable, Opcodes{
     private final Method cachedMethod;
     private int methodIndex;
     private int hashCode;
-
-    private final AtomicBoolean queuedToCompile = new AtomicBoolean();
 
     private static MyComparator comparator = new MyComparator();
 
@@ -300,9 +297,6 @@ public class CachedMethod extends MetaMethod implements Comparable, Opcodes{
         mv.visitMethodInsn(INVOKEVIRTUAL, "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", "checkCall", "(Ljava/lang/Object;[Ljava/lang/Object;)Z");
         Label l0 = new Label();
         mv.visitJumpInsn(IFEQ, l0);
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitVarInsn(ALOAD, 1);
-        mv.visitVarInsn(ALOAD, 2);
 
         BytecodeHelper helper = new BytecodeHelper(mv);
 
@@ -333,15 +327,9 @@ public class CachedMethod extends MetaMethod implements Comparable, Opcodes{
         mv.visitVarInsn(ALOAD, 0);
         mv.visitVarInsn(ALOAD, 1);
         mv.visitVarInsn(ALOAD, 2);
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitFieldInsn(GETFIELD, "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", "array", "Lorg/codehaus/groovy/runtime/callsite/CallSiteArray;");
-        mv.visitFieldInsn(GETFIELD, "org/codehaus/groovy/runtime/callsite/CallSiteArray", "owner", "Ljava/lang/Class;");
-        mv.visitMethodInsn(INVOKEVIRTUAL, "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", "createCallCurrentSite", "(Ljava/lang/Object;[Ljava/lang/Object;Ljava/lang/Class;)Lorg/codehaus/groovy/runtime/callsite/CallSite;");
-        mv.visitVarInsn(ALOAD, 1);
-        mv.visitVarInsn(ALOAD, 2);
-        mv.visitMethodInsn(INVOKEVIRTUAL, "org/codehaus/groovy/runtime/callsite/CallSite", "invoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
+        mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/callsite/CallSiteArray", "defaultCallCurrent", "(Lorg/codehaus/groovy/runtime/callsite/CallSite;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
         mv.visitInsn(ARETURN);
-        mv.visitMaxs(4, 3);
+        mv.visitMaxs(0, 0);
         mv.visitEnd();
         }
 
@@ -395,15 +383,7 @@ public class CachedMethod extends MetaMethod implements Comparable, Opcodes{
         for (int i = 0; i != pc; ++i)
             mv.visitVarInsn(ALOAD, i+2);
         mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/ArrayUtil", "createArray", "(" + pdesc + ")[Ljava/lang/Object;");
-        mv.visitVarInsn(ASTORE, pc + 2);
-        mv.visitVarInsn(ALOAD, pc + 2);
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitFieldInsn(GETFIELD, "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", "array", "Lorg/codehaus/groovy/runtime/callsite/CallSiteArray;");
-        mv.visitFieldInsn(GETFIELD, "org/codehaus/groovy/runtime/callsite/CallSiteArray", "owner", "Ljava/lang/Class;");
-        mv.visitMethodInsn(INVOKEVIRTUAL, "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", "createCallCurrentSite", "(Ljava/lang/Object;[Ljava/lang/Object;Ljava/lang/Class;)Lorg/codehaus/groovy/runtime/callsite/CallSite;");
-        mv.visitVarInsn(ALOAD, 1);
-        mv.visitVarInsn(ALOAD, pc + 2);
-        mv.visitMethodInsn(INVOKEVIRTUAL, "org/codehaus/groovy/runtime/callsite/CallSite", "invoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
+        mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/callsite/CallSiteArray", "defaultCallCurrent", "(Lorg/codehaus/groovy/runtime/callsite/CallSite;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
         mv.visitInsn(ARETURN);
         mv.visitMaxs(0, 0);
         mv.visitEnd();
@@ -419,9 +399,6 @@ public class CachedMethod extends MetaMethod implements Comparable, Opcodes{
         mv.visitMethodInsn(INVOKEVIRTUAL, "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", "checkCall", "(Ljava/lang/Object;[Ljava/lang/Object;)Z");
         Label l0 = new Label();
         mv.visitJumpInsn(IFEQ, l0);
-        mv.visitVarInsn(ALOAD, 0);
-        mv.visitVarInsn(ALOAD, 1);
-        mv.visitVarInsn(ALOAD, 2);
 
         BytecodeHelper helper = new BytecodeHelper(mv);
 
@@ -452,12 +429,9 @@ public class CachedMethod extends MetaMethod implements Comparable, Opcodes{
         mv.visitVarInsn(ALOAD, 0);
         mv.visitVarInsn(ALOAD, 1);
         mv.visitVarInsn(ALOAD, 2);
-        mv.visitMethodInsn(INVOKEVIRTUAL, "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", "createCallSite", "(Ljava/lang/Object;[Ljava/lang/Object;)Lorg/codehaus/groovy/runtime/callsite/CallSite;");
-        mv.visitVarInsn(ALOAD, 1);
-        mv.visitVarInsn(ALOAD, 2);
-        mv.visitMethodInsn(INVOKEVIRTUAL, "org/codehaus/groovy/runtime/callsite/CallSite", "invoke", "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
+        mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/callsite/CallSiteArray", "defaultCall", "(Lorg/codehaus/groovy/runtime/callsite/CallSite;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
         mv.visitInsn(ARETURN);
-        mv.visitMaxs(4, 3);
+        mv.visitMaxs(0, 0);
         mv.visitEnd();
         }
 
@@ -685,6 +659,17 @@ public class CachedMethod extends MetaMethod implements Comparable, Opcodes{
     private static class MyClassLoader extends ClassLoader {
         final Class cls;
 
+        private final static Set<String> knownClasses = new HashSet<String> ();
+        static {
+            Collections.addAll(knownClasses
+                    , "org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite"
+                    , "org.codehaus.groovy.runtime.callsite.CallSite"
+                    , "groovy.lang.MetaMethod"
+                    , "groovy.lang.MetaClassImpl"
+                    , "org.codehaus.groovy.runtime.callsite.CallSiteArray"
+                    );
+        }
+
         private MyClassLoader(Class parent, String name, byte bytes []) {
             super(parent.getClassLoader());
             cls = defineClass(name, bytes, 0, bytes.length, parent.getProtectionDomain());
@@ -692,9 +677,17 @@ public class CachedMethod extends MetaMethod implements Comparable, Opcodes{
         }
 
         protected synchronized Class loadClass(String name, boolean resolve) throws ClassNotFoundException {
-            if (name.startsWith("org.codehaus.groovy.runtime") || name.startsWith("groovy.lang"))
+            if (knownClasses.contains(name))
               return getClass().getClassLoader().loadClass(name);
-            return super.loadClass(name, resolve);
+            else {
+                final Class aClass = null;
+                try {
+                    return super.loadClass(name, resolve);
+                }
+                catch (ClassNotFoundException e) {
+                    return getClass().getClassLoader().loadClass(name);
+                }
+            }
         }
     }
 }

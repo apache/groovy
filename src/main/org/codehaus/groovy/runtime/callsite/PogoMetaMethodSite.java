@@ -44,14 +44,14 @@ public class PogoMetaMethodSite extends MetaMethodSite {
         if(checkCall(receiver, args))
           return invoke(receiver,args);
         else
-          return createCallCurrentSite(receiver, args, array.owner).invoke(receiver,args);
+          return CallSiteArray.defaultCallCurrent(this, receiver, args);
     }
 
     public Object call(Object receiver, Object[] args) {
         if(checkCall(receiver, args))
           return invoke(receiver,args);
         else
-          return super.call(receiver, args);
+          return CallSiteArray.defaultCall(this, receiver, args);
     }
 
     protected boolean checkCall(Object receiver, Object[] args) {
@@ -250,10 +250,6 @@ public class PogoMetaMethodSite extends MetaMethodSite {
 
         public PogoCachedMethodSiteNoUnwrapNoCoerce(CallSite site, MetaClassImpl metaClass, CachedMethod metaMethod, Class params[]) {
             super(site, metaClass, metaMethod, params);
-        }
-
-        protected boolean checkCall(Object receiver, Object[] args) {
-            return ((CachedMethod)metaMethod).pojoCallSiteConstructor == null &&  super.checkCall(receiver, args);
         }
 
         public final Object invoke(Object receiver, Object[] args) {

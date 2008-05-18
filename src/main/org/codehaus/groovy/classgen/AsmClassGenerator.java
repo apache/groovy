@@ -295,110 +295,6 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
 
-    // EXPERIMENTAL
-    private void generateCallSiteMethods() {
-        final int size = callSites.size();
-        for (int i = 0; i < size; i++) {
-            MethodVisitor mv = cv.visitMethod(ACC_PRIVATE+ACC_SYNTHETIC+ACC_STATIC,"$cs$" + i, "(Lorg/codehaus/groovy/runtime/callsite/CallSite;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;", null, null);
-            mv.visitCode();
-            mv.visitVarInsn(ALOAD,0);
-            mv.visitVarInsn(ALOAD,1);
-            mv.visitVarInsn(ALOAD,2);
-            mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "call","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
-            mv.visitInsn(ARETURN);
-            mv.visitMaxs(0,0);
-            mv.visitEnd();
-        }
-    }
-
-    private void generateAdapterMethods() {
-        final int size = adapterMethods.size();
-        for (int i = 0; i < size; i++) {
-            MethodNode m = (MethodNode) adapterMethods.get(i);
-
-            MethodVisitor mv = cv.visitMethod(ACC_PRIVATE+ACC_SYNTHETIC+ACC_STATIC,"$ma$" + i, "(Lorg/codehaus/groovy/runtime/callsite/CallSite;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", null, null);
-            mv.visitCode();
-            mv.visitVarInsn(ALOAD,0);
-            mv.visitVarInsn(ALOAD,1);
-            mv.visitVarInsn(ALOAD,2);
-            mv.visitMethodInsn(INVOKESTATIC, internalClassName, "$get$ma$"  + i, "()[Ljava/lang/Class;");
-            mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "acceptCurrentTyped","(Ljava/lang/Object;[Ljava/lang/Object;[Ljava/lang/Class;)Lorg/codehaus/groovy/runtime/callsite/CallSite;");
-            mv.visitInsn(DUP);
-            Label l = new Label();
-            mv.visitJumpInsn(IFNONNULL, l);
-            mv.visitInsn(POP);
-
-            BytecodeHelper helper = new BytecodeHelper(mv);
-
-            mv.visitVarInsn(ALOAD, 1);
-            helper.doCast(m.getDeclaringClass());
-
-            final Parameter[] parameters = m.getParameters();
-            int plen = parameters.length;
-            for (int k = 0; k < plen; k++) {
-                // unpack argument from Object[]
-                mv.visitVarInsn(ALOAD, 2);
-                helper.pushConstant(k);
-                mv.visitInsn(AALOAD);
-
-                // cast argument to parameter class, inclusive unboxing
-                // for methods with primitive types
-                ClassNode type = parameters[k].getType();
-                if (ClassHelper.isPrimitiveType(type)) {
-                    helper.unbox(type);
-                } else {
-                    helper.doCast(type);
-                }
-            }
-            mv.visitMethodInsn(INVOKEVIRTUAL, BytecodeHelper.getClassInternalName(m.getDeclaringClass()), m.getName(), BytecodeHelper.getMethodDescriptor(m.getReturnType(), m.getParameters()));
-            if (m.getReturnType().equals(ClassHelper.VOID_TYPE))
-               mv.visitInsn(ACONST_NULL);
-            
-            mv.visitInsn(ARETURN);
-            mv.visitLabel(l);
-            mv.visitVarInsn(ALOAD,1);
-            mv.visitVarInsn(ALOAD,2);
-            mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "invoke","(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
-            mv.visitInsn(ARETURN);
-            mv.visitMaxs(0,0);
-            mv.visitEnd();
-
-            FieldVisitor fv = cv.visitField(ACC_PRIVATE + ACC_STATIC + ACC_SYNTHETIC, "$ma$" + i, "[Ljava/lang/Class;", null, null);
-            fv.visitEnd();
-
-            mv = cv.visitMethod(ACC_PRIVATE + ACC_STATIC + ACC_SYNTHETIC, "$get$ma$" + i,"()[Ljava/lang/Class;",null, null);
-            mv.visitCode();
-            mv.visitFieldInsn(GETSTATIC,internalClassName,"$ma$"+i,"[Ljava/lang/Class;");
-            mv.visitInsn(DUP);
-            Label l0 = new Label();
-            mv.visitJumpInsn(IFNONNULL,l0);
-            mv.visitInsn(POP);
-
-            mv.visitLdcInsn(Integer.valueOf(plen +1));
-            mv.visitTypeInsn(ANEWARRAY, "java/lang/Class");
-            mv.visitInsn(DUP);
-            mv.visitLdcInsn(Integer.valueOf(0));
-            mv.visitLdcInsn(BytecodeHelper.getClassLoadingTypeDescription(m.getDeclaringClass()));
-            mv.visitMethodInsn(INVOKESTATIC,internalClassName,"class$","(Ljava/lang/String;)Ljava/lang/Class;");
-            mv.visitInsn(AASTORE);
-            for (int j = 0; j < plen; j++) {
-                mv.visitInsn(DUP);
-                mv.visitLdcInsn(Integer.valueOf(j+1));
-                mv.visitLdcInsn(BytecodeHelper.getClassLoadingTypeDescription(m.getParameters()[j].getType()));
-                mv.visitMethodInsn(INVOKESTATIC,internalClassName,"class$","(Ljava/lang/String;)Ljava/lang/Class;");
-                mv.visitInsn(AASTORE);
-            }
-
-            mv.visitInsn(DUP);
-            mv.visitFieldInsn(PUTSTATIC,internalClassName,"$ma$"+i,"[Ljava/lang/Class;");
-            mv.visitLabel(l0);
-            mv.visitInsn(ARETURN);
-            mv.visitMaxs(0,0);
-            mv.visitEnd();
-
-        }
-    }
-
     private void generateGetCallSiteArray() {
         MethodVisitor mv = cv.visitMethod(ACC_PRIVATE+ACC_SYNTHETIC+ACC_STATIC,"$getCallSiteArray", "()[Lorg/codehaus/groovy/runtime/callsite/CallSite;", null, null);
         mv.visitCode();
@@ -436,11 +332,11 @@ public class AsmClassGenerator extends ClassGenerator {
         mv.visitFieldInsn(GETSTATIC, internalClassName, "$ownClass", "Ljava/lang/Class;");
 
         final int size = callSites.size();
-        mv.visitLdcInsn(Integer.valueOf(size));
+        mv.visitLdcInsn(size);
         mv.visitTypeInsn(ANEWARRAY, "java/lang/String");
         for (int i = 0; i < size; i++) {
             mv.visitInsn(DUP);
-            mv.visitLdcInsn(Integer.valueOf(i));
+            mv.visitLdcInsn(i);
             mv.visitLdcInsn(callSites.get(i));
             mv.visitInsn(AASTORE);
         }
@@ -1985,9 +1881,9 @@ public class AsmClassGenerator extends ClassGenerator {
         visitAndAutoboxBoolean(receiver);
         this.implicitThis = oldVal;
         if (!safe)
-          mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "callGetProperty","(Ljava/lang/Object;)Ljava/lang/Object;");
+          mv.visitMethodInsn(INVOKEINTERFACE,"org/codehaus/groovy/runtime/callsite/CallSite", "callGetProperty","(Ljava/lang/Object;)Ljava/lang/Object;");
         else {
-          mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "callGetPropertySafe","(Ljava/lang/Object;)Ljava/lang/Object;");
+          mv.visitMethodInsn(INVOKEINTERFACE,"org/codehaus/groovy/runtime/callsite/CallSite", "callGetPropertySafe","(Ljava/lang/Object;)Ljava/lang/Object;");
         }
         leftHandExpression = lhs;
     }
@@ -2011,9 +1907,9 @@ public class AsmClassGenerator extends ClassGenerator {
         visitAndAutoboxBoolean(receiver);
         this.implicitThis = oldVal;
         if (!safe)
-          mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "callGroovyObjectGetProperty","(Ljava/lang/Object;)Ljava/lang/Object;");
+          mv.visitMethodInsn(INVOKEINTERFACE,"org/codehaus/groovy/runtime/callsite/CallSite", "callGroovyObjectGetProperty","(Ljava/lang/Object;)Ljava/lang/Object;");
         else {
-          mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "callGroovyObjectGetPropertySafe","(Ljava/lang/Object;)Ljava/lang/Object;");
+          mv.visitMethodInsn(INVOKEINTERFACE,"org/codehaus/groovy/runtime/callsite/CallSite", "callGroovyObjectGetPropertySafe","(Ljava/lang/Object;)Ljava/lang/Object;");
         }
         leftHandExpression = lhs;
     }
@@ -2098,22 +1994,22 @@ public class AsmClassGenerator extends ClassGenerator {
 
         final String desc = getDescForParamNum(numberOfArguments);
         if (callStatic) {
-            mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "callStatic", desc);
+            mv.visitMethodInsn(INVOKEINTERFACE,"org/codehaus/groovy/runtime/callsite/CallSite", "callStatic", desc);
         }
         else
             if (constructor) {
-                mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "callConstructor", desc);
+                mv.visitMethodInsn(INVOKEINTERFACE,"org/codehaus/groovy/runtime/callsite/CallSite", "callConstructor", desc);
             }
             else {
                 if (callCurrent) {
-                      mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "callCurrent", desc);
+                      mv.visitMethodInsn(INVOKEINTERFACE,"org/codehaus/groovy/runtime/callsite/CallSite", "callCurrent", desc);
                 }
                 else {
                     if (safe) {
-                      mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "callSafe", desc);
+                      mv.visitMethodInsn(INVOKEINTERFACE,"org/codehaus/groovy/runtime/callsite/CallSite", "callSafe", desc);
                     }
                     else {
-                      mv.visitMethodInsn(INVOKEVIRTUAL,"org/codehaus/groovy/runtime/callsite/CallSite", "call", desc);
+                      mv.visitMethodInsn(INVOKEINTERFACE,"org/codehaus/groovy/runtime/callsite/CallSite", "call", desc);
                     }
                 }
             }
@@ -2135,12 +2031,6 @@ public class AsmClassGenerator extends ClassGenerator {
             default:
                 return "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;";
         }
-    }
-
-    List adapterMethods = new ArrayList ();
-    private String allocateCallAdapter(MethodNode method) {
-        adapterMethods.add(method);
-        return "$ma$" + (adapterMethods.size ()-1);
     }
 
     private static String [] sig = new String [255];
@@ -2341,7 +2231,7 @@ public class AsmClassGenerator extends ClassGenerator {
         visitAndAutoboxBoolean(receiver);
         this.implicitThis = oldVal;
         visitAndAutoboxBoolean(arguments);
-        mv.visitMethodInsn(INVOKEVIRTUAL, "org/codehaus/groovy/runtime/callsite/CallSite", "call","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+        mv.visitMethodInsn(INVOKEINTERFACE, "org/codehaus/groovy/runtime/callsite/CallSite", "call","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
         leftHandExpression = lhs;
     }
 
@@ -2353,7 +2243,7 @@ public class AsmClassGenerator extends ClassGenerator {
             mv.visitMethodInsn(INVOKESTATIC,internalClassName,"$getCallSiteArray","()[Lorg/codehaus/groovy/runtime/callsite/CallSite;");
         }
         final int index = allocateIndex(message);
-        mv.visitLdcInsn(Integer.valueOf(index));
+        mv.visitLdcInsn(index);
         mv.visitInsn(AALOAD);
     }
 
@@ -3961,15 +3851,15 @@ public class AsmClassGenerator extends ClassGenerator {
                 // cs_put cs_method cs_get obj index
                 mv.visitInsn(DUP2_X2);
                 // cs_put obj index cs_method cs_get obj index
-                mv.visitMethodInsn(INVOKEVIRTUAL, "org/codehaus/groovy/runtime/callsite/CallSite", "call","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+                mv.visitMethodInsn(INVOKEINTERFACE, "org/codehaus/groovy/runtime/callsite/CallSite", "call","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
                 // cs_put obj index cs_method obj[index]
                 visitAndAutoboxBoolean(expression.getRightExpression());
                 // cs_put obj index cs_method obj[index] right
-                mv.visitMethodInsn(INVOKEVIRTUAL, "org/codehaus/groovy/runtime/callsite/CallSite", "call","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+                mv.visitMethodInsn(INVOKEINTERFACE, "org/codehaus/groovy/runtime/callsite/CallSite", "call","(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
                 // cs_put obj index (obj[index] + right)
                 final int resultVar = compileStack.defineTemporaryVariable("$result", true);
                 mv.visitVarInsn(ALOAD, resultVar );
-                mv.visitMethodInsn(INVOKEVIRTUAL, "org/codehaus/groovy/runtime/callsite/CallSite", "call","(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+                mv.visitMethodInsn(INVOKEINTERFACE, "org/codehaus/groovy/runtime/callsite/CallSite", "call","(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
                 mv.visitInsn(POP); //drop return value
 
                 mv.visitVarInsn(ALOAD, resultVar );
@@ -4014,7 +3904,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
                 final int resultVar = compileStack.defineTemporaryVariable("$result", true);
                 mv.visitVarInsn(ALOAD, resultVar );
-                mv.visitMethodInsn(INVOKEVIRTUAL, "org/codehaus/groovy/runtime/callsite/CallSite", "call","(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
+                mv.visitMethodInsn(INVOKEINTERFACE, "org/codehaus/groovy/runtime/callsite/CallSite", "call","(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;");
                 mv.visitInsn(POP); //drop return value
 
                 mv.visitVarInsn(ALOAD, resultVar );

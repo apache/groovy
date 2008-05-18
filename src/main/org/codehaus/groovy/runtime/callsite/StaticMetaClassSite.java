@@ -14,14 +14,17 @@ public class StaticMetaClassSite extends MetaClassSite {
         super(site, metaClass);
     }
 
-    public final Object invoke(Object receiver, Object [] args) {
-        return metaClass.invokeStaticMethod(receiver, name, args);
+    public final Object call(Object receiver, Object[] args) {
+        if(receiver == metaClass.getTheClass())
+          return metaClass.invokeStaticMethod(receiver, name, args);
+        else
+          return CallSiteArray.defaultCall(this, receiver, args);
     }
 
     public final Object callStatic(Object receiver, Object[] args) {
         if(receiver == metaClass.getTheClass())
-          return invoke(receiver, args);
+          return metaClass.invokeStaticMethod(receiver, name, args);
         else
-          return defaultCallStatic(receiver, args);
+          return CallSiteArray.defaultCallStatic(this, receiver, args);
     }
 }

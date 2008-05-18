@@ -7,13 +7,6 @@ import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 
-/**
- * Created by IntelliJ IDEA.
-* User: applerestore
-* Date: Mar 16, 2008
-* Time: 3:38:52 PM
-* To change this template use File | Settings | File Templates.
-*/
 public class CharacterArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
         private static final CachedClass ARR_CLASS = ReflectionCache.getCachedClass(char[].class);
 
@@ -42,12 +35,7 @@ public class CharacterArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
             super(site, metaClass, metaMethod, params);
         }
 
-        public Object invoke(Object receiver, Object[] args) {
-            final char[] objects = (char[]) receiver;
-            return objects[normaliseIndex(((Integer) args[0]).intValue(), objects.length)];
-        }
-
-        public Object call(Object receiver, Object arg) {
+        public Object call(Object receiver, Object arg) throws Throwable {
             if ((receiver instanceof char[] && arg instanceof Integer)
                     && checkPojoMetaClass()) {
                 final char[] objects = (char[]) receiver;
@@ -55,11 +43,6 @@ public class CharacterArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
             }
             else
               return super.call(receiver,arg);
-        }
-
-        public Object invoke(Object receiver, Object arg) {
-            final char[] objects = (char[]) receiver;
-            return objects[normaliseIndex(((Integer) arg).intValue(), objects.length)];
         }
     }
 }

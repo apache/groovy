@@ -29,14 +29,10 @@ public class MetaClassConstructorSite extends MetaClassSite {
         super(site, metaClass);
     }
 
-    public final Object invoke(Object receiver, Object[] args) {
-        return metaClass.invokeConstructor(args);
-    }
-
-    public CallSite acceptConstructor(Object receiver, Object[] args) {
+    public Object callConstructor(Object receiver, Object[] args) throws Throwable {
         if (receiver == metaClass.getTheClass())
-          return this;
+            return metaClass.invokeConstructor(args);
         else
-          return createCallConstructorSite((Class) receiver, args);
+          return CallSiteArray.defaultCallConstructor(this, receiver, args);
     }
 }

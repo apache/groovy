@@ -1,3 +1,18 @@
+/*
+ * Copyright 2003-2007 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.codehaus.groovy.runtime.dgmimpl.arrays;
 
 import groovy.lang.MetaClassImpl;
@@ -7,13 +22,6 @@ import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 
-/**
- * Created by IntelliJ IDEA.
-* User: applerestore
-* Date: Mar 16, 2008
-* Time: 3:37:43 PM
-* To change this template use File | Settings | File Templates.
-*/
 public class BooleanArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
    private static final CachedClass ARR_CLASS = ReflectionCache.getCachedClass(boolean[].class);
 
@@ -42,12 +50,7 @@ public class BooleanArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
             super(site, metaClass, metaMethod, params);
         }
 
-        public Object invoke(Object receiver, Object[] args) {
-            final boolean[] objects = (boolean[]) receiver;
-            return objects[normaliseIndex(((Integer) args[0]).intValue(), objects.length)];
-        }
-
-        public Object call(Object receiver, Object arg) {
+        public Object call(Object receiver, Object arg) throws Throwable {
             if ((receiver instanceof boolean[] && arg instanceof Integer)
                     && checkPojoMetaClass()) {
                 final boolean[] objects = (boolean[]) receiver;
@@ -55,11 +58,6 @@ public class BooleanArrayGetAtMetaMethod extends ArrayGetAtMetaMethod {
             }
             else
               return super.call(receiver,arg);
-        }
-
-        public Object invoke(Object receiver, Object arg) {
-            final boolean[] objects = (boolean[]) receiver;
-            return objects[normaliseIndex(((Integer) arg).intValue(), objects.length)];
         }
     }
 }

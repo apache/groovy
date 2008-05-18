@@ -784,11 +784,14 @@ public class MetaClassHelper {
 
         for (int i = params.length-1; i >= 0; i--) {
             Object arg = arguments[i];
-            if (arg == null
-                    || (params[i] != arg.getClass()
-                       &&(    !(arg instanceof Wrapper)
-                           || params[i] != ((Wrapper)arg).getType())))
-              return false;
+            if (arg == null) {
+               if (params [i] != null)
+                 return false;
+            }
+            else {
+               if(params[i] != arg.getClass() && !(arg instanceof Wrapper && params[i] == ((Wrapper)arg).getType()))
+                 return false;
+            }
         }
 
         return true;

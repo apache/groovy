@@ -987,10 +987,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     // This method should be called by CallSite only
     private MetaMethod getMethodWithCachingInternal (Class sender, CallSite site, Class [] params) {
-        if (site.usage.get() != 0 && GroovyCategorySupport.hasCategoryInCurrentThread())
-            return getMethodWithoutCaching(sender, site.name, params, false);
+        if (site.getUsage ().get() != 0 && GroovyCategorySupport.hasCategoryInCurrentThread())
+            return getMethodWithoutCaching(sender, site.getName (), params, false);
 
-        final MetaMethodIndex.Entry e = metaMethodIndex.getMethods(sender, site.name);
+        final MetaMethodIndex.Entry e = metaMethodIndex.getMethods(sender, site.getName());
         if (e == null) {
             return null;
         }
@@ -2767,7 +2767,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     public CallSite createStaticSite(CallSite site, Object[] args) {
         if (!(this instanceof AdaptingMetaClass)) {
             Class [] params = MetaClassHelper.convertToTypeArray(args);
-            MetaMethod metaMethod = retrieveStaticMethod(site.name, args);
+            MetaMethod metaMethod = retrieveStaticMethod(site.getName(), args);
             if (metaMethod != null)
                return StaticMetaMethodSite.createStaticMetaMethodSite(site, this, metaMethod, params, args);
         }
@@ -2775,7 +2775,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     public CallSite createPogoCallSite(CallSite site, Object[] args) {
-        if (!(this instanceof AdaptingMetaClass)) {
+        if (site.getUsage().get() == 0 && !(this instanceof AdaptingMetaClass)) {
             Class [] params = MetaClassHelper.convertToTypeArray(args);
             MetaMethod metaMethod = getMethodWithCachingInternal(theClass, site, params);
             if (metaMethod != null)
@@ -2785,7 +2785,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     public CallSite createPogoCallCurrentSite(CallSite site, Class sender, Object[] args) {
-        if (!(this instanceof AdaptingMetaClass)) {
+        if (site.getUsage().get() == 0 && !(this instanceof AdaptingMetaClass)) {
           Class [] params = MetaClassHelper.convertToTypeArray(args);
           MetaMethod metaMethod = getMethodWithCachingInternal(sender, site, params);
           if (metaMethod != null)

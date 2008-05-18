@@ -49,14 +49,14 @@ public class StaticMetaMethodSite extends MetaMethodSite {
         if(checkCall(receiver, args))
           return invoke(receiver, args);
         else
-          return defaultCall(receiver, args);
+          return CallSiteArray.defaultCall(this, receiver, args);
     }
 
     public final Object callStatic(Object receiver, Object[] args) {
         if(checkCall(receiver, args))
           return invoke(receiver, args);
         else
-          return defaultCallStatic(receiver, args);
+          return CallSiteArray.defaultCallStatic(this, receiver, args);
     }
 
     public static StaticMetaMethodSite createStaticMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object[] args) {

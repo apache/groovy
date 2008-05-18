@@ -31,7 +31,9 @@ class FileAppendTest extends GroovyTestCase {
 			"""
 	static gPathResult = new XmlSlurper().parseText(text)
 	static gPathWriteTo;
-	{
+
+    public FileAppendTest ()
+    {
 		StringWriter sw = new StringWriter()
 		gPathResult.writeTo(sw)
 		gPathWriteTo = sw.toString()
