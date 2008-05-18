@@ -22,7 +22,7 @@ class MetaClassTest extends GroovyTestCase {
         assert classNode.name == name
     }
     
-	void testMetClassDefinition() {
+	void testMetaClassDefinition() {
 		assertScript """
 			class Foo {
 		    	MetaClass metaClass
