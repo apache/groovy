@@ -10,7 +10,7 @@ class MethodClosureTest extends GroovyTestCase {
     
     static bb(it) { it}
 
-    void testMetodClosure() {   
+    void testMethodClosure() {
         Class[] c1 =  [ Exception.class, Throwable.class ]
         Class[] c2 = [ IllegalStateException.class ]
 
