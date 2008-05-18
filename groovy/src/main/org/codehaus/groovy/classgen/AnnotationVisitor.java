@@ -41,34 +41,34 @@ import org.codehaus.groovy.syntax.SyntaxException;
  * - reading annotation metadata (@Retention, @Target, attribute types)
  * - verify that an <code>AnnotationNode</code> conforms to annotation meta
  * - enhancing an <code>AnnotationNode</code> AST to reflect real annotation meta
- * 
+ *
  * @author <a href='mailto:the[dot]mindstorm[at]gmail[dot]com'>Alex Popescu</a>
  */
 public class AnnotationVisitor {
     private static final Class[] EMPTY_ARG_TYPES = new Class[0];
     private static final Object[] EMPTY_ARGS = new Object[0];
-    
+
     private final Class annotationRootClass;
     private SourceUnit source;
     private ErrorCollector errorCollector;
-    
+
     private AnnotationNode annotation;
     private Class annotationClass;
     private Map requiredAttrTypes = new HashMap(); // Map<String, Class>
     private Map defaultAttrTypes = new HashMap();  // Map<String, Class>
-    
+
     public AnnotationVisitor(SourceUnit source, ErrorCollector errorCollector) {
         this.source = source;
         this.errorCollector = errorCollector;
         this.annotationRootClass = loadAnnotationRootClass();
     }
-    
+
     public AnnotationNode visit(AnnotationNode node) {
         if(!isValidAnnotationClass(node)) {
             node.setValid(false);
             return node;
         }
-        
+
         this.annotation = node;
         if(!node.getClassNode().isResolved()) {
             addError("Current type was not yet resolved. Cannot introspect it.");
@@ -76,14 +76,14 @@ public class AnnotationVisitor {
             return node;
         }
         this.annotationClass = node.getClassNode().getTypeClass();
-        
+
         extractAnnotationMeta(this.annotationClass);
-        
+
         if(this.errorCollector.hasErrors()) {
             this.annotation.setValid(false);
             return this.annotation;
         }
-        
+
         Map attributes = this.annotation.getMembers();
         for(Iterator it = attributes.entrySet().iterator(); it.hasNext(); ) {
             Map.Entry entry = (Map.Entry) it.next();
@@ -96,22 +96,22 @@ public class AnnotationVisitor {
             }
             visitExpression(attrName, attrExpr, attrType);
         }
-        
+
         if(!this.requiredAttrTypes.isEmpty()) {
             addError("Required attributes " + this.requiredAttrTypes.keySet() + " not found",
                     this.annotation);
         }
-        
+
         this.annotation.setValid(!this.errorCollector.hasErrors());
         return this.annotation;
     }
-    
+
     /**
      * @param node
      * @return
      */
     private boolean isValidAnnotationClass(AnnotationNode node) {
-        return node.getClassNode().implementsInterface("java.lang.annotation.Annotation");
+        return node.getClassNode().implementsInterface(ClassHelper.make(java.lang.annotation.Annotation.class));
     }
 
     protected void visitExpression(String attrName, Expression attrAst, Class attrType) {
@@ -145,7 +145,7 @@ public class AnnotationVisitor {
             visitAnnotationExpression(attrName, (AnnotationConstantExpression) attrAst, attrType);
         }
     }
-    
+
     /**
      * @param attrName
      * @param expression
@@ -163,7 +163,7 @@ public class AnnotationVisitor {
             visitExpression(attrName, (Expression) expressions.get(i), elementType);
         }
     }
-    
+
     protected void visitConstantExpression(String attrName, ConstantExpression constExpr, ClassNode attrType) {
         if(!constExpr.getType().isDerivedFrom(attrType)) {
             addError("Attribute '" + attrName + "' should have type '" + attrType.getName() + "'; "
@@ -171,44 +171,44 @@ public class AnnotationVisitor {
                     constExpr);
         }
     }
-    
+
     protected void visitEnumExpression(String attrName, PropertyExpression propExpr, ClassNode attrType) {
         if(!propExpr.getObjectExpression().getType().isDerivedFrom(attrType)) {
             addError("Attribute '" + attrName + "' should have type '" + attrType.getName() +"' (Enum), but found "
-                    + propExpr.getObjectExpression().getType().getName(), 
+                    + propExpr.getObjectExpression().getType().getName(),
                     propExpr);
         }
     }
-    
+
     private boolean isAnnotation(Class clazz) {
         Boolean result = (Boolean) invoke(clazz.getClass(), "isAnnotation", EMPTY_ARG_TYPES, clazz, EMPTY_ARGS);
         return result.booleanValue();
     }
-    
+
     private boolean isEnum(Class clazz) {
         Boolean result = (Boolean) invoke(clazz.getClass(), "isEnum", EMPTY_ARG_TYPES, clazz, EMPTY_ARGS);
         return result.booleanValue();
     }
-    
+
     private void extractAnnotationMeta(Class annotationClass) {
         initializeAnnotationMeta(annotationClass);
         initializeAttributeTypes(annotationClass);
     }
-    
+
     private void initializeAnnotationMeta(Class annotationClass) {
-        Object[] annotations = (Object[]) invoke(annotationClass.getClass(), 
+        Object[] annotations = (Object[]) invoke(annotationClass.getClass(),
                 "getAnnotations", EMPTY_ARG_TYPES, annotationClass, EMPTY_ARGS);
         if (annotations == null) {
-            addError("Cannot retrieve annotation meta information. " 
+            addError("Cannot retrieve annotation meta information. "
                     + ExtendedVerifier.JVM_ERROR_MESSAGE);
             return;
         }
-        
+
         for(int i = 0; i < annotations.length; i++) {
-            Class annotationType = (Class) invoke(this.annotationRootClass, 
+            Class annotationType = (Class) invoke(this.annotationRootClass,
                     "annotationType", EMPTY_ARG_TYPES, annotations[i], EMPTY_ARGS);
             if (annotationType == null) continue;
-            
+
             if ("java.lang.annotation.Retention".equals(annotationType.getName())) {
                 initializeRetention(annotationClass, annotationType, annotations[i]);
             }
@@ -217,12 +217,12 @@ public class AnnotationVisitor {
             }
         }
     }
-    
+
     private void initializeAttributeTypes(Class annotationClass) {
         Method[] methods = annotationClass.getDeclaredMethods();
         for(int i = 0; i < methods.length; i++) {
             Object defaultValue = invoke(Method.class, "getDefaultValue", EMPTY_ARG_TYPES, methods[i], EMPTY_ARGS);
-            if (defaultValue != null) { 
+            if (defaultValue != null) {
                 // by now we know JDK1.5 API is available so a null means no default value
                 defaultAttrTypes.put(methods[i].getName(), methods[i].getReturnType());
             }
@@ -231,16 +231,16 @@ public class AnnotationVisitor {
             }
         }
     }
-    
+
     private void initializeRetention(Class annotationClass, Class retentionClass, Object retentionAnnotation) {
-        Object retentionPolicyEnum = 
+        Object retentionPolicyEnum =
             invoke(retentionClass, "value", EMPTY_ARG_TYPES, retentionAnnotation, EMPTY_ARGS);
         if (retentionPolicyEnum == null) {
-            addError("Cannot read @RetentionPolicy on the @" + annotationClass.getName() 
+            addError("Cannot read @RetentionPolicy on the @" + annotationClass.getName()
                     + ExtendedVerifier.JVM_ERROR_MESSAGE);
             return;
         }
-        
+
         if("RUNTIME".equals(retentionPolicyEnum.toString())) {
             this.annotation.setRuntimeRetention(true);
         }
@@ -248,12 +248,12 @@ public class AnnotationVisitor {
             this.annotation.setSourceRetention(true);
         }
     }
-    
+
     private void initializeTarget(Class annotationClass, Class targetClass, Object targetAnnotation) {
         Object[] elementTypeEnum =
             (Object[]) invoke(targetClass, "value", EMPTY_ARG_TYPES, targetAnnotation, EMPTY_ARGS);
         if (elementTypeEnum == null) {
-            addError("Cannot read @Target on the @" + annotationClass.getName() 
+            addError("Cannot read @Target on the @" + annotationClass.getName()
                     + ExtendedVerifier.JVM_ERROR_MESSAGE);
             return;
         }
@@ -284,33 +284,33 @@ public class AnnotationVisitor {
         }
         this.annotation.setAllowedTargets(bitmap);
     }
-    
+
     protected void addError(String msg) {
         this.errorCollector.addErrorAndContinue(
-          new SyntaxErrorMessage(new SyntaxException(msg 
-                  + " in @" + this.annotationClass.getName() + '\n', 
-                  this.annotation.getLineNumber(), 
+          new SyntaxErrorMessage(new SyntaxException(msg
+                  + " in @" + this.annotationClass.getName() + '\n',
+                  this.annotation.getLineNumber(),
                   this.annotation.getColumnNumber()), this.source)
         );
     }
-    
+
     protected void addError(String msg, ASTNode expr) {
         this.errorCollector.addErrorAndContinue(
-          new SyntaxErrorMessage(new SyntaxException(msg 
-                  + " in @" + this.annotationClass.getName() + '\n', 
-                  expr.getLineNumber(), 
+          new SyntaxErrorMessage(new SyntaxException(msg
+                  + " in @" + this.annotationClass.getName() + '\n',
+                  expr.getLineNumber(),
                   expr.getColumnNumber()), this.source)
         );
     }
-    
+
     private Class getAttributeType(String attr) {
         if(this.requiredAttrTypes.containsKey(attr)) {
             return (Class) this.requiredAttrTypes.remove(attr);
         }
-        
+
         return (Class) this.defaultAttrTypes.remove(attr);
     }
-    
+
     private Object invoke(Class clazz, String methodName, Class[] argTypes, Object target, Object[] args) {
         try {
             Method m = clazz.getMethod(methodName, argTypes);
@@ -319,10 +319,10 @@ public class AnnotationVisitor {
         catch(Throwable cause) {
             // we report an error on called side
         }
-     
+
         return null;
     }
-    
+
     private Class loadAnnotationRootClass() {
         try {
             return Class.forName("java.lang.annotation.Annotation");
@@ -330,7 +330,7 @@ public class AnnotationVisitor {
         catch(Throwable cause) {
             // report the error later
         }
-        
+
         return null;
     }
 }

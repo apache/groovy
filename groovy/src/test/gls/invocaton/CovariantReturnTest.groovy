@@ -58,16 +58,33 @@ public class CovariantReturnTest extends CompilableTestSupport {
 
   void testCovariantOverwritingMethodWithInterface() {
     assertScript """
-      public interface Base {
+      interface Base {
         List foo()
       }
-      public interface Child extends Base {
-        ArrayList foo();
+      interface Child extends Base {
+        ArrayList foo()
       }
       class GroovyChildImpl implements Child {
-        public ArrayList foo() {}
+        ArrayList foo() {}
       }
 
+      def x = new GroovyChildImpl()
+      x.foo()
+    """
+  }
+
+  void testCovariantOverwritingMethodWithInterfaceAndInheritance() {
+    assertScript """
+      interface Base {
+        List foo()
+      }
+      interface Child extends Base {
+        ArrayList foo()
+      }
+      class MyArrayList extends ArrayList { }
+      class GroovyChildImpl implements Child {
+        MyArrayList foo() {}
+      }
       def x = new GroovyChildImpl()
       x.foo()
     """
