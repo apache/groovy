@@ -238,7 +238,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 createInterfaceSyntheticStaticFields();
             } else {
                 super.visitClass(classNode);
-                if (!classNode.declaresInterface(ClassHelper.GENERATED_CLOSURE_Type.getName())) {
+                if (!classNode.declaresInterface(ClassHelper.GENERATED_CLOSURE_Type)) {
                     createMopMethods();
                 }
                 createSyntheticStaticFields();
@@ -302,7 +302,7 @@ public class AsmClassGenerator extends ClassGenerator {
      *
      * @param methods unfiltered list of methods for MOP
      * @param isThis  if true, then we are creating a MOP method on "this", "super" else
-     * @see #generateMopCalls(java.util.LinkedList, boolean) 
+     * @see #generateMopCalls(java.util.LinkedList, boolean)
      */
     private void visitMopMethodList(List methods, boolean isThis) {
         HashMap mops = new HashMap();
@@ -435,7 +435,7 @@ public class AsmClassGenerator extends ClassGenerator {
         helper = new BytecodeHelper(mv);
         if (!node.isAbstract()) {
             Statement code = node.getCode();
-            
+
             if (isConstructor && (code == null || !((ConstructorNode) node).firstStatementIsSpecialConstructorCall())) {
                 // invokes the super class constructor
                 mv.visitVarInsn(ALOAD, 0);
@@ -718,7 +718,7 @@ public class AsmClassGenerator extends ClassGenerator {
         BooleanExpression boolPart = expression.getBooleanExpression();
         Expression truePart = expression.getTrueExpression();
         Expression falsePart = expression.getFalseExpression();
-        
+
         if (expression instanceof ElvisOperatorExpression) {
             visitAndAutoboxBoolean(expression.getTrueExpression());
             boolPart = new BooleanExpression(
@@ -737,8 +737,8 @@ public class AsmClassGenerator extends ClassGenerator {
                 }
             };
         }
-        
-        
+
+
         boolPart.visit(this);
 
         Label l0 = new Label();
@@ -746,14 +746,14 @@ public class AsmClassGenerator extends ClassGenerator {
         compileStack.pushBooleanExpression();
         visitAndAutoboxBoolean(truePart);
         compileStack.pop();
-        
+
         Label l1 = new Label();
         mv.visitJumpInsn(GOTO, l1);
         mv.visitLabel(l0);
         compileStack.pushBooleanExpression();
         visitAndAutoboxBoolean(falsePart);
         compileStack.pop();
-        
+
         mv.visitLabel(l1);
     }
 
@@ -881,7 +881,7 @@ public class AsmClassGenerator extends ClassGenerator {
             // start catch block, label needed for exception table
             final Label catchStart = new Label();
             mv.visitLabel(catchStart);
-            // create exception variable and store the exception 
+            // create exception variable and store the exception
             compileStack.defineVariable(catchStatement.getVariable(), true);
             // handle catch body
             catchStatement.visit(this);
@@ -1105,7 +1105,7 @@ public class AsmClassGenerator extends ClassGenerator {
             compileStack.applyFinallyBlocks();
             helper.load(ClassHelper.OBJECT_TYPE, returnValueIdx);
         }
-        // value is always saved in boxed form, so we need to unbox it here        
+        // value is always saved in boxed form, so we need to unbox it here
         helper.unbox(returnType);
         helper.doReturn(returnType);
         outputReturn = true;
@@ -1121,7 +1121,7 @@ public class AsmClassGenerator extends ClassGenerator {
             type = ClassHelper.getWrapper(type);
         }
 
-        if (forceCast || (type != null && !type.equals(expType))) {
+        if (forceCast || (type != null && !expType.isDerivedFrom(type) && !expType.implementsInterface(type))) {
             doConvertAndCast(type, coerce);
         }
     }
@@ -1420,7 +1420,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
         mv.visitTypeInsn(NEW, innerClassinternalName);
         mv.visitInsn(DUP);
-        if (isStaticMethod() && !classNode.declaresInterface(ClassHelper.GENERATED_CLOSURE_Type.getName())) {
+        if (isStaticMethod() && !classNode.declaresInterface(ClassHelper.GENERATED_CLOSURE_Type)) {
             visitClassExpression(new ClassExpression(classNode));
             visitClassExpression(new ClassExpression(getOutermostClass()));
         } else {
@@ -1430,7 +1430,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
         // now let's load the various parameters we're passing
         // we start at index 1 because the first variable we pass
-        // is the owner instance and at this point it is already 
+        // is the owner instance and at this point it is already
         // on the stack
         for (int i = 2; i < localVariableParams.length; i++) {
             Parameter param = localVariableParams[i];
@@ -1438,8 +1438,8 @@ public class AsmClassGenerator extends ClassGenerator {
 
             // compileStack.containsVariable(name) means to ask if the variable is already declared
             // compileStack.getScope().isReferencedClassVariable(name) means to ask if the variable is a field
-            // If it is no field and is not yet declared, then it is either a closure shared variable or 
-            // an already declared variable. 
+            // If it is no field and is not yet declared, then it is either a closure shared variable or
+            // an already declared variable.
             if (!compileStack.containsVariable(name) && compileStack.getScope().isReferencedClassVariable(name)) {
                 visitFieldExpression(new FieldExpression(classNode.getField(name)));
             } else {
@@ -1779,7 +1779,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 invokeStaticMethod,
                 false, false, false);
     }
-    
+
     private void addGeneratedClosureConstructorCall(ConstructorCallExpression call) {
         mv.visitVarInsn(ALOAD, 0);
         ClassNode callNode = classNode.getSuperClass();
@@ -1793,11 +1793,11 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private void visitSpecialConstructorCall(ConstructorCallExpression call) {
-        if (classNode.declaresInterface(ClassHelper.GENERATED_CLOSURE_Type.getName())) {
+        if (classNode.declaresInterface(ClassHelper.GENERATED_CLOSURE_Type)) {
             addGeneratedClosureConstructorCall(call);
             return;
         }
-        
+
         ClassNode callNode = classNode;
         if (call.isSuperCall()) callNode = callNode.getSuperClass();
         List constructors = sortConstructors(call, callNode);
@@ -1809,11 +1809,11 @@ public class AsmClassGenerator extends ClassGenerator {
         // the call on
         helper.pushConstant(constructors.size());
         visitClassExpression(new ClassExpression(callNode));
-        // removes one Object[] leaves the int containing the 
+        // removes one Object[] leaves the int containing the
         // call flags and the construtcor number
         selectConstructorAndTransformArguments.call(mv);
         // Object[],int -> int,Object[],int
-        // we need to examine the flags and maybe change the 
+        // we need to examine the flags and maybe change the
         // Object[] later, so this reordering will do the job
         mv.visitInsn(DUP_X1);
         // test if rewrap flag is set
@@ -1836,7 +1836,7 @@ public class AsmClassGenerator extends ClassGenerator {
             mv.visitTypeInsn(NEW, BytecodeHelper.getClassInternalName(callNode));
         }
         mv.visitInsn(SWAP);
-        //prepare switch with >>8        
+        //prepare switch with >>8
         mv.visitIntInsn(BIPUSH, 8);
         mv.visitInsn(ISHR);
         Label[] targets = new Label[constructors.size()];
@@ -1852,28 +1852,28 @@ public class AsmClassGenerator extends ClassGenerator {
         for (int i = 0; i < targets.length; i++) {
             mv.visitLabel(targets[i]);
             // to keep the stack height, we need to leave
-            // one Object[] on the stack as last element. At the 
+            // one Object[] on the stack as last element. At the
             // same time, we need the Object[] on top of the stack
-            // to extract the parameters. 
+            // to extract the parameters.
             if (constructorNode!=null) {
-                // in this case we need one "this", so a SWAP will exchange 
+                // in this case we need one "this", so a SWAP will exchange
                 // "this" and Object[], a DUP_X1 will then copy the Object[]
-                /// to the last place in the stack: 
+                /// to the last place in the stack:
                 //     Object[],this -SWAP-> this,Object[]
-                //     this,Object[] -DUP_X1-> Object[],this,Object[] 
+                //     this,Object[] -DUP_X1-> Object[],this,Object[]
                 mv.visitInsn(SWAP);
                 mv.visitInsn(DUP_X1);
             } else {
                 // in this case we need two "this" in between and the Object[]
-                // at the bottom of the stack as well as on top for our invokeSpecial            
-                // So we do DUP_X1, DUP2_X1, POP 
+                // at the bottom of the stack as well as on top for our invokeSpecial
+                // So we do DUP_X1, DUP2_X1, POP
                 //     Object[],this -DUP_X1-> this,Object[],this
                 //     this,Object[],this -DUP2_X1-> Object[],this,this,Object[],this
                 //     Object[],this,this,Object[],this -POP->  Object[],this,this,Object[]
                 mv.visitInsn(DUP_X1);
                 mv.visitInsn(DUP2_X1);
                 mv.visitInsn(POP);
-            }            
+            }
 
             ConstructorNode cn = (ConstructorNode) constructors.get(i);
             String descriptor = helper.getMethodDescriptor(ClassHelper.VOID_TYPE, cn.getParameters());
@@ -1907,13 +1907,13 @@ public class AsmClassGenerator extends ClassGenerator {
         mv.visitMethodInsn(INVOKESPECIAL, "java/lang/IllegalArgumentException", "<init>", "(Ljava/lang/String;)V");
         mv.visitInsn(ATHROW);
         mv.visitLabel(afterSwitch);
-        
+
         // to keep the stack hight we kept one object on the stack
         // for the switch, now we remove that object
         if (constructorNode==null) {
             // but in case we are not in a constructor we have an additional
             // object on the stack, the result of our constructor call
-            // which we want to keep, so we swap the arguments to remove 
+            // which we want to keep, so we swap the arguments to remove
             // the right one
             mv.visitInsn(SWAP);
         }
@@ -2755,7 +2755,7 @@ public class AsmClassGenerator extends ClassGenerator {
             // so we store the type on stack
             mv.visitTypeInsn(NEW, "org/codehaus/groovy/runtime/CurriedClosure");
             // stack: closure, type
-            // for a constructor call we need the type two times 
+            // for a constructor call we need the type two times
 
             // and the closure after them
             mv.visitInsn(DUP2);
@@ -2782,7 +2782,7 @@ public class AsmClassGenerator extends ClassGenerator {
         mv.visitVarInsn(ALOAD, listArrayVar);
         createListMethod.call(mv);
 
-        // remove the temporary variable to keep the 
+        // remove the temporary variable to keep the
         // stack clean
         compileStack.removeVar(listArrayVar);
         compileStack.pop();
@@ -3190,7 +3190,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
     protected void doConvertAndCast(ClassNode type, boolean coerce) {
         if (type == ClassHelper.OBJECT_TYPE) return;
-        if (rightHandType == null || !rightHandType.isDerivedFrom(type)) {
+        if (rightHandType == null || !rightHandType.isDerivedFrom(type) || !rightHandType.implementsInterface(type)) {
             if (isValidTypeForCast(type)) {
                 visitClassExpression(new ClassExpression(type));
                 if (coerce) {
@@ -3368,7 +3368,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 final int rhsVar = compileStack.defineTemporaryVariable("$rhs", right.getType(), true);
                 Expression rhsExpr = new BytecodeExpression() {
                       public void visit (GroovyCodeVisitor visitor) {
-                          mv.visitVarInsn(ALOAD,rhsVar);                          
+                          mv.visitVarInsn(ALOAD,rhsVar);
                       }
                 };
                 visitMethodCallExpression(
@@ -3470,7 +3470,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 new ConstantExpression(method),
                 MethodCallExpression.NO_ARGUMENTS,
                 invokeMethod,false,false,false);
-        
+
         // we need special code for arrays to store the result
         boolean setResult = true;
         if (expression instanceof BinaryExpression) {
@@ -3492,15 +3492,15 @@ public class AsmClassGenerator extends ClassGenerator {
                         invokeMethod,false,false,false);
                 mv.visitInsn(POP);
                 setResult = false;
-            } 
+            }
         } else if (expression instanceof ConstantExpression) {
             setResult = false;
         }
-        
+
         if (setResult) {
             // we want to keep a value on stack, so we have to DUP here
             if (expression instanceof VariableExpression ||
-                expression instanceof FieldExpression || 
+                expression instanceof FieldExpression ||
                 expression instanceof PropertyExpression)
             {
                 mv.visitInsn(DUP);
@@ -3510,7 +3510,7 @@ public class AsmClassGenerator extends ClassGenerator {
             leftHandExpression = false;
         }
     }
-    
+
     protected void evaluatePrefixMethod(String method, Expression expression) {
         // execute Method
         execMethodAndStoreForSubscriptOperator(method,expression);
@@ -3529,7 +3529,7 @@ public class AsmClassGenerator extends ClassGenerator {
         execMethodAndStoreForSubscriptOperator(method,expression);
         // remove the result of the method call
         mv.visitInsn(POP);
-        
+
         //reload saved value
         mv.visitVarInsn(ALOAD, tempIdx);
         compileStack.removeVar(tempIdx);
@@ -3660,7 +3660,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
         boolean createEntry = true;
         if (line >= 0) {
-            columnNumber = col;       
+            columnNumber = col;
             createEntry = lineNumber!=line;
             lineNumber = line;
         }
