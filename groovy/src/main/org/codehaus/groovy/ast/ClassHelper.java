@@ -80,8 +80,9 @@ public class ClassHelper {
         
         CLASS_Type = new ClassNode(Class.class),        METACLASS_TYPE = new ClassNode(MetaClass.class),
         GENERATED_CLOSURE_Type = new ClassNode(GeneratedClosure.class),
-        Enum_Type = new ClassNode("java.lang.Enum",0,OBJECT_TYPE);
-        
+        Enum_Type = new ClassNode("java.lang.Enum",0,OBJECT_TYPE),
+        Annotation_Type = new ClassNode("java.lang.annotation.Annotation",0,OBJECT_TYPE);
+
     static {
         Enum_Type.isPrimaryNode = false;
     }
