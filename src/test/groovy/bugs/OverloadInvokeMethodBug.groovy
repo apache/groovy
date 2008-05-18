@@ -17,16 +17,15 @@ class OverloadInvokeMethodBug extends GroovyTestCase {
 }
 
 class OverloadA {
-        def invokeMethod(String name, Object args) {
-                try {
-                        metaClass.invokeMethod(this, name, args)
-                } catch(MissingMethodException e) {
-                        println "Missing method: ${name}"
-                }
-        } 
+    def invokeMethod(String name, Object args) {
+        try {
+            metaClass.invokeMethod(this, name, args)
+        } catch (MissingMethodException e) {
+            println "Missing method: ${name}"
+        }
+    }
 }
 
 class OverloadB extends OverloadA {
 
 }
-
