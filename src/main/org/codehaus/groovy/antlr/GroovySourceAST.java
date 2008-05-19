@@ -47,6 +47,11 @@ public class GroovySourceAST extends CommonAST implements Comparable {
         super.initialize(ast);
         line = ast.getLine();
         col = ast.getColumn();
+        if (ast instanceof GroovySourceAST) {
+        	GroovySourceAST node = (GroovySourceAST)ast;
+        	lineLast = node.getLineLast();
+            colLast = node.getColumnLast();
+        }
     }
 
     public void initialize(Token t) {

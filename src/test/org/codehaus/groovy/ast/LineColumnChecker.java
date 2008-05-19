@@ -367,6 +367,7 @@ class LineCheckVisitor extends ClassCodeVisitorSupport {
 	public void visitDeclarationExpression(DeclarationExpression expression) {
 		//visitNode(expression); is visited afterwards in BinaryExpression. Because
 		//super.visitDeclarationExpression calls visitBinaryExpression
+		visitNode(expression.getLeftExpression().getType());
 		super.visitDeclarationExpression(expression);
 	}
 
