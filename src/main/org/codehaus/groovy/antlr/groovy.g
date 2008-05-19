@@ -657,12 +657,15 @@ classTypeSpec[boolean addImagNode]  {Token first = LT(1);}
 
 // A non-built in type name, with possible type parameters
 classOrInterfaceType[boolean addImagNode]  {Token first = LT(1);}
-    :   IDENT^ (typeArguments)?
+    :   i1:IDENT^ (typeArguments)?
+        
         (   options{greedy=true;}: // match as many as possible
-            DOT^
-            IDENT (typeArguments)?
+            d:DOT!
+            i2:IDENT! (ta:typeArguments!)?
+            {#i1 = #(create(DOT,".",first,LT(1)),i1,i2,ta);}            
         )*
         {
+            #classOrInterfaceType = #i1;
             if ( addImagNode ) {
                 #classOrInterfaceType = #(create(TYPE,"TYPE",first,LT(1)), #classOrInterfaceType);
             }
