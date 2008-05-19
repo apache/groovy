@@ -226,7 +226,7 @@ sub = "groovy".substring(3)
 
 ###constructorCallExpressionInAssignment:::
 txt = new String("groovy")
-:::[ConstructorCallExpression,(1:7),(1:27)][ArgumentListExpression,(1:18),(1:26)];
+:::[ConstructorCallExpression,(1:7),(1:27)][ClassNode,(1:11),(1:18)][ArgumentListExpression,(1:18),(1:26)];
 [ConstantExpression,(1:18),(1:26)]
 
 ###methodCallExpressionAppendedBlockInAssignment:::
@@ -367,6 +367,10 @@ class C<Y,T extends Map<String,Map<Y,Integer>>> {}
 [GenericsType,(1:11),(1:49)][ClassNode,(1:11),(1:13)][ClassNode,(1:21),(1:49)];
 [GenericsType,(1:25),(1:31)][ClassNode,(1:25),(1:32)][GenericsType,(1:32),(1:49)][ClassNode,(1:32),(1:35)];
 [GenericsType,(1:36),(1:37)][ClassNode,(1:36),(1:38)][GenericsType,(1:38),(1:45)][ClassNode,(1:38),(1:49)]
+
+###typeArugmentInConstructorCall:::
+ArrayList<String> list = new ArrayList<String>()
+:::[ClassNode,(1:30),(1:39)][GenericsType,(1:40),(1:46)][ClassNode,(1:40),(1:48)]
 
 ###castExpressionClassNode:::
 String s = (String)i

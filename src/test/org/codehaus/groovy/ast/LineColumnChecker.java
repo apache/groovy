@@ -289,6 +289,7 @@ class LineCheckVisitor extends ClassCodeVisitorSupport {
 
 	public void visitConstructorCallExpression(ConstructorCallExpression call) {
 		visitNode(call);
+		visitType(call.getType());
 		super.visitConstructorCallExpression(call);
 	}
 
