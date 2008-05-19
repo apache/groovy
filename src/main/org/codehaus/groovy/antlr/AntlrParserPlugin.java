@@ -1385,7 +1385,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 return methodCallExpression(node);
 
             case LITERAL_new:
-                return constructorCallExpression(node.getFirstChild());
+                return constructorCallExpression(node);
 
             case CTOR_CALL:
                 return specialConstructorCallExpression(node,ClassNode.THIS);
@@ -2106,7 +2106,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     
     protected Expression constructorCallExpression(AST node) {
         AST constructorCallNode = node;
-        ClassNode type = buildName(constructorCallNode);
+        ClassNode type = makeTypeWithArguments(constructorCallNode);
 
         if (isType(CTOR_CALL, node) || isType(LITERAL_new, node)) {
             node = node.getFirstChild();
