@@ -793,7 +793,7 @@ builtInType
 // A (possibly-qualified) java identifier. We start with the first IDENT
 // and expand its name by adding dots and following IDENTS
 identifier {Token first = LT(1);}
-    :   i1:IDENT
+    :   i1:IDENT!
         (   options { greedy = true; } :
             d:DOT! nls! i2:IDENT! 
             {#i1 = #(create(DOT,".",first,LT(1)),i1,i2);}
@@ -801,13 +801,18 @@ identifier {Token first = LT(1);}
         {#identifier = #i1;}
     ;
 
-identifierStar
-    :   IDENT
+identifierStar {Token first = LT(1);}
+    :   i1:IDENT!
         (   options { greedy = true; } :
-            DOT^  nls! IDENT )*
-        (   DOT^  nls! STAR
-        |   "as"^ nls! IDENT
+            d1:DOT! nls! i2:IDENT! 
+            {#i1 = #(create(DOT,".",first,LT(1)),i1,i2);}
+        )*
+        (   d2:DOT!  nls! s:STAR! 
+            {#i1 = #(create(DOT,".",first,LT(1)),i1,s);}
+        |   "as"! nls! alias:IDENT!
+        	{#i1 = #(create(LITERAL_as,"as",first,LT(1)),i1,alias);}
         )?
+        {#identifierStar = #i1;}
     ;
 
 modifiersInternal
