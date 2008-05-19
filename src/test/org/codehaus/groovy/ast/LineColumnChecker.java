@@ -98,6 +98,14 @@ class LineCheckVisitor extends ClassCodeVisitorSupport {
 	protected void visitStatement(Statement statement) {
 		visitNode(statement);
 	}
+	
+	protected void visitNodes(ASTNode[] classNodes) {
+        if (classNodes != null) {
+        	for(int i = 0; i < classNodes.length; i++){
+        		visitNode(classNodes[i]);
+        	}
+        }
+	}
 
 	protected void visitNode(ASTNode node) {
 		String nodeName = node.getClass().getName();
@@ -143,6 +151,8 @@ class LineCheckVisitor extends ClassCodeVisitorSupport {
 
 	public void visitClass(ClassNode node) {
 		visitNode(node);
+		visitNode(node.getUnresolvedSuperClass());
+		visitNodes(node.getInterfaces());
 		super.visitClass(node);
 	}
 
@@ -151,6 +161,30 @@ class LineCheckVisitor extends ClassCodeVisitorSupport {
         if (annotionMap.isEmpty()) return;
 		visitNode(node);
 		super.visitAnnotations(node);
+	}
+	
+	protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
+        visitAnnotations(node);
+        analyseMethodHead(node);
+        Statement code = node.getCode();
+        
+        visitClassCodeContainer(code);
+    }
+	
+	private void analyseMethodHead(MethodNode node) {
+		visitNode(node.getReturnType());
+        analyseParameters(node.getParameters());
+        visitNodes(node.getExceptions());
+	}
+	
+	private void analyseParameters(Parameter[] parameters) {
+		for (int i = 0; i < parameters.length; i++) {
+        	Parameter parameter = parameters[i];
+        	visitNode(parameter.getOriginType());
+            if (parameter.hasInitialExpression()) {
+            	parameter.getInitialExpression().visit(this);
+            }
+        }
 	}
 
 	public void visitConstructor(ConstructorNode node) {
