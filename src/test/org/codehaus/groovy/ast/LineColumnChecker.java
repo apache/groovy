@@ -1,5 +1,6 @@
 package org.codehaus.groovy.ast;
 
+import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -101,10 +102,10 @@ class LineCheckVisitor extends ClassCodeVisitorSupport {
 		visitNode(statement);
 	}
 	
-	protected void visitNodes(ASTNode[] classNodes) {
-        if (classNodes != null) {
-        	for(int i = 0; i < classNodes.length; i++){
-        		visitNode(classNodes[i]);
+	protected void visitNodes(ASTNode[] nodes) {
+        if (nodes != null) {
+        	for(int i = 0; i < nodes.length; i++){
+        		visitNode(nodes[i]);
         	}
         }
 	}
@@ -132,6 +133,27 @@ class LineCheckVisitor extends ClassCodeVisitorSupport {
 	}
 
 	public void visitModuleNode(ModuleNode moduleNode) {
+		
+		//visit imports like import java.io.File and import java.io.File as MyFile
+		Object[] imports = moduleNode.getImports().toArray();
+		for (int i = 0; i < imports.length; i++) {
+			visitNode(((ImportNode)imports[i]).getType());
+		}
+		
+		//visit static imports like import java.lang.Math.*
+		Collection staticImportClasses = moduleNode.getStaticImportClasses().values();
+		for (Iterator staticClassIt = staticImportClasses.iterator(); staticClassIt.hasNext();) {
+			ClassNode staticClass = (ClassNode)staticClassIt.next();
+			visitNode(staticClass);
+		}
+		
+		//visit static imports like import java.lang.Math.cos
+		Collection staticImportAliases = moduleNode.getStaticImportAliases().values();
+		for (Iterator staticAliasesIt = staticImportAliases.iterator(); staticAliasesIt.hasNext();) {
+			ClassNode staticAlias = (ClassNode)staticAliasesIt.next();
+			visitNode(staticAlias);
+		}
+		
 		List classes = moduleNode.getClasses();
 		for (Iterator classIt = classes.iterator(); classIt.hasNext();) {
 			ClassNode classNode = (ClassNode)classIt.next();
