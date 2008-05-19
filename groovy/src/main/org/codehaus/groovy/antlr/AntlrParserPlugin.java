@@ -474,12 +474,13 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     		name = identifier(node);
     	}
     	ClassNode exception = ClassHelper.make(name);
+    	configureAST(exception, node);
     	list.add(exception);
     	AST next = node.getNextSibling();
     	if (next!=null) throwsList(next, list);
     }
-    
-    protected void methodDef(AST methodDef) {
+
+	protected void methodDef(AST methodDef) {
         List annotations = new ArrayList();
         AST node = methodDef.getFirstChild();
         
