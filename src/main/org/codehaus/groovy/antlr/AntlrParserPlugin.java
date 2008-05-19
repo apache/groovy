@@ -2544,7 +2544,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
         else if (isType(INDEX_OP, node) || isType(ARRAY_DECLARATOR, node)) {
             AST child = node.getFirstChild();
-            return buildName(child).makeArray();
+            answer = buildName(child).makeArray();
+            configureAST(answer, node);
+            return answer;
         }
         else {
             String identifier = node.getText();
@@ -2552,9 +2554,12 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
         AST nextSibling = node.getNextSibling();
         if (isType(INDEX_OP, nextSibling) || isType(ARRAY_DECLARATOR, node)) {
-            return answer.makeArray();
+        	answer = answer.makeArray();
+        	configureAST(answer, node);
+            return answer;
         }
         else {
+        	configureAST(answer, node);
             return answer;
         }
     }
