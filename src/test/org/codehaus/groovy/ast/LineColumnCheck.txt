@@ -284,3 +284,32 @@ int[][][] array
 ###resolvedDeclarationExpression:::
 def i = Integer.parseInt("42")
 :::[DeclarationExpression,(1:1),(1:31)]
+
+###throwsClauseName:::
+def method() throws Exception {}
+:::[ClassNode,(1:21),(1:31)]
+
+###throwsClauseQualifiedName:::
+def method() throws java.lang.Exception {}
+:::[ClassNode,(1:21),(1:41)]
+
+###throwsClauseMultiQualifiedName:::
+def method() throws java.lang.Exception, java.lang.RuntimeException {}
+:::[ClassNode,(1:21),(1:40)][ClassNode,(1:42),(1:69)]
+
+###extendsClassNode:::
+class BaseClass {}
+class ExtendedBaseClass extends BaseClass {}
+:::[ClassNode,(2:33),(2:43)]
+
+###implementsClassNode1:::
+interface IBase {}
+class BaseClass implements IBase {}
+:::[ClassNode,(2:28),(2:34)]
+
+###implementsClassNode3:::
+interface IBase1 {}
+interface IBase2 {}
+interface IBase3 {}
+class BaseClass implements IBase1, IBase2, IBase3 {}
+:::[ClassNode,(4:28),(4:36)][ClassNode,(4:36),(4:44)][ClassNode,(4:44),(4:51)]

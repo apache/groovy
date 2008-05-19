@@ -792,10 +792,13 @@ builtInType
 
 // A (possibly-qualified) java identifier. We start with the first IDENT
 // and expand its name by adding dots and following IDENTS
-identifier
-    :   IDENT
+identifier {Token first = LT(1);}
+    :   i1:IDENT
         (   options { greedy = true; } :
-            DOT^ nls! IDENT )*
+            d:DOT! nls! i2:IDENT! 
+            {#i1 = #(create(DOT,".",first,LT(1)),i1,i2);}
+        )*
+        {#identifier = #i1;}
     ;
 
 identifierStar
