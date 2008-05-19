@@ -181,19 +181,19 @@ for (def i = 1; i < 42; i++)
 
 ###oneLineMultiDef:::
 Integer i = 0, j = 42, k = 6
-:::[ExpressionStatement,(1:1),(1:14)][DeclarationExpression,(1:1),(1:14)];
+:::[ExpressionStatement,(1:1),(1:14)][ClassNode,(1:1),(1:9)][DeclarationExpression,(1:1),(1:14)];
 [VariableExpression,(1:9),(1:11)][ConstantExpression,(1:13),(1:16)];
-[ExpressionStatement,(1:16),(1:22)][DeclarationExpression,(1:16),(1:22)];
+[ExpressionStatement,(1:16),(1:22)][ClassNode,(1:1),(1:16)][DeclarationExpression,(1:16),(1:22)];
 [VariableExpression,(1:16),(1:18)][ConstantExpression,(1:20),(1:24)];
-[ExpressionStatement,(1:24),(1:29)][DeclarationExpression,(1:24),(1:29)];
+[ExpressionStatement,(1:24),(1:29)][ClassNode,(1:1),(1:24)][DeclarationExpression,(1:24),(1:29)];
 [VariableExpression,(1:24),(1:26)][ConstantExpression,(1:28),(0:0)]
 
 ###oneLineDef:::
 Integer onLine = 42
 def ii = 17
-:::[ExpressionStatement,(1:1),(1:20)][DeclarationExpression,(1:1),(1:20)];
+:::[ExpressionStatement,(1:1),(1:20)][ClassNode,(1:1),(1:9)][DeclarationExpression,(1:1),(1:20)];
 [VariableExpression,(1:9),(1:16)][ConstantExpression,(1:18),(2:1)];
-[ExpressionStatement,(2:1),(2:12)][DeclarationExpression,(2:1),(2:12)];
+[ExpressionStatement,(2:1),(2:12)][ClassNode,(-1:-1),(-1:-1)][DeclarationExpression,(2:1),(2:12)];
 [VariableExpression,(2:5),(2:8)][ConstantExpression,(2:10),(0:0)]
 
 ###parenthisedExpressionVariable:::
@@ -275,11 +275,11 @@ a = obj['prop']
 
 ###declaratorBracketD1:::
 int[] array
-:::[ExpressionStatement,(1:1),(1:12)][DeclarationExpression,(1:1),(1:12)]
+:::[ExpressionStatement,(1:1),(1:12)][ClassNode,(1:1),(1:7)][DeclarationExpression,(1:1),(1:12)]
 
 ###declaratorBracketD3:::
 int[][][] array
-:::[ExpressionStatement,(1:1),(1:16)][DeclarationExpression,(1:1),(1:16)]
+:::[ExpressionStatement,(1:1),(1:16)][ClassNode,(1:1),(1:11)][DeclarationExpression,(1:1),(1:16)]
 
 ###resolvedDeclarationExpression:::
 def i = Integer.parseInt("42")
@@ -329,5 +329,9 @@ import static java.lang.Math.*
 ###staticImportStatementAliases:::
 import static java.lang.Math.cos
 :::[ClassNode,(1:1),(1:33)]
+
+###declarationWithFullQualifiedTypeName:::
+java.lang.String s = "Groovy"
+:::[ClassNode,(1:1),(1:18)][DeclarationExpression,(1:1),(1:30)][VariableExpression,(1:18),(1:20)]
 
 
