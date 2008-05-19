@@ -19,6 +19,7 @@ import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.ElvisOperatorExpression;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.GStringExpression;
 import org.codehaus.groovy.ast.expr.ListExpression;
@@ -212,7 +213,11 @@ class LineCheckVisitor extends ClassCodeVisitorSupport {
         Map annotionMap = node.getAnnotations();
         if (annotionMap.isEmpty()) return;
 		visitNode(node);
-		super.visitAnnotations(node);
+        Iterator it = annotionMap.values().iterator(); 
+        while (it.hasNext()) {
+            AnnotationNode an = (AnnotationNode) it.next();
+            visitNode(an);
+        }
 	}
 	
 	protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
@@ -334,6 +339,7 @@ class LineCheckVisitor extends ClassCodeVisitorSupport {
 
 	public void visitArrayExpression(ArrayExpression expression) {
 		visitNode(expression);
+		visitNode(expression.getElementType());
 		super.visitArrayExpression(expression);
 	}
 
