@@ -1141,7 +1141,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             node = node.getNextSibling();
         }
         if (isType(TYPE, node)) {
-            type = makeType(node);
+            type = makeTypeWithArguments(node);
             node = node.getNextSibling();
         }
 
@@ -2415,8 +2415,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 " or type: " + getTokenName(TYPE_LOWER_BOUNDS));       
     }
     
-    private GenericsType makeGenericsArgumentType(AST rootNode) {
+    private GenericsType makeGenericsArgumentType(AST typeArgument) {
         GenericsType gt;
+        AST rootNode = typeArgument.getFirstChild();
         if (isType(WILDCARD_TYPE,rootNode)) {
             ClassNode base = ClassHelper.makeWithoutCaching("?");
             if (rootNode.getNextSibling()!=null) {
@@ -2436,7 +2437,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             ClassNode argument = makeTypeWithArguments(rootNode);
             gt = new GenericsType(argument);
         }
-        configureAST(gt, rootNode);
+        configureAST(gt, typeArgument);
         return gt;
     }
     
@@ -2454,7 +2455,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         
         while (typeArgument != null) {
             assertNodeType(TYPE_ARGUMENT, typeArgument);            
-            GenericsType gt = makeGenericsArgumentType(typeArgument.getFirstChild());
+            GenericsType gt = makeGenericsArgumentType(typeArgument);
             typeArgumentList.add(gt);
             typeArgument = typeArgument.getNextSibling();
         }
@@ -2493,7 +2494,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             ClassNode type = makeType(typeParameter);
             
             GenericsType gt = new GenericsType(type, makeGenericsBounds(typeNode,TYPE_UPPER_BOUNDS),null);
-            configureAST(gt, typeNode);
+            configureAST(gt, typeParameter);
             
             ret.add(gt);
             typeParameter = typeParameter.getNextSibling();

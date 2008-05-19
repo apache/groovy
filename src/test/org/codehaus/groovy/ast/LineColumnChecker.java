@@ -100,6 +100,34 @@ class LineCheckVisitor extends ClassCodeVisitorSupport {
 		visitNode(statement);
 	}
 	
+	protected void visitType(ClassNode node) {
+		visitNode(node);
+		visitGenerics(node);
+	}
+	
+	protected void visitTypes(ClassNode[] classNodes) {
+        if (classNodes != null) {
+        	for(int i = 0; i < classNodes.length; i++){
+        		visitType(classNodes[i]);
+        	}
+        }
+	}
+	
+	protected void visitGenerics(ClassNode node) {
+		if (node.isUsingGenerics()) {
+			GenericsType[] generics = node.getGenericsTypes();
+			for (int i = 0; i < generics.length; i++) {
+				GenericsType genericType = generics[i];
+				visitNode(genericType);
+				visitType(genericType.getType());
+				if (genericType.getLowerBound() != null) {
+					visitType(genericType.getLowerBound());
+				}
+				visitTypes(genericType.getUpperBounds());
+			}
+		}
+	}
+	
 	protected void visitNodes(ASTNode[] nodes) {
         if (nodes != null) {
         	for(int i = 0; i < nodes.length; i++){
@@ -172,9 +200,9 @@ class LineCheckVisitor extends ClassCodeVisitorSupport {
 	}
 
 	public void visitClass(ClassNode node) {
-		visitNode(node);
-		visitNode(node.getUnresolvedSuperClass());
-		visitNodes(node.getInterfaces());
+		visitType(node);
+		visitType(node.getUnresolvedSuperClass());
+		visitTypes(node.getInterfaces());
 		super.visitClass(node);
 	}
 
@@ -202,7 +230,7 @@ class LineCheckVisitor extends ClassCodeVisitorSupport {
 	private void analyseParameters(Parameter[] parameters) {
 		for (int i = 0; i < parameters.length; i++) {
         	Parameter parameter = parameters[i];
-        	visitNode(parameter.getOriginType());
+        	visitType(parameter.getOriginType());
             if (parameter.hasInitialExpression()) {
             	parameter.getInitialExpression().visit(this);
             }
@@ -222,6 +250,7 @@ class LineCheckVisitor extends ClassCodeVisitorSupport {
 	public void visitField(FieldNode node) {
 		// Do not visit fields which are manually added due to optimization
 		if (!node.getName().startsWith("$")) {
+			visitType(node.getOriginType());
 			visitNode(node);
 			super.visitField(node);
 		}
@@ -234,7 +263,7 @@ class LineCheckVisitor extends ClassCodeVisitorSupport {
 	/*
 	 * Statements
 	 * 
-	 * Statements are visited in ClassCodeVisitorSupport and call there
+	 * Statements not written here are visited in ClassCodeVisitorSupport and call there
 	 * visitStatement(Statement statement) which is overridden in this class
 	 */
 
@@ -344,6 +373,7 @@ class LineCheckVisitor extends ClassCodeVisitorSupport {
 
 	public void visitCastExpression(CastExpression expression) {
 		visitNode(expression);
+		visitType(expression.getType());
 		super.visitCastExpression(expression);
 	}
 
@@ -365,7 +395,7 @@ class LineCheckVisitor extends ClassCodeVisitorSupport {
 	public void visitDeclarationExpression(DeclarationExpression expression) {
 		//visitNode(expression); is visited afterwards in BinaryExpression. Because
 		//super.visitDeclarationExpression calls visitBinaryExpression
-		visitNode(expression.getLeftExpression().getType());
+		visitType(expression.getLeftExpression().getType());
 		super.visitDeclarationExpression(expression);
 	}
 
