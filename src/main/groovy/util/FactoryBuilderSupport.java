@@ -673,7 +673,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      */
     protected void postInstantiate( Object name, Map attributes, Object node ) {
         for (Closure postInstantiateDelegate : proxyBuilder.postInstantiateDelegates) {
-            (postInstantiateDelegate).call(new Object[] {this, node, attributes});
+            (postInstantiateDelegate).call(new Object[] {this, attributes, node});
         }
     }
 
@@ -707,7 +707,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      */
     protected void preInstantiate( Object name, Map attributes, Object value ) {
         for (Closure preInstantiateDelegate : proxyBuilder.preInstantiateDelegates) {
-            (preInstantiateDelegate).call(new Object[] {this, value, attributes});
+            (preInstantiateDelegate).call(new Object[] {this, attributes, value});
         }
     }
 
