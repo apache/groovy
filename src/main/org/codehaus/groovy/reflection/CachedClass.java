@@ -17,6 +17,10 @@ package org.codehaus.groovy.reflection;
 
 import groovy.lang.*;
 import org.codehaus.groovy.classgen.BytecodeHelper;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;

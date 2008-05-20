@@ -18,6 +18,7 @@ package org.codehaus.groovy.runtime.callsite;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.runtime.MetaClassHelper;
+import org.codehaus.groovy.reflection.CachedMethod;
 
 /**
  * POJO call site
@@ -39,43 +40,66 @@ public class StaticMetaMethodSite extends MetaMethodSite {
         return metaMethod.doMethodInvoke(receiver,  args);
     }
 
-    protected boolean checkCall(Object receiver, Object[] args) {
+    protected final boolean checkCall(Object receiver, Object[] args) {
         return receiver == metaClass.getTheClass() // meta class match receiver
-               && ((MetaClassImpl)metaClass).getVersion() == version // metaClass still be valid
+           && ((MetaClassImpl)metaClass).getVersion() == version // metaClass still be valid
            && MetaClassHelper.sameClasses(params, args);
     }
 
-    public final Object call(Object receiver, Object[] args) {
+    protected final boolean checkCall(Object receiver) {
+        return receiver == metaClass.getTheClass() // meta class match receiver
+           && ((MetaClassImpl)metaClass).getVersion() == version // metaClass still be valid
+           && MetaClassHelper.sameClasses(params);
+    }
+
+    protected final boolean checkCall(Object receiver, Object arg1) {
+        return receiver == metaClass.getTheClass() // meta class match receiver
+           && ((MetaClassImpl)metaClass).getVersion() == version // metaClass still be valid
+           && MetaClassHelper.sameClasses(params, arg1);
+    }
+
+    protected final boolean checkCall(Object receiver, Object arg1, Object arg2) {
+        return receiver == metaClass.getTheClass() // meta class match receiver
+           && ((MetaClassImpl)metaClass).getVersion() == version // metaClass still be valid
+           && MetaClassHelper.sameClasses(params, arg1, arg2);
+    }
+
+    protected final boolean checkCall(Object receiver, Object arg1, Object arg2, Object arg3) {
+        return receiver == metaClass.getTheClass() // meta class match receiver
+           && ((MetaClassImpl)metaClass).getVersion() == version // metaClass still be valid
+           && MetaClassHelper.sameClasses(params, arg1, arg2, arg3);
+    }
+
+    protected final boolean checkCall(Object receiver, Object arg1, Object arg2, Object arg3, Object arg4) {
+        return receiver == metaClass.getTheClass() // meta class match receiver
+           && ((MetaClassImpl)metaClass).getVersion() == version // metaClass still be valid
+           && MetaClassHelper.sameClasses(params, arg1, arg2, arg3, arg4);
+    }
+
+    public Object call(Object receiver, Object[] args) {
         if(checkCall(receiver, args))
           return invoke(receiver, args);
         else
           return CallSiteArray.defaultCall(this, receiver, args);
     }
 
-    public final Object callStatic(Object receiver, Object[] args) {
+    public Object callStatic(Object receiver, Object[] args) {
         if(checkCall(receiver, args))
           return invoke(receiver, args);
         else
           return CallSiteArray.defaultCallStatic(this, receiver, args);
     }
 
-    public static StaticMetaMethodSite createStaticMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object[] args) {
+    public static CallSite createStaticMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object[] args) {
         if (metaMethod.correctArguments(args) == args) {
             if (noWrappers(args)) {
                 if (noCoerce(metaMethod,args))
                     return new StaticMetaMethodSiteNoUnwrap(site, metaClass, metaMethod, params);
-                else {
-//                    if (metaMethod.getClass() == CachedMethod.class) {
-//                        CachedMethod m = (CachedMethod)metaMethod;
-//                        if (m.isPublic()) {
-//                            final StaticMetaMethodSite res = m.createStaticMetaMethodSite(site, metaClass, metaMethod, params, site.array.owner);
-//                            if (res != null)
-//                              return res;
-//                        }
-//                    }
-
-                    return new StaticMetaMethodSiteNoUnwrapNoCoerce(site, metaClass, metaMethod, params);
-                }
+                else
+                    if (metaMethod.getClass() == CachedMethod.class)
+                      return ((CachedMethod)metaMethod).createStaticMetaMethodSite(site, metaClass, params);
+                    else
+                      return new StaticMetaMethodSiteNoUnwrapNoCoerce (site, metaClass, metaMethod, params);
             }
         }
         return new StaticMetaMethodSite(site, metaClass, metaMethod, params);

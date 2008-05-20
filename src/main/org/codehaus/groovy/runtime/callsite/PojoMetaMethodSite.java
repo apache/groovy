@@ -18,7 +18,6 @@ package org.codehaus.groovy.runtime.callsite;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedMethod;
-import org.codehaus.groovy.runtime.ArrayUtil;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.NullObject;
@@ -73,15 +72,71 @@ public class PojoMetaMethodSite extends MetaMethodSite {
         }
     }
 
-    protected final boolean checkCall(Object receiver, Object arg) {
+    protected final boolean checkCall(Object receiver) {
         try {
             return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
                && checkPojoMetaClass()
-               && MetaClassHelper.sameClasses(params, arg);
+               && MetaClassHelper.sameClasses(params);
         }
         catch (NullPointerException e) {
             if (receiver == null)
-              return checkCall(NullObject.getNullObject(), arg);
+              return checkCall(NullObject.getNullObject());
+
+            throw e;
+        }
+    }
+
+    protected final boolean checkCall(Object receiver, Object arg1) {
+        try {
+            return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
+               && checkPojoMetaClass()
+               && MetaClassHelper.sameClasses(params, arg1);
+        }
+        catch (NullPointerException e) {
+            if (receiver == null)
+              return checkCall(NullObject.getNullObject(), arg1);
+
+            throw e;
+        }
+    }
+
+    protected final boolean checkCall(Object receiver, Object arg1, Object arg2) {
+        try {
+            return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
+               && checkPojoMetaClass()
+               && MetaClassHelper.sameClasses(params, arg1, arg2);
+        }
+        catch (NullPointerException e) {
+            if (receiver == null)
+              return checkCall(NullObject.getNullObject(), arg1, arg2);
+
+            throw e;
+        }
+    }
+
+    protected final boolean checkCall(Object receiver, Object arg1, Object arg2, Object arg3) {
+        try {
+            return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
+               && checkPojoMetaClass()
+               && MetaClassHelper.sameClasses(params, arg1, arg2, arg3);
+        }
+        catch (NullPointerException e) {
+            if (receiver == null)
+              return checkCall(NullObject.getNullObject(), arg1, arg2, arg3);
+
+            throw e;
+        }
+    }
+
+    protected final boolean checkCall(Object receiver, Object arg1, Object arg2, Object arg3, Object arg4) {
+        try {
+            return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
+               && checkPojoMetaClass()
+               && MetaClassHelper.sameClasses(params, arg1, arg2, arg3, arg4);
+        }
+        catch (NullPointerException e) {
+            if (receiver == null)
+              return checkCall(NullObject.getNullObject(), arg1, arg2, arg3, arg4);
 
             throw e;
         }
@@ -93,18 +148,18 @@ public class PojoMetaMethodSite extends MetaMethodSite {
         }
 
         if (metaMethod.getClass() == CachedMethod.class)
-          return createCachedMethodSite (site, metaClass, metaMethod, params, args);
+          return createCachedMethodSite (site, metaClass, (CachedMethod) metaMethod, params, args);
 
         return createNonAwareCallSite(site, metaClass, metaMethod, params, args);
     }
 
-    public static CallSite createCachedMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object[] args) {
+    public static CallSite createCachedMethodSite(CallSite site, MetaClassImpl metaClass, CachedMethod metaMethod, Class[] params, Object[] args) {
         if (metaMethod.correctArguments(args) == args) {
             if (noWrappers(args)) {
                 if (noCoerce(metaMethod,args))
                     return new PojoCachedMethodSiteNoUnwrap(site, metaClass, metaMethod, params);
                 else
-                    return new PojoCachedMethodSiteNoUnwrapNoCoerce(site, metaClass, metaMethod, params);
+                    return metaMethod.createPojoMetaMethodSite(site, metaClass, params);
             }
         }
         return new PojoCachedMethodSite(site, metaClass, metaMethod, params);
