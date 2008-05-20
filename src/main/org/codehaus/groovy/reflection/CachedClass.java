@@ -17,6 +17,7 @@ package org.codehaus.groovy.reflection;
 
 import groovy.lang.*;
 import org.codehaus.groovy.classgen.BytecodeHelper;
+import org.codehaus.groovy.runtime.callsite.CallSiteClassLoader;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Label;
@@ -26,6 +27,7 @@ import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.lang.ref.SoftReference;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.*;
@@ -36,17 +38,6 @@ import java.util.*;
 public class CachedClass {
     private final Class cachedClass;
     public ClassInfo classInfo;
-
-    public static boolean SunVM;
-
-    static {
-        try {
-           Class.forName("sun.misc.Unsafe");
-           SunVM = true;
-        } catch (ClassNotFoundException e) {
-           SunVM = false;
-        }
-    }
 
     private final LazySoftReference<CachedField[]> fields = new LazySoftReference<CachedField[]>() {
         public CachedField[] initValue() {
@@ -137,6 +128,17 @@ public class CachedClass {
         }
     };
 
+    private final LazySoftReference<CallSiteClassLoader> callSiteClassLoader = new LazySoftReference<CallSiteClassLoader>() {
+        public CallSiteClassLoader initValue() {
+            return
+               AccessController.doPrivileged(new PrivilegedAction<CallSiteClassLoader>() {
+                   public CallSiteClassLoader run() {
+                       return new CallSiteClassLoader(CachedClass.this.cachedClass);
+                   }
+               });
+        }
+    };
+
     static final MetaMethod[] EMPTY = new MetaMethod[0];
 
     int hashCode;
@@ -184,6 +186,7 @@ public class CachedClass {
     int distance = -1;
     public final boolean isInterface;
     public final boolean isNumber;
+    private SoftReference<CallSiteClassLoader> callSiteLoader;
 
     public CachedClass(Class klazz, ClassInfo classInfo) {
         cachedClass = klazz;
@@ -395,6 +398,10 @@ public class CachedClass {
 
     public boolean isDirectlyAssignable(Object argument) {
         return ReflectionCache.isAssignableFrom(getTheClass(), argument.getClass());
+    }
+
+    public CallSiteClassLoader getCallSiteLoader() {
+        return callSiteClassLoader.get();
     }
 
     public static class CachedMethodComparatorByName implements Comparator {

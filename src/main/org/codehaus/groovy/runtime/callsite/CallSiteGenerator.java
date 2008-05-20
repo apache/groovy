@@ -20,52 +20,16 @@ import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.classgen.BytecodeHelper;
 
-import java.util.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
-import java.io.InputStream;
-import java.io.IOException;
 
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
 
 public class CallSiteGenerator {
-    private static final SunClassLoader sunVM;
     private static final String[] EXCEPTIONS = new String[] { "java/lang/Throwable" };
-
-    static {
-        Class cls;
-        try {
-            cls = ClassLoader.getSystemClassLoader().loadClass("sun.reflect.MagicAccessorImpl");
-        } catch (Throwable e) {
-            cls = null;
-        }
-
-        if (cls != null) {
-            final Class cls1 = cls;
-            SunClassLoader res;
-            try {
-                res = AccessController.doPrivileged(new PrivilegedAction<SunClassLoader>() {
-                    public SunClassLoader run() {
-                        try {
-                            return new SunClassLoader(cls1);
-                        } catch (Throwable e) {
-                            return null;
-                        }
-                    }
-                });
-            }
-            catch (Throwable e) {
-                res = null;
-            }
-            sunVM = res;
-        }
-        else {
-            sunVM = null;
-        }
-    }
 
     private CallSiteGenerator () {
     }
@@ -213,11 +177,8 @@ public class CallSiteGenerator {
         }
     }
 
-    public static byte[] genPogoMetaMethodSite(CachedMethod cachedMethod, ClassWriter cw, String name) {
+    private static void genConstructor(ClassWriter cw, final String superClass) {
         MethodVisitor mv;
-        cw.visit(Opcodes.V1_4, Opcodes.ACC_PUBLIC, name.replace('.','/'), null, "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", null);
-
-        {
         mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "(Lorg/codehaus/groovy/runtime/callsite/CallSite;Lgroovy/lang/MetaClassImpl;Lgroovy/lang/MetaMethod;[Ljava/lang/Class;)V", null, null);
         mv.visitCode();
         mv.visitVarInsn(Opcodes.ALOAD, 0);
@@ -225,16 +186,22 @@ public class CallSiteGenerator {
         mv.visitVarInsn(Opcodes.ALOAD, 2);
         mv.visitVarInsn(Opcodes.ALOAD, 3);
         mv.visitVarInsn(Opcodes.ALOAD, 4);
-        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", "<init>", "(Lorg/codehaus/groovy/runtime/callsite/CallSite;Lgroovy/lang/MetaClassImpl;Lgroovy/lang/MetaMethod;[Ljava/lang/Class;)V");
+        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, superClass, "<init>", "(Lorg/codehaus/groovy/runtime/callsite/CallSite;Lgroovy/lang/MetaClassImpl;Lgroovy/lang/MetaMethod;[Ljava/lang/Class;)V");
         mv.visitInsn(Opcodes.RETURN);
         mv.visitMaxs(0, 0);
         mv.visitEnd();
-        }
+    }
+
+    public static byte[] genPogoMetaMethodSite(CachedMethod cachedMethod, ClassWriter cw, String name) {
+        MethodVisitor mv;
+        cw.visit(Opcodes.V1_4, Opcodes.ACC_PUBLIC, name.replace('.','/'), null, "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", null);
+
+        genConstructor(cw, "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite");
 
         getCallXxxWithArray(cw, "Current", "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", cachedMethod, "groovy/lang/GroovyObject");
         getCallXxxWithArray(cw, "", "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", cachedMethod, "java/lang/Object");
 
-        genCallWithFixedParams(cw, "Current", "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", cachedMethod, "groovy/lang/Object");
+        genCallWithFixedParams(cw, "Current", "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", cachedMethod, "groovy/lang/GroovyObject");
         genCallWithFixedParams(cw, "", "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", cachedMethod, "java/lang/Object");
 
 
@@ -247,19 +214,7 @@ public class CallSiteGenerator {
         MethodVisitor mv;
         cw.visit(Opcodes.V1_4, Opcodes.ACC_PUBLIC, name.replace('.','/'), null, "org/codehaus/groovy/runtime/callsite/PojoMetaMethodSite", null);
 
-        {
-        mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "(Lorg/codehaus/groovy/runtime/callsite/CallSite;Lgroovy/lang/MetaClassImpl;Lgroovy/lang/MetaMethod;[Ljava/lang/Class;)V", null, null);
-        mv.visitCode();
-        mv.visitVarInsn(Opcodes.ALOAD, 0);
-        mv.visitVarInsn(Opcodes.ALOAD, 1);
-        mv.visitVarInsn(Opcodes.ALOAD, 2);
-        mv.visitVarInsn(Opcodes.ALOAD, 3);
-        mv.visitVarInsn(Opcodes.ALOAD, 4);
-        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "org/codehaus/groovy/runtime/callsite/PojoMetaMethodSite", "<init>", "(Lorg/codehaus/groovy/runtime/callsite/CallSite;Lgroovy/lang/MetaClassImpl;Lgroovy/lang/MetaMethod;[Ljava/lang/Class;)V");
-        mv.visitInsn(Opcodes.RETURN);
-        mv.visitMaxs(0, 0);
-        mv.visitEnd();
-        }
+        genConstructor(cw, "org/codehaus/groovy/runtime/callsite/PojoMetaMethodSite");
 
         getCallXxxWithArray(cw, "", "org/codehaus/groovy/runtime/callsite/PojoMetaMethodSite", cachedMethod, "java/lang/Object");
         genCallWithFixedParams(cw, "", "org/codehaus/groovy/runtime/callsite/PojoMetaMethodSite", cachedMethod, "java/lang/Object");
@@ -273,19 +228,7 @@ public class CallSiteGenerator {
         MethodVisitor mv;
         cw.visit(Opcodes.V1_4, Opcodes.ACC_PUBLIC, name.replace('.','/'), null, "org/codehaus/groovy/runtime/callsite/StaticMetaMethodSite", null);
 
-        {
-        mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "(Lorg/codehaus/groovy/runtime/callsite/CallSite;Lgroovy/lang/MetaClassImpl;Lgroovy/lang/MetaMethod;[Ljava/lang/Class;)V", null, null);
-        mv.visitCode();
-        mv.visitVarInsn(Opcodes.ALOAD, 0);
-        mv.visitVarInsn(Opcodes.ALOAD, 1);
-        mv.visitVarInsn(Opcodes.ALOAD, 2);
-        mv.visitVarInsn(Opcodes.ALOAD, 3);
-        mv.visitVarInsn(Opcodes.ALOAD, 4);
-        mv.visitMethodInsn(Opcodes.INVOKESPECIAL, "org/codehaus/groovy/runtime/callsite/StaticMetaMethodSite", "<init>", "(Lorg/codehaus/groovy/runtime/callsite/CallSite;Lgroovy/lang/MetaClassImpl;Lgroovy/lang/MetaMethod;[Ljava/lang/Class;)V");
-        mv.visitInsn(Opcodes.RETURN);
-        mv.visitMaxs(0, 0);
-        mv.visitEnd();
-        }
+        genConstructor(cw, "org/codehaus/groovy/runtime/callsite/StaticMetaMethodSite");
 
         getCallXxxWithArray(cw, "", "org/codehaus/groovy/runtime/callsite/StaticMetaMethodSite", cachedMethod, "java/lang/Object");
         getCallXxxWithArray(cw, "Static", "org/codehaus/groovy/runtime/callsite/StaticMetaMethodSite", cachedMethod, "java/lang/Class");
@@ -297,18 +240,10 @@ public class CallSiteGenerator {
         return cw.toByteArray();
     }
 
-    public static Constructor compilePogoMethod(CachedMethod cachedMethod) {
-        ClassWriter cw = new ClassWriter(true);
-
-        final CachedClass declClass = cachedMethod.getDeclaringClass();
-        final Class acls = declClass.getTheClass();
-        final String name = createCallSiteClassName(cachedMethod, declClass, acls);
-
-        final byte[] bytes = genPogoMetaMethodSite(cachedMethod, cw, name);
-
+    private static Constructor defineClassAndGetConstructor(final CallSiteClassLoader callSiteLoader, final String name, final byte[] bytes) {
         final Class pogoSiteClass = AccessController.doPrivileged( new PrivilegedAction<Class>(){
             public Class run() {
-                return new CallSiteClassLoader(acls, name, bytes).cls;
+                return callSiteLoader.define(name, bytes);
             }
         });
 
@@ -321,65 +256,45 @@ public class CallSiteGenerator {
         return null;
     }
 
+    public static Constructor compilePogoMethod(CachedMethod cachedMethod) {
+        ClassWriter cw = new ClassWriter(true);
+
+        final CachedClass declClass = cachedMethod.getDeclaringClass();
+        final CallSiteClassLoader callSiteLoader = declClass.getCallSiteLoader();
+        final String name = callSiteLoader.createCallSiteClassName(cachedMethod);
+
+        final byte[] bytes = genPogoMetaMethodSite(cachedMethod, cw, name);
+
+        return defineClassAndGetConstructor(callSiteLoader, name, bytes);
+    }
+
     public static Constructor compilePojoMethod(CachedMethod cachedMethod) {
         ClassWriter cw = new ClassWriter(true);
 
         final CachedClass declClass = cachedMethod.getDeclaringClass();
-        final Class acls = declClass.getTheClass();
-        final String name = createCallSiteClassName(cachedMethod, declClass, acls);
+        final CallSiteClassLoader callSiteLoader = declClass.getCallSiteLoader();
+        final String name = callSiteLoader.createCallSiteClassName(cachedMethod);
 
         final byte[] bytes = genPojoMetaMethodSite(cachedMethod, cw, name);
 
-        final Class pojoSiteClass = AccessController.doPrivileged( new PrivilegedAction<Class>(){
-            public Class run() {
-                return new CallSiteClassLoader(acls, name, bytes).cls;
-            }
-        });
 
-        if (pojoSiteClass != null) {
-            try {
-                return pojoSiteClass.getConstructor(CallSite.class, MetaClassImpl.class, MetaMethod.class, Class[].class);
-            } catch (NoSuchMethodException e) { //
-            }
-        }
-        return null;
+        return defineClassAndGetConstructor(callSiteLoader, name, bytes);
     }
 
     public static Constructor compileStaticMethod(CachedMethod cachedMethod) {
         ClassWriter cw = new ClassWriter(true);
 
         final CachedClass declClass = cachedMethod.getDeclaringClass();
-        final Class acls = declClass.getTheClass();
-        final String name = createCallSiteClassName(cachedMethod, declClass, acls);
+        final CallSiteClassLoader callSiteLoader = declClass.getCallSiteLoader();
+        final String name = callSiteLoader.createCallSiteClassName(cachedMethod);
 
         final byte[] bytes = genStaticMetaMethodSite(cachedMethod, cw, name);
 
-        final Class staticSiteClass = AccessController.doPrivileged( new PrivilegedAction<Class>(){
-            public Class run() {
-                return new CallSiteClassLoader(acls, name, bytes).cls;
-            }
-        });
-
-        if (staticSiteClass != null) {
-            try {
-                return staticSiteClass.getConstructor(CallSite.class, MetaClassImpl.class, MetaMethod.class, Class[].class);
-            } catch (NoSuchMethodException e) { //
-            }
-        }
-        return null;
-    }
-
-    private static String createCallSiteClassName(CachedMethod cachedMethod, CachedClass declClass, Class acls) {
-        final String name;
-        if (declClass.getName().startsWith("java."))
-          name = acls.getName().replace('.','_') + "$" + cachedMethod.getName();
-        else
-          name = declClass.getName() + "$" + cachedMethod.getName();
-        return name;
+        return defineClassAndGetConstructor(callSiteLoader, name, bytes);
     }
 
     public static boolean isCompilable (CachedMethod method) {
-        return sunVM != null || Modifier.isPublic(method.cachedClass.getModifiers()) && method.isPublic() && publicParams(method);
+        return GroovySunClassLoader.sunVM != null || Modifier.isPublic(method.cachedClass.getModifiers()) && method.isPublic() && publicParams(method);
     }
 
     private static boolean publicParams(CachedMethod method) {
@@ -390,123 +305,4 @@ public class CallSiteGenerator {
         return true;
     }
 
-    private static class SunClassLoader extends ClassLoader implements Opcodes {
-        final static Map<String,Class> knownClasses = new HashMap<String,Class>();
-
-        SunClassLoader (Class magic) throws IOException {
-            super (SunClassLoader.class.getClassLoader());
-
-            knownClasses.put("sun.reflect.MagicAccessorImpl", magic);
-
-            loadMagic ();
-            loadAbstract ();
-            loadFromRes("org.codehaus.groovy.runtime.callsite.MetaClassSite");
-            loadFromRes("org.codehaus.groovy.runtime.callsite.MetaMethodSite");
-            loadFromRes("org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite");
-            loadFromRes("org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite");
-            loadFromRes("org.codehaus.groovy.runtime.callsite.StaticMetaMethodSite");
-        }
-
-        private void loadMagic() {
-            ClassWriter cw = new ClassWriter(true);
-            cw.visit(Opcodes.V1_4, Opcodes.ACC_PUBLIC, "sun/reflect/GroovyMagic", null, "sun/reflect/MagicAccessorImpl", null);
-            MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
-            mv.visitCode();
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitMethodInsn(INVOKESPECIAL, "sun/reflect/MagicAccessorImpl", "<init>", "()V");
-            mv.visitInsn(RETURN);
-            mv.visitMaxs(0,0);
-            mv.visitEnd();
-            cw.visitEnd();
-
-            define(cw.toByteArray(), "sun.reflect.GroovyMagic");
-        }
-
-        private void loadAbstract() throws IOException {
-            final InputStream asStream = getClass().getClassLoader().getResourceAsStream(resName("org.codehaus.groovy.runtime.callsite.AbstractCallSite"));
-            ClassReader reader = new ClassReader(asStream);
-            final ClassWriter cw = new ClassWriter(true) {
-                public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
-                    super.visit(version, access, name, signature, "sun/reflect/GroovyMagic", interfaces);
-                }
-            };
-            reader.accept(cw, true);
-            asStream.close();
-            define(cw.toByteArray(), "org.codehaus.groovy.runtime.callsite.AbstractCallSite");
-        }
-
-        private void loadFromRes(String name) throws IOException {
-            final InputStream asStream = getClass().getClassLoader().getResourceAsStream(resName(name));
-            ClassReader reader = new ClassReader(asStream);
-            final ClassWriter cw = new ClassWriter(true) {
-            };
-            reader.accept(cw, true);
-            asStream.close();
-            define(cw.toByteArray(), name);
-        }
-
-        private String resName(String s) {
-            return s.replace('.','/') + ".class";
-        }
-
-        private void define(byte[] bytes, final String name) {
-            knownClasses.put(name, defineClass(name, bytes, 0, bytes.length));
-        }
-
-        protected synchronized Class loadClass(String name, boolean resolve) throws ClassNotFoundException {
-            final Class aClass = knownClasses.get(name);
-            if (aClass != null)
-              return aClass;
-            else {
-                try {
-                    return super.loadClass(name, resolve);
-                }
-                catch (ClassNotFoundException e) {
-                    return getClass().getClassLoader().loadClass(name);
-                }
-            }
-        }
-    }
-
-    public static class CallSiteClassLoader extends ClassLoader {
-        public final Class cls;
-
-        private final static Set<String> knownClasses = new HashSet<String>();
-        static {
-            Collections.addAll(knownClasses
-                    , "org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite"
-                    , "org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite"
-                    , "org.codehaus.groovy.runtime.callsite.StaticMetaMethodSite"
-                    , "org.codehaus.groovy.runtime.callsite.CallSite"
-                    , "org.codehaus.groovy.runtime.callsite.CallSiteArray"
-                    , "groovy.lang.MetaMethod"
-                    , "groovy.lang.MetaClassImpl"
-                    );
-        }
-
-        public CallSiteClassLoader(Class parent, String name, byte bytes []) {
-            super(parent.getClassLoader());
-            cls = defineClass(name, bytes, 0, bytes.length, parent.getProtectionDomain());
-            resolveClass(cls);
-        }
-
-        protected synchronized Class loadClass(String name, boolean resolve) throws ClassNotFoundException {
-            if (sunVM != null) {
-                final Class aClass = SunClassLoader.knownClasses.get(name);
-                if (aClass != null)
-                  return aClass;
-            }
-
-            if (knownClasses.contains(name))
-              return getClass().getClassLoader().loadClass(name);
-            else {
-                try {
-                    return super.loadClass(name, resolve);
-                }
-                catch (ClassNotFoundException e) {
-                    return getClass().getClassLoader().loadClass(name);
-                }
-            }
-        }
-    }
 }

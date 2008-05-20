@@ -32,7 +32,7 @@ public final class CallSiteArray {
         this.owner = owner;
         array = new CallSite[names.length];
         for (int i = 0; i < array.length; i++) {
-            array[i] = new DummyCallSite(this, i, names[i]);
+            array[i] = new AbstractCallSite(this, i, names[i]);
         }
     }
 

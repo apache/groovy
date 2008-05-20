@@ -33,7 +33,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author Alex Tkachman
  */
-public abstract class AbstractCallSite implements CallSite {
+public class AbstractCallSite implements CallSite {
     protected final int index;
     protected final String name;
     protected final CallSiteArray array;
@@ -190,7 +190,7 @@ public abstract class AbstractCallSite implements CallSite {
 
 
     public Object callConstructor (Object receiver, Object [] args) throws Throwable {
-        throw new UnsupportedOperationException();
+        return CallSiteArray.defaultCallConstructor(this, receiver, args);
     }
 
     public Object callConstructor (Object receiver) throws Throwable {

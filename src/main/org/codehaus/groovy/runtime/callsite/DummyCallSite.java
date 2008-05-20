@@ -20,37 +20,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import groovy.lang.GroovyObject;
 
 public class DummyCallSite extends AbstractCallSite {
-    private int warmup = 2;
-
     public DummyCallSite(CallSiteArray array, int index, String name) {
         super(array, index,name);
-    }
-
-    public Object call(Object receiver, Object[] args) {
-        if (warmup-- > 0)
-           return InvokerHelper.invokeMethod(receiver, name, args);
-        else
-           return CallSiteArray.defaultCall(this, receiver, args);
-    }
-
-    public final Object callCurrent(GroovyObject receiver, Object[] args) throws Throwable {
-        if (warmup-- > 0)
-          return ScriptBytecodeAdapter.invokeMethodOnCurrentN(array.owner, (GroovyObject)receiver, name, args);
-        else
-          return CallSiteArray.defaultCallCurrent(this, receiver, args);
-    }
-
-    public Object callStatic(Class receiver, Object[] args) {
-        if (warmup-- > 0)
-          return InvokerHelper.invokeStaticMethod((Class)receiver, name, args);
-        else
-          return CallSiteArray.defaultCallStatic(this, receiver, args);
-    }
-
-    public final Object callConstructor(Object receiver, Object[] args) throws Throwable {
-        if (warmup-- > 0)
-          return InvokerHelper.invokeConstructorOf((Class)receiver, args);
-        else
-          return CallSiteArray.defaultCallConstructor(this, receiver, args);
     }
 }
