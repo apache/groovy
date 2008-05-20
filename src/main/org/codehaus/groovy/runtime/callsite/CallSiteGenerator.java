@@ -33,6 +33,7 @@ import groovy.lang.MetaMethod;
 
 public class CallSiteGenerator {
     private static final SunClassLoader sunVM;
+    private static final String[] EXCEPTIONS = new String[] { "java/lang/Throwable" };
 
     static {
         Class cls;
@@ -69,7 +70,7 @@ public class CallSiteGenerator {
     private CallSiteGenerator () {
     }
 
-    public static void genCallWithFixedParams(ClassWriter cw, String name, final String superClass, CachedMethod cachedMethod) {
+    public static void genCallWithFixedParams(ClassWriter cw, String name, final String superClass, CachedMethod cachedMethod, String receiverType ) {
         MethodVisitor mv;
         if (cachedMethod.getParamsCount() <= 4)
         {
@@ -80,7 +81,7 @@ public class CallSiteGenerator {
 
             String pdesc = pdescb.toString();
 
-        mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "call" + name, "(Ljava/lang/Object;" + pdesc + ")Ljava/lang/Object;", null, new String[] { "java/lang/Throwable" });
+        mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "call" + name, "(L" + receiverType + ";" + pdesc + ")Ljava/lang/Object;", null, EXCEPTIONS);
         mv.visitCode();
         mv.visitVarInsn(Opcodes.ALOAD, 0);
         mv.visitVarInsn(Opcodes.ALOAD, 1);
@@ -121,16 +122,16 @@ public class CallSiteGenerator {
         for (int i = 0; i != pc; ++i)
             mv.visitVarInsn(Opcodes.ALOAD, i+2);
         mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/codehaus/groovy/runtime/ArrayUtil", "createArray", "(" + pdesc + ")[Ljava/lang/Object;");
-        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/codehaus/groovy/runtime/callsite/CallSiteArray", "defaultCall" + name, "(Lorg/codehaus/groovy/runtime/callsite/CallSite;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/codehaus/groovy/runtime/callsite/CallSiteArray", "defaultCall" + name, "(Lorg/codehaus/groovy/runtime/callsite/CallSite;L" + receiverType + ";[Ljava/lang/Object;)Ljava/lang/Object;");
         mv.visitInsn(Opcodes.ARETURN);
         mv.visitMaxs(0, 0);
         mv.visitEnd();
         }
     }
 
-    public static void getCallXxxWithArray(ClassWriter cw, final String name, final String superClass, CachedMethod cachedMethod) {
+    public static void getCallXxxWithArray(ClassWriter cw, final String name, final String superClass, CachedMethod cachedMethod, String receiverType) {
         MethodVisitor mv;
-        mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "call" + name, "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;", null, new String[] { "java/lang/Throwable" });
+        mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "call" + name, "(L" + receiverType + ";[Ljava/lang/Object;)Ljava/lang/Object;", null, EXCEPTIONS);
         mv.visitCode();
         mv.visitVarInsn(Opcodes.ALOAD, 0);
         mv.visitVarInsn(Opcodes.ALOAD, 1);
@@ -168,7 +169,7 @@ public class CallSiteGenerator {
         mv.visitVarInsn(Opcodes.ALOAD, 0);
         mv.visitVarInsn(Opcodes.ALOAD, 1);
         mv.visitVarInsn(Opcodes.ALOAD, 2);
-        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/codehaus/groovy/runtime/callsite/CallSiteArray", "defaultCall" + name, "(Lorg/codehaus/groovy/runtime/callsite/CallSite;Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;");
+        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/codehaus/groovy/runtime/callsite/CallSiteArray", "defaultCall" + name, "(Lorg/codehaus/groovy/runtime/callsite/CallSite;L" + receiverType + ";[Ljava/lang/Object;)Ljava/lang/Object;");
         mv.visitInsn(Opcodes.ARETURN);
         mv.visitMaxs(0, 0);
         mv.visitEnd();
@@ -230,11 +231,11 @@ public class CallSiteGenerator {
         mv.visitEnd();
         }
 
-        getCallXxxWithArray(cw, "Current", "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", cachedMethod);
-        getCallXxxWithArray(cw, "", "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", cachedMethod);
+        getCallXxxWithArray(cw, "Current", "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", cachedMethod, "groovy/lang/GroovyObject");
+        getCallXxxWithArray(cw, "", "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", cachedMethod, "java/lang/Object");
 
-        genCallWithFixedParams(cw, "Current", "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", cachedMethod);
-        genCallWithFixedParams(cw, "", "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", cachedMethod);
+        genCallWithFixedParams(cw, "Current", "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", cachedMethod, "groovy/lang/Object");
+        genCallWithFixedParams(cw, "", "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", cachedMethod, "java/lang/Object");
 
 
         cw.visitEnd();
@@ -260,8 +261,8 @@ public class CallSiteGenerator {
         mv.visitEnd();
         }
 
-        getCallXxxWithArray(cw, "", "org/codehaus/groovy/runtime/callsite/PojoMetaMethodSite", cachedMethod);
-        genCallWithFixedParams(cw, "", "org/codehaus/groovy/runtime/callsite/PojoMetaMethodSite", cachedMethod);
+        getCallXxxWithArray(cw, "", "org/codehaus/groovy/runtime/callsite/PojoMetaMethodSite", cachedMethod, "java/lang/Object");
+        genCallWithFixedParams(cw, "", "org/codehaus/groovy/runtime/callsite/PojoMetaMethodSite", cachedMethod, "java/lang/Object");
 
         cw.visitEnd();
 
@@ -286,10 +287,10 @@ public class CallSiteGenerator {
         mv.visitEnd();
         }
 
-        getCallXxxWithArray(cw, "", "org/codehaus/groovy/runtime/callsite/StaticMetaMethodSite", cachedMethod);
-        getCallXxxWithArray(cw, "Static", "org/codehaus/groovy/runtime/callsite/StaticMetaMethodSite", cachedMethod);
-        genCallWithFixedParams(cw, "", "org/codehaus/groovy/runtime/callsite/StaticMetaMethodSite", cachedMethod);
-        genCallWithFixedParams(cw, "Static", "org/codehaus/groovy/runtime/callsite/StaticMetaMethodSite", cachedMethod);
+        getCallXxxWithArray(cw, "", "org/codehaus/groovy/runtime/callsite/StaticMetaMethodSite", cachedMethod, "java/lang/Object");
+        getCallXxxWithArray(cw, "Static", "org/codehaus/groovy/runtime/callsite/StaticMetaMethodSite", cachedMethod, "java/lang/Class");
+        genCallWithFixedParams(cw, "", "org/codehaus/groovy/runtime/callsite/StaticMetaMethodSite", cachedMethod, "java/lang/Object");
+        genCallWithFixedParams(cw, "Static", "org/codehaus/groovy/runtime/callsite/StaticMetaMethodSite", cachedMethod, "java/lang/Class");
 
         cw.visitEnd();
 
@@ -399,11 +400,11 @@ public class CallSiteGenerator {
 
             loadMagic ();
             loadAbstract ();
-            loadFromFile ("org.codehaus.groovy.runtime.callsite.MetaClassSite");
-            loadFromFile ("org.codehaus.groovy.runtime.callsite.MetaMethodSite");
-            loadFromFile ("org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite");
-            loadFromFile ("org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite");
-            loadFromFile ("org.codehaus.groovy.runtime.callsite.StaticMetaMethodSite");
+            loadFromRes("org.codehaus.groovy.runtime.callsite.MetaClassSite");
+            loadFromRes("org.codehaus.groovy.runtime.callsite.MetaMethodSite");
+            loadFromRes("org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite");
+            loadFromRes("org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite");
+            loadFromRes("org.codehaus.groovy.runtime.callsite.StaticMetaMethodSite");
         }
 
         private void loadMagic() {
@@ -434,7 +435,7 @@ public class CallSiteGenerator {
             define(cw.toByteArray(), "org.codehaus.groovy.runtime.callsite.AbstractCallSite");
         }
 
-        private void loadFromFile(String name) throws IOException {
+        private void loadFromRes(String name) throws IOException {
             final InputStream asStream = getClass().getClassLoader().getResourceAsStream(resName(name));
             ClassReader reader = new ClassReader(asStream);
             final ClassWriter cw = new ClassWriter(true) {

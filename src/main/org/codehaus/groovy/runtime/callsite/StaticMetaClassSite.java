@@ -21,7 +21,7 @@ public class StaticMetaClassSite extends MetaClassSite {
           return CallSiteArray.defaultCall(this, receiver, args);
     }
 
-    public final Object callStatic(Object receiver, Object[] args) {
+    public final Object callStatic(Class receiver, Object[] args) {
         if(receiver == metaClass.getTheClass())
           return metaClass.invokeStaticMethod(receiver, name, args);
         else

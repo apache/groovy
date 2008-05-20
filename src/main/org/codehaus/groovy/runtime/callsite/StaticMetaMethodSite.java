@@ -83,7 +83,7 @@ public class StaticMetaMethodSite extends MetaMethodSite {
           return CallSiteArray.defaultCall(this, receiver, args);
     }
 
-    public Object callStatic(Object receiver, Object[] args) {
+    public Object callStatic(Class receiver, Object[] args) {
         if(checkCall(receiver, args))
           return invoke(receiver, args);
         else

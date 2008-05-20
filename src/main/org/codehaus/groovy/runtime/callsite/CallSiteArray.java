@@ -32,7 +32,7 @@ public final class CallSiteArray {
         this.owner = owner;
         array = new CallSite[names.length];
         for (int i = 0; i < array.length; i++) {
-            array[i] = new AbstractCallSite.DummyCallSite(this, i, names[i]);
+            array[i] = new DummyCallSite(this, i, names[i]);
         }
     }
 
@@ -40,12 +40,12 @@ public final class CallSiteArray {
         return createCallSite(callSite, receiver, args).call(receiver, args);
     }
 
-    public static Object defaultCallCurrent(CallSite callSite, Object receiver, Object[] args) throws Throwable {
+    public static Object defaultCallCurrent(CallSite callSite, GroovyObject receiver, Object[] args) throws Throwable {
         return createCallCurrentSite(callSite, receiver, args, callSite.getArray().owner).callCurrent(receiver, args);
     }
 
-    public static Object defaultCallStatic(CallSite callSite, Object receiver, Object[] args) {
-        return createCallStaticSite(callSite, (Class) receiver, args).callStatic(receiver,args);
+    public static Object defaultCallStatic(CallSite callSite, Class receiver, Object[] args) {
+        return createCallStaticSite(callSite, receiver, args).callStatic(receiver,args);
     }
 
     public static Object defaultCallConstructor(CallSite callSite, Object receiver, Object[] args) throws Throwable {
@@ -79,12 +79,12 @@ public final class CallSiteArray {
         return site;
     }
 
-    private static CallSite createCallCurrentSite(CallSite callSite, Object receiver, Object[] args, Class sender) {
+    private static CallSite createCallCurrentSite(CallSite callSite, GroovyObject receiver, Object[] args, Class sender) {
         CallSite site;
         if (receiver instanceof GroovyInterceptable)
           site = new PogoInterceptableSite(callSite);
         else {
-            MetaClass metaClass = ((GroovyObject)receiver).getMetaClass();
+            MetaClass metaClass = receiver.getMetaClass();
             if (metaClass instanceof MetaClassImpl) {
                 site = ((MetaClassImpl)metaClass).createPogoCallCurrentSite(callSite, sender, args);
             }

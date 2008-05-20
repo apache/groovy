@@ -40,7 +40,7 @@ public class PogoMetaMethodSite extends MetaMethodSite {
         return metaMethod.doMethodInvoke(receiver,  args);
     }
 
-    public Object callCurrent(Object receiver, Object[] args) throws Throwable {
+    public Object callCurrent(GroovyObject receiver, Object[] args) throws Throwable {
         if(checkCall(receiver, args))
           return invoke(receiver,args);
         else

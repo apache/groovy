@@ -52,7 +52,7 @@ public class PogoMetaClassSite extends MetaClassSite {
         return receiver instanceof GroovyObject && ((GroovyObject)receiver).getMetaClass() == metaClass;
     }
 
-    public final Object callCurrent(Object receiver, Object[] args) throws Throwable {
+    public final Object callCurrent(GroovyObject receiver, Object[] args) throws Throwable {
         if (checkCall(receiver)) {
             try {
                 return metaClass.invokeMethod(receiver, name, args);

@@ -22,7 +22,6 @@ import org.codehaus.groovy.reflection.ParameterTypes;
 import org.codehaus.groovy.runtime.ArrayUtil;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 
 import java.lang.reflect.Field;
@@ -140,52 +139,52 @@ public abstract class AbstractCallSite implements CallSite {
 
 
 
-    public Object callCurrent (Object receiver, Object [] args) throws Throwable {
+    public Object callCurrent (GroovyObject receiver, Object [] args) throws Throwable {
         return CallSiteArray.defaultCallCurrent(this, receiver, args);
     }
     
-    public Object callCurrent (Object receiver) throws Throwable {
+    public Object callCurrent (GroovyObject receiver) throws Throwable {
         return callCurrent(receiver, CallSiteArray.NOPARAM);
     }
 
-    public Object callCurrent (Object receiver, Object arg1) throws Throwable {
+    public Object callCurrent (GroovyObject receiver, Object arg1) throws Throwable {
         return callCurrent(receiver, ArrayUtil.createArray(arg1));
     }
 
-    public Object callCurrent (Object receiver, Object arg1, Object arg2) throws Throwable {
+    public Object callCurrent (GroovyObject receiver, Object arg1, Object arg2) throws Throwable {
         return callCurrent(receiver, ArrayUtil.createArray(arg1, arg2));
     }
 
-    public Object callCurrent (Object receiver, Object arg1, Object arg2, Object arg3) throws Throwable {
+    public Object callCurrent (GroovyObject receiver, Object arg1, Object arg2, Object arg3) throws Throwable {
         return callCurrent(receiver, ArrayUtil.createArray(arg1, arg2, arg3));
     }
 
-    public Object callCurrent (Object receiver, Object arg1, Object arg2, Object arg3, Object arg4) throws Throwable {
+    public Object callCurrent (GroovyObject receiver, Object arg1, Object arg2, Object arg3, Object arg4) throws Throwable {
         return callCurrent(receiver, ArrayUtil.createArray(arg1, arg2, arg3, arg4));
     }
 
 
-    public Object callStatic (Object receiver, Object [] args) {
+    public Object callStatic (Class receiver, Object [] args) {
         return CallSiteArray.defaultCallStatic(this, receiver, args);
     }
 
-    public Object callStatic (Object receiver) throws Throwable {
+    public Object callStatic (Class receiver) throws Throwable {
         return callStatic(receiver, CallSiteArray.NOPARAM);
     }
 
-    public Object callStatic (Object receiver, Object arg1) throws Throwable {
+    public Object callStatic (Class receiver, Object arg1) throws Throwable {
         return callStatic(receiver, ArrayUtil.createArray(arg1));
     }
 
-    public Object callStatic (Object receiver, Object arg1, Object arg2) throws Throwable {
+    public Object callStatic (Class receiver, Object arg1, Object arg2) throws Throwable {
         return callStatic(receiver, ArrayUtil.createArray(arg1, arg2));
     }
 
-    public Object callStatic (Object receiver, Object arg1, Object arg2, Object arg3) throws Throwable {
+    public Object callStatic (Class receiver, Object arg1, Object arg2, Object arg3) throws Throwable {
         return callStatic(receiver, ArrayUtil.createArray(arg1, arg2, arg3));
     }
 
-    public Object callStatic (Object receiver, Object arg1, Object arg2, Object arg3, Object arg4) throws Throwable {
+    public Object callStatic (Class receiver, Object arg1, Object arg2, Object arg3, Object arg4) throws Throwable {
         return callStatic(receiver, ArrayUtil.createArray(arg1, arg2, arg3, arg4));
     }
 
@@ -234,30 +233,6 @@ public abstract class AbstractCallSite implements CallSite {
         return true;
     }
 
-
-
-    /**
-     * Call site which never accept any receiver/arguments.
-     * We use it as initial value for any call site.
-     * It allow us to avoid additional null check on each call
-     */
-    public static class DummyCallSite extends AbstractCallSite {
-        public DummyCallSite(CallSiteArray array, int index, String name) {
-            super(array, index,name);
-        }
-
-        public Object invoke(Object receiver, Object[] args) {
-            return null;
-        }
-
-        public final Object callCurrent(Object receiver, Object[] args) throws Throwable {
-            return CallSiteArray.defaultCallCurrent(this, receiver, args);
-        }
-
-        public final Object callConstructor(Object receiver, Object[] args) throws Throwable {
-            return CallSiteArray.defaultCallConstructor(this, receiver, args);
-        }
-    }
 
     public Object callGetProperty (Object receiver) {
         return acceptGetProperty(receiver).getProperty(receiver);

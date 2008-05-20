@@ -1994,22 +1994,22 @@ public class AsmClassGenerator extends ClassGenerator {
 
         final String desc = getDescForParamNum(numberOfArguments);
         if (callStatic) {
-            mv.visitMethodInsn(INVOKEINTERFACE,"org/codehaus/groovy/runtime/callsite/CallSite", "callStatic", desc);
+            mv.visitMethodInsn(INVOKEINTERFACE,"org/codehaus/groovy/runtime/callsite/CallSite", "callStatic", "(Ljava/lang/Class;" + desc);
         }
         else
             if (constructor) {
-                mv.visitMethodInsn(INVOKEINTERFACE,"org/codehaus/groovy/runtime/callsite/CallSite", "callConstructor", desc);
+                mv.visitMethodInsn(INVOKEINTERFACE,"org/codehaus/groovy/runtime/callsite/CallSite", "callConstructor", "(Ljava/lang/Object;" + desc);
             }
             else {
                 if (callCurrent) {
-                      mv.visitMethodInsn(INVOKEINTERFACE,"org/codehaus/groovy/runtime/callsite/CallSite", "callCurrent", desc);
+                      mv.visitMethodInsn(INVOKEINTERFACE,"org/codehaus/groovy/runtime/callsite/CallSite", "callCurrent", "(Lgroovy/lang/GroovyObject;" + desc);
                 }
                 else {
                     if (safe) {
-                      mv.visitMethodInsn(INVOKEINTERFACE,"org/codehaus/groovy/runtime/callsite/CallSite", "callSafe", desc);
+                      mv.visitMethodInsn(INVOKEINTERFACE,"org/codehaus/groovy/runtime/callsite/CallSite", "callSafe", "(Ljava/lang/Object;" + desc);
                     }
                     else {
-                      mv.visitMethodInsn(INVOKEINTERFACE,"org/codehaus/groovy/runtime/callsite/CallSite", "call", desc);
+                      mv.visitMethodInsn(INVOKEINTERFACE,"org/codehaus/groovy/runtime/callsite/CallSite", "call", "(Ljava/lang/Object;" + desc);
                     }
                 }
             }
@@ -2019,17 +2019,17 @@ public class AsmClassGenerator extends ClassGenerator {
     private static String getDescForParamNum(int numberOfArguments) {
         switch (numberOfArguments) {
             case 0:
-              return "(Ljava/lang/Object;)Ljava/lang/Object;";
+              return ")Ljava/lang/Object;";
             case 1:
-              return "(Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;";
+              return "Ljava/lang/Object;)Ljava/lang/Object;";
             case 2:
-                return "(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;";
+                return "Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;";
             case 3:
-                return "(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;";
+                return "Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;";
             case 4:
-                return "(Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;";
+                return "Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;Ljava/lang/Object;)Ljava/lang/Object;";
             default:
-                return "(Ljava/lang/Object;[Ljava/lang/Object;)Ljava/lang/Object;";
+                return "[Ljava/lang/Object;)Ljava/lang/Object;";
         }
     }
 
