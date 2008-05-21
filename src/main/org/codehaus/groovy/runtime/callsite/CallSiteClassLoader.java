@@ -15,14 +15,14 @@
  */
 package org.codehaus.groovy.runtime.callsite;
 
-import org.codehaus.groovy.reflection.CachedMethod;
+import org.codehaus.groovy.reflection.ClassLoaderForClassArtifacts;
 
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Collections;
+import java.lang.ref.SoftReference;
 
-public class CallSiteClassLoader extends ClassLoader {
-    public final Class parent;
+public class CallSiteClassLoader extends ClassLoaderForClassArtifacts {
 
     private final static Set<String> knownClasses = new HashSet<String>();
     static {
@@ -37,30 +37,11 @@ public class CallSiteClassLoader extends ClassLoader {
                 );
     }
 
-    private final Set<String> allocatedNames = new HashSet<String> ();
-
-    public CallSiteClassLoader(Class parent) {
-        super(parent.getClassLoader());
-        this.parent = parent;
-    }
-
-    public Class define (String name, byte [] bytes) {
-        Class cls = defineClass(name, bytes, 0, bytes.length, parent.getProtectionDomain());
-        resolveClass(cls);
-        return cls;
+    public CallSiteClassLoader(Class klazz) {
+        super(klazz);
     }
 
     protected synchronized Class loadClass(String name, boolean resolve) throws ClassNotFoundException {
-        final Class cls = findLoadedClass(name);
-        if (cls != null)
-          return cls;
-
-        if (GroovySunClassLoader.sunVM != null) {
-            final Class aClass = GroovySunClassLoader.sunVM.doesKnow(name);
-            if (aClass != null)
-              return aClass;
-        }
-
         if (knownClasses.contains(name))
           return getClass().getClassLoader().loadClass(name);
         else {
@@ -73,25 +54,4 @@ public class CallSiteClassLoader extends ClassLoader {
         }
     }
 
-    public synchronized String createCallSiteClassName(CachedMethod cachedMethod) {
-        final String name;
-        final String clsName = parent.getName();
-        if (clsName.startsWith("java."))
-          name = clsName.replace('.','_') + "$" + cachedMethod.getName();
-        else
-          name = clsName + "$" + cachedMethod.getName();
-
-        if (!allocatedNames.contains(name)) {
-          allocatedNames.add(name);
-          return name;
-        }
-
-        for (int i = 0; ; i++) {
-            String newName = name + "$" + i;
-            if (!allocatedNames.contains(newName)) {
-              allocatedNames.add(newName);
-              return newName;
-            }
-        }
-    }
 }

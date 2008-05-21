@@ -17,8 +17,7 @@ package org.codehaus.groovy.runtime.callsite;
 
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.ClassWriter;
-import org.codehaus.groovy.reflection.CachedMethod;
-import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.SunClassLoader;
 
 import java.io.IOException;
 import java.io.InputStream;

@@ -47,6 +47,8 @@ public class ClassInfo extends SoftReference<Class> {
 
     private final LazySoftReference staticMetaClassField;
 
+    private final LazyClassLoaderRef artifactClassLoader;
+
     private static final HashSet<ClassInfo> modifiedExpandos = new HashSet<ClassInfo>();
 
     private final LockableObject lock = new LockableObject();
@@ -64,6 +66,7 @@ public class ClassInfo extends SoftReference<Class> {
         this.hash = hash;
         cachedClassRef = new LazyCachedClassRef(this);
         staticMetaClassField = new LazyStaticMetaClassFieldRef(this);
+        artifactClassLoader = new LazyClassLoaderRef(this);
     }
 
     ClassInfo(ClassInfo src, ClassInfo next) {
@@ -78,6 +81,7 @@ public class ClassInfo extends SoftReference<Class> {
         staticMetaClassField = new LazyStaticMetaClassFieldRef(this);
         dgmMetaMethods = src.dgmMetaMethods;
         newMetaMethods = src.newMetaMethods;
+        artifactClassLoader = src.artifactClassLoader;
     }
 
     public int getVersion() {
@@ -103,6 +107,10 @@ public class ClassInfo extends SoftReference<Class> {
 
     public CachedClass getCachedClass() {
         return cachedClassRef.get();
+    }
+
+    public ClassLoaderForClassArtifacts getArtifactClassLoader() {
+        return artifactClassLoader.get();
     }
 
     private static final ClassSet globalClassSet = new ClassSet ();
@@ -533,6 +541,18 @@ public class ClassInfo extends SoftReference<Class> {
             }
 
             return NONE;
+        }
+    }
+
+    private static class LazyClassLoaderRef extends LazySoftReference<ClassLoaderForClassArtifacts> {
+        private final ClassInfo info;
+
+        LazyClassLoaderRef(ClassInfo info) {
+            this.info = info;
+        }
+
+        public ClassLoaderForClassArtifacts initValue() {
+            return new ClassLoaderForClassArtifacts(info.get());
         }
     }
 }

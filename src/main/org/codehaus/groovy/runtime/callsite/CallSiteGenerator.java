@@ -18,15 +18,11 @@ package org.codehaus.groovy.runtime.callsite;
 import org.objectweb.asm.*;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.MethodHandleFactory;
 import org.codehaus.groovy.classgen.BytecodeHelper;
 
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
-
-import groovy.lang.MetaClassImpl;
-import groovy.lang.MetaMethod;
 
 public class CallSiteGenerator {
     private static final String[] EXCEPTIONS = new String[] { "java/lang/Throwable" };
@@ -65,12 +61,12 @@ public class CallSiteGenerator {
 
         // make call
         if (cachedMethod.isStatic()) {
-            genLoadParametersDirect(2, mv, helper, cachedMethod);
+            MethodHandleFactory.genLoadParametersDirect(2, mv, helper, cachedMethod.setAccessible());
             mv.visitMethodInsn(Opcodes.INVOKESTATIC, type, cachedMethod.getName(), descriptor);
         } else {
             mv.visitVarInsn(Opcodes.ALOAD, 1);
             helper.doCast(callClass);
-            genLoadParametersDirect(2, mv, helper, cachedMethod);
+            MethodHandleFactory.genLoadParametersDirect(2, mv, helper, cachedMethod.setAccessible());
             mv.visitMethodInsn((useInterface) ? Opcodes.INVOKEINTERFACE : Opcodes.INVOKEVIRTUAL, type, cachedMethod.getName(), descriptor);
         }
 
@@ -114,12 +110,12 @@ public class CallSiteGenerator {
 
         // make call
         if (cachedMethod.isStatic()) {
-            genLoadParameters(2, mv, helper, cachedMethod);
+            MethodHandleFactory.genLoadParameters(2, mv, helper, cachedMethod.setAccessible());
             mv.visitMethodInsn(Opcodes.INVOKESTATIC, type, cachedMethod.getName(), descriptor);
         } else {
             mv.visitVarInsn(Opcodes.ALOAD, 1);
             helper.doCast(callClass);
-            genLoadParameters(2, mv, helper, cachedMethod);
+            MethodHandleFactory.genLoadParameters(2, mv, helper, cachedMethod.setAccessible());
             mv.visitMethodInsn((useInterface) ? Opcodes.INVOKEINTERFACE : Opcodes.INVOKEVIRTUAL, type, cachedMethod.getName(), descriptor);
         }
 
@@ -137,44 +133,6 @@ public class CallSiteGenerator {
         mv.visitInsn(Opcodes.ARETURN);
         mv.visitMaxs(0, 0);
         mv.visitEnd();
-    }
-
-    protected static void genLoadParameters(int argumentIndex, MethodVisitor mv, BytecodeHelper helper, CachedMethod method) {
-        CachedClass[] parameters = method.getParameterTypes();
-        int size = parameters.length;
-        for (int i = 0; i < size; i++) {
-            // unpack argument from Object[]
-            mv.visitVarInsn(Opcodes.ALOAD, argumentIndex);
-            helper.pushConstant(i);
-            mv.visitInsn(Opcodes.AALOAD);
-
-            // cast argument to parameter class, inclusive unboxing
-            // for methods with primitive types
-            Class type = parameters[i].getTheClass();
-            if (type.isPrimitive()) {
-                helper.unbox(type);
-            } else {
-                helper.doCast(type);
-            }
-        }
-    }
-
-    protected static void genLoadParametersDirect(int argumentIndex, MethodVisitor mv, BytecodeHelper helper, CachedMethod method) {
-        CachedClass[] parameters = method.getParameterTypes();
-        int size = parameters.length;
-        for (int i = 0; i < size; i++) {
-            // unpack argument from Object[]
-            mv.visitVarInsn(Opcodes.ALOAD, argumentIndex+i);
-
-            // cast argument to parameter class, inclusive unboxing
-            // for methods with primitive types
-            Class type = parameters[i].getTheClass();
-            if (type.isPrimitive()) {
-                helper.unbox(type);
-            } else {
-                helper.doCast(type);
-            }
-        }
     }
 
     private static void genConstructor(ClassWriter cw, final String superClass) {
@@ -225,7 +183,6 @@ public class CallSiteGenerator {
     }
 
     public static byte[] genStaticMetaMethodSite(CachedMethod cachedMethod, ClassWriter cw, String name) {
-        MethodVisitor mv;
         cw.visit(Opcodes.V1_4, Opcodes.ACC_PUBLIC, name.replace('.','/'), null, "org/codehaus/groovy/runtime/callsite/StaticMetaMethodSite", null);
 
         genConstructor(cw, "org/codehaus/groovy/runtime/callsite/StaticMetaMethodSite");
@@ -240,32 +197,16 @@ public class CallSiteGenerator {
         return cw.toByteArray();
     }
 
-    private static Constructor defineClassAndGetConstructor(final CallSiteClassLoader callSiteLoader, final String name, final byte[] bytes) {
-        final Class pogoSiteClass = AccessController.doPrivileged( new PrivilegedAction<Class>(){
-            public Class run() {
-                return callSiteLoader.define(name, bytes);
-            }
-        });
-
-        if (pogoSiteClass != null) {
-            try {
-                return pogoSiteClass.getConstructor(CallSite.class, MetaClassImpl.class, MetaMethod.class, Class[].class);
-            } catch (NoSuchMethodException e) { //
-            }
-        }
-        return null;
-    }
-
     public static Constructor compilePogoMethod(CachedMethod cachedMethod) {
         ClassWriter cw = new ClassWriter(true);
 
         final CachedClass declClass = cachedMethod.getDeclaringClass();
         final CallSiteClassLoader callSiteLoader = declClass.getCallSiteLoader();
-        final String name = callSiteLoader.createCallSiteClassName(cachedMethod);
+        final String name = callSiteLoader.createClassName(cachedMethod.setAccessible());
 
         final byte[] bytes = genPogoMetaMethodSite(cachedMethod, cw, name);
 
-        return defineClassAndGetConstructor(callSiteLoader, name, bytes);
+        return callSiteLoader.defineClassAndGetConstructor(name, bytes);
     }
 
     public static Constructor compilePojoMethod(CachedMethod cachedMethod) {
@@ -273,12 +214,12 @@ public class CallSiteGenerator {
 
         final CachedClass declClass = cachedMethod.getDeclaringClass();
         final CallSiteClassLoader callSiteLoader = declClass.getCallSiteLoader();
-        final String name = callSiteLoader.createCallSiteClassName(cachedMethod);
+        final String name = callSiteLoader.createClassName(cachedMethod.setAccessible());
 
         final byte[] bytes = genPojoMetaMethodSite(cachedMethod, cw, name);
 
 
-        return defineClassAndGetConstructor(callSiteLoader, name, bytes);
+        return callSiteLoader.defineClassAndGetConstructor(name, bytes);
     }
 
     public static Constructor compileStaticMethod(CachedMethod cachedMethod) {
@@ -286,11 +227,11 @@ public class CallSiteGenerator {
 
         final CachedClass declClass = cachedMethod.getDeclaringClass();
         final CallSiteClassLoader callSiteLoader = declClass.getCallSiteLoader();
-        final String name = callSiteLoader.createCallSiteClassName(cachedMethod);
+        final String name = callSiteLoader.createClassName(cachedMethod.setAccessible());
 
         final byte[] bytes = genStaticMetaMethodSite(cachedMethod, cw, name);
 
-        return defineClassAndGetConstructor(callSiteLoader, name, bytes);
+        return callSiteLoader.defineClassAndGetConstructor(name, bytes);
     }
 
     public static boolean isCompilable (CachedMethod method) {
