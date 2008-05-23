@@ -35,7 +35,6 @@ public class SwingBuilder  extends FactoryBuilderSupport {
 
     // local fields
     private static final Logger LOG = Logger.getLogger(SwingBuilder.name)
-    // tracks all containing windows, for auto-owned dialogs
     private static boolean headless = false
 
     public SwingBuilder() {
@@ -346,52 +345,56 @@ public class SwingBuilder  extends FactoryBuilderSupport {
             return KeyStroke.getKeyStroke(ks.getKeyCode(), ks.getModifiers() | modifier | Toolkit.getDefaultToolkit().getMenuShortcutKeyMask())        }
     }
 
-    public LookAndFeel lookAndFeel(Object lookAndFeel, Closure initCode) {
+    public static LookAndFeel lookAndFeel(Object lookAndFeel, Closure initCode) {
         lookAndFeel([:], lookAndFeel, initCode)
     }
 
-    public LookAndFeel lookAndFeel(Map attributes = [:], Object lookAndFeel = null, Closure initCode = null) {
+    public static LookAndFeel lookAndFeel(Map attributes = [:], Object lookAndFeel = null, Closure initCode = null) {
         // if we get rid of this warning, we can make it static.
-        if (context) {
-            LOG.warning "For best result do not call lookAndFeel when it is a child of a SwingBuidler node, initializaiton of the Look and Feel may be inconsistant."
-        }
-
+        //if (context) {
+        //    LOG.warning "For best result do not call lookAndFeel when it is a child of a SwingBuidler node, initializaiton of the Look and Feel may be inconsistant."
+        //}
         LookAndFeelHelper.instance.lookAndFeel(lookAndFeel, attributes, initCode)
     }
 
-    public LookAndFeel lookAndFeel(Object... lafs) {
+    public static LookAndFeel lookAndFeel(Object... lafs) {
         if (lafs.length == 1) {
             lookAndFeel([:], lafs[0], null as Closure);
         }
         for (Object laf in lafs) {
             try {
                 // (ab)use multi-methods
-                return _laf(laf)
+                if (laf instanceof ArrayList) {
+                    // multi-method bug
+                    return _laf(*laf)
+                } else {
+                    return _laf(laf)
+                }
             } catch (Throwable t) {
-                LOG.info "Could not instantiate Look and Feel $laf because of ${t}. Attemting next option."
+                LOG.fine "Could not instantiate Look and Feel $laf because of ${t}. Attemting next option."
             }
         }
         LOG.warning "All Look and Feel options failed: $lafs"
         return null
     }
 
-    private LookAndFeel _laf(List s) {
-        laf(*l)
+    private static LookAndFeel _laf(List s) {
+        _laf(*s)
     }
 
-    private LookAndFeel _laf(String s, Map m) {
+    private static LookAndFeel _laf(String s, Map m) {
         lookAndFeel(m, s, null as Closure)
     }
 
-    private LookAndFeel _laf(LookAndFeel laf, Map m) {
+    private static LookAndFeel _laf(LookAndFeel laf, Map m) {
         lookAndFeel(m, laf, null as Closure)
     }
 
-    private LookAndFeel _laf(String s) {
+    private static LookAndFeel _laf(String s) {
         lookAndFeel([:], s, null as Closure)
     }
 
-    private LookAndFeel _laf(LookAndFeel laf) {
+    private static LookAndFeel _laf(LookAndFeel laf) {
         lookAndFeel([:], laf, null as Closure)
     }
 
