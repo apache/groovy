@@ -9,8 +9,8 @@ class Groovy1759_Bug extends GroovyTestCase {
          a.b()
       }
       
-      def actual = benchmarkInterceptor.statistic()
-      def expected = [['ctor', 1, 0],['a', 1, 0],['b', 2, 0]]
+      def actual = benchmarkInterceptor.statistic().collect{ [ it[0], it[1] ] }
+      def expected = [['ctor', 1],['a', 1],['b', 2]]
       assert expected == actual
    }
 }
