@@ -961,11 +961,12 @@ public class AsmClassGenerator extends ClassGenerator {
 
                 mv.visitVarInsn(ALOAD, tempIndex);
                 new VariableExpression(name).visit(this);
+                mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/InvokerHelper", "toString", "(Ljava/lang/Object;)Ljava/lang/String;");
                 mv.visitMethodInsn(
                         INVOKEVIRTUAL,
                         "java/lang/StringBuffer",
                         "append",
-                        "(Ljava/lang/Object;)Ljava/lang/StringBuffer;");
+                        "(Ljava/lang/String;)Ljava/lang/StringBuffer;");
                 mv.visitInsn(POP);
 
             }

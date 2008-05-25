@@ -24,7 +24,7 @@ import java.util.*;
  */
 public class BenchmarkInterceptor implements Interceptor {
 
-    protected Map calls = new HashMap(); // keys to list of invocation times and before and after
+    protected Map calls = new LinkedHashMap(); // keys to list of invocation times and before and after
 
 
     public Map getCalls() {

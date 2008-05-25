@@ -11,7 +11,7 @@ class Groovy1759_Bug extends GroovyTestCase {
       }
       
       def actual = benchmarkInterceptor.statistic()
-      def expected = [['b', 2, 0],['ctor', 1, 0],['a', 1, 0]]
+      def expected = [['ctor', 1, 0],['a', 1, 0],['b', 2, 0]]
       assert expected == actual
       */
       // this test has been reported to break the build on windows
