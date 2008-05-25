@@ -24,11 +24,19 @@ import java.util.List;
 import java.util.Map;
 
 /**
+ * This class returns half bound {@link org.codehaus.groovy.binding.FullBinding}s on the source half to the model
+ * object for every property reference (and I do mean every, valid or not, queried before or not).  These returned
+ * half bindings are stored strongly in a list when gereated.
+ *
+ * Changing the model will keep all existing bindings but change the source on all of the bininfs
+ *
+ * Formerly Known as Model Binding.
+ *
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
- * @version $Revision$
- * @since Groovy 1.1
+ * @version $Revision: 11298 $
+ * @since Groovy 1.5
  */
-public class ModelBinding extends GroovyObjectSupport implements BindingUpdatable {
+public class BindingProxy extends GroovyObjectSupport implements BindingUpdatable {
 
     Object model;
     boolean bound;
@@ -36,7 +44,7 @@ public class ModelBinding extends GroovyObjectSupport implements BindingUpdatabl
     final Map<String, PropertyBinding> propertyBindings = new HashMap<String, PropertyBinding>();
     final List<FullBinding> generatedBindings = new ArrayList<FullBinding>();
 
-    public ModelBinding(Object model) {
+    public BindingProxy(Object model) {
         this.model = model;
     }
 

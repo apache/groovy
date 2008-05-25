@@ -371,7 +371,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
 
         def bean = new org.codehaus.groovy.runtime.DummyBean()
 
-        swing.model(bean, id:'dummyBean')
+        swing.bindProxy(bean, id:'dummyBean')
 
         // test initial binding
         swing.textField(id:'textField', text:swing.dummyBean.name)
@@ -389,7 +389,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
 
 
         //test for auto-update
-        swing.model(bean, id:'boundDummyBean', bind:true)
+        swing.bindProxy(bean, id:'boundDummyBean', bind:true)
         swing.textField(id:'boundTextField', text:swing.boundDummyBean.name)
         assert swing.boundTextField.text == bean.name
         bean.name = 'Danno'

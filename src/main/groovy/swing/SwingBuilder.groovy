@@ -61,7 +61,7 @@ public class SwingBuilder  extends FactoryBuilderSupport {
         BindFactory bindFactory = new BindFactory()
         registerFactory("bind", bindFactory)
         addAttributeDelegate(bindFactory.&bindingAttributeDelegate)
-        registerFactory("model", new ModelFactory())
+        registerFactory("bindProxy", new BindProxyFactory())
 
         // ulimate pass through types
         registerFactory("widget", new WidgetFactory(Component, true))

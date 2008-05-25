@@ -15,14 +15,14 @@
  */
 package groovy.swing.factory
 
-import org.codehaus.groovy.binding.ModelBinding
+import org.codehaus.groovy.binding.BindingProxy
 
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
  * @version $Revision$
  * @since Groovy 1.1
  */
-public class ModelFactory extends AbstractFactory {
+public class BindProxyFactory extends AbstractFactory {
 
     public boolean isLeaf() {
         return true
@@ -32,7 +32,7 @@ public class ModelFactory extends AbstractFactory {
         if (value == null) {
             throw new RuntimeException("$name requires a value argument.");
         }
-        ModelBinding mb = new ModelBinding(value);
+        BindingProxy mb = new BindingProxy(value);
 
         Object o = attributes.remove("bind");
         builder.context.bind = (o instanceof Boolean) && ((Boolean) o).booleanValue()
