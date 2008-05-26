@@ -94,8 +94,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     private List constructors = new ArrayList();
     private List  objectInitializers = new ArrayList();
     private MapOfLists methods;
-    private List methodsList;
-    private LinkedList fields = new LinkedList();
+    private List<MethodNode> methodsList;
+    private LinkedList<FieldNode> fields = new LinkedList<FieldNode>();
     private List properties = new ArrayList();
     private Map fieldIndex = new HashMap();
     private ModuleNode module;
@@ -289,7 +289,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * Returns a list containing FieldNode objects for
      * each field in the class represented by this ClassNode
      */
-    public List getFields() {
+    public List<FieldNode> getFields() {
         if (!lazyInitDone) {
             lazyClassInit();
         }
@@ -325,7 +325,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * Returns a list containing MethodNode objects for
      * each method in the class represented by this ClassNode
      */
-    public List getMethods() {
+    public List<MethodNode> getMethods() {
         if (!lazyInitDone) lazyClassInit();
         if (redirect!=null) return redirect().getMethods();
         return methodsList;

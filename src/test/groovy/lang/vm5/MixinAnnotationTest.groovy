@@ -7,20 +7,29 @@ class MixinAnnotationTest extends GroovyTestCase {
     void testSingleMixinAnnotation () {
         new GroovyShell ().evaluate """
 
+interface Mixed {
+  def getA ()
+}
+
+@Category(Mixed)
 class CategoryToUse {
-    static def asText (Object self) {
-        "under category: " + self
+    static def msg = "under category: "
+
+    def asText () {
+        msg + this + ": " + a
     }
 }
 
 @Mixin(CategoryToUse)
-class ClassToExtend {
+class ClassToExtend implements Mixed{
     String toString () {
         "object of ClassToExtend"
     }
+
+    def a = "blah"
 }
 
-        GroovyTestCase.assertEquals("under category: object of ClassToExtend", new ClassToExtend().asText ())
+        GroovyTestCase.assertEquals("under category: object of ClassToExtend: blah", new ClassToExtend().asText ())
 
         boolean failed = false;
         try {
@@ -36,16 +45,17 @@ class ClassToExtend {
 
     void testMultipleMixinAnnotation () {
         new GroovyShell ().evaluate """
-
+@Category(Object)
 class CategoryToUse1 {
-    static def asText (Object self) {
-        "under category: " + self.asBiggerText ()
+    def asText () {
+        "under category: " + asBiggerText ()
     }
 }
 
+@Category(Object)
 class CategoryToUse2 {
-    static def asBiggerText (Object self) {
-        "under BIG category: " + self
+    def asBiggerText () {
+        "under BIG category: " + this
     }
 }
 
