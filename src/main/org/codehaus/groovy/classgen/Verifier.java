@@ -169,9 +169,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 node.addInterface(ClassHelper.make(GroovyObject.class));
             }
 
-            if (!node.hasProperty("metaClass")) {
-                PropertyNode metaClassProperty =
-                        node.addProperty("metaClass", ACC_PUBLIC, ClassHelper.METACLASS_TYPE, new BytecodeExpression() {
+            if (node.getField("metaClass") == null) {
+                FieldNode metaClassField =
+                        node.addField("metaClass", ACC_PRIVATE | ACC_TRANSIENT, ClassHelper.METACLASS_TYPE, new BytecodeExpression() {
                             public void visit(MethodVisitor mv) {
                                 mv.visitVarInsn(ALOAD, 0);
                                 mv.visitInsn(DUP);
@@ -184,10 +184,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                             public ClassNode getType() {
                                 return ClassHelper.METACLASS_TYPE;
                             }
-                        }, null, null);
-                metaClassProperty.setSynthetic(true);
-                FieldNode metaClassField = metaClassProperty.getField();
-                metaClassField.setModifiers(metaClassField.getModifiers() | ACC_TRANSIENT);
+                        });
+                metaClassField.setSynthetic(true);
             }
 
             if (!node.hasMethod("getMetaClass", Parameter.EMPTY_ARRAY)) {
@@ -216,12 +214,35 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 node.addSyntheticMethod(
                         "getMetaClass",
                         ACC_PUBLIC,
-                        ClassHelper.make(MetaClass.class),
+                        ClassHelper.METACLASS_TYPE,
                         Parameter.EMPTY_ARRAY,
                         ClassNode.EMPTY_ARRAY,
                         new BytecodeSequence(getMetaClassCode)
                 );
             }
+
+            Parameter[] parameters = new Parameter[] { new Parameter(ClassHelper.METACLASS_TYPE, "mc") };
+            if (!node.hasMethod("setMetaClass", parameters)) {
+                List setMetaClassCode = new LinkedList();
+                setMetaClassCode.add(new BytecodeInstruction() {
+                    public void visit(MethodVisitor mv) {
+                        Label nullLabel = new Label();
+
+                        mv.visitVarInsn(ALOAD, 0);
+                        mv.visitVarInsn(ALOAD, 1);
+                        mv.visitFieldInsn(PUTFIELD, classInternalName, "metaClass", "Lgroovy/lang/MetaClass;");
+                    }
+                });
+                node.addSyntheticMethod(
+                        "setMetaClass",
+                        ACC_PUBLIC,
+                        ClassHelper.VOID_TYPE,
+                        parameters,
+                        ClassNode.EMPTY_ARRAY,
+                        new BytecodeSequence(setMetaClassCode)
+                );
+            }
+
 
 //            if (!node.hasMethod("invokeMethod", INVOKE_METHOD_PARAMS)) {
             if (!isGroovyObject) {
