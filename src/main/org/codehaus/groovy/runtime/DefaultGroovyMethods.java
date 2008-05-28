@@ -9470,17 +9470,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Converts the given String into an array of characters.
+     * Alias for toCharArray.
      *
      * @param self a String
      * @return an array of characters
+     * @see String#toCharArray()
      */
     public static char[] getChars(String self) {
-        int size = self.length();
-        char[] answer = new char[size];
-        for (int i = 0; i < size; i++) {
-            answer[i] = self.charAt(i);
-        }
-        return answer;
+        return self.toCharArray();
     }
 
     /**
