@@ -7070,6 +7070,106 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Determine if a Character is uppercase.
+     * Synonym for 'Character.isUpperCase(this)'.
+     *
+     * @param self a Character
+     * @return true if the character is uppercase
+     * @see java.lang.Character#isUpperCase(char)
+     */
+    public static boolean isUpperCase(Character self) {
+        return Character.isUpperCase(self.charValue());
+    }
+
+    /**
+     * Determine if a Character is lowercase.
+     * Synonym for 'Character.isLowerCase(this)'.
+     *
+     * @param self a Character
+     * @return true if the character is lowercase
+     * @see java.lang.Character#isLowerCase(char)
+     */
+    public static boolean isLowerCase(Character self) {
+        return Character.isLowerCase(self.charValue());
+    }
+
+    /**
+     * Determines if a character is a letter.
+     * Synonym for 'Character.isLetter(this)'.
+     *
+     * @param self a Character
+     * @return true if the character is a letter
+     * @see java.lang.Character#isLetter(char)
+     */
+    public static boolean isLetter(Character self) {
+        return Character.isLetter(self.charValue());
+    }
+
+    /**
+     * Determines if a character is a digit.
+     * Synonym for 'Character.isDigit(this)'.
+     *
+     * @param self a Character
+     * @return true if the character is a digit
+     * @see java.lang.Character#isDigit(char)
+     */
+    public static boolean isDigit(Character self) {
+        return Character.isDigit(self.charValue());
+    }
+
+    /**
+     * Determines if a character is a letter or digit.
+     * Synonym for 'Character.isLetterOrDigit(this)'.
+     *
+     * @param self a Character
+     * @return true if the character is a letter or digit
+     * @see java.lang.Character#isLetterOrDigit(char)
+     */
+    public static boolean isLetterOrDigit(Character self) {
+        return Character.isLetterOrDigit(self.charValue());
+    }
+
+    /**
+     * Determines if a character is a whitespace character.
+     * Synonym for 'Character.isWhitespace(this)'.
+     *
+     * @param self a Character
+     * @return true if the character is a whitespace character
+     * @see java.lang.Character#isWhitespace(char)
+     */
+    public static boolean isWhitespace(Character self) {
+        return Character.isWhitespace(self.charValue());
+    }
+
+    /**
+     * Converts the character to uppercase.
+     * Synonym for 'Character.toUpperCase(this)'.
+     *
+     * @param self a Character to convert
+     * @return  the uppercase equivalent of the character, if any;
+     *          otherwise, the character itself.
+     * @see     java.lang.Character#isUpperCase(char)
+     * @see     java.lang.String#toUpperCase()
+     */
+    public static char toUpperCase(Character self) {
+        return Character.toUpperCase(self.charValue());
+    }
+
+    /**
+     * Converts the character to lowercase.
+     * Synonym for 'Character.toLowerCase(this)'.
+     *
+     * @param self a Character to convert
+     * @return  the lowercase equivalent of the character, if any;
+     *          otherwise, the character itself.
+     * @see     java.lang.Character#isLowerCase(char)
+     * @see     java.lang.String#toLowerCase()
+     */
+    public static char toLowerCase(Character self) {
+        return Character.toLowerCase(self.charValue());
+    }
+
+    /**
      * Transform a Number into an Integer
      *
      * @param self a Number
@@ -9347,6 +9447,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         List answer = new ArrayList(size);
         for (int i = 0; i < size; i++) {
             answer.add(self.substring(i, i + 1));
+        }
+        return answer;
+    }
+
+    /**
+     * Converts the given String into an array of characters.
+     *
+     * @param self a String
+     * @return an array of characters
+     */
+    public static char[] getChars(String self) {
+        int size = self.length();
+        char[] answer = new char[size];
+        for (int i = 0; i < size; i++) {
+            answer[i] = self.charAt(i);
         }
         return answer;
     }
