@@ -148,6 +148,41 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         assert x instanceof Character
     }
 
+    void testGetCharsMethod() {
+        def s = 'abc'
+        def x = s.chars
+        assert x instanceof char[]
+        assert x.size() == 3
+    }
+
+    void testCharacterToMethods() {
+        char c1 = 'a'
+        char c2 = 'Z'
+        assert c1.toUpperCase() == 'A'
+        assert c2.toLowerCase() == 'z'
+    }
+
+    void testCharacterIsMethods() {
+        def f = false
+        def t = true
+        checkProperties('a', f, t, f, f, t, t)
+        checkProperties('Z', t, f, f, f, t, t)
+        checkProperties('5', f, f, f, t, f, t)
+        checkProperties(' ', f, f, t, f, f, f)
+        checkProperties('&', f, f, f, f, f, f)
+    }
+
+    private def checkProperties(String s, boolean isUpperCase, boolean isLowerCase, boolean isWhitespace,
+                            boolean isDigit, boolean isLetter, boolean isLetterOrDigit) {
+        char c = s as char
+        assert c.isUpperCase() == isUpperCase
+        assert c.isLowerCase() == isLowerCase
+        assert c.isWhitespace() == isWhitespace
+        assert c.isLetter() == isLetter
+        assert c.isDigit() == isDigit
+        assert c.isLetterOrDigit() == isLetterOrDigit
+    }
+
     void testPutAtRange() {
         def list
         list = ['a', 'b', 'c']; list[4] = 'x'; assert list == ["a", "b", "c", null, "x"]
