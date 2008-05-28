@@ -55,6 +55,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     private static final Parameter[] GET_PROPERTY_PARAMS = new Parameter[]{
             new Parameter(ClassHelper.STRING_TYPE, "property")
     };
+    private static final Parameter[] SET_METACLASS_PARAMS = new Parameter[] {
+            new Parameter(ClassHelper.METACLASS_TYPE, "mc")
+    };
 
     private ClassNode classNode;
     private MethodNode methodNode;
@@ -108,17 +111,23 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             if (!isGroovyObject) {
                 node.addInterface(ClassHelper.make(GroovyObject.class));
             }
-            FieldNode metaClassField = null;
+
+            final String classInternalName = BytecodeHelper.getClassInternalName(node);
             StaticMethodCallExpression initMetaClassCall = new StaticMethodCallExpression(
                     ClassHelper.make(ScriptBytecodeAdapter.class),
                     "initMetaClass",
                     VariableExpression.THIS_EXPRESSION);
-            // let's add a new field for the metaclass
-            PropertyNode metaClassProperty =
-                    node.addProperty("metaClass", ACC_PUBLIC, ClassHelper.make(MetaClass.class), initMetaClassCall, null, null);
-            metaClassProperty.setSynthetic(true);
-            metaClassField = metaClassProperty.getField();
-            metaClassField.setModifiers(metaClassField.getModifiers() | ACC_TRANSIENT);
+
+            FieldNode metaClassField = node.getField("metaClass");
+            if (metaClassField == null) {
+                // let's add a new field for the metaclass
+                PropertyNode metaClassProperty =
+                        node.addProperty("metaClass", ACC_PUBLIC, ClassHelper.make(MetaClass.class), initMetaClassCall, null, null);
+                metaClassProperty.setSynthetic(true);
+                metaClassField = metaClassProperty.getField();
+                metaClassField.setModifiers(metaClassField.getModifiers() | ACC_TRANSIENT);
+            }
+
             FieldExpression metaClassVar = new FieldExpression(metaClassField);
             IfStatement initMetaClassField =
                     new IfStatement(
@@ -127,14 +136,35 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                             new ExpressionStatement(new BinaryExpression(metaClassVar, Token.newSymbol(Types.EQUAL, -1, -1), initMetaClassCall)),
                             EmptyStatement.INSTANCE);
 
-            node.addSyntheticMethod(
-                    "getMetaClass",
-                    ACC_PUBLIC,
-                    ClassHelper.make(MetaClass.class),
-                    Parameter.EMPTY_ARRAY,
-                    ClassNode.EMPTY_ARRAY,
-                    new BlockStatement(new Statement[]{initMetaClassField, new ReturnStatement(metaClassVar)}, new VariableScope())
-            );
+            if (!node.hasMethod("getMetaClass", Parameter.EMPTY_ARRAY)) {
+                node.addSyntheticMethod(
+                        "getMetaClass",
+                        ACC_PUBLIC,
+                        ClassHelper.make(MetaClass.class),
+                        Parameter.EMPTY_ARRAY,
+                        ClassNode.EMPTY_ARRAY,
+                        new BlockStatement(new Statement[]{initMetaClassField, new ReturnStatement(metaClassVar)}, new VariableScope())
+                );
+            }
+
+            if (!node.hasMethod("setMetaClass", SET_METACLASS_PARAMS)) {
+                List setMetaClassCode = new LinkedList();
+                setMetaClassCode.add(new BytecodeInstruction() {
+                    public void visit(MethodVisitor mv) {
+                        mv.visitVarInsn(ALOAD, 0);
+                        mv.visitVarInsn(ALOAD, 1);
+                        mv.visitFieldInsn(PUTFIELD, classInternalName, "metaClass", "Lgroovy/lang/MetaClass;");
+                    }
+                });
+                node.addSyntheticMethod(
+                        "setMetaClass",
+                        ACC_PUBLIC,
+                        ClassHelper.VOID_TYPE,
+                        SET_METACLASS_PARAMS,
+                        ClassNode.EMPTY_ARRAY,
+                        new BytecodeSequence(setMetaClassCode)
+                );
+            }
 
             VariableExpression vMethods = new VariableExpression("method");
             VariableExpression vArguments = new VariableExpression("arguments");
