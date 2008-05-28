@@ -1,4 +1,5 @@
 target
+src/main/org/codehaus/groovy/antlr/parser
 src/main/org/codehaus/groovy/antlr/java/JavaLexer.java
 src/main/org/codehaus/groovy/antlr/java/JavaLexer.smap
 src/main/org/codehaus/groovy/antlr/java/JavaRecognizer.java
