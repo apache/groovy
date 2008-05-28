@@ -4465,6 +4465,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Overloads the left shift operator to provide an easy way to append
+     * Map.Entry values to a Map.
+     *
+     * @param self  a Map
+     * @param entry a Map.Entry to be added to the Map.
+     * @return same map, after the value has been added to it.
+     */
+    public static Map leftShift(Map self, Map.Entry entry) {
+        self.put(entry.getKey(), entry.getValue());
+        return self;
+    }
+
+    /**
      * Overloads the left shift operator to provide an easy way to append multiple
      * objects as string representations to a String.
      *
