@@ -16,10 +16,12 @@
 //
 //  Author : Russel Winder
 
+//  NB This build ignores the JDK 1.4 and retro issues, it assumes JDK1.5.
+
+//  NB  This build ignores the uberbuild route provided by the Ant build, sticking only to the stagedcompile route.
+
 ant.property ( file : 'local.build.properties' )
 ant.property ( file : 'build.properties' )
-
-antRequiredVersion= '1.6.5'
  
 includeTargets << new File ( 'config/gant/paths.groovy' )
 
@@ -92,8 +94,18 @@ target ( compileExamples  : 'Compile the Java and Groovy code in the examples so
 target ( compileMain : 'Compile the Java and Groovy code in the main source.' ) {
   depends ( ensureGrammars )
   mkdir ( dir : mainClassesDirectory )
-  mkdir ( dir : toolsClassesDirectory )
-  javac ( srcdir : mainSourceDirectory , includeantruntime : 'false' , destdir : mainClassesDirectory ,
+  //mkdir ( dir : toolsClassesDirectory )
+  //  Copy over all the resources.
+  copy ( todir : mainClassesDirectory ) {
+    fileset ( dir : mainSourceDirectory ) {
+      include ( name : 'groovy/ui/*.properties' )
+      include ( name : 'groovy/ui/**/*.png' )
+      include ( name : 'org/codehaus/groovy/tools/shell/**/*.properties' )
+      include ( name : 'org/codehaus/groovy/tools/shell/**/*.xml' )
+    }
+  }
+  // Start the initial compile.
+ javac ( srcdir : mainSourceDirectory , includeantruntime : 'false' , destdir : mainClassesDirectory ,
           deprecation : 'on' , debug : 'yes' , source : '1.5' , target : '1.5' , fork : 'true' , classpathref : 'compilePath' ,
           excludes : 'groovy/ui/**/*.java' )
   //  The Groovyc class is now compiled so we can make use of it.
