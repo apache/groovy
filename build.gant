@@ -1,4 +1,4 @@
-// -*- mode:groovy coding:utf-8 -*-
+// -*- mode: groovy coding: utf-8 -*-
 
 //  Gant build script for Groovy.
 //
@@ -23,14 +23,26 @@
 ant.property ( file : 'local.build.properties' )
 ant.property ( file : 'build.properties' )
 
-//  coverage is a Boolean determining whether Cobertura is invoked for the testing.
+//  coverage is a Boolean determining whether Cobertura is invoked for the testing. Check to see if a
+//  -Dcoverage=... was set on the command line or a coverage =... was set in either of the build properties
+//  file before declaring that no coverage state was specified.
 
-coverage = false
+try { coverage }
+catch ( Exception e ) {
+  if ( ant.project.properties.coverage != null ) { coverage = ant.project.properties.coverage }
+  else { coverage = false }
+}
 
-//  If testCase is non-null then execute that as a single test, otherwise execute all tests.
+//  If testCase is non-null then execute that as a single test, otherwise execute all tests.  Check to see
+//  if a -DtestCase=... was set on the command line or a testCase =... was set in either of the build
+//  properties file before declaring that no individual test case was specified.
 
-testCase = null
- 
+ try { testCase }
+ catch ( Exception e ) {
+   if ( ant.project.properties.testCase != null ) { testCase = ant.project.properties.testCase }
+   else { testCase = null }
+ }
+
 includeTargets << new File ( 'config/gant/paths.groovy' )
 
 includeTargets << gant.targets.Clean
@@ -176,7 +188,12 @@ target ( test : 'Compile and test all the classes (or just one class if testCase
   junit ( printsummary : 'true' , fork : 'true' , includeantruntime : 'false' , failureproperty : 'testFailed' , maxmemory : ant.project.properties.groovyJUnit_mx , dir : ant.project.properties.basedir ) {
     //jvmarg ( line : "-Xms${ant.project.properties.groovyJUnit_ms} -XX:PermSize=${ant.project.properties.groovyJUnit_permSize} -XX:MaxPermSize=${ant.project.properties.groovyJUnit_maxPermSize} ${ ( System.properties.'java.awt.headless' || ( System.properties.'os.name' == 'Mac OS X' ) ) ? '-Djava.awt.headless=true' : '' }" )
     if ( testCase != null ) {
-      test ( name : testCase , todir : junitRawDirectory )
+      //
+      //  There is a search order "bug" in that the list of targets is searched before the list of things
+      //  possible in the AntBuilder.  How to avoid this and thence the infinite recursion.  For now put the
+      //  ant. in explicitly.
+      //
+      ant.test ( name : testCase , todir : junitRawDirectory )
       formatter ( type : 'brief' , usefile : 'false' )
     }
     else {
@@ -195,11 +212,13 @@ target ( test : 'Compile and test all the classes (or just one class if testCase
       if ( coverage ) { path ( refid : 'coberturaPath' ) }
     }
   }
-  //mkdir ( dir : reportsDirectory )
-  mkdir ( dir : junitReportsDirectory )
-  junitreport ( tofile : "${junitRawDirectory}/Results.xml") {
-    fileset ( dir : junitRawDirectory , includes : 'TEST-*.xml' )
-    report ( format : 'frames' , todir : junitReportsDirectory )
+  if ( testCase == null ) {
+    //mkdir ( dir : reportsDirectory )
+    mkdir ( dir : junitReportsDirectory )
+    junitreport ( tofile : "${junitRawDirectory}/Results.xml") {
+      fileset ( dir : junitRawDirectory , includes : 'TEST-*.xml' )
+      report ( format : 'frames' , todir : junitReportsDirectory )
+    }
   }
 }
 
