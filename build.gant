@@ -22,6 +22,14 @@
 
 ant.property ( file : 'local.build.properties' )
 ant.property ( file : 'build.properties' )
+
+//  coverage is a Boolean determining whether Cobertura is invoked for the testing.
+
+coverage = false
+
+//  If testCase is non-null then execute that as a single test, otherwise execute all tests.
+
+testCase = null
  
 includeTargets << new File ( 'config/gant/paths.groovy' )
 
@@ -105,11 +113,11 @@ target ( compileMain : 'Compile the Java and Groovy code in the main source.' ) 
     }
   }
   // Start the initial compile.
- javac ( srcdir : mainSourceDirectory , includeantruntime : 'false' , destdir : mainClassesDirectory ,
+  javac ( srcdir : mainSourceDirectory , includeantruntime : 'false' , destdir : mainClassesDirectory ,
           deprecation : 'on' , debug : 'yes' , source : '1.5' , target : '1.5' , fork : 'true' , classpathref : 'compilePath' ,
           excludes : 'groovy/ui/**/*.java' )
   //  The Groovyc class is now compiled so we can make use of it.
-  depends ( initializeGroovyc )
+  initializeGroovyc ( )
   //  This compilation takes a lot of heap space, hence adding the extra.
   groovyc ( srcdir : mainSourceDirectory , destdir : mainClassesDirectory , fork : 'true' , memorymaximumsize : ant.project.properties.groovycMain_mx ) {
     classpath{  
@@ -158,25 +166,36 @@ target ( installRepo : 'Deploy artifacts to local maven repository.' ) { }
 
 target ( javadoc : 'Create the javadoc documentation.' ) { }
 
-target (  test : 'Compile and test all the classes (or just one class if testCase property is defined).' ) {
+target ( test : 'Compile and test all the classes (or just one class if testCase property is defined).' ) {
   depends ( compileTest )
+  if ( coverage ) {
+    mkdir ( dir : instrumentedClassesDirectory )
+    coberturaInstrument ( classesDirectory : mainClassesDirectory )
+  }
   mkdir ( dir : junitRawDirectory )
   junit ( printsummary : 'true' , fork : 'true' , includeantruntime : 'false' , failureproperty : 'testFailed' , maxmemory : ant.project.properties.groovyJUnit_mx , dir : ant.project.properties.basedir ) {
     //jvmarg ( line : "-Xms${ant.project.properties.groovyJUnit_ms} -XX:PermSize=${ant.project.properties.groovyJUnit_permSize} -XX:MaxPermSize=${ant.project.properties.groovyJUnit_maxPermSize} ${ ( System.properties.'java.awt.headless' || ( System.properties.'os.name' == 'Mac OS X' ) ) ? '-Djava.awt.headless=true' : '' }" )
-    formatter ( type : 'xml' )
-    formatter ( type : 'plain' , unless : 'noTextReports' )
-    batchtest ( todir : junitRawDirectory ) {
-      fileset ( dir : testClassesDirectory , includes : 'UberTest*.class' )
+    if ( testCase != null ) {
+      test ( name : testCase , todir : junitRawDirectory )
+      formatter ( type : 'brief' , usefile : 'false' )
+    }
+    else {
+      formatter ( type : 'xml' )
+      formatter ( type : 'plain' , unless : 'noTextReports' )
+      batchtest ( todir : junitRawDirectory ) {
+        fileset ( dir : testClassesDirectory , includes : 'UberTest*.class' )
+      }
     }
     classpath {
-      //pathelement ( path : instrumentedClassesDirectory)
-      //pathelement ( path : 'src/test' )
+      if ( coverage ) { pathelement ( path : instrumentedClassesDirectory) }
+      pathelement ( path : 'src/test' )
       path ( refid : 'groovyMainClasses' )
       path ( refid : 'testLibPath' )
       pathelement ( path : testClassesDirectory )
-      //path ( refid : 'coberturaPath' )
+      if ( coverage ) { path ( refid : 'coberturaPath' ) }
     }
   }
+  //mkdir ( dir : reportsDirectory )
   mkdir ( dir : junitReportsDirectory )
   junitreport ( tofile : "${junitRawDirectory}/Results.xml") {
     fileset ( dir : junitRawDirectory , includes : 'TEST-*.xml' )
