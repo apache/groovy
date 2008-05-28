@@ -91,6 +91,16 @@ class MapTest extends GroovyTestCase {
         assert foo == 5
     }
 
+    void testMapLeftShift(){
+        def map = [a:1, b:2]
+        def other = [c:3]
+        def entry = [d:4].iterator().toList()[0]
+        map += other
+        assert map == [a:1, b:2, c:3]
+        map << entry
+        assert map == [a:1, b:2, c:3, d:4]
+    }
+
     void testFindAll(){
         assert [a:1] == ['a':1, 'b':2].findAll {it.value == 1}
         assert [a:1] == ['a':1, 'b':2].findAll {it.key == 'a'}
