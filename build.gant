@@ -28,984 +28,138 @@ cleanPattern << [ '**/*~' , groovyParserDirectory + '/Groovy*.*' ]
 cleanPattern << [ 'JavaLexer.java' , '/JavaRecognizer.java' , '/JavaTokenTypes.java' , '/JavaTokenTypes.txt' , '/*.smap'].collect { item -> javaParserDirectory + item }
 cleanDirectory << targetDirectory
 
-mavenAntTaskURI = 'urn:maven-artifact-ant'
- ant.typedef ( resource : 'org/apache/maven/artifact/ant/antlib.xml' , uri : mavenAntTaskURI ) {
-   classpath { fileset ( dir : bootstrapDirectory ,  includes : 'maven-ant-tasks-*.jar' ) }
- }
+target ( initialize : '' ) {
+  mavenAntTaskURI = 'urn:maven-artifact-ant'
+  typedef ( resource : 'org/apache/maven/artifact/ant/antlib.xml' , uri : mavenAntTaskURI ) {
+    classpath { fileset ( dir : bootstrapDirectory ,  includes : 'maven-ant-tasks-*.jar' ) }
+  }
+  "${mavenAntTaskURI}:pom" ( file :'pom.xml' , id : 'groovy.pom' )
+  //"${mavenAntTaskURI}:remoteRepository" ( id : 'mavenCentral' , url : 'http://repo1.maven.org/maven2' )
+  "${mavenAntTaskURI}:dependencies" ( useScope : 'compile' , filesetId : 'fs.compile.groovy' , pomRefId : 'groovy.pom' )
+  "${mavenAntTaskURI}:dependencies" ( useScope : 'runtime' , filesetId : 'fs.runtime.groovy' , pomRefId : 'groovy.pom' )
+  "${mavenAntTaskURI}:dependencies" ( useScope : 'test' , filesetId : 'fs.test.groovy' , pomRefId : 'groovy.pom' )
+  delete ( dir : compileLibDirectory )
+  mkdir ( dir : compileLibDirectory )
+  copy ( todir : compileLibDirectory ) {
+    mapper ( type : 'flatten' )
+    fileset ( refid : 'fs.compile.groovy' )
+  }
+  path ( id : 'compilePath' ) {
+    fileset ( dir : compileLibDirectory , includes : '**/*.jar' )
+  }
+  copy ( todir : testLibDirectory ) {
+    mapper ( type : 'flatten' )
+    fileset ( refid : 'fs.test.groovy' )
+  }
+  path ( id : 'testLibPath' ) {
+    fileset ( dir : testLibDirectory , includes : '**/*.jar' )
+  }
+  copy ( todir : runtimeLibDirectory ) {
+    mapper ( type : 'flatten' )
+    fileset ( refid : 'fs.runtime.groovy' )
+  }
+  path ( id : 'runtimePath' ) {
+    fileset ( dir : runtimeLibDirectory , includes : '**/*.jar' )
+  }
+}
 
-ant."${mavenAntTaskURI}:pom" ( file :'pom.xml' , id : 'groovy.pom' )
-
- /*
-    <import file="config/ant/build-maven.xml"/>
-    <import file="config/ant/build-checkstyle.xml"/>
-    <import file="config/ant/build-cobertura.xml"/>
-    <import file="config/ant/build-retro.xml"/>
-*/
- /*
-    <condition property="_skipTests_">
-        <or>
-            <equals arg1="${test}" arg2="false"/>
-            <istrue value="${skipTests}"/>
-        </or>
-    </condition>
-
-    <condition property="_forceRetro_">
-        <and>
-            <isset property="jdk14home"/>
-            <istrue value="${forceRetro}"/>
-        </and>
-    </condition>
-
-    <condition property="_skipExamples_">
-        <istrue value="${skipExamples}"/>
-    </condition>
-
-    <condition property="_skipFetch_">
-        <istrue value="${skipFetch}"/>
-    </condition>
-
-    <condition property="groovy.build.vm5">
-        <not>
-            <contains string="${ant.java.version}" substring="1.4"/>
-        </not>
-    </condition>
-
-    <target name="-initCoverage">
-        <condition property="_forceCoverage_">
-            <and>
-                <not>
-                    <istrue value="${skipTests}"/>
-                </not>
-                <istrue value="${forceCoverage}"/>
-            </and>
-        </condition>
-    </target>
-*/
+target ( initializeGroovyc : '' ) {
+  path ( id : 'groovyMainClasses' ) {
+    pathelement ( path : mainClassesDirectory )
+    path ( refid : 'compilePath' )
+  }
+  taskdef ( name : 'groovyc' , classname : 'org.codehaus.groovy.ant.Groovyc' , classpathref : 'groovyMainClasses' )
+}
 
  target ( ensureGrammars : 'Ensure all the Antlr generated files are up to date.' ) {
+   depends ( initialize )
    mkdir ( dir : groovyParserDirectory )
    antlr ( target : antlrDirectory + '/groovy.g' , outputdirectory : groovyParserDirectory ) { classpath ( refid : 'compilePath' ) }
    antlr ( target : javaParserDirectory + '/java.g' , outputdirectory : javaParserDirectory ) { classpath ( refid : 'compilePath' ) }
  }
 
- /*
-
-    <target name="updatePolicy">
-        <move file="security/groovy.policy" tofile="security/groovy.policy.template"/>
-        <copy tofile="security/groovy.policy">
-            <fileset file="security/groovy.policy.template"/>
-            <filterset>
-                <filter token="relativePathToRealBasedir" value="${relativePathToRealBasedir}"/>
-            </filterset>
-        </copy>
-    </target>
-
-    <target name="-init" depends="-fetchDependencies"/>
-
-    <target name="-banner">
-        <echo message="Java Runtime Environment version: ${java.version}"/>
-        <echo message="Java Runtime Environment vendor: ${java.vendor}"/>
-        <echo message="Ant version: ${ant.version}"/>
-        <echo message="Operating system name: ${os.name}"/>
-        <echo message="Operating system architecture: ${os.arch}"/>
-        <echo message="Operating system version: ${os.version}"/>
-        <echo message="Base directory: ${basedir}"/>
-        <echo message="Java Home: ${java.home}"/>
-    </target>
-
-    <target name="-jvm14BuildWarning" unless="groovy.build.vm5">
-        <fail>Aborting!
-
-=================================================================
-  ERROR: You must build Groovy with a 1.5+ JDK - but you can
-         run the 'testOnly' target using Java 1.4.
-=================================================================
-        </fail>
-    </target>
-
-    <target name="-checkAntVersion" depends="-excludeLegacyAntVersion"
-            description="Check that we are running on the required version of Ant."/>
-
-    <target name="-excludeLegacyAntVersion">
-        <!-- antversion didn't exist in early versions of ant so we have
-             a legacy check to provide a nicer error message in this case -->
-        <fail message="You are using ant ${ant.version}, please build using ant ${ant.requiredVersion}+">
-            <condition>
-                <or>
-                    <contains string="${ant.version}" substring="1.1"></contains>
-                    <contains string="${ant.version}" substring="1.2"></contains>
-                    <contains string="${ant.version}" substring="1.3"></contains>
-                    <contains string="${ant.version}" substring="1.4"></contains>
-                    <contains string="${ant.version}" substring="1.5"></contains>
-                    <and>
-                        <contains string="${ant.version}" substring="1.6"></contains>
-                        <not>
-                            <contains string="${ant.version}" substring="${ant.requiredVersion}"></contains>
-                        </not>
-                    </and>
-                </or>
-            </condition>
-        </fail>
-    </target>
-
-    <!-- add back in if we make 1.7+ minimal required version for build again
-        <target name="-ensureRequiredAntVersion">
-           <fail message="You are using ant ${ant.version}, please install using ant ${ant.requiredVersion}+"/>
-               <condition><not><antversion atleast="${ant.requiredVersion}"/></not></condition>
-           </fail>
-        </target>
-    -->
-
-    <target name="dgmConvert" depends="ubercompile,stagedcompile">
-        <java classname="org.codehaus.groovy.tools.DgmConverter"
-              fork="yes"
-              failonerror="true">
-            <classpath refid="compilePath"/>
-            <classpath path="${mainClassesDirectory}"/>
-        </java>
-    </target>
-
-    <target name="compileMain" depends="ubercompile,stagedcompile,dgmConvert"
-            description="Compile the Java and Groovy code in the main source.">
-    </target>
-
-    <target name="stagedcompile" depends="-init,-includeResources,ensureGrammars,-jvm14BuildWarning" unless="uber">
-        <mkdir dir="${mainClassesDirectory}"/>
-        <mkdir dir="${toolsClassesDirectory}"/>
-
-        <javac srcdir="${mainSourceDirectory}" includeantruntime="false" destdir="${mainClassesDirectory}"
-               deprecation="on" debug="yes" source="1.5" target="1.5" fork="true" classpathref="compilePath">
-            <exclude name="groovy/ui/** /*.java"/>
-        </javac>
-        <antcall inheritall="true" target="-stagedcompile-groovy"/>
-    </target>
-
-    <target name="-stagedcompile-groovy" depends="-initGroovyc">
-        <groovyc srcdir="${mainSourceDirectory}" destdir="${mainClassesDirectory}" fork="true" memorymaximumsize="${groovycMain_mx}">
-            <classpath>
-                <pathelement path="${mainClassesDirectory}"/>
-                <path refid="compilePath"/>
-            </classpath>
-            <javac deprecation="on" debug="yes" source="1.5" target="1.5"/>
-        </groovyc>
-    </target>
-
-    <target name="-ubercompile:bootstrap" depends="-init,-includeResources,ensureGrammars" if="uber">
-        <mkdir dir="${mainClassesDirectory}"/>
-
-        <javac destdir="${mainClassesDirectory}" deprecation="on" debug="yes" source="1.5"
-               target="1.5" fork="true" includeantruntime="false">
-            <classpath refid="compilePath"/>
-            <src location="${mainSourceDirectory}"/>
-
-            <!--
-            NOTE: This list includes *most* of the classes which are required for the ubercompile
-                  bits to work, adding them here to allow for more incremental compilation when
-                  required support classes change.
-            -->
-
-            <include name="groovy/lang/** /*.java"/>
-            <include name="org/codehaus/groovy/ant/** /*.java"/>
-            <include name="org/codehaus/groovy/antlr/** /*.java"/>
-            <include name="org/codehaus/groovy/ast/** /*.java"/>
-            <include name="org/codehaus/groovy/classgen/** /*.java"/>
-            <include name="org/codehaus/groovy/control/** /*.java"/>
-            <include name="org/codehaus/groovy/reflection/** /*.java"/>
-            <include name="org/codehaus/groovy/runtime/** /*.java"/>
-            <include name="org/codehaus/groovy/syntax/** /*.java"/>
-            <include name="org/codehaus/groovy/tools/javac/** /*.java"/>
-        </javac>
-
-        <taskdef name="ubercompile" classname="org.codehaus.groovy.ant.UberCompileTask">
-            <classpath>
-                <pathelement location="${mainClassesDirectory}"/>
-                <path refid="compilePath"/>
-            </classpath>
-        </taskdef>
-    </target>
-
-    <target name="ubercompile" depends="-ubercompile:bootstrap" if="uber">
-        <mkdir dir="${mainStubsDirectory}"/>
-
-        <ubercompile destdir="${mainClassesDirectory}">
-            <classpath>
-                <pathelement location="${mainClassesDirectory}"/>
-                <path refid="compilePath"/>
-            </classpath>
-            <src location="${mainSourceDirectory}"/>
-
-            <generatestubs destdir="${mainStubsDirectory}" includes="** /*.groovy">
-                <configuration targetBytecode="1.5"/>
-            </generatestubs>
-
-            <javac includeantruntime="false" deprecation="on" debug="yes" source="1.5" target="1.5" fork="true"/>
-            <groovyc includes="** /*.groovy">
-                <configuration debug="true" verbose="true"/>
-            </groovyc>
-        </ubercompile>
-    </target>
-
-    <property name="vm5GroovySourceFiles" value="gls/** /vm5/*Test.groovy,org/codehaus/groovy/** /vm5/** /*.groovy,groovy/** /vm5/** /*.groovy"/>
-    <property name="vm5JavaSourceFiles" value="org/codehaus/groovy/** /vm5/** /*.java,groovy/** /vm5/** /*.java"/>
-    <property name="antGroovySourceFiles" value="org/codehaus/groovy/ant/** /GroovyTest*.groovy"/>
-
-    <target name="-initGroovyc" if="groovy.build.vm5">
-        <path id="groovyMainClasses">
-            <pathelement path="${mainClassesDirectory}"/>
-            <path refid="compilePath"/>
-        </path>
-        <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="groovyMainClasses"/>
-    </target>
-
-    <target name="-initGroovyc_vm4" unless="groovy.build.vm5">
-        <property name="groovyJar14path" location="${basedir}/${relativePathToRealBasedir}/target/dist/groovy-jdk14-${groovyVersion}.jar"/>
-        <condition property="groovyJar14Found">
-            <available file="${groovyJar14path}"/>
-        </condition>
-        <fail unless="groovyJar14Found">Aborting!
-
-Not found: ${groovyJar14path}
-
-=================================================================
-  ERROR: First build Groovy with a 1.5+ JDK:
-           use the 'install' target
-           set the flag: -DforceRetro=true
-           set the -Djdk14home variable your 1.4 JDK basedir
-         then you can run the 'testOnly' target on a 1.4 jvm.
-=================================================================
-        </fail>
-        <path id="groovyMainClasses">
-            <pathelement path="${basedir}/${relativePathToRealBasedir}/target/dist/groovy-jdk14-${groovyVersion}.jar"/>
-            <fileset dir="${toolsLibDirectory}">
-                <include name="backport-util-concurrent-3.1.jar"/>
-                <include name="retrotranslator-runtime-1.2.4.jar"/>
-            </fileset>
-            <path refid="runtimePath"/>
-        </path>
-        <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="groovyMainClasses"/>
-    </target>
-
-    <target name="compileTest" depends="compileMain,compileTestOnly"
-            description="Compile the Java and Groovy code in the test source."/>
-
-    <target name="-cleanTest">
-        <delete dir="${testClassesDirectory}"/>
-    </target>
-
-    <target name="compileTestOnly" unless="_skipTests_">
-        <mkdir dir="${testClassesDirectory}"/>
-        <antcall inheritall="true" target="-compileTest"/>
-    </target>
-
-    <target name="-compileTest_vm4" depends="-initGroovyc_vm4">
-        <!-- compile Groovy test files excluding ones which we want to pick up from the file system -->
-        <groovyc srcdir="${testSourceDirectory}"
-                 destdir="${testClassesDirectory}"
-                 excludes="${antGroovySourceFiles},${vm5GroovySourceFiles},${vm5JavaSourceFiles}"
-                 stacktrace="true"
-                 fork="true"
-                 memorymaximumsize="${groovycTest_mx}">
-            <classpath>
-                <pathelement path="${testClassesDirectory}"/>
-                <path refid="groovyMainClasses"/>
-                <path refid="testLibPath"/>
-                <path refid="jdk14ExtrasPath"/>
-            </classpath>
-            <javac source="1.4" target="1.4" nowarn="true"/>
-        </groovyc>
-    </target>
-
-    <target name="-compileTest" depends="-initGroovyc,-compileTest_vm4" if="groovy.build.vm5">
-        <groovyc srcdir="${testSourceDirectory}"
-                 destdir="${testClassesDirectory}"
-                 includes="${vm5GroovySourceFiles},${vm5JavaSourceFiles}"
-                 fork="true"
-                 memorymaximumsize="${groovycTest_mx}">
-            <classpath>
-                <pathelement path="${testClassesDirectory}"/>
-                <path refid="groovyMainClasses"/>
-                <path refid="testLibPath"/>
-            </classpath>
-            <javac source="1.5" target="1.5" nowarn="on"/>
-        </groovyc>
-    </target>
-
-    <target name="compileExamples" depends="-initGroovyc,compileMain,-includeExamplesResources" unless="_skipExamples_"
-            description="Compile the Java and Groovy code in the examples source directory.">
-        <mkdir dir="${examplesClassesDirectory}"/>
-        <echo message="Compiling example code."/>
-
-        <groovyc srcdir="${examplesSourceDirectory}/webapps/groovlet-examples/WEB-INF/groovy"
-                 destdir="${examplesClassesDirectory}"
-                 fork="true"
-                 memorymaximumsize="${groovycExamples_mx}">
-            <classpath>
-                <pathelement path="${mainClassesDirectory}"/>
-                <path refid="compilePath"/>
-                <path refid="examplesPath"/>
-            </classpath>
-        </groovyc>
-        <javac srcdir="${examplesSourceDirectory}"
-                destdir="${examplesClassesDirectory}"
-                source="1.5"
-                target="1.5"
-                fork="true">
-            <classpath>
-                <pathelement path="${mainClassesDirectory}"/>
-                <pathelement path="${examplesClassesDirectory}"/>
-                <path refid="compilePath"/>
-                <path refid="examplesPath"/>
-            </classpath>
-            <include name="org/codehaus/groovy/grails/compiler/injection/*.java" if="groovy.build.vm5"/>
-        </javac>
-        <groovyc srcdir="${examplesSourceDirectory}"
-                destdir="${examplesClassesDirectory}"
-                 fork="true"
-                 memorymaximumsize="${groovycExamples_mx}"
-                 excludes="webapps/groovlet-examples/WEB-INF/groovy/** /*.groovy,org/codehaus/groovy/grails/compiler/injection/** /*.java">
-            <classpath>
-                <pathelement path="${mainClassesDirectory}"/>
-                <pathelement path="${examplesClassesDirectory}"/>
-                <path refid="compilePath"/>
-                <path refid="examplesPath"/>
-            </classpath>
-            <javac source="1.4" target="1.4"/>
-        </groovyc>
-
-    </target>
-
-    <target name="-initializeReports">
-        <mkdir dir="${reportsDirectory}"/>
-    </target>
-
-    <condition property="_shouldBeHeadless_">
-        <or>
-            <istrue value="${java.awt.headless}"/>
-            <os name="Mac OS X"/>
-        </or>
-    </condition>
-
-    <target name="-testInit" depends="-initHeadless">
-        <property name="headlessArg" value=""/>
-        <property name="junitJvmArgs"
-                  value="-Xms${groovyJUnit_ms} -XX:PermSize=${groovyJUnit_permSize} -XX:MaxPermSize=${groovyJUnit_maxPermSize} ${headlessArg}"/>
-    </target>
-
-    <target name="-initHeadless" if="_shouldBeHeadless_">
-        <property name="headlessArg" value="-Djava.awt.headless=true"/>
-        <echo message="Setting headless mode ..."/>
-    </target>
-
-    <target name="test"
-            depends="-banner,-checkAntVersion,-initializeReports,compileTest,-coverageInstrument,-testInit,-testOne,-testAll,-reportTestFailed"
-            description="Compile and test all the classes (or just one class if testCase property is defined)."/>
-
-    <target name="testOnly"
-            depends="-init,-checkAntVersion,-initializeReports,-cleanTest,compileTestOnly,-coverageInstrument,-testInit,-testOne,-testAll,-reportTestFailed"/>
-
-    <target name="clean-test" depends="clean,test"
-            description="Clean and compile and test all the classes (or just one class if testCase property is defined)."/>
-
-    <condition property="_testOne_">
-        <and>
-            <not>
-                <istrue value="${_skipTests_}"/>
-            </not>
-            <isset property="testCase"/>
-        </and>
-    </condition>
-
-    <target name="-testOne" if="_testOne_" depends="-initGroovyc_vm4,-initGroovyc">
-        <mkdir dir="${junitRawDirectory}"/>
-        <junit printsummary="true" fork="true" includeantruntime="false" failureproperty="testFailed" maxmemory="${groovyJUnit_mx}" dir="${basedir}">
-            <jvmarg line="${junitJvmArgs}"/>
-            <test name="${testCase}" todir="${junitRawDirectory}"/>
-            <formatter type="brief" usefile="false"/>
-            <classpath>
-                <pathelement path="${instrumentedClassesDirectory}"/>
-                <pathelement path="src/test"/>
-                <path refid="groovyMainClasses"/>
-                <path refid="testLibPath"/>
-                <!-- TODO: extras only for JDK14 -->
-                <path refid="jdk14ExtrasPath"/>
-                <pathelement path="${testClassesDirectory}"/>
-                <path refid="coberturaPath"/>
-            </classpath>
-        </junit>
-    </target>
-
-    <condition property="_testAll_">
-        <and>
-            <not>
-                <istrue value="${_skipTests_}"/>
-            </not>
-            <not>
-                <isset property="_testOne_"/>
-            </not>
-        </and>
-    </condition>
-
-    <target name="-collect14tests" unless="groovy.build.vm5">
-        <fileset id="ubertests.fileset" dir="${testClassesDirectory}" includes="UberTest*.class" excludes="Uber*VM5.class"/>
-    </target>
-
-    <target name="-collect15tests" if="groovy.build.vm5">
-        <fileset id="ubertests.fileset" dir="${testClassesDirectory}" includes="UberTest*.class"/>
-    </target>
-
-    <target name="-testAll" if="_testAll_" depends="-collect14tests,-collect15tests,-initGroovyc_vm4,-initGroovyc">
-        <mkdir dir="${junitRawDirectory}"/>
-        <junit printsummary="true" fork="true" includeantruntime="false" failureproperty="testFailed" maxmemory="${groovyJUnit_mx}" dir="${basedir}">
-            <jvmarg line="${junitJvmArgs}"/>
-            <formatter type="xml"/>
-            <formatter type="plain" unless="noTextReports"/>
-            <batchtest todir="${junitRawDirectory}">
-                <fileset refid="ubertests.fileset"/>
-            </batchtest>
-            <classpath>
-                <pathelement path="${instrumentedClassesDirectory}"/>
-                <pathelement path="src/test"/>
-                <path refid="groovyMainClasses"/>
-                <path refid="testLibPath"/>
-                <!-- TODO: extras only for JDK14 -->
-                <path refid="jdk14ExtrasPath"/>
-                <pathelement path="${testClassesDirectory}"/>
-                <path refid="coberturaPath"/>
-            </classpath>
-        </junit>
-        <mkdir dir="${junitReportsDirectory}"/>
-        <junitreport tofile="${junitRawDirectory}/Results.xml">
-            <fileset dir="${junitRawDirectory}" includes="TEST-*.xml"/>
-            <report format="frames" todir="${junitReportsDirectory}"/>
-        </junitreport>
-    </target>
-
-    <target name="-reportTestFailed" depends="-coverageReport" if="testFailed">
-        <fail message="Test failed, not processing further targets."/>
-    </target>
-
-    <target name="-coverageInstrument" depends="-initCoverage,-coberturaInit" if="_forceCoverage_">
-        <mkdir dir="${instrumentedClassesDirectory}"/>
-        <coberturaInstrument classesDirectory="${mainClassesDirectory}"/>
-    </target>
-
-    <target name="-coverageReport" depends="-initCoverage" if="_forceCoverage_">
-        <coberturaReport reportDirectory="${reportsDirectory}/cobertura" sourceDirectory="${mainSourceDirectory}"/>
-    </target>
-
-    <target name="-actuallyCreateJars"
-            depends="-makeManifest,-initializeJars,-createBaseJar,-createEmbeddableJar"
-            unless="testFailed"/>
-
-    <target name="-makeManifest">
-        <mkdir dir="${mainClassesDirectory}/META-INF"/>
-        <copy todir="${mainClassesDirectory}/META-INF" file="LICENSE.txt"/>
-    	<makemanifest dependencies="antlr,
-org.objectweb.asm,
-org.apache.ant;resolution:=optional,
-org.apache.commons.cli;resolution:=optional,
-org.junit;resolution:=optional" file="${mainClassesDirectory}/META-INF/MANIFEST.MF"/>
-	</target>
-
-    <!-- TODO: investigate whether we can generate package list not hard-code it -->
-    <macrodef name="makemanifest">
-        <attribute name="dependencies"/>
-    	<attribute name="file"/>
-        <sequential>
-            <manifest file="@{file}">
-                <attribute name="Built-By" value="${user.name}"/>
-                <attribute name="Extension-Name" value="groovy"/>
-                <attribute name="Specification-Title" value="Groovy: a powerful, dynamic language for the JVM"/>
-                <attribute name="Specification-Version" value="${groovyVersion}"/>
-                <attribute name="Specification-Vendor" value="The Codehaus"/>
-                <attribute name="Implementation-Title" value="Groovy: a powerful, dynamic language for the JVM"/>
-                <attribute name="Implementation-Version" value="${groovyVersion}"/>
-                <attribute name="Implementation-Vendor" value="The Codehaus"/>
-                <attribute name="Bundle-ManifestVersion" value="2" />
-                <attribute name="Bundle-Name" value="Groovy Runtime" />
-                <attribute name="Bundle-SymbolicName" value="org.codehaus.groovy" />
-                <attribute name="Bundle-Version" value="${groovyBundleVersion}" />
-                <attribute name="Bundle-Vendor" value="The Codehaus" />
-                <attribute name="Bundle-ClassPath" value="." />
-                <attribute name="Bundle-RequiredExecutionEnvironment" value="J2SE-1.4" />
-                <attribute name="Require-Bundle" value="@{dependencies}" />
-                <attribute name="Export-Package" value="groovy.inspect,
-groovy.inspect.swingui,
-groovy.io,
-groovy.lang,
-groovy.mock,
-groovy.mock.interceptor,
-groovy.model,
-groovy.security,
-groovy.servlet,
-groovy.sql,
-groovy.swing,
-groovy.swing.binding,
-groovy.swing.factory,
-groovy.swing.impl,
-groovy.text,
-groovy.time,
-groovy.ui,
-groovy.ui.icons,
-groovy.ui.text,
-groovy.ui.view,
-groovy.util,
-groovy.util.slurpersupport,
-groovy.xml,
-groovy.xml.dom,
-groovy.xml.streamingmarkupsupport,
-org.codehaus.groovy,
-org.codehaus.groovy.ant,
-org.codehaus.groovy.antlr,
-org.codehaus.groovy.antlr.java,
-org.codehaus.groovy.antlr.parser,
-org.codehaus.groovy.antlr.treewalker,
-org.codehaus.groovy.ast,
-org.codehaus.groovy.ast.expr,
-org.codehaus.groovy.ast.stmt,
-org.codehaus.groovy.binding,
-org.codehaus.groovy.bsf,
-org.codehaus.groovy.classgen,
-org.codehaus.groovy.control,
-org.codehaus.groovy.control.io,
-org.codehaus.groovy.control.messages,
-org.codehaus.groovy.groovydoc,
-org.codehaus.groovy.reflection,
-org.codehaus.groovy.runtime,
-org.codehaus.groovy.runtime.metaclass,
-org.codehaus.groovy.runtime.typehandling,
-org.codehaus.groovy.runtime.wrappers,
-org.codehaus.groovy.syntax,
-org.codehaus.groovy.tools,
-org.codehaus.groovy.tools.groovydoc,
-org.codehaus.groovy.tools.javac,
-org.codehaus.groovy.tools.shell,
-org.codehaus.groovy.tools.shell.commands,
-org.codehaus.groovy.tools.shell.util,
-org.codehaus.groovy.tools.xml,
-org.codehaus.groovy.vmplugin,
-org.codehaus.groovy.vmplugin.v4,
-org.codehaus.groovy.vmplugin.v5" />
-                <attribute name="Eclipse-BuddyPolicy" value="dependent"/>
-                <attribute name="Eclipse-LazyStart" value="true"/>
-            </manifest>
-        </sequential>
-    </macrodef>
-
-    <target name="-includeResources" depends="-includeGroovyDocTemplates">
-        <copy todir="${mainClassesDirectory}">
-            <fileset dir="${mainSourceDirectory}">
-                <include name="groovy/ui/*.properties"/>
-                <include name="groovy/ui/** /*.png"/>
-                <include name="org/codehaus/groovy/tools/shell/** /*.properties"/>
-                <include name="org/codehaus/groovy/tools/shell/** /*.xml"/>
-            </fileset>
-        </copy>
-    </target>
-
-    <target name="-includeExamplesResources" depends="-includeGroovyDocTemplates">
-        <copy todir="${examplesClassesDirectory}">
-            <fileset dir="${examplesSourceDirectory}">
-                <include name="/swing/binding/caricature/resources/*.gif"/>
-            </fileset>
-        </copy>
-    </target>
-
-    <target name="-includeGroovyDocTemplates">
-        <copy todir="${mainClassesDirectory}">
-            <fileset dir="${mainSourceDirectory}">
-                <include name="org/codehaus/groovy/tools/groovydoc/gstring-templates/** /*.*"/>
-            </fileset>
-        </copy>
-    </target>
-
-    <target name="-initializeJars" depends="test">
-        <delete dir="${targetDistDirectory}" quiet="true"/>
-        <mkdir dir="${targetDistDirectory}"/>
-    </target>
-
-    <target name="-createBaseJar" unless="testFailed">
-        <jar destfile="${targetDistDirectory}/groovy-${groovyVersion}.jar" basedir="${mainClassesDirectory}"
-             excludes="*.groovy" manifest="${mainClassesDirectory}/META-INF/MANIFEST.MF"/>
-        <jar destfile="${targetDistDirectory}/groovy-${groovyVersion}-sources.jar" basedir="${mainSourceDirectory}"/>
-        <antcall target="-createBaseJarRetro"/>
-    </target>
-
-    <target name="-createBaseJarRetro" if="_forceRetro_">
-        <copy file="${targetDistDirectory}/groovy-${groovyVersion}-sources.jar"
-              tofile="${targetDistDirectory}/groovy-jdk14-${groovyVersion}-sources.jar"/>
-    </target>
-
-    <target name="-jarjarInit">
-        <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask">
-            <classpath>
-                <fileset dir="${bootstrapDirectory}" includes="jarjar-*.jar"/>
-            </classpath>
-        </taskdef>
-    </target>
-
-    <target name="-createEmbeddableJar" depends="-jarjarInit" unless="testFailed">
-        <delete dir="${stagingDirectory}" quiet="true"/>
-        <mkdir dir="${stagingDirectory}"/>
-        <unzip dest="${stagingDirectory}">
-            <fileset dir="${runtimeLibDirectory}">
-                <include name="antlr*.jar"/>
-                <include name="asm*.jar"/>
-                <exclude name="asm-attr*.jar"/>
-                <exclude name="asm-util*.jar"/>
-                <exclude name="asm-analysis*.jar"/>
-            </fileset>
-        </unzip>
-        <unzip dest="${stagingDirectory}">
-            <fileset dir="${targetDistDirectory}">
-                <include name="groovy-${groovyVersion}.jar"/>
-            </fileset>
-        </unzip>
-        <copy toDir="${stagingDirectory}/META-INF">
-            <fileset dir="${basedir}">
-                <include name="ASM-LICENSE.txt"/>
-            </fileset>
-        </copy>
-        <!-- add commons-cli -->
-        <unzip dest="${stagingDirectory}">
-            <patternset>
-                <!-- no need for the manifest file, we have our own -->
-                <exclude name="META-INF/MANIFEST.MF"/>
-            </patternset>
-            <globmapper from="META-INF/LICENSE.txt" to="META-INF/CLI-LICENSE.txt"/>
-            <fileset dir="${runtimeLibDirectory}">
-                <include name="commons-cli-*.jar"/>
-            </fileset>
-        </unzip>
-    	<makemanifest dependencies="org.apache.ant;resolution:=optional,
-org.junit;resolution:=optional" file="${stagingDirectory}/META-INF/MANIFEST.MF"/>
-        <!-- TODO try to make use of jarjar keep ability -->
-        <jarjar jarfile="${targetDistDirectory}/groovy-all-${groovyVersion}.jar"
-                manifest="${stagingDirectory}/META-INF/MANIFEST.MF">
-            <fileset dir="${stagingDirectory}" excludes="groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class"/>
-            <rule pattern="antlr.**" result="groovyjarjarantlr.@1"/>
-            <rule pattern="org.objectweb.**" result="groovyjarjarasm.@1"/>
-            <rule pattern="org.apache.commons.cli.**" result="groovyjarjarcommonscli.@1"/>
-        </jarjar>
-        <jar destfile="${targetDistDirectory}/groovy-all-${groovyVersion}.jar" update="true"
-             basedir="${stagingDirectory}" includes="groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class"/>
-        <copy file="${targetDistDirectory}/groovy-${groovyVersion}-sources.jar"
-              tofile="${targetDistDirectory}/groovy-all-${groovyVersion}-sources.jar"/>
-        <delete dir="${stagingDirectory}" quiet="true"/>
-        <antcall target="-createEmbeddableJarRetro"/>
-    </target>
-    
-    <target name="-createEmbeddableJarRetro" if="_forceRetro_">
-        <copy file="${targetDistDirectory}/groovy-all-${groovyVersion}-sources.jar"
-              tofile="${targetDistDirectory}/groovy-all-jdk14-${groovyVersion}-sources.jar"/>
-    </target>
-
-    <target name="createJars" depends="-checkAntVersion,test,-actuallyCreateJars"
-            description="Build Groovy and create the jarfiles."/>
-
-    <target name="updateJarsForRetro" if="_forceRetro_">
-        <delete dir="${stagingDirectory}" quiet="true"/>
-        <mkdir dir="${stagingDirectory}"/>
-        <unzip dest="${stagingDirectory}">
-            <patternset>
-                <!-- we already have this -->
-                <exclude name="ASM-LICENSE.txt"/>
-                <!-- we don't need this -->
-                <exclude name="META-INF/maven/** /*"/>
-            </patternset>
-            <globmapper from="RETROTRANSLATOR-LICENSE.txt" to="META-INF/RETROTRANSLATOR-LICENSE.txt"/>
-            <fileset dir="${toolsLibDirectory}">
-                <include name="retrotranslator-runtime-*.jar" />
-                <include name="backport-util-concurrent-*.jar" />
-            </fileset>
-        </unzip>
-        <unzip dest="${stagingDirectory}">
-            <fileset dir="${targetDistDirectory}">
-                <include name="groovy-all-jdk14-${groovyVersion}.jar"/>
-            </fileset>
-        </unzip>
-        <jarjar jarfile="${targetDistDirectory}/groovy-all-jdk14-${groovyVersion}.jar"
-                manifest="${stagingDirectory}/META-INF/MANIFEST.MF">
-            <fileset dir="${stagingDirectory}"/>
-            <rule pattern="net.sf.retrotranslator.runtime.**" result="groovyjarjarretroruntime.@1"/>
-            <rule pattern="edu.emory.mathcs.backport.**" result="groovyjarjarbackport.@1"/>
-        </jarjar>
-        <delete dir="${stagingDirectory}" quiet="true"/>
-    </target>
-
-    <target name="install" depends="createJars,translate,updateJarsForRetro" unless="testFailed"
-            description="Create an installation hierarchy in target/install.">
-
-        <!--
-        FIXME: Its not really a good idea to delete stuff, as it tends to negate Ant's (or other tools)
-               ability to run faster incremental builds.
-        -->
-        <delete dir="${installDirectory}" quiet="true"/>
-        <mkdir dir="${installDirectory}"/>
-
-        <!-- Install license files -->
-        <copy todir="${installDirectory}">
-            <fileset dir="${basedir}">
-                <include name="LICENSE.txt"/>
-                <include name="ASM-LICENSE.txt"/>
-                <include name="NOTICE.txt"/>
-            </fileset>
-        </copy>
-        <fixcrlf srcdir="${installDirectory}" eol="crlf" includes="*.txt"/>
-
-        <!-- Install generated artifacts and runtime dependencies -->
-        <mkdir dir="${installDirectory}/lib"/>
-        <copy todir="${installDirectory}/lib">
-            <fileset dir="${targetDistDirectory}" includes="groovy-${groovyVersion}.jar"/>
-            <fileset dir="${runtimeLibDirectory}" includes="*.jar"/>
-        </copy>
-
-        <!-- Install the embeddable bits -->
-        <mkdir dir="${installDirectory}/embeddable"/>
-        <copy todir="${installDirectory}/embeddable">
-            <fileset dir="${targetDistDirectory}" includes="groovy-all-${groovyVersion}.jar"/>
-        </copy>
-
-        <!-- Install configuration files -->
-        <mkdir dir="${installDirectory}/conf"/>
-        <copy toDir="${installDirectory}/conf">
-            <fileset dir="${sourceDirectory}/conf" includes="*"/>
-        </copy>
-
-        <!-- Install scripts -->
-        <mkdir dir="${installDirectory}/bin"/>
-        <copy toDir="${installDirectory}/bin">
-            <fileset dir="${sourceDirectory}/bin" includes="*"/>
-            <filterset>
-                <filter token="GROOVYJAR" value="groovy-${groovyVersion}.jar"/>
-            </filterset>
-        </copy>
-
-        <!-- Tweak scripts for platform compatibility -->
-        <fixcrlf srcdir="${installDirectory}/bin" eol="lf" excludes="*.bat"/>
-        <fixcrlf srcdir="${installDirectory}/bin" eol="crlf" includes="*.bat"/>
-        <chmod perm="ugo+x">
-            <fileset dir="${installDirectory}/bin" includes="*,*.*"/>
-        </chmod>
-    </target>
-
-    <target name="checkstyle" depends="-init,-initializeReports,-checkstyleInit"
-            description="Create the code style reports.">
-        <checkAndReport
-                reportDirectory="${reportsDirectory}/checkstyle"
-                sourceDirectory="${mainSourceDirectory}"
-                excludes="org/codehaus/groovy/antlr/parser/*,org/codehaus/groovy/antlr/java/*,org/codehaus/groovy/syntax/Types.java">
-            <path>
-                <pathelement path="${mainClassesDirectory}"/>
-                <path refid="testLibPath"/>
-            </path>
-        </checkAndReport>
-    </target>
-
-    <target name="-compileTools" depends="-initGroovyc,compileMain">
-        <groovyc srcdir="${toolsSourceDirectory}" destdir="${toolsClassesDirectory}" fork="true">
-            <classpath>
-                <path refid="toolsPath"/>
-                <pathelement path="${mainClassesDirectory}"/>
-                <path refid="compilePath"/>
-            </classpath>
-        </groovyc>
-        <copy todir="${toolsClassesDirectory}">
-            <fileset dir="${toolsSourceDirectory}">
-                <include name="** /*.html"/>
-            </fileset>
-        </copy>
-    </target>
-
-    <target name="buildinfo">
-        <mkdir dir="${cruiseReportRootDirectory}"/>
-        <copy todir="${cruiseReportRootDirectory}">
-            <fileset dir="config/build"/>
-        </copy>
-    </target>
-
-    <target name="cruiseInit">
-        <property name="noTextReports" value="true"/>
-        <property name="forceCoverage" value="true"/>
-        <delete dir="${reportsDirectory}" quiet="true" failonerror="false"/>
-        <delete dir="${junitRawDirectory}" quiet="true" failonerror="false"/>
-    </target>
-
-    <target name="cruise" depends="cruiseInit,distribution,compileExamples,checkstyle,buildinfo"/>
-
-    <target name="-docInit">
-        <mkdir dir="${docsDirectory}"/>
-    </target>
-
-    <target name="doc" depends="javadoc, groovydoc" description="Create the documentation."/>
-
-    <target name="javadoc" depends="-fetchDependencies,-docInit,-jvm14BuildWarning"
-            description="Create the javadoc documentation.">
-        <property name="title" value="Groovy"/>
-        <javadoc destdir="${docsDirectory}/api" author="true" version="true"
-                 windowtitle="${title} (${groovyVersion})" doctitle="${title} (${groovyVersion})"
-                 encoding="ISO-8859-1" useexternalfile="true" source="1.5"
-                 footer="Copyright &amp;copy; 2003-2008 The Codehaus. All rights reserved.">
-            <classpath>
-                <path path="${mainClassesDirectory}"/>
-                <path refid="compilePath"/>
-            </classpath>
-            <fileset dir="${mainSourceDirectory}" includes="** /*.java"/>
-            <link href="http://java.sun.com/j2se/1.4.2/docs/api"/>
-            <link href="http://www.dpml.net/api/ant/1.7.0"/>
-            <link href="http://junit.sourceforge.net/junit3.8.1/javadoc/"/>
-            <link href="http://java.sun.com/j2ee/1.4/docs/api"/>
-            <link href="http://www.antlr2.org/javadoc"/>
-        </javadoc>
-        <jar basedir="${docsDirectory}/api" destfile="${targetDistDirectory}/groovy-${groovyVersion}-javadoc.jar"/>
-        <copy toFile="${targetDistDirectory}/groovy-all-${groovyVersion}-javadoc.jar">
-            <fileset file="${targetDistDirectory}/groovy-${groovyVersion}-javadoc.jar"/>
-        </copy>
-        <antcall target="-javadocRetro"/>
-    </target>
-
-    <target name="-javadocRetro" if="_forceRetro_">
-        <copy toFile="${targetDistDirectory}/groovy-all-jdk14-${groovyVersion}-javadoc.jar">
-            <fileset file="${targetDistDirectory}/groovy-all-${groovyVersion}-javadoc.jar"/>
-        </copy>
-        <copy toFile="${targetDistDirectory}/groovy-jdk14-${groovyVersion}-javadoc.jar">
-            <fileset file="${targetDistDirectory}/groovy-${groovyVersion}-javadoc.jar"/>
-        </copy>
-    </target>
-
-    <target name="groovydoc" depends="-fetchDependencies,-docInit,-includeGroovyDocTemplates,docGDK">
-        <path id="groovydocpath">
-            <path path="${mainClassesDirectory}"/>
-            <path refid="runtimePath"/>
-        </path>
-        <antforked target="realgroovydoc" maxmemory="512m" classpathref="groovydocpath"/>
-    </target>
-
-    <target name="realgroovydoc">
-        <taskdef name="groovydoc" classname="org.codehaus.groovy.ant.Groovydoc">
-            <classpath>
-                <path path="${mainClassesDirectory}"/>
-                <path refid="compilePath"/>
-            </classpath>
-        </taskdef>
-        <groovydoc
-                destdir="${docsDirectory}/gapi"
-                sourcepath="${mainSourceDirectory}"
-                packagenames="**.*"
-                use="true"
-                windowtitle="groovydoc"
-                private="false">
-            <link packages="java." href="http://java.sun.com/j2se/1.4.2/docs/api"/>
-            <link packages="org.apache.ant." href="http://www.dpml.net/api/ant/1.7.0"/>
-            <link packages="org.junit.,junit.framework." href="http://junit.sourceforge.net/junit3.8.1/javadoc/"/>
-            <link packages="groovy.,org.codehaus.groovy." href="http://groovy.codehaus.org/api/"/>
-        </groovydoc>
-    </target>
-
-    <target name="docGDK" depends="-fetchDependencies,-compileTools" description="Create the GDK documentation">
-        <java classname="org.codehaus.groovy.tools.DocGenerator" fork="yes" failonerror="true">
-            <classpath>
-                <pathelement path="${toolsClassesDirectory}"/>
-                <path refid="toolsPath"/>
-                <pathelement path="${mainClassesDirectory}"/>
-            </classpath>
-            <arg value="org.codehaus.groovy.runtime.DefaultGroovyMethods"/>
-            <arg value="org.codehaus.groovy.runtime.DefaultGroovyStaticMethods"/>
-            <arg value="org.codehaus.groovy.vmplugin.v5.PluginDefaultGroovyMethods"/>
-        </java>
-        <copy todir="target/html/groovy-jdk" file="src/tools/org/codehaus/groovy/tools/groovy.ico"/>
-        <copy todir="target/html/groovy-jdk" file="src/tools/org/codehaus/groovy/tools/stylesheet.css"/>
-    </target>
-
-    <target name="deploy" depends="-mavenDeployInit,install,doc,-deployPlainOnly,-deployPlainAndRetro"
-            description="Deploy jars to maven repository."/>
-
-    <target name="-deployPlainOnly" unless="_forceRetro_">
-        <mavenDeploy version="${groovyVersion}" prefix="groovy"/>
-        <mavenDeploy version="${groovyVersion}" prefix="groovy-all"/>
-    </target>
-
-    <target name="-deployPlainAndRetro" if="_forceRetro_">
-        <!-- these were overwritten, so set them again -->
-        <maven.pom file="${targetDirectory}/groovy-jdk14.pom" id="groovy-jdk14.pom"/>
-        <maven.pom file="${targetDirectory}/groovy-all-jdk14.pom" id="groovy-all-jdk14.pom"/>
-
-        <!-- do them all in one hit like this because the maven ant libs like it that way -->
-        <mavenDeploy version="${groovyVersion}" prefix="groovy"/>
-        <mavenDeploy version="${groovyVersion}" prefix="groovy-all"/>
-        <mavenDeploy version="${groovyVersion}" prefix="groovy-jdk14"/>
-        <mavenDeploy version="${groovyVersion}" prefix="groovy-all-jdk14"/>
-    </target>
-
-    <target name="installRepo" depends="-mavenInit,install,doc"
-            description="Deploy artifacts to local maven repository.">
-        <mavenInstallRepo version="${groovyVersion}" prefix="groovy"/>
-        <mavenInstallRepo version="${groovyVersion}" prefix="groovy-all"/>
-        <antcall target="-installRepoRetro"/>
-    </target>
-
-    <target name="-installRepoRetro" if="_forceRetro_">
-        <maven.pom file="${targetDirectory}/groovy-jdk14.pom" id="groovy-jdk14.pom"/>
-        <mavenInstallRepo version="${groovyVersion}" prefix="groovy-jdk14"/>
-        <maven.pom file="${targetDirectory}/groovy-all-jdk14.pom" id="groovy-all-jdk14.pom"/>
-        <mavenInstallRepo version="${groovyVersion}" prefix="groovy-all-jdk14"/>
-    </target>
-
-    <target name="translate" depends="-retroInit" if="_forceRetro_">
-        <retroArtifact version="${groovyVersion}" basedir="${targetDistDirectory}" artifact="groovy"/>
-        <retroArtifact version="${groovyVersion}" basedir="${targetDistDirectory}" artifact="groovy-all"/>
-    </target>
-
-    <target name="distribution" depends="install,doc" description="Create everything needed for a distribution.">
-        <zip destfile="${targetDistDirectory}/groovy-binary-${groovyVersion}.zip"
-             comment="The Groovy ${groovyVersion} binary distribution.">
-
-            <!-- Make unix scripts executable -->
-            <zipfileset dir="${installDirectory}" prefix="groovy-${groovyVersion}" filemode="775">
-                <include name="bin/*"/>
-                <exclude name="bin/*.*"/>
-                <exclude name="bin/startGroovy*"/>
-            </zipfileset>
-
-            <!-- Include the other scripts as is -->
-            <zipfileset dir="${installDirectory}" prefix="groovy-${groovyVersion}">
-                <include name="bin/*.*"/>
-                <include name="bin/startGroovy*"/>
-            </zipfileset>
-
-            <!-- Include everything else as is too -->
-            <zipfileset dir="${installDirectory}" prefix="groovy-${groovyVersion}">
-                <exclude name="bin/**"/>
-                <include name="**"/>
-            </zipfileset>
-        </zip>
-
-        <zip destfile="${targetDistDirectory}/groovy-docs-${groovyVersion}.zip"
-             comment="The Groovy ${groovyVersion} documentation distribution.">
-            <zipfileset dir="${wikiPdfDirectory}" includes="wiki-snapshot.pdf" prefix="groovy-${groovyVersion}/pdf"/>
-            <zipfileset dir="${docsDirectory}" prefix="groovy-${groovyVersion}/html"/>
-        </zip>
-
-        <zip destfile="${targetDistDirectory}/groovy-src-${groovyVersion}.zip"
-             comment="The Groovy ${groovyVersion} source distribution.">
-            <zipfileset dir="${basedir}" prefix="groovy-${groovyVersion}">
-                <!-- Exclude generated bits as well as any other bits that shouldn't make it in -->
-                <exclude name="${targetDirectory}/**"/>
-                <exclude name="classes/**"/>
-                <exclude name="cruise/**"/>
-                <exclude name=".clover/*"/>
-                <exclude name="local.build.properties"/>
-                <exclude name="cobertura.ser"/>
-                <exclude name="junitvmwatcher*.properties"/>
-            </zipfileset>
-        </zip>
-    </target>
-
-    <target name="dist" depends="distribution" description="Alias to distribution for the lazy."/>
-
-</project>
-
-*/
-
-target ( blah : '' ) { }
-setDefaultTarget ( blah )
+target ( checkstyle : 'Create the code style reports.' ) { }
+
+target ( cleanTest : 'Clean and compile and test all the classes (or just one class if testCase property is defined).' ) { }
+
+target ( compileExamples  : 'Compile the Java and Groovy code in the examples source directory.' ) { }
+
+target ( compileMain : 'Compile the Java and Groovy code in the main source.' ) {
+  depends ( ensureGrammars )
+  mkdir ( dir : mainClassesDirectory )
+  mkdir ( dir : toolsClassesDirectory )
+  javac ( srcdir : mainSourceDirectory , includeantruntime : 'false' , destdir : mainClassesDirectory ,
+          deprecation : 'on' , debug : 'yes' , source : '1.5' , target : '1.5' , fork : 'true' , classpathref : 'compilePath' ,
+          excludes : 'groovy/ui/**/*.java' )
+  //  The Groovyc class is now compiled so we can make use of it.
+  depends ( initializeGroovyc )
+  //  This compilation takes a lot of heap space, hence adding the extra.
+  groovyc ( srcdir : mainSourceDirectory , destdir : mainClassesDirectory , fork : 'true' , memorymaximumsize : ant.project.properties.groovycMain_mx ) {
+    classpath{  
+      pathelement ( path : mainClassesDirectory )
+      path ( refid : 'compilePath' )
+    }
+    javac ( deprecation : 'on' , debug : 'yes' , source : '1.5' , target : '1.5' )
+  }
+}
+
+target ( compileTest : 'Compile the Java and Groovy code in the test source.' ) {
+  depends ( compileMain )
+  mkdir ( dir : testClassesDirectory )
+  //  This compilation takes a lot of heap space, hence adding the extra.
+  groovyc ( srcdir : testSourceDirectory , destdir : testClassesDirectory , //includes="${vm5GroovySourceFiles},${vm5JavaSourceFiles}"
+            fork : 'true' ,  memorymaximumsize : ant.project.properties.groovycTest_mx ) {
+    classpath {
+      pathelement ( path : testClassesDirectory )
+      path ( refid : 'groovyMainClasses' )
+      path ( refid : 'testLibPath' )
+    }
+    javac ( source : '1.5' , target : '1.5' , nowarn : 'on' )
+  }
+}
+
+target ( createJars : 'Build Groovy and create the jarfiles.' ) { }
+
+target ( deploy : 'Deploy jars to maven repository.' ) { }
+
+target ( dist : 'Alias to distribution for the lazy.' ) { }
+
+target ( distribution : 'Create everything needed for a distribution.' ) { }
+
+target ( doc : 'Create the documentation.' ) { }
+
+target ( docGDK : 'Create the GDK documentation' ) { }
+
+target (  install : 'Create an installation hierarchy in target/install.' ) { }
+
+target ( installRepo : 'Deploy artifacts to local maven repository.' ) { }
+
+target ( javadoc : 'Create the javadoc documentation.' ) { }
+
+target (  test : 'Compile and test all the classes (or just one class if testCase property is defined).' ) {
+  depends ( compileTest )
+  mkdir ( dir : junitRawDirectory )
+  junit ( printsummary : 'true' , fork : 'true' , includeantruntime : 'false' , failureproperty : 'testFailed' , maxmemory : ant.project.properties.groovyJUnit_mx , dir : ant.project.properties.basedir ) {
+    jvmarg ( line : "-Xms${ant.project.properties.groovyJUnit_ms} -XX:PermSize=${ant.project.properties.groovyJUnit_permSize} -XX:MaxPermSize=${ant.project.properties.groovyJUnit_maxPermSize} ${ ( System.properties.'java.awt.headless' || ( System.properties.'os.name' == 'Mac OS X' ) ) ? '-Djava.awt.headless=true' : '' }" )
+    formatter ( type : 'xml' )
+    formatter ( type : 'plain' , unless : 'noTextReports' )
+    batchtest ( todir : junitRawDirectory ) {
+      fileset ( dir : testClassesDirectory , includes : 'UberTest*.class' )
+    }
+    classpath {
+      //pathelement ( path : instrumentedClassesDirectory)
+      //pathelement ( path : 'src/test' )
+      path ( refid : 'groovyMainClasses' )
+      path ( refid : 'testLibPath' )
+      pathelement ( path : testClassesDirectory )
+      //path ( refid : 'coberturaPath' )
+    }
+  }
+  mkdir ( dir : junitReportsDirectory )
+  junitreport ( tofile : "${junitRawDirectory}/Results.xml") {
+    fileset ( dir : junitRawDirectory , includes : 'TEST-*.xml' )
+    report ( format : 'frames' , todir : junitReportsDirectory )
+  }
+}
+
+setDefaultTarget ( createJars )
