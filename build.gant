@@ -38,6 +38,7 @@ target ( initialize : '' ) {
   "${mavenAntTaskURI}:dependencies" ( useScope : 'compile' , filesetId : 'fs.compile.groovy' , pomRefId : 'groovy.pom' )
   "${mavenAntTaskURI}:dependencies" ( useScope : 'runtime' , filesetId : 'fs.runtime.groovy' , pomRefId : 'groovy.pom' )
   "${mavenAntTaskURI}:dependencies" ( useScope : 'test' , filesetId : 'fs.test.groovy' , pomRefId : 'groovy.pom' )
+  /*
   delete ( dir : compileLibDirectory )
   mkdir ( dir : compileLibDirectory )
   copy ( todir : compileLibDirectory ) {
@@ -45,22 +46,26 @@ target ( initialize : '' ) {
     fileset ( refid : 'fs.compile.groovy' )
   }
   path ( id : 'compilePath' ) {
-    fileset ( dir : compileLibDirectory , includes : '**/*.jar' )
+    fileset ( dir : compileLibDirectory , includes : '** /*.jar' )
   }
   copy ( todir : testLibDirectory ) {
     mapper ( type : 'flatten' )
     fileset ( refid : 'fs.test.groovy' )
   }
   path ( id : 'testLibPath' ) {
-    fileset ( dir : testLibDirectory , includes : '**/*.jar' )
+    fileset ( dir : testLibDirectory , includes : '** /*.jar' )
   }
   copy ( todir : runtimeLibDirectory ) {
     mapper ( type : 'flatten' )
     fileset ( refid : 'fs.runtime.groovy' )
   }
   path ( id : 'runtimePath' ) {
-    fileset ( dir : runtimeLibDirectory , includes : '**/*.jar' )
+    fileset ( dir : runtimeLibDirectory , includes : '** /*.jar' )
   }
+*/
+  path ( id : 'compilePath' ) { fileset ( refid : 'fs.compile.groovy' ) }
+  path ( id : 'testLibPath' ) { fileset ( refid : 'fs.test.groovy' ) }
+  path ( id : 'runtimePath' ) { fileset ( refid : 'fs.runtime.groovy' ) }  
 }
 
 target ( initializeGroovyc : '' ) {
@@ -139,8 +144,11 @@ target ( javadoc : 'Create the javadoc documentation.' ) { }
 target (  test : 'Compile and test all the classes (or just one class if testCase property is defined).' ) {
   depends ( compileTest )
   mkdir ( dir : junitRawDirectory )
+
+  println ( path ( refid : 'groovyMainClasses' ) )
+  
   junit ( printsummary : 'true' , fork : 'true' , includeantruntime : 'false' , failureproperty : 'testFailed' , maxmemory : ant.project.properties.groovyJUnit_mx , dir : ant.project.properties.basedir ) {
-    jvmarg ( line : "-Xms${ant.project.properties.groovyJUnit_ms} -XX:PermSize=${ant.project.properties.groovyJUnit_permSize} -XX:MaxPermSize=${ant.project.properties.groovyJUnit_maxPermSize} ${ ( System.properties.'java.awt.headless' || ( System.properties.'os.name' == 'Mac OS X' ) ) ? '-Djava.awt.headless=true' : '' }" )
+    //jvmarg ( line : "-Xms${ant.project.properties.groovyJUnit_ms} -XX:PermSize=${ant.project.properties.groovyJUnit_permSize} -XX:MaxPermSize=${ant.project.properties.groovyJUnit_maxPermSize} ${ ( System.properties.'java.awt.headless' || ( System.properties.'os.name' == 'Mac OS X' ) ) ? '-Djava.awt.headless=true' : '' }" )
     formatter ( type : 'xml' )
     formatter ( type : 'plain' , unless : 'noTextReports' )
     batchtest ( todir : junitRawDirectory ) {
