@@ -494,4 +494,23 @@ class GStringTest extends GroovyTestCase {
     void testReplaceValueWithEmptyExpression() {
         assertEquals('replace <null>', "replace <${}>")
     }
+
+    /**
+     * Tests GString concatenation. GROOVY-2848
+     */
+    void testGStringConcatenationAddsNoNewValues() {
+        def x = "dog"
+        def y = "woof-woof"
+        def gs1 = "the ${x} says "
+        assert gs1.getValues() == ["dog"]
+        assert gs1.toString() == "the dog says "
+
+        gs1 = gs1.plus(" ${y} ")
+        assert gs1.getValues() == ["dog", "woof-woof"]
+        assert gs1.toString() == "the dog says  woof-woof "
+
+        gs1 = gs1.plus(" not the cat")
+        assert gs1.getValues() == ["dog", "woof-woof"]
+        assert gs1.toString() == "the dog says  woof-woof  not the cat"
+    }
 }

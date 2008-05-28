@@ -82,11 +82,17 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
         stringList.addAll(Arrays.asList(getStrings()));
         valueList.addAll(Arrays.asList(getValues()));
 
+        List thatStrings = Arrays.asList(that.getStrings());
         if (stringList.size() > valueList.size()) {
-            valueList.add("");
+            thatStrings = new ArrayList(thatStrings);
+            // merge onto end of previous GString to avoid an empty bridging value
+            String s = (String) stringList.get(stringList.size() - 1);
+            s += thatStrings.get(0);
+            thatStrings.remove(0);
+            stringList.set(stringList.size() - 1, s);
         }
 
-        stringList.addAll(Arrays.asList(that.getStrings()));
+        stringList.addAll(thatStrings);
         valueList.addAll(Arrays.asList(that.getValues()));
 
         final String[] newStrings = new String[stringList.size()];
@@ -105,13 +111,22 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
         String[] newStrings = null;
         Object[] newValues = null;
 
-        newStrings = new String[currentStrings.length + 1];
-        newValues = new Object[getValues().length + 1];
+        boolean appendToLastString = currentStrings.length > getValues().length;
+
+        if (appendToLastString) {
+            newStrings = new String[currentStrings.length];
+        } else {
+            newStrings = new String[currentStrings.length + 1];
+        }
+        newValues = new Object[getValues().length];
         int lastIndex = currentStrings.length;
         System.arraycopy(currentStrings, 0, newStrings, 0, lastIndex);
         System.arraycopy(getValues(), 0, newValues, 0, getValues().length);
-        newStrings[lastIndex] = that;
-        newValues[getValues().length] = "";
+        if (appendToLastString) {
+            newStrings[lastIndex - 1] += that;
+        } else {
+            newStrings[lastIndex] = that;
+        }
 
         final String[] finalStrings = newStrings;
         return new GString(newValues) {
