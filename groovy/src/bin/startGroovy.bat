@@ -82,11 +82,13 @@ if "%GROOVY_HOME%" == "" set GROOVY_HOME=%DIRNAME%..
 if "%GROOVY_HOME:~-1%"=="\" SET GROOVY_HOME=%GROOVY_HOME:~0,-1%
 
 @rem classpath handling
-set _SKIP=1
+set _SKIP=2
 set CP=
 if "x%~1" == "x-cp" set CP=%~2
 if "x%~1" == "x-classpath" set CP=%~2
+if "x%~1" == "x--classpath" set CP=%~2
 if "x" == "x%CP%" goto init
+set _SKIP=4
 shift
 shift
 
@@ -146,8 +148,10 @@ goto :EOF
 :process_arg
 if "%_ARG%" == "" goto execute
 
-if "x%_ARG%" == "x%CLASS%" goto found_class
-if "x1" == "x%_SKIP%" goto skip
+if "x4" == "x%_SKIP%" goto skip_4
+if "x3" == "x%_SKIP%" goto skip_3
+if "x2" == "x%_SKIP%" goto skip_2
+if "x1" == "x%_SKIP%" goto skip_1
 
 rem now unescape -q, -s, -d
 set _ARG=%_ARG:-q="%
@@ -158,13 +162,24 @@ set CMD_LINE_ARGS=%CMD_LINE_ARGS% %_ARG%
 set _ARG=
 goto win9xME_args_loop
 
-:found_class
-set _SKIP=0
+:skip_4
 set _ARG=
+set _SKIP=3
 goto win9xME_args_loop
 
-:skip
+:skip_3
 set _ARG=
+set _SKIP=2
+goto win9xME_args_loop
+
+:skip_2
+set _ARG=
+set _SKIP=1
+goto win9xME_args_loop
+
+:skip_1
+set _ARG=
+set _SKIP=0
 goto win9xME_args_loop
 
 :4NT_args
