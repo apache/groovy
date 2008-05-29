@@ -520,7 +520,7 @@ org.junit;resolution:=optional" file="${mainClassesDirectory}/META-INF/MANIFEST.
                 <attribute name="Bundle-Vendor" value="The Codehaus" />
                 <attribute name="Bundle-ClassPath" value="." />
                 <attribute name="Bundle-RequiredExecutionEnvironment" value="J2SE-1.4" />
-                <attribute name="Require-Bundle" value="@{dependencies}" />
+                <attribute name="Import-Package" value="@{dependencies}" />
                 <attribute name="Export-Package" value="groovy.inspect,
 groovy.inspect.swingui,
 groovy.io,
