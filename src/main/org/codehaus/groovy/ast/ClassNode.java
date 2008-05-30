@@ -514,8 +514,13 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return node;
     }
 
-    public boolean hasMethod(String name, Parameter[] parameters) {
+    public boolean hasDeclaredMethod(String name, Parameter[] parameters) {
         MethodNode other = getDeclaredMethod(name, parameters);
+        return other != null;
+    }
+
+    public boolean hasMethod(String name, Parameter[] parameters) {
+        MethodNode other = getMethod(name, parameters);
         return other != null;
     }
 
@@ -670,10 +675,29 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     /**
+     * Finds a method matching the given name and parameters in this class.
+     *
      * @return the method matching the given name and parameters or null
      */
     public MethodNode getDeclaredMethod(String name, Parameter[] parameters) {
         List list = getDeclaredMethods(name);
+        for (Iterator iter = list.iterator(); iter.hasNext();) {
+            MethodNode method = (MethodNode) iter.next();
+            if (parametersEqual(method.getParameters(), parameters)) {
+                return method;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Finds a method matching the given name and parameters in this class
+     * or any parent class.
+     *
+     * @return the method matching the given name and parameters or null
+     */
+    public MethodNode getMethod(String name, Parameter[] parameters) {
+        List list = getMethods(name);
         for (Iterator iter = list.iterator(); iter.hasNext();) {
             MethodNode method = (MethodNode) iter.next();
             if (parametersEqual(method.getParameters(), parameters)) {
