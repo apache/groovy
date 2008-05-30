@@ -1,6 +1,6 @@
 package groovy
 
-class StaticAndDefaultKeywordsInPropertyNamesTest extends GroovyTestCase {
+class KeywordsInPropertyNamesTest extends GroovyTestCase {
 
     void testKeywords() {
         def value = "returnValue"
