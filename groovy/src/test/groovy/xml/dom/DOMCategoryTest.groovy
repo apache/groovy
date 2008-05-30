@@ -50,4 +50,18 @@ class DOMCategoryTest extends GroovyTestCase {
         }
     }
 
+    void testGetOnNonNodesWithDomCategory() {
+        Map ids = [:]
+        ids.put("try", "sample1")
+        assert ids.get("try") == "sample1"
+
+        use(DOMCategory) {
+            ids["try"] = "sample2"
+            assert ids["try"] == "sample2"
+            assert ids.get("try") == "sample2"
+            assert ids.put("try", "sample3")
+            assert ids.get("try") == "sample3"
+        }
+    }
+
 }
