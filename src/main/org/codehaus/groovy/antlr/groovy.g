@@ -2296,6 +2296,7 @@ keywordPropertyNames
         | "continue"
         | "def"
         | "default"
+        | "do"
         | "else"
         | "enum"
         | "extends"
@@ -2303,6 +2304,7 @@ keywordPropertyNames
         | "final"
         | "finally"
         | "for"
+        | "goto"
         | "if"
         | "implements"
         | "import"
@@ -2329,8 +2331,6 @@ keywordPropertyNames
         | "try"
         | "volatile"
         | "while"
-        |   "goto"
-        |   "do"
         |   builtInType
         )
         { #keywordPropertyNames.setType(IDENT); }
@@ -3829,6 +3829,9 @@ options {
             // for them in package names for better integration with existng Java packages
             if ((ttype == LITERAL_as || ttype == LITERAL_def || ttype == LITERAL_in) &&
                 (LA(1) == '.' || lastSigTokenType == DOT || lastSigTokenType == LITERAL_package)) {
+                ttype = IDENT;
+            }
+            if (ttype == LITERAL_static && LA(1) == '.') {
                 ttype = IDENT;
             }
 
