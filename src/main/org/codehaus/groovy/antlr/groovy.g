@@ -2286,7 +2286,8 @@ namePart  {Token first = LT(1);}
  */
 keywordPropertyNames
     :   (
-          "as"
+          "abstract"
+        | "as"
         | "assert"
         | "break"
         | "case"
@@ -2299,6 +2300,7 @@ keywordPropertyNames
         | "enum"
         | "extends"
         | "false"
+        | "final"
         | "finally"
         | "for"
         | "if"
@@ -2316,6 +2318,7 @@ keywordPropertyNames
         | "public"
         | "return"
         | "static"
+        | "strictfp"
         | "switch"
         | "synchronized"
         | "threadsafe"
