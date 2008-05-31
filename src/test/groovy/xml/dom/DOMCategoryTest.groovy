@@ -2,8 +2,8 @@ package groovy.xml.dom
 
 import groovy.xml.DOMBuilder
 import groovy.xml.GpathSyntaxTestSupport
-import groovy.xml.TraversalTestSupport
 import groovy.xml.MixedMarkupTestSupport
+import groovy.xml.TraversalTestSupport
 
 class DOMCategoryTest extends GroovyTestCase {
 
@@ -50,7 +50,7 @@ class DOMCategoryTest extends GroovyTestCase {
         }
     }
 
-    void testGetOnNonNodesWithDomCategory() {
+    void testGetOnMapWithDomCategory() {
         Map ids = [:]
         ids.put("try", "sample1")
         assert ids.get("try") == "sample1"
@@ -64,4 +64,17 @@ class DOMCategoryTest extends GroovyTestCase {
         }
     }
 
+    void testGetOnNonNodesWithDomCategory() {
+        def myFoo = new Foo()
+        assert myFoo.get("bar") == 3
+        use(DOMCategory) {
+            assert myFoo.get("bar") == 3
+        }
+    }
+}
+
+class Foo {
+    def get(String name) {
+        return name.size()
+    }
 }
