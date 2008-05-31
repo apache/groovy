@@ -141,7 +141,7 @@ public class XmlNodePrinter {
             }
             printNameAttributes(node.attributes());
             out.print("/>");
-            printLineEnd(); // "node named '" + node.name() + "'"
+            printLineEnd();
             out.flush();
             return;
         }
@@ -193,12 +193,13 @@ public class XmlNodePrinter {
     protected void printList(List list, NamespaceContext ctx) {
         out.incrementIndent();
         for (Iterator iter = list.iterator(); iter.hasNext();) {
+            NamespaceContext context = new NamespaceContext(ctx);
             Object value = iter.next();
             /*
              * If the current value is a node, recurse into that node.
              */
             if (value instanceof Node) {
-                print((Node) value, ctx);
+                print((Node) value, context);
                 continue;
             }
             printSimpleItem(value);
@@ -324,7 +325,16 @@ public class XmlNodePrinter {
     }
 
     private class NamespaceContext {
-        Map namespaceMap = new HashMap();
+        private final Map namespaceMap;
+
+        private NamespaceContext() {
+            namespaceMap = new HashMap();
+        }
+
+        private NamespaceContext(NamespaceContext context) {
+            this();
+            namespaceMap.putAll(context.namespaceMap);
+        }
 
         public boolean isNamespaceRegistered(String uri) {
             return namespaceMap.containsKey(uri);
