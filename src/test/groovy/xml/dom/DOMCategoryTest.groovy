@@ -66,13 +66,15 @@ class DOMCategoryTest extends GroovyTestCase {
 
     void testGetOnNonNodesWithDomCategory() {
         def myFoo = new Foo()
-        assert myFoo.get("bar") == 42
+        assert myFoo.get("bar") == 3
         use(DOMCategory) {
-            assert myFoo.get("bar") == 42
+            assert myFoo.get("bar") == 3
         }
     }
 }
 
 class Foo {
-    def bar = 42
+    def get(String name) {
+        return name.size()
+    }
 }
