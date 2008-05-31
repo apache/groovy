@@ -40,10 +40,7 @@ public class DOMCategory {
         if (o instanceof NamedNodeMap) {
             return get((NamedNodeMap) o, elementName);
         }
-        if (o instanceof Map) {
-            return InvokerHelper.getProperty(o, elementName);
-        }
-        return null;
+        return InvokerHelper.getProperty(o, elementName);
     }
 
     private static Object get(Element element, String elementName) {
