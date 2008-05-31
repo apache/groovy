@@ -112,24 +112,24 @@ p() {
       </tr>
       <tr align="left">
         <td>
-          <dc:author>
+          <dc:author xmlns:dc="http://purl.org/dc/elements/1.1/">
             <g:developer xmlns:g="http://groovy.codehaus.org/roles">
               Dierk König
             </g:developer>
             ,
-            <g:advocate>
+            <g:advocate xmlns:g="http://groovy.codehaus.org/roles">
               Andrew Glover
             </g:advocate>
             ,
-            <g:developer>
+            <g:developer xmlns:g="http://groovy.codehaus.org/roles">
               Paul King
             </g:developer>
             ,
-            <g:projectmanager>
+            <g:projectmanager xmlns:g="http://groovy.codehaus.org/roles">
               Guillaume Laforge
             </g:projectmanager>
             ,
-            <g:advocate>
+            <g:advocate xmlns:g="http://groovy.codehaus.org/roles">
               Jon Skeet
             </g:advocate>
             ,
@@ -142,7 +142,7 @@ p() {
           696
         </td>
         <td>
-          <dc:date>
+          <dc:date xmlns:dc="http://purl.org/dc/elements/1.1/">
             January, 2007
           </dc:date>
         </td>
