@@ -38,6 +38,8 @@ import java.util.regex.Pattern;
 
 import javax.sql.DataSource;
 
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+
 /**
  * Represents an extent of objects
  *
@@ -686,13 +688,7 @@ public class Sql {
             if (metaClosure != null) metaClosure.call(rs.getMetaData());
 
             while (rs.next()) {
-                ResultSetMetaData metadata = rs.getMetaData();
-                LinkedHashMap lhm = new LinkedHashMap(metadata.getColumnCount(), 1);
-                for (int i = 1; i <= metadata.getColumnCount(); i++) {
-                    lhm.put(metadata.getColumnName(i), rs.getObject(i));
-                }
-                GroovyRowResult row = new GroovyRowResult(lhm);
-                results.add(row);
+                results.add(DefaultGroovyMethods.toRowResult(rs));
             }
             return (results);
         } catch (SQLException e) {
@@ -724,13 +720,7 @@ public class Sql {
             configure(statement);
             rs = statement.executeQuery();
             while (rs.next()) {
-                ResultSetMetaData metadata = rs.getMetaData();
-                LinkedHashMap lhm = new LinkedHashMap(metadata.getColumnCount(), 1);
-                for (int i = 1; i <= metadata.getColumnCount(); i++) {
-                    lhm.put(metadata.getColumnName(i), rs.getObject(i));
-                }
-                GroovyRowResult row = new GroovyRowResult(lhm);
-                results.add(row);
+                results.add(DefaultGroovyMethods.toRowResult(rs));
             }
             return (results);
         }

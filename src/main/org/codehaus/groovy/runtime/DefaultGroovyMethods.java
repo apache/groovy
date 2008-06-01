@@ -18,6 +18,7 @@ package org.codehaus.groovy.runtime;
 import groovy.lang.*;
 import groovy.util.*;
 import groovy.io.EncodingAwareBufferedWriter;
+import groovy.sql.GroovyRowResult;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ReflectionCache;
@@ -48,6 +49,9 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.ResultSet;
 
 /**
  * This class defines all the new groovy methods which appear on normal JDK
@@ -9182,6 +9186,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 return buffer.toString();
             }
         };
+    }
+
+    /**
+     * Returns a GroovyRowResult given a ResultSet.
+     *
+     * @param rs a ResultSet
+     * @return the resulting GroovyRowResult
+     * @throws SQLException if a database error occurs
+     */
+    public static GroovyRowResult toRowResult(ResultSet rs) throws SQLException {
+        ResultSetMetaData metadata = rs.getMetaData();
+        LinkedHashMap lhm = new LinkedHashMap(metadata.getColumnCount(), 1);
+        for (int i = 1; i <= metadata.getColumnCount(); i++) {
+            lhm.put(metadata.getColumnName(i), rs.getObject(i));
+        }
+        return new GroovyRowResult(lhm);
     }
 
     /**
