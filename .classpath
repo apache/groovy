@@ -17,13 +17,11 @@
 	<classpathentry kind="var" path="M2_REPO/commons-cli/commons-cli/1.0/commons-cli-1.0.jar"/>
 	<classpathentry kind="var" path="M2_REPO/hsqldb/hsqldb/1.8.0.7/hsqldb-1.8.0.7.jar"/>
 	<classpathentry kind="var" path="M2_REPO/xmlunit/xmlunit/1.1/xmlunit-1.1.jar"/>
-	<classpathentry kind="var" path="M2_REPO/com/thoughtworks/xstream/xstream/1.2.2/xstream-1.2.2.jar"/>
+	<classpathentry kind="var" path="M2_REPO/com/thoughtworks/xstream/xstream/1.3/xstream-1.3.jar"/>
 	<classpathentry kind="var" path="M2_REPO/asm/asm-analysis/2.2.3/asm-analysis-2.2.3.jar"/>
 	<classpathentry kind="var" path="M2_REPO/cglib/cglib-nodep/2.1_3/cglib-nodep-2.1_3.jar"/>
 	<classpathentry kind="var" path="M2_REPO/jmock/jmock/1.2.0/jmock-1.2.0.jar"/>
-	<classpathentry kind="var" path="M2_REPO/mockobjects/mockobjects-core/0.09/mockobjects-core-0.09.jar"/>
 	<classpathentry kind="var" path="M2_REPO/openejb/openejb-loader/1.0/openejb-loader-1.0.jar"/>
-	<classpathentry kind="var" path="M2_REPO/xpp3/xpp3_min/1.1.3.4.O/xpp3_min-1.1.3.4.O.jar"/>
 	<classpathentry kind="var" path="M2_REPO/asm/asm/2.2.3/asm-2.2.3.jar"/>
 	<classpathentry kind="var" path="M2_REPO/asm/asm-util/2.2.3/asm-util-2.2.3.jar"/>
 	<classpathentry kind="var" path="M2_REPO/org/apache/ant/ant-launcher/1.7.0/ant-launcher-1.7.0.jar"/>
