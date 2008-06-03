@@ -195,23 +195,28 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
 
         info.lock();
         try {
-            answer = info.getMetaClassForClass();
-            if (answer != null)
-                return answer;
-
-            answer = metaClassCreationHandle.create(theClass, this);
-            answer.initialize();
-
-            if (GroovySystem.isKeepJavaMetaClasses()) {
-                info.setStrongMetaClass(answer);
-            } else {
-                info.setWeakMetaClass(answer);
-            }
-            return answer;
+            return getMetaClassUnderLock(theClass, info);
         }
         finally {
             info.unlock();
         }
+    }
+
+    private MetaClass getMetaClassUnderLock(Class theClass, ClassInfo info) {
+        MetaClass answer;
+        answer = info.getMetaClassForClass();
+        if (answer != null)
+            return answer;
+
+        answer = metaClassCreationHandle.create(theClass, this);
+        answer.initialize();
+
+        if (GroovySystem.isKeepJavaMetaClasses()) {
+            info.setStrongMetaClass(answer);
+        } else {
+            info.setWeakMetaClass(answer);
+        }
+        return answer;
     }
 
     public void removeMetaClass(Class theClass) {
@@ -222,6 +227,23 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         info.lock();
         try {
             info.setStrongMetaClass(null);
+        }
+        finally {
+            info.unlock();
+        }
+    }
+
+    public MetaClass getMetaClass(Object obj) {
+        Class theClass = obj.getClass ();
+        final ClassInfo info = ClassInfo.getClassInfo(theClass);
+
+        info.lock();
+        try {
+            final MetaClass instanceMetaClass = info.getPerInstanceMetaClass(obj);
+            if (instanceMetaClass != null)
+              return instanceMetaClass;
+
+            return getMetaClassUnderLock(theClass, info);
         }
         finally {
             info.unlock();
@@ -247,6 +269,23 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             info.unlock();
         }
     }
+
+
+    public void setMetaClass(Object obj, MetaClass theMetaClass) {
+        version.incrementAndGet();
+
+        Class theClass = obj.getClass ();
+        final ClassInfo info = ClassInfo.getClassInfo(theClass);
+
+        info.lock();
+        try {
+            info.setPerInstanceMetaClass(obj, theMetaClass);
+        }
+        finally {
+            info.unlock();
+        }
+    }
+
 
     public boolean useAccessible() {
         return useAccessible;

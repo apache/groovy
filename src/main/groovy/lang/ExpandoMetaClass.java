@@ -85,7 +85,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 	private static final String PROPERTIES = "properties";
 	public static final String STATIC_QUALIFIER = "static";
 	private static final Class[] ZERO_ARGUMENTS = new Class[0];
-	private static final String CONSTRUCTOR = "constructor";
+	public static final String CONSTRUCTOR = "constructor";
     private static final String GET_PROPERTY_METHOD = "getProperty";
     private static final String SET_PROPERTY_METHOD = "setProperty";
 
@@ -120,12 +120,12 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 	 */
 	public ExpandoMetaClass(Class theClass) {
 		super(GroovySystem.getMetaClassRegistry(), theClass);
-		this.myMetaClass = InvokerHelper.getMetaClass(this);
+		this.myMetaClass = InvokerHelper.getMetaClass(getClass());
 	}
 
     public ExpandoMetaClass(Class theClass, MetaMethod [] add) {
         super(GroovySystem.getMetaClassRegistry(), theClass, add);
-        this.myMetaClass = InvokerHelper.getMetaClass(this);
+        this.myMetaClass = InvokerHelper.getMetaClass(getClass());
     }
 
 	/**
@@ -199,7 +199,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     public Object invokeMissingProperty(Object instance, String propertyName, Object optionalValue, boolean isGetter) {
         Class theClass = instance instanceof Class ? (Class)instance : instance.getClass();
         CachedClass superClass = theCachedClass;
-        while(superClass != ReflectionCache.OBJECT_CLASS) {
+        while(superClass != null && superClass != ReflectionCache.OBJECT_CLASS) {
             final MetaBeanProperty property = findPropertyInClassHierarchy(propertyName, superClass);
             if(property != null) {
                 addMetaBeanProperty(property);
@@ -235,7 +235,13 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
     private MetaBeanProperty findPropertyInClassHierarchy(String propertyName, CachedClass theClass) {
         MetaBeanProperty property= null;
+        if (theClass == null)
+            return null;
+
         final CachedClass superClass = theClass.getCachedSuperClass();
+        if (superClass == null)
+          return null;
+        
         MetaClass metaClass = this.registry.getMetaClass(superClass.getTheClass());
         if(metaClass instanceof MutableMetaClass) {
             property = getMetaPropertyFromMutableMetaClass(propertyName,metaClass);
@@ -589,7 +595,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 		}
 	}
 
-	private boolean isValidExpandoProperty(String property) {
+	public static boolean isValidExpandoProperty(String property) {
         return !(property.equals(META_CLASS) || property.equals(CLASS) || property.equals(META_METHODS) || property.equals(METHODS) || property.equals(PROPERTIES));
     }
 
@@ -626,7 +632,14 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 		}
 	}
 
-
+    public ExpandoMetaClass define (Closure closure) {
+        final DefiningClosure definer = new DefiningClosure();
+        closure.setDelegate(definer);
+        closure.setResolveStrategy(Closure.DELEGATE_FIRST);
+        closure.call(null);
+        definer.definition = false;
+        return this;
+    }
     
     protected synchronized void performOperationOnMetaClass(Callable c) {
             try {
@@ -1145,5 +1158,96 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         }
 
         return super.createConstructorSite(site, args);
+    }
+
+    private class DefiningClosure extends GroovyObjectSupport {
+        boolean definition = true;
+
+        public void mixin (Class category) {
+            mixin(Collections.singletonList(category));
+        }
+
+        public void mixin (List categories) {
+            DefaultGroovyMethods.mixin(ExpandoMetaClass.this, categories);
+        }
+
+        public Object invokeMethod(String name, Object obj) {
+            try {
+                return getMetaClass().invokeMethod(this, name, obj);
+            }
+            catch (MissingMethodException mme) {
+                if (obj instanceof Object[]) {
+                    if (STATIC_QUALIFIER.equals(name)) {
+                        final StaticDefiningClosure staticDef = new StaticDefiningClosure();
+                        Closure c = (Closure)((Object[])obj)[0];
+                        c.setDelegate(staticDef);
+                        c.setResolveStrategy(Closure.DELEGATE_ONLY);
+                        c.call(null);
+                        return null;
+                    }
+                    ExpandoMetaClass.this.setProperty(name, ((Object[])obj)[0]);
+                    return null;
+                }
+
+                throw mme;
+            }
+//            if (obj instanceof Object[]) {
+//                final Object[] args = (Object[]) obj;
+//                if (args.length == 1 && args[0] instanceof Closure) {
+//                    if (STATIC_QUALIFIER.equals(name)) {
+//                        final StaticDefiningClosure staticDef = new StaticDefiningClosure();
+//                        Closure c = (Closure)args[0];
+//                        c.setDelegate(staticDef);
+//                        c.setResolveStrategy(Closure.DELEGATE_ONLY);
+//                        c.call(null);
+//                        return null;
+//                    }
+//                    else {
+//                        if ("mixin".equals(name) && args.length == 1 && args[0] instanceof Class) {
+//                            DefaultGroovyMethods.mixin(this, (Class)args[0]);
+//                            return null;
+//                        }
+//                        else {
+//                            ExpandoMetaClass.this.setProperty(name, args[0]);
+//                            return null;
+//                        }
+//                    }
+//                }
+//            }
+//
+//            throw new MissingMethodException(name, getClass(), obj instanceof Object[] ? (Object[])obj : new Object[] {obj} );
+        }
+
+        public void setProperty(String property, Object newValue) {
+            ExpandoMetaClass.this.setProperty(property, newValue);
+        }
+
+        public Object getProperty(String property) {
+            if (STATIC_QUALIFIER.equals(property))
+              return new StaticDefiningClosure();
+
+            if (definition)
+              return new ExpandoMetaProperty(property);
+            else
+              throw new MissingPropertyException(property, getClass());
+        }
+    }
+
+    private class StaticDefiningClosure extends ExpandoMetaProperty {
+        protected StaticDefiningClosure() {
+            super(STATIC_QUALIFIER, true);
+        }
+
+        public Object invokeMethod(String name, Object obj) {
+            if (obj instanceof Object[]) {
+                final Object[] args = (Object[]) obj;
+                if (args.length == 1 && args[0] instanceof Closure) {
+                    registerStaticMethod(name, (Closure)args[0]);
+                    return null;
+                }
+            }
+
+            throw new MissingMethodException(name, getClass(), obj instanceof Object[] ? (Object[])obj : new Object[] {obj} );
+        }
     }
 }

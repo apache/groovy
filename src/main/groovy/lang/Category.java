@@ -33,5 +33,5 @@ import java.lang.annotation.Target;
 @Target(ElementType.TYPE)
 @GroovyASTTransformationClass("org.codehaus.groovy.ast.CategoryASTTransformation")
 public @interface Category {
-    Class value ();
+    Class value () default Object.class;
 }

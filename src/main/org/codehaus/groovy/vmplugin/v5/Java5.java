@@ -337,6 +337,5 @@ public class Java5 implements VMPlugin {
         ClassNode cn = makeClassNode(cu,type,cl);
         return new Parameter(cn, "param" + idx);
     }
-
 }
 

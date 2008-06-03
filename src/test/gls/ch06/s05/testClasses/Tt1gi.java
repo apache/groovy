@@ -29,7 +29,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 
 public class Tt1gi extends Tt1 implements GroovyObject, GroovyInterceptable {
 
-    private MetaClass metaClass = InvokerHelper.getMetaClass(this);
+    private MetaClass metaClass = InvokerHelper.getMetaClass(getClass());
 
     public MetaClass getMetaClass() {
         return this.metaClass;

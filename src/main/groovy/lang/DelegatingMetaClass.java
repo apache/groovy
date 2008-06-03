@@ -289,7 +289,7 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
     }
 
     public MetaClass getMetaClass() {
-        return InvokerHelper.getMetaClass(this);
+        return InvokerHelper.getMetaClass(getClass());
     }
 
     public void setMetaClass(MetaClass metaClass) {

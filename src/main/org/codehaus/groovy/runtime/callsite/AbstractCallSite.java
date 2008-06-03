@@ -276,15 +276,14 @@ public class AbstractCallSite implements CallSite {
     }
 
     private CallSite createPojoMetaClassGetPropertySite(Object receiver) {
-        final Class aClass = receiver.getClass();
-        final MetaClass metaClass = InvokerHelper.getMetaClass(aClass);
+        final MetaClass metaClass = InvokerHelper.getMetaClass(receiver);
 
         CallSite site;
         if (metaClass.getClass() != MetaClassImpl.class || GroovyCategorySupport.hasCategoryInCurrentThread()) {
             site = new PojoMetaClassGetPropertySite(this, metaClass);
         }
         else {
-            final MetaProperty effective = ((MetaClassImpl) metaClass).getEffectiveGetMetaProperty(aClass, receiver, name, false);
+            final MetaProperty effective = ((MetaClassImpl) metaClass).getEffectiveGetMetaProperty(receiver.getClass(), receiver, name, false);
             if (effective != null) {
                 if (effective instanceof CachedField)
                     site = new GetEffectivePojoFieldSite(this, metaClass, (CachedField) effective);

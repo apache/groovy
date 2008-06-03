@@ -22,6 +22,7 @@ import groovy.sql.GroovyRowResult;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ReflectionCache;
+import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberDiv;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMinus;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMultiply;
@@ -29,6 +30,7 @@ import org.codehaus.groovy.runtime.dgmimpl.NumberNumberPlus;
 import org.codehaus.groovy.runtime.dgmimpl.arrays.*;
 import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack;
 import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
+import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
@@ -311,6 +313,39 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Extend object with category methods.
+     * All methods for given class and all super classes will be added to the object.
+     *
+     * @param self          any Class
+     * @param categoryClasses a category classes to use
+     */
+    public static void mixin(MetaClass self, List categoryClasses) {
+        final Class selfClass = self.getTheClass();
+        ArrayList arr = findCategoryMethods(selfClass, categoryClasses);
+
+        if (arr.isEmpty())
+          return;
+
+        if (self instanceof HandleMetaClass) {
+            self = (MetaClass) ((HandleMetaClass)self).replaceDelegate();
+        }
+
+        if (!(self instanceof ExpandoMetaClass)) {
+            if (self instanceof DelegatingMetaClass && ((DelegatingMetaClass) self).getAdaptee() instanceof ExpandoMetaClass) {
+                self = ((DelegatingMetaClass) self).getAdaptee();
+            } else {
+                throw new GroovyRuntimeException("Can't mixin methods to meta class: " + self);
+            }
+        }
+
+        ExpandoMetaClass mc = (ExpandoMetaClass)self;
+        for (Object res : arr) {
+            final MetaMethod metaMethod = (MetaMethod) res;
+            mc.registerInstanceMethod(metaMethod);
+        }
+    }
+
+    /**
      * Extend class globally with category methods.
      * All methods for given class and all super classes will be added to the class.
      *
@@ -318,52 +353,50 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param categoryClasses a category classes to use
      */
     public static void mixin(Class self, List categoryClasses) {
-        final CachedClass selfCached;
-        selfCached = ReflectionCache.getCachedClass(self);
-        ArrayList arr = findCategoryMethods(self, categoryClasses);
-        selfCached.addNewMopMethods(arr);
+        mixin(getMetaClass(self),categoryClasses);
     }
 
     /**
-     * Extend groovy object with category methods.
-     * All methods for given class and all super classes will be added to the object.
+     * Extend class globally with category methods.
      *
      * @param self          any Class
-     * @param categoryClasses a category classes to use
+     * @param categoryClass a category class to use
      */
-    public static void mixin(GroovyObject self, List categoryClasses) {
-        final Class selfClass = self.getClass();
-        ArrayList arr = findCategoryMethods(selfClass, categoryClasses);
-
-        MetaClass metaClass = self.getMetaClass();
-
-        if (metaClass.getClass() == MetaClassImpl.class) {
-            MetaClassImpl mc = (MetaClassImpl)metaClass;
-            MetaMethod mm [] = mc.getAdditionalMetaMethods();
-            arr.addAll(0, Arrays.asList(mm));
-            final MetaClassImpl newMetaClass = new MetaClassImpl(mc.getTheClass(), (MetaMethod[]) arr.toArray(new MetaMethod[arr.size()]));
-            newMetaClass.initialize();
-            self.setMetaClass(newMetaClass);
-            return;
-        }
-
-        if (metaClass.getClass() == ExpandoMetaClass.class) {
-            ExpandoMetaClass mc = (ExpandoMetaClass)metaClass;
-            MetaMethod mm [] = mc.getAdditionalMetaMethods();
-            arr.addAll(0, Arrays.asList(mm));
-            final ExpandoMetaClass newMetaClass = new ExpandoMetaClass(mc.getTheClass(), (MetaMethod[]) arr.toArray(new MetaMethod[arr.size()]));
-            for (Iterator it = mc.getExpandoMethods().iterator(); it.hasNext(); ) {
-                newMetaClass.registerInstanceMethod((MetaMethod) it.next());
-            }
-            newMetaClass.initialize();
-            self.setMetaClass(newMetaClass);
-            return;
-        }
-
-        throw new GroovyRuntimeException ("Can't mixin " + selfClass + ". Meta class: " + metaClass);
+    public static void mixin(Class self, Class categoryClass) {
+        mixin(getMetaClass(self), Collections.singletonList(categoryClass));
     }
 
-    private static ArrayList findCategoryMethods(Class self, List categoryClasses) {
+    /**
+     * Extend class globally with category methods.
+     *
+     * @param self          any Class
+     * @param categoryClass a category class to use
+     */
+    public static void mixin(Class self, Class [] categoryClass) {
+        mixin(getMetaClass(self), Arrays.asList(categoryClass));
+    }
+
+    /**
+     * Extend class globally with category methods.
+     *
+     * @param self          any Class
+     * @param categoryClass a category class to use
+     */
+    public static void mixin(MetaClass self, Class categoryClass) {
+        mixin(self, Collections.singletonList(categoryClass));
+    }
+
+    /**
+     * Extend class globally with category methods.
+     *
+     * @param self          any Class
+     * @param categoryClass a category class to use
+     */
+    public static void mixin(MetaClass self, Class [] categoryClass) {
+        mixin(self, Arrays.asList(categoryClass));
+    }
+
+    private static ArrayList findCategoryMethods(final Class self, List categoryClasses) {
         ArrayList arr = new ArrayList(4);
         for (Iterator it = categoryClasses.iterator(); it.hasNext(); ) {
             Class categoryClass = (Class) it.next();
@@ -379,7 +412,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                       continue;
 
                     if (paramTypes[0].isAssignableFrom(self)) {
-                        final NewInstanceMetaMethod metaMethod = new NewInstanceMetaMethod(method);
+                        final NewInstanceMetaMethod metaMethod = new NewInstanceMetaMethod(method) {
+                            public CachedClass getDeclaringClass() {
+                                return ReflectionCache.getCachedClass(self);
+                            }
+                        };
                         arr.add(metaMethod);
                     }
                 }
@@ -387,50 +424,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
         }
         return arr;
-    }
-
-    /**
-     * Extend class globally with category methods.
-     *
-     * @param self          any Class
-     * @param categoryClass a category class to use
-     */
-    public static void mixin(Class self, Class categoryClass) {
-        ArrayList ar = new ArrayList(1);
-        ar.add(categoryClass);
-        mixin(self, ar);
-    }
-
-    /**
-     * Extend class globally with category methods.
-     *
-     * @param self          any Class
-     * @param categoryClass a category class to use
-     */
-    public static void mixin(Class self, Class [] categoryClass) {
-        mixin(self, Arrays.asList(categoryClass));
-    }
-
-    /**
-     * Extend class globally with category methods.
-     *
-     * @param self          any Class
-     * @param categoryClass a category class to use
-     */
-    public static void mixin(GroovyObject self, Class categoryClass) {
-        ArrayList ar = new ArrayList(1);
-        ar.add(categoryClass);
-        mixin(self, ar);
-    }
-
-    /**
-     * Extend class globally with category methods.
-     *
-     * @param self          any Class
-     * @param categoryClass a category class to use
-     */
-    public static void mixin(GroovyObject self, Class [] categoryClass) {
-        mixin(self, Arrays.asList(categoryClass));
     }
 
     /**
@@ -10092,10 +10085,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 || mc instanceof DelegatingMetaClass && ((DelegatingMetaClass) mc).getAdaptee() instanceof ExpandoMetaClass)
             return mc;
         else {
-            MetaClass emc = ExpandoMetaClassCreationHandle.instance.create(c, metaClassRegistry);
-            emc.initialize();
-            metaClassRegistry.setMetaClass(c, emc);
-            return emc;
+            return new HandleMetaClass(mc);
         }
     }
 
@@ -10107,10 +10097,119 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return The MetaClass
      */
     public static MetaClass getMetaClass(Object obj) {
-        if (obj instanceof GroovyObject) {
-            return ((GroovyObject) obj).getMetaClass();
+        MetaClass mc = InvokerHelper.getMetaClass(obj);
+        return new HandleMetaClass(mc, obj);
+    }
+
+    /**
+     * Obtains a MetaClass for an object either from the registry or in the case of
+     * a GroovyObject from the object itself.
+     *
+     * @param obj The object in question
+     * @return The MetaClass
+     */
+    public static MetaClass getMetaClass(GroovyObject obj) {
+        // we need this method as trick to garantee right method selection
+        return getMetaClass((Object)obj);
+    }
+
+    public static void setMetaClass(Class c, MetaClass metaClass) {
+        final MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
+        if (metaClass == null)
+          metaClassRegistry.removeMetaClass(c);
+        else {
+          if (metaClass instanceof HandleMetaClass)
+            metaClassRegistry.setMetaClass(c, ((HandleMetaClass)metaClass).getAdaptee());
+          else
+            metaClassRegistry.setMetaClass(c, metaClass);
         }
-        return GroovySystem.getMetaClassRegistry().getMetaClass(obj.getClass());
+    }
+
+    public static MetaClass metaClass (Class klazz, Closure closure){
+        MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
+        MetaClass mc = metaClassRegistry.getMetaClass(klazz);
+
+        if (mc instanceof ExpandoMetaClass) {
+            ((ExpandoMetaClass) mc).define(closure);
+            return mc;
+        }
+        else {
+            if (mc instanceof DelegatingMetaClass && ((DelegatingMetaClass) mc).getAdaptee() instanceof ExpandoMetaClass) {
+                ((ExpandoMetaClass)((DelegatingMetaClass) mc).getAdaptee()).define(closure);
+                return mc;
+            }
+            else {
+                if (mc.getClass() == MetaClassImpl.class) {
+                    // default case
+                    mc = new ExpandoMetaClass(klazz, false, true).define(closure);
+                    mc.initialize();
+                    metaClassRegistry.setMetaClass(klazz, mc);
+                    return mc;
+                }
+                else {
+                    throw new GroovyRuntimeException("Can't add methods to custom meta class " + mc);
+                }
+            }
+        }
+    }
+
+    public static MetaClass metaClass (Object object, Closure closure){
+        MetaClass emc = hasPerInstanceMetaClass(object);
+        if (emc == null) {
+            final ExpandoMetaClass metaClass = new ExpandoMetaClass(object.getClass(), false, true).define(closure);
+            metaClass.initialize();
+            setMetaClass(object, metaClass);
+            return metaClass;
+        }
+        else {
+            if (emc instanceof ExpandoMetaClass) {
+                ((ExpandoMetaClass)emc).define(closure);
+                return emc;
+            }
+            else {
+                if (emc instanceof DelegatingMetaClass && ((DelegatingMetaClass)emc).getAdaptee() instanceof ExpandoMetaClass) {
+                    ((ExpandoMetaClass)((DelegatingMetaClass)emc).getAdaptee()).define(closure);
+                    return emc;
+                }
+                else {
+                    throw new RuntimeException("Can't add methods to non-ExpandoMetaClass " + emc);
+                }
+            }
+        }
+    }
+
+    private static MetaClass hasPerInstanceMetaClass(Object object) {
+        if (object instanceof GroovyObject) {
+            MetaClass mc = ((GroovyObject)object).getMetaClass();
+            if (mc == GroovySystem.getMetaClassRegistry().getMetaClass(object.getClass()))
+              return null;
+            else
+              return mc;
+        }
+        else {
+            ClassInfo info = ClassInfo.getClassInfo(object.getClass());
+            info.lock();
+            try {
+                return info.getPerInstanceMetaClass(object);
+            }
+            finally {
+                info.unlock();
+            }
+        }
+    }
+
+
+    public static void setMetaClass(Object obj, MetaClass metaClass) {
+        if (metaClass instanceof HandleMetaClass)
+          metaClass = ((HandleMetaClass)metaClass).getAdaptee();
+        
+        if (obj instanceof GroovyObject)
+          ((GroovyObject)obj).setMetaClass(metaClass);
+        else
+          if (obj instanceof Class)
+            ((MetaClassRegistryImpl)GroovySystem.getMetaClassRegistry()).setMetaClass((Class)obj, metaClass);
+          else 
+            ((MetaClassRegistryImpl)GroovySystem.getMetaClassRegistry()).setMetaClass(obj, metaClass);
     }
 
     /**
@@ -10463,4 +10562,5 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static Iterator iterator(Iterator self) {
         return self;
     }
+
 }

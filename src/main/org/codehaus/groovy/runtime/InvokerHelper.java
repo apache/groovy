@@ -20,6 +20,7 @@ import groovy.xml.dom.DOMUtil;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.wrappers.PojoWrapper;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
+import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.w3c.dom.Element;
 
 import java.beans.Introspector;
@@ -175,7 +176,7 @@ public class InvokerHelper {
         } else if (object instanceof Class) {
             metaRegistry.getMetaClass((Class) object).setProperty((Class) object, property, newValue);
         } else {
-            metaRegistry.getMetaClass(object.getClass()).setProperty(object, property, newValue);
+            ((MetaClassRegistryImpl) GroovySystem.getMetaClassRegistry()).getMetaClass(object).setProperty(object, property, newValue);
         }
     }
 
@@ -717,7 +718,10 @@ public class InvokerHelper {
     }
 
     public static MetaClass getMetaClass(Object object) {
-        return metaRegistry.getMetaClass(object.getClass());
+        if (object instanceof GroovyObject)
+            return ((GroovyObject) object).getMetaClass();
+        else
+            return ((MetaClassRegistryImpl) GroovySystem.getMetaClassRegistry()).getMetaClass(object);
     }
 
     public static MetaClass getMetaClass(Class cls) {
@@ -752,8 +756,7 @@ public class InvokerHelper {
     }
 
     static Object invokePojoMethod(Object object, String methodName, Object arguments) {
-        Class theClass = object.getClass();
-        MetaClass metaClass = metaRegistry.getMetaClass(theClass);
+        MetaClass metaClass = InvokerHelper.getMetaClass(object);
         return metaClass.invokeMethod(object, methodName, asArray(arguments));
     }
 

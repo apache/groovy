@@ -13,7 +13,7 @@ class MetaClassPropertyTest extends GroovyTestCase {
 		 def t = new MCPTest1()
 		
 		assertEquals MCPTest1, t.metaClass.theClass        
-		assert MCPTest1.metaClass instanceof ExpandoMetaClass
+		assert MCPTest1.metaClass instanceof org.codehaus.groovy.runtime.HandleMetaClass
 	}
 }
 class MCPTest1 {	

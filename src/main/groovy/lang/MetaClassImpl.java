@@ -101,7 +101,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     private static final MetaMethod NULL_METHOD = new DummyMetaMethod();
     private MetaMethod methodMissing;
     private MetaMethodIndex.Header mainClassMethodHeader;
-    private final MetaMethodIndex metaMethodIndex;
+    protected final MetaMethodIndex metaMethodIndex;
 
     private final MetaMethod [] myNewMetaMethods;
     private final MetaMethod [] additionalMetaMethods;
@@ -685,6 +685,16 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             throw iie;
         }
 
+        if (instance instanceof Class && theClass != Class.class) {
+           final MetaProperty metaProperty = InvokerHelper.getMetaClass(Class.class).hasProperty(instance, propertyName);
+           if (metaProperty != null)
+             if (isGetter)
+               return metaProperty.getProperty(instance);
+             else {
+               metaProperty.setProperty(instance, optionalValue);
+               return null;
+             }
+        }
         throw new MissingPropertyExceptionNoStack(propertyName, theClass);
     }
 
@@ -2407,7 +2417,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         addMetaMethodToIndex(method, metaMethodIndex.getHeader(declaringClass.getTheClass()));
     }
 
-    private void addMetaMethodToIndex(MetaMethod method, MetaMethodIndex.Header header) {
+    protected void addMetaMethodToIndex(MetaMethod method, MetaMethodIndex.Header header) {
         checkIfStdMethod(method);
 
         String name = method.getName();

@@ -747,7 +747,7 @@ public class ScriptBytecodeAdapter {
     }
 
     public static MetaClass initMetaClass(Object object) {
-        return InvokerHelper.getMetaClass(object);
+        return InvokerHelper.getMetaClass(object.getClass());
     }
 
     private static boolean isSpreadable (Object receiver) {

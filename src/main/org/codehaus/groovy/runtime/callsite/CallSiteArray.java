@@ -21,6 +21,7 @@ import groovy.lang.GroovyInterceptable;
 import groovy.lang.GroovyObject;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.NullObject;
+import org.codehaus.groovy.reflection.ClassInfo;
 
 public final class CallSiteArray {
     public final CallSite[] array;
@@ -99,13 +100,23 @@ public final class CallSiteArray {
     // for MetaClassImpl we try to pick meta method,
     // otherwise or if method doesn't exist we make call via POJO meta class
     private static CallSite createPojoSite(CallSite callSite, Object receiver, Object[] args) {
-        MetaClass metaClass = InvokerHelper.getMetaClass(receiver.getClass());
-
+        final Class klazz = receiver.getClass();
+        MetaClass metaClass = InvokerHelper.getMetaClass(klazz);
         if (callSite.getUsage().get() == 0 && metaClass instanceof MetaClassImpl) {
-          return ((MetaClassImpl)metaClass).createPojoCallSite(callSite, receiver, args);
+            final MetaClassImpl mci = (MetaClassImpl) metaClass;
+            final ClassInfo info = mci.getTheCachedClass().classInfo;
+            if (info.hasPerInstanceMetaClasses()) {
+                return new PerInstancePojoMetaClassSite(callSite, info);
+            } else {
+                return mci.createPojoCallSite(callSite, receiver, args);
+            }
         }
 
-        return new PojoMetaClassSite(callSite, metaClass);
+        ClassInfo info = ClassInfo.getClassInfo(klazz);
+        if (info.hasPerInstanceMetaClasses())
+          return new PerInstancePojoMetaClassSite(callSite, info);
+        else
+          return new PojoMetaClassSite(callSite, metaClass);
     }
 
     private static CallSite createPogoSite(CallSite callSite, Object receiver, Object[] args) {

@@ -29,7 +29,7 @@ public abstract class GroovyObjectSupport implements GroovyObject {
     private transient MetaClass metaClass;
 
     public GroovyObjectSupport() {
-        this.metaClass = InvokerHelper.getMetaClass(this);
+        this.metaClass = InvokerHelper.getMetaClass(this.getClass());
     }
     
     public Object getProperty(String property) {
@@ -46,7 +46,7 @@ public abstract class GroovyObjectSupport implements GroovyObject {
     
     public MetaClass getMetaClass() {
         if (metaClass==null) {
-            metaClass = InvokerHelper.getMetaClass(this);
+            metaClass = InvokerHelper.getMetaClass(getClass());
         }
         return metaClass;
     }

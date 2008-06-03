@@ -136,7 +136,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 mv.visitJumpInsn(IFNONNULL, l1);
                 mv.visitLabel(l0);
                 mv.visitVarInsn(ALOAD, 0);
-                mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/InvokerHelper", "getMetaClass", "(Ljava/lang/Object;)Lgroovy/lang/MetaClass;");
+                mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;");
+                mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/InvokerHelper", "getMetaClass", "(Ljava/lang/Class;)Lgroovy/lang/MetaClass;");
                 mv.visitVarInsn(ASTORE, 1);
                 mv.visitTypeInsn(NEW, "java/lang/ref/SoftReference");
                 mv.visitInsn(DUP);

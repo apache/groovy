@@ -21,10 +21,11 @@ import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.stdclasses.*;
 
 import java.lang.ref.SoftReference;
+import java.lang.ref.WeakReference;
+import java.lang.ref.ReferenceQueue;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.*;
 
 /**
  * Handle for all information we want to keep about the class
@@ -59,6 +60,7 @@ public class ClassInfo extends SoftReference<Class> {
 
     public final int hash;
     public ClassInfo next;
+    private InstanceMap perInstanceMetaClassMap;
 
     ClassInfo(Class klazz, int hash, ClassInfo next) {
         super (klazz);
@@ -73,15 +75,17 @@ public class ClassInfo extends SoftReference<Class> {
         super(src.get());
         this.next = next;
         this.hash = src.hash;
+        version = src.version;
+
         cachedClassRef = new LazyCachedClassRef(this, src);
+        staticMetaClassField = new LazyStaticMetaClassFieldRef(this, src);
+        artifactClassLoader = new LazyClassLoaderRef(this, src);
         weakMetaClass = src.weakMetaClass;
         strongMetaClass = src.strongMetaClass;
-        version = src.version;
         modifiedExpando = src.modifiedExpando;
-        staticMetaClassField = new LazyStaticMetaClassFieldRef(this);
         dgmMetaMethods = src.dgmMetaMethods;
         newMetaMethods = src.newMetaMethods;
-        artifactClassLoader = src.artifactClassLoader;
+        perInstanceMetaClassMap = src.perInstanceMetaClassMap;
     }
 
     public int getVersion() {
@@ -113,7 +117,7 @@ public class ClassInfo extends SoftReference<Class> {
         return artifactClassLoader.get();
     }
 
-    private static final ClassSet globalClassSet = new ClassSet ();
+    private static final ClassInfoSet globalClassSet = new ClassInfoSet();
 
     public static ClassInfo getClassInfo (Class cls) {
         return localMap.get().get(cls);
@@ -234,7 +238,36 @@ public class ClassInfo extends SoftReference<Class> {
         lock.unlock();
     }
 
-    public static class ClassSet {
+    public MetaClass getPerInstanceMetaClass(Object obj) {
+        if (perInstanceMetaClassMap == null)
+          return null;
+
+        return (MetaClass) perInstanceMetaClassMap.get(obj);
+    }
+
+    public void setPerInstanceMetaClass(Object obj, MetaClass metaClass) {
+        version++;
+
+        if (metaClass != null) {
+            if (perInstanceMetaClassMap == null)
+              perInstanceMetaClassMap = new InstanceMap ();
+
+            perInstanceMetaClassMap.put(obj, metaClass);
+        }
+        else {
+            if (perInstanceMetaClassMap != null) {
+              perInstanceMetaClassMap.remove(obj);
+              if (perInstanceMetaClassMap.isEmpty())
+                perInstanceMetaClassMap = null;
+            }
+        }
+    }
+
+    public boolean hasPerInstanceMetaClasses () {
+        return perInstanceMetaClassMap != null;
+    }
+
+    public static class ClassInfoSet {
 
         static final int MAXIMUM_CAPACITY = 1 << 30;
         static final int MAX_SEGMENTS = 1 << 16;
@@ -244,7 +277,7 @@ public class ClassInfo extends SoftReference<Class> {
         final int segmentShift;
         final Segment[] segments;
 
-        public ClassSet () {
+        public ClassInfoSet() {
 
             int sshift = 0;
             int ssize = 1;
@@ -354,7 +387,7 @@ public class ClassInfo extends SoftReference<Class> {
                        if (e.get() != null) {
                            if (first == null)
                              first = e;
-                                                     
+
                            ClassInfo ee = e.next;
                            while (ee != null && ee.get() == null)
                              ee = ee.next;
@@ -530,6 +563,14 @@ public class ClassInfo extends SoftReference<Class> {
             this.info = info;
         }
 
+        LazyStaticMetaClassFieldRef(ClassInfo info, ClassInfo src) {
+            this.info = info;
+            final Object cc = src.staticMetaClassField.getNullable();
+            if (cc != null) {
+                set(cc);
+            }
+        }
+
         public Object initValue() {
             final CachedClass aClass = info.getCachedClass();
 
@@ -551,8 +592,22 @@ public class ClassInfo extends SoftReference<Class> {
             this.info = info;
         }
 
+        LazyClassLoaderRef(ClassInfo info, ClassInfo src) {
+            this.info = info;
+            final ClassLoaderForClassArtifacts cc = src.artifactClassLoader.getNullable();
+            if (cc != null) {
+                set (cc);
+            }
+        }
+
         public ClassLoaderForClassArtifacts initValue() {
             return new ClassLoaderForClassArtifacts(info.get());
         }
+    }
+
+    // TODO: custom map would be better here - get rid of InstanceRef
+    // we can't use WeakHashMap because it use both == and equals for comparision, which is too agressive
+    // we need == only
+    private static class InstanceMap extends WeakHashMap {
     }
 }

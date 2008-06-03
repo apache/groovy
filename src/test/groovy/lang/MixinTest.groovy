@@ -8,8 +8,8 @@ class MixinTest extends GroovyTestCase {
     }
 
     protected void tearDown() {
-        ReflectionCache.getCachedClass(ArrayList).setNewMopMethods (null)
-        ReflectionCache.getCachedClass(List).setNewMopMethods (null)
+        ArrayList.metaClass = null
+        List.metaClass = null
     }
 
     void testOneClass () {
@@ -49,10 +49,10 @@ class MixinTest extends GroovyTestCase {
     }
 
     void testGroovyObject () {
-        ObjToTest obj = new ObjToTest ()
+        def obj = new ObjToTest ()
         assertEquals "original", obj.value
-        obj.mixin ObjToTestCategory
-        assertEquals "changed", obj.value
+        obj.metaClass.mixin ObjToTestCategory
+        assertEquals "changed by category", obj.value
         assertEquals "original", new ObjToTest ().value
     }
 
@@ -62,8 +62,8 @@ class MixinTest extends GroovyTestCase {
         }
         ObjToTest obj = new ObjToTest ()
         assertEquals "emc changed", obj.getValue()
-        obj.mixin ObjToTestCategory
-        assertEquals "changed", obj.value
+        obj.metaClass.mixin ObjToTestCategory
+        assertEquals "changed by category", obj.value
         assertEquals "emc changed", new ObjToTest ().value
     }
 }
@@ -98,6 +98,6 @@ class ObjToTest {
 
 class ObjToTestCategory {
     def static getValue (ObjToTest self) {
-        "changed"
+        "changed by category"
     }
 }

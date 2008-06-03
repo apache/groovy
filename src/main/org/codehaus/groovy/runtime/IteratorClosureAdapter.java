@@ -32,7 +32,7 @@ import java.util.List;
 public class IteratorClosureAdapter extends Closure {
 
     private final List list = new ArrayList();
-    private MetaClass metaClass = InvokerHelper.getMetaClass(this);
+    private MetaClass metaClass = InvokerHelper.getMetaClass(getClass());
     
     public IteratorClosureAdapter(Object delegate) {
         super(delegate);
