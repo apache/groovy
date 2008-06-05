@@ -86,10 +86,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 	public static final String STATIC_QUALIFIER = "static";
 	private static final Class[] ZERO_ARGUMENTS = new Class[0];
 	public static final String CONSTRUCTOR = "constructor";
-    private static final String GET_PROPERTY_METHOD = "getProperty";
-    private static final String SET_PROPERTY_METHOD = "setProperty";
 
-    private static final String INVOKE_METHOD_METHOD = "invokeMethod";
     private static final String CLASS_PROPERTY = "class";
     private static final String META_CLASS_PROPERTY = "metaClass";
     private static final String GROOVY_CONSTRUCTOR = "<init>";
@@ -160,178 +157,24 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
 
-    /**
-     * Overrides the default missing method behaviour and adds the capability to look up a method from super class
-     *
-     * @see MetaClassImpl#invokeMissingMethod(Object, String, Object[])
-     */
-    public Object invokeMissingMethod(Object instance, String methodName, Object[] arguments) {
-        Class superClass = instance instanceof Class ? (Class)instance : instance.getClass();
-        while(superClass != Object.class) {
-            final MetaMethod method = findMethodInClassHeirarchy(methodName, arguments, superClass);
-            if(method != null) {
-                addSuperMethodIfNotOverriden(method);
-                return method.invoke(instance, arguments);
-            }
-            superClass = superClass.getSuperclass();
-        }
-        // still not method here, so see if there is an invokeMethod method up the heirarchy
-        final Object[] invokeMethodArgs = {methodName, arguments};
-        final MetaMethod method = findMethodInClassHeirarchy(INVOKE_METHOD_METHOD, invokeMethodArgs, theClass );
-        if(method!=null && method instanceof ClosureMetaMethod) {
-            this.invokeMethodMethod = method;
-            return method.invoke(instance, invokeMethodArgs);
-        }
-
-        return super.invokeMissingMethod(instance, methodName, arguments);
+    protected void onInvokeMethodFoundInHierarchy(MetaMethod method) {
+        this.invokeMethodMethod = method;
     }
 
-    /**
-     * Overrides the default missing method behaviour and adds the capability to look up a method from the super class in the case
-     * where it has been overriden
-     *
-     * @param instance The instance of the object
-     * @param propertyName The property name
-     * @param optionalValue The property value in the case of a setter
-     * @param isGetter True if it is a getter
-     * @return The return value if of a getProperty call or a MissingPropertyException is thrown
-     */
-    public Object invokeMissingProperty(Object instance, String propertyName, Object optionalValue, boolean isGetter) {
-        Class theClass = instance instanceof Class ? (Class)instance : instance.getClass();
-        CachedClass superClass = theCachedClass;
-        while(superClass != null && superClass != ReflectionCache.OBJECT_CLASS) {
-            final MetaBeanProperty property = findPropertyInClassHierarchy(propertyName, superClass);
-            if(property != null) {
-                addMetaBeanProperty(property);
-                if(!isGetter) {
-                    property.setProperty(instance, optionalValue);
-                    return null;
-                }
-                else {
-                    return property.getProperty(instance);
-                }
-            }
-            superClass = superClass.getCachedSuperClass();
-        }
-        // got here to property not found, look for getProperty or setProperty overrides
-        if(isGetter) {
-            final Object[] getPropertyArgs = {propertyName};
-            final MetaMethod method = findMethodInClassHeirarchy(GET_PROPERTY_METHOD, getPropertyArgs, theClass);
-            if(method != null && method instanceof ClosureMetaMethod) {
-                this.getPropertyMethod = (ClosureMetaMethod)method;
-                return method.invoke(instance,getPropertyArgs);
-            }
-        }
-        else {
-            final Object[] setPropertyArgs = {propertyName, optionalValue};
-            final MetaMethod method = findMethodInClassHeirarchy(SET_PROPERTY_METHOD, setPropertyArgs, theClass);
-            if(method != null && method instanceof ClosureMetaMethod) {
-                this.setPropertyMethod = (ClosureMetaMethod)method;
-                return method.invoke(instance, setPropertyArgs);
-            }
-        }
-        return super.invokeMissingProperty(instance, propertyName, optionalValue, isGetter);
+    protected void onSuperMethodFoundInHierarchy(MetaMethod method) {
+        addSuperMethodIfNotOverriden(method);
     }
 
-    private MetaBeanProperty findPropertyInClassHierarchy(String propertyName, CachedClass theClass) {
-        MetaBeanProperty property= null;
-        if (theClass == null)
-            return null;
-
-        final CachedClass superClass = theClass.getCachedSuperClass();
-        if (superClass == null)
-          return null;
-        
-        MetaClass metaClass = this.registry.getMetaClass(superClass.getTheClass());
-        if(metaClass instanceof MutableMetaClass) {
-            property = getMetaPropertyFromMutableMetaClass(propertyName,metaClass);
-            if(property == null) {
-                if(superClass != ReflectionCache.OBJECT_CLASS) {
-                    property = findPropertyInClassHierarchy(propertyName, superClass);
-                }
-                if(property == null) {
-                    final Class[] interfaces = theClass.getTheClass().getInterfaces();
-                    property = searchInterfacesForMetaProperty(propertyName, interfaces);
-                }
-            }
-        }
-        return property;
-
+    protected void onSuperPropertyFoundInHierarchy(MetaBeanProperty property) {
+        addMetaBeanProperty(property);
     }
 
-    private MetaBeanProperty searchInterfacesForMetaProperty(String propertyName, Class[] interfaces) {
-        MetaBeanProperty property = null;
-        for (int i = 0; i < interfaces.length; i++) {
-            Class anInterface = interfaces[i];
-            MetaClass metaClass = this.registry.getMetaClass(anInterface);
-            if(metaClass instanceof MutableMetaClass) {
-                property = getMetaPropertyFromMutableMetaClass(propertyName,metaClass);
-                if(property != null) break;
-            }
-            Class[] superInterfaces = anInterface.getInterfaces();
-            if(superInterfaces.length > 0) {
-                property = searchInterfacesForMetaProperty(propertyName, superInterfaces);
-                if(property!=null) break;
-            }
-
-        }
-        return property;
+    protected void onSetPropertyFoundInHierarchy(MetaMethod method) {
+        this.setPropertyMethod = (ClosureMetaMethod)method;
     }
 
-    private MetaBeanProperty getMetaPropertyFromMutableMetaClass(String propertyName, MetaClass metaClass) {
-        final boolean isModified = ((MutableMetaClass) metaClass).isModified();
-        final MetaProperty metaProperty = metaClass.getMetaProperty(propertyName);
-        if(metaProperty instanceof MetaBeanProperty)
-            return isModified ? (MetaBeanProperty)metaProperty : null;
-        else
-            return null;
-
-    }
-
-    private MetaMethod findMethodInClassHeirarchy(String methodName, Object[] arguments, Class theClass) {
-        MetaMethod method = null;
-        final Class superClass = theClass.getSuperclass();
-        if (superClass == null)
-          return null;
-        
-        MetaClass metaClass = this.registry.getMetaClass(superClass);
-        if(metaClass instanceof MutableMetaClass) {
-            method = getMetaMethodFromMutableMetaClass(methodName, arguments, metaClass);
-            if(method == null) {
-                if(superClass != Object.class) {
-                    method = findMethodInClassHeirarchy(methodName, arguments, superClass);
-                }
-                if(method == null) {
-                    final Class[] interfaces = theClass.getInterfaces();
-                    method = searchInterfacesForMetaMethod(methodName, arguments, interfaces);
-                }
-            }
-        }
-        return method;
-    }
-
-    private MetaMethod searchInterfacesForMetaMethod(String methodName, Object[] arguments, Class[] interfaces) {
-        MetaMethod method = null;
-        for (int i = 0; i < interfaces.length; i++) {
-            Class anInterface = interfaces[i];
-            MetaClass metaClass = this.registry.getMetaClass(anInterface);
-            if(metaClass instanceof MutableMetaClass) {
-                method = getMetaMethodFromMutableMetaClass(methodName, arguments, metaClass);
-                if(method != null) break;
-            }
-            Class[] superInterfaces = anInterface.getInterfaces();
-            if(superInterfaces.length > 0) {
-                method = searchInterfacesForMetaMethod(methodName,arguments, superInterfaces);
-                if(method!=null) break;
-            }
-
-        }
-        return method;
-    }
-
-    private MetaMethod getMetaMethodFromMutableMetaClass(String methodName, Object[] arguments, MetaClass metaClass) {
-        final boolean isModified = ((MutableMetaClass) metaClass).isModified();
-        return isModified ? metaClass.getMetaMethod(methodName, arguments) : null;
+    protected void onGetPropertyFoundInHierarchy(MetaMethod method) {
+        this.getPropertyMethod = (ClosureMetaMethod)method;
     }
 
     public synchronized boolean isModified() {

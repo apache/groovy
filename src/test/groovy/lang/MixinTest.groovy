@@ -66,6 +66,12 @@ class MixinTest extends GroovyTestCase {
         assertEquals "changed by category", obj.value
         assertEquals "emc changed", new ObjToTest ().value
     }
+
+    void testFlatten () {
+        Collection.metaClass.mixin FlattenAndUniqueCategory
+        assertEquals ([3,2,1,4], [[3,2,[2:1,3:4]],[2,3]].flattenAndUnique () as List)
+        Collection.metaClass = null
+    }
 }
 
 class ArrayListExt {
@@ -99,5 +105,23 @@ class ObjToTest {
 class ObjToTestCategory {
     def static getValue (ObjToTest self) {
         "changed by category"
+    }
+}
+
+class FlattenAndUniqueCategory {
+    static Set flattenAndUnique(elements, Set addTo = null) {
+        if (addTo == null)
+          addTo = new LinkedHashSet()
+
+        elements.each { element ->
+            if (element instanceof Collection) {
+                element.flattenAndUnique(addTo);
+            } else if (element instanceof Map) {
+                element.values().flattenAndUnique(addTo);
+            } else {
+                addTo << element;
+            }
+        }
+        return addTo;
     }
 }
