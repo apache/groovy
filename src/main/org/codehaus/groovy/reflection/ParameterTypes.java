@@ -242,6 +242,20 @@ public class ParameterTypes
         return true;
     }
 
+    public boolean isValidExactMethod(Object [] args) {
+        // lets check the parameter types match
+        int size = args.length;
+        if (size != parameterTypes.length)
+          return false;
+        
+        for (int i = 0; i < size; i++) {
+            if (args[i] != null && !parameterTypes[i].isAssignableFrom(args[i].getClass())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private final static boolean testComponentAssignable(Class toTestAgainst, Class toTest) {
         Class component = toTest.getComponentType();
         if (component==null) return false;

@@ -68,9 +68,9 @@ class MixinTest extends GroovyTestCase {
     }
 
     void testFlatten () {
-        Collection.metaClass.mixin FlattenAndUniqueCategory
-        assertEquals ([3,2,1,4], [[3,2,[2:1,3:4]],[2,3]].flattenAndUnique () as List)
-        Collection.metaClass = null
+        Object.metaClass.mixin FlattenAndUniqueCategory
+        assertEquals ([8,9,3,2,1,4], [[8,9] as Object [], [3,2,[2:1,3:4]],[2,3]].flattenSet () as List)
+        Object.metaClass = null
     }
 }
 
@@ -109,18 +109,38 @@ class ObjToTestCategory {
 }
 
 class FlattenAndUniqueCategory {
-    static Set flattenAndUnique(elements, Set addTo = null) {
+    static Set flattenSet(elements, Set addTo = null) {
+        if (addTo == null)
+          addTo = new LinkedHashSet()
+
+        addTo << elements;
+        return addTo;
+    }
+
+    static Set flattenSet(Collection elements, Set addTo = null) {
         if (addTo == null)
           addTo = new LinkedHashSet()
 
         elements.each { element ->
-            if (element instanceof Collection) {
-                element.flattenAndUnique(addTo);
-            } else if (element instanceof Map) {
-                element.values().flattenAndUnique(addTo);
-            } else {
-                addTo << element;
-            }
+           element.flattenSet(addTo);
+        }
+        return addTo;
+    }
+
+    static Set flattenSet(Map elements, Set addTo = null) {
+        if (addTo == null)
+          addTo = new LinkedHashSet()
+
+        elements.values().flattenSet(addTo);
+        return addTo;
+    }
+
+    static Set flattenSet(Object [] elements, Set addTo = null) {
+        if (addTo == null)
+          addTo = new LinkedHashSet()
+
+        elements.each { element ->
+           element.flattenSet(addTo);
         }
         return addTo;
     }

@@ -16,7 +16,8 @@
 package groovy.lang;
 
 import org.codehaus.groovy.reflection.CachedClass;
-import org.codehaus.groovy.reflection.ReflectionCache;
+import org.codehaus.groovy.reflection.DoubleKeyHashMap;
+import org.codehaus.groovy.reflection.FastArray;
 import org.codehaus.groovy.runtime.*;
 import org.codehaus.groovy.runtime.callsite.*;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaMethod;
@@ -104,6 +105,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     private final Map beanPropertyCache = new ConcurrentHashMap();
     private final Map staticBeanPropertyCache = new ConcurrentHashMap();
     private final Map expandoMethods = new ConcurrentHashMap();
+    private final ConcurrentHashMap expandoSubclassMethods = new ConcurrentHashMap();
     private final Map expandoProperties = new ConcurrentHashMap();
     private MetaMethod getPropertyMethod;
     private MetaMethod invokeMethodMethod;
@@ -179,6 +181,25 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
     public synchronized boolean isModified() {
         return this.modified;
+    }
+
+    public void registerSubclassInstanceMethod(MetaMethod metaMethod) {
+        String key = metaMethod.getName();
+        final Object methodOrList = expandoSubclassMethods.get(key);
+        if (methodOrList == null) {
+            expandoSubclassMethods.put(key, metaMethod);
+        }
+        else {
+            if (methodOrList instanceof MetaMethod) {
+                FastArray arr = new FastArray(2);
+                arr.add(methodOrList);
+                arr.add(metaMethod);
+                expandoSubclassMethods.put(key, arr);
+            }
+            else {
+                ((FastArray)methodOrList).add(metaMethod);
+            }
+        }
     }
 
     /**
@@ -728,6 +749,13 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
 		});
 	}
+
+    protected Object getSubclassMetaMethods(String methodName) {
+        if (!isModified())
+            return null;
+
+        return expandoSubclassMethods.get(methodName);
+    }
 
     /**
 	 * @return The Java class enhanced by this MetaClass

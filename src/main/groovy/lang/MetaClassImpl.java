@@ -666,7 +666,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     public Object invokeMissingMethod(Object instance, String methodName, Object[] arguments) {
-        return invokeMissingMethod(instance, methodName, arguments, null);
+        return invokeMissingMethod(instance, methodName, arguments, null, false);
     }
 
     public Object invokeMissingProperty(Object instance, String propertyName, Object optionalValue, boolean isGetter) {
@@ -689,7 +689,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // got here to property not found, look for getProperty or setProperty overrides
         if(isGetter) {
             final Object[] getPropertyArgs = {propertyName};
-            final MetaMethod method = findMethodInClassHeirarchy(ExpandoMetaClass.GET_PROPERTY_METHOD, getPropertyArgs, theClass);
+            final MetaMethod method = findMethodInClassHeirarchy(instance.getClass(), ExpandoMetaClass.GET_PROPERTY_METHOD, getPropertyArgs, this);
             if(method != null && method instanceof ClosureMetaMethod) {
                 onGetPropertyFoundInHierarchy(method);
                 return method.invoke(instance,getPropertyArgs);
@@ -697,7 +697,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
         else {
             final Object[] setPropertyArgs = {propertyName, optionalValue};
-            final MetaMethod method = findMethodInClassHeirarchy(ExpandoMetaClass.SET_PROPERTY_METHOD, setPropertyArgs, theClass);
+            final MetaMethod method = findMethodInClassHeirarchy(instance.getClass(), ExpandoMetaClass.SET_PROPERTY_METHOD, setPropertyArgs, this);
             if(method != null && method instanceof ClosureMetaMethod) {
                 onSetPropertyFoundInHierarchy(method);
                 return method.invoke(instance, setPropertyArgs);
@@ -735,23 +735,21 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         throw new MissingPropertyExceptionNoStack(propertyName, theClass);
     }
 
-    private Object invokeMissingMethod(Object instance, String methodName, Object[] arguments, RuntimeException original) {
-        Class superClass = instance instanceof Class ? (Class)instance : instance.getClass();
-        while(superClass != Object.class) {
-            final MetaMethod method = findMethodInClassHeirarchy(methodName, arguments, superClass);
+    private Object invokeMissingMethod(Object instance, String methodName, Object[] arguments, RuntimeException original, boolean isCallToSuper) {
+        if (!isCallToSuper) {
+            MetaMethod method = findMethodInClassHeirarchy(instance.getClass(), methodName, arguments, this);
             if(method != null) {
                 onSuperMethodFoundInHierarchy(method);
                 return method.invoke(instance, arguments);
             }
-            superClass = superClass.getSuperclass();
-        }
 
-        // still not method here, so see if there is an invokeMethod method up the heirarchy
-        final Object[] invokeMethodArgs = {methodName, arguments};
-        final MetaMethod method = findMethodInClassHeirarchy(ExpandoMetaClass.INVOKE_METHOD_METHOD, invokeMethodArgs, theClass );
-        if(method!=null && method instanceof ClosureMetaMethod) {
-            onInvokeMethodFoundInHierarchy(method);
-            return method.invoke(instance, invokeMethodArgs);
+            // still not method here, so see if there is an invokeMethod method up the heirarchy
+            final Object[] invokeMethodArgs = {methodName, arguments};
+            method = findMethodInClassHeirarchy(instance.getClass(), ExpandoMetaClass.INVOKE_METHOD_METHOD, invokeMethodArgs, this );
+            if(method != null && method instanceof ClosureMetaMethod) {
+                onInvokeMethodFoundInHierarchy(method);
+                return method.invoke(instance, invokeMethodArgs);
+            }
         }
 
         if (methodMissing != null) {
@@ -929,7 +927,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                                 last = mme;
                             }
                         }
-                        if (last != null) return invokeMissingMethod(object, methodName, originalArguments, last);
+                        if (last != null) return invokeMissingMethod(object, methodName, originalArguments, last, isCallToSuper);
                     }
 
                     break;
@@ -963,7 +961,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                                 last = mme;
                             }
                         }
-                        if (last != null) return invokeMissingMethod(object, methodName, originalArguments, last);
+                        if (last != null) return invokeMissingMethod(object, methodName, originalArguments, last, isCallToSuper);
                     }
             }
         }
@@ -971,7 +969,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (method != null) {
             return method.doMethodInvoke(object, arguments);
         } else {
-            return invokePropertyOrMissing(object, methodName, originalArguments, fromInsideClass);
+            return invokePropertyOrMissing(object, methodName, originalArguments, fromInsideClass, isCallToSuper);
         }
     }
 
@@ -994,7 +992,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return method;
     }
 
-    private Object invokePropertyOrMissing(Object object, String methodName, Object[] originalArguments, boolean fromInsideClass) {
+    private Object invokePropertyOrMissing(Object object, String methodName, Object[] originalArguments, boolean fromInsideClass, boolean isCallToSuper) {
         // if no method was found, try to find a closure defined as a field of the class and run it
         Object value = null;
         final MetaProperty metaProperty = this.getMetaProperty(methodName, false);
@@ -1011,7 +1009,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return delegateMetaClass.invokeMethod(closure.getClass(), closure, CLOSURE_DO_CALL_METHOD, originalArguments, false, fromInsideClass);
         }
 
-        return invokeMissingMethod(object, methodName, originalArguments);
+        return invokeMissingMethod(object, methodName, originalArguments, null, isCallToSuper);
     }
 
     private MetaClass lookupObjectMetaClass(Object object) {
@@ -2640,7 +2638,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @param methodOrList   the possible methods to choose from
      * @param arguments
      */
-    private Object chooseMethod(String methodName, Object methodOrList, Class[] arguments) {
+    protected Object chooseMethod(String methodName, Object methodOrList, Class[] arguments) {
         if (methodOrList instanceof MetaMethod) {
             if (((ParameterTypes) methodOrList).isValidMethod(arguments)) {
                 return methodOrList;
@@ -2960,50 +2958,130 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     }
 
-    protected MetaMethod findMethodInClassHeirarchy(String methodName, Object[] arguments, Class theClass) {
+    protected static MetaMethod findMethodInClassHeirarchy(Class instanceKlazz, String methodName, Object[] arguments, MetaClass metaClass) {
         MetaMethod method = null;
-        final Class superClass = theClass.getSuperclass();
-        if (superClass == null)
-          return null;
 
-        MetaClass metaClass = this.registry.getMetaClass(superClass);
-        if(metaClass instanceof MutableMetaClass) {
-            method = getMetaMethodFromMutableMetaClass(methodName, arguments, metaClass);
-            if(method == null) {
-                if(superClass != Object.class) {
-                    method = findMethodInClassHeirarchy(methodName, arguments, superClass);
+        Class superClass;
+        if (metaClass.getTheClass().isArray() && !metaClass.getTheClass().getComponentType().isPrimitive() && metaClass.getTheClass().getComponentType() != Object.class) {
+            superClass = Object[].class;
+        }
+        else {
+            superClass = metaClass.getTheClass().getSuperclass();
+        }
+
+        if (superClass != null) {
+          MetaClass superMetaClass = GroovySystem.getMetaClassRegistry().getMetaClass(superClass);
+          method = findMethodInClassHeirarchy(instanceKlazz, methodName, arguments, superMetaClass);
+        }
+
+        method = findSubClassMethod(instanceKlazz, methodName, arguments, metaClass, method);
+
+        MetaMethod infMethod = searchInterfacesForMetaMethod(instanceKlazz, methodName, arguments, metaClass);
+        if (infMethod != null) {
+            if (method == null)
+              method = infMethod;
+            else
+              method = mostSpecific(method, infMethod, instanceKlazz);
+        }
+
+        method = findOwnMethod(instanceKlazz, methodName, arguments, metaClass, method);
+
+        return method;
+    }
+
+    private static MetaMethod findSubClassMethod(Class instanceKlazz, String methodName, Object[] arguments, MetaClass metaClass, MetaMethod method) {
+        if (metaClass instanceof MetaClassImpl) {
+            Object list = ((MetaClassImpl) metaClass).getSubclassMetaMethods(methodName);
+            if (list != null) {
+                if (list instanceof MetaMethod) {
+                    MetaMethod m = (MetaMethod) list;
+                    if (m.getDeclaringClass().getTheClass().isAssignableFrom(instanceKlazz)) {
+                        if (m.isValidExactMethod(arguments)) {
+                            if (method == null)
+                              method = m;
+                            else {
+                              method = mostSpecific (method, m, instanceKlazz);
+                            }
+                        }
+                    }
                 }
-                if(method == null) {
-                    final Class[] interfaces = theClass.getInterfaces();
-                    method = searchInterfacesForMetaMethod(methodName, arguments, interfaces);
+                else {
+                    FastArray arr = (FastArray) list;
+                    for (int i = 0; i != arr.size(); ++i) {
+                        MetaMethod m = (MetaMethod) arr.get(i);
+                        if (m.getDeclaringClass().getTheClass().isAssignableFrom(instanceKlazz)) {
+                            if (m.isValidExactMethod(arguments)) {
+                                if (method == null)
+                                  method = m;
+                                else {
+                                  method = mostSpecific (method, m, instanceKlazz);
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
         return method;
     }
 
-    private MetaMethod searchInterfacesForMetaMethod(String methodName, Object[] arguments, Class[] interfaces) {
+    private static MetaMethod mostSpecific(MetaMethod method, MetaMethod newMethod, Class instanceKlazz) {
+        Class newMethodC = newMethod.getDeclaringClass().getTheClass();
+        Class methodC = method.getDeclaringClass().getTheClass();
+
+        if (!newMethodC.isAssignableFrom(instanceKlazz))
+          return method;
+
+        if (newMethodC == methodC)
+          return newMethod;
+
+        if (newMethodC.isAssignableFrom(methodC)) {
+            return method;
+        }
+
+        if (methodC.isAssignableFrom(newMethodC)) {
+            return newMethod;
+        }
+
+        return newMethod;
+    }
+
+    private static MetaMethod searchInterfacesForMetaMethod(Class instanceKlazz, String methodName, Object[] arguments, MetaClass metaClass) {
+        Class[] interfaces = metaClass.getTheClass().getInterfaces();
+
         MetaMethod method = null;
         for (int i = 0; i < interfaces.length; i++) {
             Class anInterface = interfaces[i];
-            MetaClass metaClass = this.registry.getMetaClass(anInterface);
-            if(metaClass instanceof MutableMetaClass) {
-                method = getMetaMethodFromMutableMetaClass(methodName, arguments, metaClass);
-                if(method != null) break;
+            MetaClass infMetaClass = GroovySystem.getMetaClassRegistry().getMetaClass(anInterface);
+            MetaMethod infMethod = searchInterfacesForMetaMethod(instanceKlazz, methodName,arguments, infMetaClass);
+            if (infMethod != null) {
+                if (method == null)
+                  method = infMethod;
+                else
+                  method = mostSpecific(method, infMethod, instanceKlazz);
             }
-            Class[] superInterfaces = anInterface.getInterfaces();
-            if(superInterfaces.length > 0) {
-                method = searchInterfacesForMetaMethod(methodName,arguments, superInterfaces);
-                if(method!=null) break;
-            }
+        }
 
+        method = findSubClassMethod(instanceKlazz, methodName, arguments, metaClass, method);
+
+        method = findOwnMethod(instanceKlazz, methodName, arguments, metaClass, method);
+
+        return method;
+    }
+
+    private static MetaMethod findOwnMethod(Class instanceKlazz, String methodName, Object[] arguments, MetaClass metaClass, MetaMethod method) {
+        MetaMethod ownMethod = metaClass.getMetaMethod(methodName, arguments);
+        if (ownMethod != null) {
+            if (method == null)
+              method = ownMethod;
+            else
+              method = mostSpecific(method, ownMethod, instanceKlazz);
         }
         return method;
     }
 
-    private MetaMethod getMetaMethodFromMutableMetaClass(String methodName, Object[] arguments, MetaClass metaClass) {
-        final boolean isModified = ((MutableMetaClass) metaClass).isModified();
-        return isModified ? metaClass.getMetaMethod(methodName, arguments) : null;
+    protected Object getSubclassMetaMethods(String methodName) {
+        return null;
     }
 
     private abstract class MethodIndexAction {

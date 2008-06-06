@@ -19,10 +19,7 @@ import groovy.lang.*;
 import groovy.util.*;
 import groovy.io.EncodingAwareBufferedWriter;
 import groovy.sql.GroovyRowResult;
-import org.codehaus.groovy.reflection.CachedClass;
-import org.codehaus.groovy.reflection.CachedMethod;
-import org.codehaus.groovy.reflection.ReflectionCache;
-import org.codehaus.groovy.reflection.ClassInfo;
+import org.codehaus.groovy.reflection.*;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberDiv;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMinus;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMultiply;
@@ -341,7 +338,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         ExpandoMetaClass mc = (ExpandoMetaClass)self;
         for (Object res : arr) {
             final MetaMethod metaMethod = (MetaMethod) res;
-            mc.registerInstanceMethod(metaMethod);
+            if (metaMethod.getDeclaringClass().isAssignableFrom(selfClass))
+              mc.registerInstanceMethod(metaMethod);
+            else {
+              mc.registerSubclassInstanceMethod(metaMethod);
+            }
         }
     }
 
@@ -411,17 +412,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     if (paramTypes.length == 0)
                       continue;
 
+                    NewInstanceMetaMethod metaMethod;
                     if (paramTypes[0].isAssignableFrom(self)) {
-                        final NewInstanceMetaMethod metaMethod = new NewInstanceMetaMethod(method) {
-                            public CachedClass getDeclaringClass() {
-                                return ReflectionCache.getCachedClass(self);
-                            }
-                        };
+                        if (paramTypes[0].getTheClass() == self)
+                            metaMethod = new NewInstanceMetaMethod(method);
+                        else
+                            metaMethod = new NewInstanceMetaMethod(method) {
+                                public CachedClass getDeclaringClass() {
+                                    return ReflectionCache.getCachedClass(self);
+                                }
+                            };
                         arr.add(metaMethod);
+                    }
+                    else {
+                        if (self.isAssignableFrom(paramTypes[0].getTheClass())) {
+                            metaMethod = new NewInstanceMetaMethod(method);
+                            arr.add(metaMethod);
+                        }
                     }
                 }
             }
-
         }
         return arr;
     }
@@ -10561,6 +10571,27 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Iterator iterator(Iterator self) {
         return self;
+    }
+
+    /**
+     * @see MetaObjectProtocol#respondsTo(Object,String, Object[])
+     */
+    public static List respondsTo(Object self, String name, Object[] argTypes) {
+        return InvokerHelper.getMetaClass(self).respondsTo(self, name, argTypes);
+    }
+
+    /**
+     * @see MetaObjectProtocol#respondsTo(Object,String, Object[])
+     */
+    public List respondsTo(final Object self, final String name) {
+        return InvokerHelper.getMetaClass(self).respondsTo(self, name);
+    }
+
+    /**
+     * @see MetaObjectProtocol#hasProperty(Object,String)
+     */
+    public MetaProperty hasProperty(Object self, String name) {
+        return InvokerHelper.getMetaClass(self).getMetaProperty(name);
     }
 
 }

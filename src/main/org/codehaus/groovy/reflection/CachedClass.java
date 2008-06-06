@@ -186,7 +186,6 @@ public class CachedClass {
     int distance = -1;
     public final boolean isInterface;
     public final boolean isNumber;
-    private SoftReference<CallSiteClassLoader> callSiteLoader;
 
     public CachedClass(Class klazz, ClassInfo classInfo) {
         cachedClass = klazz;
