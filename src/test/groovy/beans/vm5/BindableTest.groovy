@@ -28,11 +28,11 @@ class BindableTest extends GroovyTestCase {
         shell.evaluate("""
             import groovy.beans.Bindable
 
-            class SimpleBean {
+            class BindableTestBean1 {
                 @Bindable String name
             }
 
-            sb = new SimpleBean()
+            sb = new BindableTestBean1()
             sb.name = "bar"
             changed = false
             sb.propertyChange = {changed = true}
@@ -46,12 +46,12 @@ class BindableTest extends GroovyTestCase {
         shell.evaluate("""
             import groovy.beans.Bindable
 
-            class SimpleBean {
+            class BindableTestBean2 {
                 @Bindable String name
                 @Bindable String value
             }
 
-            sb = new SimpleBean(name:"foo", value:"bar")
+            sb = new BindableTestBean2(name:"foo", value:"bar")
             changed = 0
             sb.propertyChange = {changed++}
             sb.name = "baz"
@@ -64,7 +64,7 @@ class BindableTest extends GroovyTestCase {
         GroovyShell shell = new GroovyShell()
         shouldFail(CompilationFailedException) {
             shell.evaluate("""
-                class SimpleBean {
+                class BindableTestBean3 {
                     @groovy.beans.Bindable String name
                     void setName() { }
                 }
@@ -76,7 +76,7 @@ class BindableTest extends GroovyTestCase {
         GroovyShell shell = new GroovyShell()
         shouldFail(CompilationFailedException) {
             shell.evaluate("""
-                class SimpleBean {
+                class BindableTestBean4 {
                     public @groovy.beans.Bindable String name
                     void setName() { }
                 }
@@ -90,12 +90,12 @@ class BindableTest extends GroovyTestCase {
             import groovy.beans.Bindable
 
             @Bindable
-            class SimpleBean {
+            class BindableTestBean5 {
                 String name
                 String value
             }
 
-            sb = new SimpleBean(name:"foo", value:"bar")
+            sb = new BindableTestBean5(name:"foo", value:"bar")
             changed = 0
             sb.propertyChange = {changed++}
             sb.name = "baz"
@@ -108,12 +108,12 @@ class BindableTest extends GroovyTestCase {
             import groovy.beans.Bindable
 
             @Bindable
-            class SimpleBean {
+            class BindableTestBean6 {
                 String name
                 @Bindable String value
             }
 
-            sb = new SimpleBean(name:"foo", value:"bar")
+            sb = new BindableTestBean6(name:"foo", value:"bar")
             changed = 0
             sb.propertyChange = {changed++}
             sb.name = "baz"
@@ -126,12 +126,12 @@ class BindableTest extends GroovyTestCase {
             import groovy.beans.Bindable
 
             @Bindable
-            class SimpleBean {
+            class BindableTestBean7 {
                 @Bindable String name
                 @Bindable String value
             }
 
-            sb = new SimpleBean(name:"foo", value:"bar")
+            sb = new BindableTestBean7(name:"foo", value:"bar")
             changed = 0
             sb.propertyChange = {changed++}
             sb.name = "baz"

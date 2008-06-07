@@ -28,11 +28,11 @@ class VetoableTest extends GroovyTestCase {
         shell.evaluate("""
             import groovy.beans.Vetoable
 
-            class SimpleBean {
+            class VetoableTestBean1 {
                 @Vetoable String name
             }
 
-            sb = new SimpleBean()
+            sb = new VetoableTestBean1()
             sb.name = "foo"
             changed = false
             sb.vetoableChange = { pce ->
@@ -60,11 +60,11 @@ class VetoableTest extends GroovyTestCase {
             import groovy.beans.Bindable
             import groovy.beans.Vetoable
 
-            class SimpleBean {
+            class VetoableTestBean2 {
                 @Bindable @Vetoable String name
             }
 
-            sb = new SimpleBean()
+            sb = new VetoableTestBean2()
             sb.name = "foo"
             vetoCheck = false
             changed = false
@@ -85,7 +85,7 @@ class VetoableTest extends GroovyTestCase {
             import groovy.beans.Bindable
             import groovy.beans.Vetoable
 
-            class SimpleBean {
+            class VetoableTestBean3 {
                 String u1
                 @Bindable String b1
                 @Vetoable String c1
@@ -96,7 +96,7 @@ class VetoableTest extends GroovyTestCase {
                 @Bindable @Vetoable String bc2
             }
 
-            sb = new SimpleBean(u1:'a', b1:'b', c1:'c', bc1:'d', u2:'e', b2:'f', c2:'g', bc2:'h')
+            sb = new VetoableTestBean3(u1:'a', b1:'b', c1:'c', bc1:'d', u2:'e', b2:'f', c2:'g', bc2:'h')
             changed = 0
             sb.vetoableChange = { changed++ }
             sb.propertyChange = { changed++ }
@@ -116,7 +116,7 @@ class VetoableTest extends GroovyTestCase {
         GroovyShell shell = new GroovyShell()
         shouldFail(CompilationFailedException) {
             shell.evaluate("""
-                class SimpleBean {
+                class VetoableTestBean4 {
                     @groovy.beans.Vetoable String name
                     void setName() { }
                 }
@@ -128,7 +128,7 @@ class VetoableTest extends GroovyTestCase {
         GroovyShell shell = new GroovyShell()
         shouldFail(CompilationFailedException) {
             shell.evaluate("""
-                class SimpleBean {
+                class VetoableTestBean5 {
                     public @groovy.beans.Vetoable String name
                     void setName() { }
                 }
@@ -147,17 +147,17 @@ class VetoableTest extends GroovyTestCase {
                     import groovy.beans.Bindable
                     import groovy.beans.Vetoable
 
-                    class ParentBean {
+                    class InheritanceParentBean$i {
                         ${bindParent?'@Bindable':''} String bp
                         ${vetoParent?'@Vetoable':''} String vp
                     }
 
-                    class ChildBean extends ParentBean {
+                    class InheritanceChildBean$i extends ParentBean$i {
                         ${bindChild?'@Bindable':''} String bc
                         ${vetoChild?'@Vetoable':''} String vc
                     }
 
-                    cb = new ChildBean(bp:'a', vp:'b', bc:'c', vc:'d')
+                    cb = new InheritanceChildBean$i(bp:'a', vp:'b', bc:'c', vc:'d')
                     changed = 0
                     ${bindParent|bindChild?'cb.propertyChange = { changed++ }':''}
                     ${vetoParent|vetoChild?'cb.vetoableChange = { changed++ }':''}
@@ -190,7 +190,7 @@ class VetoableTest extends GroovyTestCase {
                     import groovy.beans.Bindable
                     import groovy.beans.Vetoable
 
-                    ${vetoClass?'@Vetoable ':''}${bindClass?'@Bindable ':''}class ChocolateBean {
+                    ${vetoClass?'@Vetoable ':''}${bindClass?'@Bindable ':''}class ClassMarkerBean$i {
                         String neither
 
                         ${vetoField?'@Vetoable ':''}String veto
@@ -200,7 +200,7 @@ class VetoableTest extends GroovyTestCase {
                         ${vetoField?'@Vetoable ':''}${bindField?'@Bindable ':''}String both
                     }
 
-                    cb = new ChocolateBean(neither:'a', veto:'b', bind:'c', both:'d')
+                    cb = new ClassMarkerBean$i(neither:'a', veto:'b', bind:'c', both:'d')
                     vetoCount = 0
                     bindCount = 0
                     ${bindClass|bindField?'cb.propertyChange = { bindCount++ }':''}
