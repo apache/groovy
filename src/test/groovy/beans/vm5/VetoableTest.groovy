@@ -152,7 +152,7 @@ class VetoableTest extends GroovyTestCase {
                         ${vetoParent?'@Vetoable':''} String vp
                     }
 
-                    class InheritanceChildBean$i extends ParentBean$i {
+                    class InheritanceChildBean$i extends InheritanceParentBean$i {
                         ${bindChild?'@Bindable':''} String bc
                         ${vetoChild?'@Vetoable':''} String vc
                     }
