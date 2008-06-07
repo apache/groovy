@@ -737,7 +737,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private Object invokeMissingMethod(Object instance, String methodName, Object[] arguments, RuntimeException original, boolean isCallToSuper) {
         if (!isCallToSuper) {
-            MetaMethod method = findMethodInClassHeirarchy(instance.getClass(), methodName, arguments, this);
+            Class instanceKlazz = instance.getClass();
+            if (theClass != instanceKlazz && theClass.isAssignableFrom(instanceKlazz))
+              instanceKlazz = theClass;
+            
+            MetaMethod method = findMethodInClassHeirarchy(instanceKlazz, methodName, arguments, this);
             if(method != null) {
                 onSuperMethodFoundInHierarchy(method);
                 return method.invoke(instance, arguments);
@@ -745,7 +749,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
             // still not method here, so see if there is an invokeMethod method up the heirarchy
             final Object[] invokeMethodArgs = {methodName, arguments};
-            method = findMethodInClassHeirarchy(instance.getClass(), ExpandoMetaClass.INVOKE_METHOD_METHOD, invokeMethodArgs, this );
+            method = findMethodInClassHeirarchy(instanceKlazz, ExpandoMetaClass.INVOKE_METHOD_METHOD, invokeMethodArgs, this );
             if(method != null && method instanceof ClosureMetaMethod) {
                 onInvokeMethodFoundInHierarchy(method);
                 return method.invoke(instance, invokeMethodArgs);
@@ -2972,6 +2976,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (superClass != null) {
           MetaClass superMetaClass = GroovySystem.getMetaClassRegistry().getMetaClass(superClass);
           method = findMethodInClassHeirarchy(instanceKlazz, methodName, arguments, superMetaClass);
+        }
+        else {
+            if (metaClass.getTheClass().isInterface()) {
+                MetaClass superMetaClass = GroovySystem.getMetaClassRegistry().getMetaClass(Object.class);
+                method = findMethodInClassHeirarchy(instanceKlazz, methodName, arguments, superMetaClass);
+            }
         }
 
         method = findSubClassMethod(instanceKlazz, methodName, arguments, metaClass, method);

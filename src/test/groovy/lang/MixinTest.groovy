@@ -68,8 +68,67 @@ class MixinTest extends GroovyTestCase {
     }
 
     void testFlatten () {
-        Object.metaClass.mixin FlattenAndUniqueCategory
-        assertEquals ([8,9,3,2,1,4], [[8,9] as Object [], [3,2,[2:1,3:4]],[2,3]].flattenSet () as List)
+        Object.metaClass.mixin DeepFlattenToCategory
+        assertEquals ([8,9,3,2,1,4], [[8,9] as Object [], [3,2,[2:1,3:4]],[2,3]].flattenTo () as List)
+
+        def x = [-2,-2,-3,-3]
+        x.metaClass.mixin NoFlattenArrayListCategory
+        assertEquals ([x, 8,9,3,2,1,4], [x, [8,9] as Object [], [3,2,[2:1,3:4]],[2,3]].flattenTo () as List)
+
+        x.metaClass = null
+        x.metaClass.flattenTo = { Set set -> set << delegate }
+        assertEquals ([x, 8,9,3,2,1,4], [x, [8,9] as Object [], [3,2,[2:1,3:4]],[2,3]].flattenTo () as List)
+
+        x.metaClass = null
+        Object.metaClass.flattenTo(ArrayList){ ->
+            LinkedHashSet set = new LinkedHashSet()
+            delegate.flattenTo(set)
+            return set
+        }
+        Object.metaClass.flattenTo(ArrayList){ Set set ->
+            set << "oops"
+            return Collection.metaClass.invokeMethod(delegate, "flattenTo", set)
+        }
+        assertEquals (["oops", -2, -3, 8,9,3,2,1,4], [x, [8,9] as Object [], [3,2,[2:1,3:4]],[2,3]].flattenTo () as List)
+
+        Object.metaClass{
+            flattenTo(ArrayList) { ->
+                LinkedHashSet set = new LinkedHashSet()
+                delegate.flattenTo(set)
+                return set
+            }
+
+            flattenTo(ArrayList) { Set set ->
+                set << "oopsssss"
+                return Collection.metaClass.invokeMethod(delegate, "flattenTo", set)
+            }
+
+            asList { ->
+                delegate as List
+            }
+        }
+        assertEquals (["oopsssss", -2, -3, 8,9,3,2,1,4], [x, [8,9] as Object [], [3,2,[2:1,3:4]],[2,3]].flattenTo ().asList() )
+
+        Object.metaClass{
+            define(ArrayList) {
+                flattenTo{ ->
+                    LinkedHashSet set = new LinkedHashSet()
+                    delegate.flattenTo(set)
+                    return set
+                }
+
+                flattenTo{ Set set ->
+                    set << "ssoops"
+                    return Collection.metaClass.invokeMethod(delegate, "flattenTo", set)
+                }
+            }
+
+            asList { ->
+                delegate as List
+            }
+        }
+        assertEquals (["ssoops", -2, -3, 8,9,3,2,1,4], [x, [8,9] as Object [], [3,2,[2:1,3:4]],[2,3]].flattenTo ().asList() )
+
         Object.metaClass = null
     }
 }
@@ -108,40 +167,41 @@ class ObjToTestCategory {
     }
 }
 
-class FlattenAndUniqueCategory {
-    static Set flattenSet(elements, Set addTo = null) {
-        if (addTo == null)
-          addTo = new LinkedHashSet()
-
-        addTo << elements;
-        return addTo;
+class DeepFlattenToCategory {
+    static Set flattenTo(element) {
+        LinkedHashSet set = new LinkedHashSet()
+        element.flattenTo(set)
+        return set
     }
 
-    static Set flattenSet(Collection elements, Set addTo = null) {
-        if (addTo == null)
-          addTo = new LinkedHashSet()
+    // Object - put to result set
+    static void flattenTo(element, Set addTo) {
+        addTo << element;
+    }
 
+    // Collection - flatten each element
+    static void flattenTo(Collection elements, Set addTo) {
         elements.each { element ->
-           element.flattenSet(addTo);
+           element.flattenTo(addTo);
         }
-        return addTo;
     }
 
-    static Set flattenSet(Map elements, Set addTo = null) {
-        if (addTo == null)
-          addTo = new LinkedHashSet()
-
-        elements.values().flattenSet(addTo);
-        return addTo;
+    // Map - flatten each value
+    static void flattenTo(Map elements, Set addTo) {
+       elements.values().flattenTo(addTo);
     }
 
-    static Set flattenSet(Object [] elements, Set addTo = null) {
-        if (addTo == null)
-          addTo = new LinkedHashSet()
-
+    // Array - flatten each element
+    static void flattenTo(Object [] elements, Set addTo) {
         elements.each { element ->
-           element.flattenSet(addTo);
+           element.flattenTo(addTo);
         }
-        return addTo;
+    }
+}
+
+class NoFlattenArrayListCategory {
+    // Object - put to result set
+    static void flattenTo(ArrayList element, Set addTo) {
+        addTo << element;
     }
 }

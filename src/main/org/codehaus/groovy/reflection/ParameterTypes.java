@@ -244,6 +244,7 @@ public class ParameterTypes
 
     public boolean isValidExactMethod(Object [] args) {
         // lets check the parameter types match
+        getParametersTypes0();
         int size = args.length;
         if (size != parameterTypes.length)
           return false;

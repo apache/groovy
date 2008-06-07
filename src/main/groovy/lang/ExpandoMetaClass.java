@@ -18,6 +18,7 @@ package groovy.lang;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.DoubleKeyHashMap;
 import org.codehaus.groovy.reflection.FastArray;
+import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.*;
 import org.codehaus.groovy.runtime.callsite.*;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaMethod;
@@ -467,7 +468,26 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 	 * @see groovy.lang.GroovyObject#invokeMethod(java.lang.String, java.lang.Object)
 	 */
 	public Object invokeMethod(String name, Object args) {
-		return myMetaClass.invokeMethod(this, name, args);
+        final Object[] argsArr = args instanceof Object[] ? (Object[]) args : new Object[]{args};
+        MetaMethod metaMethod = myMetaClass.getMetaMethod(name, argsArr);
+        if (metaMethod != null)
+          return metaMethod.invoke(this, argsArr);
+
+        if (argsArr.length == 2 && argsArr[0] instanceof Class && argsArr[1] instanceof Closure) {
+            if (argsArr[0] == theClass)
+              registerInstanceMethod(name, (Closure) argsArr[1]);
+            else {
+              registerSubclassInstanceMethod(new ClosureMetaMethod(name, (Class) argsArr[0], (Closure) argsArr[1]));
+            }
+            return null;
+        }
+
+        if (argsArr.length == 1 && argsArr[0] instanceof Closure) {
+           registerInstanceMethod(name, (Closure) argsArr[0]);
+           return null;
+        }
+
+        throw new MissingMethodException(name, getClass(), argsArr);
 	}
 
 	/* (non-Javadoc)
@@ -585,7 +605,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 	}
 
     public void registerInstanceMethod(String name, Closure closure) {
-        registerInstanceMethod(new ClosureMetaMethod(name, closure));
+        registerInstanceMethod(new ClosureMetaMethod(name, theClass, closure));
     }
 
     /**
@@ -1031,6 +1051,26 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         return super.createConstructorSite(site, args);
     }
 
+    private class SubClassDefiningClosure extends GroovyObjectSupport {
+        private final Class klazz;
+
+        public SubClassDefiningClosure(Class klazz) {
+            this.klazz = klazz;
+        }
+
+        public Object invokeMethod(String name, Object obj) {
+            if (obj instanceof Object[]) {
+                Object args [] = (Object[]) obj;
+                if (args.length == 1 && args[0] instanceof Closure) {
+                    registerSubclassInstanceMethod(new ClosureMetaMethod(name, klazz, (Closure)args[0]));
+                    return null;
+                }
+            }
+
+            throw new MissingMethodException(name, getClass(), new Object[] {obj});
+        }
+    }
+
     private class DefiningClosure extends GroovyObjectSupport {
         boolean definition = true;
 
@@ -1040,6 +1080,13 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
         public void mixin (List categories) {
             DefaultGroovyMethods.mixin(ExpandoMetaClass.this, categories);
+        }
+
+        public void define (Class subClass, Closure closure) {
+            final SubClassDefiningClosure definer = new SubClassDefiningClosure(subClass);
+            closure.setDelegate(definer);
+            closure.setResolveStrategy(Closure.DELEGATE_FIRST);
+            closure.call(null);
         }
 
         public Object invokeMethod(String name, Object obj) {
@@ -1056,37 +1103,21 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                         c.call(null);
                         return null;
                     }
-                    ExpandoMetaClass.this.setProperty(name, ((Object[])obj)[0]);
+                    Object args [] = (Object[]) obj;
+                    if (args.length == 1 && args[0] instanceof Closure) {
+                        registerInstanceMethod(name, (Closure)args[0]);
+                    }
+                    else
+                        if (args.length == 2 && args[0] instanceof Class && args [1] instanceof Closure)
+                          registerSubclassInstanceMethod(new ClosureMetaMethod(name, (Class)args[0], (Closure)args[1]));
+                        else
+                          ExpandoMetaClass.this.setProperty(name, ((Object[])obj)[0]);
+
                     return null;
                 }
 
                 throw mme;
             }
-//            if (obj instanceof Object[]) {
-//                final Object[] args = (Object[]) obj;
-//                if (args.length == 1 && args[0] instanceof Closure) {
-//                    if (STATIC_QUALIFIER.equals(name)) {
-//                        final StaticDefiningClosure staticDef = new StaticDefiningClosure();
-//                        Closure c = (Closure)args[0];
-//                        c.setDelegate(staticDef);
-//                        c.setResolveStrategy(Closure.DELEGATE_ONLY);
-//                        c.call(null);
-//                        return null;
-//                    }
-//                    else {
-//                        if ("mixin".equals(name) && args.length == 1 && args[0] instanceof Class) {
-//                            DefaultGroovyMethods.mixin(this, (Class)args[0]);
-//                            return null;
-//                        }
-//                        else {
-//                            ExpandoMetaClass.this.setProperty(name, args[0]);
-//                            return null;
-//                        }
-//                    }
-//                }
-//            }
-//
-//            throw new MissingMethodException(name, getClass(), obj instanceof Object[] ? (Object[])obj : new Object[] {obj} );
         }
 
         public void setProperty(String property, Object newValue) {
