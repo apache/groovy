@@ -687,7 +687,7 @@ Not found: ${groovyJar14path}
             description="Create an installation hierarchy in target/install.">
 
         <!--
-        FIXME: Its not really a good idea to delete stuff, as it tends to negate Ant's (or other tools)
+        FIXME: It's not really a good idea to delete stuff, as it tends to negate Ant's (or other tools)
                ability to run faster incremental builds.
         -->
         <delete dir="${installDirectory}" quiet="true"/>
@@ -697,8 +697,10 @@ Not found: ${groovyJar14path}
         <copy todir="${installDirectory}">
             <fileset dir="${basedir}">
                 <include name="LICENSE.txt"/>
-                <include name="ASM-LICENSE.txt"/>
                 <include name="NOTICE.txt"/>
+            </fileset>
+            <fileset dir="${basedir}/config/build">
+                <include name="*-LICENSE.txt"/>
             </fileset>
         </copy>
         <fixcrlf srcdir="${installDirectory}" eol="crlf" includes="*.txt"/>
