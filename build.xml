@@ -497,7 +497,8 @@ Not found: ${groovyJar14path}
 
     <macrodef name="makemanifest">
     	<attribute name="file"/>
-    	<attribute name="bundleEnvironment" default="J2SE-1.4"/>
+    	<attribute name="bundleEnvironment" default="J2SE-1.5"/>
+    	<attribute name="bundleSuffix" default="groovy"/>
         <sequential>
             <manifest file="@{file}">
                 <attribute name="Built-By" value="${user.name}"/>
@@ -511,13 +512,29 @@ Not found: ${groovyJar14path}
                 <attribute name="Bundle-ManifestVersion" value="2" />
                 <attribute name="Bundle-Name" value="Groovy Runtime" />
                 <attribute name="Bundle-Description" value="Groovy Runtime" />
-                <attribute name="Bundle-SymbolicName" value="org.codehaus.groovy" />
+                <!-- bnd seems to remove the prefix -->
+                <!--<attribute name="Bundle-SymbolicName" value="org.codehaus.groovy.@{bundleSuffix}" />-->
+                <attribute name="Bundle-SymbolicName" value="@{bundleSuffix}" />
                 <attribute name="Bundle-Version" value="${groovyBundleVersion}" />
                 <attribute name="Bundle-Vendor" value="The Codehaus" />
                 <attribute name="Bundle-ClassPath" value="." />
                 <attribute name="Bundle-RequiredExecutionEnvironment" value="@{bundleEnvironment}" />
                 <attribute name="Eclipse-BuddyPolicy" value="dependent"/>
                 <attribute name="Eclipse-LazyStart" value="true"/>
+            </manifest>
+        </sequential>
+    </macrodef>
+
+    <macrodef name="updatemanifest">
+    	<attribute name="file"/>
+        <attribute name="bundleSuffix" default="groovy"/>
+    	<attribute name="bundleEnvironment" default="J2SE-1.5"/>
+        <sequential>
+            <manifest file="@{file}" mode="update">
+                <attribute name="Bundle-RequiredExecutionEnvironment" value="@{bundleEnvironment}" />
+                <!-- bnd seems to remove the prefix -->
+                <!--<attribute name="Bundle-SymbolicName" value="org.codehaus.groovy.@{bundleSuffix}" />-->
+                <attribute name="Bundle-SymbolicName" value="@{bundleSuffix}" />
             </manifest>
         </sequential>
     </macrodef>
@@ -608,7 +625,7 @@ Not found: ${groovyJar14path}
                 <include name="commons-cli-*.jar"/>
             </fileset>
         </unzip>
-    	<makemanifest file="${stagingDirectory}/META-INF/MANIFEST.MF"/>
+        <makemanifest file="${stagingDirectory}/META-INF/MANIFEST.MF" bundleSuffix="groovy-all"/>
         <!-- TODO try to make use of jarjar keep ability -->
         <jarjar jarfile="${targetDistDirectory}/groovy-all.jar"
                 manifest="${stagingDirectory}/META-INF/MANIFEST.MF">
@@ -657,6 +674,18 @@ Not found: ${groovyJar14path}
         <delete dir="${stagingDirectory}" quiet="true"/>
         <mkdir dir="${stagingDirectory}"/>
         <unzip dest="${stagingDirectory}">
+            <fileset dir="${targetDistDirectory}">
+                <include name="groovy-jdk14-${groovyVersion}.jar"/>
+            </fileset>
+        </unzip>
+        <updatemanifest file="${stagingDirectory}/META-INF/MANIFEST.MF"
+                        bundleEnvironment="J2SE-1.4" bundleSuffix="groovy-jdk14"/>
+        <jar basedir="${stagingDirectory}" manifest="${stagingDirectory}/META-INF/MANIFEST.MF"
+             destfile="${targetDistDirectory}/groovy-jdk14-${groovyVersion}.jar"/>
+
+        <delete dir="${stagingDirectory}" quiet="true"/>
+        <mkdir dir="${stagingDirectory}"/>
+        <unzip dest="${stagingDirectory}">
             <patternset>
                 <!-- we already have this -->
                 <exclude name="ASM-LICENSE.txt"/>
@@ -674,6 +703,8 @@ Not found: ${groovyJar14path}
                 <include name="groovy-all-jdk14-${groovyVersion}.jar"/>
             </fileset>
         </unzip>
+        <updatemanifest file="${stagingDirectory}/META-INF/MANIFEST.MF"
+                        bundleEnvironment="J2SE-1.4" bundleSuffix="groovy-all-jdk14"/>
         <jarjar jarfile="${targetDistDirectory}/groovy-all-jdk14-${groovyVersion}.jar"
                 manifest="${stagingDirectory}/META-INF/MANIFEST.MF">
             <fileset dir="${stagingDirectory}"/>
@@ -699,10 +730,14 @@ Not found: ${groovyJar14path}
                 <include name="LICENSE.txt"/>
                 <include name="NOTICE.txt"/>
             </fileset>
-            <fileset dir="${basedir}/config/build">
-                <include name="*-LICENSE.txt"/>
-            </fileset>
         </copy>
+        <unzip dest="${installDirectory}">
+            <patternset>
+                <include name="META-INF/*-LICENSE.txt"/>
+            </patternset>
+            <mapper type="flatten"/>
+            <fileset file="${targetDistDirectory}/groovy-all-${groovyVersion}.jar"/>
+        </unzip>
         <fixcrlf srcdir="${installDirectory}" eol="crlf" includes="*.txt"/>
 
         <!-- Install generated artifacts and runtime dependencies -->

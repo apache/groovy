@@ -52,6 +52,7 @@ $Date: 2007-11-02 20:51:05 +1000 (Fri, 02 Nov 2007) $
                         <include name="backport-util-concurrent-*.jar" />
                     </fileset>
                     <path refid="runtimePath"/>
+                    <path refid="jdk14ExtrasPath"/>
                 </classpath>
             </retrotranslator>
         </sequential>
