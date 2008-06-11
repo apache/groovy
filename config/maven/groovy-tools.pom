@@ -50,5 +50,16 @@
             <version>1.6.1</version>
             <scope>compile</scope>
         </dependency>
+        <dependency>
+            <groupId>biz.aQute</groupId>
+            <artifactId>bnd</artifactId>
+            <version>0.0.258</version>
+        </dependency>
     </dependencies>
+    <repositories>
+        <repository>
+            <id>aQute</id>
+            <url>http://www.aQute.biz/repo</url>
+        </repository>
+    </repositories>
 </project>

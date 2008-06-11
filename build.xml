@@ -399,16 +399,11 @@ $Date$
     <target name="-makeManifest">
         <mkdir dir="${mainClassesDirectory}/META-INF"/>
         <copy todir="${mainClassesDirectory}/META-INF" file="LICENSE.txt"/>
-        <makemanifest dependencies="antlr,
-org.objectweb.asm,
-org.apache.ant;resolution:=optional,
-org.apache.commons.cli;resolution:=optional,
-org.junit;resolution:=optional" file="${mainClassesDirectory}/META-INF/MANIFEST.MF"/>
+        <makemanifest file="${mainClassesDirectory}/META-INF/MANIFEST.MF"/>
     </target>
 
     <!-- TODO: investigate whether we can generate package list not hard-code it -->
     <macrodef name="makemanifest">
-        <attribute name="dependencies"/>
         <attribute name="file"/>
         <sequential>
             <manifest file="@{file}">
@@ -422,69 +417,12 @@ org.junit;resolution:=optional" file="${mainClassesDirectory}/META-INF/MANIFEST.
                 <attribute name="Implementation-Vendor" value="The Codehaus"/>
                 <attribute name="Bundle-ManifestVersion" value="2" />
                 <attribute name="Bundle-Name" value="Groovy Runtime" />
+                <attribute name="Bundle-Description" value="Groovy Runtime" />
                 <attribute name="Bundle-SymbolicName" value="org.codehaus.groovy" />
                 <attribute name="Bundle-Version" value="${groovyBundleVersion}" />
                 <attribute name="Bundle-Vendor" value="The Codehaus" />
                 <attribute name="Bundle-ClassPath" value="." />
                 <attribute name="Bundle-RequiredExecutionEnvironment" value="J2SE-1.4" />
-                <attribute name="Import-Package" value="@{dependencies}" />
-                <attribute name="Export-Package" value="groovy.inspect,
-groovy.inspect.swingui,
-groovy.io,
-groovy.lang,
-groovy.mock,
-groovy.mock.interceptor,
-groovy.model,
-groovy.security,
-groovy.servlet,
-groovy.sql,
-groovy.swing,
-groovy.swing.binding,
-groovy.swing.factory,
-groovy.swing.impl,
-groovy.text,
-groovy.time,
-groovy.ui,
-groovy.ui.icons,
-groovy.ui.text,
-groovy.ui.view,
-groovy.util,
-groovy.util.slurpersupport,
-groovy.xml,
-groovy.xml.dom,
-groovy.xml.streamingmarkupsupport,
-org.codehaus.groovy,
-org.codehaus.groovy.ant,
-org.codehaus.groovy.antlr,
-org.codehaus.groovy.antlr.java,
-org.codehaus.groovy.antlr.parser,
-org.codehaus.groovy.antlr.treewalker,
-org.codehaus.groovy.ast,
-org.codehaus.groovy.ast.expr,
-org.codehaus.groovy.ast.stmt,
-org.codehaus.groovy.binding,
-org.codehaus.groovy.bsf,
-org.codehaus.groovy.classgen,
-org.codehaus.groovy.control,
-org.codehaus.groovy.control.io,
-org.codehaus.groovy.control.messages,
-org.codehaus.groovy.groovydoc,
-org.codehaus.groovy.reflection,
-org.codehaus.groovy.runtime,
-org.codehaus.groovy.runtime.metaclass,
-org.codehaus.groovy.runtime.typehandling,
-org.codehaus.groovy.runtime.wrappers,
-org.codehaus.groovy.syntax,
-org.codehaus.groovy.tools,
-org.codehaus.groovy.tools.groovydoc,
-org.codehaus.groovy.tools.javac,
-org.codehaus.groovy.tools.shell,
-org.codehaus.groovy.tools.shell.commands,
-org.codehaus.groovy.tools.shell.util,
-org.codehaus.groovy.tools.xml,
-org.codehaus.groovy.vmplugin,
-org.codehaus.groovy.vmplugin.v4,
-org.codehaus.groovy.vmplugin.v5" />
                 <attribute name="Eclipse-BuddyPolicy" value="dependent"/>
                 <attribute name="Eclipse-LazyStart" value="true"/>
             </manifest>
@@ -515,9 +453,8 @@ org.codehaus.groovy.vmplugin.v5" />
     </target>
 
     <target name="-createBaseJar" unless="testFailed">
-        <jar destfile="${targetDistDirectory}/groovy-${groovyVersion}.jar" basedir="${mainClassesDirectory}"
+        <jar destfile="${targetDistDirectory}/groovy.jar" basedir="${mainClassesDirectory}"
              excludes="*.groovy" manifest="${mainClassesDirectory}/META-INF/MANIFEST.MF"/>
-        <jar destfile="${targetDistDirectory}/groovy-${groovyVersion}-sources.jar" basedir="${mainSourceDirectory}"/>
     </target>
 
     <target name="-jarjarInit">
@@ -538,7 +475,7 @@ org.codehaus.groovy.vmplugin.v5" />
         </unzip>
         <unzip dest="${stagingDirectory}">
             <fileset dir="${targetDistDirectory}">
-                <include name="groovy-${groovyVersion}.jar"/>
+                <include name="groovy.jar"/>
             </fileset>
         </unzip>
         <copy toDir="${stagingDirectory}/META-INF">
@@ -547,10 +484,8 @@ org.codehaus.groovy.vmplugin.v5" />
             </fileset>
         </copy>
         <mkdir dir="${targetDistDirectory}"/>
-        <makemanifest dependencies="org.apache.ant;resolution:=optional,
-org.apache.commons.cli;resolution:=optional,
-org.junit;resolution:=optional" file="${stagingDirectory}/META-INF/MANIFEST.MF"/>
-        <jarjar jarfile="${targetDistDirectory}/groovy-all-minimal-${groovyVersion}.jar"
+        <makemanifest file="${stagingDirectory}/META-INF/MANIFEST.MF"/>
+        <jarjar jarfile="${targetDistDirectory}/groovy-all-minimal.jar"
                 manifest="${stagingDirectory}/META-INF/MANIFEST.MF">
             <fileset dir="${stagingDirectory}"/>
             <rule pattern="antlr.**" result="groovyjarjarantlr.@1"/>
@@ -567,17 +502,39 @@ org.junit;resolution:=optional" file="${stagingDirectory}/META-INF/MANIFEST.MF"/
                 <include name="commons-cli-*.jar"/>
             </fileset>
         </unzip>
-        <makemanifest dependencies="org.apache.ant;resolution:=optional,
-org.junit;resolution:=optional" file="${stagingDirectory}/META-INF/MANIFEST.MF"/>
-        <jarjar jarfile="${targetDistDirectory}/groovy-all-${groovyVersion}.jar"
+        <makemanifest file="${stagingDirectory}/META-INF/MANIFEST.MF"/>
+        <jarjar jarfile="${targetDistDirectory}/groovy-all.jar"
                 manifest="${stagingDirectory}/META-INF/MANIFEST.MF">
             <fileset dir="${stagingDirectory}" excludes="groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class"/>
             <rule pattern="antlr.**" result="groovyjarjarantlr.@1"/>
             <rule pattern="org.objectweb.**" result="groovyjarjarasm.@1"/>
             <rule pattern="org.apache.commons.cli.**" result="groovyjarjarcommonscli.@1"/>
         </jarjar>
-        <jar destfile="${targetDistDirectory}/groovy-all-${groovyVersion}.jar" update="true"
+        <jar destfile="${targetDistDirectory}/groovy-all.jar" update="true"
              basedir="${stagingDirectory}" includes="groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class"/>
+
+        <!-- wrap jars for osgi usage -->
+        <taskdef resource="aQute/bnd/ant/taskdef.properties" classpathref="toolsPath"/>
+        <copy todir="${targetDistDirectory}">
+            <fileset dir="config/bnd" includes="groovy*.bnd"/>
+            <filterset>
+                <filter token="GROOVY_BUNDLE_VERSION" value="${groovyBundleVersion}"/>
+            </filterset>
+        </copy>
+        <bndwrap definitions="${targetDistDirectory}" output="${targetDistDirectory}">
+            <fileset dir="${targetDistDirectory}" includes="groovy.jar,groovy-all.jar,groovy-all-minimal.jar"/>
+        </bndwrap>
+        <delete dir="${targetDistDirectory}" includes="groovy*.jar"/>
+        <move file="${targetDistDirectory}/groovy.bar"
+              tofile="${targetDistDirectory}/groovy-${groovyVersion}.jar"/>
+        <move file="${targetDistDirectory}/groovy-all.bar"
+              tofile="${targetDistDirectory}/groovy-all-${groovyVersion}.jar"/>
+        <move file="${targetDistDirectory}/groovy-all-minimal.bar"
+              tofile="${targetDistDirectory}/groovy-all-minimal-${groovyVersion}.jar"/>
+        <delete dir="${targetDistDirectory}" includes="groovy*.bnd"/>
+
+        <!-- create source jars -->
+        <jar destfile="${targetDistDirectory}/groovy-${groovyVersion}-sources.jar" basedir="${mainSourceDirectory}"/>
         <copy file="${targetDistDirectory}/groovy-${groovyVersion}-sources.jar"
               tofile="${targetDistDirectory}/groovy-all-${groovyVersion}-sources.jar"/>
         <copy file="${targetDistDirectory}/groovy-all-${groovyVersion}-sources.jar"
