@@ -492,13 +492,12 @@ Not found: ${groovyJar14path}
     <target name="-makeManifest">
         <mkdir dir="${mainClassesDirectory}/META-INF"/>
         <copy todir="${mainClassesDirectory}/META-INF" file="LICENSE.txt"/>
-    	<makemanifest file="${mainClassesDirectory}/META-INF/MANIFEST.MF"/>
+    	<makeManifest file="${mainClassesDirectory}/META-INF/MANIFEST.MF"/>
 	</target>
 
-    <macrodef name="makemanifest">
+    <macrodef name="makeManifest">
     	<attribute name="file"/>
     	<attribute name="bundleEnvironment" default="J2SE-1.5"/>
-    	<attribute name="bundleSuffix" default="groovy"/>
         <sequential>
             <manifest file="@{file}">
                 <attribute name="Built-By" value="${user.name}"/>
@@ -512,29 +511,12 @@ Not found: ${groovyJar14path}
                 <attribute name="Bundle-ManifestVersion" value="2" />
                 <attribute name="Bundle-Name" value="Groovy Runtime" />
                 <attribute name="Bundle-Description" value="Groovy Runtime" />
-                <!-- bnd seems to remove the prefix -->
-                <!--<attribute name="Bundle-SymbolicName" value="org.codehaus.groovy.@{bundleSuffix}" />-->
-                <attribute name="Bundle-SymbolicName" value="@{bundleSuffix}" />
                 <attribute name="Bundle-Version" value="${groovyBundleVersion}" />
                 <attribute name="Bundle-Vendor" value="The Codehaus" />
                 <attribute name="Bundle-ClassPath" value="." />
                 <attribute name="Bundle-RequiredExecutionEnvironment" value="@{bundleEnvironment}" />
                 <attribute name="Eclipse-BuddyPolicy" value="dependent"/>
                 <attribute name="Eclipse-LazyStart" value="true"/>
-            </manifest>
-        </sequential>
-    </macrodef>
-
-    <macrodef name="updatemanifest">
-    	<attribute name="file"/>
-        <attribute name="bundleSuffix" default="groovy"/>
-    	<attribute name="bundleEnvironment" default="J2SE-1.5"/>
-        <sequential>
-            <manifest file="@{file}" mode="update">
-                <attribute name="Bundle-RequiredExecutionEnvironment" value="@{bundleEnvironment}" />
-                <!-- bnd seems to remove the prefix -->
-                <!--<attribute name="Bundle-SymbolicName" value="org.codehaus.groovy.@{bundleSuffix}" />-->
-                <attribute name="Bundle-SymbolicName" value="@{bundleSuffix}" />
             </manifest>
         </sequential>
     </macrodef>
@@ -625,7 +607,7 @@ Not found: ${groovyJar14path}
                 <include name="commons-cli-*.jar"/>
             </fileset>
         </unzip>
-        <makemanifest file="${stagingDirectory}/META-INF/MANIFEST.MF" bundleSuffix="groovy-all"/>
+        <makeManifest file="${stagingDirectory}/META-INF/MANIFEST.MF" />
         <!-- TODO try to make use of jarjar keep ability -->
         <jarjar jarfile="${targetDistDirectory}/groovy-all.jar"
                 manifest="${stagingDirectory}/META-INF/MANIFEST.MF">
@@ -636,25 +618,6 @@ Not found: ${groovyJar14path}
         </jarjar>
         <jar destfile="${targetDistDirectory}/groovy-all.jar" update="true"
              basedir="${stagingDirectory}" includes="groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class"/>
-
-        <!-- wrap jars for osgi usage -->
-        <taskdef resource="aQute/bnd/ant/taskdef.properties" classpathref="toolsPath"/>
-        <copy todir="${targetDistDirectory}">
-            <fileset dir="config/bnd" includes="groovy*.bnd"/>
-            <filterset>
-                <filter token="GROOVY_BUNDLE_VERSION" value="${groovyBundleVersion}"/>
-            </filterset>
-        </copy>
-        <property name="jarsToWrap" value="groovy.jar,groovy-all.jar" />
-        <bndwrap definitions="${targetDistDirectory}" output="${targetDistDirectory}">
-            <fileset dir="${targetDistDirectory}" includes="${jarsToWrap}"/>
-        </bndwrap>
-        <delete dir="${targetDistDirectory}" includes="${jarsToWrap}"/>
-        <move file="${targetDistDirectory}/groovy.bar"
-              tofile="${targetDistDirectory}/groovy-${groovyVersion}.jar"/>
-        <move file="${targetDistDirectory}/groovy-all.bar"
-              tofile="${targetDistDirectory}/groovy-all-${groovyVersion}.jar"/>
-        <delete dir="${targetDistDirectory}" includes="groovy*.bnd"/>
 
         <copy file="${targetDistDirectory}/groovy-${groovyVersion}-sources.jar"
               tofile="${targetDistDirectory}/groovy-all-${groovyVersion}-sources.jar"/>
@@ -670,18 +633,17 @@ Not found: ${groovyJar14path}
     <target name="createJars" depends="-checkAntVersion,test,-actuallyCreateJars"
             description="Build Groovy and create the jarfiles."/>
 
-    <target name="updateJarsForRetro" if="_forceRetro_">
+    <target name="updateRetroJars" if="_forceRetro_">
         <delete dir="${stagingDirectory}" quiet="true"/>
         <mkdir dir="${stagingDirectory}"/>
         <unzip dest="${stagingDirectory}">
             <fileset dir="${targetDistDirectory}">
-                <include name="groovy-jdk14-${groovyVersion}.jar"/>
+                <include name="groovy-jdk14.jar"/>
             </fileset>
         </unzip>
-        <updatemanifest file="${stagingDirectory}/META-INF/MANIFEST.MF"
-                        bundleEnvironment="J2SE-1.4" bundleSuffix="groovy-jdk14"/>
+        <makeManifest file="${stagingDirectory}/META-INF/MANIFEST.MF" bundleEnvironment="J2SE-1.4" />
         <jar basedir="${stagingDirectory}" manifest="${stagingDirectory}/META-INF/MANIFEST.MF"
-             destfile="${targetDistDirectory}/groovy-jdk14-${groovyVersion}.jar"/>
+             destfile="${targetDistDirectory}/groovy-jdk14.jar"/>
 
         <delete dir="${stagingDirectory}" quiet="true"/>
         <mkdir dir="${stagingDirectory}"/>
@@ -700,12 +662,11 @@ Not found: ${groovyJar14path}
         </unzip>
         <unzip dest="${stagingDirectory}">
             <fileset dir="${targetDistDirectory}">
-                <include name="groovy-all-jdk14-${groovyVersion}.jar"/>
+                <include name="groovy-all-jdk14.jar"/>
             </fileset>
         </unzip>
-        <updatemanifest file="${stagingDirectory}/META-INF/MANIFEST.MF"
-                        bundleEnvironment="J2SE-1.4" bundleSuffix="groovy-all-jdk14"/>
-        <jarjar jarfile="${targetDistDirectory}/groovy-all-jdk14-${groovyVersion}.jar"
+        <makeManifest file="${stagingDirectory}/META-INF/MANIFEST.MF" bundleEnvironment="J2SE-1.4" />
+        <jarjar jarfile="${targetDistDirectory}/groovy-all-jdk14.jar"
                 manifest="${stagingDirectory}/META-INF/MANIFEST.MF">
             <fileset dir="${stagingDirectory}"/>
             <rule pattern="net.sf.retrotranslator.runtime.**" result="groovyjarjarretroruntime.@1"/>
@@ -714,7 +675,27 @@ Not found: ${groovyJar14path}
         <delete dir="${stagingDirectory}" quiet="true"/>
     </target>
 
-    <target name="install" depends="createJars,translate,updateJarsForRetro" unless="testFailed"
+    <target name="updateJarsForOsgi">
+        <taskdef resource="aQute/bnd/ant/taskdef.properties" classpathref="toolsPath"/>
+        <copy todir="${targetDistDirectory}">
+            <fileset dir="config/bnd" includes="groovy*.bnd"/>
+            <filterset>
+                <filter token="GROOVY_BUNDLE_VERSION" value="${groovyBundleVersion}"/>
+            </filterset>
+        </copy>
+        <property name="jarsToWrap" value="groovy.jar,groovy-all.jar,groovy-jdk14.jar,groovy-all-jdk14.jar" />
+        <bndwrap definitions="${targetDistDirectory}" output="${targetDistDirectory}" failok="true">
+            <fileset dir="${targetDistDirectory}" includes="${jarsToWrap}"/>
+        </bndwrap>
+        <delete dir="${targetDistDirectory}" includes="${jarsToWrap}"/>
+        <move todir="${targetDistDirectory}">
+            <fileset dir="${targetDistDirectory}" includes="groovy*.bar"/>
+            <globmapper from="groovy*.bar" to="groovy*-${groovyVersion}.jar"/>
+        </move>
+        <delete dir="${targetDistDirectory}" includes="groovy*.bnd"/>
+    </target>
+
+    <target name="install" depends="createJars,translate,updateRetroJars,updateJarsForOsgi" unless="testFailed"
             description="Create an installation hierarchy in target/install.">
 
         <!--
@@ -774,6 +755,11 @@ Not found: ${groovyJar14path}
         <chmod perm="ugo+x">
             <fileset dir="${installDirectory}/bin" includes="*,*.*"/>
         </chmod>
+    </target>
+
+    <target name="translate" depends="-retroInit" if="_forceRetro_">
+        <retroArtifact basedir="${targetDistDirectory}" artifact="groovy"/>
+        <retroArtifact basedir="${targetDistDirectory}" artifact="groovy-all"/>
     </target>
 
     <target name="checkstyle" depends="-init,-initializeReports,-checkstyleInit"
@@ -945,11 +931,6 @@ Not found: ${groovyJar14path}
         <mavenInstallRepo version="${groovyVersion}" prefix="groovy-jdk14"/>
         <maven.pom file="${targetDirectory}/groovy-all-jdk14.pom" id="groovy-all-jdk14.pom"/>
         <mavenInstallRepo version="${groovyVersion}" prefix="groovy-all-jdk14"/>
-    </target>
-
-    <target name="translate" depends="-retroInit" if="_forceRetro_">
-        <retroArtifact version="${groovyVersion}" basedir="${targetDistDirectory}" artifact="groovy"/>
-        <retroArtifact version="${groovyVersion}" basedir="${targetDistDirectory}" artifact="groovy-all"/>
     </target>
 
     <target name="distribution" depends="install,doc" description="Create everything needed for a distribution.">

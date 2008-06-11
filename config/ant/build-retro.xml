@@ -37,14 +37,13 @@ $Date: 2007-11-02 20:51:05 +1000 (Fri, 02 Nov 2007) $
     </target>
 
     <macrodef name="retroArtifact">
-        <attribute name="version"/>
         <attribute name="artifact"/>
         <attribute name="basedir"/>
         <sequential>
-            <retrotranslator target="1.4" destjar="@{basedir}/@{artifact}-jdk14-@{version}.jar"
+            <retrotranslator target="1.4" destjar="@{basedir}/@{artifact}-jdk14.jar"
                              smart="true" verify="false" failonwarning="false"
                              backport="org.codehaus.groovy.reflection.LockableObject:edu.emory.mathcs.backport.java.util.concurrent.locks.ReentrantLock">
-                <jarfileset dir="@{basedir}" includes="@{artifact}-@{version}.jar" />
+                <jarfileset dir="@{basedir}" includes="@{artifact}.jar" />
                 <classpath>
                     <fileset dir="${jdk14home}/jre/lib" includes="**/*.jar"/>
                     <fileset dir="${toolsLibDirectory}">
