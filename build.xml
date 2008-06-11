@@ -402,7 +402,6 @@ $Date$
         <makemanifest file="${mainClassesDirectory}/META-INF/MANIFEST.MF"/>
     </target>
 
-    <!-- TODO: investigate whether we can generate package list not hard-code it -->
     <macrodef name="makemanifest">
         <attribute name="file"/>
         <sequential>
