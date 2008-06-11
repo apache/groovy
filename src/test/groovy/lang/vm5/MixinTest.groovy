@@ -1,4 +1,4 @@
-package groovy.lang
+package groovy.lang.vm5
 
 import java.util.concurrent.locks.ReentrantLock
 
