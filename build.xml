@@ -803,7 +803,7 @@ Not found: ${groovyJar14path}
                 <path refid="compilePath"/>
             </classpath>
             <fileset dir="${mainSourceDirectory}" includes="**/*.java"/>
-            <link href="http://java.sun.com/j2se/1.4.2/docs/api"/>
+            <link href="http://java.sun.com/j2se/1.5.0/docs/api"/>
             <link href="http://www.dpml.net/api/ant/1.7.0"/>
             <link href="http://junit.sourceforge.net/junit3.8.1/javadoc/"/>
             <link href="http://java.sun.com/j2ee/1.4/docs/api"/>
@@ -847,7 +847,7 @@ Not found: ${groovyJar14path}
                 use="true"
                 windowtitle="groovydoc"
                 private="false">
-            <link packages="java." href="http://java.sun.com/j2se/1.4.2/docs/api"/>
+            <link packages="java." href="http://java.sun.com/j2se/1.5.0/docs/api"/>
             <link packages="org.apache.ant." href="http://www.dpml.net/api/ant/1.7.0"/>
             <link packages="org.junit.,junit.framework." href="http://junit.sourceforge.net/junit3.8.1/javadoc/"/>
             <link packages="groovy.,org.codehaus.groovy." href="http://groovy.codehaus.org/api/"/>
