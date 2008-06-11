@@ -497,6 +497,7 @@ Not found: ${groovyJar14path}
 
     <macrodef name="makemanifest">
     	<attribute name="file"/>
+    	<attribute name="bundleEnvironment" default="J2SE-1.4"/>
         <sequential>
             <manifest file="@{file}">
                 <attribute name="Built-By" value="${user.name}"/>
@@ -514,7 +515,7 @@ Not found: ${groovyJar14path}
                 <attribute name="Bundle-Version" value="${groovyBundleVersion}" />
                 <attribute name="Bundle-Vendor" value="The Codehaus" />
                 <attribute name="Bundle-ClassPath" value="." />
-                <attribute name="Bundle-RequiredExecutionEnvironment" value="J2SE-1.4" />
+                <attribute name="Bundle-RequiredExecutionEnvironment" value="@{bundleEnvironment}" />
                 <attribute name="Eclipse-BuddyPolicy" value="dependent"/>
                 <attribute name="Eclipse-LazyStart" value="true"/>
             </manifest>
@@ -591,7 +592,8 @@ Not found: ${groovyJar14path}
             </fileset>
         </unzip>
         <copy toDir="${stagingDirectory}/META-INF">
-            <fileset dir="${basedir}">
+            <fileset dir="${basedir}/config/build">
+                <include name="ANTLR-LICENSE.txt"/>
                 <include name="ASM-LICENSE.txt"/>
             </fileset>
         </copy>
@@ -765,10 +767,10 @@ Not found: ${groovyJar14path}
         </copy>
     </target>
 
-    <target name="buildinfo">
+    <target name="cruiseReportExtras">
         <mkdir dir="${cruiseReportRootDirectory}"/>
         <copy todir="${cruiseReportRootDirectory}">
-            <fileset dir="config/build"/>
+            <fileset dir="cruise/html"/>
         </copy>
     </target>
 
@@ -779,7 +781,7 @@ Not found: ${groovyJar14path}
         <delete dir="${junitRawDirectory}" quiet="true" failonerror="false"/>
     </target>
 
-    <target name="cruise" depends="cruiseInit,distribution,compileExamples,checkstyle,buildinfo"/>
+    <target name="cruise" depends="cruiseInit,distribution,compileExamples,checkstyle,cruiseReportExtras"/>
 
     <target name="-docInit">
         <mkdir dir="${docsDirectory}"/>
