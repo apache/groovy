@@ -1,3 +1,5 @@
+package org.codehaus.groovy.classgen
+
 println """
 package org.codehaus.groovy.runtime.dgmimpl;
 

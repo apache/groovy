@@ -1,3 +1,5 @@
+package org.codehaus.groovy.classgen
+
 print """
 
 public class ArrayUtil {

@@ -1,3 +1,4 @@
+package org.codehaus.groovy.reflection
 
 def types = [
         "boolean",

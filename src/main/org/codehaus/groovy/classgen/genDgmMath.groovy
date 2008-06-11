@@ -1,3 +1,5 @@
+package org.codehaus.groovy.classgen
+
 def types = ["Integer", "Long", "Float", "Double"]
 
 def getMath (a,b) {

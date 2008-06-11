@@ -73,5 +73,16 @@
             <artifactId>retrotranslator-runtime</artifactId>
             <version>1.2.4</version>
         </dependency>
+        <dependency>
+            <groupId>biz.aQute</groupId>
+            <artifactId>bnd</artifactId>
+            <version>0.0.258</version>
+        </dependency>
     </dependencies>
+    <repositories>
+        <repository>
+            <id>aQute</id>
+            <url>http://www.aQute.biz/repo</url>
+        </repository>
+    </repositories>
 </project>

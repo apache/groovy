@@ -1,3 +1,5 @@
+package org.codehaus.groovy.classgen
+
 def ops = [
         "plus",
         "minus",
