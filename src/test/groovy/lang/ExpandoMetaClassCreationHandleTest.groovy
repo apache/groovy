@@ -237,6 +237,9 @@ class ExpandoMetaClassCreationHandleTest extends GroovyTestCase {
      void testAddMethodMissingToChildThenParent() {
          registry.removeMetaClass(Test1)
          registry.removeMetaClass(EMCInheritTest)
+         registry.removeMetaClass(Foo.class)
+         registry.removeMetaClass(IBar.class)
+         registry.removeMetaClass(Object.class)
 
          EMCInheritTest.metaClass.methodMissing = {String name, args-> "hello!" }
 

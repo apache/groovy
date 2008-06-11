@@ -162,7 +162,9 @@ class PerInstanceMetaClassTest extends GroovyTestCase{
         bean.metaClass {
             prop = 12
 
-            foo << { -> 3*prop }
+            foo << { ->
+                3*prop
+            }
         }
         bean.prop = 7
         assertEquals 21, bean.foo ()

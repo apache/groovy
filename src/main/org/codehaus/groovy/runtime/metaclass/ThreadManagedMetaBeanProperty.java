@@ -21,25 +21,30 @@ import groovy.lang.MetaBeanProperty;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
+import org.codehaus.groovy.reflection.ConcurrentWeakMap;
 
 import java.lang.reflect.Modifier;
 import java.util.Map;
 import java.util.WeakHashMap;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * This MetaBeanProperty will create a pseudo property whose value is bound to the current
- * Thread using soft references. The values will go out of scope and be garabage collected when
- * the Thread dies or when memory is required by the JVM
+ * This MetaBeanProperty will create a pseudo property whose value is bound to an object
+ * using weak references. The values will go out of scope and be garabage collected when
+ * the the object is collected
+ *
+ * In fact, this class should be called ExpandoProperty
  * <p/>
- * The property uses an InheritableThreadLocal instance internally so child threads will still be able
- * to see the property
  *
  * @author Graeme Rocher
+ * @author Alex Tkachman
  * @since 1.1
  */
 public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
     private static final CachedClass[] ZERO_ARGUMENT_LIST = new CachedClass[0];
-    private static final ThreadLocal PROPERTY_INSTANCE_HOLDER = new InheritableThreadLocal();
+    private static final ConcurrentHashMap<String,ConcurrentWeakMap> propName2Map = new ConcurrentHashMap<String, ConcurrentWeakMap>();
+
+    private final ConcurrentWeakMap instance2Prop;
 
     private Class declaringClass;
     private ThreadBoundGetter getter;
@@ -91,6 +96,7 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
         this.setter = new ThreadBoundSetter(name);
         initialValue = iv;
 
+        instance2Prop = getInstance2PropName(name);
     }
 
     /**
@@ -110,32 +116,18 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
         this.setter = new ThreadBoundSetter(name);
         this.initialValueCreator = initialValueCreator;
 
+        instance2Prop = getInstance2PropName(name);
     }
 
-    private static Object getThreadBoundPropertyValue(Object obj, String name, Object initialValue) {
-        Map propertyMap = getThreadBoundPropertMap();
-        String key = System.identityHashCode(obj) + name;
-        if (propertyMap.containsKey(key)) {
-            return propertyMap.get(key);
-        } else {
-            propertyMap.put(key, initialValue);
-            return initialValue;
+    private static ConcurrentWeakMap getInstance2PropName(String name) {
+        ConcurrentWeakMap res = propName2Map.get(name);
+        if (res == null) {
+            res = new ConcurrentWeakMap();
+            ConcurrentWeakMap ores = propName2Map.putIfAbsent(name, res);
+            if (ores != null)
+              return ores;
         }
-    }
-
-    private static Map getThreadBoundPropertMap() {
-        Map propertyMap = (Map) PROPERTY_INSTANCE_HOLDER.get();
-        if (propertyMap == null) {
-            propertyMap = new WeakHashMap();
-            PROPERTY_INSTANCE_HOLDER.set(propertyMap);
-        }
-        return propertyMap;
-    }
-
-    private static Object setThreadBoundPropertyValue(Object obj, String name, Object value) {
-        Map propertyMap = getThreadBoundPropertMap();
-        String key = System.identityHashCode(obj) + name;
-        return propertyMap.put(key, value);
+        return res;
     }
 
     /* (non-Javadoc)
@@ -192,7 +184,7 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
            * @see groovy.lang.MetaMethod#invoke(java.lang.Object, java.lang.Object[])
            */
         public Object invoke(Object object, Object[] arguments) {
-            return getThreadBoundPropertyValue(object, name0, getInitialValue());
+            return instance2Prop.getOrPut(object, getInitialValue());
         }
     }
 
@@ -215,7 +207,9 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
 
         public int getModifiers() {
             return Modifier.PUBLIC;
-        }/* (non-Javadoc)
+        }
+
+        /* (non-Javadoc)
 		 * @see groovy.lang.MetaMethod#getName()
 		 */
 
@@ -235,7 +229,8 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
            * @see groovy.lang.MetaMethod#invoke(java.lang.Object, java.lang.Object[])
            */
         public Object invoke(Object object, Object[] arguments) {
-            return setThreadBoundPropertyValue(object, name0, arguments[0]);
+            instance2Prop.put(object, arguments[0]);
+            return null;
         }
     }
 

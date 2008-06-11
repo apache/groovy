@@ -101,7 +101,6 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
      */
     public void registerModifiedMetaClass(ExpandoMetaClass emc) {
         final Class klazz = emc.getJavaClass();
-        emc.getClassInfo().setModifiedExpando(emc);
         GroovySystem.getMetaClassRegistry().setMetaClass(klazz,emc);
     }
 

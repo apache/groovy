@@ -21,8 +21,6 @@ import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.stdclasses.*;
 
 import java.lang.ref.SoftReference;
-import java.lang.ref.WeakReference;
-import java.lang.ref.ReferenceQueue;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
@@ -32,7 +30,7 @@ import java.util.*;
  *
  * @author Alex.Tkachman
  */
-public class ClassInfo extends SoftReference<Class> {
+public class ClassInfo extends FinalizableRef.SoftRef<Class> {
 
     private final LazyCachedClassRef cachedClassRef;
 
@@ -43,8 +41,6 @@ public class ClassInfo extends SoftReference<Class> {
     private static final Object NONE = new Object();
 
     private volatile int version;
-
-    private ExpandoMetaClass modifiedExpando;
 
     private final LazySoftReference staticMetaClassField;
 
@@ -64,6 +60,7 @@ public class ClassInfo extends SoftReference<Class> {
 
     ClassInfo(Class klazz, int hash, ClassInfo next) {
         super (klazz);
+        new DebugRef(klazz);
         this.next = next;
         this.hash = hash;
         cachedClassRef = new LazyCachedClassRef(this);
@@ -82,7 +79,10 @@ public class ClassInfo extends SoftReference<Class> {
         artifactClassLoader = new LazyClassLoaderRef(this, src);
         weakMetaClass = src.weakMetaClass;
         strongMetaClass = src.strongMetaClass;
-        modifiedExpando = src.modifiedExpando;
+        if (strongMetaClass instanceof ExpandoMetaClass) {
+            modifiedExpandos.remove(src);
+            modifiedExpandos.add(this);
+        }
         dgmMetaMethods = src.dgmMetaMethods;
         newMetaMethods = src.newMetaMethods;
         perInstanceMetaClassMap = src.perInstanceMetaClassMap;
@@ -93,20 +93,15 @@ public class ClassInfo extends SoftReference<Class> {
     }
 
     public ExpandoMetaClass getModifiedExpando() {
-        return modifiedExpando;
-    }
-
-    public void setModifiedExpando(ExpandoMetaClass modifiedExpando) {
-        this.modifiedExpando = modifiedExpando;
-        if (modifiedExpando != null)
-          modifiedExpandos.add (this);
+        return strongMetaClass == null ? null : strongMetaClass instanceof ExpandoMetaClass ? (ExpandoMetaClass)strongMetaClass : null;
     }
 
     public static void clearModifiedExpandos() {
-        for (ClassInfo info : modifiedExpandos) {
-            info.setModifiedExpando(null);
+        for (Iterator<ClassInfo> it = modifiedExpandos.iterator(); it.hasNext(); ) {
+            ClassInfo info = it.next();
+            it.remove();
+            info.setStrongMetaClass(null);
         }
-        modifiedExpandos.clear();
     }
 
     public CachedClass getCachedClass() {
@@ -130,9 +125,15 @@ public class ClassInfo extends SoftReference<Class> {
     public void setStrongMetaClass(MetaClass answer) {
         version++;
 
-        this.strongMetaClass = answer;
-        weakMetaClass = null;
+        if (strongMetaClass instanceof ExpandoMetaClass)
+          modifiedExpandos.remove(this);
 
+        strongMetaClass = answer;
+
+        if (strongMetaClass instanceof ExpandoMetaClass)
+          modifiedExpandos.add(this);
+
+        weakMetaClass = null;
         updateMetaClass();
     }
 
@@ -265,6 +266,10 @@ public class ClassInfo extends SoftReference<Class> {
 
     public boolean hasPerInstanceMetaClasses () {
         return perInstanceMetaClassMap != null;
+    }
+
+    public void finalizeRef() {
+        globalClassSet.segmentFor(hash).clean(this);
     }
 
     public static class ClassInfoSet {
@@ -428,6 +433,36 @@ public class ClassInfo extends SoftReference<Class> {
                 table = newTable;
                 count = newCount;
             }
+
+            public void clean(ClassInfo classInfo) {
+                lock ();
+                try {
+                    ClassInfo[] oldTable = table;
+                    ClassInfo first = null;
+                    int index = classInfo.hash & (oldTable.length - 1);
+                    for (ClassInfo e = oldTable[index]; e != null; ) {
+                       if (e.get() != null) {
+                           if (first == null)
+                             first = e;
+
+                           ClassInfo ee = e.next;
+                           while (ee != null && ee.get() == null)
+                             ee = ee.next;
+                           e.next = ee;
+                           e = ee;
+//                           newCount++;
+                       }
+                       else {
+                         e = e.next;
+                       }
+                    }
+
+                    oldTable [index] = first;
+                }
+                finally {
+                    unlock();
+                }
+            }
         }
 
         public int fullSize() {
@@ -554,6 +589,10 @@ public class ClassInfo extends SoftReference<Class> {
         public CachedClass initValue() {
             return createCachedClass(info.get(), info);
         }
+
+        protected void finalizeRef() {
+            super.finalizeRef();
+        }
     }
 
     private static class LazyStaticMetaClassFieldRef extends LazySoftReference {
@@ -610,4 +649,17 @@ public class ClassInfo extends SoftReference<Class> {
     // we need == only
     private static class InstanceMap extends WeakHashMap {
     }
+
+    private static class DebugRef extends PhantomRef {
+        final String name;
+        public DebugRef(Class klazz) {
+            super(klazz);
+            name = klazz == null ? "<null>" : klazz.getName();
+        }
+
+        public void finalizeRef() {
+            System.out.println(name + " unloaded");
+        }
+    }
+
 }

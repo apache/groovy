@@ -18,58 +18,49 @@ package org.codehaus.groovy.reflection;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 
-public class WeakDoubleKeyHashMap extends ComplexKeyHashMap
+public class SoftDoubleKeyHashMap extends ComplexKeyHashMap
 {
-  private static class Ref extends WeakReference {
-      public Ref(Object referent, ReferenceQueue q, Entry entry) {
-          super(referent, q);
+  private final LockableObject lock = new LockableObject();
+
+  private class Ref extends FinalizableRef.SoftRef {
+      public Ref(Object referent, Entry entry) {
+          super(referent);
           this.entry = entry;
       }
 
       Entry entry;
+
+      public void finalizeRef() {
+          Entry e = entry;
+          int i = e.hash & (table.length-1);
+
+          Entry prev = (Entry) table[i];
+          Entry p = prev;
+          while (p != null) {
+              Entry next = (Entry) p.next;
+              if (p == e) {
+                  if (prev == e)
+                      table[i] = next;
+                  else
+                      prev.next = next;
+                  e.next = null;  // Help GC
+                  e.value = null; //  "   "
+                  size--;
+                  break;
+              }
+              prev = p;
+              p = next;
+          }
+          entry.key1 = null;
+          entry.key2 = null;
+      }
   }
 
   public static class Entry extends ComplexKeyHashMap.Entry{
     public Ref key1, key2;
   }
 
-  private final ReferenceQueue queue = new ReferenceQueue();
-
-    private void expungeStaleEntries() {
-	    Ref r;
-        while ( (r = (Ref) queue.poll()) != null) {
-            Entry e = r.entry;
-            if (e == null)
-              continue;
-
-            r.entry = null;
-            e.key1 = e.key2 = null;
-
-            int h = e.hash;
-            int i = h & (table.length-1);
-
-            Entry prev = (Entry) table[i];
-            Entry p = prev;
-            while (p != null) {
-                Entry next = (Entry) p.next;
-                if (p == e) {
-                    if (prev == e)
-                        table[i] = next;
-                    else
-                        prev.next = next;
-                    e.next = null;  // Help GC
-                    e.value = null; //  "   "
-                    size--;
-                    break;
-                }
-                prev = p;
-                p = next;
-            }
-        }
-    }
-
   public final Object get(Object key1, Object key2) {
-//    expungeStaleEntries();
     int h = hash (31*key1.hashCode()+key2.hashCode());
     ComplexKeyHashMap.Entry e = table [h & (table.length-1)];
     for (; e != null; e = e.next)
@@ -109,8 +100,8 @@ public class WeakDoubleKeyHashMap extends ComplexKeyHashMap
     Entry entry = createEntry ();
     entry.next = table [index];
     entry.hash = h;
-    entry.key1 = new Ref(key1, queue, entry);
-    entry.key2 = new Ref(key2, queue, entry);
+    entry.key1 = new Ref(key1, entry);
+    entry.key2 = new Ref(key2, entry);
     return entry;
   }
 
@@ -119,12 +110,10 @@ public class WeakDoubleKeyHashMap extends ComplexKeyHashMap
   }
 
     public int size() {
-        expungeStaleEntries();
         return super.size();
     }
 
     public final ComplexKeyHashMap.Entry remove(Object key1, Object key2) {
-    expungeStaleEntries();
     int h = hash (31*key1.hashCode()+key2.hashCode());
     int index = h & (table.length -1);
     for (ComplexKeyHashMap.Entry e = table [index], prev = null; e != null; prev = e, e = e.next ) {

@@ -1,6 +1,6 @@
 package groovy.lang
 
-import org.codehaus.groovy.reflection.ReflectionCache
+import java.util.concurrent.locks.ReentrantLock
 
 class MixinTest extends GroovyTestCase {
 
@@ -129,6 +129,19 @@ class MixinTest extends GroovyTestCase {
         }
         assertEquals (["ssoops", -2, -3, 8,9,3,2,1,4], [x, [8,9] as Object [], [3,2,[2:1,3:4]],[2,3]].flattenTo ().asList() )
 
+        Object.metaClass = null
+    }
+
+    void testMixingLockable () {
+        Object.metaClass.mixin ReentrantLock
+        def name = "abcdef"
+        name.lock ()
+        try {
+            assertTrue name.isLocked ()
+        }
+        finally {
+            name.unlock ()
+        }
         Object.metaClass = null
     }
 }

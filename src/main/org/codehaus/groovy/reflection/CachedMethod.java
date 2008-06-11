@@ -305,6 +305,10 @@ public class CachedMethod extends MetaMethod implements Comparable {
         }
     }
 
+    public Method getCachedMethod() {
+        return cachedMethod;
+    }
+
 //    private static class CompileThread extends Thread {
 //        static final LinkedBlockingQueue queue = new LinkedBlockingQueue();
 //

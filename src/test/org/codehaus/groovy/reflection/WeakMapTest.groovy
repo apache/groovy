@@ -2,12 +2,15 @@ package org.codehaus.groovy.reflection
 
 class WeakMapTest extends GroovyTestCase{
    void testClassUnload () {
-       GroovyShell shell = new GroovyShell()
+       GroovyShell shell = null
        int SIZE = 1000
        for (int i = 0; i != SIZE; ++i) {
-           Object s = shell.parse ("""
+           if (shell == null)
+             shell = new GroovyShell ()
+
+           Script s = shell.parse ("""
               class A extends B {
-                def B callMe (b) {
+                def String callMe (b) {
                   b instanceof A ? this : b
                 }
               }
@@ -17,14 +20,18 @@ class WeakMapTest extends GroovyTestCase{
 
               new A ().callMe ("lambda")
            """)
+           s.run()
 
            ReflectionCache.isAssignableFrom s.class, s.class.superclass
            if (i % 10 == 0) {
+//               if (i % 50 == 0)
+//                 shell = null
                System.gc ()
                println "${i} ${ReflectionCache.assignableMap.size()} ${ClassInfo.size()} ${ClassInfo.fullSize()}"
            }
 
-           shell.classLoader.clearCache()
+           if (shell != null)
+             shell.classLoader.clearCache()
            GroovySystem.metaClassRegistry.removeMetaClass s.class.superclass
            GroovySystem.metaClassRegistry.removeMetaClass s.class
        }
