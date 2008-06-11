@@ -539,6 +539,7 @@ $Date$
               tofile="${targetDistDirectory}/groovy-all-${groovyVersion}-sources.jar"/>
         <copy file="${targetDistDirectory}/groovy-all-${groovyVersion}-sources.jar"
               tofile="${targetDistDirectory}/groovy-all-minimal-${groovyVersion}-sources.jar"/>
+
         <delete dir="${stagingDirectory}" quiet="true"/>
     </target>
 
