@@ -45,6 +45,9 @@ public class ConcurrentWeakMap<K,V> extends AbstractConcurrentMap<K,V> {
         public int getHash() {
             return hash;
         }
+
+        public void finalizeRef() {
+        }
     }
 
     public static class EntryWithValue<K,V> extends Entry<K,V> {
@@ -62,9 +65,10 @@ public class ConcurrentWeakMap<K,V> extends AbstractConcurrentMap<K,V> {
             this.value = value;
         }
 
-        public void clear() {
-            super.clear();
+
+        public void finalizeRef() {
             value = null;
+            super.finalizeRef();
         }
     }
 }

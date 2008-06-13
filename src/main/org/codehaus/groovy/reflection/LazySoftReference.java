@@ -49,9 +49,8 @@ public abstract class LazySoftReference<T> extends LockableObject {
             super(res);
         }
 
-        public void clear() {
+        public void finalizeRef() {
             LazySoftReference.this.finalizeRef();
-            super.clear();
         }
     }
 }

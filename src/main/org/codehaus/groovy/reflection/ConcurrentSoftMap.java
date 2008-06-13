@@ -44,6 +44,9 @@ public class ConcurrentSoftMap<K,V> extends AbstractConcurrentMap<K,V> {
         public int getHash() {
             return hash;
         }
+
+        public void finalizeRef() {
+        }
     }
 
     private static class EntryWithValue<K,V> extends Entry<K,V> {
@@ -61,9 +64,10 @@ public class ConcurrentSoftMap<K,V> extends AbstractConcurrentMap<K,V> {
             this.value = value;
         }
 
-        public void clear() {
-            super.clear();
+
+        public void finalizeRef() {
             value = null;
+            super.finalizeRef();
         }
     }
 }

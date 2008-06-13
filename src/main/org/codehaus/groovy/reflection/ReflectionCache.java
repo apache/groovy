@@ -47,7 +47,7 @@ public class ReflectionCache {
         return (String) mopNameEntry.value;
     }
 
-    static SoftDoubleKeyHashMap assignableMap = new SoftDoubleKeyHashMap();
+    static SoftDoubleKeyMap assignableMap = new SoftDoubleKeyMap();
 
     static final CachedClass STRING_CLASS = getCachedClass(String.class);
 
@@ -56,9 +56,9 @@ public class ReflectionCache {
     }
 
     static void setAssignableFrom(Class klazz, Class aClass) {
-        SoftDoubleKeyHashMap.Entry val = assignableMap.getOrPut(klazz, aClass);
-        if (val.value == null) {
-            val.value = Boolean.TRUE;
+        SoftDoubleKeyMap.Entry val = (SoftDoubleKeyMap.Entry) assignableMap.getOrPut(klazz, aClass, null);
+        if (val.getValue() == null) {
+            val.setValue(Boolean.TRUE);
         }
     }
 
@@ -66,11 +66,11 @@ public class ReflectionCache {
         if (klazz == aClass)
           return true;
 
-        SoftDoubleKeyHashMap.Entry val = assignableMap.getOrPut(klazz, aClass);
-        if (val.value == null) {
-            val.value = Boolean.valueOf(klazz.isAssignableFrom(aClass));
+        SoftDoubleKeyMap.Entry val = (SoftDoubleKeyMap.Entry) assignableMap.getOrPut(klazz, aClass, null);
+        if (val.getValue() == null) {
+            val.setValue(Boolean.valueOf(klazz.isAssignableFrom(aClass)));
         }
-        return ((Boolean)val.value).booleanValue();
+        return ((Boolean)val.getValue()).booleanValue();
 //        return klazz.isAssignableFrom(aClass);
     }
 
