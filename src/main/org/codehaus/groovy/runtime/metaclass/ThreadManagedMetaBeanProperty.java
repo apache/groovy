@@ -22,6 +22,7 @@ import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.ConcurrentWeakMap;
+import org.codehaus.groovy.reflection.AbstractConcurrentMap;
 
 import java.lang.reflect.Modifier;
 import java.util.Map;
@@ -184,7 +185,7 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
            * @see groovy.lang.MetaMethod#invoke(java.lang.Object, java.lang.Object[])
            */
         public Object invoke(Object object, Object[] arguments) {
-            return instance2Prop.getOrPut(object, getInitialValue());
+            return ((ConcurrentWeakMap.EntryWithValue)instance2Prop.getOrPut(object, getInitialValue())).getValue();
         }
     }
 

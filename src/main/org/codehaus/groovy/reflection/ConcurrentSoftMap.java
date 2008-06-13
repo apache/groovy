@@ -1,14 +1,14 @@
 package org.codehaus.groovy.reflection;
 
-public class ConcurrentWeakMap<K,V> extends AbstractConcurrentMap<K,V> {
-    public ConcurrentWeakMap() {
+public class ConcurrentSoftMap<K,V> extends AbstractConcurrentMap<K,V> {
+    public ConcurrentSoftMap() {
     }
 
     protected AbstractConcurrentMap.Segment<K,V> createSegment(int cap) {
         return new Segment<K,V>(cap);
     }
 
-    final static class Segment<K,V> extends AbstractConcurrentMap.Segment<K,V>{
+    static class Segment<K,V> extends AbstractConcurrentMap.Segment<K,V>{
         public Segment(int cap) {
             super(cap);
         }
@@ -18,7 +18,7 @@ public class ConcurrentWeakMap<K,V> extends AbstractConcurrentMap<K,V> {
         }
     }
 
-    private static class Entry<K,V> extends FinalizableRef.WeakRef<K> implements AbstractConcurrentMap.Entry<K,V> {
+    static class Entry<K,V> extends FinalizableRef.SoftRef<K> implements AbstractConcurrentMap.Entry<K,V> {
         private int hash;
 
         public Entry(K key, int hash) {
@@ -39,7 +39,6 @@ public class ConcurrentWeakMap<K,V> extends AbstractConcurrentMap<K,V> {
         }
 
         public void setValue(V value) {
-            throw new UnsupportedOperationException();
         }
 
         public int getHash() {
@@ -47,7 +46,7 @@ public class ConcurrentWeakMap<K,V> extends AbstractConcurrentMap<K,V> {
         }
     }
 
-    public static class EntryWithValue<K,V> extends Entry<K,V> {
+    private static class EntryWithValue<K,V> extends Entry<K,V> {
         private V value;
 
         public EntryWithValue(K key, int hash) {

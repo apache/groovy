@@ -2,61 +2,42 @@ package org.codehaus.groovy.reflection;
 
 import java.lang.ref.*;
 
-public interface FinalizableRef {
-    void finalizeRef();
-
+public final class FinalizableRef {
     static final ReferenceQueue finalizableQueue = new MyReferenceQueue();
 
-    static class SoftRef<T> extends SoftReference<T> implements FinalizableRef{
+    static class SoftRef<T> extends SoftReference<T> {
         public SoftRef(T referent) {
             super(referent, finalizableQueue);
         }
-
-        public void finalizeRef() {
-        }
     }
 
-    static class WeakRef<T> extends WeakReference<T> implements FinalizableRef{
+    static class WeakRef<T> extends WeakReference<T> {
         public WeakRef(T referent) {
             super(referent, finalizableQueue);
         }
-
-        public void finalizeRef() {
-        }
     }
 
-    static class PhantomRef<T> extends PhantomReference<T> implements FinalizableRef{
+    static class PhantomRef<T> extends PhantomReference<T> {
         public PhantomRef(T referent) {
             super(referent, finalizableQueue);
-        }
-
-        public void finalizeRef() {
         }
     }
 
     public static class MyReferenceQueue extends ReferenceQueue {
         public MyReferenceQueue() {
-          new CollectorThread().start();
-        }
-
-        static class CollectorThread extends Thread {
-            public CollectorThread() {
-                setDaemon(true);
-                setPriority(Thread.MAX_PRIORITY-2);
-            }
-
-            public void run() {
-                while (true) {
-                    Reference ref;
-                    while ((ref = finalizableQueue.poll()) != null)
-                      ((FinalizableRef)ref).finalizeRef();
+          Thread thread = new Thread() {
+              public void run() {
+                  while (true) {
                     try {
-                        sleep(100);
-                    } catch (InterruptedException e) {
-                        break;
+                        remove().clear();
                     }
-                }
-            }
+                    catch (Throwable t) {//
+                    }
+                  }
+              }
+          };
+          thread.setDaemon(true);
+          thread.start();
         }
     }
 }

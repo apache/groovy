@@ -650,7 +650,7 @@ public class ClassInfo extends FinalizableRef.SoftRef<Class> {
     private static class InstanceMap extends WeakHashMap {
     }
 
-    private static class DebugRef extends PhantomRef {
+    private static class DebugRef extends FinalizableRef.PhantomRef {
         final String name;
         public DebugRef(Class klazz) {
             super(klazz);

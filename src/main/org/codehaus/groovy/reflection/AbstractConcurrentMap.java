@@ -48,22 +48,47 @@ public abstract class AbstractConcurrentMap<K, V> {
     public int fullSize() {
         int count = 0;
         for (int i = 0; i < segments.length; i++) {
-            for (int j = 0; j < segments[i].table.length; j++) {
-                for (Entry e = segments[i].table[j]; e != null; e = e.getNext())
-                    count++;
+            final Object[] table = segments[i].table;
+            for (int j = 0; j < table.length; j++) {
+               count += countFull(table[j]);
             }
         }
         return count;
     }
 
+    private int countFull(Object o) {
+        if (o == null)
+          return 0;
+
+        if (o instanceof Entry)
+          return 1;
+
+        return ((Entry[])o).length;
+    }
+
     public int size() {
         int count = 0;
         for (int i = 0; i < segments.length; i++) {
-            for (int j = 0; j < segments[i].table.length; j++) {
-                for (Entry e = segments[i].table[j]; e != null; e = e.getNext())
-                  if (e.isValid())
-                    count++;
+            final Object[] table = segments[i].table;
+            for (int j = 0; j < table.length; j++) {
+               count += countSize(table[j]);
             }
+        }
+        return count;
+    }
+
+    private int countSize(Object o) {
+        if (o == null)
+          return 0;
+
+        if (o instanceof Entry)
+          return ((Entry)o).isValid() ? 1 : 0;
+
+        final Entry[] arr = (Entry[]) o;
+        int count = 0;
+        for (Entry entry : arr) {
+            if (entry.isValid())
+              count++;
         }
         return count;
     }
@@ -73,14 +98,19 @@ public abstract class AbstractConcurrentMap<K, V> {
         return segmentFor(hash).get(key, hash);
     }
 
-    public Object getOrPut(K key, V value) {
+    public Entry<K,V> getOrPut(K key, V value) {
         int hash = hash(key);
         return segmentFor(hash).getOrPut(key, hash, value);
     }
 
     public void put(K key, V value) {
         int hash = hash(key);
-        segmentFor(hash).put(key, hash, value);
+        segmentFor(hash).put(key, hash).setValue(value);
+    }
+
+    public void remove(K key) {
+        int hash = hash(key);
+        segmentFor(hash).remove(key, hash);
     }
 
     abstract static class Segment<K,V> extends LockableObject{
@@ -88,46 +118,65 @@ public abstract class AbstractConcurrentMap<K, V> {
 
         int threshold;
 
-        volatile Entry<K,V>[] table;
+        volatile Object[] table;
 
         Segment(int initialCapacity) {
-            setTable(new Entry[initialCapacity]);
+            setTable(new Object[initialCapacity]);
         }
 
-        void setTable(Entry<K,V>[] newTable) {
+        void setTable(Object[] newTable) {
             threshold = (int)(newTable.length * 0.75f);
             table = newTable;
         }
 
-        Entry<K,V> getFirst(int hash) {
-            Entry<K,V>[] tab = table;
-            return tab[hash & (tab.length - 1)];
-        }
-
         V get(K key, int hash) {
-            Entry<K,V> e = getFirst(hash);
-            while (e != null) {
-                if (e.isEqual(key,hash)) {
-                    return e.getValue();
+            Object[] tab = table;
+            Object o = tab[hash & (tab.length - 1)];
+            if (o != null) {
+                if (o instanceof Entry) {
+                    Entry<K,V> e = (Entry<K,V>) o;
+                    if (e.isEqual(key,hash)) {
+                        return e.getValue();
+                    }
                 }
-                e = e.getNext();
+                else {
+                    Entry<K,V> arr [] = (Entry<K,V>[]) o;
+                    for (int i = 0; i != arr.length; ++i) {
+                      Entry<K,V> e = arr [i];
+                      if (e != null && e.isEqual(key, hash))
+                        return e.getValue();
+                    }
+                }
             }
             return null;
         }
 
-        V getOrPut(K key, int hash, V value) {
-            Entry<K,V> e = getFirst(hash);
-            while (e != null) {
-                if (e.isEqual(key,hash)) {
-                    return e.getValue();
+        Entry<K,V> getOrPut(K key, int hash, V value) {
+            Object[] tab = table;
+            Object o = tab[hash & (tab.length - 1)];
+            if (o != null) {
+                if (o instanceof Entry) {
+                    Entry<K,V> e = (Entry<K,V>) o;
+                    if (e.isEqual(key,hash)) {
+                        return e;
+                    }
                 }
-                e = e.getNext();
+                else {
+                    Entry<K,V> arr [] = (Entry<K,V>[]) o;
+                    for (int i = 0; i != arr.length; ++i) {
+                      Entry<K,V> e = arr [i];
+                      if (e != null && e.isEqual(key, hash))
+                        return e;
+                    }
+                }
             }
-            put (key, hash, value);
-            return value;
+
+            final Entry<K, V> kvEntry = put(key, hash);
+            kvEntry.setValue(value);
+            return kvEntry;
         }
 
-        void put(K key, int hash, V value) {
+        Entry<K,V> put(K key, int hash) {
             lock();
             try {
                 int c = count;
@@ -135,98 +184,156 @@ public abstract class AbstractConcurrentMap<K, V> {
                     rehash();
                 }
 
-                Entry<K,V>[] tab = table;
-                int index = hash & (tab.length - 1);
-                Entry<K,V> first = tab[index];
-                Entry<K,V> e = first;
-                while (e != null) {
-                    if (e.isEqual(key,hash)) {
-                        e.setValue(value);
-                        return;
+                Object[] tab = table;
+                final int index = hash & (tab.length - 1);
+                final Object o = tab[index];
+                if (o != null) {
+                    if (o instanceof Entry) {
+                        final Entry<K,V> e = (Entry<K,V>) o;
+                        if (e.isEqual(key,hash)) {
+                            return e;
+                        }
+                        final Entry[] arr = new Entry[2];
+                        final Entry<K, V> res = createEntry(key, hash);
+                        arr [0] = res;
+                        arr [1] = e;
+                        tab[index] = arr;
+                        count = c; // write-volatile
+                        return res;
                     }
-                    e = e.getNext();
+                    else {
+                        final Entry<K,V> arr [] = (Entry<K,V>[]) o;
+                        for (int i = 0; i != arr.length; ++i) {
+                          Entry<K,V> e = arr [i];
+                          if (e != null && e.isEqual(key, hash)) {
+                            return e;
+                          }
+                        }
+                        final Entry[] newArr = new Entry[arr.length+1];
+                        final Entry<K, V> res = createEntry(key, hash);
+                        arr [0] = res;
+                        System.arraycopy(arr, 0, newArr, 1, arr.length);
+                        tab[index] = arr;
+                        count = c; // write-volatile
+                        return res;
+                    }
                 }
 
-                tab[index] = createEntry(key, hash, value, first);
+                final Entry<K, V> res = createEntry(key, hash);
+                tab[index] = res;
                 count = c; // write-volatile
+                return res;
+
             } finally {
                 unlock();
             }
         }
 
         void rehash() {
-            Entry<K,V>[] oldTable = table;
+            Object[] oldTable = table;
             int oldCapacity = oldTable.length;
             if (oldCapacity >= MAXIMUM_CAPACITY)
                 return;
 
-            int newCount = 0;
-            for (int i = 0; i < oldCapacity ; i++) {
-                Entry<K,V> first = null;
-                for (Entry<K,V> e = oldTable[i]; e != null; ) {
-                   if (e.isValid()) {
-                       if (first == null)
-                         first = e;
-
-                       Entry<K,V> ee = e.getNext();
-                       while (ee != null && !ee.isValid())
-                         ee = ee.getNext();
-                       e.setNext(ee);
-                       e = ee;
-                       newCount++;
-                   }
-                   else {
-                     e = e.getNext();
-                   }
-                }
-
-                oldTable [i] = first;
-            }
-
-            if (newCount+1 < threshold) {
-                count = newCount;
-                return;
-            }
-
-            Entry<K,V>[] newTable = new Entry[oldCapacity << 1];
+            Object[] newTable = new Object[oldCapacity << 1];
             int sizeMask = newTable.length - 1;
-            newCount = 0;
+            int newCount = 0;
+
             for (int i = 0; i < oldCapacity ; i++) {
-                for (Entry<K,V> e = oldTable[i]; e != null; e = e.getNext()) {
-                   int idx = e.getHash() & sizeMask;
-                   final Entry<K,V> next = newTable[idx];
-                   if (next == null && e.getNext() == null)
-                     newTable[idx] = e;
-                   else
-                     newTable[idx] = createEntry(e, next);
-                   newCount++;
+                Object o = oldTable[i];
+                if (o != null) {
+                    if (o instanceof Entry) {
+                        Entry e = (Entry) o;
+                        if (e.isValid()) {
+                            newCount++;
+                            rehash(newTable, sizeMask, e);
+                        }
+                    }
+                    else {
+                        Entry arr [] = (Entry[]) o;
+                        for (int j = 0; j < arr.length; j++) {
+                            Entry e = arr[j];
+                            if (e != null && e.isValid()) {
+                              newCount++;
+                              rehash(newTable, sizeMask, e);
+                            }
+                        }
+                    }
                 }
             }
 
             threshold = (int)(newTable.length * 0.75f);
-
             table = newTable;
             count = newCount;
         }
 
-        protected abstract Entry<K,V> createEntry(Entry<K,V> e, Entry<K,V> next);
+        private static void rehash(Object[] newTable, int sizeMask, Entry e) {
+            int index = e.getHash() & sizeMask;
+            final Object kvEntry = newTable[index];
+            if (kvEntry == null)
+              newTable [index] = e;
+            else {
+              if (kvEntry instanceof Entry) {
+                 Entry[] arr = new Entry[2];
+                 arr [0] = (Entry) kvEntry;
+                 arr [1] = e;
+                 newTable [index] = arr;
+              }
+              else {
+                 Entry arr [] = (Entry[]) kvEntry;
+                 Entry newArr [] = new Entry[arr.length+1];
+                 arr [0] = e;
+                 System.arraycopy(arr, 0, newArr, 1, arr.length);
+                 newTable[index] = arr;
+              }
+            }
+        }
 
-        protected abstract Entry<K,V> createEntry(K key, int hash, V value, Entry<K,V> first);
+        public void remove(K key, int hash) {
+//            lock();
+//            try {
+//                int c = count-1;
+//                final Object[] tab = table;
+//                final int index = hash & (tab.length - 1);
+//                Object o = tab[index];
+//
+//                if (o != null) {
+//                    if (o instanceof Entry) {
+//                        if (((Entry<K,V>)o).isEqual(key, hash)) {
+//                          tab[index] = null;
+//                          count = c;
+//                        }
+//                    }
+//                    else {
+//                        Entry<K,V> arr [] = (Entry<K,V>[]) o;
+//                        for (int i = 0; i < arr.length; i++) {
+//                            Entry<K,V> e = arr[i];
+//                            if (e != null && e.isEqual(key, hash)) {
+//                                arr [i] = null;
+//                                count = c;
+//                                break;
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//            finally {
+//                unlock();
+//            }
+        }
+
+        protected abstract Entry<K,V> createEntry(K key, int hash);
     }
 
     static interface Entry<K,V> {
-        Entry<K,V> getNext ();
-
         V getValue ();
+
+        void setValue(V value);
+
+        int getHash();
 
         boolean isValid ();
 
         boolean isEqual (K key, int hash);
-
-        void setValue(V value);
-
-        void setNext(Entry<K,V> ee);
-
-        int getHash();
     }
 }

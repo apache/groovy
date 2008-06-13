@@ -8,12 +8,6 @@ class PerInstanceMetaClassTest extends GroovyTestCase{
         Integer.metaClass = null
     }
 
-    void testMap () {
-        ClassInfo.InstanceMap map = new ClassInfo.InstanceMap ()
-        map [10] = 20
-        assertEquals 20, map [10]
-    }
-
     void testEMC () {
         def x = 22
         def FOUR = 4

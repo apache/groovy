@@ -30,7 +30,7 @@ public class SoftDoubleKeyHashMap extends ComplexKeyHashMap
 
       Entry entry;
 
-      public void finalizeRef() {
+      public void clear() {
           Entry e = entry;
           int i = e.hash & (table.length-1);
 
@@ -53,6 +53,7 @@ public class SoftDoubleKeyHashMap extends ComplexKeyHashMap
           }
           entry.key1 = null;
           entry.key2 = null;
+          super.clear();
       }
   }
 
