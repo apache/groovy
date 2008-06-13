@@ -85,7 +85,7 @@ class StreamingDOMBuilder extends AbstractStreamingBuilder {
                 if (namespaces.containsKey(parts[0])) {
                     namespaceUri = namespaces[parts[0]]
 
-                    nsAttributes.add([namespaceUri, "${parts[0]}:${parts[1]}", value])
+                    nsAttributes.add([namespaceUri, "${parts[0]}:${parts[1]}", "$value"])
 
                 } else {
                     throw new GroovyRuntimeException("bad attribute namespace tag in ${key}")
@@ -100,7 +100,7 @@ class StreamingDOMBuilder extends AbstractStreamingBuilder {
         pendingNamespaces.each {key, value ->
             hiddenNamespaces[key] = namespaces[key]
             namespaces[key] = value
-            nsAttributes.add(["http://www.w3.org/2000/xmlns/", "xmlns:${key}", value])
+            nsAttributes.add(["http://www.w3.org/2000/xmlns/", "xmlns:${key}", "$value"])
 
         }
 

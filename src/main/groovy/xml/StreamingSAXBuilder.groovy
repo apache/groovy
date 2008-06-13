@@ -82,12 +82,12 @@ import org.xml.sax.ext.LexicalHandler
           
                                               if (namespaces.containsKey(parts[0])) {
                                                   def namespaceUri = namespaces[parts[0]]          
-                                                  attributes.addAttribute(namespaceUri, parts[1], "${parts[0]}:${parts[1]}", "CDATA", value)
+                                                  attributes.addAttribute(namespaceUri, parts[1], "${parts[0]}:${parts[1]}", "CDATA", "$value")
                                               } else {
                                                   throw new GroovyRuntimeException("bad attribute namespace tag in ${key}")
                                               }
                                           } else {
-                                              attributes.addAttribute("", key, key, "CDATA", value)
+                                              attributes.addAttribute("", key, key, "CDATA", "$value")
                                           }
                                     }
           
