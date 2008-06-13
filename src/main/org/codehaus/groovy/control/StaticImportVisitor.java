@@ -93,7 +93,10 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         Variable v = ve.getAccessedVariable();
         if (v != null && v instanceof DynamicVariable) {
             Expression result = findStaticFieldImportFromModule(v.getName());
-            if (result != null) return result;
+            if (result != null) {
+            	result.setSourcePosition(ve);
+            	return result;
+            }
             if (!inPropertyExpression || inSpecialConstructorCall) addStaticVariableError(ve);
         }
         return ve;
@@ -173,6 +176,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                 FieldNode field = currentClass.getField(pe.getPropertyAsString());
                 if (field != null && field.isStatic()) {
                     Expression expression = new FieldExpression(field);
+                    expression.setSourcePosition(pe);
                     return expression;
                 }
             }

@@ -387,3 +387,57 @@ String s = i as String
 ###AsCastExpressionFullQualifiedClassNode:::
 String s = i as java.lang.String
 :::[ClassNode,(1:17),(1:33)]
+
+###FieldExpression:::
+class FieldExpression {
+    static field
+    static method() {
+        FieldExpression.field = 42
+    }
+}
+:::[FieldExpression,(4:9),(4:31)]
+
+###PropertyExpressionNormal:::
+class TestClass {
+	TestClass prop
+}
+TestClass.prop.prop = 42
+:::[PropertyExpression,(4:1),(4:21)][PropertyExpression,(4:1),(4:15)]
+
+###MethodPointerExpression:::
+def selection = list.find (entry.&validate)
+:::[MethodPointerExpression,(1:28),(1:43)][VariableExpression,(1:28),(1:35)][ConstantExpression,(1:35),(0:0)]
+
+###Spread_DOT:::
+def onlyAccess = list*.access
+:::[PropertyExpression,(1:18),(1:30)][VariableExpression,(1:18),(1:24)][ConstantExpression,(1:24),(0:0)]
+
+###Optional_DOT:::
+def property = obj?.prop
+:::[PropertyExpression,(1:16),(1:25)][VariableExpression,(1:16),(1:21)][ConstantExpression,(1:21),(0:0)]
+
+###PropertyExpressionStaticImportClasses:::
+import static java.lang.Math.* 
+def num = Math.PI
+:::[PropertyExpression,(2:11),(2:18)][ClassExpression,(2:11),(2:16)][ConstantExpression,(2:16),(0:0)]
+
+###PropertyExpressionStaticImportAliases:::
+import static java.lang.Math.PI as PIPI 
+def num = Math.PIPI
+:::[PropertyExpression,(2:11),(2:20)][ClassExpression,(2:11),(2:16)][ConstantExpression,(2:16),(0:0)]
+
+###AttributeExpression1:::
+class Bean {
+    public value
+}
+def bean = new Bean(value:42)
+def vlaue = bean.@value
+:::[AttributeExpression,(5:13),(5:24)][VariableExpression,(5:13),(5:18)][ConstantExpression,(5:19),(0:0)]
+
+###AttributeExpression2:::
+class Bean {
+	public value
+}
+Bean bean = new Bean(value:42)
+def attr = attributeAccess.@'value'
+:::[AttributeExpression,(5:12),(5:36)][VariableExpression,(5:12),(5:28)][ConstantExpression,(5:29),(0:0)]

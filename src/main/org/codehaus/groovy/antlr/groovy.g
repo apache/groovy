@@ -2185,21 +2185,23 @@ pathExpression[int lc_stmt]
         }
     ;
 
-pathElement[AST prefix]
+pathElement[AST prefix] {Token operator = LT(1);}
         // The primary can then be followed by a chain of .id, (a), [a], and {...}
     :
-        {   #pathElement = prefix;  }
+        { #pathElement = prefix; }
         (   // Spread operator:  x*.y  ===  x?.collect{it.y}
-            SPREAD_DOT^
+            SPREAD_DOT!
         |   // Optional-null operator:  x?.y  === (x==null)?null:x.y
-            OPTIONAL_DOT^
+            OPTIONAL_DOT!
         |   // Member pointer operator: foo.&y == foo.metaClass.getMethodPointer(foo, "y")
-            MEMBER_POINTER^
+            MEMBER_POINTER!
         |   // The all-powerful dot.
-            (nls! DOT^)
+            (nls! DOT!) 
         ) nls!
-        (typeArguments)?   // TODO: Java 5 type argument application via prefix x.<Integer>y
-        namePart
+        (ta:typeArguments!)?   // TODO: Java 5 type argument application via prefix x.<Integer>y
+        np:namePart!
+        { #pathElement = #(create(operator.getType(),operator.getText(),prefix,LT(1)),prefix,ta,np); }
+
     |
         mca:methodCallArgs[prefix]!
         {   #pathElement = #mca;  }
