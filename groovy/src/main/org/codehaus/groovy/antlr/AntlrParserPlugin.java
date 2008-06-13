@@ -1709,6 +1709,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         } else {
             methodName = new ConstantExpression(identifier(mNode));
         }
+        configureAST(methodName,mNode);
         MethodPointerExpression methodPointerExpression = new MethodPointerExpression(objectExpression, methodName);
         configureAST(methodPointerExpression, node);
         return methodPointerExpression;
