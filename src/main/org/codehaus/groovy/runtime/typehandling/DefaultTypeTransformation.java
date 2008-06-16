@@ -428,10 +428,7 @@ public class DefaultTypeTransformation {
             return map.entrySet();
         }
         else if (value.getClass().isArray()) {
-            if (value.getClass().getComponentType().isPrimitive()) {
-                return primitiveArrayToList(value);
-            }
-            return Arrays.asList((Object[]) value);
+            return arrayAsCollection(value);
         }
         else if (value instanceof MethodClosure) {
             MethodClosure method = (MethodClosure) value;
@@ -458,15 +455,25 @@ public class DefaultTypeTransformation {
             return Arrays.asList(values);
         }
         else {
-            // lets assume its a collection of 1
+            // let's assume it's a collection of 1
             return Collections.singletonList(value);
         }
+    }
+
+    public static Collection arrayAsCollection(Object value) {
+        if (value.getClass().getComponentType().isPrimitive()) {
+            return primitiveArrayToList(value);
+        }
+        return Arrays.asList((Object[]) value);
     }
 
     /**
      * Determines whether the value object is a Class object representing a
      * subclass of java.lang.Enum. Uses class name check to avoid breaking on
      * pre-Java 5 JREs.
+     *
+     * @param value an object
+     * @return true if the object is an Enum
      */
     public static boolean isEnumSubclass(Object value) {
         if (value instanceof Class) {
@@ -485,6 +492,7 @@ public class DefaultTypeTransformation {
     /**
      * Allows conversion of arrays into a mutable List
      *
+     * @param array an array
      * @return the array as a List
      */
     public static List primitiveArrayToList(Object array) {
