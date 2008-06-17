@@ -25,6 +25,7 @@ import groovy.xml.streamingmarkupsupport.BaseMarkupBuilder
 
 class StreamingDOMBuilder extends AbstractStreamingBuilder {
     def pendingStack = []
+    def defaultNamespaceStack = [""]
     def commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
         def comment = dom.document.createComment(body)
         if (comment != null) {
@@ -76,6 +77,7 @@ class StreamingDOMBuilder extends AbstractStreamingBuilder {
     def tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, dom ->
         def attributes = []
         def nsAttributes = []
+        def defaultNamespace = defaultNamespaceStack.last()
 
         attrs.each {key, value ->
             if (key.contains('$')) {
@@ -98,15 +100,19 @@ class StreamingDOMBuilder extends AbstractStreamingBuilder {
         def hiddenNamespaces = [:]
 
         pendingNamespaces.each {key, value ->
-            hiddenNamespaces[key] = namespaces[key]
-            namespaces[key] = value
-            nsAttributes.add(["http://www.w3.org/2000/xmlns/", "xmlns:${key}", "$value"])
-
+	        if (key == ':') {
+                defaultNamespace = "$value"
+	            nsAttributes.add(["http://www.w3.org/2000/xmlns/", "xmlns", defaultNamespace])
+            } else {
+	            hiddenNamespaces[key] = namespaces[key]
+	            namespaces[key] = value
+	            nsAttributes.add(["http://www.w3.org/2000/xmlns/", "xmlns:${key}", "$value"])
+            }
         }
 
         // setup the tag info
 
-        def uri = ""
+        def uri = defaultNamespace
         def qualifiedName = tag
 
         if (prefix != "") {
@@ -135,6 +141,7 @@ class StreamingDOMBuilder extends AbstractStreamingBuilder {
         dom.element = element
 
         if (body != null) {
+            defaultNamespaceStack.push defaultNamespace
             pendingStack.add pendingNamespaces.clone()
             pendingNamespaces.clear()
 
@@ -162,6 +169,7 @@ class StreamingDOMBuilder extends AbstractStreamingBuilder {
 
             pendingNamespaces.clear()
             pendingNamespaces.putAll pendingStack.pop()
+            defaultNamespaceStack.pop()
         }
 
         dom.element = dom.element.getParentNode()
@@ -193,7 +201,9 @@ class StreamingDOMBuilder extends AbstractStreamingBuilder {
                 boundClosure.trigger = ['document' : document, 'element' : it]
                 return document
             } else {
-                def newDocument = DocumentBuilderFactory.newInstance().newDocumentBuilder().newDocument()
+            	def dBuilder = DocumentBuilderFactory.newInstance()
+            	dBuilder.namespaceAware = true
+                def newDocument = dBuilder.newDocumentBuilder().newDocument()
                 boundClosure.trigger = ['document' : newDocument, 'element' : newDocument]
                 return newDocument
             }
