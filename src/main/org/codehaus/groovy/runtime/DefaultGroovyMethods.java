@@ -4356,37 +4356,65 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Flatten a list.  This collection and any nested collections have their
-     * contents (recursively) added to the new collection.
+     * Flatten a collection.  This collection and any nested arrays or
+     * collections have their contents (recursively) added to the new collection.
      *
-     * @param self a List
-     * @return a flattened List
+     * @param self a Collection to flatten
+     * @return a flattened Collection
      */
-    public static List flatten(List self) {
-        return new ArrayList(flatten(self, new LinkedList()));
+    public static Collection flatten(Collection self) {
+        return flatten(self, createSimilarCollection(self));
+    }
+
+    private static Collection flatten(Collection elements, Collection addTo) {
+        for (Object element : elements) {
+            if (element instanceof Collection) {
+                flatten((Collection) element, addTo);
+            } else if (element.getClass().isArray()) {
+                flatten(DefaultTypeTransformation.arrayAsCollection(element), addTo);
+            } else {
+                // found a leaf
+                addTo.add(element);
+            }
+        }
+        return addTo;
     }
 
     /**
-     * Flatten a set.  This collection and any nested collections have their
-     * contents (recursively) added to the new collection.
+     * Flatten a collection.  This collection and any nested arrays or
+     * collections have their contents (recursively) added to the new collection.
+     * For any non-Array, non-Collection object which represents some sort
+     * of collective type, the supplied closure should yield the contained items;
+     * otherwise, the closure should just return any element which corresponds to a leaf.
      *
-     * @param self a Set
-     * @return a flattened Set
+     * @param self a Collection
+     * @param flattenUsing a closure to determine how to flatten non-Array, non-Collection elements
+     * @return a flattened Collection
      */
-    public static Set flatten(Set self) {
-        return new HashSet(flatten(self, new LinkedList()));
+    public static Collection flatten(Collection self, Closure flattenUsing) {
+        return flatten(self, createSimilarCollection(self), flattenUsing);
     }
 
-    private static List flatten(Collection elements, List addTo) {
-        Iterator iter = elements.iterator();
-        while (iter.hasNext()) {
-            Object element = iter.next();
+    private static Collection flatten(Collection elements, Collection addTo, Closure flattenUsing) {
+        for (Object element : elements) {
             if (element instanceof Collection) {
-                flatten((Collection) element, addTo);
-            } else if (element instanceof Map) {
-                flatten(((Map) element).values(), addTo);
+                flatten((Collection) element, addTo, flattenUsing);
+            } else if (element.getClass().isArray()) {
+                flatten(DefaultTypeTransformation.arrayAsCollection(element), addTo, flattenUsing);
             } else {
-                addTo.add(element);
+                Object flattened = flattenUsing.call(new Object[]{element});
+                boolean returnedSelf = flattened == element;
+                if (!returnedSelf && flattened instanceof Collection) {
+                    List list = toList((Collection)flattened);
+                    if (list.size() == 1 && list.get(0) == element) {
+                        returnedSelf = true;
+                    }
+                }
+                if (flattened instanceof Collection && !returnedSelf) {
+                    flatten((Collection) flattened, addTo, flattenUsing);
+                } else {
+                    addTo.add(element);
+                }
             }
         }
         return addTo;
