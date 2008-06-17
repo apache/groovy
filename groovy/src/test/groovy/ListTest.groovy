@@ -234,6 +234,8 @@ class ListTest extends GroovyTestCase {
     void testFlattenListOfMaps() {
         def orig = [[a:1, b:2], [c:3, d:4]]
         def flat = orig.flatten()
+        assert flat == [1, 2, 3, 4]
+        flat = orig.flatten{ it }
         assert flat == orig
     }
 
