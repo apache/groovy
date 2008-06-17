@@ -15,11 +15,10 @@
  */
 package org.codehaus.groovy.runtime;
 
-import groovy.lang.*;
-import groovy.util.*;
-import groovy.text.RegexUtils;
 import groovy.io.EncodingAwareBufferedWriter;
+import groovy.lang.*;
 import groovy.sql.GroovyRowResult;
+import groovy.util.*;
 import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
@@ -37,13 +36,13 @@ import java.math.BigInteger;
 import java.net.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.ResultSet;
 
 /**
  * This class defines all the new groovy methods which appear on normal JDK
@@ -4282,6 +4281,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Flatten a collection.  This collection and any nested arrays or
      * collections have their contents (recursively) added to the new collection.
+     * <B>WARNING:</b>  Any Maps found in the collection are flattened to the
+     * Map's values and merged into the flattened collection.  This behavior
+     * may change in a future release. If you don't want Maps to be flattened
+     * use flatten(Collection, Closure) with an identity closure.
      *
      * @param self a Collection to flatten
      * @return a flattened Collection
@@ -4296,6 +4299,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             Object element = iter.next();
             if (element instanceof Collection) {
                 flatten((Collection) element, addTo);
+            } else if (element instanceof Map) {
+                flatten(((Map)element).values(), addTo);
             } else if (element.getClass().isArray()) {
                 flatten(DefaultTypeTransformation.arrayAsCollection(element), addTo);
             } else {
