@@ -23,6 +23,7 @@ import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.codehaus.groovy.runtime.callsite.PogoMetaClassSite;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
+import org.codehaus.groovy.util.FastArray;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;

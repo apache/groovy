@@ -21,12 +21,9 @@ import groovy.lang.MetaBeanProperty;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
-import org.codehaus.groovy.reflection.ConcurrentWeakMap;
-import org.codehaus.groovy.reflection.AbstractConcurrentMap;
+import org.codehaus.groovy.util.ConcurrentWeakMap;
 
 import java.lang.reflect.Modifier;
-import java.util.Map;
-import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**

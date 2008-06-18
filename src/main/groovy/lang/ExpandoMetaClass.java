@@ -16,7 +16,7 @@
 package groovy.lang;
 
 import org.codehaus.groovy.reflection.CachedClass;
-import org.codehaus.groovy.reflection.FastArray;
+import org.codehaus.groovy.util.FastArray;
 import org.codehaus.groovy.runtime.*;
 import org.codehaus.groovy.runtime.callsite.*;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaMethod;

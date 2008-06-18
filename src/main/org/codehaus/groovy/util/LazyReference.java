@@ -1,4 +1,4 @@
-package org.codehaus.groovy.reflection;
+package org.codehaus.groovy.util;
 
 /**
  * Reference with lazy initialization under lock

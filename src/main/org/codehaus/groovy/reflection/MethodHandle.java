@@ -185,7 +185,7 @@ public class MethodHandle {
     public Object invoke(Object receiver, char arg1, double arg2, double arg3) throws Throwable { return invoke(receiver,ArrayUtil.createArray(arg1,arg2,arg3)); }
     public Object invoke(Object receiver, char arg1, double arg2, Object arg3) throws Throwable { return invoke(receiver,ArrayUtil.createArray(arg1,arg2,arg3)); }
     public Object invoke(Object receiver, char arg1, Object arg2) throws Throwable { return invoke(receiver,ArrayUtil.createArray(arg1,arg2)); }
-    public Object invoke(Object receiver, char arg1, Object arg2, boolean arg3) throws Throwable { return invoke(receiver,ArrayUtil.createArray(arg1,arg2,arg3)); }
+    public Object invoke(Object receiver, char arg1, Object arg2, boolean arg3) throws Throwable { return invoke(receiver, ArrayUtil.createArray(arg1,arg2,arg3)); }
     public Object invoke(Object receiver, char arg1, Object arg2, char arg3) throws Throwable { return invoke(receiver,ArrayUtil.createArray(arg1,arg2,arg3)); }
     public Object invoke(Object receiver, char arg1, Object arg2, byte arg3) throws Throwable { return invoke(receiver,ArrayUtil.createArray(arg1,arg2,arg3)); }
     public Object invoke(Object receiver, char arg1, Object arg2, short arg3) throws Throwable { return invoke(receiver,ArrayUtil.createArray(arg1,arg2,arg3)); }

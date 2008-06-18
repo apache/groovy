@@ -18,6 +18,8 @@ package org.codehaus.groovy.reflection;
 import groovy.lang.*;
 import org.codehaus.groovy.classgen.BytecodeHelper;
 import org.codehaus.groovy.runtime.callsite.CallSiteClassLoader;
+import org.codehaus.groovy.util.LazySoftReference;
+import org.codehaus.groovy.util.LazyReference;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Label;

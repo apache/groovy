@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.codehaus.groovy.reflection;
+package org.codehaus.groovy.util;
 
 public class DoubleKeyHashMap extends ComplexKeyHashMap
 {

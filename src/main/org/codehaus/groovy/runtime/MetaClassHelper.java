@@ -21,7 +21,7 @@ import groovy.lang.GString;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
-import org.codehaus.groovy.reflection.FastArray;
+import org.codehaus.groovy.util.FastArray;
 import org.codehaus.groovy.reflection.ParameterTypes;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;

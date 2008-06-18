@@ -19,6 +19,9 @@ import groovy.lang.ExpandoMetaClass;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.stdclasses.*;
+import org.codehaus.groovy.util.LazySoftReference;
+import org.codehaus.groovy.util.LockableObject;
+import org.codehaus.groovy.util.FinalizableRef;
 
 import java.lang.ref.SoftReference;
 import java.math.BigDecimal;

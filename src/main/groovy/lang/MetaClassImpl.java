@@ -16,6 +16,9 @@
 package groovy.lang;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.util.FastArray;
+import org.codehaus.groovy.util.SingleKeyHashMap;
+import org.codehaus.groovy.util.ComplexKeyHashMap;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.BytecodeHelper;
 import org.codehaus.groovy.control.CompilationUnit;

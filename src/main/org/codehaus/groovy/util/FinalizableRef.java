@@ -1,4 +1,4 @@
-package org.codehaus.groovy.reflection;
+package org.codehaus.groovy.util;
 
 import java.lang.ref.*;
 
@@ -12,17 +12,42 @@ public interface FinalizableRef {
         public SoftRef(T referent) {
             super(referent, finalizableQueue);
         }
+
+        public String toString() {
+            T res = get ();
+            if (res == null)
+              return "<null>";
+            else
+              return res.toString();
+        }
+
+        public void finalizeRef () {
+        }
     }
 
     static abstract class WeakRef<T> extends WeakReference<T> implements FinalizableRef {
         public WeakRef(T referent) {
             super(referent, finalizableQueue);
         }
+
+        public String toString() {
+            T res = get ();
+            if (res == null)
+              return "<null>";
+            else
+              return res.toString();
+        }
+
+        public void finalizeRef () {
+        }
     }
 
     static abstract class PhantomRef<T> extends PhantomReference<T> implements FinalizableRef {
         public PhantomRef(T referent) {
             super(referent, finalizableQueue);
+        }
+
+        public void finalizeRef () {
         }
     }
 

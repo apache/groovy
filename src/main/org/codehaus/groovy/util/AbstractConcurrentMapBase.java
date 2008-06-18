@@ -1,4 +1,4 @@
-package org.codehaus.groovy.reflection;
+package org.codehaus.groovy.util;
 
 public abstract class AbstractConcurrentMapBase {
     static final int MAXIMUM_CAPACITY = 1 << 30;
@@ -62,6 +62,14 @@ public abstract class AbstractConcurrentMapBase {
             }
         }
         return count;
+    }
+
+    Segment segmentFor(int hash) {
+        return segments[(hash >>> segmentShift) & segmentMask];
+    }
+
+    public void removeEntry (Entry e) {
+        segmentFor(e.getHash()).removeEntry(e);
     }
 
     private int countSize(Object o) {

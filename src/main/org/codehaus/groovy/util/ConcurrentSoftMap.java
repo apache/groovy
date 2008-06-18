@@ -1,28 +1,30 @@
-package org.codehaus.groovy.reflection;
+package org.codehaus.groovy.util;
 
 public class ConcurrentSoftMap<K,V> extends AbstractConcurrentMap<K,V> {
     public ConcurrentSoftMap() {
     }
 
     protected AbstractConcurrentMap.Segment<K,V> createSegment(int cap) {
-        return new Segment<K,V>(cap);
+        return new ConcurrentSoftMap.Segment<K,V>(cap);
     }
 
-    static class Segment<K,V> extends AbstractConcurrentMap.Segment<K,V>{
+    public static class Segment<K,V> extends AbstractConcurrentMap.Segment<K,V>{
         public Segment(int cap) {
             super(cap);
         }
 
-        protected AbstractConcurrentMap.Entry<K,V> createEntry(K key, int hash) {
-            return new EntryWithValue(key, hash);
+        protected AbstractConcurrentMap.Entry<K,V> createEntry(K key, int hash, V value) {
+            return new EntryWithValue(this, key, hash, value);
         }
     }
 
-    static class Entry<K,V> extends FinalizableRef.SoftRef<K> implements AbstractConcurrentMap.Entry<K,V> {
+    public static class Entry<K,V> extends FinalizableRef.SoftRef<K> implements AbstractConcurrentMap.Entry<K,V> {
+        private final Segment segment;
         private int hash;
 
-        public Entry(K key, int hash) {
+        public Entry(Segment segment, K key, int hash) {
             super(key);
+            this.segment = segment;
             this.hash = hash;
         }
 
@@ -46,14 +48,17 @@ public class ConcurrentSoftMap<K,V> extends AbstractConcurrentMap<K,V> {
         }
 
         public void finalizeRef() {
+            super.finalizeRef();
+            segment.removeEntry(this);
         }
     }
 
-    private static class EntryWithValue<K,V> extends Entry<K,V> {
+    public static class EntryWithValue<K,V> extends Entry<K,V> {
         private V value;
 
-        public EntryWithValue(K key, int hash) {
-            super(key, hash);
+        public EntryWithValue(Segment segment, K key, int hash, V value) {
+            super(segment, key, hash);
+            setValue(value);
         }
 
         public V getValue() {

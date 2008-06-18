@@ -1,4 +1,4 @@
-package org.codehaus.groovy.reflection;
+package org.codehaus.groovy.util;
 
 import java.lang.ref.SoftReference;
 
@@ -42,6 +42,14 @@ public abstract class LazySoftReference<T> extends LockableObject {
 
     protected void finalizeRef() {
         value = null;
+    }
+
+    public String toString() {
+        T res = getNullable();
+        if (res == null)
+          return "<null>";
+        else
+          return res.toString();
     }
 
     private class MySoftRef<T> extends FinalizableRef.SoftRef<T> {

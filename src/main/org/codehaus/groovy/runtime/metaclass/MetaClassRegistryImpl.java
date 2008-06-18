@@ -20,6 +20,7 @@ import org.codehaus.groovy.reflection.*;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
+import org.codehaus.groovy.util.FastArray;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;

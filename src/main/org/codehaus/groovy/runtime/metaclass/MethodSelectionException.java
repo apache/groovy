@@ -19,7 +19,7 @@ package org.codehaus.groovy.runtime.metaclass;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedConstructor;
-import org.codehaus.groovy.reflection.FastArray;
+import org.codehaus.groovy.util.FastArray;
 
 import java.lang.reflect.Modifier;
 

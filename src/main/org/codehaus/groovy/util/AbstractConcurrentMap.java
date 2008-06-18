@@ -1,4 +1,4 @@
-package org.codehaus.groovy.reflection;
+package org.codehaus.groovy.util;
 
 public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapBase {
     public AbstractConcurrentMap() {
@@ -25,7 +25,7 @@ public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapB
 
     public void put(K key, V value) {
         int hash = hash(key);
-        segmentFor(hash).put(key, hash).setValue(value);
+        segmentFor(hash).put(key, hash, value);
     }
 
     public void remove(K key) {
@@ -37,8 +37,8 @@ public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapB
         return (Segment<K,V>) segments[(hash >>> segmentShift) & segmentMask];
     }
 
-    abstract static class Segment<K,V> extends AbstractConcurrentMapBase.Segment {
-        Segment(int initialCapacity) {
+    protected abstract static class Segment<K,V> extends AbstractConcurrentMapBase.Segment {
+        protected Segment(int initialCapacity) {
             super(initialCapacity);
         }
 
@@ -84,12 +84,12 @@ public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapB
                 }
             }
 
-            final Entry<K, V> kvEntry = put(key, hash);
+            final Entry<K, V> kvEntry = put(key, hash, value);
             kvEntry.setValue(value);
             return kvEntry;
         }
 
-        Entry<K,V> put(K key, int hash) {
+        Entry<K,V> put(K key, int hash, V value) {
             lock();
             try {
                 int c = count;
@@ -104,10 +104,11 @@ public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapB
                     if (o instanceof Entry) {
                         final Entry<K,V> e = (Entry<K,V>) o;
                         if (e.isEqual(key,hash)) {
+                            e.setValue(value);
                             return e;
                         }
                         final Entry[] arr = new Entry[2];
-                        final Entry<K, V> res = createEntry(key, hash);
+                        final Entry<K, V> res = createEntry(key, hash, value);
                         arr [0] = res;
                         arr [1] = e;
                         tab[index] = arr;
@@ -119,11 +120,12 @@ public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapB
                         for (int i = 0; i != arr.length; ++i) {
                           Entry<K,V> e = (Entry<K,V>) arr [i];
                           if (e != null && e.isEqual(key, hash)) {
+                            e.setValue(value);
                             return e;
                           }
                         }
                         final Object[] newArr = new Object[arr.length+1];
-                        final Entry<K, V> res = createEntry(key, hash);
+                        final Entry<K, V> res = createEntry(key, hash, value);
                         arr [0] = res;
                         System.arraycopy(arr, 0, newArr, 1, arr.length);
                         tab[index] = arr;
@@ -132,7 +134,7 @@ public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapB
                     }
                 }
 
-                final Entry<K, V> res = createEntry(key, hash);
+                final Entry<K, V> res = createEntry(key, hash, value);
                 tab[index] = res;
                 count = c; // write-volatile
                 return res;
@@ -175,10 +177,10 @@ public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapB
             }
         }
 
-        protected abstract Entry<K,V> createEntry(K key, int hash);
+        protected abstract Entry<K,V> createEntry(K key, int hash, V value);
     }
 
-    static interface Entry<K, V> extends AbstractConcurrentMapBase.Entry<V>{
+    protected static interface Entry<K, V> extends AbstractConcurrentMapBase.Entry<V>{
         boolean isEqual(K key, int hash);
     }
 }

@@ -17,9 +17,9 @@ package org.codehaus.groovy.runtime.metaclass;
 
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
-import org.codehaus.groovy.reflection.FastArray;
+import org.codehaus.groovy.util.FastArray;
 import org.codehaus.groovy.reflection.GeneratedMetaMethod;
-import org.codehaus.groovy.reflection.SingleKeyHashMap;
+import org.codehaus.groovy.util.SingleKeyHashMap;
 
 import java.util.NoSuchElementException;
 

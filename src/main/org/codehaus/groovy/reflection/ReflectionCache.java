@@ -15,6 +15,9 @@
  */
 package org.codehaus.groovy.reflection;
 
+import org.codehaus.groovy.util.TripleKeyHashMap;
+import org.codehaus.groovy.util.SoftDoubleKeyMap;
+
 import java.util.HashMap;
 import java.util.Map;
 

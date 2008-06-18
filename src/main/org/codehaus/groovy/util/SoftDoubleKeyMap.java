@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.codehaus.groovy.reflection;
+package org.codehaus.groovy.util;
 
 public class SoftDoubleKeyMap<K1,K2,V> extends AbstractConcurrentDoubleKeyMap<K1,K2,V> {
     protected AbstractConcurrentDoubleKeyMap.Segment<K1,K2,V> createSegment(int cap) {
@@ -46,7 +46,7 @@ public class SoftDoubleKeyMap<K1,K2,V> extends AbstractConcurrentDoubleKeyMap<K1
         }
     }
 
-    static class Entry<K1,K2, V> implements AbstractConcurrentDoubleKeyMap.Entry<K1,K2,V> {
+    public static class Entry<K1,K2, V> implements AbstractConcurrentDoubleKeyMap.Entry<K1,K2,V> {
         final private int hash;
         final Ref<K1> ref1;
         final Ref<K2> ref2;
