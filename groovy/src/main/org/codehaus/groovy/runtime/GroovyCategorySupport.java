@@ -115,21 +115,20 @@ public class GroovyCategorySupport {
             Class thisClass = metaClass;
             Class thatClass = thatMethod.metaClass;
             if (thisClass == thatClass) return 0;
-            Class loop = thisClass;
-            while(loop != null && loop != Object.class) {
-                loop = thisClass.getSuperclass();
-                if (loop == thatClass) {
-                    return -1;
-                }
-            }
-            loop = thatClass;
-            while (loop != null && loop != Object.class) {
-                loop = thatClass.getSuperclass();
-                if (loop == thisClass) {
-                    return 1;
-                }
-            }
+            if (isChildOfParent(thisClass, thatClass)) return -1;
+            if (isChildOfParent(thatClass, thisClass)) return 1;
             return 0;
+        }
+
+        private boolean isChildOfParent(Class candidateChild, Class candidateParent) {
+            Class loop = candidateChild;
+            while(loop != null && loop != Object.class) {
+                loop = loop.getSuperclass();
+                if (loop == candidateParent) {
+                    return true;
+                }
+            }
+            return false;
         }
     }
 
