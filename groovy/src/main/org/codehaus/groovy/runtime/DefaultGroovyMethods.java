@@ -5917,8 +5917,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a Character
      * @return an incremented Number
      */
-    public static Number next(Character self) {
-        return plus(self, ONE);
+    public static Character next(Character self) {
+        char leftChar = self.charValue();
+        char result = (char) (leftChar + 1);
+        return new Character(result);
     }
 
     /**
@@ -5937,8 +5939,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a Character
      * @return a decremented Number
      */
-    public static Number previous(Character self) {
-        return minus(self, ONE);
+    public static Character previous(Character self) {
+        char leftChar = self.charValue();
+        char result = (char) (leftChar - 1);
+        return new Character(result);
     }
 
     /**

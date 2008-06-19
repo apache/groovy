@@ -42,8 +42,8 @@ public class CharacterRangeTest extends TestCase {
     public void testIterate() {
         Iterator iter = range.iterator();
         assertEquals("wrong first value", FROM, iter.next());
-        for (int expected = FROM.charValue() + 1; expected <= TO.charValue(); expected++) {
-            assertEquals("wrong value", new Integer(expected), iter.next());
+        for (char expected = (char) (FROM.charValue() + 1); expected <= TO.charValue(); expected++) {
+            assertEquals(expected, ((Character)iter.next()).charValue());
         }
     }
 
