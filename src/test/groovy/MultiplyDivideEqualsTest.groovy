@@ -65,11 +65,11 @@ class MultiplyDivideEqualsTest extends GroovyTestCase {
         Character y = 6
         x /= y
         
-        assert x == 3.0
+        assert x == 3
         
         y /= 3
         
-        assert y == 2.0
+        assert y == 2
     }
     
     void testNumberDivideEquals() {

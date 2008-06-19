@@ -1,8 +1,10 @@
 package groovy
 
+import junit.framework.Assert
+
 /** 
  * Basic NumberMath test.
- * @see org.codehaus.groovy.runtime.NumberMath
+ * @see org.codehaus.groovy.runtime.typehandling.NumberMath
  */
 class NumberMathTest extends GroovyTestCase {
 
@@ -19,8 +21,9 @@ class NumberMathTest extends GroovyTestCase {
         //+, -, and * all promote the same way, so sample the matrix
         assert C + B instanceof Integer
         assert C - BD instanceof BigDecimal
-        assert B + F instanceof Double
+        assert B + C instanceof Integer
         assert B + I instanceof Integer
+        assert B + F instanceof Double
 
         assert I + I instanceof Integer
         assert I - F instanceof Double
@@ -87,9 +90,12 @@ class NumberMathTest extends GroovyTestCase {
         def BD2 = new BigDecimal("2.0")
         def BD20 = new BigDecimal("2.00")
 
-
         assert I1 / I2 instanceof BigDecimal
         assert I1 / I2 == new BigDecimal("0.5")
+        assert F1 / F2 instanceof Double
+        Assert.assertEquals F1 / F2, 0.5, 0.0000000001
+        assert D1 / D2 instanceof Double
+        Assert.assertEquals D1 / D2, 0.5, 0.0000000001
 
         assert I1.intdiv(I2) instanceof Integer
         assert I1.intdiv(I2) == 0
