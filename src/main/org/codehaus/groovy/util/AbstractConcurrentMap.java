@@ -4,18 +4,13 @@ public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapB
     public AbstractConcurrentMap() {
     }
 
-    static <K> int hash(K key) {
-        int h = key.hashCode();
-        h += ~(h << 9);
-        h ^=  (h >>> 14);
-        h +=  (h << 4);
-        h ^=  (h >>> 10);
-        return h;
+    public Segment segmentFor (int hash) {
+        return (Segment) super.segmentFor(hash);
     }
 
     public V get(K key) {
         int hash = hash(key);
-        return segmentFor(hash).get(key, hash);
+        return (V) segmentFor(hash).get(key, hash);
     }
 
     public Entry<K,V> getOrPut(K key, V value) {
@@ -33,11 +28,8 @@ public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapB
         segmentFor(hash).remove(key, hash);
     }
 
-    final Segment<K,V> segmentFor(int hash) {
-        return (Segment<K,V>) segments[(hash >>> segmentShift) & segmentMask];
-    }
-
     protected abstract static class Segment<K,V> extends AbstractConcurrentMapBase.Segment {
+
         protected Segment(int initialCapacity) {
             super(initialCapacity);
         }
@@ -47,17 +39,18 @@ public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapB
             Object o = tab[hash & (tab.length - 1)];
             if (o != null) {
                 if (o instanceof Entry) {
-                    Entry<K,V> e = (Entry<K,V>) o;
-                    if (e.isEqual(key,hash)) {
+                    Entry<K,V> e = (Entry) o;
+                    if (e.isEqual(key, hash)) {
                         return e.getValue();
                     }
                 }
                 else {
                     Object arr [] = (Object[]) o;
-                    for (int i = 0; i != arr.length; ++i) {
-                      Entry<K,V> e = (Entry<K,V>) arr [i];
-                      if (e != null && e.isEqual(key, hash))
-                        return e.getValue();
+                    for (int i = 0; i < arr.length; i++) {
+                        Entry<K,V> e = (Entry<K,V>) arr[i];
+                        if (e != null && e.isEqual(key, hash)) {
+                            return e.getValue();
+                        }
                     }
                 }
             }
@@ -69,27 +62,25 @@ public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapB
             Object o = tab[hash & (tab.length - 1)];
             if (o != null) {
                 if (o instanceof Entry) {
-                    Entry<K,V> e = (Entry<K,V>) o;
-                    if (e.isEqual(key,hash)) {
+                    Entry<K,V> e = (Entry) o;
+                    if (e.isEqual(key, hash)) {
                         return e;
                     }
                 }
                 else {
                     Object arr [] = (Object[]) o;
-                    for (int i = 0; i != arr.length; ++i) {
-                      Entry<K,V> e = (Entry<K,V>) arr [i];
-                      if (e != null && e.isEqual(key, hash))
-                        return e;
+                    for (int i = 0; i < arr.length; i++) {
+                        Entry<K,V> e = (Entry<K,V>) arr[i];
+                        if (e != null && e.isEqual(key, hash)) {
+                            return e;
+                        }
                     }
                 }
             }
-
-            final Entry<K, V> kvEntry = put(key, hash, value);
-            kvEntry.setValue(value);
-            return kvEntry;
+            return put(key, hash, value);
         }
 
-        Entry<K,V> put(K key, int hash, V value) {
+        Entry put(K key, int hash, V value) {
             lock();
             try {
                 int c = count;
@@ -98,47 +89,58 @@ public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapB
                 }
 
                 Object[] tab = table;
-                final int index = hash & (tab.length - 1);
-                final Object o = tab[index];
+                int index = hash & (tab.length - 1);
+                Object o = tab[index];
                 if (o != null) {
                     if (o instanceof Entry) {
-                        final Entry<K,V> e = (Entry<K,V>) o;
-                        if (e.isEqual(key,hash)) {
+                        Entry e = (Entry) o;
+                        if (e.isEqual(key, hash)) {
                             e.setValue(value);
                             return e;
                         }
-                        final Entry[] arr = new Entry[2];
-                        final Entry<K, V> res = createEntry(key, hash, value);
-                        arr [0] = res;
-                        arr [1] = e;
-                        tab[index] = arr;
-                        count = c; // write-volatile
-                        return res;
+                        else {
+                            Object arr [] = new Object [2];
+                            final Entry ee = createEntry(key, hash, value);
+                            arr [0] = ee;
+                            arr [1] = e;
+                            tab[index] = arr;
+                            count = c;
+                            return ee;
+                        }
                     }
                     else {
                         Object arr [] = (Object[]) o;
-                        for (int i = 0; i != arr.length; ++i) {
-                          Entry<K,V> e = (Entry<K,V>) arr [i];
-                          if (e != null && e.isEqual(key, hash)) {
-                            e.setValue(value);
-                            return e;
-                          }
+                        for (int i = 0; i < arr.length; i++) {
+                            Entry e = (Entry) arr[i];
+                            if (e != null && e.isEqual(key, hash)) {
+                                e.setValue(value);
+                                return e;
+                            }
                         }
-                        final Object[] newArr = new Object[arr.length+1];
-                        final Entry<K, V> res = createEntry(key, hash, value);
-                        arr [0] = res;
+
+                        final Entry ee = createEntry(key, hash, value);
+                        for (int i = 0; i < arr.length; i++) {
+                            Entry e = (Entry) arr[i];
+                            if (e == null) {
+                                arr [i] = ee;
+                                count = c;
+                                return ee;
+                            }
+                        }
+
+                        Object newArr [] = new Object[arr.length+1];
+                        newArr [0] = ee;
                         System.arraycopy(arr, 0, newArr, 1, arr.length);
-                        tab[index] = arr;
-                        count = c; // write-volatile
-                        return res;
+                        tab [index] = newArr;
+                        count = c;
+                        return ee;
                     }
                 }
 
-                final Entry<K, V> res = createEntry(key, hash, value);
-                tab[index] = res;
+                Entry e = createEntry(key, hash, value);
+                tab[index] = e;
                 count = c; // write-volatile
-                return res;
-
+                return e;
             } finally {
                 unlock();
             }

@@ -1,12 +1,12 @@
 package org.codehaus.groovy.util;
 
 public abstract class AbstractConcurrentMapBase {
-    static final int MAXIMUM_CAPACITY = 1 << 30;
+    protected static final int MAXIMUM_CAPACITY = 1 << 30;
     static final int MAX_SEGMENTS = 1 << 16;
     static final int RETRIES_BEFORE_LOCK = 2;
     final int segmentMask;
     final int segmentShift;
-    final Segment[] segments;
+    protected final Segment[] segments;
 
     public AbstractConcurrentMapBase() {
         int sshift = 0;
@@ -32,71 +32,83 @@ public abstract class AbstractConcurrentMapBase {
 
     protected abstract Segment createSegment(int cap);
 
+    protected static <K> int hash(K key) {
+        int h = key.hashCode();
+        h += ~(h << 9);
+        h ^=  (h >>> 14);
+        h +=  (h << 4);
+        h ^=  (h >>> 10);
+        return h;
+    }
+
+    public Segment segmentFor(int hash) {
+        return segments[(hash >>> segmentShift) & segmentMask];
+    }
+
     public int fullSize() {
         int count = 0;
         for (int i = 0; i < segments.length; i++) {
-            final Object[] table = segments[i].table;
-            for (int j = 0; j < table.length; j++) {
-                count += countFull(table[j]);
+            segments[i].lock();
+            try {
+                for (int j = 0; j < segments[i].table.length; j++) {
+                    Object o = segments[i].table [j];
+                    if (o != null) {
+                        if (o instanceof Entry) {
+                            count++;
+                        }
+                        else {
+                            Object arr [] = (Object[]) o;
+                            count += arr.length;
+                        }
+                    }
+                }
+            }
+            finally {
+                segments[i].unlock();
             }
         }
         return count;
-    }
-
-    private int countFull(Object o) {
-        if (o == null)
-            return 0;
-
-        if (o instanceof Entry)
-            return 1;
-
-        return ((Object[]) o).length;
     }
 
     public int size() {
         int count = 0;
         for (int i = 0; i < segments.length; i++) {
-            final Object[] table = segments[i].table;
-            for (int j = 0; j < table.length; j++) {
-                count += countSize(table[j]);
+            segments[i].lock();
+            try {
+                for (int j = 0; j < segments[i].table.length; j++) {
+                    Object o = segments[i].table [j];
+                    if (o != null) {
+                        if (o instanceof Entry) {
+                            Entry e = (Entry) o;
+                            if (e.isValid())
+                              count++;
+                        }
+                        else {
+                            Object arr [] = (Object[]) o;
+                            for (int k = 0; k < arr.length; k++) {
+                                Entry info = (Entry) arr[k];
+                                if (info != null && info.isValid())
+                                    count++;
+                            }
+                        }
+                    }
+                }
+            }
+            finally {
+                segments[i].unlock();
             }
         }
         return count;
     }
 
-    Segment segmentFor(int hash) {
-        return segments[(hash >>> segmentShift) & segmentMask];
-    }
-
-    public void removeEntry (Entry e) {
-        segmentFor(e.getHash()).removeEntry(e);
-    }
-
-    private int countSize(Object o) {
-        if (o == null)
-            return 0;
-
-        if (o instanceof Entry)
-            return ((Entry) o).isValid() ? 1 : 0;
-
-        final Object[] arr = (Object[]) o;
-        int count = 0;
-        for (int i = 0; i < arr.length; i++) {
-            Entry entry = (Entry) arr[i];
-            if (entry.isValid())
-                count++;
-        }
-        return count;
-    }                                                                                                   
-
-    abstract static class Segment extends LockableObject {
+    protected static class Segment extends LockableObject {
         volatile int count;
 
         int threshold;
 
         volatile Object[] table;
 
-        Segment(int initialCapacity) {
+        protected Segment(int initialCapacity) {
             setTable(new Object[initialCapacity]);
         }
 
@@ -105,42 +117,42 @@ public abstract class AbstractConcurrentMapBase {
             table = newTable;
         }
 
-        void removeEntry (Entry entry) {
+        void removeEntry (Entry e) {
             lock ();
+            int newCount = count;
             try {
-                Object[] tab = table;
-                int hash = entry.getHash();
-                final int index = hash & (tab.length - 1);
+                Object [] tab = table;
+                int index = e.getHash() & (tab.length-1);
                 Object o = tab[index];
                 if (o != null) {
                     if (o instanceof Entry) {
-                        Entry e = (Entry) o;
-                        if (e == entry) {
-                            tab[index] = null;
+                        if (o == e) {
+                            tab [index] = null;
+                            newCount--;
                         }
                     }
                     else {
                         Object arr [] = (Object[]) o;
-                        for (int i = 0; i != arr.length; ++i) {
-                          Entry e = (Entry) arr [i];
-                          if (e == entry) {
-                              if (arr.length == 2) {
-                                if (i == 0) {
-                                    tab[index] = arr[1];
+                        Object res = null;
+                        for (int i = 0; i < arr.length; i++) {
+                            Entry info = (Entry) arr[i];
+                            if (info != null) {
+                                if(info != e) {
+                                  if (info.isValid()) {
+                                     res = put(info, res);
+                                  }
+                                  else {
+                                      newCount--;
+                                  }
                                 }
                                 else {
-                                    tab[index] = arr[0];
+                                  newCount--;
                                 }
-                              }
-                              else {
-                                  Object newArr [] = new Object[arr.length-1];
-                                  System.arraycopy(arr, 0,   newArr, 0, i);
-                                  System.arraycopy(arr, i+1, newArr, i, arr.length-i-1);
-                              }
-                              break;
-                          }
+                            }
                         }
+                        tab [index] = res;
                     }
+                    count = newCount;
                 }
             }
             finally {
@@ -154,27 +166,61 @@ public abstract class AbstractConcurrentMapBase {
             if (oldCapacity >= MAXIMUM_CAPACITY)
                 return;
 
-            Object[] newTable = new Object[oldCapacity << 1];
-            int sizeMask = newTable.length - 1;
             int newCount = 0;
+            for (int i = 0; i < oldCapacity ; i++) {
+                Object o = oldTable [i];
+                if (o != null) {
+                    if (o instanceof Entry) {
+                        Entry e = (Entry) o;
+                        if (e.isValid()) {
+                            newCount++;
+                        }
+                        else {
+                            oldTable[i] = null;
+                        }
+                    }
+                    else {
+                        Object arr [] = (Object[]) o;
+                        int localCount = 0;
+                        for (int index = 0; index < arr.length; index++) {
+                            Entry e = (Entry) arr[index];
+                            if (e != null && e.isValid()) {
+                                localCount++;
+                            }
+                            else {
+                                arr [index] = null;
+                            }
+                        }
+                        if (localCount == 0)
+                          oldTable[i] = null;
+                        else
+                          newCount += localCount;
+                    }
+                }
+            }
 
+            Object[] newTable = new Object[newCount+1 < threshold ? oldCapacity : oldCapacity << 1];
+            int sizeMask = newTable.length - 1;
+            newCount = 0;
             for (int i = 0; i < oldCapacity ; i++) {
                 Object o = oldTable[i];
                 if (o != null) {
                     if (o instanceof Entry) {
                         Entry e = (Entry) o;
                         if (e.isValid()) {
+                            int index = e.getHash() & sizeMask;
+                            put(e, index, newTable);
                             newCount++;
-                            rehash(newTable, sizeMask, e);
                         }
                     }
                     else {
-                        Object[] arr  = (Object[]) o;
+                        Object arr [] = (Object[]) o;
                         for (int j = 0; j < arr.length; j++) {
                             Entry e = (Entry) arr[j];
                             if (e != null && e.isValid()) {
-                              newCount++;
-                              rehash(newTable, sizeMask, e);
+                                int index = e.getHash() & sizeMask;
+                                put(e, index, newTable);
+                                newCount++;
                             }
                         }
                     }
@@ -182,29 +228,50 @@ public abstract class AbstractConcurrentMapBase {
             }
 
             threshold = (int)(newTable.length * 0.75f);
+
             table = newTable;
             count = newCount;
         }
 
-        void rehash(Object[] newTable, int sizeMask, Entry e) {
-            int index = e.getHash() & sizeMask;
-            final Object kvEntry = newTable[index];
-            if (kvEntry == null)
-                newTable[index] = e;
-            else {
-                if (kvEntry instanceof Entry) {
-                    Object[] arr = new Object[2];
-                    arr[0] = (Entry) kvEntry;
-                    arr[1] = e;
-                    newTable[index] = arr;
-                } else {
-                    Object arr[] = (Object[]) kvEntry;
-                    Object newArr[] = new Object[arr.length + 1];
-                    arr[0] = e;
+        private void put(Entry ee, int index, Object[] tab) {
+            Object o = tab[index];
+            if (o != null) {
+                if (o instanceof Entry) {
+                    Object arr [] = new Object [2];
+                    arr [0] = ee;
+                    arr [1] = (Entry) o;
+                    tab[index] = arr;
+                    return;
+                }
+                else {
+                    Object arr [] = (Object[]) o;
+                    Object newArr [] = new Object[arr.length+1];
+                    newArr [0] = ee;
                     System.arraycopy(arr, 0, newArr, 1, arr.length);
-                    newTable[index] = arr;
+                    tab [index] = newArr;
+                    return;
                 }
             }
+            tab[index] = ee;
+        }
+
+        private Object put(Entry ee, Object o) {
+            if (o != null) {
+                if (o instanceof Entry) {
+                    Object arr [] = new Object [2];
+                    arr [0] = ee;
+                    arr [1] = (Entry) o;
+                    return arr;
+                }
+                else {
+                    Object arr [] = (Object[]) o;
+                    Object newArr [] = new Object[arr.length+1];
+                    newArr [0] = ee;
+                    System.arraycopy(arr, 0, newArr, 1, arr.length);
+                    return newArr;
+                }
+            }
+            return ee;
         }
     }
 

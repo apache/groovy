@@ -59,22 +59,22 @@ public class ReflectionCache {
     }
 
     static void setAssignableFrom(Class klazz, Class aClass) {
-        SoftDoubleKeyMap.Entry val = (SoftDoubleKeyMap.Entry) assignableMap.getOrPut(klazz, aClass, null);
-        if (val.getValue() == null) {
-            val.setValue(Boolean.TRUE);
-        }
+//        SoftDoubleKeyMap.Entry val = (SoftDoubleKeyMap.Entry) assignableMap.getOrPut(klazz, aClass, null);
+//        if (val.getValue() == null) {
+//            val.setValue(Boolean.TRUE);
+//        }
     }
 
     public static boolean isAssignableFrom(Class klazz, Class aClass) {
         if (klazz == aClass)
           return true;
 
-        SoftDoubleKeyMap.Entry val = (SoftDoubleKeyMap.Entry) assignableMap.getOrPut(klazz, aClass, null);
-        if (val.getValue() == null) {
-            val.setValue(Boolean.valueOf(klazz.isAssignableFrom(aClass)));
-        }
-        return ((Boolean)val.getValue()).booleanValue();
-//        return klazz.isAssignableFrom(aClass);
+//        SoftDoubleKeyMap.Entry val = (SoftDoubleKeyMap.Entry) assignableMap.getOrPut(klazz, aClass, null);
+//        if (val.getValue() == null) {
+//            val.setValue(Boolean.valueOf(klazz.isAssignableFrom(aClass)));
+//        }
+//        return ((Boolean)val.getValue()).booleanValue();
+        return klazz.isAssignableFrom(aClass);
     }
 
     static boolean arrayContentsEq(Object[] a1, Object[] a2) {

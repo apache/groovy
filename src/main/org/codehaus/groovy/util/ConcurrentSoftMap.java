@@ -4,7 +4,7 @@ public class ConcurrentSoftMap<K,V> extends AbstractConcurrentMap<K,V> {
     public ConcurrentSoftMap() {
     }
 
-    protected AbstractConcurrentMap.Segment<K,V> createSegment(int cap) {
+    protected Segment<K,V> createSegment(int cap) {
         return new ConcurrentSoftMap.Segment<K,V>(cap);
     }
 
@@ -14,7 +14,7 @@ public class ConcurrentSoftMap<K,V> extends AbstractConcurrentMap<K,V> {
         }
 
         protected AbstractConcurrentMap.Entry<K,V> createEntry(K key, int hash, V value) {
-            return new EntryWithValue(this, key, hash, value);
+            return new EntryWithValue<K,V>(this, key, hash, value);
         }
     }
 

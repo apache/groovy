@@ -33,7 +33,7 @@ public abstract class AbstractConcurrentDoubleKeyMap<K1,K2,V> extends AbstractCo
         segmentFor(hash).remove(key1, key2, hash);
     }
 
-    final Segment<K1,K2,V> segmentFor(int hash) {
+    public final Segment<K1,K2,V> segmentFor(int hash) {
         return (Segment<K1,K2,V>) segments[(hash >>> segmentShift) & segmentMask];
     }
 

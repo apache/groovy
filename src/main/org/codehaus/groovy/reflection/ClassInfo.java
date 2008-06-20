@@ -19,21 +19,20 @@ import groovy.lang.ExpandoMetaClass;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.stdclasses.*;
-import org.codehaus.groovy.util.LazySoftReference;
-import org.codehaus.groovy.util.LockableObject;
-import org.codehaus.groovy.util.FinalizableRef;
+import org.codehaus.groovy.util.*;
 
 import java.lang.ref.SoftReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Handle for all information we want to keep about the class
  *
  * @author Alex.Tkachman
  */
-public class ClassInfo extends FinalizableRef.SoftRef<Class> {
+public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
 
     private final LazyCachedClassRef cachedClassRef;
 
@@ -58,37 +57,18 @@ public class ClassInfo extends FinalizableRef.SoftRef<Class> {
     MetaMethod[] newMetaMethods = CachedClass.EMPTY;
 
     public final int hash;
-    public ClassInfo next;
     private InstanceMap perInstanceMetaClassMap;
 
-    ClassInfo(Class klazz, int hash, ClassInfo next) {
-        super (klazz);
-        new DebugRef(klazz);
-        this.next = next;
+    ClassInfo(ConcurrentSoftMap.Segment segment, Class klazz, int hash) {
+        super (segment, klazz, hash);
+
+        if (ClassInfo.DebugRef.debug)
+          new DebugRef(klazz);
+
         this.hash = hash;
         cachedClassRef = new LazyCachedClassRef(this);
         staticMetaClassField = new LazyStaticMetaClassFieldRef(this);
         artifactClassLoader = new LazyClassLoaderRef(this);
-    }
-
-    ClassInfo(ClassInfo src, ClassInfo next) {
-        super(src.get());
-        this.next = next;
-        this.hash = src.hash;
-        version = src.version;
-
-        cachedClassRef = new LazyCachedClassRef(this, src);
-        staticMetaClassField = new LazyStaticMetaClassFieldRef(this, src);
-        artifactClassLoader = new LazyClassLoaderRef(this, src);
-        weakMetaClass = src.weakMetaClass;
-        strongMetaClass = src.strongMetaClass;
-        if (strongMetaClass instanceof ExpandoMetaClass) {
-            modifiedExpandos.remove(src);
-            modifiedExpandos.add(this);
-        }
-        dgmMetaMethods = src.dgmMetaMethods;
-        newMetaMethods = src.newMetaMethods;
-        perInstanceMetaClassMap = src.perInstanceMetaClassMap;
     }
 
     public int getVersion() {
@@ -173,6 +153,15 @@ public class ClassInfo extends FinalizableRef.SoftRef<Class> {
 
     public static int fullSize () {
         return globalClassSet.fullSize();
+    }
+
+    public void finalizeRef() {
+        staticMetaClassField.set(NONE);
+        setStrongMetaClass(null);
+        cachedClassRef.set(null);
+        artifactClassLoader.set(null);
+
+        super.finalizeRef();
     }
 
     private static CachedClass createCachedClass(Class klazz, ClassInfo classInfo) {
@@ -271,233 +260,23 @@ public class ClassInfo extends FinalizableRef.SoftRef<Class> {
         return perInstanceMetaClassMap != null;
     }
 
-    public void finalizeRef() {
-        globalClassSet.segmentFor(hash).clean(this);
-    }
-
-    public static class ClassInfoSet {
-
-        static final int MAXIMUM_CAPACITY = 1 << 30;
-        static final int MAX_SEGMENTS = 1 << 16;
-        static final int RETRIES_BEFORE_LOCK = 2;
-
-        final int segmentMask;
-        final int segmentShift;
-        final Segment[] segments;
+    public static class ClassInfoSet extends ConcurrentSoftMap<Class,ClassInfo> {
 
         public ClassInfoSet() {
-
-            int sshift = 0;
-            int ssize = 1;
-            while (ssize < 16) {
-                ++sshift;
-                ssize <<= 1;
-            }
-            segmentShift = 32 - sshift;
-            segmentMask = ssize - 1;
-            this.segments = new Segment[ssize];
-
-            int c = 512 / ssize;
-            if (c * ssize < 512)
-                ++c;
-            int cap = 1;
-            while (cap < c)
-                cap <<= 1;
-
-            for (int i = 0; i < this.segments.length; ++i)
-                this.segments[i] = new Segment(cap);
         }
 
-        static int hash(Class x) {
-            int h = x.getName().hashCode();
-            h += ~(h << 9);
-            h ^=  (h >>> 14);
-            h +=  (h << 4);
-            h ^=  (h >>> 10);
-            return h;
+        protected Segment createSegment(int cap) {
+            return new Segment(cap);
         }
 
-        final Segment segmentFor(int hash) {
-            return segments[(hash >>> segmentShift) & segmentMask];
-        }
-
-        static final class Segment extends LockableObject {
-
-            volatile int count;
-
-            int threshold;
-
-            volatile ClassInfo[] table;
-
+        static final class Segment extends ConcurrentSoftMap.Segment<Class,ClassInfo> {
             Segment(int initialCapacity) {
-                setTable(new ClassInfo[initialCapacity]);
+                super(initialCapacity);
             }
 
-            void setTable(ClassInfo[] newTable) {
-                threshold = (int)(newTable.length * 0.75f);
-                table = newTable;
+            protected ClassInfo createEntry(Class key, int hash, ClassInfo unused) {
+                return new ClassInfo(this, key, hash);
             }
-
-            ClassInfo getFirst(int hash) {
-                ClassInfo[] tab = table;
-                return tab[hash & (tab.length - 1)];
-            }
-
-            ClassInfo get(Class key, int hash) {
-                ClassInfo e = getFirst(hash);
-                while (e != null) {
-                    if (e.hash == hash && e.get() == key) {
-                        return e;
-                    }
-                    e = e.next;
-                }
-                return put (key, hash);
-            }
-
-            ClassInfo put(Class key, int hash) {
-                lock();
-                try {
-                    int c = count;
-                    if (c++ > threshold) {
-                        rehash();
-                    }
-
-                    ClassInfo[] tab = table;
-                    int index = hash & (tab.length - 1);
-                    ClassInfo first = tab[index];
-                    ClassInfo e = first;
-                    while (e != null) {
-                        if (e.hash == hash && e.get() == key) {
-                            return e;
-                        }
-                        e = e.next;
-                    }
-
-                    e = new ClassInfo(key, hash, first);
-                    tab[index] = e;
-                    count = c; // write-volatile
-                    return e;
-                } finally {
-                    unlock();
-                }
-            }
-
-            void rehash() {
-                ClassInfo[] oldTable = table;
-                int oldCapacity = oldTable.length;
-                if (oldCapacity >= MAXIMUM_CAPACITY)
-                    return;
-
-                int newCount = 0;
-                for (int i = 0; i < oldCapacity ; i++) {
-                    ClassInfo first = null;
-                    for (ClassInfo e = oldTable[i]; e != null; ) {
-                       if (e.get() != null) {
-                           if (first == null)
-                             first = e;
-
-                           ClassInfo ee = e.next;
-                           while (ee != null && ee.get() == null)
-                             ee = ee.next;
-                           e.next = ee;
-                           e = ee;
-                           newCount++;
-                       }
-                       else {
-                         e = e.next;
-                       }
-                    }
-
-                    oldTable [i] = first;
-                }
-
-                if (newCount+1 < threshold) {
-                    count = newCount;
-                    return;
-                }
-
-                ClassInfo[] newTable = new ClassInfo[oldCapacity << 1];
-                int sizeMask = newTable.length - 1;
-                newCount = 0;
-                for (int i = 0; i < oldCapacity ; i++) {
-                    for (ClassInfo e = oldTable[i]; e != null; e = e.next) {
-                       int idx = e.hash & sizeMask;
-                       final ClassInfo next = newTable[idx];
-                       if (next == null && e.next == null)
-                         newTable[idx] = e;
-                       else
-                         newTable[idx] = new ClassInfo(e, next);
-                       newCount++;
-                    }
-                }
-
-                threshold = (int)(newTable.length * 0.75f);
-
-                table = newTable;
-                count = newCount;
-            }
-
-            public void clean(ClassInfo classInfo) {
-                lock ();
-                try {
-                    ClassInfo[] oldTable = table;
-                    ClassInfo first = null;
-                    int index = classInfo.hash & (oldTable.length - 1);
-                    for (ClassInfo e = oldTable[index]; e != null; ) {
-                       if (e.get() != null) {
-                           if (first == null)
-                             first = e;
-
-                           ClassInfo ee = e.next;
-                           while (ee != null && ee.get() == null)
-                             ee = ee.next;
-                           e.next = ee;
-                           e = ee;
-//                           newCount++;
-                       }
-                       else {
-                         e = e.next;
-                       }
-                    }
-
-                    oldTable [index] = first;
-                }
-                finally {
-                    unlock();
-                }
-            }
-        }
-
-        public int fullSize() {
-            int count = 0;
-            for (int i = 0; i < segments.length; i++) {
-                for (int j = 0; j < segments[i].table.length; j++) {
-                    for (ClassInfo e = segments[i].table[j]; e != null; e = e.next)
-                        count++;
-                }
-            }
-            return count;
-        }
-
-        public int size() {
-            int count = 0;
-            for (int i = 0; i < segments.length; i++) {
-                for (int j = 0; j < segments[i].table.length; j++) {
-                    for (ClassInfo e = segments[i].table[j]; e != null; e = e.next)
-                      if (e.get() != null)
-                        count++;
-                }
-            }
-            return count;
-        }
-
-        public ClassInfo get(Class key) {
-            int hash = hash(key);
-            return segmentFor(hash).get(key, hash);
-        }
-
-        public ClassInfo get(Class key, int hash) {
-            return segmentFor(hash).get(key, hash);
         }
     }
 
@@ -510,7 +289,7 @@ public class ClassInfo extends FinalizableRef.SoftRef<Class> {
         private int nextCacheEntry;
 
         private final ClassInfo[] cache = new ClassInfo[CACHE_SIZE];
-        private static final ClassInfo NOINFO = new ClassInfo(null,0,null);
+        private static final ClassInfo NOINFO = new ClassInfo(null,null,0);
 
         private LocalMap() {
             for (int i = 0; i < cache.length; i++) {
@@ -527,7 +306,7 @@ public class ClassInfo extends FinalizableRef.SoftRef<Class> {
             if (info != null)
               return putToCache(info);
 
-            return putToCache(globalClassSet.get(key));
+            return putToCache((ClassInfo) globalClassSet.getOrPut(key,null));
         }
 
         private ClassInfo getFromCache (Class klazz) {
@@ -580,21 +359,8 @@ public class ClassInfo extends FinalizableRef.SoftRef<Class> {
             this.info = info;
         }
 
-        LazyCachedClassRef(ClassInfo info, ClassInfo src) {
-            this.info = info;
-            final CachedClass cc = src.cachedClassRef.getNullable();
-            if (cc != null) {
-                cc.classInfo = info;
-                set (cc);
-            }
-        }
-
         public CachedClass initValue() {
             return createCachedClass(info.get(), info);
-        }
-
-        protected void finalizeRef() {
-            super.finalizeRef();
         }
     }
 
@@ -603,14 +369,6 @@ public class ClassInfo extends FinalizableRef.SoftRef<Class> {
 
         LazyStaticMetaClassFieldRef(ClassInfo info) {
             this.info = info;
-        }
-
-        LazyStaticMetaClassFieldRef(ClassInfo info, ClassInfo src) {
-            this.info = info;
-            final Object cc = src.staticMetaClassField.getNullable();
-            if (cc != null) {
-                set(cc);
-            }
         }
 
         public Object initValue() {
@@ -634,14 +392,6 @@ public class ClassInfo extends FinalizableRef.SoftRef<Class> {
             this.info = info;
         }
 
-        LazyClassLoaderRef(ClassInfo info, ClassInfo src) {
-            this.info = info;
-            final ClassLoaderForClassArtifacts cc = src.artifactClassLoader.getNullable();
-            if (cc != null) {
-                set (cc);
-            }
-        }
-
         public ClassLoaderForClassArtifacts initValue() {
             return new ClassLoaderForClassArtifacts(info.get());
         }
@@ -653,16 +403,22 @@ public class ClassInfo extends FinalizableRef.SoftRef<Class> {
     private static class InstanceMap extends WeakHashMap {
     }
 
-    private static class DebugRef extends FinalizableRef.PhantomRef {
+    private static class DebugRef extends FinalizableRef.DebugRef<Class> {
+        public final static boolean debug = false;
+
+        static final AtomicInteger count = new AtomicInteger();
+
         final String name;
+
         public DebugRef(Class klazz) {
             super(klazz);
             name = klazz == null ? "<null>" : klazz.getName();
+            count.incrementAndGet();
         }
 
         public void finalizeRef() {
-            System.out.println(name + " unloaded");
+            System.out.println(name + " unloaded " + count.decrementAndGet() + " classes kept");
+            super.finalizeRef();
         }
     }
-
 }

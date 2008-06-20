@@ -4,17 +4,17 @@ public class ConcurrentWeakMap<K,V> extends AbstractConcurrentMap<K,V> {
     public ConcurrentWeakMap() {
     }
 
-    protected AbstractConcurrentMap.Segment<K,V> createSegment(int cap) {
-        return new ConcurrentWeakMap.Segment<K,V>(cap);
+    protected Segment<K,V> createSegment(int cap) {
+        return new ConcurrentWeakMap.Segment<K,V>(this, cap);
     }
 
     public static class Segment<K,V> extends AbstractConcurrentMap.Segment<K,V>{
-        public Segment(int cap) {
+        public Segment(ConcurrentWeakMap<K,V> map, int cap) {
             super(cap);
         }
 
         protected AbstractConcurrentMap.Entry<K,V> createEntry(K key, int hash, V value) {
-            return new EntryWithValue(this, key, hash, value);
+            return new EntryWithValue<K,V>(this, key, hash, value);
         }
     }
 

@@ -24,8 +24,8 @@ class WeakMapTest extends GroovyTestCase{
 
            ReflectionCache.isAssignableFrom s.class, s.class.superclass
            if (i % 10 == 0) {
-//               if (i % 50 == 0)
-//                 shell = null
+               if (i % 50 == 0)
+                 shell = null
                System.gc ()
                println "${i} ${ReflectionCache.assignableMap.size()} ${ReflectionCache.assignableMap.fullSize()}  ${ClassInfo.size()} ${ClassInfo.fullSize()}"
            }
