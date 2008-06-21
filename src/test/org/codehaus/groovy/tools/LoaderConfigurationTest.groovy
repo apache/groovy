@@ -26,7 +26,7 @@ class LoaderConfigurationTest extends GroovyTestCase {
     }
 
     void testNonexistingPath() {
-        // generate a load instruction with an invalid path
+        // generate a load instruction with a non-existing path
         def file = getNonexistantFile(new File("."))
 
         def txt = "load $file"
