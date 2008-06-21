@@ -553,14 +553,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
 
         String name = identifier(node);
-        if (classNode != null) {
-            if (classNode.getNameWithoutPackage().equals(name)) {
-                if (isAnInterface()) {
-                    throw new ASTRuntimeException(methodDef, "Constructor not permitted within an interface.");
-                }
-                throw new ASTRuntimeException(methodDef, "Invalid constructor format. Try remove the 'def' expression?");
-            }
-        }
         node = node.getNextSibling();
         
         Parameter[] parameters = Parameter.EMPTY_ARRAY;
