@@ -68,7 +68,7 @@ class Console implements CaretListener {
 
     // UI
     SwingBuilder swing
-    JFrame frame
+    RootPaneContainer frame
     ConsoleTextEditor inputEditor
     JTextPane inputArea
     JTextPane outputArea
@@ -156,7 +156,42 @@ class Console implements CaretListener {
 
 
     void run() {
+        run([
+            rootContainerDelegate:{
+                frame(
+                    title: 'GroovyConsole',
+                    //location: [100,100], // in groovy 2.0 use platform default location
+                    iconImage: imageIcon("/groovy/ui/ConsoleIcon.png").image,
+                    defaultCloseOperation: JFrame.DO_NOTHING_ON_CLOSE,
+                ) {
+                    try {
+                        current.locationByPlatform = true
+                    } catch (Exception e) {
+                        current.location = [100, 100] // for 1.4 compatibility
+                    }
+                    containingWindows += current
+                }
+            },
+            menuBarDelegate: {arg->
+                current.JMenuBar = build(arg)}
+        ])
+    }
+
+    void run(JApplet applet) {
+        run([
+            rootContainerDelegate:{
+                containingWindows += SwingUtilities.getRoot(applet.getParent())
+                applet
+            },
+            menuBarDelegate: {arg->
+                current.JMenuBar = build(arg)}
+        ])
+    }
+
+    void run(Map defaults) {
+
         swing = new SwingBuilder()
+        defaults.each{k, v -> swing[k] = v}
 
         // tweak what the stack traces filter out to be fairly broad
         System.setProperty("groovy.sanitized.stacktraces", """org.codehaus.groovy.runtime.
@@ -184,8 +219,10 @@ class Console implements CaretListener {
         swing.bind(source:swing.inputEditor.undoAction, sourceProperty:'enabled', target:swing.undoAction, targetProperty:'enabled')
         swing.bind(source:swing.inputEditor.redoAction, sourceProperty:'enabled', target:swing.redoAction, targetProperty:'enabled')
 
-        swing.consoleFrame.pack()
-        swing.consoleFrame.show()
+        if (swing.consoleFrame instanceof java.awt.Window) {
+            swing.consoleFrame.pack()
+            swing.consoleFrame.show()
+        }
         installInterceptor()
         swing.doLater inputArea.&requestFocus
     }
@@ -297,8 +334,10 @@ class Console implements CaretListener {
 
     void exit(EventObject evt = null) {
         if (askToSaveFile()) {
-            frame.hide()
-            frame.dispose()
+            if (frame instanceof java.awt.Window) {
+                frame.hide()
+                frame.dispose()
+            }
             FindReplaceUtility.dispose()
             consoleControllers.remove(this)
             if (!consoleControllers) {
@@ -665,9 +704,7 @@ class Console implements CaretListener {
     // Shows the 'wait' dialog
     void showRunWaitDialog() {
         runWaitDialog.pack()
-        int x = frame.x + (frame.width - runWaitDialog.width) / 2
-        int y = frame.y + (frame.height - runWaitDialog.height) / 2
-        runWaitDialog.setLocation(x, y)
+        runWaitDialog.setLocationRelativeTo(frame)
         runWaitDialog.show()
     }
 
@@ -680,10 +717,12 @@ class Console implements CaretListener {
     }
 
     void updateTitle() {
-        if (scriptFile != null) {
-            frame.title = scriptFile.name + (dirty?" * ":"") + " - GroovyConsole"
-        } else {
-            frame.title = "GroovyConsole"
+        if (frame.properties.containsKey('title')) {
+            if (scriptFile != null) {
+                frame.title = scriptFile.name + (dirty?" * ":"") + " - GroovyConsole"
+            } else {
+                frame.title = "GroovyConsole"
+            }
         }
     }
 

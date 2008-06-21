@@ -18,7 +18,6 @@ package groovy.swing.factory
 import java.awt.Image
 import javax.swing.ImageIcon
 
-
 class ImageIconFactory extends AbstractFactory {
 
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) {
@@ -65,7 +64,7 @@ class ImageIconFactory extends AbstractFactory {
             // we may need to extract the byte[] for some packaging cases
             value = klass.getResource(resource)
             if (value == null) {
-                throw new RuntimeException("In $name the value argument '$origValue' does not refer to a file or a class resource")
+                throw new RuntimeException("In $name the resource '$value' does not refer to a file or a class resource")
             }
         }
 

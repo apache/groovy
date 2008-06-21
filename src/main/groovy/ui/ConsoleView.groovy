@@ -16,9 +16,13 @@
 
 package groovy.ui
 
-import groovy.ui.view.*
+import groovy.ui.view.Defaults
+import groovy.ui.view.GTKDefaults
+import groovy.ui.view.MacOSXDefaults
+import groovy.ui.view.WindowsDefaults
+import java.awt.datatransfer.DataFlavor
+import java.awt.dnd.*
 import javax.swing.UIManager
-import static javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE
 import javax.swing.event.DocumentListener
 
 switch (UIManager.getSystemLookAndFeelClassName()) {
@@ -40,19 +44,13 @@ switch (UIManager.getSystemLookAndFeelClassName()) {
         break
 }
 
-consoleFrame = frame(
-    title: 'GroovyConsole',
-    //location: [100,100], // in groovy 2.0 use platform default location
-    iconImage: imageIcon("/groovy/ui/ConsoleIcon.png").image,
-    defaultCloseOperation: DO_NOTHING_ON_CLOSE,
-) {
-    try {
-        current.locationByPlatform = true
-    } catch (Exception e) {
-        current.location = [100, 100] // for 1.4 compatibility
-    }
+binding.rootContainerDelegate.delegate = this
 
-    build(menuBarClass)
+consoleFrame = binding['rootContainerDelegate']()
+container(consoleFrame) {
+
+    binding.menuBarDelegate.delegate = delegate
+    binding['menuBarDelegate'](menuBarClass)
 
     build(contentPaneClass)
 
@@ -83,7 +81,9 @@ controller.outputStyle = outputStyle
 controller.resultStyle = resultStyle
 
 // add the window close handler
-consoleFrame.windowClosing = controller.&exit
+if (consoleFrame instanceof java.awt.Window) {
+    consoleFrame.windowClosing = controller.&exit
+}
 
 // link in references to the controller
 controller.inputEditor = inputEditor
@@ -107,14 +107,6 @@ controller.inputArea.addCaretListener(controller)
 controller.inputArea.document.addDocumentListener({ controller.setDirty(true) } as DocumentListener)
 controller.rootElement = inputArea.document.defaultRootElement
 
-
-import java.awt.dnd.DropTargetEvent
-import java.awt.dnd.DropTarget
-import java.awt.dnd.DropTargetListener
-import java.awt.datatransfer.DataFlavor
-import java.awt.dnd.DropTargetDragEvent
-import java.awt.dnd.DropTargetDropEvent
-import java.awt.dnd.DnDConstants
 
 def dtListener =  [
     dragEnter:{DropTargetDragEvent evt ->
