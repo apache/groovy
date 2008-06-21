@@ -26,7 +26,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * class used to configure a RootLoader from a stream or by using
+ * Class used to configure a RootLoader from a stream or by using
  * it's methods.
  * <p/>
  * The stream can be for example a FileInputStream from a file with
@@ -47,21 +47,21 @@ import java.util.regex.Pattern;
  * <li>The "main is" part may only be once in the file. The String
  * afterwards is the name of a class with a main method. </li>
  * <li>The "load" command will add the given file or path to the
- * classpath in this configuration object. If the path does not 
+ * classpath in this configuration object. If the path does not
  * exist, the path will be ignored.
  * </li>
  * <li>properties referenced using !{x} are required.</li>
- * <li>properties referenced using ${x} are not required. If the 
- * property does not exist the whole load instruction line will 
+ * <li>properties referenced using ${x} are not required. If the
+ * property does not exist the whole load instruction line will
  * be ignored.</li>
  * <li>* is used to match zero or more characters in a file.</li>
- * <li>** is used to match zero or more directories.</li> 
+ * <li>** is used to match zero or more directories.</li>
  * </ul>
  * <p/>
- * Defining the main class is optional if setRequireMain(boolean) was
+ * Defining the main class is required unless setRequireMain(boolean) is
  * called with false, before reading the configuration.
  * You can use the wildcard "*" to filter the path, but only for files, not
- * directories. to match directories use "**". The  ${propertyname} is replaced by the value of the system's
+ * directories. To match directories use "**". The ${propertyname} is replaced by the value of the system's
  * property name. You can use user.home here for example. If the property does
  * not exist, an empty string will be used. If the path or file after the load
  * command does not exist, the path will be ignored.
@@ -77,7 +77,7 @@ public class LoaderConfiguration {
     private String main;
     private boolean requireMain;
     private static final char WILDCARD = '*';
-    private static final String ALL_WILDCARD = ""+WILDCARD+WILDCARD;
+    private static final String ALL_WILDCARD = "" + WILDCARD + WILDCARD;
     private static final String MATCH_FILE_NAME = "\\\\E[^/]+?\\\\Q";
     private static final String MATCH_ALL = "\\\\E.+?\\\\Q";
 
@@ -122,10 +122,10 @@ public class LoaderConfiguration {
 
         if (requireMain && main == null) throw new IOException("missing main class definition in config file");
     }
-    
-    /**
-     * exapands the properties inside the given string to it's values
-     */
+
+    /*
+    * Expands the properties inside the given string to it's values.
+    */
     private String assignProperties(String str) {
         int propertyIndexStart = 0, propertyIndexEnd = 0;
         boolean requireProperty = false;
@@ -135,14 +135,14 @@ public class LoaderConfiguration {
             {
                 int i1 = str.indexOf("${", propertyIndexStart);
                 int i2 = str.indexOf("!{", propertyIndexStart);
-                if (i1==-1) {
-                    propertyIndexStart = i2; 
-                } else if (i2==-1) {
+                if (i1 == -1) {
+                    propertyIndexStart = i2;
+                } else if (i2 == -1) {
                     propertyIndexStart = i1;
                 } else {
-                    propertyIndexStart = Math.min(i1,i2);
+                    propertyIndexStart = Math.min(i1, i2);
                 }
-                requireProperty=propertyIndexStart==i2;
+                requireProperty = propertyIndexStart == i2;
             }
             if (propertyIndexStart == -1) break;
             result += str.substring(propertyIndexEnd, propertyIndexStart);
@@ -177,24 +177,24 @@ public class LoaderConfiguration {
     }
 
 
-    /**
-     * load a possible filtered path. Filters are defined
-     * by using the * wildcard like in any shell
+    /*
+     * Load a possibly filtered path. Filters are defined
+     * by using the * wildcard like in any shell.
      */
     private void loadFilteredPath(String filter) {
-        if (filter==null) return;
+        if (filter == null) return;
         int starIndex = filter.indexOf(WILDCARD);
         if (starIndex == -1) {
             addFile(new File(filter));
             return;
         }
         boolean recursive = filter.indexOf(ALL_WILDCARD) != -1;
-        
+
         String startDir = filter.substring(0, starIndex - 1);
         File root = new File(startDir);
 
         filter = RegexUtils.quote(filter);
-        filter = filter.replaceAll("\\"+WILDCARD+"\\"+WILDCARD, MATCH_ALL);
+        filter = filter.replaceAll("\\" + WILDCARD + "\\" + WILDCARD, MATCH_ALL);
         filter = filter.replaceAll("\\" + WILDCARD, MATCH_FILE_NAME);
         Pattern pattern = Pattern.compile(filter);
 
@@ -231,7 +231,7 @@ public class LoaderConfiguration {
         return changedPath;
     }
 
-    /**
+    /*
      * return true if the parent of the path inside the given
      * string does exist
      */
@@ -240,7 +240,7 @@ public class LoaderConfiguration {
         return dir.exists();
     }
 
-    /**
+    /*
      * seperates the given path at the last '/'
      */
     private String getParentPath(String filter) {
@@ -250,12 +250,14 @@ public class LoaderConfiguration {
     }
 
     /**
-     * adds a file to the classpath if it does exist
+     * Adds a file to the classpath if it exists.
+     *
+     * @param file the file to add
      */
-    public void addFile(File f) {
-        if (f != null && f.exists()) {
+    public void addFile(File file) {
+        if (file != null && file.exists()) {
             try {
-                classPath.add(f.toURI().toURL());
+                classPath.add(file.toURI().toURL());
             } catch (MalformedURLException e) {
                 throw new AssertionError("converting an existing file to an url should have never thrown an exception!");
             }
@@ -263,16 +265,19 @@ public class LoaderConfiguration {
     }
 
     /**
-     * adds a file to the classpath if it does exist
+     * Adds a file to the classpath if it exists.
+     *
+     * @param filename the name of the file to add
      */
-    public void addFile(String s) {
-        if (s != null) addFile(new File(s));
+    public void addFile(String filename) {
+        if (filename != null) addFile(new File(filename));
     }
 
     /**
-     * adds a classpath to this configuration. It expects a string
-     * with multiple paths, seperated by the system dependent
+     * Adds a classpath to this configuration. It expects a string with
+     * multiple paths, seperated by the system dependent path separator
      *
+     * @param path the path as a path separator delimited string
      * @see java.io.File#pathSeparator
      */
     public void addClassPath(String path) {
@@ -283,34 +288,42 @@ public class LoaderConfiguration {
     }
 
     /**
-     * gets a classpath as URL[] from this configuration.
-     * This can be used to construct a @see java.net.URLClassLoader
+     * The classpath as URL[] from this configuration.
+     * This can be used to construct a class loader.
+     *
+     * @return the classpath
+     * @see java.net.URLClassLoader
      */
     public URL[] getClassPathUrls() {
         return (URL[]) classPath.toArray(new URL[classPath.size()]);
     }
 
     /**
-     * returns the main class or null is no is defined
+     * Returns the name of the main class for this configuration.
+     *
+     * @return the name of the main class or null if not defined
      */
     public String getMainClass() {
         return main;
     }
 
     /**
-     * sets the main class. If there is already a main class
+     * Sets the main class. If there is already a main class
      * it is overwritten. Calling @see #configure(InputStream)
      * after calling this method does not require a main class
-     * definition inside the stream
+     * definition inside the stream.
+     *
+     * @param classname the name to become the main class
      */
-    public void setMainClass(String clazz) {
-        main = clazz;
+    public void setMainClass(String classname) {
+        main = classname;
         requireMain = false;
     }
 
     /**
-     * if set to false no main class is required when calling
+     * Determines if a main class is required when calling.
      *
+     * @param requireMain set to false if no main class is required
      * @see #configure(InputStream)
      */
     public void setRequireMain(boolean requireMain) {
