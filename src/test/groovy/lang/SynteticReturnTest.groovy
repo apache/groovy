@@ -92,16 +92,21 @@ class SynteticReturnTest extends GroovyTestCase{
     }
 
     void testSynchronized () {
-        assertEquals(2, mm())
+        assertEquals(20, mm(10))
+        assertEquals(10,  mm(1))
     }
 
-    private def mm() {
+    private def mm(x) {
         synchronized (new Object()) {
-            if (false)
-                throw new Object()
-            else
-                if (true)
-                    2
+            try {
+                if (x == 1)
+                    throw NullPointerException()
+                else
+                    2*x
+            }
+            catch (Throwable t) {
+               10
+            }
         }
     }
 
