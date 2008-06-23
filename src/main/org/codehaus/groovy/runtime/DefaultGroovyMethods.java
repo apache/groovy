@@ -5604,6 +5604,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Concat any object with String
+     *
+     * @param self an object
+     * @param str string to concat with
+     * @return result string
+     */
+    public static String plus(Object self, CharSequence str) {
+        return self + str.toString();
+    }
+
+    /**
      * Appends a String to this StringBuffer.
      *
      * @param left  a StringBuffer
