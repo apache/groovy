@@ -21,10 +21,7 @@ import groovy.lang.MetaClass;
 import groovy.lang.GroovyObjectSupport;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
-import org.codehaus.groovy.ast.stmt.BlockStatement;
-import org.codehaus.groovy.ast.stmt.ExpressionStatement;
-import org.codehaus.groovy.ast.stmt.ReturnStatement;
-import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
@@ -402,34 +399,26 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     public void visitMethod(MethodNode node) {
         this.methodNode = node;
+        addReturnIfNeeded(node);
+        Statement statement;
+        if (node.getName().equals("main") && node.isStatic()) {
+            Parameter[] params = node.getParameters();
+            if (params.length == 1) {
+                Parameter param = params[0];
+                if (param.getType() == null || param.getType()==ClassHelper.OBJECT_TYPE) {
+                    param.setType(ClassHelper.STRING_TYPE.makeArray());
+                }
+            }
+        }
+        statement = node.getCode();
+        if (statement!=null) statement.visit(new VerifierCodeVisitor(this));
+    }
+
+    private void addReturnIfNeeded(MethodNode node) {
         Statement statement = node.getCode();
         if (!node.isVoidMethod()) {
-            if (statement instanceof ExpressionStatement) {
-                ExpressionStatement expStmt = (ExpressionStatement) statement;
-                node.setCode(new ReturnStatement(expStmt.getExpression()));
-            }
-            else if (statement instanceof BlockStatement) {
-                BlockStatement block = (BlockStatement) statement;
-
-                // let's copy the list so we create a new block
-                List list = new ArrayList(block.getStatements());
-                if (!list.isEmpty()) {
-                    int idx = list.size() - 1;
-                    Statement last = (Statement) list.get(idx);
-                    if (last instanceof ExpressionStatement) {
-                        ExpressionStatement expStmt = (ExpressionStatement) last;
-                        list.set(idx, new ReturnStatement(expStmt));
-                    }
-                    else if (!(last instanceof ReturnStatement)) {
-                        list.add(new ReturnStatement(ConstantExpression.NULL));
-                    }
-                }
-                else {
-                    list.add(new ReturnStatement(ConstantExpression.NULL));
-                }
-
-                node.setCode(new BlockStatement(filterStatements(list),block.getVariableScope()));
-            }
+            if (statement != null) // it happens with @interface methods
+              node.setCode(addReturnsIfNeeded(statement, node.getVariableScope()));
         }
         else if (!node.isAbstract()) {
         	BlockStatement newBlock = new BlockStatement();
@@ -442,17 +431,95 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             newBlock.addStatement(ReturnStatement.RETURN_NULL_OR_VOID);
             node.setCode(newBlock);
         }
-        if (node.getName().equals("main") && node.isStatic()) {
-            Parameter[] params = node.getParameters();
-            if (params.length == 1) {
-                Parameter param = params[0];
-                if (param.getType() == null || param.getType()==ClassHelper.OBJECT_TYPE) {
-                    param.setType(ClassHelper.STRING_TYPE.makeArray());
+    }
+
+    private Statement addReturnsIfNeeded(Statement statement, VariableScope scope) {
+        if (  statement instanceof ReturnStatement
+           || statement instanceof BytecodeSequence
+           || statement instanceof ThrowStatement
+                ) {
+            return statement;
+        }
+
+        if (statement instanceof EmptyStatement) {
+            return new ReturnStatement(ConstantExpression.NULL);
+        }
+
+        if (statement instanceof ExpressionStatement) {
+            ExpressionStatement expStmt = (ExpressionStatement) statement;
+            return new ReturnStatement(expStmt.getExpression());
+        }
+
+        if (statement instanceof SynchronizedStatement) {
+            SynchronizedStatement sync = (SynchronizedStatement) statement;
+            sync.setCode(addReturnsIfNeeded(sync.getCode(), scope));
+            return sync;
+        }
+
+        if (statement instanceof IfStatement) {
+            IfStatement ifs = (IfStatement) statement;
+            ifs.setIfBlock(addReturnsIfNeeded(ifs.getIfBlock(), scope));
+            ifs.setElseBlock(addReturnsIfNeeded(ifs.getElseBlock(), scope));
+            return ifs;
+        }
+
+//        if (statement instanceof SwitchStatement) {
+//            SwitchStatement swi = (SwitchStatement) statement;
+//            return swi;
+//        }
+
+        if (statement instanceof TryCatchStatement) {
+            TryCatchStatement trys = (TryCatchStatement) statement;
+            trys.setTryStatement(addReturnsIfNeeded(trys.getTryStatement(), scope));
+            final int len = trys.getCatchStatements().size();
+            for (int i = 0; i != len; ++i) {
+                final CatchStatement catchStatement = trys.getCatchStatement(i);
+                catchStatement.setCode(addReturnsIfNeeded(catchStatement.getCode(), scope));
+            }
+            return trys;
+        }
+
+        if (statement instanceof BlockStatement) {
+            BlockStatement block = (BlockStatement) statement;
+
+            final List list = block.getStatements();
+            if (!list.isEmpty()) {
+                int idx = list.size() - 1;
+                Statement last = addReturnsIfNeeded((Statement) list.get(idx), block.getVariableScope());
+                list.set(idx, last);
+                if (!statementReturns(last)) {
+                    list.add(new ReturnStatement(ConstantExpression.NULL));
                 }
             }
+            else {
+                return new ReturnStatement(ConstantExpression.NULL);
+            }
+
+            return new BlockStatement(filterStatements(list),block.getVariableScope());
         }
-        statement = node.getCode();
-        if (statement!=null) statement.visit(new VerifierCodeVisitor(this));
+
+        if (statement == null)
+          return new ReturnStatement(ConstantExpression.NULL);
+        else {
+            final List list = new ArrayList();
+            list.add(statement);
+            list.add(new ReturnStatement(ConstantExpression.NULL));
+            return new BlockStatement(list,new VariableScope(scope));
+        }
+    }
+
+    private boolean statementReturns(Statement last) {
+        return (
+                last instanceof ReturnStatement ||
+                last instanceof BlockStatement ||
+                last instanceof IfStatement ||
+                last instanceof ExpressionStatement ||
+                last instanceof EmptyStatement ||
+                last instanceof TryCatchStatement ||
+                last instanceof BytecodeSequence ||
+                last instanceof ThrowStatement ||
+                last instanceof SynchronizedStatement
+                );
     }
 
     public void visitField(FieldNode node) {

@@ -29,6 +29,7 @@ import org.codehaus.groovy.ast.Parameter;
 public class CatchStatement extends Statement {
 
     private Parameter variable;
+
     private Statement code;
     
     public CatchStatement(Parameter variable, Statement code) {
@@ -50,5 +51,9 @@ public class CatchStatement extends Statement {
 
     public Parameter getVariable() {
         return variable;
+    }
+
+    public void setCode(Statement code) {
+        this.code = code;
     }
 }

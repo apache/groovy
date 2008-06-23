@@ -39,6 +39,10 @@ public class SynchronizedStatement extends Statement {
         return code;
     }
     
+    public void setCode(Statement statement) {
+        code = statement;
+    }
+
     public Expression getExpression() {
         return expression;
     }

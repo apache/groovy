@@ -67,4 +67,12 @@ public class TryCatchStatement extends Statement {
         }
         return null;
     }
+
+    public void setTryStatement(Statement tryStatement) {
+        this.tryStatement = tryStatement;
+    }
+
+    public void setCatchStatement(int idx, Statement catchStatement) {
+        catchStatements.set(idx, catchStatement);
+    }
 }

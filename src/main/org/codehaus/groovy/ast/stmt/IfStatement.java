@@ -56,4 +56,12 @@ public class IfStatement extends Statement {
     public void setBooleanExpression(BooleanExpression booleanExpression) {
         this.booleanExpression = booleanExpression;
     }
+
+    public void setIfBlock(Statement statement) {
+        ifBlock = statement;
+    }
+
+    public void setElseBlock(Statement statement) {
+        elseBlock = statement;
+    }
 }
