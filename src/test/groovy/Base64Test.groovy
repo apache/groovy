@@ -24,7 +24,6 @@ class Base64Test extends GroovyTestCase {
         def encodedBytes = specialBytes.encodeBase64().toString()
         def decodedBytes = encodedBytes.decodeBase64()
         def decodedString = new String(decodedBytes, "ISO-8859-1")
-        assert decodedString.equals(specialString)
         assert decodedString.equals(savedString)
     }
 
