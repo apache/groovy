@@ -891,6 +891,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * 'Case' implementation for a GString, which simply calls the equivalet method for String.
+     *
+     * @param caseValue   the case value
+     * @param switchValue the switch value
+     * @return true if the switchValue's toString() equals the caseValue
+     */
+    public static boolean isCase(GString caseValue, Object switchValue) {
+        return isCase(caseValue.toString(), switchValue);
+    }
+
+    /**
      * Special 'Case' implementation for Class, which allows testing
      * for a certain class in a switch statement.
      * For example:

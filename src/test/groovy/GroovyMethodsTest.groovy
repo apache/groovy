@@ -39,6 +39,17 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         assert [1: 'a', 2: 'b', 3: 'c'].collect {it.getKey() + "*" + it.getValue()} == ['1*a', '2*b', '3*c']
     }
 
+    void testGStringIsCase() {
+        def one = 'one'
+        def two = 'two'
+        assert 'onetwo'.isCase('onetwo')
+        assert 'onetwo'.isCase("one$two")
+        assert 'onetwo'.isCase("$one$two")
+        assert "one$two".isCase('onetwo')
+        assert "$one$two".isCase('onetwo')
+        assert "one${two}".isCase("${one}two")
+    }
+
     void testCollectAll() {
         def animalLists= [["ant", "mouse", "elephant"], ["deer", "monkey"]]
         assert animalLists*.size() == [3, 2]
