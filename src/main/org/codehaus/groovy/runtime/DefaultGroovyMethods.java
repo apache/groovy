@@ -5285,7 +5285,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return object which will write the Base64 encoding of the byte array
      */
     public static Writable encodeBase64(Byte[] data) {
-        return encodeBase64(data, false);
+        return encodeBase64(DefaultTypeTransformation.convertToByteArray(data), false);
     }
 
     /**
