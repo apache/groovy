@@ -15,11 +15,14 @@
  */
 package org.codehaus.groovy.runtime.callsite;
 
-import org.objectweb.asm.*;
-import org.codehaus.groovy.reflection.CachedMethod;
-import org.codehaus.groovy.reflection.CachedClass;
-import org.codehaus.groovy.reflection.MethodHandleFactory;
 import org.codehaus.groovy.classgen.BytecodeHelper;
+import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.CachedMethod;
+import org.codehaus.groovy.reflection.MethodHandleFactory;
+import org.objectweb.asm.ClassWriter;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
@@ -152,7 +155,7 @@ public class CallSiteGenerator {
 
     public static byte[] genPogoMetaMethodSite(CachedMethod cachedMethod, ClassWriter cw, String name) {
         MethodVisitor mv;
-        cw.visit(Opcodes.V1_4, Opcodes.ACC_PUBLIC, name.replace('.','/'), null, "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", null);
+        cw.visit(Opcodes.V1_4, Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, name.replace('.','/'), null, "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite", null);
 
         genConstructor(cw, "org/codehaus/groovy/runtime/callsite/PogoMetaMethodSite");
 
@@ -170,7 +173,7 @@ public class CallSiteGenerator {
 
     public static byte[] genPojoMetaMethodSite(CachedMethod cachedMethod, ClassWriter cw, String name) {
         MethodVisitor mv;
-        cw.visit(Opcodes.V1_4, Opcodes.ACC_PUBLIC, name.replace('.','/'), null, "org/codehaus/groovy/runtime/callsite/PojoMetaMethodSite", null);
+        cw.visit(Opcodes.V1_4, Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, name.replace('.','/'), null, "org/codehaus/groovy/runtime/callsite/PojoMetaMethodSite", null);
 
         genConstructor(cw, "org/codehaus/groovy/runtime/callsite/PojoMetaMethodSite");
 
@@ -183,7 +186,7 @@ public class CallSiteGenerator {
     }
 
     public static byte[] genStaticMetaMethodSite(CachedMethod cachedMethod, ClassWriter cw, String name) {
-        cw.visit(Opcodes.V1_4, Opcodes.ACC_PUBLIC, name.replace('.','/'), null, "org/codehaus/groovy/runtime/callsite/StaticMetaMethodSite", null);
+        cw.visit(Opcodes.V1_4, Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, name.replace('.','/'), null, "org/codehaus/groovy/runtime/callsite/StaticMetaMethodSite", null);
 
         genConstructor(cw, "org/codehaus/groovy/runtime/callsite/StaticMetaMethodSite");
 
