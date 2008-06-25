@@ -15,7 +15,6 @@
  */
 package gls.annotations.vm5
 
-import java.lang.annotation.*
 import gls.scope.CompilableTestSupport
 
 /**
@@ -218,6 +217,20 @@ assert my.defaultClass() == Integer
 
 assert my.defaultEnum() == ElementType.TYPE
 assert my.defaultAnnotation() instanceof Target
+    """
+  }
+
+  void testJavaAnnotationUsageWithGroovyKeyword() {
+    assertScript """
+package gls.annotations.vm5
+import java.lang.annotation.*
+@JavaAnnotation(in = 3)
+class Foo {}
+
+Annotation[] annotations = Foo.class.annotations
+assert annotations.size() == 1
+JavaAnnotation my = annotations[0]
+assert my.in() == 3
     """
   }
 

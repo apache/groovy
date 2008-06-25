@@ -899,8 +899,13 @@ annotationMemberValuePairs
     ;
 
 annotationMemberValuePair!  {Token first = LT(1);}
-    :   i:IDENT ASSIGN! nls! v:annotationMemberValueInitializer
+    :   i:annotationIdent ASSIGN! nls! v:annotationMemberValueInitializer
             {#annotationMemberValuePair = #(create(ANNOTATION_MEMBER_VALUE_PAIR,"ANNOTATION_MEMBER_VALUE_PAIR",first,LT(1)), i, v);}
+    ;
+
+annotationIdent
+    :   IDENT
+    |   keywordPropertyNames
     ;
 
 annotationMemberValueInitializer
