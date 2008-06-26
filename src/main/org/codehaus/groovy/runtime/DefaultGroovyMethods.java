@@ -5281,18 +5281,43 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     private static final char[] T_TABLE = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=".toCharArray();
 
-    public static Writable encodeBase64(Byte[] data) {
-        return encodeBase64(DefaultTypeTransformation.convertToByteArray(data));
+    private static final String CHUNK_SEPARATOR = "\r\n";
+
+    /**
+     * Produce a Writable object which writes the Base64 encoding of the byte array.
+     * Calling toString() on the result returns the encoding as a String. For more
+     * information on Base64 encoding and chunking see <code>RFC 4648</code>.
+     *
+     * @param data Byte array to be encoded
+     * @param chunked whether or not the Base64 encoded data should be MIME chunked
+     * @return object which will write the Base64 encoding of the byte array
+     */
+    public static Writable encodeBase64(Byte[] data, final boolean chunked) {
+        return encodeBase64(DefaultTypeTransformation.convertToByteArray(data), chunked);
     }
 
     /**
-     * Produce a Writable object which writes the base64 encoding of the byte array.
-     * Calling toString() on the result rerurns the encoding as a String
+     * Produce a Writable object which writes the Base64 encoding of the byte array.
+     * Calling toString() on the result returns the encoding as a String. For more
+     * information on Base64 encoding and chunking see <code>RFC 4648</code>.
+     *
+     * @param data Byte array to be encoded
+     * @return object which will write the Base64 encoding of the byte array
+     */
+    public static Writable encodeBase64(Byte[] data) {
+        return encodeBase64(DefaultTypeTransformation.convertToByteArray(data), false);
+    }
+
+    /**
+     * Produce a Writable object which writes the Base64 encoding of the byte array.
+     * Calling toString() on the result returns the encoding as a String. For more
+     * information on Base64 encoding and chunking see <code>RFC 4648</code>.
      *
      * @param data byte array to be encoded
-     * @return object which will write the base64 encoding of the byte array
+     * @param chunked whether or not the Base64 encoded data should be MIME chunked
+     * @return object which will write the Base64 encoding of the byte array
      */
-    public static Writable encodeBase64(final byte[] data) {
+    public static Writable encodeBase64(final byte[] data, final boolean chunked) {
         return new Writable() {
             public Writer writeTo(final Writer writer) throws IOException {
                 int charCount = 0;
@@ -5306,8 +5331,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     writer.write(T_TABLE[(d >> 6) & 0X3F]);
                     writer.write(T_TABLE[d & 0X3F]);
 
-                    if (++charCount == 18) {
-                        writer.write('\n');
+                    if (chunked && ++charCount == 19) {
+                        writer.write(CHUNK_SEPARATOR);
                         charCount = 0;
                     }
                 }
@@ -5323,6 +5348,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     writer.write(T_TABLE[(d >> 12) & 0X3F]);
                     writer.write((dLimit + 1 < data.length) ? T_TABLE[(d >> 6) & 0X3F] : '=');
                     writer.write('=');
+                    if (chunked && charCount != 0) {
+                        writer.write(CHUNK_SEPARATOR);
+                    }
                 }
 
                 return writer;
@@ -5340,6 +5368,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 return buffer.toString();
             }
         };
+    }
+
+    /**
+     * Produce a Writable object which writes the Base64 encoding of the byte array.
+     * Calling toString() on the result returns the encoding as a String. For more
+     * information on Base64 encoding and chunking see <code>RFC 4648</code>.
+     *
+     * @param data byte array to be encoded
+     * @return object which will write the Base64 encoding of the byte array
+     */
+    public static Writable encodeBase64(final byte[] data) {
+        return encodeBase64(data, false);
     }
 
     private static final byte[] TRANSLATE_TABLE = (
@@ -5377,7 +5417,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     + "\u0031\u0032\u0033").getBytes();
 
     /**
-     * Decode the Sting from base64 into a byte array.
+     * Decode the String from Base64 into a byte array.
      *
      * @param value the string to be decoded
      * @return the decoded bytes as an array
