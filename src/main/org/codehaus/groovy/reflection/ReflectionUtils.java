@@ -46,7 +46,6 @@ public class ReflectionUtils {
             Class srr = Class.forName("sun.reflect.Reflection");
             meth = srr.getMethod("getCallerClass", Integer.TYPE);
         } catch (Throwable t) {
-            t.printStackTrace(System.out);
             meth = null;
         }
         magicMethod = meth;
