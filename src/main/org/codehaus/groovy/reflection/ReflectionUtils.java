@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.reflection;
 
+import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -38,6 +39,31 @@ public class ReflectionUtils {
         ignoredPackages.add("sun.reflect");
     }
 
+    final private static Method magicMethod;
+    static {
+        Method meth;
+        try {
+            Class srr = Class.forName("sun.reflect.Reflection");
+            meth = srr.getMethod("getCallerClass", Integer.TYPE);
+        } catch (Throwable t) {
+            t.printStackTrace(System.out);
+            meth = null;
+        }
+        magicMethod = meth;
+    }
+
+    /**
+     * Determine wether or not the getCallingClass methods will return
+     * any sensible results.  On JVMs that are not Sun derived i.e.
+     * (gcj, Harmony) this will likely return false.  When not available
+     * all getCallingClass methods will return null.
+     * @return true if getCallingClass can return anything but null, false if
+     *  it will only return null.
+     */
+    public static boolean isCallingClassReflectionAvailable() {
+        return magicMethod != null;
+    }
+
     /**
      * Get the immediate calling class, ignoring MOP frames.
      * @return The Class of the caller
@@ -55,12 +81,15 @@ public class ReflectionUtils {
      *   enough stackframes to satisfy matchLevel
      */
     public static Class getCallingClass(int matchLevel) {
+        if (magicMethod == null) {
+            return null;
+        }
         int depth = 0;
         try {
             Class c;
             do {
                 do {
-                    c = sun.reflect.Reflection.getCallerClass(depth++);
+                    c = (Class) magicMethod.invoke(null, depth++);
                 } while ((c != null)
                     && (c.isSynthetic()
                         || (c.getPackage() != null
@@ -83,12 +112,15 @@ public class ReflectionUtils {
      *   enough stackframes to satisfy matchLevel
      */
     public static Class getCallingClass(int matchLevel, Collection<String> extraIgnoredPackages) {
+        if (magicMethod == null) {
+            return null;
+        }
         int depth = 0;
         try {
             Class c;
             do {
                 do {
-                    c = sun.reflect.Reflection.getCallerClass(depth++);
+                    c = (Class) magicMethod.invoke(null, depth++);
                 } while ((c != null)
                     && (c.isSynthetic()
                         || (c.getPackage() != null
