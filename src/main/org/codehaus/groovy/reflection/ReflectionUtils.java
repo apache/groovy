@@ -19,6 +19,7 @@ import java.lang.reflect.Method;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.Collections;
 
 /**
  * This class contains utility methods to determine which class called the
@@ -52,7 +53,7 @@ public class ReflectionUtils {
     }
 
     /**
-     * Determine wether or not the getCallingClass methods will return
+     * Determine whether or not the getCallingClass methods will return
      * any sensible results.  On JVMs that are not Sun derived i.e.
      * (gcj, Harmony) this will likely return false.  When not available
      * all getCallingClass methods will return null.
@@ -80,33 +81,7 @@ public class ReflectionUtils {
      *   enough stackframes to satisfy matchLevel
      */
     public static Class getCallingClass(int matchLevel) {
-        if (magicMethod == null) {
-            return null;
-        }
-        int depth = 0;
-        try {
-            Class c;
-            // this super class stuff is for Java 1.4 support only
-            // it isn't needed on a 5.0 VM
-            Class sc;
-            do {
-                do {
-                    c = (Class) magicMethod.invoke(null, depth++);
-                    if (c != null) {
-                        sc = c.getSuperclass();
-                    } else {
-                        sc = null;
-                    }
-                } while (((c != null)
-                        && (c.isSynthetic()
-                            || (c.getPackage() != null
-                                && (ignoredPackages.contains(c.getPackage().getName())))))
-                    || ((sc != null) && (sc.getPackage() != null) && "org.codehaus.groovy.runtime.callsite".equals(sc.getPackage().getName())));
-            } while (c != null && matchLevel-- > 0);
-            return c;
-        } catch (Exception e) {
-            return null;
-        }
+        return getCallingClass(matchLevel, Collections.EMPTY_SET);
     }
 
     /**
@@ -137,16 +112,24 @@ public class ReflectionUtils {
                     } else {
                         sc = null;
                     }
-                } while (((c != null)
-                        && (c.isSynthetic()
-                            || (c.getPackage() != null
-                                && (ignoredPackages.contains(c.getPackage().getName())
-                                  || extraIgnoredPackages.contains(c.getPackage().getName())))))
-                    || ((sc != null) && (sc.getPackage() != null) && "org.codehaus.groovy.runtime.callsite".equals(sc.getPackage().getName())));
+                } while (classShouldBeIgnored(c, extraIgnoredPackages)
+                    || superClassShouldBeIgnored(sc));
             } while (c != null && matchLevel-- > 0);
             return c;
-        } catch (Exception e) {
+        } catch (Throwable t) {
             return null;
         }
+    }
+
+    private static boolean superClassShouldBeIgnored(Class sc) {
+        return ((sc != null) && (sc.getPackage() != null) && "org.codehaus.groovy.runtime.callsite".equals(sc.getPackage().getName()));
+    }
+
+    private static boolean classShouldBeIgnored(Class c, Collection<String> extraIgnoredPackages) {
+        return ((c != null)
+                && (c.isSynthetic()
+                    || (c.getPackage() != null
+                        && (ignoredPackages.contains(c.getPackage().getName())
+                          || extraIgnoredPackages.contains(c.getPackage().getName())))));
     }
 }
