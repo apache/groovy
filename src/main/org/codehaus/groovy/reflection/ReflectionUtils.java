@@ -86,13 +86,22 @@ public class ReflectionUtils {
         int depth = 0;
         try {
             Class c;
+            // this super class stuff is for Java 1.4 support only
+            // it isn't needed on a 5.0 VM
+            Class sc;
             do {
                 do {
                     c = (Class) magicMethod.invoke(null, depth++);
-                } while ((c != null)
-                    && (c.isSynthetic()
-                        || (c.getPackage() != null
-                            && ignoredPackages.contains(c.getPackage().getName()))));
+                    if (c != null) {
+                        sc = c.getSuperclass();
+                    } else {
+                        sc = null;
+                    }
+                } while (((c != null)
+                        && (c.isSynthetic()
+                            || (c.getPackage() != null
+                                && (ignoredPackages.contains(c.getPackage().getName())))))
+                    || ((sc != null) && (sc.getPackage() != null) && "org.codehaus.groovy.runtime.callsite".equals(sc.getPackage().getName())));
             } while (c != null && matchLevel-- > 0);
             return c;
         } catch (Exception e) {
@@ -117,14 +126,23 @@ public class ReflectionUtils {
         int depth = 0;
         try {
             Class c;
+            // this super class stuff is for Java 1.4 support only
+            // it isn't needed on a 5.0 VM
+            Class sc;
             do {
                 do {
                     c = (Class) magicMethod.invoke(null, depth++);
-                } while ((c != null)
-                    && (c.isSynthetic()
-                        || (c.getPackage() != null
-                            && (ignoredPackages.contains(c.getPackage().getName())
-                              || extraIgnoredPackages.contains(c.getPackage().getName())))));
+                    if (c != null) {
+                        sc = c.getSuperclass();
+                    } else {
+                        sc = null;
+                    }
+                } while (((c != null)
+                        && (c.isSynthetic()
+                            || (c.getPackage() != null
+                                && (ignoredPackages.contains(c.getPackage().getName())
+                                  || extraIgnoredPackages.contains(c.getPackage().getName())))))
+                    || ((sc != null) && (sc.getPackage() != null) && "org.codehaus.groovy.runtime.callsite".equals(sc.getPackage().getName())));
             } while (c != null && matchLevel-- > 0);
             return c;
         } catch (Exception e) {
