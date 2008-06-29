@@ -20,7 +20,10 @@ import java.util.List;
 /**
  * A Range represents the list of all items obtained by starting from a
  * <code>from</code> value and calling <code>next()</code> successively
- * until you end up at the <code>to</code> value.
+ * until you reach the <code>to</code> value. For a reverse range,
+ * the list is obtained by starting at the <code>to</code> value and
+ * successively calling <code>previous()</code> until the <code>from</code>
+ * value is reached.
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
