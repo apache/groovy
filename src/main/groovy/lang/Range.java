@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,22 +18,23 @@ package groovy.lang;
 import java.util.List;
 
 /**
- * Represents the interface of a Range implementation which includes the
- * from and to values.
+ * A Range represents the list of all items obtained by starting from a
+ * <code>from</code> value and calling <code>next()</code> successively
+ * until you end up at the <code>to</code> value.
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
 public interface Range extends List {
     /**
-     * Gets the lower value in the range.
+     * The lower value in the range.
      *
      * @return the lower value in the range.
      */
     Comparable getFrom();
 
     /**
-     * Gets the lower value in the range.
+     * The upper value in the range.
      *
      * @return the upper value in the range
      */
@@ -48,8 +49,8 @@ public interface Range extends List {
     boolean isReverse();
 
     /**
-     * Indicates whether this is a reverse range which iterates backwards
-     * starting from the to value and ending on the from value
+     * Indicates whether an object is greater than or equal to the <code>from</code>
+     * value for the range and less than or equal to the <code>to</code> value.
      *
      * @param o the object to check against the boundaries of the range
      * @return <code>true</code> if the object is between the from and to values
