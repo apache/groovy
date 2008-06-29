@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 package groovy.util;
-
 
 import groovy.xml.QName;
 import org.apache.tools.ant.*;
@@ -38,9 +37,16 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
- * Allows Ant tasks to be used with GroovyMarkup 
+ * Allows <a href="http://ant.apache.org/manual/coretasklist.html">Ant tasks</a> to
+ * be used with GroovyMarkup. Requires the ant.jar in your classpath which will
+ * happen automatically if you are using the Groovy distribution but will be up
+ * to you to organize if you are embedding Groovy. If you wish to use the
+ * <a href="http://ant.apache.org/manual/optionaltasklist.html">optional tasks</a>
+ * you will need to add one or more additional jars from the ant distribution to
+ * your classpath.
  * 
- * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>, changes by Dierk Koenig (dk)
+ * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author Dierk Koenig (dk)
  * @author Marc Guillemot
  * @version $Revision$
  */
@@ -138,7 +144,6 @@ public class AntBuilder extends BuilderSupport {
 
     protected void setParent(Object parent, Object child) {
     }
-
     
     /**
      * We don't want to return the node as created in {@link #createNode(Object, Map, Object)}
