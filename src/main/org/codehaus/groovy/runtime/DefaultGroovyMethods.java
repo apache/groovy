@@ -6969,6 +6969,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Parse a String into a Short
+     *
+     * @param self a String
+     * @return a Short
+     */
+    public static Short toShort(String self) {
+        return Short.valueOf(self.trim());
+    }
+
+    /**
      * Parse a String into a Float
      *
      * @param self a String
@@ -9565,6 +9575,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             return toBigDecimal(self);
         } else if (c == BigInteger.class) {
             return toBigInteger(self);
+        } else if (c == Long.class) {
+            return toLong(self);
+        } else if (c == Integer.class) {
+            return toInteger(self);
+        } else if (c == Short.class) {
+            return toShort(self);
+        } else if (c == Byte.class) {
+            return Byte.valueOf(self.trim());
         } else if (c == Character.class) {
             return toCharacter(self);
         } else if (c == Double.class) {
