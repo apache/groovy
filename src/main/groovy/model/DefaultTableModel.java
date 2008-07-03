@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,8 +20,8 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 
 import javax.swing.table.AbstractTableModel;
 import javax.swing.table.DefaultTableColumnModel;
-import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableColumn;
+import javax.swing.table.TableColumnModel;
 import java.util.Collections;
 import java.util.List;
 
@@ -61,14 +61,14 @@ public class DefaultTableModel extends AbstractTableModel {
      * Adds a property model column to the table
      */
     public DefaultTableColumn addPropertyColumn(Object headerValue, String property, Class type) {
-        return addColumn(headerValue, new PropertyModel(rowModel, property, type));
+        return addColumn(headerValue, property, new PropertyModel(rowModel, property, type));
     }
     
     /**
      * Adds a property model column to the table
      */
     public DefaultTableColumn addPropertyColumn(Object headerValue, String property, Class type, boolean editable) {
-        return addColumn(headerValue, new PropertyModel(rowModel, property, type, editable));
+        return addColumn(headerValue, property, new PropertyModel(rowModel, property, type, editable));
     }
     
     /**
@@ -79,7 +79,11 @@ public class DefaultTableModel extends AbstractTableModel {
     }
     
     public DefaultTableColumn addColumn(Object headerValue, ValueModel columnValueModel) {
-        DefaultTableColumn answer = new DefaultTableColumn(headerValue, columnValueModel);
+        return addColumn(headerValue, headerValue, columnValueModel);
+    }
+
+    public DefaultTableColumn addColumn(Object headerValue, Object identifier, ValueModel columnValueModel) {
+        DefaultTableColumn answer = new DefaultTableColumn(headerValue, identifier, columnValueModel);
         addColumn(answer);
         return answer;
     }

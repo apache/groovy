@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 the original author or authors.
+ * Copyright 2007-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,13 @@
 package groovy.swing.factory
 
 import groovy.swing.binding.AbstractButtonProperties
-import groovy.swing.binding.JScrollBarProperties;
+import groovy.swing.binding.JScrollBarProperties
 import groovy.swing.binding.JSliderProperties
+import groovy.swing.binding.JTableProperties
 import groovy.swing.binding.JTextComponentProperties
 import java.util.Map.Entry
-import org.codehaus.groovy.binding.ClosureSourceBinding
-import org.codehaus.groovy.binding.EventTriggerBinding
-import org.codehaus.groovy.binding.FullBinding
-import org.codehaus.groovy.binding.PropertyBinding
-import org.codehaus.groovy.binding.TargetBinding
-import org.codehaus.groovy.binding.TriggerBinding
+import org.codehaus.groovy.binding.*
+
 
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
@@ -74,6 +71,8 @@ public class BindFactory extends AbstractFactory {
         // JTable.elements
         // JTable.selectedElement
         // JTable.selectedElements
+        syntheticBindings.putAll(JTableProperties.getSyntheticProperties());
+
         // JTree.root
         // JTree.selectedElement
         // JTree.selectedElements
@@ -128,7 +127,11 @@ public class BindFactory extends AbstractFactory {
             TriggerBinding trigger = getTriggerBinding(psb)
             fb = trigger.createBinding(psb, tb)
         } else {
-            throw new RuntimeException("$name does not have suffient attributes to initialize")
+            def newAttributes = [:]
+            newAttributes.putAll(attributes)
+            builder.context.put(tb, newAttributes)
+            attributes.clear()
+            return new ClosureTriggerBinding(syntheticBindings)
         }
 
         if (attributes.containsKey("value")) {
@@ -161,6 +164,9 @@ public class BindFactory extends AbstractFactory {
         if ((node instanceof FullBinding) && (node.converter == null)) {
             node.converter = childContent
             return false
+        } else if (node instanceof ClosureTriggerBinding) {
+            node.closure = childContent
+            return false;
         } else if (node instanceof TriggerBinding) {
             def bindAttrs = builder.getContext().get(node) ?: [:]
             if (!bindAttrs.containsKey("converter")) {
@@ -217,6 +223,27 @@ public class BindFactory extends AbstractFactory {
                 }
                 fb.update()
                 
+                bindAttrs.each{k, v -> fb."$k" = v}
+
+                builder.addDisposalClosure(fb.&unbind)
+
+                // replaces ourselves in the variables
+                // id: is lost to us by now, so we just assume that any storage of us is a goner as well
+                //builder.getVariables().each{ Map.Entry me -> if (value.is(me.value)) me.setValue fb}
+                if (id) builder.setVariable(id, fb)
+            } else if (value instanceof ClosureTriggerBinding) {
+                PropertyBinding psb = new PropertyBinding(node, property)
+                fb = value.createBinding(value, psb);
+
+                Object o = bindAttrs.remove("bind")
+
+                if (    (o == null)
+                    || ((o instanceof Boolean) && ((Boolean)o).booleanValue()))
+                {
+                    fb.bind()
+                }
+                fb.update()
+
                 bindAttrs.each{k, v -> fb."$k" = v}
 
                 builder.addDisposalClosure(fb.&unbind)

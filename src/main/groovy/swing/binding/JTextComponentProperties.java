@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 the original author or authors.
+ * Copyright 2007-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,7 @@
  */
 package groovy.swing.binding;
 
-import org.codehaus.groovy.binding.FullBinding;
-import org.codehaus.groovy.binding.PropertyBinding;
-import org.codehaus.groovy.binding.SourceBinding;
-import org.codehaus.groovy.binding.TargetBinding;
-import org.codehaus.groovy.binding.TriggerBinding;
-import org.codehaus.groovy.binding.AbstractFullBinding;
+import org.codehaus.groovy.binding.*;
 
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -52,68 +47,23 @@ public class JTextComponentProperties {
 }
 
 
-class JTextComponentTextBinding extends AbstractFullBinding implements PropertyChangeListener, DocumentListener {
-    boolean bound;
+class JTextComponentTextBinding extends AbstractSyntheticBinding implements PropertyChangeListener, DocumentListener {
     JTextComponent boundTextComponent;
 
     public JTextComponentTextBinding(PropertyBinding source, TargetBinding target) {
-        bound = false;
-        setSourceBinding(source);
-        setTargetBinding(target);
+        super(source, target, JTextComponent.class, "text");
     }
 
-    public synchronized void bind() {
-        if (!bound) {
-            boundTextComponent = (JTextComponent) ((PropertyBinding)sourceBinding).getBean();
-            try {
-                boundTextComponent.addPropertyChangeListener("document", this);
-                boundTextComponent.getDocument().addDocumentListener(this);
-                bound = true;
-            } catch (RuntimeException re) {
-                try {
-                    boundTextComponent.removePropertyChangeListener("document", this);
-                    boundTextComponent.getDocument().removeDocumentListener(this);
-                } catch (Exception e) {
-                    // ignore as we are re-throwing the original cause
-                }
-                throw re;
-            }
-        }
+    public synchronized void syntheticBind() {
+        boundTextComponent = (JTextComponent) ((PropertyBinding)sourceBinding).getBean();
+        boundTextComponent.addPropertyChangeListener("document", this);
+        boundTextComponent.getDocument().addDocumentListener(this);
     }
 
-    public synchronized void unbind() {
-        if (bound) {
-            bound = false;
-            // fail dirty, no checks
-            boundTextComponent.removePropertyChangeListener("document", this);
-            boundTextComponent.getDocument().removeDocumentListener(this);
-            boundTextComponent = null;
-        }
-    }
-
-    public void rebind() {
-        if (bound) {
-            unbind();
-            bind();
-        }
-    }
-
-    public void setSourceBinding(SourceBinding source) {
-        if (!(source instanceof PropertyBinding)) {
-            throw new IllegalArgumentException("Only PropertyBindings are accepted");
-        }
-
-        if (!"text".equals(((PropertyBinding)source).getPropertyName())) {
-            throw new IllegalArgumentException("PropertyName must be 'text'");
-        }
-        if (!(((PropertyBinding)source).getBean() instanceof JTextComponent)) {
-            throw new IllegalArgumentException("SourceBean must be a TextComponent");
-        }
-        super.setSourceBinding(source);
-    }
-
-    public void setTargetBinding(TargetBinding target) {
-        super.setTargetBinding(target);
+    public synchronized void syntheticUnbind() {
+        boundTextComponent.removePropertyChangeListener("document", this);
+        boundTextComponent.getDocument().removeDocumentListener(this);
+        boundTextComponent = null;
     }
 
     public void propertyChange(PropertyChangeEvent event) {

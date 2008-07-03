@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 the original author or authors.
+ * Copyright 2007-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,9 @@
  */
 package groovy.swing.binding;
 
-import org.codehaus.groovy.binding.AbstractFullBinding;
-import org.codehaus.groovy.binding.FullBinding;
-import org.codehaus.groovy.binding.PropertyBinding;
-import org.codehaus.groovy.binding.SourceBinding;
-import org.codehaus.groovy.binding.TargetBinding;
-import org.codehaus.groovy.binding.TriggerBinding;
+import org.codehaus.groovy.binding.*;
 
-import javax.swing.BoundedRangeModel;
-import javax.swing.JScrollBar;
+import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.beans.PropertyChangeEvent;
@@ -50,65 +44,24 @@ public class JScrollBarProperties {
 }
 
 
-class JScrollBarValueBinding extends AbstractFullBinding implements PropertyChangeListener, ChangeListener {
-    boolean bound;
+class JScrollBarValueBinding extends AbstractSyntheticBinding implements PropertyChangeListener, ChangeListener {
     JScrollBar boundScrollBar;
 
 
     public JScrollBarValueBinding(PropertyBinding source, TargetBinding target) {
-        bound = false;
-        setSourceBinding(source);
-        setTargetBinding(target);
+        super(source, target, JScrollBar.class, "value");
     }
 
-    public synchronized void bind() {
-        if (!bound) {
-            boundScrollBar = (JScrollBar) ((PropertyBinding)sourceBinding).getBean();
-            try {
-                boundScrollBar.addPropertyChangeListener("model", this);
-                boundScrollBar.getModel().addChangeListener(this);
-                bound = true;
-            } catch (RuntimeException re) {
-                try {
-                    boundScrollBar.removePropertyChangeListener("model", this);
-                    boundScrollBar.getModel().removeChangeListener(this);
-                } catch (Exception e) {
-                    // ignore as we are re-throwing the original cause
-                }
-                throw re;
-            }
-        }
+    public synchronized void syntheticBind() {
+        boundScrollBar = (JScrollBar) ((PropertyBinding)sourceBinding).getBean();
+        boundScrollBar.addPropertyChangeListener("model", this);
+        boundScrollBar.getModel().addChangeListener(this);
     }
 
-    public synchronized void unbind() {
-        if (bound) {
-            bound = false;
-            // fail dirty, no checks
-            boundScrollBar.removePropertyChangeListener("model", this);
-            boundScrollBar.getModel().removeChangeListener(this);
-            boundScrollBar = null;
-        }
-    }
-
-    public void rebind() {
-        if (bound) {
-            unbind();
-            bind();
-        }
-    }
-
-    public void setSourceBinding(SourceBinding source) {
-        if (!(source instanceof PropertyBinding)) {
-            throw new IllegalArgumentException("Only PropertySourceBindings are accepted");
-        }
-
-        if (!"value".equals(((PropertyBinding) source).getPropertyName())) {
-            throw new IllegalArgumentException("PropertyName must be 'value'");
-        }
-        if (!(((PropertyBinding) source).getBean() instanceof JScrollBar)) {
-            throw new IllegalArgumentException("SourceBean must be an JScrollBar");
-        }
-        super.setSourceBinding(source);
+    public synchronized void syntheticUnbind() {
+        boundScrollBar.removePropertyChangeListener("model", this);
+        boundScrollBar.getModel().removeChangeListener(this);
+        boundScrollBar = null;
     }
 
     public void setTargetBinding(TargetBinding target) {

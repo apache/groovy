@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 
 package groovy.swing.factory
 
+import groovy.swing.binding.JTableMetaMethods
 import javax.swing.JTable
 import javax.swing.table.TableColumn
 import javax.swing.table.TableModel
@@ -30,6 +31,13 @@ class TableFactory extends BeanFactory {
         super(klass, false)
     }
 
+    public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) {
+        Object table = super.newInstance(builder, name, value, attributes);
+        // insure metaproperties are registered
+        JTableMetaMethods.enhanceMetaClass(table)
+        return table
+    }
+
     public void setChild(FactoryBuilderSupport builder, Object parent, Object child) {
         if (child instanceof TableColumn) {
             parent.addColumn(child);
@@ -39,3 +47,4 @@ class TableFactory extends BeanFactory {
     }
 
 }
+

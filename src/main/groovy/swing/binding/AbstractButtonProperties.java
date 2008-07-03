@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 the original author or authors.
+ * Copyright 2007-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,9 @@
  */
 package groovy.swing.binding;
 
-import org.codehaus.groovy.binding.AbstractFullBinding;
-import org.codehaus.groovy.binding.FullBinding;
-import org.codehaus.groovy.binding.PropertyBinding;
-import org.codehaus.groovy.binding.SourceBinding;
-import org.codehaus.groovy.binding.TargetBinding;
-import org.codehaus.groovy.binding.TriggerBinding;
+import org.codehaus.groovy.binding.*;
 
-import javax.swing.AbstractButton;
-import javax.swing.ButtonModel;
+import javax.swing.*;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
 import java.beans.PropertyChangeEvent;
@@ -50,68 +44,23 @@ public class AbstractButtonProperties {
 }
 
 
-class AbstractButtonSelectedBinding extends AbstractFullBinding implements PropertyChangeListener, ItemListener {
-    boolean bound;
+class AbstractButtonSelectedBinding extends AbstractSyntheticBinding implements PropertyChangeListener, ItemListener {
     AbstractButton boundButton;
 
     public AbstractButtonSelectedBinding(PropertyBinding source, TargetBinding target) {
-        bound = false;
-        setSourceBinding(source);
-        setTargetBinding(target);
+        super(source, target, AbstractButton.class, "selected");
     }
 
-    public synchronized void bind() {
-        if (!bound) {
+    public synchronized void syntheticBind() {
             boundButton = (AbstractButton) ((PropertyBinding) sourceBinding).getBean();
-            try {
                 boundButton.addPropertyChangeListener("model", this);
                 boundButton.getModel().addItemListener(this);
-                bound = true;
-            } catch (RuntimeException re) {
-                try {
-                    boundButton.removePropertyChangeListener("model", this);
-                    boundButton.getModel().removeItemListener(this);
-                } catch (Exception e) {
-                    // ignore as we are re-throwing the original cause
-                }
-                throw re;
-            }
-        }
     }
 
-    public synchronized void unbind() {
-        if (bound) {
-            bound = false;
-            // fail dirty, no checks
+    public synchronized void syntheticUnbind() {
             boundButton.removePropertyChangeListener("model", this);
             boundButton.getModel().removeItemListener(this);
             boundButton = null;
-        }
-    }
-
-    public void rebind() {
-        if (bound) {
-            unbind();
-            bind();
-        }
-    }
-
-    public void setSourceBinding(SourceBinding source) {
-        if (!(source instanceof PropertyBinding)) {
-            throw new IllegalArgumentException("Only PropertySourceBindings are accepted");
-        }
-
-        if (!"selected".equals(((PropertyBinding)source).getPropertyName())) {
-            throw new IllegalArgumentException("PropertyName must be 'selected'");
-        }
-        if (!(((PropertyBinding)source).getBean() instanceof AbstractButton)) {
-            throw new IllegalArgumentException("SourceBean must be an AbstractButton");
-        }
-        super.setSourceBinding(source);
-    }
-
-    public void setTargetBinding(TargetBinding target) {
-        super.setTargetBinding(target);
     }
 
     public void propertyChange(PropertyChangeEvent event) {

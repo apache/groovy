@@ -188,16 +188,6 @@ class SwingBuilderTest extends GroovySwingTestCase {
         assert widgetByLabel != null
     }
 
-    void testTableColumn() {
-        if (headless) return
-
-        // TODO is this required?
-        def swing = new SwingBuilder()
-        swing.table{
-            tableColumn()
-        }
-    }
-
     void testSplitPane() {
         if (headless) return
 
@@ -335,7 +325,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         if (headless) return
 
         def swing = new SwingBuilder()
-        assert swing.class.name == 'groovy.swing.SwingBuilder'
+        assert swing.class.name == SwingBuilder.class.name
     }
 
     void testFormattedTextField() {
@@ -624,168 +614,6 @@ class SwingBuilderTest extends GroovySwingTestCase {
         assert swing.vboxId.parent == swing.frameId.contentPane
         assert swing.hboxId.parent == swing.frameId.contentPane
         assert swing.scrollId.parent == swing.frameId.contentPane
-    }
-
-    void testPropertyColumn() {
-        if (headless) return
-
-        def swing = new SwingBuilder()
-        def msg = shouldFail{
-            swing.propertyColumn()
-        }
-        assert msg.contains('propertyColumn must be a child of a tableModel')
-        msg = shouldFail{
-            swing.table{
-                tableModel(){
-                    propertyColumn()
-                }
-            }
-        }
-        assert msg.contains("Must specify a property for a propertyColumn"): \
-            "Instead found message: " + msg
-        swing.table{
-            tableModel(id: 'model'){
-                propertyColumn(propertyName:'p')
-                propertyColumn(propertyName:'ph', header: 'header')
-                propertyColumn(propertyName:'pt', type: String)
-                propertyColumn(propertyName:'pth', type: String, header: 'header')
-                propertyColumn(propertyName:'pe', editable:false)
-                propertyColumn(propertyName:'peh', editable:false, header: 'header')
-                propertyColumn(propertyName:'pet', editable:false, type: String, )
-                propertyColumn(propertyName:'peth', editable:false, type: String, header: 'header')
-            }
-        }
-        swing.model.columnList.each { col ->
-            def propName = col.valueModel.property
-            assert (col.headerValue == 'header') ^ !propName.contains('h')
-            assert (col.type == String) ^ !propName.contains('t')
-            assert col.valueModel.editable ^ propName.contains('e')
-        }
-    }
-
-    void testClosureColumn() {
-        if (headless) return
-
-        def swing = new SwingBuilder()
-        def msg = shouldFail{
-            swing.closureColumn()
-        }
-        assert msg.contains('closureColumn must be a child of a tableModel')
-        msg = shouldFail{
-            swing.table{
-                tableModel(){
-                    closureColumn()
-                }
-            }
-        }
-        assert msg.contains("Must specify 'read' Closure property for a closureColumn"): \
-            "Instead found message: " + msg
-        def closure = { x -> x }
-        def table = swing.table {
-            tableModel(){
-                closureColumn(read:closure, write:closure, header:'header')
-            }
-            tableModel(model:new groovy.model.ValueHolder('foo')){
-                closureColumn(read:closure, type:String.class)
-            }
-            tableModel(list:['a','b']){
-                closureColumn(read:closure, type:String.class)
-            }
-        }
-
-        assert table.columnModel.class.name == 'groovy.model.DefaultTableModel$MyTableColumnModel'
-    }
-
-    void testTableModelChange() {
-        if (headless) return
-
-        def swing = new SwingBuilder()
-        def table = swing.table {
-            tableModel {
-                propertyColumn(propertyName:'p')
-                propertyColumn(propertyName:'ph', header: 'header')
-                propertyColumn(propertyName:'pt', type: String)
-            }
-        }
-
-        def sorter = new groovy.inspect.swingui.TableSorter(table.model)
-        table.model = sorter
-
-        //GROOVY-2111 - resetting the model w/ a pass-through cleared the columns
-        assert table.columnModel.columnCount == 3
-    }
-
-    void testTableModelChange2() {
-        if (headless) return
-
-        def tableData = [
-           ["ATHLETEID":1, "FIRSTNAME":"Bob", "LASTNAME":"Jones", "DATEOFBIRTH":1875-05-20],
-           ["ATHLETEID":2, "FIRSTNAME":"Sam", "LASTNAME":"Wilson", "DATEOFBIRTH":1876-12-15],
-           ["ATHLETEID":3, "FIRSTNAME":"Jessie", "LASTNAME":"James", "DATEOFBIRTH":1877-06-12]
-        ]
-
-        SwingBuilder swing = new SwingBuilder()
-
-        swing.frame() {
-            scrollPane {
-               table(id: 'table01') {
-                    tableModel(list:tableData, id: 'tableModel01') {
-                        propertyColumn(header:'Athlete ID',propertyName:'ATHLETEID')
-                        propertyColumn(header:'First Name',propertyName:'FIRSTNAME')
-                        propertyColumn(header:'Last Name',propertyName:'LASTNAME')
-                        propertyColumn(header:'Date Of Birth',propertyName:'DATEOFBIRTH')
-                    }
-                }
-            }
-        }
-
-        assert swing.table01.columnModel == swing.table01.model.columnModel
-
-        def list = [ ['name':'Fred', 'location':'London'], ['name':'Bob', 'location':'Atlanta']]
-        def listModel = new ValueHolder(list)
-        def model = new DefaultTableModel(listModel)
-        model.addColumn(new DefaultTableColumn("Name", new PropertyModel(model.rowModel, "name")))
-        model.addColumn(new DefaultTableColumn("Location", new PropertyModel(model.rowModel, "location")))
-        swing.table01.setModel(model) 
-
-        assert swing.table01.columnModel == swing.table01.model.columnModel
-
-        // try moiving some columns and verifying values
-        def value = swing.table01.getValueAt(0, 0)
-        swing.table01.moveColumn(0, 1)
-        assert value == swing.table01.getValueAt(0, 1)
-
-        swing.table01.removeColumn(swing.table01.columnModel.getColumn(0))
-        assert value == swing.table01.getValueAt(0, 0)
-    }
-
-    void testTableModelValues() {
-        if (headless) return
-
-        def squares  = [
-            [ val: 1, square:  1 ],
-            [ val: 2, square:  4 ],
-            [ val: 3, square:  9 ],
-            [ val: 4, square: 16 ]
-        ]
-
-        def swing = new SwingBuilder()
-        def frame = swing.frame(title: 'Tabelle',
-                        windowClosing: { System.exit(0) } ) {
-            scrollPane {
-                table(id:'table') {
-                    tableModel(list: squares) {
-                        propertyColumn(header: "Wert", propertyName: "val")
-                        closureColumn(header: "Quadrat", read: { it.square })
-                    }
-                }
-            }
-        }
-
-        squares.eachWithIndex {it, i ->
-            assert swing.table.getValueAt(i, 0) == it.val
-            assert swing.table.getValueAt(i, 1) == it.square
-        }
     }
 
     void testSetConstraints() {
@@ -1479,10 +1307,9 @@ class SwingBuilderTest extends GroovySwingTestCase {
             }
             shouldFail {
                 swing.lookAndFeel() {laf ->
-                    println "shouldn't get here"
+                    "do" + "Nothing"
                 }
             }
-
         } finally {
             UIManager.setLookAndFeel(oldLAF)
         }

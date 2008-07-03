@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 the original author or authors.
+ * Copyright 2007-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,9 @@
  */
 package groovy.swing.binding;
 
-import org.codehaus.groovy.binding.AbstractFullBinding;
-import org.codehaus.groovy.binding.FullBinding;
-import org.codehaus.groovy.binding.PropertyBinding;
-import org.codehaus.groovy.binding.SourceBinding;
-import org.codehaus.groovy.binding.TargetBinding;
-import org.codehaus.groovy.binding.TriggerBinding;
+import org.codehaus.groovy.binding.*;
 
-import javax.swing.BoundedRangeModel;
-import javax.swing.JSlider;
+import javax.swing.*;
 import javax.swing.event.ChangeEvent;
 import javax.swing.event.ChangeListener;
 import java.beans.PropertyChangeEvent;
@@ -50,69 +44,24 @@ public class JSliderProperties {
 }
 
 
-class JSliderValueBinding extends AbstractFullBinding implements PropertyChangeListener, ChangeListener {
-    boolean bound;
+class JSliderValueBinding extends AbstractSyntheticBinding implements PropertyChangeListener, ChangeListener {
     JSlider boundSlider;
 
 
     public JSliderValueBinding(PropertyBinding source, TargetBinding target) {
-        bound = false;
-        setSourceBinding(source);
-        setTargetBinding(target);
+        super(source, target, JSlider.class, "value");
     }
 
-    public synchronized void bind() {
-        if (!bound) {
-            boundSlider = (JSlider) ((PropertyBinding)sourceBinding).getBean();
-            try {
-                boundSlider.addPropertyChangeListener("model", this);
-                boundSlider.getModel().addChangeListener(this);
-                bound = true;
-            } catch (RuntimeException re) {
-                try {
-                    boundSlider.removePropertyChangeListener("model", this);
-                    boundSlider.getModel().removeChangeListener(this);
-                } catch (Exception e) {
-                    // ignore as we are re-throwing the original cause
-                }
-                throw re;
-            }
-        }
+    public synchronized void syntheticBind() {
+        boundSlider = (JSlider) ((PropertyBinding)sourceBinding).getBean();
+        boundSlider.addPropertyChangeListener("model", this);
+        boundSlider.getModel().addChangeListener(this);
     }
 
-    public synchronized void unbind() {
-        if (bound) {
-            bound = false;
-            // fail dirty, no checks
-            boundSlider.removePropertyChangeListener("model", this);
-            boundSlider.getModel().removeChangeListener(this);
-            boundSlider = null;
-        }
-    }
-
-    public void rebind() {
-        if (bound) {
-            unbind();
-            bind();
-        }
-    }
-
-    public void setSourceBinding(SourceBinding source) {
-        if (!(source instanceof PropertyBinding)) {
-            throw new IllegalArgumentException("Only PropertySourceBindings are accepted");
-        }
-
-        if (!"value".equals(((PropertyBinding) source).getPropertyName())) {
-            throw new IllegalArgumentException("PropertyName must be 'value'");
-        }
-        if (!(((PropertyBinding) source).getBean() instanceof JSlider)) {
-            throw new IllegalArgumentException("SourceBean must be an JSlider");
-        }
-        super.setSourceBinding(source);
-    }
-
-    public void setTargetBinding(TargetBinding target) {
-        super.setTargetBinding(target);
+    public synchronized void syntheticUnbind() {
+        boundSlider.removePropertyChangeListener("model", this);
+        boundSlider.getModel().removeChangeListener(this);
+        boundSlider = null;
     }
 
     public void propertyChange(PropertyChangeEvent event) {
