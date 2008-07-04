@@ -544,9 +544,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static void printf(Object self, String format, Object[] values) {
         if (self instanceof PrintStream)
-            printf((PrintStream) self, format, values);
+            ((PrintStream)self).printf(format, values);
         else
-            printf(System.out, format, values);
+            System.out.printf(format, values);
     }
 
     /**
@@ -560,52 +560,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static String sprintf(Object self, String format, Object[] values) {
         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
         PrintStream out = new PrintStream(outputStream);
-        printf(out, format, values);
+        out.printf(format, values);
         return outputStream.toString();
     }
 
     /**
-     * Printf to a PrintStream (Only works with JDK1.5 or later).
-     *
-     * @param out    a PrintStream object
-     * @param format a format string
-     * @param values values referenced by the format specifiers in the format string.
-     */
-    private static void printf(PrintStream out, String format, Object[] values) {
-        char version = System.getProperty("java.version").charAt(2);
-        if (version >= '5') {
-            //
-            //  Cannot just do:
-            //
-            //        System.out.printf(format, values) ;
-            //
-            //  because this fails to compile on JDK1.4.x and earlier.  So until the entire world is using
-            //  JDK1.5 or later then we have to do things by reflection so as to hide the use of printf
-            //  from the compiler.  In JDK1.5 you might try:
-            //
-            //        System.out.getClass().getMethod("printf", String.class, Object[].class).invoke(System.out, format, values) ;
-            //
-            //  but of course this doesn't work on JDK1.4 as it relies on varargs.  argh.  So we are
-            //  forced into:
-            //
-            try {
-                out.getClass().getMethod("printf", new Class[]{String.class, Object[].class}).invoke(out, new Object[]{format, values});
-            } catch (NoSuchMethodException nsme) {
-                throw new RuntimeException("getMethod threw a NoSuchMethodException.  This is impossible.");
-            } catch (IllegalAccessException iae) {
-                throw new RuntimeException("invoke threw an IllegalAccessException.  This is impossible.");
-            } catch (java.lang.reflect.InvocationTargetException ite) {
-                throw new InvokerInvocationException(ite);
-            }
-        } else {
-            throw new RuntimeException("printf requires JDK1.5 or later.");
-        }
-    }
-
-    /**
      * Prints a formatted string using the specified format string and
-     * arguments (Only works with JDK1.5 or later).
-     * <p/>
+     * arguments.
      * <p/>
      * For examples, <pre>
      *     printf ( "Hello, %s!\n" , [ "world" ] as String[] )
@@ -639,17 +600,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     private static void printf(PrintStream self, String format, Object arg) {
         if (arg instanceof Object[]) {
-            printf(self, format, (Object[]) arg);
+            self.printf(format, (Object[]) arg);
             return;
         }
         if (arg instanceof List) {
-            printf(self, format, ((List) arg).toArray());
+            self.printf(format, ((List) arg).toArray());
             return;
         }
         if (!arg.getClass().isArray()) {
             Object[] o = (Object[]) java.lang.reflect.Array.newInstance(arg.getClass(), 1);
             o[0] = arg;
-            printf(self, format, o);
+            self.printf(format, o);
             return;
         }
 
@@ -706,7 +667,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         } else {
             throw new RuntimeException("printf(String," + arg + ")");
         }
-        printf(self, format, ans);
+        self.printf(format, ans);
     }
 
     /**
