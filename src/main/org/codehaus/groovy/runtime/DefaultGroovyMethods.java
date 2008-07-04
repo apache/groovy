@@ -3541,6 +3541,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Sorts the given map into a sorted map using
+     * the closure as a comparator.
+     *
+     * @param self the map to be sorted
+     * @param closure a Closure used as a comparator
+     * @return the sorted map
+     */
+    public static Map sort(Map self, Closure closure) {
+        Map result = new LinkedHashMap();
+        List entries = asList(self.entrySet());
+        sort(entries, closure);
+        Iterator iterator = entries.iterator();
+        while (iterator.hasNext()) {
+            Map.Entry entry = (Map.Entry) iterator.next();
+            result.put(entry.getKey(), entry.getValue());
+        }
+        return result;
+    }
+
+    /**
      * Sorts the given Object array into sorted order.  The array items are
      * assumed to be comparable.
      *

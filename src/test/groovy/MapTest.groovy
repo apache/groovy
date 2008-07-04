@@ -109,6 +109,14 @@ class MapTest extends GroovyTestCase {
         assert [:]   == ['a':1].findAll {false}
     }
 
+    void testMapSort(){
+        def map = [a:100, c:20, b:3]
+        def mapByValue = map.sort{ it.value }
+        assert mapByValue.collect{ it.key } == ['b', 'c', 'a']
+        def mapByKey = map.sort{ it.key }
+        assert mapByKey.collect{ it.value } == [100, 3, 20]
+    }
+
     void testMapAdditionProducesCorrectValueAndPreservesOriginalMaps() {
         def left = [a:1, b:2]
         def right = [c:3]
