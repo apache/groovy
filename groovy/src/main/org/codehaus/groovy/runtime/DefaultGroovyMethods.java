@@ -7598,90 +7598,196 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Iterates through this file line by line.  Each line is passed
-     * to the given closure.  The file reader is closed before this method
+     * Iterates through this String line by line.  Each line is passed
+     * to the given 1 or 2 arg closure. If a 2 arg closure is found
+     * the line count is passed as the second argument.
+     *
+     * @param self    a String
+     * @param closure a closure
+     * @return the last value returned by the closure
+     * @see #eachLine(String, int, groovy.lang.Closure)
+     */
+    public static Object eachLine(String self, Closure closure) {
+        return eachLine(self, 0, closure);
+    }
+
+    /**
+     * Iterates through this String line by line.  Each line is passed
+     * to the given 1 or 2 arg closure. If a 2 arg closure is found
+     * the line count is passed as the second argument.
+     *
+     * @param self    a String
+     * @param firstLine the count of the first line
+     * @param closure a closure
+     * @return the last value returned by the closure
+     */
+    public static Object eachLine(String self, int firstLine, Closure closure) {
+        int count = firstLine;
+        String line = null;
+        List list = readLines(self);
+        for (int i = 0; i < list.size(); i++) {
+            line = (String) list.get(i);
+            callClosureForLine(closure, line, count);
+            count++;
+        }
+        return line;
+    }
+
+    /**
+     * Iterates through this file line by line.  Each line is passed to the
+     * given 1 or 2 arg closure.  The file reader is closed before this method
      * returns.
      *
      * @param self    a File
      * @param closure a closure
      * @throws IOException if an IOException occurs.
      * @return the last value returned by the closure
-     * @see #eachLine(Reader,Closure)
+     * @see #eachLine(java.io.File, int, groovy.lang.Closure)
      */
     public static Object eachLine(File self, Closure closure) throws IOException {
-        return eachLine(newReader(self), closure);
+        return eachLine(self, 1, closure);
     }
 
     /**
-     * Iterates through this String line by line.  Each line is passed
-     * to the given closure.
+     * Iterates through this file line by line.  Each line is passed
+     * to the given 1 or 2 arg closure.  The file reader is closed
+     * before this method returns.
      *
-     * @param self    a String
+     * @param self    a File
+     * @param firstLine the count of the first line
      * @param closure a closure
-     * @return the self Object
+     * @throws IOException if an IOException occurs.
+     * @return the last value returned by the closure
+     * @see #eachLine(java.io.Reader, int, groovy.lang.Closure)
      */
-    public static Object eachLine(String self, Closure closure) {
-        each(readLines(self), closure);
-        return self;
+    public static Object eachLine(File self, int firstLine, Closure closure) throws IOException {
+        return eachLine(newReader(self), firstLine, closure);
     }
 
     /**
-     * Iterates through this stream reading with the provided charset, passing each line to the closure.  The
-     * stream is closed after the closure returns.
+     * Iterates through this stream reading with the provided charset, passing each line to the
+     * given 1 or 2 arg closure.  The stream is closed before this method returns.
      *
      * @param stream  a stream
      * @param charset opens the stream with a specified charset
      * @param closure a closure
      * @throws IOException if an IOException occurs.
      * @return the last value returned by the closure
-     * @see #eachLine(Reader,Closure)
+     * @see #eachLine(java.io.InputStream, String, int, groovy.lang.Closure)
      */
     public static Object eachLine(InputStream stream, String charset, Closure closure) throws IOException {
-        return eachLine(new InputStreamReader(stream, charset), closure);
+        return eachLine(stream, charset, 1, closure);
     }
 
     /**
-     * Iterates through this stream, passing each line to the closure.  The
-     * stream is closed after the closure returns.
+     * Iterates through this stream reading with the provided charset, passing each line to
+     * the given 1 or 2 arg closure.  The stream is closed after this method returns.
+     *
+     * @param stream    a stream
+     * @param charset   opens the stream with a specified charset
+     * @param firstLine the count of the first line
+     * @param closure   a closure
+     * @return the last value returned by the closure
+     * @throws IOException if an IOException occurs.
+     * @see #eachLine(Reader,Closure)
+     */
+    public static Object eachLine(InputStream stream, String charset, int firstLine, Closure closure) throws IOException {
+        return eachLine(new InputStreamReader(stream, charset), firstLine, closure);
+    }
+
+    /**
+     * Iterates through this stream, passing each line to the given 1 or 2 arg closure.
+     * The stream is closed before this method returns.
      *
      * @param stream  a stream
      * @param closure a closure
      * @throws IOException if an IOException occurs.
      * @return the last value returned by the closure
-     * @see #eachLine(Reader,Closure)
+     * @see #eachLine(java.io.InputStream, int, groovy.lang.Closure)
      */
     public static Object eachLine(InputStream stream, Closure closure) throws IOException {
-        return eachLine(new InputStreamReader(stream), closure);
+        return eachLine(stream, 1, closure);
     }
 
     /**
-     * Iterates through the lines read from the URL's associated input stream
+     * Iterates through this stream, passing each line to the given 1 or 2 arg closure.
+     * The stream is closed before this method returns.
+     *
+     * @param stream  a stream
+     * @param firstLine the count of the first line
+     * @param closure a closure
+     * @throws IOException if an IOException occurs.
+     * @return the last value returned by the closure
+     * @see #eachLine(java.io.Reader, int, groovy.lang.Closure)
+     */
+    public static Object eachLine(InputStream stream, int firstLine, Closure closure) throws IOException {
+        return eachLine(new InputStreamReader(stream), firstLine, closure);
+    }
+
+    /**
+     * Iterates through the lines read from the URL's associated input stream passing each
+     * line to the given 1 or 2 arg closure. The stream is closed before this method returns.
      *
      * @param url     a URL to open and read
      * @param closure a closure to apply on each line
      * @return the last value returned by the closure
      * @throws IOException if an IOException occurs.
+     * @see #eachLine(java.net.URL, int, groovy.lang.Closure)
      */
     public static Object eachLine(URL url, Closure closure) throws IOException {
-        return eachLine(url.openConnection().getInputStream(), closure);
+        return eachLine(url, 1, closure);
     }
 
     /**
-     * Iterates through the lines read from the URL's associated input stream
+     * Iterates through the lines read from the URL's associated input stream passing each
+     * line to the given 1 or 2 arg closure. The stream is closed before this method returns.
+     *
+     * @param url       a URL to open and read
+     * @param firstLine the count of the first line
+     * @param closure   a closure to apply on each line
+     * @return the last value returned by the closure
+     * @throws IOException if an IOException occurs.
+     * @see #eachLine(java.io.InputStream, int, groovy.lang.Closure)
+     */
+    public static Object eachLine(URL url, int firstLine, Closure closure) throws IOException {
+        return eachLine(url.openConnection().getInputStream(), firstLine, closure);
+    }
+
+    /**
+     * Iterates through the lines read from the URL's associated input stream passing each
+     * line to the given 1 or 2 arg closure. The stream is closed before this method returns.
      *
      * @param url     a URL to open and read
      * @param charset opens the stream with a specified charset
      * @param closure a closure to apply on each line
      * @return the last value returned by the closure
      * @throws IOException if an IOException occurs.
+     * @see #eachLine(java.net.URL, String, int, groovy.lang.Closure)
      */
     public static Object eachLine(URL url, String charset, Closure closure) throws IOException {
-        return eachLine(new InputStreamReader(url.openConnection().getInputStream(), charset), closure);
+        return eachLine(url, charset, 1, closure);
     }
 
     /**
-     * Iterates through the given reader line by line.  Each line is passed
-     * to the given closure.  The Reader is closed before this method returns.
+     * Iterates through the lines read from the URL's associated input stream passing each
+     * line to the given 1 or 2 arg closure. The stream is closed before this method returns.
+     *
+     * @param url       a URL to open and read
+     * @param charset   opens the stream with a specified charset
+     * @param firstLine the count of the first line
+     * @param closure   a closure to apply on each line
+     * @return the last value returned by the closure
+     * @throws IOException if an IOException occurs.
+     * @see #eachLine(java.io.Reader, int, groovy.lang.Closure)
+     */
+    public static Object eachLine(URL url, String charset, int firstLine, Closure closure) throws IOException {
+        return eachLine(new InputStreamReader(url.openConnection().getInputStream(), charset), firstLine, closure);
+    }
+
+    /**
+     * Iterates through the given reader line by line.  Each line is passed to the
+     * given 1 or 2 arg closure. If the closure has two arguments, the line count is passed
+     * as the second argument. The Reader is closed before this method returns.
      *
      * @param self    a Reader, closed after the method returns
      * @param closure a closure
@@ -7689,8 +7795,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the last value returned by the closure
      */
     public static Object eachLine(Reader self, Closure closure) throws IOException {
+        return eachLine(self, 1, closure);
+    }
+
+    /**
+     * Iterates through the given reader line by line.  Each line is passed to the
+     * given 1 or 2 arg closure. If the closure has two arguments, the line count is passed
+     * as the second argument. The Reader is closed before this method returns.
+     *
+     * @param self      a Reader, closed after the method returns
+     * @param firstLine the count of the first line
+     * @param closure   a closure which will be passed each line (or for 2 argument closures the line and count)
+     * @return the last value returned by the closure
+     * @throws IOException if an IOException occurs.
+     */
+    public static Object eachLine(Reader self, int firstLine, Closure closure) throws IOException {
         BufferedReader br;
-        int count = 0;
+        int count = firstLine;
         Object result = null;
 
         if (self instanceof BufferedReader)
@@ -7704,8 +7825,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 if (line == null) {
                     break;
                 } else {
-                    count++;
                     result = callClosureForLine(closure, line, count);
+                    count++;
                 }
             }
             Reader temp = self;
@@ -7721,6 +7842,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates through this file line by line, splitting on the seperator.
      * The list of tokens for each line is then passed to the given closure.
+     * Finally the resources used for processing the file are closed.
      *
      * @param self    a File
      * @param sep     a String separator
@@ -7746,7 +7868,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see String#split(String)
      */
     public static Object splitEachLine(Reader self, String sep, Closure closure) throws IOException {
-        BufferedReader br /* = null */;
+        BufferedReader br;
         Object result = null;
 
         if (self instanceof BufferedReader)
@@ -7777,7 +7899,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates through the given InputStream line by line using the specified
      * encoding, splitting each line using the given separator.  The list of tokens
-     * for each line is then passed to the given closure.
+     * for each line is then passed to the given closure. Finally, the stream
+     * is closed.
      *
      * @param stream  an InputStream
      * @param sep     a String separator
@@ -7794,7 +7917,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates through the given InputStream line by line, splitting each line using
      * the given separator.  The list of tokens for each line is then passed to
-     * the given closure.
+     * the given closure. The stream is closed before the method returns.
      *
      * @param stream  an InputStream
      * @param sep     a String separator
@@ -7847,11 +7970,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return readLineFromReaderWithoutMark(self);
     }
 
-
     private static int charBufferSize = 4096;     // half the default stream buffer size
     private static int expectedLineLength = 160;  // double the default line length
     private static int EOF = -1;                  // End Of File
-
 
     /*
     * This method tries to read subsequent buffers from the reader using a mark
