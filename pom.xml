@@ -490,7 +490,7 @@
         <!--<dependency>
             <groupId>net.sf.jopt-simple</groupId>
             <artifactId>jopt-simple</artifactId>
-            <version>2.4-SNAPSHOT</version>
+            <version>2.4</version>
             <scope>compile</scope>
             <optional>true</optional>
         </dependency>
