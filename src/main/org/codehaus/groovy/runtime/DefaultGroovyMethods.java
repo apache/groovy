@@ -599,82 +599,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     private static void printf(PrintStream self, String format, Object arg) {
-        if (arg instanceof Object[]) {
-            self.printf(format, (Object[]) arg);
-            return;
-        }
-        if (arg instanceof List) {
-            self.printf(format, ((List) arg).toArray());
-            return;
-        }
-        if (!arg.getClass().isArray()) {
-            Object[] o = (Object[]) java.lang.reflect.Array.newInstance(arg.getClass(), 1);
-            o[0] = arg;
-            self.printf(format, o);
-            return;
-        }
-
-        Object[] ans;
-        String elemType = arg.getClass().getName();
-        if (elemType.equals("[I")) {
-            int[] ia = (int[]) arg;
-            ans = new Integer[ia.length];
-            for (int i = 0; i < ia.length; i++) {
-                ans[i] = Integer.valueOf(ia[i]);
-            }
-        } else if (elemType.equals("[C")) {
-            char[] ia = (char[]) arg;
-            ans = new Character[ia.length];
-            for (int i = 0; i < ia.length; i++) {
-                ans[i] = new Character(ia[i]);
-            }
-        } else if (elemType.equals("[Z")) {
-            boolean[] ia = (boolean[]) arg;
-            ans = new Boolean[ia.length];
-            for (int i = 0; i < ia.length; i++) {
-                ans[i] = new Boolean(ia[i]);
-            }
-        } else if (elemType.equals("[B")) {
-            byte[] ia = (byte[]) arg;
-            ans = new Byte[ia.length];
-            for (int i = 0; i < ia.length; i++) {
-                ans[i] = new Byte(ia[i]);
-            }
-        } else if (elemType.equals("[S")) {
-            short[] ia = (short[]) arg;
-            ans = new Short[ia.length];
-            for (int i = 0; i < ia.length; i++) {
-                ans[i] = new Short(ia[i]);
-            }
-        } else if (elemType.equals("[F")) {
-            float[] ia = (float[]) arg;
-            ans = new Float[ia.length];
-            for (int i = 0; i < ia.length; i++) {
-                ans[i] = new Float(ia[i]);
-            }
-        } else if (elemType.equals("[J")) {
-            long[] ia = (long[]) arg;
-            ans = new Long[ia.length];
-            for (int i = 0; i < ia.length; i++) {
-                ans[i] = new Long(ia[i]);
-            }
-        } else if (elemType.equals("[D")) {
-            double[] ia = (double[]) arg;
-            ans = new Double[ia.length];
-            for (int i = 0; i < ia.length; i++) {
-                ans[i] = new Double(ia[i]);
-            }
-        } else {
-            throw new RuntimeException("printf(String," + arg + ")");
-        }
-        self.printf(format, ans);
+        final String s = sprintf(self, format, arg);
+        self.print(s);
     }
 
     /**
      * Returns a formatted string using the specified format string and
      * arguments.
      * <p/>
-     * TODO: remove duplication with printf
      *
      * @param self   any Object
      * @param format A format string
@@ -749,7 +681,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         } else {
             throw new RuntimeException("sprintf(String," + arg + ")");
         }
-        return sprintf(self, format, (Object[]) ans);
+        return sprintf(self, format, ans);
     }
 
 
@@ -1764,9 +1696,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static Map groupBy(Map self, Closure closure) {
         final Map initial = groupEntriesBy(self, closure);
         final Map answer = new HashMap();
-        Iterator iterator = initial.entrySet().iterator();
-        while (iterator.hasNext()) {
-            Map.Entry outer = (Map.Entry) iterator.next();
+        for (Object o : initial.entrySet()) {
+            Map.Entry outer = (Map.Entry) o;
             Object key = outer.getKey();
             List entries = (List) outer.getValue();
             Map target = new HashMap();
@@ -3513,9 +3444,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         Map result = new LinkedHashMap();
         List entries = asList(self.entrySet());
         sort(entries, closure);
-        Iterator iterator = entries.iterator();
-        while (iterator.hasNext()) {
-            Map.Entry entry = (Map.Entry) iterator.next();
+        for (Object o : entries) {
+            Map.Entry entry = (Map.Entry) o;
             result.put(entry.getKey(), entry.getValue());
         }
         return result;
@@ -7382,15 +7312,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     //-------------------------------------------------------------------------
 
     public static Boolean and(Boolean left, Boolean right) {
-        return Boolean.valueOf(left.booleanValue() && right.booleanValue());
+        return Boolean.valueOf(left && right);
     }
 
     public static Boolean or(Boolean left, Boolean right) {
-        return Boolean.valueOf(left.booleanValue() || right.booleanValue());
+        return Boolean.valueOf(left || right);
     }
 
     public static Boolean xor(Boolean left, Boolean right) {
-        return Boolean.valueOf(left.booleanValue() ^ right.booleanValue());
+        return Boolean.valueOf(left ^ right);
     }
 
 //    public static Boolean negate(Boolean left) {
