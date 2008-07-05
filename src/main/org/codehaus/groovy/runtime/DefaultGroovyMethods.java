@@ -2614,7 +2614,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Center a String and padd it with the characters appended around it
+     * Center a String and pad it with the characters appended around it
      *
      * @param self          a String object
      * @param numberOfChars the total number of characters
@@ -2638,7 +2638,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Center a String and padd it with spaces appended around it
+     * Center a String and pad it with spaces appended around it
      *
      * @param self          a String object
      * @param numberOfChars the total number of characters
@@ -2782,7 +2782,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Allows a List to be used as the indices to be used on a List
+     * Select a List of items from a List using a Collection to
+     * identify the indices to be selected.
      *
      * @param self    a List
      * @param indices a Collection of indices
@@ -2805,7 +2806,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Allows a List to be used as the indices to be used on a List
+     * Select a List of items from an Object array using a Collection to
+     * identify the indices to be selected.
      *
      * @param self    an Array of Objects
      * @param indices a Collection of indices
@@ -2828,11 +2830,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Allows a List to be used as the indices to be used on a CharSequence
+     * Select a List of characters from a CharSequence using a Collection
+     * to identify the indices to be selected.
      *
      * @param self    a CharSequence
      * @param indices a Collection of indices
-     * @return a String of the values at the given indices
+     * @return a CharSequence consisting of the characters at the given indices
      */
     public static CharSequence getAt(CharSequence self, Collection indices) {
         StringBuffer answer = new StringBuffer();
@@ -2851,18 +2854,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Allows a List to be used as the indices to be used on a String
+     * Select a List of characters from a String using a Collection
+     * to identify the indices to be selected.
      *
      * @param self    a String
      * @param indices a Collection of indices
-     * @return a String of the values at the given indices
+     * @return a String consisting of the characters at the given indices
      */
     public static String getAt(String self, Collection indices) {
         return (String) getAt((CharSequence) self, indices);
     }
 
     /**
-     * Allows a List to be used as the indices to be used on a Matcher
+     * Select a List of values from a Matcher using a Collection
+     * to identify the indices to be selected.
      *
      * @param self    a Matcher
      * @param indices a Collection of indices
