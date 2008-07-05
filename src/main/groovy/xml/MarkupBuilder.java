@@ -132,30 +132,27 @@ public class MarkupBuilder extends BuilderSupport {
     }
 
     public void yield(String value) {
-        if (state == 1) {
-            state = 2;
-            this.nodeIsEmpty = false;
-            out.print(">");
-        }
-        if (state == 2 || state == 3) {
-            out.print(escapeElementContent(value));
-        }
+        yield(value, true);
     }
 
     public void yieldUnescaped(String value) {
+        yield(value, false);
+    }
+
+    private void yield(String value, boolean escaping) {
         if (state == 1) {
             state = 2;
             this.nodeIsEmpty = false;
             out.print(">");
         }
         if (state == 2 || state == 3) {
-            out.print(value);
+            out.print(escaping ? escapeElementContent(value) : value);
         }
     }
 
     protected Object createNode(Object name) {
-        this.nodeIsEmpty = true;
         toState(1, name);
+        this.nodeIsEmpty = true;
         return name;
     }
 
@@ -405,6 +402,11 @@ public class MarkupBuilder extends BuilderSupport {
                 switch (next) {
                     case 1:
                     case 2:
+                        if (!nodeIsEmpty) {
+                            out.println();
+                            out.incrementIndent();
+                            out.printIndent();                            
+                        }
                         out.print("<");
                         print(name);
                         break;
