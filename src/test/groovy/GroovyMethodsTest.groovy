@@ -105,6 +105,20 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         assert result == [1, 2, 3]
     }
 
+    void testEachLineString() {
+        def twolines = 'one\ntwo'
+        def result = ''
+        twolines.eachLine{ line, count -> result += "$count: $line\n" }
+        assert result == '0: one\n1: two\n'
+    }
+
+    void testEachLineStringWithStartingLine() {
+        def twolines = 'one\ntwo'
+        def result = ''
+        twolines.eachLine(1){ line, count -> result += "$count: $line\n" }
+        assert result == '1: one\n2: two\n'
+    }
+
     void testSumForIteratorWithInt() {
         def result = [1, 2, 3].iterator().sum(0)
         assert result == 6
