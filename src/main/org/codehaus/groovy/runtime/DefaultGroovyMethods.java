@@ -599,8 +599,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     private static void printf(PrintStream self, String format, Object arg) {
-        final String s = sprintf(self, format, arg);
-        self.print(s);
+        self.print(sprintf(self, format, arg));
     }
 
     /**
