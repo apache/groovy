@@ -169,7 +169,7 @@ $Date$
                deprecation="on" debug="yes" source="1.5" target="1.5" fork="true" classpathref="compilePath">
             <exclude name="groovy/ui/**/*.java"/>
         </javac>
-        <antcall inheritall="true" target="-stagedcompile-groovy"/>
+        <antcall inheritrefs="true" target="-stagedcompile-groovy"/>
     </target>
 
     <target name="-stagedcompile-groovy" depends="-initGroovyc">
@@ -286,7 +286,7 @@ Not found: ${groovyJar14path}
 
     <target name="compileTestOnly" unless="_skipTests_">
         <mkdir dir="${testClassesDirectory}"/>
-        <antcall inheritall="true" target="-compileTest"/>
+        <antcall inheritrefs="true" target="-compileTest"/>
     </target>
 
     <target name="-compileTest_vm4" depends="-initGroovyc_vm4">
@@ -557,7 +557,7 @@ Not found: ${groovyJar14path}
         <jar destfile="${targetDistDirectory}/groovy.jar" basedir="${mainClassesDirectory}"
              excludes="*.groovy" manifest="${mainClassesDirectory}/META-INF/MANIFEST.MF"/>
         <jar destfile="${targetDistDirectory}/groovy-${groovyVersion}-sources.jar" basedir="${mainSourceDirectory}"/>
-        <antcall target="-createBaseJarRetro"/>
+        <antcall inheritrefs="true" target="-createBaseJarRetro"/>
     </target>
 
     <target name="-createBaseJarRetro" if="_forceRetro_">
@@ -622,7 +622,7 @@ Not found: ${groovyJar14path}
         <copy file="${targetDistDirectory}/groovy-${groovyVersion}-sources.jar"
               tofile="${targetDistDirectory}/groovy-all-${groovyVersion}-sources.jar"/>
         <delete dir="${stagingDirectory}" quiet="true"/>
-        <antcall target="-createEmbeddableJarRetro"/>
+        <antcall inheritrefs="true" target="-createEmbeddableJarRetro"/>
     </target>
     
     <target name="-createEmbeddableJarRetro" if="_forceRetro_">
@@ -834,7 +834,7 @@ Not found: ${groovyJar14path}
         <copy toFile="${targetDistDirectory}/groovy-all-${groovyVersion}-javadoc.jar">
             <fileset file="${targetDistDirectory}/groovy-${groovyVersion}-javadoc.jar"/>
         </copy>
-        <antcall target="-javadocRetro"/>
+        <antcall inheritrefs="true" target="-javadocRetro"/>
     </target>
 
     <target name="-javadocRetro" if="_forceRetro_">
@@ -846,15 +846,16 @@ Not found: ${groovyJar14path}
         </copy>
     </target>
 
-    <target name="groovydoc" depends="-fetchDependencies,-docInit,-includeGroovyDocTemplates,docGDK">
+    <target name="groovydoc" depends="-fetchDependencies">
         <path id="groovydocpath">
             <path path="${mainClassesDirectory}"/>
             <path refid="runtimePath"/>
+            <path path="${java.class.path}"/>
         </path>
         <antforked target="realgroovydoc" maxmemory="512m" classpathref="groovydocpath"/>
     </target>
 
-    <target name="realgroovydoc">
+    <target name="realgroovydoc" depends="-fetchDependencies,-docInit,-includeGroovyDocTemplates,docGDK">
         <taskdef name="groovydoc" classname="org.codehaus.groovy.ant.Groovydoc">
             <classpath>
                 <path path="${mainClassesDirectory}"/>
@@ -923,7 +924,7 @@ Not found: ${groovyJar14path}
             description="Deploy artifacts to local maven repository.">
         <mavenInstallRepo version="${groovyVersion}" prefix="groovy"/>
         <mavenInstallRepo version="${groovyVersion}" prefix="groovy-all"/>
-        <antcall target="-installRepoRetro"/>
+        <antcall inheritrefs="true" target="-installRepoRetro"/>
     </target>
 
     <target name="-installRepoRetro" if="_forceRetro_">

@@ -117,67 +117,34 @@ $Date$
     </target>
 
     <target name="-copyLibraries" unless="_skipFetch_">
-        <delete dir="${compileLibDirectory}"/>
-        <delete dir="${testLibDirectory}"/>
-        <delete dir="${runtimeLibDirectory}"/>
-        <delete dir="${toolsLibDirectory}"/>
-        <delete dir="${examplesLibDirectory}"/>
-        <delete dir="${extrasLibDirectory}"/>
-
-        <mkdir dir="${compileLibDirectory}"/>
-        <mkdir dir="${testLibDirectory}"/>
-        <mkdir dir="${runtimeLibDirectory}"/>
-        <mkdir dir="${toolsLibDirectory}"/>
-        <mkdir dir="${examplesLibDirectory}"/>
-        <mkdir dir="${extrasLibDirectory}"/>
-
-        <copy todir="${compileLibDirectory}">
-            <mapper type="flatten"/>
-            <fileset refid="fs.compile.groovy"/>
-        </copy>
-        <path id="compilePath">
-            <fileset dir="${compileLibDirectory}" includes="**/*.jar"/>
-        </path>
-        <copy todir="${testLibDirectory}">
-            <mapper type="flatten"/>
-            <fileset refid="fs.test.groovy"/>
-        </copy>
-        <path id="testLibPath">
-            <fileset dir="${testLibDirectory}" includes="**/*.jar"/>
-        </path>
-        <copy todir="${runtimeLibDirectory}">
-            <mapper type="flatten"/>
-            <fileset refid="fs.runtime.groovy"/>
-        </copy>
-        <path id="runtimePath">
-            <fileset dir="${runtimeLibDirectory}" includes="**/*.jar"/>
-        </path>
-        <copy todir="${toolsLibDirectory}">
-            <mapper type="flatten"/>
-            <fileset refid="fs.runtime.groovy-tools"/>
-        </copy>
-        <path id="toolsPath">
-            <fileset dir="${toolsLibDirectory}" includes="**/*.jar"/>
-        </path>
-        <copy todir="${examplesLibDirectory}">
-            <mapper type="flatten"/>
-            <fileset refid="fs.runtime.groovy-examples"/>
-        </copy>
-        <path id="examplesPath">
-            <fileset dir="${examplesLibDirectory}" includes="**/*.jar"/>
-        </path>
-        <copy todir="${extrasLibDirectory}">
-            <mapper type="flatten"/>
-            <fileset refid="fs.runtime.groovy-jdk14-extras"/>
-        </copy>
-        <path id="jdk14ExtrasPath">
-            <fileset dir="${extrasLibDirectory}" includes="**/*.jar"/>
-        </path>
+        <definePath filesetId="fs.compile.groovy" pathId="compilePath" libdir="${compileLibDirectory}"/>
+        <definePath filesetId="fs.runtime.groovy" pathId="runtimePath" libdir="${runtimeLibDirectory}"/>
+        <definePath filesetId="fs.test.groovy" pathId="testLibPath" libdir="${testLibDirectory}"/>
+        <definePath filesetId="fs.runtime.groovy-tools" pathId="toolsPath" libdir="${toolsLibDirectory}"/>
+        <definePath filesetId="fs.runtime.groovy-examples" pathId="examplesPath" libdir="${examplesLibDirectory}"/>
+        <definePath filesetId="fs.runtime.groovy-jdk14-extras" pathId="jdk14ExtrasPath" libdir="${extrasLibDirectory}"/>
     </target>
 
     <target name="-mavenDeployInit" depends="-mavenInit">
         <artifact:install-provider artifactId="wagon-webdav" version="1.0-beta-2"/>
     </target>
+
+    <macrodef name="definePath">
+        <attribute name="filesetId"/>
+        <attribute name="libdir"/>
+        <attribute name="pathId"/>
+        <sequential>
+            <delete dir="@{libdir}" failonerror="false"/>
+            <mkdir dir="@{libdir}"/>
+            <copy todir="@{libdir}">
+                <mapper type="flatten"/>
+                <fileset refid="@{filesetId}"/>
+            </copy>
+            <path id="@{pathId}">
+                <fileset dir="@{libdir}" includes="**/*.jar"/>
+            </path>
+        </sequential>
+    </macrodef>
 
     <macrodef name="mavenDeploy">
         <attribute name="version"/>
