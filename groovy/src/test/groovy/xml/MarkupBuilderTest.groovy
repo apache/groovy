@@ -300,9 +300,18 @@ require escaping. The other characters consist of:
             b('beats')
             mkp.yieldUnescaped ' Spades &amp; Clubs'
         }
-
         assertExpectedXml '''\
 <p><em>Usually</em> Hearts &amp; Diamonds <b>beats</b> Spades &amp; Clubs </p>'''
+    }
+
+    void testMixedMarkupWithEmptyNodes() {
+        xml.p {
+            yield 'Red: Hearts & Diamonds'
+            br()
+            yieldUnescaped 'Black: Spades &amp; Clubs'
+        }
+        assertExpectedXml '''\
+<p>Red: Hearts &amp; Diamonds\n  <br/>Black: Spades &amp; Clubs \n</p>'''
     }
 
     void testCallingMethod() {
