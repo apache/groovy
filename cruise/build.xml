@@ -4,7 +4,6 @@
   <property name="dir.checkout" value=".."/>
   <property name="svn.user" value="dierk"/>
   
-  <!--target name="cruise" depends="update, copy-reporting-app, delegate"/-->
   <target name="cruise" depends="update, copy-reporting-app, delegate, tagLastBuild"/>
   
   <!-- label is given by CruiseControl, provides a default value here for the case where the admin starts
@@ -21,15 +20,12 @@
   </target>
   
   <target name="delegate" description="Groovy-specific build parts">
-  <!-- disabled dk: no maven for Groovy build
-    <echo message="*** Starting the groovy-specific Maven 1 build parts ***"/>
-    <exec dir=".." executable="maven" failonerror="true"/>
-    <echo message="*** groovy build Maven 1 successfully ended          ***"/>
-    -->
     <ant dir=".." antfile="build.xml" target="clean"/>
 	<ant dir=".." antfile="build.xml" target="cruise">
 		<property name="buildnumber" value="${label}"/>
-	</ant>
+        <property name="forceRetro" value="true"/>
+        <property name="jdk14home" value="/usr/local/java/j2sdk1.4.2"/>
+    </ant>
     <echo message="*** groovy (${label}) Ant build successfully ended ***"/>
   </target>
   
