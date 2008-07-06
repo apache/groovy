@@ -804,7 +804,7 @@ Not found: ${groovyJar14path}
         <delete dir="${junitRawDirectory}" quiet="true" failonerror="false"/>
     </target>
 
-    <target name="cruise" depends="cruiseInit,distribution,compileExamples,checkstyle,cruiseReportExtras"/>
+    <target name="cruise" depends="cruiseInit,dist,compileExamples,checkstyle,cruiseReportExtras"/>
 
     <target name="-docInit">
         <mkdir dir="${docsDirectory}"/>
@@ -934,7 +934,7 @@ Not found: ${groovyJar14path}
         <mavenInstallRepo version="${groovyVersion}" prefix="groovy-all-jdk14"/>
     </target>
 
-    <target name="distribution" depends="install,doc" description="Create everything needed for a distribution.">
+    <target name="dist" depends="install,doc" description="Create everything needed for a distribution.">
         <zip destfile="${targetDistDirectory}/groovy-binary-${groovyVersion}.zip"
              comment="The Groovy ${groovyVersion} binary distribution.">
 
@@ -977,10 +977,10 @@ Not found: ${groovyJar14path}
                 <exclude name="junitvmwatcher*.properties"/>
             </zipfileset>
         </zip>
-        <antcall inheritrefs="true" target="-distributionRetro"/>
+        <antcall inheritrefs="true" target="-distRetro"/>
     </target>
 
-    <target name="-distributionRetro" if="_forceRetro_">
+    <target name="-distRetro" if="_forceRetro_">
         <mkdir dir="${stagingDirectory}" />
         <mkdir dir="${stagingDirectory}/lib" />
         <mkdir dir="${stagingDirectory}/embeddable" />
@@ -1002,7 +1002,7 @@ Not found: ${groovyJar14path}
             <fileset dir="${extrasLibDirectory}"/>
         </copy>
         <zip destfile="${targetDistDirectory}/groovy-binary-jdk14-${groovyVersion}.zip"
-             comment="The Groovy ${groovyVersion} binary distribution.">
+             comment="The Groovy jdk14 ${groovyVersion} binary distribution.">
 
             <!-- Make unix scripts executable -->
             <zipfileset dir="${installDirectory}" prefix="groovy-${groovyVersion}" filemode="775">
@@ -1028,7 +1028,5 @@ Not found: ${groovyJar14path}
             <zipfileset dir="${stagingDirectory}" prefix="groovy-${groovyVersion}"/>
         </zip>
     </target>
-
-    <target name="dist" depends="distribution" description="Alias to distribution for the lazy."/>
 
 </project>
