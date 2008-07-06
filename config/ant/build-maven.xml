@@ -22,24 +22,11 @@ $Date$
 
     <import file="build-setup.xml"/>
 
-    <macrodef name="maven.dependencies">
-        <attribute name="useScope"/>
-        <attribute name="filesetId"/>
-        <attribute name="pomRefId"/>
-        <sequential>
-            <artifact:dependencies useScope="@{useScope}" filesetId="@{filesetId}">
-                <remoteRepository refid="ibiblio.remote.repository"/>
-                <remoteRepository refid="repo1.remote.repository"/>
-                <pom refid="@{pomRefId}"/>
-            </artifact:dependencies>
-        </sequential>
-    </macrodef>
-
     <macrodef name="fetch.maven">
         <attribute name="scope"/>
         <attribute name="module"/>
         <sequential>
-            <maven.dependencies useScope="@{scope}" filesetId="fs.@{scope}.@{module}" pomRefId="@{module}.pom"/>
+            <artifact:dependencies useScope="@{scope}" filesetId="fs.@{scope}.@{module}" pomRefId="@{module}.pom"/>
         </sequential>
     </macrodef>
 
@@ -69,15 +56,7 @@ $Date$
         </sequential>
     </macrodef>
 
-    <macrodef name="maven.remote.repository">
-        <attribute name="id"/>
-        <attribute name="url"/>
-        <sequential>
-            <artifact:remoteRepository id="@{id}" url="@{url}"/>
-        </sequential>
-    </macrodef>
-
-    <target name="-mavenInit" depends="-mavenTaskdef,-mavenPomDefinitions,-mavenRepositoryDefinitions"/>
+    <target name="-mavenInit" depends="-mavenTaskdef,-mavenPomDefinitions"/>
 
     <target name="-mavenTaskdef">
         <typedef resource="org/apache/maven/artifact/ant/antlib.xml" uri="urn:maven-artifact-ant">
@@ -105,11 +84,6 @@ $Date$
         <!--<maven.pom file="${targetDirectory}/groovy-all-jdk14.pom" id="groovy-all-jdk14.pom"/>-->
     </target>
 
-    <target name="-mavenRepositoryDefinitions">
-        <maven.remote.repository id="repo1.remote.repository" url="http://repo1.maven.org/maven2/"/>
-        <maven.remote.repository id="ibiblio.remote.repository" url="http://ibiblio.org/maven2/"/>
-    </target>
-
     <target name="-fetchDependencies" depends="-mavenFetchAllModules,-copyLibraries"/>
 
     <target name="-mavenFetchAllModules" depends="-mavenInit" unless="_skipFetch_">
@@ -117,12 +91,12 @@ $Date$
     </target>
 
     <target name="-copyLibraries" unless="_skipFetch_">
-        <definePath filesetId="fs.compile.groovy" pathId="compilePath" libdir="${compileLibDirectory}"/>
-        <definePath filesetId="fs.runtime.groovy" pathId="runtimePath" libdir="${runtimeLibDirectory}"/>
-        <definePath filesetId="fs.test.groovy" pathId="testLibPath" libdir="${testLibDirectory}"/>
-        <definePath filesetId="fs.runtime.groovy-tools" pathId="toolsPath" libdir="${toolsLibDirectory}"/>
-        <definePath filesetId="fs.runtime.groovy-examples" pathId="examplesPath" libdir="${examplesLibDirectory}"/>
-        <definePath filesetId="fs.runtime.groovy-jdk14-extras" pathId="jdk14ExtrasPath" libdir="${extrasLibDirectory}"/>
+        <definePath pathId="compilePath" filesetId="fs.compile.groovy" libdir="${compileLibDirectory}"/>
+        <definePath pathId="runtimePath" filesetId="fs.runtime.groovy" libdir="${runtimeLibDirectory}"/>
+        <definePath pathId="testLibPath" filesetId="fs.test.groovy" libdir="${testLibDirectory}"/>
+        <definePath pathId="toolsPath" filesetId="fs.runtime.groovy-tools" libdir="${toolsLibDirectory}"/>
+        <definePath pathId="examplesPath" filesetId="fs.runtime.groovy-examples" libdir="${examplesLibDirectory}"/>
+        <definePath pathId="jdk14ExtrasPath" filesetId="fs.runtime.groovy-jdk14-extras" libdir="${extrasLibDirectory}"/>
     </target>
 
     <target name="-mavenDeployInit" depends="-mavenInit">
@@ -134,7 +108,6 @@ $Date$
         <attribute name="libdir"/>
         <attribute name="pathId"/>
         <sequential>
-            <delete dir="@{libdir}" failonerror="false"/>
             <mkdir dir="@{libdir}"/>
             <copy todir="@{libdir}">
                 <mapper type="flatten"/>
