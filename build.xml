@@ -269,8 +269,8 @@ Not found: ${groovyJar14path}
         <path id="groovyMainClasses">
             <pathelement path="${basedir}/${relativePathToRealBasedir}/target/dist/groovy-jdk14-${groovyVersion}.jar"/>
             <fileset dir="${toolsLibDirectory}">
-                <include name="backport-util-concurrent-3.1.jar"/>
-                <include name="retrotranslator-runtime-1.2.4.jar"/>
+                <include name="backport-util-concurrent-*.jar"/>
+                <include name="retrotranslator-runtime-*.jar"/>
             </fileset>
             <path refid="runtimePath"/>
         </path>
@@ -976,6 +976,56 @@ Not found: ${groovyJar14path}
                 <exclude name="cobertura.ser"/>
                 <exclude name="junitvmwatcher*.properties"/>
             </zipfileset>
+        </zip>
+        <antcall inheritrefs="true" target="-distributionRetro"/>
+    </target>
+
+    <target name="-distributionRetro" if="_forceRetro_">
+        <mkdir dir="${stagingDirectory}" />
+        <mkdir dir="${stagingDirectory}/lib" />
+        <mkdir dir="${stagingDirectory}/embeddable" />
+        <copy todir="${stagingDirectory}/lib">
+            <fileset file="${targetDistDirectory}/groovy-jdk14-${groovyVersion}.jar"/>
+            <globmapper from="groovy-jdk14-${groovyVersion}.jar" to="groovy-${groovyVersion}.jar"/>
+        </copy>
+        <copy todir="${stagingDirectory}/embeddable">
+            <fileset file="${targetDistDirectory}/groovy-all-jdk14-${groovyVersion}.jar"/>
+            <globmapper from="groovy-all-jdk14-${groovyVersion}.jar" to="groovy-all-${groovyVersion}.jar"/>
+        </copy>
+        <copy todir="${stagingDirectory}/lib">
+            <fileset dir="${toolsLibDirectory}">
+                <include name="backport-util-concurrent-*.jar"/>
+                <include name="retrotranslator-runtime-*.jar"/>
+            </fileset>
+        </copy>
+        <copy todir="${stagingDirectory}/lib">
+            <fileset dir="${extrasLibDirectory}"/>
+        </copy>
+        <zip destfile="${targetDistDirectory}/groovy-binary-jdk14-${groovyVersion}.zip"
+             comment="The Groovy ${groovyVersion} binary distribution.">
+
+            <!-- Make unix scripts executable -->
+            <zipfileset dir="${installDirectory}" prefix="groovy-${groovyVersion}" filemode="775">
+                <include name="bin/*"/>
+                <exclude name="bin/*.*"/>
+                <exclude name="bin/startGroovy*"/>
+            </zipfileset>
+
+            <!-- Include the other scripts as is -->
+            <zipfileset dir="${installDirectory}" prefix="groovy-${groovyVersion}">
+                <include name="bin/*.*"/>
+                <include name="bin/startGroovy*"/>
+            </zipfileset>
+
+            <!-- Include everything else as is too -->
+            <zipfileset dir="${installDirectory}" prefix="groovy-${groovyVersion}">
+                <exclude name="bin/**"/>
+                <exclude name="**/groovy*.jar"/>
+                <include name="**"/>
+            </zipfileset>
+
+            <!-- now the differences to normal zip -->
+            <zipfileset dir="${stagingDirectory}" prefix="groovy-${groovyVersion}"/>
         </zip>
     </target>
 
