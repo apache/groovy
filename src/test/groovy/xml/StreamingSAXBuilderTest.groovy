@@ -19,6 +19,7 @@ import javax.xml.transform.TransformerFactory
 import javax.xml.transform.stream.StreamResult
 import groovy.xml.StreamingSAXBuilder
 import org.xml.sax.ContentHandler
+import org.custommonkey.xmlunit.*
 
 public class StreamingSAXBuilderTest extends GroovyTestCase {
 
@@ -35,8 +36,9 @@ public class StreamingSAXBuilderTest extends GroovyTestCase {
         def expected = '<document><item to="world">hello</item></document>'
 
         doc(handler)
-        def actualMinusXmlDecl = outstream.toString().replaceFirst(/<[^>]*>/, '')
-        assert actualMinusXmlDecl == expected
+        XMLUnit.setIgnoreWhitespace(true)
+        def xmlDiff = new Diff(expected, outstream.toString())
+        assert xmlDiff.similar(), xmlDiff.toString()
     }
 
     public void testCustomHandler() {
