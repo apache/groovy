@@ -268,7 +268,7 @@ public class ObservableMap implements Map {
 
     public static class PropertyAddedEvent extends PropertyEvent {
         public PropertyAddedEvent( Object source, String propertyName, Object newValue ) {
-            super( source, propertyName, OLDVALUE, newValue, PropertyEvent.ADDED );
+            super( source, propertyName, null, newValue, PropertyEvent.ADDED );
         }
     }
 
@@ -280,7 +280,7 @@ public class ObservableMap implements Map {
 
     public static class PropertyRemovedEvent extends PropertyEvent {
         public PropertyRemovedEvent( Object source, String propertyName, Object oldValue ) {
-            super( source, propertyName, oldValue, NEWVALUE, PropertyEvent.REMOVED );
+            super( source, propertyName, oldValue, null, PropertyEvent.REMOVED );
         }
     }
 
