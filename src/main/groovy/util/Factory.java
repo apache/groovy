@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ public interface Factory {
      * @param builder the build the factory has been registered to
      * @param registerdName the name the factory has been registerd under
      */
-    public void onFactoryRegistration(FactoryBuilderSupport builder, String registerdName);
+    void onFactoryRegistration(FactoryBuilderSupport builder, String registerdName);
 
     /**
      *
@@ -51,8 +51,8 @@ public interface Factory {
      * @param value the 'value' argument in the build node
      * @param attributes the attributes of the build arg
      * @return the object created for the builder
-     * @throws InstantiationException
-     * @throws IllegalAccessException
+     * @throws InstantiationException if attempting to instantiate an interface or abstract class
+     * @throws IllegalAccessException if the instance can't be created due to a security violation
      */
     Object newInstance( FactoryBuilderSupport builder, Object name, Object value, Map attributes )
             throws InstantiationException, IllegalAccessException;
