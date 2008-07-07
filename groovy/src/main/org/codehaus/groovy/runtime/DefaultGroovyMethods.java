@@ -8291,6 +8291,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Write bytes to a File.
+     *
+     * @param file a File
+     * @param bytes the byte array to append to the end of the File
+     * @return the original file
+     * @throws IOException if an IOException occurs.
+     */
+    public static File leftShift(File file, byte[] bytes) throws IOException {
+        append(file, bytes);
+        return file;
+    }
+
+    /**
      * Write the text to the File, using the specified encoding.
      *
      * @param file    a File
@@ -8332,6 +8345,28 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             temp.close();
         } finally {
             closeWriterWithWarning(writer);
+        }
+    }
+
+    /**
+     * Append bytes to the end of a File.
+     *
+     * @param file a File
+     * @param bytes the byte array to append to the end of the File
+     * @throws IOException if an IOException occurs.
+     */
+    public static void append(File file, byte[] bytes) throws IOException {
+        BufferedOutputStream stream = null;
+        try {
+            stream = newOutputStream(file);
+            stream.write(bytes, 0, bytes.length);
+            stream.flush();
+
+            OutputStream temp = stream;
+            stream = null;
+            temp.close();
+        } finally {
+            closeOutputStreamWithWarning(stream);
         }
     }
 
