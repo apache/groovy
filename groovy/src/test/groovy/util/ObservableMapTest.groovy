@@ -36,6 +36,7 @@ class ObservableMapTest extends GroovyTestCase {
       assertTrue( listener.event instanceof ObservableMap.PropertyAddedEvent )
       assertEquals( key, listener.event.propertyName )
       assertNull( listener.event.newValue )
+      assertNull( listener.event.oldValue )
 
       map[key] = value1
       assertNotNull( listener.event )
