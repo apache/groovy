@@ -744,7 +744,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             if (theClass != instanceKlazz && theClass.isAssignableFrom(instanceKlazz))
               instanceKlazz = theClass;
             
-            MetaMethod method = findMethodInClassHeirarchy(instanceKlazz, methodName, arguments, this);
+            MetaMethod method = findMixinMethod(methodName, arguments);
+            if(method != null) {
+                onMixinMethodFound(method);
+                return method.invoke(instance, arguments);
+            }
+
+            method = findMethodInClassHeirarchy(instanceKlazz, methodName, arguments, this);
             if(method != null) {
                 onSuperMethodFoundInHierarchy(method);
                 return method.invoke(instance, arguments);
@@ -775,6 +781,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     protected void onSuperPropertyFoundInHierarchy(MetaBeanProperty property) {
+    }
+
+    protected void onMixinMethodFound(MetaMethod method) {
     }
 
     protected void onSuperMethodFoundInHierarchy(MetaMethod method) {
@@ -2965,6 +2974,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     }
 
+    protected MetaMethod findMixinMethod(String methodName, Object[] arguments) {
+        return null;
+    }
+
     protected static MetaMethod findMethodInClassHeirarchy(Class instanceKlazz, String methodName, Object[] arguments, MetaClass metaClass) {
         MetaMethod method = null;
 
@@ -3082,7 +3095,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return method;
     }
 
-    private static MetaMethod findOwnMethod(Class instanceKlazz, String methodName, Object[] arguments, MetaClass metaClass, MetaMethod method) {
+    protected static MetaMethod findOwnMethod(Class instanceKlazz, String methodName, Object[] arguments, MetaClass metaClass, MetaMethod method) {
         MetaMethod ownMethod = metaClass.getMetaMethod(methodName, arguments);
         if (ownMethod != null) {
             if (method == null)

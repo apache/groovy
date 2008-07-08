@@ -3,6 +3,7 @@ package org.codehaus.groovy.reflection;
 import groovy.lang.*;
 
 import java.lang.reflect.Modifier;
+import java.lang.ref.WeakReference;
 import java.util.WeakHashMap;
 import java.util.List;
 import java.util.ArrayList;
@@ -13,48 +14,59 @@ import org.codehaus.groovy.runtime.HandleMetaClass;
 import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
 
 public class MixinInMetaClass extends WeakHashMap {
-    final CachedClass instanceClass;
+    final ExpandoMetaClass emc;
     final CachedClass mixinClass;
     final CachedConstructor constructor;
 
-    public MixinInMetaClass(CachedClass cachedClass, CachedClass mixinClass) {
-        this.instanceClass = cachedClass;
+    public MixinInMetaClass(ExpandoMetaClass emc, CachedClass mixinClass) {
+        this.emc = emc;
         this.mixinClass = mixinClass;
 
+        constructor = findDefaultConstructor(mixinClass);
+        emc.addMixinClass(this);
+    }
+
+    private CachedConstructor findDefaultConstructor(CachedClass mixinClass) {
         for(CachedConstructor constr : mixinClass.getConstructors()) {
             if (!Modifier.isPublic(constr.getModifiers()))
               continue;
 
             CachedClass[] classes = constr.getParameterTypes();
-            if (classes.length != 0)
-                continue;
+            if (classes.length != 0) {
+                if (classes.length != 1 || classes[0].getTheClass() != WeakReference.class)
+                  continue;
 
-            constructor = constr;
-            return;
+                return constr;
+            }
+
+            return constr;
         }
 
-        throw new GroovyRuntimeException("No default constructor for class " + mixinClass.getName());
+        throw new GroovyRuntimeException("No default constructor for class " + mixinClass.getName() + "! Can't be mixed in.");
     }
 
     public synchronized Object getMixinInstance (Object object) {
         Object mixinInstance = get(object);
         if (mixinInstance == null) {
-            mixinInstance = constructor.invoke(MetaClassHelper.EMPTY_ARRAY);
+            if (constructor.getParameterTypes().length == 0)
+              mixinInstance = constructor.invoke(MetaClassHelper.EMPTY_ARRAY);
+            else
+              mixinInstance = constructor.invoke(new Object[] {new WeakReference(object)});
             put (object, mixinInstance);
         }
         return mixinInstance;
     }
 
     public CachedClass getInstanceClass() {
-        return instanceClass;
+        return emc.getTheCachedClass();
     }
 
-    public static void mixinClassesToMetaClass(MetaClass self, List categoryClasses) {
-        final Class selfClass = self.getTheClass();
-        ArrayList arr = findCategoryMethods(self, categoryClasses);
+    public CachedClass getMixinClass() {
+        return mixinClass;
+    }
 
-        if (arr.isEmpty())
-          return;
+    public static void mixinClassesToMetaClass(MetaClass self, List<Class> categoryClasses) {
+        final Class selfClass = self.getTheClass();
 
         if (self instanceof HandleMetaClass) {
             self = (MetaClass) ((HandleMetaClass)self).replaceDelegate();
@@ -69,6 +81,33 @@ public class MixinInMetaClass extends WeakHashMap {
         }
 
         ExpandoMetaClass mc = (ExpandoMetaClass)self;
+
+        ArrayList<MetaMethod> arr = new ArrayList<MetaMethod> ();
+        for (Class categoryClass : categoryClasses) {
+
+            final CachedClass cachedCategoryClass = ReflectionCache.getCachedClass(categoryClass);
+            final MixinInMetaClass mixin = new MixinInMetaClass(mc, cachedCategoryClass);
+
+            CachedMethod[] methods = cachedCategoryClass.getMethods();
+            for (int i = 0; i < methods.length; i++) {
+                CachedMethod method = methods[i];
+                final int mod = method.getModifiers();
+                if (Modifier.isPublic(mod) && !method.getCachedMethod().isSynthetic()) {
+                    if (Modifier.isStatic(mod)) {
+                        staticMethod(self, arr, method);
+                    }
+                    else {
+                        if(self.pickMethod(method.getName(), method.getNativeParameterTypes()) == null) {
+                            arr.add(new MixinInstanceMetaMethod(method, mixin));
+                        }
+                    }
+                }
+            }
+        }
+
+        if (arr.isEmpty())
+          return;
+
         for (Object res : arr) {
             final MetaMethod metaMethod = (MetaMethod) res;
             if (metaMethod.getDeclaringClass().isAssignableFrom(selfClass))
@@ -79,34 +118,7 @@ public class MixinInMetaClass extends WeakHashMap {
         }
     }
 
-    public static ArrayList findCategoryMethods(final MetaClass self, List categoryClasses) {
-        ArrayList arr = new ArrayList(4);
-        for (Iterator it = categoryClasses.iterator(); it.hasNext(); ) {
-            Class categoryClass = (Class) it.next();
-            CachedMethod[] methods = ReflectionCache.getCachedClass(categoryClass).getMethods();
-
-            MixinInMetaClass mixin = null;
-            for (int i = 0; i < methods.length; i++) {
-                CachedMethod method = methods[i];
-                final int mod = method.getModifiers();
-                if (Modifier.isPublic(mod) && !method.getCachedMethod().isSynthetic()) {
-                    if (Modifier.isStatic(mod)) {
-                        staticMethod(self, arr, method);
-                    }
-                    else {
-                        if(self.pickMethod(method.getName(), method.getNativeParameterTypes()) == null) {
-                            if (mixin == null)
-                              mixin = new MixinInMetaClass(ReflectionCache.getCachedClass(self.getTheClass()), ReflectionCache.getCachedClass(categoryClass));
-                            arr.add(new MixinInstanceMetaMethod(method, mixin));
-                        }
-                    }
-                }
-            }
-        }
-        return arr;
-    }
-
-    private static void staticMethod(final MetaClass self, ArrayList arr, final CachedMethod method) {
+    private static void staticMethod(final MetaClass self, ArrayList<MetaMethod> arr, final CachedMethod method) {
         CachedClass[] paramTypes = method.getParameterTypes();
 
         if (paramTypes.length == 0)

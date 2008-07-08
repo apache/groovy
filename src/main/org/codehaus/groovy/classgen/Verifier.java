@@ -306,7 +306,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     });
                     node.addSyntheticMethod(
                             "setProperty",
-                            ACC_PUBLIC,
+                            ACC_PUBLIC | ACC_SYNTHETIC,
                             ClassHelper.VOID_TYPE,
                             SET_PROPERTY_PARAMS,
                             ClassNode.EMPTY_ARRAY,

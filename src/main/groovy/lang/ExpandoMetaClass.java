@@ -16,6 +16,8 @@
 package groovy.lang;
 
 import org.codehaus.groovy.reflection.CachedClass;
+import org.codehaus.groovy.reflection.MixinInMetaClass;
+import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.util.FastArray;
 import org.codehaus.groovy.runtime.*;
 import org.codehaus.groovy.runtime.callsite.*;
@@ -110,6 +112,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     private MetaMethod invokeMethodMethod;
     private MetaMethod setPropertyMethod;
     private ClosureStaticMetaMethod invokeStaticMethodMethod;
+    private final LinkedHashSet<MixinInMetaClass> mixinClasses = new LinkedHashSet<MixinInMetaClass>();
 
     /**
 	 * Constructs a new ExpandoMetaClass instance for the given class
@@ -157,6 +160,20 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         this.allowChangesAfterInit = allowChangesAfterInit;
     }
 
+    protected MetaMethod findMixinMethod(String methodName, Object[] arguments) {
+        for (MixinInMetaClass mixin : mixinClasses) {
+            final CachedClass mixinClass = mixin.getMixinClass();
+            MetaClass metaClass = mixinClass.classInfo.getMetaClassForClass();
+            if (metaClass == null) {
+                metaClass = GroovySystem.getMetaClassRegistry().getMetaClass(mixinClass.getTheClass());
+            }
+            final MetaMethod metaMethod = metaClass.getMetaMethod(methodName, arguments);
+            if (metaMethod != null)
+              return metaMethod;
+
+        }
+        return null;
+    }
 
     protected void onInvokeMethodFoundInHierarchy(MetaMethod method) {
         this.invokeMethodMethod = method;
@@ -171,11 +188,11 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
     protected void onSetPropertyFoundInHierarchy(MetaMethod method) {
-        this.setPropertyMethod = (ClosureMetaMethod)method;
+        this.setPropertyMethod = method;
     }
 
     protected void onGetPropertyFoundInHierarchy(MetaMethod method) {
-        this.getPropertyMethod = (ClosureMetaMethod)method;
+        this.getPropertyMethod = method;
     }
 
     public synchronized boolean isModified() {
@@ -199,6 +216,10 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                 ((FastArray)methodOrList).add(metaMethod);
             }
         }
+    }
+
+    public void addMixinClass(MixinInMetaClass mixin) {
+        mixinClasses.add (mixin);
     }
 
     /**
@@ -285,10 +306,11 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                     ClosureMetaMethod closureMethod = (ClosureMetaMethod)metaMethodFromSuper;
                     Closure cloned = (Closure)closureMethod.getClosure().clone();
                     String name = metaMethodFromSuper.getName();
-                    ClosureMetaMethod localMethod = new ClosureMetaMethod(name, getJavaClass(), cloned);
+                    final Class declaringClass = metaMethodFromSuper.getDeclaringClass().getTheClass();
+                    ClosureMetaMethod localMethod = new ClosureMetaMethod(name, declaringClass, cloned);
                     addMetaMethod(localMethod);
 
-                    MethodKey key = new DefaultCachedMethodKey(getJavaClass(),name, localMethod.getParameterTypes(),false );
+                    MethodKey key = new DefaultCachedMethodKey(declaringClass, name, localMethod.getParameterTypes(),false );
 //                    cacheInstanceMethod(key, localMethod);
 
                     checkIfGroovyObjectMethod(localMethod, name);

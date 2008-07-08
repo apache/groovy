@@ -83,6 +83,7 @@ public interface FinalizableRef {
               }
           };
           thread.setDaemon(true);
+          thread.setName(FinalizableRef.class.getName());
           thread.start();
         }
     }

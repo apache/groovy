@@ -39,4 +39,8 @@ public class PogoInterceptableSite extends AbstractCallSite {
         else
           return CallSiteArray.defaultCall(this, receiver, args);
     }
+
+    public Object callCurrent (GroovyObject receiver, Object [] args) throws Throwable {
+        return call(receiver, args);
+    }
 }
