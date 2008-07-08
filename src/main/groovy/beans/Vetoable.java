@@ -39,7 +39,7 @@ import java.lang.annotation.Target;
  * @author Danno Ferrin (shemnon)
  */
 @Retention(RetentionPolicy.SOURCE)
-@Target(ElementType.FIELD)
+@Target({ElementType.FIELD, ElementType.TYPE})
 @GroovyASTTransformationClass("groovy.beans.VetoableASTTransformation")
 public @interface Vetoable {
 }
