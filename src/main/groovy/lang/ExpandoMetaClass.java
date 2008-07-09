@@ -18,6 +18,7 @@ package groovy.lang;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
 import org.codehaus.groovy.reflection.ClassInfo;
+import org.codehaus.groovy.reflection.MixinInstanceMetaMethod;
 import org.codehaus.groovy.util.FastArray;
 import org.codehaus.groovy.runtime.*;
 import org.codehaus.groovy.runtime.callsite.*;
@@ -160,21 +161,45 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         this.allowChangesAfterInit = allowChangesAfterInit;
     }
 
-    protected MetaMethod findMixinMethod(String methodName, Object[] arguments) {
+    public MetaMethod findMixinMethod(String methodName, Class[] arguments) {
         for (MixinInMetaClass mixin : mixinClasses) {
             final CachedClass mixinClass = mixin.getMixinClass();
             MetaClass metaClass = mixinClass.classInfo.getMetaClassForClass();
             if (metaClass == null) {
                 metaClass = GroovySystem.getMetaClassRegistry().getMetaClass(mixinClass.getTheClass());
             }
-            final MetaMethod metaMethod = metaClass.getMetaMethod(methodName, arguments);
-            if (metaMethod != null)
-              return metaMethod;
 
+            final MetaMethod metaMethod = metaClass.pickMethod(methodName, arguments);
+            if (metaMethod != null) {
+              MetaMethod method = new MixinInstanceMetaMethod(metaMethod, mixin);
+              registerInstanceMethod(method);
+              return method;
+            }
         }
         return null;
     }
 
+//    public MetaMethod pickMethod(String methodName, Class[] arguments) {
+//        MetaMethod method = super.pickMethod(methodName, arguments);
+//        if (method != null) {
+//          return method;
+//        }
+//
+//        method = findMixinMethod(methodName, arguments);
+//        if (method != null) {
+//            onMixinMethodFound(method);
+//            return method;
+//        }
+//
+//        method = findMethodInClassHeirarchy(getTheClass(), methodName, arguments, this);
+//        if(method != null) {
+//            onSuperMethodFoundInHierarchy(method);
+//            return method;
+//        }
+//
+//        return null;
+//    }
+//
     protected void onInvokeMethodFoundInHierarchy(MetaMethod method) {
         this.invokeMethodMethod = method;
     }
@@ -538,9 +563,11 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
     public ExpandoMetaClass define (Closure closure) {
         final DefiningClosure definer = new DefiningClosure();
+        Object delegate = closure.getDelegate();
         closure.setDelegate(definer);
         closure.setResolveStrategy(Closure.DELEGATE_FIRST);
         closure.call(null);
+        closure.setDelegate(delegate);
         definer.definition = false;
         return this;
     }
@@ -818,9 +845,14 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                 List metaMethods = superExpando.getExpandoMethods();
                 for (Iterator j = metaMethods.iterator(); j.hasNext();) {
                     MetaMethod metaMethod = (MetaMethod) j.next();
-                    if(metaMethod.isStatic()) continue; // don't inherit static methodsw
+                    if(metaMethod.isStatic()) {
+                        if (superExpando.getTheClass() != getTheClass())
+                          continue; // don't inherit static methods except our own
 
-                    addSuperMethodIfNotOverriden(metaMethod);
+                        registerStaticMethod(metaMethod.getName(), (Closure) ((ClosureStaticMetaMethod)metaMethod).getClosure().clone());
+                    }
+                    else
+                      addSuperMethodIfNotOverriden(metaMethod);
                 }
                 Collection metaProperties = superExpando.getExpandoProperties();
                 for (Iterator j = metaProperties.iterator(); j.hasNext();) {
@@ -1099,6 +1131,10 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         }
 
         public void mixin (List categories) {
+            DefaultGroovyMethods.mixin(ExpandoMetaClass.this, categories);
+        }
+
+        public void mixin (Class [] categories) {
             DefaultGroovyMethods.mixin(ExpandoMetaClass.this, categories);
         }
 

@@ -6,10 +6,10 @@ import groovy.lang.MetaMethod;
  * MetaMethod for mixed in classes
  */
 public class MixinInstanceMetaMethod extends MetaMethod{
-    private final CachedMethod method;
+    private final MetaMethod method;
     private final MixinInMetaClass mixinInMetaClass;
 
-    public MixinInstanceMetaMethod(CachedMethod method, MixinInMetaClass mixinInMetaClass) {
+    public MixinInstanceMetaMethod(MetaMethod method, MixinInMetaClass mixinInMetaClass) {
         this.method = method;
         this.mixinInMetaClass = mixinInMetaClass;
     }

@@ -205,7 +205,29 @@ public final class ClosureMetaClass extends MetaClassImpl {
         }
         else {
             delegateMetaClass = lookupObjectMetaClass(delegate);
-            return delegateMetaClass.pickMethod(methodName, argClasses);
+            MetaMethod method = delegateMetaClass.pickMethod(methodName, argClasses);
+            if (method != null) {
+              return method;
+            }
+
+            if (delegateMetaClass instanceof ExpandoMetaClass) {
+               method = ((ExpandoMetaClass)delegateMetaClass).findMixinMethod(methodName, argClasses);
+
+               if (method != null) {
+                  onMixinMethodFound(method);
+                  return method;
+               }
+            }
+
+            if (delegateMetaClass instanceof MetaClassImpl) {
+                method = ((MetaClassImpl)delegateMetaClass).findMethodInClassHeirarchy(getTheClass(), methodName, argClasses, this);
+                if(method != null) {
+                    onSuperMethodFoundInHierarchy(method);
+                    return method;
+                }
+            }
+
+            return method;
         }
     }
 
@@ -523,8 +545,11 @@ public final class ClosureMetaClass extends MetaClassImpl {
             return go.getMetaClass();
         }
         Class ownerClass = object.getClass();
-        if (ownerClass == Class.class) ownerClass = (Class) object;
-        MetaClass metaClass = registry.getMetaClass(ownerClass);
+        if (ownerClass == Class.class) {
+            ownerClass = (Class) object;
+            return registry.getMetaClass(ownerClass);
+        }
+        MetaClass metaClass = InvokerHelper.getMetaClass(object);
         return metaClass;
     }
 

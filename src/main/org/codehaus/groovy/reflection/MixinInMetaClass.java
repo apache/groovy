@@ -143,4 +143,24 @@ public class MixinInMetaClass extends WeakHashMap {
             }
         }
     }
+
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof MixinInMetaClass)) return false;
+        if (!super.equals(o)) return false;
+
+        MixinInMetaClass that = (MixinInMetaClass) o;
+
+        if (mixinClass != null ? !mixinClass.equals(that.mixinClass) : that.mixinClass != null) return false;
+
+        return true;
+    }
+
+    public int hashCode() {
+        int result = super.hashCode();
+        result = 31 * result + (emc != null ? emc.hashCode() : 0);
+        result = 31 * result + (mixinClass != null ? mixinClass.hashCode() : 0);
+        result = 31 * result + (constructor != null ? constructor.hashCode() : 0);
+        return result;
+    }
 }

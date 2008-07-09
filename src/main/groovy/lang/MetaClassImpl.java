@@ -691,7 +691,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
         // got here to property not found, look for getProperty or setProperty overrides
         if(isGetter) {
-            final Object[] getPropertyArgs = {propertyName};
+            final Class[] getPropertyArgs = {String.class};
             final MetaMethod method = findMethodInClassHeirarchy(instance.getClass(), ExpandoMetaClass.GET_PROPERTY_METHOD, getPropertyArgs, this);
             if(method != null && method instanceof ClosureMetaMethod) {
                 onGetPropertyFoundInHierarchy(method);
@@ -699,7 +699,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
         }
         else {
-            final Object[] setPropertyArgs = {propertyName, optionalValue};
+            final Class[] setPropertyArgs = {String.class, Object.class};
             final MetaMethod method = findMethodInClassHeirarchy(instance.getClass(), ExpandoMetaClass.SET_PROPERTY_METHOD, setPropertyArgs, this);
             if(method != null && method instanceof ClosureMetaMethod) {
                 onSetPropertyFoundInHierarchy(method);
@@ -744,20 +744,22 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             if (theClass != instanceKlazz && theClass.isAssignableFrom(instanceKlazz))
               instanceKlazz = theClass;
             
-            MetaMethod method = findMixinMethod(methodName, arguments);
+            Class[] argClasses = MetaClassHelper.castArgumentsToClassArray(arguments);
+
+            MetaMethod method = findMixinMethod(methodName, argClasses);
             if(method != null) {
                 onMixinMethodFound(method);
                 return method.invoke(instance, arguments);
             }
 
-            method = findMethodInClassHeirarchy(instanceKlazz, methodName, arguments, this);
+            method = findMethodInClassHeirarchy(instanceKlazz, methodName, argClasses, this);
             if(method != null) {
                 onSuperMethodFoundInHierarchy(method);
                 return method.invoke(instance, arguments);
             }
 
             // still not method here, so see if there is an invokeMethod method up the heirarchy
-            final Object[] invokeMethodArgs = {methodName, arguments};
+            final Class[] invokeMethodArgs = {String.class, Object[].class};
             method = findMethodInClassHeirarchy(instanceKlazz, ExpandoMetaClass.INVOKE_METHOD_METHOD, invokeMethodArgs, this );
             if(method != null && method instanceof ClosureMetaMethod) {
                 onInvokeMethodFoundInHierarchy(method);
@@ -2974,11 +2976,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     }
 
-    protected MetaMethod findMixinMethod(String methodName, Object[] arguments) {
+    protected MetaMethod findMixinMethod(String methodName, Class[] arguments) {
         return null;
     }
 
-    protected static MetaMethod findMethodInClassHeirarchy(Class instanceKlazz, String methodName, Object[] arguments, MetaClass metaClass) {
+    protected static MetaMethod findMethodInClassHeirarchy(Class instanceKlazz, String methodName, Class[] arguments, MetaClass metaClass) {
         MetaMethod method = null;
 
         Class superClass;
@@ -3015,7 +3017,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return method;
     }
 
-    private static MetaMethod findSubClassMethod(Class instanceKlazz, String methodName, Object[] arguments, MetaClass metaClass, MetaMethod method) {
+    private static MetaMethod findSubClassMethod(Class instanceKlazz, String methodName, Class[] arguments, MetaClass metaClass, MetaMethod method) {
         if (metaClass instanceof MetaClassImpl) {
             Object list = ((MetaClassImpl) metaClass).getSubclassMetaMethods(methodName);
             if (list != null) {
@@ -3072,7 +3074,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return newMethod;
     }
 
-    private static MetaMethod searchInterfacesForMetaMethod(Class instanceKlazz, String methodName, Object[] arguments, MetaClass metaClass) {
+    private static MetaMethod searchInterfacesForMetaMethod(Class instanceKlazz, String methodName, Class[] arguments, MetaClass metaClass) {
         Class[] interfaces = metaClass.getTheClass().getInterfaces();
 
         MetaMethod method = null;
@@ -3095,8 +3097,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return method;
     }
 
-    protected static MetaMethod findOwnMethod(Class instanceKlazz, String methodName, Object[] arguments, MetaClass metaClass, MetaMethod method) {
-        MetaMethod ownMethod = metaClass.getMetaMethod(methodName, arguments);
+    protected static MetaMethod findOwnMethod(Class instanceKlazz, String methodName, Class[] arguments, MetaClass metaClass, MetaMethod method) {
+        // we trick ourselves here
+        if (instanceKlazz == metaClass.getTheClass())
+          return method;
+
+        MetaMethod ownMethod = metaClass.pickMethod(methodName, arguments);
         if (ownMethod != null) {
             if (method == null)
               method = ownMethod;

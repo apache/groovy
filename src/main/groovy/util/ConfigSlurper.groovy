@@ -17,6 +17,7 @@ package groovy.util
 
 import java.beans.Introspector
 import java.beans.BeanInfo
+import org.codehaus.groovy.runtime.InvokerHelper
 
 /**
 * <p>
@@ -182,8 +183,12 @@ class ConfigSlurper {
             } else if(current.scope[name]) {
                 result = current.scope[name]
             } else {
-                result = new ConfigObject()
-                assignName.call(name,result)
+                try {
+                    result = InvokerHelper.getProperty(this, name);
+                } catch (GroovyRuntimeException e) {
+                    result = new ConfigObject()
+                    assignName.call(name,result)
+                }
             }
             result
         }

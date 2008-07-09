@@ -144,6 +144,70 @@ class MixinTest extends GroovyTestCase {
         }
         Object.metaClass = null
     }
+
+    void testConcurrentQueue () {
+        ReentrantLock.metaClass {
+          withLock { Closure operation ->
+            lock ()
+            try {
+              operation ()
+            }
+            finally {
+              unlock ()
+            }
+          }
+        }
+
+        def queue = new ConcurrentQueue ()
+        queue.put 1
+        queue.put 2
+        queue.put 3
+        assertEquals 1, queue.get ()
+        assertEquals 2, queue.get ()
+        assertEquals 3, queue.get ()
+
+        ReentrantLock.metaClass = null
+    }
+
+    void testDynamicConcurrentQueue () {
+        ReentrantLock.metaClass {
+          withLock { Closure operation ->
+            lock ()
+            try {
+              operation ()
+            }
+            finally {
+              unlock ()
+            }
+          }
+        }
+
+        def queue = new Object ()
+        queue.metaClass {
+            mixin LinkedList, ReentrantLock
+
+            get { ->
+               withLock {
+                 removeFirst ()
+               }
+            }
+
+            put { obj ->
+               withLock {
+                  addLast (obj)
+               }
+            }
+        }
+
+        queue.put 1
+        queue.put 2
+        queue.put 3
+        assertEquals 1, queue.get ()
+        assertEquals 2, queue.get ()
+        assertEquals 3, queue.get ()
+
+        ReentrantLock.metaClass = null
+    }
 }
 
 class ArrayListExt {
@@ -217,4 +281,22 @@ class NoFlattenArrayListCategory {
     static void flattenTo(ArrayList element, Set addTo) {
         addTo << element;
     }
+}
+
+class ConcurrentQueue {
+   static {
+     ConcurrentQueue.metaClass.mixin LinkedList, ReentrantLock
+   }
+
+   def get () {
+      withLock {
+        removeFirst ()
+      }
+   }
+
+   void put (def obj) {
+      withLock {
+         addLast (obj)
+      }
+   }
 }

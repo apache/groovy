@@ -46,6 +46,7 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
         this.name = name;
         callable = c;
         this.declaringClass = ReflectionCache.getCachedClass(declaringClass);
+        c.setResolveStrategy(Closure.DELEGATE_FIRST);
     }
 
 
