@@ -155,7 +155,7 @@ public class InvokerHelper {
             Class c = (Class) object;
             return metaRegistry.getMetaClass(c).getProperty(object, property);
         } else {
-            return metaRegistry.getMetaClass(object.getClass()).getProperty(object, property);
+            return ((MetaClassRegistryImpl)metaRegistry).getMetaClass(object).getProperty(object, property);
         }
     }
 

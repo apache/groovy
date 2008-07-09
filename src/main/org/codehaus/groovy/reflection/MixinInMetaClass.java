@@ -11,6 +11,8 @@ import java.util.Iterator;
 
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.HandleMetaClass;
+import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
 
 public class MixinInMetaClass extends WeakHashMap {
@@ -32,14 +34,8 @@ public class MixinInMetaClass extends WeakHashMap {
               continue;
 
             CachedClass[] classes = constr.getParameterTypes();
-            if (classes.length != 0) {
-                if (classes.length != 1 || classes[0].getTheClass() != WeakReference.class)
-                  continue;
-
-                return constr;
-            }
-
-            return constr;
+            if (classes.length == 0)
+               return constr;
         }
 
         throw new GroovyRuntimeException("No default constructor for class " + mixinClass.getName() + "! Can't be mixed in.");
@@ -48,13 +44,20 @@ public class MixinInMetaClass extends WeakHashMap {
     public synchronized Object getMixinInstance (Object object) {
         Object mixinInstance = get(object);
         if (mixinInstance == null) {
-            if (constructor.getParameterTypes().length == 0)
-              mixinInstance = constructor.invoke(MetaClassHelper.EMPTY_ARRAY);
-            else
-              mixinInstance = constructor.invoke(new Object[] {new WeakReference(object)});
+            mixinInstance = constructor.invoke(MetaClassHelper.EMPTY_ARRAY);
+            new MyDelegatingMetaClass(mixinInstance, object);
             put (object, mixinInstance);
         }
         return mixinInstance;
+    }
+
+    public synchronized void setMixinInstance (Object object, Object mixinInstance) {
+        if (mixinInstance == null) {
+            remove(object);
+        }
+        else {
+          put (object, mixinInstance);
+        }
     }
 
     public CachedClass getInstanceClass() {
@@ -162,5 +165,22 @@ public class MixinInMetaClass extends WeakHashMap {
         result = 31 * result + (mixinClass != null ? mixinClass.hashCode() : 0);
         result = 31 * result + (constructor != null ? constructor.hashCode() : 0);
         return result;
+    }
+
+    private static class MyDelegatingMetaClass extends DelegatingMetaClass {
+        final WeakReference owner;
+
+        public MyDelegatingMetaClass(Object instance, Object owner) {
+            super(InvokerHelper.getMetaClass(instance.getClass()));
+            this.owner = new WeakReference(owner);
+            DefaultGroovyMethods.setMetaClass(instance, this);
+        }
+
+        public Object getProperty(Object instance, String property) {
+            if ("mixinOwner".equals(property))
+              return owner.get();
+
+            return super.getProperty(instance, property);
+        }
     }
 }

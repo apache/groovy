@@ -247,6 +247,14 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         mixinClasses.add (mixin);
     }
 
+    public Object castToMixedType(Object obj, Class type) {
+        for (MixinInMetaClass mixin : mixinClasses) {
+           if (type.isAssignableFrom(mixin.getMixinClass().getTheClass()))
+             return mixin.getMixinInstance(obj);
+        }
+        return null;
+    }
+
     /**
      * For simulating closures in Java
      */
@@ -917,6 +925,11 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         if(hasOverrideGetProperty(name) && getJavaClass().isInstance(object)) {
             return getPropertyMethod.invoke(object, new Object[]{name});
         }
+
+        if ("mixedIn".equals(name)) {
+            return new MixedInAccessor(object, mixinClasses);
+        }
+
         return super.getProperty(sender, object, name, useSuper, fromInsideClass);
     }
 
@@ -1206,6 +1219,34 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
             }
 
             throw new MissingMethodException(name, getClass(), obj instanceof Object[] ? (Object[])obj : new Object[] {obj} );
+        }
+    }
+
+    private static class MixedInAccessor {
+        private final Object object;
+        private final LinkedHashSet<MixinInMetaClass> mixinClasses;
+
+        public MixedInAccessor(Object object, LinkedHashSet<MixinInMetaClass> mixinClasses) {
+            this.object = object;
+            this.mixinClasses = mixinClasses;
+        }
+
+        public Object getAt (Class key) {
+            for (MixinInMetaClass mixin : mixinClasses)
+              if (mixin.getMixinClass().getTheClass() == key)
+                return mixin.getMixinInstance(object);
+
+            throw new RuntimeException("Class " + key + " isn't mixed in " + object.getClass());
+        }
+
+        public void putAt (Class key, Object value) {
+            for (MixinInMetaClass mixin : mixinClasses)
+              if (mixin.getMixinClass().getTheClass() == key) {
+                mixin.setMixinInstance(object, value);
+                return;
+              }
+
+            throw new RuntimeException("Class " + key + " isn't mixed in " + object.getClass());
         }
     }
 }

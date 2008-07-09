@@ -10156,7 +10156,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the resulting object
      */
     public static Object asType(Object obj, Class type) {
-        return DefaultTypeTransformation.castToType(obj, type);
+        try {
+          return DefaultTypeTransformation.castToType(obj, type);
+        }
+        catch (GroovyCastException e) {
+            MetaClass mc = InvokerHelper.getMetaClass(obj);
+            if (mc instanceof ExpandoMetaClass) {
+                ExpandoMetaClass emc = (ExpandoMetaClass) mc;
+                Object mixedIn = emc.castToMixedType(obj, type);
+                if (mixedIn != null)
+                  return mixedIn;
+            }
+            throw e;
+        }
     }
 
     /**
@@ -10254,16 +10266,25 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 return mc;
             }
             else {
-                if (mc.getClass() == MetaClassImpl.class) {
-                    // default case
-                    mc = ExpandoMetaClassCreationHandle.instance.create(klazz, GroovySystem.getMetaClassRegistry());
-                    mc.initialize();
-                    ((ExpandoMetaClass)mc).define(closure);
-                    metaClassRegistry.setMetaClass(klazz, mc);
+                if (mc instanceof DelegatingMetaClass && ((DelegatingMetaClass) mc).getAdaptee().getClass() == MetaClassImpl.class) {
+                    ExpandoMetaClass emc = (ExpandoMetaClass) ExpandoMetaClassCreationHandle.instance.create(klazz, GroovySystem.getMetaClassRegistry());
+                    emc.initialize();
+                    emc.define(closure);
+                    ((DelegatingMetaClass) mc).setAdaptee(emc);
                     return mc;
                 }
                 else {
-                    throw new GroovyRuntimeException("Can't add methods to custom meta class " + mc);
+                    if (mc.getClass() == MetaClassImpl.class) {
+                        // default case
+                        mc = ExpandoMetaClassCreationHandle.instance.create(klazz, GroovySystem.getMetaClassRegistry());
+                        mc.initialize();
+                        ((ExpandoMetaClass)mc).define(closure);
+                        metaClassRegistry.setMetaClass(klazz, mc);
+                        return mc;
+                    }
+                    else {
+                        throw new GroovyRuntimeException("Can't add methods to custom meta class " + mc);
+                    }
                 }
             }
         }

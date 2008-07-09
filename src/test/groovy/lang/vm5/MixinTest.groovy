@@ -1,6 +1,7 @@
 package groovy.lang.vm5
 
 import java.util.concurrent.locks.ReentrantLock
+import java.lang.ref.WeakReference
 
 class MixinTest extends GroovyTestCase {
 
@@ -206,7 +207,48 @@ class MixinTest extends GroovyTestCase {
         assertEquals 2, queue.get ()
         assertEquals 3, queue.get ()
 
+        queue.metaClass {
+            duplicateEachElement {
+               withLock {
+                  LinkedList newList = new LinkedList ()
+                  mixedIn[LinkedList].each {
+                     newList << it
+                     newList << it
+                  }
+                  mixedIn[LinkedList] = newList
+               }
+            }
+        }
+
+        queue.put 1
+        queue.put 2
+        queue.put 3
+        queue.duplicateEachElement ()
+        assertEquals 1, queue.get ()
+        assertEquals 1, queue.get ()
+        assertEquals 2, queue.get ()
+        assertEquals 2, queue.get ()
+        assertEquals 3, queue.get ()
+        assertEquals 3, queue.get ()
+
         ReentrantLock.metaClass = null
+    }
+
+    void testNoDupCollection () {
+        def list = new Object ()
+        list.metaClass.mixin NoDuplicateCollection, LinkedList
+
+        list.put 1
+        list.put 1
+        list.put 2
+        list.put 2
+        list.put 3
+        list.put 3
+
+        assertEquals (3, list.size ())
+        assertEquals 1, list [0]
+        assertEquals 2, list [1]
+        assertEquals 3, list [2]
     }
 }
 
@@ -299,4 +341,15 @@ class ConcurrentQueue {
          addLast (obj)
       }
    }
+}
+
+class NoDuplicateCollection {
+    void put (def obj) {
+        def clone = (mixinOwner as Collection).find {
+            it == obj
+        }
+
+        if (!clone)
+          mixinOwner.add obj
+    }
 }

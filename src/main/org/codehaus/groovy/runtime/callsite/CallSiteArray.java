@@ -101,7 +101,7 @@ public final class CallSiteArray {
     // otherwise or if method doesn't exist we make call via POJO meta class
     private static CallSite createPojoSite(CallSite callSite, Object receiver, Object[] args) {
         final Class klazz = receiver.getClass();
-        MetaClass metaClass = InvokerHelper.getMetaClass(klazz);
+        MetaClass metaClass = InvokerHelper.getMetaClass(receiver);
         if (callSite.getUsage().get() == 0 && metaClass instanceof MetaClassImpl) {
             final MetaClassImpl mci = (MetaClassImpl) metaClass;
             final ClassInfo info = mci.getTheCachedClass().classInfo;

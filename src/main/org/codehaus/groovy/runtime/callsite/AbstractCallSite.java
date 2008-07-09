@@ -263,7 +263,7 @@ public class AbstractCallSite implements CallSite {
         Class aClass = receiver.getClass();
         try {
             final Method method = aClass.getMethod("getProperty", String.class);
-            if (method != null && method.isSynthetic())
+            if (method != null && method.isSynthetic() && ((GroovyObject)receiver).getMetaClass() instanceof MetaClassImpl)
               return createPogoMetaClassGetPropertySite ((GroovyObject)receiver);
         } catch (NoSuchMethodException e) {
             // fall threw
