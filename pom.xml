@@ -499,20 +499,20 @@
         <dependency>
             <groupId>org.apache.ant</groupId>
             <artifactId>ant</artifactId>
-            <version>1.7.0</version>
+            <version>1.7.1</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>org.apache.ant</groupId>
             <artifactId>ant-junit</artifactId>
-            <version>1.7.0</version>
+            <version>1.7.1</version>
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.apache.ant</groupId>
             <artifactId>ant-launcher</artifactId>
-            <version>1.7.0</version>
+            <version>1.7.1</version>
             <scope>runtime</scope>
         </dependency>
 
