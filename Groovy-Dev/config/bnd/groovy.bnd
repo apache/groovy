@@ -1,4 +1,0 @@
-version= @GROOVY_BUNDLE_VERSION@
--nouses= true
-Export-Package= *;version=${version}
-Import-Package= antlr, org.objectweb.asm, *;resolution:=optional

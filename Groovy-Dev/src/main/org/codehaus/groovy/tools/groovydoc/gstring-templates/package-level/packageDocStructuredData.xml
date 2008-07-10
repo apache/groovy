@@ -1,6 +1,0 @@
-<package>
-  <classes><% for (classDoc in packageDoc.ordinaryClasses()) { %>
-    <class name="${classDoc.name()}" />
-<% } %>
-  </classes>
-</package>
