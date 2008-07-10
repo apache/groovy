@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>groovy</groupId>
+    <artifactId>groovy-tools</artifactId>
+    <version>internal</version>
+    <packaging>jar</packaging>
+    <!-- intentionally leaving off scope here as scope is probably overkill for tools -->
+    <dependencies>
+<!-- TODO: add this back in once a new version is available in a repo
+        <dependency>
+            <groupId>com.tonicsystems</groupId>
+            <artifactId>jarjar</artifactId>
+            <version>1.0rc6</version>
+        </dependency>
+-->
+        <dependency>
+            <groupId>checkstyle</groupId>
+            <artifactId>checkstyle</artifactId>
+            <version>4.3</version>
+            <exclusions>
+                <exclusion>
+                  <groupId>junit</groupId>
+                  <artifactId>junit</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- TODO: upgrade to a recent version (has Groovy support!!) once in a repo -->
+        <dependency>
+            <groupId>redhill</groupId>
+            <artifactId>simian</artifactId>
+            <version>2.2.4</version>
+        </dependency>
+<!-- TODO upgrade to 1.9 but first work out a couple of issues
+     leading to failed tests
+        <dependency>
+            <groupId>net.sourceforge.cobertura</groupId>
+            <artifactId>cobertura</artifactId>
+            <version>1.9</version>
+        </dependency>
+        -->
+        <dependency>
+            <groupId>asm</groupId>
+            <artifactId>asm</artifactId>
+            <version>2.2.3</version>
+        </dependency>
+        <dependency>
+            <groupId>cobertura</groupId>
+            <artifactId>cobertura</artifactId>
+            <version>1.8</version>
+            <exclusions>
+                <exclusion>
+                  <groupId>asm</groupId>
+                  <artifactId>asm</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <!-- used for the JavaDoc generator script -->
+        <dependency>
+            <groupId>qdox</groupId>
+            <artifactId>qdox</artifactId>
+            <version>1.6.1</version>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.retrotranslator</groupId>
+            <artifactId>retrotranslator-transformer</artifactId>
+            <version>1.2.4</version>
+        </dependency>
+        <dependency>
+            <groupId>net.sf.retrotranslator</groupId>
+            <artifactId>retrotranslator-runtime</artifactId>
+            <version>1.2.4</version>
+        </dependency>
+        <dependency>
+            <groupId>biz.aQute</groupId>
+            <artifactId>bnd</artifactId>
+            <version>0.0.258</version>
+        </dependency>
+    </dependencies>
+    <repositories>
+        <repository>
+            <id>aQute</id>
+            <url>http://www.aQute.biz/repo</url>
+        </repository>
+    </repositories>
+</project>

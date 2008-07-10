@@ -1,0 +1,161 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!--
+
+  Copyright © 2008 Russel Winder
+
+  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+  compliance with the License.  You may obtain a copy of the License at
+
+     http://www.apache.org/licenses/LICENSE-2.0
+
+  Unless required by applicable law or agreed to in writing, software distributed under the License is
+  distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+  See the License for the specific language governing permissions and limitations under the License.
+
+-->
+
+<project name="Test Groovyc Task" default="test1">
+
+  <property name="srcPath" value="."/>
+  <property name="destPath" value="${user.dir}/target/test-classes"/>
+
+  <path id="groovyMaterials">
+      <pathelement path="${java.class.path}"/>
+  </path>
+
+  <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="groovyMaterials"/>
+
+  <target name="GroovycTest1_NoFork_NoClasspath">
+    <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy"/>
+    <java classname="org.codehaus.groovy.ant.GroovycTest1"/>
+  </target>
+
+  <target name="GroovycTest1_NoFork_WithGroovyClasspath">
+    <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy" classpathref="groovyMaterials"/>
+    <java classname="org.codehaus.groovy.ant.GroovycTest1"/>
+  </target>
+
+  <target name="GroovycTest1_NoFork_WithJavaClasspath">
+    <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy"/>
+    <java classname="org.codehaus.groovy.ant.GroovycTest1" classpathref="groovyMaterials"/>
+  </target>
+
+  <target name="GroovycTest1_NoFork_WithBothClasspath">
+    <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy" classpathref="groovyMaterials"/>
+    <java classname="org.codehaus.groovy.ant.GroovycTest1" classpathref="groovyMaterials"/>
+  </target>
+
+  <target name="GroovycTest1_ForkGroovy_NoClasspath">
+    <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy" fork="true"/>
+    <java classname="org.codehaus.groovy.ant.GroovycTest1"/>
+  </target>
+
+  <target name="GroovycTest1_ForkGroovy_WithGroovyClasspath">
+    <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy" classpathref="groovyMaterials" fork="true"/>
+    <java classname="org.codehaus.groovy.ant.GroovycTest1"/>
+  </target>
+
+  <target name="GroovycTest1_ForkGroovy_WithJavaClasspath">
+    <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy" fork="true"/>
+    <java classname="org.codehaus.groovy.ant.GroovycTest1" classpathref="groovyMaterials"/>
+  </target>
+
+  <target name="GroovycTest1_ForkGroovy_WithBothClasspath">
+    <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy" classpathref="groovyMaterials" fork="true"/>
+    <java classname="org.codehaus.groovy.ant.GroovycTest1" classpathref="groovyMaterials"/>
+  </target>
+
+  <target name="GroovycTest1_Joint_NoFork_NoClasspath">
+    <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy,Groovyc2.java">
+      <javac source="1.4" target="1.4" debug="true"/>
+    </groovyc>
+      <java classname="org.codehaus.groovy.ant.GroovycTest1"/>
+      <java classname="org.codehaus.groovy.ant.GroovycTest2"/>
+  </target>
+
+  <target name="GroovycTest1_Joint_NoFork_WithGroovyClasspath">
+    <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy,Groovyc2.java" classpathref="groovyMaterials">
+      <javac source="1.4" target="1.4" debug="true"/>
+    </groovyc>
+    <java classname="org.codehaus.groovy.ant.GroovycTest1"/>
+    <java classname="org.codehaus.groovy.ant.GroovycTest2"/>
+  </target>
+
+  <target name="GroovycTest1_Joint_NoFork_WithJavaClasspath">
+    <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy,Groovyc2.java">
+      <javac source="1.4" target="1.4" debug="true"/>
+    </groovyc>
+    <java classname="org.codehaus.groovy.ant.GroovycTest1" classpathref="groovyMaterials"/>
+    <java classname="org.codehaus.groovy.ant.GroovycTest2" classpathref="groovyMaterials"/>
+  </target>
+
+  <target name="GroovycTest1_Joint_NoFork_WithBothClasspath">
+    <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy,Groovyc2.java" classpathref="groovyMaterials">
+      <javac source="1.4" target="1.4" debug="true"/>
+    </groovyc>
+    <java classname="org.codehaus.groovy.ant.GroovycTest1" classpathref="groovyMaterials"/>
+    <java classname="org.codehaus.groovy.ant.GroovycTest2" classpathref="groovyMaterials"/>
+  </target>
+
+  <target name="GroovycTest1_Joint_ForkGroovy_NoClasspath">
+    <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy,Groovyc2.java" fork="true">
+      <javac source="1.4" target="1.4" debug="true"/>
+    </groovyc>
+    <java classname="org.codehaus.groovy.ant.GroovycTest1"/>
+    <java classname="org.codehaus.groovy.ant.GroovycTest2"/>
+  </target>
+
+  <target name="GroovycTest1_Joint_ForkGroovy_WithGroovyClasspath">
+    <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy,Groovyc2.java" classpathref="groovyMaterials" fork="true">
+      <javac source="1.4" target="1.4" debug="true"/>
+    </groovyc>
+    <java classname="org.codehaus.groovy.ant.GroovycTest1"/>
+    <java classname="org.codehaus.groovy.ant.GroovycTest2"/>
+  </target>
+
+  <target name="GroovycTest1_Joint_ForkGroovy_WithJavaClasspath">
+    <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy,Groovyc2.java" fork="true">
+      <javac source="1.4" target="1.4" debug="true"/>
+    </groovyc>
+    <java classname="org.codehaus.groovy.ant.GroovycTest1" classpathref="groovyMaterials"/>
+    <java classname="org.codehaus.groovy.ant.GroovycTest2" classpathref="groovyMaterials"/>
+  </target>
+
+  <target name="GroovycTest1_Joint_ForkGroovy_WithBothClasspath">
+    <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy,Groovyc2.java" classpathref="groovyMaterials" fork="true">
+      <javac source="1.4" target="1.4" debug="true"/>
+    </groovyc>
+    <java classname="org.codehaus.groovy.ant.GroovycTest1" classpathref="groovyMaterials"/>
+    <java classname="org.codehaus.groovy.ant.GroovycTest2" classpathref="groovyMaterials"/>
+  </target>
+
+  <target name="GroovycTest1_ForkGroovy_NoClasspath_WithJavaHome">
+    <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy" fork="true" javahome="${alt.java.home}"/>
+    <java classname="org.codehaus.groovy.ant.GroovycTest1"/>
+  </target>
+
+  <target name="GroovycTest1_ForkGroovy_WithGroovyClasspath_WithJavaHome">
+    <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy" classpathref="groovyMaterials" fork="true" javahome="${alt.java.home}"/>
+    <java classname="org.codehaus.groovy.ant.GroovycTest1"/>
+  </target>
+
+  <target name="GroovycTest1_ForkGroovy_WithJavaClasspath_WithJavaHome">
+    <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy" fork="true" javahome="${alt.java.home}"/>
+    <java classname="org.codehaus.groovy.ant.GroovycTest1" classpathref="groovyMaterials"/>
+  </target>
+
+  <target name="GroovycTest1_ForkGroovy_WithBothClasspath_WithJavaHome">
+    <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovycTest1.groovy" classpathref="groovyMaterials" fork="true" javahome="${alt.java.home}"/>
+    <java classname="org.codehaus.groovy.ant.GroovycTest1" classpathref="groovyMaterials"/>
+  </target>
+
+  <target name="clean">
+    <delete quiet="true">
+      <fileset dir="${destPath}/org/codehaus/groovy/ant">
+        <include name="GroovycTest1*.class"/>
+      </fileset>
+    </delete>
+  </target>
+
+</project>

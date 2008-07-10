@@ -1,0 +1,225 @@
+// -*- mode: groovy coding: utf-8 -*-
+
+//  Gant build script for Groovy.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+//  compliance with the License. You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software distributed under the License is
+//  distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+//  implied. See the License for the specific language governing permissions and limitations under the License.
+//
+//  This work is copyright by the author(s) and is part of a greater work collectively copyright by Codehaus on
+//  behalf of the Groovy community. See the NOTICE.txt file distributed with this work for additional information.
+//
+//  Author : Russel Winder
+
+//  NB This build ignores the JDK 1.4 and retro issues, it assumes JDK1.5.
+
+//  NB  This build ignores the uberbuild route provided by the Ant build, sticking only to the stagedcompile route.
+
+ant.property ( file : 'local.build.properties' )
+ant.property ( file : 'build.properties' )
+
+//  coverage is a Boolean determining whether Cobertura is invoked for the testing. Check to see if a
+//  -Dcoverage=... was set on the command line or a coverage =... was set in either of the build properties
+//  file before declaring that no coverage state was specified.
+
+try { coverage }
+catch ( Exception e ) {
+  if ( ant.project.properties.coverage != null ) { coverage = ant.project.properties.coverage }
+  else { coverage = false }
+}
+
+//  If testCase is non-null then execute that as a single test, otherwise execute all tests.  Check to see
+//  if a -DtestCase=... was set on the command line or a testCase =... was set in either of the build
+//  properties file before declaring that no individual test case was specified.
+
+ try { testCase }
+ catch ( Exception e ) {
+   if ( ant.project.properties.testCase != null ) { testCase = ant.project.properties.testCase }
+   else { testCase = null }
+ }
+
+includeTargets << new File ( 'config/gant/paths.groovy' )
+
+includeTargets << gant.targets.Clean
+cleanPattern << [ '**/*~' , groovyParserDirectory + '/Groovy*.*' ]
+cleanPattern << [ 'JavaLexer.java' , '/JavaRecognizer.java' , '/JavaTokenTypes.java' , '/JavaTokenTypes.txt' , '/*.smap'].collect { item -> javaParserDirectory + item }
+cleanDirectory << targetDirectory
+
+target ( initialize : '' ) {
+  mavenAntTaskURI = 'urn:maven-artifact-ant'
+  typedef ( resource : 'org/apache/maven/artifact/ant/antlib.xml' , uri : mavenAntTaskURI ) {
+    classpath { fileset ( dir : bootstrapDirectory ,  includes : 'maven-ant-tasks-*.jar' ) }
+  }
+  "${mavenAntTaskURI}:pom" ( file :'pom.xml' , id : 'groovy.pom' )
+  //"${mavenAntTaskURI}:remoteRepository" ( id : 'mavenCentral' , url : 'http://repo1.maven.org/maven2' )
+  "${mavenAntTaskURI}:dependencies" ( useScope : 'compile' , filesetId : 'fs.compile.groovy' , pomRefId : 'groovy.pom' )
+  "${mavenAntTaskURI}:dependencies" ( useScope : 'runtime' , filesetId : 'fs.runtime.groovy' , pomRefId : 'groovy.pom' )
+  "${mavenAntTaskURI}:dependencies" ( useScope : 'test' , filesetId : 'fs.test.groovy' , pomRefId : 'groovy.pom' )
+  /*
+  delete ( dir : compileLibDirectory )
+  mkdir ( dir : compileLibDirectory )
+  copy ( todir : compileLibDirectory ) {
+    mapper ( type : 'flatten' )
+    fileset ( refid : 'fs.compile.groovy' )
+  }
+  path ( id : 'compilePath' ) {
+    fileset ( dir : compileLibDirectory , includes : '** /*.jar' )
+  }
+  copy ( todir : testLibDirectory ) {
+    mapper ( type : 'flatten' )
+    fileset ( refid : 'fs.test.groovy' )
+  }
+  path ( id : 'testLibPath' ) {
+    fileset ( dir : testLibDirectory , includes : '** /*.jar' )
+  }
+  copy ( todir : runtimeLibDirectory ) {
+    mapper ( type : 'flatten' )
+    fileset ( refid : 'fs.runtime.groovy' )
+  }
+  path ( id : 'runtimePath' ) {
+    fileset ( dir : runtimeLibDirectory , includes : '** /*.jar' )
+  }
+*/
+  path ( id : 'compilePath' ) { fileset ( refid : 'fs.compile.groovy' ) }
+  path ( id : 'testLibPath' ) { fileset ( refid : 'fs.test.groovy' ) }
+  path ( id : 'runtimePath' ) { fileset ( refid : 'fs.runtime.groovy' ) }  
+}
+
+target ( initializeGroovyc : '' ) {
+  path ( id : 'groovyMainClasses' ) {
+    pathelement ( path : mainClassesDirectory )
+    path ( refid : 'compilePath' )
+  }
+  taskdef ( name : 'groovyc' , classname : 'org.codehaus.groovy.ant.Groovyc' , classpathref : 'groovyMainClasses' )
+}
+
+ target ( ensureGrammars : 'Ensure all the Antlr generated files are up to date.' ) {
+   depends ( initialize )
+   mkdir ( dir : groovyParserDirectory )
+   antlr ( target : antlrDirectory + '/groovy.g' , outputdirectory : groovyParserDirectory ) { classpath ( refid : 'compilePath' ) }
+   antlr ( target : javaParserDirectory + '/java.g' , outputdirectory : javaParserDirectory ) { classpath ( refid : 'compilePath' ) }
+ }
+
+target ( checkstyle : 'Create the code style reports.' ) { }
+
+target ( cleanTest : 'Clean and compile and test all the classes (or just one class if testCase property is defined).' ) { }
+
+target ( compileExamples  : 'Compile the Java and Groovy code in the examples source directory.' ) { }
+
+target ( compileMain : 'Compile the Java and Groovy code in the main source.' ) {
+  depends ( ensureGrammars )
+  mkdir ( dir : mainClassesDirectory )
+  //mkdir ( dir : toolsClassesDirectory )
+  //  Copy over all the resources.
+  copy ( todir : mainClassesDirectory ) {
+    fileset ( dir : mainSourceDirectory ) {
+      include ( name : 'groovy/ui/*.properties' )
+      include ( name : 'groovy/ui/**/*.png' )
+      include ( name : 'org/codehaus/groovy/tools/shell/**/*.properties' )
+      include ( name : 'org/codehaus/groovy/tools/shell/**/*.xml' )
+    }
+  }
+  // Start the initial compile.
+  javac ( srcdir : mainSourceDirectory , includeantruntime : 'false' , destdir : mainClassesDirectory ,
+          deprecation : 'on' , debug : 'yes' , source : '1.5' , target : '1.5' , fork : 'true' , classpathref : 'compilePath' ,
+          excludes : 'groovy/ui/**/*.java' )
+  //  The Groovyc class is now compiled so we can make use of it.
+  initializeGroovyc ( )
+  //  This compilation takes a lot of heap space, hence adding the extra.
+  groovyc ( srcdir : mainSourceDirectory , destdir : mainClassesDirectory , fork : 'true' , memorymaximumsize : ant.project.properties.groovycMain_mx ) {
+    classpath{  
+      pathelement ( path : mainClassesDirectory )
+      path ( refid : 'compilePath' )
+    }
+    javac ( deprecation : 'on' , debug : 'yes' , source : '1.5' , target : '1.5' )
+  }
+  message ( 'java' , 'Running DgmConverter.' )
+  java ( classname : 'org.codehaus.groovy.tools.DgmConverter' , fork : 'yes' , failonerror : 'true' ) {
+    classpath ( refid : 'compilePath' )
+    classpath ( path : mainClassesDirectory )
+  }
+}
+
+target ( compileTest : 'Compile the Java and Groovy code in the test source.' ) {
+  depends ( compileMain )
+  mkdir ( dir : testClassesDirectory )
+  //  This compilation takes a lot of heap space, hence adding the extra.
+  groovyc ( srcdir : testSourceDirectory , destdir : testClassesDirectory , //includes="${vm5GroovySourceFiles},${vm5JavaSourceFiles}"
+            fork : 'true' ,  memorymaximumsize : ant.project.properties.groovycTest_mx ) {
+    classpath {
+      pathelement ( path : testClassesDirectory )
+      path ( refid : 'groovyMainClasses' )
+      path ( refid : 'testLibPath' )
+    }
+    javac ( source : '1.5' , target : '1.5' , nowarn : 'on' )
+  }
+}
+
+target ( createJars : 'Build Groovy and create the jarfiles.' ) { }
+
+target ( deploy : 'Deploy jars to maven repository.' ) { }
+
+target ( dist : 'Alias to distribution for the lazy.' ) { }
+
+target ( distribution : 'Create everything needed for a distribution.' ) { }
+
+target ( doc : 'Create the documentation.' ) { }
+
+target ( docGDK : 'Create the GDK documentation' ) { }
+
+target (  install : 'Create an installation hierarchy in target/install.' ) { }
+
+target ( installRepo : 'Deploy artifacts to local maven repository.' ) { }
+
+target ( javadoc : 'Create the javadoc documentation.' ) { }
+
+target ( test : 'Compile and test all the classes (or just one class if testCase property is defined).' ) {
+  depends ( compileTest )
+  if ( coverage ) {
+    mkdir ( dir : instrumentedClassesDirectory )
+    coberturaInstrument ( classesDirectory : mainClassesDirectory )
+  }
+  mkdir ( dir : junitRawDirectory )
+  junit ( printsummary : 'true' , fork : 'true' , includeantruntime : 'false' , failureproperty : 'testFailed' , maxmemory : ant.project.properties.groovyJUnit_mx , dir : ant.project.properties.basedir ) {
+    //jvmarg ( line : "-Xms${ant.project.properties.groovyJUnit_ms} -XX:PermSize=${ant.project.properties.groovyJUnit_permSize} -XX:MaxPermSize=${ant.project.properties.groovyJUnit_maxPermSize} ${ ( System.properties.'java.awt.headless' || ( System.properties.'os.name' == 'Mac OS X' ) ) ? '-Djava.awt.headless=true' : '' }" )
+    if ( testCase != null ) {
+      //
+      //  There is a search order "bug" in that the list of targets is searched before the list of things
+      //  possible in the AntBuilder.  How to avoid this and thence the infinite recursion.  For now put the
+      //  ant. in explicitly.
+      //
+      ant.test ( name : testCase , todir : junitRawDirectory )
+      formatter ( type : 'brief' , usefile : 'false' )
+    }
+    else {
+      formatter ( type : 'xml' )
+      formatter ( type : 'plain' , unless : 'noTextReports' )
+      batchtest ( todir : junitRawDirectory ) {
+        fileset ( dir : testClassesDirectory , includes : 'UberTest*.class' )
+      }
+    }
+    classpath {
+      if ( coverage ) { pathelement ( path : instrumentedClassesDirectory) }
+      pathelement ( path : 'src/test' )
+      path ( refid : 'groovyMainClasses' )
+      path ( refid : 'testLibPath' )
+      pathelement ( path : testClassesDirectory )
+      if ( coverage ) { path ( refid : 'coberturaPath' ) }
+    }
+  }
+  if ( testCase == null ) {
+    //mkdir ( dir : reportsDirectory )
+    mkdir ( dir : junitReportsDirectory )
+    junitreport ( tofile : "${junitRawDirectory}/Results.xml") {
+      fileset ( dir : junitRawDirectory , includes : 'TEST-*.xml' )
+      report ( format : 'frames' , todir : junitReportsDirectory )
+    }
+  }
+}
+
+setDefaultTarget ( createJars )

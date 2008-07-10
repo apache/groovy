@@ -1,0 +1,27 @@
+<projectDescription>
+  <name>groovy</name>
+  <comment>Groovy: A powerful, dynamic language for the JVM</comment>
+  <projects/>
+  <buildSpec>
+    <buildCommand>
+      <name>org.eclipse.ui.externaltools.ExternalToolBuilder</name>
+      <triggers>full,incremental,</triggers>
+      <arguments>
+        <dictionary>
+          <key>LaunchConfigHandle</key>
+          <value>&lt;project&gt;/.externalToolBuilders/Groovy ensureGrammars.launch</value>
+        </dictionary>
+      </arguments>
+    </buildCommand>
+    <buildCommand>
+      <name>org.eclipse.jdt.core.javabuilder</name>
+    </buildCommand>
+    <buildCommand>
+      <name>org.codehaus.groovy.eclipse.groovyBuilder</name>
+    </buildCommand>
+  </buildSpec>
+  <natures>
+    <nature>org.eclipse.jdt.core.javanature</nature>
+    <nature>org.codehaus.groovy.eclipse.groovyNature</nature>
+  </natures>
+</projectDescription>

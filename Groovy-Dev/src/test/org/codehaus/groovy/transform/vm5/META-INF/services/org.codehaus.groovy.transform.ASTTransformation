@@ -1,0 +1,3 @@
+# test two transforms in different phases
+org.codehaus.groovy.transform.vm5.TestTransformConversion
+org.codehaus.groovy.transform.vm5.TestTransformClassGeneration
