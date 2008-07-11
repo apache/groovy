@@ -141,8 +141,7 @@ public class ProxyGenerator {
 
         // add overwriting methods
         List selectedMethods = new ArrayList();
-        List publicAndProtectedMethods = DefaultGroovyMethods.toList(baseClass.getMethods());
-        publicAndProtectedMethods.addAll(getInheritedMethods(baseClass));
+        List publicAndProtectedMethods = getInheritedMethods(baseClass, new ArrayList());
         for (int i = 0; i < publicAndProtectedMethods.size(); i++) {
             Method method = (Method) publicAndProtectedMethods.get(i);
             if (method.getName().indexOf('$') != -1)
@@ -154,11 +153,10 @@ public class ProxyGenerator {
         }
 
         // add interface methods
-        List interfaceMethods = new ArrayList();
+        ArrayList interfaceMethods = new ArrayList();
         for (int i = 0; i < interfacesToImplement.size(); i++) {
             Class thisInterface = (Class) interfacesToImplement.get(i);
-            interfaceMethods.addAll(DefaultGroovyMethods.toList(thisInterface.getMethods()));
-            interfaceMethods.addAll(getInheritedMethods(thisInterface));
+            getInheritedMethods(thisInterface, interfaceMethods);
         }
         for (int i = 0; i < interfaceMethods.size(); i++) {
             Method method = (Method) interfaceMethods.get(i);
@@ -260,18 +258,15 @@ public class ProxyGenerator {
         buffer.append("        this.delegate = delegate\n");
         buffer.append("    }\n");
 
-        List objectMethods = DefaultGroovyMethods.toList(Object.class.getMethods());
-        objectMethods.addAll(getInheritedMethods(Object.class));
+        List objectMethods = getInheritedMethods(Object.class, new ArrayList());
 
-        List groovyObjectMethods = DefaultGroovyMethods.toList(GroovyObject.class.getMethods());
-        groovyObjectMethods.addAll(getInheritedMethods(GroovyObject.class));
+        List groovyObjectMethods = getInheritedMethods(GroovyObject.class, new ArrayList());
 
         // add interface methods
-        List interfaceMethods = new ArrayList();
+        ArrayList interfaceMethods = new ArrayList();
         for (int i = 0; i < interfacesToImplement.size(); i++) {
             Class thisInterface = (Class) interfacesToImplement.get(i);
-            interfaceMethods.addAll(DefaultGroovyMethods.toList(thisInterface.getMethods()));
-            interfaceMethods.addAll(getInheritedMethods(thisInterface));
+            getInheritedMethods(thisInterface, interfaceMethods);
         }
         for (int i = 0; i < interfaceMethods.size(); i++) {
             Method method = (Method) interfaceMethods.get(i);
@@ -281,9 +276,7 @@ public class ProxyGenerator {
                 addWrappedCall(buffer, method, map);
             }
         }
-        List additionalMethods = new ArrayList();
-        additionalMethods.addAll(DefaultGroovyMethods.toList(delegate.getClass().getMethods()));
-        additionalMethods.addAll(getInheritedMethods(delegate.getClass()));
+        ArrayList additionalMethods = getInheritedMethods(delegate.getClass(), new ArrayList());
         for (int i = 0; i < additionalMethods.size(); i++) {
             Method method = (Method) additionalMethods.get(i);
             if (method.getName().indexOf('$') != -1)
@@ -354,8 +347,8 @@ public class ProxyGenerator {
         return true;
     }
 
-    private List getInheritedMethods(Class baseClass) {
-        List protectedMethodList = new ArrayList();
+    private ArrayList getInheritedMethods(Class baseClass, ArrayList methods) {
+        methods.addAll(DefaultGroovyMethods.toList(baseClass.getMethods()));
         Class currentClass = baseClass;
         while (currentClass != null) {
             Method[] protectedMethods = currentClass.getDeclaredMethods();
@@ -363,12 +356,12 @@ public class ProxyGenerator {
                 Method method = protectedMethods[i];
                 if (method.getName().indexOf('$') != -1)
                   continue;
-                if (Modifier.isProtected(method.getModifiers()) && !containsEquivalentMethod(protectedMethodList, method))
-                    protectedMethodList.add(method);
+                if (Modifier.isProtected(method.getModifiers()) && !containsEquivalentMethod(methods, method))
+                    methods.add(method);
             }
             currentClass = currentClass.getSuperclass();
         }
-        return protectedMethodList;
+        return methods;
     }
 
     private void addNewMapCall(StringBuffer buffer, String methodName) {
