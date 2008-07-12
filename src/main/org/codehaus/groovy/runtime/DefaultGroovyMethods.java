@@ -8120,8 +8120,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      */
     public static String getText(File file, String charset) throws IOException {
-        BufferedReader reader = newReader(file, charset);
-        return getText(reader);
+        return getText(newReader(file, charset));
     }
 
     /**
@@ -8132,8 +8131,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      */
     public static String getText(File file) throws IOException {
-        BufferedReader reader = newReader(file);
-        return getText(reader);
+        return getText(newReader(file));
     }
 
     /**
@@ -8663,6 +8661,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Object withReader(File file, Closure closure) throws IOException {
         return withReader(newReader(file), closure);
+    }
+
+    /**
+     * Create a new BufferedReader for this file using the specified charset and then
+     * passes it into the closure, ensuring the reader is closed after the
+     * closure returns.
+     *
+     * @param file    a file object
+     * @param charset the charset for this input stream
+     * @param closure a closure
+     * @return the value returned by the closure
+     * @throws IOException if an IOException occurs.
+     */
+    public static Object withReader(File file, String charset, Closure closure) throws IOException {
+        return withReader(newReader(file, charset), closure);
     }
 
     /**
