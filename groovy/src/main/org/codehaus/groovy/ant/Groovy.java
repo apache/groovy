@@ -19,17 +19,22 @@ package org.codehaus.groovy.ant;
 import groovy.lang.Binding;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyShell;
-import groovy.lang.Script;
 import groovy.lang.MissingMethodException;
+import groovy.lang.Script;
 import groovy.util.AntBuilder;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Project;
-import org.apache.tools.ant.Task;
-import org.apache.tools.ant.types.*;
+import org.apache.tools.ant.taskdefs.Java;
+import org.apache.tools.ant.types.Commandline;
+import org.apache.tools.ant.types.FileSet;
+import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.types.Reference;
+import org.apache.tools.ant.types.Environment;
+import org.apache.tools.ant.util.FileUtils;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.tools.ErrorReporter;
 
@@ -46,8 +51,10 @@ import java.util.Vector;
  *
  * @version $Id$
  */
-public class Groovy extends Task
-{
+public class Groovy extends Java {
+    private static final String PREFIX = "embedded_script_in_";
+    private static final String SUFFIX = "groovy_Ant_task";
+
     private final LoggingHelper log = new LoggingHelper(this);
 
     /**
@@ -76,6 +83,9 @@ public class Groovy extends Task
     private boolean append = false;
 
     private Path classpath;
+    private boolean fork = false;
+    private boolean includeAntRuntime = true;
+    private boolean useGroovyShell = false;
 
     /**
      * Compiler configuration.
@@ -86,6 +96,35 @@ public class Groovy extends Task
     private CompilerConfiguration configuration = new CompilerConfiguration();
 
     private Commandline cmdline = new Commandline();
+
+    /**
+     * Should the script be executed using a forked process. Defaults to false.
+     *
+     * @param fork true if the script should be executed in a forked process
+     */
+    public void setFork(boolean fork) {
+        this.fork = fork;
+    }
+
+
+    /**
+     * Should a new GroovyShell be used when forking. Special variables won't be available
+     * but you don't need Ant in the classpath.
+     *
+     * @param useGroovyShell true if GroovyShell should be used to run the script directly
+     */
+    public void setUseGroovyShell(boolean useGroovyShell) {
+        this.useGroovyShell = useGroovyShell;
+    }
+
+    /**
+     * Should the system classpath be included on the classpath when forking. Defaults to true.
+     *
+     * @param includeAntRuntime true if the system classpath should be on the classpath
+     */
+    public void setIncludeAntRuntime(boolean includeAntRuntime) {
+        this.includeAntRuntime = includeAntRuntime;
+    }
 
     /**
      * Enable compiler to report stack trace information if a problem occurs
@@ -100,6 +139,8 @@ public class Groovy extends Task
     /**
      * Set the name of the file to be run. The folder of the file is automatically added to the classpath.
      * Required unless statements are enclosed in the build file
+     *
+     * @param srcFile the file containing the groovy script to execute
      */
     public void setSrc(final File srcFile) {
         this.srcFile = srcFile;
@@ -108,6 +149,8 @@ public class Groovy extends Task
     /**
      * Set an inline command to execute.
      * NB: Properties are not expanded in this text.
+     *
+     * @param txt the inline groovy ommands to execute
      */
     public void addText(String txt) {
         log("addText('"+txt+"')", Project.MSG_VERBOSE);
@@ -116,6 +159,8 @@ public class Groovy extends Task
 
     /**
      * Adds a set of files (nested fileset attribute).
+     *
+     * @param set the fileset representing source files
      */
     public void addFileset(FileSet set) {
         filesets.addElement(set);
@@ -124,6 +169,8 @@ public class Groovy extends Task
     /**
      * Set the output file;
      * optional, defaults to the Ant log.
+     *
+     * @param output the output file
      */
     public void setOutput(File output) {
         this.output = output;
@@ -201,7 +248,6 @@ public class Groovy extends Task
             FileSet fs = (FileSet) filesets.elementAt(i);
             DirectoryScanner ds = fs.getDirectoryScanner(getProject());
             File srcDir = fs.getDir(getProject());
-
             String[] srcFiles = ds.getIncludedFiles();
         }
 
@@ -224,7 +270,6 @@ public class Groovy extends Task
                 	createClasspath().add(new Path(getProject(), srcFile.getParentFile().getCanonicalPath()));
                     command = getText(new BufferedReader(new FileReader(srcFile)));
                 }
-
 
                 if (command != null) {
                     execGroovy(command,out);
@@ -266,19 +311,18 @@ public class Groovy extends Task
      * Read in lines and execute them.
      *
      * @param reader the reader from which to get the groovy source to exec
+     * @param out    the outputstream to use
+     * @throws java.io.IOException if something goes wrong
      */
     protected void runStatements(Reader reader, PrintStream out)
         throws IOException {
         log.debug("runStatements()");
-        
         StringBuffer txt = new StringBuffer();
         String line = "";
-
         BufferedReader in = new BufferedReader(reader);
 
         while ((line = in.readLine()) != null) {
             line = getProject().replaceProperties(line);
-
             if (line.indexOf("--") >= 0) {
                 txt.append("\n");
             }
@@ -294,9 +338,9 @@ public class Groovy extends Task
      * Exec the statement.
      *
      * @param txt the groovy source to exec
+     * @param out not used?
      */
     protected void execGroovy(final String txt, final PrintStream out) {
-        // TODO: out never used?
         log.debug("execGroovy()");
 
         // Check and ignore empty statements
@@ -304,20 +348,39 @@ public class Groovy extends Task
             return;
         }
 
-        log.verbose("Groovy: " + txt);
+        log.verbose("Script: " + txt);
+        if (classpath != null) {
+            log.debug("Explicit Classpath: " + classpath.toString());
+        }
 
-        //log(getClasspath().toString(),Project.MSG_VERBOSE);
+        if (fork) {
+            log.debug("Using fork mode");
+            try {
+                createClasspathParts();
+                createNewArgs(txt);
+                super.setFork(fork);
+                super.setClassname(useGroovyShell ? "groovy.lang.GroovyShell" : "org.codehaus.groovy.ant.Groovy");
+                super.execute();
+            } catch (Exception e) {
+                StringWriter writer = new StringWriter();
+                new ErrorReporter(e, false).write(new PrintWriter(writer));
+                String message = writer.toString();
+                throw new BuildException("Script Failed: " + message, e, getLocation());
+            }
+            return;
+        }
+
         Object mavenPom = null;
         final Project project = getProject();
         final ClassLoader baseClassLoader;
         // treat the case Ant is run through Maven, and
         if ("org.apache.commons.grant.GrantProject".equals(project.getClass().getName())) {
             try {
-               final Object propsHandler = project.getClass().getMethod("getPropsHandler", new Class[0]).invoke(project, new Object[0]);
-               final Field contextField = propsHandler.getClass().getDeclaredField("context");
-               contextField.setAccessible(true);
-               final Object context = contextField.get(propsHandler);
-               mavenPom = InvokerHelper.invokeMethod(context, "getProject", new Object[0]);
+                final Object propsHandler = project.getClass().getMethod("getPropsHandler", new Class[0]).invoke(project, new Object[0]);
+                final Field contextField = propsHandler.getClass().getDeclaredField("context");
+                contextField.setAccessible(true);
+                final Object context = contextField.get(propsHandler);
+                mavenPom = InvokerHelper.invokeMethod(context, "getProject", new Object[0]);
             }
             catch (Exception e) {
                 throw new BuildException("Impossible to retrieve Maven's Ant project: " + e.getMessage(), getLocation());
@@ -336,10 +399,19 @@ public class Groovy extends Task
         addClassPathes(classLoader);
         
         final GroovyShell groovy = new GroovyShell(classLoader, new Binding(), configuration);
+        parseAndRunScript(groovy, txt, mavenPom, scriptName, null, new AntBuilder(this));
+    }
+
+    private void parseAndRunScript(GroovyShell shell, String txt, Object mavenPom, String scriptName, File scriptFile, AntBuilder builder) {
         try {
-            final Script script = groovy.parse(txt, scriptName);
-            script.setProperty("ant", new AntBuilder(this));
-            script.setProperty("project", project);
+            final Script script;
+            if (scriptFile != null) {
+                script = shell.parse(scriptFile);
+            } else {
+                script = shell.parse(txt, scriptName);
+            }
+            script.setProperty("ant", builder);
+            script.setProperty("project", getProject());
             script.setProperty("properties", new AntProjectPropertiesDelegate(project));
             script.setProperty("target", getOwningTarget());
             script.setProperty("task", this);
@@ -349,34 +421,116 @@ public class Groovy extends Task
             }
             script.run();
         }
-        catch (final MissingMethodException e) {
+        catch (final MissingMethodException mme) {
             // not a script, try running through run method but properties will not be available
-            groovy.run(txt, scriptName, cmdline.getCommandline());
+            if (scriptFile != null) {
+                try {
+                    shell.run(scriptFile, cmdline.getCommandline());
+                } catch (IOException e) {
+                    processError(e);
+                }
+            } else {
+                shell.run(txt, scriptName, cmdline.getCommandline());
+            }
         }
         catch (final CompilationFailedException e) {
-            StringWriter writer = new StringWriter();
-            new ErrorReporter( e, false ).write( new PrintWriter(writer) );
-            String message = writer.toString();
-            throw new BuildException("Script Failed: "+ message, e, getLocation());
+            processError(e);
+        } catch (IOException e) {
+            processError(e);
         }
     }
 
+    private void processError(Exception e) {
+        StringWriter writer = new StringWriter();
+        new ErrorReporter(e, false).write(new PrintWriter(writer));
+        String message = writer.toString();
+        throw new BuildException("Script Failed: " + message, e, getLocation());
+    }
+
+    public static void main(String[] args) {
+        final GroovyShell shell = new GroovyShell(new Binding());
+        final Groovy groovy = new Groovy();
+        for (int i = 1; i < args.length; i++) {
+            final Commandline.Argument argument = groovy.createArg();
+            argument.setValue(args[i]);
+        }
+        final AntBuilder builder = new AntBuilder();
+        groovy.setProject(builder.getProject());
+        groovy.parseAndRunScript(shell, null, null, null, new File(args[0]), builder);
+    }
+
+    private void createClasspathParts() {
+        Path path;
+        if (classpath != null) {
+            path = super.createClasspath();
+            path.setPath(classpath.toString());
+        }
+
+        if (includeAntRuntime) {
+            path = super.createClasspath();
+            path.setPath(System.getProperty("java.class.path"));
+        }
+        String groovyHome = null;
+        final String[] strings = getSysProperties().getVariables();
+        for (int i = 0; i < strings.length; i++) {
+            String string = strings[i];
+            if (string.startsWith("-Dgroovy.home=")) {
+                groovyHome = string.substring("-Dgroovy.home=".length());
+            }
+        }
+        if (groovyHome == null) {
+            groovyHome = System.getProperty("groovy.home");
+        }
+        if (groovyHome == null) {
+            groovyHome = System.getenv("GROOVY_HOME");
+        }
+        if (groovyHome == null) {
+            throw new IllegalStateException("Neither ${groovy.home} nor GROOVY_HOME defined.");
+        }
+        File jarDir = new File(groovyHome, "embeddable");
+        if (!jarDir.exists()) {
+            throw new IllegalStateException("GROOVY_HOME incorrectly defined. No embeddable directory found in: " + groovyHome);
+        }
+        final File[] files = jarDir.listFiles();
+        for (int i = 0; i < files.length; i++) {
+            File file = files[i];
+            try {
+                log.debug("Adding jar to classpath: " + file.getCanonicalPath());
+            } catch (IOException e) {
+                // ignore
+            }
+            path = super.createClasspath();
+            path.setLocation(file);
+        }
+    }
+
+    private void createNewArgs(String txt) throws IOException {
+        final String[] args = cmdline.getCommandline();
+        final File tempFile = FileUtils.getFileUtils().createTempFile(PREFIX, SUFFIX, null, true);
+        final String[] commandline = new String[args.length + 1];
+        DefaultGroovyMethods.write(tempFile, txt);
+        commandline[0] = tempFile.getCanonicalPath();
+        System.arraycopy(args, 0, commandline, 1, args.length);
+        super.clearArgs();
+        for (int i = 0; i < commandline.length; i++) {
+            final Commandline.Argument argument = super.createArg();
+            argument.setValue(commandline[i]);
+        }
+    }
 
     /**
      * Try to build a script name for the script of the groovy task to have an helpful value in stack traces in case of exception
      * @return the name to use when compiling the script
      */
-	private String computeScriptName() {
-		if (srcFile != null) {
-			return srcFile.getAbsolutePath();
-		}
-		else {
-			String name = "embedded_script_in_";
-			if (getLocation().getFileName().length() > 0)
-				name += getLocation().getFileName().replaceAll("[^\\w_\\.]", "_");
-			else
-				name += "groovy_Ant_task";
-
+    private String computeScriptName() {
+        if (srcFile != null) {
+            return srcFile.getAbsolutePath();
+        } else {
+            String name = PREFIX;
+            if (getLocation().getFileName().length() > 0)
+                name += getLocation().getFileName().replaceAll("[^\\w_\\.]", "_");
+            else
+                name += SUFFIX;
 			return name;
 		}
 	}
