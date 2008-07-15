@@ -211,7 +211,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 });
                 node.addSyntheticMethod(
                         "getMetaClass",
-                        ACC_PUBLIC,
+                        ACC_PUBLIC | ACC_SYNTHETIC,
                         ClassHelper.METACLASS_TYPE,
                         Parameter.EMPTY_ARRAY,
                         ClassNode.EMPTY_ARRAY,

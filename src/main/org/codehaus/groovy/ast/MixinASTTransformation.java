@@ -17,10 +17,7 @@
 package org.codehaus.groovy.ast;
 
 import groovy.lang.Mixin;
-import org.codehaus.groovy.ast.expr.ClassExpression;
-import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.ListExpression;
-import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.control.CompilePhase;
@@ -72,7 +69,7 @@ public class MixinASTTransformation implements ASTTransformation {
             final Parameter[] NOPARAMS = new Parameter[0];
             MethodNode clinit = annotatedClass.getDeclaredMethod("<clinit>", NOPARAMS);
             if (clinit == null) {
-                clinit = annotatedClass.addMethod("<clinit>", Opcodes.ACC_PUBLIC| Opcodes.ACC_STATIC, ClassHelper.VOID_TYPE, NOPARAMS, null, new BlockStatement());
+                clinit = annotatedClass.addMethod("<clinit>", Opcodes.ACC_PUBLIC|Opcodes.ACC_STATIC| Opcodes.ACC_SYNTHETIC, ClassHelper.VOID_TYPE, NOPARAMS, null, new BlockStatement());
                 clinit.setSynthetic(true);
             }
 
@@ -80,7 +77,7 @@ public class MixinASTTransformation implements ASTTransformation {
             code.addStatement(
                     new ExpressionStatement(
                             new MethodCallExpression(
-                                    new ClassExpression(annotatedClass),
+                                    new PropertyExpression(new ClassExpression(annotatedClass), "metaClass"),
                                     "mixin",
                                     useClasses
                             )

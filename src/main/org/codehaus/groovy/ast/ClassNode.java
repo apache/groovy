@@ -555,7 +555,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                                          Parameter[] parameters,
                                          ClassNode[] exceptions,
                                          Statement code) {
-        MethodNode answer = addMethod(name, modifiers, returnType, parameters, exceptions, code);
+        MethodNode answer = addMethod(name, modifiers|ACC_SYNTHETIC, returnType, parameters, exceptions, code);
         answer.setSynthetic(true);
         return answer;
     }

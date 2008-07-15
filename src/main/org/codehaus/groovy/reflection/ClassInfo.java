@@ -250,8 +250,6 @@ public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
         else {
             if (perInstanceMetaClassMap != null) {
               perInstanceMetaClassMap.remove(obj);
-              if (perInstanceMetaClassMap.isEmpty())
-                perInstanceMetaClassMap = null;
             }
         }
     }
@@ -400,7 +398,7 @@ public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
     // TODO: custom map would be better here - get rid of InstanceRef
     // we can't use WeakHashMap because it use both == and equals for comparision, which is too agressive
     // we need == only
-    private static class InstanceMap extends WeakHashMap {
+    private static class InstanceMap extends ConcurrentWeakMap {
     }
 
     private static class DebugRef extends FinalizableRef.DebugRef<Class> {

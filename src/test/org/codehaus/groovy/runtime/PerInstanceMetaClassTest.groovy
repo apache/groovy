@@ -9,8 +9,8 @@ class PerInstanceMetaClassTest extends GroovyTestCase{
     }
 
     void testEMC () {
-        def x = 22
-        def FOUR = 4
+        def x = Integer.valueOf(22)
+        def FOUR = Integer.valueOf(4)
         ExpandoMetaClass emc = new ExpandoMetaClass(Integer, false, true).define {
             plus {Number arg ->
                 Integer.metaClass.invokeMethod(delegate / 2, "plus", 2 * arg)
@@ -24,7 +24,7 @@ class PerInstanceMetaClassTest extends GroovyTestCase{
                 }
 
                 mul = { u ->
-                    11 * u
+                    Integer.valueOf(11 * u)
                 }
 
                 divFour << { u ->
@@ -82,7 +82,7 @@ class PerInstanceMetaClassTest extends GroovyTestCase{
     static def CONST = 2
 
     void testMetaClassMethod () {
-        def x = 22
+        def x = Integer.valueOf(22)
         x.metaClass {
             // define method
             plus { Number arg ->
@@ -103,7 +103,7 @@ class PerInstanceMetaClassTest extends GroovyTestCase{
         assertEquals 211, x.addTwice(50)
         assertEquals 127, 5 + x + x._100
 
-        assertEquals 23, 10 + 12 + 6  // (10+12) == Integer.valueOf(22) !!!!!!
+        assertEquals 23, Integer.valueOf(10 + 12) + 6  // (10+12) == Integer.valueOf(22) !!!!!!
 
         x.metaClass {
             // add method
@@ -165,10 +165,12 @@ class PerInstanceMetaClassTest extends GroovyTestCase{
     }
 
     void testClass () {
+        def FOUR = Integer.valueOf(4)
+
         Integer.metaClass {
             'static' {
                 fib { Number n ->
-                    n.fib ()
+                    Integer.valueOf(n.fib ())
                 }
             }
 
@@ -187,7 +189,7 @@ class PerInstanceMetaClassTest extends GroovyTestCase{
 
         assertEquals( 3, Integer.fib(3))
 
-        4.metaClass {
+        FOUR.metaClass {
             fib { ->
                 10
             }
@@ -195,17 +197,19 @@ class PerInstanceMetaClassTest extends GroovyTestCase{
 
         assertEquals( 13, Integer.fib(5))
 
-        4.metaClass {
+        FOUR.metaClass {
             fib { ->
                 fib(2) + fib(3)
             }
         }
 
         assertEquals( 8, Integer.fib(5))
-        4.metaClass = null
+        FOUR.metaClass = null
     }
 
     void testCategory () {
+        def FOUR = Integer.valueOf(4)
+
         Integer.metaClass {
             mixin Fib
         }
@@ -218,11 +222,11 @@ class PerInstanceMetaClassTest extends GroovyTestCase{
             3.fib()
         }
 
-        4.metaClass {
+        FOUR.metaClass {
             mixin FibInst
         }
-        assertEquals (15, 4.fib())
-        4.metaClass = null
+        assertEquals (15, FOUR.fib())
+        FOUR.metaClass = null
     }
 }
 

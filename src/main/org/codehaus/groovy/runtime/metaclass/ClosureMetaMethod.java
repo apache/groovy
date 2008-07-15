@@ -20,6 +20,7 @@ import groovy.lang.ClosureInvokingMethod;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
+import org.codehaus.groovy.reflection.CachedMethod;
 
 import java.lang.reflect.Modifier;
 

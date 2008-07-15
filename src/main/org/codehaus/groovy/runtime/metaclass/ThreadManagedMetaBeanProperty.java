@@ -48,7 +48,6 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
     private ThreadBoundGetter getter;
     private ThreadBoundSetter setter;
     private Object initialValue;
-    private static final String PROPERTY_SET_PREFIX = "set";
     private Closure initialValueCreator;
 
     /**
@@ -149,16 +148,12 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
      * @author Graeme Rocher
      */
     class ThreadBoundGetter extends MetaMethod {
-
-
-        private final String name, name0;
+        private final String name;
 
 
         public ThreadBoundGetter(String name) {
             setParametersTypes(new CachedClass[0]);
             this.name = getGetterName(name, type);
-            this.name0 = name;
-
         }
 
 
@@ -192,14 +187,11 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
      * @author Graeme Rocher
      */
     private class ThreadBoundSetter extends MetaMethod {
-
-
-        private final String name, name0;
+        private final String name;
 
         public ThreadBoundSetter(String name) {
             setParametersTypes (new CachedClass [] {ReflectionCache.getCachedClass(type)} );
             this.name = getSetterName(name);
-            this.name0 = name;
         }
 
 
@@ -231,15 +223,4 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
             return null;
         }
     }
-
-    private String getGetterName(String propertyName, Class type) {
-        String prefix = type == boolean.class || type == Boolean.class ? "is" : "get";
-        return prefix + Character.toUpperCase(propertyName.charAt(0))
-                + propertyName.substring(1);
-    }
-
-    private String getSetterName(String propertyName) {
-        return PROPERTY_SET_PREFIX + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
-    }
-
 }

@@ -72,6 +72,7 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
                     + InvokerHelper.toString(arguments));
         }
     }
+
     public boolean isMethod(MetaMethod method) {
         return getName().equals(method.getName())
             && getModifiers() == method.getModifiers()

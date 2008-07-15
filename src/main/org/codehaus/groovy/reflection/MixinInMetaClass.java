@@ -14,8 +14,12 @@ import org.codehaus.groovy.runtime.HandleMetaClass;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
+import org.codehaus.groovy.runtime.metaclass.MixedInMetaClass;
+import org.codehaus.groovy.runtime.metaclass.MixinInstanceMetaMethod;
+import org.codehaus.groovy.runtime.metaclass.MixinInstanceMetaProperty;
+import org.codehaus.groovy.util.ConcurrentWeakMap;
 
-public class MixinInMetaClass extends WeakHashMap {
+public class MixinInMetaClass extends ConcurrentWeakMap {
     final ExpandoMetaClass emc;
     final CachedClass mixinClass;
     final CachedConstructor constructor;
@@ -45,7 +49,7 @@ public class MixinInMetaClass extends WeakHashMap {
         Object mixinInstance = get(object);
         if (mixinInstance == null) {
             mixinInstance = constructor.invoke(MetaClassHelper.EMPTY_ARRAY);
-            new MyDelegatingMetaClass(mixinInstance, object);
+            new MixedInMetaClass(mixinInstance, object);
             put (object, mixinInstance);
         }
         return mixinInstance;
@@ -91,25 +95,39 @@ public class MixinInMetaClass extends WeakHashMap {
             final CachedClass cachedCategoryClass = ReflectionCache.getCachedClass(categoryClass);
             final MixinInMetaClass mixin = new MixinInMetaClass(mc, cachedCategoryClass);
 
-            CachedMethod[] methods = cachedCategoryClass.getMethods();
-            for (int i = 0; i < methods.length; i++) {
-                CachedMethod method = methods[i];
+            final MetaClass metaClass = GroovySystem.getMetaClassRegistry().getMetaClass(categoryClass);
+            final List<MetaProperty> propList = (List<MetaProperty>) metaClass.getProperties();
+            for (MetaProperty prop : propList)
+              if (self.getMetaProperty(prop.getName()) == null) {
+                  mc.registerBeanProperty(prop.getName(), new MixinInstanceMetaProperty(prop, mixin));
+              }
+
+            for (MetaProperty prop : cachedCategoryClass.getFields())
+              if (self.getMetaProperty(prop.getName()) == null) {
+                  mc.registerBeanProperty(prop.getName(), new MixinInstanceMetaProperty(prop, mixin));
+              }
+
+            for (MetaMethod method : (List<MetaMethod>)metaClass.getMethods()) {
                 final int mod = method.getModifiers();
-                if (Modifier.isPublic(mod) && !method.getCachedMethod().isSynthetic()) {
-                    if (Modifier.isStatic(mod)) {
-                        staticMethod(self, arr, method);
-                    }
-                    else {
-                        if(self.pickMethod(method.getName(), method.getNativeParameterTypes()) == null) {
-                            arr.add(new MixinInstanceMetaMethod(method, mixin));
-                        }
-                    }
+
+                if (!Modifier.isPublic(mod))
+                   continue;
+
+                if (method instanceof CachedMethod && ((CachedMethod)method).getCachedMethod().isSynthetic())
+                  continue;
+
+                if (Modifier.isStatic(mod)) {
+                    if (method instanceof CachedMethod)
+                      staticMethod(self, arr, (CachedMethod) method);
+                }
+                else {
+//                    if(self.pickMethod(method.getName(), method.getNativeParameterTypes()) == null) {
+                        final MixinInstanceMetaMethod metaMethod = new MixinInstanceMetaMethod(method, mixin);
+                        arr.add(metaMethod);
+//                    }
                 }
             }
         }
-
-        if (arr.isEmpty())
-          return;
 
         for (Object res : arr) {
             final MetaMethod metaMethod = (MetaMethod) res;
@@ -165,22 +183,5 @@ public class MixinInMetaClass extends WeakHashMap {
         result = 31 * result + (mixinClass != null ? mixinClass.hashCode() : 0);
         result = 31 * result + (constructor != null ? constructor.hashCode() : 0);
         return result;
-    }
-
-    private static class MyDelegatingMetaClass extends DelegatingMetaClass {
-        final WeakReference owner;
-
-        public MyDelegatingMetaClass(Object instance, Object owner) {
-            super(InvokerHelper.getMetaClass(instance.getClass()));
-            this.owner = new WeakReference(owner);
-            DefaultGroovyMethods.setMetaClass(instance, this);
-        }
-
-        public Object getProperty(Object instance, String property) {
-            if ("mixinOwner".equals(property))
-              return owner.get();
-
-            return super.getProperty(instance, property);
-        }
     }
 }

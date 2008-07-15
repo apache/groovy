@@ -6,6 +6,8 @@ import java.lang.ref.WeakReference
 class MixinTest extends GroovyTestCase {
 
     protected void setUp() {
+        ArrayList.metaClass = null
+        List.metaClass = null
     }
 
     protected void tearDown() {
@@ -52,7 +54,7 @@ class MixinTest extends GroovyTestCase {
     void testGroovyObject () {
         def obj = new ObjToTest ()
         assertEquals "original", obj.value
-        obj.metaClass.mixin ObjToTestCategory
+        obj.metaClass.mixin  ObjToTestCategory
         assertEquals "changed by category", obj.value
         assertEquals "original", new ObjToTest ().value
     }
@@ -208,6 +210,10 @@ class MixinTest extends GroovyTestCase {
         assertEquals 3, queue.get ()
 
         queue.metaClass {
+            iterator { ->
+                mixedIn[LinkedList].iterator()
+            }
+
             duplicateEachElement {
                withLock {
                   LinkedList newList = new LinkedList ()
@@ -236,7 +242,13 @@ class MixinTest extends GroovyTestCase {
 
     void testNoDupCollection () {
         def list = new Object ()
-        list.metaClass.mixin NoDuplicateCollection, LinkedList
+        list.metaClass {
+            mixin NoDuplicateCollection, LinkedList
+
+            find = { Closure check ->
+                mixedIn [LinkedList].find(check)
+            }
+        }
 
         list.put 1
         list.put 1
@@ -249,6 +261,31 @@ class MixinTest extends GroovyTestCase {
         assertEquals 1, list [0]
         assertEquals 2, list [1]
         assertEquals 3, list [2]
+    }
+
+    void testList () {
+        def u = []
+        u.metaClass {
+            mixin HashSet
+
+            leftShift { obj ->
+                mixedIn [List] << obj
+                mixedIn [Set]  << obj
+            }
+        }
+
+        u << 1
+        u << 2
+        u << 1
+        u << 2
+        u << 1
+        u << 2
+
+        assertEquals 6, u.size ()
+        assertEquals 6, ((List)u).size ()
+        assertEquals 6, ((Collection)u).size ()
+        assertEquals 2, u.mixedIn[Set].size ()
+        assertEquals 2, ((Set)u).size ()
     }
 }
 
@@ -345,11 +382,11 @@ class ConcurrentQueue {
 
 class NoDuplicateCollection {
     void put (def obj) {
-        def clone = (mixinOwner as Collection).find {
+        def clone = find {
             it == obj
         }
 
         if (!clone)
-          mixinOwner.add obj
+          add obj
     }
 }

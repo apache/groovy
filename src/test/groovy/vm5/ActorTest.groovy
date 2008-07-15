@@ -234,7 +234,7 @@ class FibCalculator {
                1
            }
            else
-             calcFibSync (value-1) + calcFibSync (value-2)
+             calcFibSync(value-1) + calcFibSync(value-2)
         }
     }
 }

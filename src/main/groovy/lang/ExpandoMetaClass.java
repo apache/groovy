@@ -17,14 +17,11 @@ package groovy.lang;
 
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
-import org.codehaus.groovy.reflection.ClassInfo;
-import org.codehaus.groovy.reflection.MixinInstanceMetaMethod;
+import org.codehaus.groovy.runtime.metaclass.MixinInstanceMetaMethod;
 import org.codehaus.groovy.util.FastArray;
 import org.codehaus.groovy.runtime.*;
 import org.codehaus.groovy.runtime.callsite.*;
-import org.codehaus.groovy.runtime.metaclass.ClosureMetaMethod;
-import org.codehaus.groovy.runtime.metaclass.ClosureStaticMetaMethod;
-import org.codehaus.groovy.runtime.metaclass.ThreadManagedMetaBeanProperty;
+import org.codehaus.groovy.runtime.metaclass.*;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
@@ -179,27 +176,6 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         return null;
     }
 
-//    public MetaMethod pickMethod(String methodName, Class[] arguments) {
-//        MetaMethod method = super.pickMethod(methodName, arguments);
-//        if (method != null) {
-//          return method;
-//        }
-//
-//        method = findMixinMethod(methodName, arguments);
-//        if (method != null) {
-//            onMixinMethodFound(method);
-//            return method;
-//        }
-//
-//        method = findMethodInClassHeirarchy(getTheClass(), methodName, arguments, this);
-//        if(method != null) {
-//            onSuperMethodFoundInHierarchy(method);
-//            return method;
-//        }
-//
-//        return null;
-//    }
-//
     protected void onInvokeMethodFoundInHierarchy(MetaMethod method) {
         this.invokeMethodMethod = method;
     }
@@ -601,7 +577,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 	 * @param property The property name
 	 * @param newValue The properties initial value
 	 */
-	protected void registerBeanProperty(final String property, final Object newValue) {
+	public void registerBeanProperty(final String property, final Object newValue) {
 			performOperationOnMetaClass(new Callable() {
 				public void call() {
 					Class type = newValue == null ? Object.class : newValue.getClass();
@@ -1232,9 +1208,41 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         }
 
         public Object getAt (Class key) {
-            for (MixinInMetaClass mixin : mixinClasses)
-              if (mixin.getMixinClass().getTheClass() == key)
-                return mixin.getMixinInstance(object);
+            if (key.isAssignableFrom(object.getClass())) {
+                return new GroovyObjectSupport() {
+                    {
+                        final MetaClass ownMetaClass = InvokerHelper.getMetaClass(object.getClass());
+                        setMetaClass(new OwnedMetaClass(ownMetaClass){
+                            protected Object getOwner() {
+                                return object;
+                            }
+
+                            protected MetaClass getOwnerMetaClass(Object owner) {
+                                return getAdaptee();
+                            }
+                        });
+                    }
+                };
+            }
+
+            for (final MixinInMetaClass mixin : mixinClasses) {
+                if (key.isAssignableFrom(mixin.getMixinClass().getTheClass())) {
+                    return new GroovyObjectSupport() {
+                        {
+                            final Object mixedInInstance = mixin.getMixinInstance(object);
+                            setMetaClass(new OwnedMetaClass(InvokerHelper.getMetaClass(mixedInInstance)){
+                                protected Object getOwner() {
+                                    return mixedInInstance;
+                                }
+
+                                protected MetaClass getOwnerMetaClass(Object owner) {
+                                    return ((MixedInMetaClass)getAdaptee()).getAdaptee();
+                                }
+                            });
+                        }
+                    };
+                }
+            }
 
             throw new RuntimeException("Class " + key + " isn't mixed in " + object.getClass());
         }

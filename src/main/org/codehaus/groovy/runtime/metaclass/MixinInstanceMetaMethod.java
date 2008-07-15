@@ -1,6 +1,10 @@
-package org.codehaus.groovy.reflection;
+package org.codehaus.groovy.runtime.metaclass;
 
 import groovy.lang.MetaMethod;
+import org.codehaus.groovy.reflection.MixinInMetaClass;
+import org.codehaus.groovy.reflection.CachedClass;
+
+import java.lang.reflect.Modifier;
 
 /**
  * MetaMethod for mixed in classes
@@ -31,7 +35,8 @@ public class MixinInstanceMetaMethod extends MetaMethod{
     }
 
     public Object invoke(Object object, Object[] arguments) {
-        return method.invoke(mixinInMetaClass.getMixinInstance(object), arguments);
+        final Object result = method.invoke(mixinInMetaClass.getMixinInstance(object), arguments);
+        return result;
     }
 
     protected Class[] getPT() {

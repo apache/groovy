@@ -2638,7 +2638,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
         else {
             MetaMethod method = (MetaMethod) methods;
-            if (method.isMethod(aMethod)) {
+            if (method.getName().equals(aMethod.getName())
+//                    TODO: shoulld be better check for case when only diff in modifiers can be SYNTETIC flag
+//                    && method.getModifiers() == aMethod.getModifiers()
+                    && method.getReturnType().equals(aMethod.getReturnType())
+                    && MetaMethod.equal(method.getParameterTypes(), aMethod.getParameterTypes())) {
                 return method;
             }
         }

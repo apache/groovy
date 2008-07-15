@@ -27,6 +27,7 @@ public abstract class MetaProperty {
 
     protected final String name;
     protected Class type;
+    public static final String PROPERTY_SET_PREFIX = "set";
 
     public MetaProperty(String name, Class type) {
         this.name = name;
@@ -63,4 +64,13 @@ public abstract class MetaProperty {
         return Modifier.PUBLIC;
     }
 
+    public static String getGetterName(String propertyName, Class type) {
+        String prefix = type == boolean.class || type == Boolean.class ? "is" : "get";
+        return prefix + Character.toUpperCase(propertyName.charAt(0))
+                + propertyName.substring(1);
+    }
+
+    public static String getSetterName(String propertyName) {
+        return PROPERTY_SET_PREFIX + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
+    }
 }

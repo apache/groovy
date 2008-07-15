@@ -33,7 +33,7 @@ public abstract class AbstractConcurrentMapBase {
     protected abstract Segment createSegment(int cap);
 
     protected static <K> int hash(K key) {
-        int h = key.hashCode();
+        int h = System.identityHashCode(key);
         h += ~(h << 9);
         h ^=  (h >>> 14);
         h +=  (h << 4);
