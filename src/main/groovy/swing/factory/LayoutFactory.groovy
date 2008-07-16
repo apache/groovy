@@ -22,6 +22,9 @@ import javax.swing.RootPaneContainer
 class LayoutFactory extends BeanFactory {
 
     def contextProps
+    public static final String DELEGATE_PROPERTY_CONSTRAINT = "_delegateProperty:Constrinat";
+    public static final String DEFAULT_DELEGATE_PROPERTY_CONSTRAINT = "constraints";
+
 
     public LayoutFactory(Class klass) {
         super(klass)
@@ -32,6 +35,7 @@ class LayoutFactory extends BeanFactory {
     }
 
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) {
+        builder.context[DELEGATE_PROPERTY_CONSTRAINT] = attributes.remove("constraintsProperty") ?: DEFAULT_DELEGATE_PROPERTY_CONSTRAINT
         Object o = super.newInstance(builder, name, value, attributes); //To change body of overridden methods use File | Settings | File Templates.
         addLayoutProperties(builder.getContext());
         return o;
@@ -68,4 +72,10 @@ class LayoutFactory extends BeanFactory {
         }
         return parent;
     }
+
+    public static constraintsAttributeDelegate(def builder, def node, def attributes) {
+        def constraintsAttr = builder?.context?.getAt(DELEGATE_PROPERTY_CONSTRAINT) ?: DEFAULT_DELEGATE_PROPERTY_CONSTRAINT
+        builder.context.constraints = attributes.remove(constraintsAttr)
+    }
+
 }

@@ -18,9 +18,27 @@ package groovy.swing.factory
 
 import java.awt.Component
 import java.awt.Window
-import javax.swing.JTabbedPane
 
 class TabbedPaneFactory extends BeanFactory {
+
+    public static final String DELEGATE_PROPERTY_TITLE = "_delegateProperty:title";
+    public static final String DEFAULT_DELEGATE_PROPERTY_TITLE = "title";
+    public static final String DELEGATE_PROPERTY_TAB_ICON = "_delegateProperty:tabIcon";
+    public static final String DEFAULT_DELEGATE_PROPERTY_TAB_ICON = "tabIcon";
+    public static final String DELEGATE_PROPERTY_TAB_DISABLED_ICON = "_delegateProperty:tabDisabledIcon";
+    public static final String DEFAULT_DELEGATE_PROPERTY_TAB_DISABLED_ICON = "tabDisabledIcon";
+    public static final String DELEGATE_PROPERTY_TAB_TOOL_TIP = "_delegateProperty:tabToolTip";
+    public static final String DEFAULT_DELEGATE_PROPERTY_TAB_TOOL_TIP = "tabToolTip";
+    public static final String DELEGATE_PROPERTY_TAB_FOREGROUND = "_delegateProperty:tabForeground";
+    public static final String DEFAULT_DELEGATE_PROPERTY_TAB_FOREGROUND = "tabForeground";
+    public static final String DELEGATE_PROPERTY_TAB_BACKGROUND = "_delegateProperty:tabBackground";
+    public static final String DEFAULT_DELEGATE_PROPERTY_TAB_BACKGROUND = "tabBackground";
+    public static final String DELEGATE_PROPERTY_TAB_ENABLED = "_delegateProperty:tabEnabled";
+    public static final String DEFAULT_DELEGATE_PROPERTY_TAB_ENABLED = "tabEnabled";
+    public static final String DELEGATE_PROPERTY_TAB_MNEMONIC = "_delegateProperty:tabMnemonic";
+    public static final String DEFAULT_DELEGATE_PROPERTY_TAB_MNEMONIC = "tabMnemonic";
+    public static final String DELEGATE_PROPERTY_TAB_DISPLAYED_MNEMONIC_INDEX = "_delegateProperty:tabDisplayedMnemonicIndex";
+    public static final String DEFAULT_DELEGATE_PROPERTY_TAB_DISPLAYED_MNEMONIC_INDEX = "tabDisplayedMnemonicIndex";
 
     public TabbedPaneFactory(Class beanClass) {
         super(beanClass, false)
@@ -35,19 +53,30 @@ class TabbedPaneFactory extends BeanFactory {
         builder.addAttributeDelegate(builder.context.tabbedPaneFactoryClosure)
         builder.context.selectedIndex = attributes.remove('selectedIndex')
         builder.context.selectedComponent = attributes.remove('selectedComponent')
+
+        builder.context[DELEGATE_PROPERTY_TITLE] = attributes.remove("titleProperty") ?: DEFAULT_DELEGATE_PROPERTY_TITLE
+        builder.context[DELEGATE_PROPERTY_TAB_ICON] = attributes.remove("tabIconProperty") ?: DEFAULT_DELEGATE_PROPERTY_TAB_ICON
+        builder.context[DELEGATE_PROPERTY_TAB_DISABLED_ICON] = attributes.remove("tabDisabledIconProperty") ?: DEFAULT_DELEGATE_PROPERTY_TAB_DISABLED_ICON
+        builder.context[DELEGATE_PROPERTY_TAB_TOOL_TIP] = attributes.remove("tabToolTipProperty") ?: DEFAULT_DELEGATE_PROPERTY_TAB_TOOL_TIP
+        builder.context[DELEGATE_PROPERTY_TAB_BACKGROUND] = attributes.remove("tabBackgroundProperty") ?: DEFAULT_DELEGATE_PROPERTY_TAB_BACKGROUND
+        builder.context[DELEGATE_PROPERTY_TAB_FOREGROUND] = attributes.remove("tabForegroundProperty") ?: DEFAULT_DELEGATE_PROPERTY_TAB_FOREGROUND
+        builder.context[DELEGATE_PROPERTY_TAB_ENABLED] = attributes.remove("tabEnabledProperty") ?: DEFAULT_DELEGATE_PROPERTY_TAB_ENABLED
+        builder.context[DELEGATE_PROPERTY_TAB_MNEMONIC] = attributes.remove("tabMnemonicProperty") ?: DEFAULT_DELEGATE_PROPERTY_TAB_MNEMONIC
+        builder.context[DELEGATE_PROPERTY_TAB_DISPLAYED_MNEMONIC_INDEX] = attributes.remove("tabDisplayedMnemonicIndexProperty") ?: DEFAULT_DELEGATE_PROPERTY_TAB_DISPLAYED_MNEMONIC_INDEX
+
         return newChild;
     }
 
     public static void inspectChild(FactoryBuilderSupport builder, Object node, Map attributes) {
-        def name = attributes.remove('title')
-        def icon = attributes.remove('tabIcon')
-        def disabledIcon = attributes.remove('tabDisabledIcon')
-        def toolTip = attributes.remove('tabToolTip')
-        def background = attributes.remove('tabBackground')
-        def foreground = attributes.remove('tabForeground')
-        def enabled = attributes.remove('tabEnabled')
-        def mnemonic = attributes.remove('tabMnemonic')
-        def displayedMnemonicIndex = attributes.remove('tabDisplayedMnemonicIndex')
+        def name = attributes.remove(builder?.parentContext?.getAt(DELEGATE_PROPERTY_TITLE) ?: DEFAULT_DELEGATE_PROPERTY_TITLE)
+        def icon = attributes.remove(builder?.parentContext?.getAt(DELEGATE_PROPERTY_TAB_ICON) ?: DEFAULT_DELEGATE_PROPERTY_TAB_ICON)
+        def disabledIcon = attributes.remove(builder?.parentContext?.getAt(DELEGATE_PROPERTY_TAB_DISABLED_ICON) ?: DEFAULT_DELEGATE_PROPERTY_TAB_DISABLED_ICON)
+        def toolTip = attributes.remove(builder?.parentContext?.getAt(DELEGATE_PROPERTY_TAB_TOOL_TIP) ?: DEFAULT_DELEGATE_PROPERTY_TAB_TOOL_TIP)
+        def background = attributes.remove(builder?.parentContext?.getAt(DELEGATE_PROPERTY_TAB_BACKGROUND) ?: DEFAULT_DELEGATE_PROPERTY_TAB_BACKGROUND)
+        def foreground = attributes.remove(builder?.parentContext?.getAt(DELEGATE_PROPERTY_TAB_FOREGROUND) ?: DEFAULT_DELEGATE_PROPERTY_TAB_FOREGROUND)
+        def enabled = attributes.remove(builder?.parentContext?.getAt(DELEGATE_PROPERTY_TAB_ENABLED) ?: DEFAULT_DELEGATE_PROPERTY_TAB_ENABLED)
+        def mnemonic = attributes.remove(builder?.parentContext?.getAt(DELEGATE_PROPERTY_TAB_MNEMONIC) ?: DEFAULT_DELEGATE_PROPERTY_TAB_MNEMONIC)
+        def displayedMnemonicIndex = attributes.remove(builder?.parentContext?.getAt(DELEGATE_PROPERTY_TAB_DISPLAYED_MNEMONIC_INDEX) ?: DEFAULT_DELEGATE_PROPERTY_TAB_DISPLAYED_MNEMONIC_INDEX)
         builder.context.put(node, [name, icon, disabledIcon, toolTip, background, foreground, enabled, mnemonic, displayedMnemonicIndex])
     }
 

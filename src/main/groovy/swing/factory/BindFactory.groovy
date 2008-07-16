@@ -15,6 +15,7 @@
  */
 package groovy.swing.factory
 
+import groovy.swing.SwingBuilder
 import groovy.swing.binding.AbstractButtonProperties
 import groovy.swing.binding.JScrollBarProperties
 import groovy.swing.binding.JSliderProperties
@@ -201,7 +202,8 @@ public class BindFactory extends AbstractFactory {
             Object value = entry.value
 
             def bindAttrs = builder.getContext().get(value) ?: [:]
-            def id = bindAttrs.remove('id')
+            def idAttr = builder.getAt(SwingBuilder.DELEGATE_PROPERTY_OBJECT_ID) ?: SwingBuilder.DEFAULT_DELEGATE_PROPERTY_OBJECT_ID
+            def id = bindAttrs.remove(idAttr)
             if (bindAttrs.containsKey("value")) {
                 node."$property" = bindAttrs.remove("value")
             }

@@ -25,7 +25,7 @@ import java.awt.Container
 import java.awt.GridBagLayout
 import java.awt.Component
 
-public class GridBagFactory extends LayoutFactory{
+public class GridBagFactory extends LayoutFactory {
 
     public GridBagFactory() {
         super(GridBagLayout, true)
@@ -42,7 +42,8 @@ public class GridBagFactory extends LayoutFactory{
             return
         }
         // an explicit constraints means don't do anything
-        if (attributes.containsKey("constraints")) {
+        def constraintsAttr = builder?.context?.getAt(LayoutFactory.DELEGATE_PROPERTY_CONSTRAINT) ?: LayoutFactory.DEFAULT_DELEGATE_PROPERTY_CONSTRAINT
+        if (attributes.containsKey(constraintsAttr)) {
             return
         }
 

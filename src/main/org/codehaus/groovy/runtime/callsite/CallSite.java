@@ -22,6 +22,8 @@ public interface CallSite {
 
     Object callGroovyObjectGetProperty (Object receiver);
 
+    Object callGroovyObjectGetPropertySafe (Object receiver);
+
 
     Object call(Object receiver, Object[] args);
 

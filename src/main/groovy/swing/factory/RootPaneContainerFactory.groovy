@@ -22,6 +22,9 @@ import javax.swing.JButton
 
 abstract class RootPaneContainerFactory extends AbstractFactory {
 
+    public static final String DELEGATE_PROPERTY_DEFAULT_BUTTON = "_delegateProperty:defaultButton";
+    public static final String DEFAULT_DELEGATE_PROPERTY_DEFAULT_BUTTON = "defaultButton";
+
     public void setChild(FactoryBuilderSupport builder, Object parent, Object child) {
         if (!(child instanceof Component) || (child instanceof Window)) {
             return;
@@ -39,11 +42,23 @@ abstract class RootPaneContainerFactory extends AbstractFactory {
     }
 
     public void handleRootPaneTasks(FactoryBuilderSupport builder, Window container, Map attributes) {
+        builder.context[DELEGATE_PROPERTY_DEFAULT_BUTTON] = attributes.remove("defaultButtonProperty") ?: DEFAULT_DELEGATE_PROPERTY_DEFAULT_BUTTON
+
         builder.context.defaultButtonDelegate =
             builder.addAttributeDelegate {myBuilder, node, myAttributes ->
-                if (myAttributes.defaultButton && (node instanceof JButton)) {
-                    container.rootPane.defaultButton = node
-                    myAttributes.remove('defaultButton')
+                if ((node instanceof JButton) && (builder.containingWindows[-1] == container)) {
+                    // in Java 6 use descending iterator
+                    ListIterator li = builder.contexts.listIterator();
+                    Map context
+                    while (li.hasNext()) context = li.next()
+                    while (context && context[FactoryBuilderSupport.CURRENT_NODE] != container) {
+                        context = li.previous() 
+                    }
+                    def defaultButtonProperty = context[DELEGATE_PROPERTY_DEFAULT_BUTTON] ?: DEFAULT_DELEGATE_PROPERTY_DEFAULT_BUTTON
+                    def defaultButton = myAttributes.remove(defaultButtonProperty)
+                    if (defaultButton) {
+                        container.rootPane.defaultButton = node
+                    }
                 }
             }
 
