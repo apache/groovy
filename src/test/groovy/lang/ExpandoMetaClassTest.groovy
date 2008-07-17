@@ -498,8 +498,24 @@ class ExpandoMetaClassTest extends GroovyTestCase {
         t.metaClass = metaClass
 
         assertEquals "mine blah!", t.borrowMe("blah")
+        assertEquals "mine blah+foo!", t.borrowMe("blah", "foo")
         // GROOVY-1993
         assertEquals "no args here!", t.borrowMeToo()
+    }
+
+    void testClosureWithOptionalArgs() {
+        def metaClass = new ExpandoMetaClass(Test.class)
+
+        metaClass.withOptional {
+            String first, String second = "no param"  ->
+            "$first + $second"
+        }
+
+        def t = new Test()
+        t.metaClass = metaClass
+
+        assertEquals ("blah + no param", t.withOptional("blah"))
+        assertEquals ("blah + foo", t.withOptional("blah", "foo"))
     }
 
     void testBorrowByName() {
@@ -684,8 +700,8 @@ class Test {
 }
 
 class Another {
-    def another(txt) {
-        "mine ${txt}!"
+    def another(txt, additional="") {
+        "mine ${txt}${additional?'+'+additional:''}!"
     }
     def noArgs() {
         "no args here!"

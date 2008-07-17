@@ -21,8 +21,11 @@ import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.CachedMethod;
+import org.codehaus.groovy.runtime.MethodClosure;
 
 import java.lang.reflect.Modifier;
+import java.util.List;
+import java.util.ArrayList;
 
 /**
  *
@@ -35,17 +38,19 @@ import java.lang.reflect.Modifier;
 public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMethod {
 
 	private final Closure callable;
+    private final CachedMethod doCall;
     private final String name;
     private final CachedClass declaringClass;
 
-    public ClosureMetaMethod(String name, Closure c) {
-		this(name, c.getOwner().getClass(), c);
+    public ClosureMetaMethod(String name, Closure c, CachedMethod doCall) {
+		this(name, c.getOwner().getClass(), c, doCall);
 	}
 
-    public ClosureMetaMethod(String name, Class declaringClass,Closure c) {
-        super (c.getParameterTypes());
+    public ClosureMetaMethod(String name, Class declaringClass, Closure c, CachedMethod doCall) {
+        super (doCall.getNativeParameterTypes());
         this.name = name;
         callable = c;
+        this.doCall = doCall;
         this.declaringClass = ReflectionCache.getCachedClass(declaringClass);
         c.setResolveStrategy(Closure.DELEGATE_FIRST);
     }
@@ -71,7 +76,7 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
 		Closure cloned = (Closure) callable.clone();
 		cloned.setDelegate(object);
 
-		return cloned.call(arguments);
+		return doCall.invoke(cloned, arguments);
 	}
 
   /**
@@ -82,4 +87,47 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
     public Closure getClosure() {
 		return callable;
 	}
+
+    public static List<ClosureMetaMethod> createMethodList(String name, Class declaringClass, Closure closure) {
+        ArrayList<ClosureMetaMethod> res = new ArrayList<ClosureMetaMethod> ();
+        if (closure instanceof MethodClosure) {
+            MethodClosure methodClosure = (MethodClosure) closure;
+            Object owner = closure.getOwner();
+            Class ownerClass = (Class) (owner instanceof Class ? owner : owner.getClass());
+            for (CachedMethod method : ReflectionCache.getCachedClass(ownerClass).getMethods() ) {
+                if (method.getName().equals(methodClosure.getMethod())) {
+                    res.add(new MethodClosureMetaMethod(name, declaringClass, closure, method));
+                }
+            }
+        }
+        else {
+            for (CachedMethod method : ReflectionCache.getCachedClass(closure.getClass()).getMethods() ) {
+                if (method.getName().equals("doCall")) {
+                    res.add(new ClosureMetaMethod(name, declaringClass, closure, method));
+                }
+            }
+        }
+        return res;
+    }
+
+    public CachedMethod getDoCall() {
+        return doCall;
+    }
+
+    public static ClosureMetaMethod copy(ClosureMetaMethod closureMethod) {
+        if (closureMethod instanceof MethodClosureMetaMethod)
+          return new MethodClosureMetaMethod(closureMethod.getName(), closureMethod.getDeclaringClass().getTheClass(), closureMethod.getClosure(), closureMethod.getDoCall());
+        else
+          return new ClosureMetaMethod(closureMethod.getName(), closureMethod.getDeclaringClass().getTheClass(), closureMethod.getClosure(), closureMethod.getDoCall());
+    }
+
+    private static class MethodClosureMetaMethod extends ClosureMetaMethod {
+        public MethodClosureMetaMethod(String name, Class declaringClass, Closure closure, CachedMethod method) {
+            super(name, declaringClass, closure, method);
+        }
+
+        public Object invoke(Object object, Object[] arguments) {
+            return getDoCall().invoke(getClosure().getOwner(), arguments);
+        }
+    }
 }

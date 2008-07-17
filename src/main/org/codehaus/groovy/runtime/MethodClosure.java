@@ -74,7 +74,7 @@ public class MethodClosure extends Closure {
     }
 
     protected Object doCall(Object arguments) {
-        return InvokerHelper.invokeMethod(getDelegate(), method, arguments);
+        return InvokerHelper.invokeMethod(getOwner(), method, arguments);
     }
     
     public Object getProperty(String property) {
