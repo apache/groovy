@@ -4,8 +4,31 @@ import org.codehaus.groovy.reflection.ClassInfo
 
 class PerInstanceMetaClassTest extends GroovyTestCase{
 
+    static Integer [] cache
+
+    static {
+        try {
+            Integer.valueOf(0)
+        }
+        catch (MissingMethodException e) {
+            cache = new Integer[-(-128) + 127 + 1]
+            for(int i = 0; i < cache.length; i++)
+              cache[i] = new Integer(i - 128);
+        }
+    }
+
     protected void setUp() {
         Integer.metaClass = null
+        if (!cache) {
+            Integer.metaClass.valueOf {
+                int i ->
+                final int offset = 128;
+                if (i >= -128 && i <= 127) { // must cache
+                    return cache[i + offset];
+                }
+                return new Integer(i);
+            }
+        }
     }
 
     void testEMC () {
