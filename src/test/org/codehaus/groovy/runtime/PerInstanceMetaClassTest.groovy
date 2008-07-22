@@ -19,9 +19,13 @@ class PerInstanceMetaClassTest extends GroovyTestCase{
 
     protected void setUp() {
         Integer.metaClass = null
-        if (!cache) {
-            Integer.metaClass.valueOf {
-                int i ->
+        setValueOfMethod()
+    }
+
+    private def setValueOfMethod() {
+        if (cache != null) {
+            Integer.metaClass.static.valueOf = {
+                Integer i ->
                 final int offset = 128;
                 if (i >= -128 && i <= 127) { // must cache
                     return cache[i + offset];
@@ -64,10 +68,11 @@ class PerInstanceMetaClassTest extends GroovyTestCase{
         assertEquals 3, x.divFour (12)
         assertEquals 55, x.mul(5)
 
-        assertEquals 23, 10 + 12 + 6  // (10+12) == Integer.valueOf(22) !!!!!!
+        assertEquals 23, Integer.valueOf(10 + 12) + 6  // (10+12) == Integer.valueOf(22) !!!!!!
 
         x.metaClass = null
         Integer.metaClass = null
+        setValueOfMethod()
 
         assertEquals 28, x + 6
 
@@ -95,7 +100,7 @@ class PerInstanceMetaClassTest extends GroovyTestCase{
         assertEquals 127, 5 + x + x._100
         assertEquals 3, x.divFour (12)
         assertEquals 55, x.mul(5)
-        assertEquals 23, 10 + 12 + 6  // (10+12) == Integer.valueOf(22) !!!!!!
+        assertEquals 23, Integer.valueOf(10 + 12) + 6  // (10+12) == Integer.valueOf(22) !!!!!!
 
         x.metaClass = null
 
@@ -206,7 +211,7 @@ class PerInstanceMetaClassTest extends GroovyTestCase{
                 if (n == 1)
                   return 1
                 else
-                  return fib(n-1) + fib(n-2)
+                  return fib(Integer.valueOf(n-1)) + fib(Integer.valueOf(n-2))
             }
         }
 
