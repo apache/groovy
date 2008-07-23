@@ -87,6 +87,6 @@ public class HandleMetaClass extends DelegatingMetaClass {
     }
 
     public boolean equals(Object obj) {
-        return super.equals(obj) || getAdaptee().equals(obj);
+        return super.equals(obj) || getAdaptee().equals(obj) || (obj instanceof HandleMetaClass && equals(((HandleMetaClass)obj).getAdaptee()));
     }
 }
