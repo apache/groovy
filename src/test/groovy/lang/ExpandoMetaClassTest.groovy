@@ -663,7 +663,48 @@ class ExpandoMetaClassTest extends GroovyTestCase {
         }
     }
 
+    void testGetProperty () {
+        def x = new SuperClass ()
+        def mc = x.metaClass
+        mc.getProperty = { String name ->
+                MetaProperty mp = mc.getMetaProperty(name)
+                if (mp)
+                  mp.getProperty(delegate)
+                else {
+                  if (thingo) {
+                      thingo."$name"
+                  }
+                  else {
+                      if (application) {
+                          "non-null application"
+                      }
+                      else {
+                          String methodName = "get${name[0].toUpperCase()}${name.substring(1)}"
+                          mc."$methodName" = {
+                              -> "$name"
+                          }
+                          delegate."$methodName" ()
+                      }
+                  }
+                }
+            }
+
+        Map map = ["prop": "none"]
+        x.thingo = map
+        assertEquals map, x.thingo
+        assertEquals ("none", x.prop )
+        x.thingo = null
+        application = new Object ()
+        assertEquals ("non-null application", x.prop)
+        application = null
+        assertEquals ("prop", x.prop)
+        application = new Object ()
+        assertEquals ("prop", x.prop)
+    }
+
+    def application
 }
+
 class SuperClass {
     def thingo
 }
