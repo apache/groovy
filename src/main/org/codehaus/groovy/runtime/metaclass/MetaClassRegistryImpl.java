@@ -312,6 +312,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      */
     public void setMetaClassCreationHandle(MetaClassCreationHandle handle) {
 		if(handle == null) throw new IllegalArgumentException("Cannot set MetaClassCreationHandle to null value!");
+        ClassInfo.clearModifiedExpandos();
         metaClassCreationHandle = handle;
     }    
 
