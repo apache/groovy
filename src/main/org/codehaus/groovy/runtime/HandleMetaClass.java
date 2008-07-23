@@ -85,4 +85,8 @@ public class HandleMetaClass extends DelegatingMetaClass {
     public void addMetaBeanProperty(MetaBeanProperty metaBeanProperty) {
         throw new UnsupportedOperationException();
     }
+
+    public boolean equals(Object obj) {
+        return super.equals(obj) || getAdaptee().equals(obj);
+    }
 }
