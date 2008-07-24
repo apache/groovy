@@ -703,6 +703,27 @@ class ExpandoMetaClassTest extends GroovyTestCase {
     }
 
     def application
+
+    void testWithNull () {
+        SuperClass.metaClass = null
+        ExpandoMetaClass.enableGlobally()
+        def x = new SuperClass ()
+        def mc = x.metaClass
+
+        def request = new Object ()
+        request.metaClass {
+            getFormat {
+                -> "js"
+            }
+        }
+
+        mc.render = {String txt ->
+            txt
+        }
+
+        assertEquals ("js",x.render(request.format))
+        ExpandoMetaClass.disableGlobally()
+    }
 }
 
 class SuperClass {

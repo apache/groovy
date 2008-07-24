@@ -703,7 +703,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             final MetaMethod method = findMethodInClassHeirarchy(instance.getClass(), ExpandoMetaClass.SET_PROPERTY_METHOD, setPropertyArgs, this);
             if(method != null && method instanceof ClosureMetaMethod) {
                 onSetPropertyFoundInHierarchy(method);
-                return method.invoke(instance, setPropertyArgs);
+                return method.invoke(instance, new Object[]{propertyName, optionalValue});
             }
         }
 
