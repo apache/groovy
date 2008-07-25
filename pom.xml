@@ -608,7 +608,7 @@
         <dependency>
             <groupId>xmlunit</groupId>
             <artifactId>xmlunit</artifactId>
-            <version>1.1</version>
+            <version>1.2</version>
             <scope>test</scope>
         </dependency>
 
