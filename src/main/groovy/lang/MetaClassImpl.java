@@ -1771,12 +1771,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                     setter = false;
                 }
                 if (!setter && !getter) continue;
-                if (!setter && mp.getSetter() != null) {
-                    element = new MetaBeanProperty(mp.getName(), mp.getType(), mp.getGetter(), null);
-                }
-                if (!getter && mp.getGetter() != null) {
-                    element = new MetaBeanProperty(mp.getName(), mp.getType(), null, mp.getSetter());
-                }
+//  TODO: I (ait) don't know why these strange tricks needed and comment following as it effects some Grails tests             
+//                if (!setter && mp.getSetter() != null) {
+//                    element = new MetaBeanProperty(mp.getName(), mp.getType(), mp.getGetter(), null);
+//                }
+//                if (!getter && mp.getGetter() != null) {
+//                    element = new MetaBeanProperty(mp.getName(), mp.getType(), null, mp.getSetter());
+//                }
             }
             ret.add(element);
         }
