@@ -46,11 +46,11 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
     /**
      * A GString containing a single empty String and no values.
      */
-    public static final GString EMPTY = new GString(new Object[0]) {
-        public String[] getStrings() {
-            return new String[]{""};
-        }
-    };
+//    public static transient final GString EMPTY = new GString(new Object[0]) {
+//        public String[] getStrings() {
+//            return new String[]{""};
+//        }
+//    };
 
     private Object[] values;
 
