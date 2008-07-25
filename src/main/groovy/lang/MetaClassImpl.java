@@ -189,7 +189,20 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return (MetaProperty) staticPropertyIndex.get(name);
         } else {
             propertyMap = classPropertyIndexForSuper.getNotNull(theCachedClass);
-            return (MetaProperty) propertyMap.get(name);
+            if (propertyMap.containsKey(name))
+              return (MetaProperty) propertyMap.get(name);
+            else {
+                CachedClass superClass = theCachedClass;
+                while(superClass != null && superClass != ReflectionCache.OBJECT_CLASS) {
+                    final MetaBeanProperty property = findPropertyInClassHierarchy(name, superClass);
+                    if(property != null) {
+                        onSuperPropertyFoundInHierarchy(property);
+                        return property;
+                    }
+                    superClass = superClass.getCachedSuperClass();
+                }
+                return null;
+            }
         }
     }
 

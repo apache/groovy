@@ -724,6 +724,25 @@ class ExpandoMetaClassTest extends GroovyTestCase {
         assertEquals ("js",x.render(request.format))
         ExpandoMetaClass.disableGlobally()
     }
+
+    void testInterfaceWithGetProperty () {
+        Implemented.metaClass.getProperty = { String name ->
+            return "META " + delegate.class.metaClass.getMetaProperty(name).getProperty(delegate)
+        }
+        InterfaceWithFormat.metaClass.getFormat = {
+            -> "js"
+        }
+        def x = new Implemented()
+        assertEquals "META js", x.format
+    }
+}
+
+interface InterfaceWithFormat {
+
+}
+
+class Implemented implements InterfaceWithFormat {
+
 }
 
 class SuperClass {
