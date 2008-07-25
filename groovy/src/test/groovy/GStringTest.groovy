@@ -11,6 +11,15 @@ class GStringTest extends GroovyTestCase {
         assert string == teststr
     }
 
+    void testEmptyGString() {
+        def foo = 'Foo'
+        def bar = 'Bar'
+        def g = GString.EMPTY + "$foo".toString() + "$bar"
+        assert g instanceof GString
+        assert g.values == ['Bar']
+        assert 'FooBar' == g
+    }
+
     void testWithOneVariable() {
         def name = "Bob"
         def teststr = "hello Bob how are you?"
