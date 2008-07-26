@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -145,7 +145,7 @@ public class ProxyGenerator {
         for (int i = 0; i < publicAndProtectedMethods.size(); i++) {
             Method method = (Method) publicAndProtectedMethods.get(i);
             if (method.getName().indexOf('$') != -1)
-              continue;
+                continue;
             if (map.containsKey(method.getName())) {
                 selectedMethods.add(method.getName());
                 addOverridingMapCall(buffer, method);
@@ -170,7 +170,7 @@ public class ProxyGenerator {
         for (Iterator iterator = map.keySet().iterator(); iterator.hasNext();) {
             String methodName = (String) iterator.next();
             if (methodName.indexOf('$') != -1)
-              continue;
+                continue;
             if (selectedMethods.contains(methodName)) continue;
             addNewMapCall(buffer, methodName);
         }
@@ -240,7 +240,7 @@ public class ProxyGenerator {
         if (baseClass != null) {
             buffer.append(" extends ").append(baseClass.getName());
         }
-        
+
         for (int i = 0; i < interfacesToImplement.size(); i++) {
             Class thisInterface = (Class) interfacesToImplement.get(i);
             if (i == 0) {
@@ -280,7 +280,7 @@ public class ProxyGenerator {
         for (int i = 0; i < additionalMethods.size(); i++) {
             Method method = (Method) additionalMethods.get(i);
             if (method.getName().indexOf('$') != -1)
-              continue;
+                continue;
             if (!containsEquivalentMethod(interfaceMethods, method) &&
                     !containsEquivalentMethod(objectMethods, method) &&
                     !containsEquivalentMethod(groovyObjectMethods, method)) {
@@ -355,7 +355,7 @@ public class ProxyGenerator {
             for (int i = 0; i < protectedMethods.length; i++) {
                 Method method = protectedMethods[i];
                 if (method.getName().indexOf('$') != -1)
-                  continue;
+                    continue;
                 if (Modifier.isProtected(method.getModifiers()) && !containsEquivalentMethod(methods, method))
                     methods.add(method);
             }
