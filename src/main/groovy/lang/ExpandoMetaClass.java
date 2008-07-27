@@ -104,11 +104,13 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     private final Map beanPropertyCache = new ConcurrentHashMap();
     private final Map staticBeanPropertyCache = new ConcurrentHashMap();
     private final Map expandoMethods = new ConcurrentHashMap();
+
+    public Collection getExpandoSubclassMethods() {
+        return expandoSubclassMethods.values();
+    }
+
     private final ConcurrentHashMap expandoSubclassMethods = new ConcurrentHashMap();
     private final Map expandoProperties = new ConcurrentHashMap();
-    private MetaMethod getPropertyMethod;
-    private MetaMethod invokeMethodMethod;
-    private MetaMethod setPropertyMethod;
     private ClosureStaticMetaMethod invokeStaticMethodMethod;
     private final LinkedHashSet<MixinInMetaClass> mixinClasses = new LinkedHashSet<MixinInMetaClass>();
 
@@ -290,6 +292,9 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 		performOperationOnMetaClass(new Callable() {
 			public void call() {
 
+                final MetaMethodIndex.Header header = metaMethodIndex.getHeader(theClass);
+                final MetaMethodIndex.Entry methods = metaMethodIndex.getOrPutMethods(metaMethodFromSuper.getName(), header);
+
                 MetaMethod existing = null;
 				try {
 					existing = pickMethod(metaMethodFromSuper.getName(), metaMethodFromSuper.getNativeParameterTypes());}
@@ -329,7 +334,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                     MethodKey key = new DefaultCachedMethodKey(declaringClass, name, localMethod.getParameterTypes(),false );
 //                    cacheInstanceMethod(key, localMethod);
 
-                    checkIfGroovyObjectMethod(localMethod, name);
+                    checkIfGroovyObjectMethod(localMethod);
                     expandoMethods.put(key,localMethod);
 
                 }
@@ -624,7 +629,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 			performOperationOnMetaClass(new Callable() {
 				public void call() {
                     String methodName = metaMethod.getName();
-                    checkIfGroovyObjectMethod(metaMethod, methodName);
+                    checkIfGroovyObjectMethod(metaMethod);
                     MethodKey key = new DefaultCachedMethodKey(theClass,methodName, metaMethod.getParameterTypes(),false );
 
 
@@ -672,39 +677,6 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         List propertyList = new ArrayList();
         propertyList.addAll(super.getProperties());
         return propertyList;
-    }
-
-    /**
-     * Checks if the metaMethod is a method from the GroovyObject interface such as setProperty, getProperty and invokeMethod
-     *
-     * @param metaMethod The metaMethod instance
-     * @param methodName The method name
-     *
-     * @see groovy.lang.GroovyObject
-     */
-    private void checkIfGroovyObjectMethod(MetaMethod metaMethod, String methodName) {
-
-        if(isGetPropertyMethod(metaMethod)) {
-            getPropertyMethod = metaMethod;
-        }
-        else if(isInvokeMethod(metaMethod)) {
-            invokeMethodMethod = metaMethod;
-        }
-        else if(isSetPropertyMethod(metaMethod)) {
-            setPropertyMethod = metaMethod;
-        }
-    }
-
-    private boolean isSetPropertyMethod(MetaMethod metaMethod) {
-        return SET_PROPERTY_METHOD.equals(metaMethod.getName())  && metaMethod.getParameterTypes().length == 2;
-    }
-
-    private boolean isGetPropertyMethod(MetaMethod metaMethod) {
-        return GET_PROPERTY_METHOD.equals(metaMethod.getName());
-    }
-
-    private boolean isInvokeMethod(MetaMethod metaMethod) {
-        return INVOKE_METHOD_METHOD.equals(metaMethod.getName()) && metaMethod.getParameterTypes().length == 2;
     }
 
 

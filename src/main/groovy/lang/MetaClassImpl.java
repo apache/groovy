@@ -64,6 +64,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     protected static final String STATIC_PROPERTY_MISSING = "$static_propertyMissing";
     protected static final String METHOD_MISSING = "methodMissing";
     protected static final String PROPERTY_MISSING = "propertyMissing";
+    private static final String GET_PROPERTY_METHOD = "getProperty";
+    private static final String SET_PROPERTY_METHOD = "setProperty";
+    protected static final String INVOKE_METHOD_METHOD = "invokeMethod";
 
     private static final Class[] METHOD_MISSING_ARGS = new Class[]{String.class, Object.class};
     private static final Class[] GETTER_MISSING_ARGS = new Class[]{String.class};
@@ -72,9 +75,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     protected final Class theClass;
     protected final CachedClass theCachedClass;
     private static final MetaMethod[] EMPTY = new MetaMethod[0];
-    static final String GET_PROPERTY_METHOD = "getProperty";
-    static final String SET_PROPERTY_METHOD = "setProperty";
-    static final String INVOKE_METHOD_METHOD = "invokeMethod";
+    protected MetaMethod getPropertyMethod;
+    protected MetaMethod invokeMethodMethod;
+    protected MetaMethod setPropertyMethod;
 
     public final CachedClass getTheCachedClass() {
         return theCachedClass;
@@ -325,9 +328,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             final CachedMethod[] m = c.getMethods();
             for (int i=0; i != m.length; ++i) {
                 MetaMethod method = m[i];
-                String name = method.getName();
-                MetaMethodIndex.Entry e = metaMethodIndex.getOrPutMethods(name, header);
-                e.methods = metaMethodIndex.addMethodToList(e.methods, method);
+                addMetaMethodToIndex (method, header);
             }
         }
     }
@@ -518,17 +519,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 if (!newGroovyMethodsSet.contains(method)) {
                     newGroovyMethodsSet.add(method);
                 }
-                MetaMethodIndex.Entry e = metaMethodIndex.getOrPutMethods(method.getName(), mainClassMethodHeader);
-                e.methods = metaMethodIndex.addMethodToList(e.methods, method);
+                addMetaMethodToIndex (method, mainClassMethodHeader);
             }
         }
-    }
-
-    private void populateInterfaces(Set interfaces) {
-//        for (Iterator iter = interfaces.iterator(); iter.hasNext();) {
-//            CachedClass iClass = (CachedClass) iter.next();
-//            classIndex.copyNonPrivateMethods(mainClassMethodHeader, classIndex.getHeader(iClass.getCachedClass()));
-//        }
     }
 
     private void connectMultimethods(List superClasses, CachedClass firstGroovyClass) {
@@ -705,15 +698,15 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // got here to property not found, look for getProperty or setProperty overrides
         if(isGetter) {
             final Class[] getPropertyArgs = {String.class};
-            final MetaMethod method = findMethodInClassHeirarchy(instance.getClass(), ExpandoMetaClass.GET_PROPERTY_METHOD, getPropertyArgs, this);
+            final MetaMethod method = findMethodInClassHeirarchy(instance.getClass(), GET_PROPERTY_METHOD, getPropertyArgs, this);
             if(method != null && method instanceof ClosureMetaMethod) {
                 onGetPropertyFoundInHierarchy(method);
-                return method.invoke(instance,getPropertyArgs);
+                return method.invoke(instance,new Object[]{propertyName});
             }
         }
         else {
             final Class[] setPropertyArgs = {String.class, Object.class};
-            final MetaMethod method = findMethodInClassHeirarchy(instance.getClass(), ExpandoMetaClass.SET_PROPERTY_METHOD, setPropertyArgs, this);
+            final MetaMethod method = findMethodInClassHeirarchy(instance.getClass(), SET_PROPERTY_METHOD, setPropertyArgs, this);
             if(method != null && method instanceof ClosureMetaMethod) {
                 onSetPropertyFoundInHierarchy(method);
                 return method.invoke(instance, new Object[]{propertyName, optionalValue});
@@ -773,7 +766,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
             // still not method here, so see if there is an invokeMethod method up the heirarchy
             final Class[] invokeMethodArgs = {String.class, Object[].class};
-            method = findMethodInClassHeirarchy(instanceKlazz, ExpandoMetaClass.INVOKE_METHOD_METHOD, invokeMethodArgs, this );
+            method = findMethodInClassHeirarchy(instanceKlazz, INVOKE_METHOD_METHOD, invokeMethodArgs, this );
             if(method != null && method instanceof ClosureMetaMethod) {
                 onInvokeMethodFoundInHierarchy(method);
                 return method.invoke(instance, invokeMethodArgs);
@@ -2528,7 +2521,41 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         e.methods = metaMethodIndex.addMethodToList(e.methods, method);
     }
 
+    /**
+     * Checks if the metaMethod is a method from the GroovyObject interface such as setProperty, getProperty and invokeMethod
+     *
+     * @param metaMethod The metaMethod instance
+     * @see GroovyObject
+     */
+    protected final void checkIfGroovyObjectMethod(MetaMethod metaMethod) {
+        if (metaMethod instanceof ClosureMetaMethod) {
+            if(isGetPropertyMethod(metaMethod)) {
+                getPropertyMethod = metaMethod;
+            }
+            else if(isInvokeMethod(metaMethod)) {
+                invokeMethodMethod = metaMethod;
+            }
+            else if(isSetPropertyMethod(metaMethod)) {
+                setPropertyMethod = metaMethod;
+            }
+        }
+    }
+
+    private boolean isSetPropertyMethod(MetaMethod metaMethod) {
+        return SET_PROPERTY_METHOD.equals(metaMethod.getName())  && metaMethod.getParameterTypes().length == 2;
+    }
+
+    private boolean isGetPropertyMethod(MetaMethod metaMethod) {
+        return GET_PROPERTY_METHOD.equals(metaMethod.getName());
+    }
+
+    private boolean isInvokeMethod(MetaMethod metaMethod) {
+        return INVOKE_METHOD_METHOD.equals(metaMethod.getName()) && metaMethod.getParameterTypes().length == 2;
+    }
+
     private void checkIfStdMethod(MetaMethod method) {
+        checkIfGroovyObjectMethod(method);
+
         if (isGenericGetMethod(method) && genericGetMethod == null) {
             genericGetMethod = method;
         } else if (MetaClassHelper.isGenericSetMethod(method) && genericSetMethod == null) {

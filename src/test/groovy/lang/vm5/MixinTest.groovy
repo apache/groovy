@@ -2,12 +2,12 @@ package groovy.lang.vm5
 
 import java.util.concurrent.locks.ReentrantLock
 import java.lang.ref.WeakReference
+import org.codehaus.groovy.reflection.ClassInfo
 
 class MixinTest extends GroovyTestCase {
 
     protected void setUp() {
-        ArrayList.metaClass = null
-        List.metaClass = null
+        ClassInfo.clearModifiedExpandos()
     }
 
     protected void tearDown() {
@@ -92,8 +92,10 @@ class MixinTest extends GroovyTestCase {
             set << "oops"
             return Collection.metaClass.invokeMethod(delegate, "flattenTo", set)
         }
+        ArrayList.metaClass = null
         assertEquals (["oops", -2, -3, 8,9,3,2,1,4], [x, [8,9] as Object [], [3,2,[2:1,3:4]],[2,3]].flattenTo () as List)
 
+        ArrayList.metaClass = null
         Object.metaClass{
             flattenTo(ArrayList) { ->
                 LinkedHashSet set = new LinkedHashSet()
@@ -112,6 +114,7 @@ class MixinTest extends GroovyTestCase {
         }
         assertEquals (["oopsssss", -2, -3, 8,9,3,2,1,4], [x, [8,9] as Object [], [3,2,[2:1,3:4]],[2,3]].flattenTo ().asList() )
 
+        ArrayList.metaClass = null
         Object.metaClass{
             define(ArrayList) {
                 flattenTo{ ->

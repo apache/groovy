@@ -20,6 +20,7 @@ import org.codehaus.groovy.classgen.BytecodeHelper;
 import org.codehaus.groovy.runtime.callsite.CallSiteClassLoader;
 import org.codehaus.groovy.util.LazySoftReference;
 import org.codehaus.groovy.util.LazyReference;
+import org.codehaus.groovy.util.FastArray;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Label;
@@ -314,7 +315,52 @@ public class CachedClass {
     }
 
     public MetaMethod[] getNewMetaMethods() {
-        return classInfo.newMetaMethods;
+        ArrayList<MetaMethod> arr = new ArrayList<MetaMethod>();
+        arr.addAll(Arrays.asList(classInfo.newMetaMethods));
+
+        final MetaClass metaClass = classInfo.getStrongMetaClass();
+        if (metaClass != null && metaClass instanceof ExpandoMetaClass) {
+            arr.addAll(((ExpandoMetaClass)metaClass).getExpandoMethods());
+        }
+
+        if (isInterface) {
+            MetaClass mc = ReflectionCache.OBJECT_CLASS.classInfo.getStrongMetaClass();
+            addSubclassExpandos(arr, mc);
+        }
+        else {
+            for (CachedClass cls = this; cls != null; cls = cls.getCachedSuperClass()) {
+                MetaClass mc = cls.classInfo.getStrongMetaClass();
+                addSubclassExpandos(arr, mc);
+            }
+        }
+
+        for (CachedClass inf : getInterfaces()) {
+            MetaClass mc = inf.classInfo.getStrongMetaClass();
+            addSubclassExpandos(arr, mc);
+        }
+
+        return arr.toArray(new MetaMethod[arr.size()]);
+    }
+
+    private void addSubclassExpandos(ArrayList<MetaMethod> arr, MetaClass mc) {
+        if (mc != null && mc instanceof ExpandoMetaClass) {
+            ExpandoMetaClass emc = (ExpandoMetaClass) mc;
+            for (Object mm : emc.getExpandoSubclassMethods()) {
+                if (mm instanceof MetaMethod) {
+                    MetaMethod method = (MetaMethod) mm;
+                    if (method.getDeclaringClass() == this)
+                      arr.add(method);
+                }
+                else {
+                    FastArray farr = (FastArray) mm;
+                    for (int i = 0; i != farr.size; ++i) {
+                        MetaMethod method = (MetaMethod) farr.get(i);
+                        if (method.getDeclaringClass() == this)
+                          arr.add(method);
+                    }
+                }
+            }
+        }
     }
 
     public void setNewMopMethods(List arr) {

@@ -48,8 +48,8 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
 	protected MetaClass createNormalMetaClass(Class theClass, MetaClassRegistry registry) {
 		if(theClass != ExpandoMetaClass.class) {
 			ExpandoMetaClass emc = new ExpandoMetaClass(theClass, false ,true);
-			Set modifiedSuperExpandos = retrieveModifiedSuperExpandos(emc);
-            emc.refreshInheritedMethods(modifiedSuperExpandos);
+//			Set modifiedSuperExpandos = retrieveModifiedSuperExpandos(emc);
+//            emc.refreshInheritedMethods(modifiedSuperExpandos);
 			return emc;
 		}
 		else {
