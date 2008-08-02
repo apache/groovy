@@ -10280,7 +10280,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
             else {
                 if (mc instanceof DelegatingMetaClass && ((DelegatingMetaClass) mc).getAdaptee().getClass() == MetaClassImpl.class) {
-                    ExpandoMetaClass emc = (ExpandoMetaClass) ExpandoMetaClassCreationHandle.instance.create(klazz, GroovySystem.getMetaClassRegistry());
+                    ExpandoMetaClass emc =  new ExpandoMetaClass(klazz, false, true);
                     emc.initialize();
                     emc.define(closure);
                     ((DelegatingMetaClass) mc).setAdaptee(emc);
@@ -10289,7 +10289,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 else {
                     if (mc.getClass() == MetaClassImpl.class) {
                         // default case
-                        mc = ExpandoMetaClassCreationHandle.instance.create(klazz, GroovySystem.getMetaClassRegistry());
+                        mc = new ExpandoMetaClass(klazz, false, true);
                         mc.initialize();
                         ((ExpandoMetaClass)mc).define(closure);
                         metaClassRegistry.setMetaClass(klazz, mc);
@@ -10306,7 +10306,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static MetaClass metaClass (Object object, Closure closure){
         MetaClass emc = hasPerInstanceMetaClass(object);
         if (emc == null) {
-            final ExpandoMetaClass metaClass = (ExpandoMetaClass) ExpandoMetaClassCreationHandle.instance.create(object.getClass(), GroovySystem.getMetaClassRegistry());
+            final ExpandoMetaClass metaClass = new ExpandoMetaClass(object.getClass(), false, true);
             metaClass.initialize();
             metaClass.define(closure);
             setMetaClass(object, metaClass);

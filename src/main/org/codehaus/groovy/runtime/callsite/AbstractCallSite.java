@@ -280,7 +280,7 @@ public class AbstractCallSite implements CallSite {
 
         CallSite site;
         if (metaClass.getClass() != MetaClassImpl.class || GroovyCategorySupport.hasCategoryInCurrentThread()) {
-            site = new PojoMetaClassGetPropertySite(this, metaClass);
+            site = new PojoMetaClassGetPropertySite(this);
         }
         else {
             final MetaProperty effective = ((MetaClassImpl) metaClass).getEffectiveGetMetaProperty(receiver.getClass(), receiver, name, false);
@@ -291,7 +291,7 @@ public class AbstractCallSite implements CallSite {
                     site = new GetEffectivePojoPropertySite(this, metaClass, effective);
             }
             else {
-                site = new PojoMetaClassGetPropertySite(this, metaClass);
+                site = new PojoMetaClassGetPropertySite(this);
             }
         }
 

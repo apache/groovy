@@ -256,6 +256,42 @@ class PerInstanceMetaClassTest extends GroovyTestCase{
         assertEquals (15, FOUR.fib())
         FOUR.metaClass = null
     }
+
+    void testInteger () {
+       ExpandoMetaClass.enableGlobally()
+
+       Integer.metaClass = null
+
+       def foo =  { x ->
+           return x._100 
+       }
+        shouldFail {
+          assert foo(1) == 100
+        }
+       def x = Integer.valueOf(22)
+       ExpandoMetaClass emc = new ExpandoMetaClass(Integer, false, true).define {
+           _100 = 100
+       }
+       emc.initialize ()                                                
+        shouldFail {
+          assert foo(1) == 100
+        }
+        x.metaClass = emc
+        shouldFail {
+          assert foo(1) == 100
+        }
+
+       assert foo(x) == 100
+       assert x._100 == 100
+       shouldFail {
+         assert foo(1) == 100
+       }
+       shouldFail {
+            assert 1._100 == 100
+       }
+
+       ExpandoMetaClass.disableGlobally()
+    }
 }
 
 class PimctBean {

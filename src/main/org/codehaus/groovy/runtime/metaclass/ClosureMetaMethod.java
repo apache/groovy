@@ -71,11 +71,12 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
 		return declaringClass;
 	}
 
-	public Object invoke(final Object object, final Object[] arguments) {
+	public Object invoke(final Object object, Object[] arguments) {
 		Closure cloned = (Closure) callable.clone();
 		cloned.setDelegate(object);
 
-		return doCall.invoke(cloned, arguments);
+        arguments = coerceArgumentsToClasses(arguments);
+        return doCall.invoke(cloned, arguments);
 	}
 
   /**

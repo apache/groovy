@@ -16,23 +16,22 @@
 package org.codehaus.groovy.runtime.callsite;
 
 import groovy.lang.MetaClass;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 public class PojoMetaClassGetPropertySite extends AbstractCallSite {
-    private final MetaClass metaClass;
-
-    public PojoMetaClassGetPropertySite(CallSite parent, MetaClass metaClass) {
+    public PojoMetaClassGetPropertySite(CallSite parent) {
         super(parent);
-        this.metaClass = metaClass;
     }
 
     public final CallSite acceptGetProperty(Object receiver) {
-        if (receiver.getClass() != metaClass.getTheClass())
-          return createGetPropertySite(receiver);
-        else
           return this;
     }
 
     public final Object getProperty(Object receiver) {
-        return metaClass.getProperty(receiver, name);
+        return InvokerHelper.getProperty(receiver, name);
+    }
+
+    public Object callGetProperty(Object receiver) {
+        return InvokerHelper.getProperty(receiver, name);
     }
 }

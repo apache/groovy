@@ -11,19 +11,19 @@ public abstract class LazyReference<T> extends LockableObject {
         if (res != null)
             return res;
 
+        return getLocked();
+    }
+
+    private T getLocked () {
         lock ();
         try {
-            res = initValue();
+            T res = initValue();
             value = res;
             return res;
         }
         finally {
             unlock();
         }
-    }
-
-    public void set (T newVal) {
-        value = newVal;
     }
 
     public T getNullable() {

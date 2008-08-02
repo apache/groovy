@@ -99,7 +99,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     private boolean initialized;
     private boolean initCalled;
     private boolean modified;
-    private boolean inRegistry;
+    public boolean inRegistry;
     private final Set inheritedMetaMethods = new HashSet();
     private final Map beanPropertyCache = new ConcurrentHashMap();
     private final Map staticBeanPropertyCache = new ConcurrentHashMap();
@@ -632,8 +632,12 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                     checkIfGroovyObjectMethod(metaMethod);
                     MethodKey key = new DefaultCachedMethodKey(theClass,methodName, metaMethod.getParameterTypes(),false );
 
+                    if (isInitialized()) {
+                        throw new RuntimeException("Already initialized, cannot add new method: " + metaMethod);
+                    }
+                    // we always adds meta methods to class itself
+                    addMetaMethodToIndex(metaMethod, metaMethodIndex.getHeader(theClass));
 
-					addMetaMethod(metaMethod);
                     dropMethodCache(methodName);
                     expandoMethods.put(key,metaMethod);
 
@@ -698,18 +702,6 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
             }
 
 		}
-		// Implementation note: EMC handles most cases by itself except for the case where yuou
-		// want to call a dynamically injected method registered with a parent on a child class
-		// For this to work the MetaClassRegistry needs to have an ExpandoMetaClassCreationHandle
-		// What this does is ensure that EVERY class created in the registry uses an EMC
-		// Then when an EMC changes it reports back to the EMCCreationHandle which will
-		// tell child classes of this class to re-inherit their methods
-		if(registry.getMetaClassCreationHandler() instanceof ExpandoMetaClassCreationHandle) {
-			ExpandoMetaClassCreationHandle creationHandler = (ExpandoMetaClassCreationHandle)registry.getMetaClassCreationHandler();
-			if(!creationHandler.hasModifiedMetaClass(this))
-				creationHandler.registerModifiedMetaClass(this);
-
-        }
 	}
 
 
@@ -810,9 +802,14 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 	 */
 	public void refreshInheritedMethods(Set modifiedSuperExpandos) {
 		for (Iterator i = modifiedSuperExpandos.iterator(); i.hasNext();) {
-
 			ExpandoMetaClass superExpando = (ExpandoMetaClass) i.next();
             if(superExpando != this) {
+                refreshInheritedMethods(superExpando);
+            }
+        }
+	}
+
+    private void refreshInheritedMethods(ExpandoMetaClass superExpando) {
                 List metaMethods = superExpando.getExpandoMethods();
                 for (Iterator j = metaMethods.iterator(); j.hasNext();) {
                     MetaMethod metaMethod = (MetaMethod) j.next();
@@ -832,9 +829,6 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                     addMetaBeanProperty(property);
                 }
             }
-
-        }
-	}
 
 
 	/**

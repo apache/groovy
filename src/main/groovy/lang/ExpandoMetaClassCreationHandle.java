@@ -18,6 +18,8 @@ package groovy.lang;
 import groovy.lang.MetaClassRegistry.MetaClassCreationHandle;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ClassInfo;
+import org.codehaus.groovy.runtime.GeneratedClosure;
+import org.codehaus.groovy.runtime.metaclass.ClosureMetaClass;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -47,52 +49,12 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
 	 */
 	protected MetaClass createNormalMetaClass(Class theClass, MetaClassRegistry registry) {
 		if(theClass != ExpandoMetaClass.class) {
-			ExpandoMetaClass emc = new ExpandoMetaClass(theClass, false ,true);
-//			Set modifiedSuperExpandos = retrieveModifiedSuperExpandos(emc);
-//            emc.refreshInheritedMethods(modifiedSuperExpandos);
-			return emc;
+			return new ExpandoMetaClass(theClass, true, true);
 		}
 		else {
 			return super.create(theClass, registry);
 		}
 	}
-
-    /*
-     * Looks for modified super class ExpandoMetaClass instances for the given child ExpandoMetaClass
-     */
-    private Set retrieveModifiedSuperExpandos(ExpandoMetaClass child) {
-		Set<MetaClass> modifiedSupers = new HashSet<MetaClass>();
-        for (CachedClass c : child.getSuperClasses()) {
-            Set<CachedClass> interfaces = c.getInterfaces();
-            populateSupersFromInterfaces(modifiedSupers, interfaces);
-            final ClassInfo info = c.classInfo;
-            final ExpandoMetaClass expando = info.getModifiedExpando();
-            if(expando != null) {
-				modifiedSupers.add(expando);
-			}
-		}
-        Set<CachedClass> interfaces = child.getTheCachedClass().getDeclaredInterfaces();
-        populateSupersFromInterfaces(modifiedSupers, interfaces);
-        return modifiedSupers;
-	}
-
-    /*
-     * Searches through a given array of interfaces for modified ExpandoMetaClass instances for each interface
-     */
-    private void populateSupersFromInterfaces(Set<MetaClass> modifiedSupers, Set<CachedClass> interfaces) {
-        for (CachedClass anInterface : interfaces) {
-            final ClassInfo info = anInterface.classInfo;
-            final ExpandoMetaClass expando = info.getModifiedExpando();
-            if(expando != null) {
-				modifiedSupers.add(expando);
-			}
-
-            final Set<CachedClass> superInterfaces = anInterface.getDeclaredInterfaces();
-            if(superInterfaces.size() > 0)
-                populateSupersFromInterfaces(modifiedSupers, superInterfaces);
-        }
-    }
-
 
     /**
      * Registers a modified ExpandoMetaClass with the creation handle

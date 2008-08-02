@@ -108,13 +108,17 @@ public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
     public void setStrongMetaClass(MetaClass answer) {
         version++;
 
-        if (strongMetaClass instanceof ExpandoMetaClass)
+        if (strongMetaClass instanceof ExpandoMetaClass) {
+          ((ExpandoMetaClass)strongMetaClass).inRegistry = false;
           modifiedExpandos.remove(this);
+        }
 
         strongMetaClass = answer;
 
-        if (strongMetaClass instanceof ExpandoMetaClass)
+        if (strongMetaClass instanceof ExpandoMetaClass) {
+          ((ExpandoMetaClass)strongMetaClass).inRegistry = true;
           modifiedExpandos.add(this);
+        }
 
         weakMetaClass = null;
         updateMetaClass();
