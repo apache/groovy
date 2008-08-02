@@ -1,0 +1,64 @@
+class MetaClassRegistryTest extends GroovyTestCase {
+     def registry = GroovySystem.metaClassRegistry
+     
+     void testListenerAdditionAndRemoval() {
+         def called = null
+         def registry = GroovySystem.metaClassRegistry
+         registry.updateConstantMetaClass = {event -> called = event}  
+         Integer.metaClass.foo = {->}
+         assert 1.foo() == null
+         assert called!=null
+         assert registry.constantMetaClassChangeListeners.size() == 2
+         registry.removeConstantMetaClassChangeListener(registry.constantMetaClassChangeListeners[1])
+         assert registry.constantMetaClassChangeListeners.size() == 1
+          
+         def oldCalled = called;
+         Integer.metaClass = null
+         Integer.metaClass.bar = {}
+         assert 1.bar()== null
+         shouldFail(MissingMethodException) {
+             1.foo()
+         }
+         assert called == oldCalled
+         Integer.metaClass = null
+         shouldFail(MissingMethodException) {
+             1.bar()
+         }
+     }
+     
+     void testDefaultListenerRemoval() {
+         assert registry.constantMetaClassChangeListeners.size() == 1
+         registry.removeConstantMetaClassChangeListener(registry.constantMetaClassChangeListeners[0])
+         assert registry.constantMetaClassChangeListeners.size() == 1
+     }
+     
+     void testIteratorIteration(){
+         // at the start the iteration might show elements, even if 
+         // they are no longer in use. After they are added to the list,
+         // they can not be collected for now. 
+         def metaClasses = []        
+         registry.each { metaClasses <<it }
+         
+         // we add one more constant meta class and then count them to 
+         // see if the numberfits
+         Integer.metaClass.foo = {}
+         def count = 0;
+         registry.each{count++}
+         assert count == 1+metaClasses.size()
+         
+         // we remove the class again, but it might still show up
+         // in the list.. so we don't test that
+         Integer.metaClass = null
+     }
+     
+     void testIteratorRemove() {
+         Integer.metaClass.foo {->1}
+         assert 1.foo() == 1
+         for (def it = registry.iterator(); it.hasNext;) {
+             it.remove()
+         }
+         shouldFail(MissingMethodException) {
+             1.foo()
+         }
+     }
+}
