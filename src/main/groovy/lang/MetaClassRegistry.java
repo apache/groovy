@@ -19,6 +19,7 @@ import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaClass;
 
 import java.lang.reflect.Constructor;
+import java.util.Iterator;
 
 /**
  * A MetaClassRegistry is an object that is responsible for managing the a cache of MetaClass instances. Each
@@ -29,13 +30,14 @@ import java.lang.reflect.Constructor;
  *
  * @author John Wilson
  * @author Graeme Rocher
+ * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  *
  */
 public interface MetaClassRegistry {
     /*
-     * The main function of the Registry
-     * If a Metaclass exists then return it
-     * otherwise create one, put it in the Registry and return it
+     * The main function of the registry
+     * If a meta class exists then return it
+     * otherwise create one, put it in the registry and return it
      */
     MetaClass getMetaClass(Class theClass);
     
@@ -60,10 +62,45 @@ public interface MetaClassRegistry {
     /**
      * Sets the MetaClassCreationHandle instance that is responsible for constructing instances
      *
-     * @param handle The hande instance
+     * @param handle The handle instance
      */
     void setMetaClassCreationHandle(MetaClassCreationHandle handle);
 
+    /**
+     * adds a ConstantMetaClassChangeListener
+     *
+     * @param listener - the update listener
+     */
+    void addMetaClassRegistryChangeEventListener(MetaClassRegistryChangeEventListener listener);
+
+    /**
+     * removes a ConstantMetaClassChangeListener
+     *
+     * @param listener - the update listener
+     */
+    void removeMetaClassRegistryChangeEventListener(MetaClassRegistryChangeEventListener listener);
+
+    /**
+     * gets all registered ConstantMetaClassChangeListener
+     *
+     * @returns an array containing all change listener
+     */
+    MetaClassRegistryChangeEventListener[] getMetaClassRegistryChangeEventListeners();
+
+    /**
+     * gets a snapshot of the current constant meta classes and returns it as Iterator.
+     * Modifications done using this Iterator will not cause a ConcurrentMoidificationExcpetion.
+     * If a MetaClass is removed using this Iterator, then the MetaClass will only
+     * be removed if the MetaClass was not replaced by another MetaClass in the meantime.
+     * If a MetaClass is added while using this Iterator, then it will be part of the Iteration.
+     * If a MetaClass replaces another constant meta class, then the Iteration might show two
+     * meta classes for the same class.<br/>
+     * This Iterator may not used in multiple threads.
+     *
+     * @return Iterator for the constant meta classes
+     */
+    Iterator iterator();    
+    
     /**
      * Class used as base for the creation of MetaClass implementations.
      * The Class defaults to MetaClassImpl, if the class loading fails to
