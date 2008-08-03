@@ -261,6 +261,7 @@ class PerInstanceMetaClassTest extends GroovyTestCase{
        ExpandoMetaClass.enableGlobally()
 
        Integer.metaClass = null
+       setValueOfMethod()
 
        def foo =  { x ->
            return x._100 
