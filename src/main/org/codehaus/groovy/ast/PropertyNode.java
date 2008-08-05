@@ -27,7 +27,7 @@ import org.objectweb.asm.Opcodes;
  */
 public class PropertyNode extends AnnotatedNode implements Opcodes,Variable {
 
-    private final FieldNode field;
+    private FieldNode field;
 
     private Statement getterBlock;
     private Statement setterBlock;
@@ -87,6 +87,10 @@ public class PropertyNode extends AnnotatedNode implements Opcodes,Variable {
     
     public FieldNode getField() {
         return field;
+    }
+    
+    public void setField(FieldNode fn) {
+    	field = fn;
     }
 
     public boolean isPrivate() {

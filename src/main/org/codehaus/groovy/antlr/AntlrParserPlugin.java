@@ -738,13 +738,33 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             // let's pass along any other modifiers we need
             fieldModifiers |= (modifiers & flags);
             fieldNode.setModifiers(fieldModifiers);
+            fieldNode.setSynthetic(true);
+            
+            // in the case that there is already a field, we would
+            // like to use that field, instead of the default field
+            // for the property
+            FieldNode storedNode = classNode.getField(fieldNode.getName());
+            if (storedNode!=null && !classNode.hasProperty(name)) {
+            	fieldNode = storedNode;
+            	// we remove it here, because addProperty will add it
+            	// again and we want to avoid it showing up multiple 
+            	// times in the fields list.
+        		classNode.getFields().remove(storedNode);
+            }
             
             PropertyNode propertyNode = new PropertyNode(fieldNode, modifiers, null, null);
             configureAST(propertyNode, fieldDef);
             classNode.addProperty(propertyNode);
-        }
-        else {
-            fieldNode.setModifiers(modifiers);
+        } else {
+        	fieldNode.setModifiers(modifiers);
+        	// if there is a property of that name, then a field of that
+        	// name already exists, which means this new field here should
+        	// be used instead of the field the property originally has.
+        	PropertyNode pn = classNode.getProperty(name);
+        	if (pn!=null && pn.getField().isSynthetic()) {
+        		classNode.getFields().remove(pn.getField());
+        		pn.setField(fieldNode);
+        	}
             classNode.addField(fieldNode);
         }
     }
