@@ -18,6 +18,7 @@ package org.codehaus.groovy.reflection;
 import groovy.lang.ExpandoMetaClass;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaMethod;
+import groovy.lang.Closure;
 import org.codehaus.groovy.reflection.stdclasses.*;
 import org.codehaus.groovy.util.*;
 
@@ -57,7 +58,7 @@ public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
     MetaMethod[] newMetaMethods = CachedClass.EMPTY;
 
     public final int hash;
-    private InstanceMap perInstanceMetaClassMap;
+    private ConcurrentWeakMap perInstanceMetaClassMap;
 
     ClassInfo(ConcurrentSoftMap.Segment segment, Class klazz, int hash) {
         super (segment, klazz, hash);
@@ -222,7 +223,10 @@ public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
                     if (klazz == Character.class)
                       cachedClass = new CharacterCachedClass(klazz, classInfo);
                     else
-                      cachedClass = new CachedClass(klazz, classInfo);
+                      if (Closure.class.isAssignableFrom(klazz))
+                        cachedClass = new CachedClosureClass (klazz, classInfo);
+                      else
+                        cachedClass = new CachedClass(klazz, classInfo);
 
         return cachedClass;
     }
@@ -247,7 +251,7 @@ public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
 
         if (metaClass != null) {
             if (perInstanceMetaClassMap == null)
-              perInstanceMetaClassMap = new InstanceMap ();
+              perInstanceMetaClassMap = new ConcurrentWeakMap ();
 
             perInstanceMetaClassMap.put(obj, metaClass);
         }
@@ -397,12 +401,6 @@ public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
         public ClassLoaderForClassArtifacts initValue() {
             return new ClassLoaderForClassArtifacts(info.get());
         }
-    }
-
-    // TODO: custom map would be better here - get rid of InstanceRef
-    // we can't use WeakHashMap because it use both == and equals for comparision, which is too agressive
-    // we need == only
-    private static class InstanceMap extends ConcurrentWeakMap {
     }
 
     private static class DebugRef extends FinalizableRef.DebugRef<Class> {
