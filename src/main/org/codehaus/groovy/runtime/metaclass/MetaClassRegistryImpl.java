@@ -201,35 +201,13 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     }
 
     public final MetaClass getMetaClass(Class theClass) {
-        final ClassInfo info = ClassInfo.getClassInfo(theClass);
-
-        MetaClass answer = info.getMetaClassForClass();
-        if (answer != null) return answer;
-
-        info.lock();
-        try {
-            return getMetaClassUnderLock(theClass, info);
-        } finally {
-            info.unlock();
-        }
+        return ClassInfo.getClassInfo(theClass).getMetaClass();
     }
 
-    private MetaClass getMetaClassUnderLock(Class theClass, ClassInfo info) {
-        MetaClass answer;
-        answer = info.getMetaClassForClass();
-        if (answer != null) return answer;
-
-        answer = metaClassCreationHandle.create(theClass, this);
-        answer.initialize();
-
-        if (GroovySystem.isKeepJavaMetaClasses()) {
-            info.setStrongMetaClass(answer);
-        } else {
-            info.setWeakMetaClass(answer);
-        }
-        return answer;
+    public MetaClass getMetaClass(Object obj) {
+        return ClassInfo.getClassInfo(obj.getClass()).getMetaClass(obj);
     }
-    
+
     /**
      * if oldMc is null, newMc will replace whatever meta class was used before.
      * if oldMc is not null, then newMc will be used only if he stored mc is
@@ -257,20 +235,6 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     	setMetaClass(theClass, null, null);
     }
     
-    public MetaClass getMetaClass(Object obj) {
-        Class theClass = obj.getClass ();
-        final ClassInfo info = ClassInfo.getClassInfo(theClass);
-
-        info.lock();
-        try {
-            final MetaClass instanceMetaClass = info.getPerInstanceMetaClass(obj);
-            if (instanceMetaClass != null) return instanceMetaClass;
-            return getMetaClassUnderLock(theClass, info);
-        } finally {
-            info.unlock();
-        }
-    }
-
     /**
      * Registers a new MetaClass in the registry to customize the type
      *
@@ -305,7 +269,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     }
 
     // the following is experimental code, not intended for stable use yet
-    private MetaClassCreationHandle metaClassCreationHandle = new MetaClassCreationHandle();
+    public MetaClassCreationHandle metaClassCreationHandle = new MetaClassCreationHandle();
     
     /**
      * Gets a handle internally used to create MetaClass implementations

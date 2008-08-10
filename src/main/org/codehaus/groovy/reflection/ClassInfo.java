@@ -15,12 +15,10 @@
  */
 package org.codehaus.groovy.reflection;
 
-import groovy.lang.ExpandoMetaClass;
-import groovy.lang.MetaClass;
-import groovy.lang.MetaMethod;
-import groovy.lang.Closure;
+import groovy.lang.*;
 import org.codehaus.groovy.reflection.stdclasses.*;
 import org.codehaus.groovy.util.*;
+import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 
 import java.lang.ref.SoftReference;
 import java.math.BigDecimal;
@@ -45,8 +43,6 @@ public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
 
     private volatile int version;
 
-    private final LazySoftReference staticMetaClassField;
-
     private final LazyClassLoaderRef artifactClassLoader;
 
     private static final HashSet<ClassInfo> modifiedExpandos = new HashSet<ClassInfo>();
@@ -68,7 +64,6 @@ public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
 
         this.hash = hash;
         cachedClassRef = new LazyCachedClassRef(this);
-        staticMetaClassField = new LazyStaticMetaClassFieldRef(this);
         artifactClassLoader = new LazyClassLoaderRef(this);
     }
 
@@ -122,13 +117,6 @@ public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
         }
 
         weakMetaClass = null;
-        updateMetaClass();
-    }
-
-    private void updateMetaClass() {
-        final Object smf = staticMetaClassField.get();
-        if (smf != null && smf != NONE)
-          ((CachedField)smf).setProperty(null,null);
     }
 
     public MetaClass getWeakMetaClass() {
@@ -144,12 +132,52 @@ public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
         } else {
            weakMetaClass = new SoftReference<MetaClass> (answer);
         }
-
-        updateMetaClass();
     }
 
     public MetaClass getMetaClassForClass() {
         return strongMetaClass != null ? strongMetaClass : weakMetaClass == null ? null : weakMetaClass.get();
+    }
+
+    private MetaClass getMetaClassUnderLock() {
+        MetaClass answer;
+        answer = getMetaClassForClass();
+        if (answer != null) return answer;
+
+        final MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
+        answer = ((MetaClassRegistryImpl) metaClassRegistry).metaClassCreationHandle.create(get(), metaClassRegistry);
+        answer.initialize();
+
+        if (GroovySystem.isKeepJavaMetaClasses()) {
+            setStrongMetaClass(answer);
+        } else {
+            setWeakMetaClass(answer);
+        }
+        return answer;
+    }
+
+    public final MetaClass getMetaClass() {
+        MetaClass answer = getMetaClassForClass();
+        if (answer != null) return answer;
+
+        lock();
+        try {
+            return getMetaClassUnderLock();
+        } finally {
+            unlock();
+        }
+    }
+
+    public MetaClass getMetaClass(Object obj) {
+        final MetaClass instanceMetaClass = getPerInstanceMetaClass(obj);
+        if (instanceMetaClass != null)
+            return instanceMetaClass;
+
+        lock();
+        try {
+            return getMetaClassUnderLock();
+        } finally {
+            unlock();
+        }
     }
 
     public static int size () {
@@ -161,7 +189,6 @@ public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
     }
 
     public void finalizeRef() {
-        staticMetaClassField.set(NONE);
         setStrongMetaClass(null);
         cachedClassRef.set(null);
         artifactClassLoader.set(null);

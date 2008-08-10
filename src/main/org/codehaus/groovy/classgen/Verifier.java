@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
+import org.codehaus.groovy.reflection.ClassInfo;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
@@ -108,42 +109,36 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 //        FieldNode myClassField = node.addField(myClassFieldName, ACC_PRIVATE|ACC_STATIC, ClassHelper.CLASS_Type, new ClassExpression(node));
 //        myClassField.setSynthetic(true);
 
-        String _staticMetaClassFieldName = "$staticMetaClass";
-        while (node.getField(_staticMetaClassFieldName) != null)
-          _staticMetaClassFieldName = _staticMetaClassFieldName + "$";
-        final String staticMetaClassFieldName = _staticMetaClassFieldName;
+        String _staticClassInfoFieldName = "$staticClassInfo";
+        while (node.getField(_staticClassInfoFieldName) != null)
+          _staticClassInfoFieldName = _staticClassInfoFieldName + "$";
+        final String staticMetaClassFieldName = _staticClassInfoFieldName;
 
-        FieldNode staticMetaClassField = node.addField(staticMetaClassFieldName, ACC_PUBLIC|ACC_STATIC, ClassHelper.make(SoftReference.class,false), null);
+        FieldNode staticMetaClassField = node.addField(staticMetaClassFieldName, ACC_PRIVATE|ACC_STATIC, ClassHelper.make(ClassInfo.class,false), null);
         staticMetaClassField.setSynthetic(true);
 
         List getStaticMetaClassCode = new LinkedList();
         getStaticMetaClassCode.add( new BytecodeInstruction(){
             public void visit(MethodVisitor mv) {
-                mv.visitFieldInsn(GETSTATIC, classInternalName, staticMetaClassFieldName, "Ljava/lang/ref/SoftReference;");
+                mv.visitFieldInsn(GETSTATIC, classInternalName, staticMetaClassFieldName, "Lorg/codehaus/groovy/reflection/ClassInfo;");
                 mv.visitVarInsn(ASTORE, 1);
                 mv.visitVarInsn(ALOAD, 1);
                 Label l0 = new Label();
-                mv.visitJumpInsn(IFNULL, l0);
-                mv.visitVarInsn(ALOAD, 1);
-                mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/ref/SoftReference", "get", "()Ljava/lang/Object;");
-                mv.visitTypeInsn(CHECKCAST, "groovy/lang/MetaClass");
-                mv.visitInsn(DUP);
-                mv.visitVarInsn(ASTORE, 1);
-                Label l1 = new Label();
-                mv.visitJumpInsn(IFNONNULL, l1);
-                mv.visitLabel(l0);
+                mv.visitJumpInsn(IFNONNULL, l0);
+
                 mv.visitVarInsn(ALOAD, 0);
                 mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;");
-                mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/InvokerHelper", "getMetaClass", "(Ljava/lang/Class;)Lgroovy/lang/MetaClass;");
-                mv.visitVarInsn(ASTORE, 1);
-                mv.visitTypeInsn(NEW, "java/lang/ref/SoftReference");
+                mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/reflection/ClassInfo", "getClassInfo", "(Ljava/lang/Class;)Lorg/codehaus/groovy/reflection/ClassInfo;");
                 mv.visitInsn(DUP);
+                mv.visitVarInsn(ASTORE, 1);
+                mv.visitFieldInsn(PUTSTATIC, classInternalName, staticMetaClassFieldName, "Lorg/codehaus/groovy/reflection/ClassInfo;");
+
+                mv.visitLabel(l0);
+
                 mv.visitVarInsn(ALOAD, 1);
-                mv.visitMethodInsn(INVOKESPECIAL, "java/lang/ref/SoftReference", "<init>", "(Ljava/lang/Object;)V");
-                mv.visitFieldInsn(PUTSTATIC, classInternalName, staticMetaClassFieldName, "Ljava/lang/ref/SoftReference;");
-                mv.visitLabel(l1);
-                mv.visitVarInsn(ALOAD, 1);
+                mv.visitMethodInsn(INVOKEVIRTUAL, "org/codehaus/groovy/reflection/ClassInfo", "getMetaClass", "()Lgroovy/lang/MetaClass;");
                 mv.visitInsn(ARETURN);
+
             }
         });
         node.addSyntheticMethod(
