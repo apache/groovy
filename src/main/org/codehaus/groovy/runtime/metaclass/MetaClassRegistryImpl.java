@@ -264,7 +264,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     }
 
     // the following is experimental code, not intended for stable use yet
-    public MetaClassCreationHandle metaClassCreationHandle = new MetaClassCreationHandle();
+    private MetaClassCreationHandle metaClassCreationHandle = new MetaClassCreationHandle();
     
     /**
      * Gets a handle internally used to create MetaClass implementations

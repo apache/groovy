@@ -142,7 +142,8 @@ public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
         if (answer != null) return answer;
 
         final MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
-        answer = ((MetaClassRegistryImpl) metaClassRegistry).metaClassCreationHandle.create(get(), metaClassRegistry);
+        answer = metaClassRegistry.getMetaClassCreationHandler()
+                                  .create(get(), metaClassRegistry);
         answer.initialize();
 
         if (GroovySystem.isKeepJavaMetaClasses()) {
