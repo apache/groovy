@@ -53,8 +53,6 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     private FastArray instanceMethods = new FastArray();
     private FastArray staticMethods = new FastArray();
 
-    private AtomicInteger version = new AtomicInteger();
-    
     private LinkedList changeListenerList = new LinkedList();
     private LinkedList metaClassInfo = new LinkedList();
     private ReferenceQueue queue = new ReferenceQueue();
@@ -214,7 +212,6 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      * the same as oldMc
      */
     private void setMetaClass(Class theClass, MetaClass oldMc, MetaClass newMc) {
-        version.incrementAndGet();
         final ClassInfo info = ClassInfo.getClassInfo(theClass);
         
         MetaClass mc = null;
@@ -247,8 +244,6 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
 
 
     public void setMetaClass(Object obj, MetaClass theMetaClass) {
-        version.incrementAndGet();
-
         Class theClass = obj.getClass ();
         final ClassInfo info = ClassInfo.getClassInfo(theClass);
 

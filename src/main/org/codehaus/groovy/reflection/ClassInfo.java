@@ -39,8 +39,6 @@ public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
 
     private SoftReference<MetaClass> weakMetaClass;
 
-    private static final Object NONE = new Object();
-
     private volatile int version;
 
     private final LazyClassLoaderRef artifactClassLoader;
@@ -394,27 +392,6 @@ public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
 
         public CachedClass initValue() {
             return createCachedClass(info.get(), info);
-        }
-    }
-
-    private static class LazyStaticMetaClassFieldRef extends LazySoftReference {
-        private final ClassInfo info;
-
-        LazyStaticMetaClassFieldRef(ClassInfo info) {
-            this.info = info;
-        }
-
-        public Object initValue() {
-            final CachedClass aClass = info.getCachedClass();
-
-            final CachedField[] cachedFields = aClass.getFields();
-            for (CachedField cachedField : cachedFields) {
-                if (cachedField.getName().startsWith("$staticMetaClass") && cachedField.getType() == SoftReference.class && cachedField.isStatic()) {
-                    return cachedField;
-                }
-            }
-
-            return NONE;
         }
     }
 
