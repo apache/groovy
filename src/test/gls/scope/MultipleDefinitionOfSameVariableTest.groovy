@@ -81,23 +81,50 @@ public class MultipleDefinitionOfSameVariableTest extends CompilableTestSupport 
    }
    
    public void testMultipleOfSameName() {
-   		shouldNotCompile("""
-   		  class DoubleField {
-			def zero = 0
-			public zero = 0
-		  }
-		  
-   		""")
-   
-   		shouldNotCompile("""
+   		shouldNotCompile """
    		  class DoubleField {
 			def zero = 0
 			def zero = 0
-		  }
-		  
-   		""")
-
+		  }		  
+   		"""
    }
-   
+
+  void testPropertyField() {
+    shouldCompile """
+      class A {
+        def foo
+        private foo
+      }
+    """
+  }
+  
+  void testFieldProperty() {
+    shouldCompile """
+      class A {
+        private foo
+        def foo
+      }
+    """
+  }
+  
+  void testFieldPropertyProperty() {
+    shouldNotCompile """
+      class A {
+        private foo
+        def foo
+        def foo
+      }
+    """
+  }
+  
+  void testPropertyFieldField() {
+    shouldNotCompile """
+      class A {
+        def foo
+        private foo
+        private foo
+      }
+    """
+  }   
    
 }
