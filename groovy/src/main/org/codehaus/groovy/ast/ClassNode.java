@@ -465,13 +465,15 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public boolean hasProperty(String name) {
+    	return getProperty(name)!=null;
+    }
+    
+    public PropertyNode getProperty(String name) {
     	for (Iterator iter = getProperties().iterator(); iter.hasNext();) {
             PropertyNode pn = (PropertyNode) iter.next();
-            if (pn.getName().equals(name)) {
-                return true;
-            }
+            if (pn.getName().equals(name)) return pn;
         }
-        return false;
+        return null;   	
     }
 
     public void addConstructor(ConstructorNode node) {
