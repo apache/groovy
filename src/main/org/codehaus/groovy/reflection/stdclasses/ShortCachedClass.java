@@ -21,8 +21,10 @@ import org.codehaus.groovy.reflection.ClassInfo;
  * @author Alex.Tkachman
  */
 public class ShortCachedClass extends NumberCachedClass {
-    public ShortCachedClass(Class klazz, ClassInfo classInfo) {
+	private boolean allowNull;
+    public ShortCachedClass(Class klazz, ClassInfo classInfo, boolean allowNull) {
         super(klazz, classInfo);
+        this.allowNull = allowNull;
     }
 
     public Object coerceArgument(Object argument) {
@@ -34,11 +36,11 @@ public class ShortCachedClass extends NumberCachedClass {
     }
 
     public boolean isDirectlyAssignable(Object argument) {
-        return argument instanceof Short;
+        return (allowNull && argument == null) || argument instanceof Short;
     }
 
     public boolean isAssignableFrom(Class classToTransformFrom) {
-        return classToTransformFrom == null
+        return (allowNull && classToTransformFrom == null)
             || classToTransformFrom == Short.class
             || classToTransformFrom == Byte.class
             || classToTransformFrom == Short.TYPE

@@ -23,8 +23,10 @@ import java.math.BigDecimal;
  * @author Alex.Tkachman
  */
 public class FloatCachedClass extends NumberCachedClass {
-    public FloatCachedClass(Class klazz, ClassInfo classInfo) {
+	private boolean allowNull;
+    public FloatCachedClass(Class klazz, ClassInfo classInfo, boolean allowNull) {
         super(klazz, classInfo);
+        this.allowNull = allowNull;
     }
 
     public Object coerceArgument(Object argument) {
@@ -40,11 +42,11 @@ public class FloatCachedClass extends NumberCachedClass {
     }
 
     public boolean isDirectlyAssignable(Object argument) {
-        return argument instanceof Float;
+        return (allowNull && argument == null) || argument instanceof Float;
     }
 
     public boolean isAssignableFrom(Class classToTransformFrom) {
-        return  classToTransformFrom == null
+        return  (allowNull && classToTransformFrom == null)
                 || classToTransformFrom == Float.class
                 || classToTransformFrom == Integer.class
                 || classToTransformFrom == Long.class

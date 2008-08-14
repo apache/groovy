@@ -24,12 +24,14 @@ import java.math.BigInteger;
  * @author Alex.Tkachman
  */
 public class DoubleCachedClass extends NumberCachedClass { // Double, double
-    public DoubleCachedClass(Class klazz, ClassInfo classInfo) {
+	private boolean allowNull;
+    public DoubleCachedClass(Class klazz, ClassInfo classInfo, boolean allowNull) {
         super(klazz,classInfo);
+        this.allowNull=allowNull;
     }
 
     public boolean isDirectlyAssignable(Object argument) {
-        return argument instanceof Double;
+        return (allowNull && argument == null) || argument instanceof Double;
     }
 
     public Object coerceArgument(Object argument) {
@@ -45,7 +47,7 @@ public class DoubleCachedClass extends NumberCachedClass { // Double, double
     }
 
     public boolean isAssignableFrom(Class classToTransformFrom) {
-        return  classToTransformFrom == null
+        return  (allowNull && classToTransformFrom == null)
                 || classToTransformFrom == Double.class
                 || classToTransformFrom == Integer.class
                 || classToTransformFrom == Long.class

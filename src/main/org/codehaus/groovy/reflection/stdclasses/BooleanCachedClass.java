@@ -22,12 +22,18 @@ import org.codehaus.groovy.reflection.ClassInfo;
  * @author Alex.Tkachman
  */
 public class BooleanCachedClass extends CachedClass {
-    public BooleanCachedClass(Class klazz, ClassInfo classInfo) {
+	private boolean allowNull;
+    public BooleanCachedClass(Class klazz, ClassInfo classInfo, boolean allowNull) {
         super(klazz, classInfo);
+        this.allowNull = allowNull;
     }
 
+    public boolean isDirectlyAssignable(Object argument) {
+        return (allowNull && argument == null) || argument instanceof Boolean;
+     }
+    
     public boolean isAssignableFrom(Class classToTransformFrom) {
-        return classToTransformFrom == null
+        return (allowNull && classToTransformFrom == null)
               || classToTransformFrom == Boolean.class
               || classToTransformFrom == Boolean.TYPE;
     }

@@ -24,7 +24,7 @@ import java.math.BigDecimal;
  */
 public class BigDecimalCachedClass extends DoubleCachedClass {
     public BigDecimalCachedClass(Class klazz, ClassInfo classInfo) {
-        super(klazz, classInfo);
+        super(klazz, classInfo, true);
     }
 
     public boolean isDirectlyAssignable(Object argument) {

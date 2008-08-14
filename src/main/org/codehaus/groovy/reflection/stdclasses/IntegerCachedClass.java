@@ -23,8 +23,10 @@ import java.math.BigInteger;
  * @author Alex.Tkachman
  */
 public class IntegerCachedClass extends NumberCachedClass {  // int, Integer
-    public IntegerCachedClass(Class klazz, ClassInfo classInfo) {
+	private boolean allowNull;
+    public IntegerCachedClass(Class klazz, ClassInfo classInfo, boolean allowNull) {
         super(klazz, classInfo);
+        this.allowNull = allowNull;
     }
 
     public Object coerceArgument(Object argument) {
@@ -36,11 +38,11 @@ public class IntegerCachedClass extends NumberCachedClass {  // int, Integer
     }
 
     public boolean isDirectlyAssignable(Object argument) {
-        return argument == null || argument instanceof Integer;
+       return (allowNull && argument == null) || argument instanceof Integer;
     }
 
     public boolean isAssignableFrom(Class classToTransformFrom) {
-        return classToTransformFrom == null
+        return (allowNull && classToTransformFrom == null)
             || classToTransformFrom == Integer.class
             || classToTransformFrom == Short.class
             || classToTransformFrom == Byte.class

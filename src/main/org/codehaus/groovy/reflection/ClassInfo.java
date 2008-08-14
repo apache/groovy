@@ -18,7 +18,6 @@ package org.codehaus.groovy.reflection;
 import groovy.lang.*;
 import org.codehaus.groovy.reflection.stdclasses.*;
 import org.codehaus.groovy.util.*;
-import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 
 import java.lang.ref.SoftReference;
 import java.math.BigDecimal;
@@ -204,56 +203,44 @@ public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
 
         CachedClass cachedClass;
         if (Number.class.isAssignableFrom(klazz) || klazz.isPrimitive()) {
-            if (klazz == Number.class)
-              cachedClass = new NumberCachedClass(klazz, classInfo);
-            else
-                if (klazz == Integer.class || klazz == Integer.TYPE)
-                  cachedClass = new IntegerCachedClass(klazz, classInfo);
-                else
-                  if (klazz == Double.class || klazz == Double.TYPE )
-                    cachedClass = new DoubleCachedClass(klazz, classInfo);
-                  else
-                      if (klazz == BigDecimal.class )
-                        cachedClass = new BigDecimalCachedClass(klazz, classInfo);
-                      else
-                          if (klazz == Long.class || klazz == Long.TYPE)
-                            cachedClass = new LongCachedClass(klazz, classInfo);
-                          else
-                              if (klazz == Float.class || klazz == Float.TYPE)
-                                cachedClass = new FloatCachedClass(klazz, classInfo);
-                              else
-                                  if (klazz == Short.class || klazz == Short.TYPE)
-                                    cachedClass = new ShortCachedClass(klazz, classInfo);
-                                  else
-                                      if (klazz == Boolean.TYPE)
-                                        cachedClass = new BooleanCachedClass(klazz, classInfo);
-                                      else
-                                          if (klazz == Character.TYPE)
-                                            cachedClass = new CharacterCachedClass(klazz, classInfo);
-                                          else
-                                              if (klazz == BigInteger.class)
-                                                cachedClass = new BigIntegerCachedClass(klazz, classInfo);
-                                              else
-                                                if (klazz == Byte.class)
-                                                  cachedClass = new ByteCachedClass(klazz, classInfo);
-                                                else
-                                                  cachedClass = new CachedClass(klazz, classInfo);
-        }
-        else
+            if (klazz == Number.class) {
+            	cachedClass = new NumberCachedClass(klazz, classInfo);
+            } else if (klazz == Integer.class || klazz ==  Integer.TYPE) {
+            	cachedClass = new IntegerCachedClass(klazz, classInfo, klazz==Integer.class);
+            } else if (klazz == Double.class || klazz == Double.TYPE) {
+            	cachedClass = new DoubleCachedClass(klazz, classInfo, klazz==Double.class);
+            } else if (klazz == BigDecimal.class) {
+            	cachedClass = new BigDecimalCachedClass(klazz, classInfo);
+            } else if (klazz == Long.class || klazz == Long.TYPE) {
+            	cachedClass = new LongCachedClass(klazz, classInfo, klazz==Long.class);
+            } else if (klazz == Float.class || klazz == Float.TYPE) { 
+            	cachedClass = new FloatCachedClass(klazz, classInfo, klazz==Float.class);
+            } else if (klazz == Short.class || klazz == Short.TYPE) {
+            	cachedClass = new ShortCachedClass(klazz, classInfo, klazz==Short.class);
+            } else if (klazz == Boolean.TYPE) {
+            	cachedClass = new BooleanCachedClass(klazz, classInfo, false);
+            } else if (klazz == Character.TYPE) { 
+            	cachedClass = new CharacterCachedClass(klazz, classInfo, false);
+            } else if (klazz == BigInteger.class) {
+            	cachedClass = new BigIntegerCachedClass(klazz, classInfo);
+            } else if (klazz == Byte.class || klazz == Byte.TYPE) {
+            	cachedClass = new ByteCachedClass(klazz, classInfo, klazz==Byte.class);
+            } else {
+            	cachedClass = new CachedClass(klazz, classInfo);
+            }
+        } else {
             if (klazz.getName().charAt(0) == '[')
               cachedClass = new ArrayCachedClass(klazz, classInfo);
-            else
-                if (klazz == Boolean.class)
-                  cachedClass = new BooleanCachedClass(klazz, classInfo);
-                else
-                    if (klazz == Character.class)
-                      cachedClass = new CharacterCachedClass(klazz, classInfo);
-                    else
-                      if (Closure.class.isAssignableFrom(klazz))
-                        cachedClass = new CachedClosureClass (klazz, classInfo);
-                      else
-                        cachedClass = new CachedClass(klazz, classInfo);
-
+            else if (klazz == Boolean.class) {
+            	cachedClass = new BooleanCachedClass(klazz, classInfo, true);
+            } else if (klazz == Character.class) {
+            	cachedClass = new CharacterCachedClass(klazz, classInfo, true);
+            } else if (Closure.class.isAssignableFrom(klazz)) {
+            	cachedClass = new CachedClosureClass (klazz, classInfo);
+            } else {
+            	cachedClass = new CachedClass(klazz, classInfo);
+            }
+        }
         return cachedClass;
     }
 
