@@ -812,7 +812,16 @@ Not found: ${groovyJar14path}
 
     <target name="doc" depends="javadoc, groovydoc" description="Create the documentation."/>
 
-    <target name="javadoc" depends="-fetchDependencies,-docInit,-jvm14BuildWarning"
+    <target name="javadoc" depends="-fetchDependencies">
+       <path id="javadocpath">
+            <path path="${mainClassesDirectory}"/>
+            <path refid="runtimePath"/>
+            <path path="${java.class.path}"/>
+        </path>
+        <antforked target="realjavadoc" maxmemory="${javaDoc_mx}" classpathref="javadocpath"/>
+    </target>
+
+   <target name="realjavadoc" depends="-fetchDependencies,-docInit,-jvm14BuildWarning,ensureGrammars"
             description="Create the javadoc documentation.">
         <property name="title" value="Groovy"/>
         <javadoc destdir="${docsDirectory}/api" author="true" version="true"
@@ -830,6 +839,7 @@ Not found: ${groovyJar14path}
             <link href="http://java.sun.com/j2ee/1.4/docs/api"/>
             <link href="http://www.antlr2.org/javadoc"/>
         </javadoc>
+        <mkdir dir="${targetDistDirectory}"/>
         <jar basedir="${docsDirectory}/api" destfile="${targetDistDirectory}/groovy-${groovyVersion}-javadoc.jar"/>
         <copy toFile="${targetDistDirectory}/groovy-all-${groovyVersion}-javadoc.jar">
             <fileset file="${targetDistDirectory}/groovy-${groovyVersion}-javadoc.jar"/>
@@ -852,7 +862,7 @@ Not found: ${groovyJar14path}
             <path refid="runtimePath"/>
             <path path="${java.class.path}"/>
         </path>
-        <antforked target="realgroovydoc" maxmemory="512m" classpathref="groovydocpath"/>
+        <antforked target="realgroovydoc" maxmemory="${groovyDoc_mx}" classpathref="groovydocpath"/>
     </target>
 
     <target name="realgroovydoc" depends="-fetchDependencies,-docInit,-includeGroovyDocTemplates,docGDK">
