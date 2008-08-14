@@ -812,22 +812,15 @@ Not found: ${groovyJar14path}
 
     <target name="doc" depends="javadoc, groovydoc" description="Create the documentation."/>
 
-    <target name="javadoc" depends="-fetchDependencies">
-       <path id="javadocpath">
-            <path path="${mainClassesDirectory}"/>
-            <path refid="runtimePath"/>
-            <path path="${java.class.path}"/>
-        </path>
-        <antforked target="realjavadoc" maxmemory="${javaDoc_mx}" classpathref="javadocpath"/>
-    </target>
-
-   <target name="realjavadoc" depends="-fetchDependencies,-docInit,-jvm14BuildWarning,ensureGrammars"
+   <target name="javadoc" depends="-fetchDependencies,-docInit,-jvm14BuildWarning,ensureGrammars"
             description="Create the javadoc documentation.">
         <property name="title" value="Groovy"/>
         <javadoc destdir="${docsDirectory}/api" author="true" version="true"
                  windowtitle="${title} (${groovyVersion})" doctitle="${title} (${groovyVersion})"
                  encoding="ISO-8859-1" useexternalfile="true" source="1.5"
-                 footer="Copyright &amp;copy; 2003-2008 The Codehaus. All rights reserved.">
+                 footer="Copyright &amp;copy; 2003-2008 The Codehaus. All rights reserved."
+                 maxmemory="${javaDoc_mx}"
+                 >
             <classpath>
                 <path path="${mainClassesDirectory}"/>
                 <path refid="compilePath"/>
