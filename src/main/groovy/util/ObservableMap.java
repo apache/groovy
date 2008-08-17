@@ -37,13 +37,13 @@ import java.util.*;
  * </pre>
  *
  * <p>The current implementation will trigger specialized events in the following scenarios,
- * you needn't register a different listener as those events extend from PropertyChangeEvent
+ * you need not register a different listener as those events extend from PropertyChangeEvent
  * <ul>
  * <li>ObservableMap.PropertyAddedEvent - a new property is added to the map</li>
  * <li>ObservableMap.PropertyRemovedEvent - a property is removed from the map</li>
  * <li>ObservableMap.PropertyUpdatedEvent - a property changes value (same as regular PropertyChangeEvent)</li>
  * <li>ObservableMap.PropertyClearedEvent - all properties have been removed from the map</li>
- * <li>ObservableMap.MultiPropertyAddedEvent - triggered by calling map.putAll(), contains Added|Updated events</li>
+ * <li>ObservableMap.MultiPropertyEvent - triggered by calling map.putAll(), contains Added|Updated events</li>
  * </ul></p>
  *
  * @author <a href="mailto:aalmiray@users.sourceforge.net">Andres Almiray</a>
@@ -264,6 +264,23 @@ public class ObservableMap implements Map {
         public int getType() {
             return type;
         }
+        
+        public String getTypeAsString() {
+         switch( type ) {
+            case ADDED:
+               return "ADDED";
+            case UPDATED:
+               return "UPDATED";
+            case REMOVED:
+               return "REMOVED";
+            case CLEARED:
+               return "CLEARED";
+            case MULTI:
+               return "MULTI";
+            default:
+               return "UPDATED";
+         }
+      }
     }
 
     public static class PropertyAddedEvent extends PropertyEvent {
