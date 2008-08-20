@@ -37,6 +37,7 @@ public class JavaStubGenerator
     private boolean requireSuperResolved = false;
     private File outputPath;
     private List toCompile = new ArrayList();
+    private ArrayList propertyMethods = new ArrayList();
 
     public JavaStubGenerator(final File outputPath, final boolean requireSuperResolved, final boolean java5) {
         this.outputPath = outputPath;
@@ -72,8 +73,10 @@ public class JavaStubGenerator
         Verifier verifier = new Verifier() {
             public void addCovariantMethods(ClassNode cn) {}
             protected void addTimeStamp(ClassNode node) {}
-            protected void addInitialization(ClassNode node) {}
-            public void visitProperty(PropertyNode node) {}            
+            protected void addInitialization(ClassNode node) {}   
+            protected void addPropertyMethod(MethodNode method) {
+            	propertyMethods.add(method);
+            }
         };
         verifier.visitClass(classNode);
         
@@ -126,10 +129,10 @@ public class JavaStubGenerator
 
             genFields(classNode, out, isEnum);
             genMethods(classNode, out, isEnum);
-            genProps(classNode, out);
 
             out.println("}");
         } finally {
+        	propertyMethods.clear();
             try {
                 out.close();
             } catch (Exception e) {
@@ -146,7 +149,8 @@ public class JavaStubGenerator
     private void genMethods(ClassNode classNode, PrintWriter out, boolean isEnum) {
         if (!isEnum) getConstructors(classNode, out);
 
-        List methods = classNode.getMethods();
+        List methods = (List) propertyMethods.clone();
+        methods.addAll(classNode.getMethods());
         if (methods != null)
             for (Iterator it = methods.iterator(); it.hasNext();) {
                 MethodNode methodNode = (MethodNode) it.next();
@@ -197,65 +201,6 @@ public class JavaStubGenerator
         } 
     }
 
-    private void genProps(ClassNode classNode, PrintWriter out) {
-        List props = classNode.getProperties();
-        if (props != null)
-            for (Iterator it = props.iterator(); it.hasNext();) {
-                PropertyNode propNode = (PropertyNode) it.next();
-                genProp(propNode, out);
-            }
-    }
-
-    private void genProp(PropertyNode propNode, PrintWriter out) {
-        String name = propNode.getName().substring(0, 1).toUpperCase()
-                + propNode.getName().substring(1);
-
-        String getterName = "get" + name;
-
-        boolean skipGetter = false;
-        List getterCandidates = propNode.getField().getOwner().getMethods(getterName);
-        if (getterCandidates != null)
-            for (Iterator it = getterCandidates.iterator(); it.hasNext();) {
-                MethodNode method = (MethodNode) it.next();
-                if (method.getParameters().length == 0) {
-                    skipGetter = true;
-                }
-            }
-
-        if (!skipGetter) {
-            printModifiers(out, propNode.getModifiers());
-
-            printType(propNode.getType(), out);
-            out.print(" ");
-            out.print(getterName);
-            out.print("() { ");
-
-            printReturn(out, propNode.getType());
-
-            out.println(" }");
-        }
-
-        String setterName = "set" + name;
-
-        boolean skipSetter = false;
-        List setterCandidates = propNode.getField().getOwner().getMethods( setterName);
-        if (setterCandidates != null)
-            for (Iterator it = setterCandidates.iterator(); it.hasNext();) {
-                MethodNode method = (MethodNode) it.next();
-                if (method.getParameters().length == 1) {
-                    skipSetter = true;
-                }
-            }
-
-        if (!skipSetter) {
-            printModifiers(out, propNode.getModifiers());
-            out.print("void ");
-            out.print(setterName);
-            out.print("(");
-            printType(propNode.getType(), out);
-            out.println(" value) {}");
-        }
-    }
     
     private void genEnumFields(List fields, PrintWriter out) {
         if (fields.size()==0) return;
