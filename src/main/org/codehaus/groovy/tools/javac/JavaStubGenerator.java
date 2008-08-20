@@ -69,7 +69,7 @@ public class JavaStubGenerator
         File file = new File(outputPath, fileName + ".java");
         FileOutputStream fos = new FileOutputStream(file);
         PrintWriter out = new PrintWriter(fos);
-
+        
         Verifier verifier = new Verifier() {
             public void addCovariantMethods(ClassNode cn) {}
             protected void addTimeStamp(ClassNode node) {}
@@ -357,6 +357,8 @@ public class JavaStubGenerator
         
         if (!clazz.isInterface()) printModifiers(out, methodNode.getModifiers());
 
+        writeGenericsBounds(out, methodNode.getGenericsTypes());
+        out.print(" ");
         printType(methodNode.getReturnType(), out);
         out.print(" ");
         out.print(methodNode.getName());
@@ -417,6 +419,8 @@ public class JavaStubGenerator
         if (type.isArray()) {
             printType(type.getComponentType(),out);
             out.print("[]");
+        } else if (java5 && type.isGenericsPlaceHolder()) {
+        	out.print(type.getGenericsTypes()[0].getName());
         } else {
             writeGenericsBounds(out,type,false);
         }
@@ -451,10 +455,8 @@ public class JavaStubGenerator
     
     private void writeGenericsBounds(PrintWriter out, ClassNode type, boolean skipName) {
         if (!skipName) printTypeName(type,out);
-        if (java5 &&
-            !type.isGenericsPlaceHolder() &&
-            !ClassHelper.isCachedType(type)
-        ) {
+        if (!java5) return;
+        if (!ClassHelper.isCachedType(type)) {
             writeGenericsBounds(out,type.getGenericsTypes());
         }
     }
