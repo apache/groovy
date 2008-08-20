@@ -30,7 +30,6 @@ import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
 import org.objectweb.asm.Opcodes;
 
-import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.*;
@@ -559,7 +558,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             MethodNode getter =
                 new MethodNode(getterName, node.getModifiers(), node.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getterBlock);
             getter.setSynthetic(true);
-            classNode.addMethod(getter);
+            addPropertyMethod(getter);
             visitMethod(getter);
 
             if (ClassHelper.boolean_TYPE==node.getType() || ClassHelper.Boolean_TYPE==node.getType()) {
@@ -567,7 +566,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 MethodNode secondGetter =
                     new MethodNode(secondGetterName, node.getModifiers(), node.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getterBlock);
                 secondGetter.setSynthetic(true);
-                classNode.addMethod(secondGetter);
+                addPropertyMethod(secondGetter);
                 visitMethod(secondGetter);
             }
         }
@@ -576,11 +575,15 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             MethodNode setter =
                 new MethodNode(setterName, node.getModifiers(), ClassHelper.VOID_TYPE, setterParameterTypes, ClassNode.EMPTY_ARRAY, setterBlock);
             setter.setSynthetic(true);
-            classNode.addMethod(setter);
+            addPropertyMethod(setter);
             visitMethod(setter);
         }
     }
 
+    protected void addPropertyMethod(MethodNode method) {
+    	classNode.addMethod(method);
+    }
+    
     // Implementation methods
     //-------------------------------------------------------------------------
     

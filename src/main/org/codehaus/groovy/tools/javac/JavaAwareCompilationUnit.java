@@ -20,6 +20,7 @@ import groovy.lang.GroovyClassLoader;
 
 import java.util.LinkedList;
 import java.util.Iterator;
+import java.util.Map;
 import java.io.File;
 import java.io.FileNotFoundException;
 
@@ -42,6 +43,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
     private JavaStubGenerator stubGenerator;
     private JavaCompilerFactory compilerFactory = new JavacCompilerFactory();
     private File generationGoal;
+    private boolean keepStubs;
     
     public JavaAwareCompilationUnit(CompilerConfiguration configuration) {
         this(configuration,null);
@@ -50,9 +52,11 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
     public JavaAwareCompilationUnit(CompilerConfiguration configuration, GroovyClassLoader groovyClassLoader) {
         super(configuration,null,groovyClassLoader);
         javaSources = new LinkedList();
-        generationGoal = (File) configuration.getJointCompilationOptions().get("stubDir");
+        Map options = configuration.getJointCompilationOptions();
+        generationGoal = (File) options.get("stubDir");
         boolean useJava5 = configuration.getTargetBytecode().equals(CompilerConfiguration.POST_JDK5);
         stubGenerator = new JavaStubGenerator(generationGoal,false,useJava5);
+        keepStubs = Boolean.TRUE.equals(options.get("keepStubs"));
         
         addPhaseOperation(new PrimaryClassNodeOperation() {
             public void call(SourceUnit source, GeneratorContext context, ClassNode node) throws CompilationFailedException {
@@ -84,7 +88,7 @@ public class JavaAwareCompilationUnit extends CompilationUnit {
                 JavaCompiler compiler = compilerFactory.createCompiler(getConfiguration());
                 compiler.compile(javaSources, this);
             } finally {
-                stubGenerator.clean();
+                if (!keepStubs) stubGenerator.clean(); 
                 javaSources.clear();
             }
         }
