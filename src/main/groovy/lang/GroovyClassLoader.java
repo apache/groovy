@@ -60,6 +60,10 @@ public class GroovyClassLoader extends URLClassLoader {
      * this cache contains the loaded classes or PARSING, if the class is currently parsed
      */
     protected final Map classCache = new HashMap();
+    /**
+     * this cache contains mappings of file name to class. It is used
+     * to bypass compilation.
+     */
     protected final Map sourceCache = new HashMap();
     private final CompilerConfiguration config;
     private Boolean recompile;
@@ -103,7 +107,7 @@ public class GroovyClassLoader extends URLClassLoader {
     /**
      * creates a GroovyClassLaoder.
      *
-     * @param parent                    the parten class loader
+     * @param parent                    the parent class loader
      * @param config                    the compiler configuration
      * @param useConfigurationClasspath determines if the configurations classpath should be added
      */
@@ -256,7 +260,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @return the main class defined in the given script
      */
     public Class parseClass(GroovyCodeSource codeSource, boolean shouldCacheSource) throws CompilationFailedException {
-        synchronized (this) {
+        synchronized (sourceCache) {
             Class answer = (Class) sourceCache.get(codeSource.getName());
             if (answer != null) return answer;
 
@@ -443,7 +447,6 @@ public class GroovyClassLoader extends URLClassLoader {
         protected Class createClass(byte[] code, ClassNode classNode) {
             GroovyClassLoader cl = getDefiningClassLoader();
             Class theClass = cl.defineClass(classNode.getName(), code, 0, code.length, unit.getAST().getCodeSource());
-            //cl.resolveClass(theClass);
             this.loadedClasses.add(theClass);
 
             if (generatedClass == null) {
@@ -564,6 +567,7 @@ public class GroovyClassLoader extends URLClassLoader {
      */
     protected boolean isRecompilable(Class cls) {
         if (cls == null) return true;
+        if (cls.getClassLoader()==this) return false;
         if (recompile == null && !config.getRecompileGroovySource()) return false;
         if (recompile != null && !recompile.booleanValue()) return false;
         if (!GroovyObject.class.isAssignableFrom(cls)) return false;
@@ -642,18 +646,16 @@ public class GroovyClassLoader extends URLClassLoader {
                 throw ncdfe;
             }
         }
-
-        if (cls != null) {
-            // prefer class if no recompilation
-            preferClassOverScript |= !recompile;
-            if (preferClassOverScript) return cls;
-        }
+        
+        // prefer class if no recompilation
+        if (cls != null && preferClassOverScript) return cls;
 
         // at this point the loading from a parent loader failed
         // and we want to recompile if needed.
         if (lookupScriptFiles) {
-            // synchronize on this, as we want only one compilation at the same time
-            synchronized (this) {
+            // synchronize on sourceCache, as we want only one 
+            // compilation at the same time
+            synchronized (sourceCache) {
                 // try groovy file
                 try {
                     // check if recompilation already happened.
@@ -715,7 +717,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @see java.lang.ClassLoader#loadClass(java.lang.String, boolean)
      */
     protected Class loadClass(final String name, boolean resolve) throws ClassNotFoundException {
-        return loadClass(name, true, false, resolve);
+        return loadClass(name, true, true, resolve);
     }
 
     /**
@@ -857,6 +859,9 @@ public class GroovyClassLoader extends URLClassLoader {
     public void clearCache() {
         synchronized (classCache) {
             classCache.clear();
+        }
+        synchronized (sourceCache) {
+            sourceCache.clear();
         }
     }
 }
