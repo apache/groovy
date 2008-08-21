@@ -33,7 +33,7 @@ public abstract class AbstractFactory implements Factory {
         return false;
     }
 
-    public void onFactoryRegistration(FactoryBuilderSupport builder, String registerdName) {
+    public void onFactoryRegistration(FactoryBuilderSupport builder, String registerdName, String group) {
         // do nothing
     }
 

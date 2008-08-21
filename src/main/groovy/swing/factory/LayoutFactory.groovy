@@ -75,7 +75,9 @@ class LayoutFactory extends BeanFactory {
 
     public static constraintsAttributeDelegate(def builder, def node, def attributes) {
         def constraintsAttr = builder?.context?.getAt(DELEGATE_PROPERTY_CONSTRAINT) ?: DEFAULT_DELEGATE_PROPERTY_CONSTRAINT
-        builder.context.constraints = attributes.remove(constraintsAttr)
+        if (attributes.containsKey(constraintsAttr)) {
+            builder.context.constraints = attributes.remove(constraintsAttr)
+        }
     }
 
 }

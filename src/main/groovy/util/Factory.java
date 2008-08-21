@@ -42,7 +42,7 @@ public interface Factory {
      * @param builder the build the factory has been registered to
      * @param registerdName the name the factory has been registerd under
      */
-    void onFactoryRegistration(FactoryBuilderSupport builder, String registerdName);
+    void onFactoryRegistration(FactoryBuilderSupport builder, String registerdName, String registeredGroupName);
 
     /**
      *

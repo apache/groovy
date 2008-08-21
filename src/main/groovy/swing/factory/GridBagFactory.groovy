@@ -38,6 +38,7 @@ public class GridBagFactory extends LayoutFactory {
 
 
     public static void processGridBagConstraintsAttributes(FactoryBuilderSupport builder, Object node, Map attributes) {
+        // if we are not a component, don't do anything
         if (!(node instanceof Component)) {
             return
         }
@@ -46,6 +47,11 @@ public class GridBagFactory extends LayoutFactory {
         if (attributes.containsKey(constraintsAttr)) {
             return
         }
+        // if there are cached constraints, don't do it again, we need to be idempotent...
+        if (builder.getContext().containsKey("constraints")) {
+            return
+        }
+
 
         // next, check to be sure we are in an appropriate container
         Object parent = builder.getCurrent()

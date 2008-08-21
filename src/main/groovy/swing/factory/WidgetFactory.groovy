@@ -52,6 +52,7 @@ public class WidgetFactory extends AbstractFactory {
             def constraints = builder.context.constraints
             if (constraints != null) {
                 parent.add(child, constraints)
+                builder.context.remove('constraints')
             } else {
                 parent.add(child)
             }
