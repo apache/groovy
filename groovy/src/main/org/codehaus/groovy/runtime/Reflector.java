@@ -32,6 +32,6 @@ public class Reflector {
     }
 
     protected Object noSuchMethod(CachedMethod method, Object object, Object[] arguments) {
-        throw new MissingMethodException(method.getName(), method.getDeclaringClass().getCachedClass(), arguments, false);
+        throw new MissingMethodException(method.getName(), method.getDeclaringClass().getTheClass(), arguments, false);
     }
 }

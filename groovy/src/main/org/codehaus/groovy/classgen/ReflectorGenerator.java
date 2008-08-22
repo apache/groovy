@@ -164,7 +164,7 @@ public class ReflectorGenerator implements Opcodes {
 
     protected void invokeMethod(CachedMethod method, MethodVisitor mv) {
         // compute class to make the call on
-        Class callClass = method.getDeclaringClass().getCachedClass();
+        Class callClass = method.getDeclaringClass().getTheClass();
         boolean useInterface = callClass.isInterface();
 //        if (callClass == null) {
 //            callClass = method.getCallClass();
@@ -200,7 +200,7 @@ public class ReflectorGenerator implements Opcodes {
 
             // cast argument to parameter class, inclusive unboxing
             // for methods with primitive types
-            Class type = parameters[i].getCachedClass();
+            Class type = parameters[i].getTheClass();
             if (type.isPrimitive()) {
                 helper.unbox(type);
             } else {

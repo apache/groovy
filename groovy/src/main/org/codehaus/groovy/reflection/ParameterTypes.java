@@ -95,7 +95,7 @@ public class ParameterTypes
       if (parameterTypes != null) {
           npt = new Class [parameterTypes.length];
           for (int i = 0; i != parameterTypes.length; ++i) {
-              npt[i] = parameterTypes[i].getCachedClass();
+              npt[i] = parameterTypes[i].getTheClass();
           }
       }
       else
@@ -121,7 +121,7 @@ public class ParameterTypes
         Object last = arguments[arguments.length - 1];
         if (last == null) return true;
         Class clazz = last.getClass();
-        return !clazz.equals(parameterTypes[lenMinus1].getCachedClass());
+        return !clazz.equals(parameterTypes[lenMinus1].getTheClass());
 
     }
 
@@ -150,7 +150,7 @@ public class ParameterTypes
         final CachedClass[] pt = parameterTypes;
         if (pt.length == 1 && argumentArray.length == 0) {
             if (isVargsMethod)
-                return new Object[]{Array.newInstance(pt[0].getCachedClass().getComponentType(), 0)};
+                return new Object[]{Array.newInstance(pt[0].getTheClass().getComponentType(), 0)};
             else
                 return MetaClassHelper.ARRAY_WITH_NULL;
         }
@@ -171,7 +171,7 @@ public class ParameterTypes
      * @param paramTypes    the types of the paramters the method takes
      */
     private static Object[] fitToVargs(Object[] argumentArray, CachedClass[] paramTypes) {
-        Class vargsClass = ReflectionCache.autoboxType(paramTypes[paramTypes.length - 1].getCachedClass().getComponentType());
+        Class vargsClass = ReflectionCache.autoboxType(paramTypes[paramTypes.length - 1].getTheClass().getComponentType());
 
         if (argumentArray.length == paramTypes.length - 1) {
             // the vargs argument is missing, so fill it with an empty array
@@ -249,7 +249,7 @@ public class ParameterTypes
 
         // check direct match
         CachedClass varg = pt[paramMinus1];
-        Class clazz = varg.getCachedClass().getComponentType();
+        Class clazz = varg.getTheClass().getComponentType();
         if ( size==pt.length &&
              (varg.isAssignableFrom(arguments[paramMinus1]) ||
               testComponentAssignable(clazz, arguments[paramMinus1])))
@@ -290,7 +290,7 @@ public class ParameterTypes
             
             // check direct match
             CachedClass varg = paramTypes[paramMinus1];
-            Class clazz = varg.getCachedClass().getComponentType();
+            Class clazz = varg.getTheClass().getComponentType();
             if ( size==paramTypes.length && 
                  (varg.isAssignableFrom(getArgClass(arguments[paramMinus1])) ||
                   testComponentAssignable(clazz,getArgClass(arguments[paramMinus1]))))
