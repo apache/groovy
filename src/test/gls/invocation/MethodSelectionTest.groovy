@@ -111,4 +111,34 @@ public class MethodSelectionTest extends CompilableTestSupport {
         assert ["super","sub"] == result
     """
   }
+  
+  void testNullUsageForPrimtives() {
+    [byte,int,short,float,double].each { type ->
+      assertScript """
+         def foo($type x) {}
+         
+         boolean catched = false
+         try {
+           foo(null)
+         } catch (MissingMethodException mme) {
+           catched = true
+         }
+         def txt = "expected to see a MissingMethodEception when using foo(null) "+
+                   "to call foo($type), but no exception was thrown"
+         assert catched, txt
+      """
+    }
+  }
+  
+  void testNullUsageForPrimitivesAndOverloading() {
+    [byte,int,short,float,double].each { type ->
+      assertScript """
+         def foo(String x){1}
+         def foo($type x) {2}
+         
+         def txt = "foo($type) was called where foo(String) should have been called"
+         assert foo(null)==1, txt
+      """
+    } 
+  }
 }

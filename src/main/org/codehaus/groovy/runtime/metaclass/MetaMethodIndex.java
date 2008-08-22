@@ -72,14 +72,14 @@ public class MetaMethodIndex {
         CachedClass last = null;
         if (!theCachedClass.isInterface()) {
             for (CachedClass c = theCachedClass; c != null; c = c.getCachedSuperClass()) {
-              final SingleKeyHashMap.Entry e = methodHeaders.getOrPut(c.getCachedClass());
-              e.value = new Header (c.getCachedClass(), last == null ? null : last.getCachedClass());
+              final SingleKeyHashMap.Entry e = methodHeaders.getOrPut(c.getTheClass());
+              e.value = new Header (c.getTheClass(), last == null ? null : last.getTheClass());
               last = c;
             }
         }
         else {
             final SingleKeyHashMap.Entry e = methodHeaders.getOrPut(Object.class);
-            e.value = new Header (Object.class, theCachedClass.getCachedClass());
+            e.value = new Header (Object.class, theCachedClass.getTheClass());
         }
     }
 
@@ -389,7 +389,7 @@ public class MetaMethodIndex {
                         if (isNonRealMethod(method)) {
                             return method;
                         }
-                    } else if (!methodC.isAssignableFrom(matchC.getCachedClass())) {
+                    } else if (!methodC.isAssignableFrom(matchC.getTheClass())) {
                         return method;
                     }
                 }
@@ -421,7 +421,7 @@ public class MetaMethodIndex {
                         if (isNonRealMethod(method)) {
                             list.set(found, method);
                         }
-                    } else if (!methodC.isAssignableFrom(matchC.getCachedClass())) {
+                    } else if (!methodC.isAssignableFrom(matchC.getTheClass())) {
                         list.set(found, method);
                     }
                 }

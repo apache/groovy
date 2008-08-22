@@ -425,7 +425,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
                     }
                 };
             } else {
-                if (length == 1 && c[0].getCachedClass() == Object.class) {
+                if (length == 1 && c[0].getTheClass() == Object.class) {
                     // Object fits all, so simple dispatch rule here
                     chooser = new MethodChooser() {
                         public Object chooseMethod(Class[] arguments, boolean coerce) {
@@ -437,12 +437,12 @@ public final class ClosureMetaClass extends MetaClassImpl {
                 } else {
                     boolean allObject = true;
                     for (int i = 0; i < c.length - 1; i++) {
-                        if (c[i].getCachedClass() != Object.class) {
+                        if (c[i].getTheClass() != Object.class) {
                             allObject = false;
                             break;
                         }
                     }
-                    if (allObject && c[c.length - 1].getCachedClass() == Object.class) {
+                    if (allObject && c[c.length - 1].getTheClass() == Object.class) {
                         // all arguments are object, so test only if argument number is correct
                         chooser = new MethodChooser() {
                             public Object chooseMethod(Class[] arguments, boolean coerce) {
@@ -451,7 +451,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
                             }
                         };
                     } else {
-                        if (allObject && c[c.length - 1].getCachedClass() == Object[].class) {
+                        if (allObject && c[c.length - 1].getTheClass() == Object[].class) {
                             // all arguments are Object but last, which is a vargs argument, that
                             // will fit all, so jsut test if the number of argument is equal or
                             // more than the parameters we have.
@@ -484,7 +484,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
                 if (c.length == 0) {
                     m0 = m;
                 } else {
-                    if (c.length == 1 && c[0].getCachedClass() == Object.class) {
+                    if (c.length == 1 && c[0].getTheClass() == Object.class) {
                         m1 = m;
                     }
                 }

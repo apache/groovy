@@ -15,12 +15,15 @@
  */
 package org.codehaus.groovy.reflection;
 
+import groovy.lang.Closure;
+
 import java.lang.ref.SoftReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.WeakHashMap;
+import org.codehaus.groovy.reflection.stdclasses.*; 
 
 public class ReflectionCache {
     private static Map primitiveTypesMap = new HashMap();
@@ -91,7 +94,7 @@ public class ReflectionCache {
 
     static WeakDoubleKeyHashMap assignableMap = new WeakDoubleKeyHashMap();
 
-    private static final CachedClass STRING_CLASS = new CachedClass.StringCachedClass();
+    private static final CachedClass STRING_CLASS = new StringCachedClass();
 
     public static boolean isArray(Class klazz) {
 //        CachedClass cachedClass = getCachedClass(klazz);
@@ -180,78 +183,44 @@ public class ReflectionCache {
         }
 
         if (ref == null || (cachedClass = (CachedClass) ref.get()) == null) {
-            {
-                if (klazz.isPrimitive()) {
-                    if (klazz == Integer.TYPE)
-                       cachedClass = new CachedClass.IntegerCachedClass(klazz);
-                    else
-                        if (klazz == Double.TYPE )
-                           cachedClass = new CachedClass.DoubleCachedClass(klazz);
-                        else
-                            if (klazz == Long.TYPE)
-                               cachedClass = new CachedClass.LongCachedClass(klazz);
-                            else
-                                if (klazz == Float.TYPE)
-                                   cachedClass = new CachedClass.FloatCachedClass(klazz);
-                                else
-                                    if (klazz == Short.TYPE)
-                                       cachedClass = new CachedClass.ShortCachedClass(klazz);
-                                    else
-                                        if (klazz == Boolean.TYPE)
-                                           cachedClass = new CachedClass.BooleanCachedClass(klazz);
-                                        else
-                                            if (klazz == Character.TYPE)
-                                               cachedClass = new CachedClass.CharacterCachedClass(klazz);
-                                            else
-                                                if (klazz == Byte.TYPE)
-                                                   cachedClass = new CachedClass.ByteCachedClass(klazz);
-                                                else {
-                                                   //!FIXME: This shouldn't happen.  assert false or throw exception...
-                                                   cachedClass = new CachedClass(klazz);
-                                                }
+            if (Number.class.isAssignableFrom(klazz) || klazz.isPrimitive()) {
+                if (klazz == Number.class) {
+                	cachedClass = new NumberCachedClass(klazz);
+                } else if (klazz == Integer.class || klazz ==  Integer.TYPE) {
+                	cachedClass = new IntegerCachedClass(klazz, klazz==Integer.class);
+                } else if (klazz == Double.class || klazz == Double.TYPE) {
+                	cachedClass = new DoubleCachedClass(klazz, klazz==Double.class);
+                } else if (klazz == BigDecimal.class) {
+                	cachedClass = new BigDecimalCachedClass(klazz);
+                } else if (klazz == Long.class || klazz == Long.TYPE) {
+                	cachedClass = new LongCachedClass(klazz, klazz==Long.class);
+                } else if (klazz == Float.class || klazz == Float.TYPE) { 
+                	cachedClass = new FloatCachedClass(klazz, klazz==Float.class);
+                } else if (klazz == Short.class || klazz == Short.TYPE) {
+                	cachedClass = new ShortCachedClass(klazz, klazz==Short.class);
+                } else if (klazz == Boolean.TYPE) {
+                	cachedClass = new BooleanCachedClass(klazz, false);
+                } else if (klazz == Character.TYPE) { 
+                	cachedClass = new CharacterCachedClass(klazz, false);
+                } else if (klazz == BigInteger.class) {
+                	cachedClass = new BigIntegerCachedClass(klazz);
+                } else if (klazz == Byte.class || klazz == Byte.TYPE) {
+                	cachedClass = new ByteCachedClass(klazz, klazz==Byte.class);
+                } else {
+                	cachedClass = new CachedClass(klazz);
                 }
-                else
-                if (Number.class.isAssignableFrom(klazz)) {
-                    if (klazz == Number.class)
-                       cachedClass = new CachedClass.NumberCachedClass(klazz);
-                    else
-                        if (klazz == Integer.class)
-                           cachedClass = new CachedClass.IntegerCachedClass(klazz);
-                        else
-                            if (klazz == Double.class)
-                               cachedClass = new CachedClass.DoubleCachedClass(klazz);
-                            else
-                                if (klazz == BigDecimal.class )
-                                   cachedClass = new CachedClass.BigDecimalCachedClass(klazz);
-                                else
-                                    if (klazz == Long.class)
-                                       cachedClass = new CachedClass.LongCachedClass(klazz);
-                                    else
-                                        if (klazz == Float.class)
-                                           cachedClass = new CachedClass.FloatCachedClass(klazz);
-                                        else
-                                            if (klazz == Short.class)
-                                               cachedClass = new CachedClass.ShortCachedClass(klazz);
-                                            else
-                                                if (klazz == BigInteger.class)
-                                                   cachedClass = new CachedClass.BigIntegerCachedClass(klazz);
-                                                else
-                                                        if (klazz == Byte.class)
-                                                          cachedClass = new CachedClass.ByteCachedClass(klazz);
-                                                        else
-                                                          cachedClass = new CachedClass(klazz);
+            } else {
+                if (klazz.getName().charAt(0) == '[')
+                    cachedClass = new ArrayCachedClass(klazz);
+                else if (klazz == Boolean.class) {
+                	cachedClass = new BooleanCachedClass(klazz, true);
+                } else if (klazz == Character.class) {
+                	cachedClass = new CharacterCachedClass(klazz, true);
+                } else if (Closure.class.isAssignableFrom(klazz)) {
+                	cachedClass = new CachedClosureClass (klazz);
+                } else {
+                	cachedClass = new CachedClass(klazz);
                 }
-                else
-                    if (klazz.getName().charAt(0) == '[')
-                      cachedClass = new CachedClass.ArrayCachedClass (klazz);
-                    else
-                        if (klazz == Boolean.class)
-                          cachedClass = new CachedClass.BooleanCachedClass(klazz);
-                        else
-                            if (klazz == Character.class)
-                              cachedClass = new CachedClass.CharacterCachedClass(klazz);
-                            else
-                              cachedClass = new CachedClass(klazz);
             }
 
 

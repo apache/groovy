@@ -17,7 +17,7 @@ class RespondsToTest extends GroovyTestCase {
             def result
             if(methods) {
                 // only way to get var-args to work is to do this at the moment. Yuck!
-                if(methods[0].parameterTypes.length == 1 && methods[0].parameterTypes[0].cachedClass == Object[].class)
+                if(methods[0].parameterTypes.length == 1 && methods[0].parameterTypes[0].theClass == Object[].class)
                     result = methods[0].invoke(delegate, [args] as Object[])
                 else
                     result = methods[0].invoke(delegate, args)

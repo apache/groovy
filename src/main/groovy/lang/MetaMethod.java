@@ -81,7 +81,7 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     protected static boolean equal(CachedClass[] a, Class[] b) {
         if (a.length == b.length) {
             for (int i = 0, size = a.length; i < size; i++) {
-                if (!a[i].getCachedClass().equals(b[i])) {
+                if (!a[i].getTheClass().equals(b[i])) {
                     return false;
                 }
             }

@@ -226,7 +226,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     private MetaBeanProperty findPropertyInClassHierarchy(String propertyName, CachedClass theClass) {
         MetaBeanProperty property= null;
         final CachedClass superClass = theClass.getCachedSuperClass();
-        MetaClass metaClass = this.registry.getMetaClass(superClass.getCachedClass());
+        MetaClass metaClass = this.registry.getMetaClass(superClass.getTheClass());
         if(metaClass instanceof MutableMetaClass) {
             property = getMetaPropertyFromMutableMetaClass(propertyName,metaClass);
             if(property == null) {
@@ -234,7 +234,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                     property = findPropertyInClassHierarchy(propertyName, superClass);
                 }
                 if(property == null) {
-                    final Class[] interfaces = theClass.getCachedClass().getInterfaces();
+                    final Class[] interfaces = theClass.getTheClass().getInterfaces();
                     property = searchInterfacesForMetaProperty(propertyName, interfaces);
                 }
             }
@@ -817,12 +817,12 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         else {
             if(getter) {
                 MetaMethod setterMethod = beanProperty.getSetter();
-                Class type = setterMethod != null ? setterMethod.getParameterTypes()[0].getCachedClass() : Object.class;
+                Class type = setterMethod != null ? setterMethod.getParameterTypes()[0].getTheClass() : Object.class;
                 beanProperty = new MetaBeanProperty(propertyName,type,metaMethod,setterMethod);
                 propertyCache.put(propertyName, beanProperty);
             }else {
                 MetaMethod getterMethod = beanProperty.getGetter();
-                beanProperty = new MetaBeanProperty(propertyName, metaMethod.getParameterTypes()[0].getCachedClass(),getterMethod,metaMethod);
+                beanProperty = new MetaBeanProperty(propertyName, metaMethod.getParameterTypes()[0].getTheClass(),getterMethod,metaMethod);
                 propertyCache .put(propertyName, beanProperty);
             }
         }

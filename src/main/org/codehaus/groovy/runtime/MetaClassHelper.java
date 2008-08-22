@@ -258,23 +258,23 @@ public class MetaClassHelper {
          *       information
          */
 
-        if (parameter.getCachedClass() == argument) return 0;
+        if (parameter.getTheClass() == argument) return 0;
 
         if (parameter.isInterface()) {
-            return getMaximumInterfaceDistance(argument, parameter.getCachedClass())<<1;
+            return getMaximumInterfaceDistance(argument, parameter.getTheClass())<<1;
         }
 
         long objectDistance = 0;
         if (argument != null) {
-            long pd = getPrimitiveDistance(parameter.getCachedClass(), argument);
+            long pd = getPrimitiveDistance(parameter.getTheClass(), argument);
             if (pd != -1) return pd << 32;
 
             // add one to dist to be sure interfaces are prefered
             objectDistance += PRIMITIVES.length + 1;
             Class clazz = ReflectionCache.autoboxType(argument);
             while (clazz != null) {
-                if (clazz == parameter.getCachedClass()) break;
-                if (clazz == GString.class && parameter.getCachedClass() == String.class) {
+                if (clazz == parameter.getTheClass()) break;
+                if (clazz == GString.class && parameter.getTheClass() == String.class) {
                     objectDistance += 2;
                     break;
                 }
@@ -287,7 +287,7 @@ public class MetaClassHelper {
             // specific type
             // remove one to dist to be sure Object is prefered
             objectDistance--;
-            Class clazz = parameter.getCachedClass();
+            Class clazz = parameter.getTheClass();
             if (clazz.isPrimitive()) {
                 objectDistance += 2;
             } else {
@@ -351,7 +351,7 @@ public class MetaClassHelper {
             // to the value we need according to case C and D
             CachedClass baseType = parameters[noVargsLength]; // case C
             if (!parameters[noVargsLength].isAssignableFrom(arguments[noVargsLength])) {
-                baseType= ReflectionCache.getCachedClass(baseType.getCachedClass().getComponentType()); // case D
+                baseType= ReflectionCache.getCachedClass(baseType.getTheClass().getComponentType()); // case D
                 ret+=2l<<VARGS_SHIFT; // penalty for vargs
             }
             ret += calculateParameterDistance(arguments[noVargsLength], baseType);
@@ -360,7 +360,7 @@ public class MetaClassHelper {
             // we give our a vargs penalty for each exceeding argument and iterate
             // by using parameters[noVargsLength].getComponentType()
             ret += (2+arguments.length-parameters.length)<<VARGS_SHIFT;
-            CachedClass vargsType = ReflectionCache.getCachedClass(parameters[noVargsLength].getCachedClass().getComponentType());
+            CachedClass vargsType = ReflectionCache.getCachedClass(parameters[noVargsLength].getTheClass().getComponentType());
             for (int i = noVargsLength; i < arguments.length; i++) {
                 ret += calculateParameterDistance(arguments[i], vargsType);
             }
@@ -431,20 +431,20 @@ public class MetaClassHelper {
                     closestVargsClass = paramTypes[1];
                     closestClass = theType;
                     answer = method;
-                } else if (closestClass.getCachedClass() == theType.getCachedClass()) {
+                } else if (closestClass.getTheClass() == theType.getTheClass()) {
                     if (closestVargsClass == null) continue;
                     CachedClass newVargsClass = paramTypes[1];
-                    if (closestVargsClass == null || isAssignableFrom(newVargsClass.getCachedClass(), closestVargsClass.getCachedClass())) {
+                    if (closestVargsClass == null || isAssignableFrom(newVargsClass.getTheClass(), closestVargsClass.getTheClass())) {
                         closestVargsClass = newVargsClass;
                         answer = method;
                     }
-                } else if (isAssignableFrom(theType.getCachedClass(), closestClass.getCachedClass())) {
+                } else if (isAssignableFrom(theType.getTheClass(), closestClass.getTheClass())) {
                     closestVargsClass = paramTypes[1];
                     closestClass = theType;
                     answer = method;
                 }
             } else {
-                if (closestClass == null || isAssignableFrom(theType.getCachedClass(), closestClass.getCachedClass())) {
+                if (closestClass == null || isAssignableFrom(theType.getTheClass(), closestClass.getTheClass())) {
                     closestVargsClass = null;
                     closestClass = theType;
                     answer = method;
