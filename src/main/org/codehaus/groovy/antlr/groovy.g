@@ -8,6 +8,7 @@ import java.io.Reader;
 import antlr.InputBuffer;
 import antlr.LexerSharedInputState;
 import antlr.CommonToken;
+import org.codehaus.groovy.GroovyBugError;
 }
 
 /** JSR-241 Groovy Recognizer
@@ -3184,6 +3185,23 @@ options {
     protected ArrayList parenLevelStack = new ArrayList();
     protected int lastSigTokenType = EOF;  // last returned non-whitespace token
 
+    public void setTokenObjectClass(String name) {
+        // we overwrite this  method here, because we want to force the usage
+        // of our token class from our package through our class loader. 
+        // It must be our claassloader, because for OSGI environments the class
+        // may not be accessible otherwise.
+        if (CommonToken.class.getName().equals(name)) {
+            tokenObjectClass = CommonToken.class;
+        } else {
+            throw new GroovyBugError(
+                "We forced setTokenObjectClass to use only "+
+                CommonToken.class.getName()+". "+name+
+                " is not supported!\nIf you need "+
+                "a different class, please first change "+
+                "setTokenObjectClass(String) in groovy.g");
+        }
+    }
+    
     protected void pushParenLevel() {
         parenLevelStack.add(Integer.valueOf(parenLevel*SCS_LIMIT + stringCtorState));
         parenLevel = 0;
