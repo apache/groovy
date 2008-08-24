@@ -97,31 +97,30 @@ public class ExtendedVerifier implements GroovyClassVisitor {
     }
 
     protected void visitAnnotations(AnnotatedNode node, int target) {
-        if(node.getAnnotations().isEmpty()) {
+        if (node.getAnnotations().isEmpty()) {
             return;
         }
-        
+
         this.currentClass.setAnnotated(true);
-        
-        if(!isAnnotationCompatible()) {
-            addError("Annotations are not supported in the current runtime." + JVM_ERROR_MESSAGE,
-                    node);
+
+        if (!isAnnotationCompatible()) {
+            addError("Annotations are not supported in the current runtime. " + JVM_ERROR_MESSAGE, node);
             return;
         }
-        
+
         Collection annotations = node.getAnnotations();
-        for(Iterator it = annotations.iterator(); it.hasNext(); ) {
+        for (Iterator it = annotations.iterator(); it.hasNext();) {
             AnnotationNode an = (AnnotationNode) it.next();
 
             AnnotationNode annotation = visitAnnotation(an);
-            if(!annotation.isTargetAllowed(target)) {
+            if (!annotation.isTargetAllowed(target)) {
                 addError("Annotation @" + annotation.getClassNode().getName()
                         + " is not allowed on element " + AnnotationNode.targetToName(target),
                         annotation);
             }
         }
     }
-    
+
     /**
      * Resolve metadata and details of the annotation.
      */
