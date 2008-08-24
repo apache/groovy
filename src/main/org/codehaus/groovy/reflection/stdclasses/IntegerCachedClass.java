@@ -32,7 +32,7 @@ public class IntegerCachedClass extends NumberCachedClass {  // int, Integer
             return argument;
         }
 
-        return Integer.valueOf(((Number) argument).intValue());
+        return new Integer(((Number) argument).intValue());
     }
 
     public boolean isDirectlyAssignable(Object argument) {
