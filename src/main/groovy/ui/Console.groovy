@@ -154,9 +154,7 @@ class Console implements CaretListener {
         shell = new GroovyShell(parent, binding)
     }
 
-
-    void run() {
-        run([
+    static def frameConsoleDelegates = [
             rootContainerDelegate:{
                 frame(
                     title: 'GroovyConsole',
@@ -174,7 +172,10 @@ class Console implements CaretListener {
             },
             menuBarDelegate: {arg->
                 current.JMenuBar = build(arg)}
-        ])
+        ];
+
+    void run() {
+        run(frameConsoleDelegates)
     }
 
     void run(JApplet applet) {
@@ -362,6 +363,7 @@ class Console implements CaretListener {
                 new HashMap(shell.context.variables)))
         consoleController.systemOutInterceptor = systemOutInterceptor
         SwingBuilder swing = new SwingBuilder()
+        frameConsoleDelegates.each {k, v -> swing[k] = v}
         swing.controller = consoleController
         swing.build(ConsoleActions)
         swing.build(ConsoleView)
