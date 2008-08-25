@@ -591,7 +591,7 @@ class Console implements CaretListener {
                 if(beforeExecution) {
                     beforeExecution()
                 }
-                def result = shell.evaluate(record.getTextToRun(selected), name)
+                def result = shell.run(record.getTextToRun(selected), name, [])
                 if(afterExecution) {
                     afterExecution()
                 }
