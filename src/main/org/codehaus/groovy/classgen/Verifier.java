@@ -536,12 +536,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                             arguments.addExpression(new VariableExpression(parameters[i].getName()));
                         }
                     }
-                    if (parameters.length>0 && parameters[parameters.length-1].getType().isArray()) {
-                        // vargs call... better expand the argument:
-                        Expression exp = arguments.getExpression(parameters.length-1);
-                        SpreadExpression se = new SpreadExpression(exp);
-                        arguments.getExpressions().set(parameters.length-1, se);
-                    }
                     action.call(arguments,newParams,method);
                 }
 

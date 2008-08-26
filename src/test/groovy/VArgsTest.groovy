@@ -146,4 +146,42 @@ class VArgsTest extends GroovyTestCase {
     assert m2351(1, 2, 3, 4, 5) == 2
   }
   
+  // see MetaClassHelper#calculateParameterDistance
+
+  def fooAB(Object[] a) {1}     //-> case B
+  def fooAB(a,b,Object[] c) {2} //-> case A
+  void testAB() {
+    assert fooAB(new Object(),new Object()) == 2
+  }
+
+  def fooAC(Object[] a) {1}     //-> case B
+  def fooAC(a,b)        {2}     //-> case C
+  void testAC(){
+    assert fooAC(new Object(),new Object()) == 2
+  }
+
+  def fooAD(Object[] a) {1}     //-> case D
+  def fooAD(a,Object[] b) {2}   //-> case A
+  void testAD(){
+    assert fooAD(new Object()) == 2
+  }
+
+  def fooBC(Object[] a) {1}     //-> case B
+  def fooBC(a,b) {2}            //-> case C
+  void testBC() {  
+    assert fooBC(new Object(),new Object()) == 2
+  }
+
+  def fooBD(Object[] a)   {1}   //-> case B
+  def fooBD(a,Object[] b) {2}   //-> case D
+  void testBD(){
+    assert fooBD(new Object(),new Object()) == 2
+  }
+
+  // GROOVY-3019
+  def foo3019(Object a, int b) {1}
+  def foo3019(Integer a, int b, Object[] arr) {2}
+  void test3019() {
+    assert foo3019(new Integer(1),1)==1
+  }
 }  
