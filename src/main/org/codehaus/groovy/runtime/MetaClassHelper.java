@@ -46,8 +46,17 @@ public class MetaClassHelper {
     public static final Class[] EMPTY_TYPE_ARRAY = {};
     public static final Object[] ARRAY_WITH_NULL = {null};
     protected static final Logger LOG = Logger.getLogger(MetaClassHelper.class.getName());
-    private static final int MAX_ARG_LEN = 12;
-    private static final int VARGS_SHIFT = 28;
+    private static final int  MAX_ARG_LEN = 12;
+    private static final int  
+        OBJECT_SHIFT = 23,    INTERFACE_SHIFT = 0, 
+        PRIMITIVE_SHIFT = 21, VARGS_SHIFT=44; 
+    /* dist binary layout:
+     * 0-20: interface
+     * 21-22: primitive dist
+     * 23-43: object dist
+     * 44-48: vargs penalty
+     */
+    
     public static final Class[] EMPTY_CLASS_ARRAY = new Class[0];
 
     public static boolean accessibleToConstructor(final Class at, final Constructor constructor) {
@@ -267,15 +276,15 @@ public class MetaClassHelper {
         if (parameter.getTheClass() == argument) return 0;
 
         if (parameter.isInterface()) {
-            return getMaximumInterfaceDistance(argument, parameter.getTheClass())<<1;
+            return getMaximumInterfaceDistance(argument, parameter.getTheClass())<<INTERFACE_SHIFT;
         }
 
         long objectDistance = 0;
         if (argument != null) {
             long pd = getPrimitiveDistance(parameter.getTheClass(), argument);
-            if (pd != -1) return pd << 32;
+            if (pd != -1) return pd << PRIMITIVE_SHIFT;
 
-            // add one to dist to be sure interfaces are prefered
+            // add one to dist to be sure interfaces are preferred
             objectDistance += PRIMITIVES.length + 1;
             Class clazz = ReflectionCache.autoboxType(argument);
             while (clazz != null) {
@@ -289,9 +298,9 @@ public class MetaClassHelper {
             }
         } else {
             // choose the distance to Object if a parameter is null
-            // this will mean that Object is prefered over a more
+            // this will mean that Object is preferred over a more
             // specific type
-            // remove one to dist to be sure Object is prefered
+            // remove one to dist to be sure Object is preferred
             objectDistance--;
             Class clazz = parameter.getTheClass();
             if (clazz.isPrimitive()) {
@@ -303,7 +312,7 @@ public class MetaClassHelper {
                 }
             }
         }
-        return objectDistance << 32;
+        return objectDistance << OBJECT_SHIFT;
     }
 
     public static long calculateParameterDistance(Class[] arguments, ParameterTypes pt) {
@@ -322,18 +331,24 @@ public class MetaClassHelper {
         //         noVargsLength because only the last parameter
         //         might be a optional vargs parameter
         //
-        // case B: arguments.lenth>parameters.length
+        //         VArgs penalty: 1l
+        //
+        // case B: arguments.length>parameters.length
         //
         //         In this case all arguments with a index bigger than
         //         paramMinus1 are part of the vargs, so a 
-        //         distance calculaion needs to be done against 
+        //         distance calculation needs to be done against 
         //         parameters[noVargsLength].getComponentType()
+        //
+        //         VArgs penalty: 2l+arguments.length-parameters.length
         //
         // case C: arguments.length==parameters.length && 
         //         isAssignableFrom( parameters[noVargsLength],
         //                           arguments[noVargsLength] )
         //
         //         In this case we have no vargs, so calculate directly
+        //
+        //         VArgs penalty: 0l
         //
         // case D: arguments.length==parameters.length && 
         //         !isAssignableFrom( parameters[noVargsLength],
@@ -342,8 +357,53 @@ public class MetaClassHelper {
         //         In this case we have a vargs case again, we need 
         //         to calculate arguments[noVargsLength] against
         //         parameters[noVargsLength].getComponentType
-        
-        
+        //
+        //         VArgs penalty: 2l
+        //
+        //         This gives: VArgs_penalty(C)<VArgs_penalty(A)
+        //                     VArgs_penalty(A)<VArgs_penalty(D)
+        //                     VArgs_penalty(D)<VArgs_penalty(B)
+
+        /**
+         * In general we want to match the signature that allows us to use
+         * as less arguments for the vargs part as possible. That means the
+         * longer signature usually wins if both signatures are vargs, while
+         * vargs looses always against a signature without vargs.
+         * 
+         *  A vs B :
+         *      def foo(Object[] a) {1}     -> case B
+         *      def foo(a,b,Object[] c) {2} -> case A
+         *      assert foo(new Object(),new Object()) == 2
+         *  --> A preferred over B
+         *  
+         *  A vs C :
+         *      def foo(Object[] a) {1}     -> case B
+         *      def foo(a,b)        {2}     -> case C
+         *      assert foo(new Object(),new Object()) == 2
+         *  --> C preferred over A
+         *  
+         *  A vs D :
+         *      def foo(Object[] a) {1}     -> case D
+         *      def foo(a,Object[] b) {2}   -> case A
+         *      assert foo(new Object()) == 2
+         *  --> A preferred over D
+         *  
+         *  This gives C<A<B,D
+         *  
+         *  B vs C :
+         *      def foo(Object[] a) {1}     -> case B
+         *      def foo(a,b) {2}            -> case C
+         *      assert foo(new Object(),new Object()) == 2
+         *  --> C preferred over B, matches C<A<B,D
+         *  
+         *  B vs D :
+         *      def foo(Object[] a)   {1}   -> case B
+         *      def foo(a,Object[] b) {2}   -> case D
+         *      assert foo(new Object(),new Object()) == 2
+         *  --> D preferred over B
+         *  
+         *  This gives C<A<D<B 
+         */              
         
         // first we calculate all arguments, that are for sure not part
         // of vargs.  Since the minimum for arguments is noVargsLength
@@ -365,7 +425,7 @@ public class MetaClassHelper {
             // case B
             // we give our a vargs penalty for each exceeding argument and iterate
             // by using parameters[noVargsLength].getComponentType()
-            ret += (2+arguments.length-parameters.length)<<VARGS_SHIFT;
+            ret += (2l+arguments.length-parameters.length)<<VARGS_SHIFT; // penalty for vargs
             CachedClass vargsType = ReflectionCache.getCachedClass(parameters[noVargsLength].getTheClass().getComponentType());
             for (int i = noVargsLength; i < arguments.length; i++) {
                 ret += calculateParameterDistance(arguments[i], vargsType);
@@ -374,7 +434,7 @@ public class MetaClassHelper {
             // case A
             // we give a penalty for vargs, since we have no direct
             // match for the last argument
-            ret+=1l<<VARGS_SHIFT;            
+            ret += 1l<<VARGS_SHIFT;
         }  
 
         return ret;
