@@ -20,6 +20,7 @@ import groovy.util.BuilderSupport;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.io.StringReader;
 import java.util.Iterator;
 import java.util.Map;
 
@@ -55,10 +56,37 @@ public class DOMBuilder extends BuilderSupport {
         return new DOMBuilder(factory.newDocumentBuilder());
     }
 
+    /**
+     * Creates a DocumentBuilder and uses it to parse the XML text read from the given reader.
+     * A non-validating, namespace aware parser is used.
+     *
+     * @param reader the reader to read the XML text from
+     * @return the root node of the parsed tree of Nodes
+     * @throws SAXException                 Any SAX exception, possibly wrapping another exception.
+     * @throws IOException                  An IO exception from the parser, possibly from a byte
+     *                                      stream or character stream supplied by the application.
+     * @throws ParserConfigurationException if a DocumentBuilder cannot be created which satisfies
+     *                                      the configuration requested.
+     * @see #parse(Reader, boolean, boolean)
+     */
     public static Document parse(Reader reader) throws SAXException, IOException, ParserConfigurationException {
         return parse(reader, false, true);
     }
 
+    /**
+     * Creates a DocumentBuilder and uses it to parse the XML text read from the given reader, allowing
+     * parser validation and namespace awareness to be controlled.
+     *
+     * @param reader         the reader to read the XML text from
+     * @param validating     whether to validate the XML
+     * @param namespaceAware whether the parser should be namespace aware
+     * @return the root node of the parsed tree of Nodes
+     * @throws SAXException                 Any SAX exception, possibly wrapping another exception.
+     * @throws IOException                  An IO exception from the parser, possibly from a byte
+     *                                      stream or character stream supplied by the application.
+     * @throws ParserConfigurationException if a DocumentBuilder cannot be created which satisfies
+     *                                      the configuration requested.
+     */
     public static Document parse(Reader reader, boolean validating, boolean namespaceAware)
             throws SAXException, IOException, ParserConfigurationException {
         DocumentBuilderFactory factory = FactorySupport.createDocumentBuilderFactory();
@@ -66,6 +94,22 @@ public class DOMBuilder extends BuilderSupport {
         factory.setValidating(validating);
         DocumentBuilder documentBuilder = factory.newDocumentBuilder();
         return documentBuilder.parse(new InputSource(reader));
+    }
+
+    /**
+     * A helper method to parse the given text as XML.
+     *
+     * @param text the XML text to parse
+     * @return the root node of the parsed tree of Nodes
+     * @throws SAXException                 Any SAX exception, possibly wrapping another exception.
+     * @throws IOException                  An IO exception from the parser, possibly from a byte
+     *                                      stream or character stream supplied by the application.
+     * @throws ParserConfigurationException if a DocumentBuilder cannot be created which satisfies
+     *                                      the configuration requested.
+     * @see #parse(Reader)
+     */
+    public Document parseText(String text) throws SAXException, IOException, ParserConfigurationException {
+        return parse(new StringReader(text));
     }
 
     public DOMBuilder(Document document) {
@@ -145,8 +189,6 @@ public class DOMBuilder extends BuilderSupport {
             }
             if (key instanceof String) {
                 String prefix = (String) key;
-
-                //System.out.println("Creating namespace for prefix: " + prefix + " with value: " + value);
 
                 //element.setAttributeNS("http://www.w3.org/XML/1998/namespace", "xmlns:" + prefix, value.toString());
                 element.setAttributeNS("", prefix, value.toString());
