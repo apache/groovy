@@ -26,7 +26,6 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
@@ -44,7 +43,9 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
  * Represents an extent of objects
  *
  * @author Chris Stevenson
- * @author <a href="mailto:james@coredevelopers.net">James Strachan </a>
+ * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
+ * @author Paul King
+ * @author Marc DeXeT
  * @version $Revision$
  */
 public class Sql {
@@ -59,11 +60,6 @@ public class Sql {
     private int resultSetConcurrency = ResultSet.CONCUR_READ_ONLY;
     private int resultSetHoldability = -1;
 
-    /**
-     * let's only warn of using deprecated methods once
-     */
-    private boolean warned;
-
     // store the last row count for executeUpdate
     int updateCount = 0;
 
@@ -71,14 +67,21 @@ public class Sql {
      * allows a closure to be used to configure the statement before its use
      */
     private Closure configureStatement;
+
     /**
      * property for allowing statements caching feature
      */
     private boolean cacheStatements;
+
     /**
-     * Statements cache
+     * Statement cache
      */
-    private HashMap statementCache;
+    private final Map<String, Statement> statementCache = new HashMap<String, Statement>();
+
+    /**
+     * property for allowing connection caching feature
+     */
+    private boolean cacheConnection;
 
     /**
      * Creates a new Sql instance given a JDBC connection URL.
@@ -439,7 +442,7 @@ public class Sql {
      * Constructs an SQL instance using the given Connection. It is the caller's
      * responsibility to close the Connection after the Sql instance has been
      * used. You can do this on the connection object directly or by calling the
-     * {@link Connection#close()}  method.
+     * {@link Connection#close()} method.
      *
      * @param connection the Connection to use
      */
@@ -1137,7 +1140,6 @@ public class Sql {
         return call(sql, params);
     }
 
-
     /**
      * Performs a stored procedure call with the given parameters,
      * calling the closure once with all result objects.
@@ -1160,8 +1162,17 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      */
     public void close() throws SQLException {
-        if (useConnection == null) return;
-        useConnection.close();
+        if (useConnection == null) {
+            log.log(Level.FINEST, "Close operation not supported when using datasets");
+            return;
+        }
+        try {
+            useConnection.close();
+        }
+        catch (SQLException e) {
+            log.log(Level.SEVERE, "Caught exception closing connection: " + e, e);
+            throw e;
+        }
     }
 
     public DataSource getDataSource() {
@@ -1169,23 +1180,45 @@ public class Sql {
     }
 
 
-    public void commit() {
-        if (useConnection == null) return;
+    /**
+     * If this SQL object was created with a Connection then this method commits
+     * the connection. If this SQL object was created from a DataSource then
+     * this method does nothing.
+     *
+     * @throws SQLException if a database access error occurs
+     */
+    public void commit() throws SQLException {
+        if (useConnection == null) {
+            log.log(Level.FINEST, "Commit operation not supported when using datasets");
+            return;
+        }
         try {
-            this.useConnection.commit();
+            useConnection.commit();
         }
         catch (SQLException e) {
             log.log(Level.SEVERE, "Caught exception committing connection: " + e, e);
+            throw e;
         }
     }
 
-    public void rollback() {
-        if (useConnection == null) return;
+    /**
+     * If this SQL object was created with a Connection then this method rolls back
+     * the connection. If this SQL object was created from a DataSource then
+     * this method does nothing.
+     *
+     * @throws SQLException if a database access error occurs
+     */
+    public void rollback() throws SQLException {
+        if (useConnection == null) {
+            log.log(Level.FINEST, "Rollback operation not supported when using datasets");
+            return;
+        }
         try {
-            this.useConnection.rollback();
+            useConnection.rollback();
         }
         catch (SQLException e) {
-            log.log(Level.SEVERE, "Caught exception rollbacking connection: " + e, e);
+            log.log(Level.SEVERE, "Caught exception rolling back connection: " + e, e);
+            throw e;
         }
     }
 
@@ -1355,12 +1388,13 @@ public class Sql {
     /**
      * Appends the parameters to the given statement.
      *
+     * @param params the parameters to append
+     * @param statement the statement
      * @throws SQLException if a database access error occurs
      */
     protected void setParameters(List params, PreparedStatement statement) throws SQLException {
         int i = 1;
-        for (Iterator iter = params.iterator(); iter.hasNext();) {
-            Object value = iter.next();
+        for (Object value : params) {
             setObject(statement, i++, value);
         }
     }
@@ -1369,6 +1403,9 @@ public class Sql {
      * Strategy method allowing derived classes to handle types differently
      * such as for CLOBs etc.
      *
+     * @param statement the statement of interest
+     * @param i the index of the object of interest
+     * @param value the new object value
      * @throws SQLException if a database access error occurs
      */
     protected void setObject(PreparedStatement statement, int i, Object value)
@@ -1397,14 +1434,13 @@ public class Sql {
     }
 
     protected Connection createConnection() throws SQLException {
-        if (isCacheStatements() && useConnection != null) {
+        if ((cacheStatements || cacheConnection) && useConnection != null) {
             return useConnection;
         }
         if (dataSource != null) {
-            //Use a doPrivileged here as many different properties need to be
-            // read, and the policy
-            //shouldn't have to list them all.
-            Connection con = null;
+            // Use a doPrivileged here as many different properties need to be
+            // read, and the policy shouldn't have to list them all.
+            Connection con;
             try {
                 con = (Connection) AccessController.doPrivileged(new PrivilegedExceptionAction() {
                     public Object run() throws SQLException {
@@ -1420,7 +1456,7 @@ public class Sql {
                     throw (RuntimeException) e;
                 }
             }
-            if (isCacheStatements()) {
+            if (cacheStatements || cacheConnection) {
                 useConnection = con;
             }
             return con;
@@ -1435,7 +1471,7 @@ public class Sql {
                 results.close();
             }
             catch (SQLException e) {
-                log.log(Level.SEVERE, "Caught exception closing resultSet: " + e, e);
+                log.log(Level.INFO, "Caught exception closing resultSet: " + e, e);
             }
         }
         closeResources(connection, statement);
@@ -1448,7 +1484,7 @@ public class Sql {
                 statement.close();
             }
             catch (SQLException e) {
-                log.log(Level.SEVERE, "Caught exception closing statement: " + e, e);
+                log.log(Level.INFO, "Caught exception closing statement: " + e, e);
             }
         }
         if (dataSource != null) {
@@ -1456,7 +1492,7 @@ public class Sql {
                 connection.close();
             }
             catch (SQLException e) {
-                log.log(Level.SEVERE, "Caught exception closing connection: " + e, e);
+                log.log(Level.INFO, "Caught exception closing connection: " + e, e);
             }
         }
     }
@@ -1473,17 +1509,15 @@ public class Sql {
     }
 
     /**
-     * Enables statements caching.</br>
+     * Enables statement caching.</br>
      * if <i>b</i> is true, cache is created and all created prepared statements will be cached.</br>
      * if <i>b</i> is false, all cached statements will be properly closed.
      *
-     * @param b
+     * @param cacheStatements the new value
      */
-    public synchronized void setCacheStatements(boolean b) {
-        cacheStatements = b;
-        if (cacheStatements && statementCache == null) {
-            createStatementCache();
-        } else if (!cacheStatements && statementCache != null) {
+    public synchronized void setCacheStatements(boolean cacheStatements) {
+        this.cacheStatements = cacheStatements;
+        if (!cacheStatements) {
             clearStatementCache();
         }
     }
@@ -1496,12 +1530,31 @@ public class Sql {
     }
 
     /**
-     * Caches every created preparedStatement in closure <i>closure</i></br>
-     * Every cached preparedStatement is properly closed after closure has been called.
+     * Caches the connection used while the closure is active.
      *
-     * @param closure
-     * @throws SQLException
-     * @see {@link #setCacheStatements(boolean)}
+     * @param closure the given closure
+     * @throws SQLException if a database error occurs
+     */
+    public synchronized void cacheConnection(Closure closure) throws SQLException {
+        cacheConnection = true;
+        Connection connection = null;
+        try {
+            connection = createConnection();
+            closure.call();
+        }
+        finally {
+            cacheConnection = false;
+            closeResources(connection, null);
+        }
+    }
+
+    /**
+     * Caches every created preparedStatement in closure <i>closure</i></br>
+     * Every cached preparedStatement is closed after closure has been called.
+     *
+     * @param closure the given closure
+     * @throws SQLException if a database error occurs
+     * @see #setCacheStatements(boolean)
      */
     public synchronized void cacheStatements(Closure closure) throws SQLException {
         setCacheStatements(true);
@@ -1517,26 +1570,21 @@ public class Sql {
     }
 
     private synchronized void clearStatementCache() {
-        if (statementCache != null) {
+        if (!statementCache.isEmpty()) {
             for (Object o : statementCache.values())
                 try {
                     ((Statement) o).close();
                 } catch (SQLException e) {
+                    log.log(Level.FINEST, "Failed to close statement. Already closed?", e);
                 }
             statementCache.clear();
         }
     }
 
-    private synchronized void createStatementCache() {
-        if (statementCache == null) {
-            statementCache = new HashMap();
-        }
-    }
-
     private Statement getStatement(Connection connection, String sql) throws SQLException {
         Statement stmt;
-        if (isCacheStatements()) {
-            stmt = (Statement) statementCache.get(sql);
+        if (cacheStatements) {
+            stmt = statementCache.get(sql);
             if (stmt == null) {
                 synchronized (statementCache) {
                     stmt = createStatement(connection);
@@ -1551,7 +1599,7 @@ public class Sql {
 
     private PreparedStatement getPreparedStatement(Connection connection, String sql, int returnGeneratedKeys) throws SQLException {
         PreparedStatement pStmt;
-        if (isCacheStatements()) {
+        if (cacheStatements) {
             pStmt = (PreparedStatement) statementCache.get(sql);
             if (pStmt == null) {
                 synchronized (statementCache) {

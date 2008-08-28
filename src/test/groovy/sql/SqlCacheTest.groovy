@@ -87,38 +87,35 @@ class SqlCacheTest extends GroovyTestCase {
         }
     }
 
-    /**
-     * Test with saveOn
-     * Statements are prepared only if need be.
-     * There's 3 different statements and only 3 calls to prepareStatement
-     */
     void testCachePreparedStatements() {
         prepareStatementCallCounter = 0
         prepareStatementExpectedCall = 3
         sql.cacheStatements {
-            sql.eachRow("SELECT * FROM PERSON", []) { r ->
-                sql.eachRow("SELECT * FROM PERSON_FOOD WHERE personid = ?", [r["id"]]) { pf ->
-                    sql.firstRow("SELECT * FROM FOOD WHERE id = ?", [pf["foodid"]])
-                }
-            }
+            invokeQuery()
         }
-        assert prepareStatementCallCounter == 3
+        assert prepareStatementCallCounter == 3 // 3 diff statements
     }
 
-    /**
-     * test without saveOn.
-     * Statements are prepared each time.
-     * There's 3 different statements but more than 3 calls to
-     * prepareStatement
-     */
-    void testNotCacheStatements() {
+    void testCacheConection() {
         prepareStatementCallCounter = 0
-        sql.eachRow("SELECT * FROM PERSON", []) {r ->
-            sql.eachRow("SELECT * FROM PERSON_FOOD WHERE personid = ?", [r["id"]]) {pf ->
-                sql.firstRow("SELECT * FROM FOOD WHERE id = ?", [pf["foodid"]])
-            }
+        sql.cacheConnection {
+            invokeQuery()
         }
         assert prepareStatementCallCounter == 13
+    }
+
+    void testNotCacheStatements() {
+        prepareStatementCallCounter = 0
+        invokeQuery()
+        assert prepareStatementCallCounter == 13
+    }
+
+    private invokeQuery() {
+        sql.eachRow("SELECT * FROM PERSON", []) { person ->
+            sql.eachRow("SELECT * FROM PERSON_FOOD WHERE personid = ?", [person.id]) { food ->
+                sql.firstRow("SELECT * FROM FOOD WHERE id = ?", [food.foodid])
+            }
+        }
     }
 
     /**
@@ -131,7 +128,7 @@ class SqlCacheTest extends GroovyTestCase {
      * prepareStatementCallCounter must be increased.
      *
      */
-    void testCaching() {
+    void testManuallyControlledCaching() {
         sql.cacheStatements = true
         sql.firstRow("SELECT * FROM PERSON WHERE lastname NOT like ? ", ['%a%'])
         assert prepareStatementCallCounter == 1
@@ -159,7 +156,7 @@ class SqlCacheTest extends GroovyTestCase {
     }
 
     /**
-     * @see #testCaching()
+     * @see #testManuallyControlledCaching()
      */
     void testNoCaching() {
         // preparedStatements
@@ -181,7 +178,7 @@ class SqlCacheTest extends GroovyTestCase {
      * Use a wrapped delegate for counting javax.sql.DataSource.getConnection() calls.
      * When caching is off, javax.sql.DataSource.getConnection() must be called each time.
      */
-    void testCachingWithDataSource() {
+    void testManuallyControlledCachingWithDataSource() {
         def connectionCallNumber = 0
         def methodOverride = [getConnection:{connectionCallNumber++; ds.getConnection()}]
         DataSource wrappedDs = ProxyGenerator.INSTANCE.instantiateDelegate(methodOverride, [DataSource], ds)
@@ -202,36 +199,46 @@ class SqlCacheTest extends GroovyTestCase {
         assert connectionCallNumber == 3
     }
 
-    /**
-     * Tests #1 Exception is not swallowed
-     */
-    void testException() {
+    void testExceptionIsNotSwallowedCachingStatements() {
+        checkExceptionIsNotSwallowedCachingStatements(new Exception('test.exception'))
+    }
+
+    void testSQLExceptionIsNotSwallowedCachingStatements() {
+        checkExceptionIsNotSwallowedCachingStatements(new SQLException('test.exception'))
+    }
+
+    private checkExceptionIsNotSwallowedCachingStatements(Throwable t) {
         try {
             sql.cacheStatements {
                 sql.eachRow("SELECT * FROM PERSON", []) {
-                    throw new Exception('test.exception')
+                    throw t
                 }
             }
             fail('Exception must be raised !')
         } catch (Exception e) {
-            assert e.message == 'test.exception'
+            assert e.message == t.message
             assert !sql.cacheStatements
         }
     }
 
-    /**
-     * Tests #1 SQLException is not swallowed
-     */
-    void testSQLException() {
+    void testExceptionIsNotSwallowedCachingConnection() {
+        checkExceptionIsNotSwallowedCachingConnection(new Exception('test.exception'))
+    }
+
+    void testSQLExceptionIsNotSwallowedCachingConnection() {
+        checkExceptionIsNotSwallowedCachingConnection(new SQLException('test.exception'))
+    }
+
+    private checkExceptionIsNotSwallowedCachingConnection(Throwable t) {
         try {
-            sql.cacheStatements {
+            sql.cacheConnection {
                 sql.eachRow("SELECT * FROM PERSON", []) {
-                    throw new SQLException('test.exception')
+                    throw t
                 }
             }
             fail('Exception must be raised !')
         } catch (Exception e) {
-            assert e.message == 'test.exception'
+            assert e.message == t.message
             assert !sql.cacheStatements
         }
     }
