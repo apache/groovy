@@ -81,9 +81,9 @@ public interface MetaClassRegistry {
     void removeMetaClassRegistryChangeEventListener(MetaClassRegistryChangeEventListener listener);
 
     /**
-     * gets all registered ConstantMetaClassChangeListener
+     * Returns all registered ConstantMetaClassChangeListener objects.
      *
-     * @returns an array containing all change listener
+     * @return an array containing all change listener
      */
     MetaClassRegistryChangeEventListener[] getMetaClassRegistryChangeEventListeners();
 
@@ -117,13 +117,13 @@ public interface MetaClassRegistry {
 	       try {
 	           final Class customMetaClass = Class.forName("groovy.runtime.metaclass." + theClass.getName() + "MetaClass");
                if (DelegatingMetaClass.class.isAssignableFrom(customMetaClass)) {
-                   final Constructor customMetaClassConstructor = customMetaClass.getConstructor(new Class[]{MetaClass.class});
+                   final Constructor customMetaClassConstructor = customMetaClass.getConstructor(MetaClass.class);
                    MetaClass normalMetaClass = createNormalMetaClass(theClass, registry);
-                   return (MetaClass)customMetaClassConstructor.newInstance(new Object[]{normalMetaClass});
+                   return (MetaClass)customMetaClassConstructor.newInstance(normalMetaClass);
                }
                else {
-                   final Constructor customMetaClassConstructor = customMetaClass.getConstructor(new Class[]{MetaClassRegistry.class, Class.class});
-                   return (MetaClass)customMetaClassConstructor.newInstance(new Object[]{registry, theClass});
+                   final Constructor customMetaClassConstructor = customMetaClass.getConstructor(MetaClassRegistry.class, Class.class);
+                   return (MetaClass)customMetaClassConstructor.newInstance(registry, theClass);
                }
            } catch (final ClassNotFoundException e) {
                return createNormalMetaClass(theClass, registry);
