@@ -543,8 +543,19 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return node;
     }
 
-    public boolean hasMethod(String name, Parameter[] parameters) {
+    /**
+     * @see #getDeclaredMethod(String, Parameter[])
+     */
+    public boolean hasDeclaredMethod(String name, Parameter[] parameters) {
         MethodNode other = getDeclaredMethod(name, parameters);
+        return other != null;
+    }
+
+    /**
+     * @see #getMethod(String, Parameter[])
+     */
+    public boolean hasMethod(String name, Parameter[] parameters) {
+        MethodNode other = getMethod(name, parameters);
         return other != null;
     }
 
@@ -699,6 +710,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     /**
+     * Finds a method matching the given name and parameters in this class.
+     *
      * @return the method matching the given name and parameters or null
      */
     public MethodNode getDeclaredMethod(String name, Parameter[] parameters) {
@@ -713,7 +726,25 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     /**
-     * @return true if this node is derived from the given class node
+     * Finds a method matching the given name and parameters in this class
+     * or any parent class.
+     *
+     * @return the method matching the given name and parameters or null
+     */
+    public MethodNode getMethod(String name, Parameter[] parameters) {
+        List list = getMethods(name);
+        for (Iterator iter = list.iterator(); iter.hasNext();) {
+            MethodNode method = (MethodNode) iter.next();
+            if (parametersEqual(method.getParameters(), parameters)) {
+                return method;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * @param type the ClassNode of interest
+     * @return true if this node is derived from the given ClassNode
      */
     public boolean isDerivedFrom(ClassNode type) {
         if (type.equals(ClassHelper.OBJECT_TYPE)) return true;
@@ -787,7 +818,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      */
     public ClassNode getSuperClass() {
         if (!lazyInitDone && !isResolved()) {
-            throw new GroovyBugError("Classnode#getSuperClass for "+getName()+" called before class resolving");
+            throw new GroovyBugError("ClassNode#getSuperClass for "+getName()+" called before class resolving");
         }
         ClassNode sn = redirect().getUnresolvedSuperClass();
         if (sn!=null) sn=sn.redirect();
