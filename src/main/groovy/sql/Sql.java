@@ -71,6 +71,14 @@ public class Sql {
      * allows a closure to be used to configure the statement before its use
      */
     private Closure configureStatement;
+    /**
+     * property for allowing statements caching feature
+     */
+    private boolean cacheStatements;
+    /**
+     * Statements cache
+     */
+    private HashMap statementCache;
 
     /**
      * Creates a new Sql instance given a JDBC connection URL.
@@ -464,7 +472,7 @@ public class Sql {
      */
     public void query(String sql, Closure closure) throws SQLException {
         Connection connection = createConnection();
-        Statement statement = createConnection(connection);
+        Statement statement = getStatement(connection, sql);
         configure(statement);
         ResultSet results = null;
         try {
@@ -481,7 +489,7 @@ public class Sql {
         }
     }
 
-    private Statement createConnection(Connection connection) throws SQLException {
+    private Statement createStatement(Connection connection) throws SQLException {
         if (resultSetHoldability == -1) {
             return connection.createStatement(resultSetType, resultSetConcurrency);
         }
@@ -503,7 +511,7 @@ public class Sql {
         ResultSet results = null;
         try {
             log.fine(sql);
-            statement = connection.prepareStatement(sql);
+            statement = getPreparedStatement(connection, sql);
             setParameters(params, statement);
             configure(statement);
             results = statement.executeQuery();
@@ -522,7 +530,7 @@ public class Sql {
      * Performs the given SQL query calling the closure with the result set.
      *
      * @param gstring a GString containing the SQL query with embedded params
-     * @param closure  called for each row with a GroovyResultSet
+     * @param closure called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      */
     public void query(GString gstring, Closure closure) throws SQLException {
@@ -535,8 +543,8 @@ public class Sql {
      * Performs the given SQL query calling the closure with each row of the
      * result set.
      *
-     * @param sql      the sql statement
-     * @param closure  called for each row with a GroovyResultSet
+     * @param sql     the sql statement
+     * @param closure called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      */
     public void eachRow(String sql, Closure closure) throws SQLException {
@@ -553,7 +561,7 @@ public class Sql {
      */
     public void eachRow(String sql, Closure metaClosure, Closure rowClosure) throws SQLException {
         Connection connection = createConnection();
-        Statement statement = createConnection(connection);
+        Statement statement = getStatement(connection, sql);
         configure(statement);
         ResultSet results = null;
         try {
@@ -588,7 +596,7 @@ public class Sql {
         ResultSet results = null;
         try {
             log.fine(sql);
-            statement = connection.prepareStatement(sql);
+            statement = getPreparedStatement(connection, sql);
             setParameters(params, statement);
             configure(statement);
             results = statement.executeQuery();
@@ -618,30 +626,6 @@ public class Sql {
         List params = getParameters(gstring);
         String sql = asSql(gstring, params);
         eachRow(sql, params, closure);
-    }
-
-    /**
-     * @deprecated please use eachRow instead
-     */
-    public void queryEach(String sql, Closure closure) throws SQLException {
-        warnDeprecated();
-        eachRow(sql, closure);
-    }
-
-    /**
-     * @deprecated please use eachRow instead
-     */
-    public void queryEach(String sql, List params, Closure closure) throws SQLException {
-        warnDeprecated();
-        eachRow(sql, params, closure);
-    }
-
-    /**
-     * @deprecated please use eachRow instead
-     */
-    public void queryEach(GString gstring, Closure closure) throws SQLException {
-        warnDeprecated();
-        eachRow(gstring, closure);
     }
 
     /**
@@ -679,7 +663,7 @@ public class Sql {
     public List rows(String sql, Closure metaClosure) throws SQLException {
         List results = new ArrayList();
         Connection connection = createConnection();
-        Statement statement = createConnection(connection);
+        Statement statement = getStatement(connection, sql);
         configure(statement);
         ResultSet rs = null;
         try {
@@ -715,7 +699,7 @@ public class Sql {
         ResultSet rs = null;
         try {
             log.fine(sql);
-            statement = connection.prepareStatement(sql);
+            statement = getPreparedStatement(connection, sql);
             setParameters(params, statement);
             configure(statement);
             rs = statement.executeQuery();
@@ -778,7 +762,7 @@ public class Sql {
     /**
      * Executes the given piece of SQL.
      *
-     * @param sql    the SQL statement
+     * @param sql the SQL to execute
      * @return <code>true</code> if the first result is a <code>ResultSet</code>
      *         object; <code>false</code> if it is an update count or there are
      *         no results
@@ -789,7 +773,7 @@ public class Sql {
         Statement statement = null;
         try {
             log.fine(sql);
-            statement = createConnection(connection);
+            statement = getStatement(connection, sql);
             configure(statement);
             boolean isResultSet = statement.execute(sql);
             this.updateCount = statement.getUpdateCount();
@@ -819,7 +803,7 @@ public class Sql {
         PreparedStatement statement = null;
         try {
             log.fine(sql);
-            statement = connection.prepareStatement(sql);
+            statement = getPreparedStatement(connection, sql);
             setParameters(params, statement);
             configure(statement);
             boolean isResultSet = statement.execute();
@@ -864,7 +848,7 @@ public class Sql {
         Statement statement = null;
         try {
             log.fine(sql);
-            statement = createConnection(connection);
+            statement = getStatement(connection, sql);
             configure(statement);
             boolean hasResultSet = statement.execute(sql, Statement.RETURN_GENERATED_KEYS);
 
@@ -919,7 +903,7 @@ public class Sql {
             log.fine(sql);
 
             // Prepare a statement for the SQL and then execute it.
-            statement = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
+            statement = getPreparedStatement(connection, sql, Statement.RETURN_GENERATED_KEYS);
             setParameters(params, statement);
             configure(statement);
             this.updateCount = statement.executeUpdate();
@@ -995,7 +979,7 @@ public class Sql {
     /**
      * Executes the given SQL update.
      *
-     * @param sql    the SQL statement
+     * @param sql the SQL to execute
      * @return the number of rows updated or 0 for SQL statements that return nothing
      * @throws SQLException if a database access error occurs
      */
@@ -1004,7 +988,7 @@ public class Sql {
         Statement statement = null;
         try {
             log.fine(sql);
-            statement = createConnection(connection);
+            statement = getStatement(connection, sql);
             configure(statement);
             this.updateCount = statement.executeUpdate(sql);
             return this.updateCount;
@@ -1031,7 +1015,7 @@ public class Sql {
         PreparedStatement statement = null;
         try {
             log.fine(sql);
-            statement = connection.prepareStatement(sql);
+            statement = getPreparedStatement(connection, sql);
             setParameters(params, statement);
             configure(statement);
             this.updateCount = statement.executeUpdate();
@@ -1062,7 +1046,7 @@ public class Sql {
     /**
      * Performs a stored procedure call.
      *
-     * @param sql    the SQL statement
+     * @param sql the SQL statement
      * @return the number of rows updated or 0 for SQL statements that return nothing
      * @throws SQLException if a database access error occurs
      */
@@ -1115,8 +1099,7 @@ public class Sql {
             List results = new ArrayList();
             int indx = 0;
             int inouts = 0;
-            for (Iterator iter = params.iterator(); iter.hasNext();) {
-                Object value = iter.next();
+            for (Object value : params) {
                 if (value instanceof OutParameter) {
                     if (value instanceof ResultSetOutParameter) {
                         results.add(CallResultSet.getImpl(statement, indx));
@@ -1160,7 +1143,7 @@ public class Sql {
      * calling the closure once with all result objects.
      *
      * @param gstring a GString containing the SQL query with embedded params
-     * @param closure  called for each row with a GroovyResultSet
+     * @param closure called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      */
     public void call(GString gstring, Closure closure) throws Exception {
@@ -1177,9 +1160,8 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      */
     public void close() throws SQLException {
-        if (useConnection != null) {
-            useConnection.close();
-        }
+        if (useConnection == null) return;
+        useConnection.close();
     }
 
     public DataSource getDataSource() {
@@ -1188,15 +1170,17 @@ public class Sql {
 
 
     public void commit() {
+        if (useConnection == null) return;
         try {
             this.useConnection.commit();
         }
         catch (SQLException e) {
-            log.log(Level.SEVERE, "Caught exception commiting connection: " + e, e);
+            log.log(Level.SEVERE, "Caught exception committing connection: " + e, e);
         }
     }
 
     public void rollback() {
+        if (useConnection == null) return;
         try {
             this.useConnection.rollback();
         }
@@ -1240,7 +1224,7 @@ public class Sql {
 
     /**
      * @param gstring a GString containing the SQL query with embedded params
-     * @param values the values to embed
+     * @param values  the values to embed
      * @return the SQL version of the given query using ? instead of any
      *         parameter
      */
@@ -1365,7 +1349,7 @@ public class Sql {
      * @return extracts the parameters from the expression as a List
      */
     protected List getParameters(GString gstring) {
-        return new ArrayList(Arrays.asList(gstring.getValues()));
+        return new ArrayList<Object>(Arrays.asList(gstring.getValues()));
     }
 
     /**
@@ -1413,6 +1397,9 @@ public class Sql {
     }
 
     protected Connection createConnection() throws SQLException {
+        if (isCacheStatements() && useConnection != null) {
+            return useConnection;
+        }
         if (dataSource != null) {
             //Use a doPrivileged here as many different properties need to be
             // read, and the policy
@@ -1433,6 +1420,9 @@ public class Sql {
                     throw (RuntimeException) e;
                 }
             }
+            if (isCacheStatements()) {
+                useConnection = con;
+            }
             return con;
         } else {
             return useConnection;
@@ -1452,6 +1442,7 @@ public class Sql {
     }
 
     protected void closeResources(Connection connection, Statement statement) {
+        if (isCacheStatements()) return;
         if (statement != null) {
             try {
                 statement.close();
@@ -1470,13 +1461,6 @@ public class Sql {
         }
     }
 
-    private void warnDeprecated() {
-        if (!warned) {
-            warned = true;
-            log.warning("queryEach() is deprecated, please use eachRow() instead");
-        }
-    }
-
     /**
      * Provides a hook to be able to configure JDBC statements, such as to configure
      *
@@ -1486,5 +1470,110 @@ public class Sql {
         if (configureStatement != null) {
             configureStatement.call(statement);
         }
+    }
+
+    /**
+     * Enables statements caching.</br>
+     * if <i>b</i> is true, cache is created and all created prepared statements will be cached.</br>
+     * if <i>b</i> is false, all cached statements will be properly closed.
+     *
+     * @param b
+     */
+    public synchronized void setCacheStatements(boolean b) {
+        cacheStatements = b;
+        if (cacheStatements && statementCache == null) {
+            createStatementCache();
+        } else if (!cacheStatements && statementCache != null) {
+            clearStatementCache();
+        }
+    }
+
+    /**
+     * @return boolean    true if cache is enabled
+     */
+    public boolean isCacheStatements() {
+        return cacheStatements;
+    }
+
+    /**
+     * Caches every created preparedStatement in closure <i>closure</i></br>
+     * Every cached preparedStatement is properly closed after closure has been called.
+     *
+     * @param closure
+     * @throws SQLException
+     * @see {@link #setCacheStatements(boolean)}
+     */
+    public synchronized void cacheStatements(Closure closure) throws SQLException {
+        setCacheStatements(true);
+        Connection connection = null;
+        try {
+            connection = createConnection();
+            closure.call();
+        }
+        finally {
+            setCacheStatements(false);
+            closeResources(connection, null);
+        }
+    }
+
+    private synchronized void clearStatementCache() {
+        if (statementCache != null) {
+            for (Object o : statementCache.values())
+                try {
+                    ((Statement) o).close();
+                } catch (SQLException e) {
+                }
+            statementCache.clear();
+        }
+    }
+
+    private synchronized void createStatementCache() {
+        if (statementCache == null) {
+            statementCache = new HashMap();
+        }
+    }
+
+    private Statement getStatement(Connection connection, String sql) throws SQLException {
+        Statement stmt;
+        if (isCacheStatements()) {
+            stmt = (Statement) statementCache.get(sql);
+            if (stmt == null) {
+                synchronized (statementCache) {
+                    stmt = createStatement(connection);
+                    statementCache.put(sql, stmt);
+                }
+            }
+        } else {
+            stmt = createStatement(connection);
+        }
+        return stmt;
+    }
+
+    private PreparedStatement getPreparedStatement(Connection connection, String sql, int returnGeneratedKeys) throws SQLException {
+        PreparedStatement pStmt;
+        if (isCacheStatements()) {
+            pStmt = (PreparedStatement) statementCache.get(sql);
+            if (pStmt == null) {
+                synchronized (statementCache) {
+                    pStmt = createPreparedStatement(connection, sql, returnGeneratedKeys);
+                    statementCache.put(sql, pStmt);
+                }
+            }
+        } else {
+            pStmt = createPreparedStatement(connection, sql, returnGeneratedKeys);
+        }
+        return pStmt;
+    }
+
+    private PreparedStatement createPreparedStatement(Connection connection, String sql, int returnGeneratedKeys) throws SQLException {
+        if (returnGeneratedKeys != 0) {
+            return connection.prepareStatement(sql, returnGeneratedKeys);
+        } else {
+            return connection.prepareStatement(sql);
+        }
+    }
+
+    private PreparedStatement getPreparedStatement(Connection connection, String sql) throws SQLException {
+        return getPreparedStatement(connection, sql, 0);
     }
 }
