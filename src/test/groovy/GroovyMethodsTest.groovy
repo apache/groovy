@@ -50,6 +50,15 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         assert "one${two}".isCase("${one}two")
     }
 
+    void testSpreadDot() {
+        def animals = ['cat', 'dog']
+        assert animals*.size() == [3, 3]
+        animals = [1:'cat', 2:'dog']
+        assert animals.values()*.size() == [3, 3]
+        animals = ['cat', 'dog'] as Vector
+        assert animals.elements()*.size() == [3, 3]
+    }
+
     void testCollectAll() {
         def animalLists= [["ant", "mouse", "elephant"], ["deer", "monkey"]]
         assert animalLists*.size() == [3, 2]

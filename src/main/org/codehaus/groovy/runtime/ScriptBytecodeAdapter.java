@@ -754,6 +754,7 @@ public class ScriptBytecodeAdapter {
         return (receiver instanceof Collection)
           || (receiver instanceof Map)
           || (receiver instanceof Iterator)
+          || (receiver instanceof Enumeration)
           || receiver.getClass().isArray();
     }
 }
