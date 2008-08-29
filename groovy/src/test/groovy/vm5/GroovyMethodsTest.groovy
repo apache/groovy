@@ -56,6 +56,14 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert Language.French in Language.English..Language.Spanish
     }
 
+    void testThreadNaming() {
+        def t = Thread.start("MyNamedThread"){
+            sleep 100 // give ourselves time to find the thread
+        }
+        assert Thread.allStackTraces.keySet().any{ thread -> thread.name == 'MyNamedThread' }
+        t.join()
+    }
+
     void testStringBuilderPlusPutAtSizeLeftShift() {
         def sb = new StringBuilder('foo')
         assert sb + 'bar' == 'foobar'
