@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,19 +16,18 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
-
 import java.util.regex.Matcher;
-
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 /**
- * This class defines all the new static groovy methods which appear on normal JDK
- * classes inside the Groovy environment. Static methods are used with the
+ * This class defines all the new static groovy methods which appear on normal
+ * JDK classes inside the Groovy environment. Static methods are used with the
  * first parameter as the destination class.
  *
  * @author Guillaume Laforge
  * @author Dierk Koenig
  * @author Joachim Baumann
+ * @author Paul King
  * @version $Revision$
  */
 public class DefaultGroovyStaticMethods {
@@ -36,49 +35,77 @@ public class DefaultGroovyStaticMethods {
     /**
      * Start a Thread with the given closure as a Runnable instance.
      *
-     * @param self the thread on which the method is called
+     * @param self    placeholder variable used by Groovy categories; ignored for default static methods
      * @param closure the Runnable closure
      * @return the started thread
      */
     public static Thread start(Thread self, Closure closure) {
-        Thread thread = new Thread(closure);
-        thread.start();
-        return thread;
+        return createThread(null, false, closure);
+    }
+
+    /**
+     * Start a Thread with a given name and the given closure
+     * as a Runnable instance.
+     *
+     * @param self    placeholder variable used by Groovy categories; ignored for default static methods
+     * @param name    the name to give the thread
+     * @param closure the Runnable closure
+     * @return the started thread
+     */
+    public static Thread start(Thread self, String name, Closure closure) {
+        return createThread(name, false, closure);
     }
 
     /**
      * Start a daemon Thread with the given closure as a Runnable instance.
      *
-     * @param self the thread on which the method is called
+     * @param self    placeholder variable used by Groovy categories; ignored for default static methods
      * @param closure the Runnable closure
      * @return the started thread
      */
     public static Thread startDaemon(Thread self, Closure closure) {
-        Thread thread = new Thread(closure);
-        thread.setDaemon(true);
+        return createThread(null, true, closure);
+    }
+
+    /**
+     * Start a daemon Thread with a given name and the given closure as
+     * a Runnable instance.
+     *
+     * @param self    placeholder variable used by Groovy categories; ignored for default static methods
+     * @param name    the name to give the thread
+     * @param closure the Runnable closure
+     * @return the started thread
+     */
+    public static Thread startDaemon(Thread self, String name, Closure closure) {
+        return createThread(name, true, closure);
+    }
+
+    private static Thread createThread(String name, boolean daemon, Closure closure) {
+        Thread thread = name != null ? new Thread(closure, name) : new Thread(closure);
+        if (daemon) thread.setDaemon(true);
         thread.start();
         return thread;
     }
 
     /**
-     * Get the last hidden matcher that system used to do a match.
-     * 
-     * @param matcher
+     * Get the last hidden matcher that the system used to do a match.
+     *
+     * @param self placeholder variable used by Groovy categories; ignored for default static methods
      * @return the last regex matcher
      */
-    public static Matcher getLastMatcher(Matcher matcher) {
+    public static Matcher getLastMatcher(Matcher self) {
         return RegexSupport.getLastMatcher();
     }
 
     /**
-     * This method is used by both sleep() methods to imlement sleeping
+     * This method is used by both sleep() methods to implement sleeping
      * for the given time even if interrupted
-     * @param object receiver
-     * @param millis the number of milliseconds to sleep
+     *
+     * @param millis  the number of milliseconds to sleep
      * @param closure optional closure called when interrupted
      *                as long as the closure returns false the sleep continues
      */
-    protected static void sleepImpl(Object object, long millis, Closure closure) {
+    private static void sleepImpl(long millis, Closure closure) {
         long start = System.currentTimeMillis();
         long rest = millis;
         long current;
@@ -100,23 +127,23 @@ public class DefaultGroovyStaticMethods {
 
     /**
      * Sleep for so many milliseconds, even if interrupted.
-     * 
-     * @param object receiver
+     *
+     * @param self         placeholder variable used by Groovy categories; ignored for default static methods
      * @param milliseconds the number of milliseconds to sleep
      */
-    public static void sleep(Object object, long milliseconds) {
-	sleepImpl(object, milliseconds, null);
+    public static void sleep(Object self, long milliseconds) {
+        sleepImpl(milliseconds, null);
     }
 
     /**
-     * Sleep for so many milliseconds
-     * 
-     * @param object receiver
+     * Sleep for so many milliseconds, using a given closure for interrupt processing.
+     *
+     * @param self         placeholder variable used by Groovy categories; ignored for default static methods
      * @param milliseconds the number of milliseconds to sleep
-     * @param onInterrupt interrupt handler, InterruptedException is passed to the Closure
-     *                    as long as it returns false, the sleep continues
+     * @param onInterrupt  interrupt handler, InterruptedException is passed to the Closure
+     *                     as long as it returns false, the sleep continues
      */
-    public static void sleep(Object object, long milliseconds, Closure onInterrupt){
-	sleepImpl(object, milliseconds, onInterrupt);
+    public static void sleep(Object self, long milliseconds, Closure onInterrupt) {
+        sleepImpl(milliseconds, onInterrupt);
     }
 }
