@@ -73,6 +73,14 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert result == 'fooabcxyz'
     }
 
+    void testThreadNaming() {
+        def t = Thread.start("MyNamedThread"){
+            sleep 100 // give ourselves time to find the thread
+        }
+        assert Thread.allStackTraces.keySet().any{ thread -> thread.name == 'MyNamedThread' }
+        t.join()
+    }
+
     void testDefiningQueue() {
         def result = [1, 2, 3, 4, 5] as Queue
         assert result instanceof Queue
