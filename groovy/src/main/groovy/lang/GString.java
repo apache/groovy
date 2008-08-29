@@ -43,15 +43,6 @@ public abstract class GString extends GroovyObjectSupport implements Comparable,
 
     static final long serialVersionUID = -2638020355892246323L;
 
-    /**
-     * A GString containing a single empty String and no values.
-     */
-//    public static transient final GString EMPTY = new GString(new Object[0]) {
-//        public String[] getStrings() {
-//            return new String[]{""};
-//        }
-//    };
-
     private Object[] values;
 
     public GString(Object values) {
