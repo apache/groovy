@@ -2657,7 +2657,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * For an example using no group match, <code><pre>
      *    def p = /ab[d|f]/
      *    def m = "abcabdabeabf" =~ p
-     *    for (i in 0..<m.count) {
+     *    for (i in 0..&lt;m.count) {
      *        println( "m.groupCount() = " + m.groupCount())
      *        println( "  " + i + ": " + m[i] )   // m[i] is a String
      *    }
@@ -2666,7 +2666,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * For an example using group matches, <code><pre>
      *    def p = /(?:ab([c|d|e|f]))/
      *    def m = "abcabdabeabf" =~ p
-     *    for (i in 0..<m.count) {
+     *    for (i in 0..&lt;m.count) {
      *        println( "m.groupCount() = " + m.groupCount())
      *        println( "  " + i + ": " + m[i] )   // m[i] is a List
      *    }
@@ -5866,7 +5866,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self   a String to be repeated
      * @param factor the number of times the String should be repeated
      * @return a String composed of a repetition
-     * @throws IllegalArgumentException if the number of repeatition is &lt; 0
+     * @throws IllegalArgumentException if the number of repetitions is &lt; 0
      */
     public static String multiply(String self, Number factor) {
         int size = factor.intValue();
