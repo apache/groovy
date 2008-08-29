@@ -5752,7 +5752,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self   a String to be repeated
      * @param factor the number of times the String should be repeated
      * @return a String composed of a repetition
-     * @throws IllegalArgumentException if the number of repeatition is &lt; 0
+     * @throws IllegalArgumentException if the number of repetitions is &lt; 0
      */
     public static String multiply(String self, Number factor) {
         int size = factor.intValue();
