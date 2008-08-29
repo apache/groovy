@@ -2654,7 +2654,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * For an example using no group match, <code><pre>
      *    def p = /ab[d|f]/
      *    def m = "abcabdabeabf" =~ p
-     *    for (i in 0..<m.count) {
+     *    for (i in 0..&lt;m.count) {
      *        println( "m.groupCount() = " + m.groupCount())
      *        println( "  " + i + ": " + m[i] )   // m[i] is a String
      *    }
@@ -2663,7 +2663,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * For an example using group matches, <code><pre>
      *    def p = /(?:ab([c|d|e|f]))/
      *    def m = "abcabdabeabf" =~ p
-     *    for (i in 0..<m.count) {
+     *    for (i in 0..&lt;m.count) {
      *        println( "m.groupCount() = " + m.groupCount())
      *        println( "  " + i + ": " + m[i] )   // m[i] is a List
      *    }
