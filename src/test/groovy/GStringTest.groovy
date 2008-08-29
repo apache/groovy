@@ -11,10 +11,12 @@ class GStringTest extends GroovyTestCase {
         assert string == teststr
     }
 
-    void _____testEmptyGString() {
+    void testEmptyGString() {
+        // GString.EMPTY is a built-in feature in 1.6 but not 1.5.x
+        def EMPTY = new org.codehaus.groovy.runtime.GStringImpl(new Object[0], [''] as String[])
         def foo = 'Foo'
         def bar = 'Bar'
-        def g = GString.EMPTY + "$foo".toString() + "$bar"
+        def g = EMPTY + "$foo".toString() + "$bar"
         assert g instanceof GString
         assert g.values == ['Bar']
         assert 'FooBar' == g
