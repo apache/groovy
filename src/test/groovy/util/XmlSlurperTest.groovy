@@ -76,4 +76,25 @@ class XmlSlurperTest extends GroovyTestCase {
         String output = outputSlurper.bind{ mkp.yield replaceSlurper }
         assert output == "<doc><t>Hello<p>World</p></t></doc>"
     }
+
+    void testNamespacedName() {
+        def wsdl = '''
+        <definitions name="AgencyManagementService"
+            xmlns:ns1="http://www.example.org/NS1"
+            xmlns:ns2="http://www.example.org/NS2">
+            <ns1:message name="SomeRequest">
+                <ns1:part name="parameters" element="SomeReq" />
+            </ns1:message>
+            <ns2:message name="SomeRequest">
+                <ns2:part name="parameters" element="SomeReq" />
+            </ns2:message>
+        </definitions>
+        '''
+        def xml = new XmlSlurper().parseText(wsdl)
+        assertEquals("message", xml.children()[0].name())
+        assertEquals("http://www.example.org/NS1", xml.children()[0].namespaceURI())
+        assertEquals("message", xml.children()[1].name())
+        assertEquals("http://www.example.org/NS2", xml.children()[1].namespaceURI())
+    }
+
 }

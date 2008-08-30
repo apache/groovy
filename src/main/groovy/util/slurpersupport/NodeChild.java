@@ -51,6 +51,10 @@ public class NodeChild extends GPathResult {
         return this.node.text();
     }
 
+    public String namespaceURI() {
+        return this.node.namespaceURI();
+    }
+
     public GPathResult parents() {
         // TODO Auto-generated method stub
         throw new GroovyRuntimeException("parents() not implemented yet");
