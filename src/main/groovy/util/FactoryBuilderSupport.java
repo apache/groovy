@@ -269,13 +269,34 @@ public abstract class FactoryBuilderSupport extends Binding {
      * @return the explicit methods map (Unmodifiable Map).
      */
     public Map<String, Closure> getExplicitMethods() {
-        return Collections.unmodifiableMap(explicitMethods);
+        return Collections.unmodifiableMap(proxyBuilder.explicitMethods);
     }
 
     /**
      * @return the explicit properties map (Unmodifiable Map).
      */
     public Map<String, Closure[]> getExplicitProperties() {
+        return Collections.unmodifiableMap(proxyBuilder.explicitProperties);
+    }
+
+    /**
+     * @return the factory map (Unmodifiable Map).
+     */
+    public Map<String, Factory> getLocalFactories() {
+        return Collections.unmodifiableMap(factories);
+    }
+
+    /**
+     * @return the explicit methods map (Unmodifiable Map).
+     */
+    public Map<String, Closure> getLocalExplicitMethods() {
+        return Collections.unmodifiableMap(explicitMethods);
+    }
+
+    /**
+     * @return the explicit properties map (Unmodifiable Map).
+     */
+    public Map<String, Closure[]> getLocalExplicitProperties() {
         return Collections.unmodifiableMap(explicitProperties);
     }
 
