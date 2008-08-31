@@ -93,9 +93,6 @@ public class ScriptBytecodeAdapter {
     }
 
     public static Object invokeMethodOnCurrentNSpreadSafe(Class senderClass, GroovyObject receiver, String messageName, Object[] messageArguments) throws Throwable {
-        if (!isSpreadable(receiver))
-            return invokeMethodOnCurrentN(senderClass, receiver, messageName, messageArguments);
-
         List answer = new ArrayList();
         for (Iterator it = InvokerHelper.asIterator(receiver); it.hasNext();) {
             answer.add(invokeMethodNSafe(senderClass, it.next(), messageName, messageArguments));
@@ -131,9 +128,6 @@ public class ScriptBytecodeAdapter {
     }
 
     public static Object invokeMethodOnSuperNSpreadSafe(Class senderClass, GroovyObject receiver, String messageName, Object[] messageArguments) throws Throwable {
-        if (!isSpreadable(receiver))
-            return invokeMethodOnSuperN(senderClass, receiver, messageName, messageArguments);
-
         List answer = new ArrayList();
         for (Iterator it = InvokerHelper.asIterator(receiver); it.hasNext();) {
             answer.add(invokeMethodNSafe(senderClass, it.next(), messageName, messageArguments));
@@ -167,8 +161,6 @@ public class ScriptBytecodeAdapter {
 
     public static Object invokeMethodNSpreadSafe(Class senderClass, Object receiver, String messageName, Object[] messageArguments) throws Throwable {
         if (receiver == null) return null;
-        if (!isSpreadable(receiver))
-            return invokeMethodN(senderClass, receiver, messageName, messageArguments);
 
         List answer = new ArrayList();
         for (Iterator it = InvokerHelper.asIterator(receiver); it.hasNext();) {
@@ -243,9 +235,6 @@ public class ScriptBytecodeAdapter {
     }
 
     public static Object getFieldOnSuperSpreadSafe(Class senderClass, Object receiver, String messageName) throws Throwable {
-        if (!isSpreadable(receiver))
-            return getFieldOnSuper(senderClass, receiver, messageName);
-
         List answer = new ArrayList();
         for (Iterator it = InvokerHelper.asIterator(receiver); it.hasNext();) {
             answer.add(getFieldOnSuper(senderClass, it.next(), messageName));
@@ -271,11 +260,6 @@ public class ScriptBytecodeAdapter {
     }
 
     public static void setFieldOnSuperSpreadSafe(Object messageArgument, Class senderClass, Object receiver, String messageName) throws Throwable {
-        if (!isSpreadable(receiver)) {
-            setFieldOnSuper(messageArgument, senderClass, receiver, messageName);
-            return;
-        }
-
         for (Iterator it = InvokerHelper.asIterator(receiver); it.hasNext();) {
             setFieldOnSuper(messageArgument, senderClass, it.next(), messageName);
         }
@@ -294,19 +278,6 @@ public class ScriptBytecodeAdapter {
         return getField(senderClass, receiver, messageName);
     }
 
-    public static Object getFieldSpreadSafe(Class senderClass, Object receiver, String messageName) throws Throwable {
-        if (receiver == null) return null;
-        if (!isSpreadable(receiver))
-            return getField(senderClass, receiver, messageName);
-
-        List list = (List) receiver;
-        List answer = new ArrayList();
-        for (Iterator it = list.iterator(); it.hasNext();) {
-            answer.add(getFieldSafe(senderClass, it.next(), messageName));
-        }
-        return answer;
-    }
-
     //  --------------------------------------------------------
     //              normal field handling : set
     //  --------------------------------------------------------
@@ -322,10 +293,6 @@ public class ScriptBytecodeAdapter {
 
     public static void setFieldSpreadSafe(Object messageArgument, Class senderClass, Object receiver, String messageName) throws Throwable {
         if (receiver == null) return;
-        if (!isSpreadable(receiver)) {
-            setField(messageArgument, senderClass, receiver, messageName);
-            return;
-        }
 
         for (Iterator it = InvokerHelper.asIterator(receiver); it.hasNext();) {
             setFieldSafe(messageArgument, senderClass, it.next(), messageName);
@@ -347,7 +314,6 @@ public class ScriptBytecodeAdapter {
 
     public static Object getGroovyObjectFieldSpreadSafe(Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
         if (receiver == null) return null;
-        if (!isSpreadable(receiver)) return getGroovyObjectField(senderClass, receiver, messageName);
 
         List answer = new ArrayList();
         for (Iterator it = InvokerHelper.asIterator(receiver); it.hasNext();) {
@@ -371,10 +337,6 @@ public class ScriptBytecodeAdapter {
 
     public static void setGroovyObjectFieldSpreadSafe(Object messageArgument, Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
         if (receiver == null) return;
-        if (!isSpreadable(receiver)) {
-            setGroovyObjectField(messageArgument, senderClass, receiver, messageName);
-            return;
-        }
 
         for (Iterator it = InvokerHelper.asIterator(receiver); it.hasNext();) {
             setFieldSafe(messageArgument, senderClass, it.next(), messageName);
@@ -394,9 +356,6 @@ public class ScriptBytecodeAdapter {
     }
 
     public static Object getPropertyOnSuperSpreadSafe(Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
-        if (!isSpreadable(receiver))
-            return getPropertyOnSuper(senderClass, receiver, messageName);
-
         List answer = new ArrayList();
         for (Iterator it = InvokerHelper.asIterator(receiver); it.hasNext();) {
             answer.add(getPropertySafe(senderClass, it.next(), messageName));
@@ -417,11 +376,6 @@ public class ScriptBytecodeAdapter {
     }
 
     public static void setPropertyOnSuperSpreadSafe(Object messageArgument, Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
-        if (!isSpreadable(receiver)) {
-            setPropertyOnSuper(messageArgument, senderClass, receiver, messageName);
-            return;
-        }
-
         for (Iterator it = InvokerHelper.asIterator(receiver); it.hasNext();) {
             setPropertySafe(messageArgument, senderClass, it.next(), messageName);
         }
@@ -442,8 +396,6 @@ public class ScriptBytecodeAdapter {
 
     public static Object getPropertySpreadSafe(Class senderClass, Object receiver, String messageName) throws Throwable {
         if (receiver == null) return null;
-        if (!isSpreadable(receiver))
-            return getProperty(senderClass, receiver, messageName);
 
         List answer = new ArrayList();
         for (Iterator it = InvokerHelper.asIterator(receiver); it.hasNext();) {
@@ -467,10 +419,6 @@ public class ScriptBytecodeAdapter {
 
     public static void setPropertySpreadSafe(Object messageArgument, Class senderClass, Object receiver, String messageName) throws Throwable {
         if (receiver == null) return;
-        if (!isSpreadable(receiver)) {
-            setProperty(messageArgument, senderClass, receiver, messageName);
-            return;
-        }
 
         for (Iterator it = InvokerHelper.asIterator(receiver); it.hasNext();) {
             setPropertySafe(messageArgument, senderClass, it.next(), messageName);
@@ -492,7 +440,6 @@ public class ScriptBytecodeAdapter {
 
     public static Object getGroovyObjectPropertySpreadSafe(Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
         if (receiver == null) return null;
-        if (!isSpreadable(receiver)) return getGroovyObjectProperty(senderClass, receiver, messageName);
 
         List answer = new ArrayList();
         for (Iterator it = InvokerHelper.asIterator(receiver); it.hasNext();) {
@@ -516,10 +463,6 @@ public class ScriptBytecodeAdapter {
 
     public static void setGroovyObjectPropertySpreadSafe(Object messageArgument, Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
         if (receiver == null) return;
-        if (!isSpreadable(receiver)) {
-            setProperty(messageArgument, senderClass, receiver, messageName);
-            return;
-        }
 
         for (Iterator it = InvokerHelper.asIterator(receiver); it.hasNext();) {
             setPropertySafe(messageArgument, senderClass, it.next(), messageName);
@@ -748,13 +691,5 @@ public class ScriptBytecodeAdapter {
 
     public static MetaClass initMetaClass(Object object) {
         return InvokerHelper.getMetaClass(object.getClass());
-    }
-
-    private static boolean isSpreadable (Object receiver) {
-        return (receiver instanceof Collection)
-          || (receiver instanceof Map)
-          || (receiver instanceof Iterator)
-          || (receiver instanceof Enumeration)
-          || receiver.getClass().isArray();
     }
 }

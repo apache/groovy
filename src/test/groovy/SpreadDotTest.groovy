@@ -92,6 +92,18 @@ public class SpreadDotTest extends GroovyTestCase {
         assertEquals "Hello, groovy.Book2", new Book2 ().foo ()
         assertEquals "Hello, groovy.Book3", new Book3 ().foo ()
     }
+    
+    public void testSpreadDotAdvanced() {
+        assertEquals ([3, 3], ['cat', 'dog']*.size())
+        assertEquals ([3, 3], (['cat', 'dog'] as Vector)*.size())
+        assertEquals ([3, 3], (['cat', 'dog'] as String[])*.size())
+        assertEquals ([3, 3], (['cat', 'dog'] as Vector).elements()*.size())
+        assertEquals ([1, 1, 1], 'zoo'*.size())
+        assertEquals (Object, new Object().getClass())
+        assertEquals ([Object], new Object()*.getClass())
+        assertEquals ('Large', new Shirt().size())
+        assertEquals (['Large'], new Shirt()*.size())
+    }
 
     public void testSpreadDotMap () {
         def map = [A:"one", B:"two", C:"three"]
@@ -133,3 +145,6 @@ class Book1 {}
 class Book2 {}
 class Book3 {}
 
+class Shirt {
+    def size() { 'Large' } 
+}
