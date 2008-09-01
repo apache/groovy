@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,7 @@
  * @author  Paul King
  */
 public class SpreadDotTest extends GroovyTestCase {
-    public void testSpreadDot() {
+    void testSpreadDot() {
         def m1 = ["a":1, "b":2]
         def m2 = ["a":11, "b":22]
         def m3 = ["a":111, "b":222]
@@ -56,7 +56,7 @@ public class SpreadDotTest extends GroovyTestCase {
         assert x == [m1, m2, m3, null, d, y]
     }
 
-    public void testSpreadDot2() {
+    void testSpreadDot2() {
         def a = new SpreadDotDemo()
         def b = new SpreadDotDemo2()
         def x = [a, b]
@@ -65,7 +65,7 @@ public class SpreadDotTest extends GroovyTestCase {
         assert [a,b]*.fnB() == [a.fnB(), b.fnB()]
     }
 
-    public void testSpreadDotArrays() {
+    void testSpreadDotArrays() {
         def a = new SpreadDotDemo()
         def b = new SpreadDotDemo2()
         Object[] x = [a, b]
@@ -83,7 +83,7 @@ public class SpreadDotTest extends GroovyTestCase {
         assert pets*.length() == nums
     }
 
-    public void testSpreadDotOnArrays2 () {
+    void testSpreadDotOnArrays2 () {
         def books = [Book1, Book2, Book3] as Object[]
 
         books*.metaClass*.foo = { "Hello, ${delegate.class.name}" }
@@ -93,7 +93,7 @@ public class SpreadDotTest extends GroovyTestCase {
         assertEquals "Hello, groovy.Book3", new Book3 ().foo ()
     }
     
-    public void testSpreadDotAdvanced() {
+    void testSpreadDotAdvanced() {
         assertEquals ([3, 3], ['cat', 'dog']*.size())
         assertEquals ([3, 3], (['cat', 'dog'] as Vector)*.size())
         assertEquals ([3, 3], (['cat', 'dog'] as String[])*.size())
@@ -105,11 +105,20 @@ public class SpreadDotTest extends GroovyTestCase {
         assertEquals (['Large'], new Shirt()*.size())
     }
 
-    public void testSpreadDotMap () {
+    void testSpreadDotMap () {
         def map = [A:"one", B:"two", C:"three"]
         assert map.collect { child ->  child.value.size() } == [3, 3, 5]
         assert map*.value*.size() == [3, 3, 5]
         assert map*.getKey() == ['A', 'B', 'C']
+    }
+
+    public void testSpreadDotAttribute() {
+        def s = new Singlet()
+        assert s.size == 1
+        assert s.@size == 12
+        def wardrobe = [s, s]
+        assert wardrobe*.size == [1, 1]
+        assert wardrobe*.@size == [12, 12]
     }
 }
 
@@ -147,4 +156,9 @@ class Book3 {}
 
 class Shirt {
     def size() { 'Large' } 
+}
+
+class Singlet {
+    private size = 12
+    def getSize() {1}
 }

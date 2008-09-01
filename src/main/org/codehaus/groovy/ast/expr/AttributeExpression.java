@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,8 +39,9 @@ public class AttributeExpression extends PropertyExpression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        Expression ret = new AttributeExpression(transformer.transform(getObjectExpression()),transformer.transform(getProperty()),isSafe());
+        AttributeExpression ret = new AttributeExpression(transformer.transform(getObjectExpression()),transformer.transform(getProperty()),isSafe());
         ret.setSourcePosition(this);
+        ret.setSpreadSafe(isSpreadSafe());
         return ret;
     }
 }

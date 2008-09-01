@@ -278,6 +278,15 @@ public class ScriptBytecodeAdapter {
         return getField(senderClass, receiver, messageName);
     }
 
+    public static Object getFieldSpreadSafe(Class senderClass, Object receiver, String messageName) throws Throwable {
+        if (receiver == null) return null;
+        List answer = new ArrayList();
+        for (Iterator it = InvokerHelper.asIterator(receiver); it.hasNext();) {
+            answer.add(getFieldSafe(senderClass, it.next(), messageName));
+        }
+        return answer;
+    }
+
     //  --------------------------------------------------------
     //              normal field handling : set
     //  --------------------------------------------------------
