@@ -657,7 +657,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         inPropertyExpression = true;
         isTopLevelProperty = !(objectExpression.getClass() == PropertyExpression.class);
         objectExpression = transform(objectExpression);
-        // we handle the property part as if it where not part of the property
+        // we handle the property part as if it were not part of the property
         inPropertyExpression = false;
         Expression property = transform(pe.getProperty());
         isTopLevelProperty = itlp;

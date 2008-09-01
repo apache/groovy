@@ -47,8 +47,6 @@ import java.util.*;
  */
 public class AsmClassGenerator extends ClassGenerator {
 
-//    private Logger log = Logger.getLogger(getClass().getName());
-
     private final ClassVisitor cv;
     private MethodVisitor mv;
     private GeneratorContext context;
@@ -61,22 +59,19 @@ public class AsmClassGenerator extends ClassGenerator {
     private String internalClassName;
     private String internalBaseClassName;
 
-    /**
+    /*
      * maps the variable names to the JVM indices
      */
     private CompileStack compileStack;
 
-    /**
+    /*
      * have we output a return statement yet
      */
     private boolean outputReturn;
 
-    /**
-     * are we on the left or right of an expression
-     */
-    private boolean leftHandExpression = false;
-    /**
-     * Notes for leftHandExpression:
+    /*
+     * Are we on the left or right of an expression?
+     *
      * The default is false, that means the right side is default.
      * The right side means that variables are read and not written.
      * Any change of leftHandExpression to true, should be made carefully.
@@ -84,6 +79,7 @@ public class AsmClassGenerator extends ClassGenerator {
      * possible, but most important in the same method. Setting
      * leftHandExpression to false is needed for writing variables.
      */
+    private boolean leftHandExpression = false;
 
     // method invocation
     static final MethodCallerMultiAdapter invokeMethodOnCurrent = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "invokeMethodOnCurrent", true, false);
@@ -92,7 +88,7 @@ public class AsmClassGenerator extends ClassGenerator {
     static final MethodCallerMultiAdapter invokeStaticMethod = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "invokeStaticMethod", true, true);
     static final MethodCallerMultiAdapter invokeNew = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "invokeNew", true, true);
 
-    // fields & properties
+    // fields and properties
     static final MethodCallerMultiAdapter setField = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setField", false, false);
     static final MethodCallerMultiAdapter getField = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "getField", false, false);
     static final MethodCallerMultiAdapter setGroovyObjectField = MethodCallerMultiAdapter.newStatic(ScriptBytecodeAdapter.class, "setGroovyObjectField", false, false);
@@ -2925,11 +2921,7 @@ public class AsmClassGenerator extends ClassGenerator {
      */
     protected boolean isPopRequired(Expression expression) {
         if (expression instanceof MethodCallExpression) {
-            if (expression.getType() == ClassHelper.VOID_TYPE) { // nothing on the stack
-                return false;
-            } else {
-                return true;
-            }
+            return expression.getType() != ClassHelper.VOID_TYPE;
         }
         if (expression instanceof DeclarationExpression) {
             return false;
