@@ -39,8 +39,9 @@ public class AttributeExpression extends PropertyExpression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        Expression ret = new AttributeExpression(transformer.transform(getObjectExpression()),transformer.transform(getProperty()),isSafe());
+        AttributeExpression ret = new AttributeExpression(transformer.transform(getObjectExpression()),transformer.transform(getProperty()),isSafe());
         ret.setSourcePosition(this);
+        ret.setSpreadSafe(isSpreadSafe());
         return ret;
     }
 }
