@@ -205,7 +205,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 blockScope.putReferencedLocalVariable(vProp);
                 blockScope.putReferencedLocalVariable(vValue);
                 // TODO: change to hasMethod to search super hierarchy?
-                if (!node.hasDeclaredMethod("getProperty", GET_PROPERTY_PARAMS)) {
+                if (!node.hasMethod("getProperty", GET_PROPERTY_PARAMS)) {
                     node.addSyntheticMethod(
                             "getProperty",
                             ACC_PUBLIC,
@@ -228,7 +228,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 }
 
                 // TODO: change to hasMethod to search super hierarchy?
-                if (!node.hasDeclaredMethod("setProperty", SET_PROPERTY_PARAMS)) {
+                if (!node.hasMethod("setProperty", SET_PROPERTY_PARAMS)) {
                     node.addSyntheticMethod(
                             "setProperty",
                             ACC_PUBLIC,

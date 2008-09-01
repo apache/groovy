@@ -516,11 +516,17 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return node;
     }
 
+    /**
+     * @see #getDeclaredMethod(String, Parameter[])
+     */
     public boolean hasDeclaredMethod(String name, Parameter[] parameters) {
         MethodNode other = getDeclaredMethod(name, parameters);
         return other != null;
     }
 
+    /**
+     * @see #getMethod(String, Parameter[])
+     */
     public boolean hasMethod(String name, Parameter[] parameters) {
         MethodNode other = getMethod(name, parameters);
         return other != null;
