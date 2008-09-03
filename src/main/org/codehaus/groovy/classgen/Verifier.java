@@ -70,6 +70,34 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         return methodNode;
     }
 
+    private FieldNode setMetaClassFieldIfNotExists(ClassNode node, FieldNode metaClassField){
+        if (metaClassField != null) return metaClassField;
+        StaticMethodCallExpression initMetaClassCall = new StaticMethodCallExpression(
+                ClassHelper.make(ScriptBytecodeAdapter.class),
+                "initMetaClass",
+                VariableExpression.THIS_EXPRESSION);
+        PropertyNode metaClassProperty =
+            node.addProperty("metaClass", ACC_PUBLIC, ClassHelper.make(MetaClass.class), initMetaClassCall, null, null);
+        metaClassProperty.setSynthetic(true);
+        FieldNode field = metaClassProperty.getField();
+        field.setModifiers(field.getModifiers() | ACC_TRANSIENT);
+        return field;
+    }
+    
+    private FieldNode getMetaClassField(ClassNode node) {
+        FieldNode ret = node.getField("metaClass");
+        if (ret!=null) return ret;
+        ClassNode current = node;
+        while (current!=null && current!=ClassHelper.OBJECT_TYPE) {
+            current = current.getSuperClass();
+            ret = current.getField("metaClass");
+            if (ret==null) continue;
+            if (Modifier.isPrivate(ret.getModifiers())) continue;
+            return ret;
+        }
+        return null;
+    }
+    
     /**
      * add code to implement GroovyObject
      * @param node
@@ -107,36 +135,23 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         if (!knownSpecialCase) {
 
-            final boolean isGroovyObject = node.isDerivedFromGroovyObject();
-            if (!isGroovyObject) {
-                node.addInterface(ClassHelper.make(GroovyObject.class));
-            }
-
+            if (!node.isDerivedFromGroovyObject()) node.addInterface(ClassHelper.make(GroovyObject.class));
+            FieldNode metaClassField = getMetaClassField(node);
             final String classInternalName = BytecodeHelper.getClassInternalName(node);
-            StaticMethodCallExpression initMetaClassCall = new StaticMethodCallExpression(
-                    ClassHelper.make(ScriptBytecodeAdapter.class),
-                    "initMetaClass",
-                    VariableExpression.THIS_EXPRESSION);
-
-            FieldNode metaClassField = node.getField("metaClass");
-            if (metaClassField == null) {
-                // let's add a new field for the metaclass
-                PropertyNode metaClassProperty =
-                        node.addProperty("metaClass", ACC_PUBLIC, ClassHelper.make(MetaClass.class), initMetaClassCall, null, null);
-                metaClassProperty.setSynthetic(true);
-                metaClassField = metaClassProperty.getField();
-                metaClassField.setModifiers(metaClassField.getModifiers() | ACC_TRANSIENT);
-            }
-
-            FieldExpression metaClassVar = new FieldExpression(metaClassField);
-            IfStatement initMetaClassField =
-                    new IfStatement(
-                            new BooleanExpression(
-                                    new BinaryExpression(metaClassVar, Token.newSymbol(Types.COMPARE_EQUAL, -1, -1), ConstantExpression.NULL)),
-                            new ExpressionStatement(new BinaryExpression(metaClassVar, Token.newSymbol(Types.EQUAL, -1, -1), initMetaClassCall)),
-                            EmptyStatement.INSTANCE);
-
+            
             if (!node.hasMethod("getMetaClass", Parameter.EMPTY_ARRAY)) {
+                metaClassField=setMetaClassFieldIfNotExists(node,metaClassField);
+                StaticMethodCallExpression initMetaClassCall = new StaticMethodCallExpression(
+                        ClassHelper.make(ScriptBytecodeAdapter.class),
+                        "initMetaClass",
+                        VariableExpression.THIS_EXPRESSION);
+                FieldExpression metaClassVar = new FieldExpression(metaClassField);
+                IfStatement initMetaClassField = new IfStatement(
+                        new BooleanExpression(
+                                new BinaryExpression(metaClassVar, Token.newSymbol(Types.COMPARE_EQUAL, -1, -1), ConstantExpression.NULL)),
+                                new ExpressionStatement(new BinaryExpression(metaClassVar, Token.newSymbol(Types.EQUAL, -1, -1), initMetaClassCall)),
+                                EmptyStatement.INSTANCE);
+                
                 node.addSyntheticMethod(
                         "getMetaClass",
                         ACC_PUBLIC,
@@ -148,109 +163,108 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             }
 
             if (!node.hasMethod("setMetaClass", SET_METACLASS_PARAMS)) {
-                List setMetaClassCode = new LinkedList();
-                setMetaClassCode.add(new BytecodeInstruction() {
-                    public void visit(MethodVisitor mv) {
-                        mv.visitVarInsn(ALOAD, 0);
-                        mv.visitVarInsn(ALOAD, 1);
-                        mv.visitFieldInsn(PUTFIELD, classInternalName, "metaClass", "Lgroovy/lang/MetaClass;");
-                    }
-                });
+                metaClassField=setMetaClassFieldIfNotExists(node,metaClassField);
+                Statement setMetaClassCode;                
+                if (Modifier.isFinal(metaClassField.getModifiers())) {
+                    ConstantExpression text = new ConstantExpression("cannot set read-only meta class");
+                    ConstructorCallExpression cce = new ConstructorCallExpression(ClassHelper.make(IllegalArgumentException.class), text);
+                    setMetaClassCode = new ExpressionStatement(cce);
+                } else {
+                    List list = new ArrayList();
+                    list.add (new BytecodeInstruction() {
+                        public void visit(MethodVisitor mv) {
+                            mv.visitVarInsn(ALOAD, 0);
+                            mv.visitVarInsn(ALOAD, 1);
+                            mv.visitFieldInsn(PUTFIELD, classInternalName, "metaClass", "Lgroovy/lang/MetaClass;");
+                        }
+                    });
+                    setMetaClassCode = new BytecodeSequence(list);
+                }
+                
                 node.addSyntheticMethod(
                         "setMetaClass",
                         ACC_PUBLIC,
                         ClassHelper.VOID_TYPE,
                         SET_METACLASS_PARAMS,
                         ClassNode.EMPTY_ARRAY,
-                        new BytecodeSequence(setMetaClassCode)
+                        setMetaClassCode
                 );
             }
 
-            VariableExpression vMethods = new VariableExpression("method");
-            VariableExpression vArguments = new VariableExpression("arguments");
-            VariableScope blockScope = new VariableScope();
-            blockScope.putReferencedLocalVariable(vMethods);
-            blockScope.putReferencedLocalVariable(vArguments);
-
-            if (!isGroovyObject) {
+            if (!node.hasMethod("invokeMethod",INVOKE_METHOD_PARAMS)) {
+                VariableExpression vMethods = new VariableExpression("method");
+                VariableExpression vArguments = new VariableExpression("arguments");
+                VariableScope blockScope = new VariableScope();
+                blockScope.putReferencedLocalVariable(vMethods);
+                blockScope.putReferencedLocalVariable(vArguments);
+                List instructions = new ArrayList();
+                instructions.add(new BytecodeInstruction() {
+                    public void visit(MethodVisitor mv) {
+                        mv.visitVarInsn(ALOAD, 0);
+                        mv.visitMethodInsn(INVOKEVIRTUAL, classInternalName, "getMetaClass", "()Lgroovy/lang/MetaClass;");
+                        mv.visitVarInsn(ALOAD, 0);
+                        mv.visitVarInsn(ALOAD, 1);
+                        mv.visitVarInsn(ALOAD, 2);
+                        mv.visitMethodInsn(INVOKEINTERFACE, "groovy/lang/MetaClass", "invokeMethod", "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;");
+                        mv.visitInsn(ARETURN);
+                    }
+                });
                 node.addSyntheticMethod(
                         "invokeMethod",
                         ACC_PUBLIC,
                         ClassHelper.OBJECT_TYPE, INVOKE_METHOD_PARAMS,
                         ClassNode.EMPTY_ARRAY,
-                        new BlockStatement(
-                                new Statement[]{
-                                        initMetaClassField,
-                                        new ReturnStatement(
-                                                new MethodCallExpression(
-                                                        metaClassVar,
-                                                        "invokeMethod",
-                                                        new ArgumentListExpression(
-                                                                VariableExpression.THIS_EXPRESSION,
-                                                                vMethods,
-                                                                vArguments
-                                                        )
-                                                )
-                                        )
-                                },
-                                blockScope
-                        )
+                        new BytecodeSequence(instructions)
                 );
             }
 
-            if (!node.isScript()) {
-                VariableExpression vProp = new VariableExpression("property");
-                VariableExpression vValue = new VariableExpression("value");
-                blockScope = new VariableScope();
-                blockScope.putReferencedLocalVariable(vProp);
-                blockScope.putReferencedLocalVariable(vValue);
-                // TODO: change to hasMethod to search super hierarchy?
-                if (!node.hasMethod("getProperty", GET_PROPERTY_PARAMS)) {
-                    node.addSyntheticMethod(
-                            "getProperty",
-                            ACC_PUBLIC,
-                            ClassHelper.OBJECT_TYPE,
-                            GET_PROPERTY_PARAMS,
-                            ClassNode.EMPTY_ARRAY,
-                            new BlockStatement(
-                                    new Statement[]{
-                                            initMetaClassField,
-                                            new ReturnStatement(
-                                                    new MethodCallExpression(
-                                                            metaClassVar,
-                                                            "getProperty",
-                                                            new ArgumentListExpression(
-                                                                    VariableExpression.THIS_EXPRESSION,
-                                                                    new VariableExpression("property"))))
-                                    },
-                                    new VariableScope()
-                            ));
-                }
-
-                // TODO: change to hasMethod to search super hierarchy?
-                if (!node.hasMethod("setProperty", SET_PROPERTY_PARAMS)) {
-                    node.addSyntheticMethod(
-                            "setProperty",
-                            ACC_PUBLIC,
-                            ClassHelper.VOID_TYPE,
-                            SET_PROPERTY_PARAMS,
-                            ClassNode.EMPTY_ARRAY,
-                            new BlockStatement(
-                                    new Statement[]{
-                                            initMetaClassField,
-                                            new ExpressionStatement(
-                                                    new MethodCallExpression(
-                                                            metaClassVar,
-                                                            "setProperty",
-                                                            new ArgumentListExpression(
-                                                                    VariableExpression.THIS_EXPRESSION,
-                                                                    vProp,
-                                                                    vValue)))
-                                    },
-                                    blockScope
-                            ));
-                }
+            if (!node.hasMethod("getProperty", GET_PROPERTY_PARAMS)) {
+                List instructions = new ArrayList();
+                instructions.add(new BytecodeInstruction() {
+                    public void visit(MethodVisitor mv) {
+                        mv.visitVarInsn(ALOAD, 0);
+                        mv.visitMethodInsn(INVOKEVIRTUAL, classInternalName, "getMetaClass", "()Lgroovy/lang/MetaClass;");
+                        mv.visitVarInsn(ALOAD, 0);
+                        mv.visitVarInsn(ALOAD, 1);
+                        mv.visitMethodInsn(INVOKEINTERFACE, "groovy/lang/MetaClass", "getProperty", "(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;");
+                        mv.visitInsn(ARETURN);
+                    }
+                });
+                node.addSyntheticMethod(
+                        "getProperty",
+                        ACC_PUBLIC,
+                        ClassHelper.OBJECT_TYPE,
+                        GET_PROPERTY_PARAMS,
+                        ClassNode.EMPTY_ARRAY,
+                        new BytecodeSequence(instructions)
+                );
             }
+
+            if (!node.hasMethod("setProperty", SET_PROPERTY_PARAMS)) {
+                List instructions = new ArrayList();
+                instructions.add(new BytecodeInstruction() {
+                    public void visit(MethodVisitor mv) {
+                        mv.visitVarInsn(ALOAD, 0);
+                        mv.visitMethodInsn(INVOKEVIRTUAL, classInternalName, "getMetaClass", "()Lgroovy/lang/MetaClass;");
+                        mv.visitVarInsn(ALOAD, 0);
+                        mv.visitVarInsn(ALOAD, 1);
+                        mv.visitVarInsn(ALOAD, 2);
+                        mv.visitMethodInsn(INVOKEINTERFACE, "groovy/lang/MetaClass", "setProperty", "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)V");
+                        mv.visitInsn(RETURN);                    }
+                });
+                
+                node.addSyntheticMethod(
+                        "setProperty",
+                        ACC_PUBLIC,
+                        ClassHelper.VOID_TYPE,
+                        SET_PROPERTY_PARAMS,
+                        ClassNode.EMPTY_ARRAY,
+                        new BytecodeSequence(instructions)
+                );
+            }
+
+
+
         }
 
         if (node.getDeclaredConstructors().isEmpty()) {

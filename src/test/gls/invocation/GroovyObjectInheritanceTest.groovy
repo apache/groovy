@@ -1,3 +1,5 @@
+package gls.invocation
+
 import gls.CompilableTestSupport
 
 class GroovyObjectInheritanceTest extends CompilableTestSupport {
@@ -33,6 +35,15 @@ class GroovyObjectInheritanceTest extends CompilableTestSupport {
         class Bar extends Foo{}
         def bar = new Bar()
         assert bar.foo() == 1
+    """
+  }
+  
+  void testMetaClassFieldInheritance() {
+    assertScript """
+        class Foo {}
+        class Bar extends Foo{}
+        assert Foo.class.declaredFields.find{it.name=="metaClass"}!=null
+        assert Bar.class.declaredFields.find{it.name=="metaClass"}==null
     """
   }
 }
