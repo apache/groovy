@@ -384,23 +384,4 @@ public class SwingBuilder  extends FactoryBuilderSupport {
             builder.setVariable(theID, node)
         }
     }
-
-    ///////////////////////////////////////////////////////////////////////////
-    // these appear to be Groovy 1.6beta2 bugs?  It breaks without it!
-    ///////////////////////////////////////////////////////////////////////////
-    public Object invokeMethod(String methodName) {
-        return super.invokeMethod(methodName)
-    }
-
-    public Object invokeMethod(String methodName, Object args) {
-        return super.invokeMethod(methodName, args)
-    }
-
-    public Object getProperty(String property) {
-        return super.getProperty(property)
-    }
-
-    public void setProperty(String property, Object newValue) {
-        super.setProperty(property, newValue)
-    }
 }
