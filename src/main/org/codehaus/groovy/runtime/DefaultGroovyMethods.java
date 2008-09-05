@@ -2654,27 +2654,34 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * For an example using no group match, <code><pre>
      *    def p = /ab[d|f]/
      *    def m = "abcabdabeabf" =~ p
-     *    for (i in 0..&lt;m.count) {
-     *        println( "m.groupCount() = " + m.groupCount())
-     *        println( "  " + i + ": " + m[i] )   // m[i] is a String
-     *    }
+     *    assert 2 == m.count
+     *    assert 2 == m.size() // synonym for m.getCount()
+     *    assert ! m.hasGroup()
+     *    assert 0 == m.groupCount()
+     *    assert "abd" == m[0]
+     *    assert "abf" == m[1]
      * </pre></code>
      * <p/>
      * For an example using group matches, <code><pre>
      *    def p = /(?:ab([c|d|e|f]))/
      *    def m = "abcabdabeabf" =~ p
-     *    for (i in 0..&lt;m.count) {
-     *        println( "m.groupCount() = " + m.groupCount())
-     *        println( "  " + i + ": " + m[i] )   // m[i] is a List
-     *    }
+     *    assert 4 == m.count
+     *    assert m.hasGroup()
+     *    assert 1 == m.groupCount()
+     *    assert ["abc", "c"] == m[0]
+     *    assert ["abd", "d"] == m[1]
+     *    assert ["abe", "e"] == m[2]
+     *    assert ["abf", "f"] == m[3]
      * </pre></code>
      * <p/>
      * For another example using group matches, <code><pre>
      *    def m = "abcabdabeabfabxyzabx" =~ /(?:ab([d|x-z]+))/
-     *    m.count.times {
-     *        println( "m.groupCount() = " + m.groupCount())
-     *        println( "  " + it + ": " + m[it] )   // m[it] is a List
-     *    }
+     *    assert 3 == m.count
+     *    assert m.hasGroup()
+     *    assert 1 == m.groupCount()
+     *    assert ["abd", "d"] == m[0]
+     *    assert ["abxyz", "xyz"] == m[1]
+     *    assert ["abx", "x"] == m[2]
      * </pre></code>
      *
      * @param matcher a Matcher
@@ -2688,24 +2695,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 throw new IndexOutOfBoundsException("index is out of range " + (-count) + ".." + (count - 1) + " (index = " + idx + ")");
             }
             idx = normaliseIndex(idx, count);
-            matcher.reset();
-            for (int i = 0; i <= idx; i++) {
-                matcher.find();
-            }
 
-            if (hasGroup(matcher)) {
-                // are we using groups?
-                // yes, so return the specified group as list
-                List list = new ArrayList(matcher.groupCount());
-                for (int i = 0; i <= matcher.groupCount(); i++) {
-                    list.add(matcher.group(i));
-                }
-                return list;
-            } else {
-                // not using groups, so return the nth
-                // occurrence of the pattern
-                return matcher.group();
+            Iterator iter = iterator(matcher);
+            Object result = null;
+            for (int i = 0; i <= idx; i++) {
+                result = iter.next();
             }
+            return result;
         }
         catch (IllegalStateException ex) {
             return null;
@@ -2873,20 +2869,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param indices a Collection of indices
      * @return a String of the values at the given indices
      */
-    public static String getAt(Matcher self, Collection indices) {
-        StringBuffer answer = new StringBuffer();
+    public static List getAt(Matcher self, Collection indices) {
+        List result = new ArrayList();
         for (Iterator iter = indices.iterator(); iter.hasNext();) {
             Object value = iter.next();
             if (value instanceof Range) {
-                answer.append(getAt(self, (Range) value));
-            } else if (value instanceof Collection) {
-                answer.append(getAt(self, (Collection) value));
+                result.addAll(getAt(self, (Range) value));
             } else {
                 int idx = DefaultTypeTransformation.intUnbox(value);
-                answer.append(getAt(self, idx));
+                result.add(getAt(self, idx));
             }
         }
-        return answer.toString();
+        return result;
     }
 
     /**
@@ -9988,37 +9982,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Process each matched substring of the given group matcher. The object
-     * passed to the closure is an array of strings, matched per a successful match.
-     *
-     * @param self    the source matcher
-     * @param closure a closure
-     * @return the matcher
-     */
-    public static Matcher each(Matcher self, Closure closure) {
-        self.reset();
-        while (self.find()) {
-            int closureParams = closure.getMaximumNumberOfParameters();
-            int count = self.groupCount();
-            if (closureParams != 1 && closureParams != count + 1) {
-                throw new GroovyRuntimeException("Matcher matched " + count + " groups. Expecting to call a "
-                        + (count + 1) + "-arg closure. Instead found a " + closureParams + "-arg closure.");
-            }
-            List groups = new ArrayList();
-            for (int i = 0; i <= count; i++) {
-                groups.add(self.group(i));
-            }
-            if (count > 0 && closureParams == 1) {
-                // give a 1-arg closure all groups as a array
-                closure.call((Object) groups.toArray());
-            } else {
-                closure.call(groups.toArray());
-            }
-        }
-        return self;
-    }
-
-    /**
      * Iterates over the elements of an iterable collection of items and returns
      * the index of the first item that matches the condition specified in the closure.
      *
@@ -10562,7 +10525,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     }
                 }
                 found = false;
-                return matcher.group();
+
+                if (hasGroup(matcher)) {
+                   // are we using groups?
+                   // yes, so return the specified group as list
+                   List list = new ArrayList(matcher.groupCount());
+                   for (int i = 0; i <= matcher.groupCount(); i++) {
+                       list.add(matcher.group(i));
+                   }
+                   return list;
+               } else {
+                   // not using groups, so return the nth
+                   // occurrence of the pattern
+                   return matcher.group();
+               }
             }
 
             public void remove() {
