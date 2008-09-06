@@ -216,7 +216,7 @@ public class XmlNodePrinter {
 
     protected void printSimpleItem(Object value) {
         printLineBegin();
-        out.print(InvokerHelper.toString(value));
+        printEscaped(InvokerHelper.toString(value));        
         printLineEnd();
     }
 

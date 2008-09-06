@@ -27,6 +27,8 @@ class XmlNodePrinterTest extends GroovyTestCase {
     def attributeInput = """<Field Text="&lt;html&gt;&quot;Some &apos;Text&apos;&quot;&lt;/html&gt;" />"""
     def attributeExpectedOutputQuot = """<Field Text="&lt;html&gt;&quot;Some 'Text'&quot;&lt;/html&gt;"/>\n"""
     def attributeExpectedOutputApos = """<Field Text='&lt;html&gt;"Some &apos;Text&apos;"&lt;/html&gt;'/>\n"""
+    def tagWithSpecialCharsInput = """<Field>&lt;&amp;&gt;</Field>"""
+    def tagWithSpecialCharsOutput = """<Field>\n  &lt;&amp;&gt;\n</Field>\n"""
 
     void testNamespaces() {
         def root = new XmlParser().parseText(namespaceInput)
@@ -76,6 +78,14 @@ class XmlNodePrinterTest extends GroovyTestCase {
         new XmlNodePrinter(new PrintWriter(writer), "  ", "'").print(root)
         def result = writer.toString()
         assertEquals attributeExpectedOutputApos, result
+    }
+
+    void testContentWithSpecialSymbols() {
+        def root = new XmlParser().parseText(tagWithSpecialCharsInput)
+        def writer = new StringWriter()
+        new XmlNodePrinter(new PrintWriter(writer), "  ", "'").print(root)
+        def result = writer.toString()
+        assertEquals tagWithSpecialCharsOutput, result
     }
 
 }
