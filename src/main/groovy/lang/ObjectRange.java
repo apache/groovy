@@ -18,6 +18,7 @@ package groovy.lang;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.IteratorClosureAdapter;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.math.BigDecimal;
@@ -236,34 +237,34 @@ public class ObjectRange extends AbstractList implements Range {
      */
     public boolean containsWithinBounds(Object value) {
         if (value instanceof Comparable) {
-            int result = from.compareTo(value);
-            return result == 0 || result < 0 && to.compareTo(value) >= 0;
+            int result = compareTo(from, (Comparable) value);
+            return result == 0 || result < 0 && compareTo(to, (Comparable) value) >= 0;
         }
         return contains(value);
     }
 
+    private int compareTo(Comparable first, Comparable second) {
+        return DefaultGroovyMethods.numberAwareCompareTo(first, second);
+    }
 
     /**
      * {@inheritDoc}
      */
     public int size() {
         if (size == -1) {
-            if (from instanceof Integer && to instanceof Integer
-                    || from instanceof Long && to instanceof Long) {
+            if ((from instanceof Integer || from instanceof Long)
+                    && (to instanceof Integer || to instanceof Long)) {
                 // let's fast calculate the size
-                size = 0;
-                int fromNum = ((Number) from).intValue();
-                int toNum = ((Number) to).intValue();
-                size = toNum - fromNum + 1;
+                long fromNum = ((Number) from).longValue();
+                long toNum = ((Number) to).longValue();
+                size = (int)(toNum - fromNum + 1);
             } else if (from instanceof Character && to instanceof Character) {
                 // let's fast calculate the size
-                size = 0;
                 char fromNum = ((Character) from).charValue();
                 char toNum = ((Character) to).charValue();
                 size = toNum - fromNum + 1;
             } else if (from instanceof BigDecimal || to instanceof BigDecimal) {
                 // let's fast calculate the size
-                size = 0;
                 BigDecimal fromNum = new BigDecimal("" + from);
                 BigDecimal toNum = new BigDecimal("" + to);
                 BigInteger sizeNum = toNum.subtract(fromNum).add(new BigDecimal(1.0)).toBigInteger();
@@ -273,10 +274,10 @@ public class ObjectRange extends AbstractList implements Range {
                 size = 0;
                 Comparable first = from;
                 Comparable value = from;
-                while (to.compareTo(value) >= 0) {
+                while (compareTo(to, value) >= 0) {
                     value = (Comparable) increment(value);
                     size++;
-                    if (first.compareTo(value) >= 0) break; // handle back to beginning due to modulo incrementing
+                    if (compareTo(first, value) >= 0) break; // handle back to beginning due to modulo incrementing
                 }
             }
         }
@@ -342,22 +343,22 @@ public class ObjectRange extends AbstractList implements Range {
         if (step >= 0) {
             Comparable first = from;
             Comparable value = from;
-            while (value.compareTo(to) <= 0) {
+            while (compareTo(value, to) <= 0) {
                 closure.call(value);
                 for (int i = 0; i < step; i++) {
                     value = (Comparable) increment(value);
-                    if (value.compareTo(first) <= 0) return;
+                    if (compareTo(value, first) <= 0) return;
                 }
             }
         } else {
             step = -step;
             Comparable first = to;
             Comparable value = to;
-            while (value.compareTo(from) >= 0) {
+            while (compareTo(value, from) >= 0) {
                 closure.call(value);
                 for (int i = 0; i < step; i++) {
                     value = (Comparable) decrement(value);
-                    if (value.compareTo(first) >= 0) return;
+                    if (compareTo(value, first) >= 0) return;
                 }
             }
         }
