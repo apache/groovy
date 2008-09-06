@@ -91,16 +91,22 @@ public class ObjectRange extends AbstractList implements Range {
     private void constructorHelper(Comparable from, Comparable to) {
         if (from instanceof Short) {
             from = Integer.valueOf(((Short) from).intValue());
+        } else if (from instanceof Float) {
+            from = new Double(((Float) from).doubleValue());
         }
         if (to instanceof Short) {
             to = Integer.valueOf(((Short) to).intValue());
-        }
-        if (from instanceof Float) {
-            from = new Double(((Float) from).doubleValue());
-        }
-        if (to instanceof Float) {
+        } else if (to instanceof Float) {
             to = new Double(((Float) to).doubleValue());
         }
+
+        // TODO: Should we align to like types?
+//        if (from instanceof Integer && to instanceof Long) {
+//            from = Long.valueOf(((Integer) from).longValue());
+//        } else if (to instanceof Integer && from instanceof Long) {
+//            to = Long.valueOf(((Integer) to).longValue());
+//        }
+
         // TODO: should we care about different types here?
         if (from.getClass() == to.getClass()) {
             this.from = from;
