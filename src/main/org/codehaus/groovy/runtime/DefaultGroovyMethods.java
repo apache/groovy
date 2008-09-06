@@ -924,6 +924,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Provides a method that compares two comparables using Groovy's
+     * default number aware comparator.
+     *
+     * @param self a Comparable
+     * @param other another Comparable
+     * @return a -ve number, 0 or a +ve number according to Groovy's compareTo contract
+     */
+    public static int numberAwareCompareTo(Comparable self, Comparable other) {
+        NumberAwareComparator numberAwareComparator = new NumberAwareComparator();
+        return numberAwareComparator.compare(self, other);
+    }
+
+    /**
      * Returns an iterator equivalent to this iterator all duplicated items
      * removed by using a closure as a comparator.  If the closure takes a
      * single parameter, the argument passed will be each element, and the
