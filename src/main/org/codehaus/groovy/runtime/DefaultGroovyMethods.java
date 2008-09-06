@@ -2658,8 +2658,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *    assert 2 == m.size() // synonym for m.getCount()
      *    assert ! m.hasGroup()
      *    assert 0 == m.groupCount()
-     *    assert "abd" == m[0]
-     *    assert "abf" == m[1]
+     *    def matches = ["abd", "abf"]
+     *    for (i in 0..&lt;m.count) {
+     *        assert m[i] == matches[i]
+     *    }
      * </pre></code>
      * <p/>
      * For an example using group matches, <code><pre>
@@ -2668,10 +2670,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *    assert 4 == m.count
      *    assert m.hasGroup()
      *    assert 1 == m.groupCount()
-     *    assert ["abc", "c"] == m[0]
-     *    assert ["abd", "d"] == m[1]
-     *    assert ["abe", "e"] == m[2]
-     *    assert ["abf", "f"] == m[3]
+     *    def matches = [["abc", "c"], ["abd", "d"], ["abe", "e"], ["abf", "f"]]
+     *    for (i in 0..&lt;m.count) {
+     *        assert m[i] == matches[i]
+     *    }
      * </pre></code>
      * <p/>
      * For another example using group matches, <code><pre>
@@ -2679,9 +2681,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *    assert 3 == m.count
      *    assert m.hasGroup()
      *    assert 1 == m.groupCount()
-     *    assert ["abd", "d"] == m[0]
-     *    assert ["abxyz", "xyz"] == m[1]
-     *    assert ["abx", "x"] == m[2]
+     *    def matches = [["abd", "d"], ["abxyz", "xyz"], ["abx", "x"]]
+     *    for (i in 0..&lt;m.count) {
+     *        assert m[i] == matches[i]
+     *    }
      * </pre></code>
      *
      * @param matcher a Matcher

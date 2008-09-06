@@ -30,7 +30,7 @@ class RegularExpressionsTest extends GroovyTestCase {
         assert string =~ regex
 
         def i = 0
-        def m = "cheese cheese" =~ "cheese"
+        def m = "cheesecheese" =~ "cheese"
 
         assert m instanceof Matcher
 
@@ -38,7 +38,7 @@ class RegularExpressionsTest extends GroovyTestCase {
         assert i == 2
 
         i = 0
-        m = "cheese cheese" =~ "e+"
+        m = "cheesecheese" =~ "e+"
         while (m) { i = i + 1 }
         assert i == 4
 
@@ -57,30 +57,33 @@ class RegularExpressionsTest extends GroovyTestCase {
         assert 2 == m.size() // synonym for m.getCount()
         assert ! m.hasGroup()
         assert 0 == m.groupCount()
-        assert "abd" == m[0]
-        assert "abf" == m[1]
+        def matches = ["abd", "abf"]
+        for (i in 0 ..< m.count) {
+            assert m[i] == matches[i]
+        }
 
         p = /(?:ab([c|d|e|f]))/
         m = "abcabdabeabf" =~ p
         assert 4 == m.count
         assert m.hasGroup()
         assert 1 == m.groupCount()
-        assert ["abc", "c"] == m[0]
-        assert ["abd", "d"] == m[1]
-        assert ["abe", "e"] == m[2]
-        assert ["abf", "f"] == m[3]
+        matches = [["abc", "c"], ["abd", "d"], ["abe", "e"], ["abf", "f"]]
+        for (i in 0 ..< m.count) {
+            assert m[i] == matches[i]
+        }
 
         m = "abcabdabeabfabxyzabx" =~ /(?:ab([d|x-z]+))/
         assert 3 == m.count
         assert m.hasGroup()
         assert 1 == m.groupCount()
-        assert ["abd", "d"] == m[0]
-        assert ["abxyz", "xyz"] == m[1]
-        assert ["abx", "x"] == m[2]
+        matches = [["abd", "d"], ["abxyz", "xyz"], ["abx", "x"]]
+        for (i in 0 ..< m.count) {
+            assert m[i] == matches[i]
+        }
     }
 
     void testMatcherWithIndexAndRanges() {
-        def string = "cheese cheese"
+        def string = "cheesecheese"
         def matcher = string =~ "e+"
 
         assert "ee" == matcher[2]
@@ -99,7 +102,7 @@ class RegularExpressionsTest extends GroovyTestCase {
     }
     
     void testMatcherIterator() {
-        def matcher = "cheese cheese" =~ "e+"
+        def matcher = "cheesecheese" =~ "e+"
         def iter = matcher.iterator()
         assert iter instanceof Iterator
         assert iter.hasNext()
@@ -128,7 +131,7 @@ class RegularExpressionsTest extends GroovyTestCase {
         shouldFail(NoSuchElementException.class, { iter.next() })
         
         // collect() uses iterator
-        matcher = "cheese cheese" =~ "e+"
+        matcher = "cheesecheese" =~ "e+"
         assert ["ee", "e", "ee", "e"] == matcher.collect { it }
 
         matcher = "cheese please" =~ /([^e]+)e+/
