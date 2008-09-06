@@ -67,4 +67,7 @@ public class LongRangeTest extends NumberRangeTest {
         return new Long(value);
     }
 
+    public void testSizeWithLongTo() {
+        assertEquals(3, new ObjectRange(new Integer(Integer.MAX_VALUE), new Long(Integer.MAX_VALUE + 2L)).size());
+    }
 }
