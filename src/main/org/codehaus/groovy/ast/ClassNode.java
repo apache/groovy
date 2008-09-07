@@ -36,8 +36,8 @@ import groovy.lang.GroovyObject;
  * Represents a class in the AST.<br/>
  * A ClassNode should be created using the methods in ClassHelper.
  * This ClassNode may be used to represent a class declaration or
- * any other type. This class uses a proxy meschanism allowing to
- * create a class for a plain name at ast creation time. In another
+ * any other type. This class uses a proxy mechanism allowing to
+ * create a class for a plain name at AST creation time. In another
  * phase of the compiler the real ClassNode for the plain name may be
  * found. To avoid the need of exchanging this ClassNode with an
  * instance of the correct ClassNode the correct ClassNode is set as
@@ -47,8 +47,8 @@ import groovy.lang.GroovyObject;
  * as primary ClassNode which means they represent no actual class.
  * The redirect itself can be any type of ClassNode
  * <br>
- * To descirbe generic type signature see {@link #getGenericsTypes()} and
- * {@link #setGenericsTypes(GenericsType[])}. These emthods are not proxied,
+ * To describe generic type signature see {@link #getGenericsTypes()} and
+ * {@link #setGenericsTypes(GenericsType[])}. These methods are not proxied,
  * they describe the type signature used at the point of declaration or the
  * type signatures provided by the class. If the type signatures provided
  * by the class are needed, then a call to {@link #redirect()} will help.
@@ -198,7 +198,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     /**
      * Creates a ClassNode from a real class. The resulting
-     * ClassNode will be no primary ClassNode.
+     * ClassNode will not be a primary ClassNode.
      */
     public ClassNode(Class c) {
         this(c.getName(), c.getModifiers(), null, null ,MixinNode.EMPTY_ARRAY);
@@ -211,7 +211,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     /**
      * The complete class structure will be initialized only when really
-     * needed to avoid having too much objects during compilation
+     * needed to avoid having too many objects during compilation
      */
     private void lazyClassInit() {
         synchronized (lazyInitLock) {
