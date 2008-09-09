@@ -17,6 +17,7 @@ package groovy.swing.factory
 
 import groovy.swing.SwingBuilder
 import groovy.swing.binding.AbstractButtonProperties
+import groovy.swing.binding.JComboBoxProperties
 import groovy.swing.binding.JScrollBarProperties
 import groovy.swing.binding.JSliderProperties
 import groovy.swing.binding.JTableProperties
@@ -56,9 +57,9 @@ public class BindFactory extends AbstractFactory {
         // covers JScrollBar.value
         syntheticBindings.putAll(JScrollBarProperties.getSyntheticProperties())
 
-        // JComboBox.elements
-        // JComboBox.selectedElement
-        //syntheticBindings.putAll(JComboBoxProperties.getSyntheticProperties())
+        // JComboBox.elements / items
+        // JComboBox.selectedElement / selectedItem
+        syntheticBindings.putAll(JComboBoxProperties.getSyntheticProperties())
 
         // JList.elements
         // JList.selectedElement

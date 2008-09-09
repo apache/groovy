@@ -17,6 +17,7 @@
 package groovy.swing.factory
 
 import javax.swing.JComboBox
+import groovy.swing.binding.JComboBoxMetaMethods
 
 public class ComboBoxFactory extends AbstractFactory {
     
@@ -24,18 +25,21 @@ public class ComboBoxFactory extends AbstractFactory {
         FactoryBuilderSupport.checkValueIsType(value, name, JComboBox)
         //TODO expand to allow the value arg to be items
         Object items = attributes.get("items")
+        JComboBox comboBox
         if (items instanceof Vector) {
-            return new JComboBox(attributes.remove("items"))
+            comboBox = new JComboBox(attributes.remove("items"))
         } else if (items instanceof List) {
             List list = (List) attributes.remove("items")
-            return new JComboBox(list.toArray())
+            comboBox = new JComboBox(list.toArray())
         } else if (items instanceof Object[]) {
-            return new JComboBox(attributes.remove("items"))
+            comboBox = new JComboBox(attributes.remove("items"))
         } else if (value instanceof JComboBox) {
-            return value
+            comboBox = value
         } else {
-            return new JComboBox()
+            comboBox = new JComboBox()
         }
+        JComboBoxMetaMethods.enhanceMetaClass(comboBox)
+        return comboBox
     }
 
 }

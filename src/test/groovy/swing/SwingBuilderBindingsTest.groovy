@@ -168,7 +168,127 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         swing.txt.enabled = !swing.txt.enabled
         swing.binding.reverseUpdate()
         assert swing.txt.enabled == swing.cb.selected
+    }
 
+    public void testComboBoxBindSyntheticProperties() {
+        if (headless) return
+
+        SwingBuilder swing = new SwingBuilder()
+        def comboData = ['Alpha', 'Bravo', 'Charlie', 'Delta']
+
+        def vectorData = ['Adams', 'Boston', 'Chicago', 'Denver']
+
+
+        swing.frame() {
+            comboBox(id: 'combo01', items:comboData)
+            comboBox(id: 'combo02', model: new javax.swing.DefaultComboBoxModel(new Vector(vectorData)))
+
+            t1e  = label(text:bind {combo01.elements})
+            t1sx = label(text:bind {combo01.selectedIndex})
+            t1se = label(text:bind {combo01.selectedElement})
+            t1si = label(text:bind {combo01.selectedItem})
+
+            t2e  = label(text:bind {combo02.elements})
+            t2sx = label(text:bind {combo02.selectedIndex})
+            t2se = label(text:bind {combo02.selectedElement})
+            t2si = label(text:bind {combo02.selectedItem})
+        }
+
+        assert swing.t1e.text == '[Alpha, Bravo, Charlie, Delta]'
+        assert swing.t1sx.text == '0'
+        assert swing.t1se.text == 'Alpha'
+        assert swing.t1si.text == 'Alpha'
+
+        assert swing.t2e.text == '[Adams, Boston, Chicago, Denver]'
+        assert swing.t2sx.text == '0'
+        assert swing.t2se.text == 'Adams'
+        assert swing.t2si.text == 'Adams'
+
+
+        swing.combo01.selectedIndex = 1
+        assert swing.t1e.text == '[Alpha, Bravo, Charlie, Delta]'
+        assert swing.t1sx.text == '1'
+        assert swing.t1se.text == 'Bravo'
+        assert swing.t1si.text == 'Bravo'
+
+        swing.combo02.selectedIndex = 1
+        assert swing.t2e.text == '[Adams, Boston, Chicago, Denver]'
+        assert swing.t2sx.text == '1'
+        assert swing.t2se.text == 'Boston'
+        assert swing.t2si.text == 'Boston'
+
+        swing.combo01.selectedIndex = -1
+        assert swing.t1e.text == '[Alpha, Bravo, Charlie, Delta]'
+        assert swing.t1sx.text == '-1'
+        assert swing.t1se.text == null
+        assert swing.t1si.text == null
+
+        swing.combo02.selectedIndex = -1
+        assert swing.t2e.text == '[Adams, Boston, Chicago, Denver]'
+        assert swing.t2sx.text == '-1'
+        assert swing.t2se.text == null
+        assert swing.t2si.text == null
+
+        swing.combo01.selectedItem = 'Charlie'
+        assert swing.t1e.text == '[Alpha, Bravo, Charlie, Delta]'
+        assert swing.t1sx.text == '2'
+        assert swing.t1se.text == 'Charlie'
+        assert swing.t1si.text == 'Charlie'
+
+        swing.combo02.selectedItem = 'Chicago'
+        assert swing.t2e.text == '[Adams, Boston, Chicago, Denver]'
+        assert swing.t2sx.text == '2'
+        assert swing.t2se.text == 'Chicago'
+        assert swing.t2si.text == 'Chicago'
+
+        swing.combo01.selectedItem = 'Fox Trot'
+        assert swing.t1e.text == '[Alpha, Bravo, Charlie, Delta]'
+        assert swing.t1sx.text == '2'
+        assert swing.t1se.text == 'Charlie'
+        assert swing.t1si.text == 'Charlie'
+
+        swing.combo02.selectedItem = 'Frank'
+        assert swing.t2e.text == '[Adams, Boston, Chicago, Denver]'
+        assert swing.t2sx.text == '2'
+        assert swing.t2se.text == 'Chicago'
+        assert swing.t2si.text == 'Chicago'
+
+
+        swing.combo01.selectedElement = 'Delta'
+        assert swing.t1e.text == '[Alpha, Bravo, Charlie, Delta]'
+        assert swing.t1sx.text == '3'
+        assert swing.t1se.text == 'Delta'
+        assert swing.t1si.text == 'Delta'
+
+        swing.combo02.selectedElement = 'Denver'
+        assert swing.t2e.text == '[Adams, Boston, Chicago, Denver]'
+        assert swing.t2sx.text == '3'
+        assert swing.t2se.text == 'Denver'
+        assert swing.t2si.text == 'Denver'
+
+        swing.combo01.selectedElement = 'Golf'
+        assert swing.t1e.text == '[Alpha, Bravo, Charlie, Delta]'
+        assert swing.t1sx.text == '3'
+        assert swing.t1se.text == 'Delta'
+        assert swing.t1si.text == 'Delta'
+
+        swing.combo02.selectedElement = 'George'
+        assert swing.t2e.text == '[Adams, Boston, Chicago, Denver]'
+        assert swing.t2sx.text == '3'
+        assert swing.t2se.text == 'Denver'
+        assert swing.t2si.text == 'Denver'
+
+        swing.combo01.model.addElement('Echo')
+        assert swing.t1e.text == '[Alpha, Bravo, Charlie, Delta, Echo]'
+
+        swing.combo02.model.addElement('Easy')
+        assert swing.t2e.text == '[Adams, Boston, Chicago, Denver, Easy]'
+
+        swing.combo01.model.removeElement('Bravo')
+        assert swing.t1e.text == '[Alpha, Charlie, Delta, Echo]'
+
+        swing.combo02.model.removeElement('Adams')
+        assert swing.t2e.text == '[Boston, Chicago, Denver, Easy]'
     }
 
     public void testEventBinding() {
@@ -311,7 +431,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
     public void testConverters() {
         if (isHeadless()) return
         SwingBuilder swing = new SwingBuilder()
-    
+
         swing.actions() {
             checkBox(id:'doner')
             checkBox(id:'cb1', enabled:bind(source:doner, sourceProperty:'enabled', converter: {it}, id:'binding1'))
