@@ -17,9 +17,9 @@
 
 package groovy.swing
 
+import java.awt.event.ActionEvent
 import javax.swing.DefaultBoundedRangeModel
 import javax.swing.DefaultButtonModel
-import javax.swing.JFrame
 import javax.swing.text.PlainDocument
 
 public class SwingBuilderBindingsTest extends GroovySwingTestCase {
@@ -294,10 +294,11 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
     public void testEventBinding() {
         if (isHeadless()) return
         SwingBuilder swing = new SwingBuilder()
-
+        def capture
         swing.actions() {
             button('Button!', id:'b')
             textField(id:'txt', text:bind(source:b, sourceEvent:'actionPerformed', sourceValue:{b.text}))
+            textField(id:'txt2', text:bind(source:b, sourceEvent:'actionPerformed', sourceValue:{evt->capture=evt; 'Captured!'}))
         }
 
         assert swing.txt.text == 'Button!'
@@ -307,6 +308,9 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         swing.b.doClick()
         //ok, now it's pressed
         assert swing.txt.text == 'Pressed!'
+        //check that we get evet as closure arg
+        assert swing.txt2.text == 'Captured!'
+        assert capture instanceof ActionEvent
     }
 
     public void testPropertyBinding() {
