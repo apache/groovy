@@ -106,6 +106,7 @@ public class BindFactory extends AbstractFactory {
             String targetProperty = (String) attributes.remove("targetProperty") ?: value
             tb = new PropertyBinding(target, targetProperty)
             if (source == null) {
+                // if we have a target but no source assume the build context is the source and return
                 def newAttributes = [:]
                 newAttributes.putAll(attributes)
                 builder.context.put(tb, newAttributes)
@@ -113,27 +114,48 @@ public class BindFactory extends AbstractFactory {
                 return tb
             }
         }
-        FullBinding fb
 
-        if (attributes.containsKey("sourceEvent") && attributes.containsKey("sourceValue")) {
+        FullBinding fb
+        boolean sea = attributes.containsKey("sourceEvent")
+        boolean sva = attributes.containsKey("sourceValue")
+        boolean spa = attributes.containsKey("sourceProperty") || value
+        if (sea && sva && !spa) {
             Closure queryValue = (Closure) attributes.remove("sourceValue")
-            ClosureSourceBinding psb = new ClosureSourceBinding(queryValue)
+            ClosureSourceBinding csb = new ClosureSourceBinding(queryValue)
             String trigger = (String) attributes.remove("sourceEvent")
             EventTriggerBinding etb = new EventTriggerBinding(source, trigger)
-            fb = etb.createBinding(psb, tb)
-        } else if (attributes.containsKey("sourceProperty") || value) {
-            // first check for synthetic properties
+            fb = etb.createBinding(csb, tb)
+        } else if (spa && !(sea && sva)) {
             String property = (String) attributes.remove("sourceProperty") ?: value
-            PropertyBinding psb = new PropertyBinding(source, property)
+            PropertyBinding pb = new PropertyBinding(source, property)
 
-            TriggerBinding trigger = getTriggerBinding(psb)
-            fb = trigger.createBinding(psb, tb)
-        } else {
+            TriggerBinding trigger
+            if (sea) {
+                String triggerName = (String) attributes.remove("sourceEvent")
+                trigger = new EventTriggerBinding(source, triggerName)
+            } else {
+                // this method will also check for synthetic properties
+                trigger = getTriggerBinding(pb)
+            }
+
+            SourceBinding sb;
+            if (sva) {
+                Closure queryValue = (Closure) attributes.remove("sourceValue")
+                sb = new ClosureSourceBinding(queryValue)
+            } else {
+                sb = pb
+            }
+
+            fb = trigger.createBinding(sb, tb)
+        } else if (!(sea || sva || spa)) {
+            // if no sourcing is defined then assume we are a closure binding and return
             def newAttributes = [:]
             newAttributes.putAll(attributes)
             builder.context.put(tb, newAttributes)
             attributes.clear()
             return new ClosureTriggerBinding(syntheticBindings)
+        } else {
+            throw new RuntimeException("Both sourceEvent: and sourceValue: cannot be specified along with sourceProperty: or a value argument")
         }
 
         if (attributes.containsKey("value")) {

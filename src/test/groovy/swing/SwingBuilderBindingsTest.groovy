@@ -348,6 +348,52 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         assert swing.txt.enabled == swing.cb.enabled
     }
 
+    public void testPropertyEventBinding() {
+        if (isHeadless()) return
+        SwingBuilder swing = new SwingBuilder()
+
+        int enabledChangeCount = 1
+        swing.actions() {
+            checkBox('Button!', id:'cb')
+            textField(id:'txtp', text:bind(source:cb, sourceProperty:'text',))
+            textField(id:'txtpv', text:bind(source:cb, sourceProperty:'text', sourceValue: {enabledChangeCount++}))
+            textField(id:'txtep', text:bind(source:cb, sourceEvent:'stateChanged', sourceProperty:'text'))
+        }
+        shouldFail {
+            swing.actions() {
+                // all three are pointless
+                textField(id:'txtepv', enabled:bind(source:cb, sourceEvent:'stateChanged', sourceProperty:'text', sourceValue: {enabledChangeCount++}))
+            }
+        }
+        shouldFail {
+            swing.actions() {
+                // just value isn't enough info
+                textField(id:'txtv', enabled:bind(source:cb, sourceValue: {enabledChangeCount++}))
+            }
+        }
+        shouldFail {
+            swing.actions() {
+                // just event isn't enough
+                textField(id:'txtepv', enabled:bind(source:cb, sourceEvent:'stateChanged'))
+            }
+        }
+
+        assert swing.txtp.text == 'Button!'
+        assert swing.txtpv.text == '1'
+        assert swing.txtep.text == 'Button!'
+
+        swing.cb.text = 'CheckBox!'
+        assert swing.txtp.text == 'CheckBox!'
+        assert swing.txtpv.text == '2'
+        assert swing.txtep.text == 'Button!'
+
+        swing.cb.selected = true
+        assert swing.txtp.text == 'CheckBox!'
+        assert swing.txtpv.text == '2'
+        assert swing.txtep.text == 'CheckBox!'
+
+    }
+
     public void testReversePropertyBinding() {
         if (isHeadless()) return
         SwingBuilder swing = new SwingBuilder()
