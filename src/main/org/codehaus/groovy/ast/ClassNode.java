@@ -43,9 +43,44 @@ import groovy.lang.GroovyObject;
  * instance of the correct ClassNode the correct ClassNode is set as
  * redirect. Most method calls are then redirected to that ClassNode.
  * <br>
- * <b>Note:</b> the proxy mechanism is only allowed for classes being marked
- * as primary ClassNode which means they represent no actual class.
- * The redirect itself can be any type of ClassNode
+ * There are three types of ClassNodes:
+ * <br>
+ * <ol>
+ * <li> Primary ClassNodes:<br>
+ * A primary ClassNode is one where we have a source representation
+ * which is to be compiled by Groovy and which we have an AST for. 
+ * The groovy compiler will output one class for each such ClassNode
+ * that passes through AsmBytecodeGenerator... not more, not less.
+ * That means for example Closures become such ClassNodes too at
+ * some point. 
+ * 
+ * <li> ClassNodes create through different sources (typically created
+ * from a java.lang.reflect.Class object):<br>
+ * The compiler will not output classes from these, the methods
+ * usually do not contain bodies. These kind of ClassNodes will be
+ * used in different checks, but not checks that work on the method 
+ * bodies. For example if such a ClassNode is a super class to a primary
+ * ClassNode, then the abstract method test and others will be done 
+ * with data based on these. Theoretically it is also possible to mix both 
+ * (1 and 2) kind of classes in a hierarchy, but this probably works only
+ *  in the newest Groovy versions. Such ClassNodes normally have to
+ *  isResolved() returning true without having a redirect.In the Groovy 
+ *  compiler the only version of this, that exists, is a ClassNode created 
+ *  through a Class instance
+ *
+ * <li> Labels:<br>
+ * ClassNodes created through ClassHelper.makeWithoutCaching. They 
+ * are place holders, its redirect points to the real structure, which can
+ * be a label too, but following all redirects it should end with a ClassNode
+ * from one of the other two categories. If ResolveVisitor finds such a 
+ * node, it tries to set the redirects. Any such label created after 
+ * ResolveVisitor has done its work needs to have a redirect pointing to 
+ * case 1 or 2. If not the compiler may react strange... this can be considered 
+ * as a kind of dangling pointer. 
+ * <br>
+ * <b>Note:</b> the redirect mechanism is only allowed for classes 
+ * that are not primary ClassNodes. Typically this is done for classes
+ * created by name only.  The redirect itself can be any type of ClassNode.
  * <br>
  * To describe generic type signature see {@link #getGenericsTypes()} and
  * {@link #setGenericsTypes(GenericsType[])}. These methods are not proxied,
