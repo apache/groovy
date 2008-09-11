@@ -17,6 +17,7 @@ package org.codehaus.groovy.transform.vm5
 
 /**
  * @author Danno.Ferrin
+ * @author Alex Tkachman
  */
 class GlobalTransformTest extends GroovyTestCase {
 
@@ -40,4 +41,47 @@ class GlobalTransformTest extends GroovyTestCase {
         """)
     }
 
+    void testSingleton() {
+        GroovyShell shell = new GroovyShell()
+        def res = shell.evaluate("""
+              @Singleton
+              class X {
+                 def getHello () {
+                   "Hello, World!"
+                 }
+              }
+
+              X.instance.hello
+        """)
+
+        assertEquals("Hello, World!", res)
+
+        shouldFail {
+            shell.evaluate("""
+                  @Singleton
+                  class X {
+                     def getHello () {
+                       "Hello, World!"
+                     }
+
+                     X ()
+                  }
+
+                  X.instance.hello
+            """)
+        }
+
+        shouldFail {
+            shell.evaluate("""
+                  @Singleton
+                  class X {
+                     def getHello () {
+                       "Hello, World!"
+                     }
+                  }
+
+                  new X ()
+            """)
+        }
+    }
 }
