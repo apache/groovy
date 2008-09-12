@@ -33,6 +33,8 @@ import org.objectweb.asm.Opcodes;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
 import java.util.Collection;
+import java.util.List;
+import java.util.Iterator;
 
 import groovy.beans.VetoableASTTransformation;
 import groovy.lang.Singleton;
@@ -46,7 +48,6 @@ import groovy.lang.Singleton;
 public class SingletonASTTransformation implements ASTTransformation, Opcodes {
 
     /**
-     * Handles the bulk of the processing, mostly delegating to other methods.
      *
      * @param nodes   the ast nodes
      * @param source  the source unit for the nodes
@@ -70,12 +71,12 @@ public class SingletonASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private void createNonLazy(ClassNode classNode) {
-        final FieldNode fieldNode = classNode.addField("instance", ACC_PUBLIC | ACC_FINAL | ACC_STATIC, classNode, new ConstructorCallExpression(classNode, new ArgumentListExpression()));
+        final FieldNode fieldNode = classNode.addField("instance", ACC_PUBLIC|ACC_FINAL|ACC_STATIC, classNode, new ConstructorCallExpression(classNode, new ArgumentListExpression()));
         createConstructor(classNode, fieldNode);
     }
 
     private void createLazy(ClassNode classNode) {
-        final FieldNode fieldNode = classNode.addField("instance", ACC_PRIVATE | ACC_STATIC, classNode, null);
+        final FieldNode fieldNode = classNode.addField("instance", ACC_PRIVATE|ACC_STATIC|ACC_VOLATILE, classNode, null);
         createConstructor(classNode, fieldNode);
 
         final BlockStatement body = new BlockStatement();
@@ -96,14 +97,28 @@ public class SingletonASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private void createConstructor(ClassNode classNode, FieldNode field) {
-        final BlockStatement body = new BlockStatement();
-        body.addStatement(new IfStatement(
-            new BooleanExpression(new FieldExpression(field)),
-            new ThrowStatement(
-                    new ConstructorCallExpression(ClassHelper.make(RuntimeException.class),
-                            new ArgumentListExpression(
-                                    new ConstantExpression("Can't instantiate singleton " + classNode.getName() + ". Use " + classNode.getName() + ".instance" )))),
-            new EmptyStatement()));
-        classNode.addConstructor(new ConstructorNode(ACC_PRIVATE, body));
+
+        final List list = classNode.getDeclaredConstructors();
+        MethodNode found = null;
+        for (Iterator it = list.iterator(); it.hasNext(); ) {
+            MethodNode mn = (MethodNode) it.next();
+            final Parameter[] parameters = mn.getParameters();
+            if (parameters == null || parameters.length == 0) {
+                found = mn;
+                break;
+            }
+        }
+
+        if (found == null) {
+            final BlockStatement body = new BlockStatement();
+            body.addStatement(new IfStatement(
+                new BooleanExpression(new FieldExpression(field)),
+                new ThrowStatement(
+                        new ConstructorCallExpression(ClassHelper.make(RuntimeException.class),
+                                new ArgumentListExpression(
+                                        new ConstantExpression("Can't instantiate singleton " + classNode.getName() + ". Use " + classNode.getName() + ".instance" )))),
+                new EmptyStatement()));
+            classNode.addConstructor(new ConstructorNode(ACC_PRIVATE, body));
+        }
     }
 }

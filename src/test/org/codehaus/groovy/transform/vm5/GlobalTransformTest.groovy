@@ -100,19 +100,19 @@ class GlobalTransformTest extends GroovyTestCase {
     }
 
     void testSingletonOverideConstructorFails() {
-        shouldFail {
-            shell.evaluate("""
+            def res = shell.evaluate("""
                   @Singleton
                   class X {
-                     def getHello () {
-                       "Hello, World!"
-                     }
+                     static hello = "Bye-bye world"
 
-                     X ()
+                     X () {
+                        hello = "Hello, World!"
+                     }
                   }
 
                   X.instance.hello
             """)
-        }
+
+            assertEquals("Hello, World!", res)
     }
 }
