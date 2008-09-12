@@ -537,7 +537,7 @@ public class DefaultTypeTransformation {
         if (left instanceof Comparable) {
             if (left instanceof Number) {
                 if (isValidCharacterString(right)) {
-                    return castToChar(left) - castToChar(right);
+                    return DefaultGroovyMethods.compareTo((Number) left, (Character) box(castToChar(right)));
                 }
                 if (right instanceof Character || right instanceof Number) {
                     return DefaultGroovyMethods.compareTo((Number) left, castToNumber(right));
@@ -545,15 +545,15 @@ public class DefaultTypeTransformation {
             }
             else if (left instanceof Character) {
                 if (isValidCharacterString(right)) {
-                    return castToChar(left) - castToChar(right);
+                    return DefaultGroovyMethods.compareTo((Character)left,(Character)box(castToChar(right)));
                 }
                 if (right instanceof Number) {
-                    return castToChar(left) - castToChar(right);
+                    return DefaultGroovyMethods.compareTo((Character)left,(Number)right);
                 }
             }
             else if (right instanceof Number) {
                 if (isValidCharacterString(left)) {
-                    return castToChar(left) - castToChar(right);
+                    return DefaultGroovyMethods.compareTo((Character)box(castToChar(left)),(Number) right);
                 }
             }
             else if (left instanceof String && right instanceof Character) {

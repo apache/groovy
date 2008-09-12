@@ -3939,9 +3939,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 return DefaultTypeTransformation.compareTo(o1, o2);
             } catch (ClassCastException cce) {
             } catch (GroovyRuntimeException gre) {}
+            // since the object does not have a valid compareTo method
+            // we compare using the hashcodes. null cases are handled by
+            // DefaultTypeTransformation.compareTo
             int x1 = o1.hashCode();
             int x2 = o2.hashCode();
-            return (x1 - x2);
+            if (x1==x2) return 0;
+            if (x1<x2)  return -1;
+            return 1;
         }
 
         public boolean equals(Object obj) {
