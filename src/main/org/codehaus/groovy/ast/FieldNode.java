@@ -132,4 +132,9 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
 	public ClassNode getOriginType() {
 		return getType();
 	}
+
+    public void rename(String name) {
+        declaringClass.renameField(this.name,name);
+        this.name = name;
+    }
 }

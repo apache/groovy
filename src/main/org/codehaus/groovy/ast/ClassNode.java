@@ -95,7 +95,6 @@ import groovy.lang.GroovyObject;
  * @version $Revision$
  */
 public class ClassNode extends AnnotatedNode implements Opcodes {
-
     private static class MapOfLists {
         private Map map = new HashMap();
         public List get(Object key) {
@@ -1236,5 +1235,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public Map<Class <? extends ASTTransformation>, Set<ASTNode>> getTransforms(CompilePhase phase) {
         return transformInstances.get(phase);
+    }
+
+    public void renameField(String oldName, String newName) {
+        final Map index = redirect().fieldIndex;
+        index.put(newName, index.remove(oldName));
     }
 }

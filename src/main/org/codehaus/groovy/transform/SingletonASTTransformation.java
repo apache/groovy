@@ -82,12 +82,12 @@ public class SingletonASTTransformation implements ASTTransformation, Opcodes {
         final BlockStatement body = new BlockStatement();
         final FieldExpression instanceExpression = new FieldExpression(fieldNode);
         body.addStatement(new IfStatement(
-            new BooleanExpression(instanceExpression),
+            new BooleanExpression(new BinaryExpression(instanceExpression, Token.newSymbol("!=",-1,-1), ConstantExpression.NULL)),
             new ReturnStatement(instanceExpression),
             new SynchronizedStatement(
                     new ClassExpression(classNode),
                     new IfStatement(
-                                new BooleanExpression(instanceExpression),
+                            new BooleanExpression(new BinaryExpression(instanceExpression, Token.newSymbol("!=",-1,-1), ConstantExpression.NULL)),
                                 new ReturnStatement(instanceExpression),
                                 new ReturnStatement(new BinaryExpression(instanceExpression,Token.newSymbol("=",-1,-1), new ConstructorCallExpression(classNode, new ArgumentListExpression())))
                     )
@@ -112,7 +112,7 @@ public class SingletonASTTransformation implements ASTTransformation, Opcodes {
         if (found == null) {
             final BlockStatement body = new BlockStatement();
             body.addStatement(new IfStatement(
-                new BooleanExpression(new FieldExpression(field)),
+                    new BooleanExpression(new BinaryExpression(new FieldExpression(field), Token.newSymbol("!=",-1,-1), ConstantExpression.NULL)),
                 new ThrowStatement(
                         new ConstructorCallExpression(ClassHelper.make(RuntimeException.class),
                                 new ArgumentListExpression(
