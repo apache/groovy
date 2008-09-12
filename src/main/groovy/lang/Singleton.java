@@ -32,4 +32,8 @@ import java.lang.annotation.Target;
 @Target({ElementType.TYPE})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.SingletonASTTransformation")
 public @interface Singleton {
+    /**
+     * @return if this singleton should be lazy
+     */
+    boolean lazy () default false;
 }

@@ -21,12 +21,23 @@ package org.codehaus.groovy.transform.vm5
  */
 class GlobalTransformTest extends GroovyTestCase {
 
+    GroovyShell shell;
+
     URL transformRoot = new File(getClass().classLoader.
             getResource("org/codehaus/groovy/transform/vm5/META-INF/services/org.codehaus.groovy.transform.ASTTransformation").
             toURI()).parentFile.parentFile.parentFile.toURL()
 
+    protected void setUp() {
+        super.setUp();
+        shell = new GroovyShell();
+    }
+
+    protected void tearDown() {
+        shell = null;
+        super.tearDown();
+    }
+
     void testGlobalTransform() {
-        GroovyShell shell = new GroovyShell()
         shell.classLoader.addURL(transformRoot)
         shell.evaluate("""
             import org.codehaus.groovy.control.CompilePhase
@@ -42,7 +53,6 @@ class GlobalTransformTest extends GroovyTestCase {
     }
 
     void testSingleton() {
-        GroovyShell shell = new GroovyShell()
         def res = shell.evaluate("""
               @Singleton
               class X {
@@ -55,7 +65,41 @@ class GlobalTransformTest extends GroovyTestCase {
         """)
 
         assertEquals("Hello, World!", res)
+    }
 
+    void testLazySingleton() {
+        def res = shell.evaluate("""
+              @Singleton(lazy=true)
+              class X {
+                 def getHello () {
+                   "Hello, World!"
+                 }
+              }
+
+              assert X.@instance == null
+
+              X.instance.hello
+        """)
+
+        assertEquals("Hello, World!", res)
+    }
+
+    void testSingletonInstantiationFails() {
+        shouldFail {
+            shell.evaluate("""
+                  @Singleton
+                  class X {
+                     def getHello () {
+                       "Hello, World!"
+                     }
+                  }
+
+                  new X ()
+            """)
+        }
+    }
+
+    void testSingletonOverideConstructorFails() {
         shouldFail {
             shell.evaluate("""
                   @Singleton
@@ -68,19 +112,6 @@ class GlobalTransformTest extends GroovyTestCase {
                   }
 
                   X.instance.hello
-            """)
-        }
-
-        shouldFail {
-            shell.evaluate("""
-                  @Singleton
-                  class X {
-                     def getHello () {
-                       "Hello, World!"
-                     }
-                  }
-
-                  new X ()
             """)
         }
     }
