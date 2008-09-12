@@ -398,7 +398,7 @@ public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
     private static class DebugRef extends FinalizableRef.DebugRef<Class> {
         public final static boolean debug = false;
 
-        static final AtomicInteger count = new AtomicInteger();
+        private static final AtomicInteger count = new AtomicInteger();
 
         final String name;
 

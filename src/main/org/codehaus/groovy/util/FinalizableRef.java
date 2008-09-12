@@ -54,6 +54,11 @@ public interface FinalizableRef {
         }
     }
 
+    /**
+     * Phantom reference, which will be kept alive while not finalized.
+     * There is no need to store this references anywhere because they will be automatically put in to internal set.
+     * Subclasses should overide finalizeRef () method and call super.finalizeRef () to do any additional cleanup or dyagnostic
+     */
     public static abstract class DebugRef<T> extends PhantomRef<T> {
         private static final ConcurrentHashMap<FinalizableRef,Object> anchor = new ConcurrentHashMap<FinalizableRef,Object> ();
         private static final Object ANCHOR = new Object();
@@ -64,6 +69,7 @@ public interface FinalizableRef {
         }
 
         public void finalizeRef () {
+            super.clear();
             anchor.remove(this);
         }
     }

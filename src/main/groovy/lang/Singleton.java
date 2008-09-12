@@ -24,7 +24,10 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Class annotation to make class singleton
+ * Class annotation to make class singleton.
+ *
+ * Sigleton can be initialized in static initialization of the class or lazily (on first access)
+ * To make singleton lazy it is enough to use <code>@Singleton(lazy=true)</code>
  *
  * @author Alex Tkachman
  */
