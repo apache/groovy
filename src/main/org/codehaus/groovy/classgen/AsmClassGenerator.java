@@ -1322,31 +1322,15 @@ public class AsmClassGenerator extends ClassGenerator {
     //-------------------------------------------------------------------------
 
     public void visitDeclarationExpression(DeclarationExpression expression) {
-        onLineNumber(expression, "visitDeclarationExpression: \"" + expression.getVariableExpression().getName() + "\"");
-
-        Expression rightExpression = expression.getRightExpression();
-        // no need to visit left side, just get the variable name
-        VariableExpression vex = expression.getVariableExpression();
-        ClassNode type = vex.getType();
-
-        // let's not cast for primitive types as we handle these in field setting etc
-        if (ClassHelper.isPrimitiveType(type)) {
-            rightExpression.visit(this);
-        } else {
-            if (type != ClassHelper.OBJECT_TYPE) {
-                visitCastExpression(new CastExpression(type, rightExpression));
-            } else {
-                visitAndAutoboxBoolean(rightExpression);
-            }
-        }
-        compileStack.defineVariable(vex, true);
+        onLineNumber(expression, "visitDeclarationExpression: \"" + expression.getText() + "\"");
+        evaluateEqual(expression,true);
     }
 
     public void visitBinaryExpression(BinaryExpression expression) {
         onLineNumber(expression, "visitBinaryExpression: \"" + expression.getOperation().getText() + "\" ");
         switch (expression.getOperation().getType()) {
             case Types.EQUAL: // = assignment
-                evaluateEqual(expression);
+                evaluateEqual(expression,false);
                 break;
 
             case Types.COMPARE_IDENTICAL: // ===
@@ -3879,7 +3863,7 @@ public class AsmClassGenerator extends ClassGenerator {
         compareMethod.call(mv);
     }
 
-    protected void evaluateEqual(BinaryExpression expression) {
+    protected void evaluateEqual(BinaryExpression expression, boolean defineVariable) {
         Expression leftExpression = expression.getLeftExpression();
         if (leftExpression instanceof BinaryExpression) {
             BinaryExpression leftBinExpr = (BinaryExpression) leftExpression;
@@ -3908,13 +3892,11 @@ public class AsmClassGenerator extends ClassGenerator {
 
         // let's evaluate the RHS then hopefully the LHS will be a field
         Expression rightExpression = expression.getRightExpression();
-        ClassNode type = getLHSType(leftExpression);
-        // let's not cast for primitive types as we handle these in field setting etc
-        if (ClassHelper.isPrimitiveType(type)) {
-            visitAndAutoboxBoolean(rightExpression);
-        } else if (!rightExpression.getType().isDerivedFrom(type)) {
-            visitCastExpression(new CastExpression(type, rightExpression));
-        } else {
+        if (!(leftExpression instanceof TupleExpression)) {
+            ClassNode type = getLHSType(leftExpression);
+            assignmentCastAndVisit(type,rightExpression);
+        }  else {
+            // multiple assignment here!
             visitAndAutoboxBoolean(rightExpression);
         }
 
@@ -3932,21 +3914,38 @@ public class AsmClassGenerator extends ClassGenerator {
             };
             for (Iterator iterator = tuple.getExpressions().iterator(); iterator.hasNext();) {
                 VariableExpression var = (VariableExpression) iterator.next();
-                visitMethodCallExpression(
-                        new MethodCallExpression(
-                                lhsExpr, "getAt",
-                                new ArgumentListExpression(new ConstantExpression(Integer.valueOf(i)))
-                        )
-                );
+                MethodCallExpression call = new MethodCallExpression(
+                        lhsExpr, "getAt",
+                        new ArgumentListExpression(new ConstantExpression(Integer.valueOf(i))));
+                ClassNode type = getLHSType(var);
+                assignmentCastAndVisit(type,call);
                 i++;
-                visitVariableExpression(var);
+                if (defineVariable) {
+                    compileStack.defineVariable(var, true);
+                } else {
+                    visitVariableExpression(var);
+                }
             }
+        } else if (defineVariable) {
+            VariableExpression var = (VariableExpression) leftExpression;
+            compileStack.defineVariable(var, true);
         } else {
             mv.visitInsn(DUP);  // to leave a copy of the rightexpression value on the stack after the assignment.
             leftExpression.visit(this);
         }
         rightHandType = null;
         leftHandExpression = false;
+    }
+
+    private void assignmentCastAndVisit(ClassNode type, Expression rightExpression) {
+        // let's not cast for primitive types as we handle these in field setting etc
+        if (ClassHelper.isPrimitiveType(type)) {
+            visitAndAutoboxBoolean(rightExpression);
+        } else if (!rightExpression.getType().isDerivedFrom(type)) {
+            visitCastExpression(new CastExpression(type, rightExpression));
+        } else {
+            visitAndAutoboxBoolean(rightExpression);
+        }        
     }
 
     /**
@@ -4020,7 +4019,6 @@ public class AsmClassGenerator extends ClassGenerator {
                 false, false, false, false);
         
         // we need special code for arrays to store the result
-        boolean setResult = true;
         if (expression instanceof BinaryExpression) {
             BinaryExpression be = (BinaryExpression) expression;
             if (be.getOperation().getType()==Types.LEFT_SQUARE_BRACKET) {
@@ -4039,21 +4037,15 @@ public class AsmClassGenerator extends ClassGenerator {
                         args,
                         false, false, false, false);
                 mv.visitInsn(POP);
-                setResult = false;
                 compileStack.removeVar(resultIdx);
             } 
-        } else if (expression instanceof ConstantExpression) {
-            setResult = false;
         }
         
-        if (setResult) {
-            // we want to keep a value on stack, so we have to DUP here
-            if (expression instanceof VariableExpression ||
-                expression instanceof FieldExpression || 
-                expression instanceof PropertyExpression)
-            {
-                mv.visitInsn(DUP);
-            }
+        if (expression instanceof VariableExpression ||
+            expression instanceof FieldExpression || 
+            expression instanceof PropertyExpression)
+        {
+            mv.visitInsn(DUP);
             leftHandExpression = true;
             expression.visit(this);
             leftHandExpression = false;

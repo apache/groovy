@@ -100,8 +100,10 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         }
     }
 
-    private void declare(VariableExpression expr) {
-        declare(expr, expr);
+    private void declare(VariableExpression vex) {
+        vex.setInStaticContext(currentScope.isInStaticContext());
+        declare(vex, vex);
+        vex.setAccessedVariable(vex);
     }
 
     private void declare(Variable var, ASTNode expr) {
@@ -362,11 +364,17 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         // visit right side first to avoid the usage of a 
         // variable before its declaration
         expression.getRightExpression().visit(this);
+        
         // no need to visit left side, just get the variable name
-        VariableExpression vex = expression.getVariableExpression();
-        vex.setInStaticContext(currentScope.isInStaticContext());
-        declare(vex);
-        vex.setAccessedVariable(vex);
+        if (expression.isMultipleAssignmentDeclaration()) {
+            ArgumentListExpression list = (ArgumentListExpression) expression.getLeftExpression();
+            for (Iterator it=list.getExpressions().iterator(); it.hasNext();) {
+                VariableExpression exp = (VariableExpression) it.next();
+                declare(exp);
+            }
+        } else {
+            declare(expression.getVariableExpression());           
+        }        
     }
 
     public void visitVariableExpression(VariableExpression expression) {

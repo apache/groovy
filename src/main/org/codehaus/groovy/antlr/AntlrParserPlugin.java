@@ -1165,22 +1165,36 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             type = makeTypeWithArguments(node);
             node = node.getNextSibling();
         }
-
-        String name = identifier(node);
-        VariableExpression leftExpression = new VariableExpression(name, type);
-        configureAST(leftExpression, node);
         
-        node = node.getNextSibling();
-
+        Expression leftExpression;
         Expression rightExpression = ConstantExpression.NULL;
+        int nodeType;
+        
+        if (isType(ASSIGN, node)) {
+            node = node.getFirstChild();
+            AST left = node.getFirstChild();
+            ArgumentListExpression alist = new ArgumentListExpression();
+            for (AST varDef = left; varDef!=null; varDef=varDef.getNextSibling()) {
+                assertNodeType(VARIABLE_DEF, varDef);
+                DeclarationExpression de = (DeclarationExpression) declarationExpression(varDef);
+                alist.addExpression(de.getVariableExpression());
+            }
+            leftExpression = alist;
+            nodeType=LIST_CONSTRUCTOR;
+        } else {
+            String name = identifier(node);
+            leftExpression = new VariableExpression(name, type);
+            nodeType=ASSIGN;
+        }
+        
+        configureAST(leftExpression, node);
+        node = node.getNextSibling();
         if (node != null) {
-            assertNodeType(ASSIGN, node);
-
+            assertNodeType(nodeType, node);
             rightExpression = expression(node.getFirstChild());
         }
+        
         Token token = makeToken(Types.ASSIGN, variableDef);
-
-        // TODO should we have a variable declaration statement?
         DeclarationExpression expression = new DeclarationExpression(leftExpression, token, rightExpression);
         configureAST(expression, variableDef);
         ExpressionStatement expressionStatement = new ExpressionStatement(expression);

@@ -782,14 +782,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     protected Expression transformDeclarationExpression(DeclarationExpression de) {
         Expression oldLeft = de.getLeftExpression();
         Expression left = transform(oldLeft);
-        if (left != oldLeft) {
+        if (left instanceof ClassExpression) {
             ClassExpression ce = (ClassExpression) left;
             addError("you tried to assign a value to the class " + ce.getType().getName(), oldLeft);
             return de;
         }
         Expression right = transform(de.getRightExpression());
         if (right == de.getRightExpression()) return de;
-        DeclarationExpression newDeclExpr = new DeclarationExpression((VariableExpression) left, de.getOperation(), right);
+        DeclarationExpression newDeclExpr = new DeclarationExpression(left, de.getOperation(), right);
         newDeclExpr.setSourcePosition(de);
         return newDeclExpr;
     }

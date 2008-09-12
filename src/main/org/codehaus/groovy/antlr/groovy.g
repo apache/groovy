@@ -497,7 +497,7 @@ declaration!
         v2:variableDefinitions[null,#t2]
         {#declaration = #v2;}
     ;
-
+    
 genericMethod!
     :
         // method using a 'def' or a modifier; type is optional
@@ -565,7 +565,7 @@ singleDeclaration
  *  just put a TODO comment in.
  */
 declarationStart!
-    :   (     "def" nls
+    :   (     ("def" nls) 
             | modifier nls
             | annotation nls
             | (   upperCaseIdent
@@ -877,7 +877,7 @@ modifier
     ;
 
 annotation!  {Token first = LT(1);}
-    :   AT! i:identifier nls! ( LPAREN! ( args:annotationArguments )? RPAREN! )?
+    :   AT! i:identifier nls! (options{greedy=true;}: LPAREN! ( args:annotationArguments )? RPAREN! )?
         {#annotation = #(create(ANNOTATION,"ANNOTATION",first,LT(1)), i, args);}
     ;
 
@@ -1238,10 +1238,13 @@ classField!  {Token first = LT(1);}
         dg:genericMethod
         {#classField = #dg;}
     |
+        (multipleAssignmentDeclarationStart)=> 
+        mad:multipleAssignmentDeclaration
+        {#classField = #mad;}
+    |    
         (declarationStart)=>
         dd:declaration
         {#classField = #dd;}
-
     |
         //TODO - unify typeDeclaration and typeDefinitionInternal names
         // type declaration
@@ -1311,6 +1314,32 @@ listOfVariables[AST mods, AST t, Token first]
                                getASTFactory().dupTree(t),first]
         )*
     ;
+    
+multipleAssignmentDeclarationStart 
+    :
+        (modifier nls | annotation nls)* "def" nls LPAREN
+    ;
+    
+typeNamePairs[AST mods, Token first]
+    :
+        (t:typeSpec[false]!)?
+        singleVariable[getASTFactory().dupTree(mods),#t]
+        (   COMMA! nls!
+            {first = LT(1);}
+            (tn:typeSpec[false]!)?
+            singleVariable[getASTFactory().dupTree(mods),#tn]
+        )*
+    ;    
+    
+multipleAssignmentDeclaration {Token first = cloneToken(LT(1));}
+    :  
+        mods:modifiers!
+        (t:typeSpec[false]!)?
+        LPAREN^ nls! typeNamePairs[#mods,first] RPAREN!
+        ASSIGN^ nls!
+        assignmentExpression[0]
+        {#multipleAssignmentDeclaration=#(create(VARIABLE_DEF,"VARIABLE_DEF",first,LT(1)), #mods, #(create(TYPE,"TYPE",first,LT(1)),#t), #multipleAssignmentDeclaration);}
+    ;    
 
 /** The tail of a declaration.
   * Either v1, v2, ... (with possible initializers) or else m(args){body}.
@@ -1320,7 +1349,7 @@ listOfVariables[AST mods, AST t, Token first]
   * Otherwise, the variable type defaults to 'any'.
   * DECIDE:  Method return types default to the type of the method body, as an expression.
   */
-variableDefinitions[AST mods, AST t]  {Token first = cloneToken(LT(1));
+variableDefinitions[AST mods, AST t] {Token first = cloneToken(LT(1));
                        if (mods != null) {
                            first.setLine(mods.getLine());
                            first.setColumn(mods.getColumn());
@@ -1664,7 +1693,9 @@ statement[int prevToken]
     :   (genericMethodStart)=>
         genericMethod
 
-
+    |  (multipleAssignmentDeclarationStart)=> 
+        multipleAssignmentDeclaration
+        
     // declarations are ambiguous with "ID DOT" relative to expression
     // statements. Must backtrack to be sure. Could use a semantic
     // predicate to test symbol table to see what the type was coming
@@ -2132,10 +2163,11 @@ expression[int lc_stmt]
     ;
 
 multipleAssignment[int lc_stmt] {Token first = cloneToken(LT(1));}
-    :   LBRACK^ nls! listOfVariables[null,null,first] RBRACK!
+    :   LPAREN^ nls! listOfVariables[null,null,first] RPAREN!
         ASSIGN^ nls!
         assignmentExpression[lc_stmt]
     ;
+
 
 // This is a list of expressions.
 // Used for backward compatibility, in a few places where

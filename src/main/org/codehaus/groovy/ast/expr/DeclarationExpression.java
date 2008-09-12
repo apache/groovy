@@ -15,6 +15,8 @@
  */
 package org.codehaus.groovy.ast.expr;
 
+import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.syntax.Token;
 
@@ -30,6 +32,23 @@ public class DeclarationExpression extends BinaryExpression {
     public DeclarationExpression(VariableExpression left, Token operation, Expression right) {
         super(left,operation,right);
     }
+    
+    public DeclarationExpression(Expression left, Token operation, Expression right) {
+        super(left,operation,right);
+        check(left,right);
+    }
+    
+    private void check(Expression left,Expression right) {
+        if (left instanceof VariableExpression) {
+            //nothing
+        } else if (left instanceof TupleExpression) {
+            if (!(right instanceof ListExpression)) throw new GroovyBugError("multiple assignment definition with unknown right part: "+right);
+            TupleExpression tuple = (TupleExpression) left;
+            if (tuple.getExpressions().size()==0) throw new GroovyBugError("one element required for left side");
+        } else {
+            throw new GroovyBugError("illegal left expression for declaration: "+left);
+        }
+    }
 
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitDeclarationExpression(this);
@@ -40,13 +59,23 @@ public class DeclarationExpression extends BinaryExpression {
     }
     
     public void setLeftExpression(Expression leftExpression) {
-        super.setLeftExpression((VariableExpression) leftExpression);
+        check(leftExpression,getRightExpression());
+        super.setLeftExpression(leftExpression);
     }
     
+    public void setRightExpression(Expression rightExpression) {
+        check(getLeftExpression(),rightExpression);
+        super.setRightExpression(rightExpression);
+    }
     
     public Expression transformExpression(ExpressionTransformer transformer) {
-        Expression ret =  new DeclarationExpression((VariableExpression) transformer.transform(getLeftExpression()), getOperation(), transformer.transform(getRightExpression()));
+        Expression left = getLeftExpression();
+        Expression ret = new DeclarationExpression(transformer.transform(getLeftExpression()), getOperation(), transformer.transform(getRightExpression()));
         ret.setSourcePosition(this);
         return ret;        
+    }
+    
+    public boolean isMultipleAssignmentDeclaration() {
+        return getLeftExpression() instanceof ArgumentListExpression;
     }
 }
