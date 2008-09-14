@@ -52,6 +52,6 @@ public class InnerClassNode extends ClassNode {
      * @return the field node on the outer class or null if this is not an inner class
      */
     public FieldNode getOuterField(String name) {
-        return outerClass.getField(name);
+        return outerClass.getDeclaredField(name);
     }
 }

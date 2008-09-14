@@ -686,7 +686,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             // in the case that there is already a field, we would
             // like to use that field, instead of the default field
             // for the property
-            FieldNode storedNode = classNode.getField(fieldNode.getName());
+            FieldNode storedNode = classNode.getDeclaredField(fieldNode.getName());
             if (storedNode!=null && !classNode.hasProperty(name)) {
             	fieldNode = storedNode;
             	// we remove it here, because addProperty will add it
