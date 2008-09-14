@@ -10,6 +10,7 @@ import static StaticImportTarget.x
 import static java.lang.Math.*
 import static java.util.Calendar.getInstance as now
 import static groovy.API.*
+import static groovy.StaticImportChild.*
 
 class StaticImportTest extends GroovyTestCase {
     void testFieldWithAliasInExpression() {
@@ -80,6 +81,13 @@ class StaticImportTest extends GroovyTestCase {
         assert API.arrayMethod("two", 1, 2, 3) == 'arrayMethod(two, 1, 2, 3)'
         assert arrayMethod("three", 1, 2, 3) == 'arrayMethod(three, 1, 2, 3)'
     }
+
+    void testStaticImportFromParentClass() {
+        assert cmethod() == 'hello from child'
+        assert pmethod() == 'hello from parent'
+        assert cfield == 21
+        assert pfield == 42
+    }
 }
 
 class API {
@@ -90,4 +98,14 @@ class API {
     static arrayMethod(String s, int[] values) {
         "arrayMethod(${s}, " + values.toList().join(", ") + ")"
     }
+}
+
+class StaticImportParent {
+  static pfield = 42
+  static pmethod() { 'hello from parent' }
+}
+
+class StaticImportChild extends StaticImportParent {
+  static cfield = 21
+  static cmethod() { 'hello from child' }
 }

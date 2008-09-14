@@ -392,8 +392,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         } while (parent!=null && ((parent.getModifiers() & Opcodes.ACC_ABSTRACT) != 0));
 
         List result = new ArrayList();
-        for (Iterator methIt = getAllDeclaredMethods().iterator(); methIt.hasNext();) {
-            MethodNode method = (MethodNode) methIt.next();
+        for (Object o : getAllDeclaredMethods()) {
+            MethodNode method = (MethodNode) o;
             // add only abstract methods from abtract classes that
             // are not overwritten
             if ( abstractNodes.contains(method.getDeclaringClass().redirect()) &&
@@ -431,8 +431,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         for (int i = 0; i < interfaces.length; i++) {
             ClassNode iface = interfaces[i];
             Map ifaceMethodsMap = iface.getDeclaredMethodsMap();
-            for (Iterator iter = ifaceMethodsMap.keySet().iterator(); iter.hasNext();) {
-                String methSig = (String) iter.next();
+            for (Object o : ifaceMethodsMap.keySet()) {
+                String methSig = (String) o;
                 if (!result.containsKey(methSig)) {
                     MethodNode methNode = (MethodNode) ifaceMethodsMap.get(methSig);
                     result.put(methSig, methNode);
@@ -441,8 +441,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         }
 
         // And add in the methods implemented in this class.
-        for (Iterator iter = getMethods().iterator(); iter.hasNext();) {
-            MethodNode method = (MethodNode) iter.next();
+        for (Object o : getMethods()) {
+            MethodNode method = (MethodNode) o;
             String sig = method.getTypeDescriptor();
             result.put(sig, method);
         }
@@ -494,7 +494,6 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         node.setDeclaringClass(redirect());
         FieldNode field = node.getField();
         addField(field);
-
         redirect().properties.add(node);
     }
 
@@ -504,17 +503,17 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                                     Expression initialValueExpression,
                                     Statement getterBlock,
                                     Statement setterBlock) {
-    	for (Iterator iter = getProperties().iterator(); iter.hasNext();) {
-            PropertyNode pn = (PropertyNode) iter.next();
+        for (Object o : getProperties()) {
+            PropertyNode pn = (PropertyNode) o;
             if (pn.getName().equals(name)) {
                 if (pn.getInitialExpression() == null && initialValueExpression != null)
-                  pn.getField().setInitialValueExpression(initialValueExpression);
+                    pn.getField().setInitialValueExpression(initialValueExpression);
 
                 if (pn.getGetterBlock() == null && getterBlock != null)
-                  pn.setGetterBlock(getterBlock);
+                    pn.setGetterBlock(getterBlock);
 
                 if (pn.getSetterBlock() == null && setterBlock != null)
-                  pn.setSetterBlock(setterBlock);
+                    pn.setSetterBlock(setterBlock);
 
                 return pn;
             }
@@ -530,8 +529,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
     
     public PropertyNode getProperty(String name) {
-    	for (Iterator iter = getProperties().iterator(); iter.hasNext();) {
-            PropertyNode pn = (PropertyNode) iter.next();
+    	for (Object o : getProperties()) {
+            PropertyNode pn = (PropertyNode) o;
             if (pn.getName().equals(name)) return pn;
         }
         return null;   	
@@ -653,8 +652,30 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         }
     }
 
-    public FieldNode getField(String name) {
+    /**
+     * Finds a field matching the given name in this class.
+     *
+     * @param name the name of the field of interest
+     * @return the method matching the given name and parameters or null
+     */
+    public FieldNode getDeclaredField(String name) {
         return (FieldNode) redirect().fieldIndex.get(name);
+    }
+
+    /**
+     * Finds a field matching the given name in this class or a parent class.
+     *
+     * @param name the name of the field of interest
+     * @return the method matching the given name and parameters or null
+     */
+    public FieldNode getField(String name) {
+        ClassNode node = this;
+        while (node != null) {
+            FieldNode fn = node.getDeclaredField(name);
+            if (fn != null) return fn;
+            node = node.getSuperClass();
+        }
+        return null;
     }
 
     /**
@@ -737,9 +758,12 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @see #getDeclaredMethods(String)
      */
     public List getMethods(String name) {
-        List answer = new ArrayList(getDeclaredMethods(name));
-        ClassNode parent = getSuperClass();
-        if (parent!=null) answer.addAll(parent.getMethods(name));
+        List answer = new ArrayList();
+        ClassNode node = this;
+        while (node != null) {
+            answer.addAll(node.getDeclaredMethods(name));
+            node = node.getSuperClass();
+        }
         return answer;
     }
 
@@ -749,9 +773,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @return the method matching the given name and parameters or null
      */
     public MethodNode getDeclaredMethod(String name, Parameter[] parameters) {
-        List list = getDeclaredMethods(name);
-        for (Iterator iter = list.iterator(); iter.hasNext();) {
-            MethodNode method = (MethodNode) iter.next();
+        for (Object o :  getDeclaredMethods(name)) {
+            MethodNode method = (MethodNode) o;
             if (parametersEqual(method.getParameters(), parameters)) {
                 return method;
             }
@@ -766,9 +789,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @return the method matching the given name and parameters or null
      */
     public MethodNode getMethod(String name, Parameter[] parameters) {
-        List list = getMethods(name);
-        for (Iterator iter = list.iterator(); iter.hasNext();) {
-            MethodNode method = (MethodNode) iter.next();
+        for (Object o : getMethods(name)) {
+            MethodNode method = (MethodNode) o;
             if (parametersEqual(method.getParameters(), parameters)) {
                 return method;
             }
@@ -925,32 +947,31 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public void visitContents(GroovyClassVisitor visitor) {
-
-        // now lets visit the contents of the class
-        for (Iterator iter = getProperties().iterator(); iter.hasNext();) {
-            PropertyNode pn = (PropertyNode) iter.next();
+        // now let's visit the contents of the class
+        for (Object o : getProperties()) {
+            PropertyNode pn = (PropertyNode) o;
             visitor.visitProperty(pn);
         }
 
-        for (Iterator iter = getFields().iterator(); iter.hasNext();) {
-            FieldNode fn = (FieldNode) iter.next();
+        for (Object o : getFields()) {
+            FieldNode fn = (FieldNode) o;
             visitor.visitField(fn);
         }
 
-        for (Iterator iter = getDeclaredConstructors().iterator(); iter.hasNext();) {
-            ConstructorNode cn = (ConstructorNode) iter.next();
+        for (Object o : getDeclaredConstructors()) {
+            ConstructorNode cn = (ConstructorNode) o;
             visitor.visitConstructor(cn);
         }
 
-        for (Iterator iter = getMethods().iterator(); iter.hasNext();) {
-            MethodNode mn = (MethodNode) iter.next();
+        for (Object o : getMethods()) {
+            MethodNode mn = (MethodNode) o;
             visitor.visitMethod(mn);
         }
     }
 
     public MethodNode getGetterMethod(String getterName) {
-        for (Iterator iter = getDeclaredMethods(getterName).iterator(); iter.hasNext();) {
-            MethodNode method = (MethodNode) iter.next();
+        for (Object o : getDeclaredMethods(getterName)) {
+            MethodNode method = (MethodNode) o;
             if (getterName.equals(method.getName())
                     && ClassHelper.VOID_TYPE!=method.getReturnType()
                     && method.getParameters().length == 0) {
@@ -963,8 +984,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public MethodNode getSetterMethod(String setterName) {
-        for (Iterator iter = getDeclaredMethods(setterName).iterator(); iter.hasNext();) {
-            MethodNode method = (MethodNode) iter.next();
+        for (Object o : getDeclaredMethods(setterName)) {
+            MethodNode method = (MethodNode) o;
             if (setterName.equals(method.getName())
                     && ClassHelper.VOID_TYPE==method.getReturnType()
                     && method.getParameters().length == 1) {
@@ -1008,22 +1029,26 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public String toString() {
         String ret = getName();
-        if (genericsTypes!=null) {
+        if (genericsTypes != null) {
             ret += " <";
             for (int i = 0; i < genericsTypes.length; i++) {
-                if (i!=0) ret+=", ";
+                if (i != 0) ret += ", ";
                 ret += genericsTypes[i];
             }
             ret += ">";
         }
-        if (redirect!=null) {
-            ret += " -> "+redirect().toString();
+        if (redirect != null) {
+            ret += " -> " + redirect().toString();
         }
         return ret;
     }
 
     /**
-     * Returns true if the given method has a possibly matching method with the given name and arguments
+     * Returns true if the given method has a possibly matching instance method with the given name and arguments.
+     *
+     * @param name      the name of the method of interest
+     * @param arguments the arguments to match against
+     * @return true if a matching method was found
      */
     public boolean hasPossibleMethod(String name, Expression arguments) {
         int count = 0;
@@ -1035,8 +1060,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         }
         ClassNode node = this;
         do {
-            for (Iterator iter = getDeclaredMethods(name).iterator(); iter.hasNext();) {
-                MethodNode method = (MethodNode) iter.next();
+            for (Object o : getMethods(name)) {
+                MethodNode method = (MethodNode) o;
                 if (method.getParameters().length == count) {
                     return true;
                 }
@@ -1054,43 +1079,40 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             TupleExpression tuple = (TupleExpression) arguments;
             // TODO this won't strictly be true when using list expansion in argument calls
             count = tuple.getExpressions().size();
-        }
-        else
-          return null;
+        } else
+            return null;
 
         MethodNode res = null;
         ClassNode node = this;
         TupleExpression args = (TupleExpression) arguments;
         do {
-            for (Iterator iter = node.getDeclaredMethods(name).iterator(); iter.hasNext();) {
-                MethodNode method = (MethodNode) iter.next();
+            for (Object o : node.getMethods(name)) {
+                MethodNode method = (MethodNode) o;
                 if (method.getParameters().length == count) {
                     boolean match = true;
                     for (int i = 0; i != count; ++i)
-                      if (!args.getType().isDerivedFrom(method.getParameters()[i].getType())) {
-                          match = false;
-                          break;
-                      }
+                        if (!args.getType().isDerivedFrom(method.getParameters()[i].getType())) {
+                            match = false;
+                            break;
+                        }
 
                     if (match) {
                         if (res == null)
-                          res = method;
+                            res = method;
                         else {
-                          if (res.getParameters().length != count)
-                            return null;
+                            if (res.getParameters().length != count)
+                                return null;
+                            if (node.equals(this))
+                                return null;
 
-                          if (node.equals(this))
-                            return null;
-
-                          match = true;
-                          for (int i = 0; i != count; ++i)
-                            if (!res.getParameters()[i].getType().equals(method.getParameters()[i].getType())) {
-                                match = false;
-                                break;
-                            }
-
-                          if (!match)
-                            return null;
+                            match = true;
+                            for (int i = 0; i != count; ++i)
+                                if (!res.getParameters()[i].getType().equals(method.getParameters()[i].getType())) {
+                                    match = false;
+                                    break;
+                                }
+                            if (!match)
+                                return null;
                         }
                     }
                 }
@@ -1103,7 +1125,11 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     /**
-     * Returns true if the given method has a possibly matching static method with the given name and arguments
+     * Returns true if the given method has a possibly matching static method with the given name and arguments.
+     *
+     * @param name      the name of the method of interest
+     * @param arguments the arguments to match against
+     * @return true if a matching method was found
      */
     public boolean hasPossibleStaticMethod(String name, Expression arguments) {
         int count = 0;
@@ -1113,14 +1139,14 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             // TODO this won't strictly be true when using list expansion in argument calls
             count = tuple.getExpressions().size();
         }
-        for (Iterator iter = getDeclaredMethods(name).iterator(); iter.hasNext();) {
-            MethodNode method = (MethodNode) iter.next();
+        for (Object o : getMethods(name)) {
+            MethodNode method = (MethodNode) o;
             if (method.getParameters().length == count && method.isStatic()) {
                 return true;
             }
             // handle varargs case
             if (method.isStatic() && method.getParameters().length > 0 &&
-                method.getParameters()[method.getParameters().length - 1].getType().isArray()) {
+                    method.getParameters()[method.getParameters().length - 1].getType().isArray()) {
                 if (count >= method.getParameters().length - 1) return true;
             }
         }

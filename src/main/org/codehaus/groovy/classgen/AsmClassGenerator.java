@@ -1587,7 +1587,7 @@ public class AsmClassGenerator extends ClassGenerator {
             // If it is no field and is not yet declared, then it is either a closure shared variable or
             // an already declared variable.
             if (!compileStack.containsVariable(name) && compileStack.getScope().isReferencedClassVariable(name)) {
-                visitFieldExpression(new FieldExpression(classNode.getField(name)));
+                visitFieldExpression(new FieldExpression(classNode.getDeclaredField(name)));
             } else {
                 Variable v = compileStack.getVariable(name, classNode.getSuperClass() != ClassHelper.CLOSURE_TYPE);
                 if (v == null) {
@@ -1595,7 +1595,7 @@ public class AsmClassGenerator extends ClassGenerator {
                     // inside a nested Closure and this variable
                     // was not used before
                     // then load it from the Closure field
-                    FieldNode field = classNode.getField(name);
+                    FieldNode field = classNode.getDeclaredField(name);
                     mv.visitVarInsn(ALOAD, 0);
                     mv.visitFieldInsn(GETFIELD, internalClassName, name, BytecodeHelper.getTypeDescription(field.getType()));
                     // and define it
@@ -1627,7 +1627,7 @@ public class AsmClassGenerator extends ClassGenerator {
      */
     protected void loadThisOrOwner() {
         if (isInnerClass()) {
-            visitFieldExpression(new FieldExpression(classNode.getField("owner")));
+            visitFieldExpression(new FieldExpression(classNode.getDeclaredField("owner")));
         } else {
             loadThis();
         }
@@ -2546,9 +2546,9 @@ public class AsmClassGenerator extends ClassGenerator {
             if (name != null) {
                 FieldNode field = null;
                 if (isSuperExpression(objectExpression)) {
-                    field = classNode.getSuperClass().getField(name);
+                    field = classNode.getSuperClass().getDeclaredField(name);
                 } else {
-                    field = classNode.getField(name);
+                    field = classNode.getDeclaredField(name);
                 }
                 if (field != null) {
                     visitFieldExpression(new FieldExpression(field));
@@ -2948,7 +2948,7 @@ public class AsmClassGenerator extends ClassGenerator {
             ClassRef ref = (ClassRef) iter.next();
             String staticFieldName = getStaticFieldName(ref.type);
             // generate a field node
-            FieldNode fn = classNode.getField(staticFieldName);
+            FieldNode fn = classNode.getDeclaredField(staticFieldName);
             if (fn != null) {
                 boolean type = fn.getType() == ClassHelper.CLASS_Type;
                 boolean modifiers = fn.getModifiers() == ACC_STATIC + ACC_SYNTHETIC;
@@ -3972,7 +3972,7 @@ public class AsmClassGenerator extends ClassGenerator {
                     return type;
                 }
             } else {
-                FieldNode field = classNode.getField(variableName);
+                FieldNode field = classNode.getDeclaredField(variableName);
                 if (field == null) {
                     field = classNode.getOuterField(variableName);
                 }
@@ -4107,14 +4107,14 @@ public class AsmClassGenerator extends ClassGenerator {
         FieldNode field = null;
         if (expression instanceof VariableExpression) {
             VariableExpression varExp = (VariableExpression) expression;
-            field = classNode.getField(varExp.getName());
+            field = classNode.getDeclaredField(varExp.getName());
         } else if (expression instanceof FieldExpression) {
             FieldExpression fieldExp = (FieldExpression) expression;
-            field = classNode.getField(fieldExp.getFieldName());
+            field = classNode.getDeclaredField(fieldExp.getFieldName());
         } else if (expression.getClass() == PropertyExpression.class) {
             PropertyExpression fieldExp = (PropertyExpression) expression;
             String possibleField = fieldExp.getPropertyAsString();
-            if (possibleField != null) field = classNode.getField(possibleField);
+            if (possibleField != null) field = classNode.getDeclaredField(possibleField);
         }
       return field != null && !field.isStatic();
     }
@@ -4221,7 +4221,7 @@ public class AsmClassGenerator extends ClassGenerator {
      * @return true if the given name is a local variable or a field
      */
     protected boolean isFieldOrVariable(String name) {
-        return compileStack.containsVariable(name) || classNode.getField(name) != null;
+        return compileStack.containsVariable(name) || classNode.getDeclaredField(name) != null;
     }
 
     /**
@@ -4288,7 +4288,7 @@ public class AsmClassGenerator extends ClassGenerator {
             if (variable != null) {
                 return variable.isHolder();
             }
-            FieldNode field = classNode.getField(varExp.getName());
+            FieldNode field = classNode.getDeclaredField(varExp.getName());
             if (field != null) {
                 return field.isHolder();
             }

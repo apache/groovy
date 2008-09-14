@@ -173,7 +173,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         if (objectExpression instanceof ClassExpression && currentMethod != null && currentMethod.isStatic()) {
             ClassExpression ce = (ClassExpression) objectExpression;
             if (ce.getType().getName().equals(currentClass.getName())) {
-                FieldNode field = currentClass.getField(pe.getPropertyAsString());
+                FieldNode field = currentClass.getDeclaredField(pe.getPropertyAsString());
                 if (field != null && field.isStatic()) {
                     Expression expression = new FieldExpression(field);
                     expression.setSourcePosition(pe);
@@ -244,9 +244,8 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
             if (expression != null) return expression;
         }
         Map importedClasses = module.getStaticImportClasses();
-        Iterator it = importedClasses.keySet().iterator();
-        while (it.hasNext()) {
-            String className = (String) it.next();
+        for (Object o : importedClasses.keySet()) {
+            String className = (String) o;
             ClassNode node = (ClassNode) importedClasses.get(className);
             Expression expression = findStaticField(node, name);
             if (expression != null) return expression;
@@ -255,15 +254,14 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     }
 
     private Expression findStaticField(ClassNode staticImportType, String fieldName) {
-        if (!staticImportType.isResolved() && !staticImportType.isPrimaryClassNode()) {
-            stillResolving = true;
-        }
         if (staticImportType.isPrimaryClassNode() || staticImportType.isResolved()) {
             staticImportType.getFields(); // force init
             FieldNode field = staticImportType.getField(fieldName);
             if (field != null && field.isStatic()) {
                 return new PropertyExpression(new ClassExpression(staticImportType), fieldName);
             }
+        } else {
+            stillResolving = true;
         }
         return null;
     }
@@ -285,9 +283,8 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
             if (expression != null) return expression;
         }
         Map importPackages = module.getStaticImportClasses();
-        Iterator it = importPackages.keySet().iterator();
-        while (it.hasNext()) {
-            String className = (String) it.next();
+        for (Object o : importPackages.keySet()) {
+            String className = (String) o;
             ClassNode starImportType = (ClassNode) importPackages.get(className);
             Expression expression = findStaticMethod(starImportType, name, args);
             if (expression != null) return expression;

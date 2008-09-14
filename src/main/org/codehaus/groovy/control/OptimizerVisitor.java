@@ -67,7 +67,7 @@ public class OptimizerVisitor extends ClassCodeExpressionTransformer {
         final String name = "$const$" + const2Var.size();
         //TODO: this part here needs a bit of rethinking. If it can happen that the field is defined already,
         //      then is this code still valid?
-        field = currentClass.getField(name);
+        field = currentClass.getDeclaredField(name);
         if (field==null) {
             field = new FieldNode(name,
                     Opcodes.ACC_PRIVATE|Opcodes.ACC_STATIC|Opcodes.ACC_SYNTHETIC| Opcodes.ACC_FINAL,

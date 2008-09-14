@@ -94,12 +94,12 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
     
     private FieldNode getMetaClassField(ClassNode node) {
-        FieldNode ret = node.getField("metaClass");
+        FieldNode ret = node.getDeclaredField("metaClass");
         if (ret!=null) return ret;
         ClassNode current = node;
         while (current!=null && current!=ClassHelper.OBJECT_TYPE) {
             current = current.getSuperClass();
-            ret = current.getField("metaClass");
+            ret = current.getDeclaredField("metaClass");
             if (ret==null) continue;
             if (Modifier.isPrivate(ret.getModifiers())) continue;
             return ret;
@@ -138,7 +138,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         addDefaultParameterConstructors(node);
 
         String _myClassFieldName = "$myClass";
-        while (node.getField(_myClassFieldName) != null)
+        while (node.getDeclaredField(_myClassFieldName) != null)
           _myClassFieldName = _myClassFieldName + "$";
         final String myClassFieldName = _myClassFieldName;
 
@@ -148,7 +148,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 //        myClassField.setSynthetic(true);
 
         String _staticClassInfoFieldName = "$staticClassInfo";
-        while (node.getField(_staticClassInfoFieldName) != null)
+        while (node.getDeclaredField(_staticClassInfoFieldName) != null)
           _staticClassInfoFieldName = _staticClassInfoFieldName + "$";
         final String staticMetaClassFieldName = _staticClassInfoFieldName;
 
