@@ -295,7 +295,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     }
 
     public void visitField(FieldNode node) {
-        if (currentClass.getField(node.getName()) != node) {
+        if (currentClass.getDeclaredField(node.getName()) != node) {
             addError("The " + getDescription(node) + " is declared multiple times.", node);
         }
         checkInterfaceFieldModifiers(node);

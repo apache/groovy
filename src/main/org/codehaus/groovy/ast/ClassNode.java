@@ -308,7 +308,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     /**
      * Returns a list containing MethodNode objects for
      * each method in the class represented by this ClassNode
-     */    
+     */
     public List getMethods() {
         if (!lazyInitDone) lazyClassInit();
         if (redirect!=null) return redirect().getMethods();
@@ -592,8 +592,30 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         }
     }
 
-    public FieldNode getField(String name) {
+    /**
+     * Finds a field matching the given name in this class.
+     *
+     * @param name the name of the field of interest
+     * @return the method matching the given name and parameters or null
+     */
+    public FieldNode getDeclaredField(String name) {
         return (FieldNode) redirect().fieldIndex.get(name);
+    }
+
+    /**
+     * Finds a field matching the given name in this class or a parent class.
+     *
+     * @param name the name of the field of interest
+     * @return the method matching the given name and parameters or null
+     */
+    public FieldNode getField(String name) {
+        ClassNode node = this;
+        while (node != null) {
+            FieldNode fn = node.getDeclaredField(name);
+            if (fn != null) return fn;
+            node = node.getSuperClass();
+        }
+        return null;
     }
 
     /**
@@ -973,7 +995,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         }
         ClassNode node = this;
         do {
-            for (Iterator iter = getDeclaredMethods(name).iterator(); iter.hasNext();) {
+            for (Iterator iter = getMethods(name).iterator(); iter.hasNext();) {
                 MethodNode method = (MethodNode) iter.next();
                 if (method.getParameters().length == count) {
                     return true;
@@ -996,7 +1018,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             // TODO this won't strictly be true when using list expansion in argument calls
             count = tuple.getExpressions().size();
         }
-        for (Iterator iter = getDeclaredMethods(name).iterator(); iter.hasNext();) {
+        for (Iterator iter = getMethods(name).iterator(); iter.hasNext();) {
             MethodNode method = (MethodNode) iter.next();
             if (method.getParameters().length == count && method.isStatic()) {
                 return true;
