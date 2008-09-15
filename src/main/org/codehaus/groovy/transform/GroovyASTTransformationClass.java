@@ -6,8 +6,8 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * This annotation is an annotation on some item that indicated that when it
- * is used the associared transform classes should be executed.  As of
+ * This is an annotation on some item that indicates that
+ * an associated transform classes should be executed.  As of
  * Groovy 1.6 the only valid target is the annotation type.
  *
  * It is a compile time error to specify a {@link #value} that is a class not
@@ -20,7 +20,7 @@ import java.lang.annotation.Target;
  */
 
 @Retention(RetentionPolicy.RUNTIME)
-// in the future the taret will be wider than annotations, but for now it is just on annotations
+// in the future the target will be wider than annotations, but for now it is just on annotations
 @Target(ElementType.ANNOTATION_TYPE)
 public @interface GroovyASTTransformationClass {
     String[] value();
