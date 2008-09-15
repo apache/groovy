@@ -29,7 +29,7 @@ import org.objectweb.asm.Opcodes;
 import java.lang.ref.SoftReference;
 
 /**
- * Handles generation of code for the @Singleton annotation
+ * Handles generation of code for the @Lazy annotation
  *
  * @author Alex Tkachman
  */
