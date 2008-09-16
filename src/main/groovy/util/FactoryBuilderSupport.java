@@ -399,7 +399,7 @@ public abstract class FactoryBuilderSupport extends Binding {
         return (FactoryBuilderSupport) getContextAttribute(CHILD_BUILDER);
     }
 
-    private Object getContextAttribute(String key) {
+    public Object getContextAttribute(String key) {
         if (!proxyBuilder.contexts.isEmpty()) {
             Map context = proxyBuilder.contexts.getFirst();
             return context.get(key);
