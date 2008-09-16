@@ -215,14 +215,16 @@ public class GroovyShell extends GroovyObjectSupport {
             }
         }
 
-        return runMainOrTestOrRunnable(scriptClass, args);
+        return runScriptOrMainOrTestOrRunnable(scriptClass, args);
 
         // Set the context classloader back to what it was.
         //AccessController.doPrivileged(new DoSetContext(currentClassLoader));
     }
 
     /**
-     * if (theClass has a main method) {
+     * if (theClass is a Script) {
+     * run it like a script
+     * } else if (theClass has a main method) {
      * run the main method
      * } else if (theClass instanceof GroovyTestCase) {
      * use the test runner to run it
@@ -233,11 +235,26 @@ public class GroovyShell extends GroovyObjectSupport {
      * instanciate theClass with the no-args constructor and run
      * }
      */
-    private Object runMainOrTestOrRunnable(Class scriptClass, String[] args) {
+    private Object runScriptOrMainOrTestOrRunnable(Class scriptClass, String[] args) {
         if (scriptClass == null) {
             return null;
         }
         try {
+            if (Script.class.isAssignableFrom(scriptClass)) {
+                // treat it just like a script if it is one
+                Script script  = null;
+                try {
+                    script = (Script) scriptClass.newInstance();
+                } catch (InstantiationException e) {
+                    // ignore instaintiations errors,, try to do main
+                } catch (IllegalAccessException e) {
+                   // ignore instaintiations errors, try to do main
+                }
+                if (script != null) {
+                    script.setBinding(context);
+                    return script.run();
+                }
+            }
             // let's find a main method
             scriptClass.getMethod("main", new Class[]{String[].class});
             // if that main method exist, invoke it
@@ -450,7 +467,7 @@ public class GroovyShell extends GroovyObjectSupport {
             }
         });
         Class scriptClass = parseClass(gcs);
-        return runMainOrTestOrRunnable(scriptClass, args);
+        return runScriptOrMainOrTestOrRunnable(scriptClass, args);
     }
 
     public Object getVariable(String name) {

@@ -465,12 +465,6 @@ class Console implements CaretListener {
         return null
     }
 
-    // Allow access to shell from outside console
-    // (useful for configuring shell before startup)
-    GroovyShell getShell() {
-        return shell
-    }
-
     void historyNext(EventObject evt = null) {
         if (historyIndex < history.size()) {
             setInputTextFromHistory(historyIndex + 1)
