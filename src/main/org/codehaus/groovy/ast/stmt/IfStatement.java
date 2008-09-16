@@ -19,7 +19,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.ast.expr.BooleanExpression;
 
 /**
- * Represents a do { ... } while (condition) loop in Groovy
+ * Represents an if (condition) { ... } else { ... } statement in Groovy
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
