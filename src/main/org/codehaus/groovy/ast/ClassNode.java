@@ -414,8 +414,24 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return new ArrayList(getDeclaredMethodsMap().values());
     }
 
+    public Set getAllInterfaces () {
+        Set res = new HashSet ();
+        getAllInterfaces(res);
+        return res;
+    }
 
-    protected Map getDeclaredMethodsMap() {
+    private void getAllInterfaces(Set res) {
+        if (isInterface())
+          res.add(this);
+        
+        ClassNode[] interfaces = getInterfaces();
+        for (int i = 0; i < interfaces.length; i++) {
+            res.add(interfaces[i]);
+            interfaces[i].getAllInterfaces(res);
+        }
+    }
+
+    public Map getDeclaredMethodsMap() {
         // Start off with the methods from the superclass.
         ClassNode parent = getSuperClass();
         Map result = null;

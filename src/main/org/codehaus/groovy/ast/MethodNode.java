@@ -154,6 +154,10 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
         return (modifiers & ACC_PUBLIC) != 0;
     }
 
+    public boolean isPrivate() {
+        return (modifiers & ACC_PRIVATE) != 0;
+    }
+
     public boolean isProtected() {
         return (modifiers & ACC_PROTECTED) != 0;
     }

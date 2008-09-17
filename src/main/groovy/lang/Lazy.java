@@ -45,6 +45,7 @@ import java.lang.annotation.Target;
  *     }
  *   }
  * }
+ * </pre>
  *
  * By default field will be initialized by call to default constructor
  *
@@ -66,7 +67,6 @@ import java.lang.annotation.Target;
  *     return $x
  *   }
  * }
- *
  * </pre>
  *
  * <code>@Lazy(soft=true)</code> will use soft reference instead of the field and use above rules each time re-initialization required
