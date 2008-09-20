@@ -260,6 +260,8 @@ public class DefaultGroovyMethodsSupport {
         Class baseClass;
         if (first instanceof Number) {
             baseClass = Number.class;
+        } else if (first == null) {
+            baseClass = NullObject.class;
         } else {
             baseClass = first.getClass();
         }
