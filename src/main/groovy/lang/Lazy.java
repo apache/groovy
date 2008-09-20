@@ -29,10 +29,10 @@ import java.lang.annotation.Target;
  * If field declared volatile then initialization will be synchronized
  *
  * <pre>
- * @Lazy volatile T x
- *
+ * {@code @Lazy} volatile T x
+ * </pre>
  * becomes
- *
+ * <pre>
  * private volatile T $x
  *
  * T getX () {
@@ -53,10 +53,10 @@ import java.lang.annotation.Target;
  * In particularly it is possible to use closures <code>{ ... } ()</code> syntax
  *
  * <pre>
- * @Lazy T x = { [1,2,3] } ()
- *
+ * {@code @Lazy} T x = { [1,2,3] } ()
+ * </pre>
  * becomes
- *
+ * <pre>
  * private T $x
  *
  * T getX () {
