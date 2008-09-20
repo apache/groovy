@@ -100,6 +100,14 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
     public boolean isStatic() {
         return (modifiers & ACC_STATIC) != 0;
     }
+
+    /**
+     * @return true if the field is public
+     */
+    public boolean isPublic() {
+        return (modifiers & ACC_PUBLIC) != 0;
+    }
+
 	/**
 	 * @param owner The owner to set.
 	 */

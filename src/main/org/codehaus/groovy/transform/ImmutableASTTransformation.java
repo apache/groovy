@@ -80,24 +80,37 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
 
         if (parent instanceof ClassNode) {
             ClassNode cNode = (ClassNode) parent;
+            String cName = cNode.getName();
             if (cNode.isInterface()) {
-                throw new RuntimeException("@Immutable not allowed for interfaces");
+                throw new RuntimeException("Error processing interface '" + cName + "'. @Immutable not allowed for interfaces.");
             }
             if ((cNode.getModifiers() & ACC_FINAL) == 0) {
-                throw new RuntimeException("@Immutable class must be final");
+                throw new RuntimeException("Error processing class '" + cName + "'. @Immutable classes must be final.");
             }
 
-            final List<PropertyNode> list = cNode.getProperties();
-            for(PropertyNode pNode : list) {
+            final List<PropertyNode> pList = cNode.getProperties();
+            for(PropertyNode pNode : pList) {
                 adjustPropertyForImmutability(pNode, newNodes);
             }
             for(PropertyNode pNode : newNodes) {
-                list.remove(pNode);
+                pList.remove(pNode);
                 addProperty(cNode, pNode);
+            }
+            final List<FieldNode> fList = cNode.getFields();
+            for (FieldNode fNode : fList) {
+                ensureNotPublic(cName, fNode);
             }
             createConstructor(cNode);
             createHashCode(cNode);
             createEquals(cNode);
+        }
+    }
+
+    private void ensureNotPublic(String cNode, FieldNode fNode) {
+        String fName = fNode.getName();
+        // TODO: do we need to lock down things like: $ownClass
+        if (fNode.isPublic() && !fName.contains("$")) {
+            throw new RuntimeException("Public field '" + fName + "' not allowed for @Immutable class '" + cNode + "'.");
         }
     }
 
@@ -204,6 +217,12 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         final VariableExpression args = new VariableExpression("args");
         for (PropertyNode pNode : list) {
             body.addStatement(createConstructorStatement(pNode));
+        }
+        final List<FieldNode> fList = cNode.getFields();
+        for (FieldNode fNode : fList) {
+            if (!fNode.isPublic() && !fNode.getName().contains("$") && (cNode.getProperty(fNode.getName()) == null)) {
+                body.addStatement(createConstructorStatementDefault(fNode));
+            }
         }
         Parameter[] params = new Parameter[]{new Parameter(HASHMAP_TYPE, "args")};
         cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, new IfStatement(
