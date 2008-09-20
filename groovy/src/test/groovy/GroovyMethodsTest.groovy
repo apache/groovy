@@ -679,6 +679,8 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         // strings remove first - deemed most common behavior for strings
         assert 'abcda.ce' - /a.c/ == 'abcde'
         assert 'abcda.ce' - ~/a.c/ == 'da.ce'
+        // should handle nulls too
+        assert [null] - [1] == [null]
     }
 }
 
