@@ -60,6 +60,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     private static final ClassNode HASHMAP_TYPE = new ClassNode(LinkedHashMap.class);
     private static final ClassNode MAP_TYPE = new ClassNode(Map.class);
     private static final ClassNode DATE_TYPE = new ClassNode(Date.class);
+    private static final ClassNode CLONEABLE_TYPE = new ClassNode(Cloneable.class);
     private static final ClassNode COLLECTION_TYPE = new ClassNode(Collection.class);
     private static final ClassNode HASHUTIL_TYPE = new ClassNode(HashCodeHelper.class);
     private static final ClassNode DGM_TYPE = new ClassNode(DefaultGroovyMethods.class);
@@ -235,8 +236,8 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         FieldNode fNode = pNode.getField();
         final ClassNode fieldType = fNode.getType();
         final Statement statement;
-        if (fieldType.isArray()) {
-            statement = createConstructorStatementArray(fNode);
+        if (fieldType.isArray() || implementsInterface(fieldType, CLONEABLE_TYPE)) {
+            statement = createConstructorStatementArrayOrCloneable(fNode);
         } else if (fieldType.isDerivedFrom(DATE_TYPE)) {
             statement = createConstructorStatementDate(fNode);
         } else if (fieldType.isDerivedFrom(COLLECTION_TYPE) || fieldType.isDerivedFrom(MAP_TYPE)) {
@@ -249,6 +250,10 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
             statement = createConstructorStatementGuarded(fNode);
         }
         return statement;
+    }
+
+    private boolean implementsInterface(ClassNode fieldType, ClassNode interfaceType) {
+        return Arrays.asList(fieldType.getInterfaces()).contains(interfaceType);
     }
 
     private Statement createConstructorStatementGuarded(FieldNode fNode) {
@@ -310,7 +315,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
                 assignField(fieldExpr, value));
     }
 
-    private Statement createConstructorStatementArray(FieldNode fNode) {
+    private Statement createConstructorStatementArrayOrCloneable(FieldNode fNode) {
         final FieldExpression fieldExpr = new FieldExpression(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
         if (initExpr == null) initExpr = ConstantExpression.NULL;
@@ -320,8 +325,8 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
                 new IfStatement(
                         equalsNullExpr(initExpr),
                         assignField(fieldExpr, ConstantExpression.NULL),
-                        assignField(fieldExpr, cloneArrayExpr(initExpr))),
-                assignField(fieldExpr, cloneArrayExpr(array)));
+                        assignField(fieldExpr, cloneArrayOrCloneableExpr(initExpr))),
+                assignField(fieldExpr, cloneArrayOrCloneableExpr(array)));
     }
 
     private Statement createConstructorStatementDate(FieldNode fNode) {
@@ -389,8 +394,8 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         BlockStatement body = new BlockStatement();
         final ClassNode fieldType = fNode.getType();
         final Statement statement;
-        if (fieldType.isArray()) {
-            statement = createGetterBodyArray(fNode);
+        if (fieldType.isArray() || implementsInterface(fieldType, CLONEABLE_TYPE)) {
+            statement = createGetterBodyArrayOrCloneable(fNode);
         } else if (fieldType.isDerivedFrom(DATE_TYPE)) {
             statement = createGetterBodyDate(fNode);
         } else {
@@ -410,13 +415,13 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
                 "' of type '" + typeName + "' found while " + mode + " @Immutable.";
     }
 
-    private Statement createGetterBodyArray(FieldNode fNode) {
+    private Statement createGetterBodyArrayOrCloneable(FieldNode fNode) {
         final Expression fieldExpr = new FieldExpression(fNode);
-        final Expression expression = cloneArrayExpr(fieldExpr);
+        final Expression expression = cloneArrayOrCloneableExpr(fieldExpr);
         return safeExpression(fieldExpr, expression);
     }
 
-    private Expression cloneArrayExpr(Expression fieldExpr) {
+    private Expression cloneArrayOrCloneableExpr(Expression fieldExpr) {
         return new MethodCallExpression(fieldExpr, "clone", MethodCallExpression.NO_ARGUMENTS);
     }
 

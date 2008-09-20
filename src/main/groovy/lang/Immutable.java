@@ -43,16 +43,17 @@ import java.lang.annotation.Target;
  * <ul>
  * <li>Properties automatically have private, final backing fields with getters.
  * Attempts to update the property will result in a {@code ReadOnlyPropertyException}.
- * <li>An <code>equals</code> method and a <code>hashCode</code> method are provided based on the field values.
- * <li><code>Date</code>s and arrays are defensively copied on the way in and out.
- * <li><code>Collection</code>s and <code>Map</code>s are wrapped by immutable wrapper classes (but not deeply cloned!).
- * Attempts to update them will result in an <code>UnsupportedOperationException</code>.
- * <li>Fields that are enums or other <code>@Immutable</code> classes are allowed but for an
+ * <li>An {@code equals} method and a {@code hashCode} method are provided based on the property values.
+ * <li>{@code Date}s, {@code Cloneable}s and arrays are defensively copied on the way in (constructor) and out (getters).
+ * Arrays and cloneable objects use the {@code clone} method. It is up to you to define this method and use deep cloning if appropriate.
+ * <li>{@code Collection}s and {@code Map}s are wrapped by immutable wrapper classes (but not deeply cloned!).
+ * Attempts to update them will result in an {@code UnsupportedOperationException}.
+ * <li>Fields that are enums or other {@code @Immutable} classes are allowed but for an
  * otherwise possible mutable property type, an error is thrown.
  * <li>You don't have to follow Groovy's normal property conventions, e.g. you can create an explicit private field and
  * then you can write explicit get and set methods. Such an approach, isn't currently prohibited (to give you some
  * wiggle room to get around these conventions) but any fields created in this way are deemed not to be part of the
- * significant state of the object and aren't factored into the <code>equals</code> or <code>hashCode</code> methods.
+ * significant state of the object and aren't factored into the {@code equals} or {@code hashCode} methods.
  * Use at your own risk!
  * </ul>
  * </p>
