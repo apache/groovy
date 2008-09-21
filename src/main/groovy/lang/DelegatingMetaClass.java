@@ -240,8 +240,8 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
         this.delegate.setProperty(sender, receiver, messageName, messageValue, useSuper, fromInsideClass);
     }
 
-    public int selectConstructorAndTransformArguments(int numberOfCosntructors, Object[] arguments) {
-        return this.delegate.selectConstructorAndTransformArguments(numberOfCosntructors, arguments);
+    public int selectConstructorAndTransformArguments(int numberOfConstructors, Object[] arguments) {
+        return this.delegate.selectConstructorAndTransformArguments(numberOfConstructors, arguments);
     }
 
 	public void setAdaptee(MetaClass adaptee) {

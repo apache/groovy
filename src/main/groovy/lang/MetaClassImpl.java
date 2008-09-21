@@ -1314,11 +1314,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return invokeConstructor(theClass, arguments);
     }
 
-    public int selectConstructorAndTransformArguments(int numberOfCosntructors, Object[] arguments) {
+    public int selectConstructorAndTransformArguments(int numberOfConstructors, Object[] arguments) {
         //TODO: that is just a quick prototype, not the real thing!
-        if (numberOfCosntructors != constructors.size()) {
+        if (numberOfConstructors != constructors.size()) {
             throw new IncompatibleClassChangeError("the number of constructors during runtime and compile time for " +
-                    this.theClass.getName() + " do not match. Expected " + numberOfCosntructors + " but got " + constructors.size());
+                    this.theClass.getName() + " do not match. Expected " + numberOfConstructors + " but got " + constructors.size());
         }
 
         if (arguments == null) arguments = EMPTY_ARGUMENTS;

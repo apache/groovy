@@ -213,9 +213,9 @@ public abstract class OwnedMetaClass extends DelegatingMetaClass {
         ownerMetaClass.setProperty(sender, owner, messageName, messageValue, useSuper, fromInsideClass);
     }
 
-    public int selectConstructorAndTransformArguments(int numberOfCosntructors, Object[] arguments) {
+    public int selectConstructorAndTransformArguments(int numberOfConstructors, Object[] arguments) {
         final Object owner = getOwner();
         final MetaClass ownerMetaClass = getOwnerMetaClass(owner);
-        return ownerMetaClass.selectConstructorAndTransformArguments(numberOfCosntructors, arguments);
+        return ownerMetaClass.selectConstructorAndTransformArguments(numberOfConstructors, arguments);
     }
 }
