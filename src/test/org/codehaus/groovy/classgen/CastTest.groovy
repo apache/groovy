@@ -1,7 +1,7 @@
 package org.codehaus.groovy.classgen
 
-class  CastTest extends GroovyTestCase {
+class  CastTest extends GroovyShellTestCase {
     void testCast () {
-        new GroovyShell ().parse(new File("src/test/org/codehaus/groovy/benchmarks/alioth/binarytrees.groovy"))
+        parse(new File("src/test/org/codehaus/groovy/benchmarks/alioth/binarytrees.groovy"))
     }
 }

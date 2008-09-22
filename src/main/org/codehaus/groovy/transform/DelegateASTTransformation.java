@@ -82,7 +82,7 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
 
     private void addDelegateMethod(FieldNode fieldNode, ClassNode owner, Map ownMethods, Map.Entry e) {
         MethodNode method = (MethodNode) e.getValue();
-        if (!method.isPublic())
+        if (!method.isPublic() || method.isStatic())
             return;
 
         if (!ownMethods.containsKey(e.getKey())) {
@@ -90,13 +90,13 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
             final Parameter[] params = method.getParameters();
             final Parameter[] newParams = new Parameter[params.length];
             for (int i = 0; i < newParams.length; i++) {
-                Parameter newParam = new Parameter(params[i].getType(), params[i].getName());
+                Parameter newParam = new Parameter(nonGeneric(params[i].getType()), params[i].getName());
                 newParams[i] = newParam;
                 args.addExpression(new VariableExpression(newParam));
             }
             owner.addMethod(method.getName(),
                     method.getModifiers() & (~ACC_ABSTRACT),
-                    method.getReturnType(),
+                    nonGeneric(method.getReturnType()),
                     newParams,
                     method.getExceptions(),
                     new ExpressionStatement(
@@ -104,6 +104,19 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
                                     new FieldExpression(fieldNode),
                                     method.getName(),
                                     args)));
+        }
+    }
+
+    private ClassNode nonGeneric(ClassNode type) {
+        if (type.isUsingGenerics()) {
+            final ClassNode nonGen = ClassHelper.make(type.getName());
+            nonGen.setRedirect(type);
+            nonGen.setGenericsTypes(null);
+            nonGen.setUsingGenerics(false);
+            return nonGen;
+        }
+        else {
+            return type;
         }
     }
 }

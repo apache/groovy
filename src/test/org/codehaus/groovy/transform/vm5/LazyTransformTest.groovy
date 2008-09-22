@@ -20,22 +20,10 @@ import java.lang.ref.SoftReference
 /**
  * @author Alex Tkachman
  */
-class LazyTransformTest extends GroovyTestCase {
-
-    GroovyShell shell;
-
-    protected void setUp() {
-        super.setUp();
-        shell = new GroovyShell();
-    }
-
-    protected void tearDown() {
-        shell = null;
-        super.tearDown();
-    }
+class LazyTransformTest extends GroovyShellTestCase {
 
     void testProp () {
-        def res = shell.evaluate("""
+        def res = evaluate("""
               class X {
                 private List list = []
 
@@ -56,7 +44,7 @@ class LazyTransformTest extends GroovyTestCase {
     }
 
     void testNoInit() {
-        def res = shell.evaluate("""
+        def res = evaluate("""
               class X {
                 @Lazy private ArrayList list
 
@@ -92,7 +80,7 @@ class LazyTransformTest extends GroovyTestCase {
     }
 
     void testInitWithClosure() {
-        def res = shell.evaluate("""
+        def res = evaluate("""
               class X {
                 @Lazy private ArrayList list = { [1,2,3] } ()
 
@@ -110,7 +98,7 @@ class LazyTransformTest extends GroovyTestCase {
     }
 
     void testSoft() {
-        def res = shell.evaluate("""
+        def res = evaluate("""
               class X {
                 @Lazy(soft=true) private ArrayList list = { [1,2,3] } ()
 

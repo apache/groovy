@@ -4,8 +4,8 @@ package groovy.bugs
  *  @author Russel Winder
  *  @version $Revision$
  */ 
-class Groovy666_Bug extends GroovyTestCase {
+class Groovy666_Bug extends GroovyShellTestCase {
   void testRunScript() {
-    (new GroovyShell ()).evaluate("x = 1")
+    evaluate("x = 1")
   }
 }

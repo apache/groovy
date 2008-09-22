@@ -18,22 +18,10 @@ package org.codehaus.groovy.transform.vm5
 /**
  * @author Alex Tkachman
  */
-class SingletonTransformTest extends GroovyTestCase {
-
-    GroovyShell shell;
-
-    protected void setUp() {
-        super.setUp();
-        shell = new GroovyShell();
-    }
-
-    protected void tearDown() {
-        shell = null;
-        super.tearDown();
-    }
+class SingletonTransformTest extends GroovyShellTestCase {
 
     void testSingleton() {
-        def res = shell.evaluate("""
+        def res = evaluate("""
               @Singleton
               class X {
                  def getHello () {
@@ -48,7 +36,7 @@ class SingletonTransformTest extends GroovyTestCase {
     }
 
     void testLazySingleton() {
-        def res = shell.evaluate("""
+        def res = evaluate("""
               @Singleton(lazy=true)
               class X {
                  def getHello () {
@@ -66,7 +54,7 @@ class SingletonTransformTest extends GroovyTestCase {
 
     void testSingletonInstantiationFails() {
         shouldFail {
-            shell.evaluate("""
+            evaluate("""
                   @Singleton
                   class X {
                      def getHello () {
@@ -80,7 +68,7 @@ class SingletonTransformTest extends GroovyTestCase {
     }
 
     void testSingletonOverideConstructorFails() {
-            def res = shell.evaluate("""
+            def res = evaluate("""
                   @Singleton
                   class X {
                      static hello = "Bye-bye world"

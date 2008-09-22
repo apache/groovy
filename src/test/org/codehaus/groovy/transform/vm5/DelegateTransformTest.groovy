@@ -15,27 +15,13 @@
  */
 package org.codehaus.groovy.transform.vm5
 
-import java.lang.ref.SoftReference
-
 /**
  * @author Alex Tkachman
  */
-class DelegateTransformTest extends GroovyTestCase {
+class DelegateTransformTest extends GroovyShellTestCase {
 
-    GroovyShell shell;
-
-    protected void setUp() {
-        super.setUp();
-        shell = new GroovyShell();
-    }
-
-    protected void tearDown() {
-        shell = null;
-        super.tearDown();
-    }
-
-    void testProp () {
-        def res = shell.evaluate("""
+    void testLock () {
+        def res = evaluate("""
               import java.util.concurrent.locks.*
 
               class LockableMap {

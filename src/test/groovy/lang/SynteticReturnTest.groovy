@@ -1,14 +1,14 @@
 package groovy.lang
 
-class SynteticReturnTest extends GroovyTestCase{
+class SynteticReturnTest extends GroovyShellTestCase{
     void testExpt () {
-        assertEquals( 5, new GroovyShell ().evaluate("""
+        assertEquals( 5, evaluate("""
               5
         """))
     }
 
     void testIfElse () {
-        assertEquals( 1, new GroovyShell ().evaluate("""
+        assertEquals( 1, evaluate("""
             if (true)
               1
             else
@@ -17,14 +17,14 @@ class SynteticReturnTest extends GroovyTestCase{
     }
 
     void testIfNoElse () {
-        assertEquals( 1, new GroovyShell ().evaluate("""
+        assertEquals( 1, evaluate("""
             if (true)
               1
         """))
     }
 
     void testEmptyElse () {
-        assertEquals( null, new GroovyShell ().evaluate("""
+        assertEquals( null, evaluate("""
             if (false)
               {
                 2
@@ -34,7 +34,7 @@ class SynteticReturnTest extends GroovyTestCase{
     }
 
     void testEmptyBlockElse () {
-        assertEquals( null, new GroovyShell ().evaluate("""
+        assertEquals( null, evaluate("""
             if (false)
               {
                 2
@@ -46,7 +46,7 @@ class SynteticReturnTest extends GroovyTestCase{
     }
 
     void testNestedIf () {
-        assertEquals( 3, new GroovyShell ().evaluate("""
+        assertEquals( 3, evaluate("""
             if (false)
               {
                 2
@@ -60,7 +60,7 @@ class SynteticReturnTest extends GroovyTestCase{
     }
 
     void testCatch () {
-        assertEquals( 0, new GroovyShell ().evaluate("""
+        assertEquals( 0, evaluate("""
             try {
                 if (true) {
                     throw new NullPointerException()

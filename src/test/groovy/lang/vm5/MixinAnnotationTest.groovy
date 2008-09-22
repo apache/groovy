@@ -2,10 +2,10 @@ package groovy.lang.vm5
 
 import org.codehaus.groovy.reflection.ReflectionCache
 
-class MixinAnnotationTest extends GroovyTestCase {
+class MixinAnnotationTest extends GroovyShellTestCase {
 
     void testSingleMixinAnnotation () {
-        new GroovyShell ().evaluate """
+        evaluate """
 
 interface Mixed {
   def getA ()
@@ -44,7 +44,7 @@ class ClassToExtend implements Mixed{
     }
 
     void testMultipleMixinAnnotation () {
-        new GroovyShell ().evaluate """
+        evaluate """
 @Category(Object)
 class CategoryToUse1 {
     def asText () {
@@ -69,10 +69,9 @@ class ClassToExtend {
         GroovyTestCase.assertEquals("under category: under BIG category: object of ClassToExtend", new ClassToExtend().asText ())
         """
     }
-    protected void setUp() {
-    }
 
     protected void tearDown() {
+        super.tearDown()
         ReflectionCache.getCachedClass(ArrayList).setNewMopMethods (null)
         ReflectionCache.getCachedClass(List).setNewMopMethods (null)
     }

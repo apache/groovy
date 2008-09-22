@@ -18,22 +18,10 @@ package org.codehaus.groovy.transform.vm5
 /**
  * @author Paul King
  */
-class ImmutableTransformTest extends GroovyTestCase {
-
-    GroovyShell shell;
-
-    protected void setUp() {
-        super.setUp();
-        shell = new GroovyShell();
-    }
-
-    protected void tearDown() {
-        shell = null;
-        super.tearDown();
-    }
+class ImmutableTransformTest extends GroovyShellTestCase {
 
     void testImmutable() {
-        def objects = shell.evaluate("""
+        def objects = evaluate("""
               enum Coin { HEAD, TAIL }
               @Immutable final class Foo {
                   String x, y
