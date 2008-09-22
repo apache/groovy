@@ -63,6 +63,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     private static final ClassNode CLONEABLE_TYPE = new ClassNode(Cloneable.class);
     private static final ClassNode COLLECTION_TYPE = new ClassNode(Collection.class);
     private static final ClassNode HASHUTIL_TYPE = new ClassNode(HashCodeHelper.class);
+    private static final ClassNode STRINGBUFFER_TYPE = new ClassNode(StringBuffer.class);
     private static final ClassNode DGM_TYPE = new ClassNode(DefaultGroovyMethods.class);
     private static final ClassNode SELF_TYPE = new ClassNode(ImmutableASTTransformation.class);
     private static final Token COMPARE_EQUAL = Token.newSymbol(Types.COMPARE_EQUAL, -1, -1);
@@ -104,6 +105,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
             createConstructor(cNode);
             createHashCode(cNode);
             createEquals(cNode);
+            createToString(cNode);
         }
     }
 
@@ -132,11 +134,52 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         cNode.addMethod(new MethodNode("hashCode", ACC_PUBLIC, ClassHelper.int_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body));
     }
 
+    private void createToString(ClassNode cNode) {
+        final BlockStatement body = new BlockStatement();
+        final List<PropertyNode> list = cNode.getProperties();
+        // def _result = new StringBuffer()
+        final Expression result = new VariableExpression("_result");
+        final Expression init = new ConstructorCallExpression(STRINGBUFFER_TYPE, MethodCallExpression.NO_ARGUMENTS);
+        body.addStatement(new ExpressionStatement(new DeclarationExpression(result, ASSIGN, init)));
+
+        body.addStatement(append(result, new ConstantExpression(cNode.getName())));
+        body.addStatement(append(result, new ConstantExpression("(")));
+        boolean first = true;
+        for(PropertyNode pNode : list) {
+            if (first) {
+                first = false;
+            } else {
+                body.addStatement(append(result, new ConstantExpression(", ")));
+            }
+            body.addStatement(new IfStatement(
+                    new BooleanExpression(new FieldExpression(cNode.getField("$map$constructor"))),
+                    toStringPropertyName(result, pNode.getName()),
+                    new EmptyStatement()
+            ));
+            final FieldExpression fieldExpr = new FieldExpression(pNode.getField());
+            body.addStatement(append(result, new MethodCallExpression(fieldExpr, "toString", MethodCallExpression.NO_ARGUMENTS)));
+        }
+        body.addStatement(append(result, new ConstantExpression(")")));
+        body.addStatement(new ReturnStatement(new MethodCallExpression(result, "toString", MethodCallExpression.NO_ARGUMENTS)));
+        cNode.addMethod(new MethodNode("toString", ACC_PUBLIC, ClassHelper.STRING_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body));
+    }
+
+    private Statement toStringPropertyName(Expression result, String fName) {
+        final BlockStatement body = new BlockStatement();
+        body.addStatement(append(result, new ConstantExpression(fName)));
+        body.addStatement(append(result, new ConstantExpression(":")));
+        return body;
+    }
+
+    private ExpressionStatement append(Expression result, Expression expr) {
+        return new ExpressionStatement(new MethodCallExpression(result, "append", expr));
+    }
+
     private Statement calculateHashStatements(Expression hash, List<PropertyNode> list) {
         final BlockStatement body = new BlockStatement();
         // def _result = HashCodeHelper.initHash()
         final Expression result = new VariableExpression("_result");
-        final StaticMethodCallExpression init = new StaticMethodCallExpression(HASHUTIL_TYPE, "initHash", MethodCallExpression.NO_ARGUMENTS);
+        final Expression init = new StaticMethodCallExpression(HASHUTIL_TYPE, "initHash", MethodCallExpression.NO_ARGUMENTS);
         body.addStatement(new ExpressionStatement(new DeclarationExpression(result, ASSIGN, init)));
 
         // fields
@@ -145,10 +188,10 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
             final Expression fieldExpr = new FieldExpression(pNode.getField());
             final Expression args = new TupleExpression(result, fieldExpr);
             final Expression current = new StaticMethodCallExpression(HASHUTIL_TYPE, "updateHash", args);
-            body.addStatement(new ExpressionStatement(new BinaryExpression(result, ASSIGN, current)));
+            body.addStatement(assignStatement(result, current));
         }
         // $hash$code = _result
-        body.addStatement(new ExpressionStatement(new BinaryExpression(hash, ASSIGN, result)));
+        body.addStatement(assignStatement(hash, result));
         return body;
     }
 
@@ -208,6 +251,9 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private void createConstructor(ClassNode cNode) {
+        // pretty toString will remember how the user declared the params and print accordingly
+        final FieldNode constructorField = cNode.addField("$map$constructor", ACC_PRIVATE|ACC_SYNTHETIC, ClassHelper.boolean_TYPE, null);
+        final FieldExpression constructorStyle = new FieldExpression(constructorField);
         if (cNode.getDeclaredConstructors().size() != 0) {
             // TODO: allow constructors which call provided constructor?
             throw new RuntimeException("@Immutable does not allow explicit constructors");
@@ -226,6 +272,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
                 body.addStatement(createConstructorStatementDefault(fNode));
             }
         }
+        body.addStatement(assignStatement(constructorStyle, ConstantExpression.TRUE));
         final Parameter[] params = new Parameter[]{new Parameter(HASHMAP_TYPE, "args")};
         cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, new IfStatement(
                 equalsNullExpr(args),
@@ -244,6 +291,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         orderedBody.addStatement(new ExpressionStatement(
                 new ConstructorCallExpression(ClassNode.THIS, argMap)
         ));
+        orderedBody.addStatement(assignStatement(constructorStyle, ConstantExpression.FALSE));
         cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, orderedParams, ClassNode.EMPTY_ARRAY, orderedBody));
     }
 
@@ -281,8 +329,8 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
                 new IfStatement(
                         equalsNullExpr(initExpr),
                         new EmptyStatement(),
-                        assignField(fieldExpr, checkUnresolved(fNode, initExpr))),
-                assignField(fieldExpr, checkUnresolved(fNode, unknown)));
+                        assignStatement(fieldExpr, checkUnresolved(fNode, initExpr))),
+                assignStatement(fieldExpr, checkUnresolved(fNode, unknown)));
     }
 
     private Expression checkUnresolved(FieldNode fNode, Expression value) {
@@ -300,8 +348,8 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
                 new IfStatement(
                         equalsNullExpr(initExpr),
                         new EmptyStatement(),
-                        assignField(fieldExpr, cloneCollectionExpr(initExpr))),
-                assignField(fieldExpr, cloneCollectionExpr(collection)));
+                        assignStatement(fieldExpr, cloneCollectionExpr(initExpr))),
+                assignStatement(fieldExpr, cloneCollectionExpr(collection)));
     }
 
     private boolean isKnownImmutable(ClassNode fieldType) {
@@ -326,8 +374,8 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
                 new IfStatement(
                         equalsNullExpr(initExpr),
                         new EmptyStatement(),
-                        assignField(fieldExpr, initExpr)),
-                assignField(fieldExpr, value));
+                        assignStatement(fieldExpr, initExpr)),
+                assignStatement(fieldExpr, value));
     }
 
     private Statement createConstructorStatementArrayOrCloneable(FieldNode fNode) {
@@ -339,9 +387,9 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
                 equalsNullExpr(array),
                 new IfStatement(
                         equalsNullExpr(initExpr),
-                        assignField(fieldExpr, ConstantExpression.NULL),
-                        assignField(fieldExpr, cloneArrayOrCloneableExpr(initExpr))),
-                assignField(fieldExpr, cloneArrayOrCloneableExpr(array)));
+                        assignStatement(fieldExpr, ConstantExpression.NULL),
+                        assignStatement(fieldExpr, cloneArrayOrCloneableExpr(initExpr))),
+                assignStatement(fieldExpr, cloneArrayOrCloneableExpr(array)));
     }
 
     private Statement createConstructorStatementDate(FieldNode fNode) {
@@ -353,9 +401,9 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
                 equalsNullExpr(date),
                 new IfStatement(
                         equalsNullExpr(initExpr),
-                        assignField(fieldExpr, ConstantExpression.NULL),
-                        assignField(fieldExpr, cloneDateExpr(initExpr))),
-                assignField(fieldExpr, cloneDateExpr(date)));
+                        assignStatement(fieldExpr, ConstantExpression.NULL),
+                        assignStatement(fieldExpr, cloneDateExpr(initExpr))),
+                assignStatement(fieldExpr, cloneDateExpr(date)));
     }
 
     private Expression cloneDateExpr(Expression origDate) {
@@ -363,11 +411,11 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
                 new MethodCallExpression(origDate, "getTime", MethodCallExpression.NO_ARGUMENTS));
     }
 
-    private Statement assignField(FieldExpression fieldExpr, Expression value) {
-        return new ExpressionStatement(assignFieldExpr(fieldExpr, value));
+    private Statement assignStatement(Expression fieldExpr, Expression value) {
+        return new ExpressionStatement(assignExpr(fieldExpr, value));
     }
 
-    private Expression assignFieldExpr(FieldExpression fieldExpr, Expression value) {
+    private Expression assignExpr(Expression fieldExpr, Expression value) {
         return new BinaryExpression(fieldExpr, ASSIGN, value);
     }
 

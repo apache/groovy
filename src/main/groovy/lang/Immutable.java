@@ -45,7 +45,7 @@ import java.lang.annotation.Target;
  * Attempts to update the property will result in a {@code ReadOnlyPropertyException}.
  * <li>A map-based constructor is provided which allows you to set properties by name.
  * <li>A tuple-style constructor is provided which allows you to set properties in the same order as they are defined.
- * <li>An {@code equals} method and a {@code hashCode} method are provided based on the property values.
+ * <li>Default {@code equals}, {@code hashCode} and {@code toString} methods are provided based on the property values.
  * <li>{@code Date}s, {@code Cloneable}s and arrays are defensively copied on the way in (constructor) and out (getters).
  * Arrays and cloneable objects use the {@code clone} method. For your own classes,
  * it is up to you to define this method and use deep cloning if appropriate.
