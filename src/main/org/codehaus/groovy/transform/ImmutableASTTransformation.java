@@ -57,7 +57,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
             java.math.BigDecimal.class,
             java.awt.Color.class,
     };
-    private static final ClassNode HASHMAP_TYPE = new ClassNode(LinkedHashMap.class);
+    private static final ClassNode HASHMAP_TYPE = new ClassNode(HashMap.class);
     private static final ClassNode MAP_TYPE = new ClassNode(Map.class);
     private static final ClassNode DATE_TYPE = new ClassNode(Date.class);
     private static final ClassNode CLONEABLE_TYPE = new ClassNode(Cloneable.class);
@@ -213,6 +213,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
             throw new RuntimeException("@Immutable does not allow explicit constructors");
         }
 
+        // map constructor
         final BlockStatement body = new BlockStatement();
         List<PropertyNode> list = cNode.getProperties();
         final VariableExpression args = new VariableExpression("args");
@@ -225,11 +226,25 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
                 body.addStatement(createConstructorStatementDefault(fNode));
             }
         }
-        Parameter[] params = new Parameter[]{new Parameter(HASHMAP_TYPE, "args")};
+        final Parameter[] params = new Parameter[]{new Parameter(HASHMAP_TYPE, "args")};
         cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, new IfStatement(
                 equalsNullExpr(args),
                 new EmptyStatement(),
                 body)));
+
+        // alternative ordered constructor
+        final MapExpression argMap = new MapExpression();
+        final Parameter[] orderedParams = new Parameter[list.size()];
+        int index = 0;
+        for (PropertyNode pNode : list) {
+            orderedParams[index++] = new Parameter(pNode.getField().getType(), pNode.getField().getName());
+            argMap.addMapEntryExpression(new ConstantExpression(pNode.getName()), new VariableExpression(pNode.getName()));
+        }
+        final BlockStatement orderedBody = new BlockStatement();
+        orderedBody.addStatement(new ExpressionStatement(
+                new ConstructorCallExpression(ClassNode.THIS, argMap)
+        ));
+        cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, orderedParams, ClassNode.EMPTY_ARRAY, orderedBody));
     }
 
     private Statement createConstructorStatement(PropertyNode pNode) {

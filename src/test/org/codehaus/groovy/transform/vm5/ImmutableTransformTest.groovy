@@ -41,7 +41,7 @@ class ImmutableTransformTest extends GroovyTestCase {
                   Collection nums
               }
               [new Foo(x:'x', y:'y', c:Coin.HEAD, nums:[1,2]),
-               new Foo(x:'x', y:'y', c:Coin.HEAD, nums:[1,2])]
+               new Foo('x', 'y', Coin.HEAD, [1,2])]
         """)
 
         assertEquals objects[0].hashCode(), objects[1].hashCode()

@@ -36,16 +36,19 @@ import java.lang.annotation.Target;
  * }
  * def d = new Date()
  * def c1 = new Customer(first:'Tom', last:'Jones', age:21, since:d, favItems:['Books', 'Games'])
- * def c2 = new Customer(first:'Tom', last:'Jones', age:21, since:d, favItems:['Books', 'Games'])
+ * def c2 = new Customer('Tom', 'Jones', 21, d, ['Books', 'Games'])
  * assert c1 == c2
  * </pre>
  * A class created in this way has the following characteristics:
  * <ul>
  * <li>Properties automatically have private, final backing fields with getters.
  * Attempts to update the property will result in a {@code ReadOnlyPropertyException}.
+ * <li>A map-based constructor is provided which allows you to set properties by name.
+ * <li>A tuple-style constructor is provided which allows you to set properties in the same order as they are defined.
  * <li>An {@code equals} method and a {@code hashCode} method are provided based on the property values.
  * <li>{@code Date}s, {@code Cloneable}s and arrays are defensively copied on the way in (constructor) and out (getters).
- * Arrays and cloneable objects use the {@code clone} method. It is up to you to define this method and use deep cloning if appropriate.
+ * Arrays and cloneable objects use the {@code clone} method. For your own classes,
+ * it is up to you to define this method and use deep cloning if appropriate.
  * <li>{@code Collection}s and {@code Map}s are wrapped by immutable wrapper classes (but not deeply cloned!).
  * Attempts to update them will result in an {@code UnsupportedOperationException}.
  * <li>Fields that are enums or other {@code @Immutable} classes are allowed but for an
