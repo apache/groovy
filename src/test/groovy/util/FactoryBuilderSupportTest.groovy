@@ -1,7 +1,5 @@
 package groovy.util
 
-import groovy.lang.MissingMethodException
-
 /**
  *   Test for FactoryBuilderSupport based in BuilderSupportTest
  *   as it should comply with the same contract
@@ -739,6 +737,44 @@ class FactoryBuilderSupportTest extends GroovyTestCase{
             'node_children', 'foo',
             'node_completed',null,'x',
             'post_node_completion',null, 'x'
+            ]
+    }
+
+    void testMultiThreaded() {
+        def b = new SpoofFactoryBuilder()
+        Thread t1 = Thread.start {
+            b.foo {
+                Thread.sleep(100)
+                bar()
+            }
+        }
+        Thread t2 = Thread.start {
+            Thread.sleep(50)
+            b.outer()
+        }
+
+        t1.join()
+        t2.join()
+        assert b.@log == [
+                'register', 'foo', 'Meta',
+                'register', 'bar', 'Meta',
+                'register', 'outest', 'Layers',
+                'register', 'outer', 'Layers',
+                'register', 'inner', 'Layers',
+                'new_instance','foo', null,
+                'handle_node_attributes','x',
+                    'new_instance','bar', null,
+                    'handle_node_attributes','x',
+                'set_parent', 'x', 'x',
+                'set_child', 'x', 'x',
+                    'node_completed','x','x',
+                    'post_node_completion', 'x', 'x',
+                'node_completed', null,'x',
+                'post_node_completion', null, 'x',
+                'new_instance','outer', null,
+                'handle_node_attributes', 'x',
+                'node_completed', null, 'x',
+                'post_node_completion', null, 'x'
             ]
     }
 

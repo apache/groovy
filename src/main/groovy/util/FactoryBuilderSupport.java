@@ -710,80 +710,88 @@ public abstract class FactoryBuilderSupport extends Binding {
         Closure closure = null;
         List list = InvokerHelper.asList(args);
 
-        if (proxyBuilder.getContexts().isEmpty()) {
-            // should be called on first build method only
-            proxyBuilder.newContext();
-        }
-        Map namedArgs = Collections.EMPTY_MAP;
-
-        // the arguments come in like [named_args?, args..., closure?]
-        // so peel off a hashmap from the front,
-        // and a closure from the end
-        // and presume that is what they meant, since there is
-        // no way to distinguish node(a:b,c,d) {..} from node([a:b],[c,d], {..})
-        // i.e. the user can deliberatly confuse the builder and there
-        // is nothing we can really do to prevent that
-
-        if ((list.size() > 0)
-                && (list.get(0) instanceof LinkedHashMap)) {
-            namedArgs = (Map) list.get(0);
-            list = list.subList(1, list.size());
-        }
-        if ((list.size() > 0)
-                && (list.get(list.size() - 1) instanceof Closure)) {
-            closure = (Closure) list.get(list.size() - 1);
-            list = list.subList(0, list.size() - 1);
-        }
-        Object arg;
-        if (list.size() == 0) {
-            arg = null;
-        } else if (list.size() == 1) {
-            arg = list.get(0);
-        } else {
-            arg = list;
-        }
-        node = proxyBuilder.createNode(name, namedArgs, arg);
-
-        Object current = proxyBuilder.getCurrent();
-        if (current != null) {
-            proxyBuilder.setParent(current, node);
-        }
-
-        if (closure != null) {
-            Factory parentFactory = proxyBuilder.getCurrentFactory();
-            if (parentFactory.isLeaf()) {
-                throw new RuntimeException("'" + name + "' doesn't support nesting.");
-            }
-            boolean processContent = true;
-            if (parentFactory.isHandlesNodeChildren()) {
-                processContent = parentFactory.onNodeChildren(this, node, closure);
-            }
-            if (processContent) {
-                // push new node on stack
-                String parentName = proxyBuilder.getCurrentName();
-                Map parentContext = proxyBuilder.getContext();
+        synchronized (proxyBuilder.contexts) {
+            if (proxyBuilder.getContexts().isEmpty()) {
+                // should be called on first build method only
                 proxyBuilder.newContext();
-                proxyBuilder.getContext().put(OWNER, closure.getOwner());
-                proxyBuilder.getContext().put(CURRENT_NODE, node);
-                proxyBuilder.getContext().put(PARENT_FACTORY, parentFactory);
-                proxyBuilder.getContext().put(PARENT_NODE, current);
-                proxyBuilder.getContext().put(PARENT_CONTEXT, parentContext);
-                proxyBuilder.getContext().put(PARENT_NAME, parentName);
-                proxyBuilder.getContext().put(PARENT_BUILDER, parentContext.get(CURRENT_BUILDER));
-                proxyBuilder.getContext().put(CURRENT_BUILDER, parentContext.get(CHILD_BUILDER));
-                // lets register the builder as the delegate
-                proxyBuilder.setClosureDelegate(closure, node);
-                closure.call();
-                proxyBuilder.popContext();
             }
-        }
+            try {
+                Map namedArgs = Collections.EMPTY_MAP;
 
-        proxyBuilder.nodeCompleted(current, node);
-        node = proxyBuilder.postNodeCompletion(current, node);
-        if (proxyBuilder.getContexts()
-                .size() == 1) {
-            // pop the first context
-            proxyBuilder.popContext();
+                // the arguments come in like [named_args?, args..., closure?]
+                // so peel off a hashmap from the front,
+                // and a closure from the end
+                // and presume that is what they meant, since there is
+                // no way to distinguish node(a:b,c,d) {..} from node([a:b],[c,d], {..})
+                // i.e. the user can deliberatly confuse the builder and there
+                // is nothing we can really do to prevent that
+
+                if ((list.size() > 0)
+                        && (list.get(0) instanceof LinkedHashMap)) {
+                    namedArgs = (Map) list.get(0);
+                    list = list.subList(1, list.size());
+                }
+                if ((list.size() > 0)
+                        && (list.get(list.size() - 1) instanceof Closure)) {
+                    closure = (Closure) list.get(list.size() - 1);
+                    list = list.subList(0, list.size() - 1);
+                }
+                Object arg;
+                if (list.size() == 0) {
+                    arg = null;
+                } else if (list.size() == 1) {
+                    arg = list.get(0);
+                } else {
+                    arg = list;
+                }
+                node = proxyBuilder.createNode(name, namedArgs, arg);
+
+                Object current = proxyBuilder.getCurrent();
+                if (current != null) {
+                    proxyBuilder.setParent(current, node);
+                }
+
+                if (closure != null) {
+                    Factory parentFactory = proxyBuilder.getCurrentFactory();
+                    if (parentFactory.isLeaf()) {
+                        throw new RuntimeException("'" + name + "' doesn't support nesting.");
+                    }
+                    boolean processContent = true;
+                    if (parentFactory.isHandlesNodeChildren()) {
+                        processContent = parentFactory.onNodeChildren(this, node, closure);
+                    }
+                    if (processContent) {
+                        // push new node on stack
+                        String parentName = proxyBuilder.getCurrentName();
+                        Map parentContext = proxyBuilder.getContext();
+                        proxyBuilder.newContext();
+                        try {
+                            proxyBuilder.getContext().put(OWNER, closure.getOwner());
+                            proxyBuilder.getContext().put(CURRENT_NODE, node);
+                            proxyBuilder.getContext().put(PARENT_FACTORY, parentFactory);
+                            proxyBuilder.getContext().put(PARENT_NODE, current);
+                            proxyBuilder.getContext().put(PARENT_CONTEXT, parentContext);
+                            proxyBuilder.getContext().put(PARENT_NAME, parentName);
+                            proxyBuilder.getContext().put(PARENT_BUILDER, parentContext.get(CURRENT_BUILDER));
+                            proxyBuilder.getContext().put(CURRENT_BUILDER, parentContext.get(CHILD_BUILDER));
+                            // lets register the builder as the delegate
+                            proxyBuilder.setClosureDelegate(closure, node);
+                            closure.call();
+                        } finally {
+                            proxyBuilder.popContext();
+                        }
+                    }
+                }
+
+                proxyBuilder.nodeCompleted(current, node);
+                node = proxyBuilder.postNodeCompletion(current, node);
+            } finally {
+                if (proxyBuilder.getContexts()
+                        .size() == 1) {
+                    // pop the first context
+                    proxyBuilder.popContext();
+                }
+            }
         }
         return node;
     }
