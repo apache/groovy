@@ -426,8 +426,10 @@ public abstract class FactoryBuilderSupport extends Binding {
         } catch (RuntimeException e) {
             // remove contexts created after we started
             if (proxyBuilder.contexts.contains(previousContext)) {
-                while (proxyBuilder.getContext() != previousContext) {
+                Map<String, Object> context = proxyBuilder.getContext();
+                while (context != null && context != previousContext) {
                     proxyBuilder.popContext();
+                    context = proxyBuilder.getContext();
                 }
             }
             throw e;
@@ -1046,8 +1048,10 @@ public abstract class FactoryBuilderSupport extends Binding {
             // remove contexts created after we started
             proxyBuilder = previousProxyBuilder;
             if (proxyBuilder.contexts.contains(previousContext)) {
-                while (proxyBuilder.getContext() != previousContext) {
+                Map<String, Object> context = proxyBuilder.getContext();
+                while (context != null && context != previousContext) {
                     proxyBuilder.popContext();
+                    context = proxyBuilder.getContext();
                 }
             }
             throw e;
@@ -1136,7 +1140,7 @@ class FactoryInterceptorMetaClass extends DelegatingMetaClass {
             // attempt factory resolution
             try {
                 if (factory.getMetaClass().respondsTo(factory, methodName).isEmpty()) {
-                    // dispatch to fectories if it is not a literal method
+                    // dispatch to factories if it is not a literal method
                     return factory.invokeMethod(methodName, arguments);
                 } else {
                     return InvokerHelper.invokeMethod(factory, methodName, arguments);
