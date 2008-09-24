@@ -97,6 +97,10 @@ public class PropertyNode extends AnnotatedNode implements Opcodes,Variable {
         return (modifiers & ACC_PRIVATE) != 0;
     }
     
+    public boolean isPublic() {
+        return (modifiers & ACC_PUBLIC) != 0;
+    }
+
     public boolean isStatic() {
         return (modifiers & ACC_STATIC) != 0;
     }

@@ -22,8 +22,10 @@ import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Token;
+import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
+import org.codehaus.groovy.classgen.Verifier;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.ref.SoftReference;
@@ -36,7 +38,7 @@ import java.util.Set;
  *
  * @author Alex Tkachman
  */
-@GroovyASTTransformation(phase= CompilePhase.CANONICALIZATION)
+@GroovyASTTransformation(phase=CompilePhase.CANONICALIZATION)
 public class DelegateASTTransformation implements ASTTransformation, Opcodes {
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
@@ -58,6 +60,44 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
                 Map.Entry e = (Map.Entry) it.next();
 
                 addDelegateMethod(fieldNode, owner, ownMethods, e);
+            }
+
+            for (Iterator it = type.getProperties().iterator(); it.hasNext(); ) {
+                PropertyNode prop = (PropertyNode) it.next();
+
+                if (prop.isStatic() || !prop.isPublic ())
+                  continue;
+
+                String name = prop.getName();
+
+                String getterName = "get" + Verifier.capitalize(name);
+                if(owner.getGetterMethod(getterName) == null) {
+                    owner.addMethod(getterName,
+                            ACC_PUBLIC,
+                            nonGeneric(prop.getType()),
+                            Parameter.EMPTY_ARRAY,
+                            null,
+                            new ReturnStatement(
+                                    new PropertyExpression(
+                                            new FieldExpression(fieldNode),
+                                            name)));
+                }
+
+                String setterName = "set" + Verifier.capitalize(name);
+                if((prop.getModifiers() & ACC_FINAL) != 0 && owner.getSetterMethod(setterName) == null) {
+                    owner.addMethod(setterName,
+                            ACC_PUBLIC,
+                            ClassHelper.VOID_TYPE,
+                            new Parameter[] {new Parameter(nonGeneric(prop.getType()), "value")},
+                            null,
+                            new ExpressionStatement(
+                                    new BinaryExpression(
+                                            new PropertyExpression(
+                                               new FieldExpression(fieldNode),
+                                               name),
+                                            Token.newSymbol(Types.EQUAL, -1, -1),
+                                            new VariableExpression("value"))));
+                }
             }
 
             final Expression member = node.getMember("interfaces");

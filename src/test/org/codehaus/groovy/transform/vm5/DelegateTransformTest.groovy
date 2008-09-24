@@ -54,4 +54,32 @@ class DelegateTransformTest extends GroovyShellTestCase {
         assertTrue res instanceof java.util.concurrent.locks.Lock
         assertFalse res instanceof List
     }
+
+    void testMultiple () {
+        def res = evaluate ("""
+        class X {
+          def value = 10
+        }
+
+        class Y {
+          @Delegate X  x  = new X ()
+          @Delegate XX xx = new XX ()
+
+          void setValue (v) {
+            this.@x.@value = 12
+          }
+        }
+
+        class XX {
+          def value2 = 11
+        }
+
+        new Y ()
+        """)
+
+        assertEquals 10, res.value
+        assertEquals 11, res.value2
+        res.value = 123
+        assertEquals 12, res.value
+    }
 }
