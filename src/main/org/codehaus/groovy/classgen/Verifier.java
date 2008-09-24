@@ -790,15 +790,37 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         return name.substring(0, 1).toUpperCase() + name.substring(1, name.length());
     }
 
-    protected Statement createGetterBlock(PropertyNode propertyNode, FieldNode field) {
-        Expression expression = new FieldExpression(field);
-        return new ReturnStatement(expression);
+    protected Statement createGetterBlock(PropertyNode propertyNode, final FieldNode field) {
+        return new BytecodeSequence(new BytecodeInstruction(){
+            public void visit(MethodVisitor mv) {
+                if (field.isStatic()) {
+                    mv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(classNode), field.getName(), BytecodeHelper.getTypeDescription(field.getType()));
+                }
+                else {
+                    mv.visitVarInsn(ALOAD, 0);
+                    mv.visitFieldInsn(GETFIELD, BytecodeHelper.getClassInternalName(classNode), field.getName(), BytecodeHelper.getTypeDescription(field.getType()));
+                }
+                final BytecodeHelper helper = new BytecodeHelper(mv);
+                helper.doReturn(field.getType());
+            }
+        });
     }
 
-    protected Statement createSetterBlock(PropertyNode propertyNode, FieldNode field) {
-        Expression expression = new FieldExpression(field);
-        return new ExpressionStatement(
-            new BinaryExpression(expression, Token.newSymbol(Types.EQUAL, 0, 0), new VariableExpression("value")));
+    protected Statement createSetterBlock(PropertyNode propertyNode, final FieldNode field) {
+        return new BytecodeSequence(new BytecodeInstruction(){
+            public void visit(MethodVisitor mv) {
+                final BytecodeHelper helper = new BytecodeHelper(mv);
+                if (field.isStatic()) {
+                    helper.load(field.getType(), 0);
+                    mv.visitFieldInsn(PUTSTATIC, BytecodeHelper.getClassInternalName(classNode), field.getName(), BytecodeHelper.getTypeDescription(field.getType()));
+                }
+                else {
+                    mv.visitVarInsn(ALOAD, 0);
+                    helper.load(field.getType(), 1);
+                    mv.visitFieldInsn(PUTFIELD, BytecodeHelper.getClassInternalName(classNode), field.getName(), BytecodeHelper.getTypeDescription(field.getType()));
+                }
+            }
+        });
     }
 
     /**

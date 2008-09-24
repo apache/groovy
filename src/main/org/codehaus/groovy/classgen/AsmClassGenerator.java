@@ -509,68 +509,75 @@ public class AsmClassGenerator extends ClassGenerator {
         } else if (!node.isAbstract()) {
             Statement code = node.getCode();
 
-            final Label tryStart = new Label();
-            mv.visitLabel(tryStart);
-
-            if (isConstructor && (code == null || !((ConstructorNode) node).firstStatementIsSpecialConstructorCall())) {
-                // invokes the super class constructor
-                mv.visitVarInsn(ALOAD, 0);
-                mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(classNode.getSuperClass()), "<init>", "()V");
-            }
-
-            compileStack.init(node.getVariableScope(), parameters, mv, classNode);
-
-
-            if (isNotClinit()) {
-                mv.visitMethodInsn(INVOKESTATIC,internalClassName,"$getCallSiteArray","()[Lorg/codehaus/groovy/runtime/callsite/CallSite;");
-                callSiteArrayVarIndex = compileStack.defineTemporaryVariable("$local$callSiteArray", ClassHelper.make(CallSite[].class), true);
-            }
-
-
-            // handle body
-            super.visitConstructorOrMethod(node, isConstructor);
-            if (!outputReturn || node.isVoidMethod()) {
-                mv.visitInsn(RETURN);
-            }
-            compileStack.clear();
-
-            final Label finallyStart = new Label();
-            mv.visitJumpInsn(GOTO, finallyStart);
-
-            // marker needed for Exception table
-            final Label tryEnd = new Label();
-            mv.visitLabel(tryEnd);
-
-            final Label catchStart = new Label();
-            mv.visitLabel(catchStart);
-
-            // handle catch body
-            mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/ScriptBytecodeAdapter", "unwrap", "(Lgroovy/lang/GroovyRuntimeException;)Ljava/lang/Throwable;");
-            mv.visitInsn(ATHROW);
-
-            mv.visitLabel(finallyStart);
-            mv.visitInsn(NOP);
-
-            // add exception to table
-            exceptionBlocks.add(new Runnable() {
-                public void run() {
-                    mv.visitTryCatchBlock(tryStart, tryEnd, catchStart, GRE);
-                }
-            });
-
-            // let's do all the exception blocks
-            for (Iterator iter = exceptionBlocks.iterator(); iter.hasNext();) {
-                Runnable runnable = (Runnable) iter.next();
-                runnable.run();
-            }
-            exceptionBlocks.clear();
+            // fast path for getter/setters etc.
+            if (code instanceof BytecodeSequence && ((BytecodeSequence)code).getInstructions().size() == 1 && ((BytecodeSequence)code).getInstructions().get(0) instanceof BytecodeInstruction)
+              ((BytecodeInstruction)((BytecodeSequence)code).getInstructions().get(0)).visit(mv);
+            else
+              visitStdMethod(node, isConstructor, parameters, code);
 
             mv.visitMaxs(0, 0);
         }
         mv.visitEnd();
     }
 
-   void visitAnnotationDefaultExpression(AnnotationVisitor av, ClassNode type, Expression exp) {
+    private void visitStdMethod(MethodNode node, boolean isConstructor, Parameter[] parameters, Statement code) {
+        final Label tryStart = new Label();
+        mv.visitLabel(tryStart);
+
+        if (isConstructor && (code == null || !((ConstructorNode) node).firstStatementIsSpecialConstructorCall())) {
+            // invokes the super class constructor
+            mv.visitVarInsn(ALOAD, 0);
+            mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(classNode.getSuperClass()), "<init>", "()V");
+        }
+
+        compileStack.init(node.getVariableScope(), parameters, mv, classNode);
+
+
+        if (isNotClinit()) {
+            mv.visitMethodInsn(INVOKESTATIC,internalClassName,"$getCallSiteArray","()[Lorg/codehaus/groovy/runtime/callsite/CallSite;");
+            callSiteArrayVarIndex = compileStack.defineTemporaryVariable("$local$callSiteArray", ClassHelper.make(CallSite[].class), true);
+        }
+
+        // handle body
+        super.visitConstructorOrMethod(node, isConstructor);
+        if (!outputReturn || node.isVoidMethod()) {
+            mv.visitInsn(RETURN);
+        }
+        compileStack.clear();
+
+        final Label finallyStart = new Label();
+        mv.visitJumpInsn(GOTO, finallyStart);
+
+        // marker needed for Exception table
+        final Label tryEnd = new Label();
+        mv.visitLabel(tryEnd);
+
+        final Label catchStart = new Label();
+        mv.visitLabel(catchStart);
+
+        // handle catch body
+        mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/ScriptBytecodeAdapter", "unwrap", "(Lgroovy/lang/GroovyRuntimeException;)Ljava/lang/Throwable;");
+        mv.visitInsn(ATHROW);
+
+        mv.visitLabel(finallyStart);
+        mv.visitInsn(NOP);
+
+        // add exception to table
+        exceptionBlocks.add(new Runnable() {
+            public void run() {
+                mv.visitTryCatchBlock(tryStart, tryEnd, catchStart, GRE);
+            }
+        });
+
+        // let's do all the exception blocks
+        for (Iterator iter = exceptionBlocks.iterator(); iter.hasNext();) {
+            Runnable runnable = (Runnable) iter.next();
+            runnable.run();
+        }
+        exceptionBlocks.clear();
+    }
+
+    void visitAnnotationDefaultExpression(AnnotationVisitor av, ClassNode type, Expression exp) {
        if (type.isArray()) {
            ListExpression list = (ListExpression) exp;
            AnnotationVisitor avl = av.visitArray(null);
