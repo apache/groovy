@@ -137,15 +137,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         addDefaultParameterMethods(node);
         addDefaultParameterConstructors(node);
 
-        String _myClassFieldName = "$myClass";
-        while (node.getDeclaredField(_myClassFieldName) != null)
-          _myClassFieldName = _myClassFieldName + "$";
-        final String myClassFieldName = _myClassFieldName;
-
         final String classInternalName = BytecodeHelper.getClassInternalName(node);
-
-//        FieldNode myClassField = node.addField(myClassFieldName, ACC_PRIVATE|ACC_STATIC, ClassHelper.CLASS_Type, new ClassExpression(node));
-//        myClassField.setSynthetic(true);
 
         String _staticClassInfoFieldName = "$staticClassInfo";
         while (node.getDeclaredField(_staticClassInfoFieldName) != null)
@@ -155,8 +147,13 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         FieldNode staticMetaClassField = node.addField(staticMetaClassFieldName, ACC_PRIVATE|ACC_STATIC, ClassHelper.make(ClassInfo.class,false), null);
         staticMetaClassField.setSynthetic(true);
 
-        List getStaticMetaClassCode = new LinkedList();
-        getStaticMetaClassCode.add( new BytecodeInstruction(){
+        node.addSyntheticMethod(
+            "$getStaticMetaClass",
+            ACC_PROTECTED,
+            ClassHelper.make(MetaClass.class),
+            Parameter.EMPTY_ARRAY,
+            ClassNode.EMPTY_ARRAY,
+            new BytecodeSequence(new BytecodeInstruction(){
             public void visit(MethodVisitor mv) {
                 mv.visitFieldInsn(GETSTATIC, classInternalName, staticMetaClassFieldName, "Lorg/codehaus/groovy/reflection/ClassInfo;");
                 mv.visitVarInsn(ASTORE, 1);
@@ -178,14 +175,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 mv.visitInsn(ARETURN);
 
             }
-        });
-        node.addSyntheticMethod(
-            "$getStaticMetaClass",
-            ACC_PROTECTED,
-            ClassHelper.make(MetaClass.class),
-            Parameter.EMPTY_ARRAY,
-            ClassNode.EMPTY_ARRAY,
-            new BytecodeSequence(getStaticMetaClassCode)
+        })
         );
 
         boolean knownSpecialCase =
@@ -200,8 +190,13 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
             if (!node.hasMethod("getMetaClass", Parameter.EMPTY_ARRAY)) {
                 metaClassField = setMetaClassFieldIfNotExists(node, metaClassField);
-                List getMetaClassCode = new LinkedList();
-                getMetaClassCode.add(new BytecodeInstruction() {
+                node.addSyntheticMethod(
+                        "getMetaClass",
+                        ACC_PUBLIC | ACC_SYNTHETIC,
+                        ClassHelper.METACLASS_TYPE,
+                        Parameter.EMPTY_ARRAY,
+                        ClassNode.EMPTY_ARRAY,
+                        new BytecodeSequence(new BytecodeInstruction() {
                     public void visit(MethodVisitor mv) {
                         Label nullLabel = new Label();
 
@@ -221,14 +216,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                         mv.visitFieldInsn(GETFIELD, classInternalName, "metaClass", "Lgroovy/lang/MetaClass;");
                         mv.visitInsn(ARETURN);
                     }
-                });
-                node.addSyntheticMethod(
-                        "getMetaClass",
-                        ACC_PUBLIC | ACC_SYNTHETIC,
-                        ClassHelper.METACLASS_TYPE,
-                        Parameter.EMPTY_ARRAY,
-                        ClassNode.EMPTY_ARRAY,
-                        new BytecodeSequence(getMetaClassCode)
+                })
                 );
             }
 
@@ -268,11 +256,13 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 VariableScope blockScope = new VariableScope();
                 blockScope.putReferencedLocalVariable(vMethods);
                 blockScope.putReferencedLocalVariable(vArguments);
-                List instructions = new ArrayList();
-                instructions.add(new BytecodeInstruction() {
+                node.addSyntheticMethod(
+                        "invokeMethod",
+                        ACC_PUBLIC,
+                        ClassHelper.OBJECT_TYPE, INVOKE_METHOD_PARAMS,
+                        ClassNode.EMPTY_ARRAY,
+                        new BytecodeSequence(new BytecodeInstruction() {
                     public void visit(MethodVisitor mv) {
-                        Label nullLabel = new Label();
-
                         mv.visitVarInsn(ALOAD, 0);
                         mv.visitMethodInsn(INVOKEVIRTUAL, classInternalName, "getMetaClass", "()Lgroovy/lang/MetaClass;");
                         mv.visitVarInsn(ALOAD, 0);
@@ -281,19 +271,18 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                         mv.visitMethodInsn(INVOKEINTERFACE, "groovy/lang/MetaClass", "invokeMethod", "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;");
                         mv.visitInsn(ARETURN);
                     }
-                });
-                node.addSyntheticMethod(
-                        "invokeMethod",
-                        ACC_PUBLIC,
-                        ClassHelper.OBJECT_TYPE, INVOKE_METHOD_PARAMS,
-                        ClassNode.EMPTY_ARRAY,
-                        new BytecodeSequence(instructions)
+                })
                 );
             }
 
             if (!node.hasMethod("getProperty", GET_PROPERTY_PARAMS)) {
-                List instructions = new ArrayList();
-                instructions.add(new BytecodeInstruction() {
+                node.addSyntheticMethod(
+                        "getProperty",
+                        ACC_PUBLIC,
+                        ClassHelper.OBJECT_TYPE,
+                        GET_PROPERTY_PARAMS,
+                        ClassNode.EMPTY_ARRAY,
+                        new BytecodeSequence(new BytecodeInstruction() {
                     public void visit(MethodVisitor mv) {
                         mv.visitVarInsn(ALOAD, 0);
                         mv.visitMethodInsn(INVOKEVIRTUAL, classInternalName, "getMetaClass", "()Lgroovy/lang/MetaClass;");
@@ -302,20 +291,18 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                         mv.visitMethodInsn(INVOKEINTERFACE, "groovy/lang/MetaClass", "getProperty", "(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;");
                         mv.visitInsn(ARETURN);
                     }
-                });
-                node.addSyntheticMethod(
-                        "getProperty",
-                        ACC_PUBLIC,
-                        ClassHelper.OBJECT_TYPE,
-                        GET_PROPERTY_PARAMS,
-                        ClassNode.EMPTY_ARRAY,
-                        new BytecodeSequence(instructions)
+                })
                 );
             }
 
             if (!node.hasMethod("setProperty", SET_PROPERTY_PARAMS)) {
-                List instructions = new ArrayList();
-                instructions.add(new BytecodeInstruction() {
+                node.addSyntheticMethod(
+                        "setProperty",
+                        ACC_PUBLIC,
+                        ClassHelper.VOID_TYPE,
+                        SET_PROPERTY_PARAMS,
+                        ClassNode.EMPTY_ARRAY,
+                        new BytecodeSequence(new BytecodeInstruction() {
                     public void visit(MethodVisitor mv) {
                         mv.visitVarInsn(ALOAD, 0);
                         mv.visitMethodInsn(INVOKEVIRTUAL, classInternalName, "getMetaClass", "()Lgroovy/lang/MetaClass;");
@@ -324,14 +311,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                         mv.visitVarInsn(ALOAD, 2);
                         mv.visitMethodInsn(INVOKEINTERFACE, "groovy/lang/MetaClass", "setProperty", "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)V");
                         mv.visitInsn(RETURN);                    }
-                });
-                node.addSyntheticMethod(
-                        "setProperty",
-                        ACC_PUBLIC,
-                        ClassHelper.VOID_TYPE,
-                        SET_PROPERTY_PARAMS,
-                        ClassNode.EMPTY_ARRAY,
-                        new BytecodeSequence(instructions)
+                })
                 );
             }
 
@@ -361,7 +341,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 ClassHelper.Long_TYPE,
                 //"",
                 node,
-                new ConstantExpression(new Long(System.currentTimeMillis())));
+                new ConstantExpression(System.currentTimeMillis()));
         // alternatively , FieldNode timeTagField = SourceUnit.createFieldNode("public static final long __timeStamp = " + System.currentTimeMillis() + "L");
         timeTagField.setSynthetic(true);
         node.addField(timeTagField);
@@ -372,7 +352,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 ClassHelper.Long_TYPE,
                 //"",
                 node,
-                new ConstantExpression(new Long(0)));
+                new ConstantExpression((long) 0));
         // alternatively , FieldNode timeTagField = SourceUnit.createFieldNode("public static final long __timeStamp = " + System.currentTimeMillis() + "L");
         timeTagField.setSynthetic(true);
         node.addField(timeTagField);
