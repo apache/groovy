@@ -36,7 +36,7 @@ import java.util.*;
  *
  * @author Paul King
  */
-@GroovyASTTransformation(phase= CompilePhase.CANONICALIZATION)
+@GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
 
     /*
@@ -65,6 +65,8 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     private static final ClassNode HASHUTIL_TYPE = new ClassNode(HashCodeHelper.class);
     private static final ClassNode STRINGBUFFER_TYPE = new ClassNode(StringBuffer.class);
     private static final ClassNode DGM_TYPE = new ClassNode(DefaultGroovyMethods.class);
+    private static final ClassNode MY_TYPE = new ClassNode(Immutable.class);
+    private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode SELF_TYPE = new ClassNode(ImmutableASTTransformation.class);
     private static final Token COMPARE_EQUAL = Token.newSymbol(Types.COMPARE_EQUAL, -1, -1);
     private static final Token COMPARE_NOT_EQUAL = Token.newSymbol(Types.COMPARE_NOT_EQUAL, -1, -1);
@@ -78,23 +80,24 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
 
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
         AnnotationNode node = (AnnotationNode) nodes[0];
+        if (!MY_TYPE.equals(node.getClassNode())) return;
         List<PropertyNode> newNodes = new ArrayList<PropertyNode>();
 
         if (parent instanceof ClassNode) {
             ClassNode cNode = (ClassNode) parent;
             String cName = cNode.getName();
             if (cNode.isInterface()) {
-                throw new RuntimeException("Error processing interface '" + cName + "'. @Immutable not allowed for interfaces.");
+                throw new RuntimeException("Error processing interface '" + cName + "'. " + MY_TYPE_NAME + " not allowed for interfaces.");
             }
             if ((cNode.getModifiers() & ACC_FINAL) == 0) {
-                throw new RuntimeException("Error processing class '" + cName + "'. @Immutable classes must be final.");
+                throw new RuntimeException("Error processing class '" + cName + "'. " + MY_TYPE_NAME + " classes must be final.");
             }
 
             final List<PropertyNode> pList = cNode.getProperties();
-            for(PropertyNode pNode : pList) {
+            for (PropertyNode pNode : pList) {
                 adjustPropertyForImmutability(pNode, newNodes);
             }
-            for(PropertyNode pNode : newNodes) {
+            for (PropertyNode pNode : newNodes) {
                 pList.remove(pNode);
                 addProperty(cNode, pNode);
             }
@@ -113,12 +116,12 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         String fName = fNode.getName();
         // TODO: do we need to lock down things like: $ownClass
         if (fNode.isPublic() && !fName.contains("$")) {
-            throw new RuntimeException("Public field '" + fName + "' not allowed for @Immutable class '" + cNode + "'.");
+            throw new RuntimeException("Public field '" + fName + "' not allowed for " + MY_TYPE_NAME + " class '" + cNode + "'.");
         }
     }
 
     private void createHashCode(ClassNode cNode) {
-        final FieldNode hashField = cNode.addField("$hash$code", ACC_PRIVATE|ACC_SYNTHETIC, ClassHelper.int_TYPE, null);
+        final FieldNode hashField = cNode.addField("$hash$code", ACC_PRIVATE | ACC_SYNTHETIC, ClassHelper.int_TYPE, null);
         final BlockStatement body = new BlockStatement();
         final Expression hash = new FieldExpression(hashField);
         final List<PropertyNode> list = cNode.getProperties();
@@ -145,7 +148,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         body.addStatement(append(result, new ConstantExpression(cNode.getName())));
         body.addStatement(append(result, new ConstantExpression("(")));
         boolean first = true;
-        for(PropertyNode pNode : list) {
+        for (PropertyNode pNode : list) {
             if (first) {
                 first = false;
             } else {
@@ -183,7 +186,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         body.addStatement(new ExpressionStatement(new DeclarationExpression(result, ASSIGN, init)));
 
         // fields
-        for(PropertyNode pNode : list) {
+        for (PropertyNode pNode : list) {
             // _result = HashCodeHelper.updateHash(_result, field)
             final Expression fieldExpr = new FieldExpression(pNode.getField());
             final Expression args = new TupleExpression(result, fieldExpr);
@@ -205,14 +208,14 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         body.addStatement(returnTrueIfIdentical(VariableExpression.THIS_EXPRESSION, other));
 
         // fields
-        for(PropertyNode pNode : list) {
+        for (PropertyNode pNode : list) {
             body.addStatement(returnFalseIfPropertyNotEqual(pNode, other));
         }
 
         // default
         body.addStatement(new ReturnStatement(ConstantExpression.TRUE));
 
-        Parameter[] params = { new Parameter(cNode, "other") };
+        Parameter[] params = {new Parameter(cNode, "other")};
         cNode.addMethod(new MethodNode("equals", ACC_PUBLIC, ClassHelper.boolean_TYPE, params, ClassNode.EMPTY_ARRAY, body));
     }
 
@@ -252,11 +255,11 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
 
     private void createConstructor(ClassNode cNode) {
         // pretty toString will remember how the user declared the params and print accordingly
-        final FieldNode constructorField = cNode.addField("$map$constructor", ACC_PRIVATE|ACC_SYNTHETIC, ClassHelper.boolean_TYPE, null);
+        final FieldNode constructorField = cNode.addField("$map$constructor", ACC_PRIVATE | ACC_SYNTHETIC, ClassHelper.boolean_TYPE, null);
         final FieldExpression constructorStyle = new FieldExpression(constructorField);
         if (cNode.getDeclaredConstructors().size() != 0) {
             // TODO: allow constructors which call provided constructor?
-            throw new RuntimeException("@Immutable does not allow explicit constructors");
+            throw new RuntimeException(MY_TYPE_NAME + " does not allow explicit constructors");
         }
 
         // map constructor
@@ -475,7 +478,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
 
     private static String createErrorMessage(String fieldName, String typeName, String mode) {
         return "Possible mutable field '" + fieldName +
-                "' of type '" + typeName + "' found while " + mode + " @Immutable.";
+                "' of type '" + typeName + "' found while " + mode + " " + MY_TYPE_NAME + " class.";
     }
 
     private Statement createGetterBodyArrayOrCloneable(FieldNode fNode) {
