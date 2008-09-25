@@ -194,11 +194,11 @@ fi
 
 # For Cygwin, switch paths to Windows format before running java
 if $cygwin ; then
-    GROOVY_HOME=`cygpath --path --mixed "$GROOVY_HOME"`
-    JAVA_HOME=`cygpath --path --mixed "$JAVA_HOME"`
-    GROOVY_CONF=`cygpath --path --mixed "$GROOVY_CONF"`
+    GROOVY_HOME=`cygpath --mixed "$GROOVY_HOME"`
+    JAVA_HOME=`cygpath --mixed "$JAVA_HOME"`
+    GROOVY_CONF=`cygpath --mixed "$GROOVY_CONF"`
     CP=`cygpath --path --mixed "$CP"`    
-    TOOLS_JAR=`cygpath --path --mixed "$TOOLS_JAR"`
+    TOOLS_JAR=`cygpath --mixed "$TOOLS_JAR"`
     STARTER_CLASSPATH=`cygpath --path --mixed "$STARTER_CLASSPATH"`
 
     # We build the pattern for arguments to be converted via cygpath
