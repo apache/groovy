@@ -9813,7 +9813,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <li>List</li>
      * <li>BigDecimal</li>
      * <li>BigInteger</li>
-     * <li>Character</li>
+     * <li>Long</li>
+     * <li>Integer</li>
+     * <li>Short</li>
+     * <li>Byte</li>
      * <li>Character</li>
      * <li>Double</li>
      * <li>Float</li>
