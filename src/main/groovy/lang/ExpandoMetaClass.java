@@ -382,26 +382,35 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 			if(arg instanceof Closure) {
                 Closure callable = (Closure)arg;
                 final List<ClosureMetaMethod> list = ClosureMetaMethod.createMethodList(propertyName, theClass, callable);
+                if (list.isEmpty() && this.isStatic) {
+                    Class[] paramTypes = callable.getParameterTypes();
+                    registerStatic(callable, replace, paramTypes);
+                    return;
+                }
                 for (MetaMethod method : list) {
                     Class[] paramTypes = method.getNativeParameterTypes();
-                    if(!this.isStatic) {
-                        Method foundMethod = checkIfMethodExists(theClass, propertyName, paramTypes, false);
-
-                        if(foundMethod != null && !replace) throw new GroovyRuntimeException("Cannot add new method ["+propertyName+"] for arguments ["+DefaultGroovyMethods.inspect(paramTypes)+"]. It already exists!");
-
-                        registerInstanceMethod(method);
-                    }
-                    else {
-                        Method foundMethod = checkIfMethodExists(theClass, propertyName, paramTypes, true);
-                        if(foundMethod != null && !replace) throw new GroovyRuntimeException("Cannot add new static method ["+propertyName+"] for arguments ["+DefaultGroovyMethods.inspect(paramTypes)+"]. It already exists!");
-
-                        registerStaticMethod(propertyName, callable);
+                    if (this.isStatic) {
+                        registerStatic(callable, replace, paramTypes);
+                    } else {
+                        registerInstance(method, replace, paramTypes);
                     }
                 }
 			}
 		}
 
-		private Method checkIfMethodExists(Class methodClass, String methodName, Class[] paramTypes, boolean staticMethod) {
+        private void registerStatic(Closure callable, boolean replace, Class[] paramTypes) {
+            Method foundMethod = checkIfMethodExists(theClass, propertyName, paramTypes, true);
+            if(foundMethod != null && !replace) throw new GroovyRuntimeException("Cannot add new static method ["+propertyName+"] for arguments ["+ DefaultGroovyMethods.inspect(paramTypes)+"]. It already exists!");
+            registerStaticMethod(propertyName, callable);
+        }
+
+        private void registerInstance(MetaMethod method, boolean replace, Class[] paramTypes) {
+            Method foundMethod = checkIfMethodExists(theClass, propertyName, paramTypes, false);
+            if(foundMethod != null && !replace) throw new GroovyRuntimeException("Cannot add new method ["+propertyName+"] for arguments ["+ DefaultGroovyMethods.inspect(paramTypes)+"]. It already exists!");
+            registerInstanceMethod(method);
+        }
+
+        private Method checkIfMethodExists(Class methodClass, String methodName, Class[] paramTypes, boolean staticMethod) {
 			Method foundMethod = null;
 			Method[] methods = methodClass.getMethods();
 			for (int i = 0; i < methods.length; i++) {
