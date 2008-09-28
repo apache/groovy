@@ -3763,7 +3763,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     new Class[]{clazz},
                     new ConvertedClosure(cl));
         }
-        return asType((Object) cl, clazz);
+        try {
+            return asType((Object) cl, clazz);
+        } catch (GroovyCastException ce) {
+            try {
+                return ProxyGenerator.INSTANCE.instantiateAggregateFromBaseClass(cl, clazz);
+            } catch (GroovyRuntimeException cause) {
+                throw new GroovyCastException("Error casting closure to " + clazz.getName() +
+                        ", Reason: " + cause.getMessage());
+            }
+        }
     }
 
     /**

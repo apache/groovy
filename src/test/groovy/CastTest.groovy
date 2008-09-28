@@ -135,4 +135,10 @@ class CastTest extends GroovyTestCase {
         assert mySet == new HashSet([ "a" ])
     }
 
+    void testCastToAbstractClass() {
+        def closure = { 42 }
+        def myList = closure as AbstractList
+        assert myList[-1] == 42
+        assert myList.size() == 42
+    }
 }
