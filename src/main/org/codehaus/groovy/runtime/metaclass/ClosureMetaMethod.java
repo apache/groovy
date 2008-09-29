@@ -18,10 +18,13 @@ package org.codehaus.groovy.runtime.metaclass;
 import groovy.lang.Closure;
 import groovy.lang.ClosureInvokingMethod;
 import groovy.lang.MetaMethod;
+import groovy.lang.MetaClass;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.runtime.MethodClosure;
+import org.codehaus.groovy.runtime.GeneratedClosure;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.lang.reflect.Modifier;
 import java.util.List;
@@ -88,8 +91,8 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
 		return callable;
 	}
 
-    public static List<ClosureMetaMethod> createMethodList(String name, Class declaringClass, Closure closure) {
-        ArrayList<ClosureMetaMethod> res = new ArrayList<ClosureMetaMethod> ();
+    public static List<MetaMethod> createMethodList(final String name, final Class declaringClass, final Closure closure) {
+        ArrayList<MetaMethod> res = new ArrayList<MetaMethod>();
         if (closure instanceof MethodClosure) {
             MethodClosure methodClosure = (MethodClosure) closure;
             Object owner = closure.getOwner();
@@ -101,10 +104,38 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
             }
         }
         else {
-            for (CachedMethod method : ReflectionCache.getCachedClass(closure.getClass()).getMethods() ) {
-                if (method.getName().equals("doCall")) {
-                    res.add(new ClosureMetaMethod(name, declaringClass, closure, method));
+            if (closure instanceof GeneratedClosure) {
+                for (CachedMethod method : ReflectionCache.getCachedClass(closure.getClass()).getMethods() ) {
+                    if (method.getName().equals("doCall")) {
+                        res.add(new ClosureMetaMethod(name, declaringClass, closure, method));
+                    }
                 }
+            }
+            else {
+                res.add(new MetaMethod(closure.getParameterTypes()){
+                    public int getModifiers() {
+                        return Modifier.PUBLIC;
+                    }
+
+                    public String getName() {
+                        return name;
+                    }
+
+                    public Class getReturnType() {
+                        return Object.class;
+                    }
+
+                    public CachedClass getDeclaringClass() {
+                        return ReflectionCache.getCachedClass(declaringClass);
+                    }
+
+                    public Object invoke(Object object, Object[] arguments) {
+                        Closure cloned = (Closure) closure.clone();
+                        cloned.setDelegate(object);
+                        arguments = coerceArgumentsToClasses(arguments);
+                        return InvokerHelper.invokeMethod(closure, "call", arguments);
+                    }
+                });
             }
         }
         return res;

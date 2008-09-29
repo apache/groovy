@@ -468,4 +468,12 @@ public class CachedClass {
     public String toString() {
         return cachedClass.toString();
     }
+
+    /**
+     * compatibility method
+     * @return
+     */
+    public CachedClass getCachedClass () {
+        return this;
+    }
 }

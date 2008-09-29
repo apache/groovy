@@ -203,8 +203,8 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
     public void registerSubclassInstanceMethod(String name, Class klazz, Closure closure) {
-        final List<ClosureMetaMethod> list = ClosureMetaMethod.createMethodList(name, klazz, closure);
-        for (ClosureMetaMethod metaMethod : list) {
+        final List<MetaMethod> list = ClosureMetaMethod.createMethodList(name, klazz, closure);
+        for (MetaMethod metaMethod : list) {
             registerSubclassInstanceMethod(metaMethod);
         }
     }
@@ -381,7 +381,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 		private void registerIfClosure(Object arg, boolean replace) {
 			if(arg instanceof Closure) {
                 Closure callable = (Closure)arg;
-                final List<ClosureMetaMethod> list = ClosureMetaMethod.createMethodList(propertyName, theClass, callable);
+                final List<MetaMethod> list = ClosureMetaMethod.createMethodList(propertyName, theClass, callable);
                 if (list.isEmpty() && this.isStatic) {
                     Class[] paramTypes = callable.getParameterTypes();
                     registerStatic(callable, replace, paramTypes);
@@ -467,7 +467,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 	protected class ExpandoMetaConstructor extends GroovyObjectSupport {
 		public Object leftShift(Closure c) {
 			if(c != null) {
-                final List<ClosureMetaMethod> list = ClosureMetaMethod.createMethodList(GROOVY_CONSTRUCTOR, theClass, c);
+                final List<MetaMethod> list = ClosureMetaMethod.createMethodList(GROOVY_CONSTRUCTOR, theClass, c);
                 for (MetaMethod method : list) {
                     Class[] paramTypes = method.getNativeParameterTypes();
                     Constructor ctor = retrieveConstructor(paramTypes);
@@ -559,7 +559,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 				property = GROOVY_CONSTRUCTOR;
 			}
             Closure callable = (Closure)newValue;
-            final List<ClosureMetaMethod> list = ClosureMetaMethod.createMethodList(property, theClass, callable);
+            final List<MetaMethod> list = ClosureMetaMethod.createMethodList(property, theClass, callable);
             for (MetaMethod method : list) {
                 // here we don't care if the method exists or not we assume the
                 // developer is responsible and wants to override methods where necessary
@@ -666,7 +666,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 	}
 
     public void registerInstanceMethod(String name, Closure closure) {
-        final List<ClosureMetaMethod> list = ClosureMetaMethod.createMethodList(name, theClass, closure);
+        final List<MetaMethod> list = ClosureMetaMethod.createMethodList(name, theClass, closure);
         for (MetaMethod method : list) {
             registerInstanceMethod(method);
         }
@@ -845,7 +845,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 	 *
 	 * @return the expandoMethods
 	 */
-	public List getExpandoMethods() {
+	public List<MetaMethod> getExpandoMethods() {
        return Collections.unmodifiableList(DefaultGroovyMethods.toList(expandoMethods.values()));
     }
 

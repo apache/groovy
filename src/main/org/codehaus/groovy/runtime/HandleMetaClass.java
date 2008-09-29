@@ -41,7 +41,13 @@ public class HandleMetaClass extends DelegatingMetaClass {
         }
         else {
           if (object != NONE) {
+              final MetaClass metaClass = delegate;
               delegate = new ExpandoMetaClass(delegate.getTheClass(), false, true);
+              if (metaClass instanceof ExpandoMetaClass) {
+                  ExpandoMetaClass emc = (ExpandoMetaClass) metaClass;
+                  for (MetaMethod method : emc.getExpandoMethods())
+                    ((ExpandoMetaClass)delegate).registerInstanceMethod(method);
+              }
               delegate.initialize();
               DefaultGroovyMethods.setMetaClass(object, delegate);
               object = NONE;
