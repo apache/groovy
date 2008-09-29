@@ -977,12 +977,27 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                             } catch (MissingMethodException mme) {
                                 if (last == null) last = mme;
                             }
+                            catch (InvokerInvocationException iie) {
+                                if (iie.getCause() instanceof MissingMethodException) {
+                                    MissingMethodException mme = (MissingMethodException) iie.getCause();
+                                    if (last == null) last = mme;
+                                }
+                                else
+                                  throw iie;
+                            }
                         }
                         if (delegate != closure && (delegate instanceof GroovyObject)) {
                             try {
                                 return invokeMethodOnGroovyObject(methodName, originalArguments, delegate);
                             } catch (MissingMethodException mme) {
                                 last = mme;
+                            }
+                            catch (InvokerInvocationException iie) {
+                                if (iie.getCause() instanceof MissingMethodException) {
+                                    last = (MissingMethodException) iie.getCause();
+                                }
+                                else
+                                  throw iie;
                             }
                         }
                         if (last != null) return invokeMissingMethod(object, methodName, originalArguments, last, isCallToSuper);
