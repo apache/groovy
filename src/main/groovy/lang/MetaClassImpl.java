@@ -723,8 +723,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 }
             }
         } catch (InvokerInvocationException iie) {
-            boolean shouldHandle = isGetter && propertyMissingGet instanceof ClosureMetaMethod;
-            if (!shouldHandle) shouldHandle = !isGetter && propertyMissingSet instanceof ClosureMetaMethod;
+            boolean shouldHandle = isGetter && propertyMissingGet != null;
+            if (!shouldHandle) shouldHandle = !isGetter && propertyMissingSet != null;
             if (shouldHandle &&  iie.getCause() instanceof MissingPropertyException) {
                 throw (MissingPropertyException) iie.getCause();
             }
