@@ -63,11 +63,23 @@ class GenericsGenTest extends GroovyTestCase{
         compiler.compile (fileList.toArray(new File [fileList.size()]) )
     }
 
+    private filesToDelete = []
+
+    void tearDown() {
+        filesToDelete.each {file->
+            if (file instanceof File) {
+                // remember: null instanceof anything is false
+                FileSystemCompiler.deleteRecursive file
+            }
+        }
+    }
+
     private File createTempDir (prefix, suffix) {
         File tempFile = File.createTempFile(prefix, suffix);
         tempFile.delete();
         tempFile.mkdirs();
         tempFile.deleteOnExit()
+        filesToDelete.add(tempFile)
         return tempFile;
     }
 }

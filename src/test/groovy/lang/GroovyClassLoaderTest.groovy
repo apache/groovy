@@ -89,21 +89,28 @@ public class GroovyClassLoaderTest extends GroovyTestCase {
         paths += getPaths(System.getProperty("java.class.path"))
         paths = paths.unique()
 
-        def file = File.createTempFile("Foo", ".groovy")
-        def name = file.name - ".groovy"
-        def script = """
-        class $name extends GroovyTestCase{}
-      """
-        file << script
-        paths << file.parentFile.toURL()
-        def cl = new URLClassLoader(paths as URL[], null)
-        def gcl = new GroovyClassLoader(cl)
+        def file
         try {
-            gcl.loadClass(name)
-            assert false
-        } catch (NoClassDefFoundError ncdfe) {
-            // TODO: hack for running when under coverage - find a better way
-            assert ncdfe.message.indexOf("TestCase") > 0 || ncdfe.message.indexOf("cobertura") > 0
+            file = File.createTempFile("Foo", ".groovy")
+            def name = file.name - ".groovy"
+            def script = """
+            class $name extends GroovyTestCase{}
+          """
+            file << script
+            paths << file.parentFile.toURL()
+            def cl = new URLClassLoader(paths as URL[], null)
+            def gcl = new GroovyClassLoader(cl)
+            try {
+                gcl.loadClass(name)
+                assert false
+            } catch (NoClassDefFoundError ncdfe) {
+                // TODO: hack for running when under coverage - find a better way
+                assert ncdfe.message.indexOf("TestCase") > 0 || ncdfe.message.indexOf("cobertura") > 0
+            }
+        } finally {
+            try {
+                if (file != null) { file.delete() }
+            } catch (Throwable t) { /*drop it*/ }
         }
     }
 
