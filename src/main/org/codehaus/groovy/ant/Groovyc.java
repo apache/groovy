@@ -16,6 +16,11 @@
 
 package org.codehaus.groovy.ant;
 
+import groovy.lang.GroovyClassLoader;
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.PosixParser;
+import org.apache.tools.ant.AntClassLoader;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Project;
@@ -26,19 +31,15 @@ import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.types.Reference;
 import org.apache.tools.ant.util.GlobPatternMapper;
 import org.apache.tools.ant.util.SourceFileScanner;
+import org.codehaus.groovy.control.CompilationUnit;
+import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.tools.ErrorReporter;
 import org.codehaus.groovy.tools.FileSystemCompiler;
+import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
 import java.nio.charset.Charset;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 /**
  * Compiles Groovy source files. This task can take the following arguments:
@@ -95,8 +96,11 @@ public class Groovyc extends MatchingTask {
     private boolean taskSuccess = true; // assume the best
     private boolean includeDestClasses = true;
 
+    protected CompilerConfiguration configuration;
     private Javac javac;
     private boolean jointCompilation;
+
+    private List<File> temporaryFiles = new ArrayList(2);
 
     /**
      * Adds a path for source compilation.
@@ -353,22 +357,6 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
-     * Returns the encoding to be used when creating files.<br/>
-     * If no encoding value has been set it will default to
-     * System.properties("file.encoding")
-     *
-     * @return the file encoding to use
-     */
-    /******
-     public String createEncoding() {
-     if (encoding == null) {
-     encoding = System.getProperty("file.encoding");
-     }
-     return encoding;
-     }
-     ********/
-
-    /**
      * Enable verbose compiling which will display which files
      * are being compiled
      */
@@ -433,11 +421,13 @@ public class Groovyc extends MatchingTask {
 
     /**
      * The JDK Home to use when forked.
+     *
      * @param home the java.home value to use, default is the current JDK's home
      */
     public void setJavaHome(File home) {
         forkJDK = home;
     }
+
     /**
      * The property to set on compliation success.
      * This property will not be set if the compilation
@@ -523,7 +513,7 @@ public class Groovyc extends MatchingTask {
         checkParameters();
         resetFileLists();
 
-        if (javac!=null) jointCompilation=true;
+        if (javac != null) jointCompilation = true;
 
         // scan source directories and dest directory to build up
         // compile lists
@@ -533,28 +523,15 @@ public class Groovyc extends MatchingTask {
             if (!file.exists()) {
                 throw new BuildException("srcdir \"" + file.getPath() + "\" does not exist!", getLocation());
             }
- //           if (file.isDirectory()) {
-
-                DirectoryScanner ds = this.getDirectoryScanner(file);
-                String[] files = ds.getIncludedFiles();
-//                scanDir(file, destDir != null ? destDir : file, files);
-//            } else if (file.isFile()) {
-//                // If it is explocitly listed, skip the depends check and just add it
-//                // could be from fork
-//                addToCompileList(new File[] {file});
-//            } else {
-//                log("Neither a file or directory, skipping: " + file.getPath());
-//                continue;
-//            }
-
-            //??
+            DirectoryScanner ds = this.getDirectoryScanner(file);
+            String[] files = ds.getIncludedFiles();
             scanDir(file, destDir != null ? destDir : file, files);
         }
 
         compile();
         if (updatedProperty != null
-            && taskSuccess
-            && compileList.length != 0) {
+                && taskSuccess
+                && compileList.length != 0) {
             getProject().setNewProperty(updatedProperty, "true");
         }
     }
@@ -618,9 +595,9 @@ public class Groovyc extends MatchingTask {
 
         if (destDir != null && !destDir.isDirectory()) {
             throw new BuildException("destination directory \""
-                + destDir
-                + "\" does not exist or is not a directory",
-                getLocation());
+                    + destDir
+                    + "\" does not exist or is not a directory",
+                    getLocation());
         }
 
         if (encoding != null && !Charset.isSupported(encoding)) {
@@ -632,8 +609,8 @@ public class Groovyc extends MatchingTask {
         if (compileList.length > 0) {
 
             log("Compiling " + compileList.length + " source file"
-                + (compileList.length == 1 ? "" : "s")
-                + (destDir != null ? " to " + destDir : ""));
+                    + (compileList.length == 1 ? "" : "s")
+                    + (destDir != null ? " to " + destDir : ""));
 
             if (listFiles) {
                 for (int i = 0; i < compileList.length; ++i) {
@@ -646,8 +623,7 @@ public class Groovyc extends MatchingTask {
             // extract joint options, some get pushed up...
             List jointOptions = new ArrayList();
             if (jointCompilation) {
-                for (Iterator i = javac.getRuntimeConfigurableWrapper().getAttributeMap().entrySet().iterator(); i.hasNext();)
-                {
+                for (Iterator i = javac.getRuntimeConfigurableWrapper().getAttributeMap().entrySet().iterator(); i.hasNext();) {
                     final Map.Entry e = (Map.Entry) i.next();
                     final String key = e.getKey().toString();
                     final String value = e.getValue().toString();
@@ -662,19 +638,18 @@ public class Groovyc extends MatchingTask {
                     } else if (((key.indexOf("nowarn") != -1)
                             || (key.indexOf("verbose") != -1)
                             || (key.indexOf("deprecation") != -1)
-                        ) && ("on".equalsIgnoreCase(value) || "true".equalsIgnoreCase(value) || "yes".equalsIgnoreCase("value"))
-                    ) {
+                    ) && ("on".equalsIgnoreCase(value) || "true".equalsIgnoreCase(value) || "yes".equalsIgnoreCase("value"))
+                            ) {
                         jointOptions.add("-F" + key);
                     } else if (key.indexOf("classpath") != -1) {
                         classpath.add(javac.getClasspath());
                     } else if ((key.indexOf("depend") != -1)
-                        || (key.indexOf("extdirs") != -1)
-                        || (key.indexOf("encoding") != -1)
-                        || (key.indexOf("source") != -1)
-                        || (key.indexOf("target") != -1)
-                        || (key.indexOf("verbose") != -1)
-                        || (key.indexOf("depend") != -1))
-                    {
+                            || (key.indexOf("extdirs") != -1)
+                            || (key.indexOf("encoding") != -1)
+                            || (key.indexOf("source") != -1)
+                            || (key.indexOf("target") != -1)
+                            || (key.indexOf("verbose") != -1)
+                            || (key.indexOf("depend") != -1)) {
                         jointOptions.add("-J" + key + "=" + value);
                     } else {
                         log("The option " + key + " cannot be set on the contained <javac> element. The option will be ignored", Project.MSG_WARN);
@@ -710,7 +685,6 @@ public class Groovyc extends MatchingTask {
                 if ((memoryMaximumSize != null) && !memoryMaximumSize.equals("")) {
                     commandLineList.add("-Xmx" + memoryMaximumSize);
                 }
-                //commandLineList.add("org.codehaus.groovy.ant.Groovyc");
                 commandLineList.add("org.codehaus.groovy.tools.FileSystemCompiler");
             }
             commandLineList.add("--classpath");
@@ -729,15 +703,14 @@ public class Groovyc extends MatchingTask {
                 commandLineList.add("-e");
             }
 
-            File tempFile = null;
             // check to see if an external file is needed
             int count = 0;
             if (fork) {
 
-                for (int i = 0; i <  compileList.length; i++) {
+                for (int i = 0; i < compileList.length; i++) {
                     count += compileList[i].getPath().length();
                 }
-                for (Iterator iter = commandLineList.iterator(); iter.hasNext(); ) {
+                for (Iterator iter = commandLineList.iterator(); iter.hasNext();) {
                     count += iter.next().toString().length();
                 }
                 count += compileList.length;
@@ -746,8 +719,8 @@ public class Groovyc extends MatchingTask {
             // 32767 is the command line length limit on Windows
             if (fork && (count > 32767)) {
                 try {
-                    tempFile = File.createTempFile("groovyc-files-", ".txt");
-                    tempFile.deleteOnExit();
+                    File tempFile = File.createTempFile("groovyc-files-", ".txt");
+                    temporaryFiles.add(tempFile);
                     PrintWriter pw = new PrintWriter(new FileWriter(tempFile));
                     for (int i = 0; i < compileList.length; i++) {
                         pw.println(compileList[i].getPath());
@@ -767,6 +740,7 @@ public class Groovyc extends MatchingTask {
                 commandLine[i] = (String) commandLineList.get(i);
             }
             if (fork) {
+                // use the main method in FileSystemCompiler
                 final Execute executor = new Execute(); // new LogStreamHandler ( attributes , Project.MSG_INFO , Project.MSG_WARN ) ) ;
                 executor.setAntRun(getProject());
                 executor.setWorkingDirectory(getProject().getBaseDir());
@@ -787,9 +761,29 @@ public class Groovyc extends MatchingTask {
                     }
                 }
             } else {
+                // hand crank it so we can add our own compiler configuration
                 try {
-                    FileSystemCompiler.main(commandLine);
-                } catch (RuntimeException re) {
+                    Options options = FileSystemCompiler.createCompilationOptions();
+
+                    PosixParser cliParser = new PosixParser();
+
+                    CommandLine cli;
+                    cli = cliParser.parse(options, commandLine);
+
+                    configuration = FileSystemCompiler.generateCompilerConfigurationFromOptions(cli);
+
+                    //
+                    // Load the file name list
+                    String[] filenames = FileSystemCompiler.generateFileNamesFromOptions(cli);
+                    boolean fileNameErrors = filenames == null;
+
+                    fileNameErrors = fileNameErrors && !FileSystemCompiler.validateFiles(filenames);
+
+                    if (!fileNameErrors) {
+                        FileSystemCompiler.doCompilation(configuration, makeCompileUnit(), filenames);
+                    }
+
+                } catch (Exception re) {
                     Throwable t = re;
                     if ((re.getClass() == RuntimeException.class) && (re.getCause() != null)) {
                         // unwrap to the real exception
@@ -807,10 +801,62 @@ public class Groovyc extends MatchingTask {
                     }
                 }
             }
-            if (tempFile != null) {
-                FileSystemCompiler.deleteRecursive(tempFile);
+            Iterator<File> files = temporaryFiles.iterator();
+            while (files.hasNext()) {
+                FileSystemCompiler.deleteRecursive(files.next());
+                files.remove();
             }
         }
+    }
+
+    protected CompilationUnit makeCompileUnit() {
+        if (configuration.getJointCompilationOptions() != null) {
+            if (!configuration.getJointCompilationOptions().containsKey("stubDir")) {
+                try {
+                    File tempStubDir = FileSystemCompiler.createTempDir();
+                    temporaryFiles.add(tempStubDir);
+                    configuration.getJointCompilationOptions().put("stubDir", tempStubDir);
+                } catch (IOException ioe) {
+                    throw new BuildException(ioe);
+                }
+            }
+            return new JavaAwareCompilationUnit(configuration, buildClassLoaderFor());
+        } else {
+            return new CompilationUnit(configuration, null, buildClassLoaderFor());
+        }
+    }
+
+
+    protected GroovyClassLoader buildClassLoaderFor() {
+        ClassLoader parent = this.getClass().getClassLoader();
+        if (parent instanceof AntClassLoader) {
+            AntClassLoader antLoader = (AntClassLoader) parent;
+            String[] pathElm = antLoader.getClasspath().split(File.pathSeparator);
+            List classpath = configuration.getClasspath();
+            /*
+             * Iterate over the classpath provided to groovyc, and add any missing path
+             * entries to the AntClassLoader.  This is a workaround, since for some reason
+             * 'directory' classpath entries were not added to the AntClassLoader' classpath.
+             */
+            for (Iterator iter = classpath.iterator(); iter.hasNext();) {
+                String cpEntry = (String) iter.next();
+                boolean found = false;
+                for (int i = 0; i < pathElm.length; i++) {
+                    if (cpEntry.equals(pathElm[i])) {
+                        found = true;
+                        break;
+                    }
+                }
+                /*
+                 * fix for GROOVY-2284
+                 * seems like AntClassLoader doesn't check if the file
+                 * may not exist in the classpath yet
+                 */
+                if (!found && new File(cpEntry).exists())
+                    antLoader.addPathElement(cpEntry);
+            }
+        }
+        return new GroovyClassLoader(parent, configuration);
     }
 
 }
