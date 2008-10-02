@@ -272,14 +272,12 @@ public class FileSystemCompiler {
         }
         if (file.isFile()) {
             file.delete();
-            System.out.println("Deleting " + file.getPath());
         } else if (file.isDirectory()) {
             File[] files = file.listFiles();
             for (int i = 0; i < files.length; i++) {
                 deleteRecursive(files[i]);
             }
             file.delete();
-            System.out.println("Deleting as dir " + file.getPath());
         }
     }
 }
