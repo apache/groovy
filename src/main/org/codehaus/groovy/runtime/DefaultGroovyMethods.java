@@ -9002,35 +9002,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
     
     /**
-     * Connect to a URL to handle the request and response streams.
-     * @see URLConnectionBuilder
-     * @param url URL to connect to
-     * @param closure closure with which to handle the connection.  The opened 
-     * 	{@link URLConnection} will be passed to the closure.
-     * @return the return value from the given closure.
-     * @throws IOException if an error occurs while interacting with the URL.
-     */
-    public static Object connect( URL url, Closure closure ) throws IOException {
-    	return new URLConnectionBuilder( url ).connect( closure );
-    }
-    
-    /**
-     * Connect to a URL to handle the request and response streams.
-     * @see URLConnectionBuilder
-     * @param url URL to connect to
-     * @param charset the encoding used to for the request writer and response reader.
-     * @param closure closure with which to handle the connection.  The opened 
-     * 	{@link URLConnection} will be passed to the closure.
-     * @return the return value from the given closure.
-     * @throws IOException if an error occurs while interacting with the URL.
-     */
-    public static Object connect( URL url, String charset, Closure closure ) throws IOException {
-    	URLConnectionBuilder conn = new URLConnectionBuilder( url );
-    	conn.setEncoding( charset );
-    	return conn.connect( closure );
-    }
-
-    /**
      * Helper method to create a new Reader for a URL and then
      * passes it to the closure.  The reader is closed after the closure returns.
      *
