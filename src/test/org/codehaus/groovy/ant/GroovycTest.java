@@ -193,11 +193,12 @@ public class GroovycTest extends GroovyTestCase {
         File badGroovy = new File(antFile.getParentFile(), "GroovyTestBad1.groovy");
         PrintStream ps = null;
         try {
-            ps = new PrintStream(badGroovy);
+            ps = new PrintStream(new FileOutputStream(badGroovy));
         } catch (FileNotFoundException e) {
             fail("Could not create test file:" + badGroovy.getAbsolutePath());
         }
         ps.println("class GroovyTest1Bad { Thi$ $hould Fail! (somehow) };:??''+_|\\|");
+        ps.close();
         ensureNotPresent("GroovycTestBad1");
         try {
             project.executeTarget(target);
