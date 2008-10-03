@@ -150,6 +150,11 @@
     <java classname="org.codehaus.groovy.ant.GroovycTest1" classpathref="groovyMaterials"/>
   </target>
 
+    <target name="GroovycTest1_ForkGroovy_NoClasspath_Fail">
+      <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="GroovyTestBad1.groovy" fork="true"/>
+      <java classname="org.codehaus.groovy.ant.GroovycTest1"/>
+    </target>
+
   <target name="clean">
     <delete quiet="true">
       <fileset dir="${destPath}/org/codehaus/groovy/ant">

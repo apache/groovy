@@ -14,10 +14,7 @@
 
 package org.codehaus.groovy.ant;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileReader;
-import java.io.IOException;
+import java.io.*;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
@@ -171,6 +168,10 @@ public class GroovycTest extends GroovyTestCase {
         ensureExecutesWithJavaHome("GroovycTest1_ForkGroovy_WithBothClasspath_WithJavaHome");
     }
 
+    public void testGroovycTest1_ForkGroovy_NoClasspath_Fail() {
+        ensureFails("GroovycTest1_ForkGroovy_NoClasspath_Fail");
+    }
+
     private void ensureExecutes(String target) {
         ensureNotPresent("GroovycTest1");
         project.executeTarget(target);
@@ -185,6 +186,27 @@ public class GroovycTest extends GroovyTestCase {
                 System.err.println("Forked Java tests skipped, not a sun JDK layout");
                 warned = true;
             }
+        }
+    }
+
+    private void ensureFails(String target) {
+        File badGroovy = new File(antFile.getParentFile(), "GroovyTestBad1.groovy");
+        PrintStream ps = null;
+        try {
+            ps = new PrintStream(badGroovy);
+        } catch (FileNotFoundException e) {
+            fail("Could not create test file:" + badGroovy.getAbsolutePath());
+        }
+        ps.println("class GroovyTest1Bad { Thi$ $hould Fail! (somehow) };:??''+_|\\|");
+        ensureNotPresent("GroovycTestBad1");
+        try {
+            project.executeTarget(target);
+            fail("Ant script shuold have failed with execution exception");
+        } catch (BuildException be) {
+            be.printStackTrace();
+            ensureNotPresent("GroovycTestBad1");
+        } finally {
+            badGroovy.delete();
         }
     }
 

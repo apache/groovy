@@ -149,6 +149,9 @@ public class FileSystemCompiler {
                 } else {
                     re.initCause(e);
                 }
+            } else {
+                new ErrorReporter( e, displayStackTraceOnError ).write( System.err );
+                System.exit(1);
             }
         }
     }
