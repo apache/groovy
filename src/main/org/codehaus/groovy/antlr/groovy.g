@@ -1690,7 +1690,7 @@ statement[int prevToken]
 {boolean sce=false; Token first = LT(1); AST casesGroup_AST = null;}
     // prevToken is NLS if previous statement is separated only by a newline
 
-    :   (genericMethodStart)=>
+    :  (genericMethodStart)=>
         genericMethod
 
     |  (multipleAssignmentDeclarationStart)=> 
@@ -1700,13 +1700,13 @@ statement[int prevToken]
     // statements. Must backtrack to be sure. Could use a semantic
     // predicate to test symbol table to see what the type was coming
     // up, but that's pretty hard without a symbol table ;)
-    |   (declarationStart)=>
+    |  (declarationStart)=>
         declaration
 
     // Attach a label to the front of a statement
     // This block is executed for effect, unless it has an explicit closure argument.
     |
-        (IDENT COLON)=>
+       (IDENT COLON)=>
         pfx:statementLabelPrefix!
         {#statement = #pfx;}  // nest it all under the label prefix
         (   (LCURLY) => openOrClosableBlock
@@ -2157,7 +2157,7 @@ commandArgument
 // in contexts where we know we have an expression.  It allows general Java-type expressions.
 expression[int lc_stmt]
     :   
-        (LBRACK nls IDENT (COMMA IDENT)* RBRACK ASSIGN) =>
+       (LPAREN nls IDENT (COMMA nls IDENT)* RPAREN ASSIGN) =>
         m:multipleAssignment[lc_stmt] {#expression=#m;}
     |   assignmentExpression[lc_stmt]
     ;

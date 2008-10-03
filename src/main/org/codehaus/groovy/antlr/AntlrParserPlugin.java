@@ -1168,7 +1168,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         
         Expression leftExpression;
         Expression rightExpression = ConstantExpression.NULL;
-        int nodeType;
+        AST right;
         
         if (isType(ASSIGN, node)) {
             node = node.getFirstChild();
@@ -1180,19 +1180,19 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 alist.addExpression(de.getVariableExpression());
             }
             leftExpression = alist;
-            nodeType=LIST_CONSTRUCTOR;
+            right = node.getNextSibling();
+            if (right != null) rightExpression = expression(right);
         } else {
             String name = identifier(node);
             leftExpression = new VariableExpression(name, type);
-            nodeType=ASSIGN;
+            right = node.getNextSibling();
+            if (right != null) {
+                assertNodeType(ASSIGN, right);
+                rightExpression = expression(right.getFirstChild());
+            }
         }
         
         configureAST(leftExpression, node);
-        node = node.getNextSibling();
-        if (node != null) {
-            assertNodeType(nodeType, node);
-            rightExpression = expression(node.getFirstChild());
-        }
         
         Token token = makeToken(Types.ASSIGN, variableDef);
         DeclarationExpression expression = new DeclarationExpression(leftExpression, token, rightExpression);
@@ -1690,7 +1690,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             case CLOSURE_LIST:
                 return closureListExpression(node);
 
-            case LBRACK:
+            case LBRACK: case LPAREN:
                 return tupleExpression(node);
 
             default:

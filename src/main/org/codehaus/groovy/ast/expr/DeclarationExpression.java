@@ -16,7 +16,6 @@
 package org.codehaus.groovy.ast.expr;
 
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 import org.codehaus.groovy.syntax.Token;
 
@@ -42,7 +41,7 @@ public class DeclarationExpression extends BinaryExpression {
         if (left instanceof VariableExpression) {
             //nothing
         } else if (left instanceof TupleExpression) {
-            if (!(right instanceof ListExpression)) throw new GroovyBugError("multiple assignment definition with unknown right part: "+right);
+            //nothing
             TupleExpression tuple = (TupleExpression) left;
             if (tuple.getExpressions().size()==0) throw new GroovyBugError("one element required for left side");
         } else {

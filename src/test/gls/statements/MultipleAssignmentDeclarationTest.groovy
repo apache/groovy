@@ -12,6 +12,13 @@ class MultipleAssignmentDeclarationTest extends CompilableTestSupport {
     """
   }
   
+  void testDefWithoutLiteral() {
+    def list = [1, 2]
+    def (c, d) = list
+    assert c==1
+    assert d==2
+  }
+  
   void testMixedTypes() {
     assertScript """
       def x = "foo"
