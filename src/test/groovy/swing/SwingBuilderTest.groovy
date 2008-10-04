@@ -1120,6 +1120,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
     }
 
     void testEDT() {
+        if (headless) return
         def swing = new SwingBuilder()
 
         boolean pass = false
@@ -1136,6 +1137,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
     }
 
     void testDoLater() {
+        if (headless) return
         def swing = new SwingBuilder()
 
         boolean pass = false
