@@ -12,9 +12,10 @@ import javax.swing.*
 class Groovy303_Bug extends GroovySwingTestCase {
 
     void testBug() {
-        if (headless) return
+      testInEDT {
         def scholastic = new Scholastic()
         scholastic.createUI()
+      }
     }
 }
 

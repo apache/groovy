@@ -8,7 +8,7 @@ import javax.swing.JButton
 class ClosureListenerTest extends GroovySwingTestCase {
 
     void testAddingAndRemovingAClosureListener() {
-        if (isHeadless()) return
+      testInEDT {
 
         def b = new JButton("foo")
         b.actionPerformed = { println("Found ${it}") }
@@ -34,18 +34,20 @@ class ClosureListenerTest extends GroovySwingTestCase {
         
         size = b.actionListeners.size()
         assert size == 0
+      }
     }
     
     void testGettingAListenerProperty() {
-        if (headless) return
+      testInEDT {
 
     	def b = new JButton("foo")
     	def foo = b.actionPerformed
     	assert foo == null
+      }
     }
     
     void testNonStandardListener() {
-        if (isHeadless()) return
+      testInEDT {
         def myWhat = null
         def myWhere = null
 
@@ -55,5 +57,6 @@ class ClosureListenerTest extends GroovySwingTestCase {
     
         assert myWhat == '?'
         assert myWhere == '!'
+      }
     }
 }

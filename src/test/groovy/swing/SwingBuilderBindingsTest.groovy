@@ -25,7 +25,7 @@ import javax.swing.text.PlainDocument
 public class SwingBuilderBindingsTest extends GroovySwingTestCase {
 
     public void testSliderValueBinding() {
-        if (isHeadless()) return
+      testInEDT {
         SwingBuilder swing = new SwingBuilder()
 
         swing.actions() {
@@ -59,10 +59,11 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         swing.slReverse.value = 21
         swing.bindingReverse.reverseUpdate()
         assert swing.sl.value == 21
+      }
     }
 
     public void testScrollBarValueBinding() {
-        if (isHeadless()) return
+      testInEDT {
         SwingBuilder swing = new SwingBuilder()
 
         swing.actions() {
@@ -96,10 +97,11 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         swing.slReverse.value = 21
         swing.bindingReverse.reverseUpdate()
         assert swing.sl.value == 21
+      }
     }
 
     public void testTextFieldTextBinding() {
-        if (isHeadless()) return
+      testInEDT {
         SwingBuilder swing = new SwingBuilder()
 
         swing.actions() {
@@ -132,10 +134,11 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         doc.insertString(0, '{}', null)
         swing.txts.document = doc
         assert swing.txt.text == '{}'
+      }
     }
 
     public void testCheckboxSelectedBinding() {
-        if (isHeadless()) return
+      testInEDT {
         SwingBuilder swing = new SwingBuilder()
 
         swing.actions() {
@@ -168,11 +171,11 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         swing.txt.enabled = !swing.txt.enabled
         swing.binding.reverseUpdate()
         assert swing.txt.enabled == swing.cb.selected
+      }
     }
 
     public void testComboBoxBindSyntheticProperties() {
-        if (headless) return
-
+      testInEDT {
         SwingBuilder swing = new SwingBuilder()
         def comboData = ['Alpha', 'Bravo', 'Charlie', 'Delta']
 
@@ -289,10 +292,11 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
 
         swing.combo02.model.removeElement('Adams')
         assert swing.t2e.text == '[Boston, Chicago, Denver, Easy]'
+      }
     }
 
     public void testEventBinding() {
-        if (isHeadless()) return
+      testInEDT {
         SwingBuilder swing = new SwingBuilder()
         def capture
         swing.actions() {
@@ -311,10 +315,11 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         //check that we get evet as closure arg
         assert swing.txt2.text == 'Captured!'
         assert capture instanceof ActionEvent
+      }
     }
 
     public void testPropertyBinding() {
-        if (isHeadless()) return
+      testInEDT {
         SwingBuilder swing = new SwingBuilder()
 
         swing.actions() {
@@ -346,10 +351,11 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         md.enabled = !swing.txt.enabled
         swing.cb.model = md
         assert swing.txt.enabled == swing.cb.enabled
+      }
     }
 
     public void testPropertyEventBinding() {
-        if (isHeadless()) return
+      testInEDT {
         SwingBuilder swing = new SwingBuilder()
 
         int enabledChangeCount = 1
@@ -392,10 +398,11 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         assert swing.txtpv.text == '2'
         assert swing.txtep.text == 'CheckBox!'
 
+      }
     }
 
     public void testReversePropertyBinding() {
-        if (isHeadless()) return
+      testInEDT {
         SwingBuilder swing = new SwingBuilder()
 
         swing.actions() {
@@ -427,10 +434,11 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         md.enabled = !swing.txt.enabled
         swing.cb.model = md
         assert swing.txt.enabled == swing.cb.enabled
+      }
     }
 
     public void testValueNodeBinding() {
-        if (isHeadless()) return
+      testInEDT {
         SwingBuilder swing = new SwingBuilder()
 
         swing.actions() {
@@ -463,10 +471,11 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         swing.cb4.selected=false
         assert !swing.cb3.selected
         assert !swing.cb4.selected
+      }
     }
 
     public void testReversePropertyPropertites() {
-        if (isHeadless()) return
+      testInEDT {
         SwingBuilder swing = new SwingBuilder()
 
         swing.actions() {
@@ -476,10 +485,11 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         }
         assert swing.binding1.converter != null
         assert swing.binding2.converter == null
+      }
     }
 
     public void testConverters() {
-        if (isHeadless()) return
+      testInEDT {
         SwingBuilder swing = new SwingBuilder()
 
         swing.actions() {
@@ -517,10 +527,11 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
             }
         }
 
+      }
     }
 
     public void testPropertyValuePassthrough() {
-        if (isHeadless()) return
+      testInEDT {
         SwingBuilder swing = new SwingBuilder()
 
         swing.actions() {
@@ -533,10 +544,11 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         assert swing.s1.value == 15
         // s2 is target, not source, so it's value setting should have no effect
         assert swing.s2.value == 8
+      }
     }
 
     public void testModel() {
-        if (isHeadless()) return
+      testInEDT {
         SwingBuilder swing = new SwingBuilder()
 
         def bean = new org.codehaus.groovy.runtime.DummyBean()
@@ -567,5 +579,6 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
 
         // old model binding could be listening...
         assert swing.textField.text != bean.name
+      }
     }
 }

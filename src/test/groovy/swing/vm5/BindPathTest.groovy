@@ -12,7 +12,7 @@ import groovy.swing.SwingBuilder
 class BindPathTest extends GroovySwingTestCase {
 
     public void testClosureBindingProperties() {
-        if (isHeadless()) return
+      testInEDT {
         SwingBuilder swing = new SwingBuilder()
 
         swing.actions() {
@@ -41,10 +41,11 @@ class BindPathTest extends GroovySwingTestCase {
         // assert change at deepest level again
         beanC.bar = 'c'
         assert beanB.bif == 'c'
+      }
     }
 
     public void testClosureBindingLocalVariables() {
-        if (isHeadless()) return
+      testInEDT {
         SwingBuilder swing = new SwingBuilder()
 
         def beanA = null
@@ -73,10 +74,11 @@ class BindPathTest extends GroovySwingTestCase {
         // assert change at deepest level again
         beanC.bar = 'c'
         assert beanB.bif == 'c'
+      }
     }
 
     public void testSyntheticBindings() {
-        if (isHeadless()) return
+      testInEDT {
         SwingBuilder swing = new SwingBuilder()
 
         swing.panel() {
@@ -99,8 +101,7 @@ class BindPathTest extends GroovySwingTestCase {
         swing.tweetBox.text = 'x'*141
         assert !swing.tweetButton.enabled
         assert swing.tweetLimit.string == "-1"
-
-
+      }
     }
 }
 

@@ -9,7 +9,7 @@ import javax.swing.JPanel
 class PropertyBug extends GroovySwingTestCase {
      
     void testBug() {
-        if (isHeadless()) return
+      testInEDT {
 
         def panel = new JPanel()
         def bean = new JButton()
@@ -18,5 +18,6 @@ class PropertyBug extends GroovySwingTestCase {
         
         def value = bean.parent
         assert value != null
+      }
     }
 }

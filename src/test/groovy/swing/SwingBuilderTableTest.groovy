@@ -26,17 +26,17 @@ import groovy.model.ValueHolder
 class SwingBuilderTableTest extends GroovySwingTestCase {
 
     void testTableColumn() {
-        if (headless) return
-
+      testInEDT {
         // TODO is this required?
         def swing = new SwingBuilder()
         swing.table {
             tableColumn()
         }
+      }
     }
 
     void testPropertyColumn() {
-        if (headless) return
+      testInEDT {
 
         def swing = new SwingBuilder()
         def msg = shouldFail {
@@ -70,11 +70,11 @@ class SwingBuilderTableTest extends GroovySwingTestCase {
             assert (col.type == String) ^ !propName.contains('t')
             assert col.valueModel.editable ^ propName.contains('e')
         }
+      }
     }
 
     void testClosureColumn() {
-        if (headless) return
-
+      testInEDT {
         def swing = new SwingBuilder()
         def msg = shouldFail {
             swing.closureColumn()
@@ -103,11 +103,11 @@ class SwingBuilderTableTest extends GroovySwingTestCase {
         }
 
         assert table.columnModel.class.name == 'groovy.model.DefaultTableModel$MyTableColumnModel'
+      }
     }
 
     void testTableModelChange() {
-        if (headless) return
-
+      testInEDT {
         def swing = new SwingBuilder()
         def table = swing.table {
             tableModel {
@@ -122,11 +122,11 @@ class SwingBuilderTableTest extends GroovySwingTestCase {
 
         //GROOVY-2111 - resetting the model w/ a pass-through cleared the columns
         assert table.columnModel.columnCount == 3
+      }
     }
 
     void testTableModelChange2() {
-        if (headless) return
-
+      testInEDT {
         def tableData = [
                 ["ATHLETEID": 1, "FIRSTNAME": "Bob", "LASTNAME": "Jones", "DATEOFBIRTH": '1875-05-20'],
                 ["ATHLETEID": 2, "FIRSTNAME": "Sam", "LASTNAME": "Wilson", "DATEOFBIRTH": '1876-12-15'],
@@ -166,10 +166,11 @@ class SwingBuilderTableTest extends GroovySwingTestCase {
 
         swing.table01.removeColumn(swing.table01.columnModel.getColumn(0))
         assert value == swing.table01.getValueAt(0, 0)
+      }
     }
 
     void testTableModelValues() {
-        if (headless) return
+      testInEDT {->
 
         def squares = [
                 [val: 1, square: 1],
@@ -195,10 +196,11 @@ class SwingBuilderTableTest extends GroovySwingTestCase {
             assert swing.table.getValueAt(i, 0) == it.val
             assert swing.table.getValueAt(i, 1) == it.square
         }
+      }
     }
 
     public void testTableSyntheticProperties() {
-        if (headless) return
+      testInEDT {
 
         SwingBuilder swing = new SwingBuilder()
         def tableData = [
@@ -265,10 +267,11 @@ class SwingBuilderTableTest extends GroovySwingTestCase {
         swing.table02.model.setValueAt('x',0,0)
         assert swing.table01.elements[0].ATHLETEID == 'x'
         assert swing.table02.elements[0][0] == 'x'
+      }
     }
 
     public void testTableBindSyntheticProperties() {
-        if (headless) return
+      testInEDT {
 
         SwingBuilder swing = new SwingBuilder()
         def tableData = [
@@ -339,6 +342,6 @@ class SwingBuilderTableTest extends GroovySwingTestCase {
         //FIXME groovy default table model does not fire data cahgne events whe editing throught he model.
         //assert swing.t1e.text == '[{ATHLETEID=x, FIRSTNAME=Bob, LASTNAME=Jones, DATEOFBIRTH=1875-05-20}, {ATHLETEID=2, FIRSTNAME=Sam, LASTNAME=Wilson, DATEOFBIRTH=1876-12-15}, {ATHLETEID=3, FIRSTNAME=Jessie, LASTNAME=James, DATEOFBIRTH=1877-06-12}]'
         assert swing.t2e.text == '[[x, Bob, Jones, 1875-05-20], [2, Sam, Wilson, 1876-12-15], [3, Jessie, James, 1877-06-12]]'
-
+      }
     }
 }

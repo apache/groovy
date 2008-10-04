@@ -1,7 +1,8 @@
 package groovy.util;
 
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.InvocationTargetException
+import javax.swing.SwingUtilities;
 
 public class GroovySwingTestCase extends GroovyTestCase {
     private static boolean headless;
@@ -26,27 +27,31 @@ public class GroovySwingTestCase extends GroovyTestCase {
         return isHeadless();
     }
 
+    public static void testInEDT(Closure test) {
+        Throwable exception = null
+        if (headless) {
+            return
+        }
+        SwingUtilities.invokeAndWait {
+            try {
+                test()
+            } catch (Throwable t) {
+                exception = t
+            }
+        }
+        if (exception != null) {
+            throw exception;
+        }
+    }
+
     static {
         try {
             final Class jframe = Class.forName("javax.swing.JFrame");
-            final Constructor constructor = jframe.getConstructor(new Class[]{String.class});
-            constructor.newInstance(new String[]{"testing"});
+            final Constructor constructor = jframe.getConstructor([String] as Class[]);
+            constructor.newInstance(["testing"] as String[]);
             headless = false;
-        } catch (java.awt.HeadlessException e) {
-            headless = true;
-        } catch (UnsatisfiedLinkError e) {
-            headless = true;
-        } catch (ClassNotFoundException e) {
-            headless = true;
-        } catch (NoClassDefFoundError e) {
-            headless = true;
-        } catch (IllegalAccessException e) {
-            headless = true;
-        } catch (InstantiationException e) {
-            headless = true;
-        } catch (NoSuchMethodException e) {
-            headless = true;
-        } catch (InvocationTargetException e) {
+        } catch (Throwable t) {
+            // any exception means headless
             headless = true;
         }
     }
