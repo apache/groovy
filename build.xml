@@ -377,7 +377,7 @@ Not found: ${groovyJar14path}
         </or>
     </condition>
 
-    <target name="-testInit" depends="-initHeadless">
+    <target name="-testInit" depends="-initHeadless,-junit-macro">
         <property name="headlessArg" value=""/>
         <property name="junitJvmArgs"
                   value="-Xms${groovyJUnit_ms} -XX:PermSize=${groovyJUnit_permSize} -XX:MaxPermSize=${groovyJUnit_maxPermSize} ${headlessArg}"/>
@@ -409,7 +409,7 @@ Not found: ${groovyJar14path}
 
     <target name="-testOne" if="_testOne_" depends="-initGroovyc_vm4,-initGroovyc">
         <mkdir dir="${junitRawDirectory}"/>
-        <junit printsummary="true" fork="true" includeantruntime="false" failureproperty="testFailed" maxmemory="${groovyJUnit_mx}" dir="${basedir}">
+        <unit-test printsummary="true" fork="true" includeantruntime="false" failureproperty="testFailed" maxmemory="${groovyJUnit_mx}" dir="${basedir}">
             <jvmarg line="${junitJvmArgs}"/>
             <test name="${testCase}" todir="${junitRawDirectory}"/>
             <formatter type="brief" usefile="false"/>
@@ -423,7 +423,7 @@ Not found: ${groovyJar14path}
                 <pathelement path="${testClassesDirectory}"/>
                 <path refid="coberturaPath"/>
             </classpath>
-        </junit>
+        </unit-test>
     </target>
 
     <condition property="_testAll_">
@@ -447,7 +447,7 @@ Not found: ${groovyJar14path}
 
     <target name="-testAll" if="_testAll_" depends="-collect14tests,-collect15tests,-initGroovyc_vm4,-initGroovyc">
         <mkdir dir="${junitRawDirectory}"/>
-        <junit printsummary="true" fork="true" includeantruntime="false" failureproperty="testFailed" maxmemory="${groovyJUnit_mx}" dir="${basedir}">
+        <unit-test printsummary="true" fork="true" includeantruntime="false" failureproperty="testFailed" maxmemory="${groovyJUnit_mx}" dir="${basedir}">
             <jvmarg line="${junitJvmArgs}"/>
             <formatter type="xml"/>
             <formatter type="plain" unless="noTextReports"/>
@@ -464,7 +464,7 @@ Not found: ${groovyJar14path}
                 <pathelement path="${testClassesDirectory}"/>
                 <path refid="coberturaPath"/>
             </classpath>
-        </junit>
+        </unit-test>
         <mkdir dir="${junitReportsDirectory}"/>
         <junitreport tofile="${junitRawDirectory}/Results.xml">
             <fileset dir="${junitRawDirectory}" includes="TEST-*.xml"/>

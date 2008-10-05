@@ -71,4 +71,61 @@ $Date: 2007-03-11 19:14:07 +1000 (Sun, 11 Mar 2007) $
         </sequential>
     </macrodef>
     
+    <target name="-junit-macro" depends="-junit-macro-vfb,-junit-macro-novfb"/>
+
+    <target name="-junit-macro-vfb" if="junit.xvfb">
+        <macrodef name="unit-test">
+            <element name="junit-elements" implicit="true"/>
+            <attribute name="fork" default="yes"/>
+            <attribute name="maxmemory" default="512m"/>
+            <attribute name="forkmode" default="once"/> 
+            <attribute name="printsummary" default="true"/> 
+            <attribute name="includeantruntime" default="false"/> 
+            <attribute name="failureproperty" default="testFailed"/> 
+            <attribute name="dir" default="${basedir}"/> 
+            <sequential>
+                <property name="xvfb.display" value="89"/>
+                <tempfile property="xauth.file" deleteonexit="true" prefix="xauth"/>
+                <echo file="${xauth.file}">localhost
+</echo>
+                <parallel>
+                  <exec executable="Xvfb">
+                    <arg value=":${xvfb.display}"/>
+                    <arg value="-auth"/>
+                    <arg value="${xauth.file}"/>
+                  </exec>
+                  <sequential> 
+                    <sleep seconds="1"/> <!-- sleep so Xvfb can start -->
+                    <junit fork="@{fork}" maxmemory="@{maxmemory}" forkmode="@{forkmode}">
+                      <env key="DISPLAY" value=":${xvfb.display}"/>
+                      <junit-elements/>
+                    </junit>
+                    <exec executable="pkill">
+                      <arg line="-9 Xvfb"/>
+                    </exec>
+                  </sequential>
+                </parallel>
+            </sequential>        
+        </macrodef>
+    </target>
+
+    <target name="-junit-macro-novfb" unless="junit.xvfb">
+        <macrodef name="unit-test">
+            <element name="junit-elements" implicit="true"/>
+            <attribute name="fork" default="yes"/>
+            <attribute name="maxmemory" default="512m"/>
+            <attribute name="forkmode" default="once"/>
+            <attribute name="printsummary" default="true"/>
+            <attribute name="includeantruntime" default="false"/>
+            <attribute name="failureproperty" default="testFailed"/>
+            <attribute name="dir" default="${basedir}"/>
+            <sequential>
+                <junit fork="@{fork}" maxmemory="@{maxmemory}" forkmode="@{forkmode}">
+                    <junit-elements/>
+                </junit>
+            </sequential>        
+        </macrodef>
+    </target>
+
+
 </project>
