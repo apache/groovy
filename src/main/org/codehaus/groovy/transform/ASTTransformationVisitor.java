@@ -228,6 +228,22 @@ public class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                 "IO Exception attempting to load global transforms:" + e.getMessage(),
                 null));
         }
+        try {
+            Class.forName("java.lang.annotation.Annotation"); // test for 1.5 JVM
+        } catch (Exception e) {
+            // we failed, notify the user
+            StringBuffer sb = new StringBuffer();
+            sb.append("Global ASTTransformations are not enabled in retro builds of groovy.\n");
+            sb.append("The following transformations will be ignored:");
+            for (Map.Entry<String, URL> entry : globalTransformNames.entrySet()) {
+                sb.append('\t');
+                sb.append(entry.getKey());
+                sb.append('\n');
+            }
+            compilationUnit.getErrorCollector().addWarning(new WarningMessage(
+                WarningMessage.POSSIBLE_ERRORS, sb.toString(), null, null));
+            return;
+        }
         for (Map.Entry<String, URL> entry : globalTransformNames.entrySet()) {
             try {
                 Class gTransClass = cuLoader.loadClass(entry.getKey());

@@ -387,7 +387,6 @@ Not found: ${groovyJar14path}
         <condition property="networkTests.fileset.includes" value="groovy/grape/*Test.class" else="-nothing-">
             <istrue value="${junit.network}"/>
         </condition>
-        <echo>${junit.network}</echo>
         <fileset id="optionalTests.fileset" dir="${testClassesDirectory}" includes="${networkTests.fileset.includes}"/>
     </target>
 
