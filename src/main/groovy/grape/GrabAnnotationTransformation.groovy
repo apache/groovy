@@ -95,7 +95,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
 
             visitClass(classNode);
 
-            ClassNode grapeIvyClassNode = new ClassNode(GrapeIvy.class);
+            ClassNode grapeIvyClassNode = new ClassNode(Grape.class);
 
             //TODO process @Grapes
             if (!grapesAnnotations.isEmpty()) {
@@ -143,14 +143,14 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                     {
                         List grabInitializers = new ArrayList();
 
-                        // add GrapeIvy.initGrape()
+                        // add Grape.initGrape()
                         grabInitializers.add(new ExpressionStatement(
                                 new StaticMethodCallExpression(
                                     grapeIvyClassNode,
                                     "initGrape",
                                     ArgumentListExpression.EMPTY_ARGUMENTS)));
 
-                        // add GrapeIvy.grab([group:group, module:module, version:version])
+                        // add Grape.grab([group:group, module:module, version:version])
                         MapExpression me = new MapExpression();
                         me.addMapEntryExpression(new ConstantExpression("group"),node.getMember("group"));
                         me.addMapEntryExpression(new ConstantExpression("module"),node.getMember("module"));
@@ -174,8 +174,8 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             Map basicArgs = new HashMap();
             basicArgs.put("classLoader", sourceUnit.getClassLoader());
 
-            GrapeIvy.initGrape();
-            GrapeIvy.grab(basicArgs, grabMaps.toArray(new Map[grabMaps.size()]));
+            Grape.initGrape();
+            Grape.grab(basicArgs, grabMaps.toArray(new Map[grabMaps.size()]));
         }
     }
 

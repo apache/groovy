@@ -36,7 +36,7 @@ import org.codehaus.groovy.runtime.InvokerHelper
 /**
  * @author Danno Ferrin
  */
-class GrapeIvy {
+class Grape {
 
     static final private exclusiveGrabArgs = [
             ['group', 'groupId', 'organisation', 'organization', 'org'],
@@ -61,7 +61,7 @@ class GrapeIvy {
         // configure settigns
         def grapeConfig = getLocalGrapeConfig()
         if (!grapeConfig.exists()) {
-            grapeConfig = GrapeIvy.class.getResource("defaultGrapeConfig.xml")
+            grapeConfig = Grape.class.getResource("defaultGrapeConfig.xml")
         }
         settings.load(grapeConfig) // exploit multi-methods for convience
 
@@ -120,7 +120,7 @@ class GrapeIvy {
             //    loader = Thread.currentThread().contextClassLoader
             //}
             //if (!isValidTargetClassLoader(loader)) {
-            //    loader = GrapeIvy.class.classLoader
+            //    loader = Grape.class.classLoader
             //}
             if (!isValidTargetClassLoader(loader)) {
                 throw new RuntimeException("No suitable ClassLoader found for grab")

@@ -23,7 +23,7 @@ import org.codehaus.groovy.control.CompilationFailedException
 class GrapeIvyTest extends GroovyTestCase {
 
     public GrapeIvyTest() {
-        GrapeIvy.initGrape()
+        Grape.initGrape()
     }
 
     public void testSingleArtifact() {
@@ -33,7 +33,7 @@ class GrapeIvyTest extends GroovyTestCase {
             shell.evaluate("import com.jidesoft.swing.JideSplitButton; JideSplitButton.class")
         }
 
-        GrapeIvy.grab(groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,)', classLoader:loader)
+        Grape.grab(groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,)', classLoader:loader)
 
         assert shell.evaluate("import com.jidesoft.swing.JideSplitButton; JideSplitButton.class").name == 'com.jidesoft.swing.JideSplitButton';
     }
@@ -45,7 +45,7 @@ class GrapeIvyTest extends GroovyTestCase {
             shell.evaluate("import org.apache.poi.hssf.model.Sheet; Sheet.class")
         }
 
-        GrapeIvy.grab(groupId:'org.apache.poi', artifactId:'poi', version:'3.0.1-FINAL', classLoader:loader)
+        Grape.grab(groupId:'org.apache.poi', artifactId:'poi', version:'3.0.1-FINAL', classLoader:loader)
 
         assert shell.evaluate("import org.apache.poi.hssf.model.Sheet; Sheet.class").name == 'org.apache.poi.hssf.model.Sheet'
     }
@@ -58,7 +58,7 @@ class GrapeIvyTest extends GroovyTestCase {
             shell.evaluate("import org.apache.poi.hssf.model.Sheet; Sheet.class")
         }
 
-        GrapeIvy.grab(classLoader:loader,
+        Grape.grab(classLoader:loader,
             [groupId:'org.apache.poi', artifactId:'poi', version:'3.0.1-FINAL'],
             [groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,)'])
 
@@ -146,15 +146,15 @@ class GrapeIvyTest extends GroovyTestCase {
     public void testSerialGrabs() {
         GroovyClassLoader loader = new GroovyClassLoader()
 
-        GrapeIvy.grab(groupId:'log4j', artifactId:'log4j', version:'1.1.3', classLoader:loader)
+        Grape.grab(groupId:'log4j', artifactId:'log4j', version:'1.1.3', classLoader:loader)
 
-        GrapeIvy.grab(groupId:'org.apache.poi', artifactId:'poi', version:'3.0.1-FINAL', classLoader:loader)
+        Grape.grab(groupId:'org.apache.poi', artifactId:'poi', version:'3.0.1-FINAL', classLoader:loader)
         def jars = loader.getURLs().collect {URL it -> it.getPath().split('/')[-1]}
         // because poi asks for log4j 1.2.13, but we already have 1.1.3 so it won't be loaded
         assert jars.contains ("log4j-1.1.3.jar")
         assert !jars.contains ("log4j-1.2.13.jar")
 
-        GrapeIvy.grab(groupId:'log4j', artifactId:'log4j', version:'1.2.13', classLoader:loader)
+        Grape.grab(groupId:'log4j', artifactId:'log4j', version:'1.2.13', classLoader:loader)
         jars = loader.getURLs().collect {URL it -> it.getPath().split('/')[-1]}
         // because log4j 1.1.3 was loaded first, 1.2.13 should not get loaded
         // even though it was explicitly asked for 
@@ -183,7 +183,7 @@ class GrapeIvyTest extends GroovyTestCase {
                 "commons-lang-2.3.jar",
             ]  as Set
 
-        GrapeIvy.grab(groupId:'org.apache.ivy', artifactId:'ivy', version:'2.0.0-beta1', classLoader:loader, preserveFiles:true)
+        Grape.grab(groupId:'org.apache.ivy', artifactId:'ivy', version:'2.0.0-beta1', classLoader:loader, preserveFiles:true)
         def jars = loader.getURLs().collect {URL it -> it.getPath().split('/')[-1]} as Set
         assert coreJars - jars == Collections.EMPTY_SET, "assert that all core jars are present"
         assert testJars - jars == testJars, "assert that no test jars are present"
@@ -191,7 +191,7 @@ class GrapeIvyTest extends GroovyTestCase {
         assert jars == coreJars, "assert that no extraneous jars are present"
 
         loader = new GroovyClassLoader()
-        GrapeIvy.grab(groupId:'org.apache.ivy', artifactId:'ivy', version:'2.0.0-beta1', conf:'optional', classLoader:loader)
+        Grape.grab(groupId:'org.apache.ivy', artifactId:'ivy', version:'2.0.0-beta1', conf:'optional', classLoader:loader)
         jars = loader.getURLs().collect {URL it -> it.getPath().split('/')[-1]} as Set
         assert coreJars - jars == coreJars, "assert that no core jars are present"
         assert testJars - jars == testJars, "assert that no test jars are present"
@@ -199,7 +199,7 @@ class GrapeIvyTest extends GroovyTestCase {
         assert jars == optionalJars, "assert that no extraneous jars are present"
 
         loader = new GroovyClassLoader()
-        GrapeIvy.grab(groupId:'org.apache.ivy', artifactId:'ivy', version:'2.0.0-beta1', conf:['default', 'optional'], classLoader:loader)
+        Grape.grab(groupId:'org.apache.ivy', artifactId:'ivy', version:'2.0.0-beta1', conf:['default', 'optional'], classLoader:loader)
         jars = loader.getURLs().collect {URL it -> it.getPath().split('/')[-1]} as Set
         assert coreJars - jars == Collections.EMPTY_SET, "assert that all core jars are present"
         assert testJars - jars == testJars, "assert that no test jars are present"

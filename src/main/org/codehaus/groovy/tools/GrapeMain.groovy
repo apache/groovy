@@ -15,7 +15,7 @@
  */
 package org.codehaus.groovy.tools
 
-import groovy.grape.GrapeIvy
+import groovy.grape.Grape
 
 import java.util.regex.Pattern
 
@@ -23,7 +23,7 @@ import org.apache.ivy.core.report.ArtifactDownloadReport
 import org.apache.ivy.util.DefaultMessageLogger
 import org.apache.ivy.util.Message
 
-GrapeIvy.initGrape()
+Grape.initGrape()
 
 arg = args as List
 
@@ -52,7 +52,7 @@ switch (arg[0]) {
             ver = arg[3]
         }
         Message.setDefaultLogger(new DefaultMessageLogger(2))
-        def ex = GrapeIvy.grab(group:arg[1], module:arg[2], version:ver, noExceptions:true)
+        def ex = Grape.grab(group:arg[1], module:arg[2], version:ver, noExceptions:true)
         if (ex) {
             println "An error occured : $ex"
         }
@@ -64,7 +64,7 @@ switch (arg[0]) {
         Pattern ivyFilePattern = ~/ivy-(.*)\.xml/
         int moduleCount = 0
         int versionCount = 0
-        GrapeIvy.grapeCacheDir.eachDir {File groupDir ->
+        Grape.grapeCacheDir.eachDir {File groupDir ->
             groupDir.eachDir { File moduleDir ->
                 def versions = []
                 moduleDir.eachFileMatch(ivyFilePattern) {
@@ -114,11 +114,11 @@ switch (arg[0]) {
         iter.next()
         def params = [[:]]
         while (iter.hasNext()) {
-            params.add(GrapeIvy.createGrabRecord([group:iter.next(), module:iter.next(), version:iter.next()]))
+            params.add(Grape.createGrabRecord([group:iter.next(), module:iter.next(), version:iter.next()]))
         }
 
         try {
-            ArtifactDownloadReport[] reports = GrapeIvy.getDependencies(*params).getAllArtifactsReports()
+            ArtifactDownloadReport[] reports = Grape.getDependencies(*params).getAllArtifactsReports()
 
             if (reports.length > 0) {
                 def items = []

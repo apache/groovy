@@ -8,7 +8,7 @@ package groovy.grape
 class GrapeClassLoaderTest extends GroovyTestCase {
 
     public GrapeClassLoaderTest() {
-        GrapeIvy.initGrape()
+        Grape.initGrape()
     }
 
     public void testGrapes() {
