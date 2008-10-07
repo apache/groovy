@@ -105,7 +105,17 @@ public class VetoableASTTransformation extends BindableASTTransformation {
                 || BindableASTTransformation.hasBindableAnnotation(parent.getDeclaringClass());
 
             if (propertyNode.getName().equals(fieldName)) {
-                createListenerSetter(source, node, bindable, declaringClass,  propertyNode);
+                if (field.isStatic()) {
+                    //noinspection ThrowableInstanceNeverThrown
+                    source.getErrorCollector().addErrorAndContinue(
+                                new SyntaxErrorMessage(new SyntaxException(
+                                    "@groovy.beans.Vetoable cannot annotate a static property.",
+                                    node.getLineNumber(),
+                                    node.getColumnNumber()),
+                                    source));
+                } else {
+                    createListenerSetter(source, node, bindable, declaringClass,  propertyNode);
+                }
                 return;
             }
         }
@@ -122,7 +132,9 @@ public class VetoableASTTransformation extends BindableASTTransformation {
     private void addListenerToClass(SourceUnit source, AnnotationNode node, ClassNode classNode) {
         boolean bindable = BindableASTTransformation.hasBindableAnnotation(classNode);
         for (PropertyNode propertyNode : (Collection<PropertyNode>) classNode.getProperties()) {
-            if (!hasVetoableAnnotation(propertyNode.getField())) {
+            if (!hasVetoableAnnotation(propertyNode.getField())
+                && !propertyNode.getField().isStatic()) 
+            {
                 createListenerSetter(source, node,
                     bindable || BindableASTTransformation.hasBindableAnnotation(propertyNode.getField()),
                     classNode, propertyNode);

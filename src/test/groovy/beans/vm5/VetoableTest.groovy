@@ -130,7 +130,17 @@ class VetoableTest extends GroovyTestCase {
             shell.evaluate("""
                 class VetoableTestBean5 {
                     public @groovy.beans.Vetoable String name
-                    void setName() { }
+                }
+            """)
+        }
+    }
+
+    public void testOnStaticField() {
+        GroovyShell shell = new GroovyShell()
+        shouldFail(CompilationFailedException) {
+            shell.evaluate("""
+                class VetoableTestBean6 {
+                    @groovy.beans.Vetoable static String name
                 }
             """)
         }
@@ -178,13 +188,14 @@ class VetoableTest extends GroovyTestCase {
     }
 
     public void testClassMarkers() {
-        for (int i = 0; i < 15; i++) {
+        for (int i = 0; i < 31; i++) {
             boolean bindField  = i & 1
             boolean bindClass  = i & 2
             boolean vetoField  = i & 4
             boolean vetoClass  = i & 8
-            int vetoCount = vetoClass?4:(vetoField?2:0);
-            int bindCount = bindClass?4:(bindField?2:0);
+            boolean staticField = i & 16
+            int vetoCount = vetoClass?(staticField?4:5):(vetoField?2:0);
+            int bindCount = bindClass?(staticField?4:5):(bindField?2:0);
 
             String script = """
                     import groovy.beans.Bindable
@@ -198,17 +209,20 @@ class VetoableTest extends GroovyTestCase {
                         ${bindField?'@Bindable ':''}String bind
 
                         ${vetoField?'@Vetoable ':''}${bindField?'@Bindable ':''}String both
+
+                        ${staticField?'static ':''}String staticField
                     }
 
-                    cb = new ClassMarkerBean$i(neither:'a', veto:'b', bind:'c', both:'d')
+                    cb = new ClassMarkerBean$i(neither:'a', veto:'b', bind:'c', both:'d', staticField:'e')
                     vetoCount = 0
                     bindCount = 0
                     ${bindClass|bindField?'cb.propertyChange = { bindCount++ }':''}
                     ${vetoClass|vetoField?'cb.vetoableChange = { vetoCount++ }':''}
-                    cb.neither = 'e'
-                    cb.bind = 'f'
-                    cb.veto = 'g'
-                    cb.both = 'h'
+                    cb.neither = 'f'
+                    cb.bind = 'g'
+                    cb.veto = 'h'
+                    cb.both = 'i'
+                    cb.staticField = 'j'
                     assert vetoCount == $vetoCount
                     assert bindCount == $bindCount
                 """

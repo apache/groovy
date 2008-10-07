@@ -78,66 +78,55 @@ class BindableTest extends GroovyTestCase {
             shell.evaluate("""
                 class BindableTestBean4 {
                     public @groovy.beans.Bindable String name
-                    void setName() { }
                 }
             """)
         }
     }
 
-    public void testOnClass() {
+    public void testOnStaticField() {
         GroovyShell shell = new GroovyShell()
-        shell.evaluate("""
-            import groovy.beans.Bindable
+        shouldFail(CompilationFailedException) {
+            shell.evaluate("""
+                class BindableTestBean5 {
+                     @groovy.beans.Bindable static String name
+                }
+            """)
+        }
+    }
 
-            @Bindable
-            class BindableTestBean5 {
-                String name
-                String value
+    public void testClassMarkers() {
+        for (int i = 0; i < 7; i++) {
+            boolean bindField  = i & 1
+            boolean bindClass  = i & 2
+            boolean staticField  = i & 4
+            int bindCount = bindClass?(staticField?2:3):(bindField?1:0);
+
+            String script = """
+                    import groovy.beans.Bindable
+
+                    ${bindClass?'@Bindable ':''}class ClassMarkerBindable$i {
+                        String neither
+
+                        ${bindField?'@Bindable ':''}String bind
+
+                        ${staticField?'static ':''}String staticString
+                    }
+
+                    cb = new ClassMarkerBindable$i(neither:'a', bind:'b', staticString:'c')
+                    bindCount = 0
+                    ${bindClass|bindField?'cb.propertyChange = { bindCount++ }':''}
+                    cb.neither = 'd'
+                    cb.bind = 'e'
+                    cb.staticString = 'f'
+                    assert bindCount == $bindCount
+                """
+            try {
+                GroovyShell shell = new GroovyShell()
+                shell.evaluate(script);
+            } catch (Throwable t) {
+                System.out.println("Failed Script: $script")
+                throw t
             }
-
-            sb = new BindableTestBean5(name:"foo", value:"bar")
-            changed = 0
-            sb.propertyChange = {changed++}
-            sb.name = "baz"
-            sb.value = "biff"
-            assert changed == 2
-        """)
-
-        shell = new GroovyShell()
-        shell.evaluate("""
-            import groovy.beans.Bindable
-
-            @Bindable
-            class BindableTestBean6 {
-                String name
-                @Bindable String value
-            }
-
-            sb = new BindableTestBean6(name:"foo", value:"bar")
-            changed = 0
-            sb.propertyChange = {changed++}
-            sb.name = "baz"
-            sb.value = "biff"
-            assert changed == 2
-        """)
-
-        shell = new GroovyShell()
-        shell.evaluate("""
-            import groovy.beans.Bindable
-
-            @Bindable
-            class BindableTestBean7 {
-                @Bindable String name
-                @Bindable String value
-            }
-
-            sb = new BindableTestBean7(name:"foo", value:"bar")
-            changed = 0
-            sb.propertyChange = {changed++}
-            sb.name = "baz"
-            sb.value = "biff"
-            assert changed == 2
-        """)
-
+        }
     }
 }

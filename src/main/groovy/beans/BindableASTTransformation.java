@@ -114,10 +114,20 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
         String fieldName = field.getName();
         for (PropertyNode propertyNode : (Collection<PropertyNode>) declaringClass.getProperties()) {
             if (propertyNode.getName().equals(fieldName)) {
-                if (needsPropertyChangeSupport(declaringClass)) {
-                    addPropertyChangeSupport(declaringClass);
+                if (field.isStatic()) {
+                    //noinspection ThrowableInstanceNeverThrown
+                    source.getErrorCollector().addErrorAndContinue(
+                                new SyntaxErrorMessage(new SyntaxException(
+                                    "@groovy.beans.Bindable cannot annotate a static property.",
+                                    node.getLineNumber(),
+                                    node.getColumnNumber()),
+                                    source));
+                } else {
+                    if (needsPropertyChangeSupport(declaringClass)) {
+                        addPropertyChangeSupport(declaringClass);
+                    }
+                    createListenerSetter(source, node, declaringClass, propertyNode);
                 }
-                createListenerSetter(source, node, declaringClass, propertyNode);
                 return;
             }
         }
@@ -137,9 +147,12 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
         for (PropertyNode propertyNode : (Collection<PropertyNode>) classNode.getProperties()) {
             FieldNode field = propertyNode.getField();
             // look to see if per-field handlers will catch this one...
-            if (hasBindableAnnotation(field) ||
-                VetoableASTTransformation.hasVetoableAnnotation(field))
+            if (hasBindableAnnotation(field)
+                || field.isStatic()
+                || VetoableASTTransformation.hasVetoableAnnotation(field))
             {
+                // explicitly labeled properties are already handled,
+                // don't transform static properties
                 // VetoableASTTransformation will handle both @Bindable and @Vetoable
                 continue;
             }
@@ -284,7 +297,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
         // add method:
         // void addPropertyChangeListener(name, listener) {
         //     this$propertyChangeSupport.addPropertyChangeListner(name, listener)
-        //  }                           
+        //  }
         declaringClass.addMethod(
                 new MethodNode(
                         "addPropertyChangeListener",
