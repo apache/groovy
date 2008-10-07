@@ -148,7 +148,7 @@ $Date$
         </target>
     -->
 
-    <target name="dgmConvert" depends="ubercompile,stagedcompile">
+    <target name="dgmConvert" depends="stagedcompile">
         <java classname="org.codehaus.groovy.tools.DgmConverter"
               fork="yes"
               failonerror="true">
@@ -157,11 +157,11 @@ $Date$
         </java>
     </target>
 
-    <target name="compileMain" depends="ubercompile,stagedcompile,dgmConvert"
+    <target name="compileMain" depends="stagedcompile,dgmConvert"
             description="Compile the Java and Groovy code in the main source.">
     </target>
 
-    <target name="stagedcompile" depends="-init,-includeResources,ensureGrammars,-jvm14BuildWarning" unless="uber">
+    <target name="stagedcompile" depends="-init,ensureGrammars,-jvm14BuildWarning" unless="uber">
         <mkdir dir="${mainClassesDirectory}"/>
         <mkdir dir="${toolsClassesDirectory}"/>
 
@@ -170,6 +170,7 @@ $Date$
             <exclude name="groovy/ui/**/*.java"/>
         </javac>
         <antcall inheritrefs="true" target="-stagedcompile-groovy"/>
+        <antcall target="-includeResources"/>
     </target>
 
     <target name="-stagedcompile-groovy" depends="-initGroovyc">
@@ -180,61 +181,6 @@ $Date$
             </classpath>
             <javac deprecation="on" debug="yes" source="1.5" target="1.5"/>
         </groovyc>
-    </target>
-
-    <target name="-ubercompile:bootstrap" depends="-init,-includeResources,ensureGrammars" if="uber">
-        <mkdir dir="${mainClassesDirectory}"/>
-
-        <javac destdir="${mainClassesDirectory}" deprecation="on" debug="yes" source="1.5"
-               target="1.5" fork="true" includeantruntime="false">
-            <classpath refid="compilePath"/>
-            <src location="${mainSourceDirectory}"/>
-
-            <!--
-            NOTE: This list includes *most* of the classes which are required for the ubercompile
-                  bits to work, adding them here to allow for more incremental compilation when
-                  required support classes change.
-            -->
-
-            <include name="groovy/lang/**/*.java"/>
-            <include name="org/codehaus/groovy/ant/**/*.java"/>
-            <include name="org/codehaus/groovy/antlr/**/*.java"/>
-            <include name="org/codehaus/groovy/ast/**/*.java"/>
-            <include name="org/codehaus/groovy/classgen/**/*.java"/>
-            <include name="org/codehaus/groovy/control/**/*.java"/>
-            <include name="org/codehaus/groovy/reflection/**/*.java"/>
-            <include name="org/codehaus/groovy/runtime/**/*.java"/>
-            <include name="org/codehaus/groovy/syntax/**/*.java"/>
-            <include name="org/codehaus/groovy/tools/javac/**/*.java"/>
-        </javac>
-
-        <taskdef name="ubercompile" classname="org.codehaus.groovy.ant.UberCompileTask">
-            <classpath>
-                <pathelement location="${mainClassesDirectory}"/>
-                <path refid="compilePath"/>
-            </classpath>
-        </taskdef>
-    </target>
-
-    <target name="ubercompile" depends="-ubercompile:bootstrap" if="uber">
-        <mkdir dir="${mainStubsDirectory}"/>
-
-        <ubercompile destdir="${mainClassesDirectory}">
-            <classpath>
-                <pathelement location="${mainClassesDirectory}"/>
-                <path refid="compilePath"/>
-            </classpath>
-            <src location="${mainSourceDirectory}"/>
-
-            <generatestubs destdir="${mainStubsDirectory}" includes="**/*.groovy">
-                <configuration targetBytecode="1.5"/>
-            </generatestubs>
-
-            <javac includeantruntime="false" deprecation="on" debug="yes" source="1.5" target="1.5" fork="true"/>
-            <groovyc includes="**/*.groovy">
-                <configuration debug="true" verbose="true"/>
-            </groovyc>
-        </ubercompile>
     </target>
 
     <property name="vm5GroovySourceFiles" value="gls/**/vm5/*Test.groovy,org/codehaus/groovy/**/vm5/*.groovy,groovy/**/vm5/*.groovy"/>
@@ -437,6 +383,14 @@ Not found: ${groovyJar14path}
         </and>
     </condition>
 
+    <target name="-collectOptionalTests">
+        <condition property="networkTests.fileset.includes" value="groovy/grape/*Test.class" else="-nothing-">
+            <istrue value="${junit.network}"/>
+        </condition>
+        <echo>${junit.network}</echo>
+        <fileset id="optionalTests.fileset" dir="${testClassesDirectory}" includes="${networkTests.fileset.includes}"/>
+    </target>
+
     <target name="-collect14tests" unless="groovy.build.vm5">
         <fileset id="ubertests.fileset" dir="${testClassesDirectory}" includes="UberTest*.class" excludes="Uber*VM5.class"/>
     </target>
@@ -445,7 +399,7 @@ Not found: ${groovyJar14path}
         <fileset id="ubertests.fileset" dir="${testClassesDirectory}" includes="UberTest*.class"/>
     </target>
 
-    <target name="-testAll" if="_testAll_" depends="-collect14tests,-collect15tests,-initGroovyc_vm4,-initGroovyc">
+    <target name="-testAll" if="_testAll_" depends="-collect14tests,-collect15tests,-collectOptionalTests,-initGroovyc_vm4,-initGroovyc">
         <mkdir dir="${junitRawDirectory}"/>
         <junit printsummary="true" fork="true" includeantruntime="false" failureproperty="testFailed" maxmemory="${groovyJUnit_mx}" dir="${basedir}">
             <jvmarg line="${junitJvmArgs}"/>
@@ -453,6 +407,7 @@ Not found: ${groovyJar14path}
             <formatter type="plain" unless="noTextReports"/>
             <batchtest todir="${junitRawDirectory}">
                 <fileset refid="ubertests.fileset"/>
+                <fileset refid="optionalTests.fileset"/>
             </batchtest>
             <classpath>
                 <pathelement path="${instrumentedClassesDirectory}"/>
@@ -524,6 +479,8 @@ Not found: ${groovyJar14path}
     <target name="-includeResources" depends="-includeGroovyDocTemplates">
         <copy todir="${mainClassesDirectory}">
             <fileset dir="${mainSourceDirectory}">
+                <include name="META-INF/services/*"/>
+                <include name="groovy/grape/*.xml"/>
                 <include name="groovy/ui/*.properties"/>
                 <include name="groovy/ui/**/*.png"/>
                 <include name="org/codehaus/groovy/tools/shell/**/*.properties"/>

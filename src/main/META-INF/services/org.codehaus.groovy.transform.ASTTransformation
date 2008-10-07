@@ -1,0 +1,2 @@
+# global annotation to handle @Grab annotation
+groovy.grape.GrabAnnotationTransformation
