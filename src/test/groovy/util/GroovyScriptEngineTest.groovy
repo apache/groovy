@@ -3,9 +3,7 @@
 */
 package groovy.util;
 
-import java.awt.Dimension;
-
-class GroovyScriptEngineTest extends GroovyTestCase{
+class GroovyScriptEngineTest extends GroovyTestCase {
 
 	private File currentDir
 	private File srcDir;
@@ -54,7 +52,7 @@ class GroovyScriptEngineTest extends GroovyTestCase{
 		makeMe = new File(company, "MakeMe.groovy")
 		makeMe << """
 		    package com.company
-		    import java.awt.Dimension
+
 		    class MakeMe extends MakeMeSuper{
 		       def modifyWidth(dim, addThis){
 		          dim.width += addThis
@@ -100,9 +98,9 @@ class GroovyScriptEngineTest extends GroovyTestCase{
  		}
 	}
 
-	public void testDynamicInstantiation() throws Exception{
+    public void testDynamicInstantiation() throws Exception{
 		//Code run in the script will modify this dimension object.
-    	Dimension dim = new Dimension();
+    	MyDimension dim = new MyDimension();
     	
     	String[] roots = new String[1]
     	roots[0] = srcDir.getAbsolutePath()
@@ -122,7 +120,7 @@ class GroovyScriptEngineTest extends GroovyTestCase{
     	//instantiate method.  The instantiated object modified the
     	//width of our Dimension object, adding the value of our
     	//'addThis' variable to it.
-    	assertEquals(new Dimension(addThis,0), dim);
+    	assertEquals(new MyDimension(addThis, 0), dim);
     	
     	assertEquals('worked', binding.getVariable("returnedMessage") )
 	}
@@ -159,4 +157,23 @@ class GroovyScriptEngineTest extends GroovyTestCase{
 	   	currentDir = new File(path);
 	}
 
+}
+
+class MyDimension {
+    int width
+    int height
+    
+    MyDimension(int x, int y) {
+        width = x
+        height = y
+    }
+
+    MyDimension() {
+        width = 0
+        height = 0
+    }
+
+    boolean equals(o) { o.width == width && o.height == height }
+
+    int hashCode() { width + 13 * height }
 }
