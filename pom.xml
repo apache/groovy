@@ -663,7 +663,7 @@
             <scope>compile</scope>
         </dependency>
 
-        <!-- Used for @Grab and @Grapes-->
+        <!-- Used for @Grab and Grapes-->
         <dependency>
             <groupId>org.apache.ivy</groupId>
             <artifactId>ivy</artifactId>

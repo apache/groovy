@@ -16,11 +16,13 @@
 
 package groovy.grape;
 
+import groovy.lang.Grab;
+import groovy.lang.Grapes;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
-import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.CompilePhase;
+import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 
@@ -95,7 +97,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
 
             visitClass(classNode);
 
-            ClassNode grapeIvyClassNode = new ClassNode(Grape.class);
+            ClassNode grapeClassNode = new ClassNode(Grape.class);
 
             //TODO process @Grapes
             if (!grapesAnnotations.isEmpty()) {
@@ -143,12 +145,6 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                     {
                         List grabInitializers = new ArrayList();
 
-                        // add Grape.initGrape()
-                        grabInitializers.add(new ExpressionStatement(
-                                new StaticMethodCallExpression(
-                                    grapeIvyClassNode,
-                                    "initGrape",
-                                    ArgumentListExpression.EMPTY_ARGUMENTS)));
 
                         // add Grape.grab([group:group, module:module, version:version])
                         MapExpression me = new MapExpression();
@@ -158,7 +154,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
 
                         grabInitializers.add(new ExpressionStatement(
                                 new StaticMethodCallExpression(
-                                    grapeIvyClassNode,
+                                    grapeClassNode,
                                     "grab",
                                     new ArgumentListExpression(me))));
 
@@ -174,7 +170,6 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             Map basicArgs = new HashMap();
             basicArgs.put("classLoader", sourceUnit.getClassLoader());
 
-            Grape.initGrape();
             Grape.grab(basicArgs, grabMaps.toArray(new Map[grabMaps.size()]));
         }
     }

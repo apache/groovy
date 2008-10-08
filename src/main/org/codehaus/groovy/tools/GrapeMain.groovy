@@ -16,9 +16,7 @@
 package org.codehaus.groovy.tools
 
 import groovy.grape.Grape
-
-import java.util.regex.Pattern
-
+import groovy.grape.GrapeIvy
 import org.apache.ivy.core.report.ArtifactDownloadReport
 import org.apache.ivy.util.DefaultMessageLogger
 import org.apache.ivy.util.Message
@@ -61,17 +59,12 @@ switch (arg[0]) {
     case 'list':
         println ""
 
-        Pattern ivyFilePattern = ~/ivy-(.*)\.xml/
         int moduleCount = 0
         int versionCount = 0
-        Grape.grapeCacheDir.eachDir {File groupDir ->
-            groupDir.eachDir { File moduleDir ->
-                def versions = []
-                moduleDir.eachFileMatch(ivyFilePattern) {
-                    def m = ivyFilePattern.matcher(it.name)
-                    if (m.matches()) versions += m.group(1)
-                }
-                println "$groupDir.name  $moduleDir.name  $versions"
+
+        Grape.enumerateGrapes().each {String groupName, Map group ->
+            group.each  { String moduleName, List<String> versions ->
+                println "$groupName $moduleName  $versions"
                 moduleCount++
                 versionCount += versions.size()
             }
@@ -82,6 +75,9 @@ switch (arg[0]) {
         break
 
     case 'resolve':
+        //TODO make this not specific to GrapeIvy
+
+        GrapeIvy grapeIvy = new GrapeIvy()
         if ((arg.size() % 3) != 1) {
             println 'There need to be a multiple of three arguments: (group module version)+'
             break
@@ -114,11 +110,11 @@ switch (arg[0]) {
         iter.next()
         def params = [[:]]
         while (iter.hasNext()) {
-            params.add(Grape.createGrabRecord([group:iter.next(), module:iter.next(), version:iter.next()]))
+            params.add(grapeIvy.createGrabRecord([group:iter.next(), module:iter.next(), version:iter.next()]))
         }
 
         try {
-            ArtifactDownloadReport[] reports = Grape.getDependencies(*params).getAllArtifactsReports()
+            ArtifactDownloadReport[] reports = grapeIvy.getDependencies(*params).getAllArtifactsReports()
 
             if (reports.length > 0) {
                 def items = []
