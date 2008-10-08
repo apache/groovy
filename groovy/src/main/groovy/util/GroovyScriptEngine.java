@@ -98,9 +98,10 @@ public class GroovyScriptEngine implements ResourceConnector {
                                     try {
                                         dependentScriptConn = rc.getResourceConnection(filename);
                                         ScriptCacheEntry currentCacheEntry = (ScriptCacheEntry) currentCacheEntryHolder.get();
-                                        currentCacheEntry.dependencies.put(
-                                                dependentScriptConn.getURL(),
-                                                new Long(dependentScriptConn.getLastModified()));
+                                        if(currentCacheEntry != null)
+	                                        currentCacheEntry.dependencies.put(
+	                                                dependentScriptConn.getURL(),
+	                                                new Long(dependentScriptConn.getLastModified()));
                                         return parseClass(dependentScriptConn.getInputStream(), filename);
                                     } catch (ResourceException e1) {
                                         throw new ClassNotFoundException("Could not read " + className + ": " + e1);
