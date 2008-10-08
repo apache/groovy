@@ -78,7 +78,7 @@ public class LineColumnChecker extends ASTTest {
 		//comment out next line to view the output of the visitor
 		//System.out.println(name + ": " + was);
 		for (int i = 0; i < expected.length; i++) {
-			assertTrue(expected[i] + " not found in" + was, was.indexOf(expected[i].trim()) != -1);
+			assertTrue("'"+ expected[i] + "' not found in '" + was + "'", was.indexOf(expected[i].trim()) != -1);
 		}
 	}
 }

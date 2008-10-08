@@ -29,7 +29,7 @@ import java.util.ArrayList;
  * @author Mike Spille
  * @author Jeremy Rayner <groovy@ross-rayner.com>
  */
-public class GroovySourceAST extends CommonAST implements Comparable {
+public class GroovySourceAST extends CommonAST implements Comparable, SourceInfo {
     private int line;
     private int col;
     private int lineLast;
@@ -58,6 +58,11 @@ public class GroovySourceAST extends CommonAST implements Comparable {
         super.initialize(t);
         line = t.getLine();
         col = t.getColumn();
+        if (t instanceof SourceInfo) {
+            SourceInfo info = (SourceInfo) t;
+            lineLast = info.getLineLast();
+            colLast  = info.getColumnLast(); 
+        }
     }
 
     public void setLast(Token last) {
