@@ -89,7 +89,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             }
         }
 
-        List<Map> grabMaps = new ArrayList<Map>(); 
+        List<Map<String,Object>> grabMaps = new ArrayList();
 
         for (ClassNode classNode : (List<ClassNode>) sourceUnit.getAST().getClasses()) {
             grabAnnotations = new ArrayList<AnnotationNode>();
@@ -134,7 +134,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             if (!grabAnnotations.isEmpty()) {
                 for (int j = 0; j < grabAnnotations.size(); j++) {
                     AnnotationNode node = grabAnnotations.get(j);
-                    HashMap grabMap = new HashMap();
+                    Map<String,Object> grabMap = new HashMap();
                     grabMap.put("group", ((ConstantExpression)node.getMember("group")).getValue());
                     grabMap.put("module", ((ConstantExpression)node.getMember("module")).getValue());
                     grabMap.put("version", ((ConstantExpression)node.getMember("version")).getValue());
