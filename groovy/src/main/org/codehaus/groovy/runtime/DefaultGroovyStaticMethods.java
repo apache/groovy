@@ -16,6 +16,10 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.regex.Matcher;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
@@ -145,5 +149,19 @@ public class DefaultGroovyStaticMethods {
      */
     public static void sleep(Object self, long milliseconds, Closure onInterrupt) {
         sleepImpl(milliseconds, onInterrupt);
+    }
+    
+    /**
+     * This convenience method acts as a wrapper for {@link SimpleDateFormat}.
+     * 
+     * @see SimpleDateFormat#parse(String)
+     * @param self         placeholder variable used by Groovy categories; ignored for default static methods
+     * @param format       pattern used to parse the input string.
+     * @param input        String to be parsed to create the date instance
+     * @return             a new Date instance representing the parsed input string 
+     * @throws ParseException if there is a parse error
+     */
+    public static Date parse( Date self, String format, String input ) throws ParseException {
+    	return new SimpleDateFormat( format ).parse( input );
     }
 }
