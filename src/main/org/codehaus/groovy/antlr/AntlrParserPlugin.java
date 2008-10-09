@@ -1049,6 +1049,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     
             collectionExpression = expression(collectionNode);
             forParameter = new Parameter(type,variable);
+            configureAST(forParameter,variableNode);
         }
 
         final AST node = inNode.getNextSibling();
@@ -1938,7 +1939,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected Expression dotExpression(AST node) {
-        // let's decide if this is a propery invocation or a method call
+        // let's decide if this is a property invocation or a method call
         AST leftNode = node.getFirstChild();
         if (leftNode != null) {
             AST identifierNode = leftNode.getNextSibling();

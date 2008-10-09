@@ -204,7 +204,6 @@ options {
     codeGenBitsetTestThreshold = 3;
     defaultErrorHandler = false;      // Don't generate parser error handlers
     buildAST = true;
-//  ASTLabelType = "GroovyAST";
 }
 
 tokens {
@@ -266,11 +265,7 @@ tokens {
      *
      * todo - change antlr.ASTFactory to do this instead...
      */
-    public AST create(int type, String txt, Token first, Token last) {
-        return create(type, txt, astFactory.create(first), last);
-    }
-    
-    public AST create(int type, String txt, AST first, Token last) {
+    public AST create(int type, String txt, AST first) {
         AST t = astFactory.create(type,txt);
         if ( t != null && first != null) {
             // first copy details from first token
@@ -278,14 +273,31 @@ tokens {
             // then ensure that type and txt are specific to this new node
             t.initialize(type,txt);
         }
-
-        if ((t instanceof GroovySourceAST) && last != null) {
+        return t;
+    }
+    
+    private AST attachLast(AST t, Object last) {
+    	if ((t instanceof GroovySourceAST) && (last instanceof SourceInfo)) {
+            SourceInfo lastInfo = (SourceInfo) last;
             GroovySourceAST node = (GroovySourceAST)t;
-            node.setLast(last);
+            node.setColumnLast(lastInfo.getColumn());
+            node.setLineLast(lastInfo.getLine());
             // This is a good point to call node.setSnippet(),
             // but it bulks up the AST too much for production code.
         }
         return t;
+    }
+     
+    public AST create(int type, String txt, Token first, Token last) {
+        return attachLast(create(type, txt, astFactory.create(first)), last);
+    }
+    
+    public AST create(int type, String txt, AST first, Token last) {
+        return attachLast(create(type, txt, first), last);
+    }
+    
+    public AST create(int type, String txt, AST first, AST last) {
+        return attachLast(create(type, txt, first), last);
     }
     
     /** 
@@ -2708,14 +2720,17 @@ stringConstructorValuePart
 // the arguments are all labeled (or SPREAD_MAP_ARG) or all unlabeled (and not SPREAD_MAP_ARG).
 listOrMapConstructorExpression
         { boolean hasLabels = false; }
-    :   lcon:LBRACK^
-        argList                 { hasLabels |= argListHasLabels;  }  // any argument label implies a map
+    :   lcon:LBRACK!
+        args:argList                 { hasLabels |= argListHasLabels;  }  // any argument label implies a map
         RBRACK!
-        { #lcon.setType(hasLabels ? MAP_CONSTRUCTOR : LIST_CONSTRUCTOR); }
+        {   int type = hasLabels ? MAP_CONSTRUCTOR : LIST_CONSTRUCTOR;
+        	#listOrMapConstructorExpression = #(create(type,"[",lcon,LT(1)),args); 
+        }
     |
         /* Special case:  [:] is an empty map constructor. */
         emcon:LBRACK^ COLON! RBRACK!   {#emcon.setType(MAP_CONSTRUCTOR);}
     ;
+
 
 /*OBS*
 /** Match a, a.b.c refs, a.b.c(...) refs, a.b.c[], a.b.c[].class,
@@ -3116,21 +3131,15 @@ options {
     protected ArrayList parenLevelStack = new ArrayList();
     protected int lastSigTokenType = EOF;  // last returned non-whitespace token
 
-    public void setTokenObjectClass(String name) {
-        // we overwrite this  method here, because we want to force the usage
-        // of our token class from our package through our class loader. 
-        // It must be our claassloader, because for OSGI environments the class
-        // may not be accessible otherwise.
-        if (CommonToken.class.getName().equals(name)) {
-            tokenObjectClass = CommonToken.class;
-        } else {
-            throw new GroovyBugError(
-                "We forced setTokenObjectClass to use only "+
-                CommonToken.class.getName()+". "+name+
-                " is not supported!\nIf you need "+
-                "a different class, please first change "+
-                "setTokenObjectClass(String) in groovy.g");
-        }
+    public void setTokenObjectClass(String name) {/*ignore*/}
+    
+    protected Token makeToken(int t) {
+        GroovySourceToken tok = new GroovySourceToken(t);
+        tok.setColumn(inputState.getTokenStartColumn());
+        tok.setLine(inputState.getTokenStartLine());
+        tok.setColumnLast(inputState.getColumn());
+        tok.setLineLast(inputState.getLine());
+        return tok;
     }
     
     protected void pushParenLevel() {
@@ -3138,6 +3147,7 @@ options {
         parenLevel = 0;
         stringCtorState = 0;
     }
+    
     protected void popParenLevel() {
         int npl = parenLevelStack.size();
         if (npl == 0)  return;
