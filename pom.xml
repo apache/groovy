@@ -8,7 +8,7 @@
     <name>Groovy</name>
     <packaging>jar</packaging>
     
-    <version>1.6-beta-2-SNAPSHOT</version>
+    <version>1.7-beta-1-SNAPSHOT</version>
     
     <description>
         Groovy: A powerful, dynamic language for the JVM
