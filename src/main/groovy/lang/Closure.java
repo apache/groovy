@@ -15,15 +15,14 @@
  */
 package groovy.lang;
 
-import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ReflectionCache;
-import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.stdclasses.CachedClosureClass;
 import org.codehaus.groovy.runtime.CurriedClosure;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.io.IOException;
+import java.io.Serializable;
 import java.io.StringWriter;
 import java.io.Writer;
 
@@ -57,7 +56,7 @@ import java.io.Writer;
  *
  * @version $Revision$
  */
-public abstract class Closure extends GroovyObjectSupport implements Cloneable, Runnable {
+public abstract class Closure extends GroovyObjectSupport implements Cloneable, Runnable, Serializable  {
 
     /**
      * With this resolveStrategy set the closure will attempt to resolve property references to the
@@ -86,15 +85,14 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
      */
     public static final int TO_SELF = 4;
 
-    private Object delegate;
-    private final Object owner;
-    private final Object thisObject;
-    private int resolveStrategy = OWNER_FIRST;
-
-
-    private int directive;
     public static final int DONE = 1, SKIP = 2;
     private static final Object[] EMPTY_OBJECT_ARRAY = {};
+    
+    private Object delegate;
+    private Object owner;
+    private Object thisObject;
+    private int resolveStrategy = OWNER_FIRST;
+    private int directive;
     protected Class[] parameterTypes;
     protected int maximumNumberOfParameters;
 
