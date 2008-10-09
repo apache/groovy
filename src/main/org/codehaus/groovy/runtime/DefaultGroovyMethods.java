@@ -43,6 +43,8 @@ import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 
 /**
  * This class defines all the new groovy methods which appear on normal JDK
@@ -2664,7 +2666,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return center(self, numberOfChars, " ");
     }
 
-    /**
+/**
      * Support the subscript operator, e.g.&nbsp;matcher[index], for a regex Matcher.
      * <p/>
      * For an example using no group match, <code><pre>
@@ -2722,7 +2724,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 // occurrence of the pattern
                 return matcher.group();
             }
-        }
+                }
         catch (IllegalStateException ex) {
             return null;
         }
@@ -6031,8 +6033,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Add a Character and a Number.
      * This operation will always create a new object for the result,
-     * while the operands remain unchanged.
+     * while the operands remain unchanged.  This character should be one 
+     * of the digits '0' through '9', and the result is addition of the integer
+     * conversion of this character plus the operand.
      *
+     * @see Integer#valueOf(String)
      * @param left  a Character
      * @param right a Number
      * @return the addition of the Character and the Number
@@ -6042,21 +6047,25 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Add a Number and a Character.
+     * Add a Number and a Character.  This assumes the character is one of the 
+     * digits '0' through '9'.
      *
+     * @see Integer#valueOf(String)
      * @param left  a Number
      * @param right a Character
-     * @return the addition of the Character and the Number
+     * @return The Number corresponding to the addition of left and right
      */
     public static Number plus(Number left, Character right) {
         return plus(left, new Integer(right.charValue()));
     }
 
     /**
-     * Add two Characters.
+     * Add two Characters.  Both characters are assumed to represent digits ('0' 
+     * through '9') and add the results.
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
      *
+     * @see #plus(Number, Character)
      * @param left  a Character
      * @param right a Character
      * @return the addition of both Characters
@@ -6077,7 +6086,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Compare a Character and a Number.
+     * Compare a Character and a Number.  The character is assumed to be a 
+     * digit (i.e. '0' through '9') which is converted to its Integer 
+     * representation.
      *
      * @param left  a Character
      * @param right a Number
@@ -6088,7 +6099,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Compare a Number and a Character.
+     * Compare a Number and a Character.  The character is assumed to be a 
+     * digit (i.e. '0' through '9') which is converted to its Integer 
+     * representation.
      *
      * @param left  a Number
      * @param right a Character
@@ -6099,7 +6112,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Compare two Characters.
+     * Compare two Characters.  Each character is assumed to be a 
+     * digit (i.e. '0' through '9') which is converted to its Integer 
+     * representation.
      *
      * @param left  a Character
      * @param right a Character
@@ -6122,7 +6137,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Subtract a Number from a Character.
+     * Subtract a Number from a Character.  The character is assumed to be a 
+     * digit (i.e. '0' through '9') which is converted to its Integer 
+     * representation.
      *
      * @param left  a Character
      * @param right a Number
@@ -6133,7 +6150,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Subtract a Character from a Number.
+     * Subtract a Character from a Number.  The character is assumed to be a 
+     * digit (i.e. '0' through '9') which is converted to its Integer 
+     * representation.
      *
      * @param left  a Number
      * @param right a Character
@@ -6144,7 +6163,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Subtraction two Characters.
+     * Subtract one Characters from another by converting them both to their 
+     * Integer representations.  Each character is assumed to be a 
+     * digit (i.e. '0' through '9') which is converted to its Integer 
+     * representation.
      *
      * @param left  a Character
      * @param right a Character
@@ -6166,7 +6188,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Multiply a Character by a Number.
+     * Multiply a Character by a Number.  The character is assumed to be a 
+     * digit (i.e. '0' through '9') which is converted to its Integer 
+     * representation.
      *
      * @param left  a Character
      * @param right a Number
@@ -6177,7 +6201,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Multiply a Number by a Character.
+     * Multiply a Number by a Character.  The character is assumed to be a 
+     * digit (i.e. '0' through '9') which is converted to its Integer 
+     * representation.
      *
      * @param left  a Number
      * @param right a Character
@@ -6188,7 +6214,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Multiply two Characters.
+     * Multiply two Characters.  Each character is assumed to be a 
+     * digit (i.e. '0' through '9') which is converted to its Integer 
+     * representation.
      *
      * @param left  a Character
      * @param right another Character
@@ -6269,7 +6297,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Divide a Character by a Number.
+     * Divide a Character by a Number.  The character is assumed to be a 
+     * digit (i.e. '0' through '9') which is converted to its Integer 
+     * representation.
      *
      * @param left  a Character
      * @param right a Number
@@ -6280,7 +6310,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Divide a Number by a Character.
+     * Divide a Number by a Character.  The character is assumed to be a 
+     * digit (i.e. '0' through '9') which is converted to its Integer 
+     * representation.
      *
      * @param left  a Number
      * @param right a Character
@@ -6291,7 +6323,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Divide two Characters.
+     * Divide one Character by another.  Each character is assumed to be a 
+     * digit (i.e. '0' through '9') which is converted to its Integer 
+     * representation.
      *
      * @param left  a Character
      * @param right another Character
@@ -7485,6 +7519,55 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static java.sql.Date minus(java.sql.Date self, int days) {
         return new java.sql.Date(minus((Date) self, days).getTime());
+    }
+    
+    /**
+     * Return a String representing this date in the given format.
+     * @see SimpleDateFormat
+     * @param self
+     * @param format the format pattern to use according to {@link SimpleDateFormat}
+     * @return a string representation of this date.
+     */
+    public static String format( Date self, String format ) {
+    	return new SimpleDateFormat( format ).format( self );
+    }
+    
+    /**
+     * Return a string representation of the 'day' portion of this date 
+     * according to the locale-specific format used by {@link DateFormat}
+     * @see DateFormat#getDateInstance(int)
+     * @see DateFormat#SHORT
+     * @param self
+     * @return a string representation of this date
+     */
+    public static String getDateString( Date self ) {
+    	return DateFormat.getDateInstance(DateFormat.SHORT).format( self );
+    }
+    
+    /**
+     * Return a string representation of the time portion of this date 
+     * according to the locale-specific format used by {@link DateFormat}
+     * @see DateFormat#getTimeInstance(int)
+     * @see DateFormat#MEDIUM
+     * @param self
+     * @return a string representing the time portion of this date
+     */
+    public static String getTimeString( Date self ) {
+    	return DateFormat.getTimeInstance(DateFormat.MEDIUM).format( self );
+    }
+    
+    /**
+     * Return a string representation of the date and time time portion of this 
+     * Date instance, according to the locale-specific format used by 
+     * {@link DateFormat}.  This method uses the {@link DateFormat#SHORT} 
+     * preset for the day portion and {@link DateFormat#MEDIUM} for the time 
+     * portion of the string 
+     * @see DateFormat#getDateTimeInstance(int, int) 
+     * @param self
+     * @return a string representation of this date and time
+     */
+    public static String getDateTimeString( Date self ) {
+    	return DateFormat.getDateTimeInstance(DateFormat.SHORT,DateFormat.MEDIUM).format( self );
     }
 
     // Boolean based methods
@@ -9069,9 +9152,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static Object withReader(URL url, Closure closure) throws IOException {
         return withReader(url.openConnection().getInputStream(), closure);
     }
-
+    
     /**
-     * Helper method to create a new BufferedReader for a URL and then
+     * Helper method to create a new Reader for a URL and then
      * passes it to the closure.  The reader is closed after the closure returns.
      *
      * @param url     a URL
@@ -9083,11 +9166,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static Object withReader(URL url, String charset, Closure closure) throws IOException {
         return withReader(url.openConnection().getInputStream(), charset, closure);
     }
-
+    
     /**
-     * Helper method to create a new BufferedReader for a stream and then
-     * passes it into the closure.  The reader is closed after the closure returns.
+     * Helper method to create a new Reader for a stream and then
+     * passes it into the closure.  The reader (and this stream) is closed after 
+     * the closure returns.
      *
+     * @see java.io.InputStreamReader
      * @param in      a stream
      * @param closure the closure to invoke with the InputStream
      * @return the value returned by the closure
@@ -9098,12 +9183,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Helper method to create a new BufferedReader for a stream and then
-     * passes it into the closure.  The reader is closed after the closure returns.
+     * Helper method to create a new Reader for a stream and then
+     * passes it into the closure.  The reader (and this stream) is closed after 
+     * the closure returns.
      *
+     * @see java.io.InputStreamReader
      * @param in      a stream
-     * @param charset the charset used
-     * @param closure the closure to invoke with the InputStream
+     * @param charset the charset used to decode the stream
+     * @param closure the closure to invoke with the reader
      * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      */
