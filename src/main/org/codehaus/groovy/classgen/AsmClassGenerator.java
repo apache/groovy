@@ -3355,6 +3355,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     public void visitListExpression(ListExpression expression) {
+        onLineNumber(expression,"ListExpression" );
         int size = expression.getExpressions().size();
         boolean containsSpreadExpression = containsSpreadExpression(expression);
         if (!containsSpreadExpression) {
