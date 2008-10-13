@@ -14,11 +14,15 @@
  * limitations under the License.
 -->
 <ivysettings>
-  <settings defaultResolver="chained"/>
+  <settings defaultResolver="downloadGrapes"/>
   <resolvers>
-    <chain name="chained">
+    <chain name="downloadGrapes">
+      <filesystem name="cachedGrapes">
+        <ivy pattern="${user.home}/.groovy/grapes/[organisation]/[module]/ivy-[revision].xml"/>
+        <artifact pattern="${user.home}/.groovy/grapes/[organisation]/[module]/[type]s/[artifact]-[revision].[ext]"/>
+      </filesystem>
       <!-- todo add 'endorsed groovy extensions' resolver here -->
-      <ibiblio name="codehaus" root="http://snapshots.repository.codehaus.org/" m2compatible="true"/>
+      <ibiblio name="codehaus" root="http://repository.codehaus.org/" m2compatible="true"/>
       <ibiblio name="ibiblio" m2compatible="true"/>
       <ibiblio name="java.net2" root="http://download.java.net/maven/2/" m2compatible="true"/>
     </chain>
