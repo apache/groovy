@@ -17,6 +17,7 @@ package groovy.grape;
 
 import java.util.List;
 import java.util.Map;
+import java.net.URI;
 
 /**
  * User: Danno.Ferrin
@@ -32,4 +33,6 @@ public interface GrapeEngine {
     Object grab(Map args, Map... dependencies);
 
     Map<String, Map<String, List<String>>> enumerateGrapes();
+
+    URI[] resolve(Map args, Map... dependencies);
 }

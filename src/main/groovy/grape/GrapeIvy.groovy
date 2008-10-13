@@ -175,19 +175,7 @@ class GrapeIvy implements GrapeEngine {
     }
 
     public grab(Map args, Map... dependencies) {
-        // check for mutually exclusive arguments
         try {
-            Set keys = args.keySet()
-            keys.each {a ->
-                Set badArgs = exclusiveGrabArgs[a]
-                if (badArgs && !badArgs.disjoint(keys)) {
-                    throw new RuntimeException("Mutually exclusive arguments passed into grab: ${keys.intersect(badArgs) + a}")
-                }
-            }
-
-            // check the kill switch
-            if (!enableGrapes) { return }
-
             // identify the target classloader early, so we fail before checking repositories
             def loader = chooseClassLoader(
                 classLoader:args.remove('classLoader'),
@@ -199,30 +187,9 @@ class GrapeIvy implements GrapeEngine {
             // If we were in fail mode we would have already thrown an exception
             if (!loader) return
 
-            Set<ModuleRevisionId> localDeps = loadedDeps.get(loader)
-            if (localDeps == null) {
-                // use a linked set to presrve intial insertion order
-                localDeps = new LinkedHashSet<ModuleRevisionId>()
-                loadedDeps.put(loader, localDeps)
-            }
-
-            dependencies.each { localDeps.add(createGrabRecord(it)) }
-            // the call to reverse insures that the newest additions are in
-            // front causing existing dependencies to come last and thus
-            // claiming higher priority.  Thus when module versions clash we
-            // err on the side of using the class already loaded into the
-            // classloader rather than adding another jar of the same module
-            // with a different version
-            ResolveReport report = getDependencies(args, *localDeps.asList().reverse())
-            ModuleDescriptor md = report.getModuleDescriptor()
-
-            for (ArtifactDownloadReport adl in report.getAllArtifactsReports()) {
-                Artifact artifact = adl.getArtifact()
-                // this is where we would likely process lifecycle events for loaded grapes
+            for (URI uri in resolve(loader, args, dependencies)) {
                 //TODO check artifcat type, jar vs library, etc
-                if (adl.localFile) {
-                    loader.addURL(adl.localFile.toURL())
-                }
+                loader.addURL(uri.toURL())
             }
         } catch (Exception e) {
             if (args.noExceptions) {
@@ -253,8 +220,10 @@ class GrapeIvy implements GrapeEngine {
         ResolveOptions resolveOptions = new ResolveOptions()\
             .setConfs(['default'] as String[])\
             .setOutputReport(false)\
-            .setValidate(args.containsKey('validate') ? args.validate : false)\
-            //.setUseCacheOnly(cacheOnly)\
+            .setValidate(args.containsKey('validate') ? args.validate : false)
+
+        ivyInstance.getSettings().setDefaultResolver( args.autoDownload ? 'downloadGrapes' : 'cachedGrapes' ) 
+
         ResolveReport report = ivyInstance.resolve(md, resolveOptions)
         if (report.hasError()) {
             throw new RuntimeException("Error grabbing Grapes -- $report.allProblemMessages")
@@ -273,18 +242,73 @@ class GrapeIvy implements GrapeEngine {
         Map<String, Map<String, List<String>>> bunches = [:]
         Pattern ivyFilePattern = ~/ivy-(.*)\.xml/ //TODO get pattern from ivy conf
         grapeCacheDir.eachDir {File groupDir ->
+            Map<String, List<String>> grapes = [:]
+            bunches[groupDir.name] = grapes
             groupDir.eachDir { File moduleDir ->
-                Map<String, List<String>> grapes = [:]
-                bunches[groupDir.name] = grapes
                 def versions = []
-                moduleDir.eachFileMatch(ivyFilePattern) {
-                    def m = ivyFilePattern.matcher(it.name)
+                moduleDir.eachFileMatch(ivyFilePattern) {File ivyFile ->
+                    def m = ivyFilePattern.matcher(ivyFile.name)
                     if (m.matches()) versions += m.group(1)
                 }
                 grapes[moduleDir.name] = versions
             }
         }
         return bunches
+    }
+
+    public URI [] resolve(Map args, Map... dependencies) {
+        // identify the target classloader early, so we fail before checking repositories
+        def loader = chooseClassLoader(
+            classLoader:args.remove('classLoader'),
+            refObject:args.remove('refObject'),
+            calleeDepth:args.calleeDepth?:DEFAULT_DEPTH,
+            )
+
+        // check for non-fail null.
+        // If we were in fail mode we would have already thrown an exception
+        if (!loader) return
+
+        resolve(loader, args, dependencies)
+    }
+
+    URI [] resolve(ClassLoader loader, Map args, Map... dependencies) {
+        // check for mutually exclusive arguments
+        Set keys = args.keySet()
+        keys.each {a ->
+            Set badArgs = exclusiveGrabArgs[a]
+            if (badArgs && !badArgs.disjoint(keys)) {
+                throw new RuntimeException("Mutually exclusive arguments passed into grab: ${keys.intersect(badArgs) + a}")
+            }
+        }
+
+        // check the kill switch
+        if (!enableGrapes) { return }
+
+        Set<ModuleRevisionId> localDeps = loadedDeps.get(loader)
+        if (localDeps == null) {
+            // use a linked set to presrve intial insertion order
+            localDeps = new LinkedHashSet<ModuleRevisionId>()
+            loadedDeps.put(loader, localDeps)
+        }
+
+        dependencies.each { localDeps.add(createGrabRecord(it)) }
+        // the call to reverse insures that the newest additions are in
+        // front causing existing dependencies to come last and thus
+        // claiming higher priority.  Thus when module versions clash we
+        // err on the side of using the class already loaded into the
+        // classloader rather than adding another jar of the same module
+        // with a different version
+        ResolveReport report = getDependencies(args, *localDeps.asList().reverse())
+        ModuleDescriptor md = report.getModuleDescriptor()
+
+        List<URI> results = []
+        for (ArtifactDownloadReport adl in report.getAllArtifactsReports()) {
+            //TODO check artifcat type, jar vs library, etc
+            if (adl.localFile) {
+                results += adl.localFile.toURI()
+            }
+        }
+        return results as URI[]
     }
 }
 

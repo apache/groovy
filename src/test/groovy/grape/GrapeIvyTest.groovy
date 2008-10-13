@@ -23,7 +23,14 @@ import org.codehaus.groovy.control.CompilationFailedException
 class GrapeIvyTest extends GroovyTestCase {
 
     public GrapeIvyTest() {
-        Grape.initGrape()
+        // insure files are installed locally
+        [[groupId:'log4j', artifactId:'log4j', version:'1.1.3'],
+            [groupId:'org.apache.poi', artifactId:'poi', version:'3.0.1-FINAL'],
+            [groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,2.3)'],
+            [groupId:'org.apache.ivy', artifactId:'ivy', version:'2.0.0-beta1', conf:['default', 'optional']]
+        ].each {
+            Grape.resolve([autoDownload:true, classLoader:new GroovyClassLoader()], it)
+        }
     }
 
     public void testSingleArtifact() {
@@ -33,7 +40,7 @@ class GrapeIvyTest extends GroovyTestCase {
             shell.evaluate("import com.jidesoft.swing.JideSplitButton; JideSplitButton.class")
         }
 
-        Grape.grab(groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,)', classLoader:loader)
+        Grape.grab(groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,2.3)', classLoader:loader)
 
         assert shell.evaluate("import com.jidesoft.swing.JideSplitButton; JideSplitButton.class").name == 'com.jidesoft.swing.JideSplitButton';
     }
@@ -60,7 +67,7 @@ class GrapeIvyTest extends GroovyTestCase {
 
         Grape.grab(classLoader:loader,
             [groupId:'org.apache.poi', artifactId:'poi', version:'3.0.1-FINAL'],
-            [groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,)'])
+            [groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,2.3)'])
 
         assert shell.evaluate("import com.jidesoft.swing.JideSplitButton; JideSplitButton.class").name == 'com.jidesoft.swing.JideSplitButton';
         assert shell.evaluate("import org.apache.poi.hssf.model.Sheet; Sheet.class").name == 'org.apache.poi.hssf.model.Sheet'
@@ -72,7 +79,7 @@ class GrapeIvyTest extends GroovyTestCase {
         shouldFail(CompilationFailedException) {
             shell.evaluate("import com.jidesoft.swing.JideSplitButton; JideSplitButton.class")
         }
-        shell.evaluate("new groovy.grape.Grape().grab(groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,)')")
+        shell.evaluate("new groovy.grape.Grape().grab(groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,2.3)')")
         assert shell.evaluate("import com.jidesoft.swing.JideSplitButton; JideSplitButton.class").name == 'com.jidesoft.swing.JideSplitButton';
     }
 
@@ -82,7 +89,7 @@ class GrapeIvyTest extends GroovyTestCase {
         shouldFail(CompilationFailedException) {
             shell.evaluate("import com.jidesoft.swing.JideSplitButton; JideSplitButton.class")
         }
-        shell.evaluate("new groovy.grape.Grape().grab(groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,)', refObject:this)")
+        shell.evaluate("new groovy.grape.Grape().grab(groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,2.3)', refObject:this)")
         assert shell.evaluate("import com.jidesoft.swing.JideSplitButton; JideSplitButton.class").name == 'com.jidesoft.swing.JideSplitButton';
     }
 
@@ -93,7 +100,7 @@ class GrapeIvyTest extends GroovyTestCase {
         shouldFail(CompilationFailedException) {
             shell.evaluate("import com.jidesoft.swing.JideSplitButton; JideSplitButton.class")
         }
-        shell.evaluate("new groovy.grape.Grape().grab(groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,)', classLoader:loader)")
+        shell.evaluate("new groovy.grape.Grape().grab(groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,2.3)', classLoader:loader)")
         assert shell.evaluate("import com.jidesoft.swing.JideSplitButton; JideSplitButton.class").name == 'com.jidesoft.swing.JideSplitButton';
     }
 
@@ -106,7 +113,7 @@ class GrapeIvyTest extends GroovyTestCase {
         }
         shell.evaluate("""new groovy.grape.Grape().grab([:],
             [groupId:'org.apache.poi', artifactId:'poi', version:'3.0.1-FINAL'],
-            [groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,)'])""")
+            [groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,2.3)'])""")
 
         assert shell.evaluate("import com.jidesoft.swing.JideSplitButton; JideSplitButton.class").name == 'com.jidesoft.swing.JideSplitButton';
         assert shell.evaluate("import org.apache.poi.hssf.model.Sheet; Sheet.class").name == 'org.apache.poi.hssf.model.Sheet'
@@ -121,7 +128,7 @@ class GrapeIvyTest extends GroovyTestCase {
         }
         shell.evaluate("""new groovy.grape.Grape().grab(refObject: this,
             [groupId:'org.apache.poi', artifactId:'poi', version:'3.0.1-FINAL'],
-            [groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,)'])""")
+            [groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,2.3)'])""")
 
         assert shell.evaluate("import com.jidesoft.swing.JideSplitButton; JideSplitButton.class").name == 'com.jidesoft.swing.JideSplitButton';
         assert shell.evaluate("import org.apache.poi.hssf.model.Sheet; Sheet.class").name == 'org.apache.poi.hssf.model.Sheet'
@@ -137,7 +144,7 @@ class GrapeIvyTest extends GroovyTestCase {
         }
         shell.evaluate("""new groovy.grape.Grape().grab(classLoader:loader,
             [groupId:'org.apache.poi', artifactId:'poi', version:'3.0.1-FINAL'],
-            [groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,)'])""")
+            [groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,2.3)'])""")
 
         assert shell.evaluate("import com.jidesoft.swing.JideSplitButton; JideSplitButton.class").name == 'com.jidesoft.swing.JideSplitButton';
         assert shell.evaluate("import org.apache.poi.hssf.model.Sheet; Sheet.class").name == 'org.apache.poi.hssf.model.Sheet'

@@ -16,12 +16,8 @@
 package org.codehaus.groovy.tools
 
 import groovy.grape.Grape
-import groovy.grape.GrapeIvy
-import org.apache.ivy.core.report.ArtifactDownloadReport
 import org.apache.ivy.util.DefaultMessageLogger
 import org.apache.ivy.util.Message
-
-Grape.initGrape()
 
 arg = args as List
 
@@ -49,8 +45,17 @@ switch (arg[0]) {
         if (arg.size() == 4) {
             ver = arg[3]
         }
-        Message.setDefaultLogger(new DefaultMessageLogger(2))
-        def ex = Grape.grab(group:arg[1], module:arg[2], version:ver, noExceptions:true)
+
+        // set the instance so we can re-set the logger
+        Grape.getInstance()
+        try {
+            // set the logger to louder
+            Message.setDefaultLogger(new DefaultMessageLogger(2))
+        } catch (Throwable e) {
+            e.printStackTrace(System.out);
+            // doesn't matter, we just won't turn up ivy's logging
+        }
+        def ex = Grape.grab(autoDownload: true, group:arg[1], module:arg[2], version:ver, noExceptions:true)
         if (ex) {
             println "An error occured : $ex"
         }
@@ -75,9 +80,17 @@ switch (arg[0]) {
         break
 
     case 'resolve':
-        //TODO make this not specific to GrapeIvy
 
-        GrapeIvy grapeIvy = new GrapeIvy()
+    // set the instance so we can re-set the logger
+    Grape.getInstance()
+    try {
+        // set the logger to louder
+        Message.setDefaultLogger(new DefaultMessageLogger(Message.MSG_DEBUG))
+    } catch (Throwable e) {
+        e.printStackTrace(System.out);
+        // doesn't matter, we just won't turn up ivy's logging
+    }
+
         if ((arg.size() % 3) != 1) {
             println 'There need to be a multiple of three arguments: (group module version)+'
             break
@@ -110,25 +123,27 @@ switch (arg[0]) {
         iter.next()
         def params = [[:]]
         while (iter.hasNext()) {
-            params.add(grapeIvy.createGrabRecord([group:iter.next(), module:iter.next(), version:iter.next()]))
+            params.add([group:iter.next(), module:iter.next(), version:iter.next()])
         }
 
         try {
-            ArtifactDownloadReport[] reports = grapeIvy.getDependencies(*params).getAllArtifactsReports()
-
-            if (reports.length > 0) {
-                def items = []
-                for (ArtifactDownloadReport report in reports) {
-                    if (report.localFile) {
-                        items += report.localFile
-                    }
+            def results = []
+            for (URI uri : Grape.resolve(*params)) {
+                if (uri.scheme == 'file') {
+                    results += new File(uri).path
+                } else {
+                    results += uri.toASCIIString()
                 }
-                println "${before}${items.join(between)}${after}"
+            }
+
+            if (results) {
+                println "${before}${results.join(between)}${after}"
             } else {
-                println 'no jars were resolved'
+                println 'Nothing was resolved'
             }
         } catch (Exception e) {
-            println "Error in Resolve:\n\t$e.message"
+            println "Error in resolve:\n\t$e.message"
+            if (e.message =~ /unresolved dependency/) println "Perhaps the grape is not installed?"
         }
         break
 }

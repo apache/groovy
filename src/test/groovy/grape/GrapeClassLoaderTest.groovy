@@ -8,7 +8,9 @@ package groovy.grape
 class GrapeClassLoaderTest extends GroovyTestCase {
 
     public GrapeClassLoaderTest() {
-        Grape.initGrape()
+        // insure files are installed locally
+        Grape.resolve([autoDownload:true, classLoader:new GroovyClassLoader()],
+            [groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,2.3)'])
     }
 
     public void testGrapes() {
@@ -16,7 +18,7 @@ class GrapeClassLoaderTest extends GroovyTestCase {
         Class testClass = loader.parseClass("""
 import com.jidesoft.swing.JideSplitButton
 
-@Grapes([@Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,)')])
+@Grapes([@Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')])
 public class TestConstructorAnnotation {
 
     String field
@@ -37,7 +39,7 @@ public class TestConstructorAnnotation {
 
     String field
 
-    @Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,)')
+    @Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
     public TestConstructorAnnotation() {
         field = JideSplitButton.class.name
     }
@@ -52,7 +54,7 @@ import com.jidesoft.swing.JideSplitButton
 
 public class TestClassFieldAnnotation {
 
-    @Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,)')
+    @Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
     private String field
 
     public TestClassFieldAnnotation() {
@@ -73,7 +75,7 @@ import com.jidesoft.swing.JideSplitButton
 
 public class TestClassPropertyAnnotation {
 
-    @Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,)')
+    @Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
     String field
 
     public TestClassPropertyAnnotation() {
@@ -96,7 +98,7 @@ public class TestClassPropertyAnnotation {
 //    public class TestClassLocalVariableAnnotation {
 //
 //        public String testMethod() {
-//            @Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,)')
+//            @Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
 //            String field = JideSplitButton.class.name
 //            return field
 //        }
@@ -110,7 +112,7 @@ public class TestClassPropertyAnnotation {
 //        Class testClass = loader.parseClass("""
 //import com.jidesoft.swing.JideSplitButton
 //
-//@Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,)')
+//@Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
 //String field = JideSplitButton.class.name
 //
 //
@@ -126,7 +128,7 @@ public class TestClassPropertyAnnotation {
 import com.jidesoft.swing.JideSplitButton
 
 public class TestClassStaticMethodAnnotation {
-    @groovy.lang.Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,)')
+    @groovy.lang.Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
     public static String testMethod () {
         return JideSplitButton.class.name
     }
@@ -140,7 +142,7 @@ public class TestClassStaticMethodAnnotation {
 import com.jidesoft.swing.JideSplitButton
 
 public class TestClassMethodAnnotation {
-    @groovy.lang.Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,)')
+    @groovy.lang.Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
     public String testMethod () {
         return JideSplitButton.class.name
     }
@@ -153,7 +155,7 @@ public class TestClassMethodAnnotation {
         Class testClass = loader.parseClass("""
 import com.jidesoft.swing.JideSplitButton
 
-@groovy.lang.Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,)')
+@groovy.lang.Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
 public static String testMethod () {
     return JideSplitButton.class.name
 }""")
@@ -165,7 +167,7 @@ public static String testMethod () {
         Class testClass = loader.parseClass("""
 import com.jidesoft.swing.JideSplitButton
 
-@groovy.lang.Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,)')
+@groovy.lang.Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
 public String testMethod () {
     return JideSplitButton.class.name
 }""")
@@ -179,7 +181,7 @@ import com.jidesoft.swing.JideSplitButton
 
 public class TestClassStaticMethodAnnotation {
     public String testMethod (
-@groovy.lang.Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,)')
+@groovy.lang.Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
 String bogus
 ) {
         return JideSplitButton.class.name
@@ -194,7 +196,7 @@ String bogus
 import com.jidesoft.swing.JideSplitButton
 
 public String testMethod (
-@groovy.lang.Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,)')
+@groovy.lang.Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
 String bogus
 ) {
     println "Foo"
@@ -208,7 +210,7 @@ String bogus
         Class testClass = loader.parseClass("""
 import com.jidesoft.swing.JideSplitButton
 
-@Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,)')
+@Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
 public class TestTypeAnnotation {
     public static String testMethod () {
         return JideSplitButton.class.name
@@ -222,7 +224,7 @@ public class TestTypeAnnotation {
         Class testClass = loader.parseClass("""
 import com.jidesoft.swing.JideSplitButton
 
-@groovy.lang.Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,)')
+@groovy.lang.Grab(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
 public class TestFQNAnnotation {
     public static String testMethod () {
         return JideSplitButton.class.name
@@ -237,7 +239,7 @@ public class TestFQNAnnotation {
 import com.jidesoft.swing.JideSplitButton
 import groovy.lang.Grab as require_gem
 
-@require_gem(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,)')
+@require_gem(group = 'com.jidesoft', module = 'jide-oss', version = '[2.2.1,2.3)')
 public class TestAliasedAnnotation {
     public static String testMethod () {
         return JideSplitButton.class.name
