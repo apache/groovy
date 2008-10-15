@@ -252,6 +252,7 @@ public class GroovyShell extends GroovyObjectSupport {
                 }
                 if (script != null) {
                     script.setBinding(context);
+                    script.setProperty("args", args);
                     return script.run();
                 }
             }
