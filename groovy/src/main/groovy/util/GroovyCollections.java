@@ -28,82 +28,82 @@ import java.util.*;
  */
 public class GroovyCollections {
     /**
-     * Finds all combinations of items from an array of lists.
+     * Finds all combinations of items from the given collections.
      *
-     * @param lists an array of lists
+     * @param collections the given collections
      * @return a List of the combinations found
      * @see #combinations(Collection)
      */
-    public static List combinations(Object[] lists) {
-        return combinations(Arrays.asList(lists));
+    public static List combinations(Object[] collections) {
+        return combinations(Arrays.asList(collections));
     }
 
     /**
-     * Finds all combinations of items from a collection of lists.
+     * Finds all combinations of items from the given collections.
      * So, <code>combinations([[true, false], [true, false]])</code>
      * is <code>[[true, true], [false, true], [true, false], [false, false]]</code>
      * and <code>combinations([['a', 'b'],[1, 2, 3]])</code>
      * is <code>[['a', 1], ['b', 1], ['a', 2], ['b', 2], ['a', 3], ['b', 3]]</code>.
+     * If a non-collection item is given, it is treated as a singleton collection,
+     * i.e. <code>combinations([[1, 2], 'x'])</code> is <code>[[1, 'x'], [2, 'x']]</code>.
      *
-     * @param lists a Collection of lists
+     * @param collections the given collections
      * @return a List of the combinations found
      */
-    public static List combinations(Collection lists) {
-        List combinations = new ArrayList();
-        for (Iterator outer = lists.iterator(); outer.hasNext();) {
-            Object candidateList = outer.next();
-            List list = (List) DefaultTypeTransformation.castToType(candidateList, List.class);
-            if (combinations.isEmpty()) {
-                for (int i = 0; i < list.size(); i++) {
+    public static List combinations(Collection collections) {
+        List collectedCombos = new ArrayList();
+        for (Iterator outer = collections.iterator(); outer.hasNext();) {
+            Collection items = DefaultTypeTransformation.asCollection(outer.next());
+            if (collectedCombos.isEmpty()) {
+                for (Iterator iterator = items.iterator(); iterator.hasNext();) {
                     List l = new ArrayList();
-                    l.add(list.get(i));
-                    combinations.add(l);
+                    l.add(iterator.next());
+                    collectedCombos.add(l);
                 }
             } else {
-                List savedCombinations = new ArrayList(combinations);
-                List newCombinations = new ArrayList();
-                for (Iterator inner = list.iterator(); inner.hasNext();) {
+                List savedCombos = new ArrayList(collectedCombos);
+                List newCombos = new ArrayList();
+                for (Iterator inner = items.iterator(); inner.hasNext();) {
                     Object value = inner.next();
-                    for (Iterator combos = savedCombinations.iterator(); combos.hasNext();) {
+                    for (Iterator combos = savedCombos.iterator(); combos.hasNext();) {
                         List oldlist = new ArrayList((List) combos.next());
                         oldlist.add(value);
-                        newCombinations.add(oldlist);
+                        newCombos.add(oldlist);
                     }
                 }
-                combinations = newCombinations;
+                collectedCombos = newCombos;
             }
         }
-        return combinations;
+        return collectedCombos;
     }
 
     /**
      * Transposes an array of lists.
      *
-     * @param lists an array of lists
+     * @param lists the given lists
      * @return a List of the transposed lists
-     * @see #transpose(Collection)
+     * @see #transpose(List)
      */
     public static List transpose(Object[] lists) {
         return transpose(Arrays.asList(lists));
     }
 
     /**
-     * Transposes a collection of lists. So,
-     * <code>transpose([['a', 'b'], [1, 2]])</code>
-     * is <code>[['a', 1], ['b', 2]]</code> and.
+     * Transposes the given lists.
+     * So, <code>transpose([['a', 'b'], [1, 2]])</code>
+     * is <code>[['a', 1], ['b', 2]]</code> and
      * <code>transpose([['a', 'b', 'c']])</code>
-     * is <code>[['a'], ['b'], ['c']]</code> and.
+     * is <code>[['a'], ['b'], ['c']]</code>.
      *
-     * @param lists a Collection of lists
+     * @param lists the given lists
      * @return a List of the transposed lists
      */
-    public static List transpose(Collection lists) {
+    public static List transpose(List lists) {
         List result = new ArrayList();
         if (lists.isEmpty() || lists.size() == 0) return result;
         int minSize = Integer.MAX_VALUE;
         for (Iterator outer = lists.iterator(); outer.hasNext();) {
-            Object candidateList = outer.next();
-            List list = (List) DefaultTypeTransformation.castToType(candidateList, List.class);
+            List list = (List) DefaultTypeTransformation.castToType(outer.next(), List.class);
             if (list.size() < minSize) minSize = list.size();
         }
         if (minSize == 0) return result;
@@ -111,8 +111,7 @@ public class GroovyCollections {
             result.add(new ArrayList());
         }
         for (Iterator outer = lists.iterator(); outer.hasNext();) {
-            Object candidateList = outer.next();
-            List list = (List) DefaultTypeTransformation.castToType(candidateList, List.class);
+            List list = (List) DefaultTypeTransformation.castToType(outer.next(), List.class);
             for (int i = 0; i < minSize; i++) {
                 List resultList = (List) result.get(i);
                 resultList.add(list.get(i));
