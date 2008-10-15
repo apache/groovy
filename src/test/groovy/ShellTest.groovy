@@ -14,7 +14,6 @@ println('foo is now ' + foo)
 return foo
 """, "Dummy1.groovy")
 
-        
         assert value == 2
         assert shell.foo == 2 , "Value is now ${shell.foo}"
 	}
@@ -28,8 +27,14 @@ println('bar is now ' + bar)
 return bar
 """, "Dummy2.groovy")
 
-        
         assert value == 3
         assert shell.bar == 3 , "Value is now ${shell.bar}"
+    }
+
+    void testArgs() {
+        def seventyfive = new GroovyShell().run("args[0] + args[1]", "StringSummerScript", ['7', '5'])
+        assert seventyfive == '75'
+        def twelve = new GroovyShell().run("args*.toInteger().sum()", "NumberSummerScript", ['7', '5'])
+        assert twelve == 12
     }
 }
