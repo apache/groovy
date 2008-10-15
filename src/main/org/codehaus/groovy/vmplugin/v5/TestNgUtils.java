@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,7 @@ import java.lang.reflect.Method;
 
 /**
  * Java 5 code for working with TestNG tests.
- * 
+ *
  * @author Paul King
  *
  */
@@ -44,13 +44,18 @@ public class TestNgUtils {
         try {
             try {
                 Class testAnnotationClass = loader.loadClass("org.testng.annotations.Test");
-                Method[] methods = scriptClass.getMethods();
-                for (int i = 0; i < methods.length; i++) {
-                    Method method = methods[i];
-                    Annotation annotation = method.getAnnotation(testAnnotationClass);
-                    if (annotation != null) {
-                        isTest = true;
-                        break;
+                Annotation annotation = scriptClass.getAnnotation(testAnnotationClass);
+                if (annotation != null) {
+                    isTest = true;
+                } else {
+                    Method[] methods = scriptClass.getMethods();
+                    for (int i = 0; i < methods.length; i++) {
+                        Method method = methods[i];
+                        annotation = method.getAnnotation(testAnnotationClass);
+                        if (annotation != null) {
+                            isTest = true;
+                            break;
+                        }
                     }
                 }
             } catch (ClassNotFoundException e) {
