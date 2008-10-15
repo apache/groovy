@@ -1,0 +1,61 @@
+// -*- coding: utf-8  mode: groovy -*-
+
+//  Gradle build script for Groovy.
+//
+//  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
+//  compliance with the License. You may obtain a copy of the License at
+//
+//    http://www.apache.org/licenses/LICENSE-2.0
+//
+//  Unless required by applicable law or agreed to in writing, software distributed under the License is
+//  distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or
+//  implied. See the License for the specific language governing permissions and limitations under the License.
+//
+//  This work is copyright by the author(s) and is part of a greater work collectively copyright by Codehaus on
+//  behalf of the Groovy community. See the NOTICE.txt file distributed with this work for additional information.
+//
+//  Author : Russel Winder <russel.winder@concertant.com>
+
+ant.property ( file : 'build.properties' )
+
+type = 'jar'
+group = 'org.codehaus.groovy'
+version = ant.antProject.properties.groovyVersion
+
+usePlugin ( 'groovy' )
+sourceCompatibility = 1.5
+targetCompatibility = 1.5
+groovySrcDirName = 'src/main'
+groovyTestSrcDirName = 'src/test'
+dependencies {
+  addMavenRepo ( "file://${ System.properties.'user.home' }/.m2/repository" )
+  groovy ( 'org.codehaus.groovy:groovy-all:1.6-beta-2-SNAPSHOT' )
+  compile ( [
+             'antlr:antlr:2.7.7' ,
+             'asm:asm:2.2.3' ,
+             'asm:asm-util:2.2.3' ,
+             'asm:asm-analysis:2.2.3' ,
+             'asm:asm-tree:2.2.3' ,
+             'junit:junit:3.8.2' ,
+             'commons-cli:commons-cli:1.2-SNAPSHOT' ,
+             'org.apache.ant:ant:1.7.1' ,
+             'javax.servlet:servlet-api:2.4' ,
+             'javax.servlet:jsp-api:2.0' ,
+             'jline:jline:0.9.94' ,
+             ] )
+  testRuntime ( [
+                 'asm:asm-attrs:2.2.3' ,
+                 'jmock:jmock:1.2.0' ,
+                 'jmock:jmock-clib:1.2.0' ,
+                 'xmlunit:xmlunit:1.2' ,
+                 'hsqldb:hsqldb:1.8.0.7' ,
+                 ] )
+  runtime ( [
+             'org.apache.ant:ant-junit:1.7.1' ,
+             'org.apache.ant:ant-launcher:1.7.1' ,
+             ] )
+}
+
+test {
+  include ( '**/*Test.class' )
+}
