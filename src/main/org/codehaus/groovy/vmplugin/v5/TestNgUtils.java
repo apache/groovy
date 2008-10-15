@@ -44,13 +44,18 @@ public class TestNgUtils {
         try {
             try {
                 Class testAnnotationClass = loader.loadClass("org.testng.annotations.Test");
-                Method[] methods = scriptClass.getMethods();
-                for (int i = 0; i < methods.length; i++) {
-                    Method method = methods[i];
-                    Annotation annotation = method.getAnnotation(testAnnotationClass);
-                    if (annotation != null) {
-                        isTest = true;
-                        break;
+                Annotation annotation = scriptClass.getAnnotation(testAnnotationClass);
+                if (annotation != null) {
+                    isTest = true;
+                } else {
+                    Method[] methods = scriptClass.getMethods();
+                    for (int i = 0; i < methods.length; i++) {
+                        Method method = methods[i];
+                        annotation = method.getAnnotation(testAnnotationClass);
+                        if (annotation != null) {
+                            isTest = true;
+                            break;
+                        }
                     }
                 }
             } catch (ClassNotFoundException e) {
