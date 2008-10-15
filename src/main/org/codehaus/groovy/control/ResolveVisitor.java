@@ -34,6 +34,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.*;
+import java.lang.ref.SoftReference;
 
 /**
  * Visitor to resolve Types and convert VariableExpression to
@@ -48,6 +49,7 @@ import java.util.*;
  */
 public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private ClassNode currentClass;
+
     // note: BigInteger and BigDecimal are also imported by default
     public static final String[] DEFAULT_IMPORTS = {"java.lang.", "java.io.", "java.net.", "java.util.", "groovy.lang.", "groovy.util."};
     private CompilationUnit compilationUnit;
@@ -337,31 +339,44 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return false;
     }
 
+    private static final Map defaults = new HashMap ();
+    private static final Object NONE = new Object ();
+
+    static {
+        defaults.put("BigInteger", ClassHelper.BigInteger_TYPE);
+        defaults.put("BigDecimal", ClassHelper.BigDecimal_TYPE);
+    }
+
     private boolean resolveFromDefaultImports(ClassNode type, boolean testDefaultImports) {
         // test default imports
         testDefaultImports &= !type.hasPackageName();
         if (testDefaultImports) {
-            for (int i = 0, size = DEFAULT_IMPORTS.length; i < size; i++) {
-                String packagePrefix = DEFAULT_IMPORTS[i];
-                String name = type.getName();
-                // We limit the inner class lookups here by using ConstructedClassWithPackage.
-                // This way only the name will change, the packagePrefix will
-                // not be included in the lookup. The case where the
-                // packagePrefix is really a class is handled else where.
-                // WARNING: This code does not expect a class that has an static
-                //          inner class in DEFAULT_IMPORTS
-                ConstructedClassWithPackage tmp =  new ConstructedClassWithPackage(packagePrefix,name);
-                if (resolve(tmp, false, false, false)) {
-                    type.setRedirect(tmp.redirect());
-                    return true;
-                }
-            }
+
             String name = type.getName();
-            if (name.equals("BigInteger")) {
-                type.setRedirect(ClassHelper.BigInteger_TYPE);
-                return true;
-            } else if (name.equals("BigDecimal")) {
-                type.setRedirect(ClassHelper.BigDecimal_TYPE);
+            final Object res = defaults.get(name);
+            if (res == NONE)
+              return false;
+
+            if (res == null) {
+                for (int i = 0, size = DEFAULT_IMPORTS.length; i < size; i++) {
+                    String packagePrefix = DEFAULT_IMPORTS[i];
+                    // We limit the inner class lookups here by using ConstructedClassWithPackage.
+                    // This way only the name will change, the packagePrefix will
+                    // not be included in the lookup. The case where the
+                    // packagePrefix is really a class is handled else where.
+                    // WARNING: This code does not expect a class that has an static
+                    //          inner class in DEFAULT_IMPORTS
+                    ConstructedClassWithPackage tmp =  new ConstructedClassWithPackage(packagePrefix,name);
+                    if (resolve(tmp, false, false, false)) {
+                        type.setRedirect(tmp.redirect());
+                        defaults.put(name, tmp.redirect());
+                        return true;
+                    }
+                }
+                defaults.put(name, NONE);
+            }
+            else {
+                type.setRedirect((ClassNode) res);
                 return true;
             }
         }
@@ -450,9 +465,18 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     private boolean resolveFromModule(ClassNode type, boolean testModuleImports) {
-        String name = type.getName();
+        final String name = type.getName();
         ModuleNode module = currentClass.getModule();
         if (module == null) return false;
+
+        Object res = module.resolveCache.get (name);
+        if (res == NONE)
+          return false;
+
+        if (res != null) {
+            type.setRedirect((ClassNode) res);
+            return true;
+        }
 
         boolean newNameUsed = false;
         // we add a package if there is none yet and the module has one. But we
@@ -469,14 +493,20 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         for (Iterator iter = moduleClasses.iterator(); iter.hasNext();) {
             ClassNode mClass = (ClassNode) iter.next();
             if (mClass.getName().equals(type.getName())) {
-                if (mClass != type) type.setRedirect(mClass);
+                if (mClass != type) {
+                    type.setRedirect(mClass);
+                }
+                module.resolveCache.put(name, type.redirect());
                 return true;
             }
         }
         if (newNameUsed) type.setName(name);
 
         if (testModuleImports) {
-            if (resolveAliasFromModule(type)) return true;
+            if (resolveAliasFromModule(type)) {
+                module.resolveCache.put(name, type.redirect());
+                return true;
+            }
 
             if (module.hasPackageName()) {
                 // check package this class is defined in. The usage of ConstructedClassWithPackage here
@@ -485,6 +515,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 ConstructedClassWithPackage tmp =  new ConstructedClassWithPackage(module.getPackageName(),name);
                 if (resolve(tmp, false, false, false)) {
                     type.setRedirect(tmp.redirect());
+                    module.resolveCache.put(name, type.redirect());
                     return true;
                 }
             }
@@ -501,10 +532,15 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 if (resolve(tmp, false, false, true)) {
                     ambiguousClass(type, tmp, name);
                     type.setRedirect(tmp.redirect());
+                    module.resolveCache.put(name, type.redirect());
                     return true;
                 }
             }
         }
+
+        if (type.hasPackageName())
+          module.resolveCache.put(name, NONE);
+
         return false;
     }
 
@@ -767,16 +803,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     protected Expression transformMethodCallExpression(MethodCallExpression mce) {
-        Expression args = transform(mce.getArguments());
-        Expression method = transform(mce.getMethod());
-        Expression object = transform(mce.getObjectExpression());
-
-        MethodCallExpression result = new MethodCallExpression(object, method, args);
-        result.setSafe(mce.isSafe());
-        result.setImplicitThis(mce.isImplicitThis());
-        result.setSpreadSafe(mce.isSpreadSafe());
-        result.setSourcePosition(mce);
-        return result;
+        mce.setArguments(transform(mce.getArguments()));
+        mce.setMethod(transform(mce.getMethod()));
+        mce.setObjectExpression(transform(mce.getObjectExpression()));
+        return mce;
     }
 
     protected Expression transformDeclarationExpression(DeclarationExpression de) {
@@ -787,11 +817,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             addError("you tried to assign a value to the class " + ce.getType().getName(), oldLeft);
             return de;
         }
-        Expression right = transform(de.getRightExpression());
-        if (right == de.getRightExpression()) return de;
-        DeclarationExpression newDeclExpr = new DeclarationExpression(left, de.getOperation(), right);
-        newDeclExpr.setSourcePosition(de);
-        return newDeclExpr;
+        de.setLeftExpression(left);
+        de.setRightExpression(transform(de.getRightExpression()));
+        return de;
     }
 
     protected Expression transformAnnotationConstantExpression(AnnotationConstantExpression ace) {
