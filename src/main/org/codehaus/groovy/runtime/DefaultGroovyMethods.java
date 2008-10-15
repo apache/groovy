@@ -1621,13 +1621,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Adds GroovyCollections#transpose(Collection) as a method on collections.
+     * Adds GroovyCollections#transpose(List) as a method on lists.
      *
-     * @param self a Collection of lists
+     * @param self a List of lists
      * @return a List of the transposed lists
-     * @see groovy.util.GroovyCollections#transpose(java.util.Collection)
+     * @see groovy.util.GroovyCollections#transpose(java.util.List)
      */
-    public static List transpose(Collection self) {
+    public static List transpose(List self) {
         return GroovyCollections.transpose(self);
     }
 
