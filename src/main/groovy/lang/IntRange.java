@@ -83,7 +83,7 @@ public class IntRange extends AbstractList implements Range {
         /**
          * Not supported.
          *
-         * @throws javax.naming.OperationNotSupportedException always
+         * @throws java.lang.UnsupportedOperationException always
          */
         public void remove() {
             IntRange.this.remove(index);

@@ -557,8 +557,8 @@ public class ScriptBytecodeAdapter {
     //TODO: refactor
     public static List createRange(Object from, Object to, boolean inclusive) throws Throwable {
         if (from instanceof Integer && to instanceof Integer) {
-            int ito = ((Integer) to).intValue();
-            int ifrom = ((Integer) from).intValue();
+            int ito = (Integer) to;
+            int ifrom = (Integer) from;
             if (!inclusive) {
                 if (ifrom == ito) {
                     return new EmptyRange((Comparable) from);
@@ -570,23 +570,22 @@ public class ScriptBytecodeAdapter {
                 }
             }
             return new IntRange(ifrom, ito);
-        } else {
-            if (!inclusive) {
-                if (compareEqual(from, to)) {
-                    return new EmptyRange((Comparable) from);
-                }
-                if (compareGreaterThan(from, to)) {
-                    to = invokeMethod0(ScriptBytecodeAdapter.class, to, "next");
-                } else {
-                    to = invokeMethod0(ScriptBytecodeAdapter.class, to, "previous");
-                }
-            }
-
-            if (from instanceof Integer && to instanceof Integer)
-              return new IntRange(DefaultTypeTransformation.intUnbox(from), DefaultTypeTransformation.intUnbox(from));
-            else
-              return new ObjectRange((Comparable) from, (Comparable) to);
         }
+        if (!inclusive) {
+            if (compareEqual(from, to)) {
+                return new EmptyRange((Comparable) from);
+            }
+            if (compareGreaterThan(from, to)) {
+                to = invokeMethod0(ScriptBytecodeAdapter.class, to, "next");
+            } else {
+                to = invokeMethod0(ScriptBytecodeAdapter.class, to, "previous");
+            }
+        }
+
+        if (from instanceof Integer && to instanceof Integer)
+            return new IntRange(DefaultTypeTransformation.intUnbox(from), DefaultTypeTransformation.intUnbox(to));
+        else
+            return new ObjectRange((Comparable) from, (Comparable) to);
     }
 
     //assert
