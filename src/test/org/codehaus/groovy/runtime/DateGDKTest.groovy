@@ -48,4 +48,27 @@ public class DateGDKTest extends GroovyTestCase {
 		
 		assertEquals d.time, d2.time
 	}
+	
+	public void testCalendarTimeZone() {
+		Locale defaultLocale = Locale.default
+		TimeZone defaultTZ = TimeZone.default
+		Locale locale = Locale.UK
+		Locale.setDefault locale // set this otherwise the test will fail if your locale isn't the same
+		TimeZone.setDefault TimeZone.getTimeZone( 'Etc/GMT' )
+
+		def offset = 8
+		def notLocalTZ = TimeZone.getTimeZone( "GMT-$offset" )
+		Calendar cal = Calendar.getInstance( notLocalTZ )
+//		println cal.time.format( 'MM/dd/yyyy HH:mm:ss' )
+//		println cal.format( 'MM/dd/yyyy HH:mm:ss' )
+		def offsetHr = cal.format( 'HH' ) as int
+		def hr = cal.time.format( 'HH' ) as int
+		
+		if ( hr < offset )  hr += 24 // if GMT hr has rolled over to next day
+		// offset should be 8 hours behind GMT:
+		assertEquals( offset, hr - offsetHr )
+
+		Locale.default = defaultLocale
+		TimeZone.setDefault defaultTZ
+	}
 }

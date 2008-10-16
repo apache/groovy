@@ -7443,6 +7443,33 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     	return DateFormat.getDateTimeInstance(DateFormat.SHORT,DateFormat.MEDIUM).format( self );
     }
     
+    /**
+     * <p>Shortcut for {@link SimpleDateFormat} to output a String representation
+     * of this calendar instance.  This method respects the Calendar's assigned 
+     * {@link TimeZone}, whereas calling <code>cal.time.format('HH:mm:ss')</code> 
+     * would use the system timezone.</p>
+     * <p>Note that Calendar equivalents of <code>date.getDateString()</code> 
+     * and variants do not exist because those methods are Locale-dependent.  
+     * Although a Calendar may be assigned a {@link Locale}, that information is 
+     * lost and therefore cannot be used to control the default date/time formats 
+     * provided by these methods.  Instead, the system Locale would always be 
+     * used.  The alternative is to simply call 
+     * {@link DateFormat#getDateInstance(int, Locale)} and pass the same Locale
+     * that was used for the Calendar.</p>
+     * 
+     * @see DateFormat#setTimeZone(TimeZone)
+     * @see SimpleDateFormat#format(Date)
+     * @see #format(Date, String)
+     * @param self this calendar
+     * @param pattern format pattern
+     * @return String representation of this calendar with the given format.
+     */
+    public static String format( Calendar self, String pattern ) {
+    	SimpleDateFormat sdf = new SimpleDateFormat( pattern );
+    	sdf.setTimeZone( self.getTimeZone() );
+    	return sdf.format( self.getTime() );
+    }
+    
     // Boolean based methods
     //-------------------------------------------------------------------------
 
