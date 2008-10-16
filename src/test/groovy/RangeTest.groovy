@@ -4,45 +4,35 @@ class RangeTest extends GroovyTestCase {
 	
 	void testRange() {
 	    def x = 0
-
 	    for ( i in 0..9 ) {
 	        x = x + i
 	    }
-
 	    assert x == 45
 	    
 	    x = 0
-
 	    for ( i in 0..<10 ) {
 	        x = x + i
 	    }
-
 	    assert x == 45
 	    
 	    x = 0
-
 	    for ( i in 0..'\u0009' ) {
 	        x = x + i
 	    }
-
 	    assert x == 45
 	}
 	
 	void testRangeEach() {
 	    def x = 0
-
 	    (0..9).each {
 	        x = x + it
 	    }
-
 	    assert x == 45
 	    
 	    x = 0
-
 	    (0..<10).each {
 	        x = x + it
 	    }
-
 	    assert x == 45
 	}
 
@@ -125,14 +115,13 @@ class RangeTest extends GroovyTestCase {
 	void testIntRangeToString() {
 	    assertToString(0..10, "0..10")
 	    assertToString([1, 4..10, 9], "[1, 4..10, 9]")
-	    
+
 	    assertToString(0..<11, "0..10")
 	    assertToString([1, 4..<11, 9], "[1, 4..10, 9]")
-	    
-	    
+
 	    assertToString(10..0, "10..0")
 	    assertToString([1, 10..4, 9], "[1, 10..4, 9]")
-	    
+
 	    assertToString(11..<0, "11..1")
 	    assertToString([1, 11..<4, 9], "[1, 11..5, 9]")
 	}
@@ -195,8 +184,15 @@ class RangeTest extends GroovyTestCase {
 	    def s = range.size()
 	    assert s == 4
 	}
-	
-	protected void assertIterate(range, expected) {
+
+    void testShortAndByteRanges() {
+        byte upper1 = 4
+        assert (0..upper1).size() == 5
+        short upper2 = 4
+        assert (0..<upper2).size() == 4
+    }
+
+    protected void assertIterate(range, expected) {
 	    def list = []
 	    for (it in range) {
 	        list << it
