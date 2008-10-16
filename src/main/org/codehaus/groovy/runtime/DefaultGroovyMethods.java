@@ -7371,10 +7371,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
     
     /**
-     * Return a String representing this date in the given format.
+     * <p>Create a String representation of this date according to the given 
+     * pattern.</p>
+     * 
+     * <p>For example, if the system timezone is GMT, 
+     * <code>new Date(0).format('MM/dd/yy')</code> would return the string 
+     * <code>"01/01/70"</code>. See documentation for {@link SimpleDateFormat} 
+     * for format pattern use.</p>
+     * 
+     * <p>Note that a new DateFormat instance is created for every 
+     * invocation of this method (for thread safety).</p>
+     *    
      * @see SimpleDateFormat
      * @param self
-     * @param format the format pattern to use according to {@link SimpleDateFormat}
+     * @param format the format pattern to use
      * @return a string representation of this date.
      */
     public static String format( Date self, String format ) {
@@ -7382,8 +7392,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
     
     /**
-     * Return a string representation of the 'day' portion of this date 
-     * according to the locale-specific format used by {@link DateFormat}
+     * <p>Return a string representation of the 'day' portion of this date 
+     * according to the locale-specific {@link DateFormat#SHORT} default format.
+     * For an "en_UK" system locale, this would be <code>dd/MM/yy</code>.</p>
+     * 
+     * <p>Note that a new DateFormat instance is created for every 
+     * invocation of this method (for thread safety).</p>
+     * 
      * @see DateFormat#getDateInstance(int)
      * @see DateFormat#SHORT
      * @param self
@@ -7394,8 +7409,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
     
     /**
-     * Return a string representation of the time portion of this date 
-     * according to the locale-specific format used by {@link DateFormat}
+     * <p>Return a string representation of the time portion of this date 
+     * according to the locale-specific {@link DateFormat#MEDIUM} default format.
+     * For an "en_UK" system locale, this would be <code>HH:MM:ss</code>.</p>
+     * 
+     * <p>Note that a new DateFormat instance is created for every 
+     * invocation of this method (for thread safety).</p>
+     * 
      * @see DateFormat#getTimeInstance(int)
      * @see DateFormat#MEDIUM
      * @param self
@@ -7406,11 +7426,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
     
     /**
-     * Return a string representation of the date and time time portion of this 
-     * Date instance, according to the locale-specific format used by 
+     * <p>Return a string representation of the date and time time portion of 
+     * this Date instance, according to the locale-specific format used by 
      * {@link DateFormat}.  This method uses the {@link DateFormat#SHORT} 
      * preset for the day portion and {@link DateFormat#MEDIUM} for the time 
-     * portion of the string 
+     * portion of the output string.</p>
+     *  
+     * <p>Note that a new DateFormat instance is created for every 
+     * invocation of this method (for thread safety).</p>
+     *  
      * @see DateFormat#getDateTimeInstance(int, int) 
      * @param self
      * @return a string representation of this date and time
@@ -7418,7 +7442,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static String getDateTimeString( Date self ) {
     	return DateFormat.getDateTimeInstance(DateFormat.SHORT,DateFormat.MEDIUM).format( self );
     }
-
+    
     // Boolean based methods
     //-------------------------------------------------------------------------
 

@@ -152,7 +152,11 @@ public class DefaultGroovyStaticMethods {
     }
     
     /**
-     * This convenience method acts as a wrapper for {@link SimpleDateFormat}.
+     * Parse a String into a Date instance using the given pattern.
+     * This convenience method acts as a wrapper for {@link SimpleDateFormat}.  
+     * 
+     * <p>Note that a new SimpleDateFormat instance is created for every 
+     * invocation of this method (for thread safety).</p>
      * 
      * @see SimpleDateFormat#parse(String)
      * @param self         placeholder variable used by Groovy categories; ignored for default static methods
