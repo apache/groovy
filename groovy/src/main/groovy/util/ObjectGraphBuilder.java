@@ -18,10 +18,14 @@ package groovy.util;
 
 import groovy.lang.Closure;
 import groovy.lang.MetaProperty;
+import groovy.lang.MissingPropertyException;
 
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.Iterator;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
 
@@ -37,6 +41,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
     public static final String NODE_CLASS = "_NODE_CLASS_";
     public static final String NODE_NAME = "_NODE_NAME_";
     public static final String OBJECT_ID = "_OBJECT_ID_";
+    public static final String LAZY_REF = "_LAZY_REF_";
 
     private ChildPropertySetter childPropertySetter;
     private ClassNameResolver classNameResolver;
@@ -46,8 +51,10 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
     private ObjectRefFactory objectRefFactory = new ObjectRefFactory();
     private ReferenceResolver referenceResolver;
     private RelationNameResolver relationNameResolver;
-    private Map/* <String,Class> */resolvedClasses = new HashMap/* <String,Class> */();
+    private Map/*<String,Class>*/ resolvedClasses = new HashMap/*<String,Class>*/();
     private ClassLoader classLoader;
+    private boolean lazyReferencesAllowed = true;
+    private List/*<NodeReference>*/ lazyReferences = new ArrayList/*<NodeReference>*/();
 
     public ObjectGraphBuilder() {
         classNameResolver = new DefaultClassNameResolver();
@@ -56,6 +63,15 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
         childPropertySetter = new DefaultChildPropertySetter();
         identifierResolver = new DefaultIdentifierResolver();
         referenceResolver = new DefaultReferenceResolver();
+
+        addPostNodeCompletionDelegate( new Closure(this,this){
+            public void doCall( ObjectGraphBuilder builder, Object parent, Object node ) {
+                if( parent == null ) {
+                    builder.resolveLazyReferences();
+                    builder.dispose();
+                }
+            }
+        });
     }
 
     /**
@@ -69,9 +85,9 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
      * Returns the classLoader used to load a node's class.
      */
     public ClassLoader getClassLoader() {
-    	return classLoader;
+        return classLoader;
     }
-    
+
     /**
      * Returns the current ClassNameResolver.
      */
@@ -94,6 +110,13 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
     }
 
     /**
+     * Returns true if references can be resolved lazily
+     */
+    public boolean isLazyReferencesAllowed() {
+        return lazyReferencesAllowed;
+    }
+
+    /**
      * Sets the current ChildPropertySetter.<br>
      * It will assign DefaultChildPropertySetter if null.<br>
      * It accepts a ChildPropertySetter instance or a Closure.
@@ -102,23 +125,25 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
         if( childPropertySetter instanceof ChildPropertySetter ){
             this.childPropertySetter = (ChildPropertySetter) childPropertySetter;
         }else if( childPropertySetter instanceof Closure ){
+            final ObjectGraphBuilder self = this;
             this.childPropertySetter = new ChildPropertySetter(){
                 public void setChild( Object parent, Object child, String parentName,
                         String propertyName ) {
-                    ((Closure) childPropertySetter).call( new Object[] { parent, child, parentName,
-                            propertyName } );
+                    Closure cls = (Closure) childPropertySetter;
+                    cls.setDelegate(self);
+                    cls.call( new Object[] { parent, child, parentName, propertyName } );
                 }
             };
         }else{
             this.childPropertySetter = new DefaultChildPropertySetter();
         }
     }
-    
+
     /**
      * Sets the classLoader used to load a node's class.
      */
     public void setClassLoader( ClassLoader classLoader ){
-    	this.classLoader = classLoader;
+        this.classLoader = classLoader;
     }
 
     /**
@@ -137,9 +162,12 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
                 }
             };
         }else if( classNameResolver instanceof Closure ){
+            final ObjectGraphBuilder self = this;
             this.classNameResolver = new ClassNameResolver(){
                 public String resolveClassname( String classname ) {
-                    return (String) ((Closure) classNameResolver).call( new Object[] { classname } );
+                    Closure cls = (Closure) classNameResolver;
+                    cls.setDelegate(self);
+                    return (String) cls.call( new Object[] { classname } );
                 }
             };
         }else{
@@ -150,20 +178,36 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
     /**
      * Sets the current IdentifierResolver.<br>
      * It will assign DefaultIdentifierResolver if null.<br>
-     * It accepts a IdentifierResolver instance or a Closure.
+     * It accepts a IdentifierResolver instance, a String or a Closure.
      */
     public void setIdentifierResolver( final Object identifierResolver ) {
         if( identifierResolver instanceof IdentifierResolver ){
             this.identifierResolver = (IdentifierResolver) identifierResolver;
-        }else if( identifierResolver instanceof Closure ){
+        }else if( identifierResolver instanceof String ){
             this.identifierResolver = new IdentifierResolver(){
                 public String getIdentifierFor( String nodeName ) {
-                    return (String) (((Closure) identifierResolver).call( new Object[] { nodeName } ));
+                    return (String) identifierResolver;
+                }
+            };
+        }else if( identifierResolver instanceof Closure ){
+            final ObjectGraphBuilder self = this;
+            this.identifierResolver = new IdentifierResolver(){
+                public String getIdentifierFor( String nodeName ) {
+                    Closure cls = (Closure) identifierResolver;
+                    cls.setDelegate(self);
+                    return (String) cls.call( new Object[] { nodeName } );
                 }
             };
         }else{
             this.identifierResolver = new DefaultIdentifierResolver();
         }
+    }
+
+    /**
+     * Sets wether references can be resolved lazily or not.
+     */
+    public void setLazyReferencesAllowed( boolean lazyReferencesAllowed ) {
+        this.lazyReferencesAllowed = lazyReferencesAllowed;
     }
 
     /**
@@ -175,10 +219,13 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
         if( newInstanceResolver instanceof NewInstanceResolver ){
             this.newInstanceResolver = (NewInstanceResolver) newInstanceResolver;
         }else if( newInstanceResolver instanceof Closure ){
+            final ObjectGraphBuilder self = this;
             this.newInstanceResolver = new NewInstanceResolver(){
                 public Object newInstance( Class klass, Map attributes )
                         throws InstantiationException, IllegalAccessException {
-                    return ((Closure) newInstanceResolver).call( new Object[] { klass, attributes } );
+                    Closure cls = (Closure) newInstanceResolver;
+                    cls.setDelegate(self);
+                    return cls.call( new Object[] { klass, attributes } );
                 }
             };
         }else{
@@ -189,15 +236,24 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
     /**
      * Sets the current ReferenceResolver.<br>
      * It will assign DefaultReferenceResolver if null.<br>
-     * It accepts a ReferenceResolver instance or a Closure.
+     * It accepts a ReferenceResolver instance, a String or a Closure.
      */
     public void setReferenceResolver( final Object referenceResolver ) {
         if( referenceResolver instanceof ReferenceResolver ){
             this.referenceResolver = (ReferenceResolver) referenceResolver;
-        }else if( referenceResolver instanceof Closure ){
+        }else if( referenceResolver instanceof String ){
             this.referenceResolver = new ReferenceResolver(){
                 public String getReferenceFor( String nodeName ) {
-                    return (String) (((Closure) referenceResolver).call( new Object[] { nodeName } ));
+                    return (String) referenceResolver;
+                }
+            };
+        }else if( referenceResolver instanceof Closure ){
+            final ObjectGraphBuilder self = this;
+            this.referenceResolver = new ReferenceResolver(){
+                public String getReferenceFor( String nodeName ) {
+                    Closure cls = (Closure) referenceResolver;
+                    cls.setDelegate(self);
+                    return (String) cls.call( new Object[] { nodeName } );
                 }
             };
         }else{
@@ -231,7 +287,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
     }
 
     protected Factory resolveFactory( Object name, Map attributes, Object value ) {
-        // let custom factories to be resolved first
+        // let custom factories be resolved first
         Factory factory = super.resolveFactory( name, attributes, value );
         if( factory != null ){
             return factory;
@@ -273,11 +329,15 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
      */
     public static class DefaultChildPropertySetter implements ChildPropertySetter {
         public void setChild( Object parent, Object child, String parentName, String propertyName ) {
-            Object property = InvokerHelper.getProperty( parent, propertyName );
-            if( property != null && Collection.class.isAssignableFrom( property.getClass() ) ){
-                ((Collection) property).add( child );
-            }else{
-                InvokerHelper.setProperty( parent, propertyName, child );
+            try {
+                Object property = InvokerHelper.getProperty( parent, propertyName );
+                if( property != null && Collection.class.isAssignableFrom( property.getClass() ) ){
+                    ((Collection) property).add( child );
+                } else {
+                    InvokerHelper.setProperty( parent, propertyName, child );
+                }
+            } catch( MissingPropertyException mpe ) {
+                // ignore
             }
         }
     }
@@ -418,6 +478,39 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
                 Object child);
     }
 
+    private void resolveLazyReferences() {
+        if( !lazyReferencesAllowed ) return;
+        for( Iterator refs = lazyReferences.iterator(); refs.hasNext() ; ) {
+            NodeReference ref = (NodeReference) refs.next();
+            if( ref.parent == null ) continue;
+
+            Object child = null;
+            try {
+                child = getProperty( ref.refId );
+            } catch( MissingPropertyException mpe ) {
+                // ignore
+            }
+            if( child == null ){
+                throw new IllegalArgumentException( "There is no valid node for reference "
+                    + ref.parentName + "." + ref.childName + "=" + ref.refId );
+            }
+
+            // set child first
+            childPropertySetter.setChild( ref.parent, child, ref.parentName,
+                relationNameResolver.resolveChildRelationName( ref.parentName,
+                    ref.parent, ref.childName, child ) );
+
+            // set parent afterwards
+            String propertyName = relationNameResolver.resolveParentRelationName( ref.parentName, 
+                ref.parent, ref.childName, child );
+            MetaProperty metaProperty = InvokerHelper.getMetaClass( child )
+                .hasProperty( child, propertyName );
+            if( metaProperty != null ){
+                metaProperty.setProperty( child, ref.parent );
+            }
+        }
+    }
+
     private static class ObjectFactory extends AbstractFactory {
         public Object newInstance( FactoryBuilderSupport builder, Object name, Object value,
                 Map properties ) throws InstantiationException, IllegalAccessException {
@@ -427,20 +520,20 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
             if( klass == null ){
                 klass = loadClass( ogbuilder.classLoader, classname );
                 if( klass == null ){
-                	klass = loadClass( ogbuilder.getClass().getClassLoader(), classname );
+                    klass = loadClass( ogbuilder.getClass().getClassLoader(), classname );
                 }
                 if( klass == null ){
-            	    try{
+                    try{
                         klass = Class.forName( classname );
                     }catch( ClassNotFoundException e ){
                         // ignore
                     }
                 }
                 if( klass == null ){
-                	klass = loadClass( Thread.currentThread().getContextClassLoader(), classname );
+                    klass = loadClass( Thread.currentThread().getContextClassLoader(), classname );
                 }
                 if( klass == null ){
-                	throw new RuntimeException(new ClassNotFoundException(classname));
+                    throw new RuntimeException(new ClassNotFoundException(classname));
                 }
                 ogbuilder.resolvedClasses.put( classname, klass );
             }
@@ -449,10 +542,16 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
             context.put( ObjectGraphBuilder.NODE_NAME, name );
             context.put( ObjectGraphBuilder.NODE_CLASS, klass );
 
+            if( value != null && klass.isAssignableFrom(value.getClass()) ) {
+                return value;
+            }
+
             return ogbuilder.newInstanceResolver.newInstance( klass, properties );
         }
 
         public void setChild( FactoryBuilderSupport builder, Object parent, Object child ) {
+            if( child == null ) return;
+
             ObjectGraphBuilder ogbuilder = (ObjectGraphBuilder) builder;
             if( parent != null ){
                 Map context = ogbuilder.getContext();
@@ -460,11 +559,8 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
 
                 String parentName = null;
                 String childName = (String) context.get( NODE_NAME );
-                Class parentClass = null;
-                Class childClass = (Class) context.get( NODE_CLASS );
                 if( parentContext != null ){
                     parentName = (String) parentContext.get( NODE_NAME );
-                    parentClass = (Class) parentContext.get( NODE_CLASS );
                 }
 
                 String propertyName = ogbuilder.relationNameResolver.resolveParentRelationName(
@@ -478,6 +574,8 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
         }
 
         public void setParent( FactoryBuilderSupport builder, Object parent, Object child ) {
+            if( child == null ) return;
+
             ObjectGraphBuilder ogbuilder = (ObjectGraphBuilder) builder;
             if( parent != null ){
                 Map context = ogbuilder.getContext();
@@ -485,11 +583,8 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
 
                 String parentName = null;
                 String childName = (String) context.get( NODE_NAME );
-                Class parentClass = null;
-                Class childClass = (Class) context.get( NODE_CLASS );
                 if( parentContext != null ){
                     parentName = (String) parentContext.get( NODE_NAME );
-                    parentClass = (Class) parentContext.get( NODE_CLASS );
                 }
 
                 ogbuilder.childPropertySetter.setChild( parent, child, parentName,
@@ -497,12 +592,12 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
                                 parent, childName, child ) );
             }
         }
-        
+
         private Class loadClass( ClassLoader classLoader, String classname ){
             if( classLoader == null || classname == null ){
-            	return null;
+                return null;
             }
-        	try{
+            try{
                 return classLoader.loadClass( classname );
             }catch( ClassNotFoundException e ){
                 return null;
@@ -519,13 +614,28 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
                 Map properties ) throws InstantiationException, IllegalAccessException {
             ObjectGraphBuilder ogbuilder = (ObjectGraphBuilder) builder;
             String refProperty = ogbuilder.referenceResolver.getReferenceFor( (String) name );
-            String refId = (String) properties.remove( refProperty );
+            Object refId = properties.remove( refProperty );
 
-            Object object = ogbuilder.getProperty( refId );
-            if( object == null ){
-                throw new IllegalArgumentException( "There is no previous node with "
-                        + ogbuilder.identifierResolver.getIdentifierFor( (String) name ) + "="
-                        + refId );
+            Object object = null;
+            Boolean lazy = Boolean.FALSE;
+            if( refId instanceof String ) {
+                try {
+                    object = ogbuilder.getProperty( (String) refId );
+                } catch( MissingPropertyException mpe ) {
+                    // ignore, will try lazy reference
+                }
+                if( object == null ){
+                    if( ogbuilder.isLazyReferencesAllowed() ) {
+                        lazy = Boolean.TRUE;
+                    } else {
+                        throw new IllegalArgumentException( "There is no previous node with "
+                                + ogbuilder.identifierResolver.getIdentifierFor( (String) name ) + "="
+                                + refId );
+                    }
+                }
+            } else {
+                // assume we got a true reference to the object
+                object = refId;
             }
 
             if( !properties.isEmpty() ){
@@ -535,9 +645,58 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
 
             Map context = ogbuilder.getContext();
             context.put( ObjectGraphBuilder.NODE_NAME, name );
-            context.put( ObjectGraphBuilder.NODE_CLASS, object.getClass() );
+            context.put( ObjectGraphBuilder.LAZY_REF, lazy );
+
+            if( lazy.booleanValue() ) {
+                Map parentContext = ogbuilder.getParentContext();
+
+                Object parent = null;
+                String parentName = null;
+                String childName = (String) name;
+                if( parentContext != null ){
+                    parent = context.get( CURRENT_NODE );
+                    parentName = (String) parentContext.get( NODE_NAME );
+                }
+                ogbuilder.lazyReferences.add( new NodeReference(parent,
+                                                                parentName,
+                                                                childName,
+                                                                (String) refId) );
+            } else {
+                context.put( ObjectGraphBuilder.NODE_CLASS, object.getClass() );
+            }
 
             return object;
+        }
+
+        public void setChild( FactoryBuilderSupport builder, Object parent, Object child ) {
+            Boolean lazy = (Boolean) builder.getContext().get( ObjectGraphBuilder.LAZY_REF );
+            if( !lazy.booleanValue() ) super.setChild( builder, parent, child );
+        }
+
+        public void setParent( FactoryBuilderSupport builder, Object parent, Object child ) {
+           Boolean lazy = (Boolean) builder.getContext().get( ObjectGraphBuilder.LAZY_REF );
+           if( !lazy.booleanValue() ) super.setParent( builder, parent, child );
+        }
+    }
+
+    private static class NodeReference {
+        private final Object parent;
+        private final String parentName;
+        private final String childName;
+        private final String refId;
+
+        private NodeReference( Object parent, String parentName, String childName, String refId ) {
+            this.parent = parent;
+            this.parentName = parentName;
+            this.childName = childName;
+            this.refId = refId;
+        }
+
+        public String toString() {
+            return new StringBuilder().append("[parentName=").append(parentName)
+                .append(", childName=").append(childName)
+                .append(", refId=").append(refId)
+                .append("]").toString();
         }
     }
 }
