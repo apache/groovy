@@ -2,6 +2,8 @@ package org.codehaus.groovy.util;
 
 import java.lang.ref.*;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.Set;
 import java.util.LinkedHashSet;
 
@@ -9,11 +11,9 @@ public interface FinalizableRef {
 
     public void finalizeRef ();
 
-    public static final ReferenceQueue finalizableQueue = new MyReferenceQueue();
-
     public static abstract class SoftRef<T> extends SoftReference<T> implements FinalizableRef {
         public SoftRef(T referent) {
-            super(referent, finalizableQueue);
+            super(referent, MyReferenceQueue.getInstance());
         }
 
         public String toString() {
@@ -30,7 +30,7 @@ public interface FinalizableRef {
 
     public static abstract class WeakRef<T> extends WeakReference<T> implements FinalizableRef {
         public WeakRef(T referent) {
-            super(referent, finalizableQueue);
+            super(referent, MyReferenceQueue.getInstance());
         }
 
         public String toString() {
@@ -47,7 +47,7 @@ public interface FinalizableRef {
 
     public static abstract class PhantomRef<T> extends PhantomReference<T> implements FinalizableRef {
         public PhantomRef(T referent) {
-            super(referent, finalizableQueue);
+            super(referent, MyReferenceQueue.getInstance());
         }
 
         public void finalizeRef () {
@@ -75,22 +75,53 @@ public interface FinalizableRef {
     }
 
     public static class MyReferenceQueue extends ReferenceQueue {
+        private static final MyReferenceQueue finalizableQueue = new MyReferenceQueue();
+
+        private AtomicInteger refCnt = new AtomicInteger();
+
+        private AtomicReference<Thread> thread = new AtomicReference<Thread> ();
+
         public MyReferenceQueue() {
-          Thread thread = new Thread() {
-              public void run() {
-                  while (true) {
+        }
+
+        private ReferenceQueue getMe () {
+            if (thread.get() == null) {
+                final Thread newThread = new MyThread();
+                if (thread.compareAndSet(null, newThread)) {
+                    newThread.setContextClassLoader(null);
+                    newThread.setDaemon(true);
+                    newThread.setName(FinalizableRef.class.getName());
+                    newThread.start();
+                }
+            }
+
+            refCnt.incrementAndGet();
+            return this;
+        }
+
+        public static ReferenceQueue getInstance() {
+            return finalizableQueue.getMe ();
+        }
+
+        private class MyThread extends Thread {
+            public void run() {
+                while (true) {
                     try {
-                        final FinalizableRef ref = (FinalizableRef) remove();
-                        ref.finalizeRef();
+                        FinalizableRef ref = (FinalizableRef) remove(5000);
+                        if (ref == null) {
+                            if (refCnt.get() == 0) {
+                                thread.compareAndSet(this, null);
+                                return;
+                            }
+                        } else {
+                            refCnt.decrementAndGet();
+                            ref.finalizeRef();
+                        }
                     }
                     catch (Throwable t) {//
                     }
-                  }
-              }
-          };
-          thread.setDaemon(true);
-          thread.setName(FinalizableRef.class.getName());
-          thread.start();
+                }
+            }
         }
     }
 }
