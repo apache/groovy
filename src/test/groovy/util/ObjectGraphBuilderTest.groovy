@@ -113,6 +113,85 @@ class ObjectGraphBuilderTest extends GroovyTestCase {
       //assert actualCompany.employees*.getClass() == [Employee,Employee,Employee]
    }
 
+   void testStringfiedIdentifierResolver() {
+      builder.identifierResolver = "uid"
+      def company = builder.company( name: 'ACME', employees: [], uid: 'acme' )
+      assert company != null
+      assert builder.acme != null
+      assert builder.acme == company
+   }
+
+   void testStringfiedReferenceResolver() {
+      builder.referenceResolver = "ref_id"
+      def company = builder.company( name: 'ACME', employees: [] ) {
+         address( line1: '123 Groovy Rd', zip: 12345, state: 'JV', id: 'a1' )
+         employee(  name: 'Duke', employeeId: 1, id: 'e1' ) {
+            address( ref_id: 'a1' )
+         }
+      }
+      assert company != null
+      assert company.employees.size() == 1
+      assert builder.e1 == company.employees[0]
+      assert builder.a1 == company.address
+      assert builder.a1 == builder.e1.address
+   }
+
+   void testReferenceResolver() {
+      def company = builder.company( name: 'ACME', employees: [] ) {
+         address( line1: '123 Groovy Rd', zip: 12345, state: 'JV', id: 'a1' )
+         employee(  name: 'Duke', employeeId: 1, id: 'e1' ) {
+            address( refId: 'a1' )
+         }
+      }
+      assert company != null
+      assert company.employees.size() == 1
+      assert builder.e1 == company.employees[0]
+      assert builder.a1 == company.address
+      assert builder.a1 == builder.e1.address
+   }
+
+   void testReferenceResolver_referenceIsLiveObject() {
+      def company = builder.company( name: 'ACME', employees: [] ) {
+         address( line1: '123 Groovy Rd', zip: 12345, state: 'JV', id: 'a1' )
+         employee(  name: 'Duke', employeeId: 1, id: 'e1' ) {
+            address( refId: a1 )
+         }
+      }
+      assert company != null
+      assert company.employees.size() == 1
+      assert builder.e1 == company.employees[0]
+      assert builder.a1 == company.address
+      assert builder.a1 == builder.e1.address
+   }
+
+   void testDirectReference() {
+      def company = builder.company( name: 'ACME', employees: [] ) {
+         address( line1: '123 Groovy Rd', zip: 12345, state: 'JV', id: 'a1' )
+         employee(  name: 'Duke', employeeId: 1, id: 'e1' ) {
+            address( a1 )
+         }
+      }
+      assert company != null
+      assert company.employees.size() == 1
+      assert builder.e1 == company.employees[0]
+      assert builder.a1 == company.address
+      assert builder.a1 == builder.e1.address
+   }
+
+   void testLazyReferences() {
+      def company = builder.company( name: 'ACME', employees: [] ) {
+         employee(  name: 'Duke', employeeId: 1, id: 'e1' ) {
+            address( refId: 'a1' )
+         }
+         address( line1: '123 Groovy Rd', zip: 12345, state: 'JV', id: 'a1' )
+      }
+      assert company != null
+      assert company.employees.size() == 1
+      assert builder.e1 == company.employees[0]
+      assert builder.a1 == company.address
+      assert builder.a1 == builder.e1.address
+   }
+
    void setUp() {
       builder = new ObjectGraphBuilder()
       builder.classNameResolver = "groovy.util"
