@@ -57,8 +57,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
     private transient SourceUnit context;
     private boolean importsResolved = false;
     private static final String[] EMPTY_STRING_ARRAY = new String[] { /* class names, not qualified */ };
-    private Map<String,ClassNode> classNames = new HashMap<String,ClassNode> ();
-    public Map resolveCache = new HashMap();
+
 
     public ModuleNode (SourceUnit context ) {
         this.context = context;
@@ -325,13 +324,5 @@ public class ModuleNode extends ASTNode implements Opcodes {
 
     public void addStaticImportClass(String name, ClassNode type) {
         staticImportClasses.put(name, type);
-    }
-
-    public ClassNode hasType(String qname) {
-        return classNames.get (qname);
-    }
-
-    public void setType(String qname, ClassNode type) {
-        classNames.put(qname, type);
     }
 }
