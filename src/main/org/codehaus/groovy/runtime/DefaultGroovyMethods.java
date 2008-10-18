@@ -1608,6 +1608,53 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Splits all items into two lists based on the closure condition.
+     * The first list contains all items matching the closure expression.
+     * The second list all those that don't.
+     *
+     * @param self    an Object with an Iterator returning its values
+     * @param closure a closure condition
+     * @return a List containing whose first item is the accepted values and whose second item is the rejected values
+     */
+    public static Collection split(Object self, Closure closure) {
+        List accept = new ArrayList();
+        List reject = new ArrayList();
+        Iterator iter = InvokerHelper.asIterator(self);
+        return split(closure, accept, reject, iter);
+    }
+
+    /**
+     * Splits all items into two collections based on the closure condition.
+     * The first list contains all items which match the closure expression.
+     * The second list all those that don't.
+     *
+     * @param self    a Collection of values
+     * @param closure a closure condition
+     * @return a List containing whose first item is the accepted values and whose second item is the rejected values
+     */
+    public static Collection split(Collection self, Closure closure) {
+        Collection accept = createSimilarCollection(self);
+        Collection reject = createSimilarCollection(self);
+        Iterator iter = self.iterator();
+        return split(closure, accept, reject, iter);
+    }
+
+    private static Collection split(Closure closure, Collection accept, Collection reject, Iterator iter) {
+        List answer = new ArrayList();
+        while (iter.hasNext()) {
+            Object value = iter.next();
+            if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
+                accept.add(value);
+            } else {
+                reject.add(value);
+            }
+        }
+        answer.add(accept);
+        answer.add(reject);
+        return answer;
+    }
+
+    /**
      * Adds GroovyCollections#combinations(Collection) as a method on collections.
      *
      * @param self a Collection of lists
