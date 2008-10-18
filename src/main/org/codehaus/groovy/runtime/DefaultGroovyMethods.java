@@ -4322,7 +4322,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         for (Object element : elements) {
             if (element instanceof Collection) {
                 flatten((Collection) element, addTo);
-            } else if (element.getClass().isArray()) {
+            } else if (element != null && element.getClass().isArray()) {
                 flatten(DefaultTypeTransformation.arrayAsCollection(element), addTo);
             } else {
                 // found a leaf
@@ -4351,7 +4351,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         for (Object element : elements) {
             if (element instanceof Collection) {
                 flatten((Collection) element, addTo, flattenUsing);
-            } else if (element.getClass().isArray()) {
+            } else if (element != null && element.getClass().isArray()) {
                 flatten(DefaultTypeTransformation.arrayAsCollection(element), addTo, flattenUsing);
             } else {
                 Object flattened = flattenUsing.call(new Object[]{element});
