@@ -1578,15 +1578,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure condition
      * @return a List of the values found
      */
-    public static List findAll(Object self, Closure closure) {
+    public static Collection findAll(Object self, Closure closure) {
         List answer = new ArrayList();
-        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
-            Object value = iter.next();
-            if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
-                answer.add(value);
-            }
-        }
-        return answer;
+        Iterator iter = InvokerHelper.asIterator(self);
+        return findAll(closure, answer, iter);
     }
 
     /**
@@ -1598,7 +1593,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Collection findAll(Collection self, Closure closure) {
         Collection answer = createSimilarCollection(self);
-        for (Iterator iter = self.iterator(); iter.hasNext();) {
+        Iterator iter = self.iterator();
+        return findAll(closure, answer, iter);
+    }
+
+    private static Collection findAll(Closure closure, Collection answer, Iterator iter) {
+        while (iter.hasNext()) {
             Object value = iter.next();
             if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
                 answer.add(value);
