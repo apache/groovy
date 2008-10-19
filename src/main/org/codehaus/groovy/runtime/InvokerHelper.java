@@ -503,44 +503,10 @@ public class InvokerHelper {
             }
         }
         if (arguments instanceof List) {
-            List list = (List) arguments;
-            StringBuffer buffer = new StringBuffer("[");
-            boolean first = true;
-            for (Iterator iter = list.iterator(); iter.hasNext();) {
-                if (first) {
-                    first = false;
-                } else {
-                    buffer.append(", ");
-                }
-                buffer.append(format(iter.next(), verbose));
-            }
-            buffer.append("]");
-            return buffer.toString();
+            return formatList(arguments, verbose);
         }
         if (arguments instanceof Map) {
-            Map map = (Map) arguments;
-            if (map.isEmpty()) {
-                return "[:]";
-            }
-            StringBuffer buffer = new StringBuffer("[");
-            boolean first = true;
-            for (Iterator iter = map.entrySet().iterator(); iter.hasNext();) {
-                if (first) {
-                    first = false;
-                } else {
-                    buffer.append(", ");
-                }
-                Map.Entry entry = (Map.Entry) iter.next();
-                buffer.append(format(entry.getKey(), verbose));
-                buffer.append(":");
-                if (entry.getValue() == map) {
-                    buffer.append("this Map_");
-                } else {
-                    buffer.append(format(entry.getValue(), verbose));
-                }
-            }
-            buffer.append("]");
-            return buffer.toString();
+            return formatMap(arguments, verbose);
         }
         if (arguments instanceof Element) {
             return DOMUtil.serialize((Element) arguments);
@@ -551,18 +517,59 @@ public class InvokerHelper {
                 arg = arg.replaceAll("\\r", "\\\\r");      // carriage return
                 arg = arg.replaceAll("\\t", "\\\\t");      // tab
                 arg = arg.replaceAll("\\f", "\\\\f");      // form feed
-                arg = arg.replaceAll("\\\"", "\\\\\"");    // double quotation amrk
-                arg = arg.replaceAll("\\\\", "\\\\");      // back slash
+                arg = arg.replaceAll("\\\"", "\\\\\"");    // double quotation mark
+                arg = arg.replaceAll("\\\\", "\\\\");      // backslash
                 return "\"" + arg + "\"";
             } else {
                 return (String) arguments;
             }
         }
-        // TODO: For GROOVY-2599 do we need something like:
+        // TODO: For GROOVY-2599 do we need something like below but it breaks other things
 //        return (String) invokeMethod(arguments, "toString", EMPTY_ARGS);
         return arguments.toString();
     }
 
+    private static String formatMap(Object arguments, boolean verbose) {
+        Map map = (Map) arguments;
+        if (map.isEmpty()) {
+            return "[:]";
+        }
+        StringBuffer buffer = new StringBuffer("[");
+        boolean first = true;
+        for (Iterator iter = map.entrySet().iterator(); iter.hasNext();) {
+            if (first) {
+                first = false;
+            } else {
+                buffer.append(", ");
+            }
+            Map.Entry entry = (Map.Entry) iter.next();
+            buffer.append(format(entry.getKey(), verbose));
+            buffer.append(":");
+            if (entry.getValue() == map) {
+                buffer.append("this Map_");
+            } else {
+                buffer.append(format(entry.getValue(), verbose));
+            }
+        }
+        buffer.append("]");
+        return buffer.toString();
+    }
+
+    private static String formatList(Object arguments, boolean verbose) {
+        List list = (List) arguments;
+        StringBuffer buffer = new StringBuffer("[");
+        boolean first = true;
+        for (Iterator iter = list.iterator(); iter.hasNext();) {
+            if (first) {
+                first = false;
+            } else {
+                buffer.append(", ");
+            }
+            buffer.append(format(iter.next(), verbose));
+        }
+        buffer.append("]");
+        return buffer.toString();
+    }
 
     /**
      * A helper method to format the arguments types as a comma-separated list.
@@ -592,28 +599,6 @@ public class InvokerHelper {
      */
     public static String toMapString(Map arg) {
         return format(arg, false);
-        /*if (arg == null) {
-            return "null";
-        }
-        if (arg.isEmpty()) {
-            return "[:]";
-        }
-        String sbdry = "[";
-        String ebdry = "]";
-        StringBuffer buffer = new StringBuffer(sbdry);
-        boolean first = true;
-        for (Iterator iter = arg.entrySet().iterator(); iter.hasNext();) {
-            if (first)
-                first = false;
-            else
-                buffer.append(", ");
-            Map.Entry entry = (Map.Entry) iter.next();
-            buffer.append(format(entry.getKey(), true));
-            buffer.append(":");
-            buffer.append(format(entry.getValue(), true));
-        }
-        buffer.append(ebdry);
-        return buffer.toString();*/
     }
 
     /**
@@ -623,26 +608,7 @@ public class InvokerHelper {
      * @return the string representation of the collection
      */
     public static String toListString(Collection arg) {
-        if (arg == null) {
-            return "null";
-        }
-        if (arg.isEmpty()) {
-            return "[]";
-        }
-        String sbdry = "[";
-        String ebdry = "]";
-        StringBuffer buffer = new StringBuffer(sbdry);
-        boolean first = true;
-        for (Iterator iter = arg.iterator(); iter.hasNext();) {
-            if (first)
-                first = false;
-            else
-                buffer.append(", ");
-            Object elem = iter.next();
-            buffer.append(format(elem, false));
-        }
-        buffer.append(ebdry);
-        return buffer.toString();
+        return format(arg, false);
     }
 
     /**
@@ -743,16 +709,14 @@ public class InvokerHelper {
             MetaClass metaClass = metaRegistry.getMetaClass(theClass);
             return metaClass.invokeStaticMethod(object, methodName, asArray(arguments));
         }
-        else { // it's an instance
-            // if it's not an object implementing GroovyObject (thus not builder, nor a closure)
-            if (!(object instanceof GroovyObject)) {
-                return invokePojoMethod(object, methodName, arguments);
-            }
-            // it's an object implementing GroovyObject
-            else {
-                return invokePogoMethod(object, methodName, arguments);
-            }
+
+        // it's an instance; check if it's a Java one
+        if (!(object instanceof GroovyObject)) {
+            return invokePojoMethod(object, methodName, arguments);
         }
+
+        // a groovy instance (including builder, closure, ...)
+        return invokePogoMethod(object, methodName, arguments);
     }
 
     static Object invokePojoMethod(Object object, String methodName, Object arguments) {
