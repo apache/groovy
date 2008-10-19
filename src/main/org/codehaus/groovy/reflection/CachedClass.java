@@ -471,7 +471,7 @@ public class CachedClass {
 
     /**
      * compatibility method
-     * @return
+     * @return this
      */
     public CachedClass getCachedClass () {
         return this;

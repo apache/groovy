@@ -755,7 +755,8 @@ class FactoryBuilderSupportTest extends GroovyTestCase{
 
         t1.join()
         t2.join()
-        assert b.@log == [
+        def log = b.@log
+        assert log == [
                 'register', 'foo', 'Meta',
                 'register', 'bar', 'Meta',
                 'register', 'outest', 'Layers',

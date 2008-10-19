@@ -702,6 +702,17 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         assert [null] - [1] == [null]
     }
 
+    void testListSplit() {
+        def nums = 1..6
+        def (evens, odds) = nums.split{ it % 2 == 0 }
+        assert evens == [2, 4, 6]
+        assert odds == [1, 3, 5]
+        def things = ['3', 'cat', '7', 'dog', '11']
+        def (numbers, others) = things.split{ it.isNumber() }
+        assert numbers == ['3', '7', '11']
+        assert others == ['cat', 'dog']
+    }
+
     void testListDerivativesAreRetainedWithCommonOperators() {
         def x = new WackyList([1, 2, 3])
         assert x.size() == 3
