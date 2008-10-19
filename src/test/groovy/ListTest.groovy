@@ -219,10 +219,11 @@ class ListTest extends GroovyTestCase {
         assert (b == a && a == [1, "foo", (short)3, 4L])
     }
 
+    // incorporates GROOVY-2904 and GROOVY-3102
     void testListFlatten() {
-        def orig = [[[4, 5, 6, [46, 7, "erer"]], 4, [3, 6, 78]], 4]
+        def orig = [[[4, 5, 6, [46, 7, "erer"]], null, 4, [3, 6, 78]], 4]
         def flat = orig.flatten()
-        assert flat == [4, 5, 6, 46, 7, "erer", 4, 3, 6, 78, 4]
+        assert flat == [4, 5, 6, 46, 7, "erer", null, 4, 3, 6, 78, 4]
     }
     
     void testSetFlatten() {
@@ -245,8 +246,9 @@ class ListTest extends GroovyTestCase {
         assert flat == ["o", "n", "e", "t", "w", "o"]
     }
 
+    // incorporates GROOVY-2904 and GROOVY-3102
     void testFlattenListWithSuppliedClosure() {
-        def orig = [[[4, 5, 6, [46, 7, "erer"]], 4, [3, 6, 78]], 4]
+        def orig = [[[4, 5, 6, [46, 7, "erer"]], null, 4, [3, 6, 78]], 4]
         def flat = orig.flatten{ it.iterator().toList() }
         assert flat == [4, 5, 6, 46, 7, "e", "r", "e", "r", 4, 3, 6, 78, 4]
     }

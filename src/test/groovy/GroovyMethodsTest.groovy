@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -690,6 +690,18 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         // should handle nulls too
         assert [null] - [1] == [null]
     }
+
+    void testListSplit() {
+        def nums = 1..6
+        def lists = nums.split{ it % 2 == 0 }
+        assert lists[0] == [2, 4, 6]
+        assert lists[1] == [1, 3, 5]
+        def things = ['3', 'cat', '7', 'dog', '11']
+        lists = things.split{ it.isNumber() }
+        assert lists[0] == ['3', '7', '11']
+        assert lists[1] == ['cat', 'dog']
+    }
+
 }
 
 class WackyHashCode {

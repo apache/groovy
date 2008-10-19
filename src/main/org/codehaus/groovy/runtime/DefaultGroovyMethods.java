@@ -1580,15 +1580,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure condition
      * @return a List of the values found
      */
-    public static List findAll(Object self, Closure closure) {
+    public static Collection findAll(Object self, Closure closure) {
         List answer = new ArrayList();
-        for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
-            Object value = iter.next();
-            if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
-                answer.add(value);
-            }
-        }
-        return answer;
+        Iterator iter = InvokerHelper.asIterator(self);
+        return findAll(closure, answer, iter);
     }
 
     /**
@@ -1600,12 +1595,64 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Collection findAll(Collection self, Closure closure) {
         Collection answer = createSimilarCollection(self);
-        for (Iterator iter = self.iterator(); iter.hasNext();) {
+        Iterator iter = self.iterator();
+        return findAll(closure, answer, iter);
+    }
+
+    private static Collection findAll(Closure closure, Collection answer, Iterator iter) {
+        while (iter.hasNext()) {
             Object value = iter.next();
             if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
                 answer.add(value);
             }
         }
+        return answer;
+    }
+
+    /**
+     * Splits all items into two lists based on the closure condition.
+     * The first list contains all items matching the closure expression.
+     * The second list all those that don't.
+     *
+     * @param self    an Object with an Iterator returning its values
+     * @param closure a closure condition
+     * @return a List containing whose first item is the accepted values and whose second item is the rejected values
+     */
+    public static Collection split(Object self, Closure closure) {
+        List accept = new ArrayList();
+        List reject = new ArrayList();
+        Iterator iter = InvokerHelper.asIterator(self);
+        return split(closure, accept, reject, iter);
+    }
+
+    /**
+     * Splits all items into two collections based on the closure condition.
+     * The first list contains all items which match the closure expression.
+     * The second list all those that don't.
+     *
+     * @param self    a Collection of values
+     * @param closure a closure condition
+     * @return a List containing whose first item is the accepted values and whose second item is the rejected values
+     */
+    public static Collection split(Collection self, Closure closure) {
+        Collection accept = createSimilarCollection(self);
+        Collection reject = createSimilarCollection(self);
+        Iterator iter = self.iterator();
+        return split(closure, accept, reject, iter);
+    }
+
+    private static Collection split(Closure closure, Collection accept, Collection reject, Iterator iter) {
+        List answer = new ArrayList();
+        while (iter.hasNext()) {
+            Object value = iter.next();
+            if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
+                accept.add(value);
+            } else {
+                reject.add(value);
+            }
+        }
+        answer.add(accept);
+        answer.add(reject);
         return answer;
     }
 
@@ -4336,7 +4383,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 flatten((Collection) element, addTo);
             } else if (element instanceof Map) {
                 flatten(((Map)element).values(), addTo);
-            } else if (element.getClass().isArray()) {
+            } else if (element != null && element.getClass().isArray()) {
                 flatten(DefaultTypeTransformation.arrayAsCollection(element), addTo);
             } else {
                 // found a leaf
@@ -4367,7 +4414,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             Object element = iter.next();
             if (element instanceof Collection) {
                 flatten((Collection) element, addTo, flattenUsing);
-            } else if (element.getClass().isArray()) {
+            } else if (element != null && element.getClass().isArray()) {
                 flatten(DefaultTypeTransformation.arrayAsCollection(element), addTo, flattenUsing);
             } else {
                 Object flattened = flattenUsing.call(new Object[]{element});
