@@ -15,34 +15,39 @@
  */
 package org.codehaus.groovy.util;
 
-public class SoftDoubleKeyMap<K1,K2,V> extends AbstractConcurrentDoubleKeyMap<K1,K2,V> {
-    protected AbstractConcurrentDoubleKeyMap.Segment<K1,K2,V> createSegment(int cap) {
-        return new Segment<K1,K2,V>(cap);
+import org.codehaus.groovy.util.ManagedReference.ReferenceBundle;
+
+public class ManagedDoubleKeyMap<K1,K2,V> extends AbstractConcurrentDoubleKeyMap<K1,K2,V> {
+    public ManagedDoubleKeyMap(ReferenceBundle bundle) {
+        super(bundle);
+    }
+    
+    protected AbstractConcurrentDoubleKeyMap.Segment<K1,K2,V> createSegment(Object segmentInfo, int cap) {
+        ReferenceBundle bundle = (ReferenceBundle) segmentInfo;
+        return new Segment<K1,K2,V>(bundle, cap);
     }
 
     static class Segment<K1,K2,V> extends AbstractConcurrentDoubleKeyMap.Segment<K1,K2,V>{
-        public Segment(int cap) {
+        private ReferenceBundle bundle;
+        public Segment(ReferenceBundle bundle, int cap) {
             super(cap);
+            this.bundle = bundle;
         }
 
         protected AbstractConcurrentDoubleKeyMap.Entry<K1,K2,V> createEntry(K1 key1, K2 key2, int hash) {
-            return new EntryWithValue(key1, key2, hash, this);
+            return new EntryWithValue(bundle, key1, key2, hash, this);
         }
     }
 
-    static class Ref<K> extends FinalizableRef.SoftRef<K> {
+    static class Ref<K> extends ManagedReference<K> {
         final Entry entry;
-        public Ref(K referent, Entry entry) {
-            super(referent);
+        public Ref(ReferenceBundle bundle, K referent, Entry entry) {
+            super(bundle, referent);
             this.entry = entry;
         }
 
         public void finalizeRef() {
             this.entry.clean();
-        }
-
-        public void clear() {
-            super.clear();
         }
     }
 
@@ -52,11 +57,11 @@ public class SoftDoubleKeyMap<K1,K2,V> extends AbstractConcurrentDoubleKeyMap<K1
         final Ref<K2> ref2;
         final Segment segment;
 
-        public Entry(K1 key1, K2 key2, int hash, Segment segment) {
+        public Entry(ReferenceBundle bundle, K1 key1, K2 key2, int hash, Segment segment) {
             this.hash = hash;
             this.segment = segment;
-            ref1 = new Ref(key1, this);
-            ref2 = new Ref(key2, this);
+            ref1 = new Ref(bundle, key1, this);
+            ref2 = new Ref(bundle, key2, this);
         }
 
         public boolean isValid() {
@@ -88,8 +93,8 @@ public class SoftDoubleKeyMap<K1,K2,V> extends AbstractConcurrentDoubleKeyMap<K1
     private static class EntryWithValue<K1,K2,V> extends Entry<K1,K2,V> {
         private V value;
 
-        public EntryWithValue(K1 key1, K2 key2, int hash, Segment segment) {
-            super(key1, key2, hash, segment);
+        public EntryWithValue(ReferenceBundle bundle, K1 key1, K2 key2, int hash, Segment segment) {
+            super(bundle, key1, key2, hash, segment);
         }
 
         public V getValue() {

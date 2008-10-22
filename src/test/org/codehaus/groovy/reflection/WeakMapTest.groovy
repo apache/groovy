@@ -27,8 +27,7 @@ class WeakMapTest extends GroovyTestCase{
                if (i % 50 == 0)
                  shell = null
                System.gc ()
-               println "${i} ${ReflectionCache.assignableMap.size()} ${ReflectionCache.assignableMap.fullSize()}  ${ClassInfo.size()} ${ClassInfo.fullSize()}"
-           }
+            }
 
            if (shell != null)
              shell.classLoader.clearCache()

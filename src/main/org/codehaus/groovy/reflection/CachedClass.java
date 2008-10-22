@@ -18,10 +18,13 @@ package org.codehaus.groovy.reflection;
 import groovy.lang.*;
 import org.codehaus.groovy.classgen.BytecodeHelper;
 import org.codehaus.groovy.runtime.callsite.CallSiteClassLoader;
-import org.codehaus.groovy.util.LazySoftReference;
 import org.codehaus.groovy.util.LazyReference;
 import org.codehaus.groovy.util.FastArray;
+import org.codehaus.groovy.util.ReferenceManager;
+import org.codehaus.groovy.util.ReferenceType;
+import org.codehaus.groovy.util.ManagedReference.ReferenceBundle;
 
+import java.lang.ref.ReferenceQueue;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -36,8 +39,16 @@ import java.util.*;
 public class CachedClass {
     private final Class cachedClass;
     public ClassInfo classInfo;
+    
+    private static ReferenceBundle softBundle;
+    static {
+        ReferenceQueue queue = new ReferenceQueue();
+        ReferenceManager callBack = ReferenceManager.createCallBackedManager(queue);
+        ReferenceManager manager  = ReferenceManager.createThresholdedIdlingManager(queue, callBack, 500);
+        softBundle = new ReferenceBundle(manager, ReferenceType.SOFT);
+    }
 
-    private final LazySoftReference<CachedField[]> fields = new LazySoftReference<CachedField[]>() {
+    private final LazyReference<CachedField[]> fields = new LazyReference<CachedField[]>(softBundle) {
         public CachedField[] initValue() {
             final Field[] declaredFields = (Field[])
                AccessController.doPrivileged(new PrivilegedAction/*<Field[]>*/() {
@@ -54,7 +65,7 @@ public class CachedClass {
         }
     };
 
-    private LazySoftReference<CachedConstructor[]> constructors = new LazySoftReference<CachedConstructor[]>() {
+    private LazyReference<CachedConstructor[]> constructors = new LazyReference<CachedConstructor[]>(softBundle) {
         public CachedConstructor[] initValue() {
             final Constructor[] declaredConstructors = (Constructor[])
                AccessController.doPrivileged(new PrivilegedAction/*<Constructor[]>*/() {
@@ -69,7 +80,7 @@ public class CachedClass {
         }
     };
 
-    private LazySoftReference<CachedMethod[]> methods = new LazySoftReference<CachedMethod[]>() {
+    private LazyReference<CachedMethod[]> methods = new LazyReference<CachedMethod[]>(softBundle) {
         public CachedMethod[] initValue() {
             final Method[] declaredMethods = (Method[])
                AccessController.doPrivileged(new PrivilegedAction/*<Method[]>*/() {
@@ -114,7 +125,8 @@ public class CachedClass {
         }
     };
 
-    private LazyReference<CachedClass> cachedSuperClass = new LazyReference<CachedClass>() {
+    /* nicht SOFT xxx */
+    private LazyReference<CachedClass> cachedSuperClass = new LazyReference<CachedClass>(softBundle) {
         public CachedClass initValue() {
             if (!isArray)
               return ReflectionCache.getCachedClass(getTheClass().getSuperclass());
@@ -126,7 +138,7 @@ public class CachedClass {
         }
     };
 
-    private final LazySoftReference<CallSiteClassLoader> callSiteClassLoader = new LazySoftReference<CallSiteClassLoader>() {
+    private final LazyReference<CallSiteClassLoader> callSiteClassLoader = new LazyReference<CallSiteClassLoader>(softBundle) {
         public CallSiteClassLoader initValue() {
             return
                AccessController.doPrivileged(new PrivilegedAction<CallSiteClassLoader>() {
@@ -144,7 +156,8 @@ public class CachedClass {
     public  CachedMethod [] mopMethods;
     public static final CachedClass[] EMPTY_ARRAY = new CachedClass[0];
 
-    private final LazyReference<Set<CachedClass>> declaredInterfaces = new LazyReference<Set<CachedClass>> () {
+    /* nicht SOFT xxx */
+    private final LazyReference<Set<CachedClass>> declaredInterfaces = new LazyReference<Set<CachedClass>> (softBundle) {
         public Set<CachedClass> initValue() {
             HashSet<CachedClass> res = new HashSet<CachedClass> (0);
 
@@ -156,7 +169,7 @@ public class CachedClass {
         }
     };
 
-    private final LazySoftReference<Set<CachedClass>> interfaces = new LazySoftReference<Set<CachedClass>> () {
+    private final LazyReference<Set<CachedClass>> interfaces = new LazyReference<Set<CachedClass>> (softBundle) {
         public Set<CachedClass> initValue() {
             HashSet<CachedClass> res = new HashSet<CachedClass> (0);
 

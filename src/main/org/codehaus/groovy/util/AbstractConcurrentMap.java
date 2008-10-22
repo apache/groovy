@@ -1,7 +1,9 @@
 package org.codehaus.groovy.util;
 
 public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapBase {
-    public AbstractConcurrentMap() {
+
+    public AbstractConcurrentMap(Object segmentInfo) {
+        super(segmentInfo);
     }
 
     public Segment segmentFor (int hash) {

@@ -23,8 +23,6 @@ import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.codehaus.groovy.util.FastArray;
 
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -32,7 +30,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A registry of MetaClass instances which caches introspection &
@@ -55,7 +52,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
 
     private LinkedList changeListenerList = new LinkedList();
     private LinkedList metaClassInfo = new LinkedList();
-    private ReferenceQueue queue = new ReferenceQueue();
+    //TODO: private ReferenceQueue queue = new ReferenceQueue();
 
     public static final int LOAD_DEFAULT = 0;
     public static final int DONT_LOAD_DEFAULT = 1;
@@ -109,9 +106,9 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
 
         addMetaClassRegistryChangeEventListener(new MetaClassRegistryChangeEventListener(){
             public void updateConstantMetaClass(MetaClassRegistryChangeEvent cmcu) {
-                synchronized (metaClassInfo) {
-                    metaClassInfo.add(new WeakReference(cmcu.getNewMetaClass(),queue));
-                }
+//TODO:                synchronized (metaClassInfo) {
+//                    metaClassInfo.add(new WeakReference(cmcu.getNewMetaClass(),queue));
+//                }
             }
         });
    }
@@ -138,7 +135,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         CachedMethod[] methods = ReflectionCache.getCachedClass(theClass).getMethods();
 
         if (useMethodrapper) {
-            // Here we instanciate objects representing MetaMethods for DGM methods.
+            // Here we instantiate objects representing MetaMethods for DGM methods.
             // Calls for such meta methods done without reflection, so more effectively.
             // It gives 7-8% improvement for benchmarks involving just several ariphmetic operations
             for (int i = 0; ; ++i) {
@@ -225,7 +222,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             info.unlock();
         }
 
-        if (oldMc==mc) fireConstantMetaClassUpdate(theClass,newMc);
+        if (oldMc!=mc) fireConstantMetaClassUpdate(theClass,newMc);
     }
     
     public void removeMetaClass(Class theClass) {
@@ -314,21 +311,21 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
 
     
     private void cleanMetaClassList() {
-        boolean hasCollectedEntries=false;
-        java.lang.ref.Reference r=null;
-        while ((r=queue.poll())!=null) {
-            r.clear();
-            hasCollectedEntries=true;
-        }
-
-        if (!hasCollectedEntries) return;
-
-        for (Iterator it = metaClassInfo.iterator(); it.hasNext();) {
-            WeakReference ref = (WeakReference) it.next();
-            if (ref.get()!=null) continue;
-            it.remove();
-            ref.clear();
-        }
+//TODO:        boolean hasCollectedEntries=false;
+//        java.lang.ref.Reference r=null;
+//        while ((r=queue.poll())!=null) {
+//            r.clear();
+//            hasCollectedEntries=true;
+//        }
+//
+//        if (!hasCollectedEntries) return;
+//
+//        for (Iterator it = metaClassInfo.iterator(); it.hasNext();) {
+//            WeakReference ref = (WeakReference) it.next();
+//            if (ref.get()!=null) continue;
+//            it.remove();
+//            ref.clear();
+//        }
     }
 
     /**
@@ -395,55 +392,56 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      * @return the iterator.
      */    
     public Iterator iterator() {
-        final WeakReference[] refs;
-        synchronized (metaClassInfo) {
-            cleanMetaClassList();
-            refs = (WeakReference[]) metaClassInfo.toArray(new WeakReference[0]);
-        }
-        
-        return new Iterator() {
-        	// index inn the ref array
-            private int index=0;
-            // the current meta class
-            private MetaClass currentMeta;
-            // used to ensure that hasNext has been called
-            private boolean hasNextCalled=false;
-            // the cached hasNext call value
-            private boolean hasNext=false;
-
-            public boolean hasNext() {
-            	if (hasNextCalled) return hasNext;
-            	hasNextCalled = true;
-            	hasNext=true;
-            	
-            	// currentMeta==null means the entry might have been
-            	// collected already, we skip these.
-                currentMeta=null;
-                while (currentMeta==null && index<refs.length) {
-                    currentMeta = (MetaClass) refs[index].get();
-                    index++;
-                }
-                hasNext=currentMeta!=null;
-                return hasNext;
-            }
-            
-            private void ensureNext() {
-            	// we ensure that hasNext has been called before 
-            	// next is called
-            	hasNext();
-            	hasNextCalled=false;            	
-            }
-            
-            public Object next() {
-            	ensureNext();
-                return currentMeta;
-            }
-            
-            public void remove() {
-            	ensureNext();
-            	setMetaClass(currentMeta.getTheClass(),currentMeta,null);
-                currentMeta=null;
-            }
-        };
+        return null;
+//TODO:        final WeakReference[] refs;
+//        synchronized (metaClassInfo) {
+//            cleanMetaClassList();
+//            refs = (WeakReference[]) metaClassInfo.toArray(new WeakReference[0]);
+//        }
+//        
+//        return new Iterator() {
+//        	// index inn the ref array
+//            private int index=0;
+//            // the current meta class
+//            private MetaClass currentMeta;
+//            // used to ensure that hasNext has been called
+//            private boolean hasNextCalled=false;
+//            // the cached hasNext call value
+//            private boolean hasNext=false;
+//
+//            public boolean hasNext() {
+//            	if (hasNextCalled) return hasNext;
+//            	hasNextCalled = true;
+//            	hasNext=true;
+//            	
+//            	// currentMeta==null means the entry might have been
+//            	// collected already, we skip these.
+//                currentMeta=null;
+//                while (currentMeta==null && index<refs.length) {
+//                    currentMeta = (MetaClass) refs[index].get();
+//                    index++;
+//                }
+//                hasNext=currentMeta!=null;
+//                return hasNext;
+//            }
+//            
+//            private void ensureNext() {
+//            	// we ensure that hasNext has been called before 
+//            	// next is called
+//            	hasNext();
+//            	hasNextCalled=false;            	
+//            }
+//            
+//            public Object next() {
+//            	ensureNext();
+//                return currentMeta;
+//            }
+//            
+//            public void remove() {
+//            	ensureNext();
+//            	setMetaClass(currentMeta.getTheClass(),currentMeta,null);
+//                currentMeta=null;
+//            }
+//        };
     }
 }
