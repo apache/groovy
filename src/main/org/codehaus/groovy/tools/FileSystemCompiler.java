@@ -159,15 +159,22 @@ public class FileSystemCompiler {
     public static void doCompilation(CompilerConfiguration configuration, CompilationUnit unit, String[] filenames) throws Exception {
         File tmpDir = null;
         // if there are any joint compilation options set stub dir if not set
-        if ((configuration.getJointCompilationOptions() != null)
-            && !configuration.getJointCompilationOptions().containsKey("stubDir"))  
-        {
-            tmpDir = createTempDir();
-            configuration.getJointCompilationOptions().put("stubDir", tmpDir);
+        try {
+            if ((configuration.getJointCompilationOptions() != null)
+                && !configuration.getJointCompilationOptions().containsKey("stubDir"))
+            {
+                tmpDir = createTempDir();
+                configuration.getJointCompilationOptions().put("stubDir", tmpDir);
+            }
+            FileSystemCompiler compiler = new FileSystemCompiler(configuration, unit);
+            compiler.compile(filenames);
+        } finally {
+            try {
+                if (tmpDir != null) deleteRecursive(tmpDir);
+            } catch (Throwable t) {
+                System.err.println("error: could not delete temp files - " + tmpDir.getPath());
+            }
         }
-        FileSystemCompiler compiler = new FileSystemCompiler(configuration, unit);
-        compiler.compile(filenames);
-        if (tmpDir != null) deleteRecursive(tmpDir);
     }
 
     public static String[] generateFileNamesFromOptions(CommandLine cli) {
