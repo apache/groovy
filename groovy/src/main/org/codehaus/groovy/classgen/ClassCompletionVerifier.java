@@ -23,7 +23,11 @@ import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
+import org.codehaus.groovy.ast.expr.DeclarationExpression;
+import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
+import org.codehaus.groovy.ast.expr.MethodCallExpression;
+import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.Opcodes;
@@ -66,7 +70,6 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         if (abstractMethods == null) return;
         for (Iterator iter = abstractMethods.iterator(); iter.hasNext();) {
             MethodNode method = (MethodNode) iter.next();
-            String methodName = method.getTypeDescriptor();
             addError("Can't have an abstract method in a non-abstract class." +
                     " The " + getDescription(node) + " must be declared abstract or" +
                     " the " + getDescription(method) + " must be implemented.", node);
@@ -326,4 +329,23 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         }
         super.visitCatchStatement(cs);
     }
+    
+    public void visitMethodCallExpression(MethodCallExpression mce) {
+        super.visitMethodCallExpression(mce);
+        Expression aexp = mce.getArguments();
+        if (aexp instanceof TupleExpression) {
+            TupleExpression arguments = (TupleExpression) aexp;
+            for (Iterator it=arguments.getExpressions().iterator();it. hasNext();) {
+                checkForInvalidDeclaration((Expression) it.next());
+            }
+        } else {
+            checkForInvalidDeclaration(aexp);
+        }
+    }
+    
+    private void checkForInvalidDeclaration(Expression exp) {
+        if (!(exp instanceof DeclarationExpression)) return;
+        addError("invalid use of declartion inside method call.",exp);
+    }
+    
 }
