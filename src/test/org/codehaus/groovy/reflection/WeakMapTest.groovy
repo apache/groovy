@@ -35,6 +35,6 @@ class WeakMapTest extends GroovyTestCase{
            GroovySystem.metaClassRegistry.removeMetaClass s.class
        }
 
-       println "${SIZE} ${ReflectionCache.assignableMap.size()} ${ClassInfo.size()}"
+       println "${SIZE} ${ClassInfo.size()}"
    }
 }
