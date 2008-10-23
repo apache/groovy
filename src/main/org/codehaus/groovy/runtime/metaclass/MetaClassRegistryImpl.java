@@ -46,7 +46,6 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     private volatile int constantMetaClassCount = 0;
     private ConcurrentReaderHashMap constantMetaClasses = new ConcurrentReaderHashMap();
     private MemoryAwareConcurrentReadMap weakMetaClasses = new MemoryAwareConcurrentReadMap();
-    private MemoryAwareConcurrentReadMap loaderMap = new MemoryAwareConcurrentReadMap();
     private boolean useAccessible;
 
     private FastArray instanceMethods = new FastArray();
