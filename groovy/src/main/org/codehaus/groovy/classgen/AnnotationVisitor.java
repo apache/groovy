@@ -25,11 +25,7 @@ import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.expr.AnnotationConstantExpression;
-import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.ast.expr.Expression;
-import org.codehaus.groovy.ast.expr.ListExpression;
-import org.codehaus.groovy.ast.expr.PropertyExpression;
+import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
@@ -114,35 +110,38 @@ public class AnnotationVisitor {
         return node.getClassNode().implementsInterface(ClassHelper.Annotation_Type);
     }
 
-    protected void visitExpression(String attrName, Expression attrAst, Class attrType) {
+    protected void visitExpression(String attrName, Expression attrExp, Class attrType) {
         if(attrType.isArray()) {
             // check needed as @Test(attr = {"elem"}) passes through the parser
-            if(attrAst instanceof ListExpression) {
-                visitListExpression(attrName, (ListExpression) attrAst, attrType.getComponentType());
-            }
-            else {
-                addError("Annotation list attributes must use Groovy notation [el1, el2]", attrAst);
+            if (attrExp instanceof ListExpression) {
+                ListExpression le = (ListExpression) attrExp;
+                visitListExpression(attrName, (ListExpression) attrExp, attrType.getComponentType());
+            } else if (attrExp instanceof ClosureExpression) {
+                addError("Annotation list attributes must use Groovy notation [el1, el2]", attrExp);
+            } else {
+                // treat like a singleton list as per Java
+                ListExpression listExp = new ListExpression();
+                listExp.addExpression(attrExp);
+                if (annotation != null) {
+                    annotation.setMember(attrName, listExp);
+                }
+                visitExpression(attrName, listExp, attrType);
             }
         }
         if(attrType.isPrimitive()) {
-            visitConstantExpression(attrName, (ConstantExpression) attrAst, ClassHelper.getWrapper(ClassHelper.make(attrType)));
-        }
-        else if(String.class.equals(attrType)) {
-            visitConstantExpression(attrName, (ConstantExpression) attrAst, ClassHelper.make(String.class));
-        }
-        else if(Class.class.equals(attrType)) {
+            visitConstantExpression(attrName, (ConstantExpression) attrExp, ClassHelper.getWrapper(ClassHelper.make(attrType)));
+        } else if(String.class.equals(attrType)) {
+            visitConstantExpression(attrName, (ConstantExpression) attrExp, ClassHelper.make(String.class));
+        } else if(Class.class.equals(attrType)) {
             // there is nothing to check about ClassExpressions
-        }
-        else if(isEnum(attrType)) {
-            if(attrAst instanceof PropertyExpression) {
-                visitEnumExpression(attrName, (PropertyExpression) attrAst, ClassHelper.make(attrType));
+        } else if(isEnum(attrType)) {
+            if(attrExp instanceof PropertyExpression) {
+                visitEnumExpression(attrName, (PropertyExpression) attrExp, ClassHelper.make(attrType));
+            } else {
+                addError("Value not defined for annotation attribute " + attrName, attrExp);
             }
-            else {
-                addError("Value not defined for annotation attribute " + attrName, attrAst);
-            }
-        }
-        else if(isAnnotation(attrType)) {
-            visitAnnotationExpression(attrName, (AnnotationConstantExpression) attrAst, attrType);
+        } else if(isAnnotation(attrType)) {
+            visitAnnotationExpression(attrName, (AnnotationConstantExpression) attrExp, attrType);
         }
     }
 
