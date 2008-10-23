@@ -429,7 +429,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     /**
-     * generates a Meta Object Protocoll method, that is used to call a non public
+     * generates a Meta Object Protocol method, that is used to call a non public
      * method, or to make a call to super.
      *
      * @param mopCalls list of methods a mop call method should be generated for
@@ -4203,6 +4203,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected void onLineNumber(ASTNode statement, String message) {
+        if (statement==null) return;
         int line = statement.getLineNumber();
         int col = statement.getColumnNumber();
         this.currentASTNode = statement;
