@@ -2725,6 +2725,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         FastArray methods = (FastArray) methodOrList;
+        if (methods==null) return null;
         int methodCount = methods.size();
         if (methodCount <= 0) {
             return null;

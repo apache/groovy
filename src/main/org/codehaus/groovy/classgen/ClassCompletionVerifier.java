@@ -70,7 +70,6 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         if (abstractMethods == null) return;
         for (Iterator iter = abstractMethods.iterator(); iter.hasNext();) {
             MethodNode method = (MethodNode) iter.next();
-            String methodName = method.getTypeDescriptor();
             addError("Can't have an abstract method in a non-abstract class." +
                     " The " + getDescription(node) + " must be declared abstract or" +
                     " the " + getDescription(method) + " must be implemented.", node);

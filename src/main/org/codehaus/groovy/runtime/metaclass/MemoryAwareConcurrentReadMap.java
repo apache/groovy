@@ -36,7 +36,7 @@ import java.lang.ref.SoftReference;
 
 
 /**
- * This Map is astripped down version of ConcurrentReaderHashMap with
+ * This Map is a stripped down version of ConcurrentReaderHashMap with
  * small modifications here and there.
  * It is no full Map, it does have put/get/remove, but no iterators.
  * This map is intended to hold values and keys as SoftReference. If
