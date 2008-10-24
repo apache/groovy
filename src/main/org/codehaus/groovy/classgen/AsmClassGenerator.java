@@ -1052,9 +1052,11 @@ public class AsmClassGenerator extends ClassGenerator {
             final Label catchStart = new Label();
             mv.visitLabel(catchStart);
             // create exception variable and store the exception
+            compileStack.pushState();
             compileStack.defineVariable(catchStatement.getVariable(), true);
             // handle catch body
             catchStatement.visit(this);
+            compileStack.pop();
             // goto finally start
             mv.visitJumpInsn(GOTO, finallyStart);
             // add exception to table
