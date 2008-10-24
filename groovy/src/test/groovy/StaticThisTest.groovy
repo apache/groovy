@@ -18,26 +18,6 @@ class StaticThisTest extends CompilableTestSupport {
         assert s.name.endsWith("CompilableTestSupport")
     }
 
-    void testThisMethodInStaticMethodShouldNotCompile() {
-        shouldNotCompile """
-            class A {
-                static method(){
-                    this.toString()
-                }
-            }
-            """
-    }
-
-    void testSuperMethodInStaticMethodShouldNotCompile() {
-        shouldNotCompile """
-            class A {
-                static method(){
-                    super.toString()
-                }
-            }
-            """
-    }
-
     void testThisPropertyInStaticMethodShouldNotCompile() {
         shouldNotCompile """
             class A {

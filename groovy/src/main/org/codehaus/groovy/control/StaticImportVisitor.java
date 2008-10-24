@@ -110,10 +110,6 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         if (object instanceof VariableExpression) {
             VariableExpression ve = (VariableExpression) object;
             isExplicitThisOrSuper = !mce.isImplicitThis() && (ve.getName().equals("this") || ve.getName().equals("super"));
-            if (isExplicitThisOrSuper && currentMethod != null && currentMethod.isStatic()) {
-                addError("Non-static variable '" + ve.getName() + "' cannot be referenced from the static method " + currentMethod.getName() + ".", mce);
-                return null;
-            }
         }
 
         if (mce.isImplicitThis() || isExplicitThisOrSuper) {
