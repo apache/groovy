@@ -26,6 +26,21 @@ import gls.scope.CompilableTestSupport
 class AnnotationTest extends CompilableTestSupport {
 
     /**
+     * Check that it is possible to annotate an annotation definition with field and method target elements.
+     */
+    void testAnnotateAnnotationDefinitionWithMethodAndFieldTargetElementTypes() {
+        shouldCompile """
+            import java.lang.annotation.*
+            import static java.lang.annotation.RetentionPolicy.*
+            import static java.lang.annotation.ElementType.*
+
+            @Retention(RUNTIME)
+            @Target([METHOD, FIELD])
+            @interface MyAnnotation { }
+        """
+    }
+
+    /**
      * The @OneToMany cascadeparameter takes an array of CascadeType.
      * To use this annotation in Java with this parameter, you do <code>@OneToMany(cascade = { CascadeType.ALL })</code>
      * In Groovy, you do <code>@OneToMany(cascade = [ CascadeType.ALL ])</code> (brackets instead of braces)

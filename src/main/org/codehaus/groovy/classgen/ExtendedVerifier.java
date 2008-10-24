@@ -113,7 +113,9 @@ public class ExtendedVerifier implements GroovyClassVisitor {
             AnnotationNode an = (AnnotationNode) it.next();
 
             AnnotationNode annotation = visitAnnotation(an);
-            if (!annotation.isTargetAllowed(target)) {
+            // if the annotated node is an annotation definition, we don't need to check that the target is allowed
+            // as the target applies to elements to which the annotation is applied to, not to the annotation definition itself
+            if (!this.currentClass.isAnnotationDefinition() && !annotation.isTargetAllowed(target)) {
                 addError("Annotation @" + annotation.getClassNode().getName()
                         + " is not allowed on element " + AnnotationNode.targetToName(target),
                         annotation);
