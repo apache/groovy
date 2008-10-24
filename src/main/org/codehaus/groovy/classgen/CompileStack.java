@@ -144,7 +144,7 @@ public class CompileStack implements Opcodes {
         }
     }
 
-    private void pushState() {
+    protected void pushState() {
         stateStack.add(new StateStackElement());
         stackVariables = new HashMap(stackVariables);
         finallyBlocks = new LinkedList(finallyBlocks);
