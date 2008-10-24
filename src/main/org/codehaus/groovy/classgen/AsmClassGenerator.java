@@ -399,6 +399,7 @@ public class AsmClassGenerator extends ClassGenerator {
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             MethodNode mn = (MethodNode) iter.next();
             if ((mn.getModifiers() & ACC_ABSTRACT) != 0) continue;
+            if (mn.isStatic()) continue;
             // no this$ methods for protected/public isThis=true
             // super$ method for protected/public isThis=false
             // --> results in XOR
@@ -443,8 +444,8 @@ public class AsmClassGenerator extends ClassGenerator {
             String methodDescriptor = BytecodeHelper.getMethodDescriptor(method.getReturnType(), method.getParameters());
             mv = cv.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, name, methodDescriptor, null, null);
             mv.visitVarInsn(ALOAD, 0);
+            int newRegister = 1;            
             BytecodeHelper helper = new BytecodeHelper(mv);
-            int newRegister = 1;
             for (int i = 0; i < parameters.length; i++) {
                 ClassNode type = parameters[i].getType();
                 helper.load(parameters[i].getType(), newRegister);
