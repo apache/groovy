@@ -17,6 +17,7 @@ package org.codehaus.groovy.classgen;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.lang.annotation.Target;
 
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
@@ -48,7 +49,11 @@ public class ExtendedVerifier implements GroovyClassVisitor {
 
     public void visitClass(ClassNode node) {
         this.currentClass = node;
-        visitAnnotations(node, AnnotationNode.TYPE_TARGET);
+        if (node.isAnnotationDefinition()) {
+            visitAnnotations(node, AnnotationNode.ANNOTATION_TARGET);
+        } else {
+            visitAnnotations(node, AnnotationNode.TYPE_TARGET);
+        }
         node.visitContents(this);
     }
 
@@ -110,12 +115,14 @@ public class ExtendedVerifier implements GroovyClassVisitor {
 
         Collection annotations = node.getAnnotations();
         for (Iterator it = annotations.iterator(); it.hasNext();) {
-            AnnotationNode an = (AnnotationNode) it.next();
+            AnnotationNode annotation = visitAnnotation((AnnotationNode) it.next());
 
-            AnnotationNode annotation = visitAnnotation(an);
-            // if the annotated node is an annotation definition, we don't need to check that the target is allowed
-            // as the target applies to elements to which the annotation is applied to, not to the annotation definition itself
-            if (!this.currentClass.isAnnotationDefinition() && !annotation.isTargetAllowed(target)) {
+            boolean isTargetAnnotation = annotation.getClassNode().isResolved() &&
+                annotation.getClassNode().getTypeClass() == Target.class;
+
+            // Check if the annotation target is correct, unless it's the target annotating an annotation definition
+            // defining on which target elements the annotation applies
+            if (!isTargetAnnotation && !annotation.isTargetAllowed(target)) {
                 addError("Annotation @" + annotation.getClassNode().getName()
                         + " is not allowed on element " + AnnotationNode.targetToName(target),
                         annotation);

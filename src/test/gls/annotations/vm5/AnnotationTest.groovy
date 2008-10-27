@@ -40,6 +40,20 @@ class AnnotationTest extends CompilableTestSupport {
         """
     }
 
+    void testCannotAnnotateAnotationDefinitionIfTargetIsNotOfType() {
+        shouldNotCompile """
+            import java.lang.annotation.*
+            import static java.lang.annotation.ElementType.*
+
+            // all target elements except ANNOTATION_TYPE
+            @Target([CONSTRUCTOR, METHOD, FIELD, LOCAL_VARIABLE, PACKAGE, PARAMETER, TYPE])
+            @interface MyAnnotation { }
+
+            @MyAnnotation
+            @interface AnotherAnnotation {}
+        """
+    }
+
     /**
      * The @OneToMany cascadeparameter takes an array of CascadeType.
      * To use this annotation in Java with this parameter, you do <code>@OneToMany(cascade = { CascadeType.ALL })</code>
