@@ -84,7 +84,7 @@ public class XmlSlurper extends DefaultHandler {
    * @param keepWhitespace
    * 
    * If true then whitespace before elements is kept.
-   * The deafult is to discard the whitespace.
+   * The default is to discard the whitespace.
    */
   public void setKeepWhitespace(boolean keepWhitespace) {
       this.keepWhitespace = keepWhitespace;
