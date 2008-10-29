@@ -65,7 +65,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private Map genericParameterNames = new HashMap();
 
     /**
-     * we use ConstructedClassWithPackage as to limit the resolving the compiler
+     * we use ConstructedClassWithPackage to limit the resolving the compiler
      * does when combining package names and class names. The idea
      * that if we use a package, then we do not want to replace the
      * '.' with a '$' for the package part, only for the class name
@@ -98,6 +98,39 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
     }
 
+     /**
+     * we use LowerCaseClass to limit the resolving the compiler
+     * does for vanilla names starting with a lower case letter. The idea
+     * that if we use a vanilla name with a lower case letter, that this
+     * is in most cases no class. If it is a class the class needs to be
+     * imported explicitly. The efffect is that in an expression like
+     * "def foo = bar" we do not have to use a loadClass call to check the
+     * name foo and bar for being classes. Instead we will ask the module
+     * for an alias for this name which is much faster.
+     */
+    private static class LowerCaseClass extends ClassNode {
+        String className;
+        public LowerCaseClass(String name) {
+            super(name, Opcodes.ACC_PUBLIC,ClassHelper.OBJECT_TYPE);
+            isPrimaryNode = false;
+            this.className = name;
+        }
+        public String getName() {
+            if (redirect()!=this) return super.getName();
+            return className;
+        }
+        public boolean hasPackageName() {
+            if (redirect()!=this) return super.hasPackageName();
+            return false;
+        }
+        public String setName(String name) {
+            if (redirect()!=this) {
+                return super.setName(name);
+            } else {
+                throw new GroovyBugError("ConstructedClassWithPackage#setName should not be called");
+            }
+        }
+    }
 
     public ResolveVisitor(CompilationUnit cu) {
         compilationUnit = cu;
@@ -268,6 +301,16 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     private boolean resolveToScript(ClassNode type) {
         String name = type.getName();
+
+        // We do not need to check instances of LowerCaseClass
+        // to be a script, because unless there was an import for
+        // for this we  do not lookup these cases. This was a decision
+        // made on the mailing list. To ensure we will not visit this
+        // method again we set a NO_CLASS for this name
+        if (type instanceof LowerCaseClass) {
+            cachedClasses.put(name, NO_CLASS);
+        }
+        
         if (cachedClasses.get(name) == NO_CLASS) return false;
         if (cachedClasses.get(name) == SCRIPT) cachedClasses.put(name, NO_CLASS);
         if (name.startsWith("java.")) return type.isResolved();
@@ -311,6 +354,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     private boolean resolveFromStaticInnerClasses(ClassNode type, boolean testStaticInnerClasses) {
+        // a class consisting of a vanilla name can never be
+        // a static inner class, because at last one dot is
+        // required for this. Example: foo.bar -> foo$bar
+        if (type instanceof LowerCaseClass) return false;
+
         // try to resolve a public static inner class' name
         testStaticInnerClasses &= type.hasPackageName();
         if (testStaticInnerClasses) {
@@ -340,6 +388,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private boolean resolveFromDefaultImports(ClassNode type, boolean testDefaultImports) {
         // test default imports
         testDefaultImports &= !type.hasPackageName();
+        // we do not resolve a vanilla name starting with a lower case letter
+        // try to resolve against adefault import, because we know that the
+        // default packages do not contain classes like these
+        testDefaultImports &= !(type instanceof LowerCaseClass);
         if (testDefaultImports) {
             for (int i = 0, size = DEFAULT_IMPORTS.length; i < size; i++) {
                 String packagePrefix = DEFAULT_IMPORTS[i];
@@ -450,6 +502,17 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     private boolean resolveFromModule(ClassNode type, boolean testModuleImports) {
+        // we decided if we have a vanilla name starting with a lower case
+        // letter that we will not try to resolve this name against .*
+        // imports. Instead a full import is needed for these.
+        // resolveAliasFromModule will do this check for us. This method
+        // does also check the module contains a class in the same package
+        // of this name. This check is not done for vanilla names starting
+        // with a lower case letter anymore
+        if (type instanceof LowerCaseClass) {
+            return resolveAliasFromModule(type);
+        }
+
         String name = type.getName();
         ModuleNode module = currentClass.getModule();
         if (module == null) return false;
@@ -510,6 +573,15 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     private boolean resolveToClass(ClassNode type) {
         String name = type.getName();
+
+        // We do not need to check instances of LowerCaseClass
+        // to be a Class, because unless there was an import for
+        // for this we  do not lookup these cases. This was a decision
+        // made on the mailing list. To ensure we will not visit this
+        // method again we set a NO_CLASS for this name
+        if (type instanceof LowerCaseClass) {
+            cachedClasses.put(name,NO_CLASS);
+        }
 
         // We use here the class cahce cachedClasses to prevent
         // calls to ClassLoader#loadClass. disabling this cache will
@@ -586,7 +658,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     private String lookupClassName(PropertyExpression pe) {
+        boolean doInitialClassTest=true;
         String name = "";
+        // this loop builds a name from right to left each name part
+        // separated by "."
         for (Expression it = pe; it != null; it = ((PropertyExpression) it).getObjectExpression()) {
             if (it instanceof VariableExpression) {
                 VariableExpression ve = (VariableExpression) it;
@@ -594,7 +669,20 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 if (ve.isSuperExpression() || ve.isThisExpression()) {
                     return null;
                 }
-                name = ve.getName() + "." + name;
+                String varName = ve.getName();
+                if (doInitialClassTest) {
+                    // we are at the first name part. This is the right most part.
+                    // If this part is in lower case, then we do not need a class
+                    // check. other parts of the property expression will be tested
+                    // by a different method call to this method, so foo.Bar.bar
+                    // can still be resolved to the class foo.Bar and the static
+                    // field bar.
+                    if (!testVanillaNameForClass(varName)) return null;
+                    doInitialClassTest= false;
+                    name = varName;
+                } else {
+                    name = varName + "." + name;
+                }
                 break;
             }
             // anything other than PropertyExpressions, ClassExpression or
@@ -608,11 +696,23 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 if (propertyPart == null || propertyPart.equals("class")) {
                     return null;
                 }
-                name = propertyPart + "." + name;
+                if (doInitialClassTest) {
+                    // we are at the first name part. This is the right most part.
+                    // If this part is in lower case, then we do not need a class
+                    // check. other parts of the property expression will be tested
+                    // by a different method call to this method, so foo.Bar.bar
+                    // can still be resolved to the class foo.Bar and the static
+                    // field bar.
+                    if (!testVanillaNameForClass(propertyPart)) return null;
+                    doInitialClassTest= false;
+                    name = propertyPart;
+                } else {
+                    name = propertyPart + "." + name;
+                }
             }
         }
-        if (name.length() > 0) return name.substring(0, name.length() - 1);
-        return null;
+        if (name.length() == 0) return null;
+        return name;
     }
 
     // iterate from the inner most to the outer and check for classes
@@ -695,9 +795,24 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     protected Expression transformVariableExpression(VariableExpression ve) {
         Variable v = ve.getAccessedVariable();
-        if (v instanceof DynamicVariable) {
-            ClassNode t = ClassHelper.make(ve.getName());
-            if (resolve(t)) {
+        if (v instanceof DynamicVariable){
+            String name = ve.getName();
+            ClassNode t = ClassHelper.make(name);
+            // asking isResolved here allows to check if a primitive
+            // type name like "int" was used to make t. In such a case
+            // we have nothing left to do.
+            boolean isClass = t.isResolved();
+            if (!isClass) {
+                // It was no primitive type, so next we see if the name,
+                // which is a vanilla name, starts with a lower case letter.
+                // In that case we change t to a LowerCaseClass to let the
+                // compiler skip the resolving at several places in this class.
+                if (Character.isLowerCase(name.charAt(0))) {
+                  t = new LowerCaseClass(name);
+                }
+                isClass = resolve(t);
+            }
+            if (isClass) {
                 // the name is a type so remove it from the scoping
                 // as it is only a classvariable, it is only in
                 // referencedClassVariables, but must be removed
@@ -713,6 +828,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
         resolveOrFail(ve.getType(), ve);
         return ve;
+    }
+
+    private boolean testVanillaNameForClass(String name) {
+        if (name==null || name.length()==0) return false;
+        return !Character.isLowerCase(name.charAt(0));
     }
 
     protected Expression transformBinaryExpression(BinaryExpression be) {
