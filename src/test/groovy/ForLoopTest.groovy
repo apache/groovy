@@ -2,9 +2,31 @@ package groovy
 
 import groovy.bugs.TestSupport
 
-class ForLoopTest extends GroovyTestCase {
+class ForLoopTest extends gls.CompilableTestSupport {
 
     def x
+
+    void testFinalParameterInForLoopIsAllowed() {
+        // only 'final' should be allowed: other modifiers like 'synchronized' should be forbidden
+        shouldNotCompile """
+            def collection = ["a", "b", "c", "d", "e"]
+            for (synchronized String letter in collection) { }            
+        """
+
+        // only 'final' allowed, and no additional modifier
+        shouldNotCompile """
+            def collection = ["a", "b", "c", "d", "e"]
+            for (final synchronized String letter in collection) { }
+        """
+
+        shouldCompile """
+            def collection = ["a", "b", "c", "d", "e"]
+            for (final String letter in collection) { }
+            for (final String letter : collection) { }
+            for (final letter in collection) { }
+            for (final letter : collection) { }
+        """
+    }
 
     void testRange() {
         x = 0

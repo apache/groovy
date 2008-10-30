@@ -1026,30 +1026,38 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         Expression collectionExpression;
         Parameter forParameter;
         if (isType(CLOSURE_LIST, inNode)) {
-            ClosureListExpression clist =  closureListExpression(inNode);
+            ClosureListExpression clist = closureListExpression(inNode);
             int size = clist.getExpressions().size();
-            if (size!=3) {
-                throw new ASTRuntimeException(inNode, "3 expressions are required for the classic for loop, you gave "+size);
+            if (size != 3) {
+                throw new ASTRuntimeException(inNode, "3 expressions are required for the classic for loop, you gave " + size);
             }
             collectionExpression = clist;
-            forParameter=ForStatement.FOR_LOOP_DUMMY;
-        } else {        
+            forParameter = ForStatement.FOR_LOOP_DUMMY;
+        } else {
             AST variableNode = inNode.getFirstChild();
             AST collectionNode = variableNode.getNextSibling();
-    
+
             ClassNode type = ClassHelper.OBJECT_TYPE;
             if (isType(VARIABLE_DEF, variableNode)) {
-                AST typeNode = variableNode.getFirstChild();
-                assertNodeType(TYPE, typeNode);
-    
-                type = type(typeNode);
-                variableNode = typeNode.getNextSibling();
+                AST node = variableNode.getFirstChild();
+                // skip the final modifier if it's present
+                if (isType(MODIFIERS, node)) {
+                    int modifiersMask = modifiers(node, new ArrayList(), 0);
+                    // only final modifier allowed
+                    if ((modifiersMask & ~Opcodes.ACC_FINAL) != 0) {
+                        throw new ASTRuntimeException(node, "Only the 'final' modifier is allowed in front of the for loop variable.");
+                    }
+                    node = node.getNextSibling();
+                }
+                type = makeTypeWithArguments(node);
+
+                variableNode = node.getNextSibling();
             }
             String variable = identifier(variableNode);
-    
+
             collectionExpression = expression(collectionNode);
-            forParameter = new Parameter(type,variable);
-            configureAST(forParameter,variableNode);
+            forParameter = new Parameter(type, variable);
+            configureAST(forParameter, variableNode);
         }
 
         final AST node = inNode.getNextSibling();
