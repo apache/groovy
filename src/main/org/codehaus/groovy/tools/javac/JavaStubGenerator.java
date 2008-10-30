@@ -21,6 +21,7 @@ import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -261,12 +262,9 @@ public class JavaStubGenerator
         ConstructorCallExpression constrCall = getConstructorCallExpression(constructorNode);
         if (constrCall == null || !constrCall.isSpecialCall()) {
             out.println(" {}");
-        }
-        else {
+        } else {
             out.println(" {");
-
             genSpecialConstructorArgs(out, constructorNode, constrCall);
-
             out.println("}");
         }
     }
@@ -340,7 +338,8 @@ public class JavaStubGenerator
                         out.print(expression.getText());
                     }
                 } else {
-                    printDefaultValue(out, arg.getType());
+                    ClassNode type = getConstructorArgumentType(arg, node);
+                    printDefaultValue(out, type);
                 }
 
                 if (arg != args.get(args.size() - 1)) {
@@ -350,6 +349,19 @@ public class JavaStubGenerator
         }
 
         out.println(");");
+    }
+
+    private ClassNode getConstructorArgumentType(Expression arg, ConstructorNode node) {
+        if (!(arg instanceof VariableExpression)) return arg.getType();
+        VariableExpression vexp = (VariableExpression) arg;
+        String name = vexp.getName();
+        Parameter[] params = node.getParameters();
+        for (int i=0; i<params.length; i++) {
+            if (params[i].getName().equals(name)) {
+                return params[i].getType();
+            }
+        }
+        return vexp.getType();
     }
 
     private void genMethod(ClassNode clazz, MethodNode methodNode, PrintWriter out) {
