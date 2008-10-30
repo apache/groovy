@@ -14,13 +14,18 @@ class BlockScopeVisibilityTest extends CompilableTestSupport {
     shouldFail(MissingPropertyException) {    
         try {
             throw new RuntimeException("not important");
-        } catch(AssertionError e) {
+        } catch (AssertionError e) {
            // here e is defined
-        } catch(Throwable t) {
+        } catch (Throwable t) {
            // here e should not be accessible
            println e 
         }
     }
+  }
+  
+  public void testInnerClosureCanAccessImplicitItOfOuterClosure() {
+    def c = { {-> it}} 
+    assert c(1)() == 1
   }
 
 }
