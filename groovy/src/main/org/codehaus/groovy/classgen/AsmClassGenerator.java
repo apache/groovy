@@ -658,8 +658,23 @@ public class AsmClassGenerator extends ClassGenerator {
         Label breakLabel = compileStack.getBreakLabel();
 
         mv.visitLabel(continueLabel);
-        loop.getBooleanExpression().visit(this);
-        mv.visitJumpInsn(IFEQ, breakLabel);
+        Expression bool = loop.getBooleanExpression();
+        boolean boolHandled = false;
+        if (bool instanceof ConstantExpression) {
+            ConstantExpression constant = (ConstantExpression) bool;
+            if (constant.getValue()==Boolean.TRUE) {
+                boolHandled = true;
+                // do nothing
+            } else if (constant.getValue()==Boolean.FALSE) {
+                boolHandled = true;
+                mv.visitJumpInsn(GOTO, breakLabel);
+            }
+        }
+        
+        if(!boolHandled) {
+            bool.visit(this);
+            mv.visitJumpInsn(IFEQ, breakLabel);
+        }
 
         loop.getLoopBlock().visit(this);
 
@@ -3038,7 +3053,10 @@ public class AsmClassGenerator extends ClassGenerator {
             parameters = Parameter.EMPTY_ARRAY;
         } else if (parameters.length == 0) {
             // let's create a default 'it' parameter
-            parameters = new Parameter[]{new Parameter(ClassHelper.OBJECT_TYPE, "it", ConstantExpression.NULL)};
+            Parameter it = new Parameter(ClassHelper.OBJECT_TYPE, "it", ConstantExpression.NULL);
+            parameters = new Parameter[]{it};
+            org.codehaus.groovy.ast.Variable ref = expression.getVariableScope().getDeclaredVariable("it");
+            if (ref!=null) it.setClosureSharedVariable(ref.isClosureSharedVariable());
         }
 
         Parameter[] localVariableParams = getClosureSharedVariables(expression);
