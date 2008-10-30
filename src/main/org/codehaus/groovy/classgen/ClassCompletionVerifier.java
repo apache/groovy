@@ -22,9 +22,11 @@ import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.GStringExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
@@ -346,6 +348,28 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     private void checkForInvalidDeclaration(Expression exp) {
         if (!(exp instanceof DeclarationExpression)) return;
         addError("invalid use of declartion inside method call.",exp);
+    }
+    
+    public void visitConstantExpression(ConstantExpression expression) {
+        super.visitConstantExpression(expression);
+        checkStringExceedingMaximumLength(expression);
+    }
+    
+    public void visitGStringExpression(GStringExpression expression) {
+        super.visitGStringExpression(expression);
+        for (Iterator it = expression.getStrings().iterator(); it.hasNext();) {
+            checkStringExceedingMaximumLength((ConstantExpression) it.next());
+        }
+    }
+    
+    private void checkStringExceedingMaximumLength(ConstantExpression expression){
+        Object value = expression.getValue();
+        if (value instanceof String) {
+            String s = (String) value;
+            if (s.length()>65535) {
+                addError("String too long. The given string is "+s.length()+" Unicode code units long, but only a maximum of 65535 is allowed.",expression);
+            }
+        }
     }
     
 }
