@@ -16,15 +16,9 @@
 package groovy.swing.factory
 
 import groovy.swing.SwingBuilder
-import groovy.swing.binding.AbstractButtonProperties
-import groovy.swing.binding.JComboBoxProperties
-import groovy.swing.binding.JScrollBarProperties
-import groovy.swing.binding.JSliderProperties
-import groovy.swing.binding.JTableProperties
-import groovy.swing.binding.JTextComponentProperties
+import groovy.swing.binding.*
 import java.util.Map.Entry
 import org.codehaus.groovy.binding.*
-
 
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
@@ -119,34 +113,50 @@ public class BindFactory extends AbstractFactory {
         boolean sea = attributes.containsKey("sourceEvent")
         boolean sva = attributes.containsKey("sourceValue")
         boolean spa = attributes.containsKey("sourceProperty") || value
+
         if (sea && sva && !spa) {
+            // entirely event triggered binding
             Closure queryValue = (Closure) attributes.remove("sourceValue")
             ClosureSourceBinding csb = new ClosureSourceBinding(queryValue)
             String trigger = (String) attributes.remove("sourceEvent")
             EventTriggerBinding etb = new EventTriggerBinding(source, trigger)
             fb = etb.createBinding(csb, tb)
         } else if (spa && !(sea && sva)) {
+            // partially property driven binding
             String property = (String) attributes.remove("sourceProperty") ?: value
             PropertyBinding pb = new PropertyBinding(source, property)
 
             TriggerBinding trigger
             if (sea) {
+                // source trigger comes from an event
                 String triggerName = (String) attributes.remove("sourceEvent")
                 trigger = new EventTriggerBinding(source, triggerName)
             } else {
+                // source trigger comes from a property change
                 // this method will also check for synthetic properties
                 trigger = getTriggerBinding(pb)
             }
 
             SourceBinding sb;
             if (sva) {
+                // source value comes from a value closure
                 Closure queryValue = (Closure) attributes.remove("sourceValue")
                 sb = new ClosureSourceBinding(queryValue)
             } else {
+                // soruce value is the property value
                 sb = pb
             }
 
-            fb = trigger.createBinding(sb, tb)
+            if (!sea && !sva) {
+                // check for a mutual binding (bi-directional)
+                if (attributes.remove("mutual")) {
+                    fb = new MutualPropertyBinding(sb, tb)
+                } else {
+                    fb = trigger.createBinding(sb, tb)
+                }
+            } else {
+                fb = trigger.createBinding(sb, tb)
+            }
         } else if (!(sea || sva || spa)) {
             // if no sourcing is defined then assume we are a closure binding and return
             def newAttributes = [:]
@@ -170,6 +180,10 @@ public class BindFactory extends AbstractFactory {
         }
         if (target != null) {
             fb.update()
+        }
+
+        if ((attributes.group instanceof AggregateBinding) && (fb instanceof BindingUpdatable)) {
+            attributes.remove('group').addBinding(fb)
         }
 
         builder.addDisposalClosure(fb.&unbind)

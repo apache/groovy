@@ -113,7 +113,6 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
                 bind();
             }
         }
-
     }
 
     public Object getBean() {
@@ -131,6 +130,4 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
     public void setPropertyName(String propertyName) {
         this.propertyName = propertyName;
     }
-
-
 }
