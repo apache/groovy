@@ -354,6 +354,89 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
       }
     }
 
+    public void testMutualPropertyBinding() {
+      testInEDT {
+        SwingBuilder swing = new SwingBuilder()
+
+        swing.actions() {
+            checkBox('Button!', id:'cb')
+            textField(id:'txt', enabled:bind(source:cb, sourceProperty:'enabled', id:'binding', mutual:true))
+        }
+        assert swing.txt.enabled == swing.cb.enabled
+        swing.cb.enabled = !swing.cb.enabled
+        assert swing.txt.enabled == swing.cb.enabled
+        swing.cb.enabled = !swing.cb.enabled
+        assert swing.txt.enabled == swing.cb.enabled
+
+        swing.txt.enabled = !swing.txt.enabled
+        assert swing.txt.enabled == swing.cb.enabled
+        swing.txt.enabled = !swing.txt.enabled
+        assert swing.txt.enabled == swing.cb.enabled
+
+        swing.binding.rebind()
+        swing.cb.enabled = !swing.cb.enabled
+        assert swing.txt.enabled == swing.cb.enabled
+        swing.txt.enabled = !swing.txt.enabled
+        assert swing.txt.enabled == swing.cb.enabled
+
+        swing.binding.unbind()
+        swing.cb.enabled = !swing.cb.enabled
+        assert swing.txt.enabled != swing.cb.enabled
+        swing.txt.enabled = !swing.txt.enabled
+        assert swing.txt.enabled == swing.cb.enabled
+        swing.txt.enabled = !swing.txt.enabled
+        assert swing.txt.enabled != swing.cb.enabled
+
+        swing.txt.enabled = !swing.cb.enabled
+        assert swing.txt.enabled != swing.cb.enabled
+        swing.binding.update()
+        assert swing.txt.enabled == swing.cb.enabled
+
+        swing.txt.enabled = !swing.cb.enabled
+        assert swing.txt.enabled != swing.cb.enabled
+        swing.binding.reverseUpdate()
+        assert swing.txt.enabled == swing.cb.enabled
+      }
+    }
+
+    public void testBindGroup() {
+      testInEDT {
+        SwingBuilder swing = new SwingBuilder()
+
+        int enabledChangeCount = 1
+        swing.actions() {
+            bindGroup(id:'testGroup')
+            checkBox('Button!', id:'cb')
+            textField(id:'txt1', text:bind(source:cb, sourceProperty:'text', group:testGroup))
+            textField(id:'txt2', text:bind(source:cb, sourceProperty:'text', sourceValue: {enabledChangeCount++}, group:testGroup))
+            textField(id:'txt3', text:bind(source:cb, sourceProperty:'text', group:testGroup))
+        }
+          assert swing.txt1.text == 'Button!'
+          assert swing.txt2.text == '1'
+          assert swing.txt3.text == 'Button!'
+
+          swing.testGroup.unbind()
+          swing.cb.text = 'CheckBox!'
+          swing.cb.selected = true
+
+          assert swing.txt1.text == 'Button!'
+          assert swing.txt2.text == '1'
+          assert swing.txt3.text == 'Button!'
+
+          swing.testGroup.update()
+          assert swing.txt1.text == 'CheckBox!'
+          assert swing.txt2.text == '2'
+          assert swing.txt3.text == 'CheckBox!'
+
+          swing.testGroup.bind()
+          swing.cb.text = 'ComboBox!'
+          swing.cb.selected = true
+          assert swing.txt1.text == 'ComboBox!'
+          assert swing.txt2.text == '3'
+          assert swing.txt3.text == 'ComboBox!'
+      }
+    }
+
     public void testPropertyEventBinding() {
       testInEDT {
         SwingBuilder swing = new SwingBuilder()
