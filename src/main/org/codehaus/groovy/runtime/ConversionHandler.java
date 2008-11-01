@@ -16,6 +16,7 @@
 
 package org.codehaus.groovy.runtime;
 
+import java.io.Serializable;
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -28,7 +29,7 @@ import java.lang.reflect.Proxy;
  * @author Ben Yu
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  */
-public abstract class ConversionHandler implements InvocationHandler {
+public abstract class ConversionHandler implements InvocationHandler, Serializable {
     private Object delegate;
     
     /**
