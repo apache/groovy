@@ -16,8 +16,10 @@
 
 package org.codehaus.groovy.runtime;
 
-import java.lang.reflect.Method;
 import groovy.lang.Closure;
+
+import java.io.Serializable;
+import java.lang.reflect.Method;
 
 /**
  * This class is a general adapter to adapt a closure to any Java interface.
@@ -26,9 +28,9 @@ import groovy.lang.Closure;
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  * Jul 27, 2006 3:50:51 PM
  */
-public class ConvertedClosure extends ConversionHandler {
+public class ConvertedClosure extends ConversionHandler implements Serializable {
     private String methodName;
-    
+
     /**
      * to create a ConvertedClosure object.
      * @param closure the closure object.
