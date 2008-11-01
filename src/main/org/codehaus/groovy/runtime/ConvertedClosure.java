@@ -30,6 +30,7 @@ import java.lang.reflect.Method;
  */
 public class ConvertedClosure extends ConversionHandler implements Serializable {
     private String methodName;
+    private static final long serialVersionUID = 1162833713450835227L;
 
     /**
      * to create a ConvertedClosure object.
@@ -49,5 +50,6 @@ public class ConvertedClosure extends ConversionHandler implements Serializable 
         if (methodName!=null && !methodName.equals(method.getName())) return null;
         return ((Closure) getDelegate()).call(args);
     }
+
 }
 

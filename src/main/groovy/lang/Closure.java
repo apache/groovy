@@ -95,6 +95,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
     private int directive;
     protected Class[] parameterTypes;
     protected int maximumNumberOfParameters;
+    private static final long serialVersionUID = 4368710879820278874L;
 
     public Closure(Object owner, Object thisObject) {
         this.owner = owner;

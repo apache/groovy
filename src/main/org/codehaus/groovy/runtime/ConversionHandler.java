@@ -31,7 +31,8 @@ import java.lang.reflect.Proxy;
  */
 public abstract class ConversionHandler implements InvocationHandler, Serializable {
     private Object delegate;
-    
+    private static final long serialVersionUID = 1162833717190835227L;
+
     /**
      * Creates a ConversionHandler with an deleagte.
      * @param delegate the delegate
@@ -134,4 +135,5 @@ public abstract class ConversionHandler implements InvocationHandler, Serializab
     private static boolean isObjectMethod(Method mtd){
         return mtd.getDeclaringClass().equals(Object.class);
     }
+
 }
