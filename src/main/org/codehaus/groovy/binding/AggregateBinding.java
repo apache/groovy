@@ -33,7 +33,7 @@ public class AggregateBinding implements BindingUpdatable {
     }
 
     public void unbind() {
-        if (!bound) {
+        if (bound) {
             for (BindingUpdatable binding : bindings) {
                 binding.unbind();
             }

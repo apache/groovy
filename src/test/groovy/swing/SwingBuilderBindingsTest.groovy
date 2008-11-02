@@ -411,29 +411,63 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
             textField(id:'txt2', text:bind(source:cb, sourceProperty:'text', sourceValue: {enabledChangeCount++}, group:testGroup))
             textField(id:'txt3', text:bind(source:cb, sourceProperty:'text', group:testGroup))
         }
-          assert swing.txt1.text == 'Button!'
-          assert swing.txt2.text == '1'
-          assert swing.txt3.text == 'Button!'
+        assert swing.txt1.text == 'Button!'
+        assert swing.txt2.text == '1'
+        assert swing.txt3.text == 'Button!'
 
-          swing.testGroup.unbind()
-          swing.cb.text = 'CheckBox!'
-          swing.cb.selected = true
+        swing.testGroup.unbind()
+        swing.cb.text = 'CheckBox!'
+        swing.cb.selected = true
 
-          assert swing.txt1.text == 'Button!'
-          assert swing.txt2.text == '1'
-          assert swing.txt3.text == 'Button!'
+        assert swing.txt1.text == 'Button!'
+        assert swing.txt2.text == '1'
+        assert swing.txt3.text == 'Button!'
 
-          swing.testGroup.update()
-          assert swing.txt1.text == 'CheckBox!'
-          assert swing.txt2.text == '2'
-          assert swing.txt3.text == 'CheckBox!'
+        swing.testGroup.update()
+        assert swing.txt1.text == 'CheckBox!'
+        assert swing.txt2.text == '2'
+        assert swing.txt3.text == 'CheckBox!'
 
-          swing.testGroup.bind()
-          swing.cb.text = 'ComboBox!'
-          swing.cb.selected = true
-          assert swing.txt1.text == 'ComboBox!'
-          assert swing.txt2.text == '3'
-          assert swing.txt3.text == 'ComboBox!'
+        swing.testGroup.bind()
+        swing.cb.text = 'ComboBox!'
+        swing.cb.selected = true
+        assert swing.txt1.text == 'ComboBox!'
+        assert swing.txt2.text == '3'
+        assert swing.txt3.text == 'ComboBox!'
+
+        // test auto-bind
+        // test explicit true
+        swing.actions() {
+            bindGroup(id:'testGroup', bind:true)
+            checkBox('Button!', id:'cb')
+            textField(id:'txt1', text:bind(source:cb, sourceProperty:'text', group:testGroup))
+        }
+
+        assert swing.txt1.text == 'Button!'
+        swing.cb.text = 'CheckBox!'
+        assert swing.txt1.text == 'CheckBox!'
+
+          // test explicit false
+        swing.actions() {
+            bindGroup(id:'testGroup', bind:false)
+            checkBox('Button!', id:'cb')
+            textField(id:'txt1', text:bind(source:cb, sourceProperty:'text', group:testGroup))
+        }
+
+        assert swing.txt1.text == 'Button!'
+        swing.cb.text = 'CheckBox!'
+        assert swing.txt1.text == 'Button!'
+
+        // test implied = true
+        swing.actions() {
+        bindGroup(id:'testGroup')
+        checkBox('Button!', id:'cb')
+        textField(id:'txt1', text:bind(source:cb, sourceProperty:'text', group:testGroup))
+        }
+
+        assert swing.txt1.text == 'Button!'
+        swing.cb.text = 'CheckBox!'
+        assert swing.txt1.text == 'CheckBox!'
       }
     }
 
