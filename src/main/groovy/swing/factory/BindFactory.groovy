@@ -173,7 +173,7 @@ public class BindFactory extends AbstractFactory {
         }
 
         Object o = attributes.remove("bind")
-        if (    (o == null)
+        if (    ((o == null) && !attributes.containsKey('group'))
             || ((o instanceof Boolean) && ((Boolean)o).booleanValue()))
         {
             fb.bind()

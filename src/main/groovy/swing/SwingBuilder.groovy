@@ -23,9 +23,7 @@ import javax.swing.*
 import javax.swing.border.BevelBorder
 import javax.swing.border.EtchedBorder
 import javax.swing.table.TableColumn
-import org.codehaus.groovy.binding.AggregateBinding
 import org.codehaus.groovy.runtime.MethodClosure
-
 
 /**
  * A helper class for creating Swing widgets using GroovyMarkup
@@ -67,7 +65,7 @@ public class SwingBuilder  extends FactoryBuilderSupport {
         registerFactory("bind", bindFactory)
         addAttributeDelegate(bindFactory.&bindingAttributeDelegate)
         registerFactory("bindProxy", new BindProxyFactory())
-        registerBeanFactory ("bindGroup", AggregateBinding)
+        registerFactory ("bindGroup", new BindGroupFactory());
     }
 
     def registerPassThruNodes() {
