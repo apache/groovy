@@ -33,6 +33,9 @@ class PrefixTest extends GroovyTestCase {
         --x
         
         assert x == "bbb"
+
+        def y = ++"bbc"
+        assert y == "bbd"
     }
     
     void testArrayPrefix() {
@@ -48,5 +51,22 @@ class PrefixTest extends GroovyTestCase {
     
     void testConstantPostFix() {
         assert 2 == ++1
-    }  
+    }
+
+    def valueReturned() { 0 }
+
+    void testFunctionPostfix() {
+        def z = ++(valueReturned())
+
+        assert z == 1
+    }
+
+    void testPrefixAndPostfix() {
+        def u = 0
+        
+        assert -1 == -- u --
+        assert 0 == ++ u ++
+        assert -2 == (--(--u))
+        assert -1 == u
+    }
 }
