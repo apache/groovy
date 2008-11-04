@@ -45,14 +45,14 @@ import java.util.*;
  *      the stored variable index
  * <li> the names of temporary variables can be ignored. The names
  *      are only used for debugging and do not conflict with each 
- *      other or normal variables. For accessing the index of the
+ *      other or normal variables. For accessing, the index of the
  *      variable must be used.
  * <li> never mix temporary and normal variables by changes to this class.
  *      While the name is very important for a normal variable, it is only a
  *      helper construct for temporary variables. That means for example a
  *      name for a temporary variable can be used multiple times without
  *      conflict. So mixing them both may lead to the problem that a normal
- *      or temporary variable is hidden or even removed. that must not happen!       
+ *      or temporary variable is hidden or even removed.  That must not happen!       
  * </ul>
  * 
  * 

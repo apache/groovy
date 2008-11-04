@@ -35,6 +35,8 @@ public class VariableScope  {
  
     private boolean inStaticContext = false;
     private boolean resolvesDynamic = false; 
+    // Only non-null is this scope corresponds to a class, as opposed to a method, "if" statement,
+    // block statement, etc.
     private ClassNode clazzScope;
     private VariableScope parent;
 
@@ -79,10 +81,14 @@ public class VariableScope  {
         this.clazzScope = node;
     }
     
+    // Only non-null is this scope corresponds to a class, as opposed to a method, "if" statement,
+    // block statement, etc.
     public ClassNode getClassScope(){
         return clazzScope;
     }
     
+    // Returns true if this scope corresponds to a class, as opposed to a method, "if" statement,
+    // block statement, etc.
     public boolean isClassScope(){
         return clazzScope!=null;
     }

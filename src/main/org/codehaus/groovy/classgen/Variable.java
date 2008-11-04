@@ -115,7 +115,6 @@ public class Variable {
     }
 
     public String toString() {
-        // TODO Auto-generated method stub
         return super.toString() + "[" + type + " " + name + " (" + index + ")";
     }
 
