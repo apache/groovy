@@ -3493,7 +3493,6 @@ public class AsmClassGenerator extends ClassGenerator {
                 invokeMethod,false,false,false);
 
         // we need special code for arrays to store the result
-        boolean setResult = true;
         if (expression instanceof BinaryExpression) {
             BinaryExpression be = (BinaryExpression) expression;
             if (be.getOperation().getType()==Types.LEFT_SQUARE_BRACKET) {
@@ -3512,20 +3511,15 @@ public class AsmClassGenerator extends ClassGenerator {
                         args,
                         invokeMethod,false,false,false);
                 mv.visitInsn(POP);
-                setResult = false;
+                compileStack.removeVar(resultIdx);
             }
-        } else if (expression instanceof ConstantExpression) {
-            setResult = false;
-        }
-
-        if (setResult) {
-            // we want to keep a value on stack, so we have to DUP here
-            if (expression instanceof VariableExpression ||
-                expression instanceof FieldExpression ||
-                expression instanceof PropertyExpression)
-            {
-                mv.visitInsn(DUP);
-            }
+        } 
+        
+        if (expression instanceof VariableExpression ||
+            expression instanceof FieldExpression ||
+            expression instanceof PropertyExpression)
+        {
+            mv.visitInsn(DUP);
             leftHandExpression = true;
             expression.visit(this);
             leftHandExpression = false;
