@@ -29,20 +29,7 @@ import java.util.*;
 public class DOMCategory {
 
     private static boolean trimWhitespace = true;
-/*
-    public static Object get(Object o, String elementName) {
-        if (o instanceof Element) {
-            return get((Element) o, elementName);
-        }
-        if (o instanceof NodeList) {
-            return get((NodeList) o, elementName);
-        }
-        if (o instanceof NamedNodeMap) {
-            return get((NamedNodeMap) o, elementName);
-        }
-        return InvokerHelper.getProperty(o, elementName);
-    }
-*/
+
     public static Object get(Element element, String elementName) {
         return getAt(element, elementName);
     }
