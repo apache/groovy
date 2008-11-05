@@ -30,28 +30,15 @@ public class DOMCategory {
 
     private static boolean trimWhitespace = true;
 
-    public static Object get(Object o, String elementName) {
-        if (o instanceof Element) {
-            return get((Element) o, elementName);
-        }
-        if (o instanceof NodeList) {
-            return get((NodeList) o, elementName);
-        }
-        if (o instanceof NamedNodeMap) {
-            return get((NamedNodeMap) o, elementName);
-        }
-        return InvokerHelper.getProperty(o, elementName);
-    }
-
-    private static Object get(Element element, String elementName) {
+    public static Object get(Element element, String elementName) {
         return getAt(element, elementName);
     }
 
-    private static Object get(NodeList nodeList, String elementName) {
+    public static Object get(NodeList nodeList, String elementName) {
         return getAt(nodeList, elementName);
     }
 
-    private static Object get(NamedNodeMap nodeMap, String elementName) {
+    public static Object get(NamedNodeMap nodeMap, String elementName) {
         return getAt(nodeMap, elementName);
     }
 
@@ -73,7 +60,7 @@ public class DOMCategory {
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node node = nodeList.item(i);
             if (node instanceof Element) {
-                addResult(results, get(node, elementName));
+                addResult(results, get((Element)node, elementName));
             }
         }
         if (elementName.startsWith("@")) {
