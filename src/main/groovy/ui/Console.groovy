@@ -23,7 +23,6 @@ import groovy.ui.text.FindReplaceUtility
 import java.awt.Component
 import java.awt.EventQueue
 import java.awt.Font
-import java.awt.Image
 import java.awt.Toolkit
 import java.awt.event.ActionEvent
 import java.util.prefs.Preferences
@@ -150,7 +149,7 @@ class Console implements CaretListener {
         }
         consoleControllers += this
 
-        binding.variables._transformHandlers = loadConsoleTransforms()
+        binding.variables._transformHandlers = OutputTransforms.loadOutputTransforms()
     }
 
     void newScript(ClassLoader parent, Binding binding) {
@@ -446,22 +445,16 @@ class Console implements CaretListener {
         if (result != null) {
             statusLabel.text = 'Execution complete.'
             appendOutputNl("Result: ", promptStyle)
-            for (Closure c : shell.context._transformHandlers) {
-                def obj = c(result)
-                if (obj instanceof Component) {
-                    outputArea.setCaretPosition(outputArea.document.length)
-                    outputArea.insertComponent(obj)
-                    break
-                } else if (obj instanceof Icon) {
-                    outputArea.setCaretPosition(outputArea.document.length)
-                    outputArea.insertIcon(obj)
-                    break
-                } else if ((obj instanceof String) || (obj instanceof GString)) {
-                    appendOutput(obj as String, resultStyle)
-                    break
-                }
+            def obj = OutputTransforms.transformResult(result, shell.context._transformHandlers)
+            if (obj instanceof Component) {
+                outputArea.setCaretPosition(outputArea.document.length)
+                outputArea.insertComponent(obj)
+            } else if (obj instanceof Icon) {
+                outputArea.setCaretPosition(outputArea.document.length)
+                outputArea.insertIcon(obj)
+            } else {
+                appendOutput(obj.toString(), resultStyle)
             }
-
         } else {
             statusLabel.text = 'Execution complete. Result was null.'
         }
@@ -783,43 +776,6 @@ class Console implements CaretListener {
 
     void redo(EventObject evt = null) {
         inputEditor.redoAction.actionPerformed(evt)
-    }
-
-    List<Closure> loadConsoleTransforms() {
-        List<Closure> transforms = []
-
-        //
-        // load user local transforms
-        //
-        def userHome = new File(System.getProperty('user.home'))
-        def groovyDir = new File(userHome, '.groovy')
-        def userTransforms = new File(groovyDir, "ConsoleOutputTransforms.groovy")
-        if (userTransforms.exists()) {
-            GroovyShell tempShell  = new GroovyShell()
-            tempShell.context.transforms = transforms
-            tempShell.evaluate(userTransforms)
-            transforms = tempShell.context.transforms
-        }
-
-        //
-        // built-in transforms
-        //
-
-        // any jcomponents, such as  a heavyweight button or a Swing component,
-        // gets passed if it has no parent set (tne parent clause is to
-        // keep buttons from disappearing from user shown forms)
-        transforms += { it -> if ((it instanceof Component) && (it.parent == null)) it }
-
-        // icons get passed, they can be rendered multiple times so no parent check
-        transforms += { it -> if (it instanceof Icon) it }
-
-        // Images become ImageIcons
-        transforms += { it -> if (it instanceof Image) new ImageIcon(it)}
-
-        // final case, non-nulls just get inspected as strings
-        transforms += { it -> if (it != null) "${InvokerHelper.inspect(it)}" }
-
-        return transforms
     }
 
 }
