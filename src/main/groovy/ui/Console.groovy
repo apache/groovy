@@ -149,7 +149,7 @@ class Console implements CaretListener {
         }
         consoleControllers += this
 
-        binding.variables._transformHandlers = OutputTransforms.loadOutputTransforms()
+        binding.variables._outputTransforms = OutputTransforms.loadOutputTransforms()
     }
 
     void newScript(ClassLoader parent, Binding binding) {
@@ -445,12 +445,14 @@ class Console implements CaretListener {
         if (result != null) {
             statusLabel.text = 'Execution complete.'
             appendOutputNl("Result: ", promptStyle)
-            def obj = OutputTransforms.transformResult(result, shell.context._transformHandlers)
+            def obj = OutputTransforms.transformResult(result, shell.context._outputTransforms)
             if (obj instanceof Component) {
-                outputArea.setCaretPosition(outputArea.document.length)
+                outputArea.setSelectionStart(outputArea.document.length)
+                outputArea.setSelectionEnd(outputArea.document.length)
                 outputArea.insertComponent(obj)
             } else if (obj instanceof Icon) {
-                outputArea.setCaretPosition(outputArea.document.length)
+                outputArea.setSelectionStart(outputArea.document.length)
+                outputArea.setSelectionEnd(outputArea.document.length)
                 outputArea.insertIcon(obj)
             } else {
                 appendOutput(obj.toString(), resultStyle)

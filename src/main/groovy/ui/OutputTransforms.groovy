@@ -15,10 +15,11 @@
  */
 package groovy.ui
 
-import java.awt.Component
-import java.awt.Image
+import java.awt.*
+import java.awt.image.BufferedImage
 import javax.swing.Icon
 import javax.swing.ImageIcon
+import org.codehaus.groovy.runtime.InvokerHelper
 
 public class OutputTransforms {
 
@@ -32,7 +33,7 @@ public class OutputTransforms {
         //
         def userHome = new File(System.getProperty('user.home'))
         def groovyDir = new File(userHome, '.groovy')
-        def userTransforms = new File(groovyDir, "ConsoleOutputTransforms.groovy")
+        def userTransforms = new File(groovyDir, "OutputTransforms.groovy")
         if (userTransforms.exists()) {
             GroovyShell tempShell  = new GroovyShell()
             tempShell.context.transforms = transforms
@@ -44,10 +45,31 @@ public class OutputTransforms {
         // built-in transforms
         //
 
-        // any jcomponents, such as  a heavyweight button or a Swing component,
+        // any GUI components, such as  a heavyweight button or a Swing component,
         // gets passed if it has no parent set (tne parent clause is to
         // keep buttons from disappearing from user shown forms)
         transforms += { it -> if ((it instanceof Component) && (it.parent == null)) it }
+
+        // remaining components get printed to an image
+        transforms += { it ->
+            if (it instanceof javax.swing.JComponent) {
+                Dimension d = it.getSize();
+                if (d.width == 0) {
+                    d = it.getPreferredSize();
+                    it.setSize(d);
+                }
+
+                GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
+                GraphicsDevice gs = ge.getDefaultScreenDevice();
+                GraphicsConfiguration gc = gs.getDefaultConfiguration();
+
+                BufferedImage image = gc.createCompatibleImage(d.width as int,d.height as int, Transparency.TRANSLUCENT);
+                Graphics2D g2 = image.createGraphics();
+                it.print(g2)
+                g2.dispose()
+                new javax.swing.ImageIcon(image)
+            }
+        }
 
         // icons get passed, they can be rendered multiple times so no parent check
         transforms += { it -> if (it instanceof Icon) it }
