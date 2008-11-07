@@ -50,21 +50,21 @@ public class OutputTransforms {
         // remaining components get printed to an image
         transforms << { it ->
             if (it instanceof javax.swing.JComponent) {
-                Dimension d = it.getSize();
+                Dimension d = it.size
                 if (d.width == 0) {
-                    d = it.getPreferredSize();
-                    it.setSize(d);
+                    d = it.preferredSize
+                    it.size = d
                 }
 
-                GraphicsEnvironment ge = GraphicsEnvironment.getLocalGraphicsEnvironment();
-                GraphicsDevice gs = ge.getDefaultScreenDevice();
-                GraphicsConfiguration gc = gs.getDefaultConfiguration();
+                GraphicsEnvironment ge = GraphicsEnvironment.localGraphicsEnvironment
+                GraphicsDevice gs = ge.defaultScreenDevice
+                GraphicsConfiguration gc = gs.defaultConfiguration
 
-                BufferedImage image = gc.createCompatibleImage(d.width as int,d.height as int, Transparency.TRANSLUCENT);
-                Graphics2D g2 = image.createGraphics();
+                BufferedImage image = gc.createCompatibleImage(d.width as int, d.height as int, Transparency.TRANSLUCENT)
+                Graphics2D g2 = image.createGraphics()
                 it.print(g2)
                 g2.dispose()
-                new javax.swing.ImageIcon(image)
+                new ImageIcon(image)
             }
         }
 
