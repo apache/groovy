@@ -23,10 +23,10 @@ import org.codehaus.groovy.runtime.InvokerHelper
 
 public class OutputTransforms {
 
-    @Lazy static List<Closure> localTransforms = loadOutputTransforms()
+    @Lazy static def localTransforms = loadOutputTransforms()
 
-    static List<Closure> loadOutputTransforms() {
-        List<Closure> transforms = []
+    static def loadOutputTransforms() {
+        def transforms = []
 
         //
         // load user local transforms
@@ -35,10 +35,7 @@ public class OutputTransforms {
         def groovyDir = new File(userHome, '.groovy')
         def userTransforms = new File(groovyDir, "OutputTransforms.groovy")
         if (userTransforms.exists()) {
-            GroovyShell tempShell  = new GroovyShell()
-            tempShell.context.transforms = transforms
-            tempShell.evaluate(userTransforms)
-            transforms = tempShell.context.transforms
+            new GroovyShell(transforms:transforms).evaluate(userTransforms)
         }
 
         //
@@ -48,10 +45,10 @@ public class OutputTransforms {
         // any GUI components, such as  a heavyweight button or a Swing component,
         // gets passed if it has no parent set (tne parent clause is to
         // keep buttons from disappearing from user shown forms)
-        transforms += { it -> if ((it instanceof Component) && (it.parent == null)) it }
+        transforms << { it -> if ((it instanceof Component) && (it.parent == null)) it }
 
         // remaining components get printed to an image
-        transforms += { it ->
+        transforms << { it ->
             if (it instanceof javax.swing.JComponent) {
                 Dimension d = it.getSize();
                 if (d.width == 0) {
@@ -72,18 +69,18 @@ public class OutputTransforms {
         }
 
         // icons get passed, they can be rendered multiple times so no parent check
-        transforms += { it -> if (it instanceof Icon) it }
+        transforms << { it -> if (it instanceof Icon) it }
 
         // Images become ImageIcons
-        transforms += { it -> if (it instanceof Image) new ImageIcon(it)}
+        transforms << { it -> if (it instanceof Image) new ImageIcon(it)}
 
         // final case, non-nulls just get inspected as strings
-        transforms += { it -> if (it != null) "${InvokerHelper.inspect(it)}" }
+        transforms << { it -> if (it != null) "${InvokerHelper.inspect(it)}" }
 
         return transforms
     }
 
-    static def transformResult(def base, List<Closure> transforms = localTransforms) {
+    static def transformResult(def base, def transforms = localTransforms) {
         for (Closure c : transforms) {
             def result = c(base)
             if (result != null)  {
