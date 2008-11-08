@@ -56,8 +56,10 @@ class Console implements CaretListener {
         Boolean.valueOf(System.getProperty("groovy.full.stacktrace", "false")))
     Action fullStackTracesAction
 
-    boolean showToolbar = prefs.getBoolean('showToolbar', true)
     boolean showScriptInOutput = prefs.getBoolean('showScriptInOutput', true)
+    Action showScriptInOutputAction
+
+    boolean showToolbar = prefs.getBoolean('showToolbar', true)
     Component toolbar
     Action showToolbarAction
 
