@@ -33,6 +33,7 @@ abstract class RootPaneContainerFactory extends AbstractFactory {
             def constraints = builder.context.constraints
             if (constraints != null) {
                 parent.contentPane.add(child, constraints)
+                builder.context.remove('constraints')
             } else {
                 parent.contentPane.add(child)
             }
