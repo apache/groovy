@@ -251,6 +251,12 @@ fullStackTracesAction = action(
     mnemonic: 'F'
 )
 
+showScriptInOutputAction = action(
+    name: 'Show Script in Output',
+    closure: controller.&showScriptInOutput,
+    mnemonic: 'O'
+)
+
 showToolbarAction = action(
     name: 'Show Toolbar',
     closure: controller.&showToolbar,

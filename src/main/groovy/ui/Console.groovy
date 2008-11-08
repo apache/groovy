@@ -57,6 +57,7 @@ class Console implements CaretListener {
     Action fullStackTracesAction
 
     boolean showToolbar = prefs.getBoolean('showToolbar', true)
+    boolean showScriptInOutput = prefs.getBoolean('showScriptInOutput', true)
     Component toolbar
     Action showToolbarAction
 
@@ -307,6 +308,11 @@ class Console implements CaretListener {
         System.setProperty("groovy.full.stacktrace",
             Boolean.toString(fullStackTraces))
         prefs.putBoolean('fullStackTraces', fullStackTraces)
+    }
+
+    void showScriptInOutput(EventObject evt) {
+        showScriptInOutput = evt.source.selected
+        prefs.putBoolean('showScriptInOutput', showScriptInOutput)
     }
 
     void showToolbar(EventObject evt) {
@@ -579,9 +585,11 @@ class Console implements CaretListener {
         pendingRecord = new HistoryRecord(allText:'', selectionStart:0, selectionEnd:0)
 
         // Print the input text
-        for (line in record.getTextToRun(selected).tokenize("\n")) {
-            appendOutputNl('groovy> ', promptStyle)
-            appendOutput(line, commandStyle)
+        if (showScriptInOutput) {
+            for (line in record.getTextToRun(selected).tokenize("\n")) {
+                appendOutputNl('groovy> ', promptStyle)
+                appendOutput(line, commandStyle)
+            }
         }
 
         //appendOutputNl("") - with wrong number of args, causes StackOverFlowError
