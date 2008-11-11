@@ -35,7 +35,9 @@ public class OutputTransforms {
         def groovyDir = new File(userHome, '.groovy')
         def userTransforms = new File(groovyDir, "OutputTransforms.groovy")
         if (userTransforms.exists()) {
-            new GroovyShell(transforms:transforms).evaluate(userTransforms)
+            GroovyShell shell = new GroovyShell()
+            shell.setVariable('transforms', transforms)
+            shell.evaluate(userTransforms)
         }
 
         //
