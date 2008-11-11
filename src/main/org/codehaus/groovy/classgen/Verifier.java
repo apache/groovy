@@ -393,7 +393,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             }
         };
         Statement s = node.getCode();
-        //todo why can a statement can be null?
         if (s == null) return;
         s.visit(checkSuper);
     }
@@ -860,7 +859,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         List declaredMethods = new ArrayList(classNode.getMethods());
         Map genericsSpec = new HashMap();
         
-        // remove staic methods from declaredMethods
+        // remove static methods from declaredMethods
         for (Iterator methodsIterator = declaredMethods.iterator(); methodsIterator.hasNext();) {
             MethodNode m = (MethodNode) methodsIterator.next();
             if (m.isStatic()) methodsIterator.remove();
