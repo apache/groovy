@@ -182,15 +182,26 @@ public class VetoableASTTransformation extends BindableASTTransformation {
      * @return the created statement
      */
     protected Statement createConstrainedStatement(PropertyNode propertyNode, Expression fieldExpression) {
-        return new ExpressionStatement(
-                new MethodCallExpression(
-                        new FieldExpression(vcsField),
-                        "fireVetoableChange",
-                        new ArgumentListExpression(
-                                new Expression[]{
-                                        new ConstantExpression(propertyNode.getName()),
-                                        fieldExpression,
-                                        new VariableExpression("value")})));
+        Expression methodArguments = new ArgumentListExpression(
+                new Expression[]{
+                        new ConstantExpression(propertyNode.getName()),
+                        fieldExpression,
+                        new VariableExpression("value")});
+        if (vcsField == null) {
+            // call is directly on the object
+            return new ExpressionStatement(
+                    new MethodCallExpression(
+                            VariableExpression.THIS_EXPRESSION,
+                            "fireVetoableChange",
+                            methodArguments));
+        } else {
+            // call is on the vetoableChangeSupport
+            return new ExpressionStatement(
+                    new MethodCallExpression(
+                            new FieldExpression(vcsField),
+                            "fireVetoableChange",
+                            methodArguments));
+        }
     }
 
     /**
@@ -226,7 +237,12 @@ public class VetoableASTTransformation extends BindableASTTransformation {
                     continue;
                 }
                 if (vcsClassNode.equals(field.getType())) {
-                    vcsField = field;
+                    // if field is not private, use it directly
+                    // else, rely on exposed fireVetoableChange methods
+                    if ((field.getModifiers() &
+                            (ACC_PUBLIC | ACC_PRIVATE | ACC_PROTECTED)) != ACC_PRIVATE) {
+                        vcsField = field;
+                    }
                     return false;
                 }
             }

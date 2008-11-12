@@ -189,18 +189,29 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
      */
     protected Statement createBindableStatement(PropertyNode propertyNode, Expression fieldExpression) {
         // create statementBody
-        return new ExpressionStatement(
-                new MethodCallExpression(
-                        new FieldExpression(pcsField),
-                        "firePropertyChange",
-                        new ArgumentListExpression(
-                                new Expression[]{
-                                        new ConstantExpression(propertyNode.getName()),
-                                        fieldExpression,
-                                        new BinaryExpression(
-                                                fieldExpression,
-                                                Token.newSymbol(Types.EQUAL, 0, 0),
-                                                new VariableExpression("value"))})));
+        Expression methodArguments = new ArgumentListExpression(
+                new Expression[]{
+                        new ConstantExpression(propertyNode.getName()),
+                        fieldExpression,
+                        new BinaryExpression(
+                                fieldExpression,
+                                Token.newSymbol(Types.EQUAL, 0, 0),
+                                new VariableExpression("value"))});
+        if (pcsField == null) {
+            // call is directly on the object
+            return new ExpressionStatement(
+                    new MethodCallExpression(
+                            VariableExpression.THIS_EXPRESSION,
+                            "firePropertyChange",
+                            methodArguments));
+        } else {
+            // call is on the propertyChangeSupport
+            return new ExpressionStatement(
+                    new MethodCallExpression(
+                            new FieldExpression(pcsField),
+                            "firePropertyChange",
+                            methodArguments));
+        }
     }
 
     /**
@@ -236,8 +247,12 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
                     continue;
                 }
                 if (pcsClassNode.equals(field.getType())) {
-                    //pcsFieldName = field.getName();
-                    pcsField = field;
+                    // if field is not private, use it directly
+                    // else, rely on exposed firePropertyChange methods
+                    if ((field.getModifiers() &
+                            (ACC_PUBLIC | ACC_PRIVATE | ACC_PROTECTED)) != ACC_PRIVATE) {
+                        pcsField = field;
+                    }
                     return false;
                 }
             }
