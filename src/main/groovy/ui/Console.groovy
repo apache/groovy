@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -123,7 +123,7 @@ class Console implements CaretListener {
         java.util.logging.Logger.getLogger(StackTraceUtils.STACK_LOG_NAME).useParentHandlers = true
 
         //when starting via main set the look and feel to system
-        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); 
+        UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName());
 
         def console = new Console(Console.class.classLoader?.getRootLoader())
         console.run()
@@ -151,6 +151,8 @@ class Console implements CaretListener {
             fullStackTracesAction.enabled = false;
         }
         consoleControllers += this
+
+        binding.variables._outputTransforms = OutputTransforms.loadOutputTransforms()
     }
 
     void newScript(ClassLoader parent, Binding binding) {
@@ -451,7 +453,18 @@ class Console implements CaretListener {
         if (result != null) {
             statusLabel.text = 'Execution complete.'
             appendOutputNl("Result: ", promptStyle)
-            appendOutput("${InvokerHelper.inspect(result)}", resultStyle)
+            def obj = OutputTransforms.transformResult(result, shell.context._outputTransforms)
+            if (obj instanceof Component) {
+                outputArea.setSelectionStart(outputArea.document.length)
+                outputArea.setSelectionEnd(outputArea.document.length)
+                outputArea.insertComponent(obj)
+            } else if (obj instanceof Icon) {
+                outputArea.setSelectionStart(outputArea.document.length)
+                outputArea.setSelectionEnd(outputArea.document.length)
+                outputArea.insertIcon(obj)
+            } else {
+                appendOutput(obj.toString(), resultStyle)
+            }
         } else {
             statusLabel.text = 'Execution complete. Result was null.'
         }
