@@ -21,7 +21,7 @@ import org.codehaus.groovy.control.CompilationFailedException
 /**
  * @author Danno Ferrin (shemnon)
  */
-class VetoableTest extends GroovyTestCase {
+class VetoableTest extends GroovySwingTestCase {
 
     public void testSimpleConstrainedProperty() {
         GroovyShell shell = new GroovyShell()
@@ -184,6 +184,26 @@ class VetoableTest extends GroovyTestCase {
                 System.out.println("Failed Script: $script")
                 throw t
             }
+        }
+    }
+
+    public void testExtendsComponent() {
+        testInEDT {
+            GroovyShell shell = new GroovyShell()
+            shell.evaluate("""
+                import groovy.beans.Vetoable
+
+                class VetoableTestBean7 extends javax.swing.JPanel {
+                    @Vetoable String testField
+                }
+
+                sb = new VetoableTestBean7()
+                sb.testField = "bar"
+                changed = false
+                sb.vetoableChange = {changed = true}
+                sb.testField = "foo"
+                assert changed
+            """)
         }
     }
 

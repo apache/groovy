@@ -21,7 +21,7 @@ import org.codehaus.groovy.control.CompilationFailedException
 /**
  * @author Danno Ferrin (shemnon)
  */
-class BindableTest extends GroovyTestCase {
+class BindableTest extends GroovySwingTestCase {
 
     public void testSimpleBindableProperty() {
         GroovyShell shell = new GroovyShell()
@@ -127,6 +127,26 @@ class BindableTest extends GroovyTestCase {
                 System.out.println("Failed Script: $script")
                 throw t
             }
+        }
+    }
+
+    public void testExtendsComponent() {
+        testInEDT {
+            GroovyShell shell = new GroovyShell()
+            shell.evaluate("""
+                import groovy.beans.Bindable
+
+                class BindableTestBean6 extends javax.swing.JPanel {
+                    @Bindable String testField
+                }
+
+                sb = new BindableTestBean6()
+                sb.testField = "bar"
+                changed = false
+                sb.propertyChange = {changed = true}
+                sb.testField = "foo"
+                assert changed
+            """)
         }
     }
 }
