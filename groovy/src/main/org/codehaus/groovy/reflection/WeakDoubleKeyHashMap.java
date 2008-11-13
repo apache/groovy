@@ -115,6 +115,7 @@ public class WeakDoubleKeyHashMap extends ComplexKeyHashMap
   }
 
   public Entry createEntry() {
+      expungeStaleEntries();
       return new Entry ();
   }
 
