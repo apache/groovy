@@ -207,6 +207,69 @@ class VetoableTest extends GroovySwingTestCase {
         }
     }
 
+    public void testPrimitaveTypes() {
+        GroovyShell shell = new GroovyShell()
+        shell.evaluate("""
+                import groovy.beans.Vetoable
+
+                class VetoableTestBean8 {
+                    @Vetoable String testField
+                    @Vetoable boolean testBoolean
+                    @Vetoable byte testByte
+                    @Vetoable short testShort
+                    @Vetoable int testInt
+                    @Vetoable long testLong
+                    @Vetoable float testFloat
+                    @Vetoable double testDouble
+                }
+
+                sb = new VetoableTestBean8()
+                sb.testField = "bar"
+                int changed = 0
+                sb.vetoableChange = {changed++}
+                sb.testField = "foo"
+                sb.testBoolean = true
+                sb.testByte = 1
+                sb.testShort = 1
+                sb.testInt = 1
+                sb.testLong = 1
+                sb.testFloat = 1
+                sb.testDouble = 1
+                assert changed == 8
+            """)
+    }
+
+    public void testBadInheritance() {
+        shouldFail(CompilationFailedException) {
+            GroovyShell shell = new GroovyShell()
+            shell.evaluate("""
+                    import groovy.beans.Vetoable
+
+                    class VetoableTestBean9  {
+                        @Vetoable String testField
+                        void addVetoableChangeListener(java.beans.VetoableChangeListener l) {}
+                    }
+                    new VetoableTestBean9()
+                """)
+        }
+        shouldFail(CompilationFailedException) {
+            GroovyShell shell = new GroovyShell()
+            shell.evaluate("""
+                    import groovy.beans.Vetoable
+
+                    class VetoableTestBean10  {
+                        void addPropertyChangeListener(java.beans.VetoableChangeListener l) {}
+                    }
+
+                    class VetoableTestBean11 extends VetoableTestBean9 {
+                        @Vetoable String testField
+                    }
+
+                    new VetoableTestBean10()
+                """)
+        }
+    }
+
     public void testClassMarkers() {
         for (int i = 0; i < 31; i++) {
             boolean bindField  = i & 1
