@@ -23,6 +23,7 @@ import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.control.messages.SimpleMessage;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.SyntaxException;
@@ -54,11 +55,6 @@ import java.util.Collection;
  */
 @GroovyASTTransformation(phase= CompilePhase.CANONICALIZATION)
 public class BindableASTTransformation implements ASTTransformation, Opcodes {
-
-    /**
-     * The found or created PropertyChangeSupport field
-     */
-    protected FieldNode pcsField;
 
     protected static ClassNode boundClassNode = new ClassNode(Bindable.class);
     protected ClassNode pcsClassNode = new ClassNode(PropertyChangeSupport.class);
@@ -105,7 +101,6 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
             }
             addListenerToProperty(source, node, declaringClass, (FieldNode) parent);
         } else if (parent instanceof ClassNode) {
-
             addListenerToClass(source, node, (ClassNode) parent);
         }
     }
@@ -123,7 +118,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
                                     node.getColumnNumber()),
                                     source));
                 } else {
-                    if (needsPropertyChangeSupport(declaringClass)) {
+                    if (needsPropertyChangeSupport(declaringClass, source)) {
                         addPropertyChangeSupport(declaringClass);
                     }
                     createListenerSetter(source, node, declaringClass, propertyNode);
@@ -141,7 +136,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private void addListenerToClass(SourceUnit source, AnnotationNode node, ClassNode classNode) {
-        if (needsPropertyChangeSupport(classNode)) {
+        if (needsPropertyChangeSupport(classNode, source)) {
             addPropertyChangeSupport(classNode);
         }
         for (PropertyNode propertyNode : (Collection<PropertyNode>) classNode.getProperties()) {
@@ -181,7 +176,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
 
     /**
      * Creates a statement body similar to:
-     * <code>pcsField.firePropertyChange("field", field, field = value)</code>
+     * <code>this.firePropertyChange("field", field, field = value)</code>
      *
      * @param propertyNode           the field node for the property
      * @param fieldExpression a field expression for setting the property value
@@ -189,29 +184,18 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
      */
     protected Statement createBindableStatement(PropertyNode propertyNode, Expression fieldExpression) {
         // create statementBody
-        Expression methodArguments = new ArgumentListExpression(
-                new Expression[]{
-                        new ConstantExpression(propertyNode.getName()),
-                        fieldExpression,
-                        new BinaryExpression(
-                                fieldExpression,
-                                Token.newSymbol(Types.EQUAL, 0, 0),
-                                new VariableExpression("value"))});
-        if (pcsField == null) {
-            // call is directly on the object
-            return new ExpressionStatement(
-                    new MethodCallExpression(
-                            VariableExpression.THIS_EXPRESSION,
-                            "firePropertyChange",
-                            methodArguments));
-        } else {
-            // call is on the propertyChangeSupport
-            return new ExpressionStatement(
-                    new MethodCallExpression(
-                            new FieldExpression(pcsField),
-                            "firePropertyChange",
-                            methodArguments));
-        }
+        return new ExpressionStatement(
+                new MethodCallExpression(
+                        VariableExpression.THIS_EXPRESSION,
+                        "firePropertyChange",
+                        new ArgumentListExpression(
+                                new Expression[]{
+                                        new ConstantExpression(propertyNode.getName()),
+                                        fieldExpression,
+                                        new BinaryExpression(
+                                                fieldExpression,
+                                                Token.newSymbol(Types.EQUAL, 0, 0),
+                                                new VariableExpression("value"))})));
     }
 
     /**
@@ -232,32 +216,39 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
     }
 
     /**
-     * Snoops through the declaring class and all parents looking for a field
-     * of type PropertyChangeSupport.  Remembers the field and returns false
-     * if found otherwise returns true to indicate that such support should
-     * be added.
+     * Snoops through the declaring class and all parents looking for methods
+     * void addPropertyChangeListener(PropertyChangeListener),
+     * void removePropertyChangeListener(PropertyChangeListener), and
+     * void firePropertyChange(String, Object, Object).  If any are defined all
+     * must be defined or a compilation error results. 
      *
      * @param declaringClass the class to search
+     * @param sourceUnit the source unit, for error reporting.  @NotNull
      * @return true if property change support should be added
      */
-    protected boolean needsPropertyChangeSupport(ClassNode declaringClass) {
-        while (declaringClass != null) {
-            for (FieldNode field : (Collection<FieldNode>) declaringClass.getFields()) {
-                if (field.getType() == null) {
-                    continue;
-                }
-                if (pcsClassNode.equals(field.getType())) {
-                    // if field is not private, use it directly
-                    // else, rely on exposed firePropertyChange methods
-                    if ((field.getModifiers() &
-                            (ACC_PUBLIC | ACC_PRIVATE | ACC_PROTECTED)) != ACC_PRIVATE) {
-                        pcsField = field;
-                    }
+    protected boolean needsPropertyChangeSupport(ClassNode declaringClass, SourceUnit sourceUnit) {
+        boolean foundAdd = false, foundRemove = false, foundFire = false;
+        ClassNode consideredClass = declaringClass;
+        while (consideredClass!= null) {
+            for (MethodNode method : consideredClass.getMethods()) {
+                // just check length, MOP will match it up
+                foundAdd = foundAdd || method.getName().equals("addPropertyChangeListener") && method.getParameters().length == 1;
+                foundRemove = foundRemove || method.getName().equals("removePropertyChangeListener") && method.getParameters().length == 1;
+                foundFire = foundFire || method.getName().equals("firePropertyChange") && method.getParameters().length == 3;
+                if (foundAdd && foundRemove && foundFire) {
                     return false;
                 }
             }
-            //TODO check add/remove conflicts
-            declaringClass = declaringClass.getSuperClass();
+            consideredClass = consideredClass.getSuperClass();
+        }
+        if (foundAdd || foundRemove || foundFire) {
+            sourceUnit.getErrorCollector().addErrorAndContinue(
+                new SimpleMessage("@Bindable cannot be processed on "
+                    + declaringClass.getName()
+                    + " because some but not all of addPropertyChangeListener, removePropertyChange, and firePropertyChange were declared in the current or super classes.",
+                sourceUnit)
+            );
+            return false;
         }
         return true;
     }
@@ -284,9 +275,9 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
 
         // add field:
         // protected final PropertyChangeSupport this$propertyChangeSupport = new java.beans.PropertyChangeSupport(this)
-        pcsField = declaringClass.addField(
+        FieldNode pcsField = declaringClass.addField(
                 "this$propertyChangeSupport",
-                ACC_FINAL | ACC_PROTECTED | ACC_SYNTHETIC,
+                ACC_FINAL | ACC_PRIVATE | ACC_SYNTHETIC,
                 pcsClassNode,
                 new ConstructorCallExpression(pcsClassNode,
                         new ArgumentListExpression(new Expression[]{new VariableExpression("this")})));
@@ -359,6 +350,27 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
                                         "removePropertyChangeListener",
                                         new ArgumentListExpression(
                                                 new Expression[]{new VariableExpression("name"), new VariableExpression("listener")})))));
+
+        // add method:
+        // void firePropertyChange(String name, Object oldValue, Object newValue) {
+        //     this$propertyChangeSupport.firePropertyChange(name, oldValue, newValue)
+        //  }
+        declaringClass.addMethod(
+                new MethodNode(
+                        "firePropertyChange",
+                        ACC_PUBLIC | ACC_SYNTHETIC,
+                        ClassHelper.VOID_TYPE,
+                        new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "name"), new Parameter(ClassHelper.OBJECT_TYPE, "oldValue"), new Parameter(ClassHelper.OBJECT_TYPE, "newValue")},
+                        ClassNode.EMPTY_ARRAY,
+                        new ExpressionStatement(
+                                new MethodCallExpression(
+                                        new FieldExpression(pcsField),
+                                        "firePropertyChange",
+                                        new ArgumentListExpression(
+                                                new Expression[]{
+                                                        new VariableExpression("name"),
+                                                        new VariableExpression("oldValue"),
+                                                        new VariableExpression("newValue")})))));
 
         // add method:
         // PropertyChangeSupport[] getPropertyChangeListeners() {

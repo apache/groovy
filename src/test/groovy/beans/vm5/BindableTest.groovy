@@ -149,4 +149,67 @@ class BindableTest extends GroovySwingTestCase {
             """)
         }
     }
+
+    public void testPrimitaveTypes() {
+        GroovyShell shell = new GroovyShell()
+        shell.evaluate("""
+            import groovy.beans.Bindable
+
+            class BindableTestBean7 {
+                @Bindable String testField
+                @Bindable boolean testBoolean
+                @Bindable byte testByte
+                @Bindable short testShort
+                @Bindable int testInt
+                @Bindable long testLong
+                @Bindable float testFloat
+                @Bindable double testDouble
+            }
+
+            sb = new BindableTestBean7()
+            sb.testField = "bar"
+            int changed = 0
+            sb.propertyChange = {changed++}
+            sb.testField = "foo"
+            sb.testBoolean = true
+            sb.testByte = 1
+            sb.testShort = 1
+            sb.testInt = 1
+            sb.testLong = 1
+            sb.testFloat = 1
+            sb.testDouble = 1
+            assert changed == 8
+        """)
+    }
+
+    public void testBadInheritance() {
+        shouldFail(CompilationFailedException) {
+            GroovyShell shell = new GroovyShell()
+            shell.evaluate("""
+                import groovy.beans.Bindable
+
+                class BindableTestBean8  {
+                    @Bindable String testField
+                    void addPropertyChangeListener(java.beans.PropertyChangeListener l) {}
+                }
+                new BindableTestBean8()
+            """)
+        }
+        shouldFail(CompilationFailedException) {
+            GroovyShell shell = new GroovyShell()
+            shell.evaluate("""
+                import groovy.beans.Bindable
+
+                class BindableTestBean9  {
+                    void addPropertyChangeListener(java.beans.PropertyChangeListener l) {}
+                }
+
+                class BindableTestBean10 extends BindableTestBean9 {
+                    @Bindable String testField
+                }
+
+                new BindableTestBean10()
+            """)
+        }
+    }
 }
