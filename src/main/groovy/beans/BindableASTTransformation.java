@@ -18,6 +18,7 @@ package groovy.beans;
 
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
+import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
@@ -52,6 +53,7 @@ import java.util.Collection;
  * lets the {@link VetoableASTTransformation} handle all the changes.
  *
  * @author Danno Ferrin (shemnon)
+ * @author Chris Reeves
  */
 @GroovyASTTransformation(phase= CompilePhase.CANONICALIZATION)
 public class BindableASTTransformation implements ASTTransformation, Opcodes {
@@ -155,6 +157,51 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
         }
     }
 
+    /**
+     * Wrap an existing setter.
+     */
+    private void wrapSetterMethod(ClassNode classNode, String propertyName) {
+        String getterName = "get" + MetaClassHelper.capitalize(propertyName);
+        MethodNode setter = classNode.getSetterMethod("set" + MetaClassHelper.capitalize(propertyName));
+
+        if (setter != null) {
+            // Get the existing code block
+            Statement code = setter.getCode();
+
+            VariableExpression oldValue = new VariableExpression("$oldValue");
+            VariableExpression newValue = new VariableExpression("$newValue");
+            BlockStatement block = new BlockStatement();
+
+            // create a local variable to hold the old value from the getter
+            block.addStatement(new ExpressionStatement(
+                new DeclarationExpression(oldValue,
+                    Token.newSymbol(Types.EQUALS, 0, 0),
+                    new MethodCallExpression(VariableExpression.THIS_EXPRESSION, getterName, ArgumentListExpression.EMPTY_ARGUMENTS))));
+
+            // call the existing block, which will presumably set the value properly
+            block.addStatement(code);
+
+            // get the new value to emit in the event
+            block.addStatement(new ExpressionStatement(
+                new DeclarationExpression(newValue,
+                    Token.newSymbol(Types.EQUALS, 0, 0),
+                    new MethodCallExpression(VariableExpression.THIS_EXPRESSION, getterName, ArgumentListExpression.EMPTY_ARGUMENTS))));
+
+            // add the firePropertyChange method call
+            block.addStatement(new ExpressionStatement(new MethodCallExpression(
+                    VariableExpression.THIS_EXPRESSION,
+                    "firePropertyChange",
+                    new ArgumentListExpression(
+                            new Expression[]{
+                                    new ConstantExpression(propertyName),
+                                    oldValue,
+                                    newValue}))));
+
+            // replace the existing code block with our new one
+            setter.setCode(block);
+        }
+    }
+
     private void createListenerSetter(SourceUnit source, AnnotationNode node, ClassNode classNode, PropertyNode propertyNode) {
         String setterName = "set" + MetaClassHelper.capitalize(propertyNode.getName());
         if (classNode.getMethods(setterName).isEmpty()) {
@@ -164,13 +211,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
             // create method void <setter>(<type> fieldName)
             createSetterMethod(classNode, propertyNode, setterName, setterBlock);
         } else {
-            //noinspection ThrowableInstanceNeverThrown
-            source.getErrorCollector().addErrorAndContinue(
-                    new SyntaxErrorMessage(new SyntaxException(
-                            "@groovy.beans.Bindable cannot handle user generated setters.",
-                            node.getLineNumber(),
-                            node.getColumnNumber()),
-                            source));
+            wrapSetterMethod(classNode, propertyNode.getName());
         }
     }
 
@@ -220,7 +261,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
      * void addPropertyChangeListener(PropertyChangeListener),
      * void removePropertyChangeListener(PropertyChangeListener), and
      * void firePropertyChange(String, Object, Object).  If any are defined all
-     * must be defined or a compilation error results. 
+     * must be defined or a compilation error results.
      *
      * @param declaringClass the class to search
      * @param sourceUnit the source unit, for error reporting.  @NotNull

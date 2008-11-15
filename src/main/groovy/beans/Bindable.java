@@ -24,15 +24,23 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotates a groovy property, and indicates that it should be a bound
- * property according to the JavaBeans spec, announding to listeners that
- * the value has changed.
+ * Annotates a groovy property or a class.
+ *
+ * When annotating a property it indicates that the property should be a
+ * bound property according to the JavaBeans spec, announding to listeners
+ * that the value has changed.
+ *
+ * When annotating a class it indicates that all groovy properties in that
+ * class should be bound as though each property had the annotation (even
+ * if it already has it explicitly).
  *
  * It is a compilation error to place this annotation on a field (that is
  * nota property, i.e. has scope visibility modifiers).
  *
- * It is a compilation error to place this annotation on a property with
- * a user defined settter.
+ * If a property with a user defined setter method is annotated the code
+ * block is wrapped with the needed code to fire off the event.
+ *
+ * //TODO discuss generated fields and methods
  *
  * @see BindableASTTransformation
  *

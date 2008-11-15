@@ -52,6 +52,7 @@ import java.util.Collection;
  * to what {@link BindableASTTransformation} would do.
  *
  * @author Danno Ferrin (shemnon)
+ * @author Chris Reeves
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class VetoableASTTransformation extends BindableASTTransformation {
@@ -130,12 +131,70 @@ public class VetoableASTTransformation extends BindableASTTransformation {
         boolean bindable = BindableASTTransformation.hasBindableAnnotation(classNode);
         for (PropertyNode propertyNode : (Collection<PropertyNode>) classNode.getProperties()) {
             if (!hasVetoableAnnotation(propertyNode.getField())
-                && !propertyNode.getField().isStatic()) 
+                && !propertyNode.getField().isStatic())
             {
                 createListenerSetter(source, node,
                     bindable || BindableASTTransformation.hasBindableAnnotation(propertyNode.getField()),
                     classNode, propertyNode);
             }
+        }
+    }
+
+    /**
+     * Wrap an existing setter.
+     */
+    private void wrapSetterMethod(ClassNode classNode, boolean bindable, String propertyName) {
+        String getterName = "get" + MetaClassHelper.capitalize(propertyName);
+        MethodNode setter = classNode.getSetterMethod("set" + MetaClassHelper.capitalize(propertyName));
+
+        if (setter != null) {
+            // Get the existing code block
+            Statement code = setter.getCode();
+
+            VariableExpression oldValue = new VariableExpression("$oldValue");
+            VariableExpression newValue = new VariableExpression("$newValue");
+            VariableExpression proposedValue = new VariableExpression(setter.getParameters()[0].getName());
+            BlockStatement block = new BlockStatement();
+
+            // create a local variable to hold the old value from the getter
+            block.addStatement(new ExpressionStatement(
+                new DeclarationExpression(oldValue,
+                    Token.newSymbol(Types.EQUALS, 0, 0),
+                    new MethodCallExpression(VariableExpression.THIS_EXPRESSION, getterName, ArgumentListExpression.EMPTY_ARGUMENTS))));
+
+            // add the fireVetoableChange method call
+            block.addStatement(new ExpressionStatement(new MethodCallExpression(
+                    VariableExpression.THIS_EXPRESSION,
+                    "fireVetoableChange",
+                    new ArgumentListExpression(
+                            new Expression[]{
+                                    new ConstantExpression(propertyName),
+                                    oldValue,
+                                    proposedValue}))));
+
+            // call the existing block, which will presumably set the value properly
+            block.addStatement(code);
+
+            if (bindable) {
+                // get the new value to emit in the event
+                block.addStatement(new ExpressionStatement(
+                    new DeclarationExpression(newValue,
+                        Token.newSymbol(Types.EQUALS, 0, 0),
+                        new MethodCallExpression(VariableExpression.THIS_EXPRESSION, getterName, ArgumentListExpression.EMPTY_ARGUMENTS))));
+
+                // add the firePropertyChange method call
+                block.addStatement(new ExpressionStatement(new MethodCallExpression(
+                        VariableExpression.THIS_EXPRESSION,
+                        "firePropertyChange",
+                        new ArgumentListExpression(
+                                new Expression[]{
+                                        new ConstantExpression(propertyName),
+                                        oldValue,
+                                        newValue}))));
+            }
+
+            // replace the existing code block with our new one
+            setter.setCode(block);
         }
     }
 
@@ -160,13 +219,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
             // create method void <setter>(<type> fieldName)
             createSetterMethod(declaringClass, propertyNode, setterName, setterBlock);
         } else {
-            //noinspection ThrowableInstanceNeverThrown
-            source.getErrorCollector().addErrorAndContinue(
-                    new SyntaxErrorMessage(new SyntaxException(
-                            "@groovy.beans.Vetoable cannot handle user generated setters.",
-                            node.getLineNumber(),
-                            node.getColumnNumber()),
-                            source));
+            wrapSetterMethod(declaringClass, bindable, propertyNode.getName());
         }
     }
 
