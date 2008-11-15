@@ -113,16 +113,54 @@ class VetoableTest extends GroovySwingTestCase {
     }
 
     public void testExisingSetter() {
-        GroovyShell shell = new GroovyShell()
-        shouldFail(CompilationFailedException) {
-            shell.evaluate("""
-                class VetoableTestBean4 {
-                    @groovy.beans.Vetoable String name
-                    void setName() { }
-                }
-            """)
+    GroovyShell shell = new GroovyShell()
+        shell.evaluate("""
+            class VetoableTestBean4 {
+                @groovy.beans.Vetoable String name
+                void setName() { }
+            }
+            new VetoableTestBean4()
+        """)
+    }
+
+    public void testWithSettersAndGetters() {
+        for (int i = 0; i < 16; i++) {
+            boolean vetoClass = i & 1
+            boolean field = i & 2
+            boolean setter = i & 4
+            boolean getter = i & 8
+            int expectedCount = (vetoClass && !field)?2:1
+            String script = """
+                    import groovy.beans.Vetoable
+
+                    ${vetoClass?'@Vetoable ':''}class VetoableTestSettersAndGetters$i {
+
+                        @Vetoable String alwaysVetoable
+                        ${field?'protected ':''} String name
+
+                        ${setter?'':'//'}void setName(String newName) { this.@name = "x\$newName" }
+                        ${getter?'':'//'}String getName() { return this.@name }
+                    }
+                    sb = new VetoableTestSettersAndGetters$i(name:"foo", alwaysVetoable:"bar")
+                    changed = 0
+                    sb.vetoableChange = {evt ->
+                        changed++
+                    }
+                    sb.alwaysVetoable = "baz"
+                    sb.name = "bif"
+                    assert changed == $expectedCount
+                """
+            try {
+                GroovyShell shell = new GroovyShell()
+                shell.evaluate(script);
+            } catch (Throwable t) {
+                System.out.println("Failed Script: $script")
+                throw t
+            }
         }
     }
+
+
 
     public void testOnField() {
         GroovyShell shell = new GroovyShell()
