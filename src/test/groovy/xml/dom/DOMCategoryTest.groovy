@@ -11,7 +11,7 @@ class DOMCategoryTest extends GroovyTestCase {
     def getRoot = { xml ->
         def reader = new StringReader(xml)
         def doc    = DOMBuilder.parse(reader)
-        def root   = doc.documentElement
+        doc.documentElement
     }
 
     void testMixedMarkup() {
