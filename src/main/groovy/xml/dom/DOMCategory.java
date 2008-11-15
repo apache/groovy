@@ -16,10 +16,14 @@
 package groovy.xml.dom;
 
 import groovy.xml.QName;
+import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.w3c.dom.*;
 
+import javax.xml.xpath.XPathFactory;
+import javax.xml.xpath.XPath;
+import javax.xml.xpath.XPathExpressionException;
 import java.util.*;
 
 /**
@@ -297,6 +301,24 @@ public class DOMCategory {
             return toString((NodeList) o);
         }
         return o.toString();
+    }
+
+    public static Object xpath(Node self, String expression, javax.xml.namespace.QName returnType) {
+        final XPath xpath = XPathFactory.newInstance().newXPath();
+        try {
+            return xpath.evaluate(expression, self, returnType);
+        } catch (XPathExpressionException e) {
+            throw new GroovyRuntimeException(e);
+        }
+    }
+
+    public static String xpath(Node self, String expression) {
+        final XPath xpath = XPathFactory.newInstance().newXPath();
+        try {
+            return xpath.evaluate(expression, self);
+        } catch (XPathExpressionException e) {
+            throw new GroovyRuntimeException(e);
+        }
     }
 
     private static String toString(NodeList self) {
