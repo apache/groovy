@@ -4,7 +4,6 @@ import groovy.xml.DOMBuilder
 import groovy.xml.GpathSyntaxTestSupport
 import groovy.xml.MixedMarkupTestSupport
 import groovy.xml.TraversalTestSupport
-import static javax.xml.xpath.XPathConstants.*
 
 class DOMCategoryTest extends GroovyTestCase {
 
