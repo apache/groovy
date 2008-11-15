@@ -9,20 +9,20 @@
     <packaging>jar</packaging>
     
     <version>1.7-beta-1-SNAPSHOT</version>
-    
+
     <description>
         Groovy: A powerful, dynamic language for the JVM
     </description>
-    
+
     <url>http://groovy.codehaus.org/</url>
-    
+
     <organization>
         <name>The Codehaus</name>
         <url>http://codehaus.org</url>
     </organization>
-    
+
     <inceptionYear>2003</inceptionYear>
-    
+
     <scm>
         <connection>scm:svn:http://svn.groovy.codehaus.org/browse/groovy/trunk/groovy/groovy-core</connection>
         <developerConnection>scm:svn:https://${maven.username}@svn.groovy.codehaus.org/browse/groovy/trunk/groovy/groovy-core</developerConnection>
@@ -68,7 +68,7 @@
             <name>Guillaume Laforge</name>
             <id>glaforge</id>
             <email></email>
-            <organization>G2One</organization>
+            <organization>SpringSource</organization>
             <roles>
                 <role>Project Manager</role>
                 <role>Developer</role>
@@ -447,6 +447,10 @@
             <name>Marc DeXeT</name>
             <email></email>
         </contributor>
+        <contributor>
+            <name>Dejan Bosanac</name>
+            <email>dejan@nighttale.net</email>
+        </contributor>
     </contributors>
 
     <dependencies>
@@ -491,14 +495,7 @@
                 </exclusion>
             </exclusions>
         </dependency>
-        <!--<dependency>
-            <groupId>net.sf.jopt-simple</groupId>
-            <artifactId>jopt-simple</artifactId>
-            <version>2.4</version>
-            <scope>compile</scope>
-            <optional>true</optional>
-        </dependency>
--->
+
         <!-- only used for Ant tasks & scripting tools -->
         <dependency>
             <groupId>org.apache.ant</groupId>

@@ -61,6 +61,10 @@ $Date$
         </not>
     </condition>
 
+    <condition property="groovy.build.vm6">
+        <contains string="${ant.java.version}" substring="1.6"/>
+    </condition>
+
     <target name="-initCoverage">
         <condition property="_forceCoverage_">
             <and>
@@ -185,6 +189,7 @@ $Date$
 
     <property name="vm5GroovySourceFiles" value="gls/**/vm5/*Test.groovy,org/codehaus/groovy/**/vm5/*.groovy,groovy/**/vm5/*.groovy"/>
     <property name="vm5JavaSourceFiles" value="org/codehaus/groovy/**/vm5/**/*.java,groovy/**/vm5/*.java,gls/**/vm5/*.java"/>
+    <property name="vm6GroovySourceFiles" value="groovy/**/vm6/*Test.groovy"/>
     <property name="antGroovySourceFiles" value="org/codehaus/groovy/ant/**/GroovyTest*.groovy"/>
 
     <target name="-initGroovyc" if="groovy.build.vm5">
@@ -239,7 +244,7 @@ Not found: ${groovyJar14path}
         <!-- compile Groovy test files excluding ones which we want to pick up from the file system -->
         <groovyc srcdir="${testSourceDirectory}"
                  destdir="${testClassesDirectory}"
-                 excludes="${antGroovySourceFiles},${vm5GroovySourceFiles},${vm5JavaSourceFiles}"
+                 excludes="${antGroovySourceFiles},${vm5GroovySourceFiles},${vm5JavaSourceFiles},${vm6GroovySourceFiles}"
                  stacktrace="true"
                  fork="true"
                  memorymaximumsize="${groovycTest_mx}">
@@ -253,7 +258,7 @@ Not found: ${groovyJar14path}
         </groovyc>
     </target>
 
-    <target name="-compileTest" depends="-initGroovyc,-compileTest_vm4" if="groovy.build.vm5">
+    <target name="-compileTest" depends="-initGroovyc,-compileTest_vm4,-compileTest_vm6" if="groovy.build.vm5">
         <groovyc srcdir="${testSourceDirectory}"
                  destdir="${testClassesDirectory}"
                  includes="${vm5GroovySourceFiles},${vm5JavaSourceFiles}"
@@ -265,6 +270,22 @@ Not found: ${groovyJar14path}
                 <path refid="testLibPath"/>
             </classpath>
             <javac source="1.5" target="1.5" nowarn="on"/>
+        </groovyc>
+    </target>
+
+    <target name="-compileTest_vm6" if="groovy.build.vm6">
+        <groovyc srcdir="${testSourceDirectory}"
+                 destdir="${testClassesDirectory}"
+                 includes="${vm6GroovySourceFiles}"
+                 fork="true"
+                 memorymaximumsize="${groovycTest_mx}">
+            <classpath>
+                <pathelement path="${testClassesDirectory}"/>
+                <path refid="groovyMainClasses"/>
+                <path refid="testLibPath"/>
+            </classpath>
+            <!-- currently not needed, add in if/when required -->
+            <!--<javac source="1.5" target="1.5" nowarn="on"/>-->
         </groovyc>
     </target>
 
@@ -391,14 +412,18 @@ Not found: ${groovyJar14path}
     </target>
 
     <target name="-collect14tests" unless="groovy.build.vm5">
-        <fileset id="ubertests.fileset" dir="${testClassesDirectory}" includes="UberTest*.class" excludes="Uber*VM5.class"/>
+        <fileset id="ubertests.fileset" dir="${testClassesDirectory}" includes="UberTest*.class" excludes="Uber*VM5.class,Uber*VM6.class"/>
     </target>
 
-    <target name="-collect15tests" if="groovy.build.vm5">
+    <target name="-collect15tests" if="groovy.build.vm5" unless="groovy.build.vm6">
+        <fileset id="ubertests.fileset" dir="${testClassesDirectory}" includes="UberTest*.class" excludes="Uber*VM6.class"/>
+    </target>
+
+    <target name="-collect16tests" if="groovy.build.vm6">
         <fileset id="ubertests.fileset" dir="${testClassesDirectory}" includes="UberTest*.class"/>
     </target>
 
-    <target name="-testAll" if="_testAll_" depends="-collect14tests,-collect15tests,-collectOptionalTests,-initGroovyc_vm4,-initGroovyc">
+    <target name="-testAll" if="_testAll_" depends="-collect14tests,-collect15tests,-collect16tests,-collectOptionalTests,-initGroovyc_vm4,-initGroovyc">
         <mkdir dir="${junitRawDirectory}"/>
         <junit printsummary="true" fork="true" includeantruntime="false" failureproperty="testFailed" maxmemory="${groovyJUnit_mx}" dir="${basedir}">
             <jvmarg line="${junitJvmArgs}"/>
