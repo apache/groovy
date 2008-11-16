@@ -256,20 +256,22 @@ public class ModuleNode extends ASTNode implements Opcodes {
     }
 
     protected String extractClassFromFileDescription() {
-        // lets strip off everything after the last .
+        // let's strip off everything after the last '.'
         String answer = getDescription();
-        int idx = answer.lastIndexOf('.');
-        if (idx > 0) {
-            answer = answer.substring(0, idx);
+        int slashIdx = answer.lastIndexOf('/');
+        int separatorIdx = answer.lastIndexOf(File.separatorChar);
+        int dotIdx = answer.lastIndexOf('.');
+        if (dotIdx > 0 && dotIdx > Math.max(slashIdx, separatorIdx)) {
+            answer = answer.substring(0, dotIdx);
         }
-        // new lets trip the path separators
-        idx = answer.lastIndexOf('/');
-        if (idx >= 0) {
-            answer = answer.substring(idx + 1);
+        // new let's strip everything up to and including the path separators
+        if (slashIdx >= 0) {
+            answer = answer.substring(slashIdx + 1);
         }
-        idx = answer.lastIndexOf(File.separatorChar);
-        if (idx >= 0) {
-            answer = answer.substring(idx + 1);
+        // recalculate in case we have already done some stripping
+        separatorIdx = answer.lastIndexOf(File.separatorChar);
+        if (separatorIdx >= 0) {
+            answer = answer.substring(separatorIdx + 1);
         }
         return answer;
     }
