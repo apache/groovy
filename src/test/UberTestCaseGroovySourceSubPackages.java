@@ -27,7 +27,7 @@ import junit.framework.TestSuite;
  * @version $Revision$
  */
 public class UberTestCaseGroovySourceSubPackages extends TestCase {
-    private static final String EXCLUDES = "groovy/**/vm5/*Test.groovy,**/grape/*Test.groovy";
+    private static final String EXCLUDES = "groovy/**/vm5/*Test.groovy,groovy/**/vm6/*Test.groovy,**/grape/*Test.groovy";
     private static final String BASE = "src/test";
     public static Test suite() {
         TestSuite suite = new TestSuite();
