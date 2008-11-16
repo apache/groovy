@@ -336,6 +336,15 @@
                 <role>Developer</role>
             </roles>
         </developer>
+        <developer>
+            <name>Jim White</name>
+            <id>jimwhite</id>
+            <email>jim@pagesmiths.com</email>
+            <organization>IFCX.org</organization>
+            <roles>
+                <role>Developer</role>
+            </roles>
+        </developer>
     </developers>
 
     <contributors>
@@ -604,6 +613,14 @@
                     <artifactId>avalon-framework</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.livetribe</groupId>
+            <artifactId>livetribe-jsr223</artifactId>
+            <version>2.0.4</version>
+            <scope>compile</scope>
+            <optional>true</optional>
         </dependency>
 
         <dependency>
