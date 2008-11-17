@@ -222,6 +222,7 @@ public class QName implements Serializable {
             if (string.length() == 0) return false;
             // try matching against 'prefix:localname'
             int lastColonIndex = string.lastIndexOf(":");
+            if (lastColonIndex < 0 && prefix.length() == 0) return string.equals(localPart);
             if (lastColonIndex < 0 || lastColonIndex == string.length() - 1) return false;
             final String stringPrefix = string.substring(0,lastColonIndex);
             final String stringLocalPart = string.substring(lastColonIndex + 1);
