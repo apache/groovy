@@ -163,8 +163,12 @@ p() {
         def anyTitle = new groovy.xml.QName("*", "title")
         def html = new XmlParser().parseText(bookXml)
 
-        // qname style
-        def result = html[anyName][anyHtml][anyTitle].text()
+        // string plain style
+        def result = html.head.':title'.text()
+        assert result == 'GINA Book Review'
+
+        // QName style
+        result = html[anyName][anyHtml][anyTitle].text()
         assert result == 'Groovy in Action Review'
 
         // string wildcard style
