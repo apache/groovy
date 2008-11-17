@@ -29,7 +29,7 @@
  * @author A. Sundararajan
  * @author Jim White
  */
-package org.codehaus.groovy.jsr223;
+package org.codehaus.groovy.jsr223.vm5;
 
 import groovy.lang.Binding;
 import groovy.lang.Closure;

@@ -28,7 +28,7 @@
  * @author A. Sundararajan
  */
 
-package org.codehaus.groovy.jsr223;
+package org.codehaus.groovy.jsr223.vm5;
 
 import javax.script.CompiledScript;
 import javax.script.ScriptContext;

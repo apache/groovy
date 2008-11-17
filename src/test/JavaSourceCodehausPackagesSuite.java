@@ -19,7 +19,6 @@ import org.codehaus.groovy.classgen.*;
 import org.codehaus.groovy.control.CompilationUnitTest;
 import org.codehaus.groovy.control.CompilerConfigurationTest;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessageTest;
-import org.codehaus.groovy.jsr223.JSR223Test;
 import org.codehaus.groovy.runtime.*;
 import org.codehaus.groovy.syntax.TokenTest;
 import org.codehaus.groovy.tools.CompilerTest;
@@ -35,7 +34,6 @@ public class JavaSourceCodehausPackagesSuite {
     public static Test suite() {
         TestSuite suite = new TestSuite();
         suite.addTestSuite(BSFTest.class);
-        suite.addTestSuite(JSR223Test.class);
         suite.addTestSuite(BytecodeHelperTest.class);
         suite.addTestSuite(CacheBSFTest.class);
         suite.addTestSuite(CapitalizeTest.class);

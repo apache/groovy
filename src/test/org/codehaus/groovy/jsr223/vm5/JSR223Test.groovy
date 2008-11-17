@@ -1,4 +1,4 @@
-package org.codehaus.groovy.jsr223;
+package org.codehaus.groovy.jsr223.vm5;
 
 import junit.framework.TestCase;
 
