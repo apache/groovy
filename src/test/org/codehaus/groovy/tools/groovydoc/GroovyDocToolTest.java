@@ -48,7 +48,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
         xmlToolForTests = new GroovyDocTool(
                 new FileSystemResourceManager("src"), // template storage
-                new Path(new Project(), "src/main"), // source file dirs
+                new Path(new Project(), "src/test"), // source file dirs
                 new String[]{TEMPLATES_DIR + "/top-level/rootDocStructuredData.xml"},
                 new String[]{TEMPLATES_DIR + "/package-level/packageDocStructuredData.xml"},
                 new String[]{TEMPLATES_DIR + "/class-level/classDocStructuredData.xml"},
