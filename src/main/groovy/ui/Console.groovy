@@ -20,10 +20,7 @@ import groovy.swing.SwingBuilder
 import groovy.ui.ConsoleTextEditor
 import groovy.ui.SystemOutputInterceptor
 import groovy.ui.text.FindReplaceUtility
-import java.awt.Component
-import java.awt.EventQueue
-import java.awt.Font
-import java.awt.Toolkit
+import java.awt.*
 import java.awt.event.ActionEvent
 import java.util.prefs.Preferences
 import javax.swing.*
@@ -58,6 +55,9 @@ class Console implements CaretListener {
 
     boolean showScriptInOutput = prefs.getBoolean('showScriptInOutput', true)
     Action showScriptInOutputAction
+
+    boolean visualizeScriptResults = prefs.getBoolean('visualizeScriptResults', false)
+    Action visualizeScriptResultsAction
 
     boolean showToolbar = prefs.getBoolean('showToolbar', true)
     Component toolbar
@@ -317,6 +317,11 @@ class Console implements CaretListener {
         prefs.putBoolean('showScriptInOutput', showScriptInOutput)
     }
 
+    void visualizeScriptResults(EventObject evt) {
+        visualizeScriptResults = evt.source.selected
+        prefs.putBoolean('visualizeScriptResults', visualizeScriptResults)
+    }
+
     void showToolbar(EventObject evt) {
         showToolbar = evt.source.selected
         prefs.putBoolean('showToolbar', showToolbar)
@@ -454,7 +459,10 @@ class Console implements CaretListener {
             statusLabel.text = 'Execution complete.'
             appendOutputNl("Result: ", promptStyle)
             def obj = OutputTransforms.transformResult(result, shell.context._outputTransforms)
-            if (obj instanceof Component) {
+            if (!visualizeScriptResults) {
+                obj = obj.toString()
+            }
+            if ((obj instanceof Component) && !(obj instanceof Window)) {
                 outputArea.setSelectionStart(outputArea.document.length)
                 outputArea.setSelectionEnd(outputArea.document.length)
                 outputArea.insertComponent(obj)
