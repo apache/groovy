@@ -15,7 +15,15 @@ class DurationTest extends GroovyTestCase {
         }
    }
 
-    void fixme_testDurationArithmetic() {
+    void testDurationToString() {
+        use(TimeCategory) {
+            def duration = 4.days + 2.hours + 5.minutes + 12.milliseconds
+
+            assert "4 days, 2 hours, 5 minutes, 0.012 seconds" == duration.toString()
+        }
+    }
+
+    void testDurationArithmetic() {
         use(TimeCategory) {
             //def nowOffset = (new Date()).daylightSavingsOffset
             def nowOffset = 0.months.from.now.daylightSavingsOffset
