@@ -183,29 +183,39 @@ public class GroovyScriptEngineImpl
     Object eval(Class scriptClass, final ScriptContext ctx) throws ScriptException {
         // Bindings so script has access to this environment.
         // Only initialize once.
-        if (null == ctx.getAttribute("context")) {
+        if (null == ctx.getAttribute("context", ScriptContext.ENGINE_SCOPE)) {
             // add context to bindings
             ctx.setAttribute("context", ctx, ScriptContext.ENGINE_SCOPE);
 
             // direct output to ctx.getWriter
+            // If we're wrapping with a PrintWriter here,
+            // enable autoFlush because otherwise it might not get done!
             final Writer writer = ctx.getWriter();
             ctx.setAttribute("out", (writer instanceof PrintWriter) ? 
                                     writer :
-                                    new PrintWriter(writer),
+                                    new PrintWriter(writer, true),
                                     ScriptContext.ENGINE_SCOPE);
 
-// TODO: JPW: I like this idea, but not sure if these are the right names.
-// They aren't really necessary because you can say context.reader or
-// context.errorWriter instead.
-//            // direct errors to ctx.getErrorWriter
+// Not going to do this after all (at least for now).
+// Scripts can use context.{reader, writer, errorWriter}.
+// That is a modern version of System.{in, out, err} or Console.{reader, writer}().
+//
+//            // New I/O names consistent with ScriptContext and java.io.Console.
+//
+//            ctx.setAttribute("writer", writer, ScriptContext.ENGINE_SCOPE);
+//
+//            // Direct errors to ctx.getErrorWriter
 //            final Writer errorWriter = ctx.getErrorWriter();
-//            ctx.setAttribute("err", (errorWriter instanceof PrintWriter) ?
+//            ctx.setAttribute("errorWriter", (errorWriter instanceof PrintWriter) ?
 //                                    errorWriter :
 //                                    new PrintWriter(errorWriter),
 //                                    ScriptContext.ENGINE_SCOPE);
 //
-//            // get input from ctx.getReader
-//            ctx.setAttribute("input", ctx.getReader(), ScriptContext.ENGINE_SCOPE);
+//            // Get input from ctx.getReader
+//            // We don't wrap with BufferedReader here because we expect that if
+//            // the host wants that they do it.  Either way Groovy scripts will
+//            // always have readLine because the GDK supplies it for Reader.
+//            ctx.setAttribute("reader", ctx.getReader(), ScriptContext.ENGINE_SCOPE);
         }
         
 
