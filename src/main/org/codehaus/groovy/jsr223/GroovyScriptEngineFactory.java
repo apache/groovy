@@ -42,7 +42,7 @@ import java.util.List;
 
 public class GroovyScriptEngineFactory implements ScriptEngineFactory {
 	
-    private static final String VERSION = "2.0d1";
+    private static final String VERSION = "2.0";
 
     private static final String SHORT_NAME = "groovy";
 
