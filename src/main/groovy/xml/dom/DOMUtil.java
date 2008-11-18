@@ -22,7 +22,8 @@ import java.io.OutputStream;
 
 public class DOMUtil {
     /**
-     * Return a pretty version of the Element
+     * Return a pretty version of the Element.
+     * 
      * @param element the element to serialize
      * @return the pretty String representation of the element
      * @deprecated use XmlUtil version instead
@@ -32,7 +33,8 @@ public class DOMUtil {
     }
 
     /**
-     * Return a pretty version of the Element
+     * Write a pretty version of the Element to the OutputStream.
+     *
      * @param element the element to serialize
      * @param os the outputstream to write to
      * @deprecated use XmlUtil version instead

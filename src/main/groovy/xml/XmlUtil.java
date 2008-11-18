@@ -24,9 +24,12 @@ import javax.xml.transform.stream.StreamResult;
 import javax.xml.transform.stream.StreamSource;
 import java.io.*;
 
+/**
+ * Used for pretty printing XML content.
+ */
 public class XmlUtil {
     /**
-     * Return a pretty version of the Element
+     * Return a pretty String version of the Element.
      *
      * @param element the element to serialize
      * @return the pretty String representation of the element
@@ -38,7 +41,7 @@ public class XmlUtil {
     }
 
     /**
-     * Return a pretty version of the Element
+     * Write a pretty version of the Element to the OutputStream.
      *
      * @param element the element to serialize
      * @param os      the outputstream to write to
@@ -49,7 +52,7 @@ public class XmlUtil {
     }
 
     /**
-     * Return a pretty version of the Element.
+     * Return a pretty String version of the XML content produced by the Writable.
      *
      * @param writable the writable to serialize
      * @return the pretty String representation of the element
@@ -59,7 +62,7 @@ public class XmlUtil {
     }
 
     /**
-     * Return a pretty version of the Element
+     * Write a pretty version of the XML content produced by the Writable to the OutputStream.
      *
      * @param writable the writable to serialize
      * @param os       the outputstream to write to
@@ -69,7 +72,7 @@ public class XmlUtil {
     }
 
     /**
-     * Return a pretty version of the Element
+     * Return a pretty version of the XML content contained in the given String.
      *
      * @param xmlString the string to serialize
      * @return the pretty String representation of the element
@@ -81,7 +84,7 @@ public class XmlUtil {
     }
 
     /**
-     * Return a pretty version of the Element
+     * Write a pretty version of the given XML string to the OutputStream.
      *
      * @param xmlString the string to serialize
      * @param os        the outputstream to write to
