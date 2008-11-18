@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,11 +16,11 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.*;
-import groovy.xml.dom.DOMUtil;
+import groovy.xml.XmlUtil;
+import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
+import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.wrappers.PojoWrapper;
-import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
-import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.w3c.dom.Element;
 
 import java.beans.Introspector;
@@ -509,7 +509,7 @@ public class InvokerHelper {
             return formatMap(arguments, verbose);
         }
         if (arguments instanceof Element) {
-            return DOMUtil.serialize((Element) arguments);
+            return XmlUtil.serialize((Element) arguments);
         }
         if (arguments instanceof String) {
             if (verbose) {

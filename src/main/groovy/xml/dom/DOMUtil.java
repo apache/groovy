@@ -1,37 +1,44 @@
+/*
+ * Copyright 2003-2008 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package groovy.xml.dom;
 
+import groovy.xml.XmlUtil;
 import org.w3c.dom.Element;
 
-import javax.xml.transform.OutputKeys;
-import javax.xml.transform.Transformer;
-import javax.xml.transform.TransformerException;
-import javax.xml.transform.TransformerFactory;
-import javax.xml.transform.dom.DOMSource;
-import javax.xml.transform.stream.StreamResult;
 import java.io.OutputStream;
-import java.io.StringWriter;
 
 public class DOMUtil {
+    /**
+     * Return a pretty version of the Element
+     * @param element the element to serialize
+     * @return the pretty String representation of the element
+     * @deprecated use XmlUtil version instead
+     */
     public static String serialize(Element element) {
-        StringWriter sw = new StringWriter();
-        serialize(element, new StreamResult(sw));
-        return sw.toString();
+        return XmlUtil.serialize(element);
     }
 
+    /**
+     * Return a pretty version of the Element
+     * @param element the element to serialize
+     * @param os the outputstream to write to
+     * @deprecated use XmlUtil version instead
+     */
     public static void serialize(Element element, OutputStream os) {
-        serialize(element, new StreamResult(os));
+        XmlUtil.serialize(element, os);
     }
 
-    private static void serialize(Element element, StreamResult outputTarget) {
-        TransformerFactory transformerFactory = TransformerFactory.newInstance();
-        StringWriter sw = new StringWriter();
-        try {
-            Transformer transformer = transformerFactory.newTransformer();
-            transformer.setOutputProperty(OutputKeys.INDENT, "yes");
-            transformer.transform(new DOMSource(element), outputTarget);
-        }
-        catch (TransformerException e) {
-            // ignore
-        }
-    }
 }
