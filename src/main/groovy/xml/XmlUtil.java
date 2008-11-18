@@ -123,7 +123,7 @@ public class XmlUtil {
 
     private static void serialize(Source source, StreamResult target) {
         TransformerFactory factory = TransformerFactory.newInstance();
-        factory.setAttribute("indent-number", 2);
+        setIndent(factory, 2);
         try {
             Transformer transformer = factory.newTransformer();
             transformer.setOutputProperty(OutputKeys.INDENT, "yes");
@@ -133,6 +133,15 @@ public class XmlUtil {
         }
         catch (TransformerException e) {
             // ignore
+        }
+    }
+
+    private static void setIndent(TransformerFactory factory, int indent) {
+        // TODO: support older parser attribute values as well
+        try {
+            factory.setAttribute("indent-number", indent);
+        } catch (IllegalArgumentException e) {
+            // ignore for factories that don't support this
         }
     }
 }
