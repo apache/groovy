@@ -44,10 +44,10 @@ public class OutputTransforms {
         // built-in transforms
         //
 
-        // any GUI components, such as  a heavyweight button or a Swing component,
-        // gets passed if it has no parent set (tne parent clause is to
-        // keep buttons from disappearing from user shown forms)
-        transforms << { it -> if ((it instanceof Component) && (it.parent == null)) it }
+        // any non-window GUI components, such as  a heavyweight button or a
+        // Swing component, gets passed if it has no parent set (the parent
+        // clause is to keep buttons from disappearing from user shown forms)
+        transforms << { it -> if ((it instanceof Component) && !(it instanceof Window) && (it.parent == null)) it }
 
         // remaining components get printed to an image
         transforms << { it ->
@@ -84,7 +84,7 @@ public class OutputTransforms {
 
     static def transformResult(def base, def transforms = localTransforms) {
         for (Closure c : transforms) {
-            def result = c(base)
+            def result = c(base as Object)
             if (result != null)  {
                 return result
             }

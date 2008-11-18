@@ -185,7 +185,7 @@ historyNextAction = action(
 clearOutputAction = action(
     name: 'Clear Output',
     closure: controller.&clearOutput,
-    mnemonic: 'O',
+    mnemonic: 'C',
     accelerator: shortcut('W')
 )
 
@@ -242,7 +242,7 @@ inspectVariablesAction = action(
 captureStdOutAction = action(
     name: 'Capture Standard Output',
     closure: controller.&captureStdOut,
-    mnemonic: 'C'
+    mnemonic: 'O'
 )
 
 fullStackTracesAction = action(
@@ -254,7 +254,13 @@ fullStackTracesAction = action(
 showScriptInOutputAction = action(
     name: 'Show Script in Output',
     closure: controller.&showScriptInOutput,
-    mnemonic: 'O'
+    mnemonic: 'R'
+)
+
+visualizeScriptResultsAction = action(
+    name: 'Visualize Script Results',
+    closure: controller.&visualizeScriptResults,
+    mnemonic: 'V'
 )
 
 showToolbarAction = action(
