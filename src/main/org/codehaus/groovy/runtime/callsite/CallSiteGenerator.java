@@ -30,65 +30,62 @@ import java.lang.reflect.Modifier;
 public class CallSiteGenerator {
     private static final String[] EXCEPTIONS = new String[] { "java/lang/Throwable" };
 
-    private CallSiteGenerator () {
-    }
+    private CallSiteGenerator () {}
 
     public static void genCallWithFixedParams(ClassWriter cw, String name, final String superClass, CachedMethod cachedMethod, String receiverType ) {
         MethodVisitor mv;
-        if (cachedMethod.getParamsCount() <= 4)
-        {
+        if (cachedMethod.getParamsCount() <= 4) {
             StringBuilder pdescb = new StringBuilder();
             final int pc = cachedMethod.getParamsCount();
-            for (int i = 0; i != pc; ++i)
-              pdescb.append("Ljava/lang/Object;");
+            for (int i = 0; i != pc; ++i) pdescb.append("Ljava/lang/Object;");
 
             String pdesc = pdescb.toString();
 
-        mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "call" + name, "(L" + receiverType + ";" + pdesc + ")Ljava/lang/Object;", null, EXCEPTIONS);
-        mv.visitCode();
-        mv.visitVarInsn(Opcodes.ALOAD, 0);
-        mv.visitVarInsn(Opcodes.ALOAD, 1);
-        for (int i = 0; i != pc; ++i)
-            mv.visitVarInsn(Opcodes.ALOAD, i+2);
-        mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, superClass, "checkCall", "(Ljava/lang/Object;" + pdesc + ")Z");
-        Label l0 = new Label();
-        mv.visitJumpInsn(Opcodes.IFEQ, l0);
-
-        BytecodeHelper helper = new BytecodeHelper(mv);
-
-        Class callClass = cachedMethod.getDeclaringClass().getTheClass();
-        boolean useInterface = callClass.isInterface();
-
-        String type = BytecodeHelper.getClassInternalName(callClass.getName());
-        String descriptor = BytecodeHelper.getMethodDescriptor(cachedMethod.getReturnType(), cachedMethod.getNativeParameterTypes());
-
-        // make call
-        if (cachedMethod.isStatic()) {
-            MethodHandleFactory.genLoadParametersDirect(2, mv, helper, cachedMethod.setAccessible());
-            mv.visitMethodInsn(Opcodes.INVOKESTATIC, type, cachedMethod.getName(), descriptor);
-        } else {
+            mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "call" + name, "(L" + receiverType + ";" + pdesc + ")Ljava/lang/Object;", null, EXCEPTIONS);
+            mv.visitCode();
+            mv.visitVarInsn(Opcodes.ALOAD, 0);
             mv.visitVarInsn(Opcodes.ALOAD, 1);
-            helper.doCast(callClass);
-            MethodHandleFactory.genLoadParametersDirect(2, mv, helper, cachedMethod.setAccessible());
-            mv.visitMethodInsn((useInterface) ? Opcodes.INVOKEINTERFACE : Opcodes.INVOKEVIRTUAL, type, cachedMethod.getName(), descriptor);
-        }
+            for (int i = 0; i != pc; ++i)
+                mv.visitVarInsn(Opcodes.ALOAD, i+2);
+            mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, superClass, "checkCall", "(Ljava/lang/Object;" + pdesc + ")Z");
+            Label l0 = new Label();
+            mv.visitJumpInsn(Opcodes.IFEQ, l0);
 
-        helper.box(cachedMethod.getReturnType());
-        if (cachedMethod.getReturnType() == void.class) {
-            mv.visitInsn(Opcodes.ACONST_NULL);
-        }
+            BytecodeHelper helper = new BytecodeHelper(mv);
 
-        mv.visitInsn(Opcodes.ARETURN);
-        mv.visitLabel(l0);
-        mv.visitVarInsn(Opcodes.ALOAD, 0);
-        mv.visitVarInsn(Opcodes.ALOAD, 1);
-        for (int i = 0; i != pc; ++i)
-            mv.visitVarInsn(Opcodes.ALOAD, i+2);
-        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/codehaus/groovy/runtime/ArrayUtil", "createArray", "(" + pdesc + ")[Ljava/lang/Object;");
-        mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/codehaus/groovy/runtime/callsite/CallSiteArray", "defaultCall" + name, "(Lorg/codehaus/groovy/runtime/callsite/CallSite;L" + receiverType + ";[Ljava/lang/Object;)Ljava/lang/Object;");
-        mv.visitInsn(Opcodes.ARETURN);
-        mv.visitMaxs(0, 0);
-        mv.visitEnd();
+            Class callClass = cachedMethod.getDeclaringClass().getTheClass();
+            boolean useInterface = callClass.isInterface();
+
+            String type = BytecodeHelper.getClassInternalName(callClass.getName());
+            String descriptor = BytecodeHelper.getMethodDescriptor(cachedMethod.getReturnType(), cachedMethod.getNativeParameterTypes());
+
+            // make call
+            if (cachedMethod.isStatic()) {
+                MethodHandleFactory.genLoadParametersDirect(2, mv, helper, cachedMethod.setAccessible());
+                mv.visitMethodInsn(Opcodes.INVOKESTATIC, type, cachedMethod.getName(), descriptor);
+            } else {
+                mv.visitVarInsn(Opcodes.ALOAD, 1);
+                helper.doCast(callClass);
+                MethodHandleFactory.genLoadParametersDirect(2, mv, helper, cachedMethod.setAccessible());
+                mv.visitMethodInsn((useInterface) ? Opcodes.INVOKEINTERFACE : Opcodes.INVOKEVIRTUAL, type, cachedMethod.getName(), descriptor);
+            }
+
+            helper.box(cachedMethod.getReturnType());
+            if (cachedMethod.getReturnType() == void.class) {
+                mv.visitInsn(Opcodes.ACONST_NULL);
+            }
+
+            mv.visitInsn(Opcodes.ARETURN);
+            mv.visitLabel(l0);
+            mv.visitVarInsn(Opcodes.ALOAD, 0);
+            mv.visitVarInsn(Opcodes.ALOAD, 1);
+            for (int i = 0; i != pc; ++i)
+                mv.visitVarInsn(Opcodes.ALOAD, i+2);
+            mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/codehaus/groovy/runtime/ArrayUtil", "createArray", "(" + pdesc + ")[Ljava/lang/Object;");
+            mv.visitMethodInsn(Opcodes.INVOKESTATIC, "org/codehaus/groovy/runtime/callsite/CallSiteArray", "defaultCall" + name, "(Lorg/codehaus/groovy/runtime/callsite/CallSite;L" + receiverType + ";[Ljava/lang/Object;)Ljava/lang/Object;");
+            mv.visitInsn(Opcodes.ARETURN);
+            mv.visitMaxs(0, 0);
+            mv.visitEnd();
         }
     }
 
@@ -244,7 +241,7 @@ public class CallSiteGenerator {
     private static boolean publicParams(CachedMethod method) {
         for (Class nativeParamType : method.getNativeParameterTypes()) {
             if (!Modifier.isPublic(nativeParamType.getModifiers()))
-              return false;
+                return false;
         }
         return true;
     }
