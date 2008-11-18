@@ -20,7 +20,10 @@ import java.io.IOException;
 import java.io.StringReader;
 import java.util.Map;
 import java.util.List;
+import java.util.Iterator;
 
+import org.apache.tools.ant.types.Path;
+import org.apache.tools.ant.types.resources.FileResource;
 import org.codehaus.groovy.antlr.AntlrASTProcessor;
 import org.codehaus.groovy.antlr.SourceBuffer;
 import org.codehaus.groovy.antlr.UnicodeEscapingReader;
@@ -51,12 +54,12 @@ import antlr.collections.AST;
  */
 public class GroovyRootDocBuilder {
 	private final GroovyDocTool tool;
-	private final String sourcepath;
+	private final Path sourcepath;
 	private final SimpleGroovyRootDoc rootDoc;
 	private static final char FS = '/';
     private List links;
 
-    public GroovyRootDocBuilder(GroovyDocTool tool, String sourcepath, List links) {
+    public GroovyRootDocBuilder(GroovyDocTool tool, Path sourcepath, List links) {
 		this.tool = tool;
 		this.sourcepath = sourcepath;
 		this.links = links;
@@ -143,28 +146,39 @@ public class GroovyRootDocBuilder {
 		return parser;
 	}
 
-	public void buildTree(String filename) throws IOException, RecognitionException, TokenStreamException {
-		String srcFileName = sourcepath + FS + filename;
-		String src = DefaultGroovyMethods.getText(new File(srcFileName));
-
-		String packagePath = tool.getPath(filename);
-		packagePath = packagePath.replace('\\', FS);
-		String file = tool.getFile(filename);
-		try {
-			Map classDocs = getClassDocsFromSingleSource(packagePath, file, src);
-		
-			rootDoc.putAllClasses(classDocs);
-
-			SimpleGroovyPackageDoc packageDoc = (SimpleGroovyPackageDoc) rootDoc.packageNamed(packagePath);
-			if (packageDoc == null) {
-				packageDoc = new SimpleGroovyPackageDoc(packagePath);
+	public void buildTree(List filenames) throws IOException, RecognitionException, TokenStreamException {
+		Iterator fileItr = filenames.iterator();
+		while (fileItr.hasNext()) {	
+			String filename = (String) fileItr.next();
+			Iterator pathItr = sourcepath.iterator();
+			while (pathItr.hasNext()){				
+				FileResource fileRes = (FileResource) pathItr.next();
+				String path = fileRes.getFile().getAbsolutePath();
+				if(new File(path + FS + filename).exists()){
+					String srcFileName = path + FS + filename;
+					String src = DefaultGroovyMethods.getText(new File(srcFileName));
+			
+					String packagePath = tool.getPath(filename);
+					packagePath = packagePath.replace('\\', FS);
+					String file = tool.getFile(filename);
+					try {
+						Map classDocs = getClassDocsFromSingleSource(packagePath, file, src);
+					
+						rootDoc.putAllClasses(classDocs);
+			
+						SimpleGroovyPackageDoc packageDoc = (SimpleGroovyPackageDoc) rootDoc.packageNamed(packagePath);
+						if (packageDoc == null) {
+							packageDoc = new SimpleGroovyPackageDoc(packagePath);
+						}
+						packageDoc.putAll(classDocs);		
+						rootDoc.put(packagePath, packageDoc);
+					} catch (RecognitionException e) {
+						System.out.println("ignored due to RecognitionException: " + filename);
+					} catch (TokenStreamException e) {
+						System.out.println("ignored due to TokenStreamException: " + filename);
+					}
+				}
 			}
-			packageDoc.putAll(classDocs);		
-			rootDoc.put(packagePath, packageDoc);
-		} catch (RecognitionException e) {
-			System.out.println("ignored due to RecognitionException: " + filename);
-		} catch (TokenStreamException e) {
-			System.out.println("ignored due to TokenStreamException: " + filename);
 		}
 	}
 
