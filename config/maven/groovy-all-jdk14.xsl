@@ -8,6 +8,9 @@
         <artifactId>groovy-all-jdk14</artifactId>
     </xsl:template>
 
+    <!-- remove livetribe -->
+    <xsl:template match="/*[local-name() = 'project']/*[local-name() = 'dependencies']/*[local-name() = 'dependency'][*/text() = 'livetribe-jsr223']"/>
+
     <!-- TODO: pull these in from tools pom? -->
     <xsl:template match="/*[local-name() = 'project']/*[local-name() = 'dependencies']">
         <dependencies>

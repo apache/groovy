@@ -573,8 +573,7 @@ Not found: ${groovyJar14path}
         </unzip>
         <copy toDir="${stagingDirectory}/META-INF">
             <fileset dir="${basedir}/config/build">
-                <include name="ANTLR-LICENSE.txt"/>
-                <include name="ASM-LICENSE.txt"/>
+                <include name="*LICENSE.txt"/>
             </fileset>
         </copy>
         <!-- add commons-cli -->
