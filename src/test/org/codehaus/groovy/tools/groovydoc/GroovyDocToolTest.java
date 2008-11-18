@@ -18,9 +18,12 @@
 package org.codehaus.groovy.tools.groovydoc;
 
 import groovy.util.GroovyTestCase;
+import java.util.List;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
+import org.apache.tools.ant.types.Path;
+import org.apache.tools.ant.Project;
 
 import java.util.ArrayList;
 
@@ -32,11 +35,11 @@ public class GroovyDocToolTest extends GroovyTestCase {
     private static final String TEMPLATES_DIR = "main/org/codehaus/groovy/tools/groovydoc/gstring-templates";
 
     public void setUp() {
-        plainTool = new GroovyDocTool("src/test");
+        plainTool = new GroovyDocTool(new Path(new Project(), "src/test"));
 
         xmlTool = new GroovyDocTool(
                 new FileSystemResourceManager("src"), // template storage
-                "src/main", // source file dirs
+                new Path(new Project(), "src/main"), // source file dirs
                 new String[]{TEMPLATES_DIR + "/top-level/rootDocStructuredData.xml"},
                 new String[]{TEMPLATES_DIR + "/package-level/packageDocStructuredData.xml"},
                 new String[]{TEMPLATES_DIR + "/class-level/classDocStructuredData.xml"},
@@ -45,7 +48,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
         xmlToolForTests = new GroovyDocTool(
                 new FileSystemResourceManager("src"), // template storage
-                "src/test", // source file dirs
+                new Path(new Project(), "src/main"), // source file dirs
                 new String[]{TEMPLATES_DIR + "/top-level/rootDocStructuredData.xml"},
                 new String[]{TEMPLATES_DIR + "/package-level/packageDocStructuredData.xml"},
                 new String[]{TEMPLATES_DIR + "/class-level/classDocStructuredData.xml"},
@@ -54,7 +57,9 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testPlainGroovyDocTool() throws Exception {
-        plainTool.add("org/codehaus/groovy/tools/groovydoc/GroovyDocToolTest.java");
+    	List srcList = new ArrayList();
+    	srcList.add("org/codehaus/groovy/tools/groovydoc/GroovyDocToolTest.java");
+        plainTool.add(srcList);
         GroovyRootDoc root = plainTool.getRootDoc();
 
         // loop through classes in tree
@@ -80,12 +85,14 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testGroovyDocTheCategoryMethodClass() throws Exception {
-        xmlTool.add("groovy/util/CliBuilder.groovy");
-        xmlTool.add("groovy/lang/GroovyLogTestCase.groovy");
-        xmlTool.add("groovy/mock/interceptor/StrictExpectation.groovy");
-        xmlTool.add("groovy/ui/Console.groovy");
-        xmlTool.add("org/codehaus/groovy/runtime/GroovyCategorySupport.java");
-        xmlTool.add("org/codehaus/groovy/runtime/ConvertedMap.java");
+    	List srcList = new ArrayList();
+    	srcList.add("groovy/util/CliBuilder.groovy");
+    	srcList.add("groovy/lang/GroovyLogTestCase.groovy");
+    	srcList.add("groovy/mock/interceptor/StrictExpectation.groovy");
+    	srcList.add("groovy/ui/Console.groovy");
+    	srcList.add("org/codehaus/groovy/runtime/GroovyCategorySupport.java");
+    	srcList.add("org/codehaus/groovy/runtime/ConvertedMap.java");
+        xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
 
@@ -102,7 +109,9 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testConstructors() throws Exception {
-        xmlTool.add("groovy/ui/Console.groovy");
+    	List srcList = new ArrayList();
+    	srcList.add("groovy/ui/Console.groovy");
+        xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
 
@@ -112,7 +121,9 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testClassComment() throws Exception {
-        xmlTool.add("groovy/xml/DOMBuilder.java");
+    	List srcList = new ArrayList();
+    	srcList.add("groovy/xml/DOMBuilder.java");
+        xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
 
@@ -121,7 +132,9 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testMethodComment() throws Exception {
-        xmlTool.add("groovy/model/DefaultTableColumn.java");
+    	List srcList = new ArrayList();
+    	srcList.add("groovy/model/DefaultTableColumn.java");
+        xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
 
@@ -130,7 +143,9 @@ public class GroovyDocToolTest extends GroovyTestCase {
         assertTrue(defTabColDoc.indexOf("Evaluates the value of a cell") > 0);
     }
     public void testPackageName() throws Exception {
-        xmlTool.add("groovy/xml/DOMBuilder.java");
+    	List srcList = new ArrayList();
+    	srcList.add("groovy/xml/DOMBuilder.java");
+        xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
 
@@ -139,7 +154,9 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testExtendsClauseWithoutSuperClassInTree() throws Exception {
-        xmlTool.add("groovy/xml/DOMBuilder.java");
+    	List srcList = new ArrayList();
+    	srcList.add("groovy/xml/DOMBuilder.java");
+        xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
 
@@ -148,8 +165,10 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testExtendsClauseWithSuperClassInTree() throws Exception {
-        xmlTool.add("groovy/xml/DOMBuilder.java");
-        xmlTool.add("groovy/util/BuilderSupport.java");
+    	List srcList = new ArrayList();
+    	srcList.add("groovy/xml/DOMBuilder.java");
+    	srcList.add("groovy/util/BuilderSupport.java");
+        xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
 
@@ -158,7 +177,9 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
     
     public void testDefaultPackage() throws Exception {
-    	xmlToolForTests.add("UberTestCaseBugs.java");
+    	List srcList = new ArrayList();
+    	srcList.add("UberTestCaseBugs.java");
+    	xmlToolForTests.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlToolForTests.renderToOutput(output, MOCK_DIR);
         String domBuilderDoc = output.getText(MOCK_DIR + "/DefaultPackage/UberTestCaseBugs.html");
@@ -166,21 +187,27 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testStaticModifier() throws Exception {
-        xmlTool.add("groovy/swing/binding/AbstractButtonProperties.java");
+    	List srcList = new ArrayList();
+    	srcList.add("groovy/swing/binding/AbstractButtonProperties.java");
+        xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
         String abstractButtonPropertiesDoc = output.getText(MOCK_DIR + "/groovy/swing/binding/AbstractButtonProperties.html");
         assertTrue(abstractButtonPropertiesDoc.indexOf("static") > 0);
     }
     public void testAnonymousInnerClassMethodsNotIncluded() throws Exception {
-        xmlTool.add("groovy/swing/binding/AbstractButtonProperties.java");
+    	List srcList = new ArrayList();
+    	srcList.add("groovy/swing/binding/AbstractButtonProperties.java");
+        xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
         String abstractButtonPropertiesDoc = output.getText(MOCK_DIR + "/groovy/swing/binding/AbstractButtonProperties.html");
         assertTrue(abstractButtonPropertiesDoc.indexOf("createBinding") < 0);
     }
     public void testMultipleConstructorError() throws Exception {
-        xmlTool.add("groovy/sql/Sql.java");
+    	List srcList = new ArrayList();
+    	srcList.add("groovy/sql/Sql.java");
+        xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
         String sqlDoc = output.getText(MOCK_DIR + "/groovy/sql/Sql.html");
@@ -188,16 +215,20 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testReturnTypeResolution() throws Exception {
-        xmlTool.add("org/codehaus/groovy/tools/groovydoc/SimpleGroovyRootDoc.java");
-        xmlTool.add("org/codehaus/groovy/groovydoc/GroovyClassDoc.java");
+    	List srcList = new ArrayList();
+    	srcList.add("org/codehaus/groovy/tools/groovydoc/SimpleGroovyRootDoc.java");
+    	srcList.add("org/codehaus/groovy/groovydoc/GroovyClassDoc.java");
+        xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
         String text = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/SimpleGroovyRootDoc.html");
         assertTrue(text.indexOf("org.codehaus.groovy.groovydoc.GroovyClassDoc") > 0);
     }
     public void testParameterTypeResolution() throws Exception {
-        xmlTool.add("org/codehaus/groovy/tools/groovydoc/SimpleGroovyRootDoc.java");
-        xmlTool.add("org/codehaus/groovy/groovydoc/GroovyPackageDoc.java");
+    	List srcList = new ArrayList();
+    	srcList.add("org/codehaus/groovy/tools/groovydoc/SimpleGroovyRootDoc.java");
+    	srcList.add("org/codehaus/groovy/groovydoc/GroovyPackageDoc.java");
+        xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
         String text = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/SimpleGroovyRootDoc.html");

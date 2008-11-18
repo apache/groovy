@@ -255,7 +255,7 @@ public class Groovydoc extends Task
         
   		GroovyDocTool htmlTool = new GroovyDocTool(
 				new ClasspathResourceManager(), // we're gonna get the default templates out of the dist jar file
-				sourcePath.toString(), // sourcepath                     - TODO multiple paths need to be handled here
+				sourcePath, // sourcepath                     - TODO multiple paths need to be handled here Should Work Now
 				new String[] { // top level templates
 						"org/codehaus/groovy/tools/groovydoc/gstring-templates/top-level/index.html",
 						"org/codehaus/groovy/tools/groovydoc/gstring-templates/top-level/overview-frame.html", // needs all package names
@@ -274,11 +274,7 @@ public class Groovydoc extends Task
                 );
 
 		try {
-			Iterator itr = sourceFilesToDoc.iterator();
-			while (itr.hasNext()) {
-				htmlTool.add((String) itr.next());
-			}
-			
+			htmlTool.add(sourceFilesToDoc);			
 			FileOutputTool output = new FileOutputTool();
 			htmlTool.renderToOutput(output, destDir.getCanonicalPath()); // TODO push destDir through APIs?
 		} catch (Exception e) {

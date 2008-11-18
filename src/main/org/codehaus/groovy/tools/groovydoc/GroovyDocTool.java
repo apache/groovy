@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
+import org.apache.tools.ant.types.Path;
 import antlr.RecognitionException;
 import antlr.TokenStreamException;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
@@ -30,15 +31,15 @@ public class GroovyDocTool {
      * Constructor for use by people who only want to interact with the Groovy Doclet Tree (rootDoc)
      * @param sourcepath where the sources to be added can be found
      */
-    public GroovyDocTool(String sourcepath) {
+    public GroovyDocTool(Path sourcepath) {
         this(null,sourcepath,null);
     }
 
-    public GroovyDocTool(ResourceManager resourceManager, String sourcepath, String classTemplate) {
+    public GroovyDocTool(ResourceManager resourceManager, Path sourcepath, String classTemplate) {
 		this(resourceManager, sourcepath, new String[]{}, new String[]{}, new String[] {classTemplate}, new ArrayList());
 	}
 
-	public GroovyDocTool(ResourceManager resourceManager, String sourcepath, String[] docTemplates, String[] packageTemplates, String[] classTemplates, List links) {
+	public GroovyDocTool(ResourceManager resourceManager, Path sourcepath, String[] docTemplates, String[] packageTemplates, String[] classTemplates, List links) {
 		rootDocBuilder = new GroovyRootDocBuilder(this, sourcepath, links);
 		if (resourceManager == null) {
             templateEngine = null;
@@ -47,12 +48,12 @@ public class GroovyDocTool {
         }
     }
 
-    public void add(String filename) throws RecognitionException, TokenStreamException, IOException {
+    public void add(List filenames) throws RecognitionException, TokenStreamException, IOException {
 		if (templateEngine != null) {
             // only print out if we are being used for template generation
-            System.out.println("Loading source files for " + filename);
+            System.out.println("Loading source files for " + filenames);
         }
-		rootDocBuilder.buildTree(filename);
+		rootDocBuilder.buildTree(filenames);
 	}
 	
 	public GroovyRootDoc getRootDoc() {
