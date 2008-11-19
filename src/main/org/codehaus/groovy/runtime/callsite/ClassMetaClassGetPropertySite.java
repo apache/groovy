@@ -15,8 +15,10 @@
  */
 package org.codehaus.groovy.runtime.callsite;
 
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
 class ClassMetaClassGetPropertySite extends AbstractCallSite {
     final MetaClass metaClass;
@@ -35,7 +37,11 @@ class ClassMetaClassGetPropertySite extends AbstractCallSite {
           return this;
     }
 
-    public final Object getProperty(Object receiver) {
-        return metaClass.getProperty(aClass, name);
+    public final Object getProperty(Object receiver) throws Throwable{
+        try {
+            return metaClass.getProperty(aClass, name);
+        } catch (GroovyRuntimeException gre) {
+            throw ScriptBytecodeAdapter.unwrap(gre);
+        }
     }
 }

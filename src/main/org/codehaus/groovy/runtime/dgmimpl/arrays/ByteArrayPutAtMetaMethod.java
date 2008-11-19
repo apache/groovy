@@ -60,7 +60,7 @@ public class ByteArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
             super(site, metaClass, metaMethod, params);
         }
 
-        public Object call(Object receiver, Object[] args) {
+        public Object call(Object receiver, Object[] args) throws Throwable {
             if ((receiver instanceof byte[] && args[0] instanceof Integer && args[1] instanceof Byte )
                     && checkPojoMetaClass()) {
                 final byte[] objects = (byte[]) receiver;

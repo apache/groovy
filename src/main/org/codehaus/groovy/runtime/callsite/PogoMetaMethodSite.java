@@ -16,11 +16,12 @@
 package org.codehaus.groovy.runtime.callsite;
 
 import groovy.lang.GroovyObject;
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedMethod;
-import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.MetaClassHelper;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -35,23 +36,37 @@ public class PogoMetaMethodSite extends MetaMethodSite {
         super(site, metaClass, metaMethod, params);
     }
 
-    public Object invoke(Object receiver, Object[] args) {
+    public Object invoke(Object receiver, Object[] args) throws Throwable {
         MetaClassHelper.unwrap(args);
-        return metaMethod.doMethodInvoke(receiver,  args);
+        try {
+            return metaMethod.doMethodInvoke(receiver,  args);
+        } catch (GroovyRuntimeException gre) {
+            throw ScriptBytecodeAdapter.unwrap(gre);
+        }
     }
 
     public Object callCurrent(GroovyObject receiver, Object[] args) throws Throwable {
-        if(checkCall(receiver, args))
-          return invoke(receiver,args);
-        else
-          return CallSiteArray.defaultCallCurrent(this, receiver, args);
+        if(checkCall(receiver, args)) {
+            try {
+                return invoke(receiver,args);
+            } catch (GroovyRuntimeException gre) {
+                throw ScriptBytecodeAdapter.unwrap(gre);
+            }
+        } else {
+            return CallSiteArray.defaultCallCurrent(this, receiver, args);
+        }
     }
 
-    public Object call(Object receiver, Object[] args) {
-        if(checkCall(receiver, args))
-          return invoke(receiver,args);
-        else
-          return CallSiteArray.defaultCall(this, receiver, args);
+    public Object call(Object receiver, Object[] args) throws Throwable {
+        if(checkCall(receiver, args)) {
+            try {
+                return invoke(receiver,args);
+            } catch (GroovyRuntimeException gre) {
+                throw ScriptBytecodeAdapter.unwrap(gre);
+            }
+        } else {
+            return CallSiteArray.defaultCall(this, receiver, args);
+        }
     }
 
     protected boolean checkCall(Object receiver, Object[] args) {
@@ -203,21 +218,18 @@ public class PogoMetaMethodSite extends MetaMethodSite {
             reflect = metaMethod.setAccessible();
         }
 
-        public Object invoke(Object receiver, Object[] args) {
+        public Object invoke(Object receiver, Object[] args) throws Throwable {
             MetaClassHelper.unwrap(args);
             args = metaMethod.coerceArgumentsToClasses(args);
             try {
-                try {
-                    return reflect.invoke(receiver, args);
-                } catch (IllegalArgumentException e) {
-                    throw new InvokerInvocationException(e);
-                } catch (IllegalAccessException e) {
-                    throw new InvokerInvocationException(e);
-                } catch (InvocationTargetException e) {
-                    throw new InvokerInvocationException(e);
+                return reflect.invoke(receiver, args);
+            } catch (InvocationTargetException e) {
+                Throwable cause = e.getCause();
+                if (cause instanceof GroovyRuntimeException) {
+                    throw ScriptBytecodeAdapter.unwrap ((GroovyRuntimeException) cause);
+                } else {
+                    throw cause;
                 }
-            } catch (Exception e) {
-                throw metaMethod.processDoMethodInvokeException(e, receiver, args);
             }
         }
     }
@@ -228,20 +240,17 @@ public class PogoMetaMethodSite extends MetaMethodSite {
             super(site, metaClass, metaMethod, params);
         }
 
-        public final Object invoke(Object receiver, Object[] args) {
+        public final Object invoke(Object receiver, Object[] args) throws Throwable {
             args = metaMethod.coerceArgumentsToClasses(args);
             try {
-                try {
-                    return reflect.invoke(receiver, args);
-                } catch (IllegalArgumentException e) {
-                    throw new InvokerInvocationException(e);
-                } catch (IllegalAccessException e) {
-                    throw new InvokerInvocationException(e);
-                } catch (InvocationTargetException e) {
-                    throw new InvokerInvocationException(e);
+                return reflect.invoke(receiver, args);
+            } catch (InvocationTargetException e) {
+                Throwable cause = e.getCause();
+                if (cause instanceof GroovyRuntimeException) {
+                    throw ScriptBytecodeAdapter.unwrap ((GroovyRuntimeException) cause);
+                } else {
+                    throw cause;
                 }
-            } catch (Exception e) {
-                throw metaMethod.processDoMethodInvokeException(e, receiver, args);
             }
         }
     }
@@ -252,15 +261,16 @@ public class PogoMetaMethodSite extends MetaMethodSite {
             super(site, metaClass, metaMethod, params);
         }
 
-        public final Object invoke(Object receiver, Object[] args) {
+        public final Object invoke(Object receiver, Object[] args) throws Throwable {
             try {
                 return reflect.invoke(receiver, args);
-            } catch (IllegalArgumentException e) {
-                throw new InvokerInvocationException(e);
-            } catch (IllegalAccessException e) {
-                throw new InvokerInvocationException(e);
             } catch (InvocationTargetException e) {
-                throw new InvokerInvocationException(e);
+                Throwable cause = e.getCause();
+                if (cause instanceof GroovyRuntimeException) {
+                    throw ScriptBytecodeAdapter.unwrap ((GroovyRuntimeException) cause);
+                } else {
+                    throw cause;
+                }
             }
         }
     }
@@ -274,8 +284,12 @@ public class PogoMetaMethodSite extends MetaMethodSite {
             super(site, metaClass, metaMethod, params);
         }
 
-        public final Object invoke(Object receiver, Object[] args) {
-            return metaMethod.doMethodInvoke(receiver,  args);
+        public final Object invoke(Object receiver, Object[] args) throws Throwable {
+            try {
+                return metaMethod.doMethodInvoke(receiver,  args);
+            } catch (GroovyRuntimeException gre) {
+                throw ScriptBytecodeAdapter.unwrap(gre);
+            }
         }
     }
 
@@ -288,8 +302,12 @@ public class PogoMetaMethodSite extends MetaMethodSite {
             super(site, metaClass, metaMethod, params);
         }
 
-        public final Object invoke(Object receiver, Object[] args) {
-            return metaMethod.invoke(receiver,  args);
+        public final Object invoke(Object receiver, Object[] args) throws Throwable {
+            try {
+                return metaMethod.invoke(receiver,  args);
+            } catch (GroovyRuntimeException gre) {
+                throw ScriptBytecodeAdapter.unwrap(gre);
+            }
         }
     }
 }

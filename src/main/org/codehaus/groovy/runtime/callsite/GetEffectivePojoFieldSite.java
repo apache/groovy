@@ -33,7 +33,7 @@ class GetEffectivePojoFieldSite extends AbstractCallSite {
         this.effective = effective.field;
     }
 
-    public final Object callGetProperty (Object receiver) {
+    public final Object callGetProperty (Object receiver) throws Throwable {
         return acceptGetProperty(receiver).getProperty(receiver);
     }
 

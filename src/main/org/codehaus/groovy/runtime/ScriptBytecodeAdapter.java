@@ -67,23 +67,27 @@ public class ScriptBytecodeAdapter {
         Object result = null;
         boolean intercepting = receiver instanceof GroovyInterceptable;
         try {
-            // if it's a pure interceptable object (even intercepting toString(), clone(), ...)
-            if (intercepting) {
-                result = receiver.invokeMethod(messageName, messageArguments);
+            try {
+                // if it's a pure interceptable object (even intercepting toString(), clone(), ...)
+                if (intercepting) {
+                    result = receiver.invokeMethod(messageName, messageArguments);
+                }
+                //else if there's a statically typed method or a GDK method
+                else {
+                    result = receiver.getMetaClass().invokeMethod(senderClass, receiver, messageName, messageArguments, false, true);
+                }
+            } catch (MissingMethodException e) {
+                if (e instanceof MissingMethodExecutionFailed) {
+                    throw (MissingMethodException)e.getCause();
+                } else if (!intercepting && receiver.getClass() == e.getType() && e.getMethod().equals(messageName)) {
+                    // in case there's nothing else, invoke the object's own invokeMethod()
+                    result = receiver.invokeMethod(messageName, messageArguments);
+                } else {
+                    throw e;
+                }
             }
-            //else if there's a statically typed method or a GDK method
-            else {
-                result = receiver.getMetaClass().invokeMethod(senderClass, receiver, messageName, messageArguments, false, true);
-            }
-        } catch (MissingMethodException e) {
-            if (e instanceof MissingMethodExecutionFailed) {
-                throw (MissingMethodException)e.getCause();
-            } else if (!intercepting && receiver.getClass() == e.getType() && e.getMethod().equals(messageName)) {
-                // in case there's nothing else, invoke the object's own invokeMethod()
-                result = receiver.invokeMethod(messageName, messageArguments);
-            } else {
-                throw e;
-            }
+        } catch (GroovyRuntimeException gre) {
+            throw unwrap(gre);
         }
         return result;
     }
@@ -119,7 +123,11 @@ public class ScriptBytecodeAdapter {
         MetaClass metaClass = receiver.getMetaClass();
         // ignore interception and missing method fallback
         Object result = null;
-        result = metaClass.invokeMethod(senderClass, receiver, messageName, messageArguments, true, true);
+        try {
+            result = metaClass.invokeMethod(senderClass, receiver, messageName, messageArguments, true, true);
+        } catch (GroovyRuntimeException gre) {
+            throw unwrap(gre);
+        }
         return result;
     }
 
@@ -151,7 +159,11 @@ public class ScriptBytecodeAdapter {
     //              normal method invocation
     //  --------------------------------------------------------
     public static Object invokeMethodN(Class senderClass, Object receiver, String messageName, Object[] messageArguments) throws Throwable {
+        try {    
             return InvokerHelper.invokeMethod(receiver, messageName, messageArguments);
+        } catch (GroovyRuntimeException gre) {
+            throw unwrap(gre);
+        }
     }
 
     public static Object invokeMethodNSafe(Class senderClass, Object receiver, String messageName, Object[] messageArguments) throws Throwable {
@@ -161,7 +173,6 @@ public class ScriptBytecodeAdapter {
 
     public static Object invokeMethodNSpreadSafe(Class senderClass, Object receiver, String messageName, Object[] messageArguments) throws Throwable {
         if (receiver == null) return null;
-
         List answer = new ArrayList();
         for (Iterator it = InvokerHelper.asIterator(receiver); it.hasNext();) {
             answer.add(invokeMethodNSafe(senderClass, it.next(), messageName, messageArguments));
@@ -190,7 +201,11 @@ public class ScriptBytecodeAdapter {
     //                static normal method invocation
     //  --------------------------------------------------------
     public static Object invokeStaticMethodN(Class senderClass, Class receiver, String messageName, Object[] messageArguments) throws Throwable {
-        return InvokerHelper.invokeStaticMethod(receiver, messageName, messageArguments);
+        try {
+            return InvokerHelper.invokeStaticMethod(receiver, messageName, messageArguments);
+        } catch (GroovyRuntimeException gre) {
+            throw unwrap(gre);
+        }
     }
 
     public static Object invokeStaticMethod0(Class senderClass, Class receiver, String messageName) throws Throwable {
@@ -201,7 +216,11 @@ public class ScriptBytecodeAdapter {
     //              normal constructor invocation (via new)
     //  --------------------------------------------------------
     public static Object invokeNewN(Class senderClass, Class receiver, Object arguments) throws Throwable {
+        try {
             return InvokerHelper.invokeConstructorOf(receiver, arguments);
+        } catch (GroovyRuntimeException gre) {
+            throw unwrap(gre);
+        }
     }
 
     public static Object invokeNew0(Class senderClass, Class receiver) throws Throwable {
@@ -212,9 +231,13 @@ public class ScriptBytecodeAdapter {
     //       special constructor invocation (via this/super)
     //  --------------------------------------------------------
 
-    public static int selectConstructorAndTransformArguments(Object[] arguments, int numberOfConstructors, Class which) {
+    public static int selectConstructorAndTransformArguments(Object[] arguments, int numberOfConstructors, Class which) throws Throwable {
         MetaClass metaClass = GroovySystem.getMetaClassRegistry().getMetaClass(which);
-        return metaClass.selectConstructorAndTransformArguments(numberOfConstructors, arguments);
+        try {
+            return metaClass.selectConstructorAndTransformArguments(numberOfConstructors, arguments);
+        } catch (GroovyRuntimeException gre) {
+            throw unwrap(gre);
+        }
     }
 
     //  --------------------------------------------------------
@@ -222,11 +245,15 @@ public class ScriptBytecodeAdapter {
     //  --------------------------------------------------------
 
     public static Object getFieldOnSuper(Class senderClass, Object receiver, String messageName) throws Throwable {
-        if (receiver instanceof Class) {
-            return InvokerHelper.getAttribute(receiver, messageName);
-        } else {
-            MetaClass mc = ((GroovyObject) receiver).getMetaClass();
-            return mc.getAttribute(senderClass, receiver, messageName, true);
+        try {
+            if (receiver instanceof Class) {
+                return InvokerHelper.getAttribute(receiver, messageName);
+            } else {
+                MetaClass mc = ((GroovyObject) receiver).getMetaClass();
+                return mc.getAttribute(senderClass, receiver, messageName, true);
+            }
+        } catch (GroovyRuntimeException gre) {
+            throw unwrap(gre);
         }
     }
 
@@ -247,11 +274,15 @@ public class ScriptBytecodeAdapter {
     //  --------------------------------------------------------
 
     public static void setFieldOnSuper(Object messageArgument, Class senderClass, Object receiver, String messageName) throws Throwable {
-        if (receiver instanceof Class) {
-            InvokerHelper.setAttribute(receiver, messageName, messageArgument);
-        } else {
-            MetaClass mc = ((GroovyObject) receiver).getMetaClass();
-            mc.setAttribute(senderClass, receiver, messageName, messageArgument, true, true);
+        try {
+            if (receiver instanceof Class) {
+                InvokerHelper.setAttribute(receiver, messageName, messageArgument);
+            } else {
+                MetaClass mc = ((GroovyObject) receiver).getMetaClass();
+                mc.setAttribute(senderClass, receiver, messageName, messageArgument, true, true);
+            }
+        } catch (GroovyRuntimeException gre) {
+            throw unwrap(gre);
         }
     }
 
@@ -270,7 +301,11 @@ public class ScriptBytecodeAdapter {
     //  --------------------------------------------------------
 
     public static Object getField(Class senderClass, Object receiver, String messageName) throws Throwable {
+        try {
             return InvokerHelper.getAttribute(receiver, messageName);
+        } catch (GroovyRuntimeException gre) {
+            throw unwrap(gre);
+        }    
     }
 
     public static Object getFieldSafe(Class senderClass, Object receiver, String messageName) throws Throwable {
@@ -292,7 +327,11 @@ public class ScriptBytecodeAdapter {
     //  --------------------------------------------------------
 
     public static void setField(Object messageArgument, Class senderClass, Object receiver, String messageName) throws Throwable {
+        try {
             InvokerHelper.setAttribute(receiver, messageName, messageArgument);
+        } catch (GroovyRuntimeException gre) {
+            throw unwrap(gre);
+        }
     }
 
     public static void setFieldSafe(Object messageArgument, Class senderClass, Object receiver, String messageName) throws Throwable {
@@ -302,7 +341,6 @@ public class ScriptBytecodeAdapter {
 
     public static void setFieldSpreadSafe(Object messageArgument, Class senderClass, Object receiver, String messageName) throws Throwable {
         if (receiver == null) return;
-
         for (Iterator it = InvokerHelper.asIterator(receiver); it.hasNext();) {
             setFieldSafe(messageArgument, senderClass, it.next(), messageName);
         }
@@ -313,17 +351,24 @@ public class ScriptBytecodeAdapter {
     //  --------------------------------------------------------
 
     public static Object getGroovyObjectField(Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
-        return receiver.getMetaClass().getAttribute(receiver, messageName);
+        try  {
+            return receiver.getMetaClass().getAttribute(receiver, messageName);
+        } catch (GroovyRuntimeException gre) {
+            throw unwrap(gre);
+        }
     }
 
     public static Object getGroovyObjectFieldSafe(Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
         if (receiver == null) return null;
-        return receiver.getMetaClass().getAttribute(receiver, messageName);
+        try {
+            return receiver.getMetaClass().getAttribute(receiver, messageName);
+        } catch (GroovyRuntimeException gre) {
+            throw unwrap(gre);
+        }
     }
 
     public static Object getGroovyObjectFieldSpreadSafe(Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
         if (receiver == null) return null;
-
         List answer = new ArrayList();
         for (Iterator it = InvokerHelper.asIterator(receiver); it.hasNext();) {
             answer.add(getFieldSafe(senderClass, it.next(), messageName));
@@ -336,17 +381,24 @@ public class ScriptBytecodeAdapter {
     //  --------------------------------------------------------
 
     public static void setGroovyObjectField(Object messageArgument, Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
-        receiver.getMetaClass().setAttribute(receiver, messageName, messageArgument);
+        try {
+            receiver.getMetaClass().setAttribute(receiver, messageName, messageArgument);
+        } catch (GroovyRuntimeException gre) {
+            throw unwrap(gre);
+        }
     }
 
     public static void setGroovyObjectFieldSafe(Object messageArgument, Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
         if (receiver == null) return;
-        receiver.getMetaClass().setAttribute(receiver, messageName, messageArgument);
+        try {
+            receiver.getMetaClass().setAttribute(receiver, messageName, messageArgument);
+        } catch (GroovyRuntimeException gre) {
+            throw unwrap(gre);
+        }
     }
 
     public static void setGroovyObjectFieldSpreadSafe(Object messageArgument, Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
         if (receiver == null) return;
-
         for (Iterator it = InvokerHelper.asIterator(receiver); it.hasNext();) {
             setFieldSafe(messageArgument, senderClass, it.next(), messageName);
         }
@@ -377,7 +429,11 @@ public class ScriptBytecodeAdapter {
     //  --------------------------------------------------------
 
     public static void setPropertyOnSuper(Object messageArgument, Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
+        try {
             InvokerHelper.setAttribute(receiver, messageName, messageArgument);
+        } catch (GroovyRuntimeException gre) {
+            throw unwrap(gre);
+        }
     }
 
     public static void setPropertyOnSuperSafe(Object messageArgument, Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
@@ -395,7 +451,11 @@ public class ScriptBytecodeAdapter {
     //  --------------------------------------------------------
 
     public static Object getProperty(Class senderClass, Object receiver, String messageName) throws Throwable {
-        return InvokerHelper.getProperty(receiver, messageName);
+        try {
+            return InvokerHelper.getProperty(receiver, messageName);
+        } catch (GroovyRuntimeException gre) {
+            throw unwrap(gre);
+        }
     }
 
     public static Object getPropertySafe(Class senderClass, Object receiver, String messageName) throws Throwable {
@@ -418,7 +478,11 @@ public class ScriptBytecodeAdapter {
     //  --------------------------------------------------------
 
     public static void setProperty(Object messageArgument, Class senderClass, Object receiver, String messageName) throws Throwable {
+        try {
             InvokerHelper.setProperty(receiver, messageName, messageArgument);
+        } catch (GroovyRuntimeException gre) {
+            throw unwrap(gre);
+        }
     }
 
     public static void setPropertySafe(Object messageArgument, Class senderClass, Object receiver, String messageName) throws Throwable {

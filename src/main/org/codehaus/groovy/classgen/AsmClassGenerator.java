@@ -180,7 +180,6 @@ public class AsmClassGenerator extends ClassGenerator {
     private static final String CONSTRUCTOR = "<$constructor$>";
     private List callSites = new ArrayList();
     private int callSiteArrayVarIndex;
-    private static final String GRE = BytecodeHelper.getClassInternalName(ClassHelper.make(GroovyRuntimeException.class));
     private static final String DTT = BytecodeHelper.getClassInternalName(DefaultTypeTransformation.class.getName());
 
     public AsmClassGenerator(
@@ -522,9 +521,6 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private void visitStdMethod(MethodNode node, boolean isConstructor, Parameter[] parameters, Statement code) {
-        final Label tryStart = new Label();
-        mv.visitLabel(tryStart);
-
         if (isConstructor && (code == null || !((ConstructorNode) node).firstStatementIsSpecialConstructorCall())) {
             // invokes the super class constructor
             mv.visitVarInsn(ALOAD, 0);
@@ -548,27 +544,6 @@ public class AsmClassGenerator extends ClassGenerator {
 
         final Label finallyStart = new Label();
         mv.visitJumpInsn(GOTO, finallyStart);
-
-        // marker needed for Exception table
-        final Label tryEnd = new Label();
-        mv.visitLabel(tryEnd);
-
-        final Label catchStart = new Label();
-        mv.visitLabel(catchStart);
-
-        // handle catch body
-        mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/ScriptBytecodeAdapter", "unwrap", "(Lgroovy/lang/GroovyRuntimeException;)Ljava/lang/Throwable;");
-        mv.visitInsn(ATHROW);
-
-        mv.visitLabel(finallyStart);
-        mv.visitInsn(NOP);
-
-        // add exception to table
-        exceptionBlocks.add(new Runnable() {
-            public void run() {
-                mv.visitTryCatchBlock(tryStart, tryEnd, catchStart, GRE);
-            }
-        });
 
         // let's do all the exception blocks
         for (Iterator iter = exceptionBlocks.iterator(); iter.hasNext();) {
@@ -1044,18 +1019,6 @@ public class AsmClassGenerator extends ClassGenerator {
         // marker needed for Exception table
         final Label greEnd = new Label();
         mv.visitLabel(greEnd);
-
-            final Label catchStartGre = new Label();
-            mv.visitLabel(catchStartGre);
-            // handle catch body
-            mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/ScriptBytecodeAdapter", "unwrap", "(Lgroovy/lang/GroovyRuntimeException;)Ljava/lang/Throwable;");
-            mv.visitInsn(ATHROW);
-            // add exception to table
-            exceptionBlocks.add(new Runnable() {
-                public void run() {
-                    mv.visitTryCatchBlock(tryStart, greEnd, catchStartGre, GRE);
-                }
-            });
 
         final Label tryEnd = new Label();
         mv.visitLabel(tryEnd);

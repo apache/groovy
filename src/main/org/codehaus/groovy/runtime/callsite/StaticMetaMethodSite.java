@@ -15,9 +15,11 @@
  */
 package org.codehaus.groovy.runtime.callsite;
 
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.runtime.MetaClassHelper;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.reflection.CachedMethod;
 
 /**
@@ -35,9 +37,13 @@ public class StaticMetaMethodSite extends MetaMethodSite {
         version = metaClass.getVersion ();
     }
 
-    public Object invoke(Object receiver, Object[] args) {
+    public Object invoke(Object receiver, Object[] args) throws Throwable {
         MetaClassHelper.unwrap(args);
-        return metaMethod.doMethodInvoke(receiver,  args);
+        try {
+            return metaMethod.doMethodInvoke(receiver,  args);
+        } catch (GroovyRuntimeException gre) {
+            throw ScriptBytecodeAdapter.unwrap(gre);
+        }
     }
 
     protected final boolean checkCall(Object receiver, Object[] args) {
@@ -76,14 +82,19 @@ public class StaticMetaMethodSite extends MetaMethodSite {
            && MetaClassHelper.sameClasses(params, arg1, arg2, arg3, arg4);
     }
 
-    public Object call(Object receiver, Object[] args) {
-        if(checkCall(receiver, args))
-          return invoke(receiver, args);
-        else
+    public Object call(Object receiver, Object[] args) throws Throwable {
+        if(checkCall(receiver, args)) {
+            try {
+                return invoke(receiver, args);
+            } catch (GroovyRuntimeException gre) {
+                throw ScriptBytecodeAdapter.unwrap(gre);
+            }
+        } else {
           return CallSiteArray.defaultCall(this, receiver, args);
+        }
     }
 
-    public Object callStatic(Class receiver, Object[] args) {
+    public Object callStatic(Class receiver, Object[] args) throws Throwable {
         if(checkCall(receiver, args))
           return invoke(receiver, args);
         else
@@ -114,8 +125,12 @@ public class StaticMetaMethodSite extends MetaMethodSite {
             super(site, metaClass, metaMethod, params);
         }
 
-        public final Object invoke(Object receiver, Object[] args) {
-            return metaMethod.doMethodInvoke(receiver,  args);
+        public final Object invoke(Object receiver, Object[] args) throws Throwable {
+            try {
+                return metaMethod.doMethodInvoke(receiver,  args);
+            } catch (GroovyRuntimeException gre) {
+                throw ScriptBytecodeAdapter.unwrap(gre);
+            }
         }
     }
 
@@ -128,8 +143,12 @@ public class StaticMetaMethodSite extends MetaMethodSite {
             super(site, metaClass, metaMethod, params);
         }
 
-        public final Object invoke(Object receiver, Object[] args) {
-            return metaMethod.invoke(receiver,  args);
+        public final Object invoke(Object receiver, Object[] args) throws Throwable {
+            try {
+                return metaMethod.invoke(receiver,  args);
+            } catch (GroovyRuntimeException gre) {
+                throw ScriptBytecodeAdapter.unwrap(gre);
+            }
         }
     }
 }

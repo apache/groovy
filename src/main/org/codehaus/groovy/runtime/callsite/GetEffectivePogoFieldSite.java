@@ -34,7 +34,7 @@ public class GetEffectivePogoFieldSite extends AbstractCallSite {
         this.effective = effective.field;
     }
 
-    public final Object callGetProperty (Object receiver) {
+    public final Object callGetProperty (Object receiver) throws Throwable {
         if (GroovyCategorySupport.hasCategoryInCurrentThread() || !(receiver instanceof GroovyObject) || ((GroovyObject) receiver).getMetaClass() != metaClass) {
             return createGetPropertySite(receiver).getProperty(receiver);
         } else {
@@ -50,7 +50,7 @@ public class GetEffectivePogoFieldSite extends AbstractCallSite {
         }
     }
 
-    public final Object callGroovyObjectGetProperty (Object receiver) {
+    public final Object callGroovyObjectGetProperty (Object receiver) throws Throwable {
         if (GroovyCategorySupport.hasCategoryInCurrentThread() || ((GroovyObject) receiver).getMetaClass() != metaClass) {
             return createGroovyObjectGetPropertySite(receiver).getProperty(receiver);
         } else {

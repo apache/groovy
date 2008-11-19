@@ -15,6 +15,9 @@
  */
 package org.codehaus.groovy.runtime.callsite;
 
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 
 /**
@@ -29,11 +32,16 @@ public class PojoMetaClassSite extends MetaClassSite{
         super(site, metaClass);
     }
 
-    public Object call(Object receiver, Object[] args) {
-        if(checkCall(receiver))
-          return metaClass.invokeMethod(receiver, name, args);
-        else
+    public Object call(Object receiver, Object[] args) throws Throwable {
+        if(checkCall(receiver)) {
+          try{
+            return metaClass.invokeMethod(receiver, name, args);
+          } catch (GroovyRuntimeException gre) {
+              throw ScriptBytecodeAdapter.unwrap(gre);
+          }
+        } else {
           return CallSiteArray.defaultCall(this, receiver, args);
+        }
     }
 
     protected final boolean checkCall(Object receiver) {

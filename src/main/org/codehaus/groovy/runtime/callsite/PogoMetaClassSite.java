@@ -16,8 +16,11 @@
 package org.codehaus.groovy.runtime.callsite;
 
 import groovy.lang.GroovyObject;
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import groovy.lang.MissingMethodException;
+
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
 
 /**
@@ -29,7 +32,7 @@ public class PogoMetaClassSite extends MetaClassSite {
         super(site, metaClass);
     }
 
-    public final Object call(Object receiver, Object[] args) {
+    public final Object call(Object receiver, Object[] args) throws Throwable {
         if (checkCall(receiver)) {
             try {
                 return metaClass.invokeMethod(receiver, name, args);
@@ -42,6 +45,8 @@ public class PogoMetaClassSite extends MetaClassSite {
                 } else {
                     throw e;
                 }
+            } catch (GroovyRuntimeException gre) {
+                throw ScriptBytecodeAdapter.unwrap(gre);
             }
         }
         else
@@ -65,6 +70,8 @@ public class PogoMetaClassSite extends MetaClassSite {
                 } else {
                     throw e;
                 }
+            } catch (GroovyRuntimeException gre) {
+                throw ScriptBytecodeAdapter.unwrap(gre);
             }
         }
         else

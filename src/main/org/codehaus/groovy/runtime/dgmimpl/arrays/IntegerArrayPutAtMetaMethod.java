@@ -60,7 +60,7 @@ public class IntegerArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
             super(site, metaClass, metaMethod, params);
         }
 
-        public Object call(Object receiver, Object[] args) {
+        public Object call(Object receiver, Object[] args) throws Throwable {
             if ((receiver instanceof int[] && args[0] instanceof Integer && args[1] instanceof Integer )
                     && checkPojoMetaClass()) {
                 final int[] objects = (int[]) receiver;

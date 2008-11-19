@@ -15,12 +15,13 @@
  */
 package org.codehaus.groovy.runtime.callsite;
 
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedMethod;
-import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.NullObject;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -41,12 +42,12 @@ public class PojoMetaMethodSite extends MetaMethodSite {
         version = metaClass.getVersion();
     }
 
-    public Object invoke(Object receiver, Object[] args) {
+    public Object invoke(Object receiver, Object[] args) throws Throwable {
         MetaClassHelper.unwrap(args);
         return metaMethod.doMethodInvoke(receiver,  args);
     }
 
-    public Object call(Object receiver, Object[] args) {
+    public Object call(Object receiver, Object[] args) throws Throwable {
         if(checkCall(receiver, args))
           return invoke(receiver,args);
         else
@@ -77,8 +78,7 @@ public class PojoMetaMethodSite extends MetaMethodSite {
             return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
                && checkPojoMetaClass()
                && MetaClassHelper.sameClasses(params);
-        }
-        catch (NullPointerException e) {
+        } catch (NullPointerException e) {
             if (receiver == null)
               return checkCall(NullObject.getNullObject());
 
@@ -91,8 +91,7 @@ public class PojoMetaMethodSite extends MetaMethodSite {
             return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
                && checkPojoMetaClass()
                && MetaClassHelper.sameClasses(params, arg1);
-        }
-        catch (NullPointerException e) {
+        } catch (NullPointerException e) {
             if (receiver == null)
               return checkCall(NullObject.getNullObject(), arg1);
 
@@ -105,8 +104,7 @@ public class PojoMetaMethodSite extends MetaMethodSite {
             return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
                && checkPojoMetaClass()
                && MetaClassHelper.sameClasses(params, arg1, arg2);
-        }
-        catch (NullPointerException e) {
+        } catch (NullPointerException e) {
             if (receiver == null)
               return checkCall(NullObject.getNullObject(), arg1, arg2);
 
@@ -119,8 +117,7 @@ public class PojoMetaMethodSite extends MetaMethodSite {
             return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
                && checkPojoMetaClass()
                && MetaClassHelper.sameClasses(params, arg1, arg2, arg3);
-        }
-        catch (NullPointerException e) {
+        } catch (NullPointerException e) {
             if (receiver == null)
               return checkCall(NullObject.getNullObject(), arg1, arg2, arg3);
 
@@ -133,8 +130,7 @@ public class PojoMetaMethodSite extends MetaMethodSite {
             return receiver.getClass() == metaClass.getTheClass() // meta class match receiver
                && checkPojoMetaClass()
                && MetaClassHelper.sameClasses(params, arg1, arg2, arg3, arg4);
-        }
-        catch (NullPointerException e) {
+        } catch (NullPointerException e) {
             if (receiver == null)
               return checkCall(NullObject.getNullObject(), arg1, arg2, arg3, arg4);
 
@@ -185,21 +181,18 @@ public class PojoMetaMethodSite extends MetaMethodSite {
             reflect = ((CachedMethod)metaMethod).setAccessible();
         }
 
-        public Object invoke(Object receiver, Object[] args) {
+        public Object invoke(Object receiver, Object[] args) throws Throwable {
             MetaClassHelper.unwrap(args);
             args = metaMethod.coerceArgumentsToClasses(args);
             try {
-                try {
-                    return reflect.invoke(receiver, args);
-                } catch (IllegalArgumentException e) {
-                    throw new InvokerInvocationException(e);
-                } catch (IllegalAccessException e) {
-                    throw new InvokerInvocationException(e);
-                } catch (InvocationTargetException e) {
-                    throw new InvokerInvocationException(e);
+                return reflect.invoke(receiver, args);
+            } catch (InvocationTargetException e) {
+                Throwable cause = e.getCause();
+                if (cause instanceof GroovyRuntimeException) {
+                    throw ScriptBytecodeAdapter.unwrap ((GroovyRuntimeException) cause);
+                } else {
+                    throw cause;
                 }
-            } catch (Exception e) {
-                throw metaMethod.processDoMethodInvokeException(e, receiver, args);
             }
         }
     }
@@ -210,20 +203,17 @@ public class PojoMetaMethodSite extends MetaMethodSite {
             super(site, metaClass, metaMethod, params);
         }
 
-        public final Object invoke(Object receiver, Object[] args) {
+        public final Object invoke(Object receiver, Object[] args) throws Throwable {
             args = metaMethod.coerceArgumentsToClasses(args);
             try {
-                try {
-                    return reflect.invoke(receiver, args);
-                } catch (IllegalArgumentException e) {
-                    throw new InvokerInvocationException(e);
-                } catch (IllegalAccessException e) {
-                    throw new InvokerInvocationException(e);
-                } catch (InvocationTargetException e) {
-                    throw new InvokerInvocationException(e);
+                return reflect.invoke(receiver, args);
+            } catch (InvocationTargetException e) {
+                Throwable cause = e.getCause();
+                if (cause instanceof GroovyRuntimeException) {
+                    throw ScriptBytecodeAdapter.unwrap ((GroovyRuntimeException) cause);
+                } else {
+                    throw cause;
                 }
-            } catch (Exception e) {
-                throw metaMethod.processDoMethodInvokeException(e, receiver, args);
             }
         }
     }
@@ -234,15 +224,16 @@ public class PojoMetaMethodSite extends MetaMethodSite {
             super(site, metaClass, metaMethod, params);
         }
 
-        public final Object invoke(Object receiver, Object[] args) {
+        public final Object invoke(Object receiver, Object[] args) throws Throwable {
             try {
                 return reflect.invoke(receiver, args);
-            } catch (IllegalArgumentException e) {
-                throw new InvokerInvocationException(e);
-            } catch (IllegalAccessException e) {
-                throw new InvokerInvocationException(e);
             } catch (InvocationTargetException e) {
-                throw new InvokerInvocationException(e);
+                Throwable cause = e.getCause();
+                if (cause instanceof GroovyRuntimeException) {
+                    throw ScriptBytecodeAdapter.unwrap ((GroovyRuntimeException) cause);
+                } else {
+                    throw cause;
+                }
             }
         }
     }
@@ -256,8 +247,12 @@ public class PojoMetaMethodSite extends MetaMethodSite {
             super(site, metaClass, metaMethod, params);
         }
 
-        public final Object invoke(Object receiver, Object[] args) {
-            return metaMethod.doMethodInvoke(receiver,  args);
+        public final Object invoke(Object receiver, Object[] args) throws Throwable {
+            try {
+                return metaMethod.doMethodInvoke(receiver,  args);
+            } catch (GroovyRuntimeException gre) {
+                throw ScriptBytecodeAdapter.unwrap(gre);
+            }
         }
     }
 
@@ -270,8 +265,12 @@ public class PojoMetaMethodSite extends MetaMethodSite {
             super(site, metaClass, metaMethod, params);
         }
 
-        public final Object invoke(Object receiver, Object[] args) {
-            return metaMethod.invoke(receiver,  args);
+        public final Object invoke(Object receiver, Object[] args) throws Throwable {
+            try {
+                return metaMethod.invoke(receiver,  args);
+            } catch (GroovyRuntimeException gre) {
+                throw ScriptBytecodeAdapter.unwrap(gre);
+            }
         }
     }
 }

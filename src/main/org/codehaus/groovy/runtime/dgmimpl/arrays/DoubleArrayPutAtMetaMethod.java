@@ -60,7 +60,7 @@ public class DoubleArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
             super(site, metaClass, metaMethod, params);
         }
 
-        public Object call(Object receiver, Object[] args) {
+        public Object call(Object receiver, Object[] args) throws Throwable {
             if ((receiver instanceof double[] && args[0] instanceof Integer && args[1] instanceof Double )
                     && checkPojoMetaClass()) {
                 final double[] objects = (double[]) receiver;
