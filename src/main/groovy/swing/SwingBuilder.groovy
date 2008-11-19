@@ -307,7 +307,9 @@ public class SwingBuilder  extends FactoryBuilderSupport {
      * the closure in the EDT
      *
      * @param c run this closre in the builder using the edt method
+     * @deprecated To replace it use new SwingBuidler().edt(Closure)
      */
+    @Deprecated
     public static SwingBuilder build(Closure c) {
         SwingBuilder builder = new SwingBuilder()
         return builder.edt(c)
