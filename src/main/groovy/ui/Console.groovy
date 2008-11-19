@@ -20,7 +20,11 @@ import groovy.swing.SwingBuilder
 import groovy.ui.ConsoleTextEditor
 import groovy.ui.SystemOutputInterceptor
 import groovy.ui.text.FindReplaceUtility
-import java.awt.*
+import java.awt.Component
+import java.awt.EventQueue
+import java.awt.Font
+import java.awt.Toolkit
+import java.awt.Window
 import java.awt.event.ActionEvent
 import java.util.prefs.Preferences
 import javax.swing.*
