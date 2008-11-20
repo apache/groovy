@@ -47,6 +47,13 @@ public class NamespaceBuilderSupport extends BuilderSupport {
         autoPrefix = true;
     }
 
+    public NamespaceBuilderSupport(BuilderSupport builder, String uri, String prefix, boolean autoPrefix) {
+        super(builder);
+        this.builder = builder;
+        nsMap.put(prefix, uri);
+        this.autoPrefix = autoPrefix;
+    }
+
     public NamespaceBuilderSupport(BuilderSupport builder, Map nsMap) {
         super(builder);
         this.nsMap = nsMap;
