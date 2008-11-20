@@ -74,17 +74,17 @@ public class DateGDKTest extends GroovyTestCase {
 	}
 
     public void testMinusDates() {
-        assertEquals(10, new Date("1/11/2007") - new Date("1/1/2007"))
-        assertEquals(-10, new Date("1/1/2007") - new Date("1/11/2007"))
-        assertEquals(375, new Date("1/11/2008") - new Date("1/1/2007"))
-        assertEquals(356, new Date("1/1/2008") - new Date("1/10/2007"))
-        assertEquals(1, new Date("7/12/2007") - new Date("7/11/2007"))
-        assertEquals(0, new Date("1/1/2007") - new Date("1/1/2007"))
-        assertEquals(-1, new Date("12/31/2007") - new Date("1/1/2008"))
-        assertEquals(365, new Date("1/1/2008") - new Date("1/1/2007"))
-        assertEquals(36525, new Date("1/1/2008") - new Date("1/1/1908"))
+        assertEquals(10, new Date(107, 0, 11) - new Date(107, 0, 1))
+        assertEquals(-10, new Date(107, 0, 1) - new Date(107, 0, 11))
+        assertEquals(375, new Date(108, 0, 11) - new Date(107, 0, 1))
+        assertEquals(356, new Date(108, 0, 1) - new Date(107, 0, 10))
+        assertEquals(1, new Date(107, 6, 12) - new Date(107, 6, 11))
+        assertEquals(0, new Date(107, 0, 1) - new Date(107, 0, 1))
+        assertEquals(-1, new Date(107, 11, 31) - new Date(108, 0, 1))
+        assertEquals(365, new Date(108, 0, 1) - new Date(107, 0, 1))
+        assertEquals(36525, new Date(108, 0, 1) - new Date(8, 0, 1))
 
-        Date d = new Date("7/4/1776");
+        Date d = new Date(76, 6, 4);
         assertEquals(44, (d + 44) - d);
     }
 }
