@@ -2,6 +2,7 @@ package org.codehaus.groovy.runtime
 
 import java.text.DateFormat
 import java.text.SimpleDateFormat
+
 /**
  * @author tnichols
  */
@@ -71,4 +72,19 @@ public class DateGDKTest extends GroovyTestCase {
 		Locale.default = defaultLocale
 		TimeZone.setDefault defaultTZ
 	}
+
+    public void testMinusDates() {
+        assertEquals(10, new Date("1/11/2007") - new Date("1/1/2007"))
+        assertEquals(-10, new Date("1/1/2007") - new Date("1/11/2007"))
+        assertEquals(375, new Date("1/11/2008") - new Date("1/1/2007"))
+        assertEquals(356, new Date("1/1/2008") - new Date("1/10/2007"))
+        assertEquals(1, new Date("7/12/2007") - new Date("7/11/2007"))
+        assertEquals(0, new Date("1/1/2007") - new Date("1/1/2007"))
+        assertEquals(-1, new Date("12/31/2007") - new Date("1/1/2008"))
+        assertEquals(365, new Date("1/1/2008") - new Date("1/1/2007"))
+        assertEquals(36525, new Date("1/1/2008") - new Date("1/1/1908"))
+
+        Date d = new Date("7/4/1776");
+        assertEquals(44, (d + 44) - d);
+    }
 }

@@ -7418,6 +7418,85 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
     
     /**
+     * Subtract another date from this one and return the number of days of the difference.
+     *
+     * Date self = Date then + (Date self - Date then)
+     *
+     * IOW, if self is before then the result is a negative value.
+     *
+     * @param self a Calendar
+     * @param then another Calendar
+     * @return number of days
+     */
+
+    public static int minus(Calendar self, Calendar then) {
+        Calendar a = self;
+        Calendar b = then;
+
+        boolean swap = a.before(b);
+
+        if (swap) {
+           Calendar t = a;
+           a = b;
+           b = t;
+        }
+
+        int days = 0;
+
+        b = (Calendar) b.clone();
+
+        while (a.get(Calendar.YEAR) > b.get(Calendar.YEAR)) {
+           days += 1 + (b.getActualMaximum(Calendar.DAY_OF_YEAR) - b.get(Calendar.DAY_OF_YEAR));
+           b.set(Calendar.DAY_OF_YEAR, 1);
+           b.add(Calendar.YEAR, 1);
+        }
+
+        days += a.get(Calendar.DAY_OF_YEAR) - b.get(Calendar.DAY_OF_YEAR);
+
+        if (swap) days = -days;
+
+        return days;
+    }
+
+    /**
+     * Subtract another Date from this one and return the number of days of the difference.
+     *
+     * Date self = Date then + (Date self - Date then)
+     *
+     * IOW, if self is before then the result is a negative value.
+     *
+     * @param self a Date
+     * @param then another Date
+     * @return number of days
+     */
+    public static int minus(Date self, Date then) {
+        Calendar a = (Calendar) Calendar.getInstance().clone();
+        a.setTime(self);
+        Calendar b = (Calendar) Calendar.getInstance().clone();
+        b.setTime(then);
+        return minus(a, b);
+    }
+
+    /**
+     * Subtract another Date from this one and return the number of days of the difference.
+     *
+     * Date self = Date then + (Date self - Date then)
+     *
+     * IOW, if self is before then the result is a negative value.
+     *
+     * @param self a java.sql.Date
+     * @param then another java.sql.Date
+     * @return number of days
+     */
+    public static int minus(java.sql.Date self, java.sql.Date then) {
+        Calendar a = (Calendar) Calendar.getInstance().clone();
+        a.setTime(self);
+        Calendar b = (Calendar) Calendar.getInstance().clone();
+        b.setTime(then);
+        return minus(a, b);
+    }
+
+    /**
      * <p>Create a String representation of this date according to the given 
      * pattern.</p>
      * 
