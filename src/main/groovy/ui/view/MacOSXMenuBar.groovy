@@ -76,7 +76,7 @@ menuBar {
         checkBoxMenuItem(captureStdOutAction, selected: controller.captureStdOut)
         checkBoxMenuItem(fullStackTracesAction, selected: controller.fullStackTraces)
         checkBoxMenuItem(showScriptInOutputAction, selected: controller.showScriptInOutput)
-        checkBoxMenuItem(visualizeScriptResults, selected: controller.visualizeScriptResults)
+        checkBoxMenuItem(visualizeScriptResultsAction, selected: controller.visualizeScriptResults)
         checkBoxMenuItem(showToolbarAction, selected: controller.showToolbar)
     }
 
