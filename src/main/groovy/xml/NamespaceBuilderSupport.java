@@ -16,21 +16,25 @@
 package groovy.xml;
 
 import java.util.Map;
+import java.util.HashMap;
 
 import groovy.util.BuilderSupport;
-
 
 /**
  * A helper class for creating namespaced GroovyMarkup
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
+ * @author Paul King
+ * @author Denver Dino
  */
 public class NamespaceBuilderSupport extends BuilderSupport {
-
-    private final Object builder;
-    private final String uri;
-    private final String prefix;
+    private boolean autoPrefix;
+    private Object builder;
+    private Map<String, String> nsMap = new HashMap<String, String>();
+    
+    public NamespaceBuilderSupport(BuilderSupport builder) {
+        super(builder);
+    }
 
     public NamespaceBuilderSupport(BuilderSupport builder, String uri) {
         this(builder, uri, "");
@@ -39,29 +43,67 @@ public class NamespaceBuilderSupport extends BuilderSupport {
     public NamespaceBuilderSupport(BuilderSupport builder, String uri, String prefix) {
         super(builder);
         this.builder = builder;
-        this.uri = uri;
-        this.prefix = prefix;
+        nsMap.put(prefix, uri);
+        autoPrefix = true;
     }
 
+    public NamespaceBuilderSupport(BuilderSupport builder, Map nsMap) {
+        super(builder);
+        this.nsMap = nsMap;
+    }
+
+    protected NamespaceBuilderSupport namespace(String namespaceURI) {
+        nsMap.put("", namespaceURI);
+        return this;
+    }
+
+    protected NamespaceBuilderSupport namespace(String namespaceURI, String prefix) {
+        nsMap.put(prefix, namespaceURI);
+        return this;
+    }
+
+    protected NamespaceBuilderSupport declareNamespace(Map nsMap) {
+        this.nsMap = nsMap;
+        return this;
+    }
+
+    @Override
     protected void setParent(Object parent, Object child) {
     }
 
+    @Override
     protected Object getName(String methodName) {
-        return new QName(uri, methodName, prefix);
+        String prefix = autoPrefix ? nsMap.keySet().iterator().next() : "";
+        String localPart = methodName;
+        int idx = methodName.indexOf(':');
+        if (idx > 0 ) {
+            prefix = methodName.substring(0, idx);
+            localPart = methodName.substring(idx + 1);
+        }
+        String namespaceURI = nsMap.get(prefix);
+        if (namespaceURI == null) {
+            namespaceURI = "";
+            prefix = "";
+        }
+        return new QName(namespaceURI, localPart, prefix);
     }
 
+    @Override
     protected Object createNode(Object name) {
         return name;
     }
 
+    @Override
     protected Object createNode(Object name, Object value) {
         return name;
     }
 
+    @Override
     protected Object createNode(Object name, Map attributes) {
         return name;
     }
 
+    @Override
     protected Object createNode(Object name, Map attributes, Object value) {
         return name;
     }

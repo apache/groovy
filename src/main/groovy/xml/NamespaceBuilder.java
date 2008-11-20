@@ -17,6 +17,8 @@ package groovy.xml;
 
 import groovy.util.BuilderSupport;
 
+import java.util.Map;
+
 /**
  * A helper class for creating namespaces for GroovyMarkup
  * 
@@ -31,6 +33,10 @@ public class NamespaceBuilder {
         return new NamespaceBuilder(builder).namespace(uri);
     }
     
+    public static NamespaceBuilderSupport newInstance(BuilderSupport builder) {
+        return new NamespaceBuilderSupport(builder);
+    }
+
     public static NamespaceBuilderSupport newInstance(BuilderSupport builder, String uri, String prefix) {
         return new NamespaceBuilder(builder).namespace(uri, prefix);
     }
@@ -45,5 +51,9 @@ public class NamespaceBuilder {
 
     public NamespaceBuilderSupport namespace(String uri, String prefix) {
         return new NamespaceBuilderSupport(builder, uri, prefix);
+    }
+
+    public NamespaceBuilderSupport declareNamespace(Map ns) {
+        return new NamespaceBuilderSupport(builder, ns);
     }
 }
