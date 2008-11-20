@@ -132,33 +132,17 @@ public class DOMCategory {
         return node.getParentNode();
     }
 
-    public static String text(Object o) {
-        if (o instanceof Element) {
-            return text((Element) o);
+    public static String text(Node node) {
+        if (node.getNodeType() == Node.TEXT_NODE) {
+            return node.getNodeValue();
         }
-        if (o instanceof Node) {
-            Node n = (Node) o;
-            if (n.getNodeType() == Node.TEXT_NODE) {
-                return n.getNodeValue();
-            }
+        if (node.hasChildNodes()) {
+            return text(node.getChildNodes());
         }
-        if (o instanceof NodeList) {
-            return text((NodeList) o);
-        }
-        return null;
+        return "";
     }
 
-    private static String text(Element element) {
-        if (!element.hasChildNodes()) {
-            return "";
-        }
-        if (element.getFirstChild().getNodeType() != Node.TEXT_NODE) {
-            return "";
-        }
-        return element.getFirstChild().getNodeValue();
-    }
-
-    private static String text(NodeList nodeList) {
+    public static String text(NodeList nodeList) {
         StringBuffer sb = new StringBuffer();
         for (int i = 0; i < nodeList.getLength(); i++) {
             sb.append(text(nodeList.item(i)));

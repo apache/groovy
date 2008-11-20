@@ -20,7 +20,6 @@ import javax.xml.parsers.DocumentBuilderFactory
 import org.w3c.dom.Node
 
 import groovy.xml.streamingmarkupsupport.AbstractStreamingBuilder
-import groovy.xml.streamingmarkupsupport.StreamingMarkupWriter
 import groovy.xml.streamingmarkupsupport.BaseMarkupBuilder
 
 class StreamingDOMBuilder extends AbstractStreamingBuilder {
@@ -188,7 +187,7 @@ class StreamingDOMBuilder extends AbstractStreamingBuilder {
                             'comment':commentClosure,
                             'pi':piClosure])
         def nsSpecificTags = [':'                                          : [tagClosure, tagClosure, [:]],    // the default namespace
-                          'http://www.w3.org/XML/1998/namespace'           : [tagClosure, tagClosure, [:]],
+                          'http://www.w3.org/2000/xmlns/'                  : [tagClosure, tagClosure, [:]],
                           'http://www.codehaus.org/Groovy/markup/keywords' : [badTagClosure, tagClosure, specialTags]]
         this.builder = new BaseMarkupBuilder(nsSpecificTags)
     }
