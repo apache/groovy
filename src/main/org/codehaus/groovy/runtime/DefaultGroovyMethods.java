@@ -7491,7 +7491,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *    
      * @see SimpleDateFormat
      * @param self
-     * @param format the format pattern to use
+     * @param format the format pattern to use according to {@link SimpleDateFormat}
      * @return a string representation of this date.
      */
     public static String format( Date self, String format ) {
