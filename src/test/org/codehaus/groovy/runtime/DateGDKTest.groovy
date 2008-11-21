@@ -73,18 +73,33 @@ public class DateGDKTest extends GroovyTestCase {
 		TimeZone.setDefault defaultTZ
 	}
 
+    static SimpleDateFormat f = new SimpleDateFormat('MM/dd/yyyy')
+        
+    static java.sql.Date sqlDate(String s) {
+        return new java.sql.Date(f.parse(s).time)
+    }
+    
     public void testMinusDates() {
-        assertEquals(10, new Date(107, 0, 11) - new Date(107, 0, 1))
-        assertEquals(-10, new Date(107, 0, 1) - new Date(107, 0, 11))
-        assertEquals(375, new Date(108, 0, 11) - new Date(107, 0, 1))
-        assertEquals(356, new Date(108, 0, 1) - new Date(107, 0, 10))
-        assertEquals(1, new Date(107, 6, 12) - new Date(107, 6, 11))
-        assertEquals(0, new Date(107, 0, 1) - new Date(107, 0, 1))
-        assertEquals(-1, new Date(107, 11, 31) - new Date(108, 0, 1))
-        assertEquals(365, new Date(108, 0, 1) - new Date(107, 0, 1))
-        assertEquals(36525, new Date(108, 0, 1) - new Date(8, 0, 1))
+        assertEquals(10, f.parse("1/11/2007") - f.parse("1/1/2007"))
+        assertEquals(-10, f.parse("1/1/2007") - f.parse("1/11/2007"))
+        assertEquals(375, f.parse("1/11/2008") - f.parse("1/1/2007"))
+        assertEquals(356, f.parse("1/1/2008") - f.parse("1/10/2007"))
+        assertEquals(1, f.parse("7/12/2007") - f.parse("7/11/2007"))
+        assertEquals(0, f.parse("1/1/2007") - f.parse("1/1/2007"))
+        assertEquals(-1, f.parse("12/31/2007") - f.parse("1/1/2008"))
+        assertEquals(365, f.parse("1/1/2008") - f.parse("1/1/2007"))
+        assertEquals(36525, f.parse("1/1/2008") - f.parse("1/1/1908"))
 
-        Date d = new Date(76, 6, 4);
+        assertEquals(1, sqlDate("7/12/2007") - f.parse("7/11/2007"))
+        assertEquals(0, sqlDate("1/1/2007") - sqlDate("1/1/2007"))
+        assertEquals(-1, f.parse("12/31/2007") - sqlDate("1/1/2008"))
+        assertEquals(365, sqlDate("1/1/2008") - sqlDate("1/1/2007"))
+        assertEquals(36525, f.parse("1/1/2008") - sqlDate("1/1/1908"))
+
+        Date d = f.parse("7/4/1776");
         assertEquals(44, (d + 44) - d);
+
+        java.sql.Date sqld = sqlDate("7/4/1776");
+        assertEquals(-4444, (sqld - 4444) - sqld);
     }
 }
