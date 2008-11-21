@@ -141,7 +141,7 @@ public abstract class FactoryBuilderSupport extends Binding {
     public void autoRegisterNodes() {
         synchronized (this) {
             if (autoRegistrationRunning || autoRegistrationComplete) {
-                // registration alreadu don or in process, abort
+                // registration already done or in process, abort
                 return;
             }
         }
@@ -693,7 +693,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      *
      * @param methodName the name of the method being invoked
      * @param name       the name of the node
-     * @param args       the arguemtns passed into the node
+     * @param args       the arguments passed into the node
      * @return the object from the factory
      */
     private Object doInvokeMethod(String methodName, Object name, Object args) {
