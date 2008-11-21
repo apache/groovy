@@ -7418,7 +7418,77 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
     
     /**
-     * Return a String representing this date in the given format.
+     * Subtract another date from this one and return the number of days of the difference.
+     *
+     * Date self = Date then + (Date self - Date then)
+     *
+     * IOW, if self is before then the result is a negative value.
+     *
+     * @param self a Calendar
+     * @param then another Calendar
+     * @return number of days
+     */
+
+    public static int minus(Calendar self, Calendar then) {
+        Calendar a = self;
+        Calendar b = then;
+
+        boolean swap = a.before(b);
+
+        if (swap) {
+           Calendar t = a;
+           a = b;
+           b = t;
+        }
+
+        int days = 0;
+
+        b = (Calendar) b.clone();
+
+        while (a.get(Calendar.YEAR) > b.get(Calendar.YEAR)) {
+           days += 1 + (b.getActualMaximum(Calendar.DAY_OF_YEAR) - b.get(Calendar.DAY_OF_YEAR));
+           b.set(Calendar.DAY_OF_YEAR, 1);
+           b.add(Calendar.YEAR, 1);
+        }
+
+        days += a.get(Calendar.DAY_OF_YEAR) - b.get(Calendar.DAY_OF_YEAR);
+
+        if (swap) days = -days;
+
+        return days;
+    }
+
+    /**
+     * Subtract another Date from this one and return the number of days of the difference.
+     *
+     * Date self = Date then + (Date self - Date then)
+     *
+     * IOW, if self is before then the result is a negative value.
+     *
+     * @param self a Date
+     * @param then another Date
+     * @return number of days
+     */
+    public static int minus(Date self, Date then) {
+        Calendar a = (Calendar) Calendar.getInstance().clone();
+        a.setTime(self);
+        Calendar b = (Calendar) Calendar.getInstance().clone();
+        b.setTime(then);
+        return minus(a, b);
+    }
+
+    /**
+     * <p>Create a String representation of this date according to the given 
+     * pattern.</p>
+     * 
+     * <p>For example, if the system timezone is GMT, 
+     * <code>new Date(0).format('MM/dd/yy')</code> would return the string 
+     * <code>"01/01/70"</code>. See documentation for {@link SimpleDateFormat} 
+     * for format pattern use.</p>
+     * 
+     * <p>Note that a new DateFormat instance is created for every 
+     * invocation of this method (for thread safety).</p>
+     *    
      * @see SimpleDateFormat
      * @param self
      * @param format the format pattern to use according to {@link SimpleDateFormat}
@@ -7429,8 +7499,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
     
     /**
-     * Return a string representation of the 'day' portion of this date 
-     * according to the locale-specific format used by {@link DateFormat}
+     * <p>Return a string representation of the 'day' portion of this date 
+     * according to the locale-specific {@link DateFormat#SHORT} default format.
+     * For an "en_UK" system locale, this would be <code>dd/MM/yy</code>.</p>
+     * 
+     * <p>Note that a new DateFormat instance is created for every 
+     * invocation of this method (for thread safety).</p>
+     * 
      * @see DateFormat#getDateInstance(int)
      * @see DateFormat#SHORT
      * @param self
@@ -7441,8 +7516,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
     
     /**
-     * Return a string representation of the time portion of this date 
-     * according to the locale-specific format used by {@link DateFormat}
+     * <p>Return a string representation of the time portion of this date 
+     * according to the locale-specific {@link DateFormat#MEDIUM} default format.
+     * For an "en_UK" system locale, this would be <code>HH:MM:ss</code>.</p>
+     * 
+     * <p>Note that a new DateFormat instance is created for every 
+     * invocation of this method (for thread safety).</p>
+     * 
      * @see DateFormat#getTimeInstance(int)
      * @see DateFormat#MEDIUM
      * @param self
@@ -7453,11 +7533,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
     
     /**
-     * Return a string representation of the date and time time portion of this 
-     * Date instance, according to the locale-specific format used by 
+     * <p>Return a string representation of the date and time time portion of 
+     * this Date instance, according to the locale-specific format used by 
      * {@link DateFormat}.  This method uses the {@link DateFormat#SHORT} 
      * preset for the day portion and {@link DateFormat#MEDIUM} for the time 
-     * portion of the string 
+     * portion of the output string.</p>
+     *  
+     * <p>Note that a new DateFormat instance is created for every 
+     * invocation of this method (for thread safety).</p>
+     *  
      * @see DateFormat#getDateTimeInstance(int, int) 
      * @param self
      * @return a string representation of this date and time
