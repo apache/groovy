@@ -8724,6 +8724,51 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Deletes a directory with all contained files and subdirectories.
+     * <p>The method returns
+     * <ul>
+     * <li>true, when deletion was successful</li>
+     * <li>true, when it is called for a non existing directory</li>
+     * <li>false, when it is called for a file which isn't a directory</li>
+     * <li>false, when directory couldn't be deleted</li>
+     * </ul>
+     * </p>
+     *
+     * @return true if deletion was successful
+     */
+    public static boolean deleteDir(final File self) {
+        if (!self.exists())
+            return true;
+        if (!self.isDirectory())
+            return false;
+
+        File[] files = self.listFiles();
+        if (files == null)
+            // couldn't access files
+            return false;
+
+        // delete contained files
+        boolean result = true;
+        for (int i = 0; i < files.length; i++) {
+            File file = files[i];
+            if (file.isDirectory()) {
+                if(!deleteDir(file))
+                    result = false;
+            }
+            else {
+                if (!file.delete())
+                    result = false;
+            }
+        }
+
+        // now delete directory itself
+        if(!self.delete())
+            result = false;
+
+        return result;
+    }
+
+    /**
      * Allows a simple syntax for using timers.  This timer will execute the
      * given closure after the given delay.
      *
