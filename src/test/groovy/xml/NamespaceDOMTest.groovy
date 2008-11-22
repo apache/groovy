@@ -1,73 +1,99 @@
 package groovy.xml
 
-/**
- * Test the building of namespaced XML using GroovyMarkup
- */
+import org.custommonkey.xmlunit.Diff
+import org.custommonkey.xmlunit.XMLUnit
+
 class NamespaceDOMTest extends TestXmlSupport {
-    
-    void testTree() {
+
+    def expected1 = '''
+        <xsd:schema xmlns:xsd="http://www.w3.org/2001/XMLSchema">
+          <xsd:element name="purchaseOrder" type="PurchaseOrderType"/>
+          <xsd:element name="comment" type="xsd:string"/>
+          <xsd:complexType name="PurchaseOrderType">
+            <xsd:sequence>
+              <xsd:element name="shipTo" type="USAddress"/>
+              <xsd:element name="billTo" type="USAddress"/>
+              <xsd:element minOccurs="0" ref="comment"/>
+              <xsd:element name="items" type="Items"/>
+            </xsd:sequence>
+            <xsd:attribute name="orderDate" type="xsd:date"/>
+          </xsd:complexType>
+        </xsd:schema>
+    '''
+
+    def expected2 = '''
+        <envelope xmlns="http://example.org/ord">
+          <order>
+            <number>123ABCD</number>
+            <items>
+              <prod:product xmlns:prod="http://example.org/prod">
+                <prod:number prod:id="prod557">557</prod:number>
+                <prod:name xmlns="">Short-Sleeved Woolen Blouse</prod:name>
+                <prod:size system="UK-DRESS">10</prod:size>
+                <prod:colour value="red"/>
+              </prod:product>
+            </items>
+          </order>
+        </envelope>
+    '''
+
+    void testXsdSchemaWithBuilderHavingAutoPrefix() {
         def builder = DOMBuilder.newInstance()
-        def xmlns = new NamespaceBuilder(builder)
-        
-        def xsd = xmlns.namespace('http://www.w3.org/2001/XMLSchema', 'xsd')
-        
-        def root = xsd.schema(xmlns:['foo':'http://someOtherNamespace']) {
-          annotation {
-              documentation("Purchase order schema for Example.com.")
-              //documentation(xmlns=[xml.lang:'en']) ["Purchase order schema for Example.com."]
-          }
-          element(name:'purchaseOrder', type:'PurchaseOrderType')
-          element(name:'comment', type:'xsd:string')
-          complexType(name:'PurchaseOrderType') {
-            sequence {
-              element(name:'shipTo', type:'USAddress')
-              element(name:'billTo', type:'USAddress')
-              element(minOccurs:'0', ref:'comment')
-              element(name:'items', type:'Items')
-            }
-            attribute(name:'orderDate', type:'xsd:date')
-          }
-          complexType(name:'USAddress') {
-            sequence {
-              element(name:'name', type:'xsd:string')
-              element(name:'street', type:'xsd:string')
-              element(name:'city', type:'xsd:string')
-              element(name:'state', type:'xsd:string')
-              element(name:'zip', type:'xsd:decimal')
-            }
-            attribute(fixed:'US', name:'country', type:'xsd:NMTOKEN')
-          }
-          complexType(name:'Items') {
-            sequence {
-              element(maxOccurs:'unbounded', minOccurs:'0', name:'item') {
-                complexType {
-                  sequence {
-                    element(name:'productName', type:'xsd:string')
-                    element(name:'quantity') {
-                      simpleType {
-                        restriction(base:'xsd:positiveInteger') {
-                          maxExclusive(value:'100')
-                        }
-                      }
-                    }
-                    element(name:'USPrice', type:'xsd:decimal')
-                    element(minOccurs:'0', ref:'comment')
-                    element(minOccurs:'0', name:'shipDate', type:'xsd:date')
-                  }
-                  attribute(name:'partNum', type:'SKU', use:'required')
+        def xsd = NamespaceBuilder.newInstance(builder, 'http://www.w3.org/2001/XMLSchema', 'xsd')
+        def root = xsd.schema {
+            element(name: 'purchaseOrder', type: 'PurchaseOrderType')
+            element(name: 'comment', type: 'xsd:string')
+            complexType(name: 'PurchaseOrderType') {
+                sequence {
+                    element(name: 'shipTo', type: 'USAddress')
+                    element(name: 'billTo', type: 'USAddress')
+                    element(minOccurs: '0', ref: 'comment')
+                    element(name: 'items', type: 'Items')
                 }
-              }
+                attribute(name: 'orderDate', type: 'xsd:date')
             }
-          }
-          /* Stock Keeping Unit, a code for identifying products */
-          simpleType(name:'SKU') {
-            restriction(base:'xsd:string') {
-              pattern(value:'\\d{3}-[A-Z]{2}')
+        }
+        assertXmlEqual(expected1, XmlUtil.serialize(root))
+    }
+
+    void testXsdSchemaWithBuilderHavingMultipleNamespaces() {
+        def builder = DOMBuilder.newInstance()
+        def multi = NamespaceBuilder.newInstance(builder)
+        multi.namespace('http://example.org/ord')
+        multi.namespace('http://example.org/prod', 'prod')
+        checkXml(multi)
+    }
+
+    void testXsdSchemaWithBuilderHavingDeclareNamespace() {
+        def builder = DOMBuilder.newInstance()
+        def multi = NamespaceBuilder.newInstance(builder)
+        multi.declareNamespace(
+                '':'http://example.org/ord',
+                prod:'http://example.org/prod'
+        )
+        checkXml(multi)
+    }
+
+    private checkXml(multi) {
+        def root = multi.envelope(xmlns: '') {
+            order {
+                number('123ABCD')
+                items {
+                    'prod:product' {
+                        'prod:number'('prod:id': 'prod557', '557')
+                        'prod:name'('Short-Sleeved Woolen Blouse')
+                        'prod:size'(system: 'UK-DRESS', '10')
+                        'prod:colour'(value: 'red')
+                    }
+                }
             }
-          }
-        }        
-        assert root != null
-        
-        dump(root)
+        }
+        assertXmlEqual(expected2, XmlUtil.serialize(root))
+    }
+
+    private assertXmlEqual(expected, actual) {
+        XMLUnit.ignoreWhitespace = true
+        def xmlDiff = new Diff(expected, actual)
+        assert xmlDiff.similar(), xmlDiff.toString()
     }
 }
