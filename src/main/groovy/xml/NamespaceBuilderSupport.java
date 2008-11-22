@@ -15,10 +15,10 @@
  */
 package groovy.xml;
 
-import java.util.Map;
-import java.util.HashMap;
-
 import groovy.util.BuilderSupport;
+
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * A helper class for creating namespaced GroovyMarkup
@@ -29,7 +29,6 @@ import groovy.util.BuilderSupport;
  */
 public class NamespaceBuilderSupport extends BuilderSupport {
     private boolean autoPrefix;
-    private Object builder;
     private Map<String, String> nsMap = new HashMap<String, String>();
     
     public NamespaceBuilderSupport(BuilderSupport builder) {
@@ -41,15 +40,11 @@ public class NamespaceBuilderSupport extends BuilderSupport {
     }
 
     public NamespaceBuilderSupport(BuilderSupport builder, String uri, String prefix) {
-        super(builder);
-        this.builder = builder;
-        nsMap.put(prefix, uri);
-        autoPrefix = true;
+        this(builder, uri, prefix, true);
     }
 
     public NamespaceBuilderSupport(BuilderSupport builder, String uri, String prefix, boolean autoPrefix) {
         super(builder);
-        this.builder = builder;
         nsMap.put(prefix, uri);
         this.autoPrefix = autoPrefix;
     }

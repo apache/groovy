@@ -41,6 +41,10 @@ public class NamespaceBuilder {
         return new NamespaceBuilder(builder).namespace(uri, prefix);
     }
 
+    public static NamespaceBuilderSupport newInstance(Map nsMap, BuilderSupport builder) {
+        return new NamespaceBuilder(builder).declareNamespace(nsMap);
+    }
+
     public NamespaceBuilder(BuilderSupport builder) {
         this.builder = builder;
     }
