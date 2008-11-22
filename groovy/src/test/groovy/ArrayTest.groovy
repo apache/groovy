@@ -22,6 +22,22 @@ class ArrayTest extends GroovyTestCase {
            assert array.size() == 3
     }
 
+    void testCharArrayAssignToElement() {
+        char[] ca = new char[1]
+
+        ca[0] = 'b' as char
+        assert ca[0] == 'b'
+
+        ca[0] = '\u00A1' as char
+        assert ca[0] == '\u00A1'
+
+        ca[0] = 'a'
+        assert ca[0] == 'a'
+
+        ca[0] = '\u00A0'
+        assert ca[0] == '\u00A0'
+    }
+    
     void testCharArrayWithInitializer() {
         char[] array = [ 'a', 'b', 'c' ]
         assert array.size() == 3
