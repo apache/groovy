@@ -641,43 +641,43 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             char[] ia = (char[]) arg;
             ans = new Character[ia.length];
             for (int i = 0; i < ia.length; i++) {
-                ans[i] = new Character(ia[i]);
+                ans[i] = Character.valueOf(ia[i]);
             }
         } else if (elemType.equals("[Z")) {
             boolean[] ia = (boolean[]) arg;
             ans = new Boolean[ia.length];
             for (int i = 0; i < ia.length; i++) {
-                ans[i] = new Boolean(ia[i]);
+                ans[i] = Boolean.valueOf(ia[i]);
             }
         } else if (elemType.equals("[B")) {
             byte[] ia = (byte[]) arg;
             ans = new Byte[ia.length];
             for (int i = 0; i < ia.length; i++) {
-                ans[i] = new Byte(ia[i]);
+                ans[i] = Byte.valueOf(ia[i]);
             }
         } else if (elemType.equals("[S")) {
             short[] ia = (short[]) arg;
             ans = new Short[ia.length];
             for (int i = 0; i < ia.length; i++) {
-                ans[i] = new Short(ia[i]);
+                ans[i] = Short.valueOf(ia[i]);
             }
         } else if (elemType.equals("[F")) {
             float[] ia = (float[]) arg;
             ans = new Float[ia.length];
             for (int i = 0; i < ia.length; i++) {
-                ans[i] = new Float(ia[i]);
+                ans[i] = Float.valueOf(ia[i]);
             }
         } else if (elemType.equals("[J")) {
             long[] ia = (long[]) arg;
             ans = new Long[ia.length];
             for (int i = 0; i < ia.length; i++) {
-                ans[i] = new Long(ia[i]);
+                ans[i] = Long.valueOf(ia[i]);
             }
         } else if (elemType.equals("[D")) {
             double[] ia = (double[]) arg;
             ans = new Double[ia.length];
             for (int i = 0; i < ia.length; i++) {
-                ans[i] = new Double(ia[i]);
+                ans[i] = Double.valueOf(ia[i]);
             }
         } else {
             throw new RuntimeException("sprintf(String," + arg + ")");
@@ -5520,7 +5520,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Character toCharacter(String self) {
         /** @todo use cache? */
-        return new Character(self.charAt(0));
+        return Character.valueOf(self.charAt(0));
     }
 
     /**
@@ -6199,9 +6199,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if ((double) ((int) answer) == answer) {
             return Integer.valueOf((int) answer);
         } else if ((double) ((long) answer) == answer) {
-            return new Long((long) answer);
+            return Long.valueOf((long) answer);
         } else {
-            return new Double(answer);
+            return Double.valueOf(answer);
         }
     }
 
@@ -6449,7 +6449,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         long to1 = to.longValue();
         if (self <= to1) {
             for (long i = self; i <= to1; i++) {
-                closure.call(new Long(i));
+                closure.call(Long.valueOf(i));
             }
         } else
             throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
@@ -6468,7 +6468,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         long to1 = to.longValue();
         if (self1 <= to1) {
             for (long i = self1; i <= to1; i++) {
-                closure.call(new Long(i));
+                closure.call(Long.valueOf(i));
             }
         } else
             throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
@@ -6486,7 +6486,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         float to1 = to.floatValue();
         if (self <= to1) {
             for (float i = self; i <= to1; i++) {
-                closure.call(new Float(i));
+                closure.call(Float.valueOf(i));
             }
         } else
             throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
@@ -6505,7 +6505,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         float to1 = to.floatValue();
         if (self1 <= to1) {
             for (float i = self1; i <= to1; i++) {
-                closure.call(new Float(i));
+                closure.call(Float.valueOf(i));
             }
         } else
             throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
@@ -6523,7 +6523,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         double to1 = to.doubleValue();
         if (self <= to1) {
             for (double i = self; i <= to1; i++) {
-                closure.call(new Double(i));
+                closure.call(Double.valueOf(i));
             }
         } else
             throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
@@ -6542,7 +6542,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         double to1 = to.doubleValue();
         if (self1 <= to1) {
             for (double i = self1; i <= to1; i++) {
-                closure.call(new Double(i));
+                closure.call(Double.valueOf(i));
             }
         } else
             throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
@@ -6562,7 +6562,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static void upto(BigInteger self, Number to, Closure closure) {
         if (to instanceof BigDecimal) {
-            final BigDecimal one = new BigDecimal("1.0");
+            final BigDecimal one = BigDecimal.valueOf(10, 1);
             BigDecimal self1 = new BigDecimal(self);
             BigDecimal to1 = (BigDecimal) to;
             if (self1.compareTo(to1) <= 0) {
@@ -6572,7 +6572,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             } else
                 throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
         } else if (to instanceof BigInteger) {
-            final BigInteger one = new BigInteger("1");
+            final BigInteger one = BigInteger.valueOf(1);
             BigInteger to1 = (BigInteger) to;
             if (self.compareTo(to1) <= 0) {
                 for (BigInteger i = self; i.compareTo(to1) <= 0; i = i.add(one)) {
@@ -6581,8 +6581,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             } else
                 throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
         } else {
-            final BigInteger one = new BigInteger("1");
-            BigInteger to1 = new BigInteger("" + to);
+            final BigInteger one = BigInteger.valueOf(1);
+            BigInteger to1 = new BigInteger(to.toString());
             if (self.compareTo(to1) <= 0) {
                 for (BigInteger i = self; i.compareTo(to1) <= 0; i = i.add(one)) {
                     closure.call(i);
@@ -6605,7 +6605,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      */
     public static void upto(BigDecimal self, Number to, Closure closure) {
-        final BigDecimal one = new BigDecimal("1.0");
+        final BigDecimal one = BigDecimal.valueOf(10, 1);  // That's what you get for "1.0".
         if (to instanceof BigDecimal) {
             BigDecimal to1 = (BigDecimal) to;
             if (self.compareTo(to1) <= 0) {
@@ -6623,7 +6623,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             } else
                 throw new GroovyRuntimeException("Infinite loop in " + self + ".upto(" + to + ")");
         } else {
-            BigDecimal to1 = new BigDecimal("" + to);
+            BigDecimal to1 = new BigDecimal(to.toString());
             if (self.compareTo(to1) <= 0) {
                 for (BigDecimal i = self; i.compareTo(to1) <= 0; i = i.add(one)) {
                     closure.call(i);
@@ -6664,7 +6664,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         long to1 = to.longValue();
         if (self >= to1) {
             for (long i = self; i >= to1; i--) {
-                closure.call(new Long(i));
+                closure.call(Long.valueOf(i));
             }
         } else
             throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
@@ -6683,7 +6683,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         long to1 = to.longValue();
         if (self1 >= to1) {
             for (long i = self1; i >= to1; i--) {
-                closure.call(new Long(i));
+                closure.call(Long.valueOf(i));
             }
         } else
             throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
@@ -6701,7 +6701,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         float to1 = to.floatValue();
         if (self >= to1) {
             for (float i = self; i >= to1; i--) {
-                closure.call(new Float(i));
+                closure.call(Float.valueOf(i));
             }
         } else
             throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
@@ -6720,7 +6720,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         float to1 = to.floatValue();
         if (self1 >= to1) {
             for (float i = self1; i >= to1; i--) {
-                closure.call(new Float(i));
+                closure.call(Float.valueOf(i));
             }
         } else
             throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
@@ -6738,7 +6738,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         double to1 = to.doubleValue();
         if (self >= to1) {
             for (double i = self; i >= to1; i--) {
-                closure.call(new Double(i));
+                closure.call(Double.valueOf(i));
             }
         } else
             throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
@@ -6757,7 +6757,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         double to1 = to.doubleValue();
         if (self1 >= to1) {
             for (double i = self1; i >= to1; i--) {
-                closure.call(new Double(i));
+                closure.call(Double.valueOf(i));
             }
         } else
             throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
@@ -6773,7 +6773,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static void downto(BigInteger self, Number to, Closure closure) {
         if (to instanceof BigDecimal) {
-            final BigDecimal one = new BigDecimal("1.0");
+            final BigDecimal one = BigDecimal.valueOf(10, 1);  // That's what you get for "1.0".
             final BigDecimal to1 = (BigDecimal) to;
             final BigDecimal selfD = new BigDecimal(self);
             if (selfD.compareTo(to1) >= 0) {
@@ -6783,7 +6783,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             } else
                 throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
         } else if (to instanceof BigInteger) {
-            final BigInteger one = new BigInteger("1");
+            final BigInteger one = BigInteger.valueOf(1);
             final BigInteger to1 = (BigInteger) to;
             if (self.compareTo(to1) >= 0) {
                 for (BigInteger i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
@@ -6792,8 +6792,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             } else
                 throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
         } else {
-            final BigInteger one = new BigInteger("1");
-            final BigInteger to1 = new BigInteger("" + to);
+            final BigInteger one = BigInteger.valueOf(1);
+            final BigInteger to1 = new BigInteger(to.toString());
             if (self.compareTo(to1) >= 0) {
                 for (BigInteger i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
                     closure.call(i);
@@ -6817,7 +6817,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the code to execute for each number
      */
     public static void downto(BigDecimal self, Number to, Closure closure) {
-        final BigDecimal one = new BigDecimal("1.0");
+        final BigDecimal one = BigDecimal.valueOf(10, 1);  // Quick way to get "1.0".
         if (to instanceof BigDecimal) {
             BigDecimal to1 = (BigDecimal) to;
             if (self.compareTo(to1) >= 0) {
@@ -6835,7 +6835,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             } else
                 throw new GroovyRuntimeException("Infinite loop in " + self + ".downto(" + to + ")");
         } else {
-            BigDecimal to1 = new BigDecimal("" + to);
+            BigDecimal to1 = new BigDecimal(to.toString());
             if (self.compareTo(to1) >= 0) {
                 for (BigDecimal i = self; i.compareTo(to1) >= 0; i = i.subtract(one)) {
                     closure.call(i);
@@ -6860,10 +6860,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static void step(Number self, Number to, Number stepNumber, Closure closure) {
         if (self instanceof BigDecimal || to instanceof BigDecimal || stepNumber instanceof BigDecimal) {
-            final BigDecimal zero = new BigDecimal("0.0");
-            BigDecimal self1 = (self instanceof BigDecimal) ? (BigDecimal) self : new BigDecimal("" + self);
-            BigDecimal to1 = (to instanceof BigDecimal) ? (BigDecimal) to : new BigDecimal("" + to);
-            BigDecimal stepNumber1 = (stepNumber instanceof BigDecimal) ? (BigDecimal) stepNumber : new BigDecimal("" + stepNumber);
+            final BigDecimal zero = BigDecimal.valueOf(0, 1);  // Same as "0.0".
+            BigDecimal self1 = (self instanceof BigDecimal) ? (BigDecimal) self : new BigDecimal(self.toString());
+            BigDecimal to1 = (to instanceof BigDecimal) ? (BigDecimal) to : new BigDecimal(to.toString());
+            BigDecimal stepNumber1 = (stepNumber instanceof BigDecimal) ? (BigDecimal) stepNumber : new BigDecimal(stepNumber.toString());
             if (stepNumber1.compareTo(zero) > 0 && to1.compareTo(self1) > 0) {
                 for (BigDecimal i = self1; i.compareTo(to1) < 0; i = i.add(stepNumber1)) {
                     closure.call(i);
@@ -6875,10 +6875,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             } else
                 throw new GroovyRuntimeException("Infinite loop in " + self1 + ".step(" + to1 + ", " + stepNumber1 + ")");
         } else if (self instanceof BigInteger || to instanceof BigInteger || stepNumber instanceof BigInteger) {
-            final BigInteger zero = new BigInteger("0");
-            BigInteger self1 = (self instanceof BigInteger) ? (BigInteger) self : new BigInteger("" + self);
-            BigInteger to1 = (to instanceof BigInteger) ? (BigInteger) to : new BigInteger("" + to);
-            BigInteger stepNumber1 = (stepNumber instanceof BigInteger) ? (BigInteger) stepNumber : new BigInteger("" + stepNumber);
+            final BigInteger zero = BigInteger.valueOf(0);
+            BigInteger self1 = (self instanceof BigInteger) ? (BigInteger) self : new BigInteger(self.toString());
+            BigInteger to1 = (to instanceof BigInteger) ? (BigInteger) to : new BigInteger(to.toString());
+            BigInteger stepNumber1 = (stepNumber instanceof BigInteger) ? (BigInteger) stepNumber : new BigInteger(stepNumber.toString());
             if (stepNumber1.compareTo(zero) > 0 && to1.compareTo(self1) > 0) {
                 for (BigInteger i = self1; i.compareTo(to1) < 0; i = i.add(stepNumber1)) {
                     closure.call(i);
@@ -7257,7 +7257,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return an Long
      */
     public static Long toLong(Number self) {
-        return new Long(self.longValue());
+        return Long.valueOf(self.longValue());
     }
 
     /**
@@ -7267,7 +7267,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return an Float
      */
     public static Float toFloat(Number self) {
-        return new Float(self.floatValue());
+        return Float.valueOf(self.floatValue());
     }
 
     /**
@@ -7277,7 +7277,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return an Double
      */
     public static Double toDouble(Number self) {
-        return new Double(self.doubleValue());
+        return Double.valueOf(self.doubleValue());
     }
 
     /**
@@ -7287,7 +7287,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return an BigDecimal
      */
     public static BigDecimal toBigDecimal(Number self) {
-        return new BigDecimal(self.doubleValue());
+        return BigDecimal.valueOf(self.doubleValue());
     }
 
     /**
@@ -7324,6 +7324,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return an BigInteger
      */
     public static BigInteger toBigInteger(Number self) {
+        //TODO: This isn't a very good way to do this.
         return new BigInteger(Long.toString(self.longValue()));
     }
 
