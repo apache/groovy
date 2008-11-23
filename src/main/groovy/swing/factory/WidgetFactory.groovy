@@ -51,13 +51,13 @@ public class WidgetFactory extends AbstractFactory {
         try {
             def constraints = builder.context.constraints
             if (constraints != null) {
-                parent.add(child, constraints)
+                LayoutFactory.getLayoutTarget(parent).add(child, constraints)
                 builder.context.remove('constraints')
             } else {
-                parent.add(child)
+                LayoutFactory.getLayoutTarget(parent).add(child)
             }
         } catch (MissingPropertyException mpe) {
-            parent.add(child)
+            LayoutFactory.getLayoutTarget(parent)parentComponent.add(child)
         }
     }
 
