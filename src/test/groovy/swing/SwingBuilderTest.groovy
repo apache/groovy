@@ -1220,6 +1220,105 @@ class SwingBuilderTest extends GroovySwingTestCase {
       }
     }
 
+    void testJumbledThreading() {
+        if (headless) return;
+
+        def swing = new SwingBuilder()
+        boolean finishedBuild = false;
+
+        Thread t = Thread.start {
+            shouldFail {
+                swing.frame {
+                    edt {
+                        label('label')
+                    }
+                }
+                finishedBuild = true
+            }
+            synchronized(swing) { swing.notifyAll() }
+        }
+        synchronized(swing) { swing.wait(2000); }
+        if (t.isAlive()) {
+            Thread.start {
+                sleep(1000)
+                exit(0)
+            }
+            fail("EDT Deadlock")
+        }
+        if (finishedBuild) {
+            fail("The EDT method should have caused the build to fail")
+        }
+
+        t = Thread.start {
+            shouldFail {
+                swing.edt {
+                    swing.frame {
+                        edt {
+                            label('label')
+                        }
+                    }
+                }
+                finishedBuild = true
+            }
+            synchronized(swing) { swing.notifyAll() }
+        }
+        synchronized(swing) { swing.wait(2000); }
+        if (t.isAlive()) {
+            Thread.start {
+                sleep(1000)
+                exit(0)
+            }
+            fail("EDT Deadlock")
+        }
+        if (finishedBuild) {
+            fail("The EDT method should have caused the build to fail")
+        }
+
+        // full build in EDT shold be fine
+        t = Thread.start {
+            swing.edt {
+                swing.frame {
+                    label('label')
+                }
+            }
+            finishedBuild = true
+            synchronized(swing) { swing.notifyAll() }
+        }
+        synchronized(swing) { swing.wait(2000); }
+        if (t.isAlive()) {
+            Thread.start {
+                sleep(1000)
+                exit(0)
+            }
+            fail("EDT Deadlock")
+        }
+
+    }
+
+    void testParallelBuild() {
+        if (headless) return;
+
+        def swing = new SwingBuilder()
+        def p
+        def l
+
+        Thread t1 = Thread.start {
+            p = swing.panel() {
+                sleep(100)
+                label('child')
+            }
+        }
+        Thread t2 = Thread.start {
+            sleep(50)
+            l = swing.label('loner')
+        }
+
+        t1.join()
+        t2.join()
+
+        assert l.parent == null
+    }
+
     void testDispose() {
       testInEDT {
         def swing = new SwingBuilder()
