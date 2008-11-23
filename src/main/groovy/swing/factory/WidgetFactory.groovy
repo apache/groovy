@@ -18,6 +18,7 @@ package groovy.swing.factory
 
 import java.awt.Component
 import java.awt.Window
+import javax.swing.RootPaneContainer
 
 public class WidgetFactory extends AbstractFactory {
 
@@ -48,16 +49,21 @@ public class WidgetFactory extends AbstractFactory {
         if (!(child instanceof Component) || (child instanceof Window)) {
             return;
         }
+        // JDK 1.4 backwards compatibility fix
+        def parentComponent = parent;
+        if (parent instanceof RootPaneContainer) {
+            parentComponent = parent.contextPane
+        }
         try {
             def constraints = builder.context.constraints
             if (constraints != null) {
-                parent.add(child, constraints)
-                builder.context.remove('constraints')
+                parentComponent.add(child, constraints)
+                parentComponent.context.remove('constraints')
             } else {
-                parent.add(child)
+                parentComponent.add(child)
             }
         } catch (MissingPropertyException mpe) {
-            parent.add(child)
+            parentComponent.add(child)
         }
     }
 
