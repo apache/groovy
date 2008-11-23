@@ -32,7 +32,7 @@ public class WidgetFactory extends AbstractFactory {
     boolean isLeaf() {
         return leaf
     }
-    
+
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         if (value == null) {
             value = attributes.remove(name);
@@ -51,13 +51,13 @@ public class WidgetFactory extends AbstractFactory {
         try {
             def constraints = builder.context.constraints
             if (constraints != null) {
-                parent.add(child, constraints)
+                LayoutFactory.getLayoutTarget(parent).add(child, constraints)
                 builder.context.remove('constraints')
             } else {
-                parent.add(child)
+                LayoutFactory.getLayoutTarget(parent).add(child)
             }
         } catch (MissingPropertyException mpe) {
-            parent.add(child)
+            LayoutFactory.getLayoutTarget(parent).add(child)
         }
     }
 
