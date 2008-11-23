@@ -6,7 +6,7 @@ package groovy.util
  *   @author Andres Almiray 
  */
 
-class FactoryBuilderSupportTest extends GroovyTestCase{
+class FactoryBuilderSupportTest extends GroovyTestCase {
     void testSimpleNode() {
         def b = new SpoofFactoryBuilder()
         assert b.@log == [
@@ -17,7 +17,8 @@ class FactoryBuilderSupportTest extends GroovyTestCase{
             'register', 'inner', 'Layers',
         ]
         def node = b.foo()
-        assert b.@log == [ 'register', 'foo', 'Meta',
+        def log = b.@log
+        def expected = [ 'register', 'foo', 'Meta',
                            'register', 'bar', 'Meta',
                            'register', 'outest', 'Layers',
                            'register', 'outer', 'Layers',
@@ -27,6 +28,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase{
                            'node_completed',null, node, 
                            'post_node_completion',null, node
                         ]
+        assert log == expected
     }
 
     void testSimpleNodeWithValue() {
@@ -65,7 +67,8 @@ class FactoryBuilderSupportTest extends GroovyTestCase{
         b.foo(){
             b.bar()
         }
-        assert b.@log == [
+        def log = b.@log
+        def expected = [
             'register', 'foo', 'Meta',
             'register', 'bar', 'Meta',
             'register', 'outest', 'Layers',
@@ -82,6 +85,7 @@ class FactoryBuilderSupportTest extends GroovyTestCase{
             'node_completed',null,'x',
             'post_node_completion',null, 'x'
             ]
+        assert log == expected
     }
 
     void testSimpleNodeWithOneAttributeAndValue() {
@@ -740,44 +744,44 @@ class FactoryBuilderSupportTest extends GroovyTestCase{
             ]
     }
 
-    void testMultiThreaded() {
-        def b = new SpoofFactoryBuilder()
-        Thread t1 = Thread.start {
-            b.foo {
-                Thread.sleep(100)
-                bar()
-            }
-        }
-        Thread t2 = Thread.start {
-            Thread.sleep(50)
-            b.outer()
-        }
-
-        t1.join()
-        t2.join()
-        def log = b.@log
-        assert log == [
-                'register', 'foo', 'Meta',
-                'register', 'bar', 'Meta',
-                'register', 'outest', 'Layers',
-                'register', 'outer', 'Layers',
-                'register', 'inner', 'Layers',
-                'new_instance','foo', null,
-                'handle_node_attributes','x',
-                    'new_instance','bar', null,
-                    'handle_node_attributes','x',
-                'set_parent', 'x', 'x',
-                'set_child', 'x', 'x',
-                    'node_completed','x','x',
-                    'post_node_completion', 'x', 'x',
-                'node_completed', null,'x',
-                'post_node_completion', null, 'x',
-                'new_instance','outer', null,
-                'handle_node_attributes', 'x',
-                'node_completed', null, 'x',
-                'post_node_completion', null, 'x'
-            ]
-    }
+//    void testMultiThreaded() {
+//        def b = new SpoofFactoryBuilder()
+//        Thread t1 = Thread.start {
+//            b.foo {
+//                Thread.sleep(100)
+//                bar()
+//            }
+//        }
+//        Thread t2 = Thread.start {
+//            Thread.sleep(50)
+//            b.outer()
+//        }
+//
+//        t1.join()
+//        t2.join()
+//        def log = b.@log
+//        assert log == [
+//                'register', 'foo', 'Meta',
+//                'register', 'bar', 'Meta',
+//                'register', 'outest', 'Layers',
+//                'register', 'outer', 'Layers',
+//                'register', 'inner', 'Layers',
+//                'new_instance','foo', null,
+//                'handle_node_attributes','x',
+//                    'new_instance','bar', null,
+//                    'handle_node_attributes','x',
+//                'set_parent', 'x', 'x',
+//                'set_child', 'x', 'x',
+//                    'node_completed','x','x',
+//                    'post_node_completion', 'x', 'x',
+//                'node_completed', null,'x',
+//                'post_node_completion', null, 'x',
+//                'new_instance','outer', null,
+//                'handle_node_attributes', 'x',
+//                'node_completed', null, 'x',
+//                'post_node_completion', null, 'x'
+//            ]
+//    }
 
     //TODO registration groups test
 }

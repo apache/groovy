@@ -30,6 +30,11 @@ import java.util.logging.Logger;
 /**
  * Mix of BuilderSupport and SwingBuilder's factory support.
  *
+ * Warning: this implementation is not thread safe and should not be used
+ * across threads in a multi-threaded environment.  A locking mechanism
+ * should be implemented by the subclass if use is expected across
+ * multiple threads.
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Andres Almiray <aalmiray@users.sourceforge.com>
  * @author Danno Ferrin
@@ -139,6 +144,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      * Ask the nodes to be registered
      */
     public void autoRegisterNodes() {
+        // if java did atomic blocks, this would be one
         synchronized (this) {
             if (autoRegistrationRunning || autoRegistrationComplete) {
                 // registration already done or in process, abort
@@ -697,100 +703,117 @@ public abstract class FactoryBuilderSupport extends Binding {
      * @return the object from the factory
      */
     private Object doInvokeMethod(String methodName, Object name, Object args) {
+        Reference explicitResult = new Reference();
+        if (checkExplicitMethod(methodName, args, explicitResult)) {
+            return explicitResult.get();
+        } else {
+            return dispathNodeCall(name, args);
+        }
+    }
+
+    protected boolean checkExplicitMethod(String methodName, Object args, Reference result) {
         Closure explicitMethod = resolveExplicitMethod(methodName, args);
         if (explicitMethod != null) {
             if (args instanceof Object[]) {
-                return explicitMethod.call((Object[]) args);
+                result.set(explicitMethod.call((Object[]) args));
             } else {
                 //todo push through InvokerHelper.asList?
-                return explicitMethod.call(args);
+                result.set(explicitMethod.call(args));
             }
+            return true;
+        } else {
+            return false;
         }
+    }
+
+    protected Object dispathNodeCall(Object name, Object args) {
         Object node;
         Closure closure = null;
         List list = InvokerHelper.asList(args);
 
-        synchronized (proxyBuilder.contexts) {
-            if (proxyBuilder.getContexts().isEmpty()) {
-                // should be called on first build method only
-                proxyBuilder.newContext();
+        final boolean needToPopContext;
+        if (proxyBuilder.getContexts().isEmpty()) {
+            // should be called on first build method only
+            proxyBuilder.newContext();
+            needToPopContext = true;
+        } else {
+            needToPopContext = false;
+        }
+
+        try {
+            Map namedArgs = Collections.EMPTY_MAP;
+
+            // the arguments come in like [named_args?, args..., closure?]
+            // so peel off a hashmap from the front, and a closure from the
+            // end and presume that is what they meant, since there is
+            // no way to distinguish node(a:b,c,d) {..} from
+            // node([a:b],[c,d], {..}), i.e. the user can deliberatly confuse
+            // the builder and there is nothing we can really do to prevent
+            // that
+
+            if ((list.size() > 0)
+                    && (list.get(0) instanceof LinkedHashMap)) {
+                namedArgs = (Map) list.get(0);
+                list = list.subList(1, list.size());
             }
-            try {
-                Map namedArgs = Collections.EMPTY_MAP;
+            if ((list.size() > 0)
+                    && (list.get(list.size() - 1) instanceof Closure)) {
+                closure = (Closure) list.get(list.size() - 1);
+                list = list.subList(0, list.size() - 1);
+            }
+            Object arg;
+            if (list.size() == 0) {
+                arg = null;
+            } else if (list.size() == 1) {
+                arg = list.get(0);
+            } else {
+                arg = list;
+            }
+            node = proxyBuilder.createNode(name, namedArgs, arg);
 
-                // the arguments come in like [named_args?, args..., closure?]
-                // so peel off a hashmap from the front,
-                // and a closure from the end
-                // and presume that is what they meant, since there is
-                // no way to distinguish node(a:b,c,d) {..} from node([a:b],[c,d], {..})
-                // i.e. the user can deliberatly confuse the builder and there
-                // is nothing we can really do to prevent that
+            Object current = proxyBuilder.getCurrent();
+            if (current != null) {
+                proxyBuilder.setParent(current, node);
+            }
 
-                if ((list.size() > 0)
-                        && (list.get(0) instanceof LinkedHashMap)) {
-                    namedArgs = (Map) list.get(0);
-                    list = list.subList(1, list.size());
+            if (closure != null) {
+                Factory parentFactory = proxyBuilder.getCurrentFactory();
+                if (parentFactory.isLeaf()) {
+                    throw new RuntimeException("'" + name + "' doesn't support nesting.");
                 }
-                if ((list.size() > 0)
-                        && (list.get(list.size() - 1) instanceof Closure)) {
-                    closure = (Closure) list.get(list.size() - 1);
-                    list = list.subList(0, list.size() - 1);
+                boolean processContent = true;
+                if (parentFactory.isHandlesNodeChildren()) {
+                    processContent = parentFactory.onNodeChildren(this, node, closure);
                 }
-                Object arg;
-                if (list.size() == 0) {
-                    arg = null;
-                } else if (list.size() == 1) {
-                    arg = list.get(0);
-                } else {
-                    arg = list;
-                }
-                node = proxyBuilder.createNode(name, namedArgs, arg);
-
-                Object current = proxyBuilder.getCurrent();
-                if (current != null) {
-                    proxyBuilder.setParent(current, node);
-                }
-
-                if (closure != null) {
-                    Factory parentFactory = proxyBuilder.getCurrentFactory();
-                    if (parentFactory.isLeaf()) {
-                        throw new RuntimeException("'" + name + "' doesn't support nesting.");
-                    }
-                    boolean processContent = true;
-                    if (parentFactory.isHandlesNodeChildren()) {
-                        processContent = parentFactory.onNodeChildren(this, node, closure);
-                    }
-                    if (processContent) {
-                        // push new node on stack
-                        String parentName = proxyBuilder.getCurrentName();
-                        Map parentContext = proxyBuilder.getContext();
-                        proxyBuilder.newContext();
-                        try {
-                            proxyBuilder.getContext().put(OWNER, closure.getOwner());
-                            proxyBuilder.getContext().put(CURRENT_NODE, node);
-                            proxyBuilder.getContext().put(PARENT_FACTORY, parentFactory);
-                            proxyBuilder.getContext().put(PARENT_NODE, current);
-                            proxyBuilder.getContext().put(PARENT_CONTEXT, parentContext);
-                            proxyBuilder.getContext().put(PARENT_NAME, parentName);
-                            proxyBuilder.getContext().put(PARENT_BUILDER, parentContext.get(CURRENT_BUILDER));
-                            proxyBuilder.getContext().put(CURRENT_BUILDER, parentContext.get(CHILD_BUILDER));
-                            // lets register the builder as the delegate
-                            proxyBuilder.setClosureDelegate(closure, node);
-                            closure.call();
-                        } finally {
-                            proxyBuilder.popContext();
-                        }
+                if (processContent) {
+                    // push new node on stack
+                    String parentName = proxyBuilder.getCurrentName();
+                    Map parentContext = proxyBuilder.getContext();
+                    proxyBuilder.newContext();
+                    try {
+                        proxyBuilder.getContext().put(OWNER, closure.getOwner());
+                        proxyBuilder.getContext().put(CURRENT_NODE, node);
+                        proxyBuilder.getContext().put(PARENT_FACTORY, parentFactory);
+                        proxyBuilder.getContext().put(PARENT_NODE, current);
+                        proxyBuilder.getContext().put(PARENT_CONTEXT, parentContext);
+                        proxyBuilder.getContext().put(PARENT_NAME, parentName);
+                        proxyBuilder.getContext().put(PARENT_BUILDER, parentContext.get(CURRENT_BUILDER));
+                        proxyBuilder.getContext().put(CURRENT_BUILDER, parentContext.get(CHILD_BUILDER));
+                        // lets register the builder as the delegate
+                        proxyBuilder.setClosureDelegate(closure, node);
+                        closure.call();
+                    } finally {
+                        proxyBuilder.popContext();
                     }
                 }
+            }
 
-                proxyBuilder.nodeCompleted(current, node);
-                node = proxyBuilder.postNodeCompletion(current, node);
-            } finally {
-                if (proxyBuilder.getContexts()
-                        .size() == 1) {
-                    // pop the first context
-                    proxyBuilder.popContext();
-                }
+            proxyBuilder.nodeCompleted(current, node);
+            node = proxyBuilder.postNodeCompletion(current, node);
+        } finally {
+            if (needToPopContext) {
+                // pop the first context
+                proxyBuilder.popContext();
             }
         }
         return node;
@@ -1014,12 +1037,14 @@ public abstract class FactoryBuilderSupport extends Binding {
     }
 
     public Object build(Script script) {
-        synchronized (script) {
-            MetaClass scriptMetaClass = script.getMetaClass();
-            script.setMetaClass(new FactoryInterceptorMetaClass(scriptMetaClass, this));
-            script.setBinding(this);
-            return script.run();
-        }
+        // this used to be synchronized, but we also used to remove the
+        // metaclass.  Since adding the metaclass is now a side effect, we
+        // don't need to ensure the meta-class won't be observed and don't
+        // need to hide the side effect.
+        MetaClass scriptMetaClass = script.getMetaClass();
+        script.setMetaClass(new FactoryInterceptorMetaClass(scriptMetaClass, this));
+        script.setBinding(this);
+        return script.run();
     }
 
     public Object build(final String script, GroovyClassLoader loader) {

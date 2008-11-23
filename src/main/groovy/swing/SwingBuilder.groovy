@@ -18,6 +18,7 @@ package groovy.swing
 import groovy.swing.factory.*
 import java.awt.*
 import java.lang.reflect.InvocationTargetException
+import java.util.concurrent.locks.ReentrantLock
 import java.util.logging.Logger
 import javax.swing.*
 import javax.swing.border.BevelBorder
@@ -31,7 +32,7 @@ import org.codehaus.groovy.runtime.MethodClosure
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class SwingBuilder  extends FactoryBuilderSupport {
+public class SwingBuilder extends FactoryBuilderSupport {
 
     // local fields
     private static final Logger LOG = Logger.getLogger(SwingBuilder.name)
@@ -40,8 +41,11 @@ public class SwingBuilder  extends FactoryBuilderSupport {
     public static final String DELEGATE_PROPERTY_OBJECT_ID = "_delegateProperty:id";
     public static final String DEFAULT_DELEGATE_PROPERTY_OBJECT_ID = "id";
 
+    ReentrantLock contextLock;
+
     public SwingBuilder(boolean init = true) {
         super(init)
+        contextLock = new ReentrantLock(false); // fair queueing is tempting...
         //registerWidgets()
         headless = GraphicsEnvironment.isHeadless()
         containingWindows = new LinkedList()
@@ -241,6 +245,18 @@ public class SwingBuilder  extends FactoryBuilderSupport {
 
     }
 
+    protected Object dispathNodeCall(Object name, Object args) {
+        //TODO we should consider using tryLock(50ms) if we do this in the EDT
+        contextLock.lock()
+        try {
+           return super.dispathNodeCall(name, args)
+        } finally {
+            contextLock.unlock()
+        }
+    }
+
+
+
     /**
      * Utilitiy method to run a closure in EDT,
      * using <code>SwingUtilities.invokeAndWait</cod>.
@@ -248,6 +264,15 @@ public class SwingBuilder  extends FactoryBuilderSupport {
      * @param c this closure is run in the EDT
      */
     public SwingBuilder edt(Closure c) {
+        ReentrantLock lock
+        try {
+            lock = proxyBuilder.contextLock
+        } catch (MissingPropertyException mpe) {
+            // don't check the proxy then
+        }
+        if (lock?.isHeldByCurrentThread() || contextLock.isHeldByCurrentThread()) {
+            throw new RuntimeException("The SwingBuilder.edt(Closure) method cannot be called within an ongoing build.")
+        }
         c.setDelegate(this)
         if (headless || SwingUtilities.isEventDispatchThread()) {
             c.call(this)
@@ -360,7 +385,7 @@ public class SwingBuilder  extends FactoryBuilderSupport {
         return null
     }
 
-    private static LookAndFeel _laf(List s) {
+    private static LookAndFeel _laf(java.util.List s) {
         _laf(*s)
     }
 
