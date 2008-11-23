@@ -1,7 +1,6 @@
 package groovy.xml.dom
 
 import groovy.xml.*
-import org.codehaus.groovy.tools.xml.*
 
 class DOMTest extends GroovyTestCase {
     def benchmark = false
@@ -40,7 +39,7 @@ class DOMTest extends GroovyTestCase {
 
     void testStreamingDOMBuilder() {
         def builder = new StreamingDOMBuilder()
-        def doc = builder.bind{
+        def make = builder.bind{
           html {
             head {
               title (class:"mytitle", "Test")
@@ -50,13 +49,12 @@ class DOMTest extends GroovyTestCase {
             }
           }
         }
-        // TODO re-enable this test now that xerces is gone
-//        if (!benchmark) assertCorrect doc().documentElement
+        if (!benchmark) assertCorrect make().documentElement
     }
 
     private def assertCorrect(html) {
         use (DOMCategory) {
-            assert html.head.title.text() == 'Test', "Expected 'Test' but was: ${html.head.title[0].text()}"
+            assert html.head.title.text() == 'Test', "Expected 'Test' but was: ${html.head.title.text()}"
             assert html.body.p[0].text() == 'This is a test.'
             assert html.find { it.tagName == 'body' }.tagName == 'body'
             assert html.getElementsByTagName('*').findAll{ it.'@class' != '' }.size() == 2

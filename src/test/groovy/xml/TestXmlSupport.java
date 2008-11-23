@@ -46,10 +46,9 @@ OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package groovy.xml;
 
-import groovy.xml.dom.DOMUtil;
 import org.codehaus.groovy.classgen.TestSupport;
-import org.w3c.dom.Node;
 import org.w3c.dom.Element;
+import org.w3c.dom.Node;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.helpers.DefaultHandler;
@@ -63,7 +62,7 @@ import java.io.IOException;
 public abstract class TestXmlSupport extends TestSupport {
 
     protected void dump(Node node) throws IOException {
-        DOMUtil.serialize((Element) node, System.out);
+        XmlUtil.serialize((Element) node, System.out);
     }
 
     protected SAXBuilder createSAXBuilder() throws IOException {

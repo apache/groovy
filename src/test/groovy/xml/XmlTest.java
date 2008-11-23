@@ -56,8 +56,8 @@ import org.codehaus.groovy.classgen.TestSupport;
 public class XmlTest extends TestSupport {
 
     public void testTree() throws Exception {
-        GroovyObject object = compile("src/test/groovy/xml/SmallNamespaceDOMTest.groovy");
-        object.invokeMethod("testTree", null);
+        GroovyObject object = compile("src/test/groovy/xml/dom/vm5/NamespaceDOMTest.groovy");
+        object.invokeMethod("testXsdSchemaWithBuilderHavingAutoPrefix", null);
     }
 
     public void testQName() throws Exception {

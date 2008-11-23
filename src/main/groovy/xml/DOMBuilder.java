@@ -17,22 +17,20 @@
 package groovy.xml;
 
 import groovy.util.BuilderSupport;
-
-import java.io.IOException;
-import java.io.Reader;
-import java.io.StringReader;
-import java.util.Iterator;
-import java.util.Map;
-
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * A helper class for creating a W3C DOM tree
@@ -168,9 +166,13 @@ public class DOMBuilder extends BuilderSupport {
             if ("xmlns".equals(attrName)) {
                 if (value instanceof Map) {
                     appendNamespaceAttributes(element, (Map) value);
+                } else if (value instanceof String) {
+                    setStringNS(element, "", value);
                 } else {
                     throw new IllegalArgumentException("The value of the xmlns attribute must be a Map of QNames to String URIs");
                 }
+            } else if (attrName.startsWith("xmlns:") && value instanceof String) {
+                setStringNS(element, attrName.substring(6), value);
             } else {
                 String valueText = (value != null) ? value.toString() : "";
                 element.setAttribute(attrName, valueText);
@@ -179,19 +181,15 @@ public class DOMBuilder extends BuilderSupport {
         return element;
     }
 
-    protected void appendNamespaceAttributes(Element element, Map attributes) {
-        for (Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {
-            Map.Entry entry = (Map.Entry) iter.next();
+    protected void appendNamespaceAttributes(Element element, Map<Object, Object> attributes) {
+        for (Map.Entry entry : attributes.entrySet()) {
             Object key = entry.getKey();
             Object value = entry.getValue();
             if (value == null) {
                 throw new IllegalArgumentException("The value of key: " + key + " cannot be null");
             }
             if (key instanceof String) {
-                String prefix = (String) key;
-
-                //element.setAttributeNS("http://www.w3.org/XML/1998/namespace", "xmlns:" + prefix, value.toString());
-                element.setAttributeNS("", prefix, value.toString());
+                setStringNS(element, key, value);
             } else if (key instanceof QName) {
                 QName qname = (QName) key;
                 element.setAttributeNS(qname.getNamespaceURI(), qname.getQualifiedName(), value.toString());
@@ -199,5 +197,10 @@ public class DOMBuilder extends BuilderSupport {
                 throw new IllegalArgumentException("The key: " + key + " should be an instanceof of " + QName.class);
             }
         }
+    }
+
+    private void setStringNS(Element element, Object key, Object value) {
+        String prefix = (String) key;
+        element.setAttributeNS("http://www.w3.org/2000/xmlns/", "".equals(prefix) ? "xmlns" : "xmlns:" + prefix, value.toString());
     }
 }

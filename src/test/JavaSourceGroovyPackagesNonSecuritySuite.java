@@ -12,7 +12,7 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 
 /**
- * All non-security related Java Unit tests in the 'groovy' dir
+ * JDK 1.4 non-security related Java Unit tests in the 'groovy' dir
  */
 
 public class JavaSourceGroovyPackagesNonSecuritySuite {
@@ -35,7 +35,6 @@ public class JavaSourceGroovyPackagesNonSecuritySuite {
         suite.addTestSuite(NodePrinterTest.class);
         suite.addTestSuite(EvalTest.class);
         suite.addTestSuite(MBeanTest.class);
-        suite.addTestSuite(XmlTest.class);
         suite.addTestSuite(FactorySupportTest.class);
         suite.addTest(new RangeTestSuite());
         return suite;
