@@ -15,10 +15,10 @@
  */
 package org.codehaus.groovy.runtime;
 
-import groovy.io.EncodingAwareBufferedWriter;
 import groovy.lang.*;
-import groovy.sql.GroovyRowResult;
 import groovy.util.*;
+import groovy.io.EncodingAwareBufferedWriter;
+import groovy.sql.GroovyRowResult;
 import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
@@ -36,13 +36,13 @@ import java.math.BigInteger;
 import java.net.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.sql.ResultSet;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 
@@ -349,7 +349,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             System.out.print(InvokerHelper.toString(value));
         }
     }
-
+    
     /**
      * Print a value to the standard output stream.
      * This method delegates to the owner to execute the method.
@@ -429,7 +429,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             System.out.println(InvokerHelper.toString(value));
         }
     }
-
+    
     /**
      * Print a value (followed by a newline) to the standard output stream.
      * This method delegates to the owner to execute the method.
@@ -2679,7 +2679,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Center a String and padd it with the characters appended around it
+     * Center a String and pad it with the characters appended around it
      *
      * @param self          a String object
      * @param numberOfChars the total number of characters
@@ -2703,7 +2703,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Center a String and padd it with spaces appended around it
+     * Center a String and pad it with spaces appended around it
      *
      * @param self          a String object
      * @param numberOfChars the total number of characters
@@ -2848,7 +2848,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Allows a List to be used as the indices to be used on a List
+     * Select a List of items from a List using a Collection to
+     * identify the indices to be selected.
      *
      * @param self    a List
      * @param indices a Collection of indices
@@ -2871,7 +2872,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Allows a List to be used as the indices to be used on a List
+     * Select a List of items from an Object array using a Collection to
+     * identify the indices to be selected.
      *
      * @param self    an Array of Objects
      * @param indices a Collection of indices
@@ -2894,11 +2896,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Allows a List to be used as the indices to be used on a CharSequence
+     * Select a List of characters from a CharSequence using a Collection
+     * to identify the indices to be selected.
      *
      * @param self    a CharSequence
      * @param indices a Collection of indices
-     * @return a String of the values at the given indices
+     * @return a CharSequence consisting of the characters at the given indices
      */
     public static CharSequence getAt(CharSequence self, Collection indices) {
         StringBuffer answer = new StringBuffer();
@@ -2917,18 +2920,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Allows a List to be used as the indices to be used on a String
+     * Select a List of characters from a String using a Collection
+     * to identify the indices to be selected.
      *
      * @param self    a String
      * @param indices a Collection of indices
-     * @return a String of the values at the given indices
+     * @return a String consisting of the characters at the given indices
      */
     public static String getAt(String self, Collection indices) {
         return (String) getAt((CharSequence) self, indices);
     }
 
     /**
-     * Allows a List to be used as the indices to be used on a Matcher
+     * Select a List of values from a Matcher using a Collection
+     * to identify the indices to be selected.
      *
      * @param self    a Matcher
      * @param indices a Collection of indices
@@ -3785,6 +3790,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (clazz == SortedSet.class) {
             if (col instanceof SortedSet) return col;
             return new TreeSet(col);
+        }
+        if (clazz == Stack.class) {
+            if (col instanceof Stack) return col;
+            final Stack stack = new Stack();
+            stack.addAll(col);
+            return stack;
         }
         Object[] args = {col};
         try {
@@ -6087,7 +6098,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see Integer#valueOf(String)
      * @param left  a Character
      * @param right a Number
-     * @return the addition of the Character and the Number
+     * @return the Number corresponding to the addition of left and right
      */
     public static Number plus(Character left, Number right) {
         return plus(new Integer(left.charValue()), right);
@@ -6115,7 +6126,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #plus(Number, Character)
      * @param left  a Character
      * @param right a Character
-     * @return the addition of both Characters
+     * @return the Number corresponding to the addition of left and right
      */
     public static Number plus(Character left, Character right) {
         return plus(new Integer(left.charValue()), right);
@@ -6190,7 +6201,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param left  a Character
      * @param right a Number
-     * @return the addition of the Character and the Number
+     * @return the Number corresponding to the subtraction of right from left
      */
     public static Number minus(Character left, Number right) {
         return minus(new Integer(left.charValue()), right);
@@ -6203,7 +6214,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param left  a Number
      * @param right a Character
-     * @return the addition of the Character and the Number
+     * @return the Number corresponding to the subtraction of right from left
      */
     public static Number minus(Number left, Character right) {
         return minus(left, new Integer(right.charValue()));
@@ -6217,7 +6228,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param left  a Character
      * @param right a Character
-     * @return the addition of both Characters
+     * @return the Number corresponding to the subtraction of right from left
      */
     public static Number minus(Character left, Character right) {
         return minus(new Integer(left.charValue()), right);
@@ -6241,7 +6252,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param left  a Character
      * @param right a Number
-     * @return the multiplication of both
+     * @return the Number corresponding to the multiplication of left by right
      */
     public static Number multiply(Character left, Number right) {
         return multiply(new Integer(left.charValue()), right);
@@ -6254,7 +6265,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param left  a Number
      * @param right a Character
-     * @return the multiplication of both
+     * @return the multiplication of left by right
      */
     public static Number multiply(Number left, Character right) {
         return multiply(left, new Integer(right.charValue()));
@@ -6267,7 +6278,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param left  a Character
      * @param right another Character
-     * @return the multiplication of both
+     * @return the Number corresponding to the multiplication of left by right
      */
     public static Number multiply(Character left, Character right) {
         return multiply(new Integer(left.charValue()), right);
@@ -6297,7 +6308,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param left  a BigDecimal
      * @param right a Double
-     * @return the multiplication of both
+     * @return the multiplication of left by right
      */
     public static Number multiply(BigDecimal left, Double right) {
         return NumberMath.multiply(left, right);
@@ -6315,7 +6326,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param left  a BigDecimal
      * @param right a BigInteger
-     * @return the multiplication of both
+     * @return the multiplication of left by right
      */
     public static Number multiply(BigDecimal left, BigInteger right) {
         return NumberMath.multiply(left, right);
@@ -6350,7 +6361,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param left  a Character
      * @param right a Number
-     * @return the multiplication of both
+     * @return the Number corresponding to the division of left by right
      */
     public static Number div(Character left, Number right) {
         return div(new Integer(left.charValue()), right);
@@ -6363,7 +6374,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param left  a Number
      * @param right a Character
-     * @return the multiplication of both
+     * @return the Number corresponding to the division of left by right
      */
     public static Number div(Number left, Character right) {
         return div(left, new Integer(right.charValue()));
@@ -6376,7 +6387,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param left  a Character
      * @param right another Character
-     * @return the multiplication of both
+     * @return the Number corresponding to the division of left by right
      */
     public static Number div(Character left, Character right) {
         return div(new Integer(left.charValue()), right);
@@ -6400,7 +6411,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param left  a Character
      * @param right a Number
-     * @return the integer division of both
+     * @return a Number (an Integer) resulting from the integer division operation
      */
     public static Number intdiv(Character left, Number right) {
         return intdiv(new Integer(left.charValue()), right);
@@ -6411,7 +6422,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param left  a Number
      * @param right a Character
-     * @return the integer division of both
+     * @return a Number (an Integer) resulting from the integer division operation
      */
     public static Number intdiv(Number left, Character right) {
         return intdiv(left, new Integer(right.charValue()));
@@ -6422,7 +6433,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param left  a Character
      * @param right another Character
-     * @return the integer division of both
+     * @return a Number (an Integer) resulting from the integer division operation
      */
     public static Number intdiv(Character left, Character right) {
         return intdiv(new Integer(left.charValue()), right);
@@ -6433,7 +6444,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param left  a Number
      * @param right another Number
-     * @return a Number (an Integer) resulting of the integer division operation
+     * @return a Number (an Integer) resulting from the integer division operation
      */
     public static Number intdiv(Number left, Number right) {
         return NumberMath.intdiv(left, right);
@@ -6591,7 +6602,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates from this number up to the given number, inclusive,
      * incrementing by one each time.
-  	 *
+     *
      * @param self    a long
      * @param to the end number
      * @param closure the code to execute for each number
@@ -6609,7 +6620,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates from this number up to the given number, inclusive,
      * incrementing by one each time.
-  	 *
+     *
      * @param self    a Long
      * @param to the end number
      * @param closure the code to execute for each number
@@ -6628,7 +6639,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates from this number up to the given number, inclusive,
      * incrementing by one each time.
-  	 *
+     *
      * @param self    a float
      * @param to the end number
      * @param closure the code to execute for each number
@@ -6646,7 +6657,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates from this number up to the given number, inclusive,
      * incrementing by one each time.
-  	 *
+     *
      * @param self    a Float
      * @param to the end number
      * @param closure the code to execute for each number
@@ -6665,7 +6676,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates from this number up to the given number, inclusive,
      * incrementing by one each time.
-  	 *
+     *
      * @param self    a double
      * @param to the end number
      * @param closure the code to execute for each number
@@ -6683,7 +6694,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates from this number up to the given number, inclusive,
      * incrementing by one each time.
-  	 *
+     *
      * @param self    a Double
      * @param to the end number
      * @param closure the code to execute for each number
@@ -6703,10 +6714,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates from this number up to the given number, inclusive,
      * incrementing by one each time.  Example:
      * <pre>0.upto( 10 ) {
-  	 *   println it
-  	 * }</pre>
-  	 * Prints numbers 0 to 10
-  	 *
+     *   println it
+     * }</pre>
+     * Prints numbers 0 to 10
+     *
      * @param self    a BigInteger
      * @param to the end number
      * @param closure the code to execute for each number
@@ -6747,9 +6758,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates from this number up to the given number, inclusive,
      * incrementing by one each time.
      * <pre>0.upto( 10 ) {
-  	 *   println it
-  	 * }</pre>
-  	 * Prints numbers 0.1, 1.1, 2.1... to 9.1
+     *   println it
+     * }</pre>
+     * Prints numbers 0.1, 1.1, 2.1... to 9.1
      *
      * @param self    a BigDecimal
      * @param to the end number
@@ -6960,9 +6971,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Example:
      * <pre>10.5.downto(0) {
      *   println it
-	 * }</pre>
-	 * Prints numbers 10.5, 9.5 ... to 0.5.
-	 *
+     * }</pre>
+     * Prints numbers 10.5, 9.5 ... to 0.5.
+     *
      * @param self    a BigDecimal
      * @param to the end number
      * @param closure the code to execute for each number
@@ -7569,7 +7580,77 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
     
     /**
-     * Return a String representing this date in the given format.
+     * Subtract another date from this one and return the number of days of the difference.
+     *
+     * Date self = Date then + (Date self - Date then)
+     *
+     * IOW, if self is before then the result is a negative value.
+     *
+     * @param self a Calendar
+     * @param then another Calendar
+     * @return number of days
+     */
+
+    public static int minus(Calendar self, Calendar then) {
+        Calendar a = self;
+        Calendar b = then;
+
+        boolean swap = a.before(b);
+
+        if (swap) {
+           Calendar t = a;
+           a = b;
+           b = t;
+        }
+
+        int days = 0;
+
+        b = (Calendar) b.clone();
+
+        while (a.get(Calendar.YEAR) > b.get(Calendar.YEAR)) {
+           days += 1 + (b.getActualMaximum(Calendar.DAY_OF_YEAR) - b.get(Calendar.DAY_OF_YEAR));
+           b.set(Calendar.DAY_OF_YEAR, 1);
+           b.add(Calendar.YEAR, 1);
+        }
+
+        days += a.get(Calendar.DAY_OF_YEAR) - b.get(Calendar.DAY_OF_YEAR);
+
+        if (swap) days = -days;
+
+        return days;
+    }
+
+    /**
+     * Subtract another Date from this one and return the number of days of the difference.
+     *
+     * Date self = Date then + (Date self - Date then)
+     *
+     * IOW, if self is before then the result is a negative value.
+     *
+     * @param self a Date
+     * @param then another Date
+     * @return number of days
+     */
+    public static int minus(Date self, Date then) {
+        Calendar a = (Calendar) Calendar.getInstance().clone();
+        a.setTime(self);
+        Calendar b = (Calendar) Calendar.getInstance().clone();
+        b.setTime(then);
+        return minus(a, b);
+    }
+
+    /**
+     * <p>Create a String representation of this date according to the given 
+     * pattern.</p>
+     * 
+     * <p>For example, if the system timezone is GMT, 
+     * <code>new Date(0).format('MM/dd/yy')</code> would return the string 
+     * <code>"01/01/70"</code>. See documentation for {@link SimpleDateFormat} 
+     * for format pattern use.</p>
+     * 
+     * <p>Note that a new DateFormat instance is created for every 
+     * invocation of this method (for thread safety).</p>
+     *    
      * @see SimpleDateFormat
      * @param self
      * @param format the format pattern to use according to {@link SimpleDateFormat}
@@ -7580,8 +7661,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
     
     /**
-     * Return a string representation of the 'day' portion of this date 
-     * according to the locale-specific format used by {@link DateFormat}
+     * <p>Return a string representation of the 'day' portion of this date 
+     * according to the locale-specific {@link DateFormat#SHORT} default format.
+     * For an "en_UK" system locale, this would be <code>dd/MM/yy</code>.</p>
+     * 
+     * <p>Note that a new DateFormat instance is created for every 
+     * invocation of this method (for thread safety).</p>
+     * 
      * @see DateFormat#getDateInstance(int)
      * @see DateFormat#SHORT
      * @param self
@@ -7592,8 +7678,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
     
     /**
-     * Return a string representation of the time portion of this date 
-     * according to the locale-specific format used by {@link DateFormat}
+     * <p>Return a string representation of the time portion of this date 
+     * according to the locale-specific {@link DateFormat#MEDIUM} default format.
+     * For an "en_UK" system locale, this would be <code>HH:MM:ss</code>.</p>
+     * 
+     * <p>Note that a new DateFormat instance is created for every 
+     * invocation of this method (for thread safety).</p>
+     * 
      * @see DateFormat#getTimeInstance(int)
      * @see DateFormat#MEDIUM
      * @param self
@@ -7604,11 +7695,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
     
     /**
-     * Return a string representation of the date and time time portion of this 
-     * Date instance, according to the locale-specific format used by 
+     * <p>Return a string representation of the date and time time portion of 
+     * this Date instance, according to the locale-specific format used by 
      * {@link DateFormat}.  This method uses the {@link DateFormat#SHORT} 
      * preset for the day portion and {@link DateFormat#MEDIUM} for the time 
-     * portion of the string 
+     * portion of the output string.</p>
+     *  
+     * <p>Note that a new DateFormat instance is created for every 
+     * invocation of this method (for thread safety).</p>
+     *  
      * @see DateFormat#getDateTimeInstance(int, int) 
      * @param self
      * @return a string representation of this date and time
@@ -10336,6 +10431,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    the source string
      * @param regex   a Regex string
      * @param closure a closure with one parameter or as much parameters as groups
+     * @return the source string
      */
     public static void eachMatch(String self, String regex, Closure closure) {
         Pattern p = Pattern.compile(regex);
@@ -10514,7 +10610,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             if(current.getName().equals(RootLoader.class.getName())) return true;
             current = current.getSuperclass();
         }
-
+        
         return false;
     }
 
