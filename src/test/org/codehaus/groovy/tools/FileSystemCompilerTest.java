@@ -100,5 +100,18 @@ public class FileSystemCompilerTest extends GroovyTestCase {
 
         compiler = new FileSystemCompiler(configuration);
     }
+                               
+    public void testCommandLine() throws Exception {
+        try {
+            FileSystemCompiler.commandLineCompile(new String[] {"--bogus-option"});
+            fail("Compiler fails to reject bogus command line");
+        } catch (Exception re) {
+            // this is why shouldFail {} exists in Groovy tests
+        }
+
+        File dir = new File("target/test-generated-classes/cl");
+        dir.mkdirs();
+        FileSystemCompiler.commandLineCompile(new String[] {"src/test/groovy/LittleClosureTest.groovy", "-d", dir.getPath()});
+    }
 
 }

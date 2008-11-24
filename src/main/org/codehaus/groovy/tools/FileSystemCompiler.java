@@ -98,61 +98,64 @@ public class FileSystemCompiler {
         return checkFiles(filenames) == 0;
     }
 
+    private static boolean displayStackTraceOnError = false;
+
+    /**
+     * Same as main(args) except that exceptions are thrown out instead of causing
+     * the VM to exit.
+     */
+    public static void commandLineCompile(String[] args) throws Exception {
+        Options options = createCompilationOptions();
+
+        PosixParser cliParser = new PosixParser();
+
+        CommandLine cli;
+        cli = cliParser.parse(options, args);
+
+        if (cli.hasOption('h')) {
+            displayHelp(options);
+            return;
+        }
+
+        if (cli.hasOption('v')) {
+            displayVersion();
+            return;
+        }
+
+        displayStackTraceOnError = cli.hasOption('e');
+
+        CompilerConfiguration configuration = generateCompilerConfigurationFromOptions(cli);
+
+        //
+        // Load the file name list
+        String[] filenames = generateFileNamesFromOptions(cli);
+        boolean fileNameErrors = filenames == null;
+        if (!fileNameErrors && (filenames.length == 0)) {
+            displayHelp(options);
+            return;
+        }
+
+        fileNameErrors = fileNameErrors && !validateFiles(filenames);
+
+        if (!fileNameErrors) {
+            doCompilation(configuration, null, filenames);
+        }
+    }
+
     /**
      * Primary entry point for compiling from the command line
      * (using the groovyc script).
+     *
+     * If calling inside a process and you don't want the JVM to exit on an
+     * error call commandLineCompile(String[]), which this method simply wraps 
      */
     public static void main(String[] args) {
-        boolean displayStackTraceOnError = false;
 
         try {
-            Options options = createCompilationOptions();
-
-            PosixParser cliParser = new PosixParser();
-
-            CommandLine cli;
-            cli = cliParser.parse(options, args);
-
-            if (cli.hasOption('h')) {
-                displayHelp(options);
-                return;
-            }
-
-            if (cli.hasOption('v')) {
-                displayVersion();
-                return;
-            }
-
-            displayStackTraceOnError = cli.hasOption('e');
-
-            CompilerConfiguration configuration = generateCompilerConfigurationFromOptions(cli);
-
-            //
-            // Load the file name list
-            String[] filenames = generateFileNamesFromOptions(cli);
-            boolean fileNameErrors = filenames == null;
-            if (!fileNameErrors && (filenames.length == 0)) {
-                displayHelp(options);
-                return;
-            }
-
-            fileNameErrors = fileNameErrors && !validateFiles(filenames);
-
-            if (!fileNameErrors) {
-                doCompilation(configuration, null, filenames);
-            }
+            commandLineCompile(args);
         } catch( Throwable e ) {
-            RuntimeException re = new RuntimeException();
-            if (re.getStackTrace().length > 1) {
-                if (e instanceof RuntimeException) {
-                    re = (RuntimeException) e;
-                } else {
-                    re.initCause(e);
-                }
-            } else {
-                new ErrorReporter( e, displayStackTraceOnError ).write( System.err );
-                System.exit(1);
-            }
+            new ErrorReporter( e, displayStackTraceOnError).write( System.err );
+            System.exit(1);
         }
     }
 
