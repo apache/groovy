@@ -2,6 +2,7 @@ package org.codehaus.groovy.runtime
 
 import java.text.DateFormat
 import java.text.SimpleDateFormat
+
 /**
  * @author tnichols
  */
@@ -48,4 +49,34 @@ public class DateGDKTest extends GroovyTestCase {
 		
 		assertEquals d.time, d2.time
 	}
+
+    static SimpleDateFormat f = new SimpleDateFormat('MM/dd/yyyy')
+        
+    static java.sql.Date sqlDate(String s) {
+        return new java.sql.Date(f.parse(s).time)
+    }
+    
+    public void testMinusDates() {
+        assertEquals(10, f.parse("1/11/2007") - f.parse("1/1/2007"))
+        assertEquals(-10, f.parse("1/1/2007") - f.parse("1/11/2007"))
+        assertEquals(375, f.parse("1/11/2008") - f.parse("1/1/2007"))
+        assertEquals(356, f.parse("1/1/2008") - f.parse("1/10/2007"))
+        assertEquals(1, f.parse("7/12/2007") - f.parse("7/11/2007"))
+        assertEquals(0, f.parse("1/1/2007") - f.parse("1/1/2007"))
+        assertEquals(-1, f.parse("12/31/2007") - f.parse("1/1/2008"))
+        assertEquals(365, f.parse("1/1/2008") - f.parse("1/1/2007"))
+        assertEquals(36525, f.parse("1/1/2008") - f.parse("1/1/1908"))
+
+        assertEquals(1, sqlDate("7/12/2007") - f.parse("7/11/2007"))
+        assertEquals(0, sqlDate("1/1/2007") - sqlDate("1/1/2007"))
+        assertEquals(-1, f.parse("12/31/2007") - sqlDate("1/1/2008"))
+        assertEquals(365, sqlDate("1/1/2008") - sqlDate("1/1/2007"))
+        assertEquals(36525, f.parse("1/1/2008") - sqlDate("1/1/1908"))
+
+        Date d = f.parse("7/4/1776");
+        assertEquals(44, (d + 44) - d);
+
+        java.sql.Date sqld = sqlDate("7/4/1776");
+        assertEquals(-4444, (sqld - 4444) - sqld);
+    }
 }
