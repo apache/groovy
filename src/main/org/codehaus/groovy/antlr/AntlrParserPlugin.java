@@ -2269,10 +2269,17 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         for (AST child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
             expressionList.add(expression(child));
         }
-        if (expressionList.size() == 1) {
+        boolean isClassNodeForEnum = false;
+    	/*
+    	 *  For an enum, let it be wrapped in a ListExpression 
+    	 *  even if it is of size 1 - GROOVY-2933
+    	 */
+    	if  (classNode != null && classNode.getSuperClass().getName().equals("java.lang.Enum")) {
+    		isClassNodeForEnum = true;
+    	}
+        if (expressionList.size() == 1 && !isClassNodeForEnum) {
             return (Expression) expressionList.get(0);
-        }
-        else {
+        } else {
             ListExpression listExpression = new ListExpression(expressionList);
             configureAST(listExpression, node);
             return listExpression;
