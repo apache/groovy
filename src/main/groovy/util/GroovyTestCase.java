@@ -40,6 +40,8 @@ public class GroovyTestCase extends TestCase {
 
     protected static Logger log = Logger.getLogger(GroovyTestCase.class.getName());
     private static int counter;
+    public static final String TEST_SCRIPT_NAME_PREFIX = "TestScript";
+
     private boolean useAgileDoxNaming = false;
 
     public GroovyTestCase() {
@@ -204,7 +206,7 @@ public class GroovyTestCase extends TestCase {
     }
 
     protected String getTestClassName() {
-        return "TestScript" + getMethodName() + (counter++) + ".groovy";
+        return TEST_SCRIPT_NAME_PREFIX + getMethodName() + (counter++) + ".groovy";
     }
 
     /**
