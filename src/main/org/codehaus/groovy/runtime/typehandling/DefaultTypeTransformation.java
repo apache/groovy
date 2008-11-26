@@ -662,16 +662,13 @@ public class DefaultTypeTransformation {
         boolean[] ans = null;
 
         // conservative coding
-        if (a.getClass().getName().equals("[Z")) {
+        if (a instanceof boolean[]) {
             ans = (boolean[]) a;
-        }
-        else {
+        } else {
             Object[] ia = (Object[]) a;
             ans = new boolean[ia.length];
             for (int i = 0; i < ia.length; i++) {
-                if (ia[i] == null) {
-                    continue;
-                }
+                if (ia[i] == null) continue;
                 ans[i] = ((Boolean) ia[i]).booleanValue();
             }
         }
@@ -682,10 +679,9 @@ public class DefaultTypeTransformation {
         byte[] ans = null;
 
         // conservative coding
-        if (a.getClass().getName().equals("[B")) {
+        if (a instanceof byte[]) {
             ans = (byte[]) a;
-        }
-        else {
+        } else {
             Object[] ia = (Object[]) a;
             ans = new byte[ia.length];
             for (int i = 0; i < ia.length; i++) {
@@ -701,10 +697,9 @@ public class DefaultTypeTransformation {
         short[] ans = null;
 
         // conservative coding
-        if (a.getClass().getName().equals("[S")) {
+        if (a instanceof short[]) {
             ans = (short[]) a;
-        }
-        else {
+        } else {
             Object[] ia = (Object[]) a;
             ans = new short[ia.length];
             for (int i = 0; i < ia.length; i++) {
@@ -718,10 +713,9 @@ public class DefaultTypeTransformation {
         char[] ans = null;
 
         // conservative coding
-        if (a.getClass().getName().equals("[C")) {
+        if (a instanceof char[]) {
             ans = (char[]) a;
-        }
-        else {
+        } else {
             Object[] ia = (Object[]) a;
             ans = new char[ia.length];
             for (int i = 0; i < ia.length; i++) {
@@ -738,10 +732,9 @@ public class DefaultTypeTransformation {
         long[] ans = null;
 
         // conservative coding
-        if (a.getClass().getName().equals("[J")) {
+        if (a instanceof long[]) {
             ans = (long[]) a;
-        }
-        else {
+        } else {
             Object[] ia = (Object[]) a;
             ans = new long[ia.length];
             for (int i = 0; i < ia.length; i++) {
@@ -758,10 +751,9 @@ public class DefaultTypeTransformation {
         float[] ans = null;
 
         // conservative coding
-        if (a.getClass().getName().equals("[F")) {
+        if (a instanceof float[]) {
             ans = (float[]) a;
-        }
-        else {
+        } else {
             Object[] ia = (Object[]) a;
             ans = new float[ia.length];
             for (int i = 0; i < ia.length; i++) {
@@ -778,10 +770,9 @@ public class DefaultTypeTransformation {
         double[] ans = null;
 
         // conservative coding
-        if (a.getClass().getName().equals("[D")) {
+        if (a instanceof double[]) {
             ans = (double[]) a;
-        }
-        else {
+        } else {
             Object[] ia = (Object[]) a;
             ans = new double[ia.length];
             for (int i = 0; i < ia.length; i++) {
