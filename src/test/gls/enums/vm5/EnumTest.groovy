@@ -109,6 +109,34 @@ class EnumTest extends GroovyTestCase {
         assert coins == [UsCoin.nickel]
     }
 
+    void testEnumWithSingleListInConstructor() {
+        def sh = new GroovyShell();
+        def enumStr;
+        
+        enumStr = """
+            enum ListEnum1 {
+                ONE([111, 222])
+                ListEnum1(Object listArg){
+                    assert listArg == [111, 222]
+                    assert listArg instanceof java.util.ArrayList
+                }
+            }
+            println ListEnum1.ONE
+        """
+        sh.evaluate(enumStr);
+            
+        enumStr = """
+            enum ListEnum2 {
+                TWO([234, [567,12]])
+                ListEnum2(Object listArg){
+                    assert listArg == [234, [567, 12]]
+                    assert listArg instanceof java.util.ArrayList
+                }
+            }
+            println ListEnum2.TWO
+        """
+        sh.evaluate(enumStr);
+    }
 }
 
 enum UsCoin {
