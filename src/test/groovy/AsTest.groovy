@@ -76,4 +76,10 @@ class AsTest extends GroovyTestCase {
         assert subject == 0.1
     }
     
+    void testFloatAsDouble() {
+        subject = 0.1f as Double
+        assert subject.class == Double
+        assert subject == 0.1
+    }
+    
 }
