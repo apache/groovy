@@ -9,6 +9,7 @@ import antlr.InputBuffer;
 import antlr.LexerSharedInputState;
 import antlr.CommonToken;
 import org.codehaus.groovy.GroovyBugError;
+import antlr.TokenStreamRecognitionException;
 }
 
 /** JSR-241 Groovy Recognizer
@@ -327,11 +328,22 @@ tokens {
     public void requireFailed(String problem, String solution) throws SemanticException {
         // TODO: Needs more work.
         Token lt = null;
-        try { lt = LT(1); }
-        catch (TokenStreamException ee) { }
-        if (lt == null)  lt = Token.badToken;
+        int lineNum = Token.badToken.getLine(), colNum = Token.badToken.getColumn();
+        try { 
+            lt = LT(1);
+            if(lt != null) {
+                lineNum = lt.getLine();
+                colNum = lt.getColumn();
+            }
+        }
+        catch (TokenStreamException ee) {
+            if(ee instanceof TokenStreamRecognitionException) {
+                lineNum = ((TokenStreamRecognitionException) ee).recog.getLine();
+                colNum = ((TokenStreamRecognitionException) ee).recog.getColumn();
+            }
+        }
         throw new SemanticException(problem + ";\n   solution: " + solution,
-                                    getFilename(), lt.getLine(), lt.getColumn());
+                                    getFilename(), lineNum, colNum);
     }
 
     public void addWarning(String warning, String solution) {
