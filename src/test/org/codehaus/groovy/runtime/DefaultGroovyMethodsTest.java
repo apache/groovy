@@ -110,6 +110,9 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertEquals(DefaultGroovyMethods.toBigDecimal("1"), new BigDecimal("1"));
         assertEquals(DefaultGroovyMethods.toBigDecimal(n), new BigDecimal("7"));
 
+        // The following is true starting with 1.6 (GROOVY-3171):
+        assertEquals(new BigDecimal("0.1"), DefaultGroovyMethods.toBigDecimal(new Double(0.1d)));
+
         assertEquals(DefaultGroovyMethods.toURL("http://example.org/"), new URL("http://example.org/"));
         assertEquals(DefaultGroovyMethods.toURI("http://example.org/"), new URI("http://example.org/"));
 

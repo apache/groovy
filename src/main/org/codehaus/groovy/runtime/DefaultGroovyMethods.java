@@ -7287,7 +7287,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return an BigDecimal
      */
     public static BigDecimal toBigDecimal(Number self) {
-        return BigDecimal.valueOf(self.doubleValue());
+        if ((self instanceof Long) 
+            || (self instanceof Integer)
+            || (self instanceof Short)
+            || (self instanceof Byte)) 
+        {
+            return BigDecimal.valueOf(self.longValue());
+        }
+        
+        return new BigDecimal(self.toString());
     }
 
     /**
