@@ -292,7 +292,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
     }
 
     /**
-     * Utilitiy method to run a closure in EDT,
+     * Utility method to run a closure in EDT,
      * using <code>SwingUtilities.invokeLater</cod>.
      *
      * @param c this closure is run in the EDT
@@ -331,7 +331,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
      * Utility method to create a SwingBuilder, and run the
      * the closure in the EDT
      *
-     * @param c run this closre in the builder using the edt method
+     * @param c run this closure in the builder using the edt method
      * @deprecated To replace it use new SwingBuidler().edt(Closure)
      */
     @Deprecated
