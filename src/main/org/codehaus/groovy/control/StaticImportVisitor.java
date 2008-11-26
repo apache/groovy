@@ -123,7 +123,14 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                 Object value = ce.getValue();
                 if (value instanceof String) {
                     String methodName = (String) value;
-                    if (inSpecialConstructorCall || currentClass.hasPossibleStaticMethod(methodName, args)) {
+                    boolean lookForPossibleStaticMethod = true;
+                    if(this.currentMethod != null && !this.currentMethod.isStatic()) {
+                        if(currentClass.hasPossibleMethod(methodName, args)) {
+                            lookForPossibleStaticMethod = false;
+                        }
+                    }
+                    if (inSpecialConstructorCall ||
+                            (lookForPossibleStaticMethod && currentClass.hasPossibleStaticMethod(methodName, args))) {
                     	StaticMethodCallExpression smce = new StaticMethodCallExpression(currentClass, methodName, args);
                     	smce.setSourcePosition(mce);
                     	return smce;
