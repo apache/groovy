@@ -15,12 +15,14 @@
  */
 package org.codehaus.groovy.runtime.callsite;
 
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.GroovyInterceptable;
 import groovy.lang.GroovyObject;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.NullObject;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.reflection.ClassInfo;
 
 public final class CallSiteArray {
@@ -37,7 +39,7 @@ public final class CallSiteArray {
         }
     }
 
-    public static Object defaultCall(CallSite callSite, Object receiver, Object[] args) {
+    public static Object defaultCall(CallSite callSite, Object receiver, Object[] args) throws Throwable {
         return createCallSite(callSite, receiver, args).call(receiver, args);
     }
 
@@ -45,7 +47,7 @@ public final class CallSiteArray {
         return createCallCurrentSite(callSite, receiver, args, callSite.getArray().owner).callCurrent(receiver, args);
     }
 
-    public static Object defaultCallStatic(CallSite callSite, Class receiver, Object[] args) {
+    public static Object defaultCallStatic(CallSite callSite, Class receiver, Object[] args) throws Throwable {
         return createCallStaticSite(callSite, receiver, args).callStatic(receiver,args);
     }
 
@@ -157,11 +159,16 @@ public final class CallSiteArray {
             super(callSite);
         }
 
-        public final Object call(Object receiver, Object[] args) {
-            if (receiver == null)
-               return InvokerHelper.invokeMethod(NullObject.getNullObject(), name, args);
-            else
-               return CallSiteArray.defaultCall(this, receiver, args);
+        public final Object call(Object receiver, Object[] args) throws Throwable {
+            if (receiver == null) {
+                try{
+                    return InvokerHelper.invokeMethod(NullObject.getNullObject(), name, args);
+                } catch (GroovyRuntimeException gre) {
+                    throw ScriptBytecodeAdapter.unwrap(gre);
+                }
+            } else {
+                return CallSiteArray.defaultCall(this, receiver, args);
+            }
         }
     }
 }

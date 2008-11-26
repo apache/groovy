@@ -60,7 +60,7 @@ public class FloatArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
             super(site, metaClass, metaMethod, params);
         }
 
-        public Object call(Object receiver, Object[] args) {
+        public Object call(Object receiver, Object[] args) throws Throwable {
             if ((receiver instanceof float[] && args[0] instanceof Integer && args[1] instanceof Float )
                     && checkPojoMetaClass()) {
                 final float[] objects = (float[]) receiver;

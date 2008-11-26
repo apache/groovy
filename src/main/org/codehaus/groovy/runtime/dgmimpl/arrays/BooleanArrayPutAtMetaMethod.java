@@ -54,7 +54,7 @@ public class BooleanArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
             super(site, metaClass, metaMethod, params);
         }
 
-        public Object call(Object receiver, Object[] args) {
+        public Object call(Object receiver, Object[] args) throws Throwable {
             if ((receiver instanceof boolean[] && args[0] instanceof Integer && args[1] instanceof Boolean )
                     && checkPojoMetaClass()) {
                 final boolean[] objects = (boolean[]) receiver;

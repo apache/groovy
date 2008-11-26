@@ -17,7 +17,10 @@ package org.codehaus.groovy.runtime.callsite;
 
 import groovy.lang.GroovyInterceptable;
 import groovy.lang.GroovyObject;
+import groovy.lang.GroovyRuntimeException;
+
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
 /**
  * Call site for GroovyInterceptable
@@ -29,15 +32,24 @@ public class PogoInterceptableSite extends AbstractCallSite {
         super(site);
     }
 
-    public final Object invoke(Object receiver, Object[] args) {
-      return ((GroovyObject)receiver).invokeMethod(name, InvokerHelper.asUnwrappedArray(args));
+    public final Object invoke(Object receiver, Object[] args) throws Throwable {
+      try {
+        return ((GroovyObject)receiver).invokeMethod(name, InvokerHelper.asUnwrappedArray(args));
+      } catch (GroovyRuntimeException gre) {
+          throw ScriptBytecodeAdapter.unwrap(gre);
+      }
     }
 
-    public final Object call(Object receiver, Object[] args) {
-        if(receiver instanceof GroovyInterceptable)
-          return ((GroovyObject) receiver).invokeMethod(name, InvokerHelper.asUnwrappedArray(args));
-        else
-          return CallSiteArray.defaultCall(this, receiver, args);
+    public final Object call(Object receiver, Object[] args) throws Throwable {
+        if(receiver instanceof GroovyInterceptable) {
+            try {
+                return ((GroovyObject) receiver).invokeMethod(name, InvokerHelper.asUnwrappedArray(args));
+            } catch (GroovyRuntimeException gre) {
+                throw ScriptBytecodeAdapter.unwrap(gre);
+            }
+        } else {
+            return CallSiteArray.defaultCall(this, receiver, args);
+        }
     }
 
     public Object callCurrent (GroovyObject receiver, Object [] args) throws Throwable {

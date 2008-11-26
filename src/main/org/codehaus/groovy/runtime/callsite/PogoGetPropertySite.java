@@ -15,7 +15,10 @@
  */
 package org.codehaus.groovy.runtime.callsite;
 
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+
 import groovy.lang.GroovyObject;
+import groovy.lang.GroovyRuntimeException;
 
 public class PogoGetPropertySite extends AbstractCallSite {
     private final Class aClass;
@@ -39,7 +42,11 @@ public class PogoGetPropertySite extends AbstractCallSite {
           return this;
     }
 
-    public Object getProperty(Object receiver) {
-        return ((GroovyObject)receiver).getProperty(name);
+    public Object getProperty(Object receiver) throws Throwable {
+        try{
+            return ((GroovyObject)receiver).getProperty(name);
+        } catch (GroovyRuntimeException gre) {
+            throw ScriptBytecodeAdapter.unwrap(gre);
+        }
     }
 }

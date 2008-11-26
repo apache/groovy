@@ -60,7 +60,7 @@ public class LongArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
             super(site, metaClass, metaMethod, params);
         }
 
-        public Object call(Object receiver, Object[] args) {
+        public Object call(Object receiver, Object[] args) throws Throwable {
             if ((receiver instanceof long[] && args[0] instanceof Integer && args[1] instanceof Long )
                     && checkPojoMetaClass()) {
                 final long[] objects = (long[]) receiver;

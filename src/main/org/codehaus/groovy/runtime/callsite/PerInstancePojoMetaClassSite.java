@@ -15,9 +15,10 @@
  */
 package org.codehaus.groovy.runtime.callsite;
 
-import groovy.lang.MetaClass;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import groovy.lang.GroovyRuntimeException;
+
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.reflection.ClassInfo;
 
 public class PerInstancePojoMetaClassSite extends AbstractCallSite{
@@ -28,10 +29,15 @@ public class PerInstancePojoMetaClassSite extends AbstractCallSite{
         this.info = info;
     }
 
-    public Object call(Object receiver, Object[] args) {
-        if (info.hasPerInstanceMetaClasses())
-          return InvokerHelper.getMetaClass(receiver).invokeMethod(receiver, name, args);
-        else
+    public Object call(Object receiver, Object[] args) throws Throwable {
+        if (info.hasPerInstanceMetaClasses()) {
+          try {
+              return InvokerHelper.getMetaClass(receiver).invokeMethod(receiver, name, args);
+          } catch (GroovyRuntimeException gre) {
+              throw ScriptBytecodeAdapter.unwrap(gre);
+          }
+        } else {
           return CallSiteArray.defaultCall(this, receiver, args);
+        }
     }
 }

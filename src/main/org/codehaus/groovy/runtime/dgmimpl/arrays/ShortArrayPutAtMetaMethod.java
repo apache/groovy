@@ -60,7 +60,7 @@ public class ShortArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
             super(site, metaClass, metaMethod, params);
         }
 
-        public Object call(Object receiver, Object[] args) {
+        public Object call(Object receiver, Object[] args) throws Throwable {
             if ((receiver instanceof short[] && args[0] instanceof Integer && args[1] instanceof Short )
                     && checkPojoMetaClass()) {
                 final short[] objects = (short[]) receiver;

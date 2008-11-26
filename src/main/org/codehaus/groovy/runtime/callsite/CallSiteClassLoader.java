@@ -20,7 +20,6 @@ import org.codehaus.groovy.reflection.ClassLoaderForClassArtifacts;
 import java.util.Set;
 import java.util.HashSet;
 import java.util.Collections;
-import java.lang.ref.SoftReference;
 
 public class CallSiteClassLoader extends ClassLoaderForClassArtifacts {
 

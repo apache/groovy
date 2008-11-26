@@ -54,7 +54,7 @@ public class CharacterArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
             super(site, metaClass, metaMethod, params);
         }
 
-        public Object call(Object receiver, Object[] args) {
+        public Object call(Object receiver, Object[] args) throws Throwable {
             if ((receiver instanceof char[] && args[0] instanceof Integer && args[1] instanceof Character )
                     && checkPojoMetaClass()) {
                 final char[] objects = (char[]) receiver;

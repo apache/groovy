@@ -15,10 +15,6 @@
  */
 package org.codehaus.groovy.runtime.callsite;
 
-import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
-import org.codehaus.groovy.runtime.InvokerHelper;
-import groovy.lang.GroovyObject;
-
 public class DummyCallSite extends AbstractCallSite {
     public DummyCallSite(CallSiteArray array, int index, String name) {
         super(array, index,name);

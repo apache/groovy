@@ -15,9 +15,11 @@
  */
 package org.codehaus.groovy.runtime.callsite;
 
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClassImpl;
 import org.codehaus.groovy.reflection.CachedConstructor;
 import org.codehaus.groovy.runtime.MetaClassHelper;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
 import java.util.Map;
 
@@ -33,9 +35,14 @@ public class ConstructorSite extends MetaClassSite {
 
     public Object callConstructor(Object receiver, Object[] args) throws Throwable {
         if (receiver == metaClass.getTheClass() // meta class match receiver
-           && MetaClassHelper.sameClasses(params, args) ) { // right arguments
+           && MetaClassHelper.sameClasses(params, args) ) 
+        {   
             MetaClassHelper.unwrap(args);
-            return constructor.doConstructorInvoke(args);
+            try {
+                return constructor.doConstructorInvoke(args);
+            } catch (GroovyRuntimeException gre) {
+                throw ScriptBytecodeAdapter.unwrap(gre);
+            }
         }
         else
           return CallSiteArray.defaultCallConstructor(this, receiver, args);
@@ -65,8 +72,13 @@ public class ConstructorSite extends MetaClassSite {
 
         public final Object callConstructor(Object receiver, Object[] args) throws Throwable {
             if (receiver == metaClass.getTheClass() // meta class match receiver
-               && MetaClassHelper.sameClasses(params, args) ) { // right arguments
-                return constructor.doConstructorInvoke(args);
+               && MetaClassHelper.sameClasses(params, args) ) 
+            {
+                try {
+                    return constructor.doConstructorInvoke(args);
+                } catch (GroovyRuntimeException gre) {
+                    throw ScriptBytecodeAdapter.unwrap(gre);
+                }
             }
             else
               return CallSiteArray.defaultCallConstructor(this, receiver, args);
@@ -84,8 +96,13 @@ public class ConstructorSite extends MetaClassSite {
 
         public Object callConstructor(Object receiver, Object[] args) throws Throwable {
             if (receiver == metaClass.getTheClass() // meta class match receiver
-               && MetaClassHelper.sameClasses(params, args) ) { // right arguments
-                return constructor.invoke(args);
+               && MetaClassHelper.sameClasses(params, args) ) 
+            {
+                try {
+                    return constructor.invoke(args);
+                } catch (GroovyRuntimeException gre) {
+                    throw ScriptBytecodeAdapter.unwrap(gre);
+                }
             }
             else
               return CallSiteArray.defaultCallConstructor(this, receiver, args);
@@ -101,9 +118,14 @@ public class ConstructorSite extends MetaClassSite {
 
         public final Object callConstructor(Object receiver, Object[] args) throws Throwable {
             if (receiver == metaClass.getTheClass() // meta class match receiver
-               && MetaClassHelper.sameClasses(params, args) ) { // right arguments
+               && MetaClassHelper.sameClasses(params, args) ) 
+            {
                 final Object bean = constructor.invoke(NO_ARGS);
-                ((MetaClassImpl)metaClass).setProperties(bean, (Map) args[0]);
+                try {
+                    ((MetaClassImpl)metaClass).setProperties(bean, (Map) args[0]);
+                } catch (GroovyRuntimeException gre) {
+                    throw ScriptBytecodeAdapter.unwrap(gre);
+                }
                 return bean;
             }
             else

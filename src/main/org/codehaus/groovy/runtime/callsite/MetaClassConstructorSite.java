@@ -15,6 +15,9 @@
  */
 package org.codehaus.groovy.runtime.callsite;
 
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
+
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 
 /**
@@ -30,9 +33,13 @@ public class MetaClassConstructorSite extends MetaClassSite {
     }
 
     public Object callConstructor(Object receiver, Object[] args) throws Throwable {
-        if (receiver == metaClass.getTheClass())
-            return metaClass.invokeConstructor(args);
-        else
-          return CallSiteArray.defaultCallConstructor(this, receiver, args);
+        try {
+            if (receiver == metaClass.getTheClass())
+                return metaClass.invokeConstructor(args);
+            else
+              return CallSiteArray.defaultCallConstructor(this, receiver, args);
+        } catch (GroovyRuntimeException gre) {
+            throw ScriptBytecodeAdapter.unwrap(gre);
+        }
     }
 }

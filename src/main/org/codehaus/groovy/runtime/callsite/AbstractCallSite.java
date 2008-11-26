@@ -112,7 +112,7 @@ public class AbstractCallSite implements CallSite {
 
 
 
-    public Object call(Object receiver, Object[] args) {
+    public Object call(Object receiver, Object[] args) throws Throwable {
         return CallSiteArray.defaultCall(this, receiver, args);
     }
 
@@ -162,8 +162,7 @@ public class AbstractCallSite implements CallSite {
         return callCurrent(receiver, ArrayUtil.createArray(arg1, arg2, arg3, arg4));
     }
 
-
-    public Object callStatic (Class receiver, Object [] args) {
+    public Object callStatic (Class receiver, Object [] args) throws Throwable {
         return CallSiteArray.defaultCallStatic(this, receiver, args);
     }
 
@@ -233,11 +232,11 @@ public class AbstractCallSite implements CallSite {
     }
 
 
-    public Object callGetProperty (Object receiver) {
+    public Object callGetProperty (Object receiver) throws Throwable {
         return acceptGetProperty(receiver).getProperty(receiver);
     }
 
-    public Object callGroovyObjectGetProperty (Object receiver) {
+    public Object callGroovyObjectGetProperty (Object receiver) throws Throwable {
         return acceptGroovyObjectGetProperty(receiver).getProperty(receiver);
     }
 
@@ -271,7 +270,7 @@ public class AbstractCallSite implements CallSite {
         return createPogoGetPropertySite (aClass);
     }
 
-    public Object getProperty(Object receiver) {
+    public Object getProperty(Object receiver) throws Throwable {
         throw new UnsupportedOperationException();
     }
 
@@ -335,14 +334,14 @@ public class AbstractCallSite implements CallSite {
         return site;
     }
 
-    public final Object callGetPropertySafe (Object receiver) {
+    public final Object callGetPropertySafe (Object receiver) throws Throwable {
         if (receiver == null)
           return null;
         else
           return callGetProperty(receiver);
     }
 
-    public final Object callGroovyObjectGetPropertySafe (Object receiver) {
+    public final Object callGroovyObjectGetPropertySafe (Object receiver) throws Throwable {
         if (receiver == null)
           return null;
         else
