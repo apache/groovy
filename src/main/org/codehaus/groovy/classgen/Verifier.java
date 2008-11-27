@@ -694,7 +694,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         Statement firstStatement = constructorNode.getFirstStatement();
         ConstructorCallExpression first = getFirstIfSpecialConstructorCall(firstStatement);
         
-        // in case of this(...) let the other constructor do the intit
+        // in case of this(...) let the other constructor do the init
         if (first!=null && first.isThisCall()) return;
         
         List statements = new ArrayList();
@@ -740,10 +740,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         return null;
     }
 
-    protected void addFieldInitialization(
-        List list,
-        List staticList,
-        FieldNode fieldNode) {
+    protected void addFieldInitialization(List list, List staticList, FieldNode fieldNode) {
         Expression expression = fieldNode.getInitialExpression();
         if (expression != null) {
             ExpressionStatement statement =
