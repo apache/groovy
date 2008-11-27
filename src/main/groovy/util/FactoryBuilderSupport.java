@@ -23,6 +23,7 @@ import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -153,24 +154,35 @@ public abstract class FactoryBuilderSupport extends Binding {
         }
         autoRegistrationRunning = true;
         try {
-            for (Method method : getClass().getMethods()) {
-                if (method.getName().startsWith("register") && method.getParameterTypes().length == 0) {
-                    registringGroupName = method.getName().substring("register".length());
-                    registrationGroup.put(registringGroupName, new TreeSet<String>());
-                    try {
-                        method.invoke(this);
-                    } catch (IllegalAccessException e) {
-                        throw new RuntimeException("Cound not init " + getClass().getName() + " because of an access error in " + method.getName(), e);
-                    } catch (InvocationTargetException e) {
-                        throw new RuntimeException("Cound not init " + getClass().getName() + " because of an exception in " + method.getName(), e);
-                    } finally {
-                        registringGroupName = "";
-                    }
-                }
-            }
+            callAutoRegisterMethods(getClass());
         } finally {
             autoRegistrationComplete = true;
             autoRegistrationRunning = false;
+        }
+    }
+
+    private void callAutoRegisterMethods(Class declaredClass) {
+        if (declaredClass == null) {
+            return;
+        }
+        callAutoRegisterMethods(declaredClass.getSuperclass());
+
+        for (Method method : declaredClass.getDeclaredMethods()) {
+            if (method.getName().startsWith("register") && method.getParameterTypes().length == 0) {
+                registringGroupName = method.getName().substring("register".length());
+                registrationGroup.put(registringGroupName, new TreeSet<String>());
+                try {
+                    if (Modifier.isPublic(method.getModifiers())) {
+                        method.invoke(this);
+                    }
+                } catch (IllegalAccessException e) {
+                    throw new RuntimeException("Cound not init " + getClass().getName() + " because of an access error in " + declaredClass.getName() + "." + method.getName(), e);
+                } catch (InvocationTargetException e) {
+                    throw new RuntimeException("Cound not init " + getClass().getName() + " because of an exception in " + declaredClass.getName() + "." + method.getName(), e);
+                } finally {
+                    registringGroupName = "";
+                }
+            }
         }
     }
 
