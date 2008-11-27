@@ -88,6 +88,26 @@ class StaticImportTest extends GroovyTestCase {
         assert cfield == 21
         assert pfield == 42
     }
+    
+    void testStaticimportAndDefaultValue() {
+      assertScript """
+        import static Foo.*
+        import static Bar.*
+        
+        class Bar {
+          static void bar() { 
+            assert foo(10,1000) == 1010 
+            assert foo(10) == 110
+          }
+        }
+        
+        class Foo {
+          static int foo(int x, int y = 100) {x+y}
+        }
+        
+        Bar.bar()
+      """  
+    }
 }
 
 class API {

@@ -1020,13 +1020,27 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         }
         for (Iterator iter = getMethods(name).iterator(); iter.hasNext();) {
             MethodNode method = (MethodNode) iter.next();
-            if (method.getParameters().length == count && method.isStatic()) {
-                return true;
-            }
-            // handle varargs case
-            if (method.isStatic() && method.getParameters().length > 0 &&
-                method.getParameters()[method.getParameters().length - 1].getType().isArray()) {
-                if (count >= method.getParameters().length - 1) return true;
+            
+            if(method.isStatic()) {
+                Parameter[] parameters = method.getParameters(); 
+                if (parameters.length == count) return true;
+
+                // handle varargs case
+                if (parameters.length > 0 && parameters[parameters.length - 1].getType().isArray()) {
+                    if (count >= parameters.length - 1) return true;
+                }
+                
+                // handle parameters with default values
+                int nonDefaultParameters = 0;
+                for(int i = 0; i < parameters.length; i++) {
+                    if(parameters[i].hasInitialExpression() == false) {
+                        nonDefaultParameters++;
+                    }
+                }
+                
+                if(count < parameters.length && nonDefaultParameters <= count) {
+                    return true;
+                }
             }
         }
         return false;
