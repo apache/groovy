@@ -3674,19 +3674,14 @@ public class AsmClassGenerator extends ClassGenerator {
         int col = statement.getColumnNumber();
         this.currentASTNode = statement;
 
-        boolean createEntry = true;
         if (line >= 0) {
-            columnNumber = col;
-            createEntry = lineNumber!=line;
             lineNumber = line;
+            columnNumber = col;
         }
-
         if (line >= 0 && mv != null) {
-            if (createEntry) {
-                Label l = new Label();
-                mv.visitLabel(l);
-                mv.visitLineNumber(line, l);
-            }
+            Label l = new Label();
+            mv.visitLabel(l);
+            mv.visitLineNumber(line, l);
             if (ASM_DEBUG) {
                 helper.mark(message + "[" + statement.getLineNumber() + ":" + statement.getColumnNumber() + "]");
             }
