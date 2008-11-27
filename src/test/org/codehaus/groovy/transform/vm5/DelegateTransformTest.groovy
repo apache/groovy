@@ -82,4 +82,13 @@ class DelegateTransformTest extends GroovyShellTestCase {
         res.value = 123
         assertEquals 12, res.value
     }
+    
+    void testUsingDateCompiles () {
+      assertScript """
+        class Foo { 
+          @Delegate Date d = new Date(); 
+        } 
+        Foo
+      """
+    }
 }
