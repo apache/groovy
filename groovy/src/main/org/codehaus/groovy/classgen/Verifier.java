@@ -725,8 +725,19 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         addCovariantMethods(classNode, declaredMethods, methodsToAdd, genericsSpec);
 
-        for (Iterator it = methodsToAdd.values().iterator(); it.hasNext();) {
-            MethodNode method = (MethodNode) it.next();
+        Set declaredMethodsSet = new HashSet();
+        if (methodsToAdd.size()>0) {
+            for (Iterator methodsIterator = declaredMethods.iterator(); methodsIterator.hasNext();) {
+                MethodNode m = (MethodNode) methodsIterator.next();
+                declaredMethodsSet.add(m.getTypeDescriptor());
+            }
+        }
+        
+        for (Iterator it = methodsToAdd.entrySet().iterator(); it.hasNext();) {
+            Map.Entry entry = (Map.Entry) it.next();
+            MethodNode method = (MethodNode) entry.getValue();
+            // we skip bridge methods implemented in current class already
+            if (declaredMethodsSet.contains(entry.getKey())) continue;
             classNode.addMethod(method);
         }
     }
