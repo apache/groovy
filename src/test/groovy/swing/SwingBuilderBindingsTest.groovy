@@ -355,58 +355,6 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
       }
     }
 
-    public void testMutualPropertyBinding() {
-      testInEDT {
-        SwingBuilder swing = new SwingBuilder()
-
-        swing.actions() {
-            bean(new BindableBean(), id:'cb')
-            textField(id:'txt', enabled:bind(source:cb, sourceProperty:'enabled', id:'binding', mutual:true))
-        }
-
-          // test gorward binding
-        assert swing.txt.enabled == swing.cb.enabled
-        swing.cb.enabled = !swing.cb.enabled
-        assert swing.txt.enabled == swing.cb.enabled
-        swing.cb.enabled = !swing.cb.enabled
-        assert swing.txt.enabled == swing.cb.enabled
-
-          // test reverse binding
-        swing.txt.enabled = !swing.txt.enabled
-        assert swing.txt.enabled == swing.cb.enabled
-        swing.txt.enabled = !swing.txt.enabled
-        assert swing.txt.enabled == swing.cb.enabled
-
-        // test rebound
-        swing.binding.rebind()
-        swing.cb.enabled = !swing.cb.enabled
-        assert swing.txt.enabled == swing.cb.enabled
-        swing.txt.enabled = !swing.txt.enabled
-        assert swing.txt.enabled == swing.cb.enabled
-
-        // test unbound not updating
-        swing.binding.unbind()
-        swing.cb.enabled = !swing.cb.enabled
-        assert swing.txt.enabled != swing.cb.enabled
-        swing.txt.enabled = !swing.txt.enabled
-        assert swing.txt.enabled == swing.cb.enabled
-        swing.txt.enabled = !swing.txt.enabled
-        assert swing.txt.enabled != swing.cb.enabled
-
-        // test manual forward update
-        swing.txt.enabled = !swing.cb.enabled
-        assert swing.txt.enabled != swing.cb.enabled
-        swing.binding.update()
-        assert swing.txt.enabled == swing.cb.enabled
-
-        // test manual reverse update
-        swing.txt.enabled = !swing.cb.enabled
-        assert swing.txt.enabled != swing.cb.enabled
-        swing.binding.reverseUpdate()
-        assert swing.txt.enabled == swing.cb.enabled
-      }
-    }
-
     public void testBindGroup() {
       testInEDT {
         SwingBuilder swing = new SwingBuilder()
@@ -706,8 +654,4 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         assert swing.textField.text != bean.name
       }
     }
-}
-
-class BindableBean {
-    @Bindable boolean enabled
 }
