@@ -18,4 +18,17 @@ public class CovariantReturnTest extends CompilableTestSupport {
       assert a < b
     """
   }
+  
+  void testBridgeMethodExistsOnImplementingClass() {
+    shouldCompile """
+      interface IBar<T>{
+        int testMethod(T obj)
+      }
+                
+      class Bar implements IBar<Date>{
+        int testMethod(Date dt){}
+        int testMethod(Object obj){}
+      }
+    """
+  }
 }
