@@ -22,8 +22,47 @@ class ArrayTest extends GroovyTestCase {
            assert array.size() == 3
     }
 
+    void testCharArrayAssignToElement() {
+        char[] ca = new char[1]
+
+        // Assignments statements.
+        ca[0] = 'b' as char
+        assert ca[0] == 'b'
+
+        ca[0] = '\u00A1' as char
+        assert ca[0] == '\u00A1'
+
+        ca[0] = 'a'
+        assert ca[0] == 'a'
+
+        ca[0] = '\u00A0'
+        assert ca[0] == '\u00A0'
+
+        def foo = 'z'
+        
+        ca[0] = "$foo"
+        assert ca[0] == 'z'
+        
+        // Assignment in value context.
+        assert (ca[0] = 'b' as char) == 'b'
+        assert ca[0] == 'b'
+
+        assert (ca[0] = '\u00A1' as char) == '\u00A1'
+        assert ca[0] == '\u00A1'
+
+        assert (ca[0] = 'a') == 'a'
+        assert ca[0] == 'a'
+
+        assert (ca[0] = '\u00A0') == '\u00A0'
+        assert ca[0] == '\u00A0'
+
+        assert (ca[0] = "$foo") == 'z'
+        assert ca[0] == 'z'
+    }
+    
     void testCharArrayWithInitializer() {
-        char[] array = [ 'a', 'b', 'c' ]
+        def bar = 'c'
+        char[] array = [ 'a', 'b', "$bar" ]
         assert array.size() == 3
         assert array[0] == 'a' , array.inspect()
         assert array[1] == 'b'

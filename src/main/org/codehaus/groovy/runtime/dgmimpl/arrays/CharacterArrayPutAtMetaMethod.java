@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.runtime.dgmimpl.arrays;
 
+import groovy.lang.GString;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
@@ -38,7 +39,15 @@ public class CharacterArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
         public Object invoke(Object object, Object[] args) {
             final char[] objects = (char[]) object;
             final int index = normaliseIndex(((Integer) args[0]).intValue(), objects.length);
-            objects[index] = ((Character)args[1]).charValue();
+            Object newValue = args[1];
+            if (newValue instanceof GString) newValue = newValue.toString();
+            if (newValue instanceof String) {
+                String s = (String) newValue;
+                if (s.length() != 1) throw new IllegalArgumentException("String of length 1 expected but got a bigger one");
+                objects[index] = s.charAt(0);
+            } else {
+                objects[index] = ((Character) newValue).charValue();
+            }
             return null;
         }
 
