@@ -21,6 +21,7 @@ import java.awt.event.ActionEvent
 import javax.swing.DefaultBoundedRangeModel
 import javax.swing.DefaultButtonModel
 import javax.swing.text.PlainDocument
+import groovy.beans.Bindable
 
 public class SwingBuilderBindingsTest extends GroovySwingTestCase {
 
@@ -359,26 +360,31 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         SwingBuilder swing = new SwingBuilder()
 
         swing.actions() {
-            checkBox('Button!', id:'cb')
+            bean(new BindableBean(), id:'cb')
             textField(id:'txt', enabled:bind(source:cb, sourceProperty:'enabled', id:'binding', mutual:true))
         }
+
+          // test gorward binding
         assert swing.txt.enabled == swing.cb.enabled
         swing.cb.enabled = !swing.cb.enabled
         assert swing.txt.enabled == swing.cb.enabled
         swing.cb.enabled = !swing.cb.enabled
         assert swing.txt.enabled == swing.cb.enabled
 
+          // test reverse binding
         swing.txt.enabled = !swing.txt.enabled
         assert swing.txt.enabled == swing.cb.enabled
         swing.txt.enabled = !swing.txt.enabled
         assert swing.txt.enabled == swing.cb.enabled
 
+        // test rebound
         swing.binding.rebind()
         swing.cb.enabled = !swing.cb.enabled
         assert swing.txt.enabled == swing.cb.enabled
         swing.txt.enabled = !swing.txt.enabled
         assert swing.txt.enabled == swing.cb.enabled
 
+        // test unbound not updating
         swing.binding.unbind()
         swing.cb.enabled = !swing.cb.enabled
         assert swing.txt.enabled != swing.cb.enabled
@@ -387,11 +393,13 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         swing.txt.enabled = !swing.txt.enabled
         assert swing.txt.enabled != swing.cb.enabled
 
+        // test manual forward update
         swing.txt.enabled = !swing.cb.enabled
         assert swing.txt.enabled != swing.cb.enabled
         swing.binding.update()
         assert swing.txt.enabled == swing.cb.enabled
 
+        // test manual reverse update
         swing.txt.enabled = !swing.cb.enabled
         assert swing.txt.enabled != swing.cb.enabled
         swing.binding.reverseUpdate()
@@ -698,4 +706,8 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         assert swing.textField.text != bean.name
       }
     }
+}
+
+class BindableBean {
+    @Bindable boolean enabled
 }

@@ -1225,6 +1225,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
 
         def swing = new SwingBuilder()
         boolean finishedBuild = false;
+        boolean postFailBlock = false;
 
         Thread t = Thread.start {
             shouldFail {
@@ -1235,10 +1236,11 @@ class SwingBuilderTest extends GroovySwingTestCase {
                 }
                 finishedBuild = true
             }
+            postFailBlock = true
             synchronized(swing) { swing.notifyAll() }
         }
         synchronized(swing) { swing.wait(2000); }
-        if (t.isAlive()) {
+        if (!postFailBlock && t.isAlive()) {
             Thread.start {
                 sleep(1000)
                 exit(0)
@@ -1249,6 +1251,8 @@ class SwingBuilderTest extends GroovySwingTestCase {
             fail("The EDT method should have caused the build to fail")
         }
 
+        postFailBlock = false
+        finishedBuild = false
         t = Thread.start {
             shouldFail {
                 swing.edt {
@@ -1260,10 +1264,11 @@ class SwingBuilderTest extends GroovySwingTestCase {
                 }
                 finishedBuild = true
             }
+            postFailBlock = true;
             synchronized(swing) { swing.notifyAll() }
         }
         synchronized(swing) { swing.wait(2000); }
-        if (t.isAlive()) {
+        if (!postFailBlock && t.isAlive()) {
             Thread.start {
                 sleep(1000)
                 exit(0)
@@ -1282,10 +1287,11 @@ class SwingBuilderTest extends GroovySwingTestCase {
                 }
             }
             finishedBuild = true
+            postFailBlock = true;
             synchronized(swing) { swing.notifyAll() }
         }
         synchronized(swing) { swing.wait(2000); }
-        if (t.isAlive()) {
+        if (!postFailBlock && t.isAlive()) {
             Thread.start {
                 sleep(1000)
                 exit(0)
