@@ -249,10 +249,11 @@ public class AbstractCallSite implements CallSite {
     }
 
     protected final CallSite createGetPropertySite(Object receiver) {
-        if (receiver instanceof GroovyObject) {
+        if (receiver==null) {
+            return new NullCallSite(this);
+        } else if (receiver instanceof GroovyObject) {
             return createGroovyObjectGetPropertySite(receiver);
-        }
-        if (receiver instanceof Class) {
+        } else if (receiver instanceof Class) {
             return createClassMetaClassGetPropertySite ((Class) receiver);
         }
         return createPojoMetaClassGetPropertySite(receiver);

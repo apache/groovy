@@ -153,22 +153,4 @@ public final class CallSiteArray {
     private static void replaceCallSite(CallSite oldSite, CallSite newSite) {
         oldSite.getArray().array [oldSite.getIndex()] = newSite;
     }
-
-    private static class NullCallSite extends AbstractCallSite {
-        public NullCallSite(CallSite callSite) {
-            super(callSite);
-        }
-
-        public final Object call(Object receiver, Object[] args) throws Throwable {
-            if (receiver == null) {
-                try{
-                    return InvokerHelper.invokeMethod(NullObject.getNullObject(), name, args);
-                } catch (GroovyRuntimeException gre) {
-                    throw ScriptBytecodeAdapter.unwrap(gre);
-                }
-            } else {
-                return CallSiteArray.defaultCall(this, receiver, args);
-            }
-        }
-    }
 }

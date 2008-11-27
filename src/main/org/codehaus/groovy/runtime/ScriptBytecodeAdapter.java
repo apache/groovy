@@ -479,6 +479,7 @@ public class ScriptBytecodeAdapter {
 
     public static void setProperty(Object messageArgument, Class senderClass, Object receiver, String messageName) throws Throwable {
         try {
+            if (receiver==null) receiver=NullObject.getNullObject();
             InvokerHelper.setProperty(receiver, messageName, messageArgument);
         } catch (GroovyRuntimeException gre) {
             throw unwrap(gre);
