@@ -339,6 +339,14 @@ public class SwingBuilder extends FactoryBuilderSupport {
         SwingBuilder builder = new SwingBuilder()
         return builder.edt(c)
     }
+    
+    public Object build(Script s) {
+        if (headless || SwingUtilities.isEventDispatchThread()) {
+            super.build(s)
+        } else {
+            edt { super.build(s) }
+        }
+    }
 
     public KeyStroke shortcut(key, modifier = 0) {
         return KeyStroke.getKeyStroke(key, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask() | modifier)
