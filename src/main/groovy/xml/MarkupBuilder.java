@@ -151,25 +151,28 @@ public class MarkupBuilder extends BuilderSupport {
     }
 
     protected Object createNode(Object name) {
-        toState(1, name);
+        Object theName = getName(name);
+        toState(1, theName);
         this.nodeIsEmpty = true;
-        return name;
+        return theName;
     }
 
     protected Object createNode(Object name, Object value) {
+        Object theName = getName(name);
         if (value == null){
-            return createNode(name);
+            return createNode(theName);
         } else {
-            toState(2, name);
+            toState(2, theName);
             this.nodeIsEmpty = false;
             out.print(">");
             out.print(escapeElementContent(value.toString()));
-            return name;
+            return theName;
         }
     }
 
     protected Object createNode(Object name, Map attributes, Object value) {
-        toState(1, name);
+        Object theName = getName(name);
+        toState(1, theName);
         for (Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry) iter.next();
             Object attributeValue = entry.getValue();
@@ -193,7 +196,7 @@ public class MarkupBuilder extends BuilderSupport {
             nodeIsEmpty = true;
         }
 
-        return name;
+        return theName;
     }
 
     protected Object createNode(Object name, Map attributes) {
@@ -405,7 +408,7 @@ public class MarkupBuilder extends BuilderSupport {
                         if (!nodeIsEmpty) {
                             out.println();
                             out.incrementIndent();
-                            out.printIndent();                            
+                            out.printIndent();
                         }
                         out.print("<");
                         print(name);
@@ -446,5 +449,12 @@ public class MarkupBuilder extends BuilderSupport {
                 break;
         }
         state = next;
+    }
+
+    private Object getName(Object name) {
+        if (name instanceof QName) {
+            return ((QName) name).getQualifiedName();
+        }
+        return name;
     }
 }
