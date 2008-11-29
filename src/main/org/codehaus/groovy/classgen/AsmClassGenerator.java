@@ -4195,7 +4195,7 @@ public class AsmClassGenerator extends ClassGenerator {
      * @return true if the given name is a local variable or a field
      */
     protected boolean isFieldOrVariable(String name) {
-        return compileStack.containsVariable(name) || classNode.getField(name) != null;
+        return compileStack.containsVariable(name) || classNode.getDeclaredField(name) != null;
     }
 
     /**
