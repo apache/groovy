@@ -334,10 +334,23 @@ public class SwingBuilder extends FactoryBuilderSupport {
      * @param c run this closure in the builder using the edt method
      * @deprecated To replace it use new SwingBuidler().edt(Closure)
      */
-    @Deprecated
     public static SwingBuilder build(Closure c) {
         SwingBuilder builder = new SwingBuilder()
         return builder.edt(c)
+    }
+
+    /**
+     * Override FactoryBuilderSupport.build(Script) in order to 
+     * provide backward compatibility to thread breakage in 1.6.
+     *
+     * @param s run this script in the builder using the edt method
+     */
+    public Object build(Script s) {
+        if (headless || SwingUtilities.isEventDispatchThread()) {
+            super.build(s)
+        } else {
+            edt { super.build(s) }
+        }
     }
     
     public KeyStroke shortcut(key, modifier = 0) {
