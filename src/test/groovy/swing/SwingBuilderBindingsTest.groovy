@@ -354,51 +354,6 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
       }
     }
 
-    public void testMutualPropertyBinding() {
-      testInEDT {
-        SwingBuilder swing = new SwingBuilder()
-
-        swing.actions() {
-            checkBox('Button!', id:'cb')
-            textField(id:'txt', enabled:bind(source:cb, sourceProperty:'enabled', id:'binding', mutual:true))
-        }
-        assert swing.txt.enabled == swing.cb.enabled
-        swing.cb.enabled = !swing.cb.enabled
-        assert swing.txt.enabled == swing.cb.enabled
-        swing.cb.enabled = !swing.cb.enabled
-        assert swing.txt.enabled == swing.cb.enabled
-
-        swing.txt.enabled = !swing.txt.enabled
-        assert swing.txt.enabled == swing.cb.enabled
-        swing.txt.enabled = !swing.txt.enabled
-        assert swing.txt.enabled == swing.cb.enabled
-
-        swing.binding.rebind()
-        swing.cb.enabled = !swing.cb.enabled
-        assert swing.txt.enabled == swing.cb.enabled
-        swing.txt.enabled = !swing.txt.enabled
-        assert swing.txt.enabled == swing.cb.enabled
-
-        swing.binding.unbind()
-        swing.cb.enabled = !swing.cb.enabled
-        assert swing.txt.enabled != swing.cb.enabled
-        swing.txt.enabled = !swing.txt.enabled
-        assert swing.txt.enabled == swing.cb.enabled
-        swing.txt.enabled = !swing.txt.enabled
-        assert swing.txt.enabled != swing.cb.enabled
-
-        swing.txt.enabled = !swing.cb.enabled
-        assert swing.txt.enabled != swing.cb.enabled
-        swing.binding.update()
-        assert swing.txt.enabled == swing.cb.enabled
-
-        swing.txt.enabled = !swing.cb.enabled
-        assert swing.txt.enabled != swing.cb.enabled
-        swing.binding.reverseUpdate()
-        assert swing.txt.enabled == swing.cb.enabled
-      }
-    }
-
     public void testBindGroup() {
       testInEDT {
         SwingBuilder swing = new SwingBuilder()
