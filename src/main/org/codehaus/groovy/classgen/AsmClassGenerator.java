@@ -4092,25 +4092,6 @@ public class AsmClassGenerator extends ClassGenerator {
         return arguments instanceof TupleExpression || arguments instanceof ClosureExpression;
     }
 
-    /**
-     * @return true if the given expression represents a non-static field
-     */
-    protected boolean isNonStaticField(Expression expression) {
-        FieldNode field = null;
-        if (expression instanceof VariableExpression) {
-            VariableExpression varExp = (VariableExpression) expression;
-            field = classNode.getDeclaredField(varExp.getName());
-        } else if (expression instanceof FieldExpression) {
-            FieldExpression fieldExp = (FieldExpression) expression;
-            field = classNode.getDeclaredField(fieldExp.getFieldName());
-        } else if (expression.getClass() == PropertyExpression.class) {
-            PropertyExpression fieldExp = (PropertyExpression) expression;
-            String possibleField = fieldExp.getPropertyAsString();
-            if (possibleField != null) field = classNode.getDeclaredField(possibleField);
-        }
-      return field != null && !field.isStatic();
-    }
-
     private static boolean isThisExpression(Expression expression) {
         if (expression instanceof VariableExpression) {
             VariableExpression varExp = (VariableExpression) expression;
@@ -4214,7 +4195,7 @@ public class AsmClassGenerator extends ClassGenerator {
      * @return true if the given name is a local variable or a field
      */
     protected boolean isFieldOrVariable(String name) {
-        return compileStack.containsVariable(name) || classNode.getDeclaredField(name) != null;
+        return compileStack.containsVariable(name) || classNode.getField(name) != null;
     }
 
     /**
@@ -4268,25 +4249,6 @@ public class AsmClassGenerator extends ClassGenerator {
             answer = context.getCompileUnit();
         }
         return answer;
-    }
-
-    protected boolean isHolderVariable(Expression expression) {
-        if (expression instanceof FieldExpression) {
-            FieldExpression fieldExp = (FieldExpression) expression;
-            return fieldExp.getField().isHolder();
-        }
-        if (expression instanceof VariableExpression) {
-            VariableExpression varExp = (VariableExpression) expression;
-            Variable variable = compileStack.getVariable(varExp.getName(), false);
-            if (variable != null) {
-                return variable.isHolder();
-            }
-            FieldNode field = classNode.getDeclaredField(varExp.getName());
-            if (field != null) {
-                return field.isHolder();
-            }
-        }
-        return false;
     }
 
     public static boolean usesSuper(MethodCallExpression call) {
