@@ -1,4 +1,4 @@
-/*
+b/*
  * Copyright 2003-2007 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License")
@@ -340,14 +340,6 @@ public class SwingBuilder extends FactoryBuilderSupport {
         return builder.edt(c)
     }
     
-    public Object build(Script s) {
-        if (headless || SwingUtilities.isEventDispatchThread()) {
-            super.build(s)
-        } else {
-            edt { super.build(s) }
-        }
-    }
-
     public KeyStroke shortcut(key, modifier = 0) {
         return KeyStroke.getKeyStroke(key, Toolkit.getDefaultToolkit().getMenuShortcutKeyMask() | modifier)
     }
