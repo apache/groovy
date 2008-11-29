@@ -1224,37 +1224,37 @@ class SwingBuilderTest extends GroovySwingTestCase {
         if (headless) return;
 
         def swing = new SwingBuilder()
-        boolean finishedBuild = false;
-        boolean postFailBlock = false;
+        boolean notifyReached = false;
 
+        Throwable caughtThrowable = null
         Thread t = Thread.start {
-            shouldFail {
+            try {
                 swing.frame {
                     edt {
                         label('label')
                     }
                 }
-                finishedBuild = true
+            } catch (Throwable throwable) {
+                caughtThrowable = throwable
             }
-            postFailBlock = true
+            notifyReached = true
             synchronized(swing) { swing.notifyAll() }
         }
         synchronized(swing) { swing.wait(2000); }
-        if (!postFailBlock && t.isAlive()) {
+        if (!notifyReached && t.isAlive()) {
             Thread.start {
                 sleep(1000)
                 exit(0)
             }
             fail("EDT Deadlock")
         }
-        if (finishedBuild) {
-            fail("The EDT method should have caused the build to fail")
+        if (caughtThrowable) {
+            throw caughtThrowable
         }
 
-        postFailBlock = false
-        finishedBuild = false
+        notifyReached = false
         t = Thread.start {
-            shouldFail {
+            try {
                 swing.edt {
                     swing.frame {
                         edt {
@@ -1262,41 +1262,48 @@ class SwingBuilderTest extends GroovySwingTestCase {
                         }
                     }
                 }
-                finishedBuild = true
+            } catch (Throwable throwable) {
+                caughtThrowable = throwable
             }
-            postFailBlock = true;
+            notifyReached = true;
             synchronized(swing) { swing.notifyAll() }
         }
         synchronized(swing) { swing.wait(2000); }
-        if (!postFailBlock && t.isAlive()) {
+        if (!notifyReached && t.isAlive()) {
             Thread.start {
                 sleep(1000)
                 exit(0)
             }
             fail("EDT Deadlock")
         }
-        if (finishedBuild) {
-            fail("The EDT method should have caused the build to fail")
+        if (caughtThrowable) {
+            throw caughtThrowable
         }
 
         // full build in EDT shold be fine
         t = Thread.start {
-            swing.edt {
-                swing.frame {
-                    label('label')
+            try {
+                swing.edt {
+                    swing.frame {
+                        label('label')
+                    }
                 }
+            } catch (Throwable throwable) {
+                caughtThrowable = throwable
             }
-            finishedBuild = true
-            postFailBlock = true;
+            notifyReached = true;
             synchronized(swing) { swing.notifyAll() }
         }
         synchronized(swing) { swing.wait(2000); }
-        if (!postFailBlock && t.isAlive()) {
+        if (!notifyReached && t.isAlive()) {
             Thread.start {
                 sleep(1000)
                 exit(0)
             }
             fail("EDT Deadlock")
+        }
+        if (caughtThrowable) {
+            throw caughtThrowable
         }
 
     }
