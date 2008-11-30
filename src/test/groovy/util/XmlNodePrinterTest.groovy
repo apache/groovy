@@ -13,6 +13,17 @@ class XmlNodePrinterTest extends GroovyTestCase {
 </soap:Envelope>
 """
 
+    def attributeWithNamespaceInput = """<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+  <soap:Body>
+    <Locator xmlns="http://www.foo.com/webservices/AddressBook">
+      <Address ns1:type="Home" xmlns:ns1="http://www.foo.com/webservices/Address">
+        1000 Main St
+      </Address>
+    </Locator>
+  </soap:Body>
+</soap:Envelope>
+"""
+
     def noNamespaceInput = """<Envelope>
   <Body>
     <Locator>
@@ -88,4 +99,11 @@ class XmlNodePrinterTest extends GroovyTestCase {
         assertEquals tagWithSpecialCharsOutput, result
     }
 
+    void testAttributeWithNamespaceInput() {
+        def root = new XmlParser().parseText(attributeWithNamespaceInput)
+        def writer = new StringWriter()
+        new XmlNodePrinter(new PrintWriter(writer), "  ").print(root)
+        def result = writer.toString()
+        assertEquals attributeWithNamespaceInput, result
+    }
 }
