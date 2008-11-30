@@ -314,11 +314,36 @@ public class SwingBuilder extends FactoryBuilderSupport {
      * the closure in the EDT
      *
      * @param c run this closure in the builder using the edt method
-     * @deprecated To replace it use new SwingBuidler().edt(Closure)
      */
-    public static SwingBuilder build(Closure c) {
+    public static SwingBuilder newBuilderInEDT(Closure c) {
         SwingBuilder builder = new SwingBuilder()
         return builder.edt(c)
+    }
+
+    /**
+     * re-director to deail with reprtative method names
+     */
+    public static SwingBuilder '$static_methodMissing'(String method, Object args) {
+        if (method == 'build' && args.length == 1 && args[0] instanceof Closure) {
+            LOG.warning("The build(Closure) API will be removed in a future API.  Please use the edt(Closure) instance method or newBuilderInEDT(Closure) static method")
+            return newBuilderInEDT(args[0])
+        } else {
+            throw new MissingMethodException(method, SwingBuilder, args, true)
+        }
+    }
+
+    /**
+     * Compatibility API.  This method will be removed in a future
+     * version of Groovy.
+     *
+     * @param c run this closure in the builder using the edt method
+     * @deprecated To replace it use 'new SwingBuidler().edt(Closure)' or 'SwingBuilder.newBuilderInEDT(Closure)'
+     */
+    @Deprecated
+    public SwingBuilder build(Closure c) {
+        LOG.warning("The build(Closure) API will be removed in a future API.  Please use the edt(Closure) instance method or newBuilderInEDT(Closure) static method")
+        edt(c)
+        return this
     }
 
     public KeyStroke shortcut(key, modifier = 0) {
