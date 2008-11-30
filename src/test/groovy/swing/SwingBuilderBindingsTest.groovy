@@ -21,7 +21,6 @@ import java.awt.event.ActionEvent
 import javax.swing.DefaultBoundedRangeModel
 import javax.swing.DefaultButtonModel
 import javax.swing.text.PlainDocument
-import groovy.beans.Bindable
 
 public class SwingBuilderBindingsTest extends GroovySwingTestCase {
 

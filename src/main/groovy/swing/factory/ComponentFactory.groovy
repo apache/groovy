@@ -42,7 +42,7 @@ class ComponentFactory extends BeanFactory {
                 LayoutFactory.getLayoutTarget(parent).add(child)
             }
         } catch (MissingPropertyException mpe) {
-            LayoutFactory.getLayoutTarget(parent)parentComponent.add(child)
+            LayoutFactory.getLayoutTarget(parent).add(child)
         }
     }
 }
