@@ -117,7 +117,8 @@ public abstract class FactoryBuilderSupport extends Binding {
     private List<Closure> disposalClosures = new ArrayList<Closure>(); // because of reverse iteration use ArrayList
     private Map<String, Factory> factories = new HashMap<String, Factory>();
     private Closure nameMappingClosure;
-    private ThreadLocal<FactoryBuilderSupport> _proxyBuilder = new ThreadLocal<FactoryBuilderSupport>();
+    private ThreadLocal<FactoryBuilderSupport> _localProxyBuilder = new ThreadLocal<FactoryBuilderSupport>();
+    private FactoryBuilderSupport _globalProxyBuilder;
     protected LinkedList<Closure> preInstantiateDelegates = new LinkedList<Closure>();
     protected LinkedList<Closure> postInstantiateDelegates = new LinkedList<Closure>();
     protected LinkedList<Closure> postNodeCompletionDelegates = new LinkedList<Closure>();
@@ -134,6 +135,7 @@ public abstract class FactoryBuilderSupport extends Binding {
     }
 
     public FactoryBuilderSupport(boolean init) {
+        _globalProxyBuilder = this;
         registrationGroup.put(registringGroupName, new TreeSet<String>());
         if (init) {
             autoRegisterNodes();
@@ -852,9 +854,9 @@ public abstract class FactoryBuilderSupport extends Binding {
      * @return the current builder that serves as a proxy.<br>
      */
     protected FactoryBuilderSupport getProxyBuilder() {
-        FactoryBuilderSupport proxy = _proxyBuilder.get();
+        FactoryBuilderSupport proxy = _localProxyBuilder.get();
         if (proxy == null) {
-            return this;
+            return _globalProxyBuilder;
         } else {
             return proxy;
         }
@@ -866,7 +868,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      * @param proxyBuilder the new proxy
      */
     protected void setProxyBuilder(FactoryBuilderSupport proxyBuilder) {
-        _proxyBuilder.set(proxyBuilder);
+        _globalProxyBuilder = proxyBuilder;
     }
 
     public Closure getNameMappingClosure() {
@@ -1057,7 +1059,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      */
     protected Map<String, Object> getContinuationData() {
         Map<String, Object> data = new HashMap<String, Object>();
-        data.put("proxyBuilder", _proxyBuilder.get());
+        data.put("proxyBuilder", _localProxyBuilder.get());
         data.put("contexts", _contexts.get());
         return data;
     }
@@ -1070,7 +1072,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      */
     protected void restoreFromContinuationData(Map<String, Object> data) {
         //noinspection unchecked
-        _proxyBuilder.set((FactoryBuilderSupport) data.get("proxyBuilder"));
+        _localProxyBuilder.set((FactoryBuilderSupport) data.get("proxyBuilder"));
         //noinspection unchecked
         _contexts.set((LinkedList<Map<String, Object>>) data.get("contexts"));
     }
@@ -1119,15 +1121,15 @@ public abstract class FactoryBuilderSupport extends Binding {
 
         Object result = null;
         Object previousContext = getProxyBuilder().getContext();
-        FactoryBuilderSupport previousProxyBuilder = getProxyBuilder();
+        FactoryBuilderSupport previousProxyBuilder = _localProxyBuilder.get();
         try {
-            setProxyBuilder(builder);
+            _localProxyBuilder.set(builder);
             closure.setDelegate(builder);
             result = closure.call();
         }
         catch (RuntimeException e) {
             // remove contexts created after we started
-            setProxyBuilder(previousProxyBuilder);
+            _localProxyBuilder.set(previousProxyBuilder);
             if (getProxyBuilder().getContexts().contains(previousContext)) {
                 Map<String, Object> context = getProxyBuilder().getContext();
                 while (context != null && context != previousContext) {
@@ -1138,7 +1140,7 @@ public abstract class FactoryBuilderSupport extends Binding {
             throw e;
         }
         finally {
-            setProxyBuilder(previousProxyBuilder);
+            _localProxyBuilder.set(previousProxyBuilder);
         }
 
         return result;
