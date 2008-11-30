@@ -17,6 +17,7 @@
 package groovy.util;
 
 import groovy.xml.QName;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
@@ -24,8 +25,6 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-
-import org.codehaus.groovy.runtime.InvokerHelper;
 
 /**
  * Prints a node with all children in XML format.
@@ -61,31 +60,6 @@ public class XmlNodePrinter {
 
     public XmlNodePrinter() {
         this(new PrintWriter(new OutputStreamWriter(System.out)));
-    }
-
-    public String getNameOfNode(Node node) {
-        if (node == null) {
-            throw new IllegalArgumentException("Node must not be null!");
-        }
-        Object name = node.name();
-        if (name instanceof QName) {
-            QName qname = (QName) name;
-            if (!namespaceAware) {
-                return qname.getLocalPart();
-            }
-            return qname.getQualifiedName();
-        }
-        return name.toString();
-    }
-
-    public boolean isEmptyElement(Node node) {
-        if (node == null) {
-            throw new IllegalArgumentException("Node must not be null!");
-        }
-        if (!node.children().isEmpty()) {
-            return false;
-        }
-        return node.text().length() == 0;
     }
 
     public void print(Node node) {
@@ -135,11 +109,11 @@ public class XmlNodePrinter {
         if (isEmptyElement(node)) {
             printLineBegin();
             out.print("<");
-            out.print(getNameOfNode(node));
+            out.print(getName(node));
             if (ctx != null) {
                 printNamespace(node, ctx);
             }
-            printNameAttributes(node.attributes());
+            printNameAttributes(node.attributes(), ctx);
             out.print("/>");
             printLineEnd();
             out.flush();
@@ -208,15 +182,9 @@ public class XmlNodePrinter {
         out.decrementIndent();
     }
 
-    private void printSimpleItemWithIndent(Object value) {
-        out.incrementIndent();
-        printSimpleItem(value);
-        out.decrementIndent();
-    }
-
     protected void printSimpleItem(Object value) {
         printLineBegin();
-        printEscaped(InvokerHelper.toString(value));        
+        printEscaped(InvokerHelper.toString(value));
         printLineEnd();
     }
 
@@ -233,25 +201,55 @@ public class XmlNodePrinter {
         if (!begin) {
             out.print("/");
         }
-        out.print(getNameOfNode(node));
+        out.print(getName(node));
         if (ctx != null) {
             printNamespace(node, ctx);
         }
         if (begin) {
-            printNameAttributes(node.attributes());
+            printNameAttributes(node.attributes(), ctx);
         }
         out.print(">");
         printLineEnd();
     }
 
-    protected void printNameAttributes(Map attributes) {
+    protected boolean printSpecialNode(Node node) {
+        return false;
+    }
+
+    protected void printNamespace(Object object, NamespaceContext ctx) {
+        if (namespaceAware) {
+            if (object instanceof Node) {
+                printNamespace(((Node) object).name(), ctx);
+            } else if (object instanceof QName) {
+                QName qname = (QName) object;
+                String namespaceUri = qname.getNamespaceURI();
+                if (namespaceUri != null) {
+                    String prefix = qname.getPrefix();
+                    if (!ctx.isNamespaceRegistered(namespaceUri)) {
+                        ctx.registerNamespacePrefix(namespaceUri, prefix);
+                        out.print(" ");
+                        out.print("xmlns");
+                        if (prefix.length() > 0) {
+                            out.print(":");
+                            out.print(prefix);
+                        }
+                        out.print("=" + quote);
+                        out.print(namespaceUri);
+                        out.print(quote);
+                    }
+                }
+            }
+        }
+    }
+
+    protected void printNameAttributes(Map attributes, NamespaceContext ctx) {
         if (attributes == null || attributes.isEmpty()) {
             return;
         }
         for (Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry) iter.next();
             out.print(" ");
-            out.print(entry.getKey().toString());
+            out.print(getName(entry.getKey()));
             out.print("=");
             Object value = entry.getValue();
             out.print(quote);
@@ -261,7 +259,40 @@ public class XmlNodePrinter {
                 printEscaped(InvokerHelper.toString(value));
             }
             out.print(quote);
+            printNamespace(entry.getKey(), ctx);
         }
+    }
+
+    private boolean isEmptyElement(Node node) {
+        if (node == null) {
+            throw new IllegalArgumentException("Node must not be null!");
+        }
+        if (!node.children().isEmpty()) {
+            return false;
+        }
+        return node.text().length() == 0;
+    }
+
+    private String getName(Object object) {
+        if (object instanceof String) {
+            return (String) object;
+        } else if (object instanceof QName) {
+            QName qname = (QName) object;
+            if (!namespaceAware) {
+                return qname.getLocalPart();
+            }
+            return qname.getQualifiedName();
+        } else if (object instanceof Node) {
+            Object name = ((Node) object).name();
+            return getName(name);
+        }
+        return object.toString();
+    }
+
+    private void printSimpleItemWithIndent(Object value) {
+        out.incrementIndent();
+        printSimpleItem(value);
+        out.decrementIndent();
     }
 
     // For ' and " we only escape if needed. As far as XML is concerned,
@@ -293,33 +324,6 @@ public class XmlNodePrinter {
                     break;
                 default:
                     out.print(c);
-            }
-        }
-    }
-
-    protected boolean printSpecialNode(Node node) {
-        return false;
-    }
-
-    protected void printNamespace(Node node, NamespaceContext ctx) {
-        Object name = node.name();
-        if (name instanceof QName && namespaceAware) {
-            QName qname = (QName) name;
-            String namespaceUri = qname.getNamespaceURI();
-            if (namespaceUri != null) {
-                String prefix = qname.getPrefix();
-                if (!ctx.isNamespaceRegistered(namespaceUri)) {
-                    ctx.registerNamespacePrefix(namespaceUri, prefix);
-                    out.print(" ");
-                    out.print("xmlns");
-                    if (prefix.length() > 0) {
-                        out.print(":");
-                        out.print(prefix);
-                    }
-                    out.print("=" + quote);
-                    out.print(namespaceUri);
-                    out.print(quote);
-                }
             }
         }
     }
