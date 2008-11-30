@@ -18,7 +18,6 @@ package groovy.swing
 import groovy.swing.factory.*
 import java.awt.*
 import java.lang.reflect.InvocationTargetException
-import java.util.concurrent.locks.ReentrantLock
 import java.util.logging.Logger
 import javax.swing.*
 import javax.swing.border.BevelBorder
@@ -41,11 +40,8 @@ public class SwingBuilder extends FactoryBuilderSupport {
     public static final String DELEGATE_PROPERTY_OBJECT_ID = "_delegateProperty:id";
     public static final String DEFAULT_DELEGATE_PROPERTY_OBJECT_ID = "id";
 
-    ReentrantLock contextLock;
-
     public SwingBuilder(boolean init = true) {
         super(init)
-        contextLock = new ReentrantLock(false); // fair queueing is tempting...
         //registerWidgets()
         headless = GraphicsEnvironment.isHeadless()
         containingWindows = new LinkedList()
@@ -245,18 +241,6 @@ public class SwingBuilder extends FactoryBuilderSupport {
 
     }
 
-    protected Object dispathNodeCall(Object name, Object args) {
-        //TODO we should consider using tryLock(50ms) if we do this in the EDT
-        contextLock.lock()
-        try {
-           return super.dispathNodeCall(name, args)
-        } finally {
-            contextLock.unlock()
-        }
-    }
-
-
-
     /**
      * Utilitiy method to run a closure in EDT,
      * using <code>SwingUtilities.invokeAndWait</cod>.
@@ -264,35 +248,33 @@ public class SwingBuilder extends FactoryBuilderSupport {
      * @param c this closure is run in the EDT
      */
     public SwingBuilder edt(Closure c) {
-        ReentrantLock lock
-        try {
-            lock = proxyBuilder.contextLock
-        } catch (MissingPropertyException mpe) {
-            // don't check the proxy then
-        }
-        if (lock?.isHeldByCurrentThread() || contextLock.isHeldByCurrentThread()) {
-            throw new RuntimeException("The SwingBuilder.edt(Closure) method cannot be called within an ongoing build.")
-        }
         c.setDelegate(this)
         if (headless || SwingUtilities.isEventDispatchThread()) {
             c.call(this)
         } else {
+            Map<String, Object> continuationData = getContinuationData();
             try {
                 if (!(c instanceof MethodClosure)) {
                     c = c.curry([this])
                 }
-                SwingUtilities.invokeAndWait(c)
+                SwingUtilities.invokeAndWait {
+                    restoreFromContinuationData(continuationData)
+                    c()
+                    continuationData = getContinuationData()
+                }
             } catch (InterruptedException e) {
                 throw new GroovyRuntimeException("interrupted swing interaction", e)
             } catch (InvocationTargetException e) {
                 throw new GroovyRuntimeException("exception in event dispatch thread", e.getTargetException())
+            } finally {
+                restoreFromContinuationData(continuationData);
             }
         }
         return this
     }
 
     /**
-     * Utilitiy method to run a closure in EDT,
+     * Utility method to run a closure in EDT,
      * using <code>SwingUtilities.invokeLater</cod>.
      *
      * @param c this closure is run in the EDT
@@ -331,10 +313,10 @@ public class SwingBuilder extends FactoryBuilderSupport {
      * Utility method to create a SwingBuilder, and run the
      * the closure in the EDT
      *
-     * @param c run this closre in the builder using the edt method
+     * @param c run this closure in the builder using the edt method
      * @deprecated To replace it use new SwingBuidler().edt(Closure)
      */
-    @Deprecated
+	@Deprecated
     public static SwingBuilder build(Closure c) {
         SwingBuilder builder = new SwingBuilder()
         return builder.edt(c)
