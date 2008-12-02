@@ -1224,88 +1224,81 @@ class SwingBuilderTest extends GroovySwingTestCase {
         if (headless) return;
 
         def swing = new SwingBuilder()
-        boolean notifyReached = false;
+        Closure threadTest = {c ->
+            boolean notifyReached = false;
+            Throwable caughtThrowable = null
+            Thread t = Thread.start {
+                try {
+                    c()
+                } catch (Throwable throwable) {
+                    caughtThrowable = throwable
+                }
+                notifyReached = true
+                synchronized(swing) { swing.notifyAll() }
+            }
 
-        Throwable caughtThrowable = null
-        Thread t = Thread.start {
-            try {
+            synchronized(swing) { swing.wait(2000); }
+            if (!notifyReached && t.isAlive()) {
+                Thread.start {
+                    sleep(1000)
+                    exit(0)
+                }
+                fail("EDT Deadlock")
+            }
+            if (caughtThrowable) {
+                throw caughtThrowable
+            }
+            assert swing.l.parent != null
+            notifyReached = false
+        }
+
+        threadTest {
+            swing.frame {
+                edt {
+                    label('label', id:'l')
+                }
+            }
+        }
+
+        threadTest {
+            swing.edt {
                 swing.frame {
                     edt {
-                        label('label')
+                        label('label', id:'l')
                     }
                 }
-            } catch (Throwable throwable) {
-                caughtThrowable = throwable
             }
-            notifyReached = true
-            synchronized(swing) { swing.notifyAll() }
-        }
-        synchronized(swing) { swing.wait(2000); }
-        if (!notifyReached && t.isAlive()) {
-            Thread.start {
-                sleep(1000)
-                exit(0)
-            }
-            fail("EDT Deadlock")
-        }
-        if (caughtThrowable) {
-            throw caughtThrowable
-        }
-
-        notifyReached = false
-        t = Thread.start {
-            try {
-                swing.edt {
-                    swing.frame {
-                        edt {
-                            label('label')
-                        }
-                    }
-                }
-            } catch (Throwable throwable) {
-                caughtThrowable = throwable
-            }
-            notifyReached = true;
-            synchronized(swing) { swing.notifyAll() }
-        }
-        synchronized(swing) { swing.wait(2000); }
-        if (!notifyReached && t.isAlive()) {
-            Thread.start {
-                sleep(1000)
-                exit(0)
-            }
-            fail("EDT Deadlock")
-        }
-        if (caughtThrowable) {
-            throw caughtThrowable
         }
 
         // full build in EDT shold be fine
-        t = Thread.start {
-            try {
+        threadTest {
             swing.edt {
                 swing.frame {
-                    label('label')
+                    label('label', id:'l')
                 }
             }
-            } catch (Throwable throwable) {
-                caughtThrowable = throwable
-            }
-            notifyReached = true;
-            synchronized(swing) { swing.notifyAll() }
-        }
-        synchronized(swing) { swing.wait(2000); }
-        if (!notifyReached && t.isAlive()) {
-            Thread.start {
-                sleep(1000)
-                exit(0)
-            }
-            fail("EDT Deadlock")
-        }
-        if (caughtThrowable) {
-            throw caughtThrowable
         }
 
+        // nested build(Closure) call.
+        // Bad form, but it shouldn't break stuff
+        threadTest {
+            swing.frame {
+                build {
+                    label('label', id:'l')
+                }
+            }
+        }
+
+        // insure the legacy static build(Closure) call still works.
+        def oldSwing = swing
+        threadTest {
+            swing = SwingBuilder.build {
+                frame {
+                    label('label', id:'l')
+                }
+            }
+        }
+        assert swing != oldSwing
     }
 
     void testParallelBuild() {
