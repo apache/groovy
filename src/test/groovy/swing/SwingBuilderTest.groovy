@@ -1225,13 +1225,29 @@ class SwingBuilderTest extends GroovySwingTestCase {
 
         def swing = new SwingBuilder()
         boolean notifyReached = false;
-
         Throwable caughtThrowable = null
-        Thread t = Thread.start {
+        Thread t
+        Closure postTestChecks = {
+            synchronized(swing) { swing.wait(2000); }
+            if (!notifyReached && t.isAlive()) {
+                Thread.start {
+                    sleep(1000)
+                    exit(0)
+                }
+                fail("EDT Deadlock")
+            }
+            if (caughtThrowable) {
+                throw caughtThrowable
+            }
+            assert swing.l.parent != null
+            notifyReached = false
+        }
+
+        t = Thread.start {
             try {
                 swing.frame {
                     edt {
-                        label('label')
+                        label('label', id:'l')
                     }
                 }
             } catch (Throwable throwable) {
@@ -1240,25 +1256,14 @@ class SwingBuilderTest extends GroovySwingTestCase {
             notifyReached = true
             synchronized(swing) { swing.notifyAll() }
         }
-        synchronized(swing) { swing.wait(2000); }
-        if (!notifyReached && t.isAlive()) {
-            Thread.start {
-                sleep(1000)
-                exit(0)
-            }
-            fail("EDT Deadlock")
-        }
-        if (caughtThrowable) {
-            throw caughtThrowable
-        }
+        postTestChecks()
 
-        notifyReached = false
         t = Thread.start {
             try {
                 swing.edt {
                     swing.frame {
                         edt {
-                            label('label')
+                            label('label', id:'l')
                         }
                     }
                 }
@@ -1268,24 +1273,14 @@ class SwingBuilderTest extends GroovySwingTestCase {
             notifyReached = true;
             synchronized(swing) { swing.notifyAll() }
         }
-        synchronized(swing) { swing.wait(2000); }
-        if (!notifyReached && t.isAlive()) {
-            Thread.start {
-                sleep(1000)
-                exit(0)
-            }
-            fail("EDT Deadlock")
-        }
-        if (caughtThrowable) {
-            throw caughtThrowable
-        }
+        postTestChecks()
 
         // full build in EDT shold be fine
         t = Thread.start {
             try {
                 swing.edt {
                     swing.frame {
-                        label('label')
+                        label('label', id:'l')
                     }
                 }
             } catch (Throwable throwable) {
@@ -1294,17 +1289,40 @@ class SwingBuilderTest extends GroovySwingTestCase {
             notifyReached = true;
             synchronized(swing) { swing.notifyAll() }
         }
-        synchronized(swing) { swing.wait(2000); }
-        if (!notifyReached && t.isAlive()) {
-            Thread.start {
-                sleep(1000)
-                exit(0)
+        postTestChecks()
+
+        // nested build(Closure) call.
+        // Bad form, but it shouldn't break stuff
+        t = Thread.start {
+            try {
+                swing.frame {
+                    build {
+                        label('label', id:'l')
+                    }
+                }
+            } catch (Throwable throwable) {
+                caughtThrowable = throwable
             }
-            fail("EDT Deadlock")
+            notifyReached = true;
+            synchronized(swing) { swing.notifyAll() }
         }
-        if (caughtThrowable) {
-            throw caughtThrowable
+        postTestChecks()
+
+        // insure the legacy static build(Closure) call still works.
+        t = Thread.start {
+            try {
+                swing = SwingBuilder.build {
+                    frame {
+                        label('label', id:'l')
+                    }
+                }
+            } catch (Throwable throwable) {
+                caughtThrowable = throwable
+            }
+            notifyReached = true;
+            synchronized(swing) { swing.notifyAll() }
         }
+        postTestChecks()
 
     }
 
