@@ -1224,10 +1224,19 @@ class SwingBuilderTest extends GroovySwingTestCase {
         if (headless) return;
 
         def swing = new SwingBuilder()
-        boolean notifyReached = false;
-        Throwable caughtThrowable = null
-        Thread t
-        Closure postTestChecks = {
+        Closure threadTest = {c ->
+            boolean notifyReached = false;
+            Throwable caughtThrowable = null
+            Thread t = Thread.start {
+                try {
+                    c()
+                } catch (Throwable throwable) {
+                    caughtThrowable = throwable
+                }
+                notifyReached = true
+                synchronized(swing) { swing.notifyAll() }
+            }
+
             synchronized(swing) { swing.wait(2000); }
             if (!notifyReached && t.isAlive()) {
                 Thread.start {
@@ -1243,87 +1252,53 @@ class SwingBuilderTest extends GroovySwingTestCase {
             notifyReached = false
         }
 
-        t = Thread.start {
-            try {
+        threadTest {
+            swing.frame {
+                edt {
+                    label('label', id:'l')
+                }
+            }
+        }
+
+        threadTest {
+            swing.edt {
                 swing.frame {
                     edt {
                         label('label', id:'l')
                     }
                 }
-            } catch (Throwable throwable) {
-                caughtThrowable = throwable
             }
-            notifyReached = true
-            synchronized(swing) { swing.notifyAll() }
         }
-        postTestChecks()
-
-        t = Thread.start {
-            try {
-                swing.edt {
-                    swing.frame {
-                        edt {
-                            label('label', id:'l')
-                        }
-                    }
-                }
-            } catch (Throwable throwable) {
-                caughtThrowable = throwable
-            }
-            notifyReached = true;
-            synchronized(swing) { swing.notifyAll() }
-        }
-        postTestChecks()
 
         // full build in EDT shold be fine
-        t = Thread.start {
-            try {
-                swing.edt {
-                    swing.frame {
-                        label('label', id:'l')
-                    }
+        threadTest {
+            swing.edt {
+                swing.frame {
+                    label('label', id:'l')
                 }
-            } catch (Throwable throwable) {
-                caughtThrowable = throwable
             }
-            notifyReached = true;
-            synchronized(swing) { swing.notifyAll() }
         }
-        postTestChecks()
 
         // nested build(Closure) call.
         // Bad form, but it shouldn't break stuff
-        t = Thread.start {
-            try {
-                swing.frame {
-                    build {
-                        label('label', id:'l')
-                    }
+        threadTest {
+            swing.frame {
+                build {
+                    label('label', id:'l')
                 }
-            } catch (Throwable throwable) {
-                caughtThrowable = throwable
             }
-            notifyReached = true;
-            synchronized(swing) { swing.notifyAll() }
         }
-        postTestChecks()
 
         // insure the legacy static build(Closure) call still works.
-        t = Thread.start {
-            try {
-                swing = SwingBuilder.build {
-                    frame {
-                        label('label', id:'l')
-                    }
+        def oldSwing = swing
+        threadTest {
+            swing = SwingBuilder.build {
+                frame {
+                    label('label', id:'l')
                 }
-            } catch (Throwable throwable) {
-                caughtThrowable = throwable
             }
-            notifyReached = true;
-            synchronized(swing) { swing.notifyAll() }
         }
-        postTestChecks()
-
+        assert swing != oldSwing
     }
 
     void testParallelBuild() {
