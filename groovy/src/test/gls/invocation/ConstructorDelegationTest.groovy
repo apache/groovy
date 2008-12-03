@@ -28,4 +28,32 @@ public class ConstructorDelegationTest extends CompilableTestSupport {
     """   
   }
 
+  public void testThisConstructorCallNotOnFirstStmt() {
+      def scriptStr = """
+          class ThisConstructorCall {
+              public ThisConstructorCall() {
+                  println 'dummy first statement'
+                  this(19)
+              }
+              public ThisConstructorCall(int b) {
+                  println 'another dummy statement'
+              }
+          }
+          1
+      """
+      shouldNotCompile(scriptStr)
+  }
+
+  public void testSuperConstructorCallNotOnFirstStmt() {
+      def scriptStr = """
+          class SuperConstructorCall {
+              public SuperConstructorCall() {
+                  println 'dummy first statement'
+                  super()
+              }
+          }
+          1
+      """
+      shouldNotCompile(scriptStr)
+  }
 }
