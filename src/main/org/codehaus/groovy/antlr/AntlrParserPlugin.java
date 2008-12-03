@@ -2132,6 +2132,12 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             objectExpression = expression(selector,true);
         } 
 
+        // if node text is found to be "super"/"this" when a method call is being processed, it is a 
+        // call like this(..)/super(..) after the first statement, which shouldn't be allowed. GROOVY-2836
+        if(selector.getText().equals("this") || selector.getText().equals("super")) {
+        	throw new ASTRuntimeException(elist, "Constructor call must be the first statement in a constructor.");
+        }
+        
         Expression arguments = arguments(elist);
         MethodCallExpression expression = new MethodCallExpression(objectExpression, name, arguments);
         expression.setSafe(safe);
