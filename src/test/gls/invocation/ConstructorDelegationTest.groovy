@@ -28,4 +28,30 @@ public class ConstructorDelegationTest extends CompilableTestSupport {
     """   
   }
 
+  public void testThisConstructorCallNotOnFirstStmt() {
+	  shouldNotCompile """
+          class ThisConstructorCall {
+              public ThisConstructorCall() {
+                  println 'dummy first statement'
+                  this(19)
+              }
+              public ThisConstructorCall(int b) {
+                  println 'another dummy statement'
+              }
+          }
+          1
+      """
+  }
+
+  public void testSuperConstructorCallNotOnFirstStmt() {
+	  shouldNotCompile """
+          class SuperConstructorCall {
+              public SuperConstructorCall() {
+                  println 'dummy first statement'
+                  super()
+              }
+          }
+          1
+      """
+  }
 }
