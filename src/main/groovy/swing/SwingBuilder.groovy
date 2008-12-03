@@ -321,7 +321,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
     }
 
     /**
-     * re-director to deail with reprtative method names
+     * re-director to deal with repetitive method names
      */
     public static SwingBuilder '$static_methodMissing'(String method, Object args) {
         if (method == 'build' && args.length == 1 && args[0] instanceof Closure) {
