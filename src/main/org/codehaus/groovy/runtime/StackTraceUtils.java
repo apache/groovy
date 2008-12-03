@@ -14,6 +14,8 @@
  */
 package org.codehaus.groovy.runtime;
 
+import groovy.lang.Closure;
+
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -21,6 +23,8 @@ import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.LogManager;
 import java.util.logging.Logger;
+
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 /**
  * Originally was grails.utils.GrailsUtils, removed some grails specific stuff.
@@ -62,8 +66,30 @@ public class StackTraceUtils {
                 "gjdk.groovy.,"
             ).split("(\\s|,)+");
 
+    private static List<Closure> tests = new ArrayList<Closure>();
+    
     /**
-     * <p>Remove all apparently groovy-internal trace entries from the exception instance<p>
+     * <p>Adds a groovy.lang.Closure to test whether the stack trace
+     * element should be added or not.</p>
+     * <p>The groovy.lang.Closure will be given the class name as parameter.
+     * the return value decides if the element will be added or not.
+     * <ul>
+     * <li><b>true</b>  - trace element will be added to the trace
+     * <li><b>false</b> - trace element will <b>not</b> be added to the trace
+     * <li><b>null</b>  - continue with next test
+     * </ul>
+     * Groovy truth will be used to determine true and false, null is excluded from
+     * defaulting to false here. If all tests have been executed and all of them skipped, then 
+     * the groovy standard filtering will take place.</p>
+     * 
+     * @param test the testing groovy.lang.Closure
+     */
+    public static void addClassTest(Closure test) {
+      tests.add(test);  
+    }    
+    
+    /**
+     * <p>Remove all apparently groovy-internal trace entries from the exception instance</p>
      * <p>This modifies the original instance and returns it, it does not clone</p>
      * @param t
      * @return The exception passed in, after cleaning the stack trace
@@ -107,6 +133,13 @@ public class StackTraceUtils {
     }
 
     public static boolean isApplicationClass(String className) {
+        for(Closure test : tests) {
+          Object result = test.call(className);
+          if(result != null) {
+              return DefaultTypeTransformation.castToBoolean(result);
+          }
+        }
+        
         for (int i = 0; i < GROOVY_PACKAGES.length; i++) {
             String groovyPackage = GROOVY_PACKAGES[i];
             if (className.startsWith(groovyPackage)) {
