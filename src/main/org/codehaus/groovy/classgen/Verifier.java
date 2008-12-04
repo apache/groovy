@@ -425,8 +425,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         	BlockStatement newBlock = new BlockStatement();
             if (statement instanceof BlockStatement) {
                 newBlock.addStatements(filterStatements(((BlockStatement)statement).getStatements()));
-            }
-            else {
+            } else {
                 newBlock.addStatement(filterStatement(statement));
             }
             newBlock.addStatement(ReturnStatement.RETURN_NULL_OR_VOID);
@@ -437,8 +436,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     private Statement addReturnsIfNeeded(Statement statement, VariableScope scope) {
         if (  statement instanceof ReturnStatement
            || statement instanceof BytecodeSequence
-           || statement instanceof ThrowStatement
-                ) {
+           || statement instanceof ThrowStatement)
+        {
             return statement;
         }
 
@@ -448,7 +447,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         if (statement instanceof ExpressionStatement) {
             ExpressionStatement expStmt = (ExpressionStatement) statement;
-            return new ReturnStatement(expStmt.getExpression());
+            Expression expr = expStmt.getExpression(); 
+            ReturnStatement ret = new ReturnStatement(expr);
+            ret.setSourcePosition(expr);
+            return ret;
         }
 
         if (statement instanceof SynchronizedStatement) {
