@@ -2349,7 +2349,7 @@ public class AsmClassGenerator extends ClassGenerator {
         helper.pushConstant(constructors.size());
         visitClassExpression(new ClassExpression(callNode));
         // removes one Object[] leaves the int containing the
-        // call flags and the construtcor number
+        // call flags and the constructor number
         selectConstructorAndTransformArguments.call(mv);
         // Object[],int -> int,Object[],int
         // we need to examine the flags and maybe change the
