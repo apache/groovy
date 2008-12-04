@@ -380,36 +380,6 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             }
         }
         
-        
-/*
-        HashSet abstractNodes = new HashSet();
-        // let us collect the abstract super classes and stop at the
-        // first non abstract super class. If such a class still
-        // contains abstract methods, then loading that class will fail.
-        // No need to be extra careful here for that.
-        ClassNode parent = this.redirect();
-        do {
-            abstractNodes.add(parent);
-            ClassNode[] interfaces = parent.getInterfaces();
-            LinkedList interfaceList = new LinkedList(Arrays.asList(interfaces));
-            while (!interfaceList.isEmpty()) {
-                ClassNode interfaceNode = (ClassNode) interfaceList.removeFirst();
-                abstractNodes.add(interfaceNode.redirect());
-                interfaceList.addAll(Arrays.asList(interfaceNode.getInterfaces()));
-            }
-            parent = parent.getSuperClass().redirect();
-        } while (parent!=null && ((parent.getModifiers() & Opcodes.ACC_ABSTRACT) != 0));
-
-        List result = new ArrayList();
-        for (Object o : getAllDeclaredMethods()) {
-            MethodNode method = (MethodNode) o;
-            // add only abstract methods from abstract classes that
-            // are not overwritten
-            if (abstractNodes.contains(method.getDeclaringClass().redirect()) && method.isAbstract()) {
-                result.add(method);
-            }
-        }*/
-        
         if (result.isEmpty()) {
             return null;
         } else {
