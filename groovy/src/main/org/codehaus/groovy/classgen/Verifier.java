@@ -343,7 +343,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             }
         };
         Statement s = node.getCode();
-        //todo why can a statement can be null?
         if (s == null) return;
         s.visit(checkSuper);
     }
@@ -354,7 +353,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         if (!node.isVoidMethod()) {
             if (statement instanceof ExpressionStatement) {
                 ExpressionStatement expStmt = (ExpressionStatement) statement;
-                node.setCode(new ReturnStatement(expStmt.getExpression()));
+                Expression expr = expStmt.getExpression();
+                ReturnStatement ret = new ReturnStatement(expr);
+                ret.setSourcePosition(expr);
+                node.setCode(ret);
             }
             else if (statement instanceof BlockStatement) {
                 BlockStatement block = (BlockStatement) statement;
@@ -366,20 +368,19 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     Statement last = (Statement) list.get(idx);
                     if (last instanceof ExpressionStatement) {
                         ExpressionStatement expStmt = (ExpressionStatement) last;
-                        list.set(idx, new ReturnStatement(expStmt));
-                    }
-                    else if (!(last instanceof ReturnStatement)) {
+                        ReturnStatement ret = new ReturnStatement(expStmt);
+                        ret.setSourcePosition(expStmt);
+                        list.set(idx, ret);
+                    } else if (!(last instanceof ReturnStatement)) {
                         list.add(new ReturnStatement(ConstantExpression.NULL));
                     }
-                }
-                else {
+                } else {
                     list.add(new ReturnStatement(ConstantExpression.NULL));
                 }
 
                 node.setCode(new BlockStatement(filterStatements(list),block.getVariableScope()));
             }
-        }
-        else if (!node.isAbstract()) {
+        } else if (!node.isAbstract()) {
         	BlockStatement newBlock = new BlockStatement();
             if (statement instanceof BlockStatement) {
                 newBlock.addStatements(filterStatements(((BlockStatement)statement).getStatements()));
@@ -491,7 +492,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 if (method.isVoidMethod()) {
                     code = new ExpressionStatement(expression);
                 } else {
-                    code = new ReturnStatement(expression);
+                    ReturnStatement ret = new ReturnStatement(expression);
+                    ret.setSourcePosition(expression);
+                    code = ret;
                 }
                 node.addMethod(method.getName(), method.getModifiers(), method.getReturnType(), newParams, method.getExceptions(), code);
             }
