@@ -100,4 +100,33 @@ public class CovariantReturnTest extends CompilableTestSupport {
     """
   }
 
+  void testCovariantMethodFromParentOverwritingMethodFromInterfaceInCurrentclass() {
+    assertScript """
+      interface I {
+        def foo()
+      } 
+      class A {
+        String foo(){""}
+      }
+      class B extends A implements I{}
+      def b = new B()
+      assert b.foo() == ""
+    """
+  
+    // basically the same as above, but with an example
+    // from an error report (GROOVY-2582)
+    // Properties has a method "String getProperty(String)", this class
+    // is also a GroovyObject, meaning a "Object getProperty(String)" method
+    // should be implemented. But this method should not be the usual automatically
+    // added getProperty, but a bridge to the getProperty method provided by Properties 
+    shouldCompile """
+      class Configuration extends java.util.Properties {}
+      assert Configuration.declaredMethods.findAll{it.name=="getProperty"}.size() == 1
+      def conf = new Configuration()
+      conf.setProperty("a","b")           
+      // the following assert would fail if standard getProperty method was added
+      // by the compiler 
+      assert conf.getProperty("a") == "b" 
+    """
+  }
 }

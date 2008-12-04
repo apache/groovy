@@ -371,7 +371,17 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * this ClassNode
      */
     public List getAbstractMethods() {
-
+        List result = new ArrayList(3);
+        Map declaredMethods = getDeclaredMethodsMap();
+        for (Iterator it = declaredMethods.values().iterator(); it.hasNext();) {
+            MethodNode method = (MethodNode) it.next();
+            if (method.isAbstract()) {
+                result.add(method);
+            }
+        }
+        
+        
+/*
         HashSet abstractNodes = new HashSet();
         // let us collect the abstract super classes and stop at the
         // first non abstract super class. If such a class still
@@ -381,10 +391,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         do {
             abstractNodes.add(parent);
             ClassNode[] interfaces = parent.getInterfaces();
-            List interfaceList = new ArrayList(Arrays.asList(interfaces));
+            LinkedList interfaceList = new LinkedList(Arrays.asList(interfaces));
             while (!interfaceList.isEmpty()) {
-                final ClassNode interfaceNode = (ClassNode) interfaceList.get(0);
-                interfaceList.remove(0);
+                ClassNode interfaceNode = (ClassNode) interfaceList.removeFirst();
                 abstractNodes.add(interfaceNode.redirect());
                 interfaceList.addAll(Arrays.asList(interfaceNode.getInterfaces()));
             }
@@ -394,18 +403,16 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         List result = new ArrayList();
         for (Object o : getAllDeclaredMethods()) {
             MethodNode method = (MethodNode) o;
-            // add only abstract methods from abtract classes that
+            // add only abstract methods from abstract classes that
             // are not overwritten
-            if ( abstractNodes.contains(method.getDeclaringClass().redirect()) &&
-                 (method.getModifiers() & Opcodes.ACC_ABSTRACT) != 0
-               ) {
+            if (abstractNodes.contains(method.getDeclaringClass().redirect()) && method.isAbstract()) {
                 result.add(method);
             }
-        }
+        }*/
+        
         if (result.isEmpty()) {
             return null;
-        }
-        else {
+        } else {
             return result;
         }
     }
@@ -437,8 +444,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         Map result = null;
         if (parent != null) {
             result = parent.getDeclaredMethodsMap();
-        }
-        else {
+        } else {
             result = new HashMap();
         }
 

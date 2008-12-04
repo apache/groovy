@@ -853,22 +853,29 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     
     protected void addCovariantMethods(ClassNode classNode) {
         Map methodsToAdd = new HashMap();
-        List declaredMethods = new ArrayList(classNode.getMethods());
         Map genericsSpec = new HashMap();
-        
-        // remove static methods from declaredMethods
+
+        List declaredMethods = classNode.getAllDeclaredMethods();
+        // remove all static, private and package private methods
+        // we remove also abstract methods if the current class is not abstract
+        // we do remove abstract methods, because covariation may automatically implement them
+        boolean isNotAbstract = (classNode.getModifiers() & ACC_ABSTRACT)==0;
         for (Iterator methodsIterator = declaredMethods.iterator(); methodsIterator.hasNext();) {
             MethodNode m = (MethodNode) methodsIterator.next();
-            if (m.isStatic()) methodsIterator.remove();
+            if (m.isStatic() || !(m.isPublic() || m.isProtected())) {
+                methodsIterator.remove();
+            } else if (isNotAbstract && m.isAbstract()) {
+                methodsIterator.remove();
+            }
         }
         
         addCovariantMethods(classNode, declaredMethods, methodsToAdd, genericsSpec);
 
-        Set declaredMethodsSet = new HashSet();
+        Map declaredMethodsMap = new HashMap();
         if (methodsToAdd.size()>0) {
             for (Iterator methodsIterator = declaredMethods.iterator(); methodsIterator.hasNext();) {
                 MethodNode m = (MethodNode) methodsIterator.next();
-                declaredMethodsSet.add(m.getTypeDescriptor());
+                declaredMethodsMap.put(m.getTypeDescriptor(),m);
             }
         }
         
@@ -876,7 +883,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             Map.Entry entry = (Map.Entry) it.next();
             MethodNode method = (MethodNode) entry.getValue();
             // we skip bridge methods implemented in current class already
-            if (declaredMethodsSet.contains(entry.getKey())) continue;
+            MethodNode mn = (MethodNode) declaredMethodsMap.get(entry.getKey());
+            if (mn!=null && mn.getDeclaringClass().equals(classNode)) continue;
             classNode.addMethod(method);
         }
     }
@@ -926,21 +934,24 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         ClassNode testmr = correctToGenericsSpec(genericsSpec,omr);
         if (!isAssignable(mr,testmr)){
             throw new RuntimeParserException(
-                    "the return type is incompatible with "+
+                    "The return type of "+
+                    overridingMethod.getTypeDescriptor()+
+                    " in "+overridingMethod.getDeclaringClass().getName()+
+                    " is incompatible with "+
                     oldMethod.getTypeDescriptor()+
                     " in "+oldMethod.getDeclaringClass().getName(),
                     overridingMethod);
         }
         if ((oldMethod.getModifiers()&ACC_FINAL)!=0) {
             throw new RuntimeParserException(
-                    "cannot override final method "+
+                    "Cannot override final method "+
                     oldMethod.getTypeDescriptor()+
                     " in "+oldMethod.getDeclaringClass().getName(),
                     overridingMethod);
         }
         if (oldMethod.isStatic() != overridingMethod.isStatic()){
             throw new RuntimeParserException(
-                    "cannot override method "+
+                    "Cannot override method "+
                     oldMethod.getTypeDescriptor()+
                     " in "+oldMethod.getDeclaringClass().getName()+
                     " with disparate static modifier",
