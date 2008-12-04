@@ -2447,7 +2447,7 @@ public class AsmClassGenerator extends ClassGenerator {
         mv.visitInsn(ATHROW);
         mv.visitLabel(afterSwitch);
 
-        // to keep the stack hight we kept one object on the stack
+        // to keep the stack height we kept one object on the stack
         // for the switch, now we remove that object
         if (constructorNode==null) {
             // but in case we are not in a constructor we have an additional

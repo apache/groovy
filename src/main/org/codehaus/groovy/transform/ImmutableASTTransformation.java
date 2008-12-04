@@ -292,7 +292,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         }
         final BlockStatement orderedBody = new BlockStatement();
         orderedBody.addStatement(new ExpressionStatement(
-                new ConstructorCallExpression(ClassNode.THIS, argMap)
+                new ConstructorCallExpression(ClassNode.THIS, new ArgumentListExpression(new CastExpression(HASHMAP_TYPE,argMap)))
         ));
         orderedBody.addStatement(assignStatement(constructorStyle, ConstantExpression.FALSE));
         cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, orderedParams, ClassNode.EMPTY_ARRAY, orderedBody));
