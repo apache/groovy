@@ -462,10 +462,9 @@ class Console implements CaretListener {
         if (result != null) {
             statusLabel.text = 'Execution complete.'
             appendOutputNl("Result: ", promptStyle)
-            def obj = OutputTransforms.transformResult(result, shell.context._outputTransforms)
-            if (!visualizeScriptResults) {
-                obj = obj.toString()
-            }
+            def obj = (visualizeScriptResults
+                ? OutputTransforms.transformResult(result, shell.context._outputTransforms)
+                : result.toString())
             if ((obj instanceof Component) && !(obj instanceof Window)) {
                 outputArea.setSelectionStart(outputArea.document.length)
                 outputArea.setSelectionEnd(outputArea.document.length)
