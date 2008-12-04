@@ -46,7 +46,7 @@ public abstract class Message
     
     
    /**
-    *  A synonyn for write( writer, owner, null ).
+    *  A synonym for write( writer, owner, null ).
     */
     
     public final void write( PrintWriter writer)
