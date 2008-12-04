@@ -36,4 +36,13 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         assertEquals objects[0], objects[1]
         assertTrue objects[0].nums.class.name.contains("Unmodifiable")
     }
+    
+    void testImmutableWithOnlyMap() {
+      assertScript """
+        @Immutable final class Foo {
+          Map bar
+        }
+        new Foo([:])
+      """
+    }
 }
