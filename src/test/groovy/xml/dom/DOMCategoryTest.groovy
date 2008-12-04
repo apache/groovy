@@ -71,6 +71,45 @@ class DOMCategoryTest extends GroovyTestCase {
             assert myFoo.get("bar") == 3
         }
     }
+
+    /** Test for GROOVY-3109 */
+    void testAccessToUnknownPropertyInAScriptWithDomCategory() {
+        assertScript """
+            import groovy.xml.dom.DOMCategory
+
+            try {
+                use(DOMCategory) {
+                    test
+                }
+                assert false
+            } catch (MissingPropertyException e) {
+                assert 'test' == e.property
+            }
+        """
+    }
+
+    /** Test for GROOVY-3109 */
+    void testAccessToUnknownPropertyInAClassWithDomCategory() {
+        assertScript """
+            import groovy.xml.dom.DOMCategory
+
+            class MyClass {
+                static boolean run() {
+                    try {
+                        use (DOMCategory) {
+                            println test
+                        }
+                        return false
+                    } catch (MissingPropertyException e) {
+                        assert 'test' == e.property
+                        return true
+                    }
+                }
+            }
+
+            assert true == MyClass.run()
+        """
+    }
 }
 
 class Foo {
