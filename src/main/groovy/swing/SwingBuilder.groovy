@@ -207,7 +207,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
         RendererFactory renderFactory = new RendererFactory()
         registerFactory("tableCellRenderer", renderFactory)
         registerFactory("listCellRenderer", renderFactory)
-        registerFactory("onRender", new RendererUpdateFactory())        
+        registerFactory("onRender", new RendererUpdateFactory())
     }
 
     def registerThreading() {
@@ -310,40 +310,37 @@ public class SwingBuilder extends FactoryBuilderSupport {
     }
 
     /**
-     * Utility method to create a SwingBuilder, and run the
-     * the closure in the EDT
+     * Factory method to create a SwingBuilder, and run the
+     * the closure in it on the EDT
      *
-     * @param c run this closure in the builder using the edt method
+     * @param c run this closure in the new builder using the edt method
      */
-    public static SwingBuilder newBuilderInEDT(Closure c) {
+    public static SwingBuilder edtBuilder(Closure c) {
         SwingBuilder builder = new SwingBuilder()
         return builder.edt(c)
     }
 
     /**
-     * re-director to deal with repetitive method names
+     * Old factory method static SwingBuilder.build(Closure).
+     * @param c run this closure in the builder using the edt method
      */
+    @Deprecated
     public static SwingBuilder '$static_methodMissing'(String method, Object args) {
         if (method == 'build' && args.length == 1 && args[0] instanceof Closure) {
-            LOG.warning("The build(Closure) API will be removed in a future API.  Please use the edt(Closure) instance method or newBuilderInEDT(Closure) static method")
-            return newBuilderInEDT(args[0])
+            return edtBuilder(args[0])
         } else {
             throw new MissingMethodException(method, SwingBuilder, args, true)
         }
     }
 
     /**
-     * Compatibility API.  This method will be removed in a future
-     * version of Groovy.
+     * Compatibility API.
      *
      * @param c run this closure in the builder using the edt method
-     * @deprecated To replace it use 'new SwingBuidler().edt(Closure)' or 'SwingBuilder.newBuilderInEDT(Closure)'
      */
-    @Deprecated
-    public SwingBuilder build(Closure c) {
-        LOG.warning("The build(Closure) API will be removed in a future API.  Please use the edt(Closure) instance method or newBuilderInEDT(Closure) static method")
-        edt(c)
-        return this
+    public Object build(Closure c) {
+        c.setDelegate(this)
+        return c.call()
     }
 
     public KeyStroke shortcut(key, modifier = 0) {
