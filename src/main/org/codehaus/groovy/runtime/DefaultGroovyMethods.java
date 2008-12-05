@@ -7627,6 +7627,58 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     //-------------------------------------------------------------------------
 
     /**
+     * Create an object output stream for this file.
+     *
+     * @param file a file
+     * @return an object output stream
+     * @throws IOException if an IOException occurs.
+     */
+    public static ObjectOutputStream newObjectOutputStream(File file) throws IOException {
+        return new ObjectOutputStream(new FileOutputStream(file));
+    }
+
+    /**
+     * Create an object output stream for this output stream.
+     *
+     * @param outputStream an output stream
+     * @return an object output stream
+     * @throws IOException if an IOException occurs.
+     */
+    public static ObjectOutputStream newObjectOutputStream(OutputStream outputStream) throws IOException {
+        return new ObjectOutputStream(outputStream);
+    }
+
+    /**
+     * Create a new ObjectOutputStream for this file and then pass it to the
+     * closure.  This method ensures the stream is closed after the closure
+     * returns.
+     *
+     * @param file    a File
+     * @param closure a closure
+     * @return the value returned by the closure
+     * @throws IOException if an IOException occurs.
+     * @see #withStream(OutputStream,Closure)
+     */
+    public static Object withObjectOutputStream(File file, Closure closure) throws IOException {
+        return withStream(newObjectOutputStream(file), closure);
+    }
+
+    /**
+     * Create a new ObjectOutputStream for this output stream and then pass it to the
+     * closure.  This method ensures the stream is closed after the closure
+     * returns.
+     *
+     * @param outputStream am output stream
+     * @param closure      a closure
+     * @return the value returned by the closure
+     * @throws IOException if an IOException occurs.
+     * @see #withStream(OutputStream,Closure)
+     */
+    public static Object withObjectOutputStream(OutputStream outputStream, Closure closure) throws IOException {
+        return withStream(newObjectOutputStream(outputStream), closure);
+    }
+
+    /**
      * Create an object input stream for this file.
      *
      * @param file a file
@@ -7638,14 +7690,43 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create an object output stream for this file.
+     * Create an object input stream for this input stream.
      *
-     * @param file a file
-     * @return an object output stream
+     * @param inputStream an input stream
+     * @return an object input stream
      * @throws IOException if an IOException occurs.
      */
-    public static ObjectOutputStream newObjectOutputStream(File file) throws IOException {
-        return new ObjectOutputStream(new FileOutputStream(file));
+    public static ObjectInputStream newObjectInputStream(InputStream inputStream) throws IOException {
+        return new ObjectInputStream(inputStream);
+    }
+
+    /**
+     * Create an object input stream for this input stream using the given class loader.
+     *
+     * @param inputStream an input stream
+     * @param classLoader the class loader to use when loading the class
+     * @return an object input stream
+     * @throws IOException if an IOException occurs.
+     */
+    public static ObjectInputStream newObjectInputStream(InputStream inputStream, final ClassLoader classLoader) throws IOException {
+        return new ObjectInputStream(inputStream) {
+            protected Class<?> resolveClass(ObjectStreamClass desc) throws IOException, ClassNotFoundException {
+                return Class.forName(desc.getName(), true, classLoader);
+
+            }
+        };
+    }
+
+    /**
+     * Create an object input stream for this file using the given class loader.
+     *
+     * @param file        a file
+     * @param classLoader the class loader to use when loading the class
+     * @return an object input stream
+     * @throws IOException if an IOException occurs.
+     */
+    public static ObjectInputStream newObjectInputStream(File file, final ClassLoader classLoader) throws IOException {
+        return newObjectInputStream(new FileInputStream(file), classLoader);
     }
 
     /**
@@ -7713,18 +7794,47 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create a new ObjectOutputStream for this file and then pass it to the
-     * closure.  This method ensures the stream is closed after the closure
-     * returns.
+     * Create a new ObjectInputStream for this file associated with the given class loader and pass it to the closure.
+     * This method ensures the stream is closed after the closure returns.
      *
-     * @param file    a File
-     * @param closure a closure
+     * @param file        a File
+     * @param classLoader the class loader to use when loading the class
+     * @param closure     a closure
      * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
-     * @see #withStream(OutputStream,Closure)
+     * @see #withStream(InputStream,Closure)
      */
-    public static Object withObjectOutputStream(File file, Closure closure) throws IOException {
-        return withStream(newObjectOutputStream(file), closure);
+    public static Object withObjectInputStream(File file, ClassLoader classLoader, Closure closure) throws IOException {
+        return withStream(newObjectInputStream(file, classLoader), closure);
+    }
+
+    /**
+     * Create a new ObjectInputStream for this file and pass it to the closure.
+     * This method ensures the stream is closed after the closure returns.
+     *
+     * @param inputStream an input stream
+     * @param closure     a closure
+     * @return the value returned by the closure
+     * @throws IOException if an IOException occurs.
+     * @see #withStream(InputStream,Closure)
+     */
+    public static Object withObjectInputStream(InputStream inputStream, Closure closure) throws IOException {
+        return withStream(newObjectInputStream(inputStream), closure);
+    }
+
+    /**
+     * Create a new ObjectInputStream for this file and pass it to the closure.
+     * This method ensures the stream is closed after the closure returns.
+     *
+     * @param inputStream an input stream
+     * @param classLoader the class loader to use when loading the class
+     * @param closure     a closure
+     * @return the value returned by the closure
+     * @throws IOException if an IOException occurs.
+     * @see #withStream(InputStream,Closure)
+     */
+    public static Object withObjectInputStream(InputStream inputStream, ClassLoader classLoader, Closure closure) throws IOException {
+        return withStream(newObjectInputStream(inputStream, classLoader), closure);
     }
 
     /**
