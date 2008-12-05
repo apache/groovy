@@ -85,6 +85,10 @@ public class SyntaxException extends GroovyException {
         return getStartColumn() + 1;
     }
 
+    public String getOriginalMessage() {
+        return super.getMessage();
+    }
+
     public String getMessage() {
         return super.getMessage() + " @ line " + line + ", column " + column + ".";
     }
