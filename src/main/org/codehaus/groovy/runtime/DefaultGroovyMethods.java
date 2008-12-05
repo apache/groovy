@@ -8073,8 +8073,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             temp.close();
             return result;
         } finally {
-            closeReaderWithWarning(self);
-            closeReaderWithWarning(br);
+            closeWithWarning(self);
+            closeWithWarning(br);
         }
     }
 
@@ -8130,8 +8130,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             temp.close();
             return result;
         } finally {
-            closeReaderWithWarning(self);
-            closeReaderWithWarning(br);
+            closeWithWarning(self);
+            closeWithWarning(br);
         }
     }
 
@@ -8463,7 +8463,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             reader = null;
             temp.close();
         } finally {
-            closeReaderWithWarning(reader);
+            closeWithWarning(reader);
         }
         return answer.toString();
     }
@@ -8498,7 +8498,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             writer = null;
             temp.close();
         } finally {
-            closeWriterWithWarning(writer);
+            closeWithWarning(writer);
         }
     }
 
@@ -8559,7 +8559,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             writer = null;
             temp.close();
         } finally {
-            closeWriterWithWarning(writer);
+            closeWithWarning(writer);
         }
     }
 
@@ -8581,7 +8581,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             writer = null;
             temp.close();
         } finally {
-            closeWriterWithWarning(writer);
+            closeWithWarning(writer);
         }
     }
 
@@ -8603,7 +8603,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             stream = null;
             temp.close();
         } finally {
-            closeOutputStreamWithWarning(stream);
+            closeWithWarning(stream);
         }
     }
 
@@ -8626,7 +8626,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             writer = null;
             temp.close();
         } finally {
-            closeWriterWithWarning(writer);
+            closeWithWarning(writer);
         }
     }
 
@@ -9266,7 +9266,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             temp.close();
             return result;
         } finally {
-            closeWriterWithWarning(writer);
+            closeWithWarning(writer);
         }
     }
 
@@ -9289,7 +9289,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
             return result;
         } finally {
-            closeReaderWithWarning(reader);
+            closeWithWarning(reader);
         }
     }
 
@@ -9312,7 +9312,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
             return result;
         } finally {
-            closeInputStreamWithWarning(stream);
+            closeWithWarning(stream);
         }
     }
 
@@ -9435,7 +9435,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
             return result;
         } finally {
-            closeOutputStreamWithWarning(os);
+            closeWithWarning(os);
         }
     }
 
@@ -9556,7 +9556,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             is = null;
             temp.close();
         } finally {
-            closeInputStreamWithWarning(is);
+            closeWithWarning(is);
         }
     }
 
@@ -9602,8 +9602,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             self = null;
             temp1.close();
         } finally {
-            closeReaderWithWarning(self);
-            closeWriterWithWarning(writer);
+            closeWithWarning(self);
+            closeWithWarning(writer);
         }
     }
 
@@ -9639,10 +9639,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             reader = null;
             temp1.close();
         } finally {
-            closeReaderWithWarning(br);
-            closeReaderWithWarning(reader);
-            closeWriterWithWarning(bw);
-            closeWriterWithWarning(writer);
+            closeWithWarning(br);
+            closeWithWarning(reader);
+            closeWithWarning(bw);
+            closeWithWarning(writer);
         }
     }
 
@@ -9676,10 +9676,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             reader = null;
             temp1.close();
         } finally {
-            closeReaderWithWarning(br);
-            closeReaderWithWarning(reader);
-            closeWriterWithWarning(bw);
-            closeWriterWithWarning(writer);
+            closeWithWarning(br);
+            closeWithWarning(reader);
+            closeWithWarning(bw);
+            closeWithWarning(writer);
         }
 
     }
@@ -9856,8 +9856,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
             return result;
         } finally {
-            closeInputStreamWithWarning(input);
-            closeOutputStreamWithWarning(output);
+            closeWithWarning(input);
+            closeWithWarning(output);
         }
     }
 
@@ -9895,52 +9895,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
             return result;
         } finally {
-            closeInputStreamWithWarning(ois);
-            closeInputStreamWithWarning(input);
-            closeOutputStreamWithWarning(oos);
-            closeOutputStreamWithWarning(output);
+            closeWithWarning(ois);
+            closeWithWarning(input);
+            closeWithWarning(oos);
+            closeWithWarning(output);
         }
     }
 
-    // TODO reduce duplication by using Closable if we raise minimum requirement to Java 1.5
-    private static void closeInputStreamWithWarning(InputStream input) {
-        if (input != null) {
+    private static void closeWithWarning(Closeable c) {
+        if (c != null) {
             try {
-                input.close();
+                c.close();
             } catch (IOException e) {
-                LOG.warning("Caught exception closing InputStream: " + e);
-            }
-        }
-    }
-
-    private static void closeOutputStreamWithWarning(OutputStream output) {
-        if (output != null) {
-            try {
-                output.close();
-            } catch (IOException e) {
-                LOG.warning("Caught exception closing OutputStream: " + e);
-            }
-        }
-    }
-
-    private static void closeReaderWithWarning(Reader reader) {
-        if (reader != null) {
-            try {
-                reader.close();
-            } catch (Exception e) {
-                // ignore this exception since this
-                // is only our internal problem
-                LOG.warning("Caught exception closing Reader: " + e);
-            }
-        }
-    }
-
-    private static void closeWriterWithWarning(Writer writer) {
-        if (writer != null) {
-            try {
-                writer.close();
-            } catch (IOException e) {
-                LOG.warning("Caught exception closing Writer: " + e);
+                LOG.warning("Caught exception during close(): " + e);
             }
         }
     }
@@ -10403,7 +10370,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 } catch (IOException e) {
                     throw new GroovyRuntimeException("exception while reading process stream", e);
                 } finally {
-                    closeOutputStreamWithWarning(out);
+                    closeWithWarning(out);
                 }
             }
         }).start();
