@@ -15,6 +15,7 @@ splitPane = splitPane(resizeWeight: 0.50F,
     scrollPane(border:emptyBorder(0)) {
         outputArea = textPane(
             editable: false,
+            contentType: "text/html",
             background: new Color(255,255,218),
             font:new Font("Monospaced", Font.PLAIN, 12),
             border:emptyBorder(4)
@@ -35,26 +36,32 @@ actions {
 
 // add styles to the output area, shuold this be moved into SwingBuidler somehow?
 outputArea.setFont(new Font("Monospaced", outputArea.font.style, outputArea.font.size))
-StyledDocument doc = outputArea.getStyledDocument();
+StyledDocument doc = outputArea.styledDocument
 
-Style defStyle = StyleContext.getDefaultStyleContext().getStyle(StyleContext.DEFAULT_STYLE);
+Style defStyle = StyleContext.defaultStyleContext.getStyle(StyleContext.DEFAULT_STYLE)
 
 def applyStyle = {Style style, values -> values.each{k, v -> style.addAttribute(k, v)}}
 
-Style regular = doc.addStyle("regular", defStyle);
+Style regular = doc.addStyle("regular", defStyle)
 applyStyle(regular, styles.regular)
 
 promptStyle = doc.addStyle("prompt", regular)
 applyStyle(promptStyle, styles.prompt)
 
-commandStyle = doc.addStyle("command", regular);
+commandStyle = doc.addStyle("command", regular)
 applyStyle(commandStyle, styles.command)
 
-outputStyle = doc.addStyle("output", regular);
+outputStyle = doc.addStyle("output", regular)
 applyStyle(outputStyle, styles.output)
 
 resultStyle = doc.addStyle("result", regular)
 applyStyle(resultStyle, styles.result)
+
+stacktraceStyle = doc.addStyle("stacktrace", regular)
+applyStyle(stacktraceStyle, styles.stacktrace)
+
+hyperlinkStyle = doc.addStyle("hyperlink", regular)
+applyStyle(hyperlinkStyle, styles.hyperlink)
 
 // redo styles for editor
 doc = inputArea.getStyledDocument()

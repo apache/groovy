@@ -78,6 +78,8 @@ container(consoleFrame) {
 controller.promptStyle = promptStyle
 controller.commandStyle = commandStyle
 controller.outputStyle = outputStyle
+controller.stacktraceStyle = stacktraceStyle
+controller.hyperlinkStyle = hyperlinkStyle
 controller.resultStyle = resultStyle
 
 // add the window close handler
@@ -103,6 +105,7 @@ controller.fullStackTracesAction = fullStackTracesAction
 controller.showToolbarAction = showToolbarAction
 
 // some more UI linkage
+controller.outputArea.addHyperlinkListener(controller)
 controller.inputArea.addCaretListener(controller)
 controller.inputArea.document.addDocumentListener({ controller.setDirty(true) } as DocumentListener)
 controller.rootElement = inputArea.document.defaultRootElement
