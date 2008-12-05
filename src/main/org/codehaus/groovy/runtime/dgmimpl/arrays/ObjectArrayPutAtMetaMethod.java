@@ -21,6 +21,7 @@ import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 public class ObjectArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
     private static final CachedClass OBJECT_CLASS = ReflectionCache.getCachedClass(Object.class);
@@ -37,6 +38,15 @@ public class ObjectArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
 
     public Object invoke(Object object, Object[] arguments) {
         final Object[] objects = (Object[]) object;
+        Object newValue = arguments[1];
+        if (newValue instanceof Number) {
+        	Class arrayComponentClass = objects.getClass().getComponentType();
+        	if (!arrayComponentClass.equals(newValue.getClass())) {
+        		Object newVal = DefaultTypeTransformation.castToType(newValue, arrayComponentClass);
+        		objects[normaliseIndex(((Integer) arguments[0]).intValue(), objects.length)] = newVal;
+        		return null;
+        	}
+        }
         objects[normaliseIndex(((Integer) arguments[0]).intValue(), objects.length)] = arguments[1];
         return null;
     }
