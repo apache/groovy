@@ -200,4 +200,26 @@ class ArrayTest extends GroovyTestCase {
         assert boolsA == boolsB
     }
 
+    void testNumberWrapperArrayAssignToElement() {
+        Byte[] bytes = [1, 2]
+        bytes[0] = (byte) 20
+        bytes[1] = 50
+        assertEquals 20, bytes[0]
+        assertEquals 50, bytes[1]
+
+        Short[] shorts = [1, 2]
+        shorts[1] = 50
+        assertEquals 50, shorts[1]
+
+        Float[] floats = [1.0f, 2.0f]
+        floats[1] = 50.0d
+        assertEquals 50.0d, floats[1]
+        
+        Double[] doubles = [1.0d, 2.0d]
+        doubles[0] = new BigDecimal(100)
+        doubles[1] = 50
+        
+        assertEquals 100, doubles[0]
+        assertEquals 50, doubles[1]
+    }
 }
