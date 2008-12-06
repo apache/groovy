@@ -79,6 +79,9 @@ $Date$
         <echo message="Operating system name: ${os.name}"/>
         <echo message="Operating system architecture: ${os.arch}"/>
         <echo message="Operating system version: ${os.version}"/>
+        <echo>
+        Java Classpath: ${java.class.path}
+        </echo>
     </target>
 
     <target name="-jvm14BuildWarning" unless="groovy.build.vm5">
