@@ -36,27 +36,7 @@ public class ArrayCachedClass extends CachedClass {
 
         Class paramComponent = getTheClass().getComponentType();
         if (paramComponent.isPrimitive()) {
-            if (paramComponent == boolean.class && argumentClass == Boolean[].class) {
-                argument = DefaultTypeTransformation.convertToBooleanArray(argument);
-            } else if (paramComponent == byte.class && argumentClass == Byte[].class) {
-                argument = DefaultTypeTransformation.convertToByteArray(argument);
-            } else if (paramComponent == char.class && argumentClass == Character[].class) {
-                argument = DefaultTypeTransformation.convertToCharArray(argument);
-            } else if (paramComponent == short.class && argumentClass == Short[].class) {
-                argument = DefaultTypeTransformation.convertToShortArray(argument);
-            } else if (paramComponent == int.class && argumentClass == Integer[].class) {
-                argument = DefaultTypeTransformation.convertToIntArray(argument);
-            } else if (paramComponent == long.class &&
-                    (argumentClass == Long[].class || argumentClass == Integer[].class)) {
-                argument = DefaultTypeTransformation.convertToLongArray(argument);
-            } else if (paramComponent == float.class &&
-                    (argumentClass == Float[].class || argumentClass == Integer[].class)) {
-                argument = DefaultTypeTransformation.convertToFloatArray(argument);
-            } else if (paramComponent == double.class &&
-                    (argumentClass == Double[].class || argumentClass == Float[].class
-                            || BigDecimal[].class.isAssignableFrom(argumentClass))) {
-                argument = DefaultTypeTransformation.convertToDoubleArray(argument);
-            }
+        	argument = DefaultTypeTransformation.convertToPrimitiveArray(argument, paramComponent);
         } else if (paramComponent == String.class && argument instanceof GString[]) {
             GString[] strings = (GString[]) argument;
             String[] ret = new String[strings.length];
