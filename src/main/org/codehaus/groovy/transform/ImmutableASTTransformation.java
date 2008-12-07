@@ -57,6 +57,9 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
             java.math.BigDecimal.class,
             java.awt.Color.class,
     };
+    private static final Class MY_CLASS = Immutable.class;
+    private static final ClassNode MY_TYPE = new ClassNode(MY_CLASS);
+    private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode HASHMAP_TYPE = new ClassNode(HashMap.class);
     private static final ClassNode MAP_TYPE = new ClassNode(Map.class);
     private static final ClassNode DATE_TYPE = new ClassNode(Date.class);
@@ -65,8 +68,6 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     private static final ClassNode HASHUTIL_TYPE = new ClassNode(HashCodeHelper.class);
     private static final ClassNode STRINGBUFFER_TYPE = new ClassNode(StringBuffer.class);
     private static final ClassNode DGM_TYPE = new ClassNode(DefaultGroovyMethods.class);
-    private static final ClassNode MY_TYPE = new ClassNode(Immutable.class);
-    private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode SELF_TYPE = new ClassNode(ImmutableASTTransformation.class);
     private static final Token COMPARE_EQUAL = Token.newSymbol(Types.COMPARE_EQUAL, -1, -1);
     private static final Token COMPARE_NOT_EQUAL = Token.newSymbol(Types.COMPARE_NOT_EQUAL, -1, -1);
@@ -511,7 +512,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     public static Object checkImmutable(String fieldName, Object field) {
         if (field == null || field instanceof Enum || inImmutableList(field.getClass())) return field;
         if (field instanceof Collection) return DefaultGroovyMethods.asImmutable((Collection) field);
-        if (field.getClass().getAnnotation(Immutable.class) != null) return field;
+        if (field.getClass().getAnnotation(MY_CLASS) != null) return field;
         final String typeName = field.getClass().getName();
         throw new RuntimeException(createErrorMessage(fieldName, typeName, "constructing"));
     }
