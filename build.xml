@@ -591,13 +591,13 @@ Not found: ${groovyJar14path}
         <!-- TODO try to make use of jarjar keep ability -->
         <jarjar jarfile="${targetDistDirectory}/groovy-all.jar"
                 manifest="${stagingDirectory}/META-INF/MANIFEST.MF">
-            <fileset dir="${stagingDirectory}" excludes="groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class"/>
+            <fileset dir="${stagingDirectory}" excludes="groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class,org/codehaus/groovy/tools/shell/util/HelpFormatter*.class"/>
             <rule pattern="antlr.**" result="groovyjarjarantlr.@1"/>
             <rule pattern="org.objectweb.**" result="groovyjarjarasm.@1"/>
             <rule pattern="org.apache.commons.cli.**" result="groovyjarjarcommonscli.@1"/>
         </jarjar>
         <jar destfile="${targetDistDirectory}/groovy-all.jar" update="true"
-             basedir="${stagingDirectory}" includes="groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class"/>
+             basedir="${stagingDirectory}" includes="groovy/util/CliBuilder*.class,groovy/util/OptionAccessor*.class,org/codehaus/groovy/tools/shell/util/HelpFormatter*.class"/>
 
         <copy file="${targetDistDirectory}/groovy-${groovyVersion}-sources.jar"
               tofile="${targetDistDirectory}/groovy-all-${groovyVersion}-sources.jar"/>
