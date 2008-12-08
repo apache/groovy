@@ -129,4 +129,18 @@ public class CovariantReturnTest extends CompilableTestSupport {
       assert conf.getProperty("a") == "b" 
     """
   }
+
+  void testCovariantMethodReturnTypeFromGenericsInterface() {
+    shouldCompile """
+        interface MyCallable<T> {
+            T myCall() throws Exception;
+        }
+
+        class Task implements MyCallable<List> {
+            List myCall() throws Exception {
+                return [ 42 ]
+            }
+        } 
+    """
+  }
 }
