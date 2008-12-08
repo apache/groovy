@@ -998,7 +998,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     private boolean isAssignable(ClassNode node, ClassNode testNode) {
         if (testNode.isInterface()) {
-            if (node.implementsInterface(testNode)) return true;
+        	if(node.isInterface()) {
+        		if (node.isDerivedFrom(testNode)) return true;
+        	} else {
+        		if (node.implementsInterface(testNode)) return true;
+        	}
         } else {
             if (node.isDerivedFrom(testNode)) return true;
         }
