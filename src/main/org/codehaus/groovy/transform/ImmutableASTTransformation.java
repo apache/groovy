@@ -263,13 +263,31 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
             throw new RuntimeException(MY_TYPE_NAME + " does not allow explicit constructors");
         }
 
-        // map constructor
-        final BlockStatement body = new BlockStatement();
         List<PropertyNode> list = cNode.getProperties();
-        final VariableExpression args = new VariableExpression("args");
+        boolean specialHashMapCase = list.size() == 1 && list.get(0).getField().getType().equals(HASHMAP_TYPE);
+        if (specialHashMapCase) {
+            createConstructorMapSpecial(cNode, constructorStyle, list);
+        } else {
+            createConstructorMap(cNode, constructorStyle, list);
+            createConstructorOrdered(cNode, constructorStyle, list);
+        }
+    }
+
+    private void createConstructorMapSpecial(ClassNode cNode, FieldExpression constructorStyle, List<PropertyNode> list) {
+        final BlockStatement body = new BlockStatement();
+        body.addStatement(createConstructorStatementMapSpecial(list.get(0).getField()));
+        createConstructorMapCommon(cNode, constructorStyle, body);
+    }
+
+    private void createConstructorMap(ClassNode cNode, FieldExpression constructorStyle, List<PropertyNode> list) {
+        final BlockStatement body = new BlockStatement();
         for (PropertyNode pNode : list) {
             body.addStatement(createConstructorStatement(pNode));
         }
+        createConstructorMapCommon(cNode, constructorStyle, body);
+    }
+
+    private void createConstructorMapCommon(ClassNode cNode, FieldExpression constructorStyle, BlockStatement body) {
         final List<FieldNode> fList = cNode.getFields();
         for (FieldNode fNode : fList) {
             if (!fNode.isPublic() && !fNode.getName().contains("$") && (cNode.getProperty(fNode.getName()) == null)) {
@@ -279,11 +297,12 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         body.addStatement(assignStatement(constructorStyle, ConstantExpression.TRUE));
         final Parameter[] params = new Parameter[]{new Parameter(HASHMAP_TYPE, "args")};
         cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, new IfStatement(
-                equalsNullExpr(args),
+                equalsNullExpr(new VariableExpression("args")),
                 new EmptyStatement(),
                 body)));
+    }
 
-        // alternative ordered constructor
+    private void createConstructorOrdered(ClassNode cNode, FieldExpression constructorStyle, List<PropertyNode> list) {
         final MapExpression argMap = new MapExpression();
         final Parameter[] orderedParams = new Parameter[list.size()];
         int index = 0;
@@ -293,7 +312,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         }
         final BlockStatement orderedBody = new BlockStatement();
         orderedBody.addStatement(new ExpressionStatement(
-                new ConstructorCallExpression(ClassNode.THIS, new ArgumentListExpression(new CastExpression(HASHMAP_TYPE,argMap)))
+                new ConstructorCallExpression(ClassNode.THIS, new ArgumentListExpression(new CastExpression(HASHMAP_TYPE, argMap)))
         ));
         orderedBody.addStatement(assignStatement(constructorStyle, ConstantExpression.FALSE));
         cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, orderedParams, ClassNode.EMPTY_ARRAY, orderedBody));
@@ -354,6 +373,24 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
                         new EmptyStatement(),
                         assignStatement(fieldExpr, cloneCollectionExpr(initExpr))),
                 assignStatement(fieldExpr, cloneCollectionExpr(collection)));
+    }
+
+    private Statement createConstructorStatementMapSpecial(FieldNode fNode) {
+        final FieldExpression fieldExpr = new FieldExpression(fNode);
+        Expression initExpr = fNode.getInitialValueExpression();
+        if (initExpr == null) initExpr = ConstantExpression.NULL;
+        Expression args = findArg(fNode.getName());
+        return new IfStatement(
+                equalsNullExpr(args),
+                new IfStatement(
+                        equalsNullExpr(initExpr),
+                        new IfStatement(
+                                equalsNullExpr(new VariableExpression("args")),
+                                new EmptyStatement(),
+                                assignStatement(fieldExpr, cloneCollectionExpr(new VariableExpression("args")))
+                        ),
+                        assignStatement(fieldExpr, cloneCollectionExpr(initExpr))),
+                assignStatement(fieldExpr, cloneCollectionExpr(args)));
     }
 
     private boolean isKnownImmutable(ClassNode fieldType) {
