@@ -1681,13 +1681,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * closure takes one parameter then it will be passed the Map.Entry.
      * Otherwise if the closure should take two parameters, which will be
      * the key and the value.
+     * <p>
+     * If the <code>self</code> map is one of TreeMap, LinkedHashMap, Hashtable
+     * or Properties, the returned Map will preserve that type, otherwise a HashMap will
+     * be returned.
      *
      * @param self    a Map
      * @param closure a closure condition applying on the entries
      * @return a new subMap
      */
     public static Map findAll(Map self, Closure closure) {
-        Map answer = new HashMap(self.size());
+        Map answer = createSimilarMap(self);
         for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry) iter.next();
             if (DefaultTypeTransformation.castToBoolean(callClosureForMapEntry(closure, entry))) {
@@ -1700,7 +1704,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Sorts all collection members into groups determined by the
      * supplied mapping closure.  The closure should return the key that this
-     * item should be grouped by.  The returned Map will have an entry for each
+     * item should be grouped by.  The returned LinkedHashMap will have an entry for each
      * distinct key returned from the closure, with each value being a list of
      * items for that group.
      *
@@ -1709,7 +1713,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a new Map grouped by keys
      */
     public static Map groupBy(Collection self, Closure closure) {
-        Map answer = new HashMap();
+        Map answer = new LinkedHashMap();
         for (Iterator iter = self.iterator(); iter.hasNext();) {
             Object element = iter.next();
             Object value = closure.call(element);
@@ -1732,7 +1736,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a new Map grouped by keys
      */
     public static Map groupEntriesBy(Map self, Closure closure) {
-        final Map answer = new HashMap();
+        final Map answer = createSimilarMap(self);
         for (final Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry) iter.next();
             Object value = callClosureForMapEntry(closure, entry);
@@ -1749,6 +1753,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * resulting map will have an entry for each 'group' key returned by the
      * closure, with values being the map members from the original map that
      * belong to each group.
+     * <p>
+     * If the <code>self</code> map is one of TreeMap, LinkedHashMap, Hashtable
+     * or Properties, the returned Map will preserve that type, otherwise a HashMap will
+     * be returned.
      *
      * @param self    a map to group
      * @param closure a closure mapping entries on keys
@@ -1756,12 +1764,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Map groupBy(Map self, Closure closure) {
         final Map initial = groupEntriesBy(self, closure);
-        final Map answer = new HashMap();
+        final Map answer = createSimilarMap(self);
         for (Object o : initial.entrySet()) {
             Map.Entry outer = (Map.Entry) o;
             Object key = outer.getKey();
             List entries = (List) outer.getValue();
-            Map target = new HashMap();
+            Map target = new LinkedHashMap();
             for (int i = 0; i < entries.size(); i++) {
                 Map.Entry inner = (Map.Entry) entries.get(i);
                 target.put(inner.getKey(), inner.getValue());

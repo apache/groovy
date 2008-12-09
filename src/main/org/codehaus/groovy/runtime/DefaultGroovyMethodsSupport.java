@@ -158,6 +158,20 @@ public class DefaultGroovyMethodsSupport {
         return new HashSet();
     }
 
+    protected static Map createSimilarMap(Map orig) {
+        Map answer = createMapFromClass(orig);
+        if (answer != null) return answer;
+
+        // fall back to some defaults
+        if (orig instanceof SortedMap) {
+            return new TreeMap();
+        }
+        if (orig instanceof LinkedHashMap) {
+            return new LinkedHashMap();
+        }
+        return new HashMap();
+    }
+
     private static Collection createCollectionFromClass(Collection orig) {
         try {
             final Constructor constructor = orig.getClass().getConstructor();
