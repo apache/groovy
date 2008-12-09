@@ -273,9 +273,37 @@ public class FileSystemCompiler {
     }
 
     public static File createTempDir() throws IOException {
-        File tempFile = File.createTempFile("groovy-generated-", "-java-source");
-        tempFile.delete();
-        tempFile.mkdirs();
+        final int MAXTRIES = 3;
+        int accessDeniedCounter = 0;
+        File tempFile=null;
+        for (int i=0; i<MAXTRIES; i++) {
+            try {
+                tempFile = File.createTempFile("groovy-generated-", "-java-source");
+                tempFile.delete();
+                tempFile.mkdirs();
+                break;
+            } catch (IOException ioe) {
+                if (ioe.getMessage().startsWith("Access is denied")) {
+                    accessDeniedCounter++;
+                }
+                if (i==MAXTRIES-1) {
+                    if (accessDeniedCounter==MAXTRIES) {
+                        String msg = 
+                            "Access is denied.\nWe tried " +
+                            + accessDeniedCounter+
+                            " times to create a temporary directory"+
+                            " and failed each time. If you are on Windows"+
+                            " you are possibly victim to"+
+                            " http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6325169. "+
+                            " this is no bug in Groovy.";
+                        throw new IOException(msg,ioe);
+                    } else {
+                        throw ioe;
+                    }
+                }
+                continue;
+            }
+        }
         return tempFile;
     }
 
