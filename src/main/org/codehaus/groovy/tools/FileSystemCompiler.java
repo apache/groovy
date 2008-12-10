@@ -296,7 +296,7 @@ public class FileSystemCompiler {
                             " you are possibly victim to"+
                             " http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6325169. "+
                             " this is no bug in Groovy.";
-                        throw new IOException(msg,ioe);
+                        throw new IOException(msg);
                     } else {
                         throw ioe;
                     }
