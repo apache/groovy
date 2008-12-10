@@ -57,6 +57,9 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
             java.math.BigDecimal.class,
             java.awt.Color.class,
     };
+    private static final Class MY_CLASS = Immutable.class;
+    private static final ClassNode MY_TYPE = new ClassNode(MY_CLASS);
+    private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode HASHMAP_TYPE = new ClassNode(HashMap.class);
     private static final ClassNode MAP_TYPE = new ClassNode(Map.class);
     private static final ClassNode DATE_TYPE = new ClassNode(Date.class);
@@ -65,8 +68,6 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     private static final ClassNode HASHUTIL_TYPE = new ClassNode(HashCodeHelper.class);
     private static final ClassNode STRINGBUFFER_TYPE = new ClassNode(StringBuffer.class);
     private static final ClassNode DGM_TYPE = new ClassNode(DefaultGroovyMethods.class);
-    private static final ClassNode MY_TYPE = new ClassNode(Immutable.class);
-    private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
     private static final ClassNode SELF_TYPE = new ClassNode(ImmutableASTTransformation.class);
     private static final Token COMPARE_EQUAL = Token.newSymbol(Types.COMPARE_EQUAL, -1, -1);
     private static final Token COMPARE_NOT_EQUAL = Token.newSymbol(Types.COMPARE_NOT_EQUAL, -1, -1);
@@ -262,13 +263,31 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
             throw new RuntimeException(MY_TYPE_NAME + " does not allow explicit constructors");
         }
 
-        // map constructor
-        final BlockStatement body = new BlockStatement();
         List<PropertyNode> list = cNode.getProperties();
-        final VariableExpression args = new VariableExpression("args");
+        boolean specialHashMapCase = list.size() == 1 && list.get(0).getField().getType().equals(HASHMAP_TYPE);
+        if (specialHashMapCase) {
+            createConstructorMapSpecial(cNode, constructorStyle, list);
+        } else {
+            createConstructorMap(cNode, constructorStyle, list);
+            createConstructorOrdered(cNode, constructorStyle, list);
+        }
+    }
+
+    private void createConstructorMapSpecial(ClassNode cNode, FieldExpression constructorStyle, List<PropertyNode> list) {
+        final BlockStatement body = new BlockStatement();
+        body.addStatement(createConstructorStatementMapSpecial(list.get(0).getField()));
+        createConstructorMapCommon(cNode, constructorStyle, body);
+    }
+
+    private void createConstructorMap(ClassNode cNode, FieldExpression constructorStyle, List<PropertyNode> list) {
+        final BlockStatement body = new BlockStatement();
         for (PropertyNode pNode : list) {
             body.addStatement(createConstructorStatement(pNode));
         }
+        createConstructorMapCommon(cNode, constructorStyle, body);
+    }
+
+    private void createConstructorMapCommon(ClassNode cNode, FieldExpression constructorStyle, BlockStatement body) {
         final List<FieldNode> fList = cNode.getFields();
         for (FieldNode fNode : fList) {
             if (!fNode.isPublic() && !fNode.getName().contains("$") && (cNode.getProperty(fNode.getName()) == null)) {
@@ -278,11 +297,12 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         body.addStatement(assignStatement(constructorStyle, ConstantExpression.TRUE));
         final Parameter[] params = new Parameter[]{new Parameter(HASHMAP_TYPE, "args")};
         cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, params, ClassNode.EMPTY_ARRAY, new IfStatement(
-                equalsNullExpr(args),
+                equalsNullExpr(new VariableExpression("args")),
                 new EmptyStatement(),
                 body)));
+    }
 
-        // alternative ordered constructor
+    private void createConstructorOrdered(ClassNode cNode, FieldExpression constructorStyle, List<PropertyNode> list) {
         final MapExpression argMap = new MapExpression();
         final Parameter[] orderedParams = new Parameter[list.size()];
         int index = 0;
@@ -292,7 +312,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         }
         final BlockStatement orderedBody = new BlockStatement();
         orderedBody.addStatement(new ExpressionStatement(
-                new ConstructorCallExpression(ClassNode.THIS, new ArgumentListExpression(new CastExpression(HASHMAP_TYPE,argMap)))
+                new ConstructorCallExpression(ClassNode.THIS, new ArgumentListExpression(new CastExpression(HASHMAP_TYPE, argMap)))
         ));
         orderedBody.addStatement(assignStatement(constructorStyle, ConstantExpression.FALSE));
         cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, orderedParams, ClassNode.EMPTY_ARRAY, orderedBody));
@@ -353,6 +373,32 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
                         new EmptyStatement(),
                         assignStatement(fieldExpr, cloneCollectionExpr(initExpr))),
                 assignStatement(fieldExpr, cloneCollectionExpr(collection)));
+    }
+
+    private Statement createConstructorStatementMapSpecial(FieldNode fNode) {
+        final FieldExpression fieldExpr = new FieldExpression(fNode);
+        Expression initExpr = fNode.getInitialValueExpression();
+        if (initExpr == null) initExpr = ConstantExpression.NULL;
+        Expression namedArgs = findArg(fNode.getName());
+        Expression baseArgs = new VariableExpression("args");
+        return new IfStatement(
+                equalsNullExpr(baseArgs),
+                new IfStatement(
+                        equalsNullExpr(initExpr),
+                        new EmptyStatement(),
+                        assignStatement(fieldExpr, cloneCollectionExpr(initExpr))),
+                new IfStatement(
+                        equalsNullExpr(namedArgs),
+                        new IfStatement(
+                                isTrueExpr(new MethodCallExpression(baseArgs, "containsKey", new ConstantExpression(fNode.getName()))),
+                                assignStatement(fieldExpr, namedArgs),
+                                assignStatement(fieldExpr, cloneCollectionExpr(baseArgs))),
+                        new IfStatement(
+                                isOneExpr(new MethodCallExpression(baseArgs, "size", MethodCallExpression.NO_ARGUMENTS)),
+                                assignStatement(fieldExpr, cloneCollectionExpr(namedArgs)),
+                                assignStatement(fieldExpr, cloneCollectionExpr(baseArgs)))
+                )
+        );
     }
 
     private boolean isKnownImmutable(ClassNode fieldType) {
@@ -426,8 +472,16 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         return new BooleanExpression(new BinaryExpression(argExpr, COMPARE_EQUAL, ConstantExpression.NULL));
     }
 
+    private BooleanExpression isTrueExpr(Expression argExpr) {
+        return new BooleanExpression(new BinaryExpression(argExpr, COMPARE_EQUAL, ConstantExpression.TRUE));
+    }
+
     private BooleanExpression isZeroExpr(Expression expr) {
         return new BooleanExpression(new BinaryExpression(expr, COMPARE_EQUAL, new ConstantExpression(Integer.valueOf(0))));
+    }
+
+    private BooleanExpression isOneExpr(Expression expr) {
+        return new BooleanExpression(new BinaryExpression(expr, COMPARE_EQUAL, new ConstantExpression(Integer.valueOf(1))));
     }
 
     private BooleanExpression notEqualsExpr(PropertyNode pNode, Expression other) {
@@ -511,7 +565,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     public static Object checkImmutable(String fieldName, Object field) {
         if (field == null || field instanceof Enum || inImmutableList(field.getClass())) return field;
         if (field instanceof Collection) return DefaultGroovyMethods.asImmutable((Collection) field);
-        if (field.getClass().getAnnotation(Immutable.class) != null) return field;
+        if (field.getClass().getAnnotation(MY_CLASS) != null) return field;
         final String typeName = field.getClass().getName();
         throw new RuntimeException(createErrorMessage(fieldName, typeName, "constructing"));
     }

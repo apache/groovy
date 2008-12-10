@@ -15,18 +15,23 @@
  */
 package org.codehaus.groovy.runtime;
 
-import groovy.lang.*;
-import groovy.util.*;
 import groovy.io.EncodingAwareBufferedWriter;
+import groovy.lang.*;
 import groovy.sql.GroovyRowResult;
-import org.codehaus.groovy.reflection.*;
+import groovy.util.CharsetToolkit;
+import groovy.util.ClosureComparator;
+import groovy.util.GroovyCollections;
+import groovy.util.OrderBy;
+import groovy.util.ProxyGenerator;
+import org.codehaus.groovy.reflection.ClassInfo;
+import org.codehaus.groovy.reflection.MixinInMetaClass;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberDiv;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMinus;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMultiply;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberPlus;
 import org.codehaus.groovy.runtime.dgmimpl.arrays.*;
-import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
+import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
@@ -40,18 +45,24 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.net.*;
+import java.net.MalformedURLException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.ResultSet;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 
 /**
  * This class defines all the new groovy methods which appear on normal JDK
@@ -285,7 +296,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Map getProperties(Object self) {
         List metaProps = getMetaPropertyValues(self);
-        Map props = new HashMap(metaProps.size());
+        Map props = new LinkedHashMap(metaProps.size());
 
         for (Iterator itr = metaProps.iterator(); itr.hasNext();) {
             PropertyValue pv = (PropertyValue) itr.next();
@@ -1681,13 +1692,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * closure takes one parameter then it will be passed the Map.Entry.
      * Otherwise if the closure should take two parameters, which will be
      * the key and the value.
+     * <p>
+     * If the <code>self</code> map is one of TreeMap, LinkedHashMap, Hashtable
+     * or Properties, the returned Map will preserve that type, otherwise a HashMap will
+     * be returned.
      *
      * @param self    a Map
      * @param closure a closure condition applying on the entries
      * @return a new subMap
      */
     public static Map findAll(Map self, Closure closure) {
-        Map answer = new HashMap(self.size());
+        Map answer = createSimilarMap(self);
         for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry) iter.next();
             if (DefaultTypeTransformation.castToBoolean(callClosureForMapEntry(closure, entry))) {
@@ -1700,7 +1715,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Sorts all collection members into groups determined by the
      * supplied mapping closure.  The closure should return the key that this
-     * item should be grouped by.  The returned Map will have an entry for each
+     * item should be grouped by.  The returned LinkedHashMap will have an entry for each
      * distinct key returned from the closure, with each value being a list of
      * items for that group.
      *
@@ -1709,7 +1724,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a new Map grouped by keys
      */
     public static Map groupBy(Collection self, Closure closure) {
-        Map answer = new HashMap();
+        Map answer = new LinkedHashMap();
         for (Iterator iter = self.iterator(); iter.hasNext();) {
             Object element = iter.next();
             Object value = closure.call(element);
@@ -1732,7 +1747,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a new Map grouped by keys
      */
     public static Map groupEntriesBy(Map self, Closure closure) {
-        final Map answer = new HashMap();
+        final Map answer = createSimilarMap(self);
         for (final Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
             Map.Entry entry = (Map.Entry) iter.next();
             Object value = callClosureForMapEntry(closure, entry);
@@ -1749,6 +1764,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * resulting map will have an entry for each 'group' key returned by the
      * closure, with values being the map members from the original map that
      * belong to each group.
+     * <p>
+     * If the <code>self</code> map is one of TreeMap, LinkedHashMap, Hashtable
+     * or Properties, the returned Map will preserve that type, otherwise a HashMap will
+     * be returned.
      *
      * @param self    a map to group
      * @param closure a closure mapping entries on keys
@@ -1756,12 +1775,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Map groupBy(Map self, Closure closure) {
         final Map initial = groupEntriesBy(self, closure);
-        final Map answer = new HashMap();
+        final Map answer = createSimilarMap(self);
         for (Object o : initial.entrySet()) {
             Map.Entry outer = (Map.Entry) o;
             Object key = outer.getKey();
             List entries = (List) outer.getValue();
-            Map target = new HashMap();
+            Map target = new LinkedHashMap();
             for (int i = 0; i < entries.size(); i++) {
                 Map.Entry inner = (Map.Entry) entries.get(i);
                 target.put(inner.getKey(), inner.getValue());

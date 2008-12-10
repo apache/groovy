@@ -158,6 +158,23 @@ public class DefaultGroovyMethodsSupport {
         return new HashSet();
     }
 
+    protected static Map createSimilarMap(Map orig) {
+        Map answer = createMapFromClass(orig);
+        if (answer != null) return answer;
+
+        // fall back to some defaults
+        if (orig instanceof SortedMap) {
+            return new TreeMap();
+        }
+        if (orig instanceof Properties) {
+            return new Properties();
+        }
+        if (orig instanceof Hashtable) {
+            return new Hashtable();
+        }
+        return new LinkedHashMap();
+    }
+
     private static Collection createCollectionFromClass(Collection orig) {
         try {
             final Constructor constructor = orig.getClass().getConstructor();
@@ -224,9 +241,6 @@ public class DefaultGroovyMethodsSupport {
         if (orig instanceof TreeMap)
             return new TreeMap(orig);
 
-        if (orig instanceof LinkedHashMap)
-            return new LinkedHashMap(orig);
-
         if (orig instanceof Properties) {
             Map map = new Properties();
             map.putAll(orig);
@@ -236,7 +250,7 @@ public class DefaultGroovyMethodsSupport {
         if (orig instanceof Hashtable)
             return new Hashtable(orig);
 
-        return new HashMap(orig);
+        return new LinkedHashMap(orig);
     }
 
     /**
