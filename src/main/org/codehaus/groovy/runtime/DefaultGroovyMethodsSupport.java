@@ -166,16 +166,13 @@ public class DefaultGroovyMethodsSupport {
         if (orig instanceof SortedMap) {
             return new TreeMap();
         }
-        if (orig instanceof LinkedHashMap) {
-            return new LinkedHashMap();
-        }
         if (orig instanceof Properties) {
             return new Properties();
         }
         if (orig instanceof Hashtable) {
             return new Hashtable();
         }
-        return new HashMap();
+        return new LinkedHashMap();
     }
 
     private static Collection createCollectionFromClass(Collection orig) {
@@ -244,9 +241,6 @@ public class DefaultGroovyMethodsSupport {
         if (orig instanceof TreeMap)
             return new TreeMap(orig);
 
-        if (orig instanceof LinkedHashMap)
-            return new LinkedHashMap(orig);
-
         if (orig instanceof Properties) {
             Map map = new Properties();
             map.putAll(orig);
@@ -256,7 +250,7 @@ public class DefaultGroovyMethodsSupport {
         if (orig instanceof Hashtable)
             return new Hashtable(orig);
 
-        return new HashMap(orig);
+        return new LinkedHashMap(orig);
     }
 
     /**

@@ -15,18 +15,23 @@
  */
 package org.codehaus.groovy.runtime;
 
-import groovy.lang.*;
-import groovy.util.*;
 import groovy.io.EncodingAwareBufferedWriter;
+import groovy.lang.*;
 import groovy.sql.GroovyRowResult;
-import org.codehaus.groovy.reflection.*;
+import groovy.util.CharsetToolkit;
+import groovy.util.ClosureComparator;
+import groovy.util.GroovyCollections;
+import groovy.util.OrderBy;
+import groovy.util.ProxyGenerator;
+import org.codehaus.groovy.reflection.ClassInfo;
+import org.codehaus.groovy.reflection.MixinInMetaClass;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberDiv;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMinus;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberMultiply;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberPlus;
 import org.codehaus.groovy.runtime.dgmimpl.arrays.*;
-import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
+import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
@@ -40,18 +45,24 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.net.*;
+import java.net.MalformedURLException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.sql.ResultSet;
+import java.sql.ResultSetMetaData;
+import java.sql.SQLException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
-import java.sql.ResultSet;
-import java.text.DateFormat;
-import java.text.SimpleDateFormat;
 
 /**
  * This class defines all the new groovy methods which appear on normal JDK
@@ -285,7 +296,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Map getProperties(Object self) {
         List metaProps = getMetaPropertyValues(self);
-        Map props = new HashMap(metaProps.size());
+        Map props = new LinkedHashMap(metaProps.size());
 
         for (Iterator itr = metaProps.iterator(); itr.hasNext();) {
             PropertyValue pv = (PropertyValue) itr.next();
