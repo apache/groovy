@@ -20,6 +20,7 @@ import groovy.swing.SwingBuilder
 import groovy.ui.ConsoleTextEditor
 import groovy.ui.SystemOutputInterceptor
 import groovy.ui.text.FindReplaceUtility
+
 import java.awt.Component
 import java.awt.EventQueue
 import java.awt.Font
@@ -30,19 +31,21 @@ import java.util.prefs.Preferences
 import javax.swing.*
 import javax.swing.event.CaretEvent
 import javax.swing.event.CaretListener
-import javax.swing.text.Element
-import javax.swing.text.Style
-import org.codehaus.groovy.runtime.InvokerHelper
-import org.codehaus.groovy.runtime.StackTraceUtils
-import javax.swing.text.SimpleAttributeSet
-import javax.swing.text.html.HTML
 import javax.swing.event.HyperlinkListener
 import javax.swing.event.HyperlinkEvent
-import org.codehaus.groovy.control.CompilationFailedException
-import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import javax.swing.text.AttributeSet
+import javax.swing.text.Element
+import javax.swing.text.SimpleAttributeSet
+import javax.swing.text.Style
+import javax.swing.text.StyleConstants
+import javax.swing.text.html.HTML
+
+import org.codehaus.groovy.runtime.InvokerHelper
+import org.codehaus.groovy.runtime.StackTraceUtils
 import org.codehaus.groovy.control.ErrorCollector
-import org.codehaus.groovy.syntax.SyntaxException
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage
+import org.codehaus.groovy.syntax.SyntaxException
 
 /**
  * Groovy Swing console.
@@ -276,11 +279,32 @@ class Console implements CaretListener, HyperlinkListener {
     }
 
     // Append a string to the output area
-    void appendOutput(text, style){
+    void appendOutput(String text, AttributeSet style){
         def doc = outputArea.styledDocument
         doc.insertString(doc.length, text, style)
-
         ensureNoDocLengthOverflow(doc)
+    }
+
+    void appendOutput(Window window, AttributeSet style) {
+        append(window.toString(), style)
+    }
+
+    void appendOutput(Object object, AttributeSet style) {
+        append(object.toString(), style)
+    }
+
+    void appendOutput(Component component, AttributeSet style) {
+        SimpleAttributeSet sas = new SimpleAttributeSet();
+        sas.addAttribute(StyleConstants.NameAttribute, "component")
+        StyleConstants.setComponent(sas, component)
+        appendOutput(component.toString(), sas)
+    }
+
+    void appendOutput(Icon icon, AttributeSet style) {
+        SimpleAttributeSet sas = new SimpleAttributeSet();
+        sas.addAttribute(StyleConstants.NameAttribute, "icon")
+        StyleConstants.setIcon(sas, icon)
+        appendOutput(icon.toString(), sas)
     }
 
     void appendStacktrace(text) {
@@ -556,17 +580,9 @@ class Console implements CaretListener, HyperlinkListener {
             def obj = (visualizeScriptResults
                 ? OutputTransforms.transformResult(result, shell.context._outputTransforms)
                 : result.toString())
-            if ((obj instanceof Component) && !(obj instanceof Window)) {
-                outputArea.setSelectionStart(outputArea.document.length)
-                outputArea.setSelectionEnd(outputArea.document.length)
-                outputArea.insertComponent(obj)
-            } else if (obj instanceof Icon) {
-                outputArea.setSelectionStart(outputArea.document.length)
-                outputArea.setSelectionEnd(outputArea.document.length)
-                outputArea.insertIcon(obj)
-            } else {
-                appendOutput(obj.toString(), resultStyle)
-            }
+
+            // multi-methods are magical!
+            appendOutput(obj, resultStyle)
         } else {
             statusLabel.text = 'Execution complete. Result was null.'
         }
