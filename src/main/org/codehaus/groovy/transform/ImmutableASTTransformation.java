@@ -379,18 +379,26 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         final FieldExpression fieldExpr = new FieldExpression(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
         if (initExpr == null) initExpr = ConstantExpression.NULL;
-        Expression args = findArg(fNode.getName());
+        Expression namedArgs = findArg(fNode.getName());
+        Expression baseArgs = new VariableExpression("args");
         return new IfStatement(
-                equalsNullExpr(args),
+                equalsNullExpr(baseArgs),
                 new IfStatement(
                         equalsNullExpr(initExpr),
-                        new IfStatement(
-                                equalsNullExpr(new VariableExpression("args")),
-                                new EmptyStatement(),
-                                assignStatement(fieldExpr, cloneCollectionExpr(new VariableExpression("args")))
-                        ),
+                        new EmptyStatement(),
                         assignStatement(fieldExpr, cloneCollectionExpr(initExpr))),
-                assignStatement(fieldExpr, cloneCollectionExpr(args)));
+                new IfStatement(
+                        equalsNullExpr(namedArgs),
+                        new IfStatement(
+                                isTrueExpr(new MethodCallExpression(baseArgs, "containsKey", new ConstantExpression(fNode.getName()))),
+                                assignStatement(fieldExpr, namedArgs),
+                                assignStatement(fieldExpr, cloneCollectionExpr(baseArgs))),
+                        new IfStatement(
+                                isOneExpr(new MethodCallExpression(baseArgs, "size", MethodCallExpression.NO_ARGUMENTS)),
+                                assignStatement(fieldExpr, cloneCollectionExpr(namedArgs)),
+                                assignStatement(fieldExpr, cloneCollectionExpr(baseArgs)))
+                )
+        );
     }
 
     private boolean isKnownImmutable(ClassNode fieldType) {
@@ -464,8 +472,16 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         return new BooleanExpression(new BinaryExpression(argExpr, COMPARE_EQUAL, ConstantExpression.NULL));
     }
 
+    private BooleanExpression isTrueExpr(Expression argExpr) {
+        return new BooleanExpression(new BinaryExpression(argExpr, COMPARE_EQUAL, ConstantExpression.TRUE));
+    }
+
     private BooleanExpression isZeroExpr(Expression expr) {
         return new BooleanExpression(new BinaryExpression(expr, COMPARE_EQUAL, new ConstantExpression(Integer.valueOf(0))));
+    }
+
+    private BooleanExpression isOneExpr(Expression expr) {
+        return new BooleanExpression(new BinaryExpression(expr, COMPARE_EQUAL, new ConstantExpression(Integer.valueOf(1))));
     }
 
     private BooleanExpression notEqualsExpr(PropertyNode pNode, Expression other) {
