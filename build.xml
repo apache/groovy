@@ -496,6 +496,7 @@ Not found: ${groovyJar14path}
                 <attribute name="Bundle-RequiredExecutionEnvironment" value="@{bundleEnvironment}" />
                 <attribute name="Eclipse-BuddyPolicy" value="dependent"/>
                 <attribute name="Eclipse-LazyStart" value="true"/>
+                <attribute name="DynamicImport-Package" value="*"/>
             </manifest>
         </sequential>
     </macrodef>
