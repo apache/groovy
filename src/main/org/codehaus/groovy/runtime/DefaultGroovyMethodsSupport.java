@@ -169,6 +169,12 @@ public class DefaultGroovyMethodsSupport {
         if (orig instanceof LinkedHashMap) {
             return new LinkedHashMap();
         }
+        if (orig instanceof Properties) {
+            return new Properties();
+        }
+        if (orig instanceof Hashtable) {
+            return new Hashtable();
+        }
         return new HashMap();
     }
 
