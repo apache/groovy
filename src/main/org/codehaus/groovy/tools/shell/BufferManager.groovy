@@ -62,7 +62,7 @@ class BufferManager
         def i = buffers.size() - 1
 
         if (select) {
-            select(i)
+            this.select(i)
         }
         
         if (log.debugEnabled) {

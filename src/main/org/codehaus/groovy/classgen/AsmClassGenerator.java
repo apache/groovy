@@ -2259,13 +2259,11 @@ public class AsmClassGenerator extends ClassGenerator {
         		&& !classNode.hasPossibleMethod(methodName, arguments)
         		&& isNotExplicitThisInClosure(call.isImplicitThis())) {
             // let's invoke the closure method
-            visitVariableExpression(new VariableExpression(methodName));
-            if (arguments instanceof TupleExpression) {
-                arguments.visit(this);
-            } else {
-                new TupleExpression(arguments).visit(this);
-            }
-            invokeClosureMethod.call(mv);
+        	invokeClosure(arguments, methodName);
+        } else if(call.isImplicitThis() && isThisExpression && compileStack.containsVariable(methodName)) {
+        	// if it is a non-qualified method call (implicitThis=true) on a local variable 
+        	// of the same name, then it should take precedence (GROOVY-3069)
+        	invokeClosure(arguments, methodName);
         } else {
             MethodCallerMultiAdapter adapter = invokeMethod;
             if (isThisExpression) adapter = invokeMethodOnCurrent;
@@ -2273,6 +2271,16 @@ public class AsmClassGenerator extends ClassGenerator {
             if (isStaticInvocation(call)) adapter = invokeStaticMethod;
             makeInvokeMethodCall(call, isSuperMethodCall, adapter);
         }
+    }
+    
+    private void invokeClosure(Expression arguments, String methodName) {
+        visitVariableExpression(new VariableExpression(methodName));
+        if (arguments instanceof TupleExpression) {
+            arguments.visit(this);
+        } else {
+            new TupleExpression(arguments).visit(this);
+        }
+        invokeClosureMethod.call(mv);
     }
 
     private boolean isStaticInvocation(MethodCallExpression call) {
