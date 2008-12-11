@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,25 +15,18 @@
  */
 package groovy.util;
 
-import groovy.xml.QName;
 import groovy.xml.FactorySupport;
-
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import groovy.xml.QName;
+import org.xml.sax.*;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
 import javax.xml.parsers.SAXParserFactory;
-
-import org.xml.sax.*;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 /**
  * A helper class for parsing XML into a tree of Node instances for a
@@ -43,7 +36,7 @@ import org.xml.sax.*;
  * the XML into a Node for each element in the XML with attributes
  * and child Nodes and Strings. This simple model is sufficient for
  * most simple use cases of processing XML.
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Paul King
  * @version $Revision$
@@ -51,7 +44,7 @@ import org.xml.sax.*;
 public class XmlParser implements ContentHandler {
 
     private StringBuffer bodyText = new StringBuffer();
-    private List stack = new ArrayList();
+    private List<Node> stack = new ArrayList<Node>();
     private Locator locator;
     private XMLReader reader;
     private Node parent;
@@ -135,7 +128,7 @@ public class XmlParser implements ContentHandler {
 
     /**
      * Parse the content of the specified input stream into a tree of Nodes.
-     *
+     * <p/>
      * Note that using this method will not provide the parser with any URI
      * for which to find DTDs etc
      *
@@ -155,7 +148,7 @@ public class XmlParser implements ContentHandler {
 
     /**
      * Parse the content of the specified reader into a tree of Nodes.
-     *
+     * <p/>
      * Note that using this method will not provide the parser with any URI
      * for which to find DTDs etc
      *
@@ -192,7 +185,7 @@ public class XmlParser implements ContentHandler {
 
     /**
      * A helper method to parse the given text as XML.
-     * 
+     *
      * @param text the XML text to parse
      * @return the root node of the parsed tree of Nodes
      * @throws SAXException Any SAX exception, possibly
@@ -222,7 +215,7 @@ public class XmlParser implements ContentHandler {
     public void setNamespaceAware(boolean namespaceAware) {
         this.namespaceAware = namespaceAware;
     }
-    
+
     // Delegated XMLReader methods
     //------------------------------------------------------------------------
 
@@ -293,7 +286,7 @@ public class XmlParser implements ContentHandler {
      * @see org.xml.sax.XMLReader#setProperty(java.lang.String, java.lang.Object)
      */
     public void setProperty(final String uri, final Object value) throws SAXNotRecognizedException, SAXNotSupportedException {
-         this.reader.setProperty(uri, value);
+        reader.setProperty(uri, value);
     }
 
     // ContentHandler interface
@@ -307,19 +300,19 @@ public class XmlParser implements ContentHandler {
     }
 
     public void startElement(String namespaceURI, String localName, String qName, Attributes list)
-        throws SAXException {
+            throws SAXException {
         addTextToNode();
 
         Object name = getElementName(namespaceURI, localName, qName);
 
         int size = list.getLength();
-        Map attributes = new HashMap(size);
+        Map attributes = new LinkedHashMap(size);
         for (int i = 0; i < size; i++) {
             Object attributeName = getElementName(list.getURI(i), list.getLocalName(i), list.getQName(i));
             String value = list.getValue(i);
             attributes.put(attributeName, value);
         }
-        parent = new Node(parent, name, attributes, new NodeList());
+        parent = createNode(parent, name, attributes);
         stack.add(parent);
     }
 
@@ -329,7 +322,7 @@ public class XmlParser implements ContentHandler {
         if (!stack.isEmpty()) {
             stack.remove(stack.size() - 1);
             if (!stack.isEmpty()) {
-                parent = (Node) stack.get(stack.size() - 1);
+                parent = stack.get(stack.size() - 1);
             }
         }
     }
@@ -362,7 +355,7 @@ public class XmlParser implements ContentHandler {
     }
 
     // Implementation methods
-    //-------------------------------------------------------------------------           
+    //-------------------------------------------------------------------------
     protected XMLReader getXMLReader() {
         reader.setContentHandler(this);
         return reader;
@@ -379,7 +372,31 @@ public class XmlParser implements ContentHandler {
         bodyText = new StringBuffer();
     }
 
-    protected Object getElementName(String namespaceURI, String localName, String qName) throws SAXException {
+    /**
+     * Creates a new node with the given parent, name, and attributes. The
+     * default implementation returns an instance of
+     * <code>groovy.util.Node</code>.
+     *
+     * @param parent     the parent node, or null if the node being created is the
+     *                   root node
+     * @param name       an Object representing the name of the node (typically
+     *                   an instance of {@link QName})
+     * @param attributes a Map of attribute names to attribute values
+     * @return a new Node instance representing the current node
+     */
+    protected Node createNode(Node parent, Object name, Map attributes) {
+        return new Node(parent, name, attributes, new NodeList());
+    }
+
+    /**
+     * Return a name given the namespaceURI, localName and qName.
+     *
+     * @param namespaceURI the namespace URI
+     * @param localName    the local name
+     * @param qName        the qualified name
+     * @return the newly created representation of the name
+     */
+    protected Object getElementName(String namespaceURI, String localName, String qName) {
         String name = localName;
         String prefix = "";
         if ((name == null) || (name.length() < 1)) {
