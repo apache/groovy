@@ -2539,7 +2539,9 @@ public class AsmClassGenerator extends ClassGenerator {
                 if (isSuperExpression(objectExpression)) {
                     field = classNode.getSuperClass().getDeclaredField(name);
                 } else {
-                    field = classNode.getDeclaredField(name);
+                	if(isNotExplicitThisInClosure(expression.isImplicitThis())) {
+                        field = classNode.getDeclaredField(name);
+                	}
                 }
                 if (field != null) {
                     visitFieldExpression(new FieldExpression(field));
