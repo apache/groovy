@@ -303,16 +303,16 @@ public class XmlParser implements ContentHandler {
             throws SAXException {
         addTextToNode();
 
-        Object name = getElementName(namespaceURI, localName, qName);
+        Object nodeName = getElementName(namespaceURI, localName, qName);
 
         int size = list.getLength();
-        Map attributes = new LinkedHashMap(size);
+        Map<Object, String> attributes = new LinkedHashMap<Object, String>(size);
         for (int i = 0; i < size; i++) {
             Object attributeName = getElementName(list.getURI(i), list.getLocalName(i), list.getQName(i));
             String value = list.getValue(i);
             attributes.put(attributeName, value);
         }
-        parent = createNode(parent, name, attributes);
+        parent = createNode(parent, nodeName, attributes);
         stack.add(parent);
     }
 

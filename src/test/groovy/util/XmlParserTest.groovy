@@ -1,8 +1,8 @@
 package groovy.util
 
-import groovy.xml.TraversalTestSupport
 import groovy.xml.GpathSyntaxTestSupport
 import groovy.xml.MixedMarkupTestSupport
+import groovy.xml.TraversalTestSupport
 
 class XmlParserTest extends GroovyTestCase {
 
@@ -247,5 +247,11 @@ p() {
   </child>
 </root>
 '''
+    }
+
+    void testXmlParserExtensionPoints() {
+        def html = new CustomXmlParser().parseText(bookXml)
+        assert html.getClass() == CustomNode
+        assert html.name() == new Integer(42)
     }
 }
