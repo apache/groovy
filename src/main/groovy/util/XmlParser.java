@@ -385,7 +385,7 @@ public class XmlParser implements ContentHandler {
      * @return a new Node instance representing the current node
      */
     protected Node createNode(Node parent, Object name, Map attributes) {
-        return new Node(parent, name, attributes, new NodeList());
+        return new Node(parent, name, attributes);
     }
 
     /**
