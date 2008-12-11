@@ -2254,7 +2254,10 @@ public class AsmClassGenerator extends ClassGenerator {
         boolean isThisExpression = isThisExpression(call.getObjectExpression());
 
         // are we a local variable?
-        if (methodName != null && isThisExpression && isFieldOrVariable(methodName) && !classNode.hasPossibleMethod(methodName, arguments)) {
+        // it should not be an explicitly "this" qualified method call inside a closure
+        if (methodName != null && isThisExpression && isFieldOrVariable(methodName) 
+        		&& !classNode.hasPossibleMethod(methodName, arguments)
+        		&& isNotExplicitThisInClosure(call.isImplicitThis())) {
             // let's invoke the closure method
             visitVariableExpression(new VariableExpression(methodName));
             if (arguments instanceof TupleExpression) {
@@ -4237,6 +4240,10 @@ public class AsmClassGenerator extends ClassGenerator {
     protected boolean isInClosure() {
         return classNode.getOuterClass() != null
                 && classNode.getSuperClass() == ClassHelper.CLOSURE_TYPE;
+    }
+    
+    protected boolean isNotExplicitThisInClosure(boolean implicitThis) {
+    	return implicitThis || !isInClosure();
     }
 
     protected boolean isStaticMethod() {
