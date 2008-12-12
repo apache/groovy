@@ -367,6 +367,32 @@ tokens {
         if (!z)  requireFailed(problem, solution);
     }
 
+    private boolean matchGenericTypeBrackets(boolean z, String problem, String solution) throws SemanticException {
+        if (!z)  matchGenericTypeBracketsFailed(problem, solution);
+        return z;
+    }
+
+    public void matchGenericTypeBracketsFailed(String problem, String solution) throws SemanticException {
+        Token lt = null;
+        int lineNum = Token.badToken.getLine(), colNum = Token.badToken.getColumn();
+        
+        try { 
+            lt = LT(1);
+            if(lt != null) {
+                lineNum = lt.getLine();
+                colNum = lt.getColumn();
+            }
+        }
+        catch (TokenStreamException ee) {
+            if(ee instanceof TokenStreamRecognitionException) {
+                lineNum = ((TokenStreamRecognitionException) ee).recog.getLine();
+                colNum = ((TokenStreamRecognitionException) ee).recog.getColumn();
+            }
+        }
+        
+        throw new SemanticException(problem + ";\n   solution: " + solution,
+                                    getFilename(), lineNum, colNum);
+   }
 
     // Query a name token to see if it begins with a capital letter.
     // This is used to tell the difference (w/o symbol table access) between {String x} and {println x}.
@@ -739,7 +765,8 @@ int currentLtLevel = 0;}
 
         // make sure we have gobbled up enough '>' characters
         // if we are at the "top level" of nested typeArgument productions
-        {(currentLtLevel != 0) || ltCounter == currentLtLevel}?
+        {matchGenericTypeBrackets(((currentLtLevel != 0) || ltCounter == currentLtLevel),
+        "Missing closing bracket '>' for generics types", "Please specify the missing bracket!")}?
 
         {#typeArguments = #(create(TYPE_ARGUMENTS, "TYPE_ARGUMENTS",first,LT(1)), #typeArguments);}
     ;
@@ -1048,7 +1075,8 @@ typeParameters
 
         // make sure we have gobbled up enough '>' characters
         // if we are at the "top level" of nested typeArgument productions
-        {(currentLtLevel != 0) || ltCounter == currentLtLevel}?
+        {matchGenericTypeBrackets(((currentLtLevel != 0) || ltCounter == currentLtLevel),
+        "Missing closing bracket '>' for generics types", "Please specify the missing bracket!")}?
 
         {#typeParameters = #(create(TYPE_PARAMETERS, "TYPE_PARAMETERS",first,LT(1)), #typeParameters);}
     ;
