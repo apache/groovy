@@ -1,5 +1,7 @@
 package gls.generics.vm5
 
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
+
 class GenericsTest extends GenericsTestBase {
 
     public void testClassWithoutParameterExtendsClassWithFixedParameter() {
@@ -269,4 +271,53 @@ import java.util.concurrent.atomic.AtomicInteger
  assert ThreadId!=null
 	   """
 	}
+
+    void testCompilationWithMissingClosingBracketsInGenerics() {
+        assertScriptAndVerifyCompilationError """
+            def list1 = new ArrayList<Integer()
+        """
+
+        assertScriptAndVerifyCompilationError """
+            List<Integer list2 = new ArrayList<Integer>()
+        """
+
+        assertScriptAndVerifyCompilationError """
+            def c = []
+            for (Iterator<String i = c.iterator(); i.hasNext(); ) { }
+        """
+        
+        assertScriptAndVerifyCompilationError """
+            def m(Class<Integer someParam) {}
+        """
+        
+        assertScriptAndVerifyCompilationError """
+            abstract class ArrayList1<E extends AbstractList<E> implements List<E> {}
+        """
+
+        assertScriptAndVerifyCompilationError """
+            abstract class ArrayList2<E> extends AbstractList<E implements List<E> {}
+        """
+
+        assertScriptAndVerifyCompilationError """
+            abstract class ArrayList3<E> extends AbstractList<E> implements List<E {}
+        """
+        
+        assertScriptAndVerifyCompilationError """
+            def List<List<Integer> history = new ArrayList<List<Integer>>()
+        """
+
+        assertScriptAndVerifyCompilationError """
+            def List<List<Integer>> history = new ArrayList<List<Integer>()
+        """
+    }
+    
+    private void assertScriptAndVerifyCompilationError(scriptText) {
+        try {
+            assertScript scriptText
+            fail("The script compilation should have failed as it contains mis-matching generic brackets")
+        } catch(MultipleCompilationErrorsException mcee) {
+            def text = mcee.toString();
+            assert text.contains("Missing closing bracket '>' for generics types")
+        }
+    }
 }
