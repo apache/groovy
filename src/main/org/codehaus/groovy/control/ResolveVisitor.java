@@ -355,7 +355,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     private boolean resolveFromStaticInnerClasses(ClassNode type, boolean testStaticInnerClasses) {
         // a class consisting of a vanilla name can never be
-        // a static inner class, because at last one dot is
+        // a static inner class, because at least one dot is
         // required for this. Example: foo.bar -> foo$bar
         if (type instanceof LowerCaseClass) return false;
 

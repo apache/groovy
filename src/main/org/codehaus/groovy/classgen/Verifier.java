@@ -931,7 +931,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         boolean equalReturnType = mr.equals(omr);
         if (equalReturnType && normalEqualParameters) return null;
 
-        // if we reach this point we have at last one parameter or return type, that
+        // if we reach this point we have at least one parameter or return type, that
         // is different in its specified form. That means we have to create a bridge method!
         ClassNode testmr = correctToGenericsSpec(genericsSpec,omr);
         if (!isAssignable(mr,testmr)){
