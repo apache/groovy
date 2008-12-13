@@ -60,6 +60,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     private static final Class MY_CLASS = Immutable.class;
     private static final ClassNode MY_TYPE = new ClassNode(MY_CLASS);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
+    private static final ClassNode OBJECT_TYPE = new ClassNode(Object.class);
     private static final ClassNode HASHMAP_TYPE = new ClassNode(HashMap.class);
     private static final ClassNode MAP_TYPE = new ClassNode(Map.class);
     private static final ClassNode DATE_TYPE = new ClassNode(Date.class);
@@ -201,13 +202,14 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
 
     private void createEquals(ClassNode cNode) {
         final BlockStatement body = new BlockStatement();
-        final List<PropertyNode> list = cNode.getProperties();
         Expression other = new VariableExpression("other");
 
         // some short circuit cases for efficiency
         body.addStatement(returnFalseIfNull(other));
+        body.addStatement(returnFalseIfWrongType(cNode, other));
         body.addStatement(returnTrueIfIdentical(VariableExpression.THIS_EXPRESSION, other));
 
+        final List<PropertyNode> list = cNode.getProperties();
         // fields
         for (PropertyNode pNode : list) {
             body.addStatement(returnFalseIfPropertyNotEqual(pNode, other));
@@ -216,8 +218,16 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         // default
         body.addStatement(new ReturnStatement(ConstantExpression.TRUE));
 
-        Parameter[] params = {new Parameter(cNode, "other")};
+        Parameter[] params = {new Parameter(OBJECT_TYPE, "other")};
         cNode.addMethod(new MethodNode("equals", ACC_PUBLIC, ClassHelper.boolean_TYPE, params, ClassNode.EMPTY_ARRAY, body));
+    }
+
+    private Statement returnFalseIfWrongType(ClassNode cNode, Expression other) {
+        return new IfStatement(
+                identicalExpr(new ClassExpression(cNode), new ClassExpression(other.getType())),
+                new ReturnStatement(ConstantExpression.FALSE),
+                new EmptyStatement()
+        );
     }
 
     private IfStatement returnFalseIfNull(Expression other) {
@@ -260,7 +270,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         final FieldExpression constructorStyle = new FieldExpression(constructorField);
         if (cNode.getDeclaredConstructors().size() != 0) {
             // TODO: allow constructors which call provided constructor?
-            throw new RuntimeException(MY_TYPE_NAME + " does not allow explicit constructors");
+            throw new RuntimeException("Explicit constructors not allowed for " + MY_TYPE_NAME + " class: " + cNode.getNameWithoutPackage());
         }
 
         List<PropertyNode> list = cNode.getProperties();
