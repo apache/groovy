@@ -37,7 +37,7 @@ public class Grape {
      * <br />
      * By default it is set to true.
      */
-    static boolean getEnableGrapes() {
+    public static boolean getEnableGrapes() {
         return enableGrapes;
     }
 
@@ -47,7 +47,7 @@ public class Grape {
      * <br />
      * By default it is set to true.
      */
-    static void setEnableGrapes(boolean enableGrapes) {
+    public static void setEnableGrapes(boolean enableGrapes) {
         Grape.enableGrapes = enableGrapes;
     }
 
@@ -70,7 +70,7 @@ public class Grape {
      * <br />
      * By default it is set to false.
      */
-    static boolean getEnableAutoDownload() {
+    public static boolean getEnableAutoDownload() {
         return enableAutoDownload;
     }
 
@@ -93,7 +93,7 @@ public class Grape {
      * <br />
      * By default it is set to false.
      */
-    static void setEnableAutoDownload(boolean enableAutoDownload) {
+    public static void setEnableAutoDownload(boolean enableAutoDownload) {
         Grape.enableAutoDownload = enableAutoDownload;
     }
 
