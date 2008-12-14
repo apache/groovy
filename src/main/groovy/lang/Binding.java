@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2008 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,68 +15,69 @@
  */
 package groovy.lang;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
  * Represents the variable bindings of a script which can be altered
  * from outside the script object or created outside of a script and passed
  * into it.
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
 public class Binding extends GroovyObjectSupport {
     private Map variables;
-    
+
     public Binding() {
     }
-    
+
     public Binding(Map variables) {
         this.variables = variables;
     }
-    
+
     /**
      * A helper constructor used in main(String[]) method calls
-     * 
+     *
      * @param args are the command line arguments from a main()
      */
     public Binding(String[] args) {
         this();
         setVariable("args", args);
     }
-    
+
     /**
      * @param name the name of the variable to lookup
      * @return the variable value
      */
     public Object getVariable(String name) {
         if (variables == null)
-            throw new MissingPropertyException(name, Binding.class);
+            throw new MissingPropertyException(name, this.getClass());
 
         Object result = variables.get(name);
-        
+
         if (result == null && !variables.containsKey(name)) {
-            throw new MissingPropertyException(name, Binding.class);
+            throw new MissingPropertyException(name, this.getClass());
         }
-        
+
         return result;
     }
-    
+
     /**
      * Sets the value of the given variable
-     * @param name the name of the variable to set
+     *
+     * @param name  the name of the variable to set
      * @param value the new value for the given variable
      */
     public void setVariable(String name, Object value) {
         if (variables == null)
-          variables = new HashMap();
+            variables = new LinkedHashMap();
         variables.put(name, value);
     }
-    
+
     public Map getVariables() {
         if (variables == null)
-          variables = new HashMap();
+            variables = new LinkedHashMap();
         return variables;
     }
 
