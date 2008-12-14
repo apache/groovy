@@ -40,6 +40,9 @@ public class ConvertedMap extends ConversionHandler {
     throws Throwable {
         Map m = (Map) getDelegate();
         Closure cl = (Closure) m.get(method.getName());
+        if(cl == null) {
+            throw new UnsupportedOperationException();
+        }
         return cl.call(args);
     }
     
