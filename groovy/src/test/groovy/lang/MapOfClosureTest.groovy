@@ -32,6 +32,18 @@ class MapOfClosureTest extends GroovyTestCase {
         assert outer == 2
     }
 
+    void testInterfaceProxyWithoutAllMethods() {
+        def proxy = [ methodOne: { 'some string' } ] as MultiMethodInterface
+        
+        assert proxy instanceof MultiMethodInterface
+        
+        assertEquals 'some string', proxy.methodOne()
+        
+        shouldFail(UnsupportedOperationException) {
+            proxy.methodTwo()
+        }
+    }
+    
     void testObject() {
         def m = [bar: { "foo" }]
         def x = m as Object
@@ -92,4 +104,9 @@ class B extends A {
 
 class C {
     String[] foo(int a, List b, Double[] c) { ["foo"] as String[] }
+}
+
+interface MultiMethodInterface {
+    String methodOne()
+    String methodTwo()
 }
