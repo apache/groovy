@@ -153,6 +153,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Object with(Object self, Closure closure) {
         final Closure clonedClosure = (Closure) closure.clone();
+        clonedClosure.setResolveStrategy(Closure.DELEGATE_FIRST);
         clonedClosure.setDelegate(self);
         return clonedClosure.call(self);
     }
