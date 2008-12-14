@@ -23,7 +23,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Enumeration;
-import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -85,7 +84,7 @@ public class ServletBinding extends Binding {
          *
          * If there are multiple, they are passed as an array.
          */
-        Map params = new HashMap();
+        Map params = new LinkedHashMap();
         for (Enumeration names = request.getParameterNames(); names.hasMoreElements();) {
             String name = (String) names.nextElement();
             if (!super.getVariables().containsKey(name)) {
