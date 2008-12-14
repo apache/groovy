@@ -80,7 +80,7 @@ $Date$
         <echo message="Operating system architecture: ${os.arch}"/>
         <echo message="Operating system version: ${os.version}"/>
         <echo>
-        Java Classpath: ${java.class.path}
+Java Classpath: ${java.class.path}
         </echo>
     </target>
 
