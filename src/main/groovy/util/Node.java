@@ -42,7 +42,7 @@ public class Node implements Serializable {
 
     static {
         // wrap the standard MetaClass with the delegate
-        setMetaClass(GroovySystem.getMetaClassRegistry().getMetaClass(Node.class));
+        setMetaClass(GroovySystem.getMetaClassRegistry().getMetaClass(Node.class), Node.class);
     }
 
     private static final long serialVersionUID = 4121134753270542643L;
@@ -117,7 +117,7 @@ public class Node implements Serializable {
         return new Node(this, name, attributes, value);
     }
 
-    private static void setMetaClass(final MetaClass metaClass) {
+    protected static void setMetaClass(final MetaClass metaClass, Class nodeClass) {
         final MetaClass newMetaClass = new DelegatingMetaClass(metaClass) {
             /* (non-Javadoc)
             * @see groovy.lang.DelegatingMetaClass#getAttribute(java.lang.Object, java.lang.String)
@@ -160,7 +160,7 @@ public class Node implements Serializable {
             }
 
         };
-        GroovySystem.getMetaClassRegistry().setMetaClass(Node.class, newMetaClass);
+        GroovySystem.getMetaClassRegistry().setMetaClass(nodeClass, newMetaClass);
     }
 
     public String text() {
