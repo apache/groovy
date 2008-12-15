@@ -91,7 +91,13 @@ class GrapeIvy implements GrapeEngine {
     }
 
     public File getLocalGrapeConfig() {
-        return new File(getGrapeDir(), 'grapeConfig.xml')
+        String grapeConfig = System.getProperty("grape.config")
+        if(grapeConfig) {
+            return new File(grapeConfig)
+        }
+        else {           
+            return new File(getGrapeDir(), 'grapeConfig.xml')
+        }
     }
 
     public File getGrapeDir() {
