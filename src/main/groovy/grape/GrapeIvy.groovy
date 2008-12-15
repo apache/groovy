@@ -91,11 +91,33 @@ class GrapeIvy implements GrapeEngine {
     }
 
     public File getLocalGrapeConfig() {
-        return new File(getGroovyRoot(), 'grapeConfig.xml')
+        String grapeConfig = System.getProperty("grape.config")
+        if(grapeConfig) {
+            return new File(grapeConfig)
+        }
+        else {           
+            return new File(getGrapeDir(), 'grapeConfig.xml')
+        }
+    }
+
+    public File getGrapeDir() {
+        String root = System.getProperty("grape.root")
+        if(root == null) {
+            return getGroovyRoot()
+        }
+        else {
+            File grapeRoot = new File(root)
+            try {
+                grapeRoot = grapeRoot.getCanonicalFile()
+            } catch (IOException e) {
+                // skip cannonicalization then, it may not exist yet
+            }
+            return grapeRoot
+        }
     }
 
     public File getGrapeCacheDir() {
-        File cache =  new File(getGroovyRoot(), 'grapes')
+        File cache =  new File(getGrapeDir(), 'grapes')
         if (!cache.exists()) {
             cache.mkdirs()
         } else if (!cache.isDirectory()) {
