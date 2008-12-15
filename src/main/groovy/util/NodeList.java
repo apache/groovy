@@ -35,7 +35,7 @@ import java.util.List;
 public class NodeList extends ArrayList {
     static {
         // wrap the standard MetaClass with the delegate
-        setMetaClass(GroovySystem.getMetaClassRegistry().getMetaClass(NodeList.class));
+        setMetaClass(NodeList.class, GroovySystem.getMetaClassRegistry().getMetaClass(NodeList.class));
     }
 
     public NodeList() {
@@ -49,7 +49,7 @@ public class NodeList extends ArrayList {
         super(size);
     }
 
-    private static void setMetaClass(final MetaClass metaClass) {
+    protected static void setMetaClass(final Class nodelistClass, final MetaClass metaClass) {
         final MetaClass newMetaClass = new DelegatingMetaClass(metaClass) {
             /* (non-Javadoc)
             * @see groovy.lang.DelegatingMetaClass#getAttribute(java.lang.Object, java.lang.String)
@@ -85,7 +85,7 @@ public class NodeList extends ArrayList {
                 return super.getProperty(object, property);
             }
         };
-        GroovySystem.getMetaClassRegistry().setMetaClass(NodeList.class, newMetaClass);
+        GroovySystem.getMetaClassRegistry().setMetaClass(nodelistClass, newMetaClass);
     }
 
     /**
