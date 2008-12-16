@@ -42,6 +42,7 @@ public class DefaultGroovyStaticMethods {
      * @param self    placeholder variable used by Groovy categories; ignored for default static methods
      * @param closure the Runnable closure
      * @return the started thread
+     * @since 1.0
      */
     public static Thread start(Thread self, Closure closure) {
         return createThread(null, false, closure);
@@ -55,6 +56,7 @@ public class DefaultGroovyStaticMethods {
      * @param name    the name to give the thread
      * @param closure the Runnable closure
      * @return the started thread
+     * @since 1.6
      */
     public static Thread start(Thread self, String name, Closure closure) {
         return createThread(name, false, closure);
@@ -66,6 +68,7 @@ public class DefaultGroovyStaticMethods {
      * @param self    placeholder variable used by Groovy categories; ignored for default static methods
      * @param closure the Runnable closure
      * @return the started thread
+     * @since 1.0
      */
     public static Thread startDaemon(Thread self, Closure closure) {
         return createThread(null, true, closure);
@@ -79,6 +82,7 @@ public class DefaultGroovyStaticMethods {
      * @param name    the name to give the thread
      * @param closure the Runnable closure
      * @return the started thread
+     * @since 1.6
      */
     public static Thread startDaemon(Thread self, String name, Closure closure) {
         return createThread(name, true, closure);
@@ -96,6 +100,7 @@ public class DefaultGroovyStaticMethods {
      *
      * @param self placeholder variable used by Groovy categories; ignored for default static methods
      * @return the last regex matcher
+     * @since 1.0
      */
     public static Matcher getLastMatcher(Matcher self) {
         return RegexSupport.getLastMatcher();
@@ -134,6 +139,7 @@ public class DefaultGroovyStaticMethods {
      *
      * @param self         placeholder variable used by Groovy categories; ignored for default static methods
      * @param milliseconds the number of milliseconds to sleep
+     * @since 1.0
      */
     public static void sleep(Object self, long milliseconds) {
         sleepImpl(milliseconds, null);
@@ -146,6 +152,7 @@ public class DefaultGroovyStaticMethods {
      * @param milliseconds the number of milliseconds to sleep
      * @param onInterrupt  interrupt handler, InterruptedException is passed to the Closure
      *                     as long as it returns false, the sleep continues
+     * @since 1.0
      */
     public static void sleep(Object self, long milliseconds, Closure onInterrupt) {
         sleepImpl(milliseconds, onInterrupt);
@@ -164,6 +171,7 @@ public class DefaultGroovyStaticMethods {
      * @param input        String to be parsed to create the date instance
      * @return             a new Date instance representing the parsed input string 
      * @throws ParseException if there is a parse error
+     * @since 1.5.7
      */
     public static Date parse( Date self, String format, String input ) throws ParseException {
     	return new SimpleDateFormat( format ).parse( input );
