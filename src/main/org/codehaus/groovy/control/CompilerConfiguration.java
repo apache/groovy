@@ -626,7 +626,7 @@ public class CompilerConfiguration {
     /**
      * Retrieves the compiler bytecode compatibility mode.
      * 
-     * @return bytecode compatibity mode. Can be either <tt>1.5</tt> or <tt>1.4</tt>.
+     * @return bytecode compatibility mode. Can be either <tt>1.5</tt> or <tt>1.4</tt>.
      */
     public String getTargetBytecode() {
         return this.targetBytecode;
