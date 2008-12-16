@@ -35,6 +35,9 @@ import java.util.Map;
  * @author Jochen Theodorou
  */
 public class VariableScopeVisitor extends ClassCodeVisitorSupport {
+    
+    private static final Expression CALL = new ConstantExpression("call");
+    
     private VariableScope currentScope = null;
     private VariableScope headScope = new VariableScope();
     private ClassNode currentClass = null;
@@ -475,15 +478,26 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
     public void visitMethodCallExpression(MethodCallExpression call) {
         if (call.isImplicitThis() && call.getMethod() instanceof ConstantExpression) {
-            Object value = ((ConstantExpression) call.getMethod()).getText();
+            ConstantExpression methodNameConstant = (ConstantExpression) call.getMethod();
+            Object value = methodNameConstant.getText();
+            
             if (!(value instanceof String)) {
                 throw new GroovyBugError("tried to make a method call with a non-String constant method name.");
             }
+            
             String methodName = (String) value;
             Variable v = checkVariableNameForDeclaration(methodName, call);
             if (v != null && !(v instanceof DynamicVariable)) {
                 checkVariableContextAccess(v, call);
             }
+
+            if (v instanceof VariableExpression || v instanceof Parameter) {
+                VariableExpression object = new VariableExpression(v);
+                object.setSourcePosition(methodNameConstant);
+                call.setObjectExpression(object);
+                call.setMethod(CALL);
+            }
+
         }
         super.visitMethodCallExpression(call);
     }
