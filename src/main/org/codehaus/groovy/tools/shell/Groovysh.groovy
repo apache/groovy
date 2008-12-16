@@ -39,17 +39,17 @@ class Groovysh
 {
     private static final MessageSource messages = new MessageSource(Groovysh.class)
 
-    private final BufferManager buffers = new BufferManager()
+    final BufferManager buffers = new BufferManager()
 
-    private final Parser parser
+    final Parser parser
 
-    private final Interpreter interp
+    final Interpreter interp
     
-    private final List imports = []
+    final List imports = []
     
-    private InteractiveShellRunner runner
+    InteractiveShellRunner runner
     
-    private History history
+    History history
     
     Groovysh(final ClassLoader classLoader, final Binding binding, final IO io, final Closure registrar) {
         super(io)
