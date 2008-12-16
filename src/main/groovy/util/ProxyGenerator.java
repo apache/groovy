@@ -41,6 +41,7 @@ public class ProxyGenerator {
 
     private ClassLoader override = null;
     private boolean debug = false;
+    private boolean emptyMethods = false;
     private List objectMethods = getInheritedMethods(Object.class, new ArrayList());
     private List groovyObjectMethods = getInheritedMethods(GroovyObject.class, new ArrayList());
 
@@ -50,6 +51,14 @@ public class ProxyGenerator {
 
     public void setDebug(boolean debug) {
         this.debug = debug;
+    }
+
+    public boolean getEmptyMethods() {
+        return emptyMethods;
+    }
+
+    public void setEmptyMethods(boolean emptyMethods) {
+        this.emptyMethods = emptyMethods;
     }
 
     public ClassLoader getOverride() {
@@ -385,8 +394,14 @@ public class ProxyGenerator {
         Class[] parameterTypes = addMethodPrefix(buffer, method);
         if (map.containsKey(method.getName())) {
             addMethodBody(buffer, method.getName(), parameterTypes);
+        } else if (!emptyMethods) {
+            addUnsupportedBody(buffer);
         }
         addMethodSuffix(buffer);
+    }
+
+    private void addUnsupportedBody(StringBuffer buffer) {
+        buffer.append("throw new UnsupportedOperationException()");
     }
 
     private Class[] addMethodPrefix(StringBuffer buffer, Method method) {
