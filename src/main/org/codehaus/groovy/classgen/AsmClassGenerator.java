@@ -2248,31 +2248,33 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitMethodCallExpression(MethodCallExpression call) {
         onLineNumber(call, "visitMethodCallExpression: \"" + call.getMethod() + "\":");
 
-        Expression arguments = call.getArguments();
-        String methodName = call.getMethodAsString();
-        boolean isSuperMethodCall = usesSuper(call);
-        boolean isThisExpression = isThisExpression(call.getObjectExpression());
-
-        // are we a local variable?
-        // it should not be an explicitly "this" qualified method call inside a closure
-        if (methodName != null && isThisExpression && isFieldOrVariable(methodName) 
-        		&& !classNode.hasPossibleMethod(methodName, arguments)
-        		&& isNotExplicitThisInClosure(call.isImplicitThis())) {
+        if (isClosureCall(call)) {
             // let's invoke the closure method
-        	invokeClosure(arguments, methodName);
-        } else if(call.isImplicitThis() && isThisExpression && compileStack.containsVariable(methodName)) {
-        	// if it is a non-qualified method call (implicitThis=true) on a local variable 
-        	// of the same name, then it should take precedence (GROOVY-3069)
-        	invokeClosure(arguments, methodName);
+        	invokeClosure(call.getArguments(), call.getMethodAsString());
         } else {
+            boolean isSuperMethodCall = usesSuper(call);
             MethodCallerMultiAdapter adapter = invokeMethod;
-            if (isThisExpression) adapter = invokeMethodOnCurrent;
+            if (isThisExpression(call.getObjectExpression())) adapter = invokeMethodOnCurrent;
             if (isSuperMethodCall) adapter = invokeMethodOnSuper;
             if (isStaticInvocation(call)) adapter = invokeStaticMethod;
             makeInvokeMethodCall(call, isSuperMethodCall, adapter);
         }
     }
-    
+
+    private boolean isClosureCall(MethodCallExpression call) {
+        // are we a local variable?
+        // it should not be an explicitly "this" qualified method call
+        // and the current class should have a possible method
+        String methodName = call.getMethodAsString();
+        if (methodName==null) return false;
+        if (!call.isImplicitThis()) return false;
+        if (!isThisExpression(call.getObjectExpression())) return false;
+        //if (isNotExplicitThisInClosure(call.isImplicitThis()) return false;
+        if (classNode.getDeclaredField(methodName) == null) return false;
+        Expression arguments = call.getArguments();
+        return ! classNode.hasPossibleMethod(methodName, arguments);
+    }
+
     private void invokeClosure(Expression arguments, String methodName) {
         visitVariableExpression(new VariableExpression(methodName));
         if (arguments instanceof TupleExpression) {
