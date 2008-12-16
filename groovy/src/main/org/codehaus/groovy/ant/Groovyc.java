@@ -74,6 +74,7 @@ import java.util.Map ;
  * <li>memoryMaximumSize</li>
  * <li>fork</li>
  * <li>stacktrace</li>
+ * <li>stubdir</li>
  * </ul>
  * Of these arguments, the <b>srcdir</b> and <b>destdir</b> are required.
  *
@@ -131,6 +132,7 @@ public class Groovyc extends MatchingTask
     private boolean jointCompilation;
 
     public Groovyc ( ) { }
+
 
     /**
      * Adds a path for source compilation.
@@ -840,4 +842,25 @@ public class Groovyc extends MatchingTask
     compiler.setListfiles ( listFiles ) ;
     compiler.execute ( ) ;
   }  
+    /**
+     * Set the stub directory into which the Java source stub
+     * files should be generated. The directory should exist 
+     * will not be deleted automatically.
+     *
+     * @param stubDir the stub directory
+     */
+    public void setStubdir(File stubDir) {
+        jointCompilation = true;
+        configuration.getJointCompilationOptions().put("stubDir", stubDir);
+    }
+
+    /**
+     * Gets the stub directory into which the Java source stub
+     * files should be generated
+     *
+     * @return the stub directory
+     */
+    public File getStubdir() {
+        return (File) configuration.getJointCompilationOptions().get("stubDir");
+    }
 }

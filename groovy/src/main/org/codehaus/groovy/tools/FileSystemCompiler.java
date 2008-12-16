@@ -226,10 +226,103 @@ public class FileSystemCompiler
         }
     }
 
-    private static File createTempDir() throws IOException {
-        File tempFile = File.createTempFile("groovy-generated-", "-java-source");
-        tempFile.delete();
-        tempFile.mkdirs();
+    public static CompilerConfiguration generateCompilerConfigurationFromOptions(CommandLine cli) {
+        //
+        // Setup the configuration data
+
+        CompilerConfiguration configuration = new CompilerConfiguration();
+
+        if (cli.hasOption("classpath")) {
+            configuration.setClasspath(cli.getOptionValue("classpath"));
+        }
+
+        if (cli.hasOption('d')) {
+            configuration.setTargetDirectory(cli.getOptionValue('d'));
+        }
+
+        if (cli.hasOption("encoding")) {
+            configuration.setSourceEncoding(cli.getOptionValue("encoding"));
+        }
+
+        // joint compilation parameters
+        if (cli.hasOption('j')) {
+            Map compilerOptions = new HashMap();
+
+            String[] opts = cli.getOptionValues("J");
+            compilerOptions.put("namedValues", opts);
+
+            opts = cli.getOptionValues("F");
+            compilerOptions.put("flags", opts);
+
+            configuration.setJointCompilationOptions(compilerOptions);
+        }
+        return configuration;
+    }
+
+    public static Options createCompilationOptions() {
+        //
+        // Parse the command line
+
+        Options options = new Options();
+
+        options.addOption(OptionBuilder.withLongOpt("classpath").hasArg().withArgName("path").withDescription("Specify where to find the class files.").create());
+        options.addOption(OptionBuilder.withLongOpt("sourcepath").hasArg().withArgName("path").withDescription("Specify where to find the source files.").create());
+        options.addOption(OptionBuilder.withLongOpt("temp").hasArg().withArgName("temp").withDescription("").create());
+        options.addOption(OptionBuilder.withLongOpt("encoding").hasArg().withArgName("encoding").withDescription("Specify the encoding of the user class files.").create());
+        options.addOption(OptionBuilder.hasArg().withDescription("Specify where to place generated class files.").create('d'));
+//            options.addOption(OptionBuilder.withLongOpt("strict").withDescription("Turn on strict type safety.").create('s'));
+        options.addOption(OptionBuilder.withLongOpt("help").withDescription("Print a synopsis of standard options.").create('h'));
+        options.addOption(OptionBuilder.withLongOpt("version").withDescription("Print the version.").create('v'));
+        options.addOption(OptionBuilder.withLongOpt("exception").withDescription("Print stack trace on error.").create('e'));
+        options.addOption(OptionBuilder.withLongOpt("jointCompilation").withDescription("Attach javac compiler to compile .java files.").create('j'));
+
+        options.addOption(
+                OptionBuilder.withArgName("property=value")
+                        .withValueSeparator()
+                        .hasArgs(2)
+                        .withDescription("")
+                        .create("J"));
+        options.addOption(
+                OptionBuilder.withArgName("flag")
+                        .hasArg()
+                        .withDescription("")
+                        .create("F"));
+        return options;
+    }
+
+    public static File createTempDir() throws IOException {
+        final int MAXTRIES = 3;
+        int accessDeniedCounter = 0;
+        File tempFile=null;
+        for (int i=0; i<MAXTRIES; i++) {
+            try {
+                tempFile = File.createTempFile("groovy-generated-", "-java-source");
+                tempFile.delete();
+                tempFile.mkdirs();
+                break;
+            } catch (IOException ioe) {
+                if (ioe.getMessage().startsWith("Access is denied")) {
+                    accessDeniedCounter++;
+                    try { Thread.sleep(100); } catch (InterruptedException e) {}
+                }
+                if (i==MAXTRIES-1) {
+                    if (accessDeniedCounter==MAXTRIES) {
+                        String msg = 
+                            "Access is denied.\nWe tried " +
+                            + accessDeniedCounter+
+                            " times to create a temporary directory"+
+                            " and failed each time. If you are on Windows"+
+                            " you are possibly victim to"+
+                            " http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6325169. "+
+                            " this is no bug in Groovy.";
+                        throw new IOException(msg);
+                    } else {
+                        throw ioe;
+                    }
+                }
+                continue;
+            }
+        }
         return tempFile;
     }
 }
