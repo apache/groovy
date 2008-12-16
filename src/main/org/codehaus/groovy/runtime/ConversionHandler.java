@@ -70,7 +70,7 @@ public abstract class ConversionHandler implements InvocationHandler, Serializab
      */
     public Object invoke(Object proxy, Method method, Object[] args)
     throws Throwable {
-        if(!isObjectMethod(method)){
+        if(!isObjectMethod(method) || method.getName().equals("toString")){
             return invokeCustom(proxy,method,args);
         }
         try {
