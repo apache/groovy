@@ -740,6 +740,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         String propertyNamePart = classPropertyExpression.getPropertyAsString();
         if (propertyNamePart == null || !propertyNamePart.equals("class")) return pe;
 
+        found.setSourcePosition(classPropertyExpression);
         if (stack.isEmpty()) return found;
         stackElement = stack.removeFirst();
         if (!(stackElement.getClass() == PropertyExpression.class)) return pe;
