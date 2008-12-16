@@ -285,6 +285,7 @@ public class FileSystemCompiler {
             } catch (IOException ioe) {
                 if (ioe.getMessage().startsWith("Access is denied")) {
                     accessDeniedCounter++;
+                    try { Thread.sleep(100); } catch (InterruptedException e) {}
                 }
                 if (i==MAXTRIES-1) {
                     if (accessDeniedCounter==MAXTRIES) {
