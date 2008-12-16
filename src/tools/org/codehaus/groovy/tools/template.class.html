@@ -94,19 +94,25 @@ ${method.shortComment}
 <A name="${method.name}(${method.parametersSignature})"><!-- --></A><H3>${method.name}</H3>
 <PRE>public ${method.isStatic ? 'static ' : ''}${method.returnTypeDocUrl} <B>${method.name}</B>(${method.parametersDocUrl})</PRE>
 <DL>
-<DD>${method.comment}
+<DD>${method.comment}</DD>
 <P>
 <DD><DL></dl></DD>
 
 <% if (method.parametersSignature) { %>
-<DT><B>Parameters:</B>
+<DT><B>Parameters:</B></DT>
 	<% method.parameters.each { param -> %>
-		<DD><CODE>${param.name}</CODE> - ${param.comment}.
+		<DD><CODE>${param.name}</CODE> - ${param.comment}.</DD>
 <% } } %>
 
 <% if (method.returnComment) { %>
-<DT><B>Returns:</B><DD>${method.returnComment}</DL>
+<DT><B>Returns:</B></DT><DD>${method.returnComment}</DD>
 <% } %>
+
+<%if (method.since) { %>
+<DT><B>Since:</B></DT>
+<DD>${method.since}</DD>
+<%}%>
+</DL>
 
 <% if (method.seeComments) { %>
 <DT><B>See:</B>

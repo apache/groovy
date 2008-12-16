@@ -221,7 +221,8 @@ class DocGenerator {
                     parametersSignature: getParametersDecl(method),
                     parametersDocUrl: getParametersDocUrl(method),
                     parameters: parameters,
-                    isStatic: method.parentClass.name == 'DefaultGroovyStaticMethods'
+                    isStatic: method.parentClass.name == 'DefaultGroovyStaticMethods',
+                    since: method.getTagByName("since")?.getValue() ?: null
             ]
             methods << methodInfo
         }
