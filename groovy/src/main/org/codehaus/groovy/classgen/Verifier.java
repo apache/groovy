@@ -328,7 +328,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 if (!firstMethodCall) return;
                 firstMethodCall = false;
                 String name = call.getMethodAsString();
-                // the name might not be null if the method name is a GString for example
+                // the name might be null if the method name is a GString for example
                 if (name==null) return;
                 if (!name.equals("super") && !name.equals("this")) return;
                 type=name;
@@ -606,7 +606,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 }
                 statements.addAll(otherStatements);
             }
-            constructorNode.setCode(new BlockStatement(statements, block.getVariableScope()));
+            BlockStatement newBlock = new BlockStatement(statements, block.getVariableScope());
+            newBlock.setSourcePosition(block);
+            constructorNode.setCode(newBlock);
         }
 
         if (!staticStatements.isEmpty()) {
