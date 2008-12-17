@@ -97,6 +97,12 @@ else
     fi
 fi
 
+#  For MSYS, ensure paths are in appropriate format.
+if $msys
+then
+    [ -n "$JAVA_HOME" ] && JAVA_HOME=`( cd "$JAVA_HOME" ; pwd )`
+fi
+
 # Attempt to set GROOVY_HOME if it is not already set.
 if [ -z "$GROOVY_HOME" -o ! -d "$GROOVY_HOME" ] ; then
     # Resolve links: $0 may be a link to groovy's home.
