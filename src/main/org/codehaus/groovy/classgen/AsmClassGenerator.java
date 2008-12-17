@@ -510,10 +510,11 @@ public class AsmClassGenerator extends ClassGenerator {
             Statement code = node.getCode();
 
             // fast path for getter/setters etc.
-            if (code instanceof BytecodeSequence && ((BytecodeSequence)code).getInstructions().size() == 1 && ((BytecodeSequence)code).getInstructions().get(0) instanceof BytecodeInstruction)
+            if (code instanceof BytecodeSequence && ((BytecodeSequence)code).getInstructions().size() == 1 && ((BytecodeSequence)code).getInstructions().get(0) instanceof BytecodeInstruction) {
               ((BytecodeInstruction)((BytecodeSequence)code).getInstructions().get(0)).visit(mv);
-            else
+            } else{
               visitStdMethod(node, isConstructor, parameters, code);
+            }
 
             mv.visitMaxs(0, 0);
         }

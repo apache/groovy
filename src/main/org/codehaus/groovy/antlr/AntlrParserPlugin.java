@@ -1036,7 +1036,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected Statement statementList(AST code) {
-        return statementListNoChild(code.getFirstChild());
+        Statement st = statementListNoChild(code.getFirstChild());
+        if (st.getLineNumber()==-1) configureAST(st,code);
+        return st;
     }
 
     protected Statement statementListNoChild(AST node) {
