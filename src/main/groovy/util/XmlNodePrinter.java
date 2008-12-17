@@ -225,8 +225,8 @@ public class XmlNodePrinter {
                 String namespaceUri = qname.getNamespaceURI();
                 if (namespaceUri != null) {
                     String prefix = qname.getPrefix();
-                    if (!ctx.isNamespaceRegistered(namespaceUri)) {
-                        ctx.registerNamespacePrefix(namespaceUri, prefix);
+                    if (!ctx.isPrefixRegistered(prefix, namespaceUri)) {
+                        ctx.registerNamespacePrefix(prefix, namespaceUri);
                         out.print(" ");
                         out.print("xmlns");
                         if (prefix.length() > 0) {
@@ -340,20 +340,25 @@ public class XmlNodePrinter {
             namespaceMap.putAll(context.namespaceMap);
         }
 
-        public boolean isNamespaceRegistered(String uri) {
-            return namespaceMap.containsKey(uri);
+        public boolean isPrefixRegistered(String prefix, String uri) {
+            return namespaceMap.containsKey(prefix) && namespaceMap.get(prefix).equals(uri);
         }
 
-        public void registerNamespacePrefix(String uri, String prefix) {
-            if (!isNamespaceRegistered(uri)) {
-                namespaceMap.put(uri, prefix);
+        public void registerNamespacePrefix(String prefix, String uri) {
+            if (!isPrefixRegistered(prefix, uri)) {
+                namespaceMap.put(prefix, uri);
             }
         }
 
-        public String getNamespacePrefix(String uri) {
-            Object prefix = namespaceMap.get(uri);
-            return (prefix == null) ? null : prefix.toString();
+        public String getNamespace(String prefix) {
+            Object uri = namespaceMap.get(prefix);
+            return (uri == null) ? null : uri.toString();
         }
+//
+//        public String getNamespacePrefix(String uri) {
+//            Object prefix = namespaceMap.get(uri);
+//            return (prefix == null) ? null : prefix.toString();
+//        }
 
     }
 
