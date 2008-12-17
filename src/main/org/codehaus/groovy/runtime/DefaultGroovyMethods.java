@@ -18,11 +18,7 @@ package org.codehaus.groovy.runtime;
 import groovy.io.EncodingAwareBufferedWriter;
 import groovy.lang.*;
 import groovy.sql.GroovyRowResult;
-import groovy.util.CharsetToolkit;
-import groovy.util.ClosureComparator;
-import groovy.util.GroovyCollections;
-import groovy.util.OrderBy;
-import groovy.util.ProxyGenerator;
+import groovy.util.*;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberDiv;
@@ -45,13 +41,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.net.MalformedURLException;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
+import java.net.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.sql.ResultSet;
@@ -1022,8 +1012,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0 
      */
     public static Collection unique(Collection self, Closure closure) {
-        if (self instanceof Set)
-            return self;
         // use a comparator of one item or two
         int params = closure.getMaximumNumberOfParameters();
         if (params == 1) {
@@ -1095,8 +1083,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static Collection unique(Collection self, Comparator comparator) {
-        if (self instanceof Set)
-            return self;
         List answer = new ArrayList();
         for (Iterator it = self.iterator(); it.hasNext();) {
             Object o = it.next();
