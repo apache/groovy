@@ -17,6 +17,8 @@ package groovy.lang;
 
 import java.lang.reflect.Modifier;
 
+import org.codehaus.groovy.runtime.MetaClassHelper;
+
 /**
  * Represents a property on a bean which may have a getter and/or a setter
  * 
@@ -66,11 +68,10 @@ public abstract class MetaProperty {
 
     public static String getGetterName(String propertyName, Class type) {
         String prefix = type == boolean.class || type == Boolean.class ? "is" : "get";
-        return prefix + Character.toUpperCase(propertyName.charAt(0))
-                + propertyName.substring(1);
+        return prefix + MetaClassHelper.capitalize(propertyName);
     }
 
     public static String getSetterName(String propertyName) {
-        return PROPERTY_SET_PREFIX + propertyName.substring(0, 1).toUpperCase() + propertyName.substring(1);
+        return PROPERTY_SET_PREFIX + MetaClassHelper.capitalize(propertyName);
     }
 }

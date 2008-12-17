@@ -2081,12 +2081,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return name;
 
         synchronized (propNames) {
-            // get the name of the property
-            final int len = methodName.length() - 3;
-            char[] pn = new char[len];
-            methodName.getChars(3, 3 + len, pn, 0);
-            pn[0] = Character.toLowerCase(pn[0]);
-            String propName = new String(pn);
+            String propName = java.beans.Introspector.decapitalize(methodName.substring(3));
             propNames.put(methodName, propName);
             return propName;
         }

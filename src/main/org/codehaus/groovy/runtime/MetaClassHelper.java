@@ -440,8 +440,23 @@ public class MetaClassHelper {
         return ret;
     }
 
-    public static String capitalize(String property) {
-        return property.substring(0, 1).toUpperCase() + property.substring(1, property.length());
+    /**
+     * This is the complement to the java.beans.Introspector.decapitalize(String) method.
+     * We handle names that begin with an initial lowerCase followed by upperCase specially
+     * (which is to make no change).
+     * See GROOVY-3211.
+     * @param property the property name to capitalize
+     * @return the name capitalized, except when we don't
+     */
+    public static String capitalize(final String property) {
+        final String rest = property.substring(1);
+        
+        // Funky rule so that names like 'pNAME' will still work.
+        if (Character.isLowerCase(property.charAt(0)) && (rest.length() > 0) && Character.isUpperCase(rest.charAt(0))) {
+           return property;
+        }
+        
+        return property.substring(0, 1).toUpperCase() + rest;
     }
 
     /**

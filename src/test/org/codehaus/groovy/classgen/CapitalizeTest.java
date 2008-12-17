@@ -57,8 +57,8 @@ public class CapitalizeTest extends GroovyTestCase {
     public void testCapitalize() {
         assertEquals("Foo", Verifier.capitalize("foo"));
         assertEquals("Foo", Verifier.capitalize("Foo"));
-        assertEquals("FOo", Verifier.capitalize("fOo"));
-        assertEquals("FOO", Verifier.capitalize("fOO"));
+        assertEquals("fOo", Verifier.capitalize("fOo"));
+        assertEquals("fOO", Verifier.capitalize("fOO"));
         assertEquals("F", Verifier.capitalize("f"));
     }
 

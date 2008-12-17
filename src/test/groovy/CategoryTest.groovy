@@ -5,7 +5,7 @@ class CategoryTest extends GroovyTestCase {
     void setUp() {
         def dummy = null
         CategoryTestPropertyCategory.setSomething(dummy, 'hello')
-        CategoryTestHelperPropertyReplacer.setAProperty(dummy, 'anotherValue')
+        CategoryTestHelperPropertyReplacer.setaProperty(dummy, 'anotherValue')
     }
 
     void testCategories() {
@@ -130,6 +130,6 @@ class CategoryTestHelper {
 
 class CategoryTestHelperPropertyReplacer {
     private static aVal = "anotherValue"
-    static getAProperty(CategoryTestHelper self) { return aVal }
-    static void setAProperty(CategoryTestHelper self, newValue) { aVal = newValue }
+    static getaProperty(CategoryTestHelper self) { return aVal }
+    static void setaProperty(CategoryTestHelper self, newValue) { aVal = newValue }
 }

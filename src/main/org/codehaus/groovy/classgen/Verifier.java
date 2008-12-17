@@ -22,6 +22,7 @@ import groovy.lang.GroovyObjectSupport;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
+import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
@@ -765,7 +766,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
      * Capitalizes the start of the given bean property name
      */
     public static String capitalize(String name) {
-        return name.substring(0, 1).toUpperCase() + name.substring(1, name.length());
+        return MetaClassHelper.capitalize(name);
     }
 
     protected Statement createGetterBlock(PropertyNode propertyNode, final FieldNode field) {
