@@ -35,7 +35,15 @@ public class DOMCategory {
     }
 
     public static Object get(NodeList nodeList, String elementName) {
-        return getAt(nodeList, elementName);
+        if (nodeList instanceof Element) {
+            // things like com.sun.org.apache.xerces.internal.dom.DeferredElementNSImpl
+            // do implement Element, NodeList and Node. But here we prefer element,
+            // so we force the usage of Element. Without this DOMCategoryTest may fail
+            // in strange ways
+            return getAt((Element)nodeList, elementName);
+        } else {
+            return getAt(nodeList, elementName);
+        }
     }
 
     public static Object get(NamedNodeMap nodeMap, String elementName) {
