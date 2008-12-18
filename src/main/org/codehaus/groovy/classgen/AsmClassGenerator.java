@@ -180,6 +180,7 @@ public class AsmClassGenerator extends ClassGenerator {
     private static final String CONSTRUCTOR = "<$constructor$>";
     private List callSites = new ArrayList();
     private int callSiteArrayVarIndex;
+    private HashMap closureClassMap;
     private static final String DTT = BytecodeHelper.getClassInternalName(DefaultTypeTransformation.class.getName());
 
     public AsmClassGenerator(
@@ -195,6 +196,7 @@ public class AsmClassGenerator extends ClassGenerator {
         dummyGen = new DummyClassGenerator(context, dummyClassWriter, classLoader, sourceFile);
         compileStack = new CompileStack();
         genericParameterNames = new HashMap();
+        closureClassMap = new HashMap();
     }
 
     protected SourceUnit getSourceUnit() {
@@ -1542,11 +1544,15 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     public void visitClosureExpression(ClosureExpression expression) {
-        ClassNode innerClass = createClosureClass(expression);
-        addInnerClass(innerClass);
-        innerClass.addInterface(ClassHelper.GENERATED_CLOSURE_Type);
+        ClassNode innerClass = (ClassNode) closureClassMap.get(expression);
+        if (innerClass==null) {
+            innerClass = createClosureClass(expression);
+            closureClassMap.put(expression,innerClass);
+            addInnerClass(innerClass);
+            innerClass.addInterface(ClassHelper.GENERATED_CLOSURE_Type);
+        }
+        
         String innerClassinternalName = BytecodeHelper.getClassInternalName(innerClass);
-
         passingClosureParams = true;
         List constructors = innerClass.getDeclaredConstructors();
         ConstructorNode node = (ConstructorNode) constructors.get(0);
