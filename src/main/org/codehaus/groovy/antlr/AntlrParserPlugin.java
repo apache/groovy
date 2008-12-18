@@ -507,7 +507,14 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         String identifier = identifier(element);
         Expression init = null;
         element = element.getNextSibling();
-        if (element!=null) init = expression(element);
+        if (element!=null) {
+            init = expression(element);
+            if (isType(ELIST,element)) {
+                ListExpression le = new ListExpression();
+                le.addExpression(init);
+                init = le;
+            }
+        }
         EnumHelper.addEnumConstant(classNode, identifier, init);
     }
     
@@ -2281,15 +2288,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         for (AST child = node.getFirstChild(); child != null; child = child.getNextSibling()) {
             expressionList.add(expression(child));
         }
-        boolean isClassNodeForEnum = false;
-    	/*
-    	 *  For an enum, let it be wrapped in a ListExpression 
-    	 *  even if it is of size 1 - GROOVY-2933
-    	 */
-    	if  (classNode != null && classNode.getSuperClass().getName().equals("java.lang.Enum")) {
-    		isClassNodeForEnum = true;
-    	}
-        if (expressionList.size() == 1 && !isClassNodeForEnum) {
+        if (expressionList.size() == 1) {
             return (Expression) expressionList.get(0);
         } else {
             ListExpression listExpression = new ListExpression(expressionList);
