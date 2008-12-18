@@ -336,7 +336,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
     /**
      * Compatibility API.
      *
-     * @param c run this closure in the builder using the edt method
+     * @param c run this closure in the builder
      */
     public Object build(Closure c) {
         c.setDelegate(this)
