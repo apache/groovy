@@ -137,6 +137,24 @@ class EnumTest extends GroovyTestCase {
         """
         sh.evaluate(enumStr);
     }
+    
+    void testSingleListDoesNoInfluenceMaps() {
+        // the fix for GROOVY-2933 caused map["taku"]
+        // to become map[(["take])] instead. -> GROOVY-3214
+        assertScript """
+            public enum FontFamily {
+                ARIAL
+            
+                static public void obtainMyMap()
+                {
+                    Map map = [:]
+                    map["taku"] = "dio"
+                    assert map.taku == "dio"
+                }
+            }
+            FontFamily.obtainMyMap()
+        """
+    }
 }
 
 enum UsCoin {
