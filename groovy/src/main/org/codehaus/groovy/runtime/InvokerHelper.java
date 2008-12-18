@@ -165,9 +165,9 @@ public class InvokerHelper {
     }
 
     public static Object getProperty(Object object, String property) {
-//        if (object == null) {
-//            throw new NullPointerException("Cannot get property: " + property + " on null object");
-//        }
+        if (object == null) {
+            object = NullObject.getNullObject();
+        }
         if (object instanceof GroovyObject) {
             GroovyObject pogo = (GroovyObject) object;
             return pogo.getProperty(property);
