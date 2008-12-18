@@ -7722,7 +7722,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static Double toDouble(Number self) {
-        return Double.valueOf(self.doubleValue());
+        // Conversions in which all decimal digits are known to be good.
+        if ((self instanceof Double)
+            || (self instanceof Long) 
+            || (self instanceof Integer)
+            || (self instanceof Short)
+            || (self instanceof Byte)) 
+        {
+            return Double.valueOf(self.doubleValue());
+        }
+        
+        // Chances are this is a Float or a Big.
+        // With Float we're extending binary precision and that gets ugly in decimal.
+        // If we used Float.doubleValue() on 0.1f we get 0.10000000149011612.
+        // Note that this is different than casting '(double) 0.1f' which will do the
+        // binary extension just like in Java.
+        // With Bigs and other unkowns, this is likely to be the same.
+        
+        return Double.valueOf(self.toString());
     }
 
     /**
@@ -7733,7 +7750,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static BigDecimal toBigDecimal(Number self) {
-        return BigDecimal.valueOf(self.doubleValue());
+        // Quick method for scalars.
+        if ((self instanceof Long) 
+            || (self instanceof Integer)
+            || (self instanceof Short)
+            || (self instanceof Byte)) 
+        {
+            return BigDecimal.valueOf(self.longValue());
+        }
+        
+        return new BigDecimal(self.toString());
     }
 
     /**

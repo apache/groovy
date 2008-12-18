@@ -63,4 +63,23 @@ class AsTest extends GroovyTestCase {
         assert subject.class == Float
         assert subject == 1.345F
     }
+    
+    void testFloatAsBigDecimal() {
+        subject = 0.1f as BigDecimal
+        assert subject.class == BigDecimal
+        assert subject == 0.1
+    }
+    
+    void testDoubleAsBigDecimal() {
+        subject = 0.1d as BigDecimal
+        assert subject.class == BigDecimal
+        assert subject == 0.1
+    }
+    
+    void testFloatAsDouble() {
+        subject = 0.1f as Double
+        assert subject.class == Double
+        assert subject == 0.1
+    }
+    
 }
