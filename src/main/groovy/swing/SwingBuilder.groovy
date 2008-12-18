@@ -256,6 +256,21 @@ public class SwingBuilder  extends FactoryBuilderSupport {
         return this
     }
 
+    /**
+     * Factory method to create a SwingBuilder, and run the
+     * the closure in it on the EDT
+     *
+     * @param c run this closure in the new builder using the edt method
+     */
+    public static SwingBuilder edtBuilder(Closure c) {
+        return build(c)
+    }
+
+    /**
+     * Factory method static SwingBuilder.build(Closure).
+     * @param c run this closure in a new builder using the edt method
+     * @deprecated  please use edtBuilder(Closure) instead
+     */
     public static SwingBuilder build(Closure c) {
         SwingBuilder builder = new SwingBuilder()
         return builder.edt(c)
