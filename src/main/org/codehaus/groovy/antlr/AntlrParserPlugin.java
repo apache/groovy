@@ -980,14 +980,18 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected Statement statementList(AST code) {
-        Statement st = statementListNoChild(code.getFirstChild());
-        if (st.getLineNumber()==-1) configureAST(st,code);
+        Statement st = statementListNoChild(code.getFirstChild(),code);
         return st;
     }
 
-    protected Statement statementListNoChild(AST node) {
+    protected Statement statementListNoChild(AST node, AST alternativeConfigureNode) {
         BlockStatement block = new BlockStatement();
-        // no need to configureAST(block,node); as node is probably null
+        // alternativeConfigureNode is used only to set the source position
+        if (node!=null) {
+            configureAST(block, node);
+        } else {
+            configureAST(block, alternativeConfigureNode);
+        }
         for (; node != null; node = node.getNextSibling()) {
             block.addStatement(statement(node));
         }
@@ -2218,7 +2222,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             parameters = parameters(paramNode);
             codeNode = paramNode.getNextSibling();
         }
-        Statement code = statementListNoChild(codeNode);
+        Statement code = statementListNoChild(codeNode,node);
         ClosureExpression closureExpression = new ClosureExpression(parameters, code);
         configureAST(closureExpression, node);
         return closureExpression;
@@ -2232,7 +2236,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             return expression(codeNode);
         }
         Parameter[] parameters = Parameter.EMPTY_ARRAY;
-        Statement code = statementListNoChild(codeNode);
+        Statement code = statementListNoChild(codeNode,node);
         ClosureExpression closureExpression = new ClosureExpression(parameters, code);
         configureAST(closureExpression, node);
         // Call it immediately.
