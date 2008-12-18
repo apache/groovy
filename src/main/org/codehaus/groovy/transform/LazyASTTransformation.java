@@ -21,6 +21,7 @@ import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
@@ -87,7 +88,7 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
                 )
             ));
         }
-        final String name = "get" + fieldNode.getName().substring(1, 2).toUpperCase() + fieldNode.getName().substring(2);
+        final String name = "get" + MetaClassHelper.capitalize(fieldNode.getName().substring(1));
         fieldNode.getDeclaringClass().addMethod(name, ACC_PUBLIC, fieldNode.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
 
@@ -133,14 +134,14 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
                     )
             ));
         }
-        final String name = "get" + fieldNode.getName().substring(1, 2).toUpperCase() + fieldNode.getName().substring(2);
+        final String name = "get" + MetaClassHelper.capitalize(fieldNode.getName().substring(1));
         fieldNode.getDeclaringClass().addMethod(name, ACC_PUBLIC, type, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
 
     private void createSoftSetter(FieldNode fieldNode, ClassNode type) {
         BlockStatement body = new BlockStatement();
         final FieldExpression fieldExpr = new FieldExpression(fieldNode);
-        final String name = "set" + fieldNode.getName().substring(1, 2).toUpperCase() + fieldNode.getName().substring(2);
+        final String name = "set" + MetaClassHelper.capitalize(fieldNode.getName().substring(1));
         final Parameter parameter = new Parameter(type, "value");
         final VariableExpression paramExpr = new VariableExpression(parameter);
         body.addStatement(new IfStatement(

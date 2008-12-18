@@ -965,6 +965,14 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
 
     /**
+     * Determine if this method name suffix is a legitimate bean property name.
+     * Either the first or second letter must be upperCase for that to be true.
+     */
+    private static boolean isPropertyName(String name) {
+        return ((name.length() > 0) && Character.isUpperCase(name.charAt(0))) || ((name.length() > 1) && Character.isUpperCase(name.charAt(1)));
+    }
+    
+    /**
      * Returns true if the name of the method specified and the number of arguments make it a javabean property
      *
      * @param name True if its a Javabean property
@@ -977,11 +985,11 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
         if(name.startsWith("get")) {
             name = name.substring(3);
-            if(name.length() > 0 && Character.isUpperCase(name.charAt(0))) return true;
+            return isPropertyName(name);
         }
         else if(name.startsWith("is")) {
             name = name.substring(2);
-            if(name.length() > 0 && Character.isUpperCase(name.charAt(0))) return true;
+            return isPropertyName(name);
         }
         return false;
     }
@@ -1007,15 +1015,10 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
 	private String convertPropertyName(String prop) {
-		if(Character.isUpperCase(prop.charAt(0)) && (prop.length() > 1 && Character.isUpperCase(prop.charAt(1)))) {
+		if(Character.isDigit(prop.charAt(0))) {
 			return prop;
 		}
-		else if(Character.isDigit(prop.charAt(0))) {
-			return prop;
-		}
-		else {
-			return Character.toLowerCase(prop.charAt(0)) + (prop.length() > 1 ? prop.substring(1) : "");
-		}
+		return java.beans.Introspector.decapitalize(prop);
 	}
 
     /**
@@ -1040,7 +1043,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         if(name.startsWith("set")) {
             if(args.length != 1) return false;
             name = name.substring(3);
-            if(name.length() > 0 && Character.isUpperCase(name.charAt(0))) return true;
+            return isPropertyName(name);
         }
 
         return false;
