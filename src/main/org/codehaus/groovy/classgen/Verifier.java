@@ -424,11 +424,13 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         else if (!node.isAbstract()) {
         	BlockStatement newBlock = new BlockStatement();
             if (statement instanceof BlockStatement) {
+                BlockStatement oldBlock = (BlockStatement)statement;
                 newBlock.addStatements(filterStatements(((BlockStatement)statement).getStatements()));
             } else {
                 newBlock.addStatement(filterStatement(statement));
             }
             newBlock.addStatement(ReturnStatement.RETURN_NULL_OR_VOID);
+            newBlock.setSourcePosition(statement);
             node.setCode(newBlock);
         }
     }
@@ -495,7 +497,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 }
             }
             else {
-                return new ReturnStatement(ConstantExpression.NULL);
+                ReturnStatement ret = new ReturnStatement(ConstantExpression.NULL);
+                ret.setSourcePosition(block);
+                return ret;
             }
 
             return new BlockStatement(filterStatements(list),block.getVariableScope());

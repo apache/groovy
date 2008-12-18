@@ -3632,7 +3632,8 @@ public class AsmClassGenerator extends ClassGenerator {
 
         // let's make the constructor
         BlockStatement block = new BlockStatement();
-        block.setSourcePosition(expression);
+        // this block does not get a source position, because we don't
+        // want this synthetic constructor to show up in corbertura reports
         VariableExpression outer = new VariableExpression("_outerInstance");
         outer.setSourcePosition(expression);
         block.getVariableScope().putReferencedLocalVariable(outer);
