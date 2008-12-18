@@ -1526,7 +1526,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
       }
     }
 
-    void _testLookAndFeel() {
+    void testLookAndFeel() {
       testInEDT {
         def swing = new SwingBuilder()
 

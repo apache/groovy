@@ -355,16 +355,16 @@ public class SwingBuilder extends FactoryBuilderSupport {
             return KeyStroke.getKeyStroke(ks.getKeyCode(), ks.getModifiers() | modifier | Toolkit.getDefaultToolkit().getMenuShortcutKeyMask())        }
     }
 
-    public static LookAndFeel lookAndFeel(Object lookAndFeel, Closure initCode) {
-        lookAndFeel([:], lookAndFeel, initCode)
+    public static LookAndFeel lookAndFeel(Object laf, Closure initCode) {
+        lookAndFeel([:], laf, initCode)
     }
 
-    public static LookAndFeel lookAndFeel(Map attributes = [:], Object lookAndFeel = null, Closure initCode = null) {
+    public static LookAndFeel lookAndFeel(Map attributes = [:], Object laf = null, Closure initCode = null) {
         // if we get rid of this warning, we can make it static.
         //if (context) {
         //    LOG.warning "For best result do not call lookAndFeel when it is a child of a SwingBuidler node, initializaiton of the Look and Feel may be inconsistant."
         //}
-        LookAndFeelHelper.instance.lookAndFeel(lookAndFeel, attributes, initCode)
+        LookAndFeelHelper.instance.lookAndFeel(laf, attributes, initCode)
     }
 
     public static LookAndFeel lookAndFeel(Object... lafs) {
