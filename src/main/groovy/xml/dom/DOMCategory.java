@@ -35,18 +35,26 @@ public class DOMCategory {
     private static boolean trimWhitespace = true;
 
     public static Object get(Element element, String elementName) {
-        return getAt(element, elementName);
+        return xgetAt(element, elementName);
     }
 
     public static Object get(NodeList nodeList, String elementName) {
-        return getAt(nodeList, elementName);
+        if (nodeList instanceof Element) {
+            // things like com.sun.org.apache.xerces.internal.dom.DeferredElementNSImpl
+            // do implement Element, NodeList and Node. But here we prefer element,
+            // so we force the usage of Element. Without this DOMCategoryTest may fail
+            // in strange ways
+            return xgetAt((Element)nodeList, elementName);
+        } else {
+            return xgetAt(nodeList, elementName);
+        }
     }
 
     public static Object get(NamedNodeMap nodeMap, String elementName) {
-        return getAt(nodeMap, elementName);
+        return xgetAt(nodeMap, elementName);
     }
 
-    private static Object getAt(Element element, String elementName) {
+    private static Object xgetAt(Element element, String elementName) {
         if ("..".equals(elementName)) {
             return parent(element);
         }
@@ -59,7 +67,7 @@ public class DOMCategory {
         return getChildElements(element, elementName);
     }
 
-    private static Object getAt(NodeList nodeList, String elementName) {
+    private static Object xgetAt(NodeList nodeList, String elementName) {
         List results = new ArrayList();
         for (int i = 0; i < nodeList.getLength(); i++) {
             Node node = nodeList.item(i);
@@ -77,7 +85,7 @@ public class DOMCategory {
         return element.getAttributes();
     }
 
-    private static String getAt(NamedNodeMap namedNodeMap, String elementName) {
+    private static String xgetAt(NamedNodeMap namedNodeMap, String elementName) {
         Attr a = (Attr) namedNodeMap.getNamedItem(elementName);
         return a.getValue();
     }
@@ -100,16 +108,16 @@ public class DOMCategory {
 
     private static Node nodeGetAt(Object o, int i) {
         if (o instanceof Element) {
-            Node n = getAt((Element)o, i);
+            Node n = xgetAt((Element)o, i);
             if (n != null) return n;
         }
         if (o instanceof NodeList) {
-            return getAt((NodeList)o, i);
+            return xgetAt((NodeList)o, i);
         }
         return null;
     }
 
-    private static Node getAt(Element element, int i) {
+    private static Node xgetAt(Element element, int i) {
         if (hasChildElements(element, "*")) {
             NodeList nodeList = getChildElements(element, "*");
             return nodeList.item(i);
@@ -117,7 +125,7 @@ public class DOMCategory {
         return null;
     }
 
-    private static Node getAt(NodeList nodeList, int i) {
+    private static Node xgetAt(NodeList nodeList, int i) {
         if (i >= 0 && i < nodeList.getLength()) {
             return nodeList.item(i);
         }
