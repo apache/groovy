@@ -1,8 +1,9 @@
-package groovy.util;
+package groovy.util
 
 class XmlNodePrinterTest extends GroovyTestCase {
 
-    def namespaceInput = """<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+    def namespaceInput = """\
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
   <soap:Body>
     <Locator xmlns="http://www.foo.com/webservices/AddressBook">
       <Address>
@@ -13,10 +14,11 @@ class XmlNodePrinterTest extends GroovyTestCase {
 </soap:Envelope>
 """
 
-    def attributeWithNamespaceInput = """<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
+    def attributeWithNamespaceInput = """\
+<soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
   <soap:Body>
     <Locator xmlns="http://www.foo.com/webservices/AddressBook">
-      <Address ns1:type="Home" xmlns:ns1="http://www.foo.com/webservices/Address">
+      <Address ns1:type="Home" xmlns:ns1="http://www.foo.com/webservices/Address" ns2:country="AU" xmlns:ns2="http://www.foo.com/webservices/Address">
         1000 Main St
       </Address>
     </Locator>
@@ -24,7 +26,8 @@ class XmlNodePrinterTest extends GroovyTestCase {
 </soap:Envelope>
 """
 
-    def noNamespaceInput = """<Envelope>
+    def noNamespaceInput = """\
+<Envelope>
   <Body>
     <Locator>
       <Address>
