@@ -29,7 +29,7 @@ import java.util.List;
  */
 public class MethodNode extends AnnotatedNode implements Opcodes {
 
-    private String name;
+    private final String name;
     private int modifiers;
     private ClassNode returnType;
     private Parameter[] parameters;
@@ -102,10 +102,6 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
 
     public String getName() {
         return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public Parameter[] getParameters() {
