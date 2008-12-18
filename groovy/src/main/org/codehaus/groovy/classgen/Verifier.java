@@ -383,12 +383,14 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         } else if (!node.isAbstract()) {
         	BlockStatement newBlock = new BlockStatement();
             if (statement instanceof BlockStatement) {
+                BlockStatement oldBlock = (BlockStatement)statement;
                 newBlock.addStatements(filterStatements(((BlockStatement)statement).getStatements()));
             }
             else {
                 newBlock.addStatement(filterStatement(statement));
             }
             newBlock.addStatement(ReturnStatement.RETURN_NULL_OR_VOID);
+            newBlock.setSourcePosition(statement);
             node.setCode(newBlock);
         }
         if (node.getName().equals("main") && node.isStatic()) {
