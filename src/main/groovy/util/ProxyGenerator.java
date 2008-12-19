@@ -17,6 +17,7 @@ package groovy.util;
 
 import groovy.lang.*;
 import org.codehaus.groovy.control.MultipleCompilationErrorsException;
+import org.codehaus.groovy.runtime.ConversionHandler;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
@@ -159,13 +160,11 @@ public class ProxyGenerator {
         // add overwriting methods
         Map<String, Method> selectedMethods = new HashMap<String, Method>();
         List<Method> publicAndProtectedMethods = getInheritedMethods(baseClass, new ArrayList<Method>());
-        List<Method> directMethods = getDeclaredMethodsList(baseClass);
         boolean closureIndicator = map.containsKey("*");
         for (Method method : publicAndProtectedMethods) {
             if (method.getName().indexOf('$') != -1
                     || Modifier.isFinal(method.getModifiers())
-                    || (containsEquivalentMethod(objectMethods, method)
-                    && !containsEquivalentMethod(directMethods, method))
+                    || ConversionHandler.isCoreObjectMethod(method)
                     || containsEquivalentMethod(selectedMethods.values(), method))
                 continue;
             if (map.containsKey(method.getName()) || closureIndicator) {
@@ -379,10 +378,6 @@ public class ProxyGenerator {
             currentClass = currentClass.getSuperclass();
         }
         return methods;
-    }
-
-    private List<Method> getDeclaredMethodsList(Class baseClass) {
-        return new ArrayList<Method>(Arrays.asList(baseClass.getDeclaredMethods()));
     }
 
     private void addNewMapCall(StringBuffer buffer, String methodName) {
