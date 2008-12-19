@@ -706,8 +706,21 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         
         List statements = new ArrayList();
         List staticStatements = new ArrayList();
+        final boolean isEnumClassNode = isEnum(node);
+        List initStmtsAfterEnumValuesInit = new ArrayList();
+        Set explicitStaticPropsInEnum = new HashSet();
+        if(isEnumClassNode) {
+        	for (Iterator iter = node.getProperties().iterator(); iter.hasNext();) {
+        		PropertyNode propNode = (PropertyNode) iter.next();
+        		if(!propNode.isSynthetic() && propNode.getField().isStatic()) {
+        			explicitStaticPropsInEnum.add(propNode.getField().getName());
+        		}
+        	}
+        }
         for (Iterator iter = node.getFields().iterator(); iter.hasNext();) {
-            addFieldInitialization(statements, staticStatements, (FieldNode) iter.next());
+        	addFieldInitialization(statements, staticStatements, 
+        			(FieldNode) iter.next(), isEnumClassNode, 
+        			initStmtsAfterEnumValuesInit, explicitStaticPropsInEnum);
         }
         statements.addAll(node.getObjectInitializerStatements());
         if (!statements.isEmpty()) {
@@ -735,10 +748,26 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
 
         if (!staticStatements.isEmpty()) {
-            node.addStaticInitializerStatements(staticStatements,true);
+        	if(isEnumClassNode) {
+        		/*
+        		* GROOVY-3161: initialize statements for explicitly declared static fields 
+        		* inside an enum should come after enum values are initialized
+        		*/
+        		staticStatements.removeAll(initStmtsAfterEnumValuesInit);
+        		node.addStaticInitializerStatements(staticStatements, true);
+        		if(!initStmtsAfterEnumValuesInit.isEmpty()) {
+        			node.addStaticInitializerStatements(initStmtsAfterEnumValuesInit, false);
+        		}
+        	} else {
+        		node.addStaticInitializerStatements(staticStatements, true);
+        	}
         }
     }
-
+    
+    private boolean isEnum(ClassNode node) {
+    	return (node.getModifiers() & Opcodes.ACC_ENUM) != 0;
+    }
+    
     private ConstructorCallExpression getFirstIfSpecialConstructorCall(Statement code) {
         if (code == null || !(code instanceof ExpressionStatement)) return null;
 
@@ -749,7 +778,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         return null;
     }
 
-    protected void addFieldInitialization(List list, List staticList, FieldNode fieldNode) {
+    protected void addFieldInitialization(List list, List staticList, FieldNode fieldNode,
+    		boolean isEnumClassNode, List initStmtsAfterEnumValuesInit, Set explicitStaticPropsInEnum) {
         Expression expression = fieldNode.getInitialExpression();
         if (expression != null) {
             ExpressionStatement statement =
@@ -761,6 +791,14 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             if (fieldNode.isStatic()) {
                 staticList.add(statement);
                 fieldNode.setInitialValueExpression(null); // to avoid double initialization in case of several constructors
+                /*
+                 * If it is a statement for an explicitly declared static field inside an enum, store its
+                 * reference. For enums, they need to be handled differently as such init statements should
+                 * come after the enum values have been initialized inside <clinit> block. GROOVY-3161.
+                 */
+                if(isEnumClassNode && explicitStaticPropsInEnum.contains(fieldNode.getName())) {
+                	initStmtsAfterEnumValuesInit.add(statement);
+                }
             }
             else {
                 list.add(statement);
