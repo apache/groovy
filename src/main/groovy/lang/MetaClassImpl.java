@@ -975,12 +975,17 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                             try {
                                 return invokeMethodOnGroovyObject(methodName, originalArguments, owner);
                             } catch (MissingMethodException mme) {
+                                // proboboly needed here, but we need a test case to trip it first
                                 if (last == null) last = mme;
                             }
                             catch (InvokerInvocationException iie) {
                                 if (iie.getCause() instanceof MissingMethodException) {
                                     MissingMethodException mme = (MissingMethodException) iie.getCause();
-                                    if (last == null) last = mme;
+                                    if (methodName.equals(mme.getMethod())) {
+                                        if (last == null) last = mme;
+                                    } else {
+                                        throw iie;
+                                    }
                                 }
                                 else
                                   throw iie;
