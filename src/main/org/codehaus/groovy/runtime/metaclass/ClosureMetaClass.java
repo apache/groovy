@@ -404,7 +404,9 @@ public final class ClosureMetaClass extends MetaClassImpl {
                 first = mme;
             } catch (GroovyRuntimeException gre) {
                 Throwable th = unwrap(gre);
-                if (th instanceof MissingMethodException) {
+                if ((th instanceof MissingMethodException)
+                    && (methodName.equals(((MissingMethodException)th).getMethod())))
+                {
                     first = (MissingMethodException) th;
                 } else {
                     throw gre;
@@ -416,6 +418,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
             try {
                 return go.invokeMethod(methodName, args);
             } catch (MissingMethodException mme) {
+                // patch needed here too, but we need a test case to trip it first
                 if (first == null) first = mme;
             } catch (GroovyRuntimeException gre) {
                 Throwable th = unwrap(gre);
