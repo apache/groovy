@@ -17,6 +17,7 @@ package groovy.util;
 
 import groovy.lang.*;
 import org.codehaus.groovy.control.MultipleCompilationErrorsException;
+import org.codehaus.groovy.runtime.ConversionHandler;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
@@ -145,8 +146,10 @@ public class ProxyGenerator {
         publicAndProtectedMethods.addAll(getInheritedMethods(baseClass));
         for (int i = 0; i < publicAndProtectedMethods.size(); i++) {
             Method method = (Method) publicAndProtectedMethods.get(i);
-            if (method.getName().indexOf('$') != -1)
-              continue;
+            if (method.getName().indexOf('$') != -1
+                    || Modifier.isFinal(method.getModifiers())
+                    || ConversionHandler.isCoreObjectMethod(method))
+                continue;
             if (map.containsKey(method.getName())) {
                 selectedMethods.add(method.getName());
                 addOverridingMapCall(buffer, method);
