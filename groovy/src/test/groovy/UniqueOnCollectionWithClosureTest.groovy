@@ -15,6 +15,13 @@ class UniqueOnCollectionWithClosureTest extends GroovyTestCase {
         assert result == [-1, 0]
     }
 
+    // GROOVY-3213
+    void testUniqueWithTwoParameterClosureOnSet() {
+        def set = [-1, 0, 1] as Set
+        def closure = {a,b -> Math.abs(a) <=> Math.abs(b)}
+        assert set.unique(closure).size() == 2
+    }
+
     // GROOVY-1236
     void testUniqueWithTwoParameterClosure() {
         def list = [-1, 0, 1, 1, 0, -1]

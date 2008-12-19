@@ -968,8 +968,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return self   without any duplicates
      */
     public static Collection unique(Collection self, Closure closure) {
-        if (self instanceof Set)
-            return self;
         // use a comparator of one item or two
         int params = closure.getMaximumNumberOfParameters();
         if (params == 1) {
@@ -1039,8 +1037,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return self       the now modified collection without duplicates
      */
     public static Collection unique(Collection self, Comparator comparator) {
-        if (self instanceof Set)
-            return self;
         List answer = new ArrayList();
         for (Iterator it = self.iterator(); it.hasNext();) {
             Object o = it.next();
