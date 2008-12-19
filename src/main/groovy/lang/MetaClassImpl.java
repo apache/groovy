@@ -3029,12 +3029,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private MetaBeanProperty getMetaPropertyFromMutableMetaClass(String propertyName, MetaClass metaClass) {
         final boolean isModified = ((MutableMetaClass) metaClass).isModified();
-        final MetaProperty metaProperty = metaClass.getMetaProperty(propertyName);
-        if(metaProperty instanceof MetaBeanProperty)
-            return isModified ? (MetaBeanProperty)metaProperty : null;
-        else
-            return null;
-
+        if (isModified) {
+            final MetaProperty metaProperty = metaClass.getMetaProperty(propertyName);
+            if(metaProperty instanceof MetaBeanProperty)
+                return (MetaBeanProperty)metaProperty;
+        }
+        return null;
     }
 
     protected MetaMethod findMixinMethod(String methodName, Class[] arguments) {
@@ -3042,6 +3042,21 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     protected static MetaMethod findMethodInClassHeirarchy(Class instanceKlazz, String methodName, Class[] arguments, MetaClass metaClass) {
+
+        if (metaClass instanceof MetaClassImpl) {
+            boolean check = false;
+            for (ClassInfo ci : ((MetaClassImpl)metaClass).theCachedClass.getHeirarchy ()) {
+                final MetaClass aClass = ci.getStrongMetaClass();
+                if (aClass instanceof MutableMetaClass && ((MutableMetaClass)aClass).isModified()) {
+                    check = true;
+                    break;
+                }
+            }
+
+            if (!check)
+              return null;
+        }
+
         MetaMethod method = null;
 
         Class superClass;

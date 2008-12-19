@@ -149,6 +149,26 @@ public class CachedClass {
         }
     };
 
+    private final LazyReference<LinkedList<ClassInfo>> hierarchy = new LazyReference<LinkedList<ClassInfo>>(softBundle) {
+        public LinkedList<ClassInfo> initValue() {
+            LinkedHashSet<ClassInfo> res = new LinkedHashSet<ClassInfo> ();
+
+            res.add(classInfo);
+
+            for (CachedClass iface : getDeclaredInterfaces())
+              res.addAll(iface.getHeirarchy());
+
+            final CachedClass superClass = getCachedSuperClass();
+            if (superClass != null)
+              res.addAll(superClass.getHeirarchy());
+
+            if (isInterface)
+              res.add(ReflectionCache.OBJECT_CLASS.classInfo);
+
+            return new LinkedList<ClassInfo> (res);
+        }
+    };
+
     static final MetaMethod[] EMPTY = new MetaMethod[0];
 
     int hashCode;
@@ -457,6 +477,10 @@ public class CachedClass {
 
     public CallSiteClassLoader getCallSiteLoader() {
         return callSiteClassLoader.get();
+    }
+
+    public Collection<ClassInfo> getHeirarchy() {
+        return hierarchy.get();
     }
 
     public static class CachedMethodComparatorByName implements Comparator {

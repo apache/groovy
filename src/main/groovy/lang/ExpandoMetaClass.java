@@ -210,6 +210,8 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
     public void registerSubclassInstanceMethod(MetaMethod metaMethod) {
+        modified = true;
+        
         final String name = metaMethod.getName();
         Object methodOrList = expandoSubclassMethods.get(name);
         if (methodOrList == null) {
