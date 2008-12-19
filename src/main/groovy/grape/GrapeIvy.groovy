@@ -46,7 +46,7 @@ class GrapeIvy implements GrapeEngine {
     boolean enableGrapes
     Ivy ivyInstance
     // weak hash map so we don't leak loaders directly
-    Map<ClassLoader, Set<ModuleRevisionId>> loadedDeps = new WeakHashMap<ClassLoader, Set<ModuleRevisionId>>()
+    Map<ClassLoader, Set<IvyGrabRecord>> loadedDeps = new WeakHashMap<ClassLoader, Set<IvyGrabRecord>>()
 
     public GrapeIvy() {
         // if we are already inited, quit
@@ -306,10 +306,10 @@ class GrapeIvy implements GrapeEngine {
         // check the kill switch
         if (!enableGrapes) { return }
 
-        Set<ModuleRevisionId> localDeps = loadedDeps.get(loader)
+        Set<IvyGrabRecord> localDeps = loadedDeps.get(loader)
         if (localDeps == null) {
             // use a linked set to presrve intial insertion order
-            localDeps = new LinkedHashSet<ModuleRevisionId>()
+            localDeps = new LinkedHashSet<IvyGrabRecord>()
             loadedDeps.put(loader, localDeps)
         }
 
@@ -331,6 +331,35 @@ class GrapeIvy implements GrapeEngine {
             }
         }
         return results as URI[]
+    }
+
+    public Map[] listDependencies (ClassLoader classLoader) {
+        if (loadedDeps.containsKey(classLoader)) {
+            List<Map> results = []
+            loadedDeps[classLoader].each { IvyGrabRecord grabbed ->
+                def dep =  [
+                    group : grabbed.mrid.organisation,
+                    module : grabbed.mrid.name,
+                    version : grabbed.mrid.revision
+                ]
+                if (grabbed.conf != ['default']) {
+                    dep.conf = conf
+                }
+                if (grabbed.changing) {
+                    dep.changing = changing
+                }
+                if (!grabbed.transitive) {
+                    dep.transitive = transitive
+                }
+                if (!grabbed.force) {
+                    dep.force = force
+                }
+                results << dep
+            }
+            return results
+        } else {
+            return null
+        }
     }
 }
 

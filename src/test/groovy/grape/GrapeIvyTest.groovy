@@ -73,6 +73,25 @@ class GrapeIvyTest extends GroovyTestCase {
         assert shell.evaluate("import org.apache.poi.hssf.model.Sheet; Sheet.class").name == 'org.apache.poi.hssf.model.Sheet'
     }
 
+    public void testListDependencies() {
+        GroovyClassLoader loader = new GroovyClassLoader()
+        GroovyShell shell = new GroovyShell(loader)
+        shouldFail(CompilationFailedException) {
+            shell.evaluate("import com.jidesoft.swing.JideSplitButton; JideSplitButton.class")
+            shell.evaluate("import org.apache.poi.hssf.model.Sheet; Sheet.class")
+        }
+
+        Grape.grab(classLoader:loader,
+            [groupId:'org.apache.poi', artifactId:'poi', version:'3.0.1-FINAL'],
+            [groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,2.3)'])
+
+        def loadedDependencies = Grape.listDependencies(loader)
+        assert loadedDependencies == [
+            [group:'org.apache.poi', module:'poi', version:'3.0.1-FINAL'],
+            [group:'com.jidesoft', module:'jide-oss', version:'[2.2.1,2.3)']
+        ]
+    }
+
     public void testGrabRefless() {
         GroovyClassLoader loader = new GroovyClassLoader()
         GroovyShell shell = new GroovyShell(loader)

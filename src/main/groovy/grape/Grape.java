@@ -27,8 +27,8 @@ import java.net.URI;
  */
 public class Grape {
 
-    private static boolean enableGrapes = true;
-    private static boolean enableAutoDownload = false;
+    private static boolean enableGrapes = Boolean.valueOf(System.getProperties().getProperty("groovy.grape.enable", "true"));
+    private static boolean enableAutoDownload = Boolean.valueOf(System.getProperties().getProperty("groovy.grape.autoDownload", "true"));
     protected static GrapeEngine instance;
 
     /**
@@ -177,6 +177,22 @@ public class Grape {
             return new URI[0];
         } else {
             return uris;
+        }
+
+    }
+
+    public static Map[] listDependencies(ClassLoader cl) {
+        Map[] maps = null;
+        if (enableGrapes) {
+            GrapeEngine instance = getInstance();
+            if (instance != null) {
+                maps = instance.listDependencies(cl);
+            }
+        }
+        if (maps == null) {
+            return new Map[0];
+        } else {
+            return maps;
         }
 
     }
