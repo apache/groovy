@@ -354,7 +354,12 @@ public final class ClosureMetaClass extends MetaClassImpl {
         }
 
         if (method != null) {
-            return method.doMethodInvoke(callObject, arguments);
+        	MetaClass metaClass = registry.getMetaClass(callObject.getClass());
+        	if(metaClass instanceof ProxyMetaClass) {
+        		return metaClass.invokeMethod(callObject, methodName, arguments);
+        	} else {
+        		return method.doMethodInvoke(callObject, arguments);
+        	}
         } else {
             // if no method was found, try to find a closure defined as a field of the class and run it
             Object value = null;
