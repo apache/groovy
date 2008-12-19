@@ -15,9 +15,15 @@ class UniqueOnCollectionWithComparatorTest extends GroovyTestCase {
         assert result == [-1, 0]
     }
 
-    void testUniqueWithComparator() {
+    void testUniqueWithComparatorList() {
         def list = [-1, 0, 1, 1, 0, -1]
         def comparator = new ClosureComparator() {a,b -> Math.abs(a) <=> Math.abs(b)}
         assert list.unique(comparator) == [-1, 0]
+    }
+
+    void testUniqueWithComparatorSet() {
+        def set = [-1, 0, 1] as Set
+        def comparator = new ClosureComparator() {a,b -> Math.abs(a) <=> Math.abs(b)}
+        assert set.unique(comparator).size() == 2
     }
 }
