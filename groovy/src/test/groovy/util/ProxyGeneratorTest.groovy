@@ -96,6 +96,26 @@ class ProxyGeneratorTest extends GroovyTestCase {
         testClass.removeRange(1, 3)
         assert [1, 99, 5] == testClass
     }
+
+    void testUnknownMethodThrowsUnsupportedOperationException() {
+        def map = [ myMethodA: { 'some string' } ]
+        def proxy = ProxyGenerator.instantiateAggregateFromInterface(map, TestInterface)
+        assert proxy instanceof TestInterface
+        assertEquals 'some string', proxy.myMethodA()
+        shouldFail(UnsupportedOperationException) {
+            proxy.myMethodC()
+        }
+    }
+
+    void testUnknownMethodWithBlankBody() {
+        def map = [ myMethodA: { 'some string' } ]
+        def gen = new ProxyGenerator()
+        gen.emptyMethods = true
+        def proxy = gen.instantiateAggregate(map, [TestInterface])
+        assert proxy instanceof TestInterface
+        assertEquals 'some string', proxy.myMethodA()
+        proxy.myMethodC()
+    }
 }
 
 class TestClass {
