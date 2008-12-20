@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.runtime.dgmimpl.arrays;
 
+import groovy.lang.GString;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
@@ -39,15 +40,26 @@ public class ObjectArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
     public Object invoke(Object object, Object[] arguments) {
         final Object[] objects = (Object[]) object;
         Object newValue = arguments[1];
+    	Class arrayComponentClass = objects.getClass().getComponentType();
+    	final int index = normaliseIndex(((Integer) arguments[0]).intValue(), objects.length);
         if (newValue instanceof Number) {
-        	Class arrayComponentClass = objects.getClass().getComponentType();
         	if (!arrayComponentClass.equals(newValue.getClass())) {
         		Object newVal = DefaultTypeTransformation.castToType(newValue, arrayComponentClass);
-        		objects[normaliseIndex(((Integer) arguments[0]).intValue(), objects.length)] = newVal;
+        		objects[index] = newVal;
         		return null;
         	}
+        } else if (Character.class.isAssignableFrom(arrayComponentClass)) {
+        	if (newValue instanceof GString) newValue = newValue.toString();
+            if (newValue instanceof String) {
+                String s = (String) newValue;
+                if (s.length() != 1) throw new IllegalArgumentException("String of length 1 expected but got a bigger one");
+                objects[index] = s.charAt(0);
+            } else {
+                objects[index] = ((Character) newValue).charValue();
+            }
+            return null;
         }
-        objects[normaliseIndex(((Integer) arguments[0]).intValue(), objects.length)] = arguments[1];
+        objects[index] = arguments[1];
         return null;
     }
 
