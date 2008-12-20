@@ -28,10 +28,8 @@ import antlr.collections.AST;
 import java.util.*;
 
 public class AntlrASTProcessSnippets implements AntlrASTProcessor{
-    private final SourceBuffer sourceBuffer;
 
-    public AntlrASTProcessSnippets(SourceBuffer sourceBuffer) {
-        this.sourceBuffer = sourceBuffer;
+    public AntlrASTProcessSnippets() {
     }
 
     /**
