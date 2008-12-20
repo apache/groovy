@@ -15,15 +15,28 @@
  */
 package org.codehaus.groovy.reflection;
 
-import groovy.lang.*;
+import groovy.lang.Closure;
+import groovy.lang.ExpandoMetaClass;
+import groovy.lang.GroovySystem;
+import groovy.lang.MetaClass;
+import groovy.lang.MetaClassRegistry;
+import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.stdclasses.*;
-import org.codehaus.groovy.util.*;
+import org.codehaus.groovy.util.LazyReference;
+import org.codehaus.groovy.util.LockableObject;
+import org.codehaus.groovy.util.ManagedConcurrentMap;
+import org.codehaus.groovy.util.ManagedReference;
+import org.codehaus.groovy.util.ReferenceManager;
+import org.codehaus.groovy.util.ReferenceType;
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.*;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -33,7 +46,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  */
 public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
 
-    private static final HashSet<ClassInfo> modifiedExpandos = new HashSet<ClassInfo>();
+    private static final Set<ClassInfo> modifiedExpandos = new HashSet<ClassInfo>();
 
     private final LazyCachedClassRef cachedClassRef;
     private final LazyClassLoaderRef artifactClassLoader;
@@ -48,8 +61,8 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
     MetaMethod[] newMetaMethods = CachedClass.EMPTY;
     private ManagedConcurrentMap perInstanceMetaClassMap;
     
-    private final static ReferenceBundle softBundle;
-    private final static ReferenceBundle perInstanceBundle;
+    private static final ReferenceBundle softBundle;
+    private static final ReferenceBundle perInstanceBundle;
     static {
         ReferenceQueue queue = new ReferenceQueue();
         ReferenceManager callBack = ReferenceManager.createCallBackedManager(queue);
@@ -307,7 +320,7 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
         }
     }
 
-    private static class LocalMap extends HashMap<Class,ClassInfo> {
+    private static final class LocalMap extends HashMap<Class,ClassInfo> {
 
         private static final int CACHE_SIZE = 5;
 
@@ -406,7 +419,7 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
     }
 
     private static class DebugRef extends ManagedReference<Class> {
-        public final static boolean debug = false;
+        public static final boolean debug = false;
 
         private static final AtomicInteger count = new AtomicInteger();
 

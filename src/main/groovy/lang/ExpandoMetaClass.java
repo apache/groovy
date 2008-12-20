@@ -17,16 +17,37 @@ package groovy.lang;
 
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
+import org.codehaus.groovy.runtime.DefaultCachedMethodKey;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.MetaClassHelper;
+import org.codehaus.groovy.runtime.MethodKey;
+import org.codehaus.groovy.runtime.callsite.CallSite;
+import org.codehaus.groovy.runtime.callsite.ConstructorMetaMethodSite;
+import org.codehaus.groovy.runtime.callsite.PogoMetaClassSite;
+import org.codehaus.groovy.runtime.callsite.PojoMetaClassSite;
+import org.codehaus.groovy.runtime.callsite.StaticMetaClassSite;
+import org.codehaus.groovy.runtime.metaclass.ClosureMetaMethod;
+import org.codehaus.groovy.runtime.metaclass.ClosureStaticMetaMethod;
+import org.codehaus.groovy.runtime.metaclass.MetaMethodIndex;
+import org.codehaus.groovy.runtime.metaclass.MixedInMetaClass;
 import org.codehaus.groovy.runtime.metaclass.MixinInstanceMetaMethod;
+import org.codehaus.groovy.runtime.metaclass.OwnedMetaClass;
+import org.codehaus.groovy.runtime.metaclass.ThreadManagedMetaBeanProperty;
 import org.codehaus.groovy.util.FastArray;
-import org.codehaus.groovy.runtime.*;
-import org.codehaus.groovy.runtime.callsite.*;
-import org.codehaus.groovy.runtime.metaclass.*;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -84,7 +105,6 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 	private static final String METHODS = "methods";
 	private static final String PROPERTIES = "properties";
 	public static final String STATIC_QUALIFIER = "static";
-	private static final Class[] ZERO_ARGUMENTS = new Class[0];
 	public static final String CONSTRUCTOR = "constructor";
 
     private static final String CLASS_PROPERTY = "class";
@@ -112,7 +132,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     private final ConcurrentHashMap expandoSubclassMethods = new ConcurrentHashMap();
     private final Map expandoProperties = new ConcurrentHashMap();
     private ClosureStaticMetaMethod invokeStaticMethodMethod;
-    private final LinkedHashSet<MixinInMetaClass> mixinClasses = new LinkedHashSet<MixinInMetaClass>();
+    private final Set<MixinInMetaClass> mixinClasses = new LinkedHashSet<MixinInMetaClass>();
 
     /**
 	 * Constructs a new ExpandoMetaClass instance for the given class
@@ -1195,9 +1215,9 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
     private static class MixedInAccessor {
         private final Object object;
-        private final LinkedHashSet<MixinInMetaClass> mixinClasses;
+        private final Set<MixinInMetaClass> mixinClasses;
 
-        public MixedInAccessor(Object object, LinkedHashSet<MixinInMetaClass> mixinClasses) {
+        public MixedInAccessor(Object object, Set<MixinInMetaClass> mixinClasses) {
             this.object = object;
             this.mixinClasses = mixinClasses;
         }

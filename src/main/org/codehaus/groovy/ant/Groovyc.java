@@ -37,7 +37,11 @@ import org.codehaus.groovy.tools.ErrorReporter;
 import org.codehaus.groovy.tools.FileSystemCompiler;
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
 
-import java.io.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -665,7 +669,7 @@ public class Groovyc extends MatchingTask {
 
 
                 String separator = System.getProperty("file.separator");
-                ArrayList commandLineList = new ArrayList();
+                List commandLineList = new ArrayList();
 
                 if (fork) {
                     String javaHome;

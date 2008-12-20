@@ -17,7 +17,6 @@ package groovy.sql;
 
 import groovy.lang.Closure;
 import groovy.lang.GroovyObject;
-import groovy.lang.MissingPropertyException;
 
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -37,26 +36,27 @@ public interface GroovyResultSet extends GroovyObject, ResultSet {
      * starting at zero. Negative indices are supported, they will count from the last column backwards.
      *
      * @param index is the number of the column to look at starting at 1
-     * @throws SQLException if a database error occurs
      * @return the object for this index in the current result set
+     * @throws SQLException if a database error occurs
      */
     Object getAt(int index) throws SQLException;
 
     /**
      * Gets the value of the designated column in the current row
      * as an <code>Object</code>.
+     *
      * @param columnName the SQL name of the column
-     * @throws groovy.lang.MissingPropertyException
-     *   if an SQLException happens while getting the object
      * @return the returned column value
+     * @throws groovy.lang.MissingPropertyException
+     *          if an SQLException happens while getting the object
      */
-    public Object getAt(String columnName);
+    Object getAt(String columnName);
 
     /**
      * Supports integer based subscript operators for updating the values of numbered columns
      * starting at zero. Negative indices are supported, they will count from the last column backwards.
      *
-     * @param index is the number of the column to look at starting at 1
+     * @param index    is the number of the column to look at starting at 1
      * @param newValue the new value for this index
      * @throws SQLException if a database error occurs
      */
@@ -64,12 +64,12 @@ public interface GroovyResultSet extends GroovyObject, ResultSet {
 
     /**
      * Updates the designated column with an <code>Object</code> value.
+     *
      * @param columnName the SQL name of the column
-     * @param newValue the updated value
-     * @throws MissingPropertyException
-     *   if an SQLException happens while setting the new value
+     * @param newValue   the updated value
+     *                   if an SQLException happens while setting the new value
      */
-    public void putAt(String columnName, Object newValue);
+    void putAt(String columnName, Object newValue);
 
     /**
      * Adds a new row to this result set

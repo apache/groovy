@@ -18,7 +18,10 @@ package groovy.sql;
 import groovy.lang.GroovyObjectSupport;
 import groovy.lang.MissingPropertyException;
 
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Represents an extent of objects.
@@ -30,9 +33,9 @@ import java.util.*;
  */
 public class GroovyRowResult extends GroovyObjectSupport implements Map {
 
-    private final LinkedHashMap result;
+    private final Map result;
 
-    public GroovyRowResult(LinkedHashMap result) {
+    public GroovyRowResult(Map result) {
         this.result = result;
     }
 
