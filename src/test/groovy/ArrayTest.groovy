@@ -200,4 +200,25 @@ class ArrayTest extends GroovyTestCase {
         assert boolsA == boolsB
     }
 
+    void testCharacterArrayElementAssignments() {
+        Character[] ca = new Character[1]
+
+        // Assignments statements.
+        ca[0] = 'b' as char
+        assert ca[0] == 'b'
+
+        ca[0] = '\u00A1' as char
+        assert ca[0] == '\u00A1'
+
+        ca[0] = 'a'
+        assert ca[0] == 'a'
+
+        ca[0] = '\u00A0'
+        assert ca[0] == '\u00A0'
+
+        def foo = 'z'
+
+        ca[0] = "$foo"
+        assert ca[0] == 'z'
+    }
 }

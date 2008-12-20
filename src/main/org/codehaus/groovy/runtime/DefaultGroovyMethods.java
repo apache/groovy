@@ -3035,16 +3035,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param value an Object to put at the given index
      */
     public static void putAt(Object[] array, int idx, Object value) {
+    	Class arrayComponentClass = array.getClass().getComponentType();
+    	final int index = normaliseIndex(idx, array.length);
         if (value instanceof Number) {
-            Class arrayComponentClass = array.getClass().getComponentType();
-
             if (!arrayComponentClass.equals(value.getClass())) {
                 Object newVal = DefaultTypeTransformation.castToType(value, arrayComponentClass);
-                array[normaliseIndex(idx, array.length)] = newVal;
+                array[index] = newVal;
                 return;
             }
+        } else if (Character.class.isAssignableFrom(arrayComponentClass)) {
+        	if (value instanceof GString) value = value.toString();
+            if (value instanceof String) {
+                String s = (String) value;
+                if (s.length() != 1) throw new IllegalArgumentException("String of length 1 expected but got a bigger one");
+                array[index] = new Character(s.charAt(0));
+            } else {
+            	array[index] = ((Character) value);
+            }
+            return;
         }
-        array[normaliseIndex(idx, array.length)] = value;
+        array[index] = value;
     }
 
     /**
