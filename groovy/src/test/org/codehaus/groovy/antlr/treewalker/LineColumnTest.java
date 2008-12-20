@@ -54,7 +54,7 @@ public class LineColumnTest extends TestCase {
         String[] tokenNames = parser.getTokenNames();
         parser.compilationUnit();
         AST ast = parser.getAST();
-        AntlrASTProcessor snippets = new AntlrASTProcessSnippets(sourceBuffer);
+        AntlrASTProcessor snippets = new AntlrASTProcessSnippets();
         ast = snippets.process(ast);
         Visitor visitor = new LineColumnChecker(sourceBuffer, tokenNames);
         AntlrASTProcessor traverser = new SourceCodeTraversal(visitor);
