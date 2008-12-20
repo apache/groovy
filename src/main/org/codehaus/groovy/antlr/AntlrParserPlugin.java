@@ -50,17 +50,24 @@ import java.util.List;
  */
 public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, GroovyTokenTypes {
 
-    private AST ast;
+    protected AST ast;
     private ClassNode classNode;
     private String[] tokenNames;
 
+    public /*final*/ Reduction parseCST(final SourceUnit sourceUnit, Reader reader) throws CompilationFailedException {
+        final SourceBuffer sourceBuffer = new SourceBuffer();
+        transformCSTIntoAST(sourceUnit, reader, sourceBuffer);
+        processAST();
+        return outputAST(sourceUnit,sourceBuffer);
+    }
 
-    public Reduction parseCST(final SourceUnit sourceUnit, Reader reader) throws CompilationFailedException {
+    protected void transformCSTIntoAST(SourceUnit sourceUnit, Reader reader, SourceBuffer sourceBuffer) throws CompilationFailedException {
         ast = null;
 
         setController(sourceUnit);
 
-        final SourceBuffer sourceBuffer = new SourceBuffer();
+        // TODO find a way to inject any GroovyLexer/GroovyRecognizer
+
         UnicodeEscapingReader unicodeReader = new UnicodeEscapingReader(reader,sourceBuffer);
         GroovyLexer lexer = new GroovyLexer(unicodeReader);
         unicodeReader.setLexer(lexer);
@@ -89,10 +96,14 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
 
         ast = parser.getAST();
+    }
 
+    protected void processAST() {
         AntlrASTProcessor snippets = new AntlrASTProcessSnippets();
         ast = snippets.process(ast);
+    }
         
+    public Reduction outputAST(final SourceUnit sourceUnit, final SourceBuffer sourceBuffer) {
         AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
             	outputASTInVariousFormsIfNeeded(sourceUnit, sourceBuffer);
