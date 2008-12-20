@@ -42,7 +42,7 @@ public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
 
     private final LazyClassLoaderRef artifactClassLoader;
 
-    private static final HashSet<ClassInfo> modifiedExpandos = new HashSet<ClassInfo>();
+    private static final Set<ClassInfo> modifiedExpandos = new HashSet<ClassInfo>();
 
     private final LockableObject lock = new LockableObject();
 
@@ -213,13 +213,13 @@ public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
             	cachedClass = new BigDecimalCachedClass(klazz, classInfo);
             } else if (klazz == Long.class || klazz == Long.TYPE) {
             	cachedClass = new LongCachedClass(klazz, classInfo, klazz==Long.class);
-            } else if (klazz == Float.class || klazz == Float.TYPE) { 
+            } else if (klazz == Float.class || klazz == Float.TYPE) {
             	cachedClass = new FloatCachedClass(klazz, classInfo, klazz==Float.class);
             } else if (klazz == Short.class || klazz == Short.TYPE) {
             	cachedClass = new ShortCachedClass(klazz, classInfo, klazz==Short.class);
             } else if (klazz == Boolean.TYPE) {
             	cachedClass = new BooleanCachedClass(klazz, classInfo, false);
-            } else if (klazz == Character.TYPE) { 
+            } else if (klazz == Character.TYPE) {
             	cachedClass = new CharacterCachedClass(klazz, classInfo, false);
             } else if (klazz == BigInteger.class) {
             	cachedClass = new BigIntegerCachedClass(klazz, classInfo);
@@ -299,7 +299,7 @@ public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
         }
     }
 
-    private static class LocalMap extends HashMap<Class,ClassInfo> {
+    private static final class LocalMap extends HashMap<Class,ClassInfo> {
 
         private static final int CACHE_SIZE = 5;
 
@@ -396,7 +396,7 @@ public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
     }
 
     private static class DebugRef extends FinalizableRef.DebugRef<Class> {
-        public final static boolean debug = false;
+        public static final boolean debug = false;
 
         private static final AtomicInteger count = new AtomicInteger();
 

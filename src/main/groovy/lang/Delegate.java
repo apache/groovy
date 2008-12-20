@@ -37,5 +37,5 @@ public @interface Delegate {
     /**
      * true if owner class should implement interfaces implemented by field
      */
-    public abstract boolean interfaces () default true;
+    abstract boolean interfaces () default true;
 }

@@ -16,9 +16,24 @@
 
 package groovy.ui.text;
 
-import javax.swing.text.*;
+import javax.swing.text.AttributeSet;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultStyledDocument;
+import javax.swing.text.DocumentFilter;
+import javax.swing.text.Position;
+import javax.swing.text.Segment;
+import javax.swing.text.Style;
+import javax.swing.text.StyleContext;
 import java.nio.CharBuffer;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.SortedSet;
+import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -47,7 +62,7 @@ public class StructuredSyntaxDocumentFilter extends DocumentFilter {
     /**
      * The position tree of multi-line comments.
      */ 
-    protected TreeSet mlTextRunSet = new TreeSet(ML_COMPARATOR);
+    protected SortedSet mlTextRunSet = new TreeSet(ML_COMPARATOR);
     
     // Ensures not adding any regexp with capturing groups
     private static void checkRegexp(String regexp) {
