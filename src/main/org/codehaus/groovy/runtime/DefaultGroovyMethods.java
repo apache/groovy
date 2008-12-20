@@ -5128,6 +5128,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     public static Character putAt(char[] array, int idx, Object newValue) {
+    	if (newValue instanceof GString) newValue = newValue.toString();
         if (newValue instanceof String) {
             String s = (String) newValue;
             if (s.length() != 1) throw new IllegalArgumentException("String of length 1 expected but got a bigger one");
