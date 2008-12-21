@@ -49,15 +49,14 @@ public class ObjectArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
         		return null;
         	}
         } else if (Character.class.isAssignableFrom(arrayComponentClass)) {
-        	if (newValue instanceof GString) newValue = newValue.toString();
-            if (newValue instanceof String) {
-                String s = (String) newValue;
-                if (s.length() != 1) throw new IllegalArgumentException("String of length 1 expected but got a bigger one");
-                objects[index] = s.charAt(0);
-            } else {
-                objects[index] = ((Character) newValue).charValue();
-            }
+        	objects[index] = DefaultTypeTransformation.getCharFromSizeOneString(newValue);
             return null;
+        } else if (Number.class.isAssignableFrom(arrayComponentClass)) {
+        	if(newValue instanceof Character || newValue instanceof String || newValue instanceof GString) {
+        		Character ch = DefaultTypeTransformation.getCharFromSizeOneString(newValue);
+        		objects[index] = DefaultTypeTransformation.castToType(ch, arrayComponentClass);
+        		return null;
+        	}
         }
         objects[index] = arguments[1];
         return null;
