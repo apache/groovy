@@ -22,6 +22,7 @@ import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 public class CharacterArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
         private static final CachedClass OBJECT_CLASS = ReflectionCache.OBJECT_CLASS;
@@ -39,15 +40,7 @@ public class CharacterArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
         public Object invoke(Object object, Object[] args) {
             final char[] objects = (char[]) object;
             final int index = normaliseIndex(((Integer) args[0]).intValue(), objects.length);
-            Object newValue = args[1];
-            if (newValue instanceof GString) newValue = newValue.toString();
-            if (newValue instanceof String) {
-                String s = (String) newValue;
-                if (s.length() != 1) throw new IllegalArgumentException("String of length 1 expected but got a bigger one");
-                objects[index] = s.charAt(0);
-            } else {
-                objects[index] = ((Character) newValue).charValue();
-            }
+            objects[index] = DefaultTypeTransformation.getCharFromSizeOneString(args[1]).charValue();
             return null;
         }
 

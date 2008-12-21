@@ -814,5 +814,16 @@ public class DefaultTypeTransformation {
             return a;
         }
     }
+    
+    public static Character getCharFromSizeOneString(Object value) {
+    	if (value instanceof GString) value = value.toString();
+        if (value instanceof String) {
+            String s = (String) value;
+            if (s.length() != 1) throw new IllegalArgumentException("String of length 1 expected but got a bigger one");
+            return new Character(s.charAt(0));
+        } else {
+            return ((Character) value);
+        }    	
+    }
 
 }

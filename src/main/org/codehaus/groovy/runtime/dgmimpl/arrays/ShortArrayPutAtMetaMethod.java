@@ -15,12 +15,14 @@
  */
 package org.codehaus.groovy.runtime.dgmimpl.arrays;
 
+import groovy.lang.GString;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 public class ShortArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
         private static final CachedClass OBJECT_CLASS = ReflectionCache.OBJECT_CLASS;
@@ -40,8 +42,13 @@ public class ShortArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
             final int index = normaliseIndex(((Integer) args[0]).intValue(), objects.length);
             Object newValue = args[1];
             if (!(newValue instanceof Short)) {
-                Number n = (Number) newValue;
-                objects[index] = ((Number)newValue).shortValue();
+            	if(newValue instanceof Character || newValue instanceof String || newValue instanceof GString) {
+            		Character ch = DefaultTypeTransformation.getCharFromSizeOneString(newValue);
+            		objects[index] = ((Short)DefaultTypeTransformation.castToType(ch, Short.class)).shortValue();
+            	} else {
+                    Number n = (Number) newValue;
+                    objects[index] = ((Number)newValue).shortValue();
+            	}
             }
             else
               objects[index] = ((Short)args[1]).shortValue();
