@@ -180,4 +180,14 @@ class ForLoopTest extends gls.CompilableTestSupport {
         assert i == 5
     }
 
+    void testClassicForWithEverythingInitCondNextExpressionsEmpty() {
+        int counter = 0
+        for (;;) {
+            counter++
+            if (counter == 10) break
+        }
+
+        assert counter == 10, "The body of the for loop wasn't executed, it should have looped 10 times."
+    }
+
 }
