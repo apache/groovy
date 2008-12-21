@@ -60,7 +60,7 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
     
     private static ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();
     private static final ClassInfoSet globalClassSet = new ClassInfoSet(softBundle);
-    
+
     ClassInfo(ManagedConcurrentMap.Segment segment, Class klazz, int hash) {
         super (softBundle, segment, klazz, hash);
 
@@ -225,7 +225,7 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
             	cachedClass = new ShortCachedClass(klazz, classInfo, klazz==Short.class);
             } else if (klazz == Boolean.TYPE) {
             	cachedClass = new BooleanCachedClass(klazz, classInfo, false);
-            } else if (klazz == Character.TYPE) { 
+            } else if (klazz == Character.TYPE) {
             	cachedClass = new CharacterCachedClass(klazz, classInfo, false);
             } else if (klazz == BigInteger.class) {
             	cachedClass = new BigIntegerCachedClass(klazz, classInfo);

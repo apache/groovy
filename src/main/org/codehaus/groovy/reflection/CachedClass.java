@@ -147,11 +147,11 @@ public class CachedClass {
             res.add(classInfo);
 
             for (CachedClass iface : getDeclaredInterfaces())
-              res.addAll(iface.getHeirarchy());
+              res.addAll(iface.getHierarchy());
 
             final CachedClass superClass = getCachedSuperClass();
             if (superClass != null)
-              res.addAll(superClass.getHeirarchy());
+              res.addAll(superClass.getHierarchy());
 
             if (isInterface)
               res.add(ReflectionCache.OBJECT_CLASS.classInfo);
@@ -470,7 +470,7 @@ public class CachedClass {
         return callSiteClassLoader.get();
     }
 
-    public Collection<ClassInfo> getHeirarchy() {
+    public Collection<ClassInfo> getHierarchy() {
         return hierarchy.get();
     }
 

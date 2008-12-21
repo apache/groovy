@@ -745,7 +745,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         // got here to property not found, look for getProperty or setProperty overrides
         if(isGetter) {
             final Class[] getPropertyArgs = {String.class};
-            final MetaMethod method = findMethodInClassHeirarchy(instance.getClass(), GET_PROPERTY_METHOD, getPropertyArgs, this);
+            final MetaMethod method = findMethodInClassHierarchy(instance.getClass(), GET_PROPERTY_METHOD, getPropertyArgs, this);
             if(method != null && method instanceof ClosureMetaMethod) {
                 onGetPropertyFoundInHierarchy(method);
                 return method.invoke(instance,new Object[]{propertyName});
@@ -753,7 +753,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
         else {
             final Class[] setPropertyArgs = {String.class, Object.class};
-            final MetaMethod method = findMethodInClassHeirarchy(instance.getClass(), SET_PROPERTY_METHOD, setPropertyArgs, this);
+            final MetaMethod method = findMethodInClassHierarchy(instance.getClass(), SET_PROPERTY_METHOD, setPropertyArgs, this);
             if(method != null && method instanceof ClosureMetaMethod) {
                 onSetPropertyFoundInHierarchy(method);
                 return method.invoke(instance, new Object[]{propertyName, optionalValue});
@@ -805,15 +805,15 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 return method.invoke(instance, arguments);
             }
 
-            method = findMethodInClassHeirarchy(instanceKlazz, methodName, argClasses, this);
+            method = findMethodInClassHierarchy(instanceKlazz, methodName, argClasses, this);
             if(method != null) {
                 onSuperMethodFoundInHierarchy(method);
                 return method.invoke(instance, arguments);
             }
 
-            // still not method here, so see if there is an invokeMethod method up the heirarchy
+            // still not method here, so see if there is an invokeMethod method up the hierarchy
             final Class[] invokeMethodArgs = {String.class, Object[].class};
-            method = findMethodInClassHeirarchy(instanceKlazz, INVOKE_METHOD_METHOD, invokeMethodArgs, this );
+            method = findMethodInClassHierarchy(instanceKlazz, INVOKE_METHOD_METHOD, invokeMethodArgs, this );
             if(method != null && method instanceof ClosureMetaMethod) {
                 onInvokeMethodFoundInHierarchy(method);
                 return method.invoke(instance, invokeMethodArgs);
@@ -3088,11 +3088,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return null;
     }
 
-    protected static MetaMethod findMethodInClassHeirarchy(Class instanceKlazz, String methodName, Class[] arguments, MetaClass metaClass) {
+    protected static MetaMethod findMethodInClassHierarchy(Class instanceKlazz, String methodName, Class[] arguments, MetaClass metaClass) {
 
         if (metaClass instanceof MetaClassImpl) {
             boolean check = false;
-            for (ClassInfo ci : ((MetaClassImpl)metaClass).theCachedClass.getHeirarchy ()) {
+            for (ClassInfo ci : ((MetaClassImpl)metaClass).theCachedClass.getHierarchy ()) {
                 final MetaClass aClass = ci.getStrongMetaClass();
                 if (aClass instanceof MutableMetaClass && ((MutableMetaClass)aClass).isModified()) {
                     check = true;
@@ -3116,12 +3116,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         if (superClass != null) {
           MetaClass superMetaClass = GroovySystem.getMetaClassRegistry().getMetaClass(superClass);
-          method = findMethodInClassHeirarchy(instanceKlazz, methodName, arguments, superMetaClass);
+          method = findMethodInClassHierarchy(instanceKlazz, methodName, arguments, superMetaClass);
         }
         else {
             if (metaClass.getTheClass().isInterface()) {
                 MetaClass superMetaClass = GroovySystem.getMetaClassRegistry().getMetaClass(Object.class);
-                method = findMethodInClassHeirarchy(instanceKlazz, methodName, arguments, superMetaClass);
+                method = findMethodInClassHierarchy(instanceKlazz, methodName, arguments, superMetaClass);
             }
         }
 
