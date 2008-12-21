@@ -183,6 +183,7 @@ public class LoaderConfiguration {
      */
     private void loadFilteredPath(String filter) {
         if (filter == null) return;
+        filter = getSlashyPath(filter);
         int starIndex = filter.indexOf(WILDCARD);
         if (starIndex == -1) {
             addFile(new File(filter));
@@ -190,6 +191,9 @@ public class LoaderConfiguration {
         }
         boolean recursive = filter.indexOf(ALL_WILDCARD) != -1;
 
+        if (filter.lastIndexOf('/')<starIndex) {
+            starIndex=filter.lastIndexOf('/')+1;
+        }
         String startDir = filter.substring(0, starIndex - 1);
         File root = new File(startDir);
 
