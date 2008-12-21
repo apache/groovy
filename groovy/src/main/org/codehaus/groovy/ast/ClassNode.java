@@ -342,7 +342,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
 
-    protected Map getDeclaredMethodsMap() {
+    public Map getDeclaredMethodsMap() {
         // Start off with the methods from the superclass.
         ClassNode parent = getSuperClass();
         Map result = null;

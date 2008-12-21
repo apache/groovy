@@ -384,7 +384,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         	BlockStatement newBlock = new BlockStatement();
             if (statement instanceof BlockStatement) {
                 BlockStatement oldBlock = (BlockStatement)statement;
-                newBlock.addStatements(filterStatements(((BlockStatement)statement).getStatements()));
+                newBlock.addStatements(filterStatements((oldBlock).getStatements()));
             }
             else {
                 newBlock.addStatement(filterStatement(statement));
@@ -763,21 +763,26 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         Map methodsToAdd = new HashMap();
         Map genericsSpec = new HashMap();
 
-        List declaredMethods = classNode.getAllDeclaredMethods();
+        // unimplemented abstract methods from interfaces
+        Map abstractMethods = new HashMap();
+        ClassNode[] interfaces = classNode.getInterfaces();
+        for (int i = 0; i < interfaces.length; i++) {
+            ClassNode iface = interfaces[i];
+            Map ifaceMethodsMap = iface.getDeclaredMethodsMap();
+            abstractMethods.putAll(ifaceMethodsMap);
+        }
+        
+        List declaredMethods = new ArrayList(classNode.getMethods());
         // remove all static, private and package private methods
-        // we remove also abstract methods if the current class is not abstract
-        // we do remove abstract methods, because covariation may automatically implement them
-        boolean isNotAbstract = (classNode.getModifiers() & ACC_ABSTRACT)==0;
         for (Iterator methodsIterator = declaredMethods.iterator(); methodsIterator.hasNext();) {
             MethodNode m = (MethodNode) methodsIterator.next();
+            abstractMethods.remove(m.getTypeDescriptor());
             if (m.isStatic() || !(m.isPublic() || m.isProtected())) {
                 methodsIterator.remove();
-            } else if (isNotAbstract && m.isAbstract()) {
-                methodsIterator.remove();
-            }
+            } 
         }
 
-        addCovariantMethods(classNode, declaredMethods, methodsToAdd, genericsSpec);
+        addCovariantMethods(classNode, declaredMethods, abstractMethods, methodsToAdd, genericsSpec);
 
         Map declaredMethodsMap = new HashMap();
         if (methodsToAdd.size()>0) {
@@ -797,27 +802,40 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
     }
 
-    private void addCovariantMethods(ClassNode classNode, List declaredMethods, Map methodsToAdd, Map oldGenericsSpec) {
+    private void addCovariantMethods(ClassNode classNode, List declaredMethods, Map abstractMethods, Map methodsToAdd, Map oldGenericsSpec) {
         ClassNode sn = classNode.getUnresolvedSuperClass(false);
+        
         if (sn!=null) {
             Map genericsSpec = createGenericsSpec(sn,oldGenericsSpec);
+            List classMethods = sn.getMethods();
+            // original class causing bridge methods for methods in super class
             for (Iterator it = declaredMethods.iterator(); it.hasNext();) {
                 MethodNode method = (MethodNode) it.next();
                 if (method.isStatic()) continue;
-                storeMissingCovariantMethods(sn,method,methodsToAdd,genericsSpec);
+                storeMissingCovariantMethods(classMethods,method,methodsToAdd,genericsSpec);
             }
-            addCovariantMethods(sn.redirect(),declaredMethods,methodsToAdd,genericsSpec);
+            // super class causing bridge methods for abstract methods in original class
+            if (!abstractMethods.isEmpty()) {
+                for (Iterator it = classMethods.iterator(); it.hasNext();) {
+                    MethodNode method = (MethodNode) it.next();
+                    if (method.isStatic()) continue;
+                    storeMissingCovariantMethods(abstractMethods.values(),method,methodsToAdd,Collections.EMPTY_MAP);
+                }
+            }
+            
+            addCovariantMethods(sn.redirect(),declaredMethods,abstractMethods,methodsToAdd,genericsSpec);
         }
 
         ClassNode[] interfaces = classNode.getInterfaces();
         for (int i=0; i<interfaces.length; i++) {
+            List interfacesMethods = interfaces[i].getMethods();
             Map genericsSpec = createGenericsSpec(interfaces[i],oldGenericsSpec);
             for (Iterator it = declaredMethods.iterator(); it.hasNext();) {
                 MethodNode method = (MethodNode) it.next();
                 if (method.isStatic()) continue;
-                storeMissingCovariantMethods(interfaces[i],method,methodsToAdd,genericsSpec);
+                storeMissingCovariantMethods(interfacesMethods,method,methodsToAdd,genericsSpec);
             }
-            addCovariantMethods(interfaces[i],declaredMethods,methodsToAdd,genericsSpec);
+            addCovariantMethods(interfaces[i],declaredMethods,abstractMethods,methodsToAdd,genericsSpec);
         }
 
     }
@@ -923,8 +941,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         return params;
     }
 
-    private void storeMissingCovariantMethods(ClassNode current, MethodNode method, Map methodsToAdd, Map genericsSpec) {
-        List methods = current.getMethods();
+    private void storeMissingCovariantMethods(Collection methods, MethodNode method, Map methodsToAdd, Map genericsSpec) {
         for (Iterator sit = methods.iterator(); sit.hasNext();) {
             MethodNode toOverride = (MethodNode) sit.next();
             MethodNode bridgeMethod = getCovariantImplementation(toOverride,method,genericsSpec);
