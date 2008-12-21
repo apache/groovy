@@ -242,7 +242,7 @@ class Console implements CaretListener, HyperlinkListener {
 
         bindResults()
 
-        // stitch some actions togeather
+        // stitch some actions together
         swing.bind(source:swing.inputEditor.undoAction, sourceProperty:'enabled', target:swing.undoAction, targetProperty:'enabled')
         swing.bind(source:swing.inputEditor.redoAction, sourceProperty:'enabled', target:swing.redoAction, targetProperty:'enabled')
 
