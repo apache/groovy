@@ -703,7 +703,7 @@ public class AsmClassGenerator extends ClassGenerator {
         {
             Expression condExpr = (Expression) expressions.get(condIndex);
             if (condExpr == EmptyExpression.INSTANCE) {
-                mv.visitIntInsn(BIPUSH, 0);
+                mv.visitIntInsn(BIPUSH, 1);
             } else if (isComparisonExpression(condExpr)) {
                 condExpr.visit(this);
             } else {
