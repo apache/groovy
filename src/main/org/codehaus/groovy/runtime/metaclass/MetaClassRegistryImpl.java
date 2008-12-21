@@ -22,6 +22,8 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.codehaus.groovy.util.FastArray;
+import org.codehaus.groovy.util.ManagedLinkedList;
+import org.codehaus.groovy.util.ReferenceBundle;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
@@ -51,8 +53,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     private FastArray staticMethods = new FastArray();
 
     private LinkedList changeListenerList = new LinkedList();
-    private LinkedList metaClassInfo = new LinkedList();
-    //TODO: private ReferenceQueue queue = new ReferenceQueue();
+    private ManagedLinkedList metaClassInfo = new ManagedLinkedList<MetaClass>(ReferenceBundle.getWeakBundle());
 
     public static final int LOAD_DEFAULT = 0;
     public static final int DONT_LOAD_DEFAULT = 1;
@@ -106,9 +107,9 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
 
         addMetaClassRegistryChangeEventListener(new MetaClassRegistryChangeEventListener(){
             public void updateConstantMetaClass(MetaClassRegistryChangeEvent cmcu) {
-//TODO:                synchronized (metaClassInfo) {
-//                    metaClassInfo.add(new WeakReference(cmcu.getNewMetaClass(),queue));
-//                }
+                synchronized (metaClassInfo) {
+                   metaClassInfo.add(cmcu.getNewMetaClass());
+                }
             }
         });
    }
@@ -309,25 +310,6 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         }
     }
 
-    
-    private void cleanMetaClassList() {
-//TODO:        boolean hasCollectedEntries=false;
-//        java.lang.ref.Reference r=null;
-//        while ((r=queue.poll())!=null) {
-//            r.clear();
-//            hasCollectedEntries=true;
-//        }
-//
-//        if (!hasCollectedEntries) return;
-//
-//        for (Iterator it = metaClassInfo.iterator(); it.hasNext();) {
-//            WeakReference ref = (WeakReference) it.next();
-//            if (ref.get()!=null) continue;
-//            it.remove();
-//            ref.clear();
-//        }
-    }
-
     /**
      * Causes the execution of all registered listeners. This method is used mostly
      * internal to kick of the listener notification. It can also be used by subclasses
@@ -392,56 +374,48 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      * @return the iterator.
      */    
     public Iterator iterator() {
-        return null;
-//TODO:        final WeakReference[] refs;
-//        synchronized (metaClassInfo) {
-//            cleanMetaClassList();
-//            refs = (WeakReference[]) metaClassInfo.toArray(new WeakReference[0]);
-//        }
-//        
-//        return new Iterator() {
-//        	// index inn the ref array
-//            private int index=0;
-//            // the current meta class
-//            private MetaClass currentMeta;
-//            // used to ensure that hasNext has been called
-//            private boolean hasNextCalled=false;
-//            // the cached hasNext call value
-//            private boolean hasNext=false;
-//
-//            public boolean hasNext() {
-//            	if (hasNextCalled) return hasNext;
-//            	hasNextCalled = true;
-//            	hasNext=true;
-//            	
-//            	// currentMeta==null means the entry might have been
-//            	// collected already, we skip these.
-//                currentMeta=null;
-//                while (currentMeta==null && index<refs.length) {
-//                    currentMeta = (MetaClass) refs[index].get();
-//                    index++;
-//                }
-//                hasNext=currentMeta!=null;
-//                return hasNext;
-//            }
-//            
-//            private void ensureNext() {
-//            	// we ensure that hasNext has been called before 
-//            	// next is called
-//            	hasNext();
-//            	hasNextCalled=false;            	
-//            }
-//            
-//            public Object next() {
-//            	ensureNext();
-//                return currentMeta;
-//            }
-//            
-//            public void remove() {
-//            	ensureNext();
-//            	setMetaClass(currentMeta.getTheClass(),currentMeta,null);
-//                currentMeta=null;
-//            }
-//        };
+        final MetaClass[] refs;
+        synchronized (metaClassInfo) {
+            refs = (MetaClass[]) metaClassInfo.toArray(new MetaClass[0]);
+        }
+        
+        return new Iterator() {
+        	// index in the ref array
+            private int index=0;
+            // the current meta class
+            private MetaClass currentMeta;
+            // used to ensure that hasNext has been called
+            private boolean hasNextCalled=false;
+            // the cached hasNext call value
+            private boolean hasNext=false;
+
+            public boolean hasNext() {
+            	if (hasNextCalled) return hasNext;
+            	hasNextCalled = true;
+            	hasNext=true;
+            	
+                currentMeta= refs[index];
+                index++;
+                return hasNext;
+            }
+            
+            private void ensureNext() {
+            	// we ensure that hasNext has been called before 
+            	// next is called
+            	hasNext();
+            	hasNextCalled=false;            	
+            }
+            
+            public Object next() {
+            	ensureNext();
+                return currentMeta;
+            }
+            
+            public void remove() {
+            	ensureNext();
+            	setMetaClass(currentMeta.getTheClass(),currentMeta,null);
+                currentMeta=null;
+            }
+        };
     }
 }

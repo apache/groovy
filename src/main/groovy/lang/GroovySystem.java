@@ -16,10 +16,11 @@
 package groovy.lang;
 
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
+import org.codehaus.groovy.util.ReferenceBundle;
 
 public final class GroovySystem {
     //
-    //  TODO: make this initialisation able to set useReflection true
+    //  TODO: make this initialization able to set useReflection true
     //  TODO: have some way of specifying another MetaClass Registry implementation
     //
     static {
@@ -62,4 +63,19 @@ public final class GroovySystem {
         return keepJavaMetaClasses;
     }
     
+    /**
+     * This method can be used to ensure that no threaded created
+     * by a reference manager will be active. This is useful if the Groovy
+     * runtime itself is loaded through a class loader which should be disposed
+     * off. Without calling this method and if a threaded reference manager is
+     * active the class loader cannot be unloaded!
+     * 
+     * Per default no threaded manager will be used.
+     * 
+     * @since 1.6
+     */
+    public static void stopThreadedReferenceManager() {
+        ReferenceBundle.getSoftBundle().getManager().stopThread();
+        ReferenceBundle.getWeakBundle().getManager().stopThread();
+    }
 }

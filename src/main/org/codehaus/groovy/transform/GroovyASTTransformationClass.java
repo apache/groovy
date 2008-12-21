@@ -10,7 +10,7 @@ import java.lang.annotation.Target;
  * an associated transform classes should be executed.  As of
  * Groovy 1.6 the only valid target is the annotation type.
  *
- * It is a compile time error to specify a {@link #value} that is a class not
+ * It is a compile time error to specify a {@link #ref} that is a class not
  * accessible at compile time.  It need not be available at runtime.
  *
  * Each of the class names in the value must be annotated with

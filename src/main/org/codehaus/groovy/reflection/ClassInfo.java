@@ -19,8 +19,6 @@ import groovy.lang.*;
 import org.codehaus.groovy.reflection.stdclasses.*;
 import org.codehaus.groovy.util.*;
 
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.SoftReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
@@ -43,20 +41,12 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
     private volatile int version;
 
     private MetaClass strongMetaClass;
-    private SoftReference<MetaClass> weakMetaClass;
+    private ManagedReference<MetaClass> weakMetaClass;
     MetaMethod[] dgmMetaMethods = CachedClass.EMPTY;
     MetaMethod[] newMetaMethods = CachedClass.EMPTY;
     private ManagedConcurrentMap perInstanceMetaClassMap;
     
-    private final static ReferenceBundle softBundle;
-    private final static ReferenceBundle perInstanceBundle;
-    static {
-        ReferenceQueue queue = new ReferenceQueue();
-        ReferenceManager callBack = ReferenceManager.createCallBackedManager(queue);
-        ReferenceManager manager  = ReferenceManager.createThresholdedIdlingManager(queue, callBack, 500);
-        softBundle = new ReferenceBundle(manager, ReferenceType.SOFT);
-        perInstanceBundle = new ReferenceBundle(manager, ReferenceType.WEAK);
-    }
+    private static ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();
     private static final ClassInfoSet globalClassSet = new ClassInfoSet(softBundle);
 
     ClassInfo(ManagedConcurrentMap.Segment segment, Class klazz, int hash) {
@@ -131,7 +121,7 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
         if (answer == null) {
            weakMetaClass = null;
         } else {
-           weakMetaClass = new SoftReference<MetaClass> (answer);
+           weakMetaClass = new ManagedReference<MetaClass> (softBundle,answer);
         }
     }
 
@@ -268,7 +258,7 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
 
         if (metaClass != null) {
             if (perInstanceMetaClassMap == null)
-              perInstanceMetaClassMap = new ManagedConcurrentMap(perInstanceBundle); 
+              perInstanceMetaClassMap = new ManagedConcurrentMap(ReferenceBundle.getWeakBundle()); 
 
             perInstanceMetaClassMap.put(obj, metaClass);
         }

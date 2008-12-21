@@ -1,6 +1,5 @@
 package org.codehaus.groovy.util;
 
-import org.codehaus.groovy.util.ManagedReference.ReferenceBundle;
 
 public class ManagedConcurrentMap<K,V> extends AbstractConcurrentMap<K,V> {
     protected ReferenceBundle bundle;

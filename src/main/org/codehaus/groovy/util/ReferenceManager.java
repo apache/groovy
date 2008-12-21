@@ -3,6 +3,7 @@ package org.codehaus.groovy.util;
 import java.lang.ref.ReferenceQueue;
 import java.util.concurrent.atomic.AtomicInteger;
 
+
 public class ReferenceManager {
     private static class ThreadedReferenceManager extends ReferenceManager {
         private final Thread thread;
@@ -128,5 +129,22 @@ public class ReferenceManager {
     @Override
     public String toString() {
         return "ReferenceManager(idling)";
+    }
+    
+    private final static ReferenceBundle  softBundle, weakBundle;
+    static {
+        ReferenceQueue queue = new ReferenceQueue();
+        ReferenceManager callBack = ReferenceManager.createCallBackedManager(queue);
+        ReferenceManager manager  = ReferenceManager.createThresholdedIdlingManager(queue, callBack, 500);
+        softBundle = new ReferenceBundle(manager, ReferenceType.SOFT);
+        weakBundle = new ReferenceBundle(manager, ReferenceType.WEAK);
+    }
+    
+    public static ReferenceBundle getDefaultSoftBundle() {
+        return softBundle;
+    }
+    
+    public static ReferenceBundle getDefaultWeakBundle() {
+        return weakBundle;
     }
 }

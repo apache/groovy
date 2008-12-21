@@ -15,7 +15,6 @@
  */
 package org.codehaus.groovy.util;
 
-import org.codehaus.groovy.util.ManagedReference.ReferenceBundle;
 
 public class ManagedDoubleKeyMap<K1,K2,V> extends AbstractConcurrentDoubleKeyMap<K1,K2,V> {
     public ManagedDoubleKeyMap(ReferenceBundle bundle) {
