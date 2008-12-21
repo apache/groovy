@@ -1,7 +1,8 @@
 package org.codehaus.groovy.util;
 
 public abstract class AbstractConcurrentDoubleKeyMap<K1,K2,V> extends AbstractConcurrentMapBase {
-    public AbstractConcurrentDoubleKeyMap() {
+    public AbstractConcurrentDoubleKeyMap(Object segmentInfo) {
+        super(segmentInfo);
     }
 
     static <K1,K2> int hash(K1 key1, K2 key2) {

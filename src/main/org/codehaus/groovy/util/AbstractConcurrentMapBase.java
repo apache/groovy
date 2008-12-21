@@ -8,7 +8,7 @@ public abstract class AbstractConcurrentMapBase {
     final int segmentShift;
     protected final Segment[] segments;
 
-    public AbstractConcurrentMapBase() {
+    public AbstractConcurrentMapBase(Object segmentInfo) {
         int sshift = 0;
         int ssize = 1;
         while (ssize < 16) {
@@ -27,10 +27,10 @@ public abstract class AbstractConcurrentMapBase {
             cap <<= 1;
 
         for (int i = 0; i < this.segments.length; ++i)
-            this.segments[i] = createSegment(cap);
+            this.segments[i] = createSegment(segmentInfo, cap);
     }
 
-    protected abstract Segment createSegment(int cap);
+    protected abstract Segment createSegment(Object segmentInfo, int cap);
 
     protected static <K> int hash(K key) {
         int h = System.identityHashCode(key);

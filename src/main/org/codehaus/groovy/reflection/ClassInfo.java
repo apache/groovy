@@ -19,6 +19,7 @@ import groovy.lang.*;
 import org.codehaus.groovy.reflection.stdclasses.*;
 import org.codehaus.groovy.util.*;
 
+import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -30,38 +31,43 @@ import java.util.concurrent.atomic.AtomicInteger;
  *
  * @author Alex.Tkachman
  */
-public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
+public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
+
+    private static final HashSet<ClassInfo> modifiedExpandos = new HashSet<ClassInfo>();
 
     private final LazyCachedClassRef cachedClassRef;
-
-    private MetaClass strongMetaClass;
-
-    private SoftReference<MetaClass> weakMetaClass;
+    private final LazyClassLoaderRef artifactClassLoader;
+    private final LockableObject lock = new LockableObject();
+    public final int hash;
 
     private volatile int version;
 
-    private final LazyClassLoaderRef artifactClassLoader;
-
-    private static final Set<ClassInfo> modifiedExpandos = new HashSet<ClassInfo>();
-
-    private final LockableObject lock = new LockableObject();
-
+    private MetaClass strongMetaClass;
+    private SoftReference<MetaClass> weakMetaClass;
     MetaMethod[] dgmMetaMethods = CachedClass.EMPTY;
-
     MetaMethod[] newMetaMethods = CachedClass.EMPTY;
+    private ManagedConcurrentMap perInstanceMetaClassMap;
+    
+    private final static ReferenceBundle softBundle;
+    private final static ReferenceBundle perInstanceBundle;
+    static {
+        ReferenceQueue queue = new ReferenceQueue();
+        ReferenceManager callBack = ReferenceManager.createCallBackedManager(queue);
+        ReferenceManager manager  = ReferenceManager.createThresholdedIdlingManager(queue, callBack, 500);
+        softBundle = new ReferenceBundle(manager, ReferenceType.SOFT);
+        perInstanceBundle = new ReferenceBundle(manager, ReferenceType.WEAK);
+    }
+    private static final ClassInfoSet globalClassSet = new ClassInfoSet(softBundle);
 
-    public final int hash;
-    private ConcurrentWeakMap perInstanceMetaClassMap;
-
-    ClassInfo(ConcurrentSoftMap.Segment segment, Class klazz, int hash) {
-        super (segment, klazz, hash);
+    ClassInfo(ManagedConcurrentMap.Segment segment, Class klazz, int hash) {
+        super (softBundle, segment, klazz, hash);
 
         if (ClassInfo.DebugRef.debug)
           new DebugRef(klazz);
 
         this.hash = hash;
-        cachedClassRef = new LazyCachedClassRef(this);
-        artifactClassLoader = new LazyClassLoaderRef(this);
+        cachedClassRef = new LazyCachedClassRef(softBundle, this);
+        artifactClassLoader = new LazyClassLoaderRef(softBundle, this);
     }
 
     public int getVersion() {
@@ -87,8 +93,6 @@ public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
     public ClassLoaderForClassArtifacts getArtifactClassLoader() {
         return artifactClassLoader.get();
     }
-
-    private static final ClassInfoSet globalClassSet = new ClassInfoSet();
 
     public static ClassInfo getClassInfo (Class cls) {
         return localMap.get().get(cls);
@@ -188,8 +192,8 @@ public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
 
     public void finalizeRef() {
         setStrongMetaClass(null);
-        cachedClassRef.set(null);
-        artifactClassLoader.set(null);
+        cachedClassRef.clear();
+        artifactClassLoader.clear();
 
         super.finalizeRef();
     }
@@ -264,7 +268,7 @@ public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
 
         if (metaClass != null) {
             if (perInstanceMetaClassMap == null)
-              perInstanceMetaClassMap = new ConcurrentWeakMap ();
+              perInstanceMetaClassMap = new ManagedConcurrentMap(perInstanceBundle); 
 
             perInstanceMetaClassMap.put(obj, metaClass);
         }
@@ -279,18 +283,21 @@ public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
         return perInstanceMetaClassMap != null;
     }
 
-    public static class ClassInfoSet extends ConcurrentSoftMap<Class,ClassInfo> {
-
-        public ClassInfoSet() {
+    public static class ClassInfoSet extends ManagedConcurrentMap<Class,ClassInfo> {
+        public ClassInfoSet(ReferenceBundle bundle) {
+            super(bundle);
         }
 
-        protected Segment createSegment(int cap) {
-            return new Segment(cap);
+        protected Segment createSegment(Object segmentInfo,  int cap) {
+            ReferenceBundle bundle = (ReferenceBundle) segmentInfo;
+            if (bundle==null) throw new IllegalArgumentException("bundle must not be null ");
+
+            return new Segment(bundle, cap);
         }
 
-        static final class Segment extends ConcurrentSoftMap.Segment<Class,ClassInfo> {
-            Segment(int initialCapacity) {
-                super(initialCapacity);
+        static final class Segment extends ManagedConcurrentMap.Segment<Class,ClassInfo> {
+            Segment(ReferenceBundle bundle, int initialCapacity) {
+                super(bundle, initialCapacity);
             }
 
             protected ClassInfo createEntry(Class key, int hash, ClassInfo unused) {
@@ -371,10 +378,11 @@ public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
         }
     };
 
-    private static class LazyCachedClassRef extends LazySoftReference<CachedClass> {
+    private static class LazyCachedClassRef extends LazyReference<CachedClass> {
         private final ClassInfo info;
 
-        LazyCachedClassRef(ClassInfo info) {
+        LazyCachedClassRef(ReferenceBundle bundle, ClassInfo info) {
+            super(bundle);
             this.info = info;
         }
 
@@ -383,10 +391,11 @@ public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
         }
     }
 
-    private static class LazyClassLoaderRef extends LazySoftReference<ClassLoaderForClassArtifacts> {
+    private static class LazyClassLoaderRef extends LazyReference<ClassLoaderForClassArtifacts> {
         private final ClassInfo info;
 
-        LazyClassLoaderRef(ClassInfo info) {
+        LazyClassLoaderRef(ReferenceBundle bundle, ClassInfo info) {
+            super(bundle);
             this.info = info;
         }
 
@@ -395,7 +404,7 @@ public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
         }
     }
 
-    private static class DebugRef extends FinalizableRef.DebugRef<Class> {
+    private static class DebugRef extends ManagedReference<Class> {
         public static final boolean debug = false;
 
         private static final AtomicInteger count = new AtomicInteger();
@@ -403,14 +412,14 @@ public class ClassInfo extends ConcurrentSoftMap.Entry<Class,ClassInfo> {
         final String name;
 
         public DebugRef(Class klazz) {
-            super(klazz);
+            super(softBundle, klazz);
             name = klazz == null ? "<null>" : klazz.getName();
             count.incrementAndGet();
         }
 
         public void finalizeRef() {
             System.out.println(name + " unloaded " + count.decrementAndGet() + " classes kept");
-            super.finalizeRef();
+            super.finalizeReference();
         }
     }
 }

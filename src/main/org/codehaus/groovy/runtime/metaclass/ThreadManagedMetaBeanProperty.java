@@ -21,8 +21,12 @@ import groovy.lang.MetaBeanProperty;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
-import org.codehaus.groovy.util.ConcurrentWeakMap;
+import org.codehaus.groovy.util.ManagedConcurrentMap;
+import org.codehaus.groovy.util.ReferenceManager;
+import org.codehaus.groovy.util.ReferenceType;
+import org.codehaus.groovy.util.ManagedReference.ReferenceBundle;
 
+import java.lang.ref.ReferenceQueue;
 import java.lang.reflect.Modifier;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -40,15 +44,23 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
     private static final CachedClass[] ZERO_ARGUMENT_LIST = new CachedClass[0];
-    private static final ConcurrentHashMap<String,ConcurrentWeakMap> propName2Map = new ConcurrentHashMap<String, ConcurrentWeakMap>();
+    private static final ConcurrentHashMap<String,ManagedConcurrentMap> propName2Map = new ConcurrentHashMap<String, ManagedConcurrentMap>();
 
-    private final ConcurrentWeakMap instance2Prop;
+    private final ManagedConcurrentMap instance2Prop;
 
     private Class declaringClass;
     private ThreadBoundGetter getter;
     private ThreadBoundSetter setter;
     private Object initialValue;
     private Closure initialValueCreator;
+    
+    private final static ReferenceBundle softBundle;
+    static {
+        ReferenceQueue queue = new ReferenceQueue();
+        ReferenceManager callBack = ReferenceManager.createCallBackedManager(queue);
+        ReferenceManager manager  = ReferenceManager.createThresholdedIdlingManager(queue, callBack, 200);
+        softBundle = new ReferenceBundle(manager, ReferenceType.SOFT);
+    }
 
     /**
      * Retrieves the initial value of the ThreadBound property
@@ -116,11 +128,11 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
         instance2Prop = getInstance2PropName(name);
     }
 
-    private static ConcurrentWeakMap getInstance2PropName(String name) {
-        ConcurrentWeakMap res = propName2Map.get(name);
+    private static ManagedConcurrentMap getInstance2PropName(String name) {
+        ManagedConcurrentMap res = propName2Map.get(name);
         if (res == null) {
-            res = new ConcurrentWeakMap();
-            ConcurrentWeakMap ores = propName2Map.putIfAbsent(name, res);
+            res = new ManagedConcurrentMap(softBundle);
+            ManagedConcurrentMap ores = propName2Map.putIfAbsent(name, res);
             if (ores != null)
               return ores;
         }
@@ -177,7 +189,7 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
            * @see groovy.lang.MetaMethod#invoke(java.lang.Object, java.lang.Object[])
            */
         public Object invoke(Object object, Object[] arguments) {
-            return ((ConcurrentWeakMap.EntryWithValue)instance2Prop.getOrPut(object, getInitialValue())).getValue();
+            return ((ManagedConcurrentMap.EntryWithValue)instance2Prop.getOrPut(object, getInitialValue())).getValue();
         }
     }
 

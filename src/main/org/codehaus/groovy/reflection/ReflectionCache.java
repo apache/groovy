@@ -16,7 +16,6 @@
 package org.codehaus.groovy.reflection;
 
 import org.codehaus.groovy.util.TripleKeyHashMap;
-import org.codehaus.groovy.util.SoftDoubleKeyMap;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -49,9 +48,7 @@ public class ReflectionCache {
         }
         return (String) mopNameEntry.value;
     }
-
-    static SoftDoubleKeyMap assignableMap = new SoftDoubleKeyMap();
-
+    
     static final CachedClass STRING_CLASS = getCachedClass(String.class);
 
     public static boolean isArray(Class klazz) {
