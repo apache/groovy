@@ -179,7 +179,7 @@ public class ClassHelper {
      * Creates a ClassNode using a given class.
      * If the name is one of the predefined ClassNodes then the 
      * corresponding ClassNode instance will be returned. If the
-     * is null of of length 0 the dynamic type is returned
+     * name is null or of length 0 the dynamic type is returned
      * 
      * @param name of the class the ClassNode is representing
      */

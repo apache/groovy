@@ -702,7 +702,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         Statement firstStatement = constructorNode.getFirstStatement();
         ConstructorCallExpression first = getFirstIfSpecialConstructorCall(firstStatement);
         
-        // in case of this(...) let the other constructor do the intit
+        // in case of this(...) let the other constructor do the init
         if (first!=null && first.isThisCall()) return;
         
         List statements = new ArrayList();

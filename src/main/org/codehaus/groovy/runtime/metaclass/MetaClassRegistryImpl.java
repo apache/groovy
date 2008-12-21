@@ -138,7 +138,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         CachedMethod[] methods = ReflectionCache.getCachedClass(theClass).getMethods();
 
         if (useMethodrapper) {
-            // Here we instanciate objects representing MetaMethods for DGM methods.
+            // Here we instantiate objects representing MetaMethods for DGM methods.
             // Calls for such meta methods done without reflection, so more effectively.
             // It gives 7-8% improvement for benchmarks involving just several ariphmetic operations
             for (int i = 0; ; ++i) {
