@@ -886,7 +886,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     /**
      * Invokes the given method on the object.
-     * TODO: should this be depreciated? If so, we have to propogate to many places.
+     * TODO: should this be deprecated? If so, we have to propogate to many places.
      */
     public Object invokeMethod(Object object, String methodName, Object[] originalArguments) {
         return invokeMethod(theClass, object, methodName, originalArguments, false, false);
