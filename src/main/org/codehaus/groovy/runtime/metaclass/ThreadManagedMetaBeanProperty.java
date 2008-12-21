@@ -22,11 +22,8 @@ import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.util.ManagedConcurrentMap;
-import org.codehaus.groovy.util.ReferenceManager;
-import org.codehaus.groovy.util.ReferenceType;
-import org.codehaus.groovy.util.ManagedReference.ReferenceBundle;
+import org.codehaus.groovy.util.ReferenceBundle;
 
-import java.lang.ref.ReferenceQueue;
 import java.lang.reflect.Modifier;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -54,13 +51,7 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
     private Object initialValue;
     private Closure initialValueCreator;
     
-    private final static ReferenceBundle softBundle;
-    static {
-        ReferenceQueue queue = new ReferenceQueue();
-        ReferenceManager callBack = ReferenceManager.createCallBackedManager(queue);
-        ReferenceManager manager  = ReferenceManager.createThresholdedIdlingManager(queue, callBack, 200);
-        softBundle = new ReferenceBundle(manager, ReferenceType.SOFT);
-    }
+    private final static ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();
 
     /**
      * Retrieves the initial value of the ThreadBound property

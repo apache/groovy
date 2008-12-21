@@ -3,38 +3,24 @@ package org.codehaus.groovy.reflection;
 import groovy.lang.*;
 
 import java.lang.reflect.Modifier;
-import java.lang.ref.ReferenceQueue;
-import java.lang.ref.WeakReference;
-import java.util.WeakHashMap;
 import java.util.List;
 import java.util.ArrayList;
-import java.util.Iterator;
 
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.HandleMetaClass;
-import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.MixedInMetaClass;
 import org.codehaus.groovy.runtime.metaclass.MixinInstanceMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.MixinInstanceMetaProperty;
 import org.codehaus.groovy.util.ManagedConcurrentMap;
-import org.codehaus.groovy.util.ReferenceManager;
-import org.codehaus.groovy.util.ReferenceType;
-import org.codehaus.groovy.util.ManagedReference.ReferenceBundle;
+import org.codehaus.groovy.util.ReferenceBundle;
 
 public class MixinInMetaClass extends ManagedConcurrentMap {
     final ExpandoMetaClass emc;
     final CachedClass mixinClass;
     final CachedConstructor constructor;
 
-    private static ReferenceBundle softBundle;
-    static {
-        ReferenceQueue queue = new ReferenceQueue();
-        ReferenceManager callBack = ReferenceManager.createCallBackedManager(queue);
-        ReferenceManager manager  = ReferenceManager.createThresholdedIdlingManager(queue, callBack, 200);
-        softBundle = new ReferenceBundle(manager, ReferenceType.SOFT);
-    }
+    private static ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();
     
     public MixinInMetaClass(ExpandoMetaClass emc, CachedClass mixinClass) {
         super(softBundle);

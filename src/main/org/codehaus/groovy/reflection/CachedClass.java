@@ -20,11 +20,8 @@ import org.codehaus.groovy.classgen.BytecodeHelper;
 import org.codehaus.groovy.runtime.callsite.CallSiteClassLoader;
 import org.codehaus.groovy.util.LazyReference;
 import org.codehaus.groovy.util.FastArray;
-import org.codehaus.groovy.util.ReferenceManager;
-import org.codehaus.groovy.util.ReferenceType;
-import org.codehaus.groovy.util.ManagedReference.ReferenceBundle;
+import org.codehaus.groovy.util.ReferenceBundle;
 
-import java.lang.ref.ReferenceQueue;
 import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
@@ -40,13 +37,7 @@ public class CachedClass {
     private final Class cachedClass;
     public ClassInfo classInfo;
     
-    private static ReferenceBundle softBundle;
-    static {
-        ReferenceQueue queue = new ReferenceQueue();
-        ReferenceManager callBack = ReferenceManager.createCallBackedManager(queue);
-        ReferenceManager manager  = ReferenceManager.createThresholdedIdlingManager(queue, callBack, 500);
-        softBundle = new ReferenceBundle(manager, ReferenceType.SOFT);
-    }
+    private static ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();
 
     private final LazyReference<CachedField[]> fields = new LazyReference<CachedField[]>(softBundle) {
         public CachedField[] initValue() {
