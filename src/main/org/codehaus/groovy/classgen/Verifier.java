@@ -750,9 +750,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         if (!staticStatements.isEmpty()) {
         	if(isEnumClassNode) {
         		/*
-        		* GROOVY-3161: initialize statements for explicitly declared static fields 
-        		* inside an enum should come after enum values are initialized
-        		*/
+        		 * GROOVY-3161: initialize statements for explicitly declared static fields 
+        		 * inside an enum should come after enum values are initialized
+        		 */
         		staticStatements.removeAll(initStmtsAfterEnumValuesInit);
         		node.addStaticInitializerStatements(staticStatements, true);
         		if(!initStmtsAfterEnumValuesInit.isEmpty()) {
@@ -767,7 +767,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     private boolean isEnum(ClassNode node) {
     	return (node.getModifiers() & Opcodes.ACC_ENUM) != 0;
     }
-    
+
     private ConstructorCallExpression getFirstIfSpecialConstructorCall(Statement code) {
         if (code == null || !(code instanceof ExpressionStatement)) return null;
 

@@ -48,7 +48,7 @@ package org.codehaus.groovy.classgen;
 
 import groovy.lang.GroovyObject;
 
-import java.awt.*;
+import java.awt.HeadlessException;
 
 /**
  * Tests dynamically compiling and running a new class

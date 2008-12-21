@@ -100,7 +100,7 @@ public class FileSystemCompilerTest extends GroovyTestCase {
 
         compiler = new FileSystemCompiler(configuration);
     }
-                               
+
     public void testCommandLine() throws Exception {
         try {
             FileSystemCompiler.commandLineCompile(new String[] {"--bogus-option"});
