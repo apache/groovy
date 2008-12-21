@@ -119,7 +119,7 @@ public class CovariantReturnTest extends CompilableTestSupport {
     // is also a GroovyObject, meaning a "Object getProperty(String)" method
     // should be implemented. But this method should not be the usual automatically
     // added getProperty, but a bridge to the getProperty method provided by Properties 
-    shouldCompile """
+    assertScript """
       class Configuration extends java.util.Properties {}
       assert Configuration.declaredMethods.findAll{it.name=="getProperty"}.size() == 1
       def conf = new Configuration()
@@ -127,6 +127,16 @@ public class CovariantReturnTest extends CompilableTestSupport {
       // the following assert would fail if standard getProperty method was added
       // by the compiler 
       assert conf.getProperty("a") == "b" 
+    """
+  }
+  
+  void testImplementedInterfacesNotInfluencing(){
+    // in GROOVY-3229 some methods from Appendable were not correctly recognized
+    // as already being overriden (PrintWriter<Writer<Appenable)
+    shouldCompile """
+        class IndentWriter extends java.io.PrintWriter {
+           public IndentWriter(Writer w)  { super(w, true) }
+        }
     """
   }
   
