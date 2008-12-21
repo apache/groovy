@@ -221,7 +221,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
             }
 
             if (delegateMetaClass instanceof MetaClassImpl) {
-                method = ((MetaClassImpl)delegateMetaClass).findMethodInClassHeirarchy(getTheClass(), methodName, argClasses, this);
+                method = ((MetaClassImpl)delegateMetaClass).findMethodInClassHierarchy(getTheClass(), methodName, argClasses, this);
                 if(method != null) {
                     onSuperMethodFoundInHierarchy(method);
                     return method;

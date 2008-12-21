@@ -55,7 +55,6 @@ public class ManagedLinkedList<T> {
         Iter() {
             current = head;
         }
-        @Override
         public boolean hasNext() {
             if (current==null) return false;
             if (currentHandled) {
@@ -64,14 +63,12 @@ public class ManagedLinkedList<T> {
                 return current!=null;
             }
         }
-        @Override
         public T next() {
             if (currentHandled) current = current.next;
             currentHandled=true;
             if (current==null)  return null;
             return current.get();
         }
-        @Override
         public void remove() {
             if (current!=null) current.finalizeReference();
         }
