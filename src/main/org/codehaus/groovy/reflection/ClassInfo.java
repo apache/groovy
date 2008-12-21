@@ -26,8 +26,7 @@ import org.codehaus.groovy.util.LazyReference;
 import org.codehaus.groovy.util.LockableObject;
 import org.codehaus.groovy.util.ManagedConcurrentMap;
 import org.codehaus.groovy.util.ManagedReference;
-import org.codehaus.groovy.util.ReferenceManager;
-import org.codehaus.groovy.util.ReferenceType;
+import org.codehaus.groovy.util.ReferenceBundle;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
