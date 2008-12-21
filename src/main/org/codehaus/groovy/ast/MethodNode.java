@@ -41,6 +41,9 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     
     // type spec for generics
     private GenericsType[] genericsTypes=null;
+    
+    // cached data
+    String typeDescriptor;
 
     public MethodNode(String name, int modifiers, ClassNode returnType, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
         this.name = name;
@@ -57,27 +60,30 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     /**
      * The type descriptor for a method node is a string containing the name of the method, its return type,
      * and its parameter types in a canonical form. For simplicity, I'm using the format of a Java declaration
-     * without parameter names, and with $dynamic as the type for any dynamically typed values.
+     * without parameter names.
      */
-    // TODO: add test case for type descriptor
     public String getTypeDescriptor() {
-        StringBuffer buf = new StringBuffer(name.length()+parameters.length*10);
-        // buf.append(dynamicReturnType ? "$dynamic" : cleanupTypeName(returnType));
-        //
-        buf.append(returnType.getName()); // br  to replace the above. Dynamic type returns Object.
-        //
-        buf.append(' ');
-        buf.append(name);
-        buf.append('(');
-        for (int i = 0; i < parameters.length; i++) {
-            if (i > 0) {
-                buf.append(", ");
+        if (typeDescriptor==null) { 
+            StringBuffer buf = new StringBuffer(name.length()+parameters.length*10);
+            buf.append(returnType.getName());
+            buf.append(' ');
+            buf.append(name);
+            buf.append('(');
+            for (int i = 0; i < parameters.length; i++) {
+                if (i > 0) {
+                    buf.append(", ");
+                }
+                Parameter param = parameters[i];
+                buf.append(param.getType().getName());
             }
-            Parameter param = parameters[i];
-            buf.append(param.getType().getName());
+            buf.append(')');
+            typeDescriptor = buf.toString();
         }
-        buf.append(')');
-        return buf.toString();
+        return typeDescriptor;
+    }
+    
+    private void invalidateCachedData() {
+        typeDescriptor = null;
     }
  
     public boolean isVoidMethod() {
@@ -97,6 +103,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     }
 
     public void setModifiers(int modifiers) {
+        invalidateCachedData();
         this.modifiers = modifiers;
     }
 
@@ -109,6 +116,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     }
 
     public void setParameters(Parameter[] parameters) {
+        invalidateCachedData();
         VariableScope scope = new VariableScope();
         this.parameters = parameters;
         if (parameters != null && parameters.length > 0) {
@@ -162,10 +170,11 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     }
 
     public String toString() {
-        return super.toString() + "[name: " + name + "]";
+        return "MethodNode@"+hashCode()+"[" + getTypeDescriptor() + "]";
     }
 
     public void setReturnType(ClassNode returnType) {
+        invalidateCachedData();
     	dynamicReturnType |= ClassHelper.DYNAMIC_TYPE==returnType;
         this.returnType = returnType;
         if (returnType==null) this.returnType = ClassHelper.OBJECT_TYPE;
@@ -194,6 +203,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     }
 
     public void setGenericsTypes(GenericsType[] genericsTypes) {
+        invalidateCachedData();
         this.genericsTypes = genericsTypes;
     }
 }
