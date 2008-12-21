@@ -221,4 +221,141 @@ class ArrayTest extends GroovyTestCase {
         ca[0] = "$foo"
         assert ca[0] == 'z'
     }
+
+    void testAssignmentOfSingleCharStringToNumberArrays() {
+        def x = 'x'
+        def gx = "$x"
+        
+        Short[] sa = new Short[1]
+        sa[0] = 'c' as char
+        assert sa[0] == 99
+        sa[0] = 'd'
+        assert sa[0] == 100
+        sa[0] = gx
+        assert sa[0] == 120
+        shouldFail {
+            sa[0] = 'zz'
+        }
+
+        Integer[] ca = new Integer[1]
+        ca[0] = 'c' as char
+        assert ca[0] == 99
+        ca[0] = 'd'
+        assert ca[0] == 100
+        ca[0] = gx
+        assert ca[0] == 120
+        shouldFail {
+            ca[0] = 'zz'
+        }       
+        
+        Long[] la = new Long[1]
+        la[0] = 'c' as char
+        assert la[0] == 99
+        la[0] = 'd'
+        assert la[0] == 100
+        la[0] = gx
+        assert la[0] == 120
+        shouldFail {
+            la[0] = 'zz'
+        }       
+
+        Float[] fa = new Float[1]
+        fa[0] = 'c' as char
+        assert fa[0] == 99.0f
+        fa[0] = 'd'
+        assert fa[0] == 100.0f
+        fa[0] = gx
+        assert fa[0] == 120.0f
+        shouldFail {
+            fa[0] = 'zz'
+        }       
+        
+        Double[] da = new Double[1]
+        da[0] = 'c' as char
+        assert da[0] == 99.0d
+        da[0] = 'd'
+        assert da[0] == 100.0d
+        da[0] = gx
+        assert da[0] == 120.0d
+        shouldFail {
+            da[0] = 'zz'
+        }       
+
+        BigInteger[] bia = new BigInteger[1]
+        bia[0] = 'c' as char
+        assert bia[0] == new BigInteger("99")
+        bia[0] = 'd'
+        assert bia[0] == new BigInteger("100")
+        bia[0] = gx
+        assert bia[0] == new BigInteger("120")
+        shouldFail {
+            bia[0] = 'zz'
+        }       
+
+        BigDecimal[] bda = new BigDecimal[1]
+        bda[0] = 'c' as char
+        assert bda[0] == new BigDecimal("99")
+        bda[0] = 'd'
+        assert bda[0] == new BigDecimal("100")
+        bda[0] = gx
+        assert bda[0] == new BigDecimal("120")
+        shouldFail {
+            bda[0] = 'zz'
+        }       
+
+        short[] sap = new short[1]
+        sap[0] = 'c' as char
+        assert sap[0] == 99
+        sap[0] = 'd'
+        assert sap[0] == 100
+        sap[0] = gx
+        assert sap[0] == 120
+        shouldFail {
+            sap[0] = 'zz'
+        }       
+        
+        int[] iap = new int[1]
+        iap[0] = 'c' as char
+        assert iap[0] == 99
+        iap[0] = 'd'
+        assert iap[0] == 100
+        iap[0] = gx
+        assert iap[0] == 120
+        shouldFail {
+            iap[0] = 'zz'
+        }       
+        
+        long[] lap = new long[1]
+        lap[0] = 'c' as char
+        assert lap[0] == 99
+        lap[0] = 'd'
+        assert lap[0] == 100
+        lap[0] = gx
+        assert lap[0] == 120
+        shouldFail {
+            lap[0] = 'zz'
+        }       
+        
+        float[] fap = new float[1]
+        fap[0] = 'c' as char
+        assert fap[0] == 99.0f
+        fap[0] = 'd'
+        assert fap[0] == 100.0f
+        fap[0] = gx
+        assert fap[0] == 120.0f
+        shouldFail {
+            fap[0] = 'zz'
+        }       
+        
+        double[] dap = new double[1]
+        dap[0] = 'c' as char
+        assert dap[0] == 99.0d
+        dap[0] = 'd'
+        assert dap[0] == 100.0d
+        dap[0] = gx
+        assert dap[0] == 120.0d
+        shouldFail {
+            dap[0] = 'zz'
+        }       
+    }
 }
