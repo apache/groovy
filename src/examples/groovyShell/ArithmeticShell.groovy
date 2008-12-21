@@ -284,7 +284,7 @@ private class ArithmeticExpressionEnforcer implements GroovyCodeVisitor {
     }
 
     /**
-     * Ternary exprîessions are allowed as long as they are arithmetic
+     * Ternary expressions are allowed as long as they are arithmetic
      */
     void visitTernaryExpression(TernaryExpression expression) {
         expression.getBooleanExpression().visit(this)
