@@ -169,22 +169,22 @@ public abstract class FactoryBuilderSupport extends Binding {
         callAutoRegisterMethods(declaredClass.getSuperclass());
 
         for (Method method : declaredClass.getDeclaredMethods()) {
-                if (method.getName().startsWith("register") && method.getParameterTypes().length == 0) {
-                    registringGroupName = method.getName().substring("register".length());
-                    registrationGroup.put(registringGroupName, new TreeSet<String>());
-                    try {
+            if (method.getName().startsWith("register") && method.getParameterTypes().length == 0) {
+                registringGroupName = method.getName().substring("register".length());
+                registrationGroup.put(registringGroupName, new TreeSet<String>());
+                try {
                     if (Modifier.isPublic(method.getModifiers())) {
                         method.invoke(this);
                     }
-                    } catch (IllegalAccessException e) {
+                } catch (IllegalAccessException e) {
                     throw new RuntimeException("Cound not init " + getClass().getName() + " because of an access error in " + declaredClass.getName() + "." + method.getName(), e);
-                    } catch (InvocationTargetException e) {
+                } catch (InvocationTargetException e) {
                     throw new RuntimeException("Cound not init " + getClass().getName() + " because of an exception in " + declaredClass.getName() + "." + method.getName(), e);
-                    } finally {
-                        registringGroupName = "";
-                    }
+                } finally {
+                    registringGroupName = "";
                 }
             }
+        }
     }
 
     @Deprecated

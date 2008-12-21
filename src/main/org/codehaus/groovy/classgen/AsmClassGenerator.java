@@ -4261,7 +4261,7 @@ public class AsmClassGenerator extends ClassGenerator {
         return classNode.getOuterClass() != null
                 && classNode.getSuperClass() == ClassHelper.CLOSURE_TYPE;
     }
-
+    
     protected boolean isNotExplicitThisInClosure(boolean implicitThis) {
     	return implicitThis || !isInClosure();
     }

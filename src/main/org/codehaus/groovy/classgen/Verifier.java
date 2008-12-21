@@ -779,13 +779,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         return null;
     }
 
-    protected void addFieldInitialization(
-        List list,
-        List staticList,
-        FieldNode fieldNode,
-        boolean isEnumClassNode,
-        List initStmtsAfterEnumValuesInit,
-        Set explicitStaticPropsInEnum) {
+    protected void addFieldInitialization(List list, List staticList, FieldNode fieldNode,
+    		boolean isEnumClassNode, List initStmtsAfterEnumValuesInit, Set explicitStaticPropsInEnum) {
         Expression expression = fieldNode.getInitialExpression();
         if (expression != null) {
             ExpressionStatement statement =

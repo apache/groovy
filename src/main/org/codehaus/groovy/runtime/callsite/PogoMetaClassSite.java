@@ -35,22 +35,24 @@ public class PogoMetaClassSite extends MetaClassSite {
     public final Object call(Object receiver, Object[] args) throws Throwable {
         if (checkCall(receiver)) {
             try {
-                return metaClass.invokeMethod(receiver, name, args);
-            } catch (MissingMethodException e) {
-                if (e instanceof MissingMethodExecutionFailed) {
-                    throw (MissingMethodException)e.getCause();
-                } else if (receiver.getClass() == e.getType() && e.getMethod().equals(name)) {
-                    // in case there's nothing else, invoke the object's own invokeMethod()
-                    return ((GroovyObject)receiver).invokeMethod(name, args);
-                } else {
-                    throw e;
+                try {
+                    return metaClass.invokeMethod(receiver, name, args);
+                } catch (MissingMethodException e) {
+                    if (e instanceof MissingMethodExecutionFailed) {
+                        throw (MissingMethodException)e.getCause();
+                    } else if (receiver.getClass() == e.getType() && e.getMethod().equals(name)) {
+                        // in case there's nothing else, invoke the object's own invokeMethod()
+                        return ((GroovyObject)receiver).invokeMethod(name, args);
+                    } else {
+                        throw e;
+                    }
                 }
             } catch (GroovyRuntimeException gre) {
                 throw ScriptBytecodeAdapter.unwrap(gre);
             }
-        }
-        else
+        } else {
           return CallSiteArray.defaultCall(this, receiver, args);
+        }
     }
 
     protected final boolean checkCall(Object receiver) {
@@ -60,21 +62,23 @@ public class PogoMetaClassSite extends MetaClassSite {
     public final Object callCurrent(GroovyObject receiver, Object[] args) throws Throwable {
         if (checkCall(receiver)) {
             try {
-                return metaClass.invokeMethod(receiver, name, args);
-            } catch (MissingMethodException e) {
-                if (e instanceof MissingMethodExecutionFailed) {
-                    throw (MissingMethodException)e.getCause();
-                } else if (receiver.getClass() == e.getType() && e.getMethod().equals(name)) {
-                    // in case there's nothing else, invoke the object's own invokeMethod()
-                    return ((GroovyObject)receiver).invokeMethod(name, args);
-                } else {
-                    throw e;
+                try {
+                    return metaClass.invokeMethod(receiver, name, args);
+                } catch (MissingMethodException e) {
+                    if (e instanceof MissingMethodExecutionFailed) {
+                        throw (MissingMethodException)e.getCause();
+                    } else if (receiver.getClass() == e.getType() && e.getMethod().equals(name)) {
+                        // in case there's nothing else, invoke the object's own invokeMethod()
+                        return ((GroovyObject)receiver).invokeMethod(name, args);
+                    } else {
+                        throw e;
+                    }
                 }
             } catch (GroovyRuntimeException gre) {
                 throw ScriptBytecodeAdapter.unwrap(gre);
             }
-        }
-        else
+        } else {
           return CallSiteArray.defaultCallCurrent(this, receiver, args);
+        }
     }
 }
