@@ -18,7 +18,11 @@ package org.codehaus.groovy.runtime;
 import groovy.io.EncodingAwareBufferedWriter;
 import groovy.lang.*;
 import groovy.sql.GroovyRowResult;
-import groovy.util.*;
+import groovy.util.CharsetToolkit;
+import groovy.util.ClosureComparator;
+import groovy.util.GroovyCollections;
+import groovy.util.OrderBy;
+import groovy.util.ProxyGenerator;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberDiv;
@@ -41,7 +45,13 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.net.*;
+import java.net.MalformedURLException;
+import java.net.ServerSocket;
+import java.net.Socket;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
+import java.net.URLConnection;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.sql.ResultSet;
@@ -1881,14 +1891,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
     }
     
-    /**
-     * internal helper method
-     *
-     * @param closure
-     * @param entry
-     * @return
-     * @since 1.0
-     */
+    // internal helper method
     protected static Object callClosureForMapEntry(Closure closure, Map.Entry entry) {
         if (closure.getMaximumNumberOfParameters() == 2) {
             return closure.call(new Object[]{entry.getKey(), entry.getValue()});
@@ -1904,6 +1907,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return closure.call(line);
     }
 
+    // internal helper method
     protected static Object callClosureForMapEntryAndCounter(Closure closure, Map.Entry entry, int counter) {
         if (closure.getMaximumNumberOfParameters() == 3) {
             return closure.call(new Object[]{entry.getKey(), entry.getValue(), Integer.valueOf(counter)});
@@ -3157,7 +3161,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param array an Array of Objects
      * @param range a Range
      * @return a range of a list from the range's from index up to but not
-     *         including the ranges's to value
+     *         including the range's to value
      * @since 1.0
      */
     public static List getAt(Object[] array, Range range) {
@@ -3167,9 +3171,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      *
-     * @param array
-     * @param range
-     * @return
+     * @param array an Array of Objects
+     * @param range an IntRange
+     * @return a range of a list from the range's from index up to but not
+     *         including the range's to value
      * @since 1.0
      */
     public static List getAt(Object[] array, IntRange range) {
@@ -3179,9 +3184,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      *
-     * @param array
-     * @param range
-     * @return
+     * @param array an Array of Objects
+     * @param range an EmptyRange
+     * @return an empty Range
      * @since 1.5.0
      */
     public static List getAt(Object[] array, EmptyRange range) {
@@ -3190,9 +3195,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      *
-     * @param array
-     * @param range
-     * @return
+     * @param array an Array of Objects
+     * @param range an ObjectRange
+     * @return a range of a list from the range's from index up to but not
+     *         including the range's to value
      * @since 1.0
      */
     public static List getAt(Object[] array, ObjectRange range) {
@@ -11154,7 +11160,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 continue;
             }
             if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
-                result.add(Integer.valueOf(i));
+                result.add(i);
             }
         }
         return result;
@@ -11286,38 +11292,60 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.6.0
      */
     public static MetaClass getMetaClass(GroovyObject obj) {
-        // we need this method as trick to garantee right method selection
+        // we need this method as trick to guarantee correct method selection
         return getMetaClass((Object)obj);
     }
 
     /**
+     * Sets the metaclass for a given class.
      *
-     * @param c
-     * @param metaClass
+     * @param self the class whose metaclass we wish to set
+     * @param metaClass the new MetaClass
      * @since 1.6.0
      */
-    public static void setMetaClass(Class c, MetaClass metaClass) {
+    public static void setMetaClass(Class self, MetaClass metaClass) {
         final MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
         if (metaClass == null)
-          metaClassRegistry.removeMetaClass(c);
+          metaClassRegistry.removeMetaClass(self);
         else {
           if (metaClass instanceof HandleMetaClass)
-            metaClassRegistry.setMetaClass(c, ((HandleMetaClass)metaClass).getAdaptee());
+            metaClassRegistry.setMetaClass(self, ((HandleMetaClass)metaClass).getAdaptee());
           else
-            metaClassRegistry.setMetaClass(c, metaClass);
+            metaClassRegistry.setMetaClass(self, metaClass);
         }
     }
 
     /**
-     *
-     * @param klazz
-     * @param closure
-     * @return
+     * Set the metaclass for an object
+     * @param self the object whose metaclass we want to set
+     * @param metaClass the new metaclass value
      * @since 1.6.0
      */
-    public static MetaClass metaClass (Class klazz, Closure closure){
+    public static void setMetaClass(Object self, MetaClass metaClass) {
+        if (metaClass instanceof HandleMetaClass)
+            metaClass = ((HandleMetaClass)metaClass).getAdaptee();
+
+        if (self instanceof GroovyObject)
+            ((GroovyObject)self).setMetaClass(metaClass);
+        else
+        if (self instanceof Class)
+            ((MetaClassRegistryImpl)GroovySystem.getMetaClassRegistry()).setMetaClass((Class)self, metaClass);
+        else
+            ((MetaClassRegistryImpl)GroovySystem.getMetaClassRegistry()).setMetaClass(self, metaClass);
+    }
+
+    /**
+     * Sets/updates the metaclass for a given class to a closure.
+     *
+     * @param self the class whose metaclass we wish to update
+     * @param closure the closure representing the new metaclass
+     * @return the new metaclass value
+     * @throws GroovyRuntimeException if the metaclass can't be set for this class
+     * @since 1.6.0
+     */
+    public static MetaClass metaClass (Class self, Closure closure){
         MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
-        MetaClass mc = metaClassRegistry.getMetaClass(klazz);
+        MetaClass mc = metaClassRegistry.getMetaClass(self);
 
         if (mc instanceof ExpandoMetaClass) {
             ((ExpandoMetaClass) mc).define(closure);
@@ -11330,7 +11358,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
             else {
                 if (mc instanceof DelegatingMetaClass && ((DelegatingMetaClass) mc).getAdaptee().getClass() == MetaClassImpl.class) {
-                    ExpandoMetaClass emc =  new ExpandoMetaClass(klazz, false, true);
+                    ExpandoMetaClass emc =  new ExpandoMetaClass(self, false, true);
                     emc.initialize();
                     emc.define(closure);
                     ((DelegatingMetaClass) mc).setAdaptee(emc);
@@ -11339,10 +11367,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 else {
                     if (mc.getClass() == MetaClassImpl.class) {
                         // default case
-                        mc = new ExpandoMetaClass(klazz, false, true);
+                        mc = new ExpandoMetaClass(self, false, true);
                         mc.initialize();
                         ((ExpandoMetaClass)mc).define(closure);
-                        metaClassRegistry.setMetaClass(klazz, mc);
+                        metaClassRegistry.setMetaClass(self, mc);
                         return mc;
                     }
                     else {
@@ -11354,19 +11382,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Sets/updates the metaclass for a given object to a closure.
      *
-     * @param object
-     * @param closure
-     * @return
+     * @param self the object whose metaclass we wish to update
+     * @param closure the closure representing the new metaclass
+     * @return the new metaclass value
+     * @throws GroovyRuntimeException if the metaclass can't be set for this object
      * @since 1.6.0
      */
-    public static MetaClass metaClass (Object object, Closure closure){
-        MetaClass emc = hasPerInstanceMetaClass(object);
+    public static MetaClass metaClass (Object self, Closure closure){
+        MetaClass emc = hasPerInstanceMetaClass(self);
         if (emc == null) {
-            final ExpandoMetaClass metaClass = new ExpandoMetaClass(object.getClass(), false, true);
+            final ExpandoMetaClass metaClass = new ExpandoMetaClass(self.getClass(), false, true);
             metaClass.initialize();
             metaClass.define(closure);
-            setMetaClass(object, metaClass);
+            setMetaClass(self, metaClass);
             return metaClass;
         }
         else {
@@ -11404,25 +11434,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 info.unlock();
             }
         }
-    }
-
-    /**
-     *
-     * @param obj
-     * @param metaClass
-     * @since 1.6.0
-     */
-    public static void setMetaClass(Object obj, MetaClass metaClass) {
-        if (metaClass instanceof HandleMetaClass)
-          metaClass = ((HandleMetaClass)metaClass).getAdaptee();
-        
-        if (obj instanceof GroovyObject)
-          ((GroovyObject)obj).setMetaClass(metaClass);
-        else
-          if (obj instanceof Class)
-            ((MetaClassRegistryImpl)GroovySystem.getMetaClassRegistry()).setMetaClass((Class)obj, metaClass);
-          else 
-            ((MetaClassRegistryImpl)GroovySystem.getMetaClassRegistry()).setMetaClass(obj, metaClass);
     }
 
     /**
