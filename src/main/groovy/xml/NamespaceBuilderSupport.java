@@ -16,6 +16,8 @@
 package groovy.xml;
 
 import groovy.util.BuilderSupport;
+import groovy.util.NodeBuilder;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -30,9 +32,11 @@ import java.util.Map;
 public class NamespaceBuilderSupport extends BuilderSupport {
     private boolean autoPrefix;
     private Map<String, String> nsMap = new HashMap<String, String>();
-    
+    private BuilderSupport builder;
+
     public NamespaceBuilderSupport(BuilderSupport builder) {
         super(builder);
+        this.builder = builder;
     }
 
     public NamespaceBuilderSupport(BuilderSupport builder, String uri) {
@@ -44,29 +48,47 @@ public class NamespaceBuilderSupport extends BuilderSupport {
     }
 
     public NamespaceBuilderSupport(BuilderSupport builder, String uri, String prefix, boolean autoPrefix) {
-        super(builder);
+        this(builder);
         nsMap.put(prefix, uri);
         this.autoPrefix = autoPrefix;
     }
 
     public NamespaceBuilderSupport(BuilderSupport builder, Map nsMap) {
-        super(builder);
+        this(builder);
         this.nsMap = nsMap;
     }
 
-    protected NamespaceBuilderSupport namespace(String namespaceURI) {
+    public NamespaceBuilderSupport namespace(String namespaceURI) {
         nsMap.put("", namespaceURI);
         return this;
     }
 
-    protected NamespaceBuilderSupport namespace(String namespaceURI, String prefix) {
+    public NamespaceBuilderSupport namespace(String namespaceURI, String prefix) {
         nsMap.put(prefix, namespaceURI);
         return this;
     }
 
-    protected NamespaceBuilderSupport declareNamespace(Map nsMap) {
+    public NamespaceBuilderSupport declareNamespace(Map nsMap) {
         this.nsMap = nsMap;
         return this;
+    }
+
+    @Override
+    protected Object getCurrent() {
+        // TODO a better way to do this?
+        if (builder instanceof NodeBuilder)
+            return InvokerHelper.invokeMethod(builder, "getCurrent", null);
+        else
+            return super.getCurrent();
+    }
+
+    @Override
+    protected void setCurrent(Object current) {
+        // TODO a better way to do this?
+        if (builder instanceof NodeBuilder)
+            InvokerHelper.invokeMethod(builder, "setCurrent", current);
+        else
+            super.setCurrent(current);
     }
 
     @Override

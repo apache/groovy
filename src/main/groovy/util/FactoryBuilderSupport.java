@@ -16,7 +16,15 @@
 
 package groovy.util;
 
-import groovy.lang.*;
+import groovy.lang.Binding;
+import groovy.lang.Closure;
+import groovy.lang.DelegatingMetaClass;
+import groovy.lang.GroovyClassLoader;
+import groovy.lang.MetaClass;
+import groovy.lang.MissingMethodException;
+import groovy.lang.MissingPropertyException;
+import groovy.lang.Reference;
+import groovy.lang.Script;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
@@ -24,7 +32,15 @@ import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -1055,7 +1071,7 @@ public abstract class FactoryBuilderSupport extends Binding {
 
     /**
      * Stores the thread local states in a Map that can be passed across threads
-     * @return
+     * @return the map
      */
     protected Map<String, Object> getContinuationData() {
         Map<String, Object> data = new HashMap<String, Object>();

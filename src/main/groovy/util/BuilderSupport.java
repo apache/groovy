@@ -136,14 +136,12 @@ public abstract class BuilderSupport extends GroovyObjectSupport {
 
         if (closure != null) {
             // push new node on stack
-            Object oldCurrent = current;
-            current = node;
-
+            Object oldCurrent = getCurrent();
+            setCurrent(node);
             // let's register the builder as the delegate
             setClosureDelegate(closure, node);
             closure.call();
-
-            current = oldCurrent;
+            setCurrent(oldCurrent);
         }
 
         proxyBuilder.nodeCompleted(current, node);
