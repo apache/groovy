@@ -1,8 +1,5 @@
 package groovy.jmx.builder
 
-import groovy.jmx.builder.JmxBuilder
-import groovy.jmx.builder.JmxClientConnectorFactory
-import groovy.jmx.builder.JmxServerConnectorFactory
 import java.rmi.registry.LocateRegistry
 import java.rmi.registry.Registry
 import javax.management.remote.rmi.RMIConnector

@@ -1,4 +1,4 @@
-package groovy.jmx.builder.test;
+package groovy.jmx.builder;
 
 import java.util.logging.Level;
 import java.util.logging.Logger;

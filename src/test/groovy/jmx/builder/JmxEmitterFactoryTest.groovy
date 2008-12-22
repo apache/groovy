@@ -1,7 +1,5 @@
 package groovy.jmx.builder
 
-import groovy.jmx.builder.JmxBuilder
-import groovy.jmx.builder.test.MockManagedObject
 import javax.management.MBeanServer
 
 

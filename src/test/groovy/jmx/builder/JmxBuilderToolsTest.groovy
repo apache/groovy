@@ -1,10 +1,5 @@
 package groovy.jmx.builder
 
-import groovy.jmx.builder.JmxBuilderModelMBean
-import groovy.jmx.builder.JmxBuilderTools
-import groovy.jmx.builder.MockJmxListener
-import groovy.jmx.builder.MockManagedGroovyObject
-import groovy.jmx.builder.test.MockManagedObject
 import javax.management.ObjectName
 
 class JmxBuilderToolsTest extends GroovyTestCase {

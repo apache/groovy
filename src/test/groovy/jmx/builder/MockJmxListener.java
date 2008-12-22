@@ -3,13 +3,6 @@ package groovy.jmx.builder;
 import javax.management.Notification;
 import javax.management.NotificationListener;
 
-/**
- * Created by IntelliJ IDEA.
- * User: VVivien
- * Date: Dec 19, 2008
- * Time: 1:19:51 PM
- * To change this template use File | Settings | File Templates.
- */
 public class MockJmxListener implements MockJmxListenerMBean, NotificationListener {
 
     public void handleNotification(Notification note, Object handback) {

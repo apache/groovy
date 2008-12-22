@@ -1,10 +1,5 @@
 package groovy.jmx.builder
 
-import groovy.jmx.builder.JmxBeanFactory
-import groovy.jmx.builder.JmxBuilder
-import groovy.jmx.builder.MockManagedGroovyObject
-import groovy.jmx.builder.MockSimpleObject
-import groovy.jmx.builder.test.MockManagedObject
 import javax.management.MBeanServerConnection
 import javax.management.ObjectName
 

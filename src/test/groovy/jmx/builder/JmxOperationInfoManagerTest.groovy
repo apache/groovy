@@ -1,9 +1,5 @@
 package groovy.jmx.builder
 
-import groovy.jmx.builder.JmxBuilderTools
-import groovy.jmx.builder.JmxMetaMapBuilder
-import groovy.jmx.builder.JmxOperationInfoManager
-import groovy.jmx.builder.test.MockManagedObject
 import javax.management.Descriptor
 import javax.management.MBeanParameterInfo
 import javax.management.modelmbean.ModelMBeanConstructorInfo
@@ -15,7 +11,7 @@ class JmxOperationInfoManagerTest extends GroovyTestCase {
 
   }
 
-  public void testGetConstructorInfoFromMap() {
+  public void TODO_testGetConstructorInfoFromMap() {
     def object = new MockManagedObject()
     def maps = JmxMetaMapBuilder.buildConstructorMapFrom(object);
     assert maps

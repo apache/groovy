@@ -1,10 +1,5 @@
 package groovy.jmx.builder
 
-import groovy.jmx.builder.JmxAttributeInfoManager
-import groovy.jmx.builder.JmxBuilderTools
-import groovy.jmx.builder.JmxMetaMapBuilder
-import groovy.jmx.builder.MockManagedGroovyObject
-import groovy.jmx.builder.test.MockManagedObject
 import javax.management.modelmbean.DescriptorSupport
 import javax.management.modelmbean.ModelMBeanAttributeInfo
 

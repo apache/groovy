@@ -1,6 +1,5 @@
 package groovy.jmx.builder
 
-import groovy.jmx.builder.JmxBuilder
 import javax.management.ObjectName
 
 class JmxListenerFactoryTest extends GroovyTestCase {
