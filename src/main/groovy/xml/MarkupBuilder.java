@@ -24,7 +24,23 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * A helper class for creating XML or HTML markup
+ * <p>A helper class for creating XML or HTML markup.  This implementation outputs
+ * markup in a 'pretty printed' format.</p>
+ * 
+ * <p>Example:</p>
+ * <pre>new MarkupBuilder().root {
+ *   a( a1:'one' ) {
+ *     b { mkp.yield( '3 < 5' ) }
+ *     c( a2:'two', 'blah' )
+ *   }
+ * }</pre>
+ * Will print the following to System.out:  
+ * <pre>&lt;root&gt;
+ *   &lt;a a1='one'&gt;
+ *     &lt;b&gt;3 &amp;lt; 5&lt;/b&gt;
+ *     &lt;c a2='two'&gt;blah&lt;/c&gt;
+ *   &lt;/a&gt;
+ * &lt;/root&gt;</pre> 
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Stefan Matthias Aust
@@ -41,18 +57,34 @@ public class MarkupBuilder extends BuilderSupport {
     private boolean omitNullAttributes = false;
     private boolean omitEmptyAttributes = false;
 
+    /**
+     * Prints markup to System.out
+     * @see IndentPrinter#IndentPrinter()
+     */
     public MarkupBuilder() {
         this(new IndentPrinter());
     }
 
+    /**
+     * Sends markup to the given PrintWriter 
+     * @see IndentPrinter#IndentPrinter(PrintWriter)
+     */
     public MarkupBuilder(PrintWriter writer) {
         this(new IndentPrinter(writer));
     }
 
+    /**
+     * Sends markup to the given PrintWriter 
+     * @see IndentPrinter#IndentPrinter(PrintWriter)
+     */
     public MarkupBuilder(Writer writer) {
         this(new IndentPrinter(new PrintWriter(writer)));
     }
 
+    /**
+     * Sends markup to the given IndentPrinter.  Use this option if you want
+     * to customize the indent used. 
+     */
     public MarkupBuilder(IndentPrinter out) {
         this.out = out;
     }
@@ -88,7 +120,7 @@ public class MarkupBuilder extends BuilderSupport {
     }
 
     /**
-     * Allows null attributes to be removed the produced markup.
+     * Allows null attributes to be removed from the generated markup.
      *
      * @param omitNullAttributes if <code>true</code>, null
      * attributes will not be included in the resulting markup.
@@ -111,7 +143,7 @@ public class MarkupBuilder extends BuilderSupport {
     }
 
     /**
-     * Allows empty attributes to be removed the produced markup.
+     * Allows empty attributes to be removed from the generated markup.
      *
      * @param omitEmptyAttributes if <code>true</code>, empty
      * attributes will not be included in the resulting markup.
@@ -127,14 +159,30 @@ public class MarkupBuilder extends BuilderSupport {
 
     protected void setParent(Object parent, Object child) { }
 
+    /**
+     * Property that may be called from within your builder closure to access 
+     * helper methods, namely {@link #yield(String)} and 
+     * {@link #yieldUnescaped(String)}.
+     * @return this MarkupBuilder
+     */
     public Object getMkp() {
         return this;
     }
 
+    /**
+     * Prints data in the body of the current tag, escaping XML entities.
+     * For example: <code>mkp.yield('5 &lt; 7')</code>
+     * @param value text to print
+     */
     public void yield(String value) {
         yield(value, true);
     }
 
+    /**
+     * Print data in the body of the current tag.  Does not escape XML entities.
+     * For example: <code>mkp.yieldUnescaped('I am &lt;i&gt;happy&lt;/i&gt;!')</code>.
+     * @param value the text or markup to print.
+     */
     public void yieldUnescaped(String value) {
         yield(value, false);
     }
@@ -408,7 +456,7 @@ public class MarkupBuilder extends BuilderSupport {
                         if (!nodeIsEmpty) {
                             out.println();
                             out.incrementIndent();
-                            out.printIndent();
+                            out.printIndent();                            
                         }
                         out.print("<");
                         print(name);
