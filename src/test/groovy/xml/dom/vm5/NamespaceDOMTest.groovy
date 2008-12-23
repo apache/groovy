@@ -1,4 +1,4 @@
-package groovy.xml.dom
+package groovy.xml.dom.vm5
 
 import groovy.xml.DOMBuilder
 import groovy.xml.NamespaceBuilder
@@ -7,6 +7,14 @@ import groovy.xml.XmlUtil
 import org.custommonkey.xmlunit.Diff
 import org.custommonkey.xmlunit.XMLUnit
 
+/*
+These tests aren't inherently doing anything requiring jdk1.5 but there is a bug
+in JDK 1.4 VMs on some platforms which causes the test to have problems, so it
+is here to avoid tripping the build on those platforms. If you need the features
+covered by these tests on a 1.4 JVM, try the features out. It will appear as if
+you haven't turned namespace awareness on if you are in an environment that will
+have problems. Upgrading to a recent xerces may be sufficient to avoid the problem.
+*/
 class NamespaceDOMTest extends TestXmlSupport {
 
     def expected1 = '''
