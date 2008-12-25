@@ -462,7 +462,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (self instanceof Writer) {
             final PrintWriter pw = new PrintWriter((Writer) self);
             pw.print(InvokerHelper.toString(value));
-            pw.flush();
         } else {
             System.out.print(InvokerHelper.toString(value));
         }
@@ -490,7 +489,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static void println(Object self) {
         // we won't get here if we are a PrintWriter
         if (self instanceof Writer) {
-            PrintWriter pw = new PrintWriter((Writer) self, true);
+            PrintWriter pw = new PrintWriter((Writer) self);
             pw.println();
         } else {
             System.out.println();
@@ -527,7 +526,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static void println(Object self, Object value) {
         // we won't get here if we are a PrintWriter
         if (self instanceof Writer) {
-            final PrintWriter pw = new PrintWriter((Writer) self, true);
+            final PrintWriter pw = new PrintWriter((Writer) self);
             pw.println(InvokerHelper.toString(value));
         } else {
             System.out.println(InvokerHelper.toString(value));
