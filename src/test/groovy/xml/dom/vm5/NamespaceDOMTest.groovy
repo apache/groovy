@@ -1,12 +1,13 @@
-package groovy.xml.dom
+package groovy.xml.dom.vm5
 
-import groovy.xml.DOMBuilder
-import groovy.xml.NamespaceBuilder
-import groovy.xml.TestXmlSupport
-import groovy.xml.XmlUtil
 import org.custommonkey.xmlunit.Diff
 import org.custommonkey.xmlunit.XMLUnit
+import groovy.xml.*
 
+/*
+This isn't inherently doing anything requiring jdk1.5 but there is a bug in
+JDK 1.4 VMs which causes the test to have problems, so it is here.
+ */
 class NamespaceDOMTest extends TestXmlSupport {
 
     def expected1 = '''
