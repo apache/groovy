@@ -8,18 +8,18 @@ class ArrayTest extends GroovyTestCase {
         array[0] = "Hello"
         assert array[0] == "Hello"
     }
-    
+
     void testArrayWithInitializer() {
-        String[] array = [ "nice", "cheese", "gromit" ]
+        String[] array = ["nice", "cheese", "gromit"]
         assert array.size() == 3
-        assert array[0] == "nice" , array.inspect()
+        assert array[0] == "nice", array.inspect()
         assert array[1] == "cheese"
         assert array[2] == "gromit"
     }
 
     void testCharArrayCreate() {
-           def array = new char[3]
-           assert array.size() == 3
+        def array = new char[3]
+        assert array.size() == 3
     }
 
     void testCharArrayAssignToElement() {
@@ -39,10 +39,10 @@ class ArrayTest extends GroovyTestCase {
         assert ca[0] == '\u00A0'
 
         def foo = 'z'
-        
+
         ca[0] = "$foo"
         assert ca[0] == 'z'
-        
+
         // Assignment in value context.
         assert (ca[0] = 'b' as char) == 'b'
         assert ca[0] == 'b'
@@ -59,16 +59,16 @@ class ArrayTest extends GroovyTestCase {
         assert (ca[0] = "$foo") == 'z'
         assert ca[0] == 'z'
     }
-    
+
     void testCharArrayWithInitializer() {
         def bar = 'c'
-        char[] array = [ 'a', 'b', "$bar" ]
+        char[] array = ['a', 'b', "$bar"]
         assert array.size() == 3
-        assert array[0] == 'a' , array.inspect()
+        assert array[0] == 'a', array.inspect()
         assert array[1] == 'b'
         assert array[2] == 'c'
     }
-    
+
     void testByteArrayCreate() {
         def array = new byte[100]
         assert array.size() == 100;
@@ -77,14 +77,14 @@ class ArrayTest extends GroovyTestCase {
     void testByteArrayWithInitializer() {
         byte[] array = [0, 1, 2, 3]
         assert array.size() == 4
-        assert array[0] == 0 , array.inspect()
+        assert array[0] == 0, array.inspect()
         assert array[1] == 1
         assert array[2] == 2
         assert array[3] == 3
     }
 
     void testByteArrayWithInitializerAndAssignmentOfNumber() {
-        byte[] array = [ 2, 4]
+        byte[] array = [2, 4]
         assert array.size() == 2
         assert array[0] == 2
         assert array[1] == 4
@@ -112,14 +112,14 @@ class ArrayTest extends GroovyTestCase {
     }
 
     void testDoubleArrayCreate() {
-         def array  = new double[3]
-         assert array.size() == 3
+        def array = new double[3]
+        assert array.size() == 3
     }
 
     void testDoubleArrayWithInitializer() {
-        double[] array = [ 1.3, 3.14, 2.7]
+        double[] array = [1.3, 3.14, 2.7]
         assert array.size() == 3
-        assert array[0] == 1.3 , array.inspect()
+        assert array[0] == 1.3, array.inspect()
         assert array[1] == 3.14
         assert array[2] == 2.7
     }
@@ -132,13 +132,13 @@ class ArrayTest extends GroovyTestCase {
     void testIntArrayWithInitializer() {
         int[] array = [42, -5, 360]
         assert array.size() == 3
-        assert array[0] == 42 , array.inspect()
+        assert array[0] == 42, array.inspect()
         assert array[1] == -5
         assert array[2] == 360
     }
 
     void testArrayDeclaration() {
-        String[] array = [ "a", "b", "c" ]
+        String[] array = ["a", "b", "c"]
         assert array.class == String[].class
         assert array.size() == 3
         assert array[0] == "a"
@@ -147,26 +147,26 @@ class ArrayTest extends GroovyTestCase {
     }
 
     void testArrayAssignmentShouldHonorInheritance() {
-        String[] array = [ "a", "b", "c" ]
+        String[] array = ["a", "b", "c"]
         Object[] other = array
         assert other.class == String[].class
         assert other.hashCode() == array.hashCode()
     }
 
     void testSimpleArrayEquals() {
-        Integer[] arr1 = [1,2,3,4]
-        Integer[] arr2 = [1,2,3,4]
+        Integer[] arr1 = [1, 2, 3, 4]
+        Integer[] arr2 = [1, 2, 3, 4]
         assert arr1 == arr2
-        int[] primarr1 = [1,2,3,4]
-        int[] primarr2 = [1,2,3,4]
+        int[] primarr1 = [1, 2, 3, 4]
+        int[] primarr2 = [1, 2, 3, 4]
         assert primarr1 == primarr2
         assert primarr1 == arr2
-        double[] primarr3 = [1,2,3,4]
-        long[] primarr4 = [1,2,3,4]
+        double[] primarr3 = [1, 2, 3, 4]
+        long[] primarr4 = [1, 2, 3, 4]
         assert primarr3 == primarr4
         assert primarr3 == primarr1
         assert primarr2 == primarr4
-        def list1 = [1,2,3,4]
+        def list1 = [1, 2, 3, 4]
         assert list1 == arr1
         assert arr1 == list1
         assert list1 == primarr1
@@ -178,22 +178,22 @@ class ArrayTest extends GroovyTestCase {
     }
 
     void testComplexArrayEquals() {
-        def a = [1,2] as Integer[]
-        def b = [1,2]
+        def a = [1, 2] as Integer[]
+        def b = [1, 2]
         assert a == b
-        assert [[1,2],[3,4]] == [[1,2],[3,4]]
-        def x = [[1,2] as Integer[]]
-        Object[] y = [[1,2]]
+        assert [[1, 2], [3, 4]] == [[1, 2], [3, 4]]
+        def x = [[1, 2] as Integer[]]
+        Object[] y = [[1, 2]]
         assert y == x
-        assert [[1,2],[3,4]] as int[][] == [[1,2],[3,4]] as int[][]
-        assert [[[5,6],[7,8]]] as int[][][] == [[[5,6],[7,8]]] as Long[][][]
-        assert [[1,2],[3,4]] as long[][] == [[1,2],[3,4]] as long[][]
-        assert [[1,2],[3,4]] as long[][] == [[1,2],[3,4]] as Long[][]
-        assert [[1,2],[3,4]] as long[][] == [[1,2],[3,4]]
-        assert [[1,2],[3,4]] as long[][] == [[1,2] as short[], [3,4] as short[]]
-        int[][] intsA = [[1,2],[3,4]]
-        assert intsA == [[1,2],[3,4]] as int[][]
-        int[][] intsB = [[1,2],[3,4]]
+        assert [[1, 2], [3, 4]] as int[][] == [[1, 2], [3, 4]] as int[][]
+        assert [[[5, 6], [7, 8]]] as int[][][] == [[[5, 6], [7, 8]]] as Long[][][]
+        assert [[1, 2], [3, 4]] as long[][] == [[1, 2], [3, 4]] as long[][]
+        assert [[1, 2], [3, 4]] as long[][] == [[1, 2], [3, 4]] as Long[][]
+        assert [[1, 2], [3, 4]] as long[][] == [[1, 2], [3, 4]]
+        assert [[1, 2], [3, 4]] as long[][] == [[1, 2] as short[], [3, 4] as short[]]
+        int[][] intsA = [[1, 2], [3, 4]]
+        assert intsA == [[1, 2], [3, 4]] as int[][]
+        int[][] intsB = [[1, 2], [3, 4]]
         assert intsA == intsB
         boolean[][] boolsA = [[true, true], [false, true], [false]]
         boolean[][] boolsB = [[true, true], [false, true], [false]]
@@ -214,15 +214,15 @@ class ArrayTest extends GroovyTestCase {
         Float[] floats = [1.0f, 2.0f]
         floats[1] = 50.0d
         assertEquals 50.0d, floats[1]
-        
+
         Double[] doubles = [1.0d, 2.0d]
         doubles[0] = new BigDecimal(100)
         doubles[1] = 50
-        
+
         assertEquals 100, doubles[0]
         assertEquals 50, doubles[1]
     }
-    
+
     void testCharacterArrayElementAssignments() {
         Character[] ca = new Character[1]
 
@@ -244,11 +244,11 @@ class ArrayTest extends GroovyTestCase {
         ca[0] = "$foo"
         assert ca[0] == 'z'
     }
-    
+
     void testAssignmentOfSingleCharStringToNumberArrays() {
         def x = 'x'
         def gx = "$x"
-        
+
         Short[] sa = new Short[1]
         sa[0] = 'c' as char
         assert sa[0] == 99
@@ -269,8 +269,8 @@ class ArrayTest extends GroovyTestCase {
         assert ca[0] == 120
         shouldFail {
             ca[0] = 'zz'
-        }       
-        
+        }
+
         Long[] la = new Long[1]
         la[0] = 'c' as char
         assert la[0] == 99
@@ -280,7 +280,7 @@ class ArrayTest extends GroovyTestCase {
         assert la[0] == 120
         shouldFail {
             la[0] = 'zz'
-        }       
+        }
 
         Float[] fa = new Float[1]
         fa[0] = 'c' as char
@@ -291,8 +291,8 @@ class ArrayTest extends GroovyTestCase {
         assert fa[0] == 120.0f
         shouldFail {
             fa[0] = 'zz'
-        }       
-        
+        }
+
         Double[] da = new Double[1]
         da[0] = 'c' as char
         assert da[0] == 99.0d
@@ -302,7 +302,7 @@ class ArrayTest extends GroovyTestCase {
         assert da[0] == 120.0d
         shouldFail {
             da[0] = 'zz'
-        }       
+        }
 
         BigInteger[] bia = new BigInteger[1]
         bia[0] = 'c' as char
@@ -313,7 +313,7 @@ class ArrayTest extends GroovyTestCase {
         assert bia[0] == new BigInteger("120")
         shouldFail {
             bia[0] = 'zz'
-        }       
+        }
 
         BigDecimal[] bda = new BigDecimal[1]
         bda[0] = 'c' as char
@@ -324,7 +324,7 @@ class ArrayTest extends GroovyTestCase {
         assert bda[0] == new BigDecimal("120")
         shouldFail {
             bda[0] = 'zz'
-        }       
+        }
 
         short[] sap = new short[1]
         sap[0] = 'c' as char
@@ -335,8 +335,8 @@ class ArrayTest extends GroovyTestCase {
         assert sap[0] == 120
         shouldFail {
             sap[0] = 'zz'
-        }       
-        
+        }
+
         int[] iap = new int[1]
         iap[0] = 'c' as char
         assert iap[0] == 99
@@ -346,8 +346,8 @@ class ArrayTest extends GroovyTestCase {
         assert iap[0] == 120
         shouldFail {
             iap[0] = 'zz'
-        }       
-        
+        }
+
         long[] lap = new long[1]
         lap[0] = 'c' as char
         assert lap[0] == 99
@@ -357,8 +357,8 @@ class ArrayTest extends GroovyTestCase {
         assert lap[0] == 120
         shouldFail {
             lap[0] = 'zz'
-        }       
-        
+        }
+
         float[] fap = new float[1]
         fap[0] = 'c' as char
         assert fap[0] == 99.0f
@@ -368,8 +368,8 @@ class ArrayTest extends GroovyTestCase {
         assert fap[0] == 120.0f
         shouldFail {
             fap[0] = 'zz'
-        }       
-        
+        }
+
         double[] dap = new double[1]
         dap[0] = 'c' as char
         assert dap[0] == 99.0d
@@ -379,6 +379,36 @@ class ArrayTest extends GroovyTestCase {
         assert dap[0] == 120.0d
         shouldFail {
             dap[0] = 'zz'
-        }       
+        }
+    }
+
+    void testFlattenArray() {
+        def orig = "onetwo".toList().toArray()
+        def flat = orig.flatten()
+        assert flat == ["o", "n", "e", "t", "w", "o"]
+    }
+
+    void testFlattenArrayOfLists() {
+        def orig = ["one".toList(), "two".toList()] as Object[]
+        def flat = orig.flatten()
+        assert flat == ["o", "n", "e", "t", "w", "o"]
+    }
+
+    void testFlattenArrayOfArrays() {
+        def orig = ["one".toList().toArray(), "two".toList().toArray()] as Object[]
+        def flat = orig.flatten()
+        assert flat == ["o", "n", "e", "t", "w", "o"]
+    }
+
+    void testFlattenPrimitiveArray() {
+        def orig = [1, 2, 3] as int[]
+        def flat = orig.flatten()
+        assert flat == [1, 2, 3]
+    }
+
+    void testFlattenArrayOfPrimitiveArrays() {
+        def orig = [[1, 2, 3] as int[], [4, 5, 6] as int[]] as int[][]
+        def flat = orig.flatten()
+        assert flat == [1, 2, 3, 4, 5, 6]
     }
 }

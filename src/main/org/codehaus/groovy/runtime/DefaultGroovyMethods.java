@@ -4602,6 +4602,114 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return flatten(self, createSimilarCollection(self));
     }
 
+    /**
+     * Flatten an array.  This array and any nested arrays or
+     * collections have their contents (recursively) added to the new collection.
+     *
+     * @param self an Array to flatten
+     * @return a flattened Collection
+     * @since 1.6.0
+     */
+    public static Collection flatten(Object[] self) {
+        return flatten(toList(self), new ArrayList());
+    }
+
+    /**
+     * Flatten an array.  This array and any nested arrays or
+     * collections have their contents (recursively) added to the new collection.
+     *
+     * @param self a boolean Array to flatten
+     * @return a flattened Collection
+     * @since 1.6.0
+     */
+    public static Collection flatten(boolean[] self) {
+        return flatten(toList(self), new ArrayList());
+    }
+
+    /**
+     * Flatten an array.  This array and any nested arrays or
+     * collections have their contents (recursively) added to the new collection.
+     *
+     * @param self a byte Array to flatten
+     * @return a flattened Collection
+     * @since 1.6.0
+     */
+    public static Collection flatten(byte[] self) {
+        return flatten(toList(self), new ArrayList());
+    }
+
+    /**
+     * Flatten an array.  This array and any nested arrays or
+     * collections have their contents (recursively) added to the new collection.
+     *
+     * @param self a char Array to flatten
+     * @return a flattened Collection
+     * @since 1.6.0
+     */
+    public static Collection flatten(char[] self) {
+        return flatten(toList(self), new ArrayList());
+    }
+
+    /**
+     * Flatten an array.  This array and any nested arrays or
+     * collections have their contents (recursively) added to the new collection.
+     *
+     * @param self a short Array to flatten
+     * @return a flattened Collection
+     * @since 1.6.0
+     */
+    public static Collection flatten(short[] self) {
+        return flatten(toList(self), new ArrayList());
+    }
+
+    /**
+     * Flatten an array.  This array and any nested arrays or
+     * collections have their contents (recursively) added to the new collection.
+     *
+     * @param self an int Array to flatten
+     * @return a flattened Collection
+     * @since 1.6.0
+     */
+    public static Collection flatten(int[] self) {
+        return flatten(toList(self), new ArrayList());
+    }
+
+    /**
+     * Flatten an array.  This array and any nested arrays or
+     * collections have their contents (recursively) added to the new collection.
+     *
+     * @param self a long Array to flatten
+     * @return a flattened Collection
+     * @since 1.6.0
+     */
+    public static Collection flatten(long[] self) {
+        return flatten(toList(self), new ArrayList());
+    }
+
+    /**
+     * Flatten an array.  This array and any nested arrays or
+     * collections have their contents (recursively) added to the new collection.
+     *
+     * @param self a float Array to flatten
+     * @return a flattened Collection
+     * @since 1.6.0
+     */
+    public static Collection flatten(float[] self) {
+        return flatten(toList(self), new ArrayList());
+    }
+
+    /**
+     * Flatten an array.  This array and any nested arrays or
+     * collections have their contents (recursively) added to the new collection.
+     *
+     * @param self a double Array to flatten
+     * @return a flattened Collection
+     * @since 1.6.0
+     */
+    public static Collection flatten(double[] self) {
+        return flatten(toList(self), new ArrayList());
+    }
+
     private static Collection flatten(Collection elements, Collection addTo) {
         for (Object element : elements) {
             if (element instanceof Collection) {
@@ -5491,7 +5599,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Converts this array to a List of the same size, with each element
      * added to the list.
      *
-     * @param array an array
+     * @param array a boolean array
+     * @return a list containing the contents of this array.
+     * @since 1.6.0
+     */
+    public static List toList(boolean[] array) {
+        return DefaultTypeTransformation.primitiveArrayToList(array);
+    }
+
+    /**
+     * Converts this array to a List of the same size, with each element
+     * added to the list.
+     *
+     * @param array a char array
      * @return a list containing the contents of this array.
      * @since 1.0
      */
@@ -5503,7 +5623,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Converts this array to a List of the same size, with each element
      * added to the list.
      *
-     * @param array an array
+     * @param array a short array
      * @return a list containing the contents of this array.
      * @since 1.0
      */
@@ -5515,7 +5635,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Converts this array to a List of the same size, with each element
      * added to the list.
      *
-     * @param array an array
+     * @param array an int array
      * @return a list containing the contents of this array.
      * @since 1.0
      */
@@ -5527,7 +5647,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Converts this array to a List of the same size, with each element
      * added to the list.
      *
-     * @param array an array
+     * @param array a long array
      * @return a list containing the contents of this array.
      * @since 1.0
      */
@@ -5539,7 +5659,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Converts this array to a List of the same size, with each element
      * added to the list.
      *
-     * @param array an array
+     * @param array a float array
      * @return a list containing the contents of this array.
      * @since 1.0
      */
@@ -5551,7 +5671,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Converts this array to a List of the same size, with each element
      * added to the list.
      *
-     * @param array an array
+     * @param array a double array
      * @return a list containing the contents of this array.
      * @since 1.0
      */
