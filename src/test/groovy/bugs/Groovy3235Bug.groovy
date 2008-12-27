@@ -13,7 +13,7 @@ public class Groovy3235Bug extends GroovyTestCase {
           d.eachLine { w.println it }
       }
 
-      def t = f.text
+      def t = f.text.replaceAll(System.getProperty('line.separator'), '\n')
 
       assert d == t
    }
