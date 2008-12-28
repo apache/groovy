@@ -3490,7 +3490,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.util.Collections#unmodifiableMap(java.util.Map)
      * @since 1.0
      */
-    public static Map asImmutable(Map self) {
+    public static <K,V> Map<K,V> asImmutable(Map<? extends K, ? extends V> self) {
         return Collections.unmodifiableMap(self);
     }
 
@@ -3502,7 +3502,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.util.Collections#unmodifiableSortedMap(java.util.SortedMap)
      * @since 1.0
      */
-    public static SortedMap asImmutable(SortedMap self) {
+    public static <K,V> SortedMap<K,V> asImmutable(SortedMap<K, ? extends V> self) {
         return Collections.unmodifiableSortedMap(self);
     }
 
@@ -3514,7 +3514,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.util.Collections#unmodifiableList(java.util.List)
      * @since 1.0
      */
-    public static List asImmutable(List self) {
+    public static <T> List<T> asImmutable(List<? extends T> self) {
         return Collections.unmodifiableList(self);
     }
 
@@ -3526,7 +3526,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.util.Collections#unmodifiableSet(java.util.Set)
      * @since 1.0
      */
-    public static Set asImmutable(Set self) {
+    public static <T> Set<T> asImmutable(Set<? extends T> self) {
         return Collections.unmodifiableSet(self);
     }
 
@@ -3538,7 +3538,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.util.Collections#unmodifiableSortedSet(java.util.SortedSet)
      * @since 1.0
      */
-    public static SortedSet asImmutable(SortedSet self) {
+    public static <T> SortedSet<T> asImmutable(SortedSet<T> self) {
         return Collections.unmodifiableSortedSet(self);
     }
 
@@ -3550,7 +3550,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.util.Collections#unmodifiableCollection(java.util.Collection)
      * @since 1.5.0
      */
-    public static Collection asImmutable(Collection self) {
+    public static <T> Collection<T> asImmutable(Collection<? extends T> self) {
         return Collections.unmodifiableCollection(self);
     }
 
@@ -3562,7 +3562,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.util.Collections#synchronizedMap(java.util.Map)
      * @since 1.0
      */
-    public static Map asSynchronized(Map self) {
+    public static <K,V> Map<K,V> asSynchronized(Map<K,V> self) {
         return Collections.synchronizedMap(self);
     }
 
@@ -3574,7 +3574,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.util.Collections#synchronizedSortedMap(java.util.SortedMap)
      * @since 1.0
      */
-    public static SortedMap asSynchronized(SortedMap self) {
+    public static <K,V> SortedMap<K,V> asSynchronized(SortedMap<K,V> self) {
         return Collections.synchronizedSortedMap(self);
     }
 
@@ -3586,7 +3586,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.util.Collections#synchronizedCollection(java.util.Collection)
      * @since 1.0
      */
-    public static Collection asSynchronized(Collection self) {
+    public static <T> Collection<T> asSynchronized(Collection<T> self) {
         return Collections.synchronizedCollection(self);
     }
 
@@ -3598,7 +3598,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.util.Collections#synchronizedList(java.util.List)
      * @since 1.0
      */
-    public static List asSynchronized(List self) {
+    public static <T> List<T> asSynchronized(List<T> self) {
         return Collections.synchronizedList(self);
     }
 
@@ -3610,7 +3610,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.util.Collections#synchronizedSet(java.util.Set)
      * @since 1.0
      */
-    public static Set asSynchronized(Set self) {
+    public static <T> Set<T> asSynchronized(Set<T> self) {
         return Collections.synchronizedSet(self);
     }
 
@@ -3622,7 +3622,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.util.Collections#synchronizedSortedSet(java.util.SortedSet)
      * @since 1.0
      */
-    public static SortedSet asSynchronized(SortedSet self) {
+    public static <T> SortedSet<T> asSynchronized(SortedSet<T> self) {
         return Collections.synchronizedSortedSet(self);
     }
 
