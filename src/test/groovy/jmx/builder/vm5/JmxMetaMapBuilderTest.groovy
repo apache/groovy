@@ -318,13 +318,14 @@ class JmxMetaMapBuilderTest extends GroovyTestCase {
     assert map.SomethingElse.methodListener.callback instanceof Closure
   }
 
-/*
+
   void testBuildOperationNotificationFromDescriptor() {
     def object = new MockManagedObject()
     def map
 
     map = JmxMetaMapBuilder.buildOperationMapFrom(object, [
-            doSomething: [
+            "doSomething": [
+                    params:[],
                     onCall: {-> "event block"}
             ]
     ])
@@ -334,7 +335,7 @@ class JmxMetaMapBuilderTest extends GroovyTestCase {
     assert map.doSomething.methodListener.target == "doSomething"
     assert map.doSomething.methodListener.callback instanceof Closure
   }
-*/
+
   void testBuildListenerMap() {
     def object = new MockManagedObject()
     def map

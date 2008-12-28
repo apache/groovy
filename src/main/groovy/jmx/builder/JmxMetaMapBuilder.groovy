@@ -363,13 +363,14 @@ class JmxMetaMapBuilder {
                         }
                         params = paramTypes ?: null
                     }
-                    method = object.metaClass.getMetaMethod(opName, (params != null) ? (Object[]) params : null)
+                    def signature = (params != null) ? (Object[]) params : null 
+                    def methods = object.metaClass.respondsTo (object, opName, signature)
+                    method =  methods[0] ?: null
                 }
 
                 if (method) {
                     map.put(opName, createOperationMap(method, descriptor))
                 }
-
             }
         }
 

@@ -251,7 +251,7 @@ class JmxBeanExportFactoryTest extends GroovyTestCase {
     assert gbean.info().getConstructors()[0].signature[1].type == "int"
   }
 
-/*
+
   void testExplicitOperationDeclaration() {
     def objName = "jmx.builder:type=ExplicitDescriptor"
     def beans
@@ -326,7 +326,7 @@ class JmxBeanExportFactoryTest extends GroovyTestCase {
     assert gbean.info().getConstructors().size() == 0
 
   } 
- */
+ 
 
 
   void testAttributeChangeListener() {
@@ -365,7 +365,7 @@ class JmxBeanExportFactoryTest extends GroovyTestCase {
     assert testFlag == "dyna"
   }
 
-/*
+
   void testOperationCallListener() {
     def object = new MockManagedObject()
     def testFlag1 = "0"
@@ -411,7 +411,6 @@ class JmxBeanExportFactoryTest extends GroovyTestCase {
     assert testFlag3 == 8
   }
   
-*/
 
   void testExportMBeanObject() {
     def object = new MockSimpleObject(id: "0001", priority: 99)
