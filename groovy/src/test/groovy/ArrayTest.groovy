@@ -358,4 +358,34 @@ class ArrayTest extends GroovyTestCase {
             dap[0] = 'zz'
         }       
     }
+    
+    void testFlattenArray() {
+        def orig = "onetwo".toList().toArray()
+        def flat = orig.flatten()
+        assert flat == ["o", "n", "e", "t", "w", "o"]
+    }
+
+    void testFlattenArrayOfLists() {
+        def orig = ["one".toList(), "two".toList()] as Object[]
+        def flat = orig.flatten()
+        assert flat == ["o", "n", "e", "t", "w", "o"]
+    }
+
+    void testFlattenArrayOfArrays() {
+        def orig = ["one".toList().toArray(), "two".toList().toArray()] as Object[]
+        def flat = orig.flatten()
+        assert flat == ["o", "n", "e", "t", "w", "o"]
+    }
+
+    void testFlattenPrimitiveArray() {
+        def orig = [1, 2, 3] as int[]
+        def flat = orig.flatten()
+        assert flat == [1, 2, 3]
+    }
+
+    void testFlattenArrayOfPrimitiveArrays() {
+        def orig = [[1, 2, 3] as int[], [4, 5, 6] as int[]] as int[][]
+        def flat = orig.flatten()
+        assert flat == [1, 2, 3, 4, 5, 6]
+    }
 }
