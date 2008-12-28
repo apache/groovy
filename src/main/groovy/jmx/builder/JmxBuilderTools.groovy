@@ -1,3 +1,19 @@
+/*
+ * Copyright 2008 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package groovy.jmx.builder
 
 import java.lang.management.ManagementFactory
@@ -6,6 +22,11 @@ import javax.management.MBeanServerConnection
 import javax.management.MBeanServerFactory
 import javax.management.ObjectName
 
+/**
+ * This is a utility class used as a helper for JmxBuilder.
+ *
+ * @author Vladimir Vivien
+ */
 class JmxBuilderTools {
     static String DEFAULT_DOMAIN = "groovy.builder.jmx:"
     static String NODE_NAME_ATTRIBUTES = "attributes"
@@ -137,18 +158,33 @@ class JmxBuilderTools {
             "java.util.Date": java.util.Date.class
     ]
 
+    /**
+     * Capitalize the string passed.
+     * @param value - string to capitalize.
+     * @return - a capitalized string.
+     */
     public static String capitalize(String value) {
         if (!value) return null
         if (value.length() == 1) return value.toUpperCase()
         return (value.length() > 1) ? value[0].toUpperCase() + value[1..-1] : value.toUpperCase()
     }
 
+    /**
+     * Uncapitalizes a string.
+     * @param value - string to uncap.
+     * @return uncap'ed string.
+     */
     public static String uncapitalize(String value) {
         if (!value) return null
         if (value.length() == 1) return value.toLowerCase()
         return (value.length() > 1) ? value[0].toLowerCase() + value[1..-1] : value.toLowerCase()
     }
 
+    /**
+     * Builds a default ObjectName() instance for a given backing POJO/POGO
+     * @param obj - the backing pojo/pogo
+     * @return the generated ObjectName() instance.
+     */
     public static ObjectName getDefaultObjectName(def obj) {
         String name = DEFAULT_DOMAIN + "name=${obj.getClass().getName()},hashCode=${obj.hashCode()}"
         try {
@@ -158,6 +194,10 @@ class JmxBuilderTools {
         }
     }
 
+    /**
+     * Returns an MBeanServerConnection instance.  It searches for declared MBeanServers
+     * from the MBeanServerFactory.  If none is found, the default Platform MBeanServer is returned.
+     */
     public static MBeanServerConnection getMBeanServer() {
         def servers = MBeanServerFactory.findMBeanServer(null);
         def server = servers.size() > 0 ? servers[0] : ManagementFactory.getPlatformMBeanServer()
@@ -165,6 +205,11 @@ class JmxBuilderTools {
     }
 
 
+    /** *
+     * Returns method signature (as Class[]) given the meta map that describes the method.
+     * @param params - the map with parameter info.
+     * @return Class[] that represent the method signature.
+     */
     public static Class[] getSignatureFromParamInfo(def params) {
         if (params == null || params.size() == 0) return null
         Object[] result = new Object[params.size()]
@@ -176,16 +221,40 @@ class JmxBuilderTools {
         return result
     }
 
+    /**
+     * Returns the proper type's class name when a short version is provided (i.e. String returns java.lang.String)
+     * @param type - the type name to normalize
+     * @return the normalized type name.
+     */
     public static String getNormalizedType(String type) {
         if (typeIsPrimitive(type))
             return PRIMITIVE_TYPES[type].name
         return TYPE_MAP[type]?.name ?: Class.forName(type)?.name ?: null
     }
 
+    /**
+     * Tests whether a type name is a primitive.
+     * @param typeName - the type name to test.
+     * @return true = if primitive
+     */
     private static boolean typeIsPrimitive(String typeName) {
         PRIMITIVE_TYPES.containsKey(typeName)
     }
 
+    /**
+     * Tests whether the provided class implements MBean.  It uses the following runes
+     * <p>
+     * <pre>
+     * if(
+     *     DyanamicMBean.class.isAssignable(cls) ||
+     *     cls.getName().endsWith("MBean") ||
+     *     cls.getName().endsWith("MXBean")
+     * ) then class is MBean
+     * </pre>
+     *
+     * @param cls - class to test
+     * @return true = if class implements DyanmicMBean or interface name that ends in MBean or MXBean.
+     */
     public static boolean isClassMBean(Class cls) {
         boolean result = false
         if (cls == null) result = false

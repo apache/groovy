@@ -1,3 +1,19 @@
+/*
+ * Copyright 2008 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package groovy.jmx.builder
 
 import javax.management.Descriptor
@@ -6,6 +22,16 @@ import javax.management.modelmbean.DescriptorSupport
 import javax.management.modelmbean.ModelMBeanConstructorInfo
 import javax.management.modelmbean.ModelMBeanOperationInfo
 
+/**
+ * This class is responsible for assembling JMX Operation Info from the meta map.
+ * It cycles through the provided meta map from the bean() node and generate JMX Info objects used to
+ * expose information in the MBeanServer.
+ *
+ * @author Vladimir Vivien
+ *
+ * @see groovy.jmx.builder.JmxMetaMapBuilder
+ *
+ */
 class JmxOperationInfoManager {
     /** *
      * This method extracts an array of MBeanConstructorInfo from a list of meta maps.
@@ -77,7 +103,7 @@ class JmxOperationInfoManager {
     }
 
     /** *
-     * Generates a ModelMBeanOperationInfo object from a meta map.
+     * Generates a ModelMBeanOperationInfo object from a meta map provided.
      * @param the meta map for the method
      * @return the generated ModelMBeanOprationInfo
      */
@@ -128,8 +154,11 @@ class JmxOperationInfoManager {
         return result
     }
 
-    /** *
-     * Returns a Getter operation info from an attribute property object.
+    /**
+     * Returns a MBean operation info for getter operation specified by the MetaProperty.  Since no meta
+     * map is provided, this method will generate all default descriptor values to describe the operation.
+     * @param prop - the property object on the POGO/POJO that represents a getter
+     * @return a ModelMBeanOperation info built 
      */
     public static ModelMBeanOperationInfo createGetterOperationInfoFromProperty(MetaProperty prop) {
         if (prop == null) return null
@@ -155,6 +184,12 @@ class JmxOperationInfoManager {
         return op
     }
 
+    /**
+     * Returns a MBean operation info for setter operation specified by the MetaProperty.  Since
+     * no meta data is provided, this method will generate all default descriptor values to describe operation.
+     * @param prop - the property object on the POGO/POJO that represents a setter
+     * @return a ModelMBeanOperation info built
+     */
     public static ModelMBeanOperationInfo createSetterOperationInfoFromProperty(MetaProperty prop) {
 
         Descriptor desc = new DescriptorSupport()

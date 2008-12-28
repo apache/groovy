@@ -1,3 +1,19 @@
+/*
+ * Copyright 2008 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package groovy.jmx.builder
 
 import javax.management.MBeanServer
@@ -8,6 +24,30 @@ import javax.management.remote.rmi.RMIConnectorServer
 import javax.rmi.ssl.SslRMIClientSocketFactory
 import javax.rmi.ssl.SslRMIServerSocketFactory
 
+/**
+ * This is the server connector factory used for node JmxBuilder.connectorServer().  A call to this node
+ * returns an instance of JMXConnectorServer interface (rmi default).
+ *
+ * <p> Possible syntax</p>
+ * <pre>
+ *    JmxBuilder.connectorServer(
+ *        protocol:"rmi",
+ *        host:"...",
+ *        port:1099,
+ *        url:"...",
+ *        properties:[
+ *            "authenticate":true|false,
+ *            "passwordFile":"...",
+ *            "accessFile":"...",
+ *            "sslEnabled" : true | false
+ *         ...
+ *        ]
+ *     )
+ * </pre>
+ *
+ * @author Vladimir Vivien
+ * @see <a href="http://java.sun.com/j2se/1.5.0/docs/api/javax/management/remote/JMXConnector.html">JMXConnector</a>
+ */
 class JmxServerConnectorFactory extends AbstractFactory {
     private static List SUPPORTED_PROTOCOLS = ["rmi", "jrmp", "iiop", "jmxmp"]
 

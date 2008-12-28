@@ -1,3 +1,19 @@
+/*
+ * Copyright 2008 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package groovy.jmx.builder;
 
 import groovy.lang.Closure;
@@ -12,6 +28,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicLong;
 
+/**
+ * The JmxBuilderModelMBean is the MBean class that proxies exported POGO/POJO inside the MBeanServer.
+ * When JmxBuilder exports an object instance, an instance of this class is created and exported inside the
+ * MBeanServer.
+ *
+ * @author Vladimir Vivien
+ */
 public class JmxBuilderModelMBean extends RequiredModelMBean implements NotificationListener {
     private List<String> methodListeners = new ArrayList<String>(0);
     private Object managedObject;
@@ -141,9 +164,20 @@ public class JmxBuilderModelMBean extends RequiredModelMBean implements Notifica
         }
     }
 
+    /***
+     * Internal class AttributeChangedListener provides hooks toa handle attribute-change events 
+     * that occurs on registered MBeans.
+     *
+     * @author Vladimir Vivien
+     * @see groovy.jmx.builder.JmxBuilderModelMBean
+     */
     private static class AttributeChangedListener implements NotificationListener {
         private static AttributeChangedListener listener;
 
+        /**
+         * Returns an instance of the AttributeChangedListener.
+         * @return
+         */
         public static synchronized AttributeChangedListener getListner() {
             if (listener == null) {
                 listener = new AttributeChangedListener();

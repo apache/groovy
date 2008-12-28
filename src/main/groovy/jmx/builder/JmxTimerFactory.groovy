@@ -1,3 +1,20 @@
+/*
+ * Copyright 2008 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
 package groovy.jmx.builder
 
 import javax.management.MBeanServer
@@ -5,6 +22,28 @@ import javax.management.NotificationFilter
 import javax.management.NotificationFilterSupport
 import javax.management.ObjectName
 
+
+/**
+* The JmxTimerFactory class generates a timer() node for JmxBuilder.  This node crates a standard JMX Timer object
+ * that can be used to provide timing signals to registered JMX listeners.
+ *
+ * <p>Syntax</p>
+ *
+ * <pre>
+ * timer(
+ *     name:"object name"|ObjectName(),
+ *     event:"...",
+ *     message:"...",
+ *     data:dataValue
+ *     startDate:"now"|dateValue
+ *     period:"99d"|"99h"|"99m"|"99s"|99
+ *     occurences:long
+ * )
+ * </pre>
+ * 
+ * @author Vladimir Vivien
+ *
+ */
 class JmxTimerFactory extends AbstractFactory {
     public Object newInstance(FactoryBuilderSupport builder, Object nodeName, Object nodeParam, Map nodeAttribs) {
         if (nodeParam) {

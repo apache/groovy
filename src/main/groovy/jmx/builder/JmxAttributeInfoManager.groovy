@@ -1,10 +1,35 @@
+/*
+ * Copyright 2008 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package groovy.jmx.builder
 
 import javax.management.modelmbean.DescriptorSupport
 import javax.management.modelmbean.ModelMBeanAttributeInfo
 
+/**
+ * This class is responsible for assembling JMX Attribute Info from the meta map.
+ * It cycles through the meta map from the Node and generate JMX Info objects used to
+ * expose information in the MBeanServer.
+ *
+ * @author Vladimir Vivien 
+ *
+ * @see groovy.jmx.builder.JmxMetaMapBuilder
+ */
 class JmxAttributeInfoManager {
-    /** *
+    /**
      * Generates a list of ModelMBeanAttributeInfo from a list meta data Maps.
      * @param list of meta data maps
      * @return ModelMBeanAttributeInfo
@@ -22,7 +47,7 @@ class JmxAttributeInfoManager {
         return attribs
     }
 
-    /** *
+    /**
      * This method builds a single ModelMBeanAttribute info from a given meta data map object.
      * @param the map object containing the meta data
      * @return the generated ModelMBeanAttribute Info object.

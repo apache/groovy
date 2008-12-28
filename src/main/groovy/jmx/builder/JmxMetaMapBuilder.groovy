@@ -1,8 +1,30 @@
+/*
+ * Copyright 2008 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 package groovy.jmx.builder
 
 import java.lang.reflect.Constructor
 import javax.management.ObjectName
 
+/**
+ * The JmxMetaMapBuilder class is used to collect meta data passed in JmxBuilder nodes.  Once collected,
+ * the data is then normalized to be represented uniformly regardless of the resource where it was obtained.
+ *
+ * @author Vladimir Vivien
+ */
 class JmxMetaMapBuilder {
     private static def ATTRIB_EXCEPTION_LIST = ["class", "descriptor", "jmx", "metaClass"]
     private static def OPS_EXCEPTION_LIST = [
@@ -23,6 +45,9 @@ class JmxMetaMapBuilder {
      * All generated attributes are set to read-only.
      * @param object used to build meta data graph
      * @return fully-realized meta map of the object
+     * @see #buildAttributeMapFrom(Object)
+     * @see #buildConstructorMapFrom(Object)
+     * @see #buildOperationMapFrom(Object)
      */
     public static Map buildObjectMapFrom(def object) {
         if (!object) {
@@ -41,7 +66,7 @@ class JmxMetaMapBuilder {
 
 
     /** *
-     * Builds an attribute meta map from an instance of an object.
+     * Builds attribute meta map with default information from an instance of an object.
      * @param the object from which attribute info will be retrieved
      * @return the meta map for the attribute
      */
@@ -106,7 +131,12 @@ class JmxMetaMapBuilder {
     }
 
     /**
-     * Normalizes the attribute meta map.
+     * Builds a fully-nornalized meta map for a given POJO property and its associated descriptor.
+     * The method fills in defaults where possible and creates listeners for onChange attribute events.
+     * @param prop - property to build meta map for.
+     * @param attribName - the descriptive name of attribute.
+     * @param descriptor - the descriptor collected from JmxBuilder.bean() node.
+     * @return - a well-formed meta map.
      */
     private static Map createAttributeMap(prop, attribName, descriptor) {
         def desc = (descriptor instanceof Map) ? descriptor : [:]
@@ -138,9 +168,8 @@ class JmxMetaMapBuilder {
         return map
     }
 
-    /** ***************************************************
-     * CONSTRUCTORS
-     ***************************************************** */
+    // ******************* CONSTRUCTORS ********************** */
+
     /**
      * Returns a meta map of constructors from given object.
      * @param object to profile
@@ -216,7 +245,11 @@ class JmxMetaMapBuilder {
     }
 
     /**
-     * Normalizes a constructor meta map with required meta data.
+     * Builds a fully-normalized constructor meta map for the specified constructor.  The method provides
+     * defaults where necessary and uses the descriptor to fill in the collected data from JmxBuilder.bean() node..
+     * @param ctor - the Constructor instance being described.
+     * @param descriptor - descriptor meta data collected from JmxBulider.bean() node.
+     * @return a fully-normalized meta map of the constructor.
      */
     private static Map createConstructorMap(ctor, descriptor) {
         def desc = (descriptor && descriptor instanceof Map) ? descriptor : [:]
@@ -344,7 +377,11 @@ class JmxMetaMapBuilder {
     }
 
     /**
-     * Normalizes an operation meta map with required meta data.
+     * Creates a fully-normalized meta map for a given method (or operation).  The method uses the descriptor
+     * to create a map object of the meta data provided with defaults where necessary.
+     * @param method - the method being described
+     * @param descriptor - the meta data collected from JmxBuilder.bean()
+     * @return fully-normalized meta map 
      */
     private static Map createOperationMap(method, descriptor) {
         def desc = (descriptor && descriptor instanceof Map) ? descriptor : [:]
@@ -420,7 +457,12 @@ class JmxMetaMapBuilder {
     }
 
     /** *
-     * Creates a normalized meta map for paramers.
+     * Creates a fully-normalized meta map for a given parmater type on a give method.
+     * The descriptor represents data collected from JmxBuilder.bean() node.
+     * @param method - method with parameter being described
+     * @param type - type of parameter being described
+     * @param descriptor - descriptor from JmxBuilder.bean() node.
+     * @return - a fully-realized meta map.
      */
     private static Map createParameterMap(method, type, descriptor) {
         def desc = (descriptor instanceof Map) ? descriptor : [:]
@@ -445,6 +487,11 @@ class JmxMetaMapBuilder {
    * LISTENERS
    * **************************************/
 
+    /**
+     * Creates a fully-normalized meta map for agiven collection of listeners.
+     * @param - collection of descriptors to normalize
+     * @see JmxMetaMapBuilder#createListenerMap(Object) 
+     */
     public static buildListenerMapFrom(descCollection) {
         def map = [:]
         if (descCollection && descCollection instanceof Map) {
@@ -457,7 +504,9 @@ class JmxMetaMapBuilder {
     }
 
     /**
-     * Normalizes the notification map.
+     * Builds normalized meta map of the provided listener descriptor.
+     * @param descriptor - descriptive data collected from JmxBuilder listener nodes.
+     * @return - fully normalized meta map of listener data.
      */
     public static Map createListenerMap(descriptor) {
         def map = [:]
