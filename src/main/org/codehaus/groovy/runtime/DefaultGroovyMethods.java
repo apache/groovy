@@ -3297,6 +3297,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
     }
 
+    public static void putAt(List self, EmptyRange range, Collection value) {
+    	putAt(self, range, (Object)value);
+    }
+
     private static List resizeListWithRangeAndGetSublist(List self, IntRange range) {
         RangeInfo info = subListBorders(self.size(), range);
         int size = self.size();
@@ -3349,13 +3353,25 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self   a List
      * @param splice the subset of the list to set
      * @param values the value to put at the given sublist
-     * @deprecated replace with putAt(List self, Range range, List value)
      * @since 1.0
      */
     public static void putAt(List self, List splice, List values) {
-        List sublist = getSubList(self, splice);
-        sublist.clear();
-        sublist.addAll(values);
+        if (splice.isEmpty()) {
+            if ( ! values.isEmpty() )
+                throw new IllegalArgumentException("Trying to replace 0 elements with "+values.size()+" elements");
+            return;
+        }
+        Object first = splice.iterator().next();
+        if (first instanceof Integer) {
+            if (values.size() != splice.size())
+                throw new IllegalArgumentException("Trying to replace "+splice.size()+" elements with "+values.size()+" elements");
+            Iterator<?> valuesIter = values.iterator();
+            for (Object index : splice) {
+                putAt(self, (Integer) index, valuesIter.next());
+            }
+        } else {
+            throw new IllegalArgumentException("Can only index a List with another List of Integers, not a List of "+first.getClass().getName());
+        }
     }
 
     /**
@@ -3364,13 +3380,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self   a List
      * @param splice the subset of the list to set
      * @param value  the value to put at the given sublist
-     * @deprecated replace with putAt(List self, Range range, Object value)
      * @since 1.0
      */
     public static void putAt(List self, List splice, Object value) {
-        List sublist = getSubList(self, splice);
-        sublist.clear();
-        sublist.add(value);
+        if (splice.isEmpty()) {
+            return;
+        }
+        Object first = splice.iterator().next();
+        if (first instanceof Integer) {
+            for (Object index : splice) {
+                self.set((Integer) index, value);
+            }
+        } else {
+            throw new IllegalArgumentException("Can only index a List with another List of Integers, not a List of "+first.getClass().getName());
+        }
     }
 
     // helper method for putAt(Splice)
