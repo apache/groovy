@@ -18,17 +18,16 @@ package org.codehaus.groovy.runtime.metaclass;
 import groovy.lang.Closure;
 import groovy.lang.ClosureInvokingMethod;
 import groovy.lang.MetaMethod;
-import groovy.lang.MetaClass;
 import org.codehaus.groovy.reflection.CachedClass;
-import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.CachedMethod;
-import org.codehaus.groovy.runtime.MethodClosure;
+import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.runtime.GeneratedClosure;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.MethodClosure;
 
 import java.lang.reflect.Modifier;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  *
@@ -136,7 +135,7 @@ public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMeth
                         Closure cloned = (Closure) closure.clone();
                         cloned.setDelegate(object);
                         arguments = coerceArgumentsToClasses(arguments);
-                        return InvokerHelper.invokeMethod(closure, "call", arguments);
+                        return InvokerHelper.invokeMethod(cloned, "call", arguments);
                     }
                 };
                 res.add(adjustParamTypesForStdMethods(metaMethod, name));
