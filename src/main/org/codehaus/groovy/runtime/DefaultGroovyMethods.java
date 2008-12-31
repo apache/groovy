@@ -8980,7 +8980,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static String normalize(String self) throws IOException {
         // for efficiency, we don't use: return join(readLines(self), "\n");
         BufferedReader br = new BufferedReader(new StringReader(self));
-        StringBuilder sb = new StringBuilder();
+        StringBuilder sb = new StringBuilder(self.length());
         boolean first = true;
         try {
             while (true) {
