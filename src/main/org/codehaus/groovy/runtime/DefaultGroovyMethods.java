@@ -18,11 +18,7 @@ package org.codehaus.groovy.runtime;
 import groovy.io.EncodingAwareBufferedWriter;
 import groovy.lang.*;
 import groovy.sql.GroovyRowResult;
-import groovy.util.CharsetToolkit;
-import groovy.util.ClosureComparator;
-import groovy.util.GroovyCollections;
-import groovy.util.OrderBy;
-import groovy.util.ProxyGenerator;
+import groovy.util.*;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
 import org.codehaus.groovy.runtime.dgmimpl.NumberNumberDiv;
@@ -45,13 +41,7 @@ import java.lang.reflect.Modifier;
 import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.net.MalformedURLException;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.net.URLConnection;
+import java.net.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.sql.ResultSet;
@@ -203,7 +193,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (self == null) {
             return "null";
         }
-        StringBuffer buffer = new StringBuffer("<");
+        StringBuilder buffer = new StringBuilder("<");
         Class klass = self.getClass();
         buffer.append(klass.getName());
         buffer.append("@");
@@ -2135,7 +2125,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String join(Collection self, String separator) {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         boolean first = true;
 
         if (separator == null) separator = "";
@@ -2163,7 +2153,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String join(Object[] self, String separator) {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         boolean first = true;
 
         if (separator == null) separator = "";
@@ -2673,7 +2663,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static String reverse(String self) {
         int size = self.length();
-        StringBuffer buffer = new StringBuffer(size);
+        StringBuilder buffer = new StringBuilder(size);
         for (int i = size - 1; i >= 0; i--) {
             buffer.append(self.charAt(i));
         }
@@ -3064,7 +3054,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static CharSequence getAt(CharSequence self, Collection indices) {
-        StringBuffer answer = new StringBuffer();
+        StringBuilder answer = new StringBuilder();
         for (Iterator iter = indices.iterator(); iter.hasNext();) {
             Object value = iter.next();
             if (value instanceof Range) {
@@ -5858,7 +5848,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         int byteShift = 4;
         int tmp = 0;
         boolean done = false;
-        final StringBuffer buffer = new StringBuffer();
+        final StringBuilder buffer = new StringBuilder();
 
         for (int i = 0; i != value.length(); i++) {
             final char c = value.charAt(i);
@@ -6152,7 +6142,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String next(String self) {
-        StringBuffer buffer = new StringBuffer(self);
+        StringBuilder buffer = new StringBuilder(self);
         if (buffer.length() == 0) {
             buffer.append(Character.MIN_VALUE);
         } else {
@@ -6179,7 +6169,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String previous(String self) {
-        StringBuffer buffer = new StringBuffer(self);
+        StringBuilder buffer = new StringBuilder(self);
         if (buffer.length() == 0) throw new IllegalArgumentException("the string is empty");
         char last = buffer.charAt(buffer.length() - 1);
         if (last == Character.MIN_VALUE) {
@@ -6310,7 +6300,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         else if (size < 0) {
             throw new IllegalArgumentException("multiply() should be called with a number of 0 or greater not: " + size);
         }
-        StringBuffer answer = new StringBuffer(self);
+        StringBuilder answer = new StringBuilder(self);
         for (int i = 1; i < size; i++) {
             answer.append(self);
         }
@@ -8436,10 +8426,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    a String
      * @param closure a closure
      * @return the last value returned by the closure
+     * @throws java.io.IOException if an error occurs
      * @see #eachLine(String, int, groovy.lang.Closure)
      * @since 1.5.5
      */
-    public static Object eachLine(String self, Closure closure) {
+    public static Object eachLine(String self, Closure closure) throws IOException {
         return eachLine(self, 0, closure);
     }
 
@@ -8452,9 +8443,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param firstLine the count of the first line
      * @param closure a closure
      * @return the last value returned by the closure
+     * @throws java.io.IOException if an error occurs
      * @since 1.5.7
      */
-    public static Object eachLine(String self, int firstLine, Closure closure) {
+    public static Object eachLine(String self, int firstLine, Closure closure) throws IOException {
         int count = firstLine;
         String line = null;
         for (Object o : readLines(self)) {
@@ -8787,10 +8779,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param sep     a String separator
      * @param closure a closure
      * @return the last value returned by the closure
+     * @throws java.io.IOException if an error occurs
      * @see String#split(String)
      * @since 1.5.5
      */
-    public static Object splitEachLine(String self, String sep, Closure closure) {
+    public static Object splitEachLine(String self, String sep, Closure closure) throws IOException {
         final List list = readLines(self);
         Object result = null;
         for (int i = 0; i < list.size(); i++) {
@@ -8943,10 +8936,42 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a String object
      * @return a list of lines
+     * @throws java.io.IOException if an error occurs
      * @since 1.5.5
      */
-    public static List readLines(String self) {
-        return tokenize(self, "\n\r");
+    public static List readLines(String self) throws IOException {
+        return readLines(new StringReader(self));
+    }
+
+    /**
+     * Return a String with linefeeds and carriage returns normalized to linefeeds.
+     * The last trailing linefeed (after normalization) if found is removed.
+     *
+     * @param self a String object
+     * @return the normalized string
+     * @throws java.io.IOException if an error occurs
+     * @since 1.6.0
+     */
+    public static String normalize(String self) throws IOException {
+        // for efficiency, we don't use: return join(readLines(self), "\n");
+        BufferedReader br = new BufferedReader(new StringReader(self));
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        try {
+            while (true) {
+                String line = br.readLine();
+                if (line == null) {
+                    break;
+                } else {
+                    if (first) first = false;
+                    else sb.append("\n");
+                    sb.append(line);
+                }
+            }
+        } finally {
+            closeWithWarning(br);
+        }
+        return sb.toString();
     }
 
     /**
@@ -9071,10 +9096,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String getText(BufferedReader reader) throws IOException {
-        StringBuffer answer = new StringBuffer();
+        StringBuilder answer = new StringBuilder();
         // reading the content of the file within a char buffer
         // allow to keep the correct line endings
-        char[] charBuffer = new char[4096];
+        char[] charBuffer = new char[8192];
         int nbCharRead /* = 0*/;
         try {
             while ((nbCharRead = reader.read(charBuffer)) != -1) {
