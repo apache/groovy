@@ -7989,9 +7989,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    a String
      * @param closure a closure
      * @return the last value returned by the closure
+     * @throws java.io.IOException if an error occurs
      * @see #eachLine(String, int, groovy.lang.Closure)
      */
-    public static Object eachLine(String self, Closure closure) {
+    public static Object eachLine(String self, Closure closure) throws IOException {
         return eachLine(self, 0, closure);
     }
 
@@ -8004,8 +8005,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param firstLine the count of the first line
      * @param closure a closure
      * @return the last value returned by the closure
+     * @throws java.io.IOException if an error occurs
+     * @since 1.5.7
      */
-    public static Object eachLine(String self, int firstLine, Closure closure) {
+    public static Object eachLine(String self, int firstLine, Closure closure) throws IOException {
         int count = firstLine;
         String line = null;
         List list = readLines(self);
@@ -8323,9 +8326,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param sep     a String separator
      * @param closure a closure
      * @return the last value returned by the closure
+     * @throws java.io.IOException if an error occurs
      * @see String#split(String)
      */
-    public static Object splitEachLine(String self, String sep, Closure closure) {
+    public static Object splitEachLine(String self, String sep, Closure closure) throws IOException {
         final List list = readLines(self);
         Object result = null;
         for (int i = 0; i < list.size(); i++) {
@@ -8476,9 +8480,42 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a String object
      * @return a list of lines
+     * @throws java.io.IOException if an error occurs
+     * @since 1.5.5
      */
-    public static List readLines(String self) {
-        return tokenize(self, "\n\r");
+    public static List readLines(String self) throws IOException {
+        return readLines(new StringReader(self));
+    }
+
+    /**
+     * Return a String with linefeeds and carriage returns normalized to linefeeds.
+     * The last trailing linefeed (after normalization) if found is removed.
+     *
+     * @param self a String object
+     * @return the normalized string
+     * @throws java.io.IOException if an error occurs
+     * @since 1.5.8
+     */
+    public static String normalize(String self) throws IOException {
+        // for efficiency, we don't use: return join(readLines(self), "\n");
+        BufferedReader br = new BufferedReader(new StringReader(self));
+        StringBuffer sb = new StringBuffer(self.length());
+        boolean first = true;
+        try {
+            while (true) {
+                String line = br.readLine();
+                if (line == null) {
+                    break;
+                } else {
+                    if (first) first = false;
+                    else sb.append("\n");
+                    sb.append(line);
+                }
+            }
+        } finally {
+            closeReaderWithWarning(br);
+        }
+        return sb.toString();
     }
 
     /**
