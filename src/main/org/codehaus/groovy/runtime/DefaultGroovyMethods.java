@@ -193,7 +193,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (self == null) {
             return "null";
         }
-        StringBuffer buffer = new StringBuffer("<");
+        StringBuilder buffer = new StringBuilder("<");
         Class klass = self.getClass();
         buffer.append(klass.getName());
         buffer.append("@");
@@ -2098,7 +2098,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String join(Collection self, String separator) {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         boolean first = true;
 
         if (separator == null) separator = "";
@@ -2126,7 +2126,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String join(Object[] self, String separator) {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder buffer = new StringBuilder();
         boolean first = true;
 
         if (separator == null) separator = "";
@@ -2636,7 +2636,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static String reverse(String self) {
         int size = self.length();
-        StringBuffer buffer = new StringBuffer(size);
+        StringBuilder buffer = new StringBuilder(size);
         for (int i = size - 1; i >= 0; i--) {
             buffer.append(self.charAt(i));
         }
@@ -3027,7 +3027,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static CharSequence getAt(CharSequence self, Collection indices) {
-        StringBuffer answer = new StringBuffer();
+        StringBuilder answer = new StringBuilder();
         for (Iterator iter = indices.iterator(); iter.hasNext();) {
             Object value = iter.next();
             if (value instanceof Range) {
@@ -5844,7 +5844,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         int byteShift = 4;
         int tmp = 0;
         boolean done = false;
-        final StringBuffer buffer = new StringBuffer();
+        final StringBuilder buffer = new StringBuilder();
 
         for (int i = 0; i != value.length(); i++) {
             final char c = value.charAt(i);
@@ -6138,7 +6138,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String next(String self) {
-        StringBuffer buffer = new StringBuffer(self);
+        StringBuilder buffer = new StringBuilder(self);
         if (buffer.length() == 0) {
             buffer.append(Character.MIN_VALUE);
         } else {
@@ -6165,7 +6165,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String previous(String self) {
-        StringBuffer buffer = new StringBuffer(self);
+        StringBuilder buffer = new StringBuilder(self);
         if (buffer.length() == 0) throw new IllegalArgumentException("the string is empty");
         char last = buffer.charAt(buffer.length() - 1);
         if (last == Character.MIN_VALUE) {
@@ -6296,7 +6296,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         else if (size < 0) {
             throw new IllegalArgumentException("multiply() should be called with a number of 0 or greater not: " + size);
         }
-        StringBuffer answer = new StringBuffer(self);
+        StringBuilder answer = new StringBuilder(self);
         for (int i = 1; i < size; i++) {
             answer.append(self);
         }
@@ -9121,10 +9121,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String getText(BufferedReader reader) throws IOException {
-        StringBuffer answer = new StringBuffer();
+        StringBuilder answer = new StringBuilder();
         // reading the content of the file within a char buffer
         // allow to keep the correct line endings
-        char[] charBuffer = new char[4096];
+        char[] charBuffer = new char[8192];
         int nbCharRead /* = 0*/;
         try {
             while ((nbCharRead = reader.read(charBuffer)) != -1) {
