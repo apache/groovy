@@ -8970,7 +8970,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Return a String with linefeeds and carriage returns normalized to linefeeds.
-     * The last trailing linefeed if found is removed.
+     * The last trailing linefeed (after normalization) if found is removed.
      *
      * @param self a String object
      * @return the normalized string
