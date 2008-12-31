@@ -16,8 +16,11 @@
 package groovy.xml;
 
 import java.util.Map;
+import java.util.HashMap;
 
 import groovy.util.BuilderSupport;
+import groovy.util.NodeBuilder;
+import org.codehaus.groovy.runtime.InvokerHelper;
 
 
 /**
@@ -27,27 +30,82 @@ import groovy.util.BuilderSupport;
  * @version $Revision$
  */
 public class NamespaceBuilderSupport extends BuilderSupport {
+    private boolean autoPrefix;
+    private Map nsMap = new HashMap();
+    private BuilderSupport builder;
 
-    private final Object builder;
-    private final String uri;
-    private final String prefix;
+    public NamespaceBuilderSupport(BuilderSupport builder) {
+        super(builder);
+        this.builder = builder;
+    }
 
     public NamespaceBuilderSupport(BuilderSupport builder, String uri) {
         this(builder, uri, "");
     }
 
     public NamespaceBuilderSupport(BuilderSupport builder, String uri, String prefix) {
-        super(builder);
-        this.builder = builder;
-        this.uri = uri;
-        this.prefix = prefix;
+        this(builder, uri, prefix, true);
+    }
+
+    public NamespaceBuilderSupport(BuilderSupport builder, String uri, String prefix, boolean autoPrefix) {
+        this(builder);
+        nsMap.put(prefix, uri);
+        this.autoPrefix = autoPrefix;
+    }
+
+    public NamespaceBuilderSupport(BuilderSupport builder, Map nsMap) {
+        this(builder);
+        this.nsMap = nsMap;
+    }
+
+    public NamespaceBuilderSupport namespace(String namespaceURI) {
+        nsMap.put("", namespaceURI);
+        return this;
+    }
+
+    public NamespaceBuilderSupport namespace(String namespaceURI, String prefix) {
+        nsMap.put(prefix, namespaceURI);
+        return this;
+    }
+
+    public NamespaceBuilderSupport declareNamespace(Map nsMap) {
+        this.nsMap = nsMap;
+        return this;
+    }
+
+    protected Object getCurrent() {
+        // TODO a better way to do this?
+        if (builder instanceof NodeBuilder)
+            return InvokerHelper.invokeMethod(builder, "getCurrent", null);
+        else
+            return super.getCurrent();
+    }
+
+    protected void setCurrent(Object current) {
+        // TODO a better way to do this?
+        if (builder instanceof NodeBuilder)
+            InvokerHelper.invokeMethod(builder, "setCurrent", current);
+        else
+            super.setCurrent(current);
     }
 
     protected void setParent(Object parent, Object child) {
     }
 
     protected Object getName(String methodName) {
-        return new QName(uri, methodName, prefix);
+        String prefix = autoPrefix ? nsMap.keySet().iterator().next().toString() : "";
+        String localPart = methodName;
+        int idx = methodName.indexOf(':');
+        if (idx > 0 ) {
+            prefix = methodName.substring(0, idx);
+            localPart = methodName.substring(idx + 1);
+        }
+        String namespaceURI = (String) nsMap.get(prefix);
+        if (namespaceURI == null) {
+            namespaceURI = "";
+            prefix = "";
+        }
+        return new QName(namespaceURI, localPart, prefix);
     }
 
     protected Object createNode(Object name) {
