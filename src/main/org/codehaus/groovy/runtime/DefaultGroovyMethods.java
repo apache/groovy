@@ -8969,6 +8969,37 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Return a String with linefeeds and carriage returns normalized to linefeeds.
+     * The last trailing linefeed if found is removed.
+     *
+     * @param self a String object
+     * @return the normalized string
+     * @throws java.io.IOException if an error occurs
+     * @since 1.6.0
+     */
+    public static String normalize(String self) throws IOException {
+        // for efficiency, we don't use: return join(readLines(self), "\n");
+        BufferedReader br = new BufferedReader(new StringReader(self));
+        StringBuilder sb = new StringBuilder();
+        boolean first = true;
+        try {
+            while (true) {
+                String line = br.readLine();
+                if (line == null) {
+                    break;
+                } else {
+                    if (first) first = false;
+                    else sb.append("\n");
+                    sb.append(line);
+                }
+            }
+        } finally {
+            closeWithWarning(br);
+        }
+        return sb.toString();
+    }
+
+    /**
      * Reads the file into a list of Strings, with one item for each line.
      *
      * @param file a File
