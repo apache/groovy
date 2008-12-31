@@ -165,6 +165,13 @@ y''', 3, 'x\ny');
         assert splitted == []
     }
 
+    void testReadLines() {
+        assert "a\nb".readLines() == ['a', 'b']
+        assert "a\rb".readLines() == ['a', 'b']
+        assert "a\r\nb".readLines() == ['a', 'b']
+        assert "a\n\nb".readLines() == ['a', '', 'b']
+    }
+
     void testSplitEqualsTokenize() {
         def text = """
         A text with different words and
