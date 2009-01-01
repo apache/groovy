@@ -16,13 +16,21 @@
 
 package groovy.text;
 
-import groovy.lang.*;
+import groovy.lang.Binding;
+import groovy.lang.GroovyRuntimeException;
+import groovy.lang.GroovyShell;
+import groovy.lang.Script;
+import groovy.lang.Writable;
 import groovy.util.IndentPrinter;
 import groovy.util.Node;
 import groovy.util.XmlNodePrinter;
 import groovy.util.XmlParser;
 import groovy.xml.QName;
+import org.codehaus.groovy.control.CompilationFailedException;
+import org.codehaus.groovy.runtime.InvokerHelper;
+import org.xml.sax.SAXException;
 
+import javax.xml.parsers.ParserConfigurationException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Reader;
@@ -31,12 +39,6 @@ import java.io.Writer;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
-
-import javax.xml.parsers.ParserConfigurationException;
-
-import org.codehaus.groovy.control.CompilationFailedException;
-import org.codehaus.groovy.runtime.InvokerHelper;
-import org.xml.sax.SAXException;
 
 /**
  * Template engine for xml data input.
@@ -82,7 +84,7 @@ public class XmlTemplateEngine extends TemplateEngine {
         }
 
         private String escapeSpecialChars(String s) {
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             boolean inGString = false;
             for (int i = 0; i < s.length(); i++) {
                 final char c = s.charAt(i);
@@ -114,7 +116,7 @@ public class XmlTemplateEngine extends TemplateEngine {
             return sb.toString();
         }
 
-        private void append(StringBuffer sb, char plainChar, String xmlString, boolean inGString) {
+        private void append(StringBuilder sb, char plainChar, String xmlString, boolean inGString) {
             if (inGString) {
                 sb.append(plainChar);
             } else {
