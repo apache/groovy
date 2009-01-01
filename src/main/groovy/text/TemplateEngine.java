@@ -27,6 +27,7 @@ import java.net.URL;
 
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
 
 /**
  * Represents an API to any template engine which is basically a factory of Template instances from a given text input.
@@ -45,7 +46,7 @@ public abstract class TemplateEngine {
         try {
             return createTemplate(reader);
         } finally {
-            DefaultGroovyMethods.closeWithWarning(reader);
+            DefaultGroovyMethodsSupport.closeWithWarning(reader);
         }
     }
 
@@ -54,7 +55,7 @@ public abstract class TemplateEngine {
         try {
             return createTemplate(reader);
         } finally {
-            DefaultGroovyMethods.closeWithWarning(reader);
+            DefaultGroovyMethodsSupport.closeWithWarning(reader);
         }
     }
 }
