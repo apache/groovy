@@ -2209,6 +2209,10 @@ commandArgument
 // in contexts where we know we have an expression.  It allows general Java-type expressions.
 expression[int lc_stmt]
     :   
+        (LPAREN typeSpec[true] RPAREN expression[lc_stmt])=>
+            lp:LPAREN^ {#lp.setType(TYPECAST);} typeSpec[true] RPAREN!
+            expression[lc_stmt]
+    |        
        (LPAREN nls IDENT (COMMA nls IDENT)* RPAREN ASSIGN) =>
         m:multipleAssignment[lc_stmt] {#expression=#m;}
     |   assignmentExpression[lc_stmt]
