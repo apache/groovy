@@ -180,6 +180,15 @@ y''', 3, 'x\ny');
         assert "a\n\nb".normalize() == "a\n\nb"
     }
 
+    void testDenormalize() {
+        def LS = System.getProperty('line.separator')
+        assert 'a'.denormalize() == 'a'
+        assert 'a\n'.denormalize() == 'a' + LS
+        assert 'a\n\n'.denormalize() == 'a' + LS + LS
+        assert 'a\n\nb'.denormalize() == 'a' + LS + LS + 'b'
+        assert 'a\nb\r\nc\n\rd'.denormalize() == 'a' + LS + 'b' + LS + 'c' + LS + 'd'
+    }
+
     void testSplitEqualsTokenize() {
         def text = """
         A text with different words and
