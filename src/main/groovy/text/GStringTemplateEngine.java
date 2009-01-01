@@ -72,7 +72,7 @@ public class GStringTemplateEngine extends TemplateEngine {
          * @throws IOException
          */
         GStringTemplate(final Reader reader, final ClassLoader parentLoader) throws CompilationFailedException, ClassNotFoundException, IOException {
-            final StringBuffer templateExpressions = new StringBuffer("package groovy.tmp.templates\n def getTemplate() { return { out -> delegate = new Binding(delegate); out << \"\"\"");
+            final StringBuilder templateExpressions = new StringBuilder("package groovy.tmp.templates\n def getTemplate() { return { out -> delegate = new Binding(delegate); out << \"\"\"");
             boolean writingString = true;
 
             while (true) {
@@ -145,7 +145,7 @@ public class GStringTemplateEngine extends TemplateEngine {
         }
 
         private static void appendCharacter(final char c,
-                                            final StringBuffer templateExpressions,
+                                            final StringBuilder templateExpressions,
                                             final boolean writingString) {
             if (!writingString) {
                 templateExpressions.append("out << \"\"\"");
@@ -153,7 +153,7 @@ public class GStringTemplateEngine extends TemplateEngine {
             templateExpressions.append(c);
         }
 
-        private void parseGSstring(Reader reader, boolean writingString, StringBuffer templateExpressions) throws IOException {
+        private void parseGSstring(Reader reader, boolean writingString, StringBuilder templateExpressions) throws IOException {
             if (!writingString) {
                 templateExpressions.append("\"\"\"; ");
             }
@@ -181,7 +181,7 @@ public class GStringTemplateEngine extends TemplateEngine {
         private static void parseSection(final int pendingC,
                                          final Reader reader,
                                          final boolean writingString,
-                                         final StringBuffer templateExpressions)
+                                         final StringBuilder templateExpressions)
                 throws IOException {
             if (writingString) {
                 templateExpressions.append("\"\"\"; ");
@@ -212,7 +212,7 @@ public class GStringTemplateEngine extends TemplateEngine {
          */
         private static void parseExpression(final Reader reader,
                                             final boolean writingString,
-                                            final StringBuffer templateExpressions)
+                                            final StringBuilder templateExpressions)
                 throws IOException {
             if (!writingString) {
                 templateExpressions.append("out << \"\"\"");
