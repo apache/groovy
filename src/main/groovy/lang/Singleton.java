@@ -27,7 +27,7 @@ import java.lang.annotation.Target;
  * Class annotation to make class singleton.
  *
  * Singleton can be initialized in static initialization of the class or lazily (on first access)
- * To make singleton lazy it is enough to use <code>@Singleton(lazy=true)</code>
+ * To make singleton lazy it is enough to use {@code @Singleton(lazy=true)}
  * Lazy singletons implemented with double check locking and volatile field
  *
  * @author Alex Tkachman

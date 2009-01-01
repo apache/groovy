@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 the original author or authors.
+ * Copyright 2008-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,7 +39,7 @@ import java.beans.PropertyChangeSupport;
 import java.util.Collection;
 
 /**
- * Handles generation of code for the @Bindable annotation when @Vetoable
+ * Handles generation of code for the {@code @Bindable} annotation when {@code @Vetoable}
  * is not present.
  * <p/>
  * Generally, it adds (if needed) a PropertyChangeSupport field and
@@ -49,7 +49,7 @@ import java.util.Collection;
  * It also generates the setter and wires the setter through the
  * PropertyChangeSupport.
  * <p/>
- * If a @{@link Vetoable} annotaton is detected it does nothing and
+ * If a {@link Vetoable} annotaton is detected it does nothing and
  * lets the {@link VetoableASTTransformation} handle all the changes.
  *
  * @author Danno Ferrin (shemnon)
@@ -62,7 +62,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
     protected ClassNode pcsClassNode = new ClassNode(PropertyChangeSupport.class);
 
     /**
-     * Convenience method to see if an annotated node is @Bindable.
+     * Convenience method to see if an annotated node is {@code @Bindable}.
      *
      * @param node the node to check
      * @return true if the node is bindable
@@ -157,7 +157,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
         }
     }
 
-    /**
+    /*
      * Wrap an existing setter.
      */
     private void wrapSetterMethod(ClassNode classNode, String propertyName) {
@@ -264,7 +264,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
      * must be defined or a compilation error results.
      *
      * @param declaringClass the class to search
-     * @param sourceUnit the source unit, for error reporting.  @NotNull
+     * @param sourceUnit the source unit, for error reporting. {@code @NotNull}.
      * @return true if property change support should be added
      */
     protected boolean needsPropertyChangeSupport(ClassNode declaringClass, SourceUnit sourceUnit) {

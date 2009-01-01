@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 the original author or authors.
+ * Copyright 2008-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,7 +38,7 @@ import java.beans.VetoableChangeSupport;
 import java.util.Collection;
 
 /**
- * Handles generation of code for the @Vetoable annotation, and @Bindable
+ * Handles generation of code for the {@code @Vetoable} annotation, and {@code @Bindable}
  * if also present.
  * <p/>
  * Generally, it adds (if needed) a VetoableChangeSupport field and
