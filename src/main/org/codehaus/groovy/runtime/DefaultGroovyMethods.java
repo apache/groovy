@@ -10676,36 +10676,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Close the Closeable. Logging a warning if any problems occur.
-     *
-     * @param c the thing to close
-     */
-    public static void closeWithWarning(Closeable c) {
-        if (c != null) {
-            try {
-                c.close();
-            } catch (IOException e) {
-                LOG.warning("Caught exception during close(): " + e);
-            }
-        }
-    }
-
-    /**
-     * Close the Closeable. Ignore any problems that might occur.
-     *
-     * @param c the thing to close
-     */
-    public static void closeQuietly(Closeable c) {
-        if (c != null) {
-            try {
-                c.close();
-            } catch (IOException e) {
-                /* ignore */
-            }
-        }
-    }
-
-    /**
      * Overloads the left shift operator to provide an append mechanism to
      * add things to the output stream of a socket
      *

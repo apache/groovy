@@ -15,18 +15,22 @@
  */
 package org.codehaus.groovy.runtime;
 
-import groovy.lang.IntRange;
 import groovy.lang.EmptyRange;
+import groovy.lang.IntRange;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
-import java.util.*;
+import java.io.Closeable;
+import java.io.IOException;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
+import java.util.*;
+import java.util.logging.Logger;
 
 /**
  * Support methods for DefaultGroovyMethods and PluginDefaultMethods.
  */
 public class DefaultGroovyMethodsSupport {
+
+    private static final Logger LOG = Logger.getLogger(DefaultGroovyMethodsSupport.class.getName());
 
     // helper method for getAt and putAt
     protected static RangeInfo subListBorders(int size, IntRange range) {
@@ -65,6 +69,36 @@ public class DefaultGroovyMethodsSupport {
             throw new ArrayIndexOutOfBoundsException("Negative array index [" + temp + "] too large for array size " + size);
         }
         return i;
+    }
+
+    /**
+     * Close the Closeable. Logging a warning if any problems occur.
+     *
+     * @param c the thing to close
+     */
+    public static void closeWithWarning(Closeable c) {
+        if (c != null) {
+            try {
+                c.close();
+            } catch (IOException e) {
+                LOG.warning("Caught exception during close(): " + e);
+            }
+        }
+    }
+
+    /**
+     * Close the Closeable. Ignore any problems that might occur.
+     *
+     * @param c the thing to close
+     */
+    public static void closeQuietly(Closeable c) {
+        if (c != null) {
+            try {
+                c.close();
+            } catch (IOException e) {
+                /* ignore */
+            }
+        }
     }
 
     protected static class RangeInfo {
@@ -261,8 +295,8 @@ public class DefaultGroovyMethodsSupport {
      */
     protected static boolean sameType(Collection[] cols) {
         List all = new LinkedList();
-        for (int i = 0; i < cols.length; i++) {
-            all.addAll(cols[i]);
+        for (Collection col : cols) {
+            all.addAll(col);
         }
         if (all.size() == 0)
             return true;
@@ -280,9 +314,9 @@ public class DefaultGroovyMethodsSupport {
             baseClass = first.getClass();
         }
 
-        for (int i = 0; i < cols.length; i++) {
-            for (Iterator iter = cols[i].iterator(); iter.hasNext();) {
-                if (!baseClass.isInstance(iter.next())) {
+        for (Collection col : cols) {
+            for (Object o : col) {
+                if (!baseClass.isInstance(o)) {
                     return false;
                 }
             }
