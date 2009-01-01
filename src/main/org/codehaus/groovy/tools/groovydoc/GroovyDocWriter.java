@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,11 +42,9 @@ public class GroovyDocWriter {
 	}
 
 	public void writeClasses(GroovyRootDoc rootDoc, String destdir) throws Exception {
-		Iterator classDocs = Arrays.asList(rootDoc.classes()).iterator();
-		while (classDocs.hasNext()) {
-			GroovyClassDoc classDoc = (GroovyClassDoc) classDocs.next();
-			writeClassToOutput(classDoc, destdir);
-		}
+        for (GroovyClassDoc classDoc : Arrays.asList(rootDoc.classes())) {
+            writeClassToOutput(classDoc, destdir);
+        }
 	}
 
 	public void writeRoot(GroovyRootDoc rootDoc, String destdir) throws Exception {
@@ -62,21 +60,17 @@ public class GroovyDocWriter {
 	}	
 
 	public void writePackages(GroovyRootDoc rootDoc, String destdir) throws Exception {
-		Iterator packageDocs = Arrays.asList(rootDoc.specifiedPackages()).iterator();
-		while (packageDocs.hasNext()) {
-			GroovyPackageDoc packageDoc = (GroovyPackageDoc) packageDocs.next();
-			output.makeOutputArea(destdir + FS + packageDoc.name());
-			writePackageToOutput(packageDoc, destdir);
-		}
+        for (GroovyPackageDoc packageDoc : Arrays.asList(rootDoc.specifiedPackages())) {
+            output.makeOutputArea(destdir + FS + packageDoc.name());
+            writePackageToOutput(packageDoc, destdir);
+        }
 	}
 
 	public void writePackageToOutput(GroovyPackageDoc packageDoc, String destdir) throws Exception {
 		Iterator templates = templateEngine.packageTemplatesIterator();
 		while (templates.hasNext()) {
 			String template = (String) templates.next();
-
 			String renderedSrc = templateEngine.applyPackageTemplate(template, packageDoc); // todo
-			
 			String destFileName = destdir + FS + packageDoc.name() + FS + tool.getFile(template);
 			System.out.println("Generating " + destFileName);
 			output.writeToOutput(destFileName, renderedSrc);
@@ -84,12 +78,10 @@ public class GroovyDocWriter {
 	}	
 
 	public void writeRootDocToOutput(GroovyRootDoc rootDoc, String destdir) throws Exception {
-		Iterator templates = templateEngine.docTemplatesIterator();
+		Iterator<String> templates = templateEngine.docTemplatesIterator();
 		while (templates.hasNext()) {
 			String template = (String) templates.next();
-
 			String renderedSrc = templateEngine.applyRootDocTemplate(template, rootDoc); // todo
-			
 			String destFileName = destdir + FS + tool.getFile(template);
 			System.out.println("Generating " + destFileName);
 			output.writeToOutput(destFileName, renderedSrc);

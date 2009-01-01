@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,12 +42,12 @@ public class GroovyDocTemplateEngine {
 	private GroovyDocTool tool;
 	private ResourceManager resourceManager;
 //	private String relativeTemplatePath;
-	private Map docTemplates; // cache
-	private List docTemplatePaths; // once per documentation set
-	private Map packageTemplates; // cache
-	private List packageTemplatePaths; // once per package
-	private Map classTemplates; // cache
-	private List classTemplatePaths; // once per class
+	private Map<String, Template> docTemplates; // cache
+	private List<String> docTemplatePaths; // once per documentation set
+	private Map<String, Template> packageTemplates; // cache
+	private List<String> packageTemplatePaths; // once per package
+	private Map<String, Template> classTemplates; // cache
+	private List<String> classTemplatePaths; // once per class
 	
 	
 	public GroovyDocTemplateEngine(GroovyDocTool tool, ResourceManager resourceManager, String classTemplate) {
@@ -63,26 +63,24 @@ public class GroovyDocTemplateEngine {
 		this.docTemplatePaths = Arrays.asList(docTemplates);
 		this.packageTemplatePaths = Arrays.asList(packageTemplates);
 		this.classTemplatePaths = Arrays.asList(classTemplates);
-		this.docTemplates = new HashMap();
-		this.packageTemplates = new HashMap();
-		this.classTemplates = new HashMap();
+		this.docTemplates = new HashMap<String, Template>();
+		this.packageTemplates = new HashMap<String, Template>();
+		this.classTemplates = new HashMap<String, Template>();
 		engine = new GStringTemplateEngine();
 		
 	}
 	
 	String applyClassTemplates(GroovyClassDoc classDoc) {
-		String templatePath = (String) classTemplatePaths.get(0); // todo (iterate)
-			
+		String templatePath = classTemplatePaths.get(0); // todo (iterate)
 		String templateWithBindingApplied = "";
 		try {
-			Template t = (Template) classTemplates.get(templatePath);
+			Template t = classTemplates.get(templatePath);
 			if (t == null) {
 				t = engine.createTemplate(resourceManager.getReader(templatePath));
 				classTemplates.put(templatePath, t);
 			}
 			Map binding = new HashMap();
 	        binding.put("classDoc", classDoc);
-	        
 	        templateWithBindingApplied = t.make(binding).toString();
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -95,7 +93,7 @@ public class GroovyDocTemplateEngine {
 			
 		String templateWithBindingApplied = "";
 		try {
-			Template t = (Template) packageTemplates.get(templatePath);
+			Template t = packageTemplates.get(templatePath);
 			if (t == null) {
 				t = engine.createTemplate(resourceManager.getReader(templatePath));
 				packageTemplates.put(templatePath, t);
@@ -116,7 +114,7 @@ public class GroovyDocTemplateEngine {
 			
 		String templateWithBindingApplied = "";
 		try {
-			Template t = (Template) docTemplates.get(templatePath);
+			Template t = docTemplates.get(templatePath);
 			if (t == null) {
 				t = engine.createTemplate(resourceManager.getReader(templatePath));
 				docTemplates.put(templatePath, t);

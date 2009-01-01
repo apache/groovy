@@ -14,17 +14,23 @@
  * limitations under the License.
  */
 package org.codehaus.groovy.tools.groovydoc;
+
 import org.codehaus.groovy.groovydoc.*;
+import org.codehaus.groovy.ant.Groovydoc;
 
 import java.util.List;
 import java.util.ArrayList;
 
-public class SimpleGroovyMemberDoc extends SimpleGroovyProgramElementDoc implements GroovyMemberDoc{
-	public SimpleGroovyMemberDoc(String name) {
-		this(name, new ArrayList());
-	}
-	public SimpleGroovyMemberDoc(String name, List links) {
-		super(name, links);
-	}
-	public boolean isSynthetic() {/*todo*/return false;}
+public class SimpleGroovyMemberDoc extends SimpleGroovyProgramElementDoc implements GroovyMemberDoc {
+    public SimpleGroovyMemberDoc(String name) {
+        this(name, new ArrayList<Groovydoc.LinkArgument>());
+    }
+
+    public SimpleGroovyMemberDoc(String name, List<Groovydoc.LinkArgument> links) {
+        super(name, links);
+    }
+
+    public boolean isSynthetic() {/*todo*/
+        return false;
+    }
 }

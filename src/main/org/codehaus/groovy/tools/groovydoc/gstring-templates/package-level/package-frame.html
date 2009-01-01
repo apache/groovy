@@ -9,7 +9,6 @@ ${packageDoc.nameWithDots()}
 
 <LINK REL ="stylesheet" TYPE="text/css" HREF="${packageDoc.getRelativeRootPath()}stylesheet.css" TITLE="Style">
 
-
 </HEAD>
 
 <BODY BGCOLOR="white">
@@ -30,7 +29,6 @@ Interfaces</FONT>&nbsp;
 </TR>
 </TABLE>
 
-
 <TABLE BORDER="0" WIDTH="100%" SUMMARY="">
 <TR>
 <TD NOWRAP><FONT size="+1" CLASS="FrameHeadingFont">
@@ -46,6 +44,19 @@ Classes</FONT>&nbsp;
 </TR>
 </TABLE>
 
-
+<TABLE BORDER="0" WIDTH="100%" SUMMARY="">
+<TR>
+<TD NOWRAP><FONT size="+1" CLASS="FrameHeadingFont">
+Annotation Types</FONT>&nbsp;
+<FONT CLASS="FrameItemFont"><%
+    for (classDoc in packageDoc.ordinaryClasses()) {
+        if (classDoc.isAnnotationType()) { %>
+<BR>
+<A HREF="${classDoc.name()}.html" title="annotation type in ${packageDoc.name()}" target="classFrame">${classDoc.name()}</A><%
+        }
+    }
+%></FONT></TD>
+</TR>
+</TABLE>
 </BODY>
 </HTML>

@@ -92,7 +92,7 @@ DETAIL:&nbsp;<A HREF="#field_detail">FIELD</A>&nbsp;|&nbsp;<A HREF="#constructor
 <FONT SIZE="-1">
 ${classDoc.containingPackage().nameWithDots()}</FONT>
 <BR>
-<FONT CLASS="ClassTitleFont">${classDoc.isInterface()?'Interface':'Class'} ${classDoc.name()}</FONT></H2>
+<FONT CLASS="ClassTitleFont">${classDoc.isInterface()?'Interface':(classDoc.isAnnotationType()?'Annotation Type':'Class')} ${classDoc.name()}</FONT></H2>
 <P>
 ${classDoc.commentText()}
 </P>
@@ -114,7 +114,10 @@ ${classDoc.commentText()}
     <TD><CODE><B><A HREF="#${field.name()}">${field.name()}</A></B></CODE>
 
     <BR>
-    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</TD>
+        <P>
+        ${field.commentText()}
+        </P>
+    </TD>
     </TR>
   <% } %>
 <% } %>

@@ -24,17 +24,21 @@ import org.codehaus.groovy.groovydoc.*;
 import org.codehaus.groovy.ant.Groovydoc;
 
 public class SimpleGroovyDoc implements GroovyDoc {
+    private static final Pattern TAG_REGEX = Pattern.compile("(?m)@([a-z]*)\\s*(.*$[^@]*)");
+    private static final Pattern LINK_REGEX = Pattern.compile("(?m)[{]@(link)\\s*([^}]*)}");
+    private static final Pattern CODE_REGEX = Pattern.compile("(?m)[{]@(code)\\s*([^}]*)}");
 	private String name;
 	private String commentText;
 	private String rawCommentText;
 	private String firstSentenceCommentText;
-    private List links;
+    private List<Groovydoc.LinkArgument> links;
     private int definitionType;
 
     private final int CLASS = 0;
     private final int INTERFACE = 1;
+    private final int ANNOTATION = 2;
 
-    public SimpleGroovyDoc(String name, List links) {
+    public SimpleGroovyDoc(String name, List<Groovydoc.LinkArgument> links) {
         this.name = name;
         this.links = links;
         this.setRawCommentText("");  // default to no comments (good for default constructors which will not have a reason to call this)
@@ -42,7 +46,7 @@ public class SimpleGroovyDoc implements GroovyDoc {
     }
 
     public SimpleGroovyDoc(String name) {
-        this(name, new ArrayList());
+        this(name, new ArrayList<Groovydoc.LinkArgument>());
     }
 
 	public String name() {
@@ -79,27 +83,36 @@ public class SimpleGroovyDoc implements GroovyDoc {
         } else {
         	this.firstSentenceCommentText = commentText;
         }
+
+        // TODO {@link processing hack}
+        this.commentText = replaceAllTags(this.commentText, "", "", LINK_REGEX);
+
+        // TODO {@code processing hack}
+        this.commentText = replaceAllTags(this.commentText, "<TT>", "</TT>", CODE_REGEX);
+
 		// hack to reformat groovydoc tags into html (todo: tags)
-		this.commentText = replaceAllTags(this.commentText, "(?m)@([a-z]*)\\s*(.*)$",
-                "<DL><DT><B>$1:</B></DT><DD>", "</DD></DL>");
+		this.commentText = replaceAllTags(this.commentText, "<DL><DT><B>$1:</B></DT><DD>", "</DD></DL>", TAG_REGEX);
+
+        this.commentText = commentText.replaceAll("&at;", "@").replaceAll("&dollar;", "\\$");
 
 		// hack to hide groovydoc tags in summaries
 		this.firstSentenceCommentText = this.firstSentenceCommentText.replaceAll("(?m)@([a-z]*\\s*.*)$",""); // remove @return etc from summaries
         
 	}
 
-    // TODO: this should go away once we have tags
-    public String replaceAllTags(String self, String regex, String s1, String s2) {
-        Matcher matcher = Pattern.compile(regex).matcher(self);
+    // TODO: this should go away once we have proper tags
+    public String replaceAllTags(String self, String s1, String s2, Pattern regex) {
+        Matcher matcher = regex.matcher(self);
         if (matcher.find()) {
             matcher.reset();
             StringBuffer sb = new StringBuffer();
             while (matcher.find()) {
-                if (matcher.group(1).equals("see")) {
+                String tagname = matcher.group(1);
+                if (tagname.equals("see") || tagname.equals("link")) {
                     // TODO: escape $ signs?
-                    matcher.appendReplacement(sb, s1 + getDocUrl(matcher.group(2)) + s2);
+                    matcher.appendReplacement(sb, s1 + getDocUrl(matcher.group(2)).replaceAll("[$]", "&dollar;") + s2);
                 } else {
-                    matcher.appendReplacement(sb, s1 + "$2" + s2);
+                    matcher.appendReplacement(sb, s1 + matcher.group(2).replaceAll("@", "&at;").replaceAll("[$]", "&dollar;") + s2);
                 }
             }
             matcher.appendTail(sb);
@@ -110,21 +123,27 @@ public class SimpleGroovyDoc implements GroovyDoc {
     }
 
     public String getDocUrl(String type) {
-        if (type == null || type.indexOf('.') == -1)
+        if (type == null)
+            return type;
+        type = type.trim();
+        if (type.startsWith("#"))
+            return "<a href='" + type + "'>" + type + "</a>";
+        if (type.indexOf('.') == -1)
             return type;
 
         final String[] target = type.split("#");
         String shortClassName = target[0].replaceAll(".*\\.", "");
-        String packageName = type.substring(0, type.length()-shortClassName.length()-2);
+//        String packageName = type.substring(0, type.length()-shortClassName.length()-2);
         shortClassName += (target.length > 1 ? "#" + target[1].split("\\(")[0] : "");
-        for (int i = 0; i < links.size(); i++) {
-            Groovydoc.LinkArgument linkArgument = (Groovydoc.LinkArgument) links.get(i);
-            final StringTokenizer tokenizer = new StringTokenizer(linkArgument.getPackages(), ", ");
+        for (Groovydoc.LinkArgument link : links) {
+            final StringTokenizer tokenizer = new StringTokenizer(link.getPackages(), ", ");
             while (tokenizer.hasMoreTokens()) {
                 final String token = tokenizer.nextToken();
                 if (type.startsWith(token)) {
-                    String apiBaseUrl = linkArgument.getHref();
-                    if (!apiBaseUrl.endsWith("/")) { apiBaseUrl += "/"; }
+                    String apiBaseUrl = link.getHref();
+                    if (!apiBaseUrl.endsWith("/")) {
+                        apiBaseUrl += "/";
+                    }
                     String url = apiBaseUrl + target[0].replaceAll("\\.", "/") + ".html" + (target.length > 1 ? "#" + target[1] : "");
                     return "<a href='" + url + "' title='" + shortClassName + "'>" + shortClassName + "</a>";
                 }
@@ -136,13 +155,22 @@ public class SimpleGroovyDoc implements GroovyDoc {
     public boolean isClass() {
         return definitionType == CLASS;
     }
+
     public boolean isInterface() {
         return definitionType == INTERFACE;
     }
+
+    public boolean isAnnotationType() {
+        return definitionType == ANNOTATION;
+    }
+
     public void setAsInterfaceDefinition() {
         definitionType = INTERFACE;
     }
 
+    public void setAsAnnotationDefinition() {
+        definitionType = ANNOTATION;
+    }
 
     // Methods from Comparable
 	public int compareTo(Object that) {
@@ -156,7 +184,6 @@ public class SimpleGroovyDoc implements GroovyDoc {
     // Methods from GroovyDoc
 //	public GroovyTag[] firstSentenceTags() {/*todo*/return null;}
 //	public GroovyTag[] inlineTags() {/*todo*/return null;}
-	public boolean isAnnotationType() {/*todo*/return false;}
 	public boolean isAnnotationTypeElement() {/*todo*/return false;}
 	public boolean isConstructor() {/*todo*/return false;}
 	public boolean isEnum() {/*todo*/return false;}
