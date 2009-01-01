@@ -16,6 +16,7 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.io.EncodingAwareBufferedWriter;
+import groovy.io.PlatformLineWriter;
 import groovy.lang.*;
 import groovy.sql.GroovyRowResult;
 import groovy.util.*;
@@ -8969,6 +8970,28 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Return a String with linefeeds denormalized to the platform specific
+     * end of line character. Algorithm used is throw away all '\r' chars
+     * and replace all '\n' chars with platform 'line.separator' char.
+     *
+     * @param self a String object
+     * @return the denormalized string
+     * @throws java.io.IOException if an error occurs
+     * @since 1.6.0
+     * @see groovy.io.PlatformLineWriter
+     */
+    public static String denormalize(String self) throws IOException {
+        StringWriter result = new StringWriter(self.length());
+        PlatformLineWriter w = new PlatformLineWriter(result, self.length());
+        try {
+            w.write(self);
+        } finally {
+            closeWithWarning(w);
+        }
+        return result.toString();
+    }
+
+    /**
      * Return a String with linefeeds and carriage returns normalized to linefeeds.
      * The last trailing linefeed (after normalization) if found is removed.
      *
@@ -10652,12 +10675,32 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
     }
 
-    private static void closeWithWarning(Closeable c) {
+    /**
+     * Close the Closeable. Logging a warning if any problems occur.
+     *
+     * @param c the thing to close
+     */
+    public static void closeWithWarning(Closeable c) {
         if (c != null) {
             try {
                 c.close();
             } catch (IOException e) {
                 LOG.warning("Caught exception during close(): " + e);
+            }
+        }
+    }
+
+    /**
+     * Close the Closeable. Ignore any problems that might occur.
+     *
+     * @param c the thing to close
+     */
+    public static void closeQuietly(Closeable c) {
+        if (c != null) {
+            try {
+                c.close();
+            } catch (IOException e) {
+                /* ignore */
             }
         }
     }
