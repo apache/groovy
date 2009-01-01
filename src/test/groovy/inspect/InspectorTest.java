@@ -92,7 +92,7 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
                 "split", "findIndexOf", "findIndexOf", "findLastIndexOf", "findLastIndexOf", "findIndexValues", "findIndexValues",
                 "iterator", "addShutdownHook", "sprintf", "sprintf", "with", "inject", "getMetaClass", "setMetaClass", "metaClass", "respondsTo"
         };
-        assertEquals("Incorrect number of methods found examining: " + getNamesFor(metaMethods), names.length + 1, metaMethods.length);
+        assertEquals("Incorrect number of methods found examining: " + getNamesFor(metaMethods), names.length, metaMethods.length);
         assertNameEquals(names, metaMethods);
         String[] details = {"GROOVY", "public", "Object", "void", "println", "Object", "n/a"};
         assertContains(metaMethods, details);
