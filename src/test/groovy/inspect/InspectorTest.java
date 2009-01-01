@@ -92,7 +92,7 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
                 "split", "findIndexOf", "findIndexOf", "findLastIndexOf", "findLastIndexOf", "findIndexValues", "findIndexValues",
                 "iterator", "addShutdownHook", "sprintf", "sprintf", "with", "inject", "getMetaClass", "setMetaClass", "metaClass", "respondsTo"
         };
-        assertEquals(names.length, metaMethods.length);
+        assertEquals("Incorrect number of methods found examining: " + getNamesFor(metaMethods), names.length + 1, metaMethods.length);
         assertNameEquals(names, metaMethods);
         String[] details = {"GROOVY", "public", "Object", "void", "println", "Object", "n/a"};
         assertContains(metaMethods, details);
@@ -202,6 +202,15 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
         assertEquals("0:\ta b " + ls + "1:\tx y " + ls, bytes.toString());
         // just for coverage, print to System.out (yuck)
         Inspector.print(memberInfo);
+    }
+
+    private List getNamesFor(Object[] metaMethods) {
+        List result = new ArrayList();
+        for (int i = 0; i < metaMethods.length; i++) {
+            String[] strings = (String[]) metaMethods[i];
+            result.add(strings[Inspector.MEMBER_NAME_IDX]);
+        }
+        return result;
     }
 
     private void assertNameEquals(String[] names, Object[] metaMethods) {
