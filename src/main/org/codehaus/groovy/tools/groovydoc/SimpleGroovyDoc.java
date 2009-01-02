@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -119,11 +119,11 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
     }
 
     private String encodeSpecialSymbols(String text) {
-        return text.replaceAll("@", "&at;").replaceAll("[$]", "&dollar;");
+        return Matcher.quoteReplacement(text.replaceAll("@", "&at;"));
     }
 
     private String decodeSpecialSymbols(String text) {
-        return text.replaceAll("&at;", "@").replaceAll("&dollar;", "\\$");
+        return text.replaceAll("&at;", "@");
     }
 
     public String getDocUrl(String type) {
