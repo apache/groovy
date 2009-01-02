@@ -23,11 +23,13 @@ import java.util.*;
 public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implements GroovyClassDoc {
     private final List<GroovyConstructorDoc> constructors;
     private final List<GroovyFieldDoc> fields;
+    private final List<GroovyFieldDoc> enumConstants;
     private final List<GroovyMethodDoc> methods;
-    private String fullPathName;
 
+    private String fullPathName;
     private String superClassName;
     private GroovyClassDoc superClass;
+
     private List<String> importedClassesAndPackages;
 
     public SimpleGroovyClassDoc(List<String> importedClassesAndPackages, String name, List<Groovydoc.LinkArgument> links) {
@@ -35,6 +37,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         this.importedClassesAndPackages = importedClassesAndPackages;
         constructors = new ArrayList<GroovyConstructorDoc>();
         fields = new ArrayList<GroovyFieldDoc>();
+        enumConstants = new ArrayList<GroovyFieldDoc>();
         methods = new ArrayList<GroovyMethodDoc>();
     }
 
@@ -46,7 +49,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
      * returns a sorted array of constructors
      */
     public GroovyConstructorDoc[] constructors() {
-        Collections.sort(constructors); // todo - performance / maybe move into a sortMe() method
+        Collections.sort(constructors);
         return constructors.toArray(new GroovyConstructorDoc[constructors.size()]);
     }
 
@@ -58,7 +61,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
      * returns a sorted array of fields
      */
     public GroovyFieldDoc[] fields() {
-        Collections.sort(fields); // todo - performance / maybe move into a sortMe() method
+        Collections.sort(fields);
         return fields.toArray(new GroovyFieldDoc[fields.size()]);
     }
 
@@ -67,10 +70,22 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
     }
 
     /**
+     * returns a sorted array of enum constants
+     */
+    public GroovyFieldDoc[] enumConstants() {
+        Collections.sort(enumConstants);
+        return enumConstants.toArray(new GroovyFieldDoc[enumConstants.size()]);
+    }
+
+    public boolean addEnumConstant(GroovyFieldDoc field) {
+        return enumConstants.add(field);
+    }
+
+    /**
      * returns a sorted array of methods
      */
     public GroovyMethodDoc[] methods() {
-        Collections.sort(methods); // todo - performance / maybe move into a sortMe() method
+        Collections.sort(methods);
         return methods.toArray(new GroovyMethodDoc[methods.size()]);
     }
 
@@ -163,10 +178,6 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
 
     public boolean definesSerializableFields() {/*todo*/
         return false;
-    }
-
-    public GroovyFieldDoc[] enumConstants() {/*todo*/
-        return null;
     }
 
     public GroovyFieldDoc[] fields(boolean filter) {/*todo*/

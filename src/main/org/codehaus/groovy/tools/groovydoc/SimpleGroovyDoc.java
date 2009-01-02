@@ -53,12 +53,15 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
 	public String toString() {
 		return "" + getClass() + "(" + name + ")";
 	}
+
 	public String commentText() {
 		return commentText; // derived from rawCommentText
 	}
+
 	public String getRawCommentText() {
 		return rawCommentText;
 	}
+
 	public String firstSentenceCommentText() {
 		return firstSentenceCommentText; // derived from rawCommentText
 	}

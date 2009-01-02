@@ -44,6 +44,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     private LineColumn lastLineCol;
     private LineColumn lastSeenCol;
     private GroovySourceAST lastSeenNode;
+    private boolean insideEnum;
 
     public SimpleGroovyClassDocAssembler(String packagePath, String file, SourceBuffer sourceBuffer, List<Groovydoc.LinkArgument> links) {
         this.sourceBuffer = sourceBuffer;
@@ -99,8 +100,6 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     public void visitInterfaceDef(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
             currentClassDoc.setTokenType(t.getType());
-            // TODO do different behavior for annotations to show e.g.
-            // retention etc. and required and optional element summary
             visitClassDef(t, visit);
         }
     }
@@ -108,15 +107,32 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     public void visitEnumDef(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
             currentClassDoc.setTokenType(t.getType());
-            // TODO do different behavior for enums to show e.g.
-            // Enum Constant Summary
             visitClassDef(t, visit);
+        } else {
+            adjustForAutomaticEnumMethods();
         }
+    }
+
+    private void adjustForAutomaticEnumMethods() {
+        SimpleGroovyMethodDoc valueOf = new SimpleGroovyMethodDoc("valueOf", links);
+        valueOf.setRawCommentText("Returns the enum constant of this type with the specified name.");
+        SimpleGroovyParameter parameter = new SimpleGroovyParameter("name");
+        parameter.setTypeName("String");
+        valueOf.add(parameter);
+        valueOf.setReturnType(new SimpleGroovyType(currentClassDoc.name()));
+        currentClassDoc.add(valueOf);
+
+        SimpleGroovyMethodDoc values = new SimpleGroovyMethodDoc("values", links);
+        values.setRawCommentText("Returns an array containing the constants of this enum type, in the order they are declared.");
+        values.setReturnType(new SimpleGroovyType(currentClassDoc.name() + "[]"));
+        currentClassDoc.add(values);
     }
 
     public void visitAnnotationDef(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
             currentClassDoc.setTokenType(t.getType());
+            // TODO do different behavior for annotations to show e.g.
+            // retention etc. and required and optional element summary
             visitClassDef(t, visit);
         }
     }
@@ -200,7 +216,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     }
 
     public void visitMethodDef(GroovySourceAST t, int visit) {
-        if (visit == OPENING_VISIT) {
+        if (visit == OPENING_VISIT && !insideEnum) {
             if (!insideAnonymousInnerClass()) {
                 // init
 
@@ -225,6 +241,29 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 addParametersTo(currentMethodDoc, t, visit);
                 currentClassDoc.add(currentMethodDoc);
             }
+        }
+    }
+
+    public void visitEnumConstantDef(GroovySourceAST t, int visit) {
+        if (visit == OPENING_VISIT) {
+            insideEnum = true;
+            String enumConstantName = t.childOfType(IDENT).getText();
+            SimpleGroovyFieldDoc currentEnumConstantDoc = new SimpleGroovyFieldDoc(enumConstantName);
+
+            // comments
+            String commentText = getJavaDocCommentsBeforeNode(t);
+            currentEnumConstantDoc.setRawCommentText(commentText);
+
+            // modifiers
+            processModifiers(t, currentEnumConstantDoc);
+
+            String typeName = getTypeNodeAsText(t.childOfType(TYPE), currentClassDoc.getTypeDescription());
+            SimpleGroovyType type = new SimpleGroovyType(typeName);
+            currentEnumConstantDoc.setType(type);
+
+            currentClassDoc.addEnumConstant(currentEnumConstantDoc);
+        } else {
+            insideEnum = false;
         }
     }
 
