@@ -42,8 +42,6 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     private String packagePath;
     private Pattern previousJavaDocCommentPattern;
     private LineColumn lastLineCol;
-    private LineColumn lastSeenCol;
-    private GroovySourceAST lastSeenNode;
     private boolean insideEnum;
 
     public SimpleGroovyClassDocAssembler(String packagePath, String file, SourceBuffer sourceBuffer, List<Groovydoc.LinkArgument> links) {
@@ -69,8 +67,6 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         currentClassDoc.setFullPathName(packagePath + FS + className);
         classDocs.put(currentClassDoc.getFullPathName(), currentClassDoc);
         lastLineCol = new LineColumn(1, 1);
-        lastSeenCol = lastLineCol;
-        lastSeenNode = null;
         previousJavaDocCommentPattern = Pattern.compile("(?s)/\\*\\*(.*?)\\*/");
     }
 
@@ -97,6 +93,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         }
     }
 
+    @Override
     public void visitInterfaceDef(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
             currentClassDoc.setTokenType(t.getType());
@@ -104,6 +101,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         }
     }
 
+    @Override
     public void visitEnumDef(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
             currentClassDoc.setTokenType(t.getType());
@@ -128,6 +126,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         currentClassDoc.add(values);
     }
 
+    @Override
     public void visitAnnotationDef(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
             currentClassDoc.setTokenType(t.getType());
@@ -137,6 +136,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         }
     }
 
+    @Override
     public void visitImport(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
             GroovySourceAST child = t.childOfType(DOT);
@@ -165,6 +165,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         return "";
     }
 
+    @Override
     public void visitExtendsClause(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
             GroovySourceAST superClassNode = t.childOfType(IDENT);
@@ -175,6 +176,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         }
     }
 
+    @Override
     public void visitClassDef(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
             // todo is this correct for java + groovy src?
@@ -192,6 +194,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         }
     }
 
+    @Override
     public void visitCtorIdent(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
             if (!insideAnonymousInnerClass()) {
@@ -215,6 +218,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         }
     }
 
+    @Override
     public void visitMethodDef(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT && !insideEnum) {
             if (!insideAnonymousInnerClass()) {
@@ -244,6 +248,12 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         }
     }
 
+    @Override
+    public void visitAnnotationFieldDef(GroovySourceAST t, int visit) {
+        visitVariableDef(t, visit);
+    }
+
+    @Override
     public void visitEnumConstantDef(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
             insideEnum = true;
@@ -267,6 +277,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         }
     }
 
+    @Override
     public void visitVariableDef(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
             if (!insideAnonymousInnerClass()) {
@@ -332,11 +343,6 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     private String getJavaDocCommentsBeforeNode(GroovySourceAST t) {
         String result = "";
         LineColumn thisLineCol = new LineColumn(t.getLine(), t.getColumn());
-        if (thisLineCol.getLine() > lastSeenCol.getLine() + 1 || (isMajorType(t) && isMajorType(lastSeenNode))) {
-            lastLineCol = lastSeenCol;
-            lastSeenNode = t;
-        }
-        lastSeenCol = thisLineCol;
         String text = sourceBuffer.getSnippet(lastLineCol, thisLineCol);
         if (text != null) {
             Matcher m = previousJavaDocCommentPattern.matcher(text);
@@ -344,13 +350,17 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 result = m.group(1);
             }
         }
+        if (isMajorType(t)) {
+            lastLineCol = thisLineCol;
+        }
         return result;
     }
 
     private boolean isMajorType(GroovySourceAST t) {
         if (t == null) return false;
         int tt = t.getType();
-        return tt == CLASS_DEF || tt == INTERFACE_DEF || tt == METHOD_DEF || tt == VARIABLE_DEF;
+        return tt == CLASS_DEF || tt == INTERFACE_DEF || tt == METHOD_DEF || tt == ANNOTATION_DEF ||
+                tt == VARIABLE_DEF || tt == ANNOTATION_FIELD_DEF || tt == ENUM_CONSTANT_DEF;
     }
 
     private String getText(GroovySourceAST node) {

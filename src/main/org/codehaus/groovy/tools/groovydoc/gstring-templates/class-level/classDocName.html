@@ -10,7 +10,8 @@
 <!-- *                                      * -->
 <!-- **************************************** -->
 <%
-    boolean hasFields = (classDoc.fields().length > 0)
+    boolean hasFields = (!classDoc.isAnnotationType() && classDoc.fields().length > 0)
+    boolean hasElements = (classDoc.isAnnotationType() && classDoc.fields().length > 0)
     boolean hasConstructors = (classDoc.constructors().length > 0)
     boolean hasMethods = (classDoc.methods().length > 0)
     boolean hasEnumConstants = (classDoc.enumConstants().length > 0)
@@ -93,25 +94,36 @@ function windowTitle()
 
 </TR>
 <TR>
+<TD VALIGN="top" CLASS="NavBarCell3"><FONT SIZE="-2"><!-- TODO split annotation into required/optional -->
+SUMMARY:&nbsp;<%
+    if (classDoc.isAnnotationType()) {
+        %>REQUIRED | OPTIONAL<%
+    } else {
+        if (classDoc.isEnum()) {
+            if (hasEnumConstants) { %><A HREF="#enum_constant_summary"><% } %>ENUM CONSTANTS<% if (hasEnumConstants) { %></A><% }
+        }
+        %>&nbsp;|&nbsp;<% if (hasFields) { %><A HREF="#field_summary"><% } %>FIELD<% if (hasFields) { %></A><% }
+        if (classDoc.isClass()) {
+            %>&nbsp;|&nbsp;<% if (hasConstructors) { %><A HREF="#constructor_summary"><% } %>CONSTR<% if (hasConstructors) { %></A><% }
+        }
+        %>&nbsp;|&nbsp;<% if (hasMethods) { %><A HREF="#method_summary"><% } %>METHOD<% if (hasMethods) { %></A><% }
+    }
+    %></FONT></TD>
 <TD VALIGN="top" CLASS="NavBarCell3"><FONT SIZE="-2">
-SUMMARY:&nbsp;NESTED&nbsp;|&nbsp;<% if (hasFields) { %><A HREF="#field_summary"><% } %>FIELD<% if (hasFields) { %></A><% }
-    if (classDoc.isClass()) {
-        %>&nbsp;|&nbsp;<% if (hasConstructors) { %><A HREF="#constructor_summary"><% } %>CONSTR<% if (hasConstructors) { %></A><% }
+DETAIL:&nbsp;<%
+    if (classDoc.isAnnotationType()) {
+        if (hasElements) { %><A HREF="#element_detail"><% } %>ELEMENT<% if (hasElements) { %></A><% }
+    } else {
+        if (classDoc.isEnum()) {
+            if (hasEnumConstants) { %><A HREF="#enum_constant_detail"><% } %>ENUM CONSTANTS<% if (hasEnumConstants) { %></A><% }
+        }
+        %>&nbsp;|&nbsp;<% if (hasFields) { %><A HREF="#field_detail"><% } %>FIELD<% if (hasFields) { %></A><% }
+        if (classDoc.isClass()) {
+            %>&nbsp;|&nbsp;<% if (hasConstructors) { %><A HREF="#constructor_detail"><% } %>CONSTR<% if (hasConstructors) { %></A><% }
+        }
+        %>&nbsp;|&nbsp;<% if (hasMethods) { %><A HREF="#method_detail"><% } %>METHOD<% if (hasMethods) { %></A><% }
     }
-    if (classDoc.isEnum()) {
-        %>&nbsp;|&nbsp;<% if (hasEnumConstants) { %><A HREF="#enum_constant_summary"><% } %>ENUM CONSTANTS<% if (hasEnumConstants) { %></A><% }
-    }
-    %>&nbsp;|&nbsp;<% if (hasMethods) { %><A HREF="#method_summary"><% } %>METHOD<% if (hasMethods) { %></A><% } %></FONT></TD>
-<TD VALIGN="top" CLASS="NavBarCell3"><FONT SIZE="-2">
-DETAIL:&nbsp;<% if (hasFields) { %><A HREF="#field_detail"><% } %>FIELD<% if (hasFields) { %></A><% }
-    if (classDoc.isClass()) {
-        %>&nbsp;|&nbsp;<% if (hasConstructors) { %><A HREF="#constructor_detail"><% } %>CONSTR<% if (hasConstructors) { %></A><% }
-    }
-    if (classDoc.isEnum()) {
-        %>&nbsp;|&nbsp;<% if (hasEnumConstants) { %><A HREF="#enum_constant_detail"><% } %>ENUM CONSTANTS<% if (hasEnumConstants) { %></A><% }
-    }
-    %>&nbsp;|&nbsp;<% if (hasMethods) { %><A HREF="#method_detail"><% } %>METHOD<% if (hasMethods) { %></A><% } %></FONT></TD>
-
+    %></FONT></TD>
 </TR>
 </TABLE>
 <A NAME="skip-navbar_top"></A>
@@ -129,8 +141,31 @@ ${classDoc.containingPackage().nameWithDots()}</FONT>
 ${classDoc.commentText()}
 </P>
 
+<!-- =========== ENUM CONSTANT SUMMARY =========== -->
+
+<A NAME="enum_constant_summary"><!-- --></A>
+<% if (hasEnumConstants) { %>
+    <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
+    <TR BGCOLOR="#CCCCFF" CLASS="TableHeadingColor">
+    <TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2">
+    <B>Enum Constant Summary</B></FONT></TH>
+    </TR>
+    <% for (ec in classDoc.enumConstants()) { %>
+        <TR BGCOLOR="white" CLASS="TableRowColor">
+        <TD>
+            <CODE><B><A HREF="#${ec.name()}">${ec.name()}</A></B></CODE>
+            <BR>
+            <P>${ec.commentText()}</P>
+        </TD>
+        </TR>
+    <% } %>
+    </TABLE>
+    &nbsp;
+<% } %>
+
 <!-- =========== FIELD SUMMARY =========== -->
 
+<!-- TODO default values -->
 <A NAME="field_summary"><!-- --></A>
 <% if (hasFields) { %>
     <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
@@ -153,21 +188,24 @@ ${classDoc.commentText()}
     &nbsp;
 <% } %>
 
-<!-- =========== ENUM CONSTANT SUMMARY =========== -->
-
-<A NAME="enum_constant_summary"><!-- --></A>
-<% if (hasEnumConstants) { %>
+<!-- =========== ELEMENT SUMMARY =========== -->
+<!-- TODO split into required/optional -->
+<!-- TODO default values -->
+<A NAME="element_summary"><!-- --></A>
+<% if (hasElements) { %>
     <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
     <TR BGCOLOR="#CCCCFF" CLASS="TableHeadingColor">
     <TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2">
-    <B>Enum Constant Summary</B></FONT></TH>
+    <B>Element Summary</B></FONT></TH>
     </TR>
-    <% for (ec in classDoc.enumConstants()) { %>
+    <% for (field in classDoc.fields()) { %>
         <TR BGCOLOR="white" CLASS="TableRowColor">
+        <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
+        <CODE>${modifiers(field) + field.type().typeName()}</CODE></FONT></TD>
         <TD>
-            <CODE><B><A HREF="#${ec.name()}">${ec.name()}</A></B></CODE>
+            <CODE><B><A HREF="#${field.name()}">${field.name()}</A></B></CODE>
             <BR>
-            <P>${ec.commentText()}</P>
+            <P>${field.commentText()}</P>
         </TD>
         </TR>
     <% } %>
@@ -199,6 +237,7 @@ ${classDoc.commentText()}
 
 <!-- ========== METHOD SUMMARY =========== -->
 
+<!-- TODO default values for optional params -->
 <A NAME="method_summary"><!-- --></A>
 <% if (hasMethods) { %>
     <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
@@ -224,28 +263,6 @@ ${classDoc.commentText()}
 
 <P>
 
-<!-- =========== FIELD DETAIL =========== -->
-
-<A NAME="field_detail"><!-- --></A>
-<% if (hasFields) { %>
-    <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
-    <TR BGCOLOR="#CCCCFF" CLASS="TableHeadingColor">
-    <TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2">
-    <B>Field Detail</B></FONT></TH>
-    </TR>
-    </TABLE>
-    <% for (field in classDoc.fields()) { %>
-        <A NAME="${field.name()}"><!-- --></A><H3>${field.name()}</H3>
-        <PRE>${modifiers(field) + '<a href="' + classDoc.getRelativeRootPath() + classDoc.getFullPathName() + '.html">' + classDoc.name() + '</a>'} <B>${field.name()}</B></PRE>
-        <DL>
-        <DD>${field.commentText()}
-        <P>
-        </DL>
-        <HR>
-    <% } %>
-    &nbsp;
-<% } %>
-
 <!-- ============ ENUM CONSTANT DETAIL ========== -->
 
 <A NAME="enum_constant_detail"><!-- --></A>
@@ -265,6 +282,50 @@ ${classDoc.commentText()}
         </DL>
         <HR>
     <% } %>
+<% } %>
+
+<!-- =========== FIELD DETAIL =========== -->
+
+<A NAME="field_detail"><!-- --></A>
+<% if (hasFields) { %>
+    <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
+    <TR BGCOLOR="#CCCCFF" CLASS="TableHeadingColor">
+    <TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2">
+    <B>Field Detail</B></FONT></TH>
+    </TR>
+    </TABLE>
+    <% for (field in classDoc.fields()) { %>
+        <A NAME="${field.name()}"><!-- --></A><H3>${field.name()}</H3>
+        <PRE>${modifiers(field) + field.type().typeName()} <B>${field.name()}</B></PRE>
+        <DL>
+        <DD>${field.commentText()}
+        <P>
+        </DL>
+        <HR>
+    <% } %>
+    &nbsp;
+<% } %>
+
+<!-- =========== ELEMENT DETAIL =========== -->
+
+<A NAME="element_detail"><!-- --></A>
+<% if (hasElements) { %>
+    <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
+    <TR BGCOLOR="#CCCCFF" CLASS="TableHeadingColor">
+    <TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2">
+    <B>Element Detail</B></FONT></TH>
+    </TR>
+    </TABLE>
+    <% for (field in classDoc.fields()) { %>
+        <A NAME="${field.name()}"><!-- --></A><H3>${field.name()}</H3>
+        <PRE>${modifiers(field) + field.type().typeName()} <B>${field.name()}</B></PRE>
+        <DL>
+        <DD>${field.commentText()}
+        <P>
+        </DL>
+        <HR>
+    <% } %>
+    &nbsp;
 <% } %>
 
 <!-- ========= CONSTRUCTOR DETAIL ======== -->
