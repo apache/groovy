@@ -98,16 +98,25 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
 
     public void visitInterfaceDef(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
-            currentClassDoc.setAsInterfaceDefinition();
+            currentClassDoc.setTokenType(t.getType());
             // TODO do different behavior for annotations to show e.g.
             // retention etc. and required and optional element summary
             visitClassDef(t, visit);
         }
     }
 
+    public void visitEnumDef(GroovySourceAST t, int visit) {
+        if (visit == OPENING_VISIT) {
+            currentClassDoc.setTokenType(t.getType());
+            // TODO do different behavior for enums to show e.g.
+            // Enum Constant Summary
+            visitClassDef(t, visit);
+        }
+    }
+
     public void visitAnnotationDef(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
-            currentClassDoc.setAsAnnotationDefinition();
+            currentClassDoc.setTokenType(t.getType());
             visitClassDef(t, visit);
         }
     }

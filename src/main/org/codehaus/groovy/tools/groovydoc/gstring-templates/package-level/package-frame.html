@@ -14,6 +14,8 @@ ${packageDoc.nameWithDots()}
 <BODY BGCOLOR="white">
 <FONT size="+1" CLASS="FrameTitleFont">
 <A HREF="package-summary.html" target="classFrame">${packageDoc.nameWithDots()}</A></FONT>
+
+<% if (packageDoc.ordinaryClasses().any{ it.isInterface() }) { %>
 <TABLE BORDER="0" WIDTH="100%" SUMMARY="">
 <TR>
 <TD NOWRAP><FONT size="+1" CLASS="FrameHeadingFont">
@@ -28,7 +30,9 @@ Interfaces</FONT>&nbsp;
 %></FONT></TD>
 </TR>
 </TABLE>
+<% } %>
 
+<% if (packageDoc.ordinaryClasses().any{ it.isClass() }) { %>
 <TABLE BORDER="0" WIDTH="100%" SUMMARY="">
 <TR>
 <TD NOWRAP><FONT size="+1" CLASS="FrameHeadingFont">
@@ -43,7 +47,9 @@ Classes</FONT>&nbsp;
 %></FONT></TD>
 </TR>
 </TABLE>
+<% } %>
 
+<% if (packageDoc.ordinaryClasses().any{ it.isAnnotationType() }) { %>
 <TABLE BORDER="0" WIDTH="100%" SUMMARY="">
 <TR>
 <TD NOWRAP><FONT size="+1" CLASS="FrameHeadingFont">
@@ -58,5 +64,24 @@ Annotation Types</FONT>&nbsp;
 %></FONT></TD>
 </TR>
 </TABLE>
+<% } %>
+
+<% if (packageDoc.ordinaryClasses().any{ it.isEnum() }) { %>
+<TABLE BORDER="0" WIDTH="100%" SUMMARY="">
+<TR>
+<TD NOWRAP><FONT size="+1" CLASS="FrameHeadingFont">
+Enums</FONT>&nbsp;
+<FONT CLASS="FrameItemFont"><%
+    for (classDoc in packageDoc.ordinaryClasses()) {
+        if (classDoc.isEnum()) { %>
+<BR>
+<A HREF="${classDoc.name()}.html" title="enum in ${packageDoc.name()}" target="classFrame">${classDoc.name()}</A><%
+        }
+    }
+%></FONT></TD>
+</TR>
+</TABLE>
+<% } %>
+
 </BODY>
 </HTML>

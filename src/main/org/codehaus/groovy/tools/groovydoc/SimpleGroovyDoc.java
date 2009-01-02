@@ -22,8 +22,9 @@ import java.util.regex.Pattern;
 
 import org.codehaus.groovy.groovydoc.*;
 import org.codehaus.groovy.ant.Groovydoc;
+import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 
-public class SimpleGroovyDoc implements GroovyDoc {
+public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
     private static final Pattern TAG_REGEX = Pattern.compile("(?m)@([a-z]+)\\s+(.*$[^@]*)");
     private static final Pattern LINK_REGEX = Pattern.compile("(?m)[{]@(link)\\s+([^}]*)}");
     private static final Pattern CODE_REGEX = Pattern.compile("(?m)[{]@(code)\\s+([^}]*)}");
@@ -34,15 +35,11 @@ public class SimpleGroovyDoc implements GroovyDoc {
     private List<Groovydoc.LinkArgument> links;
     private int definitionType;
 
-    private final int CLASS = 0;
-    private final int INTERFACE = 1;
-    private final int ANNOTATION = 2;
-
     public SimpleGroovyDoc(String name, List<Groovydoc.LinkArgument> links) {
         this.name = name;
         this.links = links;
-        this.setRawCommentText("");  // default to no comments (good for default constructors which will not have a reason to call this)
-        definitionType = CLASS; // default this instance to a class, unless told otherwise
+        setRawCommentText("");  // default to no comments (good for default constructors which will not have a reason to call this)
+        definitionType = CLASS_DEF;
     }
 
     public SimpleGroovyDoc(String name) {
@@ -70,7 +67,7 @@ public class SimpleGroovyDoc implements GroovyDoc {
 		this.rawCommentText = rawCommentText;
 		
 		// remove all the * from beginning of lines
-		this.commentText = rawCommentText.replaceAll("(?m)^\\s*\\*", ""); // todo precompile regex Patterns
+		commentText = rawCommentText.replaceAll("(?m)^\\s*\\*", ""); // todo precompile regex Patterns
 
 		// Comment Summary using first sentence (Locale sensitive)
 		BreakIterator boundary = BreakIterator.getSentenceInstance(Locale.getDefault()); // todo - allow locale to be passed in
@@ -79,26 +76,25 @@ public class SimpleGroovyDoc implements GroovyDoc {
         int end = boundary.next();
         if (start > -1 && end > -1) {
         	// need to abbreviate this comment for the summary
-        	this.firstSentenceCommentText = commentText.substring(start,end);
+        	firstSentenceCommentText = commentText.substring(start,end);
         } else {
-        	this.firstSentenceCommentText = commentText;
+        	firstSentenceCommentText = commentText;
         }
 
         // {@link processing hack}
-        this.commentText = replaceAllTags(this.commentText, "", "", LINK_REGEX);
+        commentText = replaceAllTags(commentText, "", "", LINK_REGEX);
 
         // {@code processing hack}
-        this.commentText = replaceAllTags(this.commentText, "<TT>", "</TT>", CODE_REGEX);
+        commentText = replaceAllTags(commentText, "<TT>", "</TT>", CODE_REGEX);
 
 		// hack to reformat other groovydoc tags (@see, @return, @link, @param, @throws, @author, @since) into html
         // todo: replace with proper tag support
-		this.commentText = replaceAllTags(this.commentText, "<DL><DT><B>$1:</B></DT><DD>", "</DD></DL>", TAG_REGEX);
+		commentText = replaceAllTags(commentText, "<DL><DT><B>$1:</B></DT><DD>", "</DD></DL>", TAG_REGEX);
 
-        this.commentText = decodeSpecialSymbols(commentText);
+        commentText = decodeSpecialSymbols(commentText);
 
 		// hack to hide groovydoc tags in summaries
-		this.firstSentenceCommentText = this.firstSentenceCommentText.replaceAll("(?m)@([a-z]+\\s*.*)$",""); // remove @return etc from summaries
-        
+		firstSentenceCommentText = firstSentenceCommentText.replaceAll("(?m)@([a-z]+\\s*.*)$",""); // remove @return etc from summaries
 	}
 
     // TODO: this should go away once we have proper tags
@@ -161,23 +157,30 @@ public class SimpleGroovyDoc implements GroovyDoc {
     }
 
     public boolean isClass() {
-        return definitionType == CLASS;
+        return definitionType == CLASS_DEF;
     }
 
     public boolean isInterface() {
-        return definitionType == INTERFACE;
+        return definitionType == INTERFACE_DEF;
     }
 
     public boolean isAnnotationType() {
-        return definitionType == ANNOTATION;
+        return definitionType == ANNOTATION_DEF;
     }
 
-    public void setAsInterfaceDefinition() {
-        definitionType = INTERFACE;
+    public boolean isEnum() {
+        return definitionType == ENUM_DEF;
     }
 
-    public void setAsAnnotationDefinition() {
-        definitionType = ANNOTATION;
+    public String getTypeDescription() {
+        if (isInterface()) return "Interface";
+        if (isAnnotationType()) return "Annotation Type";
+        if (isEnum()) return "Enum";
+        return "Class";
+    }
+
+    public void setTokenType(int t) {
+        definitionType = t;
     }
 
     // Methods from Comparable
@@ -190,12 +193,14 @@ public class SimpleGroovyDoc implements GroovyDoc {
 	}
 
     // Methods from GroovyDoc
-//	public GroovyTag[] firstSentenceTags() {/*todo*/return null;}
-//	public GroovyTag[] inlineTags() {/*todo*/return null;}
+
+    //	public GroovyTag[] firstSentenceTags() {/*todo*/return null;}
+    //	public GroovyTag[] inlineTags() {/*todo*/return null;}
 	public boolean isAnnotationTypeElement() {/*todo*/return false;}
-	public boolean isConstructor() {/*todo*/return false;}
-	public boolean isEnum() {/*todo*/return false;}
-	public boolean isEnumConstant() {/*todo*/return false;}
+
+    public boolean isConstructor() {/*todo*/return false;}
+
+    public boolean isEnumConstant() {/*todo*/return false;}
 	public boolean isError() {/*todo*/return false;}
 	public boolean isException() {/*todo*/return false;}
 	public boolean isField() {/*todo*/return false;}
