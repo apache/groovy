@@ -7,52 +7,50 @@ import javax.management.remote.rmi.RMIConnectorServer
 import groovy.jmx.builder.*
 
 class JmxClientConnectorFactoryTest extends GroovyTestCase {
-  def builder
+    def builder
+    int DEFAULT_PORT = 10995
+    def rmi
 
-  void setUp() {
-    builder = new JmxBuilder()
-    builder.registerFactory "clientConnector", new JmxClientConnectorFactory()
-    builder.registerFactory "serverConnector", new JmxServerConnectorFactory()
-  }
-
-  void tearDown() {
-  }
-
-  void testJmxClientConnectorNode() {
-    RMIConnectorServer server = builder.serverConnector(port: 1098)
-    Registry reg = LocateRegistry.createRegistry(1098)
-    server.start()
-
-    RMIConnector client = builder.clientConnector(
-            port: 1098
-    )
-
-    assert client
-    client.connect()
-    server.stop()
-    java.rmi.server.UnicastRemoteObject.unexportObject(reg, true)
-  }
-
-  void testJmxClientConnectorUrl() {
-    RMIConnectorServer server = builder.serverConnector(port: 1099)
-    Registry reg = LocateRegistry.createRegistry(1099)
-    server.start()
-
-    RMIConnector client = builder.clientConnector(url: "service:jmx:rmi:///jndi/rmi://localhost:1099/jmxrmi")
-    client.connect()
-    client.close()
-    server.stop()
-    java.rmi.server.UnicastRemoteObject.unexportObject(reg, true)
-  }
-
-  void testJmxClientConnectorFailure() {
-    shouldFail {
-      RMIConnector client = builder.clientConnector(
-              port: 1099
-      )
-      assert client
-      client.connect()
+    void setUp() {
+        builder = new JmxBuilder()
+        rmi = JmxConnectorHelper.createRmiRegistry(DEFAULT_PORT)
     }
-  }
+
+    void tearDown() {
+        JmxConnectorHelper.destroyRmiRegistry (rmi.registry)
+    }
+
+    void testJmxClientConnectorNode() {
+        RMIConnectorServer server = builder.serverConnector(port: rmi.port)
+        server.start()
+
+        RMIConnector client = builder.clientConnector(
+                port: rmi.port
+        )
+
+        assert client
+        client.connect()
+        server.stop()
+    }
+
+    void testJmxClientConnectorUrl() {
+        RMIConnectorServer server = builder.serverConnector(port: rmi.port)
+        server.start()
+
+        RMIConnector client = builder.clientConnector(url: "service:jmx:rmi:///jndi/rmi://localhost:${rmi.port}/jmxrmi")
+        client.connect()
+        client.close()
+        server.stop()
+    }
+
+    void testJmxClientConnectorFailure() {
+        shouldFail {
+            RMIConnector client = builder.clientConnector(
+                port: 1099
+            )
+            assert client
+            client.connect()
+        }
+    }
 
 }
