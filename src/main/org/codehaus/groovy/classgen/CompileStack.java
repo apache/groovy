@@ -61,7 +61,7 @@ import java.util.*;
  */
 public class CompileStack implements Opcodes {
     /**
-     * @TODO remove optimization of this.foo -> this.@foo
+     * @todo remove optimization of this.foo -> this.@foo
      * 
      */
     

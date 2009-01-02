@@ -24,9 +24,9 @@ import org.codehaus.groovy.groovydoc.*;
 import org.codehaus.groovy.ant.Groovydoc;
 
 public class SimpleGroovyDoc implements GroovyDoc {
-    private static final Pattern TAG_REGEX = Pattern.compile("(?m)@([a-z]*)\\s*(.*$[^@]*)");
-    private static final Pattern LINK_REGEX = Pattern.compile("(?m)[{]@(link)\\s*([^}]*)}");
-    private static final Pattern CODE_REGEX = Pattern.compile("(?m)[{]@(code)\\s*([^}]*)}");
+    private static final Pattern TAG_REGEX = Pattern.compile("(?m)@([a-z]+)\\s+(.*$[^@]*)");
+    private static final Pattern LINK_REGEX = Pattern.compile("(?m)[{]@(link)\\s+([^}]*)}");
+    private static final Pattern CODE_REGEX = Pattern.compile("(?m)[{]@(code)\\s+([^}]*)}");
 	private String name;
 	private String commentText;
 	private String rawCommentText;
@@ -84,19 +84,20 @@ public class SimpleGroovyDoc implements GroovyDoc {
         	this.firstSentenceCommentText = commentText;
         }
 
-        // TODO {@link processing hack}
+        // {@link processing hack}
         this.commentText = replaceAllTags(this.commentText, "", "", LINK_REGEX);
 
-        // TODO {@code processing hack}
+        // {@code processing hack}
         this.commentText = replaceAllTags(this.commentText, "<TT>", "</TT>", CODE_REGEX);
 
-		// hack to reformat groovydoc tags into html (todo: tags)
+		// hack to reformat other groovydoc tags (@see, @return, @link, @param, @throws, @author, @since) into html
+        // todo: replace with proper tag support
 		this.commentText = replaceAllTags(this.commentText, "<DL><DT><B>$1:</B></DT><DD>", "</DD></DL>", TAG_REGEX);
 
-        this.commentText = commentText.replaceAll("&at;", "@").replaceAll("&dollar;", "\\$");
+        this.commentText = decodeSpecialSymbols(commentText);
 
 		// hack to hide groovydoc tags in summaries
-		this.firstSentenceCommentText = this.firstSentenceCommentText.replaceAll("(?m)@([a-z]*\\s*.*)$",""); // remove @return etc from summaries
+		this.firstSentenceCommentText = this.firstSentenceCommentText.replaceAll("(?m)@([a-z]+\\s*.*)$",""); // remove @return etc from summaries
         
 	}
 
@@ -109,10 +110,9 @@ public class SimpleGroovyDoc implements GroovyDoc {
             while (matcher.find()) {
                 String tagname = matcher.group(1);
                 if (tagname.equals("see") || tagname.equals("link")) {
-                    // TODO: escape $ signs?
-                    matcher.appendReplacement(sb, s1 + getDocUrl(matcher.group(2)).replaceAll("[$]", "&dollar;") + s2);
+                    matcher.appendReplacement(sb, s1 + getDocUrl(encodeSpecialSymbols(matcher.group(2))) + s2);
                 } else {
-                    matcher.appendReplacement(sb, s1 + matcher.group(2).replaceAll("@", "&at;").replaceAll("[$]", "&dollar;") + s2);
+                    matcher.appendReplacement(sb, s1 + encodeSpecialSymbols(matcher.group(2)) + s2);
                 }
             }
             matcher.appendTail(sb);
@@ -120,6 +120,14 @@ public class SimpleGroovyDoc implements GroovyDoc {
         } else {
             return self;
         }
+    }
+
+    private String encodeSpecialSymbols(String text) {
+        return text.replaceAll("@", "&at;").replaceAll("[$]", "&dollar;");
+    }
+
+    private String decodeSpecialSymbols(String text) {
+        return text.replaceAll("&at;", "@").replaceAll("&dollar;", "\\$");
     }
 
     public String getDocUrl(String type) {

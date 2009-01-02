@@ -15,7 +15,7 @@
  */
 
 /**
- * @TODO: multi threaded compiling of the same class but with different roots
+ * @todo multi threaded compiling of the same class but with different roots
  * for compilation... T1 compiles A, which uses B, T2 compiles B... mark A and B
  * as parsed and then synchronize compilation. Problems: How to synchronize? 
  * How to get error messages?   
