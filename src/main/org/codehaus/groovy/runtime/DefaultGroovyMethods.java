@@ -17,6 +17,7 @@ package org.codehaus.groovy.runtime;
 
 import groovy.io.EncodingAwareBufferedWriter;
 import groovy.io.PlatformLineWriter;
+import groovy.io.GroovyPrintWriter;
 import groovy.lang.*;
 import groovy.sql.GroovyRowResult;
 import groovy.util.*;
@@ -451,8 +452,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static void print(Object self, Object value) {
         // we won't get here if we are a PrintWriter
         if (self instanceof Writer) {
-            final PrintWriter pw = new PrintWriter((Writer) self);
-            pw.print(InvokerHelper.toString(value));
+            final PrintWriter pw = new GroovyPrintWriter((Writer) self);
+            pw.print(value);
         } else {
             System.out.print(InvokerHelper.toString(value));
         }
@@ -480,7 +481,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static void println(Object self) {
         // we won't get here if we are a PrintWriter
         if (self instanceof Writer) {
-            PrintWriter pw = new PrintWriter((Writer) self);
+            PrintWriter pw = new GroovyPrintWriter((Writer) self);
             pw.println();
         } else {
             System.out.println();
@@ -517,8 +518,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static void println(Object self, Object value) {
         // we won't get here if we are a PrintWriter
         if (self instanceof Writer) {
-            final PrintWriter pw = new PrintWriter((Writer) self);
-            pw.println(InvokerHelper.toString(value));
+            final PrintWriter pw = new GroovyPrintWriter((Writer) self);
+            pw.println(value);
         } else {
             System.out.println(InvokerHelper.toString(value));
         }
@@ -712,7 +713,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static void print(Object self, PrintWriter out) {
         if (out == null) {
-            out = new PrintWriter(System.out);
+            out = new GroovyPrintWriter(System.out);
         }
         out.print(InvokerHelper.toString(self));
     }
@@ -726,7 +727,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static void println(Object self, PrintWriter out) {
         if (out == null) {
-            out = new PrintWriter(System.out);
+            out = new GroovyPrintWriter(System.out);
         }
         InvokerHelper.invokeMethod(self, "print", out);
         out.println();
@@ -3999,6 +4000,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             stack.addAll(col);
             return stack;
         }
+        
         Object[] args = {col};
         try {
             return InvokerHelper.invokeConstructorOf(clazz, args);
@@ -4022,11 +4024,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static Object asType(Object[] ary, Class clazz) {
         if (clazz == List.class) {
             return new ArrayList(Arrays.asList(ary));
-        } else if (clazz == Set.class) {
+        }
+        if (clazz == Set.class) {
             return new HashSet(Arrays.asList(ary));
-        } else if (clazz == SortedSet.class) {
+        }
+        if (clazz == SortedSet.class) {
             return new TreeSet(Arrays.asList(ary));
         }
+
         return asType((Object) ary, clazz);
     }
 
@@ -4048,7 +4053,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                     new ConvertedClosure(cl));
         }
         try {
-        return asType((Object) cl, clazz);
+            return asType((Object) cl, clazz);
         } catch (GroovyCastException ce) {
             try {
                 return ProxyGenerator.INSTANCE.instantiateAggregateFromBaseClass(cl, clazz);
@@ -9940,7 +9945,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static PrintWriter newPrintWriter(File file) throws IOException {
-        return new PrintWriter(newWriter(file));
+        return new GroovyPrintWriter(newWriter(file));
     }
 
     /**
@@ -9954,7 +9959,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static PrintWriter newPrintWriter(File file, String charset) throws IOException {
-        return new PrintWriter(newWriter(file, charset));
+        return new GroovyPrintWriter(newWriter(file, charset));
+    }
+
+    /**
+     * Create a new PrintWriter for this file, using specified
+     * charset.
+     *
+     * @param writer   a writer
+     * @return a PrintWriter
+     * @since 1.6
+     */
+    public static PrintWriter newPrintWriter(Writer writer) {
+        return new GroovyPrintWriter(writer);
     }
 
     /**
@@ -9986,6 +10003,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Object withPrintWriter(File file, String charset, Closure closure) throws IOException {
         return withWriter(newPrintWriter(file, charset), closure);
+    }
+
+    /**
+     * Create a new PrintWriter with a specified charset for
+     * this file.  The writer is passed to the closure, and will be closed
+     * before this method returns.
+     *
+     * @param writer   a writer
+     * @param closure the closure to invoke with the PrintWriter
+     * @return the value returned by the closure
+     * @throws IOException if an IOException occurs.
+     * @since 1.6
+     */
+    public static Object withPrintWriter(Writer writer, Closure closure) throws IOException {
+        return withWriter(newPrintWriter(writer), closure);
     }
 
     /**
@@ -11365,6 +11397,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static Object asType(Object obj, Class type) {
+        if (String.class == type) {
+            return InvokerHelper.toString(obj);
+        }
+        
         try {
           return DefaultTypeTransformation.castToType(obj, type);
         }

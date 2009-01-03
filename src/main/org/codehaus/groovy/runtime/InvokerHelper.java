@@ -492,6 +492,9 @@ public class InvokerHelper {
             return (String) nullObject.getMetaClass().invokeMethod(nullObject, "toString", EMPTY_ARGS);
         }
         if (arguments.getClass().isArray()) {
+            if (arguments instanceof char[]) {
+                return new String((char[]) arguments);
+            }
             return format(DefaultTypeTransformation.asCollection(arguments), verbose);
         }
         if (arguments instanceof Range) {
