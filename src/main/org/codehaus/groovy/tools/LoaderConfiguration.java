@@ -15,8 +15,6 @@
  */
 package org.codehaus.groovy.tools;
 
-import groovy.text.RegexUtils;
-
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -197,7 +195,7 @@ public class LoaderConfiguration {
         String startDir = filter.substring(0, starIndex - 1);
         File root = new File(startDir);
 
-        filter = RegexUtils.quote(filter);
+        filter = Pattern.quote(filter);
         filter = filter.replaceAll("\\" + WILDCARD + "\\" + WILDCARD, MATCH_ALL);
         filter = filter.replaceAll("\\" + WILDCARD, MATCH_FILE_NAME);
         Pattern pattern = Pattern.compile(filter);
