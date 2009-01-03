@@ -2706,19 +2706,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a String with replaced content
      * @since 1.0
      */
-    public static String replaceAll(String self, String regex, Closure closure) {
-        Matcher matcher = Pattern.compile(regex).matcher(self);
+    public static String replaceAll(final String self, final String regex, final Closure closure) {
+        final Matcher matcher = Pattern.compile(regex).matcher(self);
         if (matcher.find()) {
-            matcher.reset();
-            StringBuffer sb = new StringBuffer();
-            while (matcher.find()) {
+            final StringBuffer sb = new StringBuffer();
+            do {
                 int count = matcher.groupCount();
                 List groups = new ArrayList();
                 for (int i = 0; i <= count; i++) {
                     groups.add(matcher.group(i));
                 }
-                matcher.appendReplacement(sb, String.valueOf(closure.call(groups.toArray())));
-            }
+                final String replacement = String.valueOf(closure.call(groups.toArray()));
+                matcher.appendReplacement(sb, Matcher.quoteReplacement(replacement));
+            } while (matcher.find());
             matcher.appendTail(sb);
             return sb.toString();
         } else {

@@ -387,4 +387,12 @@ class RegularExpressionsTest extends GroovyTestCase {
         }
         assert result == ['0:[abd, d]', '1:[abxyz, xyz]', '2:[abx, x]']
     }
+    
+    void testReplaceAllClosure() {
+        def p = /([^z]*)(z)/
+        def c = { all, m, d -> m }
+        assert 'x12345' == 'x123z45'.replaceAll(p, c)
+        assert 'x1\\2345' == 'x1\\23z4zz5'.replaceAll(p, c)
+        assert '$1$2345' == '$1$23z45'.replaceAll(p, c)
+    }
 }
