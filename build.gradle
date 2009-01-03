@@ -28,16 +28,16 @@ targetCompatibility = 1.5
 groovySrcDirName = 'src/main'
 groovyTestSrcDirName = 'src/test'
 dependencies {
-  addMavenRepo ( "file://${ System.properties.'user.home' }/.m2/repository" )
-  groovy ( 'org.codehaus.groovy:groovy-all:1.6-beta-2-SNAPSHOT' )
+  addMavenRepo ( )
+  groovy ( 'org.codehaus.groovy:groovy-all:1.6-RC-1' )
   compile ( [
              'antlr:antlr:2.7.7' ,
              'asm:asm:2.2.3' ,
              'asm:asm-util:2.2.3' ,
              'asm:asm-analysis:2.2.3' ,
              'asm:asm-tree:2.2.3' ,
-             'junit:junit:3.8.2' ,
-             'commons-cli:commons-cli:1.2-SNAPSHOT' ,
+             'junit:junit:4.5' ,
+             'commons-cli:commons-cli:1.0' ,
              'org.apache.ant:ant:1.7.1' ,
              'javax.servlet:servlet-api:2.4' ,
              'javax.servlet:jsp-api:2.0' ,
