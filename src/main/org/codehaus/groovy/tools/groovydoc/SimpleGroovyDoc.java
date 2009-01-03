@@ -70,7 +70,7 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
 		this.rawCommentText = rawCommentText;
 		
 		// remove all the * from beginning of lines
-		commentText = rawCommentText.replaceAll("(?m)^\\s*\\*", ""); // todo precompile regex Patterns
+		commentText = rawCommentText.replaceAll("(?m)^\\s*\\*", ""); // todo precompile regex
 
 		// Comment Summary using first sentence (Locale sensitive)
 		BreakIterator boundary = BreakIterator.getSentenceInstance(Locale.getDefault()); // todo - allow locale to be passed in
@@ -97,7 +97,7 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
         commentText = decodeSpecialSymbols(commentText);
 
 		// hack to hide groovydoc tags in summaries
-		firstSentenceCommentText = firstSentenceCommentText.replaceAll("(?m)@([a-z]+\\s*.*)$",""); // remove @return etc from summaries
+		firstSentenceCommentText = stripTags(firstSentenceCommentText);
 	}
 
     // TODO: this should go away once we have proper tags
@@ -110,7 +110,7 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
                 String tagname = matcher.group(1);
                 if (tagname.equals("see") || tagname.equals("link")) {
                     matcher.appendReplacement(sb, s1 + getDocUrl(encodeSpecialSymbols(matcher.group(2))) + s2);
-                } else {
+                } else if (!tagname.equals("interface")) {
                     matcher.appendReplacement(sb, s1 + encodeSpecialSymbols(matcher.group(2)) + s2);
                 }
             }
@@ -119,6 +119,10 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
         } else {
             return self;
         }
+    }
+
+    private String stripTags(String text) {
+        return text.replaceAll("(?m)@([a-z]+\\s*.*)$","");
     }
 
     private String encodeSpecialSymbols(String text) {

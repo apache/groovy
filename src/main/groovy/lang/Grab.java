@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,7 @@ import java.lang.annotation.Target;
 import java.lang.annotation.ElementType;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Danno
- * Date: Jan 19, 2008
- * Time: 8:53:51 AM
+ * Used to grab the referenced artifact and its dependencies and make it available on the Classpath.
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target({
@@ -40,10 +37,9 @@ public @interface Grab {
     String version() default "*";
 
     /**
-     * By default, when a &#064;Grab annotation is used, the grab() call is added
+     * By default, when a @Grab annotation is used, the grab() call is added
      * to the static initializers of the class the annotatable node appears in.
      * If you wish to disable this add initClass=false to the annotation.
      */
-
     boolean initClass() default true;
 }

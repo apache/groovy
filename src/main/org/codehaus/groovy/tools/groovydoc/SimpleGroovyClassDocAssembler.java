@@ -31,6 +31,8 @@ import antlr.collections.AST;
 
 public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements GroovyTokenTypes {
     private static final String FS = "/";
+    private static final Pattern PREV_JAVADOC_COMMENT_PATTERN = Pattern.compile("(?s)/\\*\\*(.*?)\\*/");
+    private static final Pattern ANNOTATION_PRELUDE_PATTERN = Pattern.compile("(?sm)(^\\s*@[A-Z].*|^public\\s*)");
     private Stack<GroovySourceAST> stack;
     private Map<String, GroovyClassDoc> classDocs;
     private List<String> importedClassesAndPackages;
@@ -40,7 +42,6 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     private SimpleGroovyMethodDoc currentMethodDoc; // todo - stack?
     private SourceBuffer sourceBuffer;
     private String packagePath;
-    private Pattern previousJavaDocCommentPattern;
     private LineColumn lastLineCol;
     private boolean insideEnum;
 
@@ -67,7 +68,6 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         currentClassDoc.setFullPathName(packagePath + FS + className);
         classDocs.put(currentClassDoc.getFullPathName(), currentClassDoc);
         lastLineCol = new LineColumn(1, 1);
-        previousJavaDocCommentPattern = Pattern.compile("(?s)/\\*\\*(.*?)\\*/");
     }
 
     public Map<String, GroovyClassDoc> getGroovyClassDocs() {
@@ -130,9 +130,11 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     public void visitAnnotationDef(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
             currentClassDoc.setTokenType(t.getType());
-            // TODO do different behavior for annotations to show e.g.
-            // retention etc. and required and optional element summary
+            String prelude = getAnnotationPrelude(t);
             visitClassDef(t, visit);
+            String orig = currentClassDoc.getRawCommentText();
+            currentClassDoc.setRawCommentText("<PRE>\n" + prelude + "@interface " +
+                    currentClassDoc.name() + "</PRE>\n<HR>\n" + orig);
         }
     }
 
@@ -198,8 +200,6 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     public void visitCtorIdent(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
             if (!insideAnonymousInnerClass()) {
-                // now... get relevant values from the AST
-
                 // name of class for the constructor
                 currentConstructorDoc = new SimpleGroovyConstructorDoc(currentClassDoc.name());
 
@@ -222,10 +222,6 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     public void visitMethodDef(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT && !insideEnum) {
             if (!insideAnonymousInnerClass()) {
-                // init
-
-                // now... get relevant values from the AST
-
                 // method name
                 String methodName = t.childOfType(IDENT).getText();
                 currentMethodDoc = new SimpleGroovyMethodDoc(methodName, links);
@@ -279,33 +275,32 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
 
     @Override
     public void visitVariableDef(GroovySourceAST t, int visit) {
-        if (visit == OPENING_VISIT) {
-            if (!insideAnonymousInnerClass()) {
-                GroovySourceAST parentNode = getParentNode();
+        if (visit == OPENING_VISIT && !insideAnonymousInnerClass()) {
+            GroovySourceAST parentNode = getParentNode();
+            if (isFieldDefinition(parentNode)) {
+                // field name
+                String fieldName = t.childOfType(IDENT).getText();
+                SimpleGroovyFieldDoc currentFieldDoc = new SimpleGroovyFieldDoc(fieldName);
 
-                // todo - what about fields in interfaces/enums etc
-                if (parentNode != null && parentNode.getType() == OBJBLOCK) {  // this should restrict us to just field definitions, and not local variable definitions
+                // comments
+                String commentText = getJavaDocCommentsBeforeNode(t);
+                currentFieldDoc.setRawCommentText(commentText);
 
-                    // field name
-                    String fieldName = t.childOfType(IDENT).getText();
-                    SimpleGroovyFieldDoc currentFieldDoc = new SimpleGroovyFieldDoc(fieldName);
+                // modifiers
+                processModifiers(t, currentFieldDoc);
 
-                    // comments
-                    String commentText = getJavaDocCommentsBeforeNode(t);
-                    currentFieldDoc.setRawCommentText(commentText);
+                // type
+                String typeName = getTypeNodeAsText(t.childOfType(TYPE), "def");
+                SimpleGroovyType type = new SimpleGroovyType(typeName); // todo !!!
+                currentFieldDoc.setType(type);
 
-                    // modifiers
-                    processModifiers(t, currentFieldDoc);
-
-                    // type
-                    String typeName = getTypeNodeAsText(t.childOfType(TYPE), "def");
-                    SimpleGroovyType type = new SimpleGroovyType(typeName); // todo !!!
-                    currentFieldDoc.setType(type);
-
-                    currentClassDoc.add(currentFieldDoc);
-                }
+                currentClassDoc.add(currentFieldDoc);
             }
         }
+    }
+
+    private boolean isFieldDefinition(GroovySourceAST parentNode) {
+        return parentNode != null && parentNode.getType() == OBJBLOCK;
     }
 
     private boolean insideAnonymousInnerClass() {
@@ -345,13 +340,26 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         LineColumn thisLineCol = new LineColumn(t.getLine(), t.getColumn());
         String text = sourceBuffer.getSnippet(lastLineCol, thisLineCol);
         if (text != null) {
-            Matcher m = previousJavaDocCommentPattern.matcher(text);
+            Matcher m = PREV_JAVADOC_COMMENT_PATTERN.matcher(text);
             if (m.find()) {
                 result = m.group(1);
             }
         }
         if (isMajorType(t)) {
             lastLineCol = thisLineCol;
+        }
+        return result;
+    }
+
+    private String getAnnotationPrelude(GroovySourceAST t) {
+        LineColumn thisLineCol = new LineColumn(t.getLine(), t.getColumn());
+        String result = "";
+        String text = sourceBuffer.getSnippet(lastLineCol, thisLineCol);
+        if (text != null) {
+            Matcher m = ANNOTATION_PRELUDE_PATTERN.matcher(text);
+            if (m.find()) {
+                result = m.group(1);
+            }
         }
         return result;
     }

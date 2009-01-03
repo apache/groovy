@@ -23,8 +23,10 @@ package groovy.lang;
  *
  * For example:
  *
- * &#064;Grapes([&#064;Grab(module='m1'), &#064;Grab(module='m2')])
+ * <pre>
+ * @Grapes([@Grab(module='m1'), @Grab(module='m2')])
  * class AnnotatedClass { ... }
+ * </pre>
  *
  */
 public @interface Grapes {
