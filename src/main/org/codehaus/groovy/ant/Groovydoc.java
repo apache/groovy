@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.StringTokenizer;
+import java.util.Properties;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
@@ -46,6 +47,7 @@ public class Groovydoc extends Task {
     private List<String> packageNames;
     private List<String> excludePackageNames;
     private String windowTitle;
+    private String footer;
     private boolean privateScope;
     private boolean useDefaultExcludes;
     private boolean includeNoSourcePackages;
@@ -124,6 +126,15 @@ public class Groovydoc extends Task {
      */
     public void setPrivate(boolean b) {
         privateScope = b;
+    }
+
+    /**
+     * Set the footer to place at the bottom of each generated html page.
+     *
+     * @param footer the footer value
+     */
+    public void setFooter(String footer) {
+        this.footer = footer;
     }
 
     /**
@@ -237,6 +248,9 @@ public class Groovydoc extends Task {
 
         List<String> packagesToDoc = new ArrayList<String>();
         Path sourceDirs = new Path(getProject());
+        Properties properties = new Properties();
+        properties.put("windowTitle", windowTitle);
+        properties.put("footer", footer);
 
         if (sourcePath != null) {
             sourceDirs.addExisting(sourcePath);
@@ -260,7 +274,8 @@ public class Groovydoc extends Task {
                 new String[]{ // class level templates
                         TEMPLATE_BASEDIR + "class-level/classDocName.html"
                 },
-                links
+                links,
+                properties
         );
 
         try {

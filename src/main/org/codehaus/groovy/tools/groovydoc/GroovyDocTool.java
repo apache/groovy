@@ -24,6 +24,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Properties;
 
 public class GroovyDocTool {
 
@@ -36,15 +37,15 @@ public class GroovyDocTool {
     }
 
     public GroovyDocTool(ResourceManager resourceManager, Path sourcepath, String classTemplate) {
-		this(resourceManager, sourcepath, new String[]{}, new String[]{}, new String[] {classTemplate}, new ArrayList());
+		this(resourceManager, sourcepath, new String[]{}, new String[]{}, new String[] {classTemplate}, new ArrayList(), new Properties());
 	}
 
-	public GroovyDocTool(ResourceManager resourceManager, Path sourcepath, String[] docTemplates, String[] packageTemplates, String[] classTemplates, List links) {
-		rootDocBuilder = new GroovyRootDocBuilder(this, sourcepath, links);
+	public GroovyDocTool(ResourceManager resourceManager, Path sourcepath, String[] docTemplates, String[] packageTemplates, String[] classTemplates, List links, Properties properties) {
+		rootDocBuilder = new GroovyRootDocBuilder(this, sourcepath, links, properties);
 		if (resourceManager == null) {
             templateEngine = null;
         } else {
-            templateEngine = new GroovyDocTemplateEngine(this, resourceManager, docTemplates, packageTemplates, classTemplates);
+            templateEngine = new GroovyDocTemplateEngine(this, resourceManager, docTemplates, packageTemplates, classTemplates, properties);
         }
     }
 

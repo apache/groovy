@@ -21,6 +21,7 @@ import java.io.StringReader;
 import java.util.Map;
 import java.util.List;
 import java.util.Iterator;
+import java.util.Properties;
 
 import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.types.resources.FileResource;
@@ -58,14 +59,16 @@ public class GroovyRootDocBuilder {
 	private final GroovyDocTool tool;
 	private final Path sourcepath;
 	private final SimpleGroovyRootDoc rootDoc;
+	private final Properties properties;
 	private static final char FS = '/';
     private List<Groovydoc.LinkArgument> links;
 
-    public GroovyRootDocBuilder(GroovyDocTool tool, Path sourcepath, List<Groovydoc.LinkArgument> links) {
+    public GroovyRootDocBuilder(GroovyDocTool tool, Path sourcepath, List<Groovydoc.LinkArgument> links, Properties properties) {
 		this.tool = tool;
 		this.sourcepath = sourcepath;
 		this.links = links;
 		this.rootDoc = new SimpleGroovyRootDoc("root");
+        this.properties = properties;
 	}
 	
 	// parsing
@@ -101,7 +104,7 @@ public class GroovyRootDocBuilder {
         groovifierTraverser.process(ast);
 
         // now do the business     
-        Visitor visitor = new SimpleGroovyClassDocAssembler(packagePath, file, sourceBuffer, links);
+        Visitor visitor = new SimpleGroovyClassDocAssembler(packagePath, file, sourceBuffer, links, properties);
         AntlrASTProcessor traverser = new SourceCodeTraversal(visitor);
 
         traverser.process(ast);
@@ -117,7 +120,7 @@ public class GroovyRootDocBuilder {
         AST ast = parser.getAST();
 
         // now do the business
-        Visitor visitor = new SimpleGroovyClassDocAssembler(packagePath, file, sourceBuffer, links);
+        Visitor visitor = new SimpleGroovyClassDocAssembler(packagePath, file, sourceBuffer, links, properties);
         AntlrASTProcessor traverser = new SourceCodeTraversal(visitor);
         traverser.process(ast);
         return ((SimpleGroovyClassDocAssembler) visitor).getGroovyClassDocs();

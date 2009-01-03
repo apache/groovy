@@ -37,6 +37,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     private Map<String, GroovyClassDoc> classDocs;
     private List<String> importedClassesAndPackages;
     private List<Groovydoc.LinkArgument> links;
+    private Properties properties; // TODO use it or lose it
     private SimpleGroovyClassDoc currentClassDoc; // todo - stack?
     private SimpleGroovyConstructorDoc currentConstructorDoc; // todo - stack?
     private SimpleGroovyMethodDoc currentMethodDoc; // todo - stack?
@@ -45,12 +46,12 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     private String packagePath;
     private LineColumn lastLineCol;
     private boolean insideEnum;
-    private boolean insideAnnotation;
 
-    public SimpleGroovyClassDocAssembler(String packagePath, String file, SourceBuffer sourceBuffer, List<Groovydoc.LinkArgument> links) {
+    public SimpleGroovyClassDocAssembler(String packagePath, String file, SourceBuffer sourceBuffer, List<Groovydoc.LinkArgument> links, Properties properties) {
         this.sourceBuffer = sourceBuffer;
         this.packagePath = packagePath;
         this.links = links;
+        this.properties = properties;
 
         stack = new Stack<GroovySourceAST>();
         classDocs = new HashMap<String, GroovyClassDoc>();
@@ -259,6 +260,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         }
     }
 
+    // hack warning! fragile! TODO find a better way
     private String getDefaultValue(GroovySourceAST t) {
         GroovySourceAST child = (GroovySourceAST) t.getFirstChild();
         if (t.getNumberOfChildren() != 4) return null;
