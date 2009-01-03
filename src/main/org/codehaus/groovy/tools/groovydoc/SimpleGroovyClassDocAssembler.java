@@ -40,10 +40,12 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     private SimpleGroovyClassDoc currentClassDoc; // todo - stack?
     private SimpleGroovyConstructorDoc currentConstructorDoc; // todo - stack?
     private SimpleGroovyMethodDoc currentMethodDoc; // todo - stack?
+    private SimpleGroovyFieldDoc currentFieldDoc;
     private SourceBuffer sourceBuffer;
     private String packagePath;
     private LineColumn lastLineCol;
     private boolean insideEnum;
+    private boolean insideAnnotation;
 
     public SimpleGroovyClassDocAssembler(String packagePath, String file, SourceBuffer sourceBuffer, List<Groovydoc.LinkArgument> links) {
         this.sourceBuffer = sourceBuffer;
@@ -134,7 +136,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             visitClassDef(t, visit);
             String orig = currentClassDoc.getRawCommentText();
             currentClassDoc.setRawCommentText("<PRE>\n" + prelude + "@interface " +
-                    currentClassDoc.name() + "</PRE>\n<HR>\n" + orig);
+                    currentClassDoc.name() + "</PRE>\n<P>&nbsp;</P>\n" + orig);
         }
     }
 
@@ -246,7 +248,36 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
 
     @Override
     public void visitAnnotationFieldDef(GroovySourceAST t, int visit) {
-        visitVariableDef(t, visit);
+        if (visit == OPENING_VISIT) {
+            visitVariableDef(t, visit);
+            String defaultText = getDefaultValue(t);
+            if (defaultText != null) {
+                currentFieldDoc.setConstantValueExpression(defaultText);
+                String orig = currentFieldDoc.getRawCommentText();
+                currentFieldDoc.setRawCommentText(orig + "\n* @default " + defaultText);
+            }
+        }
+    }
+
+    private String getDefaultValue(GroovySourceAST t) {
+        GroovySourceAST child = (GroovySourceAST) t.getFirstChild();
+        if (t.getNumberOfChildren() != 4) return null;
+        for (int i = 1; i < t.getNumberOfChildren(); i++) {
+            child = (GroovySourceAST) child.getNextSibling();
+        }
+        if (child.getNumberOfChildren() == 0) {
+            return getChildTextFromSource(child);
+        }
+        return getChildTextFromSource((GroovySourceAST) child.getFirstChild());
+    }
+
+    private String getChildTextFromSource(GroovySourceAST child) {
+        String text = sourceBuffer.getSnippet(
+                new LineColumn(child.getLine(), child.getColumn()),
+                new LineColumn(child.getLine() + 1, 0));
+        int semi = text.indexOf(";");
+        if (semi >= 0) return text.substring(0, semi);
+        else return text;
     }
 
     @Override
@@ -280,7 +311,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             if (isFieldDefinition(parentNode)) {
                 // field name
                 String fieldName = t.childOfType(IDENT).getText();
-                SimpleGroovyFieldDoc currentFieldDoc = new SimpleGroovyFieldDoc(fieldName);
+                currentFieldDoc = new SimpleGroovyFieldDoc(fieldName);
 
                 // comments
                 String commentText = getJavaDocCommentsBeforeNode(t);

@@ -18,16 +18,29 @@ import org.codehaus.groovy.groovydoc.*;
 
 public class SimpleGroovyFieldDoc extends SimpleGroovyMemberDoc implements GroovyFieldDoc {
     private GroovyType type;
+    private String constantValueExpression;
 
-	public SimpleGroovyFieldDoc(String name) {
+    public SimpleGroovyFieldDoc(String name) {
 		super(name);
 	}
-	public Object constantValue() {/*todo*/return null;}
-	public String constantValueExpression() {/*todo*/return null;}
+
+    public Object constantValue() {/*todo*/return null;}
+
+    public void setConstantValueExpression(String constantValueExpression) {
+        this.constantValueExpression = constantValueExpression;
+    }
+
+    public String constantValueExpression() {
+        return constantValueExpression;
+    }
+
 	public boolean isTransient() {/*todo*/return false;}
+
 	public boolean isVolatile() {/*todo*/return false;}
-//	public GroovySerialFieldTag[] serialFieldTags() {/*todo*/return null;}
-	public GroovyType type() {
+
+    //	public GroovySerialFieldTag[] serialFieldTags() {/*todo*/return null;}
+
+    public GroovyType type() {
         return type;
     }
 

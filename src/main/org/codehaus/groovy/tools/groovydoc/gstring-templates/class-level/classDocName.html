@@ -16,6 +16,7 @@
     boolean hasMethods = (classDoc.methods().length > 0)
     boolean hasEnumConstants = (classDoc.enumConstants().length > 0)
     def modifiers = { t ->
+        (t.isPrivate()?"private&nbsp;":"") +
         (t.isPublic()?"public&nbsp;":"") +
         (t.isProtected()?"protected&nbsp;":"") +
         (t.isStatic()?"static&nbsp;":"") +
@@ -27,6 +28,12 @@
             '<a href="' + classDoc.getRelativeRootPath() + t.returnType().getFullPathName() + '.html">' + t.returnType().name() + '</a>' :
             t.returnType().fullDottedName()
     }
+    def elementTypes = [
+        "required":"true",
+        "optional":"false"
+    ]
+    def isRequired = { f, v -> def req = f.constantValueExpression() == null; req.toString() == v }
+    def upcase = { n -> n[0].toUpperCase() + n[1..-1] }
 %>
 <HTML>
 <HEAD>
@@ -97,7 +104,10 @@ function windowTitle()
 <TD VALIGN="top" CLASS="NavBarCell3"><FONT SIZE="-2"><!-- TODO split annotation into required/optional -->
 SUMMARY:&nbsp;<%
     if (classDoc.isAnnotationType()) {
-        %>REQUIRED | OPTIONAL<%
+        def hasReq = classDoc.fields().any{ isRequired(it, "true") }
+        def hasOpt = classDoc.fields().any{ isRequired(it, "false") }
+        %><% if (hasReq) { %><A HREF="#required_element_summary"><% } %>REQUIRED<% if (hasReq) { %></A><% }
+        %> | <% if (hasOpt) { %><A HREF="#optional_element_summary"><% } %>OPTIONAL<% if (hasOpt) { %></A><% } %><%
     } else {
         if (classDoc.isEnum()) {
             if (hasEnumConstants) { %><A HREF="#enum_constant_summary"><% } %>ENUM CONSTANTS<% if (hasEnumConstants) { %></A><% }
@@ -137,10 +147,12 @@ DETAIL:&nbsp;<%
 ${classDoc.containingPackage().nameWithDots()}</FONT>
 <BR>
 <FONT CLASS="ClassTitleFont">${classDoc.typeDescription} ${classDoc.name()}</FONT></H2>
+<hr><br>
 <P>
 ${classDoc.commentText()}
 </P>
 <P>&nbsp;</P>
+<hr>
 
 <!-- =========== ENUM CONSTANT SUMMARY =========== -->
 
@@ -156,7 +168,7 @@ ${classDoc.commentText()}
         <TD>
             <CODE><B><A HREF="#${ec.name()}">${ec.name()}</A></B></CODE>
             <BR>
-            <P>${ec.commentText()}</P>
+            <P>${ec.firstSentenceCommentText()}</P>
         </TD>
         </TR>
     <% } %>
@@ -166,7 +178,6 @@ ${classDoc.commentText()}
 
 <!-- =========== FIELD SUMMARY =========== -->
 
-<!-- TODO default values -->
 <A NAME="field_summary"><!-- --></A>
 <% if (hasFields) { %>
     <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
@@ -181,7 +192,7 @@ ${classDoc.commentText()}
         <TD>
             <CODE><B><A HREF="#${field.name()}">${field.name()}</A></B></CODE>
             <BR>
-            <P>${field.commentText()}</P>
+            <P>${field.firstSentenceCommentText()}</P>
         </TD>
         </TR>
     <% } %>
@@ -190,28 +201,33 @@ ${classDoc.commentText()}
 <% } %>
 
 <!-- =========== ELEMENT SUMMARY =========== -->
-<!-- TODO split into required/optional -->
-<!-- TODO default values -->
-<A NAME="element_summary"><!-- --></A>
+
 <% if (hasElements) { %>
-    <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
-    <TR BGCOLOR="#CCCCFF" CLASS="TableHeadingColor">
-    <TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2">
-    <B>Element Summary</B></FONT></TH>
-    </TR>
-    <% for (field in classDoc.fields()) { %>
-        <TR BGCOLOR="white" CLASS="TableRowColor">
-        <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
-        <CODE>${modifiers(field) + field.type().typeName()}</CODE></FONT></TD>
-        <TD>
-            <CODE><B><A HREF="#${field.name()}">${field.name()}</A></B></CODE>
-            <BR>
-            <P>${field.commentText()}</P>
-        </TD>
-        </TR>
+    <% elementTypes.each { k, v -> %>
+        <A NAME="${k}_element_summary"><!-- --></A>
+        <% if (classDoc.fields().any{ isRequired(it, v) }) {  %>
+            <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
+            <TR BGCOLOR="#CCCCFF" CLASS="TableHeadingColor">
+            <TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2">
+            <B>${upcase(k)} Element Summary</B></FONT></TH>
+            </TR>
+            <% for (field in classDoc.fields()) { %>
+                <% if (isRequired(field, v)) { %>
+                <TR BGCOLOR="white" CLASS="TableRowColor">
+                <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
+                <CODE>${modifiers(field) + field.type().typeName()}</CODE></FONT></TD>
+                <TD>
+                    <CODE><B><A HREF="#${field.name()}">${field.name()}</A></B></CODE>
+                    <BR>
+                    <P>${field.firstSentenceCommentText()}</P>
+                </TD>
+                </TR>
+                <% } %>
+            <% } %>
+            </TABLE>
+        <% } %>
+        &nbsp;
     <% } %>
-    </TABLE>
-    &nbsp;
 <% } %>
 
 <!-- ======== CONSTRUCTOR SUMMARY ======== -->
@@ -254,7 +270,7 @@ ${classDoc.commentText()}
         <TD>
             <FONT CLASS="ClassItemFont"><CODE><B><a href="#${method.name()}(<%= method.parameters().collect{ param -> param.isTypeAvailable()?param.type().fullDottedName():param.typeName() }.join(', ') %>)">${method.name()}</a></B>(<%= method.parameters().collect{ param -> "${param.isTypeAvailable()?'<a href="' + classDoc.getRelativeRootPath() + param.type().getFullPathName() + '.html">' + param.type().name() + '</a>':param.typeName()} ${param.name()}" }.join(", ") %>)</CODE></FONT>
             <BR>
-            <FONT CLASS="ClassItemFont">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;${method.firstSentenceCommentText()}</FONT>
+            <P>${method.firstSentenceCommentText()}</P>
         </TD>
         </TR>
     <% } %>
@@ -279,10 +295,12 @@ ${classDoc.commentText()}
         <PRE>${modifiers(ec) + '<a href="' + classDoc.getRelativeRootPath() + classDoc.getFullPathName() + '.html">' + classDoc.name() + '</a>'} <B>${ec.name()}</B></PRE>
         <DL>
         <DD>${ec.commentText()}
+        </DD>
         <P>
         </DL>
         <HR>
     <% } %>
+    &nbsp;
 <% } %>
 
 <!-- =========== FIELD DETAIL =========== -->
@@ -300,6 +318,7 @@ ${classDoc.commentText()}
         <PRE>${modifiers(field) + field.type().typeName()} <B>${field.name()}</B></PRE>
         <DL>
         <DD>${field.commentText()}
+        </DD>
         <P>
         </DL>
         <HR>
@@ -322,6 +341,7 @@ ${classDoc.commentText()}
         <PRE>${modifiers(field) + field.type().typeName()} <B>${field.name()}</B></PRE>
         <DL>
         <DD>${field.commentText()}
+        </DD>
         <P>
         </DL>
         <HR>
@@ -345,10 +365,12 @@ ${classDoc.commentText()}
         <PRE>${modifiers(constructor)}<B>${constructor.name()}</B>(<%= constructor.parameters().collect{ param -> "${param.isTypeAvailable()?'<a href="' + classDoc.getRelativeRootPath() + param.type().getFullPathName() + '.html">' + param.type().name() + '</a>':param.typeName()} ${param.name()}" }.join(", ") %>)</PRE>
         <DL>
         <DD>${constructor.commentText()}
+        </DD>
         <P>
         </DL>
         <HR>
     <% } %>
+    &nbsp;
 <% } %>
 
 <!-- ============ METHOD DETAIL ========== -->
@@ -367,15 +389,16 @@ ${classDoc.commentText()}
         <PRE>${modifiers(method)}${returnType(method)} <B>${method.name()}</B>(<%= method.parameters().collect{ param -> "${param.isTypeAvailable()?'<a href="' + classDoc.getRelativeRootPath() + param.type().getFullPathName() + '.html">' + param.type().name() + '</a>':param.typeName()} ${param.name()}" }.join(", ") %>)</PRE>
         <DL>
         <DD>${method.commentText()}
+        </DD>
         <P>
         </DL>
         <HR>
     <% } %>
+    &nbsp;
 <% } %>
 
 <!-- ========= END OF CLASS DATA ========= -->
 <HR>
-
 
 </BODY>
 </HTML>
