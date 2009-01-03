@@ -127,6 +127,10 @@ class RegularExpressionsTest extends GroovyTestCase {
         assert 'x1\\2345' == 'x1\\23z4zz5'.replaceAll(p, c)
         assert '$1$2345' == 'z$1$2345'.replaceAll(p, c)
         assert '12345' == '12345z'.replaceAll(p, c)
+        assert '12345' == 'z12345z'.replaceAll(p, c)
+        assert '12345' == 'z12z345z'.replaceAll(p, c)
+        assert '12345' == 'z12z3zz45z'.replaceAll(p, c)
+        assert '12345' == 'z12z3zzz45z'.replaceAll(p, c)
         assert '12345' == '12345'.replaceAll(p, c)
     }
 }
