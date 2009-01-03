@@ -124,13 +124,19 @@ class RegularExpressionsTest extends GroovyTestCase {
         def p = /([^z]*)(z)/
         def c = { all, m, d -> m }
         assert 'x12345' == 'x123z45'.replaceAll(p, c)
-        assert 'x1\\2345' == 'x1\\23z4zz5'.replaceAll(p, c)
-        assert '$1$2345' == 'z$1$2345'.replaceAll(p, c)
         assert '12345' == '12345z'.replaceAll(p, c)
         assert '12345' == 'z12345z'.replaceAll(p, c)
         assert '12345' == 'z12z345z'.replaceAll(p, c)
-        assert '12345' == 'z12z3zz45z'.replaceAll(p, c)
+        assert '12345' == 'zz12z3zz45z'.replaceAll(p, c)
         assert '12345' == 'z12z3zzz45z'.replaceAll(p, c)
         assert '12345' == '12345'.replaceAll(p, c)
+        assert '$1$2345' == 'z$1$2345'.replaceAll(p, c)
+        assert '1$2345$' == 'z1$2345$'.replaceAll(p, c)
+        assert '2345\\' == '23z45zz\\'.replaceAll(p, c)
+        assert 'x1\\2345' == 'x1\\23z4zz5'.replaceAll(p, c)
+        assert '\\2345' == '\\23z45zzz'.replaceAll(p, c)
+        assert '\\2345\\' == '\\23z45\\'.replaceAll(p, c)
+        assert '\\23\\\\45\\' == '\\23\\\\45\\'.replaceAll(p, c)
+        assert '$\\23\\$\\45\\' == '$\\23\\$\\45\\'.replaceAll(p, c)
     }
 }
