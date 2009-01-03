@@ -20,4 +20,5 @@ public interface GroovyParameter{
 	String name();
 	GroovyType type();
 	String typeName();
+    String defaultValue();
 }

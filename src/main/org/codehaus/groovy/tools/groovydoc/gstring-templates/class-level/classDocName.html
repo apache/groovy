@@ -34,6 +34,8 @@
     ]
     def isRequired = { f, v -> def req = f.constantValueExpression() == null; req.toString() == v }
     def upcase = { n -> n[0].toUpperCase() + n[1..-1] }
+    def paramsOf = { n -> n.parameters().collect{ param -> (param.isTypeAvailable() ? '<a href="' + classDoc.getRelativeRootPath() + param.type().getFullPathName() + '.html">' + param.type().name() + '</a>' : param.typeName() ) + ' ' + param.name() + (param.defaultValue() ? " = " + param.defaultValue():"") }.join(", ") }
+    def nameFromParams = { n -> n.name() + '(' + n.parameters().collect{ param -> param.isTypeAvailable()?param.type().fullDottedName():param.typeName() }.join(', ') + ')' }
 %>
 <HTML>
 <HEAD>
@@ -242,7 +244,7 @@ ${classDoc.commentText()}
     <% for (constructor in classDoc.constructors()) { %>
         <TR BGCOLOR="white" CLASS="TableRowColor">
         <TD>
-            <CODE><B><a href="">${constructor.name()}</a></B>(<%= constructor.parameters().collect{ param -> "${param.isTypeAvailable()?'<a href="' + classDoc.getRelativeRootPath() + param.type().getFullPathName() + '.html">' + param.type().name() + '</a>':param.typeName()} ${param.name()}" }.join(", ") %>)</CODE>
+            <CODE><B><a href="#${nameFromParams(constructor)}">${constructor.name()}</a></B>(${paramsOf(constructor)})</CODE>
             <BR>
             <P>${constructor.firstSentenceCommentText()}</P>
         </TD>
@@ -268,7 +270,7 @@ ${classDoc.commentText()}
             <CODE>${modifiers(method)}${returnType(method)}</CODE></FONT>
         </TD>
         <TD>
-            <FONT CLASS="ClassItemFont"><CODE><B><a href="#${method.name()}(<%= method.parameters().collect{ param -> param.isTypeAvailable()?param.type().fullDottedName():param.typeName() }.join(', ') %>)">${method.name()}</a></B>(<%= method.parameters().collect{ param -> "${param.isTypeAvailable()?'<a href="' + classDoc.getRelativeRootPath() + param.type().getFullPathName() + '.html">' + param.type().name() + '</a>':param.typeName()} ${param.name()}" }.join(", ") %>)</CODE></FONT>
+            <CODE><b><a href="#${nameFromParams(method)}">${method.name()}</a></b>(${paramsOf(method)})</CODE>
             <BR>
             <P>${method.firstSentenceCommentText()}</P>
         </TD>
@@ -360,9 +362,9 @@ ${classDoc.commentText()}
     </TR>
     </TABLE>
     <% for (constructor in classDoc.constructors()) { %>
-        <A NAME="${constructor.name()}(<%= constructor.parameters().collect{ param -> param.isTypeAvailable()?param.type().fullDottedName():param.typeName() }.join(', ') %>)"><!-- --></A><H3>
+        <A NAME="${nameFromParams(constructor)}"><!-- --></A><H3>
         ${constructor.name()}</H3>
-        <PRE>${modifiers(constructor)}<B>${constructor.name()}</B>(<%= constructor.parameters().collect{ param -> "${param.isTypeAvailable()?'<a href="' + classDoc.getRelativeRootPath() + param.type().getFullPathName() + '.html">' + param.type().name() + '</a>':param.typeName()} ${param.name()}" }.join(", ") %>)</PRE>
+        <PRE>${modifiers(constructor)}<B>${constructor.name()}</B>(${paramsOf(constructor)})</PRE>
         <DL>
         <DD>${constructor.commentText()}
         </DD>
@@ -384,9 +386,9 @@ ${classDoc.commentText()}
     </TR>
     </TABLE>
     <% for (method in classDoc.methods()) { %>
-        <A NAME="${method.name()}(<%= method.parameters().collect{ param -> param.isTypeAvailable()?param.type().fullDottedName():param.typeName() }.join(', ') %>)"><!-- --></A><H3>
+        <A NAME="${nameFromParams(method)}"><!-- --></A><H3>
         ${method.name()}</H3>
-        <PRE>${modifiers(method)}${returnType(method)} <B>${method.name()}</B>(<%= method.parameters().collect{ param -> "${param.isTypeAvailable()?'<a href="' + classDoc.getRelativeRootPath() + param.type().getFullPathName() + '.html">' + param.type().name() + '</a>':param.typeName()} ${param.name()}" }.join(", ") %>)</PRE>
+        <PRE>${modifiers(method)}${returnType(method)} <B>${method.name()}</B>(${paramsOf(method)})</PRE>
         <DL>
         <DD>${method.commentText()}
         </DD>

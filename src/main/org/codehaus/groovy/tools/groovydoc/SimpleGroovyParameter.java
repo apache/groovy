@@ -18,27 +18,40 @@ package org.codehaus.groovy.tools.groovydoc;
 import org.codehaus.groovy.groovydoc.*;
 
 public class SimpleGroovyParameter implements GroovyParameter {
-	private String name;
-	private String typeName;
+    private String name;
+    private String typeName;
+    private String defaultValue;
     private GroovyType type;
 
     public SimpleGroovyParameter(String name) {
-		this.name = name;
-	}
-	public String name() {return name;}
-	public String typeName() {
+        this.name = name;
+    }
+
+    public String defaultValue() {
+        return defaultValue;
+    }
+
+    public void setDefaultValue(String defaultValue) {
+        this.defaultValue = defaultValue;
+    }
+
+    public String name() {
+        return name;
+    }
+
+    public String typeName() {
         if (type == null) {
             return typeName;
         }
         return type.simpleTypeName();
     }
-	
-	public void setTypeName(String typeName) {
-		this.typeName = typeName;
-	}
-	
-//	public GroovyAnnotationDesc[] annotations() {/*todo*/return null;}
-	public GroovyType type() {
+
+    public void setTypeName(String typeName) {
+        this.typeName = typeName;
+    }
+
+    //	public GroovyAnnotationDesc[] annotations() {/*todo*/return null;}
+    public GroovyType type() {
         return type;
     }
 

@@ -265,19 +265,19 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         for (int i = 1; i < t.getNumberOfChildren(); i++) {
             child = (GroovySourceAST) child.getNextSibling();
         }
-        if (child.getNumberOfChildren() == 0) {
-            return getChildTextFromSource(child);
+        GroovySourceAST nodeToProcess = child;
+        if (child.getNumberOfChildren() > 0) {
+            nodeToProcess = (GroovySourceAST) child.getFirstChild();
         }
-        return getChildTextFromSource((GroovySourceAST) child.getFirstChild());
+        return getChildTextFromSource(nodeToProcess, ";");
     }
 
-    private String getChildTextFromSource(GroovySourceAST child) {
+    private String getChildTextFromSource(GroovySourceAST child, String tokens) {
         String text = sourceBuffer.getSnippet(
                 new LineColumn(child.getLine(), child.getColumn()),
                 new LineColumn(child.getLine() + 1, 0));
-        int semi = text.indexOf(";");
-        if (semi >= 0) return text.substring(0, semi);
-        else return text;
+        StringTokenizer st = new StringTokenizer(text, tokens);
+        return st.nextToken();
     }
 
     @Override
@@ -467,6 +467,19 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 SimpleGroovyParameter parameter = new SimpleGroovyParameter(parameterName);
                 parameter.setTypeName(parameterTypeName);
                 executableMemberDoc.add(parameter);
+                if (currentNode.getNumberOfChildren() == 4) {
+                    GroovySourceAST paramPart = (GroovySourceAST) currentNode.getFirstChild();
+                    for (int i = 1; i < currentNode.getNumberOfChildren(); i++) {
+                        paramPart = (GroovySourceAST) paramPart.getNextSibling();
+                    }
+                    GroovySourceAST nodeToProcess = paramPart;
+                    if (paramPart.getNumberOfChildren() > 0) {
+                        nodeToProcess = (GroovySourceAST) paramPart.getFirstChild();
+                    }
+                    // hack warning!
+                    // TODO handle , and ) when they occur within Strings
+                    parameter.setDefaultValue(getChildTextFromSource(nodeToProcess, ",)"));
+                }
                 currentNode = (GroovySourceAST) currentNode.getNextSibling();
             }
         }
