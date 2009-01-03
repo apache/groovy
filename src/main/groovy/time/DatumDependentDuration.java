@@ -21,13 +21,13 @@ import java.util.Date;
 import org.codehaus.groovy.runtime.TimeCategory;
 
 /**
+ * DatumDependentDuration represents durations whose length in milliseconds cannot be determined without knowing the datum point.
+ * <p/>
+ * I don't know how many days in a year unless I know if it's a leap year or not.
+ * <p/>
+ * I don't know how many days in a month unless I know the name of the month (and if it's a leap year if the month is February)
+ *
  * @author John Wilson tug@wilson.co.uk
- *         <p/>
- *         DatumDependentDuration represents durations whose length in milliseconds cannot be determined withou knowing the datum point.
- *         <p/>
- *         I don't know how many days in a year unless I know if it's a leap year or not.
- *         <p/>
- *         I don't know how many days in a month unless I know the name of the month (and if it's a leap yaer if the month is February)
  */
 public class DatumDependentDuration extends BaseDuration {
     public DatumDependentDuration(final int years, final int months, final int days, final int hours, final int minutes, final int seconds, final int millis) {

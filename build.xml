@@ -849,7 +849,7 @@ Not found: ${groovyJar14path}
         <groovydoc
                 destdir="${docsDirectory}/gapi"
                 sourcepath="${mainSourceDirectory}"
-                packagenames="**.*"
+                packagenames="groovy.time"
                 use="true"
                 windowtitle="groovydoc"
                 private="false">
