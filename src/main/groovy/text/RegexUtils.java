@@ -44,9 +44,11 @@ public class RegexUtils {
     /**
      * Replacement for Matcher.quoteReplacement from JDK 1.5
      */
-    public static String quoteReplacement(String s) {
-       s = s.replaceAll("\\$", "\\$\\$");
-       s = s.replaceAll("\\\\", "\\\\\\\\");
-       return s;
+    public static String quoteReplacement(final String str) {
+        if ((str.indexOf('$') < 0) && (str.indexOf('\\') < 0)) {
+            return str;
+        }
+        
+        return str.replaceAll("[$\\\\]", "\\\\$0");
     }
 }
