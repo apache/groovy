@@ -83,17 +83,6 @@ void doTest(def param) {
     def t3 = sw3.toString()
     def t4 = sw4.toString()
     
-    println param.getClass()
-    println t1
-    println t2
-    println t3
-    println t4
-    println (param.toString())
-    println String.valueOf(param)
-    println org.codehaus.groovy.runtime.InvokerHelper.toString(param)
-    println (param as String)
-    println param
-    
     assert t1 == t2
     assert t1 == t3
     assert t1 == t4
@@ -103,8 +92,6 @@ void doTest(def param) {
     sw3 = new StringWriter()
     sw4 = new StringWriter()
 
-//    sw1.write(String.valueOf(param))
-//    sw1.write((param.is(null)) ? 'null' : param.toString())
     sw1.write(param as String)
     sw1.write(NEWLINE)
     sw2.println(param)
@@ -122,7 +109,7 @@ void doTest(def param) {
 }
 
 void testGroovy3227() { 
-//    doTest(null)
+    doTest(null)
     doTest("foo")
     doTest(true)
     doTest(false)
@@ -134,7 +121,7 @@ void testGroovy3227() {
     doTest(new Double(1234.5678))
     doTest(new BigInteger("123456789012345678901234567890"))
     doTest(new BigDecimal("12345678901234567890.1234567890123456789"))
-    doTest(new Date())
+    doTest(new Date(107, 12, 31))
     doTest(new StringBuffer("bar"))
     doTest([null, "foo", true, false, new Integer(1234)])
     doTest(["foo" : "bar", "true": true, "int": new Integer(1234)])
