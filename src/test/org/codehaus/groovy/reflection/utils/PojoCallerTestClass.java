@@ -18,12 +18,9 @@ package org.codehaus.groovy.reflection.utils;
 import org.codehaus.groovy.reflection.ReflectionUtils;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Danno.Ferrin
- * Date: Jun 24, 2008
- * Time: 9:50:39 PM
+ * Test artifact.
  */
-class PojoCalleTestClass {
+class PojoCallerTestClass {
     public static Class staticClassCaller() {
         return ReflectionUtils.getCallingClass();
     }
