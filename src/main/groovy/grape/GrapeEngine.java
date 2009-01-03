@@ -35,4 +35,7 @@ public interface GrapeEngine {
     Map<String, Map<String, List<String>>> enumerateGrapes();
 
     URI[] resolve(Map args, Map... dependencies);
+
+    Map[] listDependencies(ClassLoader classLoader);
 }
+

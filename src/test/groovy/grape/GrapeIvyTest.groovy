@@ -73,6 +73,25 @@ class GrapeIvyTest extends GroovyTestCase {
         assert shell.evaluate("import org.apache.poi.hssf.model.Sheet; Sheet.class").name == 'org.apache.poi.hssf.model.Sheet'
     }
 
+    public void testListDependencies() {
+        GroovyClassLoader loader = new GroovyClassLoader()
+        GroovyShell shell = new GroovyShell(loader)
+        shouldFail(CompilationFailedException) {
+            shell.evaluate("import com.jidesoft.swing.JideSplitButton; JideSplitButton.class")
+            shell.evaluate("import org.apache.poi.hssf.model.Sheet; Sheet.class")
+        }
+
+        Grape.grab(classLoader:loader,
+            [groupId:'org.apache.poi', artifactId:'poi', version:'3.0.1-FINAL'],
+            [groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,2.3)'])
+
+        def loadedDependencies = Grape.listDependencies(loader)
+        assert loadedDependencies == [
+            [group:'org.apache.poi', module:'poi', version:'3.0.1-FINAL'],
+            [group:'com.jidesoft', module:'jide-oss', version:'[2.2.1,2.3)']
+        ]
+    }
+
     public void testGrabRefless() {
         GroovyClassLoader loader = new GroovyClassLoader()
         GroovyShell shell = new GroovyShell(loader)
@@ -164,7 +183,7 @@ class GrapeIvyTest extends GroovyTestCase {
         Grape.grab(groupId:'log4j', artifactId:'log4j', version:'1.2.13', classLoader:loader)
         jars = loader.getURLs().collect {URL it -> it.getPath().split('/')[-1]}
         // because log4j 1.1.3 was loaded first, 1.2.13 should not get loaded
-        // even though it was explicitly asked for 
+        // even though it was explicitly asked for
         assert jars.contains ("log4j-1.1.3.jar")
         assert !jars.contains ("log4j-1.2.13.jar")
     }
