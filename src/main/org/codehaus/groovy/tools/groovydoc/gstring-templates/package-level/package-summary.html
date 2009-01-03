@@ -1,6 +1,14 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML>
 <HEAD>
+<%
+def classTypes = [
+    "Interface":"isInterface",
+    "Class":"isClass",
+    "Enum":"isEnum",
+    "Annotation Type":"isAnnotationType"
+]
+%>
 <TITLE>
 ${packageDoc.nameWithDots()} ({todo.title})
 </TITLE>
@@ -22,47 +30,39 @@ function windowTitle()
 
 <BODY BGCOLOR="white" onload="windowTitle();">
 
-
-
 <HR>
 <H2>
 Package ${packageDoc.nameWithDots()}
 </H2>
 
-<TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
-<TR BGCOLOR="#90DDF7" CLASS="TableHeadingColor">
-<TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2">
-<B>Interface Summary</B></FONT></TH>
-</TR>
-<!--<TR BGCOLOR="white" CLASS="TableRowColor">
-<TD WIDTH="15%"><B><A HREF="../../../com/javanicus/redbook/Pausable.html" title="interface in com.javanicus.redbook">Pausable</A></B></TD>
-<TD>&nbsp;</TD>
-</TR>-->
-</TABLE>
-&nbsp;
-
-<P>
+<%
+classTypes.each{ k, v ->
+    if (packageDoc.ordinaryClasses().any{ it."$v"() }) {
+%>
 
 <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
-<TR BGCOLOR="#90DDF7" CLASS="TableHeadingColor">
-<TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2">
-<B>Class Summary</B></FONT></TH>
-</TR>
-<% for (classDoc in packageDoc.ordinaryClasses()) { %>
-<TR BGCOLOR="white" CLASS="TableRowColor">
-<TD WIDTH="15%"><B><A HREF="${classDoc.name()}.html" title="class in ${packageDoc.name()}">${classDoc.name()}</A></B></TD>
-<TD>&nbsp;</TD>
-</TR>
-<% } %>
+    <TR BGCOLOR="#90DDF7" CLASS="TableHeadingColor">
+    <TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2">
+    <B>${k} Summary</B></FONT></TH>
+    </TR>
+<%
+    for (classDoc in packageDoc.ordinaryClasses()) {
+        if (classDoc."$v"()) {
+%>
+            <TR BGCOLOR="white" CLASS="TableRowColor">
+            <TD WIDTH="15%"><B><A HREF="${classDoc.name()}.html" title="class in ${packageDoc.name()}">${classDoc.name()}</A></B></TD>
+            <TD>&nbsp;</TD>
+            </TR>
+        <% } %>
+    <% } %>
 </TABLE>
 &nbsp;
-
 <P>
 <DL>
 </DL>
-
-
 <HR>
+    <% } %>
+<% } %>
 
 </BODY>
 </HTML>
