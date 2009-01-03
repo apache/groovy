@@ -21,7 +21,9 @@ public class RegexUtils {
     private static final String Q = "\\Q";
     private static final int NO_MATCH = -1;
 
-    // Replacement for Pattern.quote from JDK 1.5
+    /**
+     * Replacement for Pattern.quote from JDK 1.5
+     */
     public static String quote(String s) {
         final int len = s.length();
         final StringBuffer sb = new StringBuffer(len * 2);
@@ -37,5 +39,14 @@ public class RegexUtils {
             cur = eIndex + 2;
         }
         return sb.append(s.substring(cur, len)).append(E).toString();
+    }
+    
+    /**
+     * Replacement for Matcher.quoteReplacement from JDK 1.5
+     */
+    public static String quoteReplacement(String s) {
+       s = s.replaceAll("\\$", "\\$\\$");
+       s = s.replaceAll("\\\\", "\\\\\\\\");
+       return s;
     }
 }
