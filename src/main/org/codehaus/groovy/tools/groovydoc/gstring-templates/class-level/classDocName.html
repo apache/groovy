@@ -101,7 +101,7 @@ function windowTitle()
 
 </TR>
 <TR>
-<TD VALIGN="top" CLASS="NavBarCell3"><FONT SIZE="-2"><!-- TODO split annotation into required/optional -->
+<TD VALIGN="top" CLASS="NavBarCell3"><FONT SIZE="-2">
 SUMMARY:&nbsp;<%
     if (classDoc.isAnnotationType()) {
         def hasReq = classDoc.fields().any{ isRequired(it, "true") }
