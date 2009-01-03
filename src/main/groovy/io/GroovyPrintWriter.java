@@ -78,11 +78,20 @@ public class GroovyPrintWriter extends PrintWriter
 // Don't need to do this if Groovy is going to print char[] like a string.
 //    public void print(char[] x) 
 //    {
-//        super.write(InvokerHelper.toString(x));
+//        write(InvokerHelper.toString(x));
 //    }
 
     public void print(Object x) 
     {
-        super.write(InvokerHelper.toString(x));
+        write(InvokerHelper.toString(x));
+    }
+
+    public void println(Object x) 
+    {
+        // JDK 1.6 has changed the implementation to do a
+        // String.valueOf(x) rather than call print(x).
+        // Probably to improve performance by doing the conversion outside the lock.
+        // This will do the same thing for us, and we don't have to have access to the lock.
+        println(InvokerHelper.toString(x));
     }
 }
