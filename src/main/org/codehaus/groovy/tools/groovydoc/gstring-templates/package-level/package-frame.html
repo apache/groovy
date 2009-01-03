@@ -4,6 +4,15 @@
 <TITLE>
 ${packageDoc.nameWithDots()}
 </TITLE>
+<%
+def classTypes = [
+    "interface":"isInterface",
+    "class":"isClass",
+    "enum":"isEnum",
+    "annotation type":"isAnnotationType"
+]
+def pluralize = { name -> name[0].toUpperCase() + name[1..-1] + (name.endsWith("s") ? "es" : "s") }
+%>
 
 <META NAME="keywords" CONTENT="${packageDoc.name()} package">
 
@@ -15,72 +24,29 @@ ${packageDoc.nameWithDots()}
 <FONT size="+1" CLASS="FrameTitleFont">
 <A HREF="package-summary.html" target="classFrame">${packageDoc.nameWithDots()}</A></FONT>
 
-<% if (packageDoc.ordinaryClasses().any{ it.isInterface() }) { %>
+<%
+classTypes.each{ k, v ->
+    if (packageDoc.ordinaryClasses().any{ it."$v"() }) {
+%>
+
 <TABLE BORDER="0" WIDTH="100%" SUMMARY="">
 <TR>
 <TD NOWRAP><FONT size="+1" CLASS="FrameHeadingFont">
-Interfaces</FONT>&nbsp;
+${pluralize(k)}</FONT>&nbsp;
 <FONT CLASS="FrameItemFont"><%
     for (classDoc in packageDoc.ordinaryClasses()) {
-        if (classDoc.isInterface()) { %>
-<BR>
-<A HREF="${classDoc.name()}.html" title="interface in ${packageDoc.name()}" target="classFrame"><I>${classDoc.name()}</I></A><%
+        if (classDoc."$v"()) {
+            %><BR><A HREF="${classDoc.name()}.html" title="${k} in ${packageDoc.nameWithDots()}" target="classFrame"><%
+            if (classDoc.isInterface()) { %><I><% }
+            %>${classDoc.name()}<%
+            if (classDoc.isInterface()) { %></I><% }
+            %></A><%
         }
     }
 %></FONT></TD>
 </TR>
 </TABLE>
 <% } %>
-
-<% if (packageDoc.ordinaryClasses().any{ it.isClass() }) { %>
-<TABLE BORDER="0" WIDTH="100%" SUMMARY="">
-<TR>
-<TD NOWRAP><FONT size="+1" CLASS="FrameHeadingFont">
-Classes</FONT>&nbsp;
-<FONT CLASS="FrameItemFont"><%
-    for (classDoc in packageDoc.ordinaryClasses()) {
-        if (classDoc.isClass()) { %>
-<BR>
-<A HREF="${classDoc.name()}.html" title="class in ${packageDoc.name()}" target="classFrame">${classDoc.name()}</A><%
-        }
-    }
-%></FONT></TD>
-</TR>
-</TABLE>
-<% } %>
-
-<% if (packageDoc.ordinaryClasses().any{ it.isAnnotationType() }) { %>
-<TABLE BORDER="0" WIDTH="100%" SUMMARY="">
-<TR>
-<TD NOWRAP><FONT size="+1" CLASS="FrameHeadingFont">
-Annotation Types</FONT>&nbsp;
-<FONT CLASS="FrameItemFont"><%
-    for (classDoc in packageDoc.ordinaryClasses()) {
-        if (classDoc.isAnnotationType()) { %>
-<BR>
-<A HREF="${classDoc.name()}.html" title="annotation type in ${packageDoc.name()}" target="classFrame">${classDoc.name()}</A><%
-        }
-    }
-%></FONT></TD>
-</TR>
-</TABLE>
-<% } %>
-
-<% if (packageDoc.ordinaryClasses().any{ it.isEnum() }) { %>
-<TABLE BORDER="0" WIDTH="100%" SUMMARY="">
-<TR>
-<TD NOWRAP><FONT size="+1" CLASS="FrameHeadingFont">
-Enums</FONT>&nbsp;
-<FONT CLASS="FrameItemFont"><%
-    for (classDoc in packageDoc.ordinaryClasses()) {
-        if (classDoc.isEnum()) { %>
-<BR>
-<A HREF="${classDoc.name()}.html" title="enum in ${packageDoc.name()}" target="classFrame">${classDoc.name()}</A><%
-        }
-    }
-%></FONT></TD>
-</TR>
-</TABLE>
 <% } %>
 
 </BODY>
