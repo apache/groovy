@@ -26,6 +26,7 @@ import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.Project;
 
 import java.util.ArrayList;
+import java.util.Properties;
 
 public class GroovyDocToolTest extends GroovyTestCase {
     GroovyDocTool xmlTool;
@@ -43,7 +44,8 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 new String[]{TEMPLATES_DIR + "/top-level/rootDocStructuredData.xml"},
                 new String[]{TEMPLATES_DIR + "/package-level/packageDocStructuredData.xml"},
                 new String[]{TEMPLATES_DIR + "/class-level/classDocStructuredData.xml"},
-                new ArrayList()
+                new ArrayList(),
+                new Properties()
         );
 
         xmlToolForTests = new GroovyDocTool(
@@ -52,7 +54,8 @@ public class GroovyDocToolTest extends GroovyTestCase {
                 new String[]{TEMPLATES_DIR + "/top-level/rootDocStructuredData.xml"},
                 new String[]{TEMPLATES_DIR + "/package-level/packageDocStructuredData.xml"},
                 new String[]{TEMPLATES_DIR + "/class-level/classDocStructuredData.xml"},
-                new ArrayList()
+                new ArrayList(),
+                new Properties()                
         );
     }
 
