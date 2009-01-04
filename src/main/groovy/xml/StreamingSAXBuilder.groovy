@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -60,10 +60,11 @@ class StreamingSAXBuilder extends AbstractStreamingBuilder {
         }
         def hiddenNamespaces = [:]
         pendingNamespaces.each {key, value ->
-            hiddenNamespaces[key] = namespaces[key]
-            namespaces[key] = value
-            attributes.addAttribute("http://www.w3.org/2000/xmlns/", key, "xmlns:${key}", "CDATA", "$value")
-            contentHandler.startPrefixMapping(key, value)
+            def k = (key == ':' ? '' : key)
+            hiddenNamespaces[k] = namespaces[key]
+            namespaces[k] = value
+            attributes.addAttribute("http://www.w3.org/2000/xmlns/", k, "xmlns${k == '' ? '' : ":$k"}", "CDATA", "$value")
+            contentHandler.startPrefixMapping(k, value)
         }
         // set up the tag info
         def uri = ""
