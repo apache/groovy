@@ -6320,7 +6320,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #toMapString(Map)
      * @since 1.0
      */
-    public static String toString(Map self) {
+    public static String toString(AbstractMap self) {
         return toMapString(self);
     }
 
@@ -6346,7 +6346,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #toListString(Collection)
      * @since 1.0
      */
-    public static String toString(Collection self) {
+    public static String toString(AbstractCollection self) {
         return toListString(self);
     }
 

@@ -10,14 +10,11 @@ class PrintTest extends GroovyTestCase {
         assertToString([], "[]")
         assertToString([1, 2, "hello"], '[1, 2, hello]')
 
-        // TODO: change toString on Map to produce same as inspect method
-        assertToString([1: 20, 2: 40, 3: 'cheese'], '{1=20, 2=40, 3=cheese}')
-        assertToString([:], "{}")
+        assertToString([1: 20, 2: 40, 3: 'cheese'], '[1:20, 2:40, 3:cheese]')
+        assertToString([:], "[:]")
 
-        // TODO: change toString on Map to produce same as inspect method
-        assertToString([['bob': 'drools', 'james': 'geronimo']], '[{bob=drools, james=geronimo}]')
-        // TODO: change toString on Map to produce same as inspect method
-        assertToString([5, ["bob", "james"], ["bob": "drools", "james": "geronimo"], "cheese"], '[5, [bob, james], {bob=drools, james=geronimo}, cheese]')
+        assertToString([['bob': 'drools', 'james': 'geronimo']], '[[bob:drools, james:geronimo]]')
+        assertToString([5, ["bob", "james"], ["bob": "drools", "james": "geronimo"], "cheese"], '[5, [bob, james], [bob:drools, james:geronimo], cheese]')
     }
 
     void testInspect() {
