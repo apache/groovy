@@ -41,6 +41,26 @@ public class StreamingSAXBuilderTest extends GroovyTestCase {
         assert xmlDiff.similar(), xmlDiff.toString()
     }
 
+    public void testDefaultSerializationNamespaces() {
+        def handler = TransformerFactory.newInstance().newTransformerHandler()
+        def outstream = new ByteArrayOutputStream()
+        handler.setResult(new StreamResult(outstream))
+
+        def doc = new StreamingSAXBuilder().bind {
+            mkp.declareNamespace("" : "uri:urn1")
+            mkp.declareNamespace("x" : "uri:urn2")
+            outer {
+                'x:inner'('hello')
+            }
+        }
+        def expected = '<outer xmlns="uri:urn1" xmlns:x="uri:urn2"><x:inner>hello</x:inner></outer>'
+
+        doc(handler)
+        XMLUnit.setIgnoreWhitespace(true)
+        def xmlDiff = new Diff(expected, outstream.toString())
+        assert xmlDiff.similar(), xmlDiff.toString()
+    }
+
     public void testCustomHandler() {
         def visited = []
         def handler = [
