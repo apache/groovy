@@ -23,44 +23,74 @@ public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements Gr
 	private GroovyPackageDoc packageDoc;
     private boolean publicElement;
     private boolean staticElement;
+    private boolean finalElement;
+    private boolean privateElement;
+    private boolean protectedElement;
 
     public SimpleGroovyProgramElementDoc(String name) {
-		super(name);
-	}
-	
-	public SimpleGroovyProgramElementDoc(String name, List<Groovydoc.LinkArgument> links) {
-		super(name, links);
-	}
-
-	public GroovyPackageDoc containingPackage() {
-		return packageDoc;
-	}
-	public void setContainingPackage(GroovyPackageDoc packageDoc) {
-		this.packageDoc = packageDoc;
-	}
-
-    public void setPublic(boolean publicElement) {
-        this.publicElement = publicElement;
+        super(name);
     }
+
+    public SimpleGroovyProgramElementDoc(String name, List<Groovydoc.LinkArgument> links) {
+        super(name, links);
+    }
+
+    public GroovyPackageDoc containingPackage() {
+        return packageDoc;
+    }
+
+    public void setContainingPackage(GroovyPackageDoc packageDoc) {
+        this.packageDoc = packageDoc;
+    }
+
+    public void setPublic(boolean b) {
+        publicElement = b;
+    }
+
     public boolean isPublic() {
         return publicElement;
     }
 
-    public void setStatic(boolean staticElement) {
-        this.staticElement = staticElement;
+    public void setStatic(boolean b) {
+        staticElement = b;
     }
+
     public boolean isStatic() {
         return staticElement;
     }
 
+    public boolean isFinal() {
+        return finalElement;
+    }
+
+    public void setFinal(boolean b) {
+        this.finalElement = b;
+    }
+
+    public void setPrivate(boolean b) {
+        privateElement = b;
+    }
+
+    public void setProtected(boolean b) {
+        protectedElement = b;
+    }
+
+    public boolean isPrivate() {
+        return privateElement;
+    }
+
+    public boolean isProtected() {
+        return protectedElement;
+    }
+
     //	public GroovyAnnotationDesc[] annotations() {/*todo*/return null;}
 	public GroovyClassDoc containingClass() {/*todo*/return null;}
-	public boolean isFinal() {/*todo*/return false;}
-	public boolean isPackagePrivate() {/*todo*/return false;}
-	public boolean isPrivate() {/*todo*/return false;}
-	public boolean isProtected() {/*todo*/return false;}
-	public String modifiers() {/*todo*/return null;}
-	public int modifierSpecifier() {/*todo*/return 0;}
-	public String qualifiedName() {/*todo*/return null;}
 
+    public boolean isPackagePrivate() {/*todo*/return false;}
+
+    public String modifiers() {/*todo*/return null;}
+
+    public int modifierSpecifier() {/*todo*/return 0;}
+
+    public String qualifiedName() {/*todo*/return null;}
 }

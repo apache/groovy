@@ -22,12 +22,22 @@ import java.util.List;
 import java.util.ArrayList;
 
 public class SimpleGroovyMemberDoc extends SimpleGroovyProgramElementDoc implements GroovyMemberDoc {
+    private boolean abstractElement;
+
     public SimpleGroovyMemberDoc(String name) {
         this(name, new ArrayList<Groovydoc.LinkArgument>());
     }
 
     public SimpleGroovyMemberDoc(String name, List<Groovydoc.LinkArgument> links) {
         super(name, links);
+    }
+
+    public void setAbstract(boolean b) {
+        abstractElement = b;
+    }
+
+    public boolean isAbstract() {
+        return abstractElement;
     }
 
     public boolean isSynthetic() {/*todo*/

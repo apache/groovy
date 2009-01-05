@@ -251,6 +251,7 @@ public class Groovydoc extends Task {
         Properties properties = new Properties();
         properties.put("windowTitle", windowTitle);
         properties.put("footer", footer);
+        properties.put("privateScope", privateScope);
 
         if (sourcePath != null) {
             sourceDirs.addExisting(sourcePath);

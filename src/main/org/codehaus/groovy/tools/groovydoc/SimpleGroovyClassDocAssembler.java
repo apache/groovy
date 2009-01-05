@@ -27,6 +27,7 @@ import org.codehaus.groovy.antlr.treewalker.VisitorAdapter;
 import org.codehaus.groovy.groovydoc.GroovyConstructorDoc;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.ant.Groovydoc;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import antlr.collections.AST;
 
 public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements GroovyTokenTypes {
@@ -341,7 +342,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         return grandParentNode != null && grandParentNode.getType() == LITERAL_new;
     }
 
-    private void processModifiers(GroovySourceAST t, SimpleGroovyProgramElementDoc programElementDoc) {
+    private void processModifiers(GroovySourceAST t, SimpleGroovyMemberDoc memberDoc) {
         GroovySourceAST modifiers = t.childOfType(MODIFIERS);
         if (modifiers != null) {
             AST currentModifier = modifiers.getFirstChild();
@@ -350,18 +351,28 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 int type = currentModifier.getType();
                 switch (type) {
                     case LITERAL_protected:
+                        memberDoc.setProtected(true);
+                        seenNonPublicVisibilityModifier = true;
+                        break;
                     case LITERAL_private:
+                        memberDoc.setPrivate(true);
                         seenNonPublicVisibilityModifier = true;
                         break;
                     case LITERAL_static:
-                        programElementDoc.setStatic(true);
+                        memberDoc.setStatic(true);
+                        break;
+                    case FINAL:
+                        memberDoc.setFinal(true);
+                        break;
+                    case ABSTRACT:
+                        memberDoc.setAbstract(true);
                         break;
                 }
                 currentModifier = currentModifier.getNextSibling();
             }
             if (!seenNonPublicVisibilityModifier) {
                 // in groovy (and java asts turned into groovy by Groovifier), methods are assumed public, unless informed otherwise
-                programElementDoc.setPublic(true);
+                memberDoc.setPublic(true);
             }
         }
     }

@@ -10,11 +10,13 @@
 <!-- *                                      * -->
 <!-- **************************************** -->
 <%
-    boolean hasFields = (!classDoc.isAnnotationType() && classDoc.fields().length > 0)
-    boolean hasElements = (classDoc.isAnnotationType() && classDoc.fields().length > 0)
-    boolean hasConstructors = (classDoc.constructors().length > 0)
-    boolean hasMethods = (classDoc.methods().length > 0)
-    boolean hasEnumConstants = (classDoc.enumConstants().length > 0)
+    def visibleFields = classDoc.fields().findAll{ !it.isPrivate() || props.privateScope }
+    boolean hasFields = !classDoc.isAnnotationType() && visibleFields.size() > 0
+    boolean hasElements = classDoc.isAnnotationType() && visibleFields.size() > 0
+    boolean hasConstructors = classDoc.constructors().size() > 0
+    def visibleMethods = classDoc.methods().findAll{ !it.isPrivate() || props.privateScope }
+    boolean hasMethods = visibleMethods.size() > 0
+    boolean hasEnumConstants = classDoc.enumConstants().size() > 0
     def modifiers = { t ->
         (t.isPrivate()?"private&nbsp;":"") +
         (t.isPublic()?"public&nbsp;":"") +
@@ -23,9 +25,15 @@
         (t.isFinal()?"final&nbsp;":"") +
         (t.respondsTo('isAbstract') && t.isAbstract()?"abstract&nbsp;":"")
     }
+    def modifiersBrief = { t ->
+        (t.isPrivate()?"private&nbsp;":"") +
+        (t.isProtected()?"protected&nbsp;":"") +
+        (t.isStatic()?"static&nbsp;":"") +
+        (t.isFinal()?"final&nbsp;":"")
+    }
     def returnType = { t ->
         t.isReturnTypeAvailable() ?
-            '<a href="' + classDoc.getRelativeRootPath() + t.returnType().getFullPathName() + '.html">' + t.returnType().name() + '</a>' :
+            '<a href="' + classDoc.relativeRootPath + t.returnType().fullPathName + '.html">' + t.returnType().name() + '</a>' :
             t.returnType().fullDottedName()
     }
     def elementTypes = [
@@ -34,7 +42,7 @@
     ]
     def isRequired = { f, v -> def req = f.constantValueExpression() == null; req.toString() == v }
     def upcase = { n -> n[0].toUpperCase() + n[1..-1] }
-    def paramsOf = { n -> n.parameters().collect{ param -> (param.isTypeAvailable() ? '<a href="' + classDoc.getRelativeRootPath() + param.type().getFullPathName() + '.html">' + param.type().name() + '</a>' : param.typeName() ) + ' ' + param.name() + (param.defaultValue() ? " = " + param.defaultValue():"") }.join(", ") }
+    def paramsOf = { n -> n.parameters().collect{ param -> (param.isTypeAvailable() ? '<a href="' + classDoc.relativeRootPath + param.type().fullPathName + '.html">' + param.type().name() + '</a>' : param.typeName() ) + ' ' + param.name() + (param.defaultValue() ? " = " + param.defaultValue():"") }.join(", ") }
     def nameFromParams = { n -> n.name() + '(' + n.parameters().collect{ param -> param.isTypeAvailable()?param.type().fullDottedName():param.typeName() }.join(', ') + ')' }
 %>
 <HTML>
@@ -47,7 +55,7 @@ ${classDoc.name()}
 <META NAME="keywords" CONTENT="getTimezoneOffset()">
 
 <!-- todo stylesheet relative path -->
-<LINK REL ="stylesheet" TYPE="text/css" HREF="${classDoc.getRelativeRootPath()}stylesheet.css" TITLE="Style">
+<LINK REL ="stylesheet" TYPE="text/css" HREF="${classDoc.relativeRootPath}stylesheet.css" TITLE="Style">
 
 <SCRIPT type="text/javascript">
 function windowTitle()
@@ -71,15 +79,15 @@ function windowTitle()
 <A NAME="navbar_top_firstrow"><!-- --></A>
 <TABLE BORDER="0" CELLPADDING="0" CELLSPACING="3" SUMMARY="">
   <TR ALIGN="center" VALIGN="top">
-  <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="${classDoc.getRelativeRootPath()}overview-summary.html"><FONT CLASS="NavBarFont1"><B>Overview</B></FONT></A>&nbsp;</TD>
+  <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="${classDoc.relativeRootPath}overview-summary.html"><FONT CLASS="NavBarFont1"><B>Overview</B></FONT></A>&nbsp;</TD>
 
   <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="package-summary.html"><FONT CLASS="NavBarFont1"><B>Package</B></FONT></A>&nbsp;</TD>
   <TD BGCOLOR="#FFFFFF" CLASS="NavBarCell1Rev"> &nbsp;<FONT CLASS="NavBarFont1Rev"><B>Class</B></FONT>&nbsp;</TD>
   <!--<TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="package-tree.html"><FONT CLASS="NavBarFont1"><B>Tree</B></FONT></A>&nbsp;</TD>
-  <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="${classDoc.getRelativeRootPath()}deprecated-list.html"><FONT CLASS="NavBarFont1"><B>Deprecated</B></FONT></A>&nbsp;</TD>
-  <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="${classDoc.getRelativeRootPath()}index-all.html"><FONT CLASS="NavBarFont1"><B>Index</B></FONT></A>&nbsp;</TD>
+  <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="${classDoc.relativeRootPath}deprecated-list.html"><FONT CLASS="NavBarFont1"><B>Deprecated</B></FONT></A>&nbsp;</TD>
+  <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="${classDoc.relativeRootPath}index-all.html"><FONT CLASS="NavBarFont1"><B>Index</B></FONT></A>&nbsp;</TD>
 
-  <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="${classDoc.getRelativeRootPath()}help-doc.html"><FONT CLASS="NavBarFont1"><B>Help</B></FONT></A>&nbsp;</TD>-->
+  <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="${classDoc.relativeRootPath}help-doc.html"><FONT CLASS="NavBarFont1"><B>Help</B></FONT></A>&nbsp;</TD>-->
   </TR>
 </TABLE>
 </TD>
@@ -90,11 +98,11 @@ function windowTitle()
 
 <TR>
 <TD BGCOLOR="white" CLASS="NavBarCell2"><!--<FONT SIZE="-2">
-&nbsp;<A HREF="${classDoc.getRelativeRootPath()}groovy/lang/ExpandoMetaClass.ExpandoMetaProperty.html" title="class in groovy.lang"><B>PREV CLASS</B></A>&nbsp;
+&nbsp;<A HREF="${classDoc.relativeRootPath}groovy/lang/ExpandoMetaClass.ExpandoMetaProperty.html" title="class in groovy.lang"><B>PREV CLASS</B></A>&nbsp;
 
-&nbsp;<A HREF="${classDoc.getRelativeRootPath()}groovy/lang/GroovyClassLoader.html" title="class in groovy.lang"><B>NEXT CLASS</B></A></FONT>--></TD>
+&nbsp;<A HREF="${classDoc.relativeRootPath}groovy/lang/GroovyClassLoader.html" title="class in groovy.lang"><B>NEXT CLASS</B></A></FONT>--></TD>
 <TD BGCOLOR="white" CLASS="NavBarCell2"><FONT SIZE="-2">
-  <A HREF="${classDoc.getRelativeRootPath()}index.html?${classDoc.getFullPathName()}.html" target="_top"><B>FRAMES</B></A>  &nbsp;
+  <A HREF="${classDoc.relativeRootPath}index.html?${classDoc.fullPathName}.html" target="_top"><B>FRAMES</B></A>  &nbsp;
 &nbsp;<A HREF="${classDoc.name()}.html" target="_top"><B>NO FRAMES</B></A>  &nbsp;
 &nbsp;
 
@@ -153,7 +161,6 @@ ${classDoc.containingPackage().nameWithDots()}</FONT>
 <P>
 ${classDoc.commentText()}
 </P>
-<P>&nbsp;</P>
 <hr>
 
 <!-- =========== ENUM CONSTANT SUMMARY =========== -->
@@ -187,10 +194,10 @@ ${classDoc.commentText()}
     <TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2">
     <B>Field Summary</B></FONT></TH>
     </TR>
-    <% for (field in classDoc.fields()) { %>
+    <% for (field in visibleFields) { %>
         <TR BGCOLOR="white" CLASS="TableRowColor">
         <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
-        <CODE>${modifiers(field) + field.type().typeName()}</CODE></FONT></TD>
+        <CODE>${modifiersBrief(field) + field.type().typeName()}</CODE></FONT></TD>
         <TD>
             <CODE><B><A HREF="#${field.name()}">${field.name()}</A></B></CODE>
             <BR>
@@ -207,21 +214,21 @@ ${classDoc.commentText()}
 <% if (hasElements) { %>
     <% elementTypes.each { k, v -> %>
         <A NAME="${k}_element_summary"><!-- --></A>
-        <% if (classDoc.fields().any{ isRequired(it, v) }) {  %>
+        <% if (visibleFields.any{ isRequired(it, v) }) {  %>
             <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
             <TR BGCOLOR="#CCCCFF" CLASS="TableHeadingColor">
             <TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2">
             <B>${upcase(k)} Element Summary</B></FONT></TH>
             </TR>
-            <% for (field in classDoc.fields()) { %>
-                <% if (isRequired(field, v)) { %>
+            <% for (element in visibleFields) { %>
+                <% if (isRequired(element, v)) { %>
                 <TR BGCOLOR="white" CLASS="TableRowColor">
                 <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
-                <CODE>${modifiers(field) + field.type().typeName()}</CODE></FONT></TD>
+                <CODE>${modifiersBrief(element) + element.type().typeName()}</CODE></FONT></TD>
                 <TD>
-                    <CODE><B><A HREF="#${field.name()}">${field.name()}</A></B></CODE>
+                    <CODE><B><A HREF="#${element.name()}">${element.name()}</A></B></CODE>
                     <BR>
-                    <P>${field.firstSentenceCommentText()}</P>
+                    <P>${element.firstSentenceCommentText()}</P>
                 </TD>
                 </TR>
                 <% } %>
@@ -244,7 +251,7 @@ ${classDoc.commentText()}
     <% for (constructor in classDoc.constructors()) { %>
         <TR BGCOLOR="white" CLASS="TableRowColor">
         <TD>
-            <CODE><B><a href="#${nameFromParams(constructor)}">${constructor.name()}</a></B>(${paramsOf(constructor)})</CODE>
+            <CODE>${modifiersBrief(constructor)}<B><a href="#${nameFromParams(constructor)}">${constructor.name()}</a></B>(${paramsOf(constructor)})</CODE>
             <BR>
             <P>${constructor.firstSentenceCommentText()}</P>
         </TD>
@@ -264,10 +271,10 @@ ${classDoc.commentText()}
     <TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2" CLASS="ClassHeadingFont">
     <B>Method Summary</B></FONT></TH>
     </TR>
-    <% for (method in classDoc.methods()) { %>
+    <% for (method in visibleMethods) { %>
         <TR BGCOLOR="white" CLASS="TableRowColor">
         <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1" CLASS="ClassItemFont">
-            <CODE>${modifiers(method)}${returnType(method)}</CODE></FONT>
+            <CODE>${modifiersBrief(method)}${returnType(method)}</CODE></FONT>
         </TD>
         <TD>
             <CODE><b><a href="#${nameFromParams(method)}">${method.name()}</a></b>(${paramsOf(method)})</CODE>
@@ -294,7 +301,7 @@ ${classDoc.commentText()}
     </TABLE>
     <% for (ec in classDoc.enumConstants()) { %>
         <A NAME="${ec.name()}"><!-- --></A><H3>${ec.name()}</H3>
-        <PRE>${modifiers(ec) + '<a href="' + classDoc.getRelativeRootPath() + classDoc.getFullPathName() + '.html">' + classDoc.name() + '</a>'} <B>${ec.name()}</B></PRE>
+        <PRE>${modifiers(ec) + '<a href="' + classDoc.relativeRootPath + classDoc.fullPathName + '.html">' + classDoc.name() + '</a>'} <B>${ec.name()}</B></PRE>
         <DL>
         <DD>${ec.commentText()}
         </DD>
@@ -315,7 +322,7 @@ ${classDoc.commentText()}
     <B>Field Detail</B></FONT></TH>
     </TR>
     </TABLE>
-    <% for (field in classDoc.fields()) { %>
+    <% for (field in visibleFields) { %>
         <A NAME="${field.name()}"><!-- --></A><H3>${field.name()}</H3>
         <PRE>${modifiers(field) + field.type().typeName()} <B>${field.name()}</B></PRE>
         <DL>
@@ -338,11 +345,11 @@ ${classDoc.commentText()}
     <B>Element Detail</B></FONT></TH>
     </TR>
     </TABLE>
-    <% for (field in classDoc.fields()) { %>
-        <A NAME="${field.name()}"><!-- --></A><H3>${field.name()}</H3>
-        <PRE>${modifiers(field) + field.type().typeName()} <B>${field.name()}</B></PRE>
+    <% for (element in visibleFields) { %>
+        <A NAME="${element.name()}"><!-- --></A><H3>${element.name()}</H3>
+        <PRE>${modifiers(element) + element.type().typeName()} <B>${element.name()}</B></PRE>
         <DL>
-        <DD>${field.commentText()}
+        <DD>${element.commentText()}
         </DD>
         <P>
         </DL>
@@ -385,7 +392,7 @@ ${classDoc.commentText()}
     <B>Method Detail</B></FONT></TH>
     </TR>
     </TABLE>
-    <% for (method in classDoc.methods()) { %>
+    <% for (method in visibleMethods) { %>
         <A NAME="${nameFromParams(method)}"><!-- --></A><H3>
         ${method.name()}</H3>
         <PRE>${modifiers(method)}${returnType(method)} <B>${method.name()}</B>(${paramsOf(method)})</PRE>
