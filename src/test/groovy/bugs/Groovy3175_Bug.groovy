@@ -7,7 +7,10 @@ class Groovy3175_Bug extends GroovyTestCase {
             def something() { }
             def anotherSomething() { assert true }
         }
-        assert MyService.getDeclaredFields().grep {!it.synthetic}.size() == 1 
+        def isNotSynthetic(o) {
+          return (o.modifiers & 0x1000) == 0
+        }
+        assert MyService.getDeclaredFields().grep {isNotSynthetic(it)}.size() == 1 
      """
    } 
 }
