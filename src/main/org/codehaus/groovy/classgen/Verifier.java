@@ -145,7 +145,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
           _staticClassInfoFieldName = _staticClassInfoFieldName + "$";
         final String staticMetaClassFieldName = _staticClassInfoFieldName;
 
-        FieldNode staticMetaClassField = node.addField(staticMetaClassFieldName, ACC_PRIVATE|ACC_STATIC, ClassHelper.make(ClassInfo.class,false), null);
+        FieldNode staticMetaClassField = node.addField(staticMetaClassFieldName, ACC_PRIVATE|ACC_STATIC|ACC_SYNTHETIC, ClassHelper.make(ClassInfo.class,false), null);
         staticMetaClassField.setSynthetic(true);
 
         node.addSyntheticMethod(

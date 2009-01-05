@@ -626,18 +626,20 @@ public class AsmClassGenerator extends ClassGenerator {
         onLineNumber(fieldNode, "visitField: " + fieldNode.getName());
         ClassNode t = fieldNode.getType();
         String signature = helper.getGenericsBounds(t);
+        int modifiers = fieldNode.getModifiers();
+        if (fieldNode.isSynthetic()) modifiers |= ACC_SYNTHETIC;
         FieldVisitor fv = cv.visitField(
-                fieldNode.getModifiers(),
+                modifiers,
                 fieldNode.getName(),
                 BytecodeHelper.getTypeDescription(t),
-                signature, //fieldValue,  //br  all the sudden that one cannot init the field here. init is done in static initilizer and instace intializer.
+                signature, 
                 null);
         visitAnnotations(fieldNode, fv);
         fv.visitEnd();
     }
 
     public void visitProperty(PropertyNode statement) {
-        // the verifyer created the field and the setter/getter methods, so here is
+        // the verifier created the field and the setter/getter methods, so here is
         // not really something to do
         onLineNumber(statement, "visitProperty:" + statement.getField().getName());
         this.methodNode = null;
