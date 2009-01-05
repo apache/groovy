@@ -174,11 +174,13 @@ if (interfaces) {
 <!--
 <dd><a href="../../../../org/codehaus/groovy/ast/GroovyClassVisitor.html" title="interface in org.codehaus.groovy.ast">GroovyClassVisitor</a>, <a href="../../../../org/codehaus/groovy/ast/GroovyCodeVisitor.html" title="interface in org.codehaus.groovy.ast">GroovyCodeVisitor</a></dd>
 -->
-<hr><br>
+<hr>
+<% if (classDoc.commentText()) { %>
 <P>
 ${classDoc.commentText()}
 </P>
 <hr>
+<% } %>
 
 <!-- =========== ENUM CONSTANT SUMMARY =========== -->
 

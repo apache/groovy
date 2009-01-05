@@ -85,7 +85,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             SimpleGroovyClassDoc classDoc = (SimpleGroovyClassDoc) groovyClassDoc;
 
             // potentially add default constructor to class docs (but not interfaces)
-            if (classDoc.isClass()) {          // todo Enums, anything else?
+            if (classDoc.isClass()) {
                 GroovyConstructorDoc[] constructors = classDoc.constructors();
                 if (constructors != null && constructors.length == 0) { // add default constructor to doc
                     // name of class for the constructor
@@ -203,6 +203,24 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                     }
                 }
                 currentClassDoc.addInterfaceName(className);
+            }
+        }
+    }
+
+    @Override
+    public void visitAnnotation(GroovySourceAST t, int visit) {
+        if (visit == OPENING_VISIT) {
+            GroovySourceAST classNode = t.childOfType(IDENT);
+            if (classNode != null) {
+                String className = classNode.getText();
+                if (className.indexOf(".") == -1) {
+                    for (String name : importedClassesAndPackages) {
+                        if (name.endsWith(className)) {
+                            className = name;
+                        }
+                    }
+                }
+                currentClassDoc.addAnnotationName(className);
             }
         }
     }
