@@ -190,6 +190,24 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     }
 
     @Override
+    public void visitImplementsClause(GroovySourceAST t, int visit) {
+        if (visit == OPENING_VISIT) {
+            GroovySourceAST classNode = t.childOfType(IDENT);
+            if (classNode != null) {
+                String className = classNode.getText();
+                if (className.indexOf(".") == -1) {
+                    for (String name : importedClassesAndPackages) {
+                        if (name.endsWith(className)) {
+                            className = name;
+                        }
+                    }
+                }
+                currentClassDoc.addInterfaceName(className);
+            }
+        }
+    }
+
+    @Override
     public void visitClassDef(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
             // todo is this correct for java + groovy src?

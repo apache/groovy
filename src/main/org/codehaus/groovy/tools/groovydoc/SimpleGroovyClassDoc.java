@@ -26,6 +26,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
     private final List<GroovyFieldDoc> enumConstants;
     private final List<GroovyMethodDoc> methods;
     private final List<String> importedClassesAndPackages;
+    private final List<String> interfaceNames;
 
     private String fullPathName;
     private String superClassName;
@@ -38,6 +39,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         fields = new ArrayList<GroovyFieldDoc>();
         enumConstants = new ArrayList<GroovyFieldDoc>();
         methods = new ArrayList<GroovyMethodDoc>();
+        interfaceNames = new ArrayList<String>();
     }
 
     public SimpleGroovyClassDoc(List<String> importedClassesAndPackages, String name) {
@@ -307,9 +309,15 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         return null;
     }
 
-    // ----
     public String fullDottedName() {
         return fullPathName.replaceAll("/", ".");
     }
 
+    public void addInterfaceName(String className) {
+        interfaceNames.add(className);
+    }
+
+    public List<String> interfaceNames() {
+        return interfaceNames;
+    }
 }

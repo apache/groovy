@@ -165,7 +165,15 @@ if (parents.size() >= 2) {
     }
     %></PRE><%
 }
+// TODO follow up the tree collecting interfaces seen
+def interfaces = classDoc.interfaceNames()
+if (interfaces) {
+    %><DL><dt><b>All Implemented Interfaces:</b> </dt><dd>${interfaces.collect{ it.replaceAll('/', '.')}.join(', ')}</dd></DL><%
+}
 %>
+<!--
+<dd><a href="../../../../org/codehaus/groovy/ast/GroovyClassVisitor.html" title="interface in org.codehaus.groovy.ast">GroovyClassVisitor</a>, <a href="../../../../org/codehaus/groovy/ast/GroovyCodeVisitor.html" title="interface in org.codehaus.groovy.ast">GroovyCodeVisitor</a></dd>
+-->
 <hr><br>
 <P>
 ${classDoc.commentText()}
