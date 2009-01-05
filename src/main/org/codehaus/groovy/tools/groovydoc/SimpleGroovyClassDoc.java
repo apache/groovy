@@ -25,12 +25,11 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
     private final List<GroovyFieldDoc> fields;
     private final List<GroovyFieldDoc> enumConstants;
     private final List<GroovyMethodDoc> methods;
+    private final List<String> importedClassesAndPackages;
 
     private String fullPathName;
     private String superClassName;
     private GroovyClassDoc superClass;
-
-    private List<String> importedClassesAndPackages;
 
     public SimpleGroovyClassDoc(List<String> importedClassesAndPackages, String name, List<Groovydoc.LinkArgument> links) {
         super(name, links);
@@ -93,6 +92,18 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         return methods.add(method);
     }
 
+    public String getSuperClassName() {
+        return superClassName;
+    }
+
+    public void setSuperClassName(String className) {
+        superClassName = className;
+    }
+
+    public GroovyClassDoc superclass() {
+        return superClass;
+    }
+
     public String getFullPathName() {
         return fullPathName;
     }
@@ -114,12 +125,31 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         return sb.toString();
     }
 
-    public void setSuperClassName(String className) {
-        superClassName = className;
+    public List<String> getParentClasses() {
+        List<String> result = new LinkedList<String>();
+        result.add(0, name());
+        SimpleGroovyClassDoc next = this;
+        while (next.superclass() != null) {
+            next = (SimpleGroovyClassDoc) next.superclass();
+            result.add(0, next.name().replaceAll("/", "."));
+        }
+        if ("Object".equals(next.name())) {
+            return result;
+        }
+        Class nextClass = getClassOf(next.name());
+        while (nextClass != null && nextClass.getSuperclass() != null && !Object.class.equals(nextClass)) {
+            nextClass = nextClass.getSuperclass();
+            result.add(0, nextClass.getName());
+        }
+        return result;
     }
 
-    public GroovyClassDoc superclass() {
-        return superClass;
+    private Class getClassOf(String next) {
+        try {
+            return Class.forName(next.replaceAll("/", "."));
+        } catch (Throwable t) {
+            return null;
+        }
     }
 
     void resolve(GroovyRootDoc rootDoc) {

@@ -177,7 +177,14 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             GroovySourceAST superClassNode = t.childOfType(IDENT);
             if (superClassNode != null) {
                 String superClassName = superClassNode.getText();
-                currentClassDoc.setSuperClassName(superClassName); // un 'packaged' class name
+                if (superClassName.indexOf(".") == -1) {
+                    for (String name : importedClassesAndPackages) {
+                        if (name.endsWith(superClassName)) {
+                            superClassName = name;
+                        }
+                    }
+                }
+                currentClassDoc.setSuperClassName(superClassName);
             }
         }
     }

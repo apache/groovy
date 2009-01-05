@@ -35,9 +35,10 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
         classDocs = new HashMap<String, GroovyClassDoc>();
     }
 
-    // todo - take account of package names !
+    // todo - take better account of package names !
     public GroovyClassDoc classNamed(String name) {
         for (String key : classDocs.keySet()) {
+            if (key.equals(name)) return classDocs.get(key);
             int lastSlashIdx = key.lastIndexOf('/');
             if (lastSlashIdx > 0) {
                 String shortKey = key.substring(lastSlashIdx + 1);

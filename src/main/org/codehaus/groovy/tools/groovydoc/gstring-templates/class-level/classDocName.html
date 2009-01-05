@@ -28,8 +28,7 @@
     def modifiersBrief = { t ->
         (t.isPrivate()?"private&nbsp;":"") +
         (t.isProtected()?"protected&nbsp;":"") +
-        (t.isStatic()?"static&nbsp;":"") +
-        (t.isFinal()?"final&nbsp;":"")
+        (t.isStatic()?"static&nbsp;":"")
     }
     def returnType = { t ->
         t.isReturnTypeAvailable() ?
@@ -157,6 +156,16 @@ DETAIL:&nbsp;<%
 ${classDoc.containingPackage().nameWithDots()}</FONT>
 <BR>
 <FONT CLASS="ClassTitleFont">${classDoc.typeDescription} ${classDoc.name()}</FONT></H2>
+<%
+def parents = classDoc.parentClasses
+if (parents.size() >= 2) {
+    %><PRE><%
+    parents.eachWithIndex { p, i ->
+        %>${(i > 0 ? "   " * (i - 1) + "+- " : "") + p}\n<%
+    }
+    %></PRE><%
+}
+%>
 <hr><br>
 <P>
 ${classDoc.commentText()}
