@@ -18,6 +18,9 @@ package org.codehaus.groovy.tools.shell.commands
 
 import groovy.inspect.swingui.ObjectBrowser
 
+import java.awt.HeadlessException
+import javax.swing.UIManager
+
 import org.codehaus.groovy.tools.shell.CommandSupport
 import org.codehaus.groovy.tools.shell.Shell
 import org.codehaus.groovy.tools.shell.util.SimpleCompletor
@@ -34,6 +37,9 @@ class InspectCommand
     InspectCommand(final Shell shell) {
         super(shell, 'inspect', '\\n')
     }
+    
+    def lafInitialized = false
+    def headless
     
     protected List createCompletors() {
         return [
@@ -55,15 +61,29 @@ class InspectCommand
         
         if (args.size() == 1) {
             subject = binding.variables[args[0]]
-        }
-        else {
+        } else {
             subject = binding.variables['_']
         }
 
         if (!subject) {
             io.out.println('Subject is null; nothing to inspect') // TODO: i18n
-        }
-        else {
+        } else {
+            // Only set LAF once.
+            if (!lafInitialized) {
+                lafInitialized = true
+                try {
+                    UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
+                    headless = false
+                } catch (HeadlessException he) {
+                    headless = true
+                }
+            }
+            
+            if (headless) {
+                io.err.println("@|red ERROR:| Running in AWT Headless mode, 'inspect' is not available.")
+                return
+            }
+            
             if (io.verbose) {
                 io.out.println("Launching object browser to inspect: $subject") // TODO: i18n
             }
