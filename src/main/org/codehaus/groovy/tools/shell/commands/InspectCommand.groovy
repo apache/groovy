@@ -73,6 +73,11 @@ class InspectCommand
                 lafInitialized = true
                 try {
                     UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
+                    
+                    // The setLAF doesn't throw a HeadlessException on Mac.
+                    // So try really creating a frame.
+                    new java.awt.Frame().dispose()
+                    
                     headless = false
                 } catch (HeadlessException he) {
                     headless = true
@@ -87,7 +92,7 @@ class InspectCommand
             if (io.verbose) {
                 io.out.println("Launching object browser to inspect: $subject") // TODO: i18n
             }
-            
+
             ObjectBrowser.inspect(subject)
         }
     }
