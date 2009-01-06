@@ -443,7 +443,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Print a value to the standard output stream.
+     * Print a value formatted Groovy style to self if it
+     * is a Writer, otherwise to the standard output stream.
      *
      * @param self  any Object
      * @param value the value to print
@@ -452,11 +453,25 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static void print(Object self, Object value) {
         // we won't get here if we are a PrintWriter
         if (self instanceof Writer) {
-            final PrintWriter pw = new GroovyPrintWriter((Writer) self);
-            pw.print(value);
+            try {
+                ((Writer) self).write(InvokerHelper.toString(value));
+            } catch (IOException e) {
+                // TODO: Should we have some unified function like PrintWriter.checkError()?
+            }
         } else {
             System.out.print(InvokerHelper.toString(value));
         }
+    }
+    
+    /**
+     * Print a value formatted Groovy style to the writer.
+     *
+     * @param self  any Object
+     * @param value the value to print
+     * @since 1.0
+     */
+    public static void print(PrintStream self, Object value) {
+        self.print(InvokerHelper.toString(value));
     }
     
     /**
@@ -509,7 +524,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Print a value (followed by a newline) to the standard output stream.
+     * Print a value formatted Groovy style (followed by a newline) to self
+     * if it is a Writer, otherwise to the standard output stream.
      *
      * @param self  any Object
      * @param value the value to print
@@ -523,6 +539,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         } else {
             System.out.println(InvokerHelper.toString(value));
         }
+    }
+    
+    /**
+     * Print a value formatted Groovy style (followed by a newline) to the print stream.
+     *
+     * @param self  any Object
+     * @param value the value to print
+     * @since 1.0
+     */
+    public static void println(PrintStream self, Object value) {
+        self.println(InvokerHelper.toString(value));
     }
     
     /**
@@ -713,7 +740,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static void print(Object self, PrintWriter out) {
         if (out == null) {
-            out = new GroovyPrintWriter(System.out);
+            out = new PrintWriter(System.out);
         }
         out.print(InvokerHelper.toString(self));
     }
@@ -727,10 +754,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static void println(Object self, PrintWriter out) {
         if (out == null) {
-            out = new GroovyPrintWriter(System.out);
+            out = new PrintWriter(System.out);
         }
-        InvokerHelper.invokeMethod(self, "print", out);
-        out.println();
+        out.println(InvokerHelper.toString(self));
     }
 
     /**
