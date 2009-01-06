@@ -16,9 +16,6 @@
 
 package org.codehaus.groovy.tools.shell
 
-import java.awt.HeadlessException
-import javax.swing.UIManager
-
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.tools.shell.util.ANSI
 import org.codehaus.groovy.tools.shell.util.HelpFormatter
@@ -112,11 +109,6 @@ class Main
             io.flush()
         }
 
-        try {
-            UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName())
-        } catch (HeadlessException he) {
-            io.err.println('@|red WARNING:| Running in AWT Headless mode, \'inspect\' will fail')
-        }
         // Boot up the shell... :-)
         Groovysh shell = new Groovysh(io)
 
