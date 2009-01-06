@@ -412,8 +412,9 @@ public class Groovy extends Java {
             } else {
                 script = shell.parse(txt, scriptName);
             }
+            final Project project = getProject();
             script.setProperty("ant", builder);
-            script.setProperty("project", getProject());
+            script.setProperty("project", project);
             script.setProperty("properties", new AntProjectPropertiesDelegate(project));
             script.setProperty("target", getOwningTarget());
             script.setProperty("task", this);
@@ -508,7 +509,8 @@ public class Groovy extends Java {
 
     private void createNewArgs(String txt) throws IOException {
         final String[] args = cmdline.getCommandline();
-        final File tempFile = FileUtils.getFileUtils().createTempFile(PREFIX, SUFFIX, null, true);
+        // Temporary file - delete on exit, create (assured unique name).
+        final File tempFile = FileUtils.getFileUtils().createTempFile(PREFIX, SUFFIX, null, true, true);
         final String[] commandline = new String[args.length + 1];
         DefaultGroovyMethods.write(tempFile, txt);
         commandline[0] = tempFile.getCanonicalPath();
