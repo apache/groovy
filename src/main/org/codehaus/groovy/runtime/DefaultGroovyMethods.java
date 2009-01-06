@@ -6510,14 +6510,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     protected static String toString(Object value) {
-        if (value instanceof Map)
-            return toMapString((Map) value);
-        else if (value instanceof Collection)
-            return toListString((Collection) value);
-        else if (value instanceof Object[])
-            return toArrayString((Object[]) value);
-        else
-            return InvokerHelper.toString(value);
+        return InvokerHelper.toString(value);
     }
 
     // Number based methods
