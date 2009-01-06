@@ -15,20 +15,19 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
+import antlr.collections.AST;
+import org.codehaus.groovy.ant.Groovydoc;
 import org.codehaus.groovy.antlr.GroovySourceAST;
 import org.codehaus.groovy.antlr.LineColumn;
 import org.codehaus.groovy.antlr.SourceBuffer;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 import org.codehaus.groovy.antlr.treewalker.VisitorAdapter;
-import org.codehaus.groovy.groovydoc.GroovyConstructorDoc;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
-import org.codehaus.groovy.ant.Groovydoc;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import antlr.collections.AST;
+import org.codehaus.groovy.groovydoc.GroovyConstructorDoc;
+
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements GroovyTokenTypes {
     private static final String FS = "/";
@@ -145,13 +144,27 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     @Override
     public void visitImport(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
-            GroovySourceAST child = t.childOfType(DOT);
-            if (child == null) {
-                child = t.childOfType(IDENT);
-            }
-            String importTextWithSlashesInsteadOfDots = recurseDownImportBranch(child);
+            String importTextWithSlashesInsteadOfDots = extractImportPath(t);
             importedClassesAndPackages.add(importTextWithSlashesInsteadOfDots);
         }
+    }
+
+// TODO is this needed so we can click through on default values?
+//    @Override
+//    public void visitStaticImport(GroovySourceAST t, int visit) {
+//        if (visit == OPENING_VISIT) {
+//            // TODO
+//            String importTextWithSlashesInsteadOfDots = extractImportPath(t);
+//            System.out.println(currentClassDoc.name() + " has static import: " + importTextWithSlashesInsteadOfDots);
+//        }
+//    }
+
+    private String extractImportPath(GroovySourceAST t) {
+        GroovySourceAST child = t.childOfType(DOT);
+        if (child == null) {
+            child = t.childOfType(IDENT);
+        }
+        return recurseDownImportBranch(child);
     }
 
     public String recurseDownImportBranch(GroovySourceAST t) {
@@ -176,14 +189,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         if (visit == OPENING_VISIT) {
             GroovySourceAST superClassNode = t.childOfType(IDENT);
             if (superClassNode != null) {
-                String superClassName = superClassNode.getText();
-                if (superClassName.indexOf(".") == -1) {
-                    for (String name : importedClassesAndPackages) {
-                        if (name.endsWith(superClassName)) {
-                            superClassName = name;
-                        }
-                    }
-                }
+                String superClassName = extractName(superClassNode);
                 currentClassDoc.setSuperClassName(superClassName);
             }
         }
@@ -194,17 +200,21 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         if (visit == OPENING_VISIT) {
             GroovySourceAST classNode = t.childOfType(IDENT);
             if (classNode != null) {
-                String className = classNode.getText();
-                if (className.indexOf(".") == -1) {
-                    for (String name : importedClassesAndPackages) {
-                        if (name.endsWith(className)) {
-                            className = name;
-                        }
-                    }
-                }
-                currentClassDoc.addInterfaceName(className);
+                currentClassDoc.addInterfaceName(extractName(classNode));
             }
         }
+    }
+
+    private String extractName(GroovySourceAST classNode) {
+        String className = classNode.getText();
+        if (className.indexOf(".") == -1) {
+            for (String name : importedClassesAndPackages) {
+                if (name.endsWith(className)) {
+                    className = name;
+                }
+            }
+        }
+        return className;
     }
 
     @Override
@@ -212,15 +222,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         if (visit == OPENING_VISIT) {
             GroovySourceAST classNode = t.childOfType(IDENT);
             if (classNode != null) {
-                String className = classNode.getText();
-                if (className.indexOf(".") == -1) {
-                    for (String name : importedClassesAndPackages) {
-                        if (name.endsWith(className)) {
-                            className = name;
-                        }
-                    }
-                }
-                currentClassDoc.addAnnotationName(className);
+                currentClassDoc.addAnnotationName(extractName(classNode));
             }
         }
     }

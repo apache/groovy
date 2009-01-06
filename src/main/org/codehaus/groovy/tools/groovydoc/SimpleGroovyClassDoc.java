@@ -15,8 +15,8 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
-import org.codehaus.groovy.groovydoc.*;
 import org.codehaus.groovy.ant.Groovydoc;
+import org.codehaus.groovy.groovydoc.*;
 
 import java.util.*;
 
@@ -27,11 +27,13 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
     private final List<GroovyMethodDoc> methods;
     private final List<String> importedClassesAndPackages;
     private final List<String> interfaceNames;
+    private final List<GroovyClassDoc> interfaceClasses;
     private final List<String> annotationNames;
-
-    private String fullPathName;
+    private final List<GroovyClassDoc> annotationClasses;
     private String superClassName;
     private GroovyClassDoc superClass;
+
+    private String fullPathName;
 
     public SimpleGroovyClassDoc(List<String> importedClassesAndPackages, String name, List<Groovydoc.LinkArgument> links) {
         super(name, links);
@@ -41,7 +43,9 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         enumConstants = new ArrayList<GroovyFieldDoc>();
         methods = new ArrayList<GroovyMethodDoc>();
         interfaceNames = new ArrayList<String>();
+        interfaceClasses = new ArrayList<GroovyClassDoc>();
         annotationNames = new ArrayList<String>();
+        annotationClasses = new ArrayList<GroovyClassDoc>();
     }
 
     public SimpleGroovyClassDoc(List<String> importedClassesAndPackages, String name) {
@@ -131,13 +135,13 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
 
     public List<String> getParentClasses() {
         List<String> result = new LinkedList<String>();
-        result.add(0, name());
+        result.add(0, getFullName(this));
         SimpleGroovyClassDoc next = this;
         while (next.superclass() != null) {
             next = (SimpleGroovyClassDoc) next.superclass();
-            result.add(0, next.name().replaceAll("/", "."));
+            result.add(0, getFullName(next));
         }
-        if ("Object".equals(next.name())) {
+        if ("java.lang.Object".equals(next.name())) {
             return result;
         }
         Class nextClass = getClassOf(next.name());
@@ -146,6 +150,10 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
             result.add(0, nextClass.getName());
         }
         return result;
+    }
+
+    private String getFullName(SimpleGroovyClassDoc next) {
+        return (next.getFullPathName() != null ? next.getFullPathName() : next.name()).replaceAll("/", ".");
     }
 
     private Class getClassOf(String next) {
@@ -163,7 +171,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         for (GroovyConstructorDoc constructor : constructors) {
 
             // parameters
-            for (GroovyParameter groovyParameter : Arrays.asList(constructor.parameters())) {
+            for (GroovyParameter groovyParameter : constructor.parameters()) {
                 SimpleGroovyParameter param = (SimpleGroovyParameter) groovyParameter;
                 String paramTypeName = param.typeName();
                 if (visibleClasses.containsKey(paramTypeName)) {
@@ -183,7 +191,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
             }
 
             // parameters
-            for (GroovyParameter groovyParameter : Arrays.asList(method.parameters())) {
+            for (GroovyParameter groovyParameter : method.parameters()) {
                 SimpleGroovyParameter param = (SimpleGroovyParameter) groovyParameter;
                 String paramTypeName = param.typeName();
                 if (visibleClasses.containsKey(paramTypeName)) {
@@ -192,22 +200,38 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
             }
         }
 
-        //resolve type references
         if (superClassName != null) {
-            superClass = rootDoc.classNamed(superClassName); // todo - take package names into account ?!
-            if (superClass == null) {
-                // The superClass is not in the tree being documented
-                superClass = new SimpleGroovyClassDoc(null, superClassName); // dummy class with name, not to be put into main tree
-            }
+            superClass = resolveClass(rootDoc, superClassName);
         } else {
-            superClass = new SimpleGroovyClassDoc(null, "Object"); // dummy class representing java.lang.Object, not to be put into main tree
+            superClass = new SimpleGroovyClassDoc(null, "java.lang.Object"); // dummy class representing java.lang.Object, not to be put into main tree
         }
+
+        for (String name : interfaceNames) {
+            interfaceClasses.add(resolveClass(rootDoc, name));
+        }
+
+        for (String name : annotationNames) {
+            annotationClasses.add(resolveClass(rootDoc, name));
+        }
+    }
+
+    private GroovyClassDoc resolveClass(GroovyRootDoc rootDoc, String name) {
+        GroovyClassDoc doc = rootDoc.classNamed(name);
+        if (doc == null) {
+            // The superClass is not in the tree being documented
+            doc = new SimpleGroovyClassDoc(null, name); // dummy class with name, not to be put into main tree
+        }
+        return doc;
     }
     // methods from GroovyClassDoc
 
-
     public GroovyConstructorDoc[] constructors(boolean filter) {/*todo*/
         return null;
+    }
+
+    public GroovyClassDoc[] annotationClasses(boolean filter) {
+        Collections.sort(annotationClasses);
+        return annotationClasses.toArray(new GroovyClassDoc[interfaceClasses.size()]);
     }
 
     public boolean definesSerializableFields() {/*todo*/
@@ -238,8 +262,9 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         return null;
     } // not supported in groovy
 
-    public GroovyClassDoc[] interfaces() {/*todo*/
-        return null;
+    public GroovyClassDoc[] interfaces() {
+        Collections.sort(interfaceClasses);
+        return interfaceClasses.toArray(new GroovyClassDoc[interfaceClasses.size()]);
     }
 
     public GroovyType[] interfaceTypes() {/*todo*/
@@ -315,22 +340,10 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         return fullPathName.replaceAll("/", ".");
     }
 
-    // warning don't use - String likely to be replaced with ClassNode
     public void addInterfaceName(String className) {
         interfaceNames.add(className);
     }
 
-    // warning don't use - String likely to be replaced with ClassNode
-    public List<String> interfaceNames() {
-        return interfaceNames;
-    }
-
-    // warning don't use - String likely to be replaced with ClassNode
-    public List<String> annotationNames() {
-        return annotationNames;
-    }
-
-    // warning don't use - String likely to be replaced with ClassNode
     public void addAnnotationName(String className) {
         annotationNames.add(className);
     }
