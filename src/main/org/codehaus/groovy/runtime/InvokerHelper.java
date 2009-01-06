@@ -622,8 +622,8 @@ public class InvokerHelper {
         if (arguments == null) {
             return "null";
         }
-        String sbdry = "{";
-        String ebdry = "}";
+        String sbdry = "[";
+        String ebdry = "]";
         StringBuffer argBuf = new StringBuffer(sbdry);
         for (int i = 0; i < arguments.length; i++) {
             if (i > 0) {
