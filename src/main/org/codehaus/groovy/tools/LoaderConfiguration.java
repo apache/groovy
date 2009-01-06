@@ -15,8 +15,6 @@
  */
 package org.codehaus.groovy.tools;
 
-import groovy.text.RegexUtils;
-
 import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
