@@ -6312,6 +6312,94 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
         return answer.toString();
     }
+    
+    /**
+     * Returns the string representation of the given array.
+     * 
+     * @param self an array
+     * @return the string representation
+     * @since 1.6
+     */
+    public static String toString(boolean[] self) {
+        return InvokerHelper.toString(self);
+    }
+
+    /**
+     * Returns the string representation of the given array.
+     * 
+     * @param self an array
+     * @return the string representation
+     * @since 1.6
+     */
+    public static String toString(byte[] self) {
+        return InvokerHelper.toString(self);
+    }
+
+    /**
+     * Returns the string representation of the given array.
+     * 
+     * @param self an array
+     * @return the string representation
+     * @since 1.6
+     */
+    public static String toString(char[] self) {
+        return InvokerHelper.toString(self);
+    }
+
+    /**
+     * Returns the string representation of the given array.
+     * 
+     * @param self an array
+     * @return the string representation
+     * @since 1.6
+     */
+    public static String toString(short[] self) {
+        return InvokerHelper.toString(self);
+    }
+
+    /**
+     * Returns the string representation of the given array.
+     * 
+     * @param self an array
+     * @return the string representation
+     * @since 1.6
+     */
+    public static String toString(int[] self) {
+        return InvokerHelper.toString(self);
+    }
+
+    /**
+     * Returns the string representation of the given array.
+     * 
+     * @param self an array
+     * @return the string representation
+     * @since 1.6
+     */
+    public static String toString(long[] self) {
+        return InvokerHelper.toString(self);
+    }
+
+    /**
+     * Returns the string representation of the given array.
+     * 
+     * @param self an array
+     * @return the string representation
+     * @since 1.6
+     */
+    public static String toString(float[] self) {
+        return InvokerHelper.toString(self);
+    }
+
+    /**
+     * Returns the string representation of the given array.
+     * 
+     * @param self an array
+     * @return the string representation
+     * @since 1.6
+     */
+    public static String toString(double[] self) {
+        return InvokerHelper.toString(self);
+    }
 
     /**
      * Returns the string representation of the given map.
