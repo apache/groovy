@@ -30,6 +30,7 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * to produce the same results as Writer.print(Object).
  *
  * @author Jim White
+ * @since 1.6
  */
 public class GroovyPrintWriter extends PrintWriter 
 {

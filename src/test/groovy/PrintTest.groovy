@@ -1,8 +1,19 @@
 package groovy
 
+import groovy.io.GroovyPrintStream
+
 import java.text.NumberFormat
 
 class PrintTest extends GroovyTestCase {
+    PrintStream savedSystemOut
+    
+    void setUp() {
+        savedSystemOut = System.out
+    }
+    
+    void tearDown() {
+        System.setOut(savedSystemOut)
+    }
 
     void testToString() {
         assertToString("hello", 'hello')
@@ -71,6 +82,8 @@ void doTest(def param) {
     StringWriter sw4 = new StringWriter()
     StringWriter sw5 = new StringWriter()
     ByteArrayOutputStream baos1 = new ByteArrayOutputStream()
+    ByteArrayOutputStream baos2 = new ByteArrayOutputStream()
+    ByteArrayOutputStream baos3 = new ByteArrayOutputStream()
     
     sw1.write(param as String)
     sw2.print(param)
@@ -78,7 +91,9 @@ void doTest(def param) {
     new PrintWriter(sw4).print(param as String)
     sw5.newPrintWriter().print(param)
     new PrintStream(baos1).print(param)
-    // TODO: Add test for System.out printing.
+    new GroovyPrintStream(baos2).print(param)
+    System.setOut(new GroovyPrintStream(baos3))
+    print(param)
 
     def t1 = sw1.toString()
     def t2 = sw2.toString()
@@ -86,12 +101,16 @@ void doTest(def param) {
     def t4 = sw4.toString()
     def t5 = sw5.toString()
     def t6 = baos1.toString()
+    def t7 = baos2.toString()
+    def t8 = baos3.toString()
     
     assert t1 == t2
     assert t1 == t3
     assert t1 == t4
     assert t1 == t5
     assert t1 == t6
+    assert t1 == t7
+    assert t1 == t8
 
     sw1.buffer.length = 0
     sw2.buffer.length = 0
@@ -99,6 +118,8 @@ void doTest(def param) {
     sw4.buffer.length = 0
     sw5.buffer.length = 0
     baos1.reset()
+    baos2.reset()
+    baos3.reset()
 
     sw1.write(param as String)
     sw1.write(NEWLINE)
@@ -107,6 +128,9 @@ void doTest(def param) {
     new PrintWriter(sw4).println(param as String)
     sw5.newPrintWriter().println(param)
     new PrintStream(baos1).println(param)
+    new GroovyPrintStream(baos2).println(param)
+    System.setOut(new GroovyPrintStream(baos3))
+    println(param)
 
     t1 = sw1.toString()
     t2 = sw2.toString()
@@ -114,12 +138,16 @@ void doTest(def param) {
     t4 = sw4.toString()
     t5 = sw5.toString()
     t6 = baos1.toString()
+    t7 = baos2.toString()
+    t8 = baos3.toString()
     
     assert t1 == t2
     assert t1 == t3
     assert t1 == t4
     assert t1 == t5
     assert t1 == t6
+    assert t1 == t7
+    assert t1 == t8
 }
 
 void testGroovy3227() { 
