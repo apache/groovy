@@ -69,40 +69,57 @@ void doTest(def param) {
     StringWriter sw2 = new StringWriter()
     StringWriter sw3 = new StringWriter()
     StringWriter sw4 = new StringWriter()
-
+    StringWriter sw5 = new StringWriter()
+    ByteArrayOutputStream baos1 = new ByteArrayOutputStream()
+    
     sw1.write(param as String)
     sw2.print(param)
     sw3.withPrintWriter { it.print param }
     new PrintWriter(sw4).print(param as String)
+    sw5.newPrintWriter().print(param)
+    new PrintStream(baos1).print(param)
+    // TODO: Add test for System.out printing.
 
     def t1 = sw1.toString()
     def t2 = sw2.toString()
     def t3 = sw3.toString()
     def t4 = sw4.toString()
+    def t5 = sw5.toString()
+    def t6 = baos1.toString()
     
     assert t1 == t2
     assert t1 == t3
     assert t1 == t4
+    assert t1 == t5
+    assert t1 == t6
 
-    sw1 = new StringWriter()
-    sw2 = new StringWriter()
-    sw3 = new StringWriter()
-    sw4 = new StringWriter()
+    sw1.buffer.length = 0
+    sw2.buffer.length = 0
+    sw3.buffer.length = 0
+    sw4.buffer.length = 0
+    sw5.buffer.length = 0
+    baos1.reset()
 
     sw1.write(param as String)
     sw1.write(NEWLINE)
     sw2.println(param)
     sw3.withPrintWriter { it.println param }
     new PrintWriter(sw4).println(param as String)
+    sw5.newPrintWriter().println(param)
+    new PrintStream(baos1).println(param)
 
     t1 = sw1.toString()
     t2 = sw2.toString()
     t3 = sw3.toString()
     t4 = sw4.toString()
+    t5 = sw5.toString()
+    t6 = baos1.toString()
     
     assert t1 == t2
     assert t1 == t3
     assert t1 == t4
+    assert t1 == t5
+    assert t1 == t6
 }
 
 void testGroovy3227() { 
