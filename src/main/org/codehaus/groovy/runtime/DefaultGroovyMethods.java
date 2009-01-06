@@ -16,8 +16,8 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.io.EncodingAwareBufferedWriter;
-import groovy.io.PlatformLineWriter;
 import groovy.io.GroovyPrintWriter;
+import groovy.io.PlatformLineWriter;
 import groovy.lang.*;
 import groovy.sql.GroovyRowResult;
 import groovy.util.*;
@@ -2735,7 +2735,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the closure to apply on each captured group
      * @return a String with replaced content
      * @since 1.0
-     * @see java.util.regex.Matcher.quoteReplacement(String)
+     * @see java.util.regex.Matcher#quoteReplacement(String)
      */
     public static String replaceAll(final String self, final String regex, final Closure closure) {
         final Matcher matcher = Pattern.compile(regex).matcher(self);
