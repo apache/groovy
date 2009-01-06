@@ -1,5 +1,13 @@
-class Groovy3175_Bug extends GroovyTestCase {
+package groovy.bugs
+
+public class Groovy3175_Bug extends GroovyTestCase {
+
+   def getJavaVersionMajorMinor() { (System.getProperty('java.version') =~ /^\d+\.?\d*/)[0] as BigDecimal }
+
    void testSyntheticModifier() {
+     if (getJavaVersionMajorMinor() < 1.5)
+        return
+        
      assertScript """
         class MyService {
             private fio
@@ -7,10 +15,10 @@ class Groovy3175_Bug extends GroovyTestCase {
             def something() { }
             def anotherSomething() { assert true }
         }
-        def isNotSynthetic(o) {
-          return (o.modifiers & 0x1000) == 0
-        }
-        assert MyService.getDeclaredFields().grep {isNotSynthetic(it)}.size() == 1 
+        def fields = MyService.getDeclaredFields().grep { !it.synthetic }
+        assert fields.size() == 1 
+        def methods = MyService.getDeclaredMethods().grep { !it.synthetic }
+        assert methods.size() == 4 
      """
    } 
 }
