@@ -2,6 +2,7 @@ package groovy
 
 import groovy.io.GroovyPrintStream
 
+import java.io.PrintStream
 import java.text.NumberFormat
 
 class PrintTest extends GroovyTestCase {
@@ -92,7 +93,7 @@ void doTest(def param) {
     sw5.newPrintWriter().print(param)
     new PrintStream(baos1).print(param)
     new GroovyPrintStream(baos2).print(param)
-    System.setOut(new GroovyPrintStream(baos3))
+    System.setOut(new PrintStream(baos3))
     print(param)
 
     def t1 = sw1.toString()
@@ -129,7 +130,7 @@ void doTest(def param) {
     sw5.newPrintWriter().println(param)
     new PrintStream(baos1).println(param)
     new GroovyPrintStream(baos2).println(param)
-    System.setOut(new GroovyPrintStream(baos3))
+    System.setOut(new PrintStream(baos3))
     println(param)
 
     t1 = sw1.toString()
