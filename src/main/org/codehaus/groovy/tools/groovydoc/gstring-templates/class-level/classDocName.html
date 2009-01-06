@@ -168,7 +168,7 @@ if (parents.size() >= 2) {
 // TODO follow up the tree collecting interfaces seen
 def interfaces = classDoc.interfaces()
 if (interfaces) {
-    %><DL><dt><b>All Implemented Interfaces:</b> </dt><dd>${interfaces.collect{ (it.fullPathName ?: it.name()).replaceAll('/', '.')}.join(', ')}</dd></DL><%
+    %><DL><dt><b>All Implemented Interfaces:</b> </dt><dd>${interfaces.collect{ (it.fullPathName ?: it.name()).replace('/', '.')}.join(', ')}</dd></DL><%
 }
 %>
 <!--

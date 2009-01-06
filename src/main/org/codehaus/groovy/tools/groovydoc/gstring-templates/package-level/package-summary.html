@@ -51,7 +51,7 @@ classTypes.each{ k, v ->
 %>
             <TR BGCOLOR="white" CLASS="TableRowColor">
             <TD WIDTH="15%"><B><A HREF="${classDoc.name()}.html" title="class in ${packageDoc.name()}">${classDoc.name()}</A></B></TD>
-            <TD>&nbsp;</TD>
+            <TD>${classDoc.firstSentenceCommentText()}</TD>
             </TR>
         <% } %>
     <% } %>

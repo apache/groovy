@@ -15,39 +15,37 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.StringTokenizer;
-
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyPackageDoc;
 
+import java.util.*;
+
 public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPackageDoc {
     private static final char FS = '/';
-    final Map classDocs;
+    final Map<String, GroovyClassDoc> classDocs;
+    private String description;
 
     public SimpleGroovyPackageDoc(String name) {
         super(name);
-        classDocs = new HashMap();
+        classDocs = new HashMap<String, GroovyClassDoc>();
     }
 
     public GroovyClassDoc[] allClasses() {
-        return (GroovyClassDoc[]) classDocs.values().toArray(new GroovyClassDoc[classDocs.values().size()]); // todo performance? sorting?
+        return classDocs.values().toArray(new GroovyClassDoc[classDocs.values().size()]); // todo performance? sorting?
     }
 
-    public void putAll(Map classes) {
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public void putAll(Map<String, GroovyClassDoc> classes) {
         // 2 way relationship
         // add reference to classes inside this package
         classDocs.putAll(classes);
 
         // add reference to this package inside classes
-        Iterator itr = classes.values().iterator();
-        while (itr.hasNext()) {
-            SimpleGroovyProgramElementDoc programElement = (SimpleGroovyProgramElementDoc) itr.next();
+        for (GroovyClassDoc doc : classes.values()) {
+            SimpleGroovyProgramElementDoc programElement = (SimpleGroovyProgramElementDoc) doc;
             programElement.setContainingPackage(this);
         }
     }
@@ -81,9 +79,13 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
     }
 
     public GroovyClassDoc[] ordinaryClasses() {
-        List<GroovyClassDoc> classDocValues = new ArrayList(classDocs.values());
+        List<GroovyClassDoc> classDocValues = new ArrayList<GroovyClassDoc>(classDocs.values());
         Collections.sort(classDocValues); // todo - performance / maybe move into a sortMe() method
         return classDocValues.toArray(new GroovyClassDoc[classDocValues.size()]); // todo CURRENTLY ALL CLASSES!
+    }
+
+    public String description() {
+        return description;
     }
 
     public String getRelativeRootPath() {

@@ -22,8 +22,6 @@ function windowTitle()
 
 <BODY BGCOLOR="white" onload="windowTitle();">
 
-
-
 <HR>
 
 <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
@@ -34,7 +32,7 @@ function windowTitle()
 <% for (packageDoc in rootDoc.specifiedPackages()) { %>
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD WIDTH="20%"><B><A HREF="${packageDoc.name()}/package-summary.html">${packageDoc.name()}</A></B></TD>
-<TD>&nbsp;</TD>
+<TD>${packageDoc.description()}</TD>
 </TR>
 <% } %>
 </TABLE>

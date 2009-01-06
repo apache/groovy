@@ -15,14 +15,6 @@
  */
 package org.codehaus.groovy.ant;
 
-import java.io.File;
-import java.io.FilenameFilter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.StringTokenizer;
-import java.util.Properties;
-
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Task;
@@ -32,6 +24,10 @@ import org.apache.tools.ant.types.PatternSet;
 import org.codehaus.groovy.tools.groovydoc.ClasspathResourceManager;
 import org.codehaus.groovy.tools.groovydoc.FileOutputTool;
 import org.codehaus.groovy.tools.groovydoc.GroovyDocTool;
+
+import java.io.File;
+import java.io.FilenameFilter;
+import java.util.*;
 
 /**
  * Access to the GroovyDoc tool from Ant.
@@ -208,7 +204,7 @@ public class Groovydoc extends Task {
                                 || name.endsWith(".gv")
                                 || name.endsWith(".gvy")
                                 || name.endsWith(".gsh")
-                                || (includeNoSourcePackages
+                                || (!includeNoSourcePackages
                                 && name.equals("package.html"));
                     }
                 });
