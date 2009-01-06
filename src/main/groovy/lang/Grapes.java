@@ -24,7 +24,7 @@ package groovy.lang;
  * For example:
  *
  * <pre>
- * @Grapes([@Grab(module='m1'), @Grab(module='m2')])
+ * {@code @Grapes([@Grab(module='m1'), @Grab(module='m2')])}
  * class AnnotatedClass { ... }
  * </pre>
  *
