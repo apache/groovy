@@ -124,16 +124,16 @@ class VArgsTest extends GroovyTestCase {
   }
 
   void test2204a() {
-     assert m2204a('hello', 'world') == 'arg1: hello, arg2: world, args: {}, kwargs: [:]'
-     assert m2204a('hello', 'world', 'from', 'list') == 'arg1: hello, arg2: world, args: {from, list}, kwargs: [:]'
-     assert m2204a('hello', 'world', 'from', 'list', from: 'kwargs') == 'arg1: hello, arg2: world, args: {from, list}, kwargs: [from:kwargs]'
-     assert m2204a('hello', 'world', from: 'kwargs') == 'arg1: hello, arg2: world, args: {}, kwargs: [from:kwargs]'
-     assert m2204a([:], 'hello', 'world', [] as Object[]) == 'arg1: hello, arg2: world, args: {}, kwargs: [:]'
+     assert m2204a('hello', 'world') == 'arg1: hello, arg2: world, args: [], kwargs: [:]'
+     assert m2204a('hello', 'world', 'from', 'list') == 'arg1: hello, arg2: world, args: [from, list], kwargs: [:]'
+     assert m2204a('hello', 'world', 'from', 'list', from: 'kwargs') == 'arg1: hello, arg2: world, args: [from, list], kwargs: [from:kwargs]'
+     assert m2204a('hello', 'world', from: 'kwargs') == 'arg1: hello, arg2: world, args: [], kwargs: [from:kwargs]'
+     assert m2204a([:], 'hello', 'world', [] as Object[]) == 'arg1: hello, arg2: world, args: [], kwargs: [:]'
      
-     assert m2204b('hello', 'world') == 'arg1: hello, arg2: 1, args: {world}, kwargs: [:]'
-     assert m2204b('hello', 'world', 'from', 'list') == 'arg1: hello, arg2: 1, args: {world, from, list}, kwargs: [:]'
-     assert m2204b('hello', 'world', 'from', 'list', from: 'kwargs') == 'arg1: hello, arg2: world, args: {from, list}, kwargs: [from:kwargs]'
-     assert m2204b('hello', 'world', from: 'kwargs') == 'arg1: hello, arg2: world, args: {}, kwargs: [from:kwargs]'
+     assert m2204b('hello', 'world') == 'arg1: hello, arg2: 1, args: [world], kwargs: [:]'
+     assert m2204b('hello', 'world', 'from', 'list') == 'arg1: hello, arg2: 1, args: [world, from, list], kwargs: [:]'
+     assert m2204b('hello', 'world', 'from', 'list', from: 'kwargs') == 'arg1: hello, arg2: world, args: [from, list], kwargs: [from:kwargs]'
+     assert m2204b('hello', 'world', from: 'kwargs') == 'arg1: hello, arg2: world, args: [], kwargs: [from:kwargs]'
   }
 
  
