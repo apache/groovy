@@ -180,6 +180,15 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
             }
         }
 
+        for (GroovyFieldDoc field : fields) {
+            SimpleGroovyFieldDoc mutableField = (SimpleGroovyFieldDoc) field;
+            GroovyType fieldType = field.type();
+            String typeName = fieldType.typeName();
+            if (visibleClasses.containsKey(typeName)) {
+                mutableField.setType((GroovyType) visibleClasses.get(typeName));
+            }
+        }
+
         // resolve method return types and parameter types
         for (GroovyMethodDoc method : methods) {
 
@@ -337,7 +346,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
     }
 
     public String fullDottedName() {
-        return fullPathName.replaceAll("/", ".");
+        return fullPathName == null ? "null" : fullPathName.replaceAll("/", ".");
     }
 
     public void addInterfaceName(String className) {

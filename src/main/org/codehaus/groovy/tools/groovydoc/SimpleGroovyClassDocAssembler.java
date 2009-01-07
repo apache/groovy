@@ -24,6 +24,7 @@ import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 import org.codehaus.groovy.antlr.treewalker.VisitorAdapter;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyConstructorDoc;
+import org.codehaus.groovy.groovydoc.GroovyType;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -370,7 +371,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
 
                 // type
                 String typeName = getTypeNodeAsText(t.childOfType(TYPE), "def");
-                SimpleGroovyType type = new SimpleGroovyType(typeName); // todo !!!
+                GroovyType type = new SimpleGroovyType(typeName); // todo !!!
                 currentFieldDoc.setType(type);
 
                 currentClassDoc.add(currentFieldDoc);

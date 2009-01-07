@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 package org.codehaus.groovy.tools.groovydoc;
-import org.codehaus.groovy.groovydoc.*;
+
+import org.codehaus.groovy.groovydoc.GroovyFieldDoc;
+import org.codehaus.groovy.groovydoc.GroovyType;
 
 public class SimpleGroovyFieldDoc extends SimpleGroovyMemberDoc implements GroovyFieldDoc {
     private GroovyType type;
@@ -44,7 +46,7 @@ public class SimpleGroovyFieldDoc extends SimpleGroovyMemberDoc implements Groov
         return type;
     }
 
-    public void setType(SimpleGroovyType type) {
+    public void setType(GroovyType type) {
         this.type = type;
     }
 }

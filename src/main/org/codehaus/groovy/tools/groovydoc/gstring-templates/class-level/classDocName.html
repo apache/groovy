@@ -17,6 +17,13 @@
     def visibleMethods = classDoc.methods().findAll{ !it.isPrivate() || props.privateScope }
     boolean hasMethods = visibleMethods.size() > 0
     boolean hasEnumConstants = classDoc.enumConstants().size() > 0
+    def linkable = { t, b ->
+        if (t instanceof String) return t
+        if (b) {
+            return '<a href="' + classDoc.relativeRootPath + t.fullDottedName().replace('.', '/') + '.html">' + t.typeName() + '</a>'
+        }
+        return (t.fullDottedName() ? t.fullDottedName() : t.typeName())
+    }
     def modifiers = { t ->
         (t.isPrivate()?"private&nbsp;":"") +
         (t.isPublic()?"public&nbsp;":"") +
@@ -29,11 +36,6 @@
         (t.isPrivate()?"private&nbsp;":"") +
         (t.isProtected()?"protected&nbsp;":"") +
         (t.isStatic()?"static&nbsp;":"")
-    }
-    def returnType = { t ->
-        t.isReturnTypeAvailable() ?
-            '<a href="' + classDoc.relativeRootPath + t.returnType().fullPathName + '.html">' + t.returnType().name() + '</a>' :
-            t.returnType().fullDottedName()
     }
     def elementTypes = [
         "required":"true",
@@ -161,20 +163,26 @@ def parents = classDoc.parentClasses
 if (parents.size() >= 2) {
     %><PRE><%
     parents.eachWithIndex { p, i ->
-        %>${(i > 0 ? "   " * (i - 1) + "+- " : "") + p}\n<%
+        %>${(i > 0 ? "   " * (i - 1) + "+- " : "") + linkable(p, true)}\n<%
     }
     %></PRE><%
 }
-// TODO follow up the tree collecting interfaces seen
+// TODO follow up the tree collecting interfaces seen?
 def interfaces = classDoc.interfaces()
 if (interfaces) {
-    %><DL><dt><b>All Implemented Interfaces:</b> </dt><dd>${interfaces.collect{ (it.fullPathName ?: it.name()).replace('/', '.')}.join(', ')}</dd></DL><%
+    %><DL><dt><b>All Implemented Interfaces:</b> </dt><dd>${interfaces.collect{ linkable(it, true) }.join(', ')}</dd></DL><%
 }
 %>
 <!--
 <dd><a href="../../../../org/codehaus/groovy/ast/GroovyClassVisitor.html" title="interface in org.codehaus.groovy.ast">GroovyClassVisitor</a>, <a href="../../../../org/codehaus/groovy/ast/GroovyCodeVisitor.html" title="interface in org.codehaus.groovy.ast">GroovyCodeVisitor</a></dd>
 -->
 <hr>
+<PRE>
+${modifiers(classDoc) + (classDoc.isAnnotationType() ? '@interface' : classDoc.typeDescription) + ' ' + classDoc.name()}
+<% if (!"java.lang.Object".equals(classDoc.superclass().name())) {
+%>extends ${linkable(classDoc.superclass(), true)}
+<% } %>
+</PRE>
 <% if (classDoc.commentText()) { %>
 <P>
 ${classDoc.commentText()}
@@ -216,7 +224,7 @@ ${classDoc.commentText()}
     <% for (field in visibleFields) { %>
         <TR BGCOLOR="white" CLASS="TableRowColor">
         <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
-        <CODE>${modifiersBrief(field) + field.type().typeName()}</CODE></FONT></TD>
+        <CODE>${modifiersBrief(field) + linkable(field.type(), true)}</CODE></FONT></TD>
         <TD>
             <CODE><B><A HREF="#${field.name()}">${field.name()}</A></B></CODE>
             <BR>
@@ -293,7 +301,7 @@ ${classDoc.commentText()}
     <% for (method in visibleMethods) { %>
         <TR BGCOLOR="white" CLASS="TableRowColor">
         <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1" CLASS="ClassItemFont">
-            <CODE>${modifiersBrief(method)}${returnType(method)}</CODE></FONT>
+            <CODE>${modifiersBrief(method)}${linkable(method.returnType(), method.isReturnTypeAvailable())}</CODE></FONT>
         </TD>
         <TD>
             <CODE><b><a href="#${nameFromParams(method)}">${method.name()}</a></b>(${paramsOf(method)})</CODE>
@@ -343,7 +351,7 @@ ${classDoc.commentText()}
     </TABLE>
     <% for (field in visibleFields) { %>
         <A NAME="${field.name()}"><!-- --></A><H3>${field.name()}</H3>
-        <PRE>${modifiers(field) + field.type().typeName()} <B>${field.name()}</B></PRE>
+        <PRE>${modifiers(field) + linkable(field.type(), true)} <B>${field.name()}</B></PRE>
         <DL>
         <DD>${field.commentText()}
         </DD>
@@ -366,7 +374,7 @@ ${classDoc.commentText()}
     </TABLE>
     <% for (element in visibleFields) { %>
         <A NAME="${element.name()}"><!-- --></A><H3>${element.name()}</H3>
-        <PRE>${modifiers(element) + element.type().typeName()} <B>${element.name()}</B></PRE>
+        <PRE>${modifiers(element) + linkable(element.type(), true)} <B>${element.name()}</B></PRE>
         <DL>
         <DD>${element.commentText()}
         </DD>
@@ -414,7 +422,7 @@ ${classDoc.commentText()}
     <% for (method in visibleMethods) { %>
         <A NAME="${nameFromParams(method)}"><!-- --></A><H3>
         ${method.name()}</H3>
-        <PRE>${modifiers(method)}${returnType(method)} <B>${method.name()}</B>(${paramsOf(method)})</PRE>
+        <PRE>${modifiers(method)}${linkable(method.returnType(), method.isReturnTypeAvailable())} <B>${method.name()}</B>(${paramsOf(method)})</PRE>
         <DL>
         <DD>${method.commentText()}
         </DD>
