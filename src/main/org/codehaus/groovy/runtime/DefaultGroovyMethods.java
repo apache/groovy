@@ -464,11 +464,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
     
     /**
-     * Print a value formatted Groovy style to the writer.
+     * Print a value formatted Groovy style to the print writer.
      *
-     * @param self  any Object
+     * @param self  a PrintWriter
      * @param value the value to print
      * @since 1.0
+     */
+    public static void print(PrintWriter self, Object value) {
+        self.print(InvokerHelper.toString(value));
+    }
+    
+    /**
+     * Print a value formatted Groovy style to the print stream.
+     *
+     * @param self  a PrintStream
+     * @param value the value to print
+     * @since 1.6
      */
     public static void print(PrintStream self, Object value) {
         self.print(InvokerHelper.toString(value));
@@ -542,11 +553,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
     
     /**
+     * Print a value formatted Groovy style (followed by a newline) to the print writer.
+     *
+     * @param self  a PrintWriter
+     * @param value the value to print
+     * @since 1.0
+     */
+    public static void println(PrintWriter self, Object value) {
+        self.println(InvokerHelper.toString(value));
+    }
+    
+    /**
      * Print a value formatted Groovy style (followed by a newline) to the print stream.
      *
      * @param self  any Object
      * @param value the value to print
-     * @since 1.0
+     * @since 1.6
      */
     public static void println(PrintStream self, Object value) {
         self.println(InvokerHelper.toString(value));
