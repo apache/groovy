@@ -89,7 +89,7 @@ void doTest(def param) {
     sw1.write(param as String)
     sw2.print(param)
     sw3.withPrintWriter { it.print param }
-    new PrintWriter(sw4).print(param as String)
+    new PrintWriter(sw4).print(param)
     sw5.newPrintWriter().print(param)
     new PrintStream(baos1).print(param)
     new GroovyPrintStream(baos2).print(param)
@@ -126,7 +126,7 @@ void doTest(def param) {
     sw1.write(NEWLINE)
     sw2.println(param)
     sw3.withPrintWriter { it.println param }
-    new PrintWriter(sw4).println(param as String)
+    new PrintWriter(sw4).println(param)
     sw5.newPrintWriter().println(param)
     new PrintStream(baos1).println(param)
     new GroovyPrintStream(baos2).println(param)
