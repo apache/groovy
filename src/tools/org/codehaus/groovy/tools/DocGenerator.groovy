@@ -257,11 +257,11 @@ class DocGenerator {
             title = "Groovy class in $packageName"
         }
         else {
-            apiBaseUrl = "http://java.sun.com/j2se/1.4.2/docs/api/"
+            apiBaseUrl = "http://java.sun.com/j2se/1.5.0/docs/api/"
             title = "JDK class in $packageName"
         }
 
-        def url = apiBaseUrl + target[0].replaceAll(/\./, "/") + '.html' + (target.size() > 1 ? '#' + target[1] : '')
+        def url = apiBaseUrl + target[0].replace('.', '/') + '.html' + (target.size() > 1 ? '#' + target[1] : '')
         return "<a href='$url' title='$title'>$shortClassName</a>"
     }
 
@@ -373,6 +373,6 @@ class DocGenerator {
     }
 
     private static File getSourceFile(String classname) {
-        new File("src/main/" + classname.replaceAll(/\./, "/") + ".java")
+        new File("src/main/" + classname.replace('.', '/') + ".java")
     }
 }
