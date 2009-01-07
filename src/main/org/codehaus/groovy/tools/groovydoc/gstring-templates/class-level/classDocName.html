@@ -18,11 +18,17 @@
     boolean hasMethods = visibleMethods.size() > 0
     boolean hasEnumConstants = classDoc.enumConstants().size() > 0
     def linkable = { t, b ->
-        if (t instanceof String) return t
-        if (b) {
-            return '<a href="' + classDoc.relativeRootPath + t.fullDottedName().replace('.', '/') + '.html">' + t.typeName() + '</a>'
+        if (!t || t instanceof String) return t
+        if (t instanceof org.codehaus.groovy.groovydoc.GroovyClassDoc) {
+            if (b) {
+                return '<a href="' + classDoc.relativeRootPath + t.getFullPathName() + '.html">' + t.name() + '</a>'
+            }
+            return (t.fullDottedName() ?: t.name())
         }
-        return (t.fullDottedName() ? t.fullDottedName() : t.typeName())
+        if (b) {
+            return '<a href="' + classDoc.relativeRootPath + (t.fullDottedName()?:'null').replace('.', '/') + '.html">' + t.typeName() + '</a>'
+        }
+        return (t.fullDottedName() ?: t.typeName())
     }
     def modifiers = { t ->
         (t.isPrivate()?"private&nbsp;":"") +
@@ -43,7 +49,7 @@
     ]
     def isRequired = { f, v -> def req = f.constantValueExpression() == null; req.toString() == v }
     def upcase = { n -> n[0].toUpperCase() + n[1..-1] }
-    def paramsOf = { n -> n.parameters().collect{ param -> (param.isTypeAvailable() ? '<a href="' + classDoc.relativeRootPath + param.type().fullPathName + '.html">' + param.type().name() + '</a>' : param.typeName() ) + ' ' + param.name() + (param.defaultValue() ? " = " + param.defaultValue():"") }.join(", ") }
+    def paramsOf = { n -> n.parameters().collect{ param -> linkable(param.type(), param.isTypeAvailable()) + ' ' + param.name() + (param.defaultValue() ? " = " + param.defaultValue():"") }.join(", ") }
     def nameFromParams = { n -> n.name() + '(' + n.parameters().collect{ param -> param.isTypeAvailable()?param.type().fullDottedName():param.typeName() }.join(', ') + ')' }
 %>
 <HTML>

@@ -153,12 +153,12 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
     }
 
     private String getFullName(SimpleGroovyClassDoc next) {
-        return (next.getFullPathName() != null ? next.getFullPathName() : next.name()).replaceAll("/", ".");
+        return (next.getFullPathName() != null ? next.getFullPathName() : next.name()).replace("/", ".");
     }
 
     private Class getClassOf(String next) {
         try {
-            return Class.forName(next.replaceAll("/", "."));
+            return Class.forName(next.replace("/", "."));
         } catch (Throwable t) {
             return null;
         }
@@ -346,7 +346,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
     }
 
     public String fullDottedName() {
-        return fullPathName == null ? "null" : fullPathName.replaceAll("/", ".");
+        return fullPathName == null ? "null" : fullPathName.replace('/', '.');
     }
 
     public void addInterfaceName(String className) {
