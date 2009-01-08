@@ -627,6 +627,11 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return (cn.getName().equals(getName()));
     }
 
+    public int hashCode() {
+        if (redirect!=null) return redirect().hashCode();
+        return getName().hashCode();
+    }
+
     public void addMixin(MixinNode mixin) {
         // lets check if it already uses a mixin
         MixinNode[] mixins = redirect().mixins;
