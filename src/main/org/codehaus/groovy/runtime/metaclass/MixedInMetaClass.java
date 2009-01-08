@@ -46,4 +46,12 @@ public class MixedInMetaClass extends OwnedMetaClass {
     protected MetaClass getOwnerMetaClass(Object owner) {
         return InvokerHelper.getMetaClass(owner);
     }
+
+    public Object invokeMethod(Class sender, Object receiver, String methodName, Object[] arguments, boolean isCallToSuper, boolean fromInsideClass) {
+        if (isCallToSuper) {
+            return delegate.invokeMethod(sender, receiver, methodName, arguments, true, fromInsideClass);
+        }
+        else
+            return super.invokeMethod(sender, receiver, methodName, arguments, false, fromInsideClass);
+    }
 }
