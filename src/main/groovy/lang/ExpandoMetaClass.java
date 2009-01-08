@@ -188,7 +188,15 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                 metaClass = GroovySystem.getMetaClassRegistry().getMetaClass(mixinClass.getTheClass());
             }
 
-            final MetaMethod metaMethod = metaClass.pickMethod(methodName, arguments);
+            MetaMethod metaMethod = metaClass.pickMethod(methodName, arguments);
+            if (metaMethod == null && metaClass instanceof MetaClassImpl) {
+                MetaClassImpl mc = (MetaClassImpl) metaClass;
+                for (CachedClass cl = mc.getTheCachedClass().getCachedSuperClass(); cl != null; cl = cl.getCachedSuperClass()) {
+                    metaMethod = mc.getMethodWithoutCaching(cl.getTheClass(), methodName, arguments, false);
+                    if (metaMethod != null)
+                        break;
+                }
+            }
             if (metaMethod != null) {
               MetaMethod method = new MixinInstanceMetaMethod(metaMethod, mixin);
               registerInstanceMethod(method);

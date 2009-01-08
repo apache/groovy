@@ -290,6 +290,17 @@ class MixinTest extends GroovyTestCase {
         assertEquals 2, u.mixedIn[Set].size ()
         assertEquals 2, ((Set)u).size ()
     }
+
+    void testWPM () {
+
+        new WPM_B ().foo ()
+
+        WPM_C.metaClass { mixin WPM_B }
+
+        def c= new WPM_C()
+        c.foo()
+        c.foobar()
+    }
 }
 
 class ArrayListExt {
@@ -393,3 +404,20 @@ class NoDuplicateCollection {
           add obj
     }
 }
+
+class WPM_A  {
+
+  def final foo() {
+    bar() 
+  }
+
+  private final String bar() { return "Bar" }
+}
+
+class WPM_B extends WPM_A {
+  def foobar () {
+    super.foo ()
+  }
+}
+
+class WPM_C {}
