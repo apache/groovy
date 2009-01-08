@@ -505,11 +505,11 @@ public class InvokerHelper {
                 return range.toString();
             }
         }
-        if (arguments instanceof List) {
-            return formatList(arguments, verbose);
+        if (arguments instanceof Collection) {
+            return formatList((Collection) arguments, verbose);
         }
         if (arguments instanceof Map) {
-            return formatMap(arguments, verbose);
+            return formatMap((Map) arguments, verbose);
         }
         if (arguments instanceof Element) {
             return XmlUtil.serialize((Element) arguments);
@@ -532,8 +532,7 @@ public class InvokerHelper {
         return arguments.toString();
     }
 
-    private static String formatMap(Object arguments, boolean verbose) {
-        Map map = (Map) arguments;
+    private static String formatMap(Map map, boolean verbose) {
         if (map.isEmpty()) {
             return "[:]";
         }
@@ -558,8 +557,7 @@ public class InvokerHelper {
         return buffer.toString();
     }
 
-    private static String formatList(Object arguments, boolean verbose) {
-        List list = (List) arguments;
+    private static String formatList(Collection list, boolean verbose) {
         StringBuffer buffer = new StringBuffer("[");
         boolean first = true;
         for (Iterator iter = list.iterator(); iter.hasNext();) {
@@ -601,7 +599,7 @@ public class InvokerHelper {
      * @return the string representation of the map
      */
     public static String toMapString(Map arg) {
-        return format(arg, false);
+        return formatMap(arg, false);
     }
 
     /**
@@ -611,7 +609,7 @@ public class InvokerHelper {
      * @return the string representation of the collection
      */
     public static String toListString(Collection arg) {
-        return format(arg, false);
+        return formatList(arg, false);
     }
 
     /**
