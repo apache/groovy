@@ -212,7 +212,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         if (superClassName != null) {
             superClass = resolveClass(rootDoc, superClassName);
         } else {
-            superClass = new SimpleGroovyClassDoc(null, "java.lang.Object"); // dummy class representing java.lang.Object, not to be put into main tree
+            superClass = new SimpleGroovyClassDoc(null, "java.lang.Object"); // don't put into main tree
         }
 
         for (String name : interfaceNames) {
@@ -225,10 +225,16 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
     }
 
     private GroovyClassDoc resolveClass(GroovyRootDoc rootDoc, String name) {
-        GroovyClassDoc doc = rootDoc.classNamed(name);
+        SimpleGroovyClassDoc doc = (SimpleGroovyClassDoc) rootDoc.classNamed(name);
         if (doc == null) {
             // The superClass is not in the tree being documented
-            doc = new SimpleGroovyClassDoc(null, name); // dummy class with name, not to be put into main tree
+            String shortname = name;
+            int slashIndex = name.lastIndexOf("/");
+            if (slashIndex > 0) {
+                shortname = name.substring(slashIndex + 1);
+            }
+            doc = new SimpleGroovyClassDoc(null, shortname); // dummy class with name, not to be put into main tree
+            doc.setFullPathName(name);
         }
         return doc;
     }

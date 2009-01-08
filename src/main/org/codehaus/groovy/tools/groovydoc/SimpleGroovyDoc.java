@@ -15,30 +15,33 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
-import java.text.BreakIterator;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.codehaus.groovy.groovydoc.*;
 import org.codehaus.groovy.ant.Groovydoc;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
+import org.codehaus.groovy.groovydoc.GroovyDoc;
+
+import java.text.BreakIterator;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.StringTokenizer;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
     private static final Pattern TAG_REGEX = Pattern.compile("(?m)@([a-z]+)\\s+(.*$[^@]*)");
     private static final Pattern LINK_REGEX = Pattern.compile("(?m)[{]@(link)\\s+([^}]*)}");
     private static final Pattern CODE_REGEX = Pattern.compile("(?m)[{]@(code)\\s+([^}]*)}");
-	private String name;
-	private String commentText;
-	private String rawCommentText;
-	private String firstSentenceCommentText;
+    private String name;
+    private String commentText;
+    private String rawCommentText;
+    private String firstSentenceCommentText;
     private List<Groovydoc.LinkArgument> links;
     private int definitionType;
 
     public SimpleGroovyDoc(String name, List<Groovydoc.LinkArgument> links) {
         this.name = name;
         this.links = links;
-        setRawCommentText("");  // default to no comments (good for default constructors which will not have a reason to call this)
+        setRawCommentText("");  // default to no comments (mainly for default constructors where this won't be called)
         definitionType = CLASS_DEF;
     }
 
@@ -46,42 +49,42 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
         this(name, new ArrayList<Groovydoc.LinkArgument>());
     }
 
-	public String name() {
-		return name;
-	}
+    public String name() {
+        return name;
+    }
 
-	public String toString() {
-		return "" + getClass() + "(" + name + ")";
-	}
+    public String toString() {
+        return "" + getClass() + "(" + name + ")";
+    }
 
-	public String commentText() {
-		return commentText; // derived from rawCommentText
-	}
+    public String commentText() {
+        return commentText; // derived from rawCommentText
+    }
 
-	public String getRawCommentText() {
-		return rawCommentText;
-	}
+    public String getRawCommentText() {
+        return rawCommentText;
+    }
 
-	public String firstSentenceCommentText() {
-		return firstSentenceCommentText; // derived from rawCommentText
-	}
+    public String firstSentenceCommentText() {
+        return firstSentenceCommentText; // derived from rawCommentText
+    }
 
-	public void setRawCommentText(String rawCommentText) {
-		this.rawCommentText = rawCommentText;
-		
-		// remove all the * from beginning of lines
-		commentText = rawCommentText.replaceAll("(?m)^\\s*\\*", ""); // todo precompile regex
+    public void setRawCommentText(String rawCommentText) {
+        this.rawCommentText = rawCommentText;
 
-		// Comment Summary using first sentence (Locale sensitive)
-		BreakIterator boundary = BreakIterator.getSentenceInstance(Locale.getDefault()); // todo - allow locale to be passed in
+        // remove all the * from beginning of lines
+        commentText = rawCommentText.replaceAll("(?m)^\\s*\\*", ""); // todo precompile regex
+
+        // Comment Summary using first sentence (Locale sensitive)
+        BreakIterator boundary = BreakIterator.getSentenceInstance(Locale.getDefault()); // todo - allow locale to be passed in
         boundary.setText(commentText);
         int start = boundary.first();
         int end = boundary.next();
         if (start > -1 && end > -1) {
-        	// need to abbreviate this comment for the summary
-        	firstSentenceCommentText = commentText.substring(start,end);
+            // need to abbreviate this comment for the summary
+            firstSentenceCommentText = commentText.substring(start, end);
         } else {
-        	firstSentenceCommentText = commentText;
+            firstSentenceCommentText = commentText;
         }
 
         // {@link processing hack}
@@ -90,15 +93,15 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
         // {@code processing hack}
         commentText = replaceAllTags(commentText, "<TT>", "</TT>", CODE_REGEX);
 
-		// hack to reformat other groovydoc tags (@see, @return, @link, @param, @throws, @author, @since) into html
+        // hack to reformat other groovydoc tags (@see, @return, @link, @param, @throws, @author, @since) into html
         // todo: replace with proper tag support
-		commentText = replaceAllTags(commentText, "<DL><DT><B>$1:</B></DT><DD>", "</DD></DL>", TAG_REGEX);
+        commentText = replaceAllTags(commentText, "<DL><DT><B>$1:</B></DT><DD>", "</DD></DL>", TAG_REGEX);
 
         commentText = decodeSpecialSymbols(commentText);
 
-		// hack to hide groovydoc tags in summaries
-		firstSentenceCommentText = stripTags(firstSentenceCommentText);
-	}
+        // hack to hide groovydoc tags in summaries
+        firstSentenceCommentText = stripTags(firstSentenceCommentText);
+    }
 
     // TODO: this should go away once we have proper tags
     public String replaceAllTags(String self, String s1, String s2, Pattern regex) {
@@ -122,7 +125,7 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
     }
 
     private String stripTags(String text) {
-        return text.replaceAll("(?m)@([a-z]+\\s*.*)$","");
+        return text.replaceAll("(?m)@([a-z]+\\s*.*)$", "");
     }
 
     private String encodeSpecialSymbols(String text) {
@@ -131,6 +134,14 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
 
     private String decodeSpecialSymbols(String text) {
         return text.replaceAll("&at;", "@");
+    }
+
+    public String getDocUrl(Object type) {
+        if (type instanceof SimpleGroovyClassDoc) {
+            SimpleGroovyClassDoc classDoc = (SimpleGroovyClassDoc) type;
+            return "<a href=\"" + classDoc.getRelativeRootPath() + (classDoc.fullDottedName() != null ? classDoc.fullDottedName() : "null").replace('.', '/') + ".html\">" + classDoc.fullDottedName() + "</a>";
+        }
+        return getDocUrl(type.toString());
     }
 
     public String getDocUrl(String type) {
@@ -146,6 +157,9 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
         String shortClassName = target[0].replaceAll(".*\\.", "");
 //        String packageName = type.substring(0, type.length()-shortClassName.length()-2);
         shortClassName += (target.length > 1 ? "#" + target[1].split("\\(")[0] : "");
+        if (shortClassName.startsWith("groovy.") || shortClassName.startsWith("org.codehaus.groovy.")) {
+            
+        }
         for (Groovydoc.LinkArgument link : links) {
             final StringTokenizer tokenizer = new StringTokenizer(link.getPackages(), ", ");
             while (tokenizer.hasMoreTokens()) {
@@ -155,7 +169,7 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
                     if (!apiBaseUrl.endsWith("/")) {
                         apiBaseUrl += "/";
                     }
-                    String url = apiBaseUrl + target[0].replaceAll("\\.", "/") + ".html" + (target.length > 1 ? "#" + target[1] : "");
+                    String url = apiBaseUrl + target[0].replace('.', '/') + ".html" + (target.length > 1 ? "#" + target[1] : "");
                     return "<a href='" + url + "' title='" + shortClassName + "'>" + shortClassName + "</a>";
                 }
             }
@@ -186,34 +200,66 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
         return "Class";
     }
 
+    public String getTypeSourceDescription() {
+        if (isInterface()) return "interface";
+        if (isAnnotationType()) return "@interface";
+        if (isEnum()) return "enum";
+        return "class";
+    }
+
     public void setTokenType(int t) {
         definitionType = t;
     }
 
     // Methods from Comparable
-	public int compareTo(Object that) {
-		if (that instanceof SimpleGroovyDoc) {
-			return name.compareTo(((SimpleGroovyDoc) that).name);
-		} else {
-			throw new ClassCastException();
-		}
-	}
+    public int compareTo(Object that) {
+        if (that instanceof SimpleGroovyDoc) {
+            return name.compareTo(((SimpleGroovyDoc) that).name);
+        } else {
+            throw new ClassCastException();
+        }
+    }
 
     // Methods from GroovyDoc
 
     //	public GroovyTag[] firstSentenceTags() {/*todo*/return null;}
     //	public GroovyTag[] inlineTags() {/*todo*/return null;}
-	public boolean isAnnotationTypeElement() {/*todo*/return false;}
 
-    public boolean isConstructor() {/*todo*/return false;}
+    public boolean isAnnotationTypeElement() {/*todo*/
+        return false;
+    }
 
-    public boolean isEnumConstant() {/*todo*/return false;}
-	public boolean isError() {/*todo*/return false;}
-	public boolean isException() {/*todo*/return false;}
-	public boolean isField() {/*todo*/return false;}
-	public boolean isIncluded() {/*todo*/return false;}
-	public boolean isMethod() {/*todo*/return false;}
-	public boolean isOrdinaryClass() {/*todo*/return false;}
+    public boolean isConstructor() {/*todo*/
+        return false;
+    }
+
+    public boolean isEnumConstant() {/*todo*/
+        return false;
+    }
+
+    public boolean isError() {/*todo*/
+        return false;
+    }
+
+    public boolean isException() {/*todo*/
+        return false;
+    }
+
+    public boolean isField() {/*todo*/
+        return false;
+    }
+
+    public boolean isIncluded() {/*todo*/
+        return false;
+    }
+
+    public boolean isMethod() {/*todo*/
+        return false;
+    }
+
+    public boolean isOrdinaryClass() {/*todo*/
+        return false;
+    }
 //	public GroovySourcePosition position() {/*todo*/return null;}
 //	public GroovySeeTag[] seeTags() {/*todo*/return null;}
 //	public GroovyTag[] tags() {/*todo*/return null;}

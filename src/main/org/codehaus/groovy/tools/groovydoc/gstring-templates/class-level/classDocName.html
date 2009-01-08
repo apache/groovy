@@ -19,16 +19,10 @@
     boolean hasEnumConstants = classDoc.enumConstants().size() > 0
     def linkable = { t, b ->
         if (!t || t instanceof String) return t
-        if (t instanceof org.codehaus.groovy.groovydoc.GroovyClassDoc) {
-            if (b) {
-                return '<a href="' + classDoc.relativeRootPath + t.getFullPathName() + '.html">' + t.name() + '</a>'
-            }
-            return (t.fullDottedName() ?: t.name())
-        }
         if (b) {
-            return '<a href="' + classDoc.relativeRootPath + (t.fullDottedName()?:'null').replace('.', '/') + '.html">' + t.typeName() + '</a>'
+            return classDoc.getDocUrl(t.fullDottedName())
         }
-        return (t.fullDottedName() ?: t.typeName())
+        return (t.fullDottedName() ?: t.name())
     }
     def modifiers = { t ->
         (t.isPrivate()?"private&nbsp;":"") +
@@ -184,7 +178,7 @@ if (interfaces) {
 -->
 <hr>
 <PRE>
-${modifiers(classDoc) + (classDoc.isAnnotationType() ? '@interface' : classDoc.typeDescription) + ' ' + classDoc.name()}
+${modifiers(classDoc) + classDoc.typeSourceDescription + ' ' + classDoc.name()}
 <% if (!"java.lang.Object".equals(classDoc.superclass().name())) {
 %>extends ${linkable(classDoc.superclass(), true)}
 <% } %>

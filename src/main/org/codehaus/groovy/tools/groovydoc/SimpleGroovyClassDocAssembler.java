@@ -371,7 +371,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
 
                 // type
                 String typeName = getTypeNodeAsText(t.childOfType(TYPE), "def");
-                GroovyType type = new SimpleGroovyType(typeName); // todo !!!
+                GroovyType type = new SimpleGroovyType(typeName);
                 currentFieldDoc.setType(type);
 
                 currentClassDoc.add(currentFieldDoc);

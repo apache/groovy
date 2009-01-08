@@ -14,7 +14,9 @@
  * limitations under the License.
  */
 package org.codehaus.groovy.tools.groovydoc;
-import org.codehaus.groovy.groovydoc.*;
+
+import org.codehaus.groovy.groovydoc.GroovyClassDoc;
+import org.codehaus.groovy.groovydoc.GroovyType;
 
 public class SimpleGroovyType implements GroovyType {
 	public SimpleGroovyType(String typeName) {
@@ -34,8 +36,6 @@ public class SimpleGroovyType implements GroovyType {
 	public String qualifiedTypeName() {/*todo*/return null;}
 	public String simpleTypeName() {/*todo*/return null;}
 
-
-    // ----
     public String fullDottedName() {
         return typeName;  // todo - package name prefixed
     }
