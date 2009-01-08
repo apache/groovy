@@ -17,13 +17,14 @@ package org.codehaus.groovy.tools.groovydoc;
 
 import org.codehaus.groovy.groovydoc.GroovyFieldDoc;
 import org.codehaus.groovy.groovydoc.GroovyType;
+import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 
 public class SimpleGroovyFieldDoc extends SimpleGroovyMemberDoc implements GroovyFieldDoc {
     private GroovyType type;
     private String constantValueExpression;
 
-    public SimpleGroovyFieldDoc(String name) {
-		super(name);
+    public SimpleGroovyFieldDoc(String name, GroovyClassDoc belongsToClass) {
+		super(name, belongsToClass);
 	}
 
     public Object constantValue() {/*todo*/return null;}

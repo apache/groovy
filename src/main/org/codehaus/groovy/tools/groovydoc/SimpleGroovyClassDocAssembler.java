@@ -25,6 +25,7 @@ import org.codehaus.groovy.antlr.treewalker.VisitorAdapter;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyConstructorDoc;
 import org.codehaus.groovy.groovydoc.GroovyType;
+import org.codehaus.groovy.control.ResolveVisitor;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -48,7 +49,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     private LineColumn lastLineCol;
     private boolean insideEnum;
 
-    public SimpleGroovyClassDocAssembler(String packagePath, String file, SourceBuffer sourceBuffer, List<Groovydoc.LinkArgument> links, Properties properties) {
+    public SimpleGroovyClassDocAssembler(String packagePath, String file, SourceBuffer sourceBuffer, List<Groovydoc.LinkArgument> links, Properties properties, boolean isGroovy) {
         this.sourceBuffer = sourceBuffer;
         this.packagePath = packagePath;
         this.links = links;
@@ -64,10 +65,14 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         }
 
         importedClassesAndPackages = new ArrayList<String>();
-        importedClassesAndPackages.add(packagePath + "/*");  // everything in this package is automatically imported
-        importedClassesAndPackages.add("groovy/lang/*");     // default imports in Groovy, from org.codehaus.groovy.control.ResolveVisitor.DEFAULT_IMPORTS
-        importedClassesAndPackages.add("groovy/util/*");     // todo - non Groovy source files shouldn't import these, but let us import them for now, it won't hurt...
-
+        importedClassesAndPackages.add(packagePath + "/*");  // everything in this package
+        if (isGroovy) {
+            for (String pkg : ResolveVisitor.DEFAULT_IMPORTS) {
+                importedClassesAndPackages.add(pkg.replace('.', '/') + "*");
+            }
+        } else {
+            importedClassesAndPackages.add("java/lang/*");
+        }
         currentClassDoc = new SimpleGroovyClassDoc(importedClassesAndPackages, className, links);
         currentClassDoc.setFullPathName(packagePath + FS + className);
         classDocs.put(currentClassDoc.getFullPathName(), currentClassDoc);
@@ -89,7 +94,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 GroovyConstructorDoc[] constructors = classDoc.constructors();
                 if (constructors != null && constructors.length == 0) { // add default constructor to doc
                     // name of class for the constructor
-                    GroovyConstructorDoc constructorDoc = new SimpleGroovyConstructorDoc(classDoc.name());
+                    GroovyConstructorDoc constructorDoc = new SimpleGroovyConstructorDoc(classDoc.name(), classDoc);
                     // don't forget to tell the class about this default constructor.
                     classDoc.add(constructorDoc);
                 }
@@ -116,7 +121,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     }
 
     private void adjustForAutomaticEnumMethods() {
-        SimpleGroovyMethodDoc valueOf = new SimpleGroovyMethodDoc("valueOf", links);
+        SimpleGroovyMethodDoc valueOf = new SimpleGroovyMethodDoc("valueOf", currentClassDoc);
         valueOf.setRawCommentText("Returns the enum constant of this type with the specified name.");
         SimpleGroovyParameter parameter = new SimpleGroovyParameter("name");
         parameter.setTypeName("String");
@@ -124,7 +129,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         valueOf.setReturnType(new SimpleGroovyType(currentClassDoc.name()));
         currentClassDoc.add(valueOf);
 
-        SimpleGroovyMethodDoc values = new SimpleGroovyMethodDoc("values", links);
+        SimpleGroovyMethodDoc values = new SimpleGroovyMethodDoc("values", currentClassDoc);
         values.setRawCommentText("Returns an array containing the constants of this enum type, in the order they are declared.");
         values.setReturnType(new SimpleGroovyType(currentClassDoc.name() + "[]"));
         currentClassDoc.add(values);
@@ -251,7 +256,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         if (visit == OPENING_VISIT) {
             if (!insideAnonymousInnerClass()) {
                 // name of class for the constructor
-                currentConstructorDoc = new SimpleGroovyConstructorDoc(currentClassDoc.name());
+                currentConstructorDoc = new SimpleGroovyConstructorDoc(currentClassDoc.name(), currentClassDoc);
 
                 // comments
                 String commentText = getJavaDocCommentsBeforeNode(t);
@@ -274,7 +279,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             if (!insideAnonymousInnerClass()) {
                 // method name
                 String methodName = t.childOfType(IDENT).getText();
-                currentMethodDoc = new SimpleGroovyMethodDoc(methodName, links);
+                currentMethodDoc = new SimpleGroovyMethodDoc(methodName, currentClassDoc);
 
                 // comments
                 String commentText = getJavaDocCommentsBeforeNode(t);
@@ -334,7 +339,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         if (visit == OPENING_VISIT) {
             insideEnum = true;
             String enumConstantName = t.childOfType(IDENT).getText();
-            SimpleGroovyFieldDoc currentEnumConstantDoc = new SimpleGroovyFieldDoc(enumConstantName);
+            SimpleGroovyFieldDoc currentEnumConstantDoc = new SimpleGroovyFieldDoc(enumConstantName, currentClassDoc);
 
             // comments
             String commentText = getJavaDocCommentsBeforeNode(t);
@@ -360,7 +365,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             if (isFieldDefinition(parentNode)) {
                 // field name
                 String fieldName = t.childOfType(IDENT).getText();
-                currentFieldDoc = new SimpleGroovyFieldDoc(fieldName);
+                currentFieldDoc = new SimpleGroovyFieldDoc(fieldName, currentClassDoc);
 
                 // comments
                 String commentText = getJavaDocCommentsBeforeNode(t);

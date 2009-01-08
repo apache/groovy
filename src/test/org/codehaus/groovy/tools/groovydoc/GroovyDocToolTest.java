@@ -140,11 +140,10 @@ public class GroovyDocToolTest extends GroovyTestCase {
         xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
-
         String defTabColDoc = output.getText(MOCK_DIR + "/groovy/model/DefaultTableColumn.html");
-
         assertTrue(defTabColDoc.indexOf("Evaluates the value of a cell") > 0);
     }
+
     public void testPackageName() throws Exception {
     	List srcList = new ArrayList();
     	srcList.add("groovy/xml/DOMBuilder.java");
@@ -164,7 +163,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         xmlTool.renderToOutput(output, MOCK_DIR);
 
         String domBuilderDoc = output.getText(MOCK_DIR + "/groovy/xml/DOMBuilder.html");
-        assertTrue(domBuilderDoc.indexOf("<extends>groovy/util/BuilderSupport</extends>") > 0);
+        assertTrue(domBuilderDoc.indexOf("<extends>BuilderSupport</extends>") > 0);
     }
 
     public void testExtendsClauseWithSuperClassInTree() throws Exception {
@@ -174,7 +173,6 @@ public class GroovyDocToolTest extends GroovyTestCase {
         xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
-
         String domBuilderDoc = output.getText(MOCK_DIR + "/groovy/xml/DOMBuilder.html");
         assertTrue(domBuilderDoc.indexOf("<extends>BuilderSupport</extends>") > 0);
     }
@@ -186,7 +184,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         MockOutputTool output = new MockOutputTool();
         xmlToolForTests.renderToOutput(output, MOCK_DIR);
         String domBuilderDoc = output.getText(MOCK_DIR + "/DefaultPackage/UberTestCaseBugs.html");
-        assertTrue(domBuilderDoc.indexOf("<extends>junit/framework/TestCase</extends>") > 0);    	
+        assertTrue(domBuilderDoc.indexOf("<extends>TestCase</extends>") > 0);    	
     }
 
     public void testStaticModifier() throws Exception {

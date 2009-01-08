@@ -31,10 +31,6 @@ public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements Gr
         super(name);
     }
 
-    public SimpleGroovyProgramElementDoc(String name, List<Groovydoc.LinkArgument> links) {
-        super(name, links);
-    }
-
     public GroovyPackageDoc containingPackage() {
         return packageDoc;
     }

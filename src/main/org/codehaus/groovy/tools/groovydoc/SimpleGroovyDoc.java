@@ -15,38 +15,22 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
-import org.codehaus.groovy.ant.Groovydoc;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 import org.codehaus.groovy.groovydoc.GroovyDoc;
 
 import java.text.BreakIterator;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Locale;
-import java.util.StringTokenizer;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
-    private static final Pattern TAG_REGEX = Pattern.compile("(?m)@([a-z]+)\\s+(.*$[^@]*)");
-    private static final Pattern LINK_REGEX = Pattern.compile("(?m)[{]@(link)\\s+([^}]*)}");
-    private static final Pattern CODE_REGEX = Pattern.compile("(?m)[{]@(code)\\s+([^}]*)}");
     private String name;
     private String commentText;
-    private String rawCommentText;
+    private String rawCommentText = "";
     private String firstSentenceCommentText;
-    private List<Groovydoc.LinkArgument> links;
     private int definitionType;
 
-    public SimpleGroovyDoc(String name, List<Groovydoc.LinkArgument> links) {
-        this.name = name;
-        this.links = links;
-        setRawCommentText("");  // default to no comments (mainly for default constructors where this won't be called)
-        definitionType = CLASS_DEF;
-    }
-
     public SimpleGroovyDoc(String name) {
-        this(name, new ArrayList<Groovydoc.LinkArgument>());
+        this.name = name;
+        definitionType = CLASS_DEF;
     }
 
     public String name() {
@@ -55,6 +39,14 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
 
     public String toString() {
         return "" + getClass() + "(" + name + ")";
+    }
+
+    protected void setCommentText(String commentText) {
+        this.commentText = commentText;
+    }
+
+    protected void setFirstSentenceCommentText(String firstSentenceCommentText) {
+        this.firstSentenceCommentText = firstSentenceCommentText;
     }
 
     public String commentText() {
@@ -71,110 +63,27 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
 
     public void setRawCommentText(String rawCommentText) {
         this.rawCommentText = rawCommentText;
+        setFirstSentenceCommentText(calculateFirstSentence(rawCommentText));
+    }
 
+    private String calculateFirstSentence(String raw) {
         // remove all the * from beginning of lines
-        commentText = rawCommentText.replaceAll("(?m)^\\s*\\*", ""); // todo precompile regex
-
+        String text = raw.replaceAll("(?m)^\\s*\\*", ""); // todo precompile regex
         // Comment Summary using first sentence (Locale sensitive)
         BreakIterator boundary = BreakIterator.getSentenceInstance(Locale.getDefault()); // todo - allow locale to be passed in
-        boundary.setText(commentText);
+        boundary.setText(text);
         int start = boundary.first();
         int end = boundary.next();
         if (start > -1 && end > -1) {
             // need to abbreviate this comment for the summary
-            firstSentenceCommentText = commentText.substring(start, end);
-        } else {
-            firstSentenceCommentText = commentText;
+            text = text.substring(start, end);
         }
-
-        // {@link processing hack}
-        commentText = replaceAllTags(commentText, "", "", LINK_REGEX);
-
-        // {@code processing hack}
-        commentText = replaceAllTags(commentText, "<TT>", "</TT>", CODE_REGEX);
-
-        // hack to reformat other groovydoc tags (@see, @return, @link, @param, @throws, @author, @since) into html
-        // todo: replace with proper tag support
-        commentText = replaceAllTags(commentText, "<DL><DT><B>$1:</B></DT><DD>", "</DD></DL>", TAG_REGEX);
-
-        commentText = decodeSpecialSymbols(commentText);
-
-        // hack to hide groovydoc tags in summaries
-        firstSentenceCommentText = stripTags(firstSentenceCommentText);
-    }
-
-    // TODO: this should go away once we have proper tags
-    public String replaceAllTags(String self, String s1, String s2, Pattern regex) {
-        Matcher matcher = regex.matcher(self);
-        if (matcher.find()) {
-            matcher.reset();
-            StringBuffer sb = new StringBuffer();
-            while (matcher.find()) {
-                String tagname = matcher.group(1);
-                if (tagname.equals("see") || tagname.equals("link")) {
-                    matcher.appendReplacement(sb, s1 + getDocUrl(encodeSpecialSymbols(matcher.group(2))) + s2);
-                } else if (!tagname.equals("interface")) {
-                    matcher.appendReplacement(sb, s1 + encodeSpecialSymbols(matcher.group(2)) + s2);
-                }
-            }
-            matcher.appendTail(sb);
-            return sb.toString();
-        } else {
-            return self;
-        }
+        // hide groovydoc tags in summaries
+        return stripTags(text);
     }
 
     private String stripTags(String text) {
         return text.replaceAll("(?m)@([a-z]+\\s*.*)$", "");
-    }
-
-    private String encodeSpecialSymbols(String text) {
-        return Matcher.quoteReplacement(text.replaceAll("@", "&at;"));
-    }
-
-    private String decodeSpecialSymbols(String text) {
-        return text.replaceAll("&at;", "@");
-    }
-
-    public String getDocUrl(Object type) {
-        if (type instanceof SimpleGroovyClassDoc) {
-            SimpleGroovyClassDoc classDoc = (SimpleGroovyClassDoc) type;
-            return "<a href=\"" + classDoc.getRelativeRootPath() + (classDoc.fullDottedName() != null ? classDoc.fullDottedName() : "null").replace('.', '/') + ".html\">" + classDoc.fullDottedName() + "</a>";
-        }
-        return getDocUrl(type.toString());
-    }
-
-    public String getDocUrl(String type) {
-        if (type == null)
-            return type;
-        type = type.trim();
-        if (type.startsWith("#"))
-            return "<a href='" + type + "'>" + type + "</a>";
-        if (type.indexOf('.') == -1)
-            return type;
-
-        final String[] target = type.split("#");
-        String shortClassName = target[0].replaceAll(".*\\.", "");
-//        String packageName = type.substring(0, type.length()-shortClassName.length()-2);
-        shortClassName += (target.length > 1 ? "#" + target[1].split("\\(")[0] : "");
-        if (shortClassName.startsWith("groovy.") || shortClassName.startsWith("org.codehaus.groovy.")) {
-            
-        }
-        for (Groovydoc.LinkArgument link : links) {
-            final StringTokenizer tokenizer = new StringTokenizer(link.getPackages(), ", ");
-            while (tokenizer.hasMoreTokens()) {
-                final String token = tokenizer.nextToken();
-                if (type.startsWith(token)) {
-                    String apiBaseUrl = link.getHref();
-                    if (!apiBaseUrl.endsWith("/")) {
-                        apiBaseUrl += "/";
-                    }
-                    String url = apiBaseUrl + target[0].replace('.', '/') + ".html" + (target.length > 1 ? "#" + target[1] : "");
-                    return "<a href='" + url + "' title='" + shortClassName + "'>" + shortClassName + "</a>";
-                }
-            }
-        }
-        return type;
     }
 
     public boolean isClass() {

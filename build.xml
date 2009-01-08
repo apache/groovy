@@ -855,7 +855,7 @@ Not found: ${groovyJar14path}
                 windowtitle="groovydoc"
                 footer="${docFooter}"
                 private="false">
-            <link packages="java." href="http://java.sun.com/j2se/1.5.0/docs/api"/>
+            <link packages="java.,org.xml.,javax.,org.xml." href="http://java.sun.com/j2se/1.5.0/docs/api"/>
             <link packages="org.apache.ant." href="http://www.dpml.net/api/ant/1.7.0"/>
             <link packages="org.junit.,junit.framework." href="http://junit.sourceforge.net/junit3.8.1/javadoc/"/>
             <link packages="groovy.,org.codehaus.groovy." href="http://groovy.codehaus.org/api/"/>

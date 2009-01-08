@@ -23,13 +23,11 @@ import java.util.ArrayList;
 
 public class SimpleGroovyMemberDoc extends SimpleGroovyProgramElementDoc implements GroovyMemberDoc {
     private boolean abstractElement;
+    protected GroovyClassDoc belongsToClass;
 
-    public SimpleGroovyMemberDoc(String name) {
-        this(name, new ArrayList<Groovydoc.LinkArgument>());
-    }
-
-    public SimpleGroovyMemberDoc(String name, List<Groovydoc.LinkArgument> links) {
-        super(name, links);
+    public SimpleGroovyMemberDoc(String name, GroovyClassDoc belongsToClass) {
+        super(name);
+        this.belongsToClass = belongsToClass;
     }
 
     public void setAbstract(boolean b) {
@@ -43,4 +41,9 @@ public class SimpleGroovyMemberDoc extends SimpleGroovyProgramElementDoc impleme
     public boolean isSynthetic() {/*todo*/
         return false;
     }
+
+    public void setRawCommentText(String rawCommentText) {
+        super.setRawCommentText(rawCommentText);
+        setCommentText(((SimpleGroovyClassDoc)belongsToClass).replaceTags(rawCommentText));
+     }
 }

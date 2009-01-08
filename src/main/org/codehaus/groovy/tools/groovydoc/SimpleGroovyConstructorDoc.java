@@ -18,7 +18,7 @@ package org.codehaus.groovy.tools.groovydoc;
 import org.codehaus.groovy.groovydoc.*;
 
 public class SimpleGroovyConstructorDoc extends SimpleGroovyExecutableMemberDoc implements GroovyConstructorDoc {
-	public SimpleGroovyConstructorDoc(String name) {
-		super(name);
+	public SimpleGroovyConstructorDoc(String name, GroovyClassDoc belongsToClass) {
+		super(name, belongsToClass);
 	}
 }

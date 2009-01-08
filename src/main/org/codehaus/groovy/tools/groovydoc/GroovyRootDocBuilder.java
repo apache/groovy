@@ -56,12 +56,12 @@ import java.util.Properties;
  *  provide links to other html files (e.g. return type of a method)
  */
 public class GroovyRootDocBuilder {
+    private static final char FS = '/';
+    private List<Groovydoc.LinkArgument> links;
     private final GroovyDocTool tool;
     private final Path sourcepath;
     private final SimpleGroovyRootDoc rootDoc;
     private final Properties properties;
-    private static final char FS = '/';
-    private List<Groovydoc.LinkArgument> links;
 
     public GroovyRootDocBuilder(GroovyDocTool tool, Path sourcepath, List<Groovydoc.LinkArgument> links, Properties properties) {
         this.tool = tool;
@@ -86,7 +86,8 @@ public class GroovyRootDocBuilder {
         return parseGroovy(packagePath, file, src);
     }
 
-    private Map<String, GroovyClassDoc> parseJava(String packagePath, String file, String src) throws RecognitionException, TokenStreamException {
+    private Map<String, GroovyClassDoc> parseJava(String packagePath, String file, String src)
+            throws RecognitionException, TokenStreamException {
         SourceBuffer sourceBuffer = new SourceBuffer();
         JavaRecognizer parser = getJavaParser(src, sourceBuffer);
         String[] tokenNames = parser.getTokenNames();
@@ -104,7 +105,7 @@ public class GroovyRootDocBuilder {
         groovifierTraverser.process(ast);
 
         // now do the business     
-        Visitor visitor = new SimpleGroovyClassDocAssembler(packagePath, file, sourceBuffer, links, properties);
+        Visitor visitor = new SimpleGroovyClassDocAssembler(packagePath, file, sourceBuffer, links, properties, false);
         AntlrASTProcessor traverser = new SourceCodeTraversal(visitor);
 
         traverser.process(ast);
@@ -112,7 +113,8 @@ public class GroovyRootDocBuilder {
         return ((SimpleGroovyClassDocAssembler) visitor).getGroovyClassDocs();
     }
 
-    private Map<String, GroovyClassDoc> parseGroovy(String packagePath, String file, String src) throws RecognitionException, TokenStreamException {
+    private Map<String, GroovyClassDoc> parseGroovy(String packagePath, String file, String src)
+            throws RecognitionException, TokenStreamException {
         SourceBuffer sourceBuffer = new SourceBuffer();
         GroovyRecognizer parser = getGroovyParser(src, sourceBuffer);
 //        String[] tokenNames = parser.getTokenNames();
@@ -120,7 +122,7 @@ public class GroovyRootDocBuilder {
         AST ast = parser.getAST();
 
         // now do the business
-        Visitor visitor = new SimpleGroovyClassDocAssembler(packagePath, file, sourceBuffer, links, properties);
+        Visitor visitor = new SimpleGroovyClassDocAssembler(packagePath, file, sourceBuffer, links, properties, true);
         AntlrASTProcessor traverser = new SourceCodeTraversal(visitor);
         traverser.process(ast);
         return ((SimpleGroovyClassDocAssembler) visitor).getGroovyClassDocs();

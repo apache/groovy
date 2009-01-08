@@ -19,8 +19,14 @@ import org.codehaus.groovy.ant.Groovydoc;
 import org.codehaus.groovy.groovydoc.*;
 
 import java.util.*;
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
 
 public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implements GroovyClassDoc {
+    private static final Pattern TAG_REGEX = Pattern.compile("(?m)@([a-z]+)\\s+(.*$[^@]*)");
+    private static final Pattern LINK_REGEX = Pattern.compile("(?m)[{]@(link)\\s+([^}]*)}");
+    private static final Pattern CODE_REGEX = Pattern.compile("(?m)[{]@(code)\\s+([^}]*)}");
+
     private final List<GroovyConstructorDoc> constructors;
     private final List<GroovyFieldDoc> fields;
     private final List<GroovyFieldDoc> enumConstants;
@@ -30,14 +36,15 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
     private final List<GroovyClassDoc> interfaceClasses;
     private final List<String> annotationNames;
     private final List<GroovyClassDoc> annotationClasses;
-    private String superClassName;
+    private List<Groovydoc.LinkArgument> links;
     private GroovyClassDoc superClass;
-
+    private String superClassName;
     private String fullPathName;
 
     public SimpleGroovyClassDoc(List<String> importedClassesAndPackages, String name, List<Groovydoc.LinkArgument> links) {
-        super(name, links);
+        super(name);
         this.importedClassesAndPackages = importedClassesAndPackages;
+        this.links = links;
         constructors = new ArrayList<GroovyConstructorDoc>();
         fields = new ArrayList<GroovyFieldDoc>();
         enumConstants = new ArrayList<GroovyFieldDoc>();
@@ -224,6 +231,48 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         }
     }
 
+    public String getDocUrl(String type) {
+        return getDocUrl(type, false);
+    }
+
+    public String getDocUrl(String type, boolean full) {
+        if (type == null)
+            return type;
+        type = type.trim();
+        if (type.startsWith("#"))
+            return "<a href='" + type + "'>" + type + "</a>";
+        if (type.indexOf('.') == -1)
+            type = resolveExternalClass(type);
+        if (type.indexOf('.') == -1)
+            return type;
+
+        final String[] target = type.split("#");
+        String shortClassName = target[0].replaceAll(".*\\.", "");
+        shortClassName += (target.length > 1 ? "#" + target[1].split("\\(")[0] : "");
+        String name = full ? target[0] : shortClassName;
+        if (shortClassName.startsWith("groovy.") || shortClassName.startsWith("org.codehaus.groovy.")) {
+            return buildUrl(getRelativeRootPath(), target, name);
+        }
+        for (Groovydoc.LinkArgument link : links) {
+            final StringTokenizer tokenizer = new StringTokenizer(link.getPackages(), ", ");
+            while (tokenizer.hasMoreTokens()) {
+                final String token = tokenizer.nextToken();
+                if (type.startsWith(token)) {
+                    return buildUrl(link.getHref(), target, name);
+                }
+            }
+        }
+        return type;
+    }
+
+    private String buildUrl(String relativeRoot, String[] target, String shortClassName) {
+        if (!relativeRoot.endsWith("/")) {
+            relativeRoot += "/";
+        }
+        String url = relativeRoot + target[0].replace('.', '/') + ".html" + (target.length > 1 ? "#" + target[1] : "");
+        return "<a href='" + url + "' title='" + shortClassName + "'>" + shortClassName + "</a>";
+    }
+
     private GroovyClassDoc resolveClass(GroovyRootDoc rootDoc, String name) {
         SimpleGroovyClassDoc doc = (SimpleGroovyClassDoc) rootDoc.classNamed(name);
         if (doc == null) {
@@ -232,12 +281,33 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
             int slashIndex = name.lastIndexOf("/");
             if (slashIndex > 0) {
                 shortname = name.substring(slashIndex + 1);
+            } else {
+                name = resolveExternalClass(name);
             }
             doc = new SimpleGroovyClassDoc(null, shortname); // dummy class with name, not to be put into main tree
             doc.setFullPathName(name);
         }
         return doc;
     }
+
+    private String resolveExternalClass(String name) {
+        for (String importName : importedClassesAndPackages) {
+            if (importName.endsWith("/*")) {
+                String candidate = importName.substring(0, importName.length() - 2).replace('/', '.') + "." + name;
+                try {
+                    // TODO cache these
+                    Class.forName(candidate);
+//                    SimpleGroovyClassDoc doc = new SimpleGroovyClassDoc(null, name);
+//                    doc.setFullPathName(candidate);
+                    return candidate;
+                } catch (ClassNotFoundException e) {
+                    // ignore
+                }
+            }
+        }
+        return name;
+    }
+
     // methods from GroovyClassDoc
 
     public GroovyConstructorDoc[] constructors(boolean filter) {/*todo*/
@@ -362,4 +432,55 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
     public void addAnnotationName(String className) {
         annotationNames.add(className);
     }
+
+    public void setRawCommentText(String rawCommentText) {
+        super.setRawCommentText(rawCommentText);
+        setCommentText(replaceTags(rawCommentText));
+     }
+
+    public String replaceTags(String comment) {
+        String result = comment.replaceAll("(?m)^\\s*\\*", ""); // todo precompile regex
+
+        // {@link processing hack}
+        result = replaceAllTags(result, "", "", LINK_REGEX);
+
+        // {@code processing hack}
+        result = replaceAllTags(result, "<TT>", "</TT>", CODE_REGEX);
+
+        // hack to reformat other groovydoc tags (@see, @return, @link, @param, @throws, @author, @since) into html
+        // todo: replace with proper tag support
+        result = replaceAllTags(result, "<DL><DT><B>$1:</B></DT><DD>", "</DD></DL>", TAG_REGEX);
+
+        return decodeSpecialSymbols(result);
+    }
+
+    // TODO: this should go away once we have proper tags
+    public String replaceAllTags(String self, String s1, String s2, Pattern regex) {
+        Matcher matcher = regex.matcher(self);
+        if (matcher.find()) {
+            matcher.reset();
+            StringBuffer sb = new StringBuffer();
+            while (matcher.find()) {
+                String tagname = matcher.group(1);
+                if (tagname.equals("see") || tagname.equals("link")) {
+                    matcher.appendReplacement(sb, s1 + getDocUrl(encodeSpecialSymbols(matcher.group(2))) + s2);
+                } else if (!tagname.equals("interface")) {
+                    matcher.appendReplacement(sb, s1 + encodeSpecialSymbols(matcher.group(2)) + s2);
+                }
+            }
+            matcher.appendTail(sb);
+            return sb.toString();
+        } else {
+            return self;
+        }
+    }
+
+    private String encodeSpecialSymbols(String text) {
+        return Matcher.quoteReplacement(text.replaceAll("@", "&at;"));
+    }
+
+    private String decodeSpecialSymbols(String text) {
+        return text.replaceAll("&at;", "@");
+    }
+
 }

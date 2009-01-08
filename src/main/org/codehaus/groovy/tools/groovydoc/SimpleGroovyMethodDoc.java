@@ -21,36 +21,39 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class SimpleGroovyMethodDoc extends SimpleGroovyExecutableMemberDoc implements GroovyMethodDoc {
-	public SimpleGroovyMethodDoc(String name) {
-		this(name, new ArrayList());
-	}
-	public SimpleGroovyMethodDoc(String name, List links) {
-		super(name, links);
-	}
-	private GroovyType returnType;
-	public GroovyType returnType() {return returnType;}
+    private GroovyType returnType;
+
+    public SimpleGroovyMethodDoc(String name, GroovyClassDoc belongsToClass) {
+        super(name, belongsToClass);
+    }
+
+    public GroovyType returnType() {
+        return returnType;
+    }
 
     // TODO need returnType.qualifiedTypeName() here
 
-    // TODO - is this needed, I'm not sure this is the best way?  public String returnTypeName() {return getDocUrl(returnType.typeName());}
+    public void setReturnType(GroovyType returnType) {
+        this.returnType = returnType;
+    }
 
-    public boolean isReturnTypeAvailable() {
-        if (returnType != null) {
-            if (returnType instanceof SimpleGroovyClassDoc) {
-                return true;
-            }
-        }
+    public boolean isAbstract() {/*todo*/
         return false;
     }
-    
-    public void setReturnType(GroovyType returnType) {
-		this.returnType = returnType;
-	}
-	
 
-	public boolean isAbstract() {/*todo*/return false;}
-	public GroovyClassDoc overriddenClass() {/*todo*/return null;}
-	public GroovyMethodDoc overriddenMethod() {/*todo*/return null;}
-	public GroovyType overriddenType() {/*todo*/return null;}
-	public boolean overrides(GroovyMethodDoc arg0) {/*todo*/return false;}
+    public GroovyClassDoc overriddenClass() {/*todo*/
+        return null;
+    }
+
+    public GroovyMethodDoc overriddenMethod() {/*todo*/
+        return null;
+    }
+
+    public GroovyType overriddenType() {/*todo*/
+        return null;
+    }
+
+    public boolean overrides(GroovyMethodDoc arg0) {/*todo*/
+        return false;
+    }
 }

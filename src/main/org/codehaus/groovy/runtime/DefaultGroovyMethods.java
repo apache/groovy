@@ -2884,10 +2884,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return center(self, numberOfChars, " ");
     }
 
-/**
+    /**
      * Support the subscript operator, e.g.&nbsp;matcher[index], for a regex Matcher.
      * <p/>
-     * For an example using no group match, <code><pre>
+     * For an example using no group match,
+     * <pre>
      *    def p = /ab[d|f]/
      *    def m = "abcabdabeabf" =~ p
      *    assert 2 == m.count
@@ -2896,11 +2897,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *    assert 0 == m.groupCount()
      *    def matches = ["abd", "abf"]
      *    for (i in 0..&lt;m.count) {
-     *        assert m[i] == matches[i]
+     *    &nbsp;&nbsp;assert m[i] == matches[i]
      *    }
-     * </pre></code>
+     * </pre>
      * <p/>
-     * For an example using group matches, <code><pre>
+     * For an example using group matches,
+     * <pre>
      *    def p = /(?:ab([c|d|e|f]))/
      *    def m = "abcabdabeabf" =~ p
      *    assert 4 == m.count
@@ -2908,25 +2910,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *    assert 1 == m.groupCount()
      *    def matches = [["abc", "c"], ["abd", "d"], ["abe", "e"], ["abf", "f"]]
      *    for (i in 0..&lt;m.count) {
-     *        assert m[i] == matches[i]
+     *    &nbsp;&nbsp;assert m[i] == matches[i]
      *    }
-     * </pre></code>
+     * </pre>
      * <p/>
-     * For another example using group matches, <code><pre>
+     * For another example using group matches,
+     * <pre>
      *    def m = "abcabdabeabfabxyzabx" =~ /(?:ab([d|x-z]+))/
      *    assert 3 == m.count
      *    assert m.hasGroup()
      *    assert 1 == m.groupCount()
      *    def matches = [["abd", "d"], ["abxyz", "xyz"], ["abx", "x"]]
      *    for (i in 0..&lt;m.count) {
-     *        assert m[i] == matches[i]
+     *    &nbsp;&nbsp;assert m[i] == matches[i]
      *    }
-     * </pre></code>
+     * </pre>
      *
      * @param matcher a Matcher
      * @param idx     an index
      * @return object a matched String if no groups matched, list of matched groups otherwise.
-     * @since 1.0 
+     * @since 1.0
      */
     public static Object getAt(Matcher matcher, int idx) {
         try {
@@ -2942,7 +2945,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 result = iter.next();
             }
             return result;
-                }
+        }
         catch (IllegalStateException ex) {
             return null;
         }
@@ -11931,7 +11934,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Retuns an {@link Iterator} which traverses each match.
+     * Returns an {@link Iterator} which traverses each match.
      *
      * @param matcher a Matcher object
      * @return an Iterator for a Matcher
