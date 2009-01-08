@@ -6508,7 +6508,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a string.
      * @since 1.0
      */
-    protected static String toString(Object value) {
+    public static String toString(Object value) {
         return InvokerHelper.toString(value);
     }
 
