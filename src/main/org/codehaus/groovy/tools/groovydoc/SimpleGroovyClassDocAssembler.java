@@ -291,7 +291,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 processModifiers(t, currentMethodDoc);
 
                 // return type
-                String returnTypeName = getTypeNodeAsText(t.childOfType(TYPE), "def");
+                String returnTypeName = getTypeOrDefault(t);
                 SimpleGroovyType returnType = new SimpleGroovyType(returnTypeName); // todo !!!
                 currentMethodDoc.setReturnType(returnType);
 
@@ -299,6 +299,10 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 currentClassDoc.add(currentMethodDoc);
             }
         }
+    }
+
+    private String getTypeOrDefault(GroovySourceAST t) {
+        return getTypeNodeAsText(t.childOfType(TYPE), "def");
     }
 
     @Override
@@ -377,7 +381,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 processModifiers(t, currentFieldDoc);
 
                 // type
-                String typeName = getTypeNodeAsText(t.childOfType(TYPE), "def");
+                String typeName = getTypeOrDefault(t);
                 GroovyType type = new SimpleGroovyType(typeName);
                 currentFieldDoc.setType(type);
 
@@ -477,47 +481,54 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     }
 
     private String getTypeNodeAsText(GroovySourceAST typeNode, String defaultText) {
-        String returnValue = defaultText;
-        if (typeNode != null &&
-                typeNode.getType() == TYPE &&
-                typeNode.getNumberOfChildren() > 0) {
-            GroovySourceAST child = (GroovySourceAST) typeNode.getFirstChild(); // assume type has only one child // todo type of "foo.bar.Wibble"
-            switch (child.getType()) {
-                // literals
-                case LITERAL_boolean:
-                    returnValue = "boolean";
-                    break;
-                case LITERAL_byte:
-                    returnValue = "byte";
-                    break;
-                case LITERAL_char:
-                    returnValue = "char";
-                    break;
-                // note: LITERAL_def never created
-                case LITERAL_double:
-                    returnValue = "double";
-                    break;
-                case LITERAL_float:
-                    returnValue = "float";
-                    break;
-                case LITERAL_int:
-                    returnValue = "int";
-                    break;
-                case LITERAL_long:
-                    returnValue = "long";
-                    break;
-                case LITERAL_short:
-                    returnValue = "short";
-                    break;
-                case LITERAL_void:
-                    returnValue = "void";
-                    break;
+        if (typeNode != null && typeNode.getType() == TYPE && typeNode.getNumberOfChildren() > 0) {
+            return getAsText(typeNode, defaultText);
+        }
+        return defaultText;
+    }
 
-                // identifiers
-                case IDENT:
-                    returnValue = child.getText();
-                    break;
-            }
+    private String getAsText(GroovySourceAST typeNode, String defaultText) {
+        String returnValue = defaultText;
+        GroovySourceAST child = (GroovySourceAST) typeNode.getFirstChild(); // assume type has only one child // todo type of "foo.bar.Wibble"
+        switch (child.getType()) {
+            // literals
+            case LITERAL_boolean:
+                returnValue = "boolean";
+                break;
+            case LITERAL_byte:
+                returnValue = "byte";
+                break;
+            case LITERAL_char:
+                returnValue = "char";
+                break;
+            // note: LITERAL_def never created
+            case LITERAL_double:
+                returnValue = "double";
+                break;
+            case LITERAL_float:
+                returnValue = "float";
+                break;
+            case LITERAL_int:
+                returnValue = "int";
+                break;
+            case LITERAL_long:
+                returnValue = "long";
+                break;
+            case LITERAL_short:
+                returnValue = "short";
+                break;
+            case LITERAL_void:
+                returnValue = "void";
+                break;
+            case ARRAY_DECLARATOR:
+                String componentType = getAsText(child, defaultText);
+                if (!componentType.equals("def")) returnValue = componentType + "[]";
+                break;
+
+            // identifiers
+            case IDENT:
+                returnValue = child.getText();
+                break;
         }
         return returnValue;
     }
@@ -528,7 +539,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         if (parametersNode != null && parametersNode.getNumberOfChildren() > 0) {
             GroovySourceAST currentNode = (GroovySourceAST) parametersNode.getFirstChild();
             while (currentNode != null) {
-                String parameterTypeName = getTypeNodeAsText(currentNode.childOfType(TYPE), "def");
+                String parameterTypeName = getTypeOrDefault(currentNode);
                 String parameterName = getText(currentNode.childOfType(IDENT));
                 SimpleGroovyParameter parameter = new SimpleGroovyParameter(parameterName);
                 parameter.setTypeName(parameterTypeName);

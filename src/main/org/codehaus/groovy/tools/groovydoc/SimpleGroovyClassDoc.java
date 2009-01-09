@@ -258,6 +258,9 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         type = type.trim();
         if (type.startsWith("#"))
             return "<a href='" + type + "'>" + type + "</a>";
+        if (type.endsWith("[]")) {
+            return getDocUrl(type.substring(0, type.length() - 2), full) + "[]";
+        }
         if (type.indexOf('.') == -1)
             type = resolveExternalClass(type);
         if (type.indexOf('.') == -1)

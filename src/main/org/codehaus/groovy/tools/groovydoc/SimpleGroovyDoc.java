@@ -23,9 +23,9 @@ import java.util.Locale;
 
 public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
     private String name;
-    private String commentText;
+    private String commentText = "";
     private String rawCommentText = "";
-    private String firstSentenceCommentText;
+    private String firstSentenceCommentText = "";
     private int definitionType;
 
     public SimpleGroovyDoc(String name) {
