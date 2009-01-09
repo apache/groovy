@@ -160,28 +160,34 @@ ${classDoc.containingPackage().nameWithDots()}</FONT>
 <BR>
 <FONT CLASS="ClassTitleFont">${classDoc.typeDescription} ${classDoc.name()}</FONT></H2>
 <%
-def parents = classDoc.parentClasses
-if (parents.size() >= 2) {
-    %><PRE><%
-    parents.eachWithIndex { p, i ->
-        %>${(i > 0 ? "   " * (i - 1) + "+- " : "") + ( i == parents.size() - 1 ? p : linkfull(p))}\n<%
+if (!classDoc.isInterface()) {
+    def parents = classDoc.parentClasses
+    if (parents.size() >= 2) {
+        %><PRE><%
+        parents.eachWithIndex { p, i ->
+            %>${(i > 0 ? "   " * (i - 1) + "+- " : "") + ( i == parents.size() - 1 ? p : linkfull(p))}\n<%
+        }
+        %></PRE><%
     }
-    %></PRE><%
 }
 // TODO follow up the tree collecting interfaces seen?
-def interfaces = classDoc.interfaces()
-if (interfaces) {
-    %><DL><dt><b>All Implemented Interfaces:</b> </dt><dd>${interfaces.collect{ linkable(it) }.join(', ')}</dd></DL><%
+if (classDoc.isInterface()) {
+    Set interfaces = classDoc.superclasses().collect{ it.parentClasses }.sum()
+    if (interfaces) interfaces -= 'java.lang.Object'
+    if (interfaces) {
+        %><dl><dt><b>All Superinterfaces:</b> </dt><dd>${interfaces.collect{ linkable(it) }.join(', ')}</dd></dl><%
+    }
+} else {
+    def interfaces = classDoc.interfaces()
+    if (interfaces) {
+        %><dl><dt><b>All Implemented Interfaces:</b> </dt><dd>${interfaces.collect{ linkable(it.fullDottedName()) }.join(', ')}</dd></dl><%
+    }
 }
-%>
-<!--
-<dd><a href="../../../../org/codehaus/groovy/ast/GroovyClassVisitor.html" title="interface in org.codehaus.groovy.ast">GroovyClassVisitor</a>, <a href="../../../../org/codehaus/groovy/ast/GroovyCodeVisitor.html" title="interface in org.codehaus.groovy.ast">GroovyCodeVisitor</a></dd>
--->
-<hr>
+%><hr>
 <PRE>
 ${modifiers(classDoc) + classDoc.typeSourceDescription + ' ' + classDoc.name()}
-<% if (!"java.lang.Object".equals(classDoc.superclass().name())) {
-%>extends ${linkable(classDoc.superclass().name())}
+<% if (!"java.lang.Object".equals(classDoc.superclass().fullDottedName())) {
+%>extends ${classDoc.superclasses().collect{ linkable(it.fullDottedName()) }.join(', ')}    
 <% } %>
 </PRE>
 <% if (classDoc.commentText()) { %>

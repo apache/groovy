@@ -22,10 +22,10 @@ import org.codehaus.groovy.antlr.LineColumn;
 import org.codehaus.groovy.antlr.SourceBuffer;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 import org.codehaus.groovy.antlr.treewalker.VisitorAdapter;
+import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyConstructorDoc;
 import org.codehaus.groovy.groovydoc.GroovyType;
-import org.codehaus.groovy.control.ResolveVisitor;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -104,6 +104,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
 
     @Override
     public void visitInterfaceDef(GroovySourceAST t, int visit) {
+        // todo nested is broken
         if (visit == OPENING_VISIT) {
             currentClassDoc.setTokenType(t.getType());
             visitClassDef(t, visit);
@@ -112,6 +113,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
 
     @Override
     public void visitEnumDef(GroovySourceAST t, int visit) {
+        // todo nested?
         if (visit == OPENING_VISIT) {
             currentClassDoc.setTokenType(t.getType());
             visitClassDef(t, visit);
@@ -142,8 +144,8 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             String prelude = getAnnotationPrelude(t);
             visitClassDef(t, visit);
             String orig = currentClassDoc.getRawCommentText();
-            currentClassDoc.setRawCommentText("<PRE>\n" + prelude + "@interface " +
-                    currentClassDoc.name() + "</PRE>\n<P>&nbsp;</P>\n" + orig);
+            currentClassDoc.setRawCommentText("<pre>\n" + prelude + "@interface " +
+                    currentClassDoc.name() + "</pre>\n<P>&nbsp;</P>\n" + orig);
         }
     }
 
@@ -196,7 +198,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             GroovySourceAST superClassNode = t.childOfType(IDENT);
             if (superClassNode != null) {
                 String superClassName = extractName(superClassNode);
-                currentClassDoc.setSuperClassName(superClassName);
+                currentClassDoc.addSuperClassName(superClassName);
             }
         }
     }
@@ -236,7 +238,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     @Override
     public void visitClassDef(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
-            // todo is this correct for java + groovy src?
+            // todo nested is broken
             String className = t.childOfType(IDENT).getText();
             currentClassDoc = (SimpleGroovyClassDoc) classDocs.get(packagePath + FS + className);
             if (currentClassDoc == null) {
