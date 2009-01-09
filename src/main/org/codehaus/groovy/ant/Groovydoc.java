@@ -42,8 +42,8 @@ public class Groovydoc extends Task {
     private File destDir;
     private List<String> packageNames;
     private List<String> excludePackageNames;
-    private String windowTitle;
-    private String footer;
+    private String windowTitle = "Groovy Documentation";
+    private String footer = "Groovy Documentation";
     private boolean privateScope;
     private boolean useDefaultExcludes;
     private boolean includeNoSourcePackages;

@@ -184,6 +184,9 @@ public class GroovyRootDocBuilder {
         }
     }
 
+    // TODO non-strict XML parsing (CyberNeko, TagSoup)
+    // and extract first sentence for summary
+    // and full text for package page
     private void processHtmlPackage(String src, SimpleGroovyPackageDoc packageDoc) {
         try {
             XmlSlurper parser = new XmlSlurper();
