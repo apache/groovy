@@ -300,7 +300,7 @@ ${classDoc.commentText()}
 <A NAME="method_summary"><!-- --></A>
 <% if (hasMethods) { %>
     <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
-    <TR BGCOLOR="#D5D5FF" CLASS="TableHeadingColor">
+    <TR CLASS="TableHeadingColor">
     <TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2" CLASS="ClassHeadingFont">
     <B>Method Summary</B></FONT></TH>
     </TR>
@@ -318,7 +318,35 @@ ${classDoc.commentText()}
     <% } %>
     </TABLE>
     &nbsp;
-<% } %>
+<% }
+    Set classes = classDoc.superclasses()
+    Set visited = [classDoc] as Set
+    while (classes) {
+        Set nextLevel = []
+        classes.each { c ->
+            if (c instanceof org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc) {
+                nextLevel += c.superclasses()
+                nextLevel -= visited
+                visited += nextLevel
+                def list = c.methods().findAll{ it.isPublic() || it.isProtected() }.collect { method ->
+                    "<a href='${classDoc.relativeRootPath}${c.fullPathName}.html#${nameFromParams(method)}'>${method.name()}</a>"
+                }
+                if (list) {
+                    %><table BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
+                    <TR CLASS="TableSubHeadingColor">
+                    <TH ALIGN="left" COLSPAN="2">
+                    <B>Methods inherited from ${c.typeSourceDescription} ${linkable(c.fullDottedName())}</B>
+                    </TH>
+                    </TR>
+                    <tr class="TableRowColor"><td colspan='2'>${list.join(', ')}</td></tr>
+                    </table>
+                    &nbsp;<%
+                }
+            }
+        }
+        classes = nextLevel
+    }
+%>
 
 <P>
 
