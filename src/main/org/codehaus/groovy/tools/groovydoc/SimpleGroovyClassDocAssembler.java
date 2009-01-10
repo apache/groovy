@@ -213,18 +213,6 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         }
     }
 
-    private String extractName(GroovySourceAST classNode) {
-        String className = classNode.getText();
-        if (className.indexOf(".") == -1) {
-            for (String name : importedClassesAndPackages) {
-                if (name.endsWith(className)) {
-                    className = name;
-                }
-            }
-        }
-        return className;
-    }
-
     @Override
     public void visitAnnotation(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
@@ -292,17 +280,13 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
 
                 // return type
                 String returnTypeName = getTypeOrDefault(t);
-                SimpleGroovyType returnType = new SimpleGroovyType(returnTypeName); // todo !!!
+                SimpleGroovyType returnType = new SimpleGroovyType(returnTypeName);
                 currentMethodDoc.setReturnType(returnType);
 
                 addParametersTo(currentMethodDoc, t, visit);
                 currentClassDoc.add(currentMethodDoc);
             }
         }
-    }
-
-    private String getTypeOrDefault(GroovySourceAST t) {
-        return getTypeNodeAsText(t.childOfType(TYPE), "def");
     }
 
     @Override
@@ -480,6 +464,27 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         return returnValue;
     }
 
+    // preempt resolve as info is available here - TODO is this always safe?
+    private String extractName(GroovySourceAST typeNode) {
+        String typeName = typeNode.getText();
+        if (typeName.indexOf(".") == -1) {
+            for (String name : importedClassesAndPackages) {
+                if (name.endsWith(typeName)) {
+                    typeName = name;
+                }
+            }
+        }
+        return typeName;
+    }
+
+    private String getTypeOrDefault(GroovySourceAST t) {
+        GroovySourceAST typeNode = t.childOfType(TYPE);
+        if (typeNode != null && typeNode.getNumberOfChildren() > 0) {
+            return extractName((GroovySourceAST) typeNode.getFirstChild()).replace('/', '.');
+        }
+        return "def";
+    }
+
     private String getTypeNodeAsText(GroovySourceAST typeNode, String defaultText) {
         if (typeNode != null && typeNode.getType() == TYPE && typeNode.getNumberOfChildren() > 0) {
             return getAsText(typeNode, defaultText);
@@ -545,21 +550,25 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 parameter.setTypeName(parameterTypeName);
                 executableMemberDoc.add(parameter);
                 if (currentNode.getNumberOfChildren() == 4) {
-                    GroovySourceAST paramPart = (GroovySourceAST) currentNode.getFirstChild();
-                    for (int i = 1; i < currentNode.getNumberOfChildren(); i++) {
-                        paramPart = (GroovySourceAST) paramPart.getNextSibling();
-                    }
-                    GroovySourceAST nodeToProcess = paramPart;
-                    if (paramPart.getNumberOfChildren() > 0) {
-                        nodeToProcess = (GroovySourceAST) paramPart.getFirstChild();
-                    }
-                    // hack warning!
-                    // TODO handle , and ) when they occur within Strings
-                    parameter.setDefaultValue(getChildTextFromSource(nodeToProcess, ",)"));
+                    handleDefaultValue(currentNode, parameter);
                 }
                 currentNode = (GroovySourceAST) currentNode.getNextSibling();
             }
         }
+    }
+
+    private void handleDefaultValue(GroovySourceAST currentNode, SimpleGroovyParameter parameter) {
+        GroovySourceAST paramPart = (GroovySourceAST) currentNode.getFirstChild();
+        for (int i = 1; i < currentNode.getNumberOfChildren(); i++) {
+            paramPart = (GroovySourceAST) paramPart.getNextSibling();
+        }
+        GroovySourceAST nodeToProcess = paramPart;
+        if (paramPart.getNumberOfChildren() > 0) {
+            nodeToProcess = (GroovySourceAST) paramPart.getFirstChild();
+        }
+        // hack warning!
+        // TODO handle , and ) when they occur within Strings
+        parameter.setDefaultValue(getChildTextFromSource(nodeToProcess, ",)"));
     }
 
     public void push(GroovySourceAST t) {
