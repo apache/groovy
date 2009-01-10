@@ -25,7 +25,7 @@ function windowTitle()
 <% for (packageDoc in rootDoc.specifiedPackages()) { %>
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD WIDTH="20%"><B><A HREF="${packageDoc.name()}/package-summary.html">${packageDoc.name()}</A></B></TD>
-<TD>${packageDoc.description() ?: ''}</TD>
+<TD>${packageDoc.summary() ?: ''}</TD>
 </TR>
 <% } %>
 </TABLE>

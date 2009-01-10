@@ -333,11 +333,9 @@ ${classDoc.commentText()}
                 }
                 if (list) {
                     %><table BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
-                    <TR CLASS="TableSubHeadingColor">
-                    <TH ALIGN="left" COLSPAN="2">
-                    <B>Methods inherited from ${c.typeSourceDescription} ${linkable(c.fullDottedName())}</B>
-                    </TH>
-                    </TR>
+                    <tr CLASS="TableSubHeadingColor"><th ALIGN="left" COLSPAN="2">
+                    <b>Methods inherited from ${c.typeSourceDescription} ${linkable(c.fullDottedName())}</b>
+                    </th></tr>
                     <tr class="TableRowColor"><td colspan='2'>${list.join(', ')}</td></tr>
                     </table>
                     &nbsp;<%

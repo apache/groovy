@@ -2,6 +2,7 @@
 <HTML>
 <HEAD>
 <%
+def title = packageDoc.nameWithDots() + (props.windowTitle ? " ($props.windowTitle)" : "")
 def classTypes = [
     "Interface":"isInterface",
     "Class":"isClass",
@@ -9,18 +10,13 @@ def classTypes = [
     "Annotation Type":"isAnnotationType"
 ]
 %>
-<TITLE>
-${packageDoc.nameWithDots()} ({todo.title})
-</TITLE>
-
+<TITLE>${title}</TITLE>
 <META NAME="keywords" CONTENT="${packageDoc.nameWithDots()} package">
-
 <LINK REL ="stylesheet" TYPE="text/css" HREF="${packageDoc.getRelativeRootPath()}stylesheet.css" TITLE="Style">
-
 <SCRIPT type="text/javascript">
 function windowTitle()
 {
-    parent.document.title="${packageDoc.nameWithDots()} ({todo.title})";
+    parent.document.title="${title}";
 }
 </SCRIPT>
 <NOSCRIPT>
@@ -34,6 +30,10 @@ function windowTitle()
 <H2>
 Package ${packageDoc.nameWithDots()}
 </H2>
+
+${packageDoc.description()}
+
+<P>&nbsp;</P>
 
 <%
 classTypes.each{ k, v ->

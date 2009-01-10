@@ -66,7 +66,7 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
         setFirstSentenceCommentText(calculateFirstSentence(rawCommentText));
     }
 
-    private String calculateFirstSentence(String raw) {
+    public static String calculateFirstSentence(String raw) {
         // remove all the * from beginning of lines
         String text = raw.replaceAll("(?m)^\\s*\\*", ""); // todo precompile regex
         // Comment Summary using first sentence (Locale sensitive)
@@ -82,7 +82,7 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
         return stripTags(text);
     }
 
-    private String stripTags(String text) {
+    private static String stripTags(String text) {
         return text.replaceAll("(?m)@([a-z]+\\s*.*)$", "");
     }
 

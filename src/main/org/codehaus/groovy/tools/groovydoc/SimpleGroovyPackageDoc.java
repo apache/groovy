@@ -23,7 +23,8 @@ import java.util.*;
 public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPackageDoc {
     private static final char FS = '/';
     final Map<String, GroovyClassDoc> classDocs;
-    private String description;
+    private String description = "";
+    private String summary = "";
 
     public SimpleGroovyPackageDoc(String name) {
         super(name);
@@ -31,11 +32,15 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
     }
 
     public GroovyClassDoc[] allClasses() {
-        return classDocs.values().toArray(new GroovyClassDoc[classDocs.values().size()]); // todo performance? sorting?
+        return classDocs.values().toArray(new GroovyClassDoc[classDocs.values().size()]);
     }
 
     public void setDescription(String description) {
         this.description = description;
+    }
+
+    public void setSummary(String summary) {
+        this.summary = summary;
     }
 
     public void putAll(Map<String, GroovyClassDoc> classes) {
@@ -86,6 +91,10 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
 
     public String description() {
         return description;
+    }
+
+    public String summary() {
+        return summary;
     }
 
     public String getRelativeRootPath() {

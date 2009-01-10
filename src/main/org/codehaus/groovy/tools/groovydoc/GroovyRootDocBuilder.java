@@ -18,8 +18,6 @@ package org.codehaus.groovy.tools.groovydoc;
 import antlr.RecognitionException;
 import antlr.TokenStreamException;
 import antlr.collections.AST;
-import groovy.util.XmlSlurper;
-import groovy.util.slurpersupport.GPathResult;
 import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.types.resources.FileResource;
 import org.codehaus.groovy.ant.Groovydoc;
@@ -184,17 +182,44 @@ public class GroovyRootDocBuilder {
         }
     }
 
-    // TODO non-strict XML parsing (CyberNeko, TagSoup)
-    // and extract first sentence for summary
-    // and full text for package page
     private void processHtmlPackage(String src, SimpleGroovyPackageDoc packageDoc) {
-        try {
-            XmlSlurper parser = new XmlSlurper();
-            GPathResult result = parser.parseText(src);
-            packageDoc.setDescription(result.getProperty("body").toString());
-        } catch (Exception e) {
-            System.err.println("ignored due to XML parser exception: " + e.getMessage());
-        }
+        String description = calcThenSetDescription(src, packageDoc);
+        calcThenSetSummary(description, packageDoc);
+    }
+
+    private void calcThenSetSummary(String src, SimpleGroovyPackageDoc packageDoc) {
+        packageDoc.setSummary(SimpleGroovyDoc.calculateFirstSentence(src));
+    }
+
+    private String calcThenSetDescription(String src, SimpleGroovyPackageDoc packageDoc) {
+        String description = scrubOffExcessiveTags(src);
+        packageDoc.setDescription(description);
+        return description;
+    }
+
+    private String scrubOffExcessiveTags(String src) {
+        String description = pruneTagFromFront(src, "html");
+        description = pruneTagFromFront(description, "/head");
+        description = pruneTagFromFront(description, "body");
+        description = pruneTagFromEnd(description, "/html");
+        return pruneTagFromEnd(description, "/body");
+    }
+
+    private String pruneTagFromFront(String description, String tag) {
+        int index = Math.max(indexOfTag(description, tag.toLowerCase()), indexOfTag(description, tag.toUpperCase()));
+        return description.substring(index + 1);
+    }
+
+    private String pruneTagFromEnd(String description, String tag) {
+        int index = Math.max(description.indexOf("<" + tag.toLowerCase() + ">"),
+                description.indexOf("<" + tag.toUpperCase() + ">"));
+        return description.substring(0, index);
+    }
+
+    private int indexOfTag(String text, String tag) {
+        int pos = text.indexOf("<" + tag + ">");
+        if (pos > 0) pos += tag.length() + 2;
+        return pos;
     }
 
     public GroovyRootDoc getRootDoc() {
