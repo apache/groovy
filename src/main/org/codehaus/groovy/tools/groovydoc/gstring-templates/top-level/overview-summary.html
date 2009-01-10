@@ -2,7 +2,7 @@
 <HTML>
 <HEAD>
 <TITLE>
-Overview ({todo.title})
+${props.windowTitle} Overview
 </TITLE>
 
 <META NAME="keywords" CONTENT="Overview">
@@ -12,7 +12,7 @@ Overview ({todo.title})
 <SCRIPT type="text/javascript">
 function windowTitle()
 {
-    parent.document.title="Overview ({todo.title})";
+    parent.document.title="${props.windowTitle} Overview";
 }
 </SCRIPT>
 <NOSCRIPT>
@@ -32,7 +32,7 @@ function windowTitle()
 <% for (packageDoc in rootDoc.specifiedPackages()) { %>
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD WIDTH="20%"><B><A HREF="${packageDoc.name()}/package-summary.html">${packageDoc.name()}</A></B></TD>
-<TD>${packageDoc.description()}</TD>
+<TD>${packageDoc.description() ?: ''}</TD>
 </TR>
 <% } %>
 </TABLE>

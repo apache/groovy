@@ -43,6 +43,7 @@ public class Groovydoc extends Task {
     private List<String> packageNames;
     private List<String> excludePackageNames;
     private String windowTitle = "Groovy Documentation";
+    private String docTitle = "Groovy Documentation";
     private String footer = "Groovy Documentation";
     private boolean privateScope;
     private boolean useDefaultExcludes;
@@ -112,6 +113,15 @@ public class Groovydoc extends Task {
      */
     public void setWindowtitle(String title) {
         windowTitle = title;
+    }
+
+    /**
+     * Set the title for the overview page.
+     *
+     * @param htmlTitle the html to use for the title.
+     */
+    public void setDoctitle(String htmlTitle) {
+        docTitle = htmlTitle;
     }
 
     /**
@@ -246,6 +256,7 @@ public class Groovydoc extends Task {
         Path sourceDirs = new Path(getProject());
         Properties properties = new Properties();
         properties.put("windowTitle", windowTitle);
+        properties.put("docTitle", docTitle);
         properties.put("footer", footer);
         properties.put("privateScope", privateScope);
 
