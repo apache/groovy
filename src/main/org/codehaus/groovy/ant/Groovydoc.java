@@ -50,7 +50,6 @@ public class Groovydoc extends Task {
     private boolean includeNoSourcePackages;
     private List<DirSet> packageSets;
     private List<String> sourceFilesToDoc;
-    // TODO: hook this in
     private List<LinkArgument> links = new ArrayList<LinkArgument>();
 
 
@@ -78,7 +77,7 @@ public class Groovydoc extends Task {
     }
 
     /**
-     * Set the directory where the Javadoc output will be generated.
+     * Set the directory where the Groovydoc output will be generated.
      *
      * @param dir the destination directory.
      */
@@ -274,6 +273,7 @@ public class Groovydoc extends Task {
                         TEMPLATE_BASEDIR + "top-level/allclasses-frame.html", // needs all packages / class names
                         TEMPLATE_BASEDIR + "top-level/overview-summary.html", // needs all packages
                         TEMPLATE_BASEDIR + "top-level/stylesheet.css",
+                        TEMPLATE_BASEDIR + "top-level/inherit.gif",
                 },
                 new String[]{ // package level templates
                         TEMPLATE_BASEDIR + "package-level/package-frame.html",

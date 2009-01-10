@@ -15,6 +15,18 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
+import groovy.text.GStringTemplateEngine;
+import groovy.text.Template;
+import groovy.text.TemplateEngine;
+import org.codehaus.groovy.groovydoc.GroovyClassDoc;
+import org.codehaus.groovy.groovydoc.GroovyPackageDoc;
+import org.codehaus.groovy.groovydoc.GroovyRootDoc;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -22,35 +34,20 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import org.codehaus.groovy.groovydoc.GroovyClassDoc;
-import org.codehaus.groovy.groovydoc.GroovyPackageDoc;
-import org.codehaus.groovy.groovydoc.GroovyRootDoc;
-
-import groovy.text.GStringTemplateEngine;
-import groovy.text.Template;
-import groovy.text.TemplateEngine;
-
-/*
- * todo
- *  comma at the end of method parameters
- *  add comments
- *  static modifier
- *  order methods alphabetically (implement compareTo enough?)
- *  provide links to other html files (e.g. return type of a method)
+/**
+ * Process Groovydoc templates.
  */
 public class GroovyDocTemplateEngine {
     private TemplateEngine engine;
-    private GroovyDocTool tool;
+    private GroovyDocTool tool; // TODO use it or lose it
     private ResourceManager resourceManager;
     private Properties properties;
-    //	private String relativeTemplatePath;
     private Map<String, Template> docTemplates; // cache
     private List<String> docTemplatePaths; // once per documentation set
     private Map<String, Template> packageTemplates; // cache
     private List<String> packageTemplatePaths; // once per package
     private Map<String, Template> classTemplates; // cache
     private List<String> classTemplatePaths; // once per class
-
 
     public GroovyDocTemplateEngine(GroovyDocTool tool, ResourceManager resourceManager, String classTemplate) {
         this(tool, resourceManager, new String[]{}, new String[]{}, new String[]{classTemplate}, new Properties());
@@ -83,7 +80,7 @@ public class GroovyDocTemplateEngine {
                 t = engine.createTemplate(resourceManager.getReader(templatePath));
                 classTemplates.put(templatePath, t);
             }
-            Map binding = new HashMap();
+            Map<String, Object> binding = new HashMap<String, Object>();
             binding.put("classDoc", classDoc);
             binding.put("props", properties);
             templateWithBindingApplied = t.make(binding).toString();
@@ -101,7 +98,7 @@ public class GroovyDocTemplateEngine {
                 t = engine.createTemplate(resourceManager.getReader(template));
                 packageTemplates.put(template, t);
             }
-            Map binding = new HashMap();
+            Map<String, Object> binding = new HashMap<String, Object>();
             binding.put("packageDoc", packageDoc);
             binding.put("props", properties);
             templateWithBindingApplied = t.make(binding).toString();
@@ -119,7 +116,7 @@ public class GroovyDocTemplateEngine {
                 t = engine.createTemplate(resourceManager.getReader(template));
                 docTemplates.put(template, t);
             }
-            Map binding = new HashMap();
+            Map<String, Object> binding = new HashMap<String, Object>();
             binding.put("rootDoc", rootDoc);
             binding.put("props", properties);
             templateWithBindingApplied = t.make(binding).toString();
@@ -129,15 +126,15 @@ public class GroovyDocTemplateEngine {
         return templateWithBindingApplied;
     }
 
-    Iterator classTemplatesIterator() {
+    Iterator<String> classTemplatesIterator() {
         return classTemplatePaths.iterator();
     }
 
-    Iterator packageTemplatesIterator() {
+    Iterator<String> packageTemplatesIterator() {
         return packageTemplatePaths.iterator();
     }
 
-    Iterator docTemplatesIterator() {
+    Iterator<String> docTemplatesIterator() {
         return docTemplatePaths.iterator();
     }
 
@@ -164,4 +161,18 @@ public class GroovyDocTemplateEngine {
 	}
 */
 
+    public void copyBinaryResource(String template, String destFileName) {
+        if (resourceManager instanceof ClasspathResourceManager) {
+            OutputStream outputStream = null;
+            try {
+                InputStream inputStream = ((ClasspathResourceManager) resourceManager).getInputStream(template);
+                outputStream = new FileOutputStream(destFileName);
+                DefaultGroovyMethods.leftShift(outputStream, inputStream);
+            } catch (IOException e) {
+                System.err.println("Resource " + template + " skipped due to: " + e.getMessage());
+            } finally {
+                DefaultGroovyMethods.closeQuietly(outputStream);
+            }
+        }
+    }
 }
