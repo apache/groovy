@@ -287,8 +287,9 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         if (type.endsWith("[]")) {
             return getDocUrl(type.substring(0, type.length() - 2), full) + "[]";
         }
+        // TODO move next 4 lines to resolve?
         if (type.indexOf('.') == -1) {
-            Class c = resolveExternalClass(type);
+            Class c = resolveExternalClassFromImport(type);
             if (c != null) type = c.getName();
         }
         if (type.indexOf('.') == -1)
@@ -328,8 +329,9 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         Class c = null;
         if (slashIndex > 0) {
             shortname = name.substring(slashIndex + 1);
-        } else {
             c = resolveExternalClass(name);
+        } else {
+            c = resolveExternalClassFromImport(name);
         }
         if (c != null) {
             return new ExternalGroovyClassDoc(c);
@@ -341,7 +343,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         return placeholder;
     }
 
-    private Class resolveExternalClass(String name) {
+    private Class resolveExternalClassFromImport(String name) {
         for (String importName : importedClassesAndPackages) {
             if (importName.endsWith("/*")) {
                 String candidate = importName.substring(0, importName.length() - 2).replace('/', '.') + "." + name;
@@ -352,6 +354,17 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
                     // ignore
                 }
             }
+        }
+        return null;
+    }
+
+    private Class resolveExternalClass(String name) {
+        String candidate = name.replace('/', '.');
+        try {
+            // TODO cache these??
+            return Class.forName(candidate);
+        } catch (ClassNotFoundException e) {
+            // ignore
         }
         return null;
     }
