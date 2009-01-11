@@ -187,7 +187,6 @@ public class GroovyDocToolTest extends GroovyTestCase {
         MockOutputTool output = new MockOutputTool();
         xmlToolForTests.renderToOutput(output, MOCK_DIR);
         String domBuilderDoc = output.getText(MOCK_DIR + "/DefaultPackage/UberTestCaseBugs.html");
-        System.out.println("domBuilderDoc = " + domBuilderDoc);
         // TODO reinstate
 //        assertTrue(domBuilderDoc.indexOf("<extends>TestCase</extends>") > 0);
         assertTrue(domBuilderDoc.indexOf("<extends>null</extends>") > 0);
