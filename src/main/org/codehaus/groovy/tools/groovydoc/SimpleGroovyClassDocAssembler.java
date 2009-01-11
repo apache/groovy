@@ -106,8 +106,8 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     public void visitInterfaceDef(GroovySourceAST t, int visit) {
         // todo nested is broken
         if (visit == OPENING_VISIT) {
-            currentClassDoc.setTokenType(t.getType());
             visitClassDef(t, visit);
+            currentClassDoc.setTokenType(t.getType());
         }
     }
 
@@ -115,8 +115,8 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     public void visitEnumDef(GroovySourceAST t, int visit) {
         // todo nested?
         if (visit == OPENING_VISIT) {
-            currentClassDoc.setTokenType(t.getType());
             visitClassDef(t, visit);
+            currentClassDoc.setTokenType(t.getType());
         } else {
             adjustForAutomaticEnumMethods();
         }
@@ -140,9 +140,9 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     @Override
     public void visitAnnotationDef(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
-            currentClassDoc.setTokenType(t.getType());
             String prelude = getAnnotationPrelude(t);
             visitClassDef(t, visit);
+            currentClassDoc.setTokenType(t.getType());
             String orig = currentClassDoc.getRawCommentText();
             currentClassDoc.setRawCommentText("<pre>\n" + prelude + "@interface " +
                     currentClassDoc.name() + "</pre>\n<P>&nbsp;</P>\n" + orig);
@@ -198,7 +198,11 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             GroovySourceAST superClassNode = t.childOfType(IDENT);
             if (superClassNode != null) {
                 String superClassName = extractName(superClassNode);
-                currentClassDoc.addSuperClassName(superClassName);
+                if (currentClassDoc.isInterface()) {
+                    currentClassDoc.addInterfaceName(superClassName);
+                } else {
+                    currentClassDoc.setSuperClassName(superClassName);
+                }
             }
         }
     }

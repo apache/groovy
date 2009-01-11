@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,43 @@
 package org.codehaus.groovy.groovydoc;
 
 public interface GroovyType {
-//	GroovyAnnotationTypeDoc asAnnotationTypeDoc();
-	GroovyClassDoc asClassDoc();
-//	GroovyParameterizedType asParameterizedType();
-//	GroovyTypeVariable asTypeVariable();
-//	GroovyWildcardType asWildcardType();
-	String dimension();
-	boolean isPrimitive();
-	String qualifiedTypeName();
-	String simpleTypeName();
-	String typeName();
+//    GroovyAnnotationTypeDoc asAnnotationTypeDoc();
+//
+//    GroovyClassDoc asClassDoc();
+//
+//    GroovyParameterizedType asParameterizedType();
+//
+//    GroovyTypeVariable asTypeVariable();
+//
+//    GroovyWildcardType asWildcardType();
+//
+//    String dimension();
 
-    // ----
-    String fullDottedName();
+    boolean isPrimitive();
+
+    /**
+     * The qualified name of this type excluding any dimension information.
+     * For example, a two dimensional array of String returns "<code>java.lang.String</code>".
+     */
+    String qualifiedTypeName();
+
+    /**
+     * The unqualified name of this type excluding any dimension or nesting information.
+     * For example, the class <code>Outer.Inner</code> returns "<code>Inner</code>".
+     */
+    String simpleTypeName();
+
+    /**
+     * The unqualified name of this type excluding any dimension information.
+     * For example, a two dimensional array of String returns "<code>String</code>".
+     */
+    String typeName();
+
+    /**
+     * The qualified name including any dimension information.
+     * For example, a two dimensional array of String returns
+     * "<code>java.lang.String[][]</code>", and the parameterized type
+     * <code>List&lt;Integer&gt;</code> returns "<code>java.util.List&lt;java.lang.Integer&gt;</code>".
+     */
+    String toString();
 }

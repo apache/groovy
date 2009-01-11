@@ -17,12 +17,16 @@
     boolean hasConstructors = classDoc.constructors().size() > 0
     def visibleMethods = classDoc.methods().findAll{ !it.isPrivate() || props.privateScope }
     boolean hasMethods = visibleMethods.size() > 0
+    boolean methodSummaryShown = hasMethods
     boolean hasEnumConstants = classDoc.enumConstants().size() > 0
     def dolink = { t, boolean b ->
         if (!t || t instanceof String) {
             return classDoc.getDocUrl(t, b)
         }
-        return classDoc.getDocUrl(t.fullDottedName(), b)
+        if (t instanceof org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc) {
+            return "<a href='" + classDoc.relativeRootPath + t.fullPathName + ".html'>" + (b ? t.qualifiedTypeName() : t.name()) + "</a>"
+        }
+        return classDoc.getDocUrl(t.qualifiedTypeName(), b)
     }
     def linkfull = { t -> dolink(t, true) }
     def linkable = { t -> dolink(t, false) }
@@ -39,14 +43,15 @@
         (t.isProtected()?"protected&nbsp;":"") +
         (t.isStatic()?"static&nbsp;":"")
     }
+    def isVisible = { t -> java.lang.reflect.Modifier.isPublic(t.modifiers) || java.lang.reflect.Modifier.isProtected(t.modifiers) }
     def elementTypes = [
         "required":"true",
         "optional":"false"
     ]
     def isRequired = { f, v -> def req = f.constantValueExpression() == null; req.toString() == v }
     def upcase = { n -> n[0].toUpperCase() + n[1..-1] }
-    def paramsOf = { n -> n.parameters().collect{ param -> linkable(param.isTypeAvailable()?param.type().fullDottedName():param.typeName()) + ' ' + param.name() + (param.defaultValue() ? " = " + param.defaultValue():"") }.join(", ") }
-    def nameFromParams = { n -> n.name() + '(' + n.parameters().collect{ param -> param.isTypeAvailable()?param.type().fullDottedName():param.typeName() }.join(', ') + ')' }
+    def paramsOf = { n -> n.parameters().collect{ param -> linkable(param.isTypeAvailable()?param.type():param.typeName()) + ' ' + param.name() + (param.defaultValue() ? " = " + param.defaultValue():"") }.join(", ") }
+    def nameFromParams = { n -> n.name() + '(' + n.parameters().collect{ param -> param.isTypeAvailable()?param.type().qualifiedTypeName():param.typeName() }.join(', ') + ')' }
 %>
 <HTML>
 <HEAD>
@@ -159,19 +164,17 @@ ${classDoc.containingPackage().nameWithDots()}</FONT>
 <BR>
 <FONT CLASS="ClassTitleFont">${classDoc.typeDescription} ${classDoc.name()}</FONT></H2>
 <%
-if (!classDoc.isInterface()) {
-    def parents = classDoc.parentClasses
-    if (parents.size() >= 2) {
-        %><pre><%
-        parents.eachWithIndex { p, i ->
-            %>${(i > 0 ? "  " * i + "  " * (i - 1) + "<img src='" + classDoc.relativeRootPath + "inherit.gif'>" : "") + ( i == parents.size() - 1 ? p : linkfull(p))}\n<%
-        }
-        %></pre><%
+def parents = classDoc.isInterface() ? classDoc.parentInterfaces : classDoc.parentClasses
+if (parents.size() >= 2) {
+    %><pre><%
+    parents.eachWithIndex { p, i ->
+        %>${(i > 0 ? "  " * i + "  " * (i - 1) + "<img src='" + classDoc.relativeRootPath + "inherit.gif'>" : "") + ( i == parents.size() - 1 ? p.qualifiedTypeName() : linkfull(p))}\n<%
     }
+    %></pre><%
 }
 if (classDoc.isInterface()) {
-    Set interfaces = classDoc.superclasses().collect{ it.parentClasses }.sum()
-    if (interfaces) interfaces -= 'java.lang.Object'
+    Set interfaces = classDoc.parentInterfaces
+    interfaces -= classDoc
     if (interfaces) {
         %><dl><dt><b>All Superinterfaces:</b> </dt><dd>${interfaces.collect{ linkable(it) }.join(', ')}</dd></dl><%
     }
@@ -179,14 +182,16 @@ if (classDoc.isInterface()) {
     // TODO follow up the tree collecting interfaces seen?
     def interfaces = classDoc.interfaces()
     if (interfaces) {
-        %><dl><dt><b>All Implemented Interfaces:</b> </dt><dd>${interfaces.collect{ linkable(it.fullDottedName()) }.join(', ')}</dd></dl><%
+        %><dl><dt><b>All Implemented Interfaces:</b> </dt><dd>${interfaces.collect{ linkable(it) }.join(', ')}</dd></dl><%
     }
 }
 %><hr>
 <PRE>
 ${modifiers(classDoc) + classDoc.typeSourceDescription + ' ' + classDoc.name()}
-<% if (!"java.lang.Object".equals(classDoc.superclass().fullDottedName())) {
-%>extends ${classDoc.superclasses().collect{ linkable(it.fullDottedName()) }.join(', ')}    
+<% if (classDoc.isInterface() && classDoc.interfaces()) {
+%>extends ${classDoc.interfaces().collect{ linkable(it) }.join(', ')}
+<% } else if (classDoc.superclass()) {
+%>extends ${linkable(classDoc.superclass())}
 <% } %>
 </PRE>
 <% if (classDoc.commentText()) { %>
@@ -319,27 +324,50 @@ ${classDoc.commentText()}
     </TABLE>
     &nbsp;
 <% }
-    Set classes = classDoc.superclasses()
+    Set classes = []
+    if (classDoc.isInterface()) {
+        classes.addAll(classDoc.interfaces().toList())
+    } else {
+        if (classDoc.superclass()) classes += classDoc.superclass()
+        else classes += new org.codehaus.groovy.tools.groovydoc.ExternalGroovyClassDoc(Object.class)
+    }
     Set visited = [classDoc] as Set
     while (classes) {
         Set nextLevel = []
         classes.each { c ->
+            if (c.isInterface()) nextLevel.addAll(c.interfaces().toList())
+            else if (c.superclass() && c.qualifiedTypeName() != 'java.lang.Object') nextLevel += c.superclass()
+            nextLevel -= visited
+            visited += nextLevel
+            def list = []
             if (c instanceof org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc) {
-                nextLevel += c.superclasses()
-                nextLevel -= visited
-                visited += nextLevel
-                def list = c.methods().findAll{ it.isPublic() || it.isProtected() }.collect { method ->
+                list = c.methods().findAll{ it.isPublic() || it.isProtected() }.collect { method ->
                     "<a href='${classDoc.relativeRootPath}${c.fullPathName}.html#${nameFromParams(method)}'>${method.name()}</a>"
                 }
-                if (list) {
+            } else {
+                list = c.externalClass().methods.findAll{ isVisible(it) }.collect { method ->
+                    // "<a href='${classDoc.relativeRootPath}${c.fullPathName}.html#${nameFromParams(method)}'>${method.name()}</a>"
+                    method.name
+                }
+            }
+            if (list) {
+                if (!methodSummaryShown) {
+                    methodSummaryShown = true
                     %><table BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
-                    <tr CLASS="TableSubHeadingColor"><th ALIGN="left" COLSPAN="2">
-                    <b>Methods inherited from ${c.typeSourceDescription} ${linkable(c.fullDottedName())}</b>
-                    </th></tr>
-                    <tr class="TableRowColor"><td colspan='2'>${list.join(', ')}</td></tr>
+                    <TR CLASS="TableHeadingColor">
+                    <TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2" CLASS="ClassHeadingFont">
+                    <B>Method Summary</B></FONT></TH>
+                    </TR>
                     </table>
                     &nbsp;<%
                 }
+                %><table BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
+                <tr CLASS="TableSubHeadingColor"><th ALIGN="left" COLSPAN="2">
+                <b>Methods inherited from ${c.typeSourceDescription} ${linkable(c)}</b>
+                </th></tr>
+                <tr class="TableRowColor"><td colspan='2'>${list.join(', ')}</td></tr>
+                </table>
+                &nbsp;<%
             }
         }
         classes = nextLevel

@@ -120,6 +120,10 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
         definitionType = t;
     }
 
+    public int tokenType() {
+        return definitionType;
+    }
+
     // Methods from Comparable
     public int compareTo(Object that) {
         if (that instanceof SimpleGroovyDoc) {
