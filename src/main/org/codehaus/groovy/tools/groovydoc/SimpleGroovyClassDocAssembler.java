@@ -483,10 +483,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
 
     private String getTypeOrDefault(GroovySourceAST t) {
         GroovySourceAST typeNode = t.childOfType(TYPE);
-        if (typeNode != null && typeNode.getNumberOfChildren() > 0) {
-            return extractName((GroovySourceAST) typeNode.getFirstChild()).replace('/', '.');
-        }
-        return "def";
+        return getTypeNodeAsText(typeNode, "def");
     }
 
     private String getTypeNodeAsText(GroovySourceAST typeNode, String defaultText) {
