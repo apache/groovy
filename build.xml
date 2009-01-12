@@ -850,7 +850,7 @@ Not found: ${groovyJar14path}
         <groovydoc
                 destdir="${docsDirectory}/gapi"
                 sourcepath="${mainSourceDirectory}"
-                packagenames="**.*"
+                packagenames="groovy.lang,org.codehaus.groovy.util"
                 use="true"
                 windowtitle="${title}"
                 doctitle="${title}"
