@@ -3,11 +3,14 @@
 <HEAD>
 <%
 def title = packageDoc.nameWithDots() + (props.windowTitle ? " ($props.windowTitle)" : "")
+// TODO enable errors(), enums() etc in SimpleGroovyPackageDoc then replace closures below
 def classTypes = [
-    "Interface":"isInterface",
-    "Class":"isClass",
-    "Enum":"isEnum",
-    "Annotation Type":"isAnnotationType"
+    "Interface" : { it.isInterface() },
+    "Class" : { it.isClass() && !it.parentClasses*.qualifiedTypeName().contains('java.lang.Throwable') },
+    "Enum" : { it.isEnum() },
+    "Exception" : { it.isClass() && it.parentClasses*.qualifiedTypeName().contains('java.lang.Exception') },
+    "Error" : { it.isClass() && it.parentClasses*.qualifiedTypeName().contains('java.lang.Error') },
+    "Annotation Type" : { it.isAnnotationType() }
 ]
 %>
 <TITLE>${title}</TITLE>
@@ -37,7 +40,7 @@ ${packageDoc.description()}
 
 <%
 classTypes.each{ k, v ->
-    if (packageDoc.ordinaryClasses().any{ it."$v"() }) {
+    if (packageDoc.ordinaryClasses().any{ v(it) }) {
 %>
 
 <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
@@ -47,7 +50,7 @@ classTypes.each{ k, v ->
     </TR>
 <%
     for (classDoc in packageDoc.ordinaryClasses()) {
-        if (classDoc."$v"()) {
+        if (v(classDoc)) {
 %>
             <TR BGCOLOR="white" CLASS="TableRowColor">
             <TD WIDTH="15%"><B><A HREF="${classDoc.name()}.html" title="class in ${packageDoc.name()}">${classDoc.name()}</A></B></TD>

@@ -5,11 +5,14 @@
 ${packageDoc.nameWithDots()}
 </TITLE>
 <%
+// TODO enable errors(), enums() etc in SimpleGroovyPackageDoc then replace closures below
 def classTypes = [
-    "interface":"isInterface",
-    "class":"isClass",
-    "enum":"isEnum",
-    "annotation type":"isAnnotationType"
+    "Interface" : { it.isInterface() },
+    "Class" : { it.isClass() && !it.parentClasses*.qualifiedTypeName().contains('java.lang.Throwable') },
+    "Enum" : { it.isEnum() },
+    "Exception" : { it.isClass() && it.parentClasses*.qualifiedTypeName().contains('java.lang.Exception') },
+    "Error" : { it.isClass() && it.parentClasses*.qualifiedTypeName().contains('java.lang.Error') },
+    "Annotation Type" : { it.isAnnotationType() }
 ]
 def pluralize = { name -> name[0].toUpperCase() + name[1..-1] + (name.endsWith("s") ? "es" : "s") }
 %>
@@ -26,7 +29,7 @@ def pluralize = { name -> name[0].toUpperCase() + name[1..-1] + (name.endsWith("
 
 <%
 classTypes.each{ k, v ->
-    if (packageDoc.ordinaryClasses().any{ it."$v"() }) {
+    if (packageDoc.ordinaryClasses().any{ v(it) }) {
 %>
 
 <TABLE BORDER="0" WIDTH="100%" SUMMARY="">
@@ -35,7 +38,7 @@ classTypes.each{ k, v ->
 ${pluralize(k)}</FONT>&nbsp;
 <FONT CLASS="FrameItemFont"><%
     for (classDoc in packageDoc.ordinaryClasses()) {
-        if (classDoc."$v"()) {
+        if (v(classDoc)) {
             %><BR><A HREF="${classDoc.name()}.html" title="${k} in ${packageDoc.nameWithDots()}" target="classFrame"><%
             if (classDoc.isInterface()) { %><I><% }
             %>${classDoc.name()}<%
