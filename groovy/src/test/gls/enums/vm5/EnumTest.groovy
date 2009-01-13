@@ -157,7 +157,27 @@ class EnumTest extends GroovyTestCase {
         """
     }
 
-    // the fix for GROOVY-3161
+    void testMutipleValuesDontGetWronglyWrappedInList() {
+        // the fix for GROOVY-3214 caused multiple values passed in an enum const
+        // to get wrapped in an extra ListExpression. -> GROOVY-3276
+        assertScript """
+            enum GROOVY3276 {
+                A(1,2), B(3,4)
+            
+                GROOVY3276(int xx, int yy) { 
+                    x=xx 
+                    y=yy 
+                }
+                public int x
+                public int y
+            }
+            
+            assert GROOVY3276.A.x == 1
+            assert GROOVY3276.B.y == 4
+        """
+    }
+
+   // the fix for GROOVY-3161
     def void testStaticEnumFieldWithEnumValues() {
         def allColors = GroovyColors3161.ALL_COLORS
         assert allColors.size == 3

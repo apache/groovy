@@ -476,9 +476,11 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         if (element!=null) {
             init = expression(element);
             if (isType(ELIST,element)) {
-                ListExpression le = new ListExpression();
-                le.addExpression(init);
-                init = le;
+            	if(init instanceof ListExpression && !((ListExpression)init).isWrapped()) {
+                    ListExpression le = new ListExpression();
+                    le.addExpression(init);
+                    init = le;
+            	}
             }
         }
         EnumHelper.addEnumConstant(classNode, identifier, init);
@@ -2219,6 +2221,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             return (Expression) expressionList.get(0);
         } else {
             ListExpression listExpression = new ListExpression(expressionList);
+            listExpression.setWrapped(true);
             configureAST(listExpression, node);
             return listExpression;
         }
