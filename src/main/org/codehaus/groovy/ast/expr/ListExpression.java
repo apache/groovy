@@ -30,6 +30,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  */
 public class ListExpression extends Expression {
     private List expressions;
+    private boolean wrapped = false;
 
     public ListExpression() {
         this(new ArrayList());
@@ -62,6 +63,14 @@ public class ListExpression extends Expression {
 
     public Expression getExpression(int i) {
         return (Expression) expressions.get(i);
+    }
+
+    public void setWrapped(boolean value) {
+    	wrapped = value;
+    }
+    
+    public boolean isWrapped() {
+    	return wrapped;
     }
 
     public String getText() {
