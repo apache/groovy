@@ -301,6 +301,22 @@ class MixinTest extends GroovyTestCase {
         c.foo()
         c.foobar()
     }
+
+    void testStackOverflow () {
+        Overflow_B.metaClass {
+            mixin Overflow_A
+
+            foo = {->
+                println 'New foo ' + receive('')
+            }
+        }
+
+        final Overflow_A a = new Overflow_A()
+        a.foo()
+
+        final Overflow_B b = new Overflow_B()
+        b.foo()
+    }
 }
 
 class ArrayListExt {
@@ -421,3 +437,20 @@ class WPM_B extends WPM_A {
 }
 
 class WPM_C {}
+
+class Overflow_A {
+    public void foo() {
+        println 'Original foo ' + receive('')
+    }
+
+    protected Object receive() {
+        return "Message"
+    }
+
+    protected Object receive(Object param) {
+        receive() + param
+    }
+}
+
+class Overflow_B {}
+

@@ -199,6 +199,14 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
             }
             if (metaMethod != null) {
               MetaMethod method = new MixinInstanceMetaMethod(metaMethod, mixin);
+
+              if (method.getParameterTypes().length == 1 && !method.getParameterTypes()[0].isPrimitive) {
+                  MetaMethod noParam = pickMethod(methodName, new Class[0]);
+                  if (noParam == null) {
+                      findMixinMethod(methodName, new Class [0]);
+                  }
+              }
+
               registerInstanceMethod(method);
               return method;
             }
