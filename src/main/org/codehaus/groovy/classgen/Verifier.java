@@ -236,6 +236,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                             mv.visitVarInsn(ALOAD, 0);
                             mv.visitVarInsn(ALOAD, 1);
                             mv.visitFieldInsn(PUTFIELD, classInternalName, "metaClass", "Lgroovy/lang/MetaClass;");
+                            mv.visitInsn(RETURN);
                         }
                     });
                     setMetaClassCode = new BytecodeSequence(list);
@@ -422,16 +423,17 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
               node.setCode(addReturnsIfNeeded(statement, node.getVariableScope()));
         }
         else if (!node.isAbstract()) {
-        	BlockStatement newBlock = new BlockStatement();
-            if (statement instanceof BlockStatement) {
-                BlockStatement oldBlock = (BlockStatement)statement;
-                newBlock.addStatements(filterStatements(((BlockStatement)statement).getStatements()));
-            } else {
-                newBlock.addStatement(filterStatement(statement));
+            if (!(statement instanceof BytecodeSequence)) {
+                BlockStatement newBlock = new BlockStatement();
+                if (statement instanceof BlockStatement) {
+                    newBlock.addStatements(filterStatements(((BlockStatement)statement).getStatements()));
+                } else {
+                    newBlock.addStatement(filterStatement(statement));
+                }
+                newBlock.addStatement(ReturnStatement.RETURN_NULL_OR_VOID);
+                newBlock.setSourcePosition(statement);
+                node.setCode(newBlock);
             }
-            newBlock.addStatement(ReturnStatement.RETURN_NULL_OR_VOID);
-            newBlock.setSourcePosition(statement);
-            node.setCode(newBlock);
         }
     }
 
@@ -842,6 +844,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     helper.load(field.getType(), 1);
                     mv.visitFieldInsn(PUTFIELD, BytecodeHelper.getClassInternalName(classNode), field.getName(), BytecodeHelper.getTypeDescription(field.getType()));
                 }
+                mv.visitInsn(RETURN);
             }
         });
     }
