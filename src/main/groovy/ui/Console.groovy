@@ -46,6 +46,7 @@ import org.codehaus.groovy.control.ErrorCollector
 import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage
 import org.codehaus.groovy.syntax.SyntaxException
+import org.codehaus.groovy.control.messages.ExceptionMessage
 
 /**
  * Groovy Swing console.
@@ -552,8 +553,10 @@ class Console implements CaretListener, HyperlinkListener {
 
                     doc.insertString(doc.length, message + " at ", stacktraceStyle)
                     doc.insertString(doc.length, "line: ${se.line}, column: ${se.column}\n\n", style)
-                } else {
+                } else if (error instanceof Throwable) {
                     reportException(error)
+                } else if (error instanceof ExceptionMessage) {
+                    reportException(error.cause)
                 }
             }
         } else {
