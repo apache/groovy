@@ -206,7 +206,9 @@ y''', 3, 'x\ny');
     }
 
     void doNormalizationFileRoundTrip(String s) {
-        [s, s.replace('\n', '\r'), s.replace('\n', '\r\n'), s.replace('\n', '\n\n')].each {
+        // TODO: Add String.replace(String, String) to DGM.
+        // Using String.replaceAll here because test cases must use JDK 1.4 API.
+        [s, s.replaceAll('\n', '\r'), s.replaceAll('\n', '\r\n'), s.replaceAll('\n', '\n\n')].each {
             innerNormalizationFileRoundTrip(it)
             innerNormalizationFileRoundTrip(it.reverse())
         }
