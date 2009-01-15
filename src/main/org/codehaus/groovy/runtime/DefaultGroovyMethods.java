@@ -9110,57 +9110,52 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return readLines(new StringReader(self));
     }
 
+    static String lineSeparator = null;
+    
     /**
-     * Return a String with linefeeds denormalized to the platform specific
-     * end of line character. Algorithm used is throw away all '\r' chars
-     * and replace all '\n' chars with platform 'line.separator' char.
+     * Return a String with lines (separated by LF, CR/LF, or CR)
+     * terminated by the platform specific line separator. 
      *
      * @param self a String object
      * @return the denormalized string
-     * @throws java.io.IOException if an error occurs
      * @since 1.6.0
-     * @see groovy.io.PlatformLineWriter
      */
-    public static String denormalize(String self) throws IOException {
-        StringWriter result = new StringWriter(self.length());
-        PlatformLineWriter w = new PlatformLineWriter(result, self.length());
-        try {
-            w.write(self);
-        } finally {
-            closeWithWarning(w);
+    public static String denormalize(String self) {
+        if (lineSeparator == null) {
+            final StringWriter sw = new StringWriter(2);
+            try {
+                final BufferedWriter bw = new BufferedWriter(sw);
+                bw.newLine();
+                bw.flush();
+                lineSeparator = sw.toString();
+            } catch (IOException ioe) {
+                lineSeparator = "\n";
+            }
         }
-        return result.toString();
+        
+        self = normalize(self);
+        
+        if (!lineSeparator.equals("\n")) {
+            self = self.replace("\n", lineSeparator);
+        }
+        
+        return self;
     }
 
     /**
      * Return a String with linefeeds and carriage returns normalized to linefeeds.
-     * The last trailing linefeed (after normalization) if found is removed.
      *
      * @param self a String object
      * @return the normalized string
-     * @throws java.io.IOException if an error occurs
      * @since 1.6.0
      */
-    public static String normalize(String self) throws IOException {
-        // for efficiency, we don't use: return join(readLines(self), "\n");
-        BufferedReader br = new BufferedReader(new StringReader(self));
-        StringBuilder sb = new StringBuilder(self.length());
-        boolean first = true;
-        try {
-            while (true) {
-                String line = br.readLine();
-                if (line == null) {
-                    break;
-                } else {
-                    if (first) first = false;
-                    else sb.append("\n");
-                    sb.append(line);
-                }
-            }
-        } finally {
-            closeWithWarning(br);
+    public static String normalize(String self) {
+        if (self.contains("\r")) {
+            self = self.replace("\r\n", "\n");
+            self = self.replace('\r', '\n');
         }
-        return sb.toString();
+        
+        return self;
     }
 
     /**
