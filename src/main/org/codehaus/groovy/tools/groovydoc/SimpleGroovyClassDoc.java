@@ -35,8 +35,6 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
     private final List<String> importedClassesAndPackages;
     private final List<String> interfaceNames;
     private final List<GroovyClassDoc> interfaceClasses;
-    private final List<String> annotationNames;
-    private final List<GroovyClassDoc> annotationClasses;
     private final List<Groovydoc.LinkArgument> links;
     private GroovyClassDoc superClass;
     private String superClassName;
@@ -52,8 +50,6 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         methods = new ArrayList<GroovyMethodDoc>();
         interfaceNames = new ArrayList<String>();
         interfaceClasses = new ArrayList<GroovyClassDoc>();
-        annotationNames = new ArrayList<String>();
-        annotationClasses = new ArrayList<GroovyClassDoc>();
     }
 
     public SimpleGroovyClassDoc(List<String> importedClassesAndPackages, String name) {
@@ -269,8 +265,9 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
             interfaceClasses.add(resolveClass(rootDoc, name));
         }
 
-        for (String name : annotationNames) {
-            annotationClasses.add(resolveClass(rootDoc, name));
+        for (GroovyAnnotationRef annotation : annotations()) {
+            SimpleGroovyAnnotationRef ref = (SimpleGroovyAnnotationRef) annotation;
+            ref.setType(resolveClass(rootDoc, ref.name()));
         }
     }
 
@@ -375,11 +372,6 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         return null;
     }
 
-    public GroovyClassDoc[] annotationClasses(boolean filter) {
-        Collections.sort(annotationClasses);
-        return annotationClasses.toArray(new GroovyClassDoc[interfaceClasses.size()]);
-    }
-
     public boolean definesSerializableFields() {/*todo*/
         return false;
     }
@@ -478,10 +470,6 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
 
     public void addInterfaceName(String className) {
         interfaceNames.add(className);
-    }
-
-    public void addAnnotationName(String className) {
-        annotationNames.add(className);
     }
 
     public void setRawCommentText(String rawCommentText) {

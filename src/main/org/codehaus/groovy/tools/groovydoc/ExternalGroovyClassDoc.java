@@ -15,25 +15,29 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
-import org.codehaus.groovy.groovydoc.GroovyClassDoc;
-import org.codehaus.groovy.groovydoc.GroovyConstructorDoc;
-import org.codehaus.groovy.groovydoc.GroovyFieldDoc;
-import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
-import org.codehaus.groovy.groovydoc.GroovyPackageDoc;
-import org.codehaus.groovy.groovydoc.GroovyType;
+import org.codehaus.groovy.groovydoc.*;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Represents a class not in the codebase being processed.
  */
 public class ExternalGroovyClassDoc implements GroovyClassDoc {
     private Class externalClass;
+    private final List<GroovyAnnotationRef> annotationRefs;
 
     public ExternalGroovyClassDoc(Class externalClass) {
         this.externalClass = externalClass;
+        annotationRefs = new ArrayList<GroovyAnnotationRef>();
     }
 
     public boolean isPrimitive() {
         return externalClass.isPrimitive();
+    }
+
+    public GroovyAnnotationRef[] annotations() {
+        return annotationRefs.toArray(new GroovyAnnotationRef[annotationRefs.size()]);
     }
 
     public String qualifiedTypeName() {

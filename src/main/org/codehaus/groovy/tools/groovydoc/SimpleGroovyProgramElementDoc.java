@@ -14,9 +14,13 @@
  * limitations under the License.
  */
 package org.codehaus.groovy.tools.groovydoc;
-import org.codehaus.groovy.groovydoc.*;
-import org.codehaus.groovy.ant.Groovydoc;
 
+import org.codehaus.groovy.groovydoc.GroovyAnnotationRef;
+import org.codehaus.groovy.groovydoc.GroovyClassDoc;
+import org.codehaus.groovy.groovydoc.GroovyPackageDoc;
+import org.codehaus.groovy.groovydoc.GroovyProgramElementDoc;
+
+import java.util.ArrayList;
 import java.util.List;
 
 public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements GroovyProgramElementDoc {
@@ -26,9 +30,11 @@ public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements Gr
     private boolean finalElement;
     private boolean privateElement;
     private boolean protectedElement;
+    private final List<GroovyAnnotationRef> annotationRefs;
 
     public SimpleGroovyProgramElementDoc(String name) {
         super(name);
+        annotationRefs = new ArrayList<GroovyAnnotationRef>();
     }
 
     public GroovyPackageDoc containingPackage() {
@@ -79,7 +85,14 @@ public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements Gr
         return protectedElement;
     }
 
-    //	public GroovyAnnotationDesc[] annotations() {/*todo*/return null;}
+    public GroovyAnnotationRef[] annotations() {
+        return annotationRefs.toArray(new GroovyAnnotationRef[annotationRefs.size()]);
+    }
+
+    public void addAnnotationRef(GroovyAnnotationRef ref) {
+        annotationRefs.add(ref);
+    }
+
 	public GroovyClassDoc containingClass() {/*todo*/return null;}
 
     public boolean isPackagePrivate() {/*todo*/return false;}

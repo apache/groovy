@@ -17,7 +17,7 @@ package org.codehaus.groovy.groovydoc;
 
 public interface GroovyProgramElementDoc extends GroovyDoc {
 
-//    GroovyAnnotationDesc[] annotations();
+    GroovyAnnotationRef[] annotations();
 
     GroovyClassDoc containingClass();
 

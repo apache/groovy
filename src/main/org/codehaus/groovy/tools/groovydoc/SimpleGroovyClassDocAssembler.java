@@ -23,6 +23,7 @@ import org.codehaus.groovy.antlr.SourceBuffer;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 import org.codehaus.groovy.antlr.treewalker.VisitorAdapter;
 import org.codehaus.groovy.control.ResolveVisitor;
+import org.codehaus.groovy.groovydoc.GroovyAnnotationRef;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyConstructorDoc;
 import org.codehaus.groovy.groovydoc.GroovyType;
@@ -34,7 +35,6 @@ import java.util.regex.Pattern;
 public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements GroovyTokenTypes {
     private static final String FS = "/";
     private static final Pattern PREV_JAVADOC_COMMENT_PATTERN = Pattern.compile("(?s)/\\*\\*(.*?)\\*/");
-    private static final Pattern ANNOTATION_PRELUDE_PATTERN = Pattern.compile("(?sm)(^\\s*@[A-Z].*|^public\\s*)");
     private Stack<GroovySourceAST> stack;
     private Map<String, GroovyClassDoc> classDocs;
     private List<String> importedClassesAndPackages;
@@ -48,6 +48,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     private String packagePath;
     private LineColumn lastLineCol;
     private boolean insideEnum;
+    private boolean insideMethod;
 
     public SimpleGroovyClassDocAssembler(String packagePath, String file, SourceBuffer sourceBuffer, List<Groovydoc.LinkArgument> links, Properties properties, boolean isGroovy) {
         this.sourceBuffer = sourceBuffer;
@@ -140,12 +141,8 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     @Override
     public void visitAnnotationDef(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
-            String prelude = getAnnotationPrelude(t);
             visitClassDef(t, visit);
             currentClassDoc.setTokenType(t.getType());
-            String orig = currentClassDoc.getRawCommentText();
-            currentClassDoc.setRawCommentText("<pre>\n" + prelude + "@interface " +
-                    currentClassDoc.name() + "</pre>\n<P>&nbsp;</P>\n" + orig);
         }
     }
 
@@ -217,14 +214,38 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         }
     }
 
+    // TODO get constructor? parameter anotations working?
     @Override
     public void visitAnnotation(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
-            GroovySourceAST classNode = t.childOfType(IDENT);
-            if (classNode != null) {
-                currentClassDoc.addAnnotationName(extractName(classNode));
+            GroovyAnnotationRef ref = getAnnotationRef(t);
+            if (ref != null) {
+//                System.out.println("currentClassDoc.name() = " + currentClassDoc.name() + " : " + t.getText());
+                if (currentFieldDoc != null) {
+                    currentFieldDoc.addAnnotationRef(ref);
+//                    System.out.println("SimpleGroovyClassDocAssembler.visitAnnotation: set field annotation");
+                } else if (currentConstructorDoc != null) {
+                    currentConstructorDoc.addAnnotationRef(ref);
+//                    System.out.println("SimpleGroovyClassDocAssembler.visitAnnotation: set constructor annotation");
+                } else if (currentMethodDoc != null) {
+                    currentMethodDoc.addAnnotationRef(ref);
+//                    System.out.println("SimpleGroovyClassDocAssembler.visitAnnotation: set method annotation");
+                } else if (!insideMethod) {
+                    currentClassDoc.addAnnotationRef(ref);
+//                    System.out.println("SimpleGroovyClassDocAssembler.visitAnnotation: set class annotation");
+                } else {
+//                    System.out.println("SimpleGroovyClassDocAssembler.visitAnnotation: unknown annotation");
+                }
             }
         }
+    }
+
+    private GroovyAnnotationRef getAnnotationRef(GroovySourceAST t) {
+        GroovySourceAST classNode = t.childOfType(IDENT);
+        if (classNode != null) {
+            return new SimpleGroovyAnnotationRef(extractName(classNode), getChildTextFromSource(t));
+        }
+        return null;
     }
 
     @Override
@@ -248,7 +269,9 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     @Override
     public void visitCtorIdent(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
+            insideMethod = true;
             if (!insideAnonymousInnerClass()) {
+//                System.out.println("SimpleGroovyClassDocAssembler.visitCtorIdent: start");
                 // name of class for the constructor
                 currentConstructorDoc = new SimpleGroovyConstructorDoc(currentClassDoc.name(), currentClassDoc);
 
@@ -259,37 +282,47 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 // modifiers
                 processModifiers(t, currentConstructorDoc);
 
-                addParametersTo(currentConstructorDoc, t, visit);
+                addParametersTo(currentConstructorDoc, t);
 
                 // don't forget to tell the class about this constructor.
                 currentClassDoc.add(currentConstructorDoc);
             }
+        } else {
+//            System.out.println("SimpleGroovyClassDocAssembler.visitCtorIdent: end");
+            insideMethod = false;
+            currentConstructorDoc = null;
         }
     }
 
     @Override
     public void visitMethodDef(GroovySourceAST t, int visit) {
-        if (visit == OPENING_VISIT && !insideEnum) {
-            if (!insideAnonymousInnerClass()) {
-                // method name
-                String methodName = t.childOfType(IDENT).getText();
-                currentMethodDoc = new SimpleGroovyMethodDoc(methodName, currentClassDoc);
+        if (visit == OPENING_VISIT ) {
+            insideMethod = true;
+            if (!insideEnum) {
+                if (!insideAnonymousInnerClass()) {
+                    // method name
+                    String methodName = t.childOfType(IDENT).getText();
+                    currentMethodDoc = new SimpleGroovyMethodDoc(methodName, currentClassDoc);
 
-                // comments
-                String commentText = getJavaDocCommentsBeforeNode(t);
-                currentMethodDoc.setRawCommentText(commentText);
+                    // comments
+                    String commentText = getJavaDocCommentsBeforeNode(t);
+                    currentMethodDoc.setRawCommentText(commentText);
 
-                // modifiers
-                processModifiers(t, currentMethodDoc);
+                    // modifiers
+                    processModifiers(t, currentMethodDoc);
 
-                // return type
-                String returnTypeName = getTypeOrDefault(t);
-                SimpleGroovyType returnType = new SimpleGroovyType(returnTypeName);
-                currentMethodDoc.setReturnType(returnType);
+                    // return type
+                    String returnTypeName = getTypeOrDefault(t);
+                    SimpleGroovyType returnType = new SimpleGroovyType(returnTypeName);
+                    currentMethodDoc.setReturnType(returnType);
 
-                addParametersTo(currentMethodDoc, t, visit);
-                currentClassDoc.add(currentMethodDoc);
+                    addParametersTo(currentMethodDoc, t);
+                    currentClassDoc.add(currentMethodDoc);
+                }
             }
+        } else {
+            insideMethod = false;
+            currentMethodDoc = null;
         }
     }
 
@@ -318,6 +351,12 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             nodeToProcess = (GroovySourceAST) child.getFirstChild();
         }
         return getChildTextFromSource(nodeToProcess, ";");
+    }
+
+    private String getChildTextFromSource(GroovySourceAST child) {
+        return sourceBuffer.getSnippet(
+                new LineColumn(child.getLine(), child.getColumn()),
+                new LineColumn(child.getLineLast(), child.getColumnLast()));
     }
 
     private String getChildTextFromSource(GroovySourceAST child, String tokens) {
@@ -375,6 +414,8 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
 
                 currentClassDoc.add(currentFieldDoc);
             }
+        } else {
+            currentFieldDoc = null;
         }
     }
 
@@ -436,19 +477,6 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         }
         if (isMajorType(t)) {
             lastLineCol = thisLineCol;
-        }
-        return result;
-    }
-
-    private String getAnnotationPrelude(GroovySourceAST t) {
-        LineColumn thisLineCol = new LineColumn(t.getLine(), t.getColumn());
-        String result = "";
-        String text = sourceBuffer.getSnippet(lastLineCol, thisLineCol);
-        if (text != null) {
-            Matcher m = ANNOTATION_PRELUDE_PATTERN.matcher(text);
-            if (m.find()) {
-                result = m.group(1);
-            }
         }
         return result;
     }
@@ -539,7 +567,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         return returnValue;
     }
 
-    private void addParametersTo(SimpleGroovyExecutableMemberDoc executableMemberDoc, GroovySourceAST t, int visit) {
+    private void addParametersTo(SimpleGroovyExecutableMemberDoc executableMemberDoc, GroovySourceAST t) {
         // parameters
         GroovySourceAST parametersNode = t.childOfType(PARAMETERS);
         if (parametersNode != null && parametersNode.getNumberOfChildren() > 0) {

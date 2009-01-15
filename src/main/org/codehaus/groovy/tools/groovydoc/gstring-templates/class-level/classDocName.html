@@ -186,7 +186,10 @@ if (classDoc.isInterface()) {
     }
 }
 %><hr>
-<PRE>
+<PRE><%
+if (classDoc.annotations()) {
+    %>${classDoc.annotations()*.description().join().trim()}<%
+} %>
 ${modifiers(classDoc) + classDoc.typeSourceDescription + ' ' + classDoc.name()}
 <% if (classDoc.isInterface() && classDoc.interfaces()) {
 %>extends ${classDoc.interfaces().collect{ linkable(it) }.join(', ')}
@@ -411,7 +414,10 @@ ${classDoc.commentText()}
     </TABLE>
     <% for (field in visibleFields) { %>
         <A NAME="${field.name()}"><!-- --></A><H3>${field.name()}</H3>
-        <PRE>${modifiers(field) + linkable(field.type())} <B>${field.name()}</B></PRE>
+        <PRE><%
+            if (field.annotations()) {
+                %>${field.annotations()*.description().join().trim() + '\n'}<%
+            } %>${modifiers(field) + linkable(field.type())} <B>${field.name()}</B></PRE>
         <DL>
         <DD>${field.commentText()}
         </DD>
@@ -458,7 +464,10 @@ ${classDoc.commentText()}
     <% for (constructor in classDoc.constructors()) { %>
         <A NAME="${nameFromParams(constructor)}"><!-- --></A><H3>
         ${constructor.name()}</H3>
-        <PRE>${modifiers(constructor)}<B>${constructor.name()}</B>(${paramsOf(constructor)})</PRE>
+        <PRE><%
+            if (constructor.annotations()) {
+                %>${constructor.annotations()*.description().join().trim() + '\n'}<%
+            } %>${modifiers(constructor)}<B>${constructor.name()}</B>(${paramsOf(constructor)})</PRE>
         <DL>
         <DD>${constructor.commentText()}
         </DD>
@@ -482,7 +491,10 @@ ${classDoc.commentText()}
     <% for (method in visibleMethods) { %>
         <A NAME="${nameFromParams(method)}"><!-- --></A><H3>
         ${method.name()}</H3>
-        <PRE>${modifiers(method)}${linkable(method.returnType())} <B>${method.name()}</B>(${paramsOf(method)})</PRE>
+        <PRE><%
+            if (method.annotations()) {
+                %>${method.annotations()*.description().join().trim() + '\n'}<%
+            } %>${modifiers(method)}${linkable(method.returnType())} <B>${method.name()}</B>(${paramsOf(method)})</PRE>
         <DL>
         <DD>${method.commentText()}
         </DD>
