@@ -2538,7 +2538,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Replaces all occurrencies of a captured group by the result of a closure on that text.
+     * Replaces all occurrances of a captured group by the result of a closure on that text.
      * <p/>
      * <p> For examples,
      * <pre>
@@ -2588,6 +2588,25 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
     }
 
+    /**
+     * Replaces all occurrences of a literal string with another literal string.
+     * This provides backwards compatibility for the JDK 1.5 method String.replace(CharSequence, CharSequence).
+     * This will only be invoked on a JDK 1.4 JVM.
+     *
+     * @param self    a String
+     * @param target  the character sequence to search for
+     * @param replacement  the character sequence to replace the matches with
+     * @return a String with replaced content
+     * @since 1.5.8
+     * @see java.lang.String.replace(CharSequence, CharSequence)
+     */
+    public static String replace(final String self, final CharSequence target, final CharSequence replacement) {
+        final String p = RegexUtils.quote(target.toString());
+        final String r = RegexUtils.quoteReplacement(replacement.toString());
+        
+        return self.replaceAll(p, r);
+    }
+    
     private static String getPadding(String padding, int length) {
         if (padding.length() < length) {
             return multiply(padding, new Integer(length / padding.length() + 1)).substring(0, length);
@@ -8494,7 +8513,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         self = normalize(self);
         
         if (!lineSeparator.equals("\n")) {
-            self = self.replace("\n", lineSeparator);
+            self = replace(self, "\n", lineSeparator);
         }
         
         return self;
@@ -8508,8 +8527,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.8
      */
     public static String normalize(String self) {
-        if (self.contains("\r")) {
-            self = self.replace("\r\n", "\n");
+        if (self.indexOf('\r') >= 0) {
+            self = replace(self, "\r\n", "\n");
             self = self.replace('\r', '\n');
         }
         
