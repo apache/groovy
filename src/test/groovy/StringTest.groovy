@@ -174,8 +174,8 @@ y''', 3, 'x\ny');
 
     void testNormalize() {
         assert "a".normalize() == "a"
-        assert "a\n".normalize() == "a"
-        assert "a\n\n".normalize() == "a\n"
+        assert "a\n".normalize() == "a\n"
+        assert "a\n\n".normalize() == "a\n\n"
         assert "a\nb\rc\r\nd".normalize() == "a\nb\nc\nd"
         assert "a\n\nb".normalize() == "a\n\nb"
     }
@@ -186,9 +186,43 @@ y''', 3, 'x\ny');
         assert 'a\n'.denormalize() == 'a' + LS
         assert 'a\n\n'.denormalize() == 'a' + LS + LS
         assert 'a\n\nb'.denormalize() == 'a' + LS + LS + 'b'
-        assert 'a\nb\r\nc\n\rd'.denormalize() == 'a' + LS + 'b' + LS + 'c' + LS + 'd'
+        assert 'a\nb\r\nc\n\rd'.denormalize() == 'a' + LS + 'b' + LS + 'c' + LS + LS + 'd'
+    }
+    
+    void innerNormalizationFileRoundTrip(String s) {
+        def f = File.createTempFile("groovy.StringTest", ".txt")
+        
+        def sd = s.denormalize()
+        f.write(sd)
+        assert sd == f.text
+        
+        f.write(s); 
+        assert s == f.text
+        
+        def rt = (s.denormalize()).normalize()
+        assert s.normalize() == rt
+
+        if (!s.contains('\r')) assert s == rt
     }
 
+    void doNormalizationFileRoundTrip(String s) {
+        [s, s.replace('\n', '\r'), s.replace('\n', '\r\n'), s.replace('\n', '\n\n')].each {
+            innerNormalizationFileRoundTrip(it)
+            innerNormalizationFileRoundTrip(it.reverse())
+        }
+    }
+
+    void testNormalizationFileRoundTrip() {
+        doNormalizationFileRoundTrip("a line 1\nline 2")
+        doNormalizationFileRoundTrip("a line 1\nline 2\n")
+        doNormalizationFileRoundTrip("")
+        doNormalizationFileRoundTrip("\n")
+        doNormalizationFileRoundTrip("a")
+        doNormalizationFileRoundTrip("abcdef")
+        doNormalizationFileRoundTrip("a\n")
+        doNormalizationFileRoundTrip("abcdef\n")
+    }
+    
     void testSplitEqualsTokenize() {
         def text = """
         A text with different words and
