@@ -7,10 +7,9 @@ public class ResourceBundleTest extends GroovyTestCase {
         def results = []
         // run test twice, call site optimizations result in call stack differences
         2.times {
-            ResourceBundle rb = ResourceBundle.getBundle("groovy.util.i18n", Locale.ENGLISH)
+            ResourceBundle rb = ResourceBundle.getBundle("groovy.util.i18n")
             results << rb
-            // we could be defaulted to french or english, just assert something
-            assert rb.getString('yes') != null
+            assert rb.getString('upvote') == '+1'
         }
         assert results.size() == 2
     }
@@ -21,10 +20,18 @@ public class ResourceBundleTest extends GroovyTestCase {
         2.times {
             ResourceBundle rb = ResourceBundle.getBundle("groovy.util.i18n", Locale.ENGLISH)
             results << rb
+            println "en"
+            println "'${rb.getString('yes')}'"
+            println "'${rb.getString('upvote')}'"
             assert rb.getString('yes') == 'yes'
+            assert rb.getString('upvote') == '+1'
             rb = ResourceBundle.getBundle("groovy.util.i18n", Locale.FRENCH)
             results << rb
+            println "fr"
+            println "'${rb.getString('yes')}'"
+            println "'${rb.getString('upvote')}'"
             assert rb.getString('yes') == 'oui'
+            assert rb.getString('upvote') == '+1'
         }
         assert results.size() == 4
     }
@@ -36,10 +43,18 @@ public class ResourceBundleTest extends GroovyTestCase {
         2.times {
             ResourceBundle rb = ResourceBundle.getBundle("groovy.util.i18n", Locale.ENGLISH, cl)
             results << rb
+            println "en"
+            println "'${rb.getString('yes')}'"
+            println "'${rb.getString('upvote')}'"
             assert rb.getString('yes') == 'yes'
+            assert rb.getString('upvote') == '+1'
             rb = ResourceBundle.getBundle("groovy.util.i18n", Locale.FRENCH, cl)
             results << rb
+            println "fr"
+            println "'${rb.getString('yes')}'"
+            println "'${rb.getString('upvote')}'"
             assert rb.getString('yes') == 'oui'
+            assert rb.getString('upvote') == '+1'
         }
         assert results.size() == 4
     }
