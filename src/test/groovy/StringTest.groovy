@@ -171,6 +171,33 @@ y''', 3, 'x\ny');
         assert "a\r\nb".readLines() == ['a', 'b']
         assert "a\n\nb".readLines() == ['a', '', 'b']
     }
+    
+    void testReplace() {
+        assert "".replace("", "") == ""
+        assert "".replace("", "r") == "r"
+        assert "a".replace("", "r") == "rar"
+        assert "a".replace("b", "c") == "a"
+        assert "a".replace("a", "c") == "c"
+        assert "aa".replace("a", "c") == "cc"
+        assert "ab".replace("b", "c") == "ac"
+        assert "ba".replace("b", "c") == "ca"
+        assert "aaa".replace("b", "c") == "aaa"
+        assert "aaa".replace("a", "c") == "ccc"
+        assert "aba".replace("b", "c") == "aca"
+        assert "baa".replace("b", "c") == "caa"
+        assert "aab".replace("b", "c") == "aac"
+        assert "aa.".replace(".", "c") == "aac"
+        assert 'aba'.replace('b', '$') == 'a$a'
+        assert 'aba'.replace('b', '\\') == 'a\\a'
+        assert 'a\\a'.replace('\\', 'x') == 'axa'
+        assert '\\'.replace('\\', 'x') == 'x'
+        assert '\\\\'.replace('\\', 'x') == 'xx'
+        assert '\\z\\'.replace('\\', 'x') == 'xzx'
+        assert 'a\\\\Ea'.replace('\\', 'x') == 'axxEa'
+        assert '\\Qa\\\\Ea'.replace('\\', '$') == '$Qa$$Ea'
+        assert 'a\\((z))\\Qa'.replace('\\', 'x') == 'ax((z))xQa'
+        assert (/\Q\E\\\Q\E/).replace(/\Q\E\\\Q\E/, 'z') == 'z'
+    }
 
     void testNormalize() {
         assert "a".normalize() == "a"
