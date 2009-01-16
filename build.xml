@@ -510,6 +510,7 @@ Not found: ${groovyJar14path}
                 <include name="groovy/ui/**/*.png"/>
                 <include name="org/codehaus/groovy/tools/shell/**/*.properties"/>
                 <include name="org/codehaus/groovy/tools/shell/**/*.xml"/>
+                <include name="org/codehaus/groovy/antlib.xml"/>
             </fileset>
         </copy>
     </target>
