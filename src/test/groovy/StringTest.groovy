@@ -174,6 +174,8 @@ y''', 3, 'x\ny');
     
     void testReplace() {
         assert "".replace("", "") == ""
+        assert "".replace("", "r") == "r"
+        assert "a".replace("", "r") == "rar"
         assert "a".replace("b", "c") == "a"
         assert "a".replace("a", "c") == "c"
         assert "aa".replace("a", "c") == "cc"
