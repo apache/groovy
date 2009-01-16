@@ -195,7 +195,8 @@ y''', 3, 'x\ny');
         assert '\\z\\'.replace('\\', 'x') == 'xzx'
         assert 'a\\\\Ea'.replace('\\', 'x') == 'axxEa'
         assert '\\Qa\\\\Ea'.replace('\\', '$') == '$Qa$$Ea'
-        assert 'a\\z\\Qa'.replace('\\', 'x') == 'axzxQa'
+        assert 'a\\((z))\\Qa'.replace('\\', 'x') == 'ax((z))xQa'
+        assert (/\Q\E\\\Q\E/).replace(/\Q\E\\\Q\E/, 'z') == 'z'
     }
 
     void testNormalize() {
