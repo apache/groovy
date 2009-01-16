@@ -18,6 +18,7 @@ package org.codehaus.groovy.control;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.objectweb.asm.Opcodes;
 
 import java.util.*;
 
@@ -288,7 +289,12 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         Map importPackages = module.getStaticImportClasses();
         for (Object o : importPackages.keySet()) {
             String className = (String) o;
-            ClassNode starImportType = (ClassNode) importPackages.get(className);
+            ClassNode starImportType = null;
+            if(isEnum(currentClass) && importPackages.containsKey(currentClass.getName())) {
+            	starImportType = (ClassNode) importPackages.get(currentClass.getName());
+            } else {
+                starImportType = (ClassNode) importPackages.get(className);
+            }
             Expression expression = findStaticMethod(starImportType, name, args);
             if (expression != null) return expression;
         }
@@ -307,4 +313,8 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     protected SourceUnit getSourceUnit() {
         return source;
     }
+
+    private boolean isEnum(ClassNode node) {
+        return (node.getModifiers() & Opcodes.ACC_ENUM) != 0;
+     }
 }

@@ -184,6 +184,20 @@ class EnumTest extends GroovyTestCase {
         assert allColors[1] == GroovyColors3161.blue
         assert allColors[2] == GroovyColors3161.green
     }
+
+    // the fix for GROOVY-3283
+    def void testImportStaticMoreThanOneEnum() {
+        assertScript """
+            enum Foo3283 { A,B }
+            enum Bar3283 { X,Y }
+            
+            import static Foo3283.*
+            import static Bar3283.*
+            
+            a = A
+            x = X
+    """
+    }
 }
 
 enum UsCoin {
