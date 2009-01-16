@@ -1,0 +1,120 @@
+<?xml version="1.0"?>
+<project name="groovy-osgi-sample" default="print-results">
+
+  <property name="build.dir" value="build"/>
+  <property file="build.properties"/>
+  <property name="groovy.jar" value="groovy-all-${groovy.version}.jar" />
+  <property name="hello.bundle" value="hello-bundle-imports-groovy.jar" />
+  <property name="hello.bundle.contains" value="hello-bundle-contains-groovy.jar" />
+  <property name="harness.bundle" value="hello-groovy-test-harness.jar" />
+    
+  <taskdef name="groovyc"
+	   classname="org.codehaus.groovy.ant.Groovyc"
+	   classpathref="project.classpath"/>
+  
+  <target name="init" description="cleanup and reinitialize">
+	  <path id="project.classpath">
+		  <pathelement location="${osgi.jar}"/>
+		  <pathelement location="${groovy.bin.dir}${file.separator}${groovy.jar}"/>
+		  <pathelement location="${build.dir}${file.separator}${hello.bundle}"/>
+	  </path>
+	  
+	  <delete dir="${build.dir}" />
+	  <mkdir dir="${build.dir}${file.separator}hello-groovy-bundle" />
+	  <mkdir dir="${build.dir}${file.separator}hello-groovy-test-harness" />
+  </target>
+  
+  <target name="make-hello-groovy-bundle" description="compile and build the Hello Groovy bundles">
+  
+    <groovyc destdir="${build.dir}${file.separator}hello-groovy-bundle"
+	     srcdir=".${file.separator}hello-groovy-bundle"
+              listfiles="true">
+              <classpath refid="project.classpath"/>
+    </groovyc>
+    
+    <!-- This jar file imports Groovy from the container -->
+    <jar destfile="${build.dir}${file.separator}${hello.bundle}">
+	    <fileset dir="${build.dir}${file.separator}hello-groovy-bundle"/>
+	    <manifest>
+		    <attribute name="Built-By" value="${user.name}"/>
+		    <attribute name="provider" value="org.codehaus.groovy.osgi"/>
+		    <attribute name="Bundle-ManifestVersion" value="2"/>
+		    <attribute name="Bundle-Name" value="Groovy OSGi Example Bundle"/>
+		    <attribute name="Bundle-SymbolicName" value="org.codehaus.groovy.osgi.hello-groovy-bundle"/>
+		    <attribute name="Bundle-Version" value="1.0.0"/>
+		    <attribute name="Bundle-Activator" value="org.codehaus.groovy.osgi.Activator"/>
+		    <attribute name="Bundle-Vendor" value="Groovy"/>
+		    <attribute name="Bundle-Localization" value="plugin"/>
+		    <attribute name="Import-Package" value="groovy.lang;version=&quot;1.7.0.beta-1-SNAPSHOT&quot;,org.codehaus.groovy.reflection;version=&quot;1.7.0.beta-1-SNAPSHOT&quot;,org.codehaus.groovy.runtime;version=&quot;1.7.0.beta-1-SNAPSHOT&quot;,org.codehaus.groovy.runtime.callsite;version=&quot;1.7.0.beta-1-SNAPSHOT&quot;,org.w3c.dom,org.osgi.framework;version=&quot;1.3.0&quot;"/> 
+		    <attribute name="Export-Package" value="org.codehaus.groovy.osgi;version=&quot;1.0.0&quot;"/> 
+		    <attribute name="Bundle-ClassPath" value="."/>
+	    </manifest>
+    </jar>
+    
+    <!-- This jar includes the Groovy jar withinn itself-->
+    <jar destfile="${build.dir}${file.separator}${hello.bundle.contains}">
+	    <fileset dir="${build.dir}${file.separator}hello-groovy-bundle"/>
+	    <fileset file="${groovy.bin.dir}${file.separator}${groovy.jar}" casesensitive="no" />
+	    <manifest>
+		    <attribute name="Built-By" value="${user.name}"/>
+		    <attribute name="provider" value="org.codehaus.groovy.osgi"/>
+		    <attribute name="Bundle-ManifestVersion" value="2"/>
+		    <attribute name="Bundle-Name" value="Groovy OSGi Example Bundle"/>
+		    <attribute name="Bundle-SymbolicName" value="org.codehaus.groovy.osgi.hello-groovy-bundle"/>
+		    <attribute name="Bundle-Version" value="1.0.0"/>
+		    <attribute name="Bundle-Activator" value="org.codehaus.groovy.osgi.Activator"/>
+		    <attribute name="Bundle-Vendor" value="Groovy"/>
+		    <attribute name="Bundle-Localization" value="plugin"/>
+		    <attribute name="Import-Package" value="org.w3c.dom,org.osgi.framework;version=&quot;1.3.0&quot;"/> 
+		    <attribute name="Export-Package" value="org.codehaus.groovy.osgi;version=&quot;1.0.0&quot;"/> 
+		    <attribute name="Bundle-ClassPath" value=".,${groovy.jar}"/>
+	    </manifest>
+    </jar> 
+  </target>
+
+  <target name="make-harness-bundle" description="Makes the test harness bundle">
+	  
+	  <groovyc destdir="${build.dir}${file.separator}hello-groovy-test-harness"
+		   srcdir=".${file.separator}hello-groovy-test-harness"
+		   listfiles="true">
+		  <classpath refid="project.classpath"/>
+	  </groovyc>
+	  
+	  <jar destfile="${build.dir}${file.separator}${harness.bundle}">
+		  <fileset dir="${build.dir}${file.separator}hello-groovy-test-harness"/>
+		  <manifest>
+			  <attribute name="Built-By" value="${user.name}"/>
+			  <attribute name="provider" value="org.codehaus.groovy.osgi.harness"/>
+			  <attribute name="Bundle-ManifestVersion" value="2"/>
+			  <attribute name="Bundle-Name" value="Groovy OSGi Test Harness"/>
+			  <attribute name="Bundle-SymbolicName" value="org.codehaus.groovy.osgi.harness.hello-groovy-test-harness"/>
+			  <attribute name="Bundle-Version" value="1.0.0"/>
+			  <attribute name="Bundle-Activator" value="org.codehaus.groovy.osgi.harness.HarnessActivator"/>
+			  <attribute name="Bundle-Vendor" value="Groovy"/>
+			  <attribute name="Bundle-Localization" value="plugin"/>
+			  <attribute name="Import-Package" value="org.codehaus.groovy.runtime.typehandling;version=&quot;1.0.0&quot;,org.codehaus.groovy.osgi;version=&quot;1.0.0&quot;,groovy.lang;version=&quot;1.7.0.beta-1-SNAPSHOT&quot;,org.codehaus.groovy.reflection;version=&quot;1.7.0.beta-1-SNAPSHOT&quot;,org.codehaus.groovy.runtime;version=&quot;1.7.0.beta-1-SNAPSHOT&quot;,org.codehaus.groovy.runtime.callsite;version=&quot;1.7.0.beta-1-SNAPSHOT&quot;,org.w3c.dom,org.osgi.framework;version=&quot;1.3.0&quot;"/> 
+			  <attribute name="Bundle-ClassPath" value="."/>
+		  </manifest>
+	  </jar>
+	  
+  </target>
+
+  <target name="print-results" depends="init,make-hello-groovy-bundle,make-harness-bundle" description="compile and build everything">
+	<makeurl file="${basedir}/${groovy.bin.dir}/${groovy.jar}" property="groovy.jar.url"/>
+	<makeurl file="${basedir}/${build.dir}/${hello.bundle}" property="hello.jar1.url"/>
+	<makeurl file="${basedir}/${build.dir}/${hello.bundle.contains}" property="hello.jar2.url"/>
+	<makeurl file="${basedir}/${build.dir}/${harness.bundle}" property="harness.jar.url"/>
+	
+	<echo>To run the OSGi console, run the following command: 
+ java -jar ${osgi.jar} -console 
+To install these applications in the container, run the following commands in the OSGi container: 
+ install ${groovy.jar.url}
+ install ${hello.jar1.url}
+ install ${hello.jar2.url}
+ install ${harness.jar.url}
+To start the applications in the container, run the following commands in the OSGi container: 
+ start [bundle1] [bundle2]
+Where [bundle1] and [bundle] are the bundle IDs printed by the console in the previous step.</echo>  
+  </target>
+</project>
+
