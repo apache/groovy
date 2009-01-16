@@ -34,6 +34,9 @@ public class RegexUtils {
      * <code>String</code>. Used to escape strings that may contain
      * unintentional characters with special significance to replaceAll() etc.
      *
+     * GROOVY-3287 : This is used instead of the default Retrotranslator
+     * backport implementation.  See backport attribute in config/build-retro.xml.
+     *
      * @param s the original string
      * @return the escaped string
      * @deprecated use java.util.regex.Pattern#quote(String) instead
@@ -67,7 +70,7 @@ public class RegexUtils {
         }
         
         // JDK 1.4 String.replaceAll has a bug when a quoted pattern contains a BS.
-        sb.append(p.matcher(s.substring(cur, eIndex)).replaceAll(BS + E + BS + BS + BS + BS + BS + Q));
+        sb.append(p.matcher(s.substring(cur, len)).replaceAll(BS + E + BS + BS + BS + BS + BS + Q));
         
         return sb.toString();
     }

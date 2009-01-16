@@ -20,7 +20,6 @@ import groovy.io.PlatformLineWriter;
 import groovy.io.GroovyPrintWriter;
 import groovy.lang.*;
 import groovy.sql.GroovyRowResult;
-import groovy.text.RegexUtils;
 import groovy.util.*;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
@@ -2793,9 +2792,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.lang.String.replace(CharSequence, CharSequence)
      */
     public static String replace(final String self, final CharSequence target, final CharSequence replacement) {
-        // GROOVY-3287 - we use RegexUtils.quote rather than Pattern.quote so that this
-        // will work correctly on JDK 1.4 with targets that contain backslashes.
-        final String p = RegexUtils.quote(target.toString());
+        final String p = Pattern.quote(target.toString());
         final String r = Matcher.quoteReplacement(replacement.toString());
         
         return self.replaceAll(p, r);
