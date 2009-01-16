@@ -15,6 +15,8 @@
  */
 package groovy.text;
 
+import java.util.regex.Pattern;
+
 public class RegexUtils {
     private static final String BS = "\\";
     private static final String E = "\\E";
@@ -25,22 +27,38 @@ public class RegexUtils {
      * Replacement for Pattern.quote from JDK 1.5
      */
     public static String quote(String s) {
+        if (s.indexOf(E) < 0) {
+            // JDK String.replaceAll has a bug when a quoted pattern contains a BS.
+            if (s.indexOf(BS) >= 0) {
+                s = s.replaceAll(BS + BS, BS + E + BS + BS + BS + BS + BS + Q);
+            }
+            
+            return Q + s + E;
+        }
+        
         final int len = s.length();
         final StringBuffer sb = new StringBuffer(len * 2);
-        int eIndex = s.indexOf(E);
-        if (eIndex == NO_MATCH)
-            return sb.append(Q).append(s).append(E).toString();
+        
+        final Pattern p = Pattern.compile(BS + BS + "[^QE]");
 
         sb.append(Q);
-        eIndex = 0;
+        
         int cur = 0;
-        while ((eIndex = s.indexOf(E, cur)) != NO_MATCH) {
-            sb.append(s.substring(cur, eIndex)).append(E + BS + E + Q);
+        int eIndex;
+        
+        while ((eIndex = s.indexOf(E, cur)) >= 0) {
+            // JDK String.replaceAll has a bug when a quoted pattern contains a BS.
+            sb.append(p.matcher(s.substring(cur, eIndex)).replaceAll(BS + E + BS + BS + BS + BS + BS + Q));
+            sb.append(E + BS + E + Q);
             cur = eIndex + 2;
         }
-        return sb.append(s.substring(cur, len)).append(E).toString();
+        
+        // JDK String.replaceAll has a bug when a quoted pattern contains a BS.
+        sb.append(p.matcher(s.substring(cur, eIndex)).replaceAll(BS + E + BS + BS + BS + BS + BS + Q));
+        
+        return sb.toString();
     }
-    
+        
     /**
      * Replacement for Matcher.quoteReplacement from JDK 1.5
      */
