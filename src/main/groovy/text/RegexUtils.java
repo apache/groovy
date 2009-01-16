@@ -17,6 +17,12 @@ package groovy.text;
 
 import java.util.regex.Pattern;
 
+/**
+ * Regex package required when using JDK 1.4 JDKs.
+ * Will be removed in the next major release of Groovy.
+ *
+ * @deprecated use Java's JDK 1.5+ equivalent classes instead
+ */
 public class RegexUtils {
     private static final String BS = "\\";
     private static final String E = "\\E";
@@ -24,7 +30,13 @@ public class RegexUtils {
     private static final int NO_MATCH = -1;
 
     /**
-     * Replacement for Pattern.quote from JDK 1.5
+     * Returns a literal pattern <code>String</code> for the specified
+     * <code>String</code>. Used to escape strings that may contain
+     * unintentional characters with special significance to replaceAll() etc.
+     *
+     * @param s the original string
+     * @return the escaped string
+     * @deprecated use java.util.regex.Pattern#quote(String) instead
      */
     public static String quote(String s) {
         if (s.indexOf(E) < 0) {
