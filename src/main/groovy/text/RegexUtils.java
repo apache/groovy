@@ -55,7 +55,7 @@ public class RegexUtils {
         }
         
         // JDK 1.4 String.replaceAll has a bug when a quoted pattern contains a BS.
-        sb.append(p.matcher(s.substring(cur, eIndex)).replaceAll(BS + E + BS + BS + BS + BS + BS + Q));
+        sb.append(p.matcher(s.substring(cur, len)).replaceAll(BS + E + BS + BS + BS + BS + BS + Q));
         
         return sb.toString();
     }
