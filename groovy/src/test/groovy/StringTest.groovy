@@ -188,6 +188,12 @@ y''', 3, 'x\ny');
         assert 'aba'.replace('b', '$') == 'a$a'
         assert 'aba'.replace('b', '\\') == 'a\\a'
         assert 'a\\a'.replace('\\', 'x') == 'axa'
+        assert '\\'.replace('\\', 'x') == 'x'
+        assert '\\\\'.replace('\\', 'x') == 'xx'
+        assert '\\z\\'.replace('\\', 'x') == 'xzx'
+        assert 'a\\\\Ea'.replace('\\', 'x') == 'axxEa'
+        assert '\\Qa\\\\Ea'.replace('\\', '$') == '$Qa$$Ea'
+        assert 'a\\z\\Qa'.replace('\\', 'x') == 'axzxQa'
     }
 
     void testNormalize() {

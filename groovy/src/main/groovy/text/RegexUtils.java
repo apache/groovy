@@ -28,8 +28,9 @@ public class RegexUtils {
      */
     public static String quote(String s) {
         if (s.indexOf(E) < 0) {
-            // JDK String.replaceAll has a bug when a quoted pattern contains a BS.
+            // JDK 1.4 String.replaceAll has a bug when a quoted pattern contains a BS.
             if (s.indexOf(BS) >= 0) {
+                // So we end the quotation, escape the BS with a BS, then back to the quote.
                 s = s.replaceAll(BS + BS, BS + E + BS + BS + BS + BS + BS + Q);
             }
             
@@ -39,7 +40,7 @@ public class RegexUtils {
         final int len = s.length();
         final StringBuffer sb = new StringBuffer(len * 2);
         
-        final Pattern p = Pattern.compile(BS + BS + "[^QE]");
+        final Pattern p = Pattern.compile(BS + BS);
 
         sb.append(Q);
         
@@ -53,7 +54,7 @@ public class RegexUtils {
             cur = eIndex + 2;
         }
         
-        // JDK String.replaceAll has a bug when a quoted pattern contains a BS.
+        // JDK 1.4 String.replaceAll has a bug when a quoted pattern contains a BS.
         sb.append(p.matcher(s.substring(cur, eIndex)).replaceAll(BS + E + BS + BS + BS + BS + BS + Q));
         
         return sb.toString();
