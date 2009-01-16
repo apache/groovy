@@ -171,6 +171,32 @@ y''', 3, 'x\ny');
         assert "a\r\nb".readLines() == ['a', 'b']
         assert "a\n\nb".readLines() == ['a', '', 'b']
     }
+    
+    void testReplace() {
+        assert "".replace("", "") == ""
+        assert "".replace("", "r") == "r"
+        assert "a".replace("", "r") == "rar"
+        assert "a".replace("b", "c") == "a"
+        assert "a".replace("a", "c") == "c"
+        assert "aa".replace("a", "c") == "cc"
+        assert "ab".replace("b", "c") == "ac"
+        assert "ba".replace("b", "c") == "ca"
+        assert "aaa".replace("b", "c") == "aaa"
+        assert "aaa".replace("a", "c") == "ccc"
+        assert "aba".replace("b", "c") == "aca"
+        assert "baa".replace("b", "c") == "caa"
+        assert "aab".replace("b", "c") == "aac"
+        assert "aa.".replace(".", "c") == "aac"
+        assert 'aba'.replace('b', '$') == 'a$a'
+        assert 'aba'.replace('b', '\\') == 'a\\a'
+        assert 'a\\a'.replace('\\', 'x') == 'axa'
+        assert '\\'.replace('\\', 'x') == 'x'
+        assert '\\\\'.replace('\\', 'x') == 'xx'
+        assert '\\z\\'.replace('\\', 'x') == 'xzx'
+        assert 'a\\\\Ea'.replace('\\', 'x') == 'axxEa'
+        assert '\\Qa\\\\Ea'.replace('\\', '$') == '$Qa$$Ea'
+        assert 'a\\z\\Qa'.replace('\\', 'x') == 'axzxQa'
+    }
 
     void testNormalize() {
         assert "a".normalize() == "a"
@@ -206,9 +232,7 @@ y''', 3, 'x\ny');
     }
 
     void doNormalizationFileRoundTrip(String s) {
-        // TODO: Add String.replace(String, String) to DGM.
-        // Using String.replaceAll here because test cases must use JDK 1.4 API.
-        [s, s.replaceAll('\n', '\r'), s.replaceAll('\n', '\r\n'), s.replaceAll('\n', '\n\n')].each {
+        [s, s.replace('\n', '\r'), s.replace('\n', '\r\n'), s.replace('\n', '\n\n')].each {
             innerNormalizationFileRoundTrip(it)
             innerNormalizationFileRoundTrip(it.reverse())
         }

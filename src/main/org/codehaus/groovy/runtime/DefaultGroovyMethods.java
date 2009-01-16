@@ -20,6 +20,7 @@ import groovy.io.PlatformLineWriter;
 import groovy.io.GroovyPrintWriter;
 import groovy.lang.*;
 import groovy.sql.GroovyRowResult;
+import groovy.text.RegexUtils;
 import groovy.util.*;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
@@ -2729,7 +2730,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Replaces all occurrencies of a captured group by the result of a closure on that text.
+     * Replaces all occurrances of a captured group by the result of a closure on that text.
      * <p/>
      * <p> For examples,
      * <pre>
@@ -2779,6 +2780,27 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
     }
 
+    /**
+     * Replaces all occurrances of a literal string with another literal string.
+     * This provides backwards compatibility for the JDK 1.5 method String.replace(CharSequence, CharSequence).
+     * This will only be invoked on a JDK 1.4 JVM.
+     *
+     * @param self    a String
+     * @param target  the character sequence to search for
+     * @param replacement  the character sequence to replace the matches with
+     * @return a String with replaced content
+     * @since 1.5.8
+     * @see java.lang.String.replace(CharSequence, CharSequence)
+     */
+    public static String replace(final String self, final CharSequence target, final CharSequence replacement) {
+        // GROOVY-3287 - we use RegexUtils.quote rather than Pattern.quote so that this
+        // will work correctly on JDK 1.4 with targets that contain backslashes.
+        final String p = RegexUtils.quote(target.toString());
+        final String r = Matcher.quoteReplacement(replacement.toString());
+        
+        return self.replaceAll(p, r);
+    }
+    
     private static String getPadding(String padding, int length) {
         if (padding.length() < length) {
             return multiply(padding, Integer.valueOf(length / padding.length() + 1)).substring(0, length);
