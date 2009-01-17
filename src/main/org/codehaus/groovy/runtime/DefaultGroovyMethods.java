@@ -9140,28 +9140,35 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
         
         final int len = self.length();
+        
+        if (len < 1) {
+            return self;
+        }
+        
         final StringBuilder sb = new StringBuilder((110 * len) / 100);
-        char chLookBack = '\0';
 
-        for (int i = 0; i < len; i++) {
+        for (int i = 0; i < len; ++i) {
             final char ch = self.charAt(i);
 
             switch (ch) {
                 case '\r':
                     sb.append(lineSeparator);
+                    
+                    // Eat the following LF if any.
+                    if ((i + 1 < len) && (self.charAt(i + 1) == '\n')) {
+                        ++i;
+                    }
+                    
                     break;
 
                 case '\n':
-                    if (chLookBack != '\r')
-                        sb.append(lineSeparator);
+                    sb.append(lineSeparator);
                     break;
 
                 default:
                     sb.append(ch);
                     break;
             }
-
-            chLookBack = ch;
          }
 
         return sb.toString();
