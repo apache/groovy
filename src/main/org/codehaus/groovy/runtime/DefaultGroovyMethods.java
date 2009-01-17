@@ -9084,26 +9084,58 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the denormalized string
      * @since 1.6.0
      */
-    public static String denormalize(String self) {
+    public static String denormalize(final String self) {
+        // Don't do this in static initializer because we may never be needed.
+        // TODO: Put this lineSeparator property somewhere everyone can use it.
         if (lineSeparator == null) {
             final StringWriter sw = new StringWriter(2);
             try {
+                // We use BufferedWriter rather than System.getProperty because
+                // it has the security manager rigamarole to deal with the possible exception.
                 final BufferedWriter bw = new BufferedWriter(sw);
                 bw.newLine();
                 bw.flush();
                 lineSeparator = sw.toString();
             } catch (IOException ioe) {
+                // This shouldn't happen, but this is the same default used by
+                // BufferedWriter on a security exception.
                 lineSeparator = "\n";
             }
         }
         
-        self = normalize(self);
+        final int len = self.length();
         
-        if (!lineSeparator.equals("\n")) {
-            self = self.replace("\n", lineSeparator);
+        if (len < 1) {
+            return self;
         }
         
-        return self;
+        final StringBuilder sb = new StringBuilder((110 * len) / 100);
+
+        for (int i = 0; i < len; ++i) {
+            final char ch = self.charAt(i);
+
+            switch (ch) {
+                case '\r':
+                    sb.append(lineSeparator);
+                    
+                    // Eat the following LF if any.
+                    if ((i + 1 < len) && (self.charAt(i + 1) == '\n')) {
+                        ++i;
+                    }
+                    
+                    break;
+
+                case '\n':
+                    sb.append(lineSeparator);
+                    break;
+
+                default:
+                    sb.append(ch);
+                    break;
+            }
+         }
+
+        return sb.toString();
     }
 
     /**
@@ -9113,13 +9145,35 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the normalized string
      * @since 1.6.0
      */
-    public static String normalize(String self) {
-        if (self.contains("\r")) {
-            self = self.replace("\r\n", "\n");
-            self = self.replace('\r', '\n');
-        }
+    public static String normalize(final String self) {
+        int nx = self.indexOf('\r');
         
-        return self;
+        if (nx < 0) {
+            return self;
+        }
+      
+        final int len = self.length();
+        final StringBuilder sb = new StringBuilder(len);
+
+        int i = 0;
+        
+        do {
+            sb.append(self, i, nx);
+            sb.append('\n');
+            
+            if ((i = nx + 1) >= len) break;
+            
+            if (self.charAt(i) == '\n') {
+                // skip the LF in CR LF
+                if (++i >= len) break;
+            }
+            
+            nx = self.indexOf('\r', i);
+        } while (nx > 0);
+        
+        sb.append(self, i, len);
+
+        return sb.toString();
     }
 
     /**

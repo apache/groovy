@@ -201,19 +201,33 @@ y''', 3, 'x\ny');
 
     void testNormalize() {
         assert "a".normalize() == "a"
+        assert "\n".normalize() == "\n"
+        assert "\r".normalize() == "\n"
+        assert "\r\n".normalize() == "\n"
         assert "a\n".normalize() == "a\n"
-        assert "a\n\n".normalize() == "a\n\n"
+        assert "a\r".normalize() == "a\n"
+        assert "a\r\n".normalize() == "a\n"
+        assert "a\r\n\r".normalize() == "a\n\n"
+        assert "a\r\n\r\n".normalize() == "a\n\n"
         assert "a\nb\rc\r\nd".normalize() == "a\nb\nc\nd"
         assert "a\n\nb".normalize() == "a\n\nb"
+        assert "a\n\r\nb".normalize() == "a\n\nb"
     }
 
     void testDenormalize() {
         def LS = System.getProperty('line.separator')
-        assert 'a'.denormalize() == 'a'
-        assert 'a\n'.denormalize() == 'a' + LS
-        assert 'a\n\n'.denormalize() == 'a' + LS + LS
-        assert 'a\n\nb'.denormalize() == 'a' + LS + LS + 'b'
-        assert 'a\nb\r\nc\n\rd'.denormalize() == 'a' + LS + 'b' + LS + 'c' + LS + LS + 'd'
+        assert "\n".denormalize() == LS
+        assert "\r".denormalize() == LS
+        assert "\r\n".denormalize() == LS
+        assert "a\n".denormalize() == "a${LS}"
+        assert "a\r".denormalize() == "a${LS}"
+        assert "a\r\n".denormalize() == "a${LS}"
+        assert "a\r\n\r".denormalize() == "a${LS}${LS}"
+        assert "a\r\n\r\n".denormalize() == "a${LS}${LS}"
+        assert "a\nb\rc\r\nd".denormalize() == "a${LS}b${LS}c${LS}d"
+        assert "a\n\nb".denormalize() == "a${LS}${LS}b"
+        assert "a\n\r\nb".denormalize() == "a${LS}${LS}b"
+        assert 'a\nb\r\nc\n\rd'.denormalize() == "a${LS}b${LS}c${LS}${LS}d"
     }
     
     void innerNormalizationFileRoundTrip(String s) {
