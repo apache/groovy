@@ -29,7 +29,7 @@ def pluralize = { name -> name[0].toUpperCase() + name[1..-1] + (name.endsWith("
 
 <%
 classTypes.each{ k, v ->
-    if (packageDoc.ordinaryClasses().any{ v(it) }) {
+    if (packageDoc.allClasses().any{ v(it) }) {
 %>
 
 <TABLE BORDER="0" WIDTH="100%" SUMMARY="">
@@ -37,7 +37,7 @@ classTypes.each{ k, v ->
 <TD NOWRAP><FONT size="+1" CLASS="FrameHeadingFont">
 ${pluralize(k)}</FONT>&nbsp;
 <FONT CLASS="FrameItemFont"><%
-    for (classDoc in packageDoc.ordinaryClasses()) {
+    for (classDoc in packageDoc.allClasses()) {
         if (v(classDoc)) {
             %><BR><A HREF="${classDoc.name()}.html" title="${k} in ${packageDoc.nameWithDots()}" target="classFrame"><%
             if (classDoc.isInterface()) { %><I><% }

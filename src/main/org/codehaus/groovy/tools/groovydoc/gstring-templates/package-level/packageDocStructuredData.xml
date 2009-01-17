@@ -1,5 +1,5 @@
 <package>
-  <classes><% for (classDoc in packageDoc.ordinaryClasses()) { %>
+  <classes><% for (classDoc in packageDoc.allClasses()) { %>
     <class name="${classDoc.name()}" />
 <% } %>
   </classes>

@@ -18,7 +18,11 @@ package org.codehaus.groovy.tools.groovydoc;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyPackageDoc;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
+import java.util.TreeMap;
 
 public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPackageDoc {
     private static final char FS = '/';
@@ -28,7 +32,7 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
 
     public SimpleGroovyPackageDoc(String name) {
         super(name);
-        classDocs = new HashMap<String, GroovyClassDoc>();
+        classDocs = new TreeMap<String, GroovyClassDoc>();
     }
 
     public GroovyClassDoc[] allClasses() {
@@ -59,34 +63,63 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
         return name().replace(FS, '.');
     }
 
-    public GroovyClassDoc[] allClasses(boolean arg0) {/*todo*/
-        return null;
+    public GroovyClassDoc[] allClasses(boolean arg0) {
+        List<GroovyClassDoc> classDocValues = new ArrayList<GroovyClassDoc>(classDocs.values());
+        return classDocValues.toArray(new GroovyClassDoc[classDocValues.size()]);
     }
 
-    public GroovyClassDoc[] enums() {/*todo*/
-        return null;
+    public GroovyClassDoc[] enums() {
+        List<GroovyClassDoc> result = new ArrayList<GroovyClassDoc>(classDocs.values().size());
+        for (GroovyClassDoc doc : classDocs.values()) {
+            if (doc.isEnum()) {
+                result.add(doc);
+            }
+        }
+        return result.toArray(new GroovyClassDoc[result.size()]);
     }
 
-    public GroovyClassDoc[] errors() {/*todo*/
-        return null;
+    public GroovyClassDoc[] errors() {
+        List<GroovyClassDoc> result = new ArrayList<GroovyClassDoc>(classDocs.values().size());
+        for (GroovyClassDoc doc : classDocs.values()) {
+            if (doc.isError()) {
+                result.add(doc);
+            }
+        }
+        return result.toArray(new GroovyClassDoc[result.size()]);
     }
 
-    public GroovyClassDoc[] exceptions() {/*todo*/
-        return null;
+    public GroovyClassDoc[] exceptions() {
+        List<GroovyClassDoc> result = new ArrayList<GroovyClassDoc>(classDocs.values().size());
+        for (GroovyClassDoc doc : classDocs.values()) {
+            if (doc.isException()) {
+                result.add(doc);
+            }
+        }
+        return result.toArray(new GroovyClassDoc[result.size()]);
     }
 
     public GroovyClassDoc findClass(String arg0) {/*todo*/
         return null;
     }
 
-    public GroovyClassDoc[] interfaces() {/*todo*/
-        return null;
+    public GroovyClassDoc[] interfaces() {
+        List<GroovyClassDoc> result = new ArrayList<GroovyClassDoc>(classDocs.values().size());
+        for (GroovyClassDoc doc : classDocs.values()) {
+            if (doc.isInterface()) {
+                result.add(doc);
+            }
+        }
+        return result.toArray(new GroovyClassDoc[result.size()]);
     }
 
     public GroovyClassDoc[] ordinaryClasses() {
-        List<GroovyClassDoc> classDocValues = new ArrayList<GroovyClassDoc>(classDocs.values());
-        Collections.sort(classDocValues); // todo - performance / maybe move into a sortMe() method
-        return classDocValues.toArray(new GroovyClassDoc[classDocValues.size()]); // todo CURRENTLY ALL CLASSES!
+        List<GroovyClassDoc> result = new ArrayList<GroovyClassDoc>(classDocs.values().size());
+        for (GroovyClassDoc doc : classDocs.values()) {
+            if (doc.isOrdinaryClass()) {
+                result.add(doc);
+            }
+        }
+        return result.toArray(new GroovyClassDoc[result.size()]);
     }
 
     public String description() {

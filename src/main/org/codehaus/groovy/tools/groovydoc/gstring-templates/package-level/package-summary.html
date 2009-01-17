@@ -40,7 +40,7 @@ ${packageDoc.description()}
 
 <%
 classTypes.each{ k, v ->
-    if (packageDoc.ordinaryClasses().any{ v(it) }) {
+    if (packageDoc.allClasses().any{ v(it) }) {
 %>
 
 <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
@@ -49,7 +49,7 @@ classTypes.each{ k, v ->
     <B>${k} Summary</B></FONT></TH>
     </TR>
 <%
-    for (classDoc in packageDoc.ordinaryClasses()) {
+    for (classDoc in packageDoc.allClasses()) {
         if (v(classDoc)) {
 %>
             <TR BGCOLOR="white" CLASS="TableRowColor">
