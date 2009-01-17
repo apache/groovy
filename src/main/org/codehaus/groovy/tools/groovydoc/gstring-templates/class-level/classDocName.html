@@ -43,6 +43,11 @@
         (t.isProtected()?"protected&nbsp;":"") +
         (t.isStatic()?"static&nbsp;":"")
     }
+    def annotations = { t, sepChar ->
+        if (t.annotations()) {
+            t.annotations()*.description().join(sepChar) + sepChar
+        }
+    }
     def isVisible = { t -> java.lang.reflect.Modifier.isPublic(t.modifiers) || java.lang.reflect.Modifier.isProtected(t.modifiers) }
     def elementTypes = [
         "required":"true",
@@ -186,11 +191,7 @@ if (classDoc.isInterface()) {
     }
 }
 %><hr>
-<PRE><%
-if (classDoc.annotations()) {
-    %>${classDoc.annotations()*.description().join().trim()}<%
-} %>
-${modifiers(classDoc) + classDoc.typeSourceDescription + ' ' + classDoc.name()}
+<PRE>${annotations(classDoc, '\n') + modifiers(classDoc) + classDoc.typeSourceDescription + ' ' + classDoc.name()}
 <% if (classDoc.isInterface() && classDoc.interfaces()) {
 %>extends ${classDoc.interfaces().collect{ linkable(it) }.join(', ')}
 <% } else if (classDoc.superclass()) {
@@ -304,7 +305,6 @@ ${classDoc.commentText()}
 
 <!-- ========== METHOD SUMMARY =========== -->
 
-<!-- TODO default values for optional params -->
 <A NAME="method_summary"><!-- --></A>
 <% if (hasMethods) { %>
     <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
@@ -414,10 +414,7 @@ ${classDoc.commentText()}
     </TABLE>
     <% for (field in visibleFields) { %>
         <A NAME="${field.name()}"><!-- --></A><H3>${field.name()}</H3>
-        <PRE><%
-            if (field.annotations()) {
-                %>${field.annotations()*.description().join().trim() + '\n'}<%
-            } %>${modifiers(field) + linkable(field.type())} <B>${field.name()}</B></PRE>
+        <PRE>${annotations(field, '\n') + modifiers(field) + linkable(field.type())} <B>${field.name()}</B></PRE>
         <DL>
         <DD>${field.commentText()}
         </DD>
@@ -464,10 +461,7 @@ ${classDoc.commentText()}
     <% for (constructor in classDoc.constructors()) { %>
         <A NAME="${nameFromParams(constructor)}"><!-- --></A><H3>
         ${constructor.name()}</H3>
-        <PRE><%
-            if (constructor.annotations()) {
-                %>${constructor.annotations()*.description().join().trim() + '\n'}<%
-            } %>${modifiers(constructor)}<B>${constructor.name()}</B>(${paramsOf(constructor)})</PRE>
+        <PRE>${annotations(constructor, '\n') + modifiers(constructor)}<B>${constructor.name()}</B>(${paramsOf(constructor)})</PRE>
         <DL>
         <DD>${constructor.commentText()}
         </DD>
@@ -491,10 +485,7 @@ ${classDoc.commentText()}
     <% for (method in visibleMethods) { %>
         <A NAME="${nameFromParams(method)}"><!-- --></A><H3>
         ${method.name()}</H3>
-        <PRE><%
-            if (method.annotations()) {
-                %>${method.annotations()*.description().join().trim() + '\n'}<%
-            } %>${modifiers(method)}${linkable(method.returnType())} <B>${method.name()}</B>(${paramsOf(method)})</PRE>
+        <PRE>${annotations(method, '\n') + modifiers(method)}${linkable(method.returnType())} <B>${method.name()}</B>(${paramsOf(method)})</PRE>
         <DL>
         <DD>${method.commentText()}
         </DD>

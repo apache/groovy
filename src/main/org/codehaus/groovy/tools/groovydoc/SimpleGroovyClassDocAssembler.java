@@ -23,7 +23,6 @@ import org.codehaus.groovy.antlr.SourceBuffer;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 import org.codehaus.groovy.antlr.treewalker.VisitorAdapter;
 import org.codehaus.groovy.control.ResolveVisitor;
-import org.codehaus.groovy.groovydoc.GroovyAnnotationRef;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyConstructorDoc;
 import org.codehaus.groovy.groovydoc.GroovyType;
@@ -214,38 +213,17 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         }
     }
 
-    // TODO get constructor? parameter anotations working?
-    @Override
-    public void visitAnnotation(GroovySourceAST t, int visit) {
-        if (visit == OPENING_VISIT) {
-            GroovyAnnotationRef ref = getAnnotationRef(t);
-            if (ref != null) {
-//                System.out.println("currentClassDoc.name() = " + currentClassDoc.name() + " : " + t.getText());
-                if (currentFieldDoc != null) {
-                    currentFieldDoc.addAnnotationRef(ref);
-//                    System.out.println("SimpleGroovyClassDocAssembler.visitAnnotation: set field annotation");
-                } else if (currentConstructorDoc != null) {
-                    currentConstructorDoc.addAnnotationRef(ref);
-//                    System.out.println("SimpleGroovyClassDocAssembler.visitAnnotation: set constructor annotation");
-                } else if (currentMethodDoc != null) {
-                    currentMethodDoc.addAnnotationRef(ref);
-//                    System.out.println("SimpleGroovyClassDocAssembler.visitAnnotation: set method annotation");
-                } else if (!insideMethod) {
-                    currentClassDoc.addAnnotationRef(ref);
-//                    System.out.println("SimpleGroovyClassDocAssembler.visitAnnotation: set class annotation");
-                } else {
-//                    System.out.println("SimpleGroovyClassDocAssembler.visitAnnotation: unknown annotation");
-                }
-            }
+    private void addAnnotationRef(SimpleGroovyProgramElementDoc node, GroovySourceAST t) {
+        GroovySourceAST classNode = t.childOfType(IDENT);
+        if (classNode != null) {
+            node.addAnnotationRef(new SimpleGroovyAnnotationRef(extractName(classNode), getChildTextFromSource(t).trim()));
         }
     }
 
-    private GroovyAnnotationRef getAnnotationRef(GroovySourceAST t) {
-        GroovySourceAST classNode = t.childOfType(IDENT);
-        if (classNode != null) {
-            return new SimpleGroovyAnnotationRef(extractName(classNode), getChildTextFromSource(t));
+    private void addAnnotationRefs(SimpleGroovyProgramElementDoc node, List<GroovySourceAST> nodes) {
+        for (GroovySourceAST t : nodes) {
+            addAnnotationRef(node, t);
         }
-        return null;
     }
 
     @Override
@@ -263,15 +241,14 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
 
             currentClassDoc.setFullPathName(packagePath + FS + currentClassDoc.name());
             classDocs.put(currentClassDoc.getFullPathName(), currentClassDoc);
+            processAnnotations(t, currentClassDoc);
         }
     }
 
     @Override
     public void visitCtorIdent(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT) {
-            insideMethod = true;
             if (!insideAnonymousInnerClass()) {
-//                System.out.println("SimpleGroovyClassDocAssembler.visitCtorIdent: start");
                 // name of class for the constructor
                 currentConstructorDoc = new SimpleGroovyConstructorDoc(currentClassDoc.name(), currentClassDoc);
 
@@ -282,15 +259,20 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 // modifiers
                 processModifiers(t, currentConstructorDoc);
 
-                addParametersTo(currentConstructorDoc, t);
+                addParametersTo(t, currentConstructorDoc);
+
+                processAnnotations(t, currentConstructorDoc);
 
                 // don't forget to tell the class about this constructor.
                 currentClassDoc.add(currentConstructorDoc);
             }
-        } else {
-//            System.out.println("SimpleGroovyClassDocAssembler.visitCtorIdent: end");
-            insideMethod = false;
-            currentConstructorDoc = null;
+        }
+    }
+
+    private void processAnnotations(GroovySourceAST t, SimpleGroovyProgramElementDoc node) {
+        GroovySourceAST modifiers = t.childOfType(MODIFIERS);
+        if (modifiers != null) {
+            addAnnotationRefs(node, modifiers.childrenOfType(ANNOTATION));
         }
     }
 
@@ -316,11 +298,14 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                     SimpleGroovyType returnType = new SimpleGroovyType(returnTypeName);
                     currentMethodDoc.setReturnType(returnType);
 
-                    addParametersTo(currentMethodDoc, t);
+                    addParametersTo(t, currentMethodDoc);
+
+                    processAnnotations(t, currentMethodDoc);
+
                     currentClassDoc.add(currentMethodDoc);
                 }
             }
-        } else {
+        } else if (visit == CLOSING_VISIT) {
             insideMethod = false;
             currentMethodDoc = null;
         }
@@ -386,7 +371,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             currentEnumConstantDoc.setType(type);
 
             currentClassDoc.addEnumConstant(currentEnumConstantDoc);
-        } else {
+        } else if (visit == CLOSING_VISIT) {
             insideEnum = false;
         }
     }
@@ -411,11 +396,10 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 String typeName = getTypeOrDefault(t);
                 GroovyType type = new SimpleGroovyType(typeName);
                 currentFieldDoc.setType(type);
+                processAnnotations(t, currentFieldDoc);
 
                 currentClassDoc.add(currentFieldDoc);
             }
-        } else {
-            currentFieldDoc = null;
         }
     }
 
@@ -567,7 +551,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         return returnValue;
     }
 
-    private void addParametersTo(SimpleGroovyExecutableMemberDoc executableMemberDoc, GroovySourceAST t) {
+    private void addParametersTo(GroovySourceAST t, SimpleGroovyExecutableMemberDoc executableMemberDoc) {
         // parameters
         GroovySourceAST parametersNode = t.childOfType(PARAMETERS);
         if (parametersNode != null && parametersNode.getNumberOfChildren() > 0) {

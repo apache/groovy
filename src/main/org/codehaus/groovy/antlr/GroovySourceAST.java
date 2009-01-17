@@ -16,11 +16,12 @@
 
 package org.codehaus.groovy.antlr;
 
+import antlr.CommonAST;
+import antlr.Token;
 import antlr.collections.AST;
-import antlr.*;
 
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 
 /**
  * We have an AST subclass so we can track source information.
@@ -159,6 +160,16 @@ public class GroovySourceAST extends CommonAST implements Comparable, SourceInfo
             child = child.getNextSibling();
         }
         return null;
+    }
+
+    public List<GroovySourceAST> childrenOfType(int type) {
+        List<GroovySourceAST> result = new ArrayList<GroovySourceAST>();
+        AST child = this.getFirstChild();
+        while (child != null) {
+            if (child.getType() == type) { result.add((GroovySourceAST) child); }
+            child = child.getNextSibling();
+        }
+        return result;
     }
 
 }
