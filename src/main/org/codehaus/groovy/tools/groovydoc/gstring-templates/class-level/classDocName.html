@@ -18,6 +18,7 @@
     def visibleMethods = classDoc.methods().findAll{ !it.isPrivate() || props.privateScope }
     boolean hasMethods = visibleMethods.size() > 0
     boolean methodSummaryShown = hasMethods
+    boolean fieldSummaryShown = hasFields
     boolean hasEnumConstants = classDoc.enumConstants().size() > 0
     def dolink = { t, boolean b ->
         if (!t || t instanceof String) {
@@ -43,11 +44,7 @@
         (t.isProtected()?"protected&nbsp;":"") +
         (t.isStatic()?"static&nbsp;":"")
     }
-    def annotations = { t, sepChar ->
-        if (t.annotations()) {
-            t.annotations()*.description().join(sepChar) + sepChar
-        }
-    }
+    def annotations = { t, sepChar -> t.annotations() ? t.annotations()*.description().join(sepChar) + sepChar : '' }
     def isVisible = { t -> java.lang.reflect.Modifier.isPublic(t.modifiers) || java.lang.reflect.Modifier.isProtected(t.modifiers) }
     def elementTypes = [
         "required":"true",
@@ -146,9 +143,9 @@ DETAIL:&nbsp;<%
         if (hasElements) { %><A HREF="#element_detail"><% } %>ELEMENT<% if (hasElements) { %></A><% }
     } else {
         if (classDoc.isEnum()) {
-            if (hasEnumConstants) { %><A HREF="#enum_constant_detail"><% } %>ENUM CONSTANTS<% if (hasEnumConstants) { %></A><% }
+            if (hasEnumConstants) { %><A HREF="#enum_constant_detail"><% } %>ENUM CONSTANTS<% if (hasEnumConstants) { %></A>&nbsp;|&nbsp;<% }
         }
-        %>&nbsp;|&nbsp;<% if (hasFields) { %><A HREF="#field_detail"><% } %>FIELD<% if (hasFields) { %></A><% }
+        if (hasFields) { %><A HREF="#field_detail"><% } %>FIELD<% if (hasFields) { %></A><% }
         if (classDoc.isClass()) {
             %>&nbsp;|&nbsp;<% if (hasConstructors) { %><A HREF="#constructor_detail"><% } %>CONSTR<% if (hasConstructors) { %></A><% }
         }
@@ -249,7 +246,56 @@ ${classDoc.commentText()}
     <% } %>
     </TABLE>
     &nbsp;
-<% } %>
+<% }
+    classes = []
+    if (classDoc.isInterface()) {
+        classes.addAll(classDoc.interfaces().toList())
+    } else {
+        if (classDoc.superclass()) classes += classDoc.superclass()
+        else classes += new org.codehaus.groovy.tools.groovydoc.ExternalGroovyClassDoc(Object.class)
+    }
+    visited = [classDoc] as Set
+    while (classes) {
+        Set nextLevel = []
+        classes.each { c ->
+            if (c.isInterface()) nextLevel.addAll(c.interfaces().toList())
+            else if (c.superclass() && c.qualifiedTypeName() != 'java.lang.Object') nextLevel += c.superclass()
+            nextLevel -= visited
+            visited += nextLevel
+            def list = []
+            if (c instanceof org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc) {
+                list = c.fields().findAll{ it.isPublic() || it.isProtected() }.collect { field ->
+                    "<a href='${classDoc.relativeRootPath}${c.fullPathName}.html#${field.name()}'>${field.name()}</a>"
+                }
+            } else {
+                list = c.externalClass().fields.findAll{ isVisible(it) }.collect { field ->
+                    // "<a href='${classDoc.relativeRootPath}${c.fullPathName}.html#${field.name()}'>${field.name()}</a>"
+                    field.name
+                }
+            }
+            if (list) {
+                if (!fieldSummaryShown) {
+                    fieldSummaryShown = true
+                    %><table BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
+                    <TR CLASS="TableHeadingColor">
+                    <TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2" CLASS="ClassHeadingFont">
+                    <B>Field Summary</B></FONT></TH>
+                    </TR>
+                    </table>
+                    &nbsp;<%
+                }
+                %><table BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
+                <tr CLASS="TableSubHeadingColor"><th ALIGN="left" COLSPAN="2">
+                <b>Fields inherited from ${c.typeSourceDescription} ${linkable(c)}</b>
+                </th></tr>
+                <tr class="TableRowColor"><td colspan='2'>${list.join(', ')}</td></tr>
+                </table>
+                &nbsp;<%
+            }
+        }
+        classes = nextLevel
+    }
+%>
 
 <!-- =========== ELEMENT SUMMARY =========== -->
 
