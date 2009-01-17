@@ -55,7 +55,7 @@
     ]
     def isRequired = { f, v -> def req = f.constantValueExpression() == null; req.toString() == v }
     def upcase = { n -> n[0].toUpperCase() + n[1..-1] }
-    def paramsOf = { n -> n.parameters().collect{ param -> linkable(param.isTypeAvailable()?param.type():param.typeName()) + ' ' + param.name() + (param.defaultValue() ? " = " + param.defaultValue():"") }.join(", ") }
+    def paramsOf = { n, boolean brief -> n.parameters().collect{ param -> (brief?'':annotations(param, ' ')) + linkable(param.isTypeAvailable()?param.type():param.typeName()) + ' ' + param.name() + (param.defaultValue() ? " = " + param.defaultValue():"") }.join(", ") }
     def nameFromParams = { n -> n.name() + '(' + n.parameters().collect{ param -> param.isTypeAvailable()?param.type().qualifiedTypeName():param.typeName() }.join(', ') + ')' }
 %>
 <HTML>
@@ -293,7 +293,7 @@ ${classDoc.commentText()}
     <% for (constructor in classDoc.constructors()) { %>
         <TR BGCOLOR="white" CLASS="TableRowColor">
         <TD>
-            <CODE>${modifiersBrief(constructor)}<B><a href="#${nameFromParams(constructor)}">${constructor.name()}</a></B>(${paramsOf(constructor)})</CODE>
+            <CODE>${modifiersBrief(constructor)}<B><a href="#${nameFromParams(constructor)}">${constructor.name()}</a></B>(${paramsOf(constructor, true)})</CODE>
             <BR>
             <P>${constructor.firstSentenceCommentText()}</P>
         </TD>
@@ -318,7 +318,7 @@ ${classDoc.commentText()}
             <CODE>${modifiersBrief(method)}${linkable(method.returnType())}</CODE></FONT>
         </TD>
         <TD>
-            <CODE><b><a href="#${nameFromParams(method)}">${method.name()}</a></b>(${paramsOf(method)})</CODE>
+            <CODE><b><a href="#${nameFromParams(method)}">${method.name()}</a></b>(${paramsOf(method, true)})</CODE>
             <BR>
             <P>${method.firstSentenceCommentText()}</P>
         </TD>
@@ -461,7 +461,7 @@ ${classDoc.commentText()}
     <% for (constructor in classDoc.constructors()) { %>
         <A NAME="${nameFromParams(constructor)}"><!-- --></A><H3>
         ${constructor.name()}</H3>
-        <PRE>${annotations(constructor, '\n') + modifiers(constructor)}<B>${constructor.name()}</B>(${paramsOf(constructor)})</PRE>
+        <PRE>${annotations(constructor, '\n') + modifiers(constructor)}<B>${constructor.name()}</B>(${paramsOf(constructor, false)})</PRE>
         <DL>
         <DD>${constructor.commentText()}
         </DD>
@@ -485,7 +485,7 @@ ${classDoc.commentText()}
     <% for (method in visibleMethods) { %>
         <A NAME="${nameFromParams(method)}"><!-- --></A><H3>
         ${method.name()}</H3>
-        <PRE>${annotations(method, '\n') + modifiers(method)}${linkable(method.returnType())} <B>${method.name()}</B>(${paramsOf(method)})</PRE>
+        <PRE>${annotations(method, '\n') + modifiers(method)}${linkable(method.returnType())} <B>${method.name()}</B>(${paramsOf(method, false)})</PRE>
         <DL>
         <DD>${method.commentText()}
         </DD>

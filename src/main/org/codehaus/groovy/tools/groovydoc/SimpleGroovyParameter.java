@@ -17,14 +17,19 @@ package org.codehaus.groovy.tools.groovydoc;
 
 import org.codehaus.groovy.groovydoc.*;
 
+import java.util.List;
+import java.util.ArrayList;
+
 public class SimpleGroovyParameter implements GroovyParameter {
     private String name;
     private String typeName;
     private String defaultValue;
     private GroovyType type;
+    private final List<GroovyAnnotationRef> annotationRefs;
 
     public SimpleGroovyParameter(String name) {
         this.name = name;
+        annotationRefs = new ArrayList<GroovyAnnotationRef>();
     }
 
     public String defaultValue() {
@@ -50,7 +55,14 @@ public class SimpleGroovyParameter implements GroovyParameter {
         this.typeName = typeName;
     }
 
-    //	public GroovyAnnotationDesc[] annotations() {/*todo*/return null;}
+    public GroovyAnnotationRef[] annotations() {
+        return annotationRefs.toArray(new GroovyAnnotationRef[annotationRefs.size()]);
+    }
+
+    public void addAnnotationRef(GroovyAnnotationRef ref) {
+        annotationRefs.add(ref);
+    }
+
     public GroovyType type() {
         return type;
     }

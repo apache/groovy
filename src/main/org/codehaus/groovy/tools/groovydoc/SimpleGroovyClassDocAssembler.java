@@ -220,6 +220,13 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         }
     }
 
+    private void addAnnotationRef(SimpleGroovyParameter node, GroovySourceAST t) {
+        GroovySourceAST classNode = t.childOfType(IDENT);
+        if (classNode != null) {
+            node.addAnnotationRef(new SimpleGroovyAnnotationRef(extractName(classNode), getChildTextFromSource(t).trim()));
+        }
+    }
+
     private void addAnnotationRefs(SimpleGroovyProgramElementDoc node, List<GroovySourceAST> nodes) {
         for (GroovySourceAST t : nodes) {
             addAnnotationRef(node, t);
@@ -561,6 +568,13 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 String parameterName = getText(currentNode.childOfType(IDENT));
                 SimpleGroovyParameter parameter = new SimpleGroovyParameter(parameterName);
                 parameter.setTypeName(parameterTypeName);
+                GroovySourceAST modifiers = currentNode.childOfType(MODIFIERS);
+                if (modifiers != null) {
+                    List<GroovySourceAST> annotations = modifiers.childrenOfType(ANNOTATION);
+                    for (GroovySourceAST a : annotations) {
+                        addAnnotationRef(parameter, a);
+                    }
+                }
                 executableMemberDoc.add(parameter);
                 if (currentNode.getNumberOfChildren() == 4) {
                     handleDefaultValue(currentNode, parameter);
