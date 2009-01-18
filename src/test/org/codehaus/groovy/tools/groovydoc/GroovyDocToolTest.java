@@ -100,16 +100,25 @@ public class GroovyDocToolTest extends GroovyTestCase {
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
 
-        String categoryMethodDocument = output.getText(MOCK_DIR + "/org/codehaus/groovy/runtime/CategoryMethod.html"); // todo - figure out how to get xml extension for templates
+        System.out.println("output = " + output);
+        String groovyCategorySupportDocument = output.getText(MOCK_DIR + "/org/codehaus/groovy/runtime/GroovyCategorySupport.html");
+        assertTrue(groovyCategorySupportDocument != null &&
+                groovyCategorySupportDocument.indexOf("<method modifiers=\"public static \" returns=\"boolean\" name=\"hasCategoryInAnyThread\">") > 0);
 
-        assertTrue(categoryMethodDocument.indexOf("<method modifiers=\"public static \" returns=\"boolean\" name=\"hasCategoryInAnyThread\">") > 0);
+        String categoryMethodDocument = output.getText(MOCK_DIR + "/org/codehaus/groovy/runtime/GroovyCategorySupport.CategoryMethod.html");
+        assertTrue(categoryMethodDocument != null &&
+                categoryMethodDocument.indexOf("<method modifiers=\"\" returns=\"boolean\" name=\"isChildOfParent\">") > 0);
 
         String packageDocument = output.getText(MOCK_DIR + "/org/codehaus/groovy/runtime/packageDocStructuredData.xml");
-        assertTrue(packageDocument.indexOf("<class name=\"CategoryMethod\" />") > 0);
+        assertTrue("Failed to find 'packageDocStructuredData.xml' in generated output", packageDocument != null);
+        assertTrue(packageDocument.indexOf("<class name=\"GroovyCategorySupport\" />") > 0);
+        assertTrue(packageDocument.indexOf("<class name=\"GroovyCategorySupport.CategoryMethod\" />") > 0);
 
         String rootDocument = output.getText(MOCK_DIR + "/rootDocStructuredData.xml");
+        assertTrue("Failed to find 'rootDocStructuredData.xml' in generated output", rootDocument != null);
         assertTrue(rootDocument.indexOf("<package name=\"org/codehaus/groovy/runtime\" />") > 0);
-        assertTrue(rootDocument.indexOf("<class path=\"org/codehaus/groovy/runtime/CategoryMethod\" name=\"CategoryMethod\" />") > 0);
+        assertTrue(rootDocument.indexOf("<class path=\"org/codehaus/groovy/runtime/GroovyCategorySupport\" name=\"GroovyCategorySupport\" />") > 0);
+        assertTrue(rootDocument.indexOf("<class path=\"org/codehaus/groovy/runtime/GroovyCategorySupport.CategoryMethod\" name=\"GroovyCategorySupport.CategoryMethod\" />") > 0);
     }
 
     public void testConstructors() throws Exception {

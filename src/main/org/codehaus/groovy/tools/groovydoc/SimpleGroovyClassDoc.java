@@ -35,8 +35,10 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
     private final List<String> importedClassesAndPackages;
     private final List<String> interfaceNames;
     private final List<GroovyClassDoc> interfaceClasses;
+    private final List<GroovyClassDoc> nested;
     private final List<Groovydoc.LinkArgument> links;
     private GroovyClassDoc superClass;
+    private GroovyClassDoc outer;
     private String superClassName;
     private String fullPathName;
 
@@ -50,6 +52,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         methods = new ArrayList<GroovyMethodDoc>();
         interfaceNames = new ArrayList<String>();
         interfaceClasses = new ArrayList<GroovyClassDoc>();
+        nested = new ArrayList<GroovyClassDoc>();
     }
 
     public SimpleGroovyClassDoc(List<String> importedClassesAndPackages, String name) {
@@ -66,6 +69,27 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
 
     public boolean add(GroovyConstructorDoc constructor) {
         return constructors.add(constructor);
+    }
+
+    // TODO remove?
+    public GroovyClassDoc getOuter() {
+        return outer;
+    }
+
+    public void setOuter(GroovyClassDoc outer) {
+        this.outer = outer;
+    }
+
+    /**
+     * returns a sorted array of nested classes and interfaces
+     */
+    public GroovyClassDoc[] innerClasses() {
+        Collections.sort(nested);
+        return nested.toArray(new GroovyClassDoc[nested.size()]);
+    }
+
+    public boolean addNested(GroovyClassDoc nestedClass) {
+        return nested.add(nestedClass);
     }
 
     /**
@@ -392,13 +416,9 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         return null;
     }
 
-    public GroovyClassDoc[] innerClasses() {/*todo*/
-        return null;
-    } // not supported in groovy
-
     public GroovyClassDoc[] innerClasses(boolean filter) {/*todo*/
         return null;
-    } // not supported in groovy
+    }
 
     public GroovyClassDoc[] interfaces() {
         Collections.sort(interfaceClasses);
