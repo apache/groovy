@@ -25,8 +25,8 @@ import java.util.Iterator;
 import java.util.List;
 
 /**
- * This class repersents a sequence of BytecodeInstructions
- * or ASTNodes. The evaluation is dpeending on the type of 
+ * This class represents a sequence of BytecodeInstructions
+ * or ASTNodes. The evaluation is depending on the type of 
  * the visitor.
  * 
  * @see BytecodeInstruction
@@ -34,7 +34,7 @@ import java.util.List;
  */
 
 public class BytecodeSequence extends Statement {
-    private final List instructions;
+    private final List<BytecodeInstruction> instructions;
 
     public BytecodeSequence(List instructions) {
         this.instructions = instructions;

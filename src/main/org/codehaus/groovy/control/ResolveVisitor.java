@@ -365,7 +365,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             if (type instanceof ConstructedClassWithPackage) {
                 // we replace '.' only in the className part
                 // with '$' to find an inner class. The case that
-                // the packageis really a class is handled else where
+                // the package is really a class is handled else where
                 ConstructedClassWithPackage tmp = (ConstructedClassWithPackage) type;
                 String name = ((ConstructedClassWithPackage) type).className;
                 tmp.className = replaceLastPoint(name);

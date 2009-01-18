@@ -36,6 +36,7 @@ public class ConstructorNode extends MethodNode {
     public ConstructorNode(int modifiers, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
         super("<init>",modifiers,ClassHelper.VOID_TYPE,parameters,exceptions,code);
         
+        // This variable scope is thrown out and replaced with a different one during semantic analysis.
         VariableScope scope = new VariableScope();
         for (int i = 0; i < parameters.length; i++) {
             scope.putDeclaredVariable(parameters[i]);

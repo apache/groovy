@@ -168,6 +168,7 @@ public class AsmClassGenerator extends ClassGenerator {
     private int columnNumber = -1;
     private ASTNode currentASTNode = null;
 
+    // This isn't referenced from anywhere in the Java code, but groovyc uses it.
     private DummyClassGenerator dummyGen = null;
     private ClassWriter dummyClassWriter = null;
 

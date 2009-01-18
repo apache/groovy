@@ -30,8 +30,12 @@ import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
 
 /**
- * Represents the entire contents of a compilation step which consists of one
- * or more {@link ModuleNode}instances
+ * Represents the entire contents of a compilation step which consists of one or more
+ * {@link ModuleNode} instances. There's one instance of this that's shared by all modules and
+ * classes compiled during a single invocation of the compiler.
+ * 
+ * It's attached to MethodNodes and ClassNodes and is used to find fully qualified names of classes,
+ * resolve imports, and that sort of thing.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan </a>
  * @version $Revision$
