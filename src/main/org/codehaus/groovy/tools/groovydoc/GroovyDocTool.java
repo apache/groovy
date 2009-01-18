@@ -15,15 +15,14 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
-import org.apache.tools.ant.types.Path;
 import antlr.RecognitionException;
 import antlr.TokenStreamException;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.List;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -37,18 +36,18 @@ public class GroovyDocTool {
     /**
      * Constructor for use by people who only want to interact with the Groovy Doclet Tree (rootDoc)
      *
-     * @param sourcepath where the sources to be added can be found
+     * @param sourcepaths where the sources to be added can be found
      */
-    public GroovyDocTool(Path sourcepath) {
-        this(null, sourcepath, null);
+    public GroovyDocTool(String[] sourcepaths) {
+        this(null, sourcepaths, null);
     }
 
-    public GroovyDocTool(ResourceManager resourceManager, Path sourcepath, String classTemplate) {
-        this(resourceManager, sourcepath, new String[]{}, new String[]{}, new String[]{classTemplate}, new ArrayList(), new Properties());
+    public GroovyDocTool(ResourceManager resourceManager, String[] sourcepaths, String classTemplate) {
+        this(resourceManager, sourcepaths, new String[]{}, new String[]{}, new String[]{classTemplate}, new ArrayList(), new Properties());
     }
 
-    public GroovyDocTool(ResourceManager resourceManager, Path sourcepath, String[] docTemplates, String[] packageTemplates, String[] classTemplates, List links, Properties properties) {
-        rootDocBuilder = new GroovyRootDocBuilder(this, sourcepath, links, properties);
+    public GroovyDocTool(ResourceManager resourceManager, String[] sourcepaths, String[] docTemplates, String[] packageTemplates, String[] classTemplates, List<LinkArgument> links, Properties properties) {
+        rootDocBuilder = new GroovyRootDocBuilder(this, sourcepaths, links, properties);
         if (resourceManager == null) {
             templateEngine = null;
         } else {

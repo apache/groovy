@@ -15,7 +15,6 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
-import org.codehaus.groovy.ant.Groovydoc;
 import org.codehaus.groovy.groovydoc.*;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
@@ -36,13 +35,13 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
     private final List<String> interfaceNames;
     private final List<GroovyClassDoc> interfaceClasses;
     private final List<GroovyClassDoc> nested;
-    private final List<Groovydoc.LinkArgument> links;
+    private final List<LinkArgument> links;
     private GroovyClassDoc superClass;
     private GroovyClassDoc outer;
     private String superClassName;
     private String fullPathName;
 
-    public SimpleGroovyClassDoc(List<String> importedClassesAndPackages, String name, List<Groovydoc.LinkArgument> links) {
+    public SimpleGroovyClassDoc(List<String> importedClassesAndPackages, String name, List<LinkArgument> links) {
         super(name);
         this.importedClassesAndPackages = importedClassesAndPackages;
         this.links = links;
@@ -56,7 +55,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
     }
 
     public SimpleGroovyClassDoc(List<String> importedClassesAndPackages, String name) {
-        this(importedClassesAndPackages, name, new ArrayList<Groovydoc.LinkArgument>());
+        this(importedClassesAndPackages, name, new ArrayList<LinkArgument>());
     }
 
     /**
@@ -320,7 +319,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         String shortClassName = target[0].replaceAll(".*\\.", "");
         shortClassName += (target.length > 1 ? "#" + target[1].split("\\(")[0] : "");
         String name = full ? target[0] : shortClassName;
-        for (Groovydoc.LinkArgument link : links) {
+        for (LinkArgument link : links) {
             final StringTokenizer tokenizer = new StringTokenizer(link.getPackages(), ", ");
             while (tokenizer.hasMoreTokens()) {
                 final String token = tokenizer.nextToken();

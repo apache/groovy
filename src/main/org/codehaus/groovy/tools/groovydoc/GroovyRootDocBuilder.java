@@ -18,9 +18,6 @@ package org.codehaus.groovy.tools.groovydoc;
 import antlr.RecognitionException;
 import antlr.TokenStreamException;
 import antlr.collections.AST;
-import org.apache.tools.ant.types.Path;
-import org.apache.tools.ant.types.resources.FileResource;
-import org.codehaus.groovy.ant.Groovydoc;
 import org.codehaus.groovy.antlr.AntlrASTProcessor;
 import org.codehaus.groovy.antlr.SourceBuffer;
 import org.codehaus.groovy.antlr.UnicodeEscapingReader;
@@ -40,7 +37,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -55,15 +52,15 @@ import java.util.Properties;
  */
 public class GroovyRootDocBuilder {
     private static final char FS = '/';
-    private List<Groovydoc.LinkArgument> links;
+    private List<LinkArgument> links;
     private final GroovyDocTool tool;
-    private final Path sourcepath;
+    private final String[] sourcepaths;
     private final SimpleGroovyRootDoc rootDoc;
     private final Properties properties;
 
-    public GroovyRootDocBuilder(GroovyDocTool tool, Path sourcepath, List<Groovydoc.LinkArgument> links, Properties properties) {
+    public GroovyRootDocBuilder(GroovyDocTool tool, String[] sourcepaths, List<LinkArgument> links, Properties properties) {
         this.tool = tool;
-        this.sourcepath = sourcepath;
+        this.sourcepaths = sourcepaths;
         this.links = links;
         this.rootDoc = new SimpleGroovyRootDoc("root");
         this.properties = properties;
@@ -145,14 +142,17 @@ public class GroovyRootDocBuilder {
     }
 
     public void buildTree(List<String> filenames) throws IOException, RecognitionException, TokenStreamException {
+        List<File> sourcepathFiles = new ArrayList<File>();
+        for (String sourcepath : sourcepaths) {
+            sourcepathFiles.add(new File(sourcepath).getAbsoluteFile());
+        }
+
         for (String filename : filenames) {
-            Iterator pathItr = sourcepath.iterator();
-            while (pathItr.hasNext()) {
-                FileResource fileRes = (FileResource) pathItr.next();
-                String path = fileRes.getFile().getAbsolutePath();
-                File srcFile = new File(path + FS + filename);
+            for (File spath : sourcepathFiles) {
+                File srcFile = new File(spath, filename);
                 if (srcFile.exists()) {
                     processFile(filename, srcFile);
+                    break;
                 }
             }
         }
