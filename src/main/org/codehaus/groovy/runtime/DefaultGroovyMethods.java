@@ -9147,15 +9147,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         
         final StringBuilder sb = new StringBuilder((110 * len) / 100);
 
-        for (int i = 0; i < len; ++i) {
-            final char ch = self.charAt(i);
+        int i = 0;
+        
+        while (i < len) {
+            final char ch = self.charAt(i++);
 
             switch (ch) {
                 case '\r':
                     sb.append(lineSeparator);
                     
                     // Eat the following LF if any.
-                    if ((i + 1 < len) && (self.charAt(i + 1) == '\n')) {
+                    if ((i < len) && (self.charAt(i) == '\n')) {
                         ++i;
                     }
                     
