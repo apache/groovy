@@ -1293,6 +1293,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             finallyStatement = statement(node);
             node = node.getNextSibling();
         }
+        
+        if (finallyStatement instanceof EmptyStatement && catches.size() == 0) {
+            throw new ASTRuntimeException(tryStatementNode, "A try block must have at least one try or finally block.");
+        }
 
         TryCatchStatement tryCatchStatement = new TryCatchStatement(tryStatement, finallyStatement);
         configureAST(tryCatchStatement, tryStatementNode);
