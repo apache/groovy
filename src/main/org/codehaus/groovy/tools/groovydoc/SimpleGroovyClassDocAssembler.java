@@ -16,7 +16,6 @@
 package org.codehaus.groovy.tools.groovydoc;
 
 import antlr.collections.AST;
-import org.codehaus.groovy.ant.Groovydoc;
 import org.codehaus.groovy.antlr.GroovySourceAST;
 import org.codehaus.groovy.antlr.LineColumn;
 import org.codehaus.groovy.antlr.SourceBuffer;
@@ -36,7 +35,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     private final Stack<GroovySourceAST> stack;
     private Map<String, GroovyClassDoc> classDocs;
     private List<String> importedClassesAndPackages;
-    private List<Groovydoc.LinkArgument> links;
+    private List<LinkArgument> links;
     private Properties properties; // TODO use it or lose it
     private SimpleGroovyFieldDoc currentFieldDoc;
     private SourceBuffer sourceBuffer;
@@ -45,7 +44,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     private boolean insideEnum;
     private Map<String, SimpleGroovyClassDoc> foundClasses;
 
-    public SimpleGroovyClassDocAssembler(String packagePath, String file, SourceBuffer sourceBuffer, List<Groovydoc.LinkArgument> links, Properties properties, boolean isGroovy) {
+    public SimpleGroovyClassDocAssembler(String packagePath, String file, SourceBuffer sourceBuffer, List<LinkArgument> links, Properties properties, boolean isGroovy) {
         this.sourceBuffer = sourceBuffer;
         this.packagePath = packagePath;
         this.links = links;

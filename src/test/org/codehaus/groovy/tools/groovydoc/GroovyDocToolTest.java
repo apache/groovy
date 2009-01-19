@@ -18,8 +18,6 @@
 package org.codehaus.groovy.tools.groovydoc;
 
 import groovy.util.GroovyTestCase;
-import org.apache.tools.ant.Project;
-import org.apache.tools.ant.types.Path;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
@@ -40,11 +38,11 @@ public class GroovyDocToolTest extends GroovyTestCase {
     GroovyDocTool plainTool;
 
     public void setUp() {
-        plainTool = new GroovyDocTool(new Path(new Project(), "src/test"));
+        plainTool = new GroovyDocTool(new String[]{"src/test"});
 
         xmlTool = new GroovyDocTool(
                 new FileSystemResourceManager("src"), // template storage
-                new Path(new Project(), "src/main"), // source file dirs
+                new String[] {"src/main"}, // source file dirs
                 new String[]{TEMPLATES_DIR + "/top-level/rootDocStructuredData.xml"},
                 new String[]{TEMPLATES_DIR + "/package-level/packageDocStructuredData.xml"},
                 new String[]{TEMPLATES_DIR + "/class-level/classDocStructuredData.xml"},
@@ -54,7 +52,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
         xmlToolForTests = new GroovyDocTool(
                 new FileSystemResourceManager("src"), // template storage
-                new Path(new Project(), "src/test"), // source file dirs
+                new String[] {"src/test"}, // source file dirs, // source file dirs
                 new String[]{TEMPLATES_DIR + "/top-level/rootDocStructuredData.xml"},
                 new String[]{TEMPLATES_DIR + "/package-level/packageDocStructuredData.xml"},
                 new String[]{TEMPLATES_DIR + "/class-level/classDocStructuredData.xml"},
@@ -251,5 +249,26 @@ public class GroovyDocToolTest extends GroovyTestCase {
         xmlTool.renderToOutput(output, MOCK_DIR);
         String text = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/SimpleGroovyRootDoc.html");
         assertTrue(text.indexOf("<parameter type=\"org.codehaus.groovy.groovydoc.GroovyPackageDoc\"") > 0);
+    }
+    
+    public void testMultipleSourcePaths() throws Exception {
+        GroovyDocTool multipleXmlTool = new GroovyDocTool(
+                new FileSystemResourceManager("src"), // template storage
+                new String[] {"src/main", "src/test"}, // source file dirs, // source file dirs
+                new String[]{TEMPLATES_DIR + "/top-level/rootDocStructuredData.xml"},
+                new String[]{TEMPLATES_DIR + "/package-level/packageDocStructuredData.xml"},
+                new String[]{TEMPLATES_DIR + "/class-level/classDocStructuredData.xml"},
+                new ArrayList(),
+                new Properties()
+        );
+        
+        List srcList = new ArrayList();
+        srcList.add("groovy/model/DefaultTableColumn.java");
+        srcList.add("org/codehaus/groovy/tools/groovydoc/GroovyDocToolTestSampleGroovy.groovy");
+        multipleXmlTool.add(srcList);
+        MockOutputTool output = new MockOutputTool();
+        multipleXmlTool.renderToOutput(output, MOCK_DIR);
+        assertTrue(output.getText(MOCK_DIR + "/groovy/model/DefaultTableColumn.html") != null);
+        assertTrue(output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/GroovyDocToolTestSampleGroovy.html") != null);
     }
 }
