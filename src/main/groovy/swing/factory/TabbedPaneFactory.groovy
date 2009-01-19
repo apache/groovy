@@ -39,6 +39,7 @@ class TabbedPaneFactory extends BeanFactory {
     public static final String DEFAULT_DELEGATE_PROPERTY_TAB_MNEMONIC = "tabMnemonic";
     public static final String DELEGATE_PROPERTY_TAB_DISPLAYED_MNEMONIC_INDEX = "_delegateProperty:tabDisplayedMnemonicIndex";
     public static final String DEFAULT_DELEGATE_PROPERTY_TAB_DISPLAYED_MNEMONIC_INDEX = "tabDisplayedMnemonicIndex";
+    public static final String CONTEXT_DATA_KEY = "TabbdePaneFactoryData";
 
     public TabbedPaneFactory(Class beanClass) {
         super(beanClass, false)
@@ -68,6 +69,9 @@ class TabbedPaneFactory extends BeanFactory {
     }
 
     public static void inspectChild(FactoryBuilderSupport builder, Object node, Map attributes) {
+        if (!(node instanceof Component) || (node instanceof Window)) {
+            return;
+        }
         def name = attributes.remove(builder?.parentContext?.getAt(DELEGATE_PROPERTY_TITLE) ?: DEFAULT_DELEGATE_PROPERTY_TITLE)
         def icon = attributes.remove(builder?.parentContext?.getAt(DELEGATE_PROPERTY_TAB_ICON) ?: DEFAULT_DELEGATE_PROPERTY_TAB_ICON)
         def disabledIcon = attributes.remove(builder?.parentContext?.getAt(DELEGATE_PROPERTY_TAB_DISABLED_ICON) ?: DEFAULT_DELEGATE_PROPERTY_TAB_DISABLED_ICON)
@@ -77,7 +81,11 @@ class TabbedPaneFactory extends BeanFactory {
         def enabled = attributes.remove(builder?.parentContext?.getAt(DELEGATE_PROPERTY_TAB_ENABLED) ?: DEFAULT_DELEGATE_PROPERTY_TAB_ENABLED)
         def mnemonic = attributes.remove(builder?.parentContext?.getAt(DELEGATE_PROPERTY_TAB_MNEMONIC) ?: DEFAULT_DELEGATE_PROPERTY_TAB_MNEMONIC)
         def displayedMnemonicIndex = attributes.remove(builder?.parentContext?.getAt(DELEGATE_PROPERTY_TAB_DISPLAYED_MNEMONIC_INDEX) ?: DEFAULT_DELEGATE_PROPERTY_TAB_DISPLAYED_MNEMONIC_INDEX)
-        builder.context.put(node, [name, icon, disabledIcon, toolTip, background, foreground, enabled, mnemonic, displayedMnemonicIndex])
+        def tabbedPaneContext = builder.context.get(CONTEXT_DATA_KEY) ?: [:];
+        if (tabbedPaneContext.isEmpty()) {
+            builder.context.put(CONTEXT_DATA_KEY, tabbedPaneContext)
+        }
+        tabbedPaneContext.put(node, [name, icon, disabledIcon, toolTip, background, foreground, enabled, mnemonic, displayedMnemonicIndex])
     }
 
     public void setChild(FactoryBuilderSupport builder, Object parent, Object child) {
@@ -85,7 +93,7 @@ class TabbedPaneFactory extends BeanFactory {
             return;
         }
         try {
-            def title = builder.context[child] ?: [null, null, null, null, null, null, null, null, null]
+            def title = builder.context[CONTEXT_DATA_KEY]?.get(child) ?: [null, null, null, null, null, null, null, null, null]
             if (title[0] == null) {
                 title[0] = child.name
             }
@@ -109,7 +117,7 @@ class TabbedPaneFactory extends BeanFactory {
                     parent.setMnemonicAt(index, mnemonic.charAt(0) as int)
                 } else {
                     parent.setMnemonicAt(index, mnemonic as int)
-                } 
+                }
             }
             if (title[8]) {
                 parent.setDisplayedMnemonicIndexAt(index, title[8])

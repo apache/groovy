@@ -27,6 +27,8 @@ import org.codehaus.groovy.binding.*
  */
 public class BindFactory extends AbstractFactory {
 
+    public static final String CONTEXT_DATA_KEY = "BindFactoryData";
+
     final Map<String, TriggerBinding> syntheticBindings
 
     public BindFactory() {
@@ -94,6 +96,10 @@ public class BindFactory extends AbstractFactory {
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         Object source = attributes.remove("source")
         Object target = attributes.remove("target")
+        Map bindContext = builder.context.get(CONTEXT_DATA_KEY) ?: [:]
+        if (bindContext.isEmpty()) {
+            builder.context.put(CONTEXT_DATA_KEY, bindContext)
+        }
 
         TargetBinding tb = null
         if (target != null) {
@@ -103,7 +109,7 @@ public class BindFactory extends AbstractFactory {
                 // if we have a target but no source assume the build context is the source and return
                 def newAttributes = [:]
                 newAttributes.putAll(attributes)
-                builder.context.put(tb, newAttributes)
+                bindContext.put(tb, newAttributes)
                 attributes.clear()
                 return tb
             }
@@ -161,7 +167,7 @@ public class BindFactory extends AbstractFactory {
             // if no sourcing is defined then assume we are a closure binding and return
             def newAttributes = [:]
             newAttributes.putAll(attributes)
-            builder.context.put(tb, newAttributes)
+            bindContext.put(tb, newAttributes)
             attributes.clear()
             return new ClosureTriggerBinding(syntheticBindings)
         } else {
@@ -169,7 +175,7 @@ public class BindFactory extends AbstractFactory {
         }
 
         if (attributes.containsKey("value")) {
-            builder.context.put(fb, [value:attributes.remove("value")])
+            bindContext.put(fb, [value:attributes.remove("value")])
         }
 
         Object o = attributes.remove("bind")
@@ -206,7 +212,7 @@ public class BindFactory extends AbstractFactory {
             node.closure = childContent
             return false;
         } else if (node instanceof TriggerBinding) {
-            def bindAttrs = builder.getContext().get(node) ?: [:]
+            def bindAttrs = builder.context.get(CONTEXT_DATA_KEY)[node] ?: [:]
             if (!bindAttrs.containsKey("converter")) {
                 bindAttrs["converter"] = childContent
                 return false;
@@ -233,12 +239,14 @@ public class BindFactory extends AbstractFactory {
 
     public bindingAttributeDelegate(FactoryBuilderSupport builder, def node, def attributes) {
         Iterator iter = attributes.entrySet().iterator()
+        Map bindContext = builder.context.get(CONTEXT_DATA_KEY) ?: [:]
+
         while (iter.hasNext()) {
             Entry entry = (Entry) iter.next()
             String property = entry.key.toString()
             Object value = entry.value
 
-            def bindAttrs = builder.getContext().get(value) ?: [:]
+            def bindAttrs = bindContext.get(value) ?: [:]
             def idAttr = builder.getAt(SwingBuilder.DELEGATE_PROPERTY_OBJECT_ID) ?: SwingBuilder.DEFAULT_DELEGATE_PROPERTY_OBJECT_ID
             def id = bindAttrs.remove(idAttr)
             if (bindAttrs.containsKey("value")) {
@@ -261,7 +269,7 @@ public class BindFactory extends AbstractFactory {
                     fb.bind()
                 }
                 fb.update()
-                
+
                 bindAttrs.each{k, v -> fb."$k" = v}
 
                 builder.addDisposalClosure(fb.&unbind)
