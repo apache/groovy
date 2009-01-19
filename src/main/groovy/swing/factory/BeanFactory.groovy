@@ -38,6 +38,7 @@ class BeanFactory extends AbstractFactory {
     }
 
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
+        if (value instanceof GString) value = value as String
         if (FactoryBuilderSupport.checkValueIsTypeNotString(value, name, beanClass)) {
             return value
         }

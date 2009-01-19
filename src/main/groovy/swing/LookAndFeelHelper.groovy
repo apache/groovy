@@ -115,6 +115,7 @@ class LookAndFeelHelper {
         if (value == null) {
             value = attributes.remove('lookAndFeel')
         }
+        if (value instanceof GString) value = value as String
         if (FactoryBuilderSupport.checkValueIsTypeNotString(value, 'lookAndFeel', LookAndFeel)) {
             lafInstance = value
             lafClassName = lafInstance.class.name

@@ -928,6 +928,8 @@ class SwingBuilderTest extends GroovySwingTestCase {
 
         def swing = new SwingBuilder()
 
+        // elements that take an action, icon, string, GString,
+        // or their own type as a value arg
         def anAction = swing.action(name:"test action")
         def icon = new javax.swing.plaf.metal.MetalComboBoxIcon()
         def richActionItems = [
@@ -944,11 +946,13 @@ class SwingBuilderTest extends GroovySwingTestCase {
             swing."$name"(anAction, id:"${name}Action".toString())
             swing."$name"(icon, id:"${name}Icon".toString())
             swing."$name"("string", id:"${name}String".toString())
+            swing."$name"("${'g'}string", id:"${name}GString".toString())
             swing."$name"(swing."${name}Action", id:"${name}Self".toString())
 
             assert swing."${name}Action"
             assert swing."${name}Icon"
             assert swing."${name}String".text == 'string'
+            assert swing."${name}GString".text == 'gstring'
             assert swing."${name}Self" == swing."${name}Action"
             shouldFail {
                 swing."$name"(['bad'])
@@ -1047,7 +1051,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
             }
         }
 
-         // elements take their own type as a value argument or a stringa s a text property
+         // elements take their own type as a value argument or a [g]string as a text property
         def textItems = [
             "editorPane",
             "label",
@@ -1061,8 +1065,10 @@ class SwingBuilderTest extends GroovySwingTestCase {
             swing.frame {
                 "$name"(swing."$name"(), id:"${name}Self".toString())
                 "$name"('text', id:"${name}Text".toString())
+                "$name"("${'g'}string", id:"${name}GString".toString())
             }
             assert swing."${name}Text".text == 'text'
+            assert swing."${name}GString".text == 'gstring'
 
             shouldFail {
                 swing.frame {
@@ -1543,6 +1549,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
                 swing.lookAndFeel(this)
             }
             swing.lookAndFeel('javax.swing.plaf.metal.MetalLookAndFeel')
+            swing.lookAndFeel("${'j'}avax.swing.plaf.metal.MetalLookAndFeel")
             shouldFail() {
                 swing.lookAndFeel('BogusLookAndFeel')
             }

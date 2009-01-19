@@ -31,12 +31,12 @@ public class RichActionWidgetFactory extends AbstractFactory {
     static final Class[] ACTION_ARGS = [Action];
     static final Class[] ICON_ARGS = [Icon];
     static final Class[] STRING_ARGS = [String];
-    
+
     final Constructor actionCtor;
     final Constructor iconCtor;
     final Constructor stringCtor;
     final Class klass;
-    
+
     public RichActionWidgetFactory(Class klass) {
         try {
             actionCtor = klass.getConstructor(ACTION_ARGS);
@@ -49,9 +49,10 @@ public class RichActionWidgetFactory extends AbstractFactory {
             Logger.getLogger("global").log(Level.SEVERE, null, ex);
         }
     }
-    
+
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         try {
+            if (value instanceof GString) value = value as String
             if (value == null) {
                 return klass.newInstance();
             } else if (value instanceof Action) {
