@@ -893,7 +893,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         Expression object = transform(mce.getObjectExpression());
 
         MethodCallExpression result = new MethodCallExpression(object, method, args);
-        transformForEnumIfNeeded(result);
         result.setSafe(mce.isSafe());
         result.setImplicitThis(mce.isImplicitThis());
         result.setSpreadSafe(mce.isSpreadSafe());
@@ -901,29 +900,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         return result;
     }
     
-    private void transformForEnumIfNeeded(MethodCallExpression call) {
-    	Expression objectExpression = call.getObjectExpression();
-    	if(objectExpression instanceof ClassExpression) {
-    		ClassNode type = ((ClassExpression)objectExpression).getType();
-    		if(isEnum(type)) {
-    			Expression method = call.getMethod();
-    			if (method instanceof ConstantExpression) {
-    				String methodName = (String) ((ConstantExpression) method).getValue();
-    				FieldNode f = type.getField(methodName);
-    				if(f != null && f.getType().equals(type)) {
-    					call.setObjectExpression(new FieldExpression(f));
-    					call.setMethod(new ConstantExpression("call"));
-    				}
-    			}
-    		}
-    	}
-    	
-    }
-    
-    private boolean isEnum(ClassNode node) {
-    	return (node.getModifiers() & Opcodes.ACC_ENUM) != 0;
-    }
-
     protected Expression transformDeclarationExpression(DeclarationExpression de) {
         Expression oldLeft = de.getLeftExpression();
         Expression left = transform(oldLeft);

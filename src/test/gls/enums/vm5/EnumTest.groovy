@@ -198,22 +198,6 @@ class EnumTest extends GroovyTestCase {
             x = X
 	    """
     }
-    
-    // the fix for GROOVY-3284
-    def void testResolutionToMethodCallForEnumValues() {
-        assertScript """
-            enum Foo3284 {
-	            A({ return "A" }), B({ return "B" })
-	            Foo3284(Closure c) {
-	              call = c
-	            }
-	            final Closure call
-	        }
-        
-	        assert Foo3284.A() == "A"
-	        assert Foo3284.B() == "B"
-	    """
-    }
 }
 
 enum UsCoin {
