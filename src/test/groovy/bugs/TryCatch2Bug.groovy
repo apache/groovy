@@ -12,10 +12,4 @@ class TryCatch2Bug extends GroovyTestCase {
         catch (Throwable t) { 
         } 
     }
-    
-    void testBug2() {
-    	try {
-    		def x = 123
-    	}
-    }
 }
