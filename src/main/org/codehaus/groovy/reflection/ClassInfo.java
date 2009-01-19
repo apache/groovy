@@ -64,6 +64,10 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
         return version;
     }
 
+    public void incVersion() {
+        version++;
+    }
+
     public ExpandoMetaClass getModifiedExpando() {
         return strongMetaClass == null ? null : strongMetaClass instanceof ExpandoMetaClass ? (ExpandoMetaClass)strongMetaClass : null;
     }
