@@ -493,7 +493,16 @@ class SwingBuilderTest extends GroovySwingTestCase {
         assert swing.st.indexOfTab('sta') == swing.st.indexOfComponent(swing.sa)
         assert swing.st.indexOfTab('stb') == swing.st.indexOfComponent(swing.sb)
 
-
+        // insure we don't collide with bind node work        
+        // GROOVY-3288
+        def model=[wordValue:'word']
+        swing.tabbedPane {
+          panel( title: "a") {
+              textField( id: 'wordValue', columns: 20)
+          }
+          bean( model, word: bind{ wordValue.text } )
+        }
+        // no asserts, the above is pass/fai;  
       }
     }
 
