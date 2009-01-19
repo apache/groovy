@@ -1,6 +1,8 @@
 package groovy
 
-class TryCatchTest extends GroovyTestCase {
+import gls.CompilableTestSupport
+
+class TryCatchTest extends CompilableTestSupport {
 
     def exceptionCalled
     def finallyCalled
@@ -21,6 +23,13 @@ class TryCatchTest extends GroovyTestCase {
         println("After try/catch")
      }
 
+    void testStandaloneTryBlockShouldNotCompile() {
+        shouldNotCompile """
+            try {
+                assert true
+            }
+        """
+    }
 
      void testTryFinally() {
          Boolean touched = false;
