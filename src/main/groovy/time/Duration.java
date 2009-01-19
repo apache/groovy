@@ -19,8 +19,6 @@ import java.util.Calendar;
 import java.util.Date;
 
 /**
- * @author John Wilson tug@wilson.co.uk
- * 
  * Duration represents time periods which have values independant of the context.
  * So, whilst we can't say how long a month is without knowing the year and the name of the month,
  * we know how long a day is independant of the date.
@@ -31,6 +29,7 @@ import java.util.Date;
  * If you ask Duration to convert itself to milliseconds then it will work on the basis of 24 hours
  * in a day. If you add or subtract it from a date it will take daylight saving into account.
  *
+ * @author John Wilson tug@wilson.co.uk
  */
 public class Duration extends BaseDuration {
     public Duration(final int days, final int hours, final int minutes, final int seconds, final int millis) {

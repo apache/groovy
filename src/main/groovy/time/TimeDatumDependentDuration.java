@@ -19,11 +19,10 @@ import java.util.Calendar;
 import java.util.Date;
 
 /**
- * @author John Wilson tug@wilson.co.uk
- * 
  * TimeDatumDuration represents a time perid which results from an
  * arithmetic operation between a TimeDuration object and a DatumDuration object
  * 
+ * @author John Wilson tug@wilson.co.uk
  */
 public class TimeDatumDependentDuration extends DatumDependentDuration {
     public TimeDatumDependentDuration(int years, int months, int days, int hours, int minutes, int seconds, int millis) {

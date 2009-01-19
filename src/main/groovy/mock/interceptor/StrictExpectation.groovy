@@ -20,7 +20,7 @@ import junit.framework.AssertionFailedError
 
 /**
     Expects demanded call cardinalities to match demanded ranges in the sequence of recording.
-    @See LooseExpectation
+    @see LooseExpectation
     @author Dierk Koenig
 */
 

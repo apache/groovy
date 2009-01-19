@@ -21,7 +21,7 @@ import java.lang.reflect.Modifier
 /**
     Facade over the Stubbing details.
     A Stub's expectation is sequence independent and use of verify() is left to the user.
-    @See MockFor.
+    @see MockFor.
     @author Dierk Koenig
     @author Paul King
 */

@@ -29,13 +29,13 @@ function windowTitle()
             <A NAME="navbar_top_firstrow"><!-- --></A>
             <TABLE BORDER="0" CELLPADDING="0" CELLSPACING="3">
                 <TR ALIGN="center" VALIGN="top">
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="${pathPref}overview-summary.html"><FONT CLASS="NavBarFont1"><B>Overview</B></FONT></A>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <FONT CLASS="NavBarFont1">Package</FONT>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <FONT CLASS="NavBarFont1">Class</FONT>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <FONT CLASS="NavBarFont1">Tree</FONT>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <FONT CLASS="NavBarFont1">Deprecated</FONT>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="${pathPref}index-all.html"><FONT CLASS="NavBarFont1"><B>Index</B></FONT></A>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <FONT CLASS="NavBarFont1">Help</FONT>&nbsp;</TD>
+                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="${pathPref}overview-summary.html"><SPAN CLASS="NavBarFont1"><B>Overview</B></SPAN></A>&nbsp;</TD>
+                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <SPAN CLASS="NavBarFont1">Package</SPAN>&nbsp;</TD>
+                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <SPAN CLASS="NavBarFont1">Class</SPAN>&nbsp;</TD>
+                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <SPAN CLASS="NavBarFont1">Tree</SPAN>&nbsp;</TD>
+                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <SPAN CLASS="NavBarFont1">Deprecated</SPAN>&nbsp;</TD>
+                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="${pathPref}index-all.html"><SPAN CLASS="NavBarFont1"><B>Index</B></SPAN></A>&nbsp;</TD>
+                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <SPAN CLASS="NavBarFont1">Help</SPAN>&nbsp;</TD>
                 </TR>
             </TABLE>
         </TD>
@@ -48,8 +48,8 @@ function windowTitle()
 
 <!-- ======== START OF CLASS DATA ======== -->
 <H2>
-<FONT SIZE="-1">
-${packageName}</FONT>
+<SPAN style="font-size:12px;">
+${packageName}</SPAN>
 <BR>
 Class ${className}</H2>
 
@@ -58,16 +58,16 @@ Class ${className}</H2>
 <A NAME="method_summary"><!-- --></A>
 <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
 <TR BGCOLOR="#CCCCFF" CLASS="TableHeadingColor">
-<TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2">
-<B>Method Summary</B></FONT></TH>
+<TH ALIGN="left" COLSPAN="2"><SPAN style="font-size:24px;">
+<B>Method Summary</B></SPAN></TH>
 </TR>
 
 <% methods.each { method -> %>
 <TR BGCOLOR="white" CLASS="TableRowColor">
 <TD ALIGN="right" VALIGN="top" WIDTH="1%">
 
-<FONT SIZE="-1">
-<CODE>${method.isStatic ? 'static ' : ''}${method.returnTypeDocUrl}</CODE></FONT>
+<SPAN>
+<CODE>${method.isStatic ? 'static ' : ''}${method.returnTypeDocUrl}</CODE></SPAN>
 </TD>
 <TD><CODE><B><A HREF="#${method.name}(${method.parametersSignature})">${method.name}</A></B>(${method.parametersDocUrl})</CODE>
 <BR>
@@ -84,8 +84,8 @@ ${method.shortComment}
 <A NAME="method_detail"><!-- --></A>
 <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
 <TR BGCOLOR="#CCCCFF" CLASS="TableHeadingColor">
-<TH ALIGN="left" COLSPAN="1"><FONT SIZE="+2">
-<B>Method Detail</B></FONT></TH>
+<TH ALIGN="left" COLSPAN="1"><SPAN style="font-size:24px;">
+<B>Method Detail</B></SPAN></TH>
 </TR>
 </TABLE>
 
@@ -94,34 +94,38 @@ ${method.shortComment}
 <A name="${method.name}(${method.parametersSignature})"><!-- --></A><H3>${method.name}</H3>
 <PRE>public ${method.isStatic ? 'static ' : ''}${method.returnTypeDocUrl} <B>${method.name}</B>(${method.parametersDocUrl})</PRE>
 <DL>
+<dt>&nbsp;</dt>
 <DD>${method.comment}</DD>
-<P>
-<DD><DL></dl></DD>
-
+</DL>
 <% if (method.parametersSignature) { %>
-<DT><B>Parameters:</B></DT>
+<dl><DT><B>Parameters:</B></DT>
 	<% method.parameters.each { param -> %>
 		<DD><CODE>${param.name}</CODE> - ${param.comment}.</DD>
-<% } } %>
+<% } %>
+    </dl>
+    <%
+    } %>
 
 <% if (method.returnComment) { %>
-<DT><B>Returns:</B></DT><DD>${method.returnComment}</DD>
+<dl><DT><B>Returns:</B></DT><DD>${method.returnComment}</DD></dl>
 <% } %>
 
 <%if (method.since) { %>
+<dl>
 <DT><B>Since:</B></DT>
 <DD>${method.since}</DD>
+</dl>
 <%}%>
-</DL>
 
 <% if (method.seeComments) { %>
-<DT><B>See:</B>
+<dl>
+<DT><B>See:</B></DT>
 <% method.seeComments.each { param -> %>
-    <DD>${param.target}.
-<% } } %>
+    <DD>${param.target}.</DD>
+<% }%>
+</dl>
+<%    } %>
 
-</DD>
-</DL>
 <HR>
 <% } %>
 <!-- ========= END OF CLASS DATA ========= -->
@@ -136,13 +140,13 @@ ${method.shortComment}
             <A NAME="navbar_top_firstrow"><!-- --></A>
             <TABLE BORDER="0" CELLPADDING="0" CELLSPACING="3">
                 <TR ALIGN="center" VALIGN="top">
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="${pathPref}overview-summary.html"><FONT CLASS="NavBarFont1"><B>Overview</B></FONT></A>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <FONT CLASS="NavBarFont1">Package</FONT>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <FONT CLASS="NavBarFont1">Class</FONT>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <FONT CLASS="NavBarFont1">Tree</FONT>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <FONT CLASS="NavBarFont1">Deprecated</FONT>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="${pathPref}index-all.html"><FONT CLASS="NavBarFont1"><B>Index</B></FONT></A>&nbsp;</TD>
-                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <FONT CLASS="NavBarFont1">Help</FONT>&nbsp;</TD>
+                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="${pathPref}overview-summary.html"><SPAN CLASS="NavBarFont1"><B>Overview</B></SPAN></A>&nbsp;</TD>
+                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <SPAN CLASS="NavBarFont1">Package</SPAN>&nbsp;</TD>
+                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <SPAN CLASS="NavBarFont1">Class</SPAN>&nbsp;</TD>
+                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <SPAN CLASS="NavBarFont1">Tree</SPAN>&nbsp;</TD>
+                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <SPAN CLASS="NavBarFont1">Deprecated</SPAN>&nbsp;</TD>
+                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="${pathPref}index-all.html"><SPAN CLASS="NavBarFont1"><B>Index</B></SPAN></A>&nbsp;</TD>
+                    <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <SPAN CLASS="NavBarFont1">Help</SPAN>&nbsp;</TD>
                 </TR>
             </TABLE>
         </TD>

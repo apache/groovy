@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,15 +15,12 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.StringReader;
-import java.util.Map;
-import java.util.List;
-import java.util.Iterator;
-
+import antlr.RecognitionException;
+import antlr.TokenStreamException;
+import antlr.collections.AST;
 import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.types.resources.FileResource;
+import org.codehaus.groovy.ant.Groovydoc;
 import org.codehaus.groovy.antlr.AntlrASTProcessor;
 import org.codehaus.groovy.antlr.SourceBuffer;
 import org.codehaus.groovy.antlr.UnicodeEscapingReader;
@@ -36,13 +33,17 @@ import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
 import org.codehaus.groovy.antlr.treewalker.PreOrderTraversal;
 import org.codehaus.groovy.antlr.treewalker.SourceCodeTraversal;
 import org.codehaus.groovy.antlr.treewalker.Visitor;
+import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
-
-import antlr.RecognitionException;
-import antlr.TokenStreamException;
-import antlr.collections.AST;
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 /*
  * todo
@@ -53,37 +54,38 @@ import antlr.collections.AST;
  *  provide links to other html files (e.g. return type of a method)
  */
 public class GroovyRootDocBuilder {
-	private final GroovyDocTool tool;
-	private final Path sourcepath;
-	private final SimpleGroovyRootDoc rootDoc;
-	private static final char FS = '/';
-    private List links;
+    private static final char FS = '/';
+    private List<Groovydoc.LinkArgument> links;
+    private final GroovyDocTool tool;
+    private final Path sourcepath;
+    private final SimpleGroovyRootDoc rootDoc;
+    private final Properties properties;
 
-    public GroovyRootDocBuilder(GroovyDocTool tool, Path sourcepath, List links) {
-		this.tool = tool;
-		this.sourcepath = sourcepath;
-		this.links = links;
-		this.rootDoc = new SimpleGroovyRootDoc("root");
-	}
-	
-	// parsing
-	public Map getClassDocsFromSingleSource(String packagePath, String file, String src)
+    public GroovyRootDocBuilder(GroovyDocTool tool, Path sourcepath, List<Groovydoc.LinkArgument> links, Properties properties) {
+        this.tool = tool;
+        this.sourcepath = sourcepath;
+        this.links = links;
+        this.rootDoc = new SimpleGroovyRootDoc("root");
+        this.properties = properties;
+    }
+
+    // parsing
+    public Map<String, GroovyClassDoc> getClassDocsFromSingleSource(String packagePath, String file, String src)
             throws RecognitionException, TokenStreamException {
-		Map classDocsFromSrc = null;
-		if (file.indexOf(".java") > 0) { // simple (for now) decision on java or groovy
-			// java
-			classDocsFromSrc = parseJava(packagePath, file, src);
-		} else if (file.indexOf(".sourcefile") > 0){
-			// java (special name used for testing)
-			classDocsFromSrc = parseJava(packagePath, file, src);
-		} else {
-			// not java, try groovy instead :-)
-			classDocsFromSrc = parseGroovy(packagePath, file, src);
-		}		
-		return classDocsFromSrc;
-	}
+        if (file.indexOf(".java") > 0) { // simple (for now) decision on java or groovy
+            // java
+            return parseJava(packagePath, file, src);
+        }
+        if (file.indexOf(".sourcefile") > 0) {
+            // java (special name used for testing)
+            return parseJava(packagePath, file, src);
+        }
+        // not java, try groovy instead :-)
+        return parseGroovy(packagePath, file, src);
+    }
 
-	private Map parseJava(String packagePath, String file, String src) throws RecognitionException, TokenStreamException {
+    private Map<String, GroovyClassDoc> parseJava(String packagePath, String file, String src)
+            throws RecognitionException, TokenStreamException {
         SourceBuffer sourceBuffer = new SourceBuffer();
         JavaRecognizer parser = getJavaParser(src, sourceBuffer);
         String[] tokenNames = parser.getTokenNames();
@@ -91,100 +93,137 @@ public class GroovyRootDocBuilder {
         AST ast = parser.getAST();
 
         // modify the Java AST into a Groovy AST (just token types)
-		Visitor java2groovyConverter = new Java2GroovyConverter(tokenNames);
+        Visitor java2groovyConverter = new Java2GroovyConverter(tokenNames);
         AntlrASTProcessor java2groovyTraverser = new PreOrderTraversal(java2groovyConverter);
         java2groovyTraverser.process(ast);
 
         // now mutate (groovify) the ast into groovy
-		Visitor groovifier = new Groovifier(tokenNames);
+        Visitor groovifier = new Groovifier(tokenNames);
         AntlrASTProcessor groovifierTraverser = new PreOrderTraversal(groovifier);
         groovifierTraverser.process(ast);
 
-        
         // now do the business     
-        Visitor visitor = new SimpleGroovyClassDocAssembler(packagePath, file, sourceBuffer, links);
+        Visitor visitor = new SimpleGroovyClassDocAssembler(packagePath, file, sourceBuffer, links, properties, false);
         AntlrASTProcessor traverser = new SourceCodeTraversal(visitor);
 
         traverser.process(ast);
-        
+
         return ((SimpleGroovyClassDocAssembler) visitor).getGroovyClassDocs();
-	}
-	
-	private Map parseGroovy(String packagePath, String file, String src) throws RecognitionException, TokenStreamException {
+    }
+
+    private Map<String, GroovyClassDoc> parseGroovy(String packagePath, String file, String src)
+            throws RecognitionException, TokenStreamException {
         SourceBuffer sourceBuffer = new SourceBuffer();
         GroovyRecognizer parser = getGroovyParser(src, sourceBuffer);
-        String[] tokenNames = parser.getTokenNames();
+//        String[] tokenNames = parser.getTokenNames();
         parser.compilationUnit();
         AST ast = parser.getAST();
 
         // now do the business
-        Visitor visitor = new SimpleGroovyClassDocAssembler(packagePath, file, sourceBuffer, links);
+        Visitor visitor = new SimpleGroovyClassDocAssembler(packagePath, file, sourceBuffer, links, properties, true);
         AntlrASTProcessor traverser = new SourceCodeTraversal(visitor);
-
         traverser.process(ast);
-        
         return ((SimpleGroovyClassDocAssembler) visitor).getGroovyClassDocs();
-	}
-	
-	private JavaRecognizer getJavaParser(String input, SourceBuffer sourceBuffer) {
-		JavaRecognizer parser = null;
-        UnicodeEscapingReader unicodeReader = new UnicodeEscapingReader(new StringReader(input),sourceBuffer);
+    }
+
+    private JavaRecognizer getJavaParser(String input, SourceBuffer sourceBuffer) {
+        UnicodeEscapingReader unicodeReader = new UnicodeEscapingReader(new StringReader(input), sourceBuffer);
         JavaLexer lexer = new JavaLexer(unicodeReader);
         unicodeReader.setLexer(lexer);
-        parser = JavaRecognizer.make(lexer);
+        JavaRecognizer parser = JavaRecognizer.make(lexer);
         parser.setSourceBuffer(sourceBuffer);
-		return parser;
-	}
+        return parser;
+    }
 
-	private GroovyRecognizer getGroovyParser(String input, SourceBuffer sourceBuffer) {
-		GroovyRecognizer parser = null;
-        UnicodeEscapingReader unicodeReader = new UnicodeEscapingReader(new StringReader(input),sourceBuffer);
+    private GroovyRecognizer getGroovyParser(String input, SourceBuffer sourceBuffer) {
+        UnicodeEscapingReader unicodeReader = new UnicodeEscapingReader(new StringReader(input), sourceBuffer);
         GroovyLexer lexer = new GroovyLexer(unicodeReader);
         unicodeReader.setLexer(lexer);
-        parser = GroovyRecognizer.make(lexer);
+        GroovyRecognizer parser = GroovyRecognizer.make(lexer);
         parser.setSourceBuffer(sourceBuffer);
-		return parser;
-	}
+        return parser;
+    }
 
-	public void buildTree(List filenames) throws IOException, RecognitionException, TokenStreamException {
-		Iterator fileItr = filenames.iterator();
-		while (fileItr.hasNext()) {	
-			String filename = (String) fileItr.next();
-			Iterator pathItr = sourcepath.iterator();
-			while (pathItr.hasNext()){				
-				FileResource fileRes = (FileResource) pathItr.next();
-				String path = fileRes.getFile().getAbsolutePath();
-				if(new File(path + FS + filename).exists()){
-					String srcFileName = path + FS + filename;
-					String src = DefaultGroovyMethods.getText(new File(srcFileName));
-			
-					String packagePath = tool.getPath(filename);
-					packagePath = packagePath.replace('\\', FS);
-					String file = tool.getFile(filename);
-					try {
-						Map classDocs = getClassDocsFromSingleSource(packagePath, file, src);
-					
-						rootDoc.putAllClasses(classDocs);
-			
-						SimpleGroovyPackageDoc packageDoc = (SimpleGroovyPackageDoc) rootDoc.packageNamed(packagePath);
-						if (packageDoc == null) {
-							packageDoc = new SimpleGroovyPackageDoc(packagePath);
-						}
-						packageDoc.putAll(classDocs);		
-						rootDoc.put(packagePath, packageDoc);
-					} catch (RecognitionException e) {
-						System.out.println("ignored due to RecognitionException: " + filename);
-					} catch (TokenStreamException e) {
-						System.out.println("ignored due to TokenStreamException: " + filename);
-					}
-				}
-			}
-		}
-	}
+    public void buildTree(List<String> filenames) throws IOException, RecognitionException, TokenStreamException {
+        for (String filename : filenames) {
+            Iterator pathItr = sourcepath.iterator();
+            while (pathItr.hasNext()) {
+                FileResource fileRes = (FileResource) pathItr.next();
+                String path = fileRes.getFile().getAbsolutePath();
+                File srcFile = new File(path + FS + filename);
+                if (srcFile.exists()) {
+                    processFile(filename, srcFile);
+                }
+            }
+        }
+    }
 
-	public GroovyRootDoc getRootDoc() {
-		rootDoc.resolve();
-		
-		return rootDoc;
-	}
+    private void processFile(String filename, File srcFile) throws IOException {
+        String src = DefaultGroovyMethods.getText(srcFile);
+        String packagePath = tool.getPath(filename).replace('\\', FS);
+        String file = tool.getFile(filename);
+        SimpleGroovyPackageDoc packageDoc = (SimpleGroovyPackageDoc) rootDoc.packageNamed(packagePath);
+        if (packageDoc == null) {
+            packageDoc = new SimpleGroovyPackageDoc(packagePath);
+        }
+        if (filename.endsWith("package.html")) {
+            processHtmlPackage(src, packageDoc);
+            return;
+        }
+        try {
+            Map<String, GroovyClassDoc> classDocs = getClassDocsFromSingleSource(packagePath, file, src);
+            rootDoc.putAllClasses(classDocs);
+            packageDoc.putAll(classDocs);
+            rootDoc.put(packagePath, packageDoc);
+        } catch (RecognitionException e) {
+            System.err.println("ignored due to RecognitionException: " + filename + " [" + e.getMessage() + "]");
+        } catch (TokenStreamException e) {
+            System.err.println("ignored due to TokenStreamException: " + filename + " [" + e.getMessage() + "]");
+        }
+    }
+
+    private void processHtmlPackage(String src, SimpleGroovyPackageDoc packageDoc) {
+        String description = calcThenSetDescription(src, packageDoc);
+        calcThenSetSummary(description, packageDoc);
+    }
+
+    private void calcThenSetSummary(String src, SimpleGroovyPackageDoc packageDoc) {
+        packageDoc.setSummary(SimpleGroovyDoc.calculateFirstSentence(src));
+    }
+
+    private String calcThenSetDescription(String src, SimpleGroovyPackageDoc packageDoc) {
+        String description = scrubOffExcessiveTags(src);
+        packageDoc.setDescription(description);
+        return description;
+    }
+
+    private String scrubOffExcessiveTags(String src) {
+        String description = pruneTagFromFront(src, "html");
+        description = pruneTagFromFront(description, "/head");
+        description = pruneTagFromFront(description, "body");
+        description = pruneTagFromEnd(description, "/html");
+        return pruneTagFromEnd(description, "/body");
+    }
+
+    private String pruneTagFromFront(String description, String tag) {
+        int index = Math.max(indexOfTag(description, tag.toLowerCase()), indexOfTag(description, tag.toUpperCase()));
+        return description.substring(index + 1);
+    }
+
+    private String pruneTagFromEnd(String description, String tag) {
+        int index = Math.max(description.indexOf("<" + tag.toLowerCase() + ">"),
+                description.indexOf("<" + tag.toUpperCase() + ">"));
+        return description.substring(0, index);
+    }
+
+    private int indexOfTag(String text, String tag) {
+        int pos = text.indexOf("<" + tag + ">");
+        if (pos > 0) pos += tag.length() + 2;
+        return pos;
+    }
+
+    public GroovyRootDoc getRootDoc() {
+        rootDoc.resolve();
+        return rootDoc;
+    }
 }

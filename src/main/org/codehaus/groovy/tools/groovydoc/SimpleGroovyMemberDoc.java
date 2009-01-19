@@ -14,17 +14,36 @@
  * limitations under the License.
  */
 package org.codehaus.groovy.tools.groovydoc;
+
 import org.codehaus.groovy.groovydoc.*;
+import org.codehaus.groovy.ant.Groovydoc;
 
 import java.util.List;
 import java.util.ArrayList;
 
-public class SimpleGroovyMemberDoc extends SimpleGroovyProgramElementDoc implements GroovyMemberDoc{
-	public SimpleGroovyMemberDoc(String name) {
-		this(name, new ArrayList());
-	}
-	public SimpleGroovyMemberDoc(String name, List links) {
-		super(name, links);
-	}
-	public boolean isSynthetic() {/*todo*/return false;}
+public class SimpleGroovyMemberDoc extends SimpleGroovyProgramElementDoc implements GroovyMemberDoc {
+    private boolean abstractElement;
+    protected GroovyClassDoc belongsToClass;
+
+    public SimpleGroovyMemberDoc(String name, GroovyClassDoc belongsToClass) {
+        super(name);
+        this.belongsToClass = belongsToClass;
+    }
+
+    public void setAbstract(boolean b) {
+        abstractElement = b;
+    }
+
+    public boolean isAbstract() {
+        return abstractElement;
+    }
+
+    public boolean isSynthetic() {/*todo*/
+        return false;
+    }
+
+    public void setRawCommentText(String rawCommentText) {
+        super.setRawCommentText(rawCommentText);
+        setCommentText(((SimpleGroovyClassDoc)belongsToClass).replaceTags(rawCommentText));
+     }
 }

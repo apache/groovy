@@ -55,26 +55,26 @@ class ReflectionUtilsTest extends GroovyTestCase {
 
     public void testPojoMethodCallingClass() {
         if (ReflectionUtils.isCallingClassReflectionAvailable()) {
-            assert PojoCalleTestClass.staticClassCaller() == ReflectionUtilsTest
-            assert new PojoCalleTestClass().instanceCaller() == ReflectionUtilsTest
+            assert PojoCallerTestClass.staticClassCaller() == ReflectionUtilsTest
+            assert new PojoCallerTestClass().instanceCaller() == ReflectionUtilsTest
         }
     }
 
     public void testMetaMethodCallingClass() {
         if (ReflectionUtils.isCallingClassReflectionAvailable()) {
             MetaClassRegistry mcr = GroovySystem.getMetaClassRegistry()
-            mcr.removeMetaClass PojoCalleTestClass
+            mcr.removeMetaClass PojoCallerTestClass
             mcr.removeMetaClass PogoCalleTestClass
 
             Closure testClosure = {-> return ReflectionUtils.getCallingClass()}
-            PojoCalleTestClass.metaClass.metaInstanceCaller = testClosure
+            PojoCallerTestClass.metaClass.metaInstanceCaller = testClosure
             PogoCalleTestClass.metaClass.metaInstanceCaller = testClosure
 
-            PojoCalleTestClass.metaClass.'static'.metaStaticCaller = testClosure
+            PojoCallerTestClass.metaClass.'static'.metaStaticCaller = testClosure
             PogoCalleTestClass.metaClass.'static'.metaStaticCaller = testClosure
 
-            assert PojoCalleTestClass.metaStaticCaller() == ReflectionUtilsTest
-            assert new PojoCalleTestClass().metaInstanceCaller() == ReflectionUtilsTest
+            assert PojoCallerTestClass.metaStaticCaller() == ReflectionUtilsTest
+            assert new PojoCallerTestClass().metaInstanceCaller() == ReflectionUtilsTest
 
             assert PogoCalleTestClass.metaStaticCaller() == ReflectionUtilsTest
             assert new PogoCalleTestClass().metaInstanceCaller() == ReflectionUtilsTest

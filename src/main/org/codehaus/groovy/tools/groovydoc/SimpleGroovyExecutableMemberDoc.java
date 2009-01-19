@@ -22,18 +22,15 @@ import org.codehaus.groovy.groovydoc.*;
 public class SimpleGroovyExecutableMemberDoc extends SimpleGroovyMemberDoc implements GroovyExecutableMemberDoc {
 	List parameters;
 	
-	public SimpleGroovyExecutableMemberDoc(String name) {
-		this(name, new ArrayList());
-	}
-
-	public SimpleGroovyExecutableMemberDoc(String name, List links) {
-        super(name, links);
+	public SimpleGroovyExecutableMemberDoc(String name, GroovyClassDoc belongsToClass) {
+        super(name, belongsToClass);
 		parameters = new ArrayList();
 	}
 
 	public GroovyParameter[] parameters() {
 		return (GroovyParameter[]) parameters.toArray(new GroovyParameter[parameters.size()]);
 	}
+
 	public void add(GroovyParameter parameter) {
 		parameters.add(parameter);
 	}

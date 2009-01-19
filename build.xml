@@ -790,17 +790,18 @@ Not found: ${groovyJar14path}
 
     <target name="-docInit">
         <mkdir dir="${docsDirectory}"/>
+        <property name="docFooter" value="Copyright &amp;copy; 2003-2009 The Codehaus. All rights reserved."/>
+        <property name="title" value="Groovy ${groovyVersion}"/>
     </target>
 
     <target name="doc" depends="javadoc, groovydoc" description="Create the documentation."/>
 
    <target name="javadoc" depends="-fetchDependencies,-docInit,-jvm14BuildWarning,ensureGrammars"
             description="Create the javadoc documentation.">
-        <property name="title" value="Groovy"/>
         <javadoc destdir="${docsDirectory}/api" author="true" version="true"
-                 windowtitle="${title} (${groovyVersion})" doctitle="${title} (${groovyVersion})"
+                 windowtitle="${title}" doctitle="${title}"
                  encoding="ISO-8859-1" useexternalfile="true" source="1.5"
-                 footer="Copyright &amp;copy; 2003-2008 The Codehaus. All rights reserved."
+                 footer="${docFooter}"
                  maxmemory="${javaDoc_mx}"
                  >
             <classpath>
@@ -852,10 +853,12 @@ Not found: ${groovyJar14path}
                 sourcepath="${mainSourceDirectory}"
                 packagenames="**.*"
                 use="true"
-                windowtitle="groovydoc"
+                windowtitle="${title}"
+                doctitle="${title}"
+                footer="${docFooter}"
                 private="false">
-            <link packages="java." href="http://java.sun.com/j2se/1.5.0/docs/api"/>
-            <link packages="org.apache.ant." href="http://www.dpml.net/api/ant/1.7.0"/>
+            <link packages="java.,org.xml.,javax.,org.xml." href="http://java.sun.com/j2se/1.5.0/docs/api"/>
+            <link packages="org.apache.ant.,org.apache.tools.ant." href="http://www.dpml.net/api/ant/1.7.0"/>
             <link packages="org.junit.,junit.framework." href="http://junit.sourceforge.net/junit3.8.1/javadoc/"/>
             <link packages="groovy.,org.codehaus.groovy." href="http://groovy.codehaus.org/api/"/>
         </groovydoc>

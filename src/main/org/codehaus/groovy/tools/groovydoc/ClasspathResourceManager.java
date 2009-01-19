@@ -29,10 +29,13 @@ public class ClasspathResourceManager implements ResourceManager {
 	public ClasspathResourceManager(ClassLoader classLoader) {
 		this.classLoader = classLoader;
 	}
-	
+
+	public InputStream getInputStream(String resourceName) throws IOException {
+        return classLoader.getResourceAsStream(resourceName);
+	}
+
 	public Reader getReader(String resourceName) throws IOException {
-        InputStream stream = classLoader.getResourceAsStream(resourceName);
-        return DefaultGroovyMethods.newReader(stream);
+        return DefaultGroovyMethods.newReader(getInputStream(resourceName));
 	}
 
 }

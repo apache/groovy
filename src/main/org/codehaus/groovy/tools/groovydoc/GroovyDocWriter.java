@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,78 +22,74 @@ import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyPackageDoc;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
 
-/*
- * todo
- *  comma at the end of method parameters
- *  static modifier
- *  order methods alphabetically (implement compareTo enough?)
- *  provide links to other html files (e.g. return type of a method)
+/**
+ * Write GroovyDoc resources to destination.
  */
 public class GroovyDocWriter {
-	private GroovyDocTool tool;
-	private OutputTool output;
-	private GroovyDocTemplateEngine templateEngine;
+    private GroovyDocTool tool;
+    private OutputTool output;
+    private GroovyDocTemplateEngine templateEngine;
     private static final String FS = "/";
 
     public GroovyDocWriter(GroovyDocTool tool, OutputTool output, GroovyDocTemplateEngine templateEngine) {
-		this.tool = tool;
-		this.output = output;
-		this.templateEngine = templateEngine;
-	}
+        this.tool = tool;
+        this.output = output;
+        this.templateEngine = templateEngine;
+    }
 
-	public void writeClasses(GroovyRootDoc rootDoc, String destdir) throws Exception {
-		Iterator classDocs = Arrays.asList(rootDoc.classes()).iterator();
-		while (classDocs.hasNext()) {
-			GroovyClassDoc classDoc = (GroovyClassDoc) classDocs.next();
-			writeClassToOutput(classDoc, destdir);
-		}
-	}
+    public void writeClasses(GroovyRootDoc rootDoc, String destdir) throws Exception {
+        for (GroovyClassDoc classDoc : Arrays.asList(rootDoc.classes())) {
+            writeClassToOutput(classDoc, destdir);
+        }
+    }
 
-	public void writeRoot(GroovyRootDoc rootDoc, String destdir) throws Exception {
-		output.makeOutputArea(destdir);
-		writeRootDocToOutput(rootDoc, destdir);
-	}
+    public void writeClassToOutput(GroovyClassDoc classDoc, String destdir) throws Exception {
+        String destFileName = destdir + FS + classDoc.getFullPathName() + ".html";
+        System.out.println("Generating " + destFileName);
+        String renderedSrc = templateEngine.applyClassTemplates(classDoc);
+        output.writeToOutput(destFileName, renderedSrc);
+    }
 
-	public void writeClassToOutput(GroovyClassDoc classDoc, String destdir) throws Exception {
-		String destFileName = destdir + FS + classDoc.getFullPathName() + ".html";
-		System.out.println("Generating " + destFileName);
-		String renderedSrc = templateEngine.applyClassTemplates(classDoc);// todo		
-		output.writeToOutput(destFileName, renderedSrc);
-	}	
+    public void writePackages(GroovyRootDoc rootDoc, String destdir) throws Exception {
+        for (GroovyPackageDoc packageDoc : Arrays.asList(rootDoc.specifiedPackages())) {
+            output.makeOutputArea(destdir + FS + packageDoc.name());
+            writePackageToOutput(packageDoc, destdir);
+        }
+    }
 
-	public void writePackages(GroovyRootDoc rootDoc, String destdir) throws Exception {
-		Iterator packageDocs = Arrays.asList(rootDoc.specifiedPackages()).iterator();
-		while (packageDocs.hasNext()) {
-			GroovyPackageDoc packageDoc = (GroovyPackageDoc) packageDocs.next();
-			output.makeOutputArea(destdir + FS + packageDoc.name());
-			writePackageToOutput(packageDoc, destdir);
-		}
-	}
+    public void writePackageToOutput(GroovyPackageDoc packageDoc, String destdir) throws Exception {
+        Iterator<String> templates = templateEngine.packageTemplatesIterator();
+        while (templates.hasNext()) {
+            String template = templates.next();
+            String renderedSrc = templateEngine.applyPackageTemplate(template, packageDoc);
+            String destFileName = destdir + FS + packageDoc.name() + FS + tool.getFile(template);
+            System.out.println("Generating " + destFileName);
+            output.writeToOutput(destFileName, renderedSrc);
+        }
+    }
 
-	public void writePackageToOutput(GroovyPackageDoc packageDoc, String destdir) throws Exception {
-		Iterator templates = templateEngine.packageTemplatesIterator();
-		while (templates.hasNext()) {
-			String template = (String) templates.next();
+    public void writeRoot(GroovyRootDoc rootDoc, String destdir) throws Exception {
+        output.makeOutputArea(destdir);
+        writeRootDocToOutput(rootDoc, destdir);
+    }
 
-			String renderedSrc = templateEngine.applyPackageTemplate(template, packageDoc); // todo
-			
-			String destFileName = destdir + FS + packageDoc.name() + FS + tool.getFile(template);
-			System.out.println("Generating " + destFileName);
-			output.writeToOutput(destFileName, renderedSrc);
-		}
-	}	
+    public void writeRootDocToOutput(GroovyRootDoc rootDoc, String destdir) throws Exception {
+        Iterator<String> templates = templateEngine.docTemplatesIterator();
+        while (templates.hasNext()) {
+            String template = templates.next();
+            String destFileName = destdir + FS + tool.getFile(template);
+            System.out.println("Generating " + destFileName);
+            if (hasBinaryExtension(template)) {
+                templateEngine.copyBinaryResource(template, destFileName);
+            } else {
+                String renderedSrc = templateEngine.applyRootDocTemplate(template, rootDoc);
+                output.writeToOutput(destFileName, renderedSrc);
+            }
+        }
+    }
 
-	public void writeRootDocToOutput(GroovyRootDoc rootDoc, String destdir) throws Exception {
-		Iterator templates = templateEngine.docTemplatesIterator();
-		while (templates.hasNext()) {
-			String template = (String) templates.next();
-
-			String renderedSrc = templateEngine.applyRootDocTemplate(template, rootDoc); // todo
-			
-			String destFileName = destdir + FS + tool.getFile(template);
-			System.out.println("Generating " + destFileName);
-			output.writeToOutput(destFileName, renderedSrc);
-		}
-	}	
+    private boolean hasBinaryExtension(String template) {
+        return template.endsWith(".gif");
+    }
 
 }

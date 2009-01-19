@@ -61,7 +61,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
     protected ClassNode vcsClassNode = new ClassNode(VetoableChangeSupport.class);
 
     /**
-     * Convienience method to see if an annotatied node is @Vetoable.
+     * Convenience method to see if an annotated node is {@code @Vetoable}.
      *
      * @param node the node to check
      * @return true if the node is constrained

@@ -8,8 +8,8 @@ import groovy.xml.NamespaceBuilder
 
 /**
 Tests for the <groovy> task.
-@Author Unknown
-@Author Marc Guillemot
+@author Unknown
+@author Marc Guillemot
 */
 class AntTest extends GroovyTestCase {
     

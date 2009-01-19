@@ -30,7 +30,7 @@ import java.util.Collection;
  * are annotated themselves by {@link GroovyASTTransformation}. Each such
  * annotation is added.
  * <p/>
- * This visitor is only intended to be executed once, durring the
+ * This visitor is only intended to be executed once, during the
  * SEMANTIC_ANALYSIS phase of compilation.
  *
  * @author Danno Ferrin (shemnon)

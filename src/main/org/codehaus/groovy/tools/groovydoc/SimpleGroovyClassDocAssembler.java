@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,363 +15,576 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
+import antlr.collections.AST;
+import org.codehaus.groovy.ant.Groovydoc;
 import org.codehaus.groovy.antlr.GroovySourceAST;
 import org.codehaus.groovy.antlr.LineColumn;
 import org.codehaus.groovy.antlr.SourceBuffer;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 import org.codehaus.groovy.antlr.treewalker.VisitorAdapter;
+import org.codehaus.groovy.control.ResolveVisitor;
+import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyConstructorDoc;
-import org.codehaus.groovy.groovydoc.GroovyFieldDoc;
-import antlr.collections.AST;
 
-public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
-    private Stack stack;
-	private Map classDocs;
-	private SimpleGroovyClassDoc currentClassDoc; // todo - stack?
-	private SimpleGroovyConstructorDoc currentConstructorDoc; // todo - stack?
-	private SimpleGroovyMethodDoc currentMethodDoc; // todo - stack?
-	private SourceBuffer sourceBuffer;
-	private String packagePath;
-	private Pattern previousJavaDocCommentPattern;
-	private static final String FS = "/";
-    private List importedClassesAndPackages;
-    private List links;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
-    public SimpleGroovyClassDocAssembler(String packagePath, String file, SourceBuffer sourceBuffer, List links) {
-		this.sourceBuffer = sourceBuffer;
-		this.packagePath = packagePath;		
-		this.links = links;
+public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements GroovyTokenTypes {
+    private static final String FS = "/";
+    private static final Pattern PREV_JAVADOC_COMMENT_PATTERN = Pattern.compile("(?s)/\\*\\*(.*?)\\*/");
+    private final Stack<GroovySourceAST> stack;
+    private Map<String, GroovyClassDoc> classDocs;
+    private List<String> importedClassesAndPackages;
+    private List<Groovydoc.LinkArgument> links;
+    private Properties properties; // TODO use it or lose it
+    private SimpleGroovyFieldDoc currentFieldDoc;
+    private SourceBuffer sourceBuffer;
+    private String packagePath;
+    private LineColumn lastLineCol;
+    private boolean insideEnum;
+    private Map<String, SimpleGroovyClassDoc> foundClasses;
 
-		stack = new Stack();
-        classDocs = new HashMap();
+    public SimpleGroovyClassDocAssembler(String packagePath, String file, SourceBuffer sourceBuffer, List<Groovydoc.LinkArgument> links, Properties properties, boolean isGroovy) {
+        this.sourceBuffer = sourceBuffer;
+        this.packagePath = packagePath;
+        this.links = links;
+        this.properties = properties;
+
+        stack = new Stack<GroovySourceAST>();
+        classDocs = new HashMap<String, GroovyClassDoc>();
         String className = file;
         if (file != null) {
-        	// todo: replace this simple idea of default class name
-        	int idx = file.lastIndexOf(".");
-        	className = file.substring(0,idx);
+            // todo: replace this simple idea of default class name
+            int idx = file.lastIndexOf(".");
+            className = file.substring(0, idx);
         }
 
-        importedClassesAndPackages = new ArrayList();
-        importedClassesAndPackages.add(packagePath + "/*");  // everything in this package is automatically imported
-
-        importedClassesAndPackages.add("groovy/lang/*");     // default imports in Groovy, from org.codehaus.groovy.control.ResolveVisitor.DEFAULT_IMPORTS
-        importedClassesAndPackages.add("groovy/util/*");     // todo - non Groovy source files shouldn't import these, but let us import them for now, it won't hurt...
-
-
-        currentClassDoc = new SimpleGroovyClassDoc(importedClassesAndPackages, className, links);
-		currentClassDoc.setFullPathName(packagePath + FS + className);
-		classDocs.put(currentClassDoc.getFullPathName(),currentClassDoc);
-		
-		previousJavaDocCommentPattern = Pattern.compile("(?s)/\\*\\*(.*?)\\*/");
-
+        importedClassesAndPackages = new ArrayList<String>();
+        importedClassesAndPackages.add(packagePath + "/*");  // everything in this package
+        if (isGroovy) {
+            for (String pkg : ResolveVisitor.DEFAULT_IMPORTS) {
+                importedClassesAndPackages.add(pkg.replace('.', '/') + "*");
+            }
+        } else {
+            importedClassesAndPackages.add("java/lang/*");
+        }
+        SimpleGroovyClassDoc currentClassDoc = new SimpleGroovyClassDoc(importedClassesAndPackages, className, links);
+        currentClassDoc.setFullPathName(packagePath + FS + className);
+        classDocs.put(currentClassDoc.getFullPathName(), currentClassDoc);
+        lastLineCol = new LineColumn(1, 1);
     }
-	
-	public Map getGroovyClassDocs() {
-		postProcessClassDocs();
-		return classDocs;
-	}
-	
-	// Step through ClassDocs and tie up loose ends
-	private void postProcessClassDocs() {
-		Iterator classDocIterator = classDocs.values().iterator();
-		while (classDocIterator.hasNext()) {
-			SimpleGroovyClassDoc classDoc = (SimpleGroovyClassDoc) classDocIterator.next();
+
+    public Map<String, GroovyClassDoc> getGroovyClassDocs() {
+        postProcessClassDocs();
+        return classDocs;
+    }
+
+    @Override
+    public void visitInterfaceDef(GroovySourceAST t, int visit) {
+        visitClassDef(t, visit);
+    }
+
+    @Override
+    public void visitEnumDef(GroovySourceAST t, int visit) {
+        visitClassDef(t, visit);
+        SimpleGroovyClassDoc currentClassDoc = getCurrentOrTopLevelClassDoc(t);
+        if (visit == CLOSING_VISIT && currentClassDoc != null) {
+            adjustForAutomaticEnumMethods(currentClassDoc);
+        }
+    }
+
+    @Override
+    public void visitAnnotationDef(GroovySourceAST t, int visit) {
+        visitClassDef(t, visit);
+    }
+
+    @Override
+    public void visitClassDef(GroovySourceAST t, int visit) {
+        if (visit == OPENING_VISIT) {
+            SimpleGroovyClassDoc parent = getCurrentClassDoc();
+            String shortName = getIdentFor(t);
+            String className = shortName;
+            if (parent != null && isNested() && !insideAnonymousInnerClass()) {
+                className = parent.name() + "." + className;
+            } else {
+                foundClasses = new HashMap<String, SimpleGroovyClassDoc>();
+            }
+            SimpleGroovyClassDoc current = (SimpleGroovyClassDoc) classDocs.get(packagePath + FS + className);
+            if (current == null) {
+                current = new SimpleGroovyClassDoc(importedClassesAndPackages, className, links);
+            }
+            current.setRawCommentText(getJavaDocCommentsBeforeNode(t));
+            current.setFullPathName(packagePath + FS + current.name());
+            current.setTokenType(t.getType());
+            processAnnotations(t, current);
+            classDocs.put(current.getFullPathName(), current);
+            foundClasses.put(shortName, current);
+            if (parent != null) {
+                parent.addNested(current);
+                current.setOuter(parent);
+            }
+        }
+    }
+
+    @Override
+    public void visitImport(GroovySourceAST t, int visit) {
+        if (visit == OPENING_VISIT) {
+            String importTextWithSlashesInsteadOfDots = extractImportPath(t);
+            importedClassesAndPackages.add(importTextWithSlashesInsteadOfDots);
+        }
+    }
+
+// TODO is this needed so we can click through on default values?
+//    @Override
+//    public void visitStaticImport(GroovySourceAST t, int visit) {
+//        if (visit == OPENING_VISIT) {
+//            // TODO
+//            String importTextWithSlashesInsteadOfDots = extractImportPath(t);
+//            System.out.println(currentClassDoc.name() + " has static import: " + importTextWithSlashesInsteadOfDots);
+//        }
+//    }
+
+    @Override
+    public void visitExtendsClause(GroovySourceAST t, int visit) {
+        SimpleGroovyClassDoc currentClassDoc = getCurrentClassDoc();
+        if (visit == OPENING_VISIT) {
+            GroovySourceAST superClassNode = t.childOfType(IDENT);
+            if (superClassNode != null) {
+                String superClassName = extractName(superClassNode);
+                if (currentClassDoc.isInterface()) {
+                    currentClassDoc.addInterfaceName(superClassName);
+                } else {
+                    currentClassDoc.setSuperClassName(superClassName);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void visitImplementsClause(GroovySourceAST t, int visit) {
+        if (visit == OPENING_VISIT) {
+            GroovySourceAST classNode = t.childOfType(IDENT);
+            if (classNode != null) {
+                getCurrentClassDoc().addInterfaceName(extractName(classNode));
+            }
+        }
+    }
+
+    @Override
+    public void visitCtorIdent(GroovySourceAST t, int visit) {
+        if (visit == OPENING_VISIT && !insideEnum && !insideAnonymousInnerClass()) {
+            SimpleGroovyClassDoc currentClassDoc = getCurrentClassDoc();
+            SimpleGroovyConstructorDoc currentConstructorDoc = new SimpleGroovyConstructorDoc(currentClassDoc.name(), currentClassDoc);
+            currentConstructorDoc.setRawCommentText(getJavaDocCommentsBeforeNode(t));
+            processModifiers(t, currentConstructorDoc);
+            addParametersTo(t, currentConstructorDoc);
+            processAnnotations(t, currentConstructorDoc);
+            currentClassDoc.add(currentConstructorDoc);
+        }
+    }
+
+    @Override
+    public void visitMethodDef(GroovySourceAST t, int visit) {
+        if (visit == OPENING_VISIT && !insideEnum && !insideAnonymousInnerClass()) {
+            SimpleGroovyClassDoc currentClassDoc = getCurrentClassDoc();
+            if (currentClassDoc != null) {
+                String methodName = getIdentFor(t);
+                SimpleGroovyMethodDoc currentMethodDoc = new SimpleGroovyMethodDoc(methodName, currentClassDoc);
+                currentMethodDoc.setRawCommentText(getJavaDocCommentsBeforeNode(t));
+                processModifiers(t, currentMethodDoc);
+                currentMethodDoc.setReturnType(new SimpleGroovyType(getTypeOrDefault(t)));
+                addParametersTo(t, currentMethodDoc);
+                processAnnotations(t, currentMethodDoc);
+                currentClassDoc.add(currentMethodDoc);
+            }
+        }
+    }
+
+    @Override
+    public void visitAnnotationFieldDef(GroovySourceAST t, int visit) {
+        if (visit == OPENING_VISIT) {
+            visitVariableDef(t, visit);
+            String defaultText = getDefaultValue(t);
+            if (defaultText != null) {
+                currentFieldDoc.setConstantValueExpression(defaultText);
+                String orig = currentFieldDoc.getRawCommentText();
+                currentFieldDoc.setRawCommentText(orig + "\n* @default " + defaultText);
+            }
+        }
+    }
+
+    @Override
+    public void visitEnumConstantDef(GroovySourceAST t, int visit) {
+        if (visit == OPENING_VISIT) {
+            SimpleGroovyClassDoc currentClassDoc = getCurrentClassDoc();
+            insideEnum = true;
+            String enumConstantName = getIdentFor(t);
+            SimpleGroovyFieldDoc currentEnumConstantDoc = new SimpleGroovyFieldDoc(enumConstantName, currentClassDoc);
+            currentEnumConstantDoc.setRawCommentText(getJavaDocCommentsBeforeNode(t));
+            processModifiers(t, currentEnumConstantDoc);
+            String typeName = getTypeNodeAsText(t.childOfType(TYPE), currentClassDoc.getTypeDescription());
+            currentEnumConstantDoc.setType(new SimpleGroovyType(typeName));
+            currentClassDoc.addEnumConstant(currentEnumConstantDoc);
+        } else if (visit == CLOSING_VISIT) {
+            insideEnum = false;
+        }
+    }
+
+    @Override
+    public void visitVariableDef(GroovySourceAST t, int visit) {
+        if (visit == OPENING_VISIT && !insideAnonymousInnerClass() && isFieldDefinition()) {
+            SimpleGroovyClassDoc currentClassDoc = getCurrentClassDoc();
+            if (currentClassDoc != null) {
+                String fieldName = getIdentFor(t);
+                currentFieldDoc = new SimpleGroovyFieldDoc(fieldName, currentClassDoc);
+                currentFieldDoc.setRawCommentText(getJavaDocCommentsBeforeNode(t));
+                processModifiers(t, currentFieldDoc);
+                currentFieldDoc.setType(new SimpleGroovyType(getTypeOrDefault(t)));
+                processAnnotations(t, currentFieldDoc);
+                currentClassDoc.add(currentFieldDoc);
+            }
+        }
+    }
+
+    // Step through ClassDocs and tie up loose ends
+    private void postProcessClassDocs() {
+        for (GroovyClassDoc groovyClassDoc : classDocs.values()) {
+            SimpleGroovyClassDoc classDoc = (SimpleGroovyClassDoc) groovyClassDoc;
 
             // potentially add default constructor to class docs (but not interfaces)
-            if (classDoc.isClass()) {               // todo Enums, @Interfaces etc 
+            if (classDoc.isClass()) {
                 GroovyConstructorDoc[] constructors = classDoc.constructors();
                 if (constructors != null && constructors.length == 0) { // add default constructor to doc
                     // name of class for the constructor
-                    GroovyConstructorDoc constructorDoc = new SimpleGroovyConstructorDoc(classDoc.name());
+                    GroovyConstructorDoc constructorDoc = new SimpleGroovyConstructorDoc(classDoc.name(), classDoc);
                     // don't forget to tell the class about this default constructor.
                     classDoc.add(constructorDoc);
                 }
             }
         }
-	}
-
-    public void visitInterfaceDef(GroovySourceAST t, int visit) {
-        currentClassDoc.setAsInterfaceDefinition();
     }
 
-    public void visitImport(GroovySourceAST t, int visit) {
-        if (visit == OPENING_VISIT) {
-            GroovySourceAST child = t.childOfType(GroovyTokenTypes.DOT);
-            if (child == null) {
-                child = t.childOfType(GroovyTokenTypes.IDENT);
-            }
-            String importTextWithSlashesInsteadOfDots = recurseDownImportBranch(child);
-            importedClassesAndPackages.add(importTextWithSlashesInsteadOfDots);
+    private boolean isNested() {
+        GroovySourceAST gpn = getGrandParentNode();
+        return getParentNode() != null && gpn != null && (gpn.getType() == CLASS_DEF || gpn.getType() == INTERFACE_DEF);
+    }
+
+    private boolean isTopLevelConstruct(GroovySourceAST node) {
+        if (node == null) return false;
+        int type = node.getType();
+        return type == CLASS_DEF || type == INTERFACE_DEF || type == ANNOTATION_DEF || type == ENUM_DEF;
+    }
+
+    private void adjustForAutomaticEnumMethods(SimpleGroovyClassDoc currentClassDoc) {
+        SimpleGroovyMethodDoc valueOf = new SimpleGroovyMethodDoc("valueOf", currentClassDoc);
+        valueOf.setRawCommentText("Returns the enum constant of this type with the specified name.");
+        SimpleGroovyParameter parameter = new SimpleGroovyParameter("name");
+        parameter.setTypeName("String");
+        valueOf.add(parameter);
+        valueOf.setReturnType(new SimpleGroovyType(currentClassDoc.name()));
+        currentClassDoc.add(valueOf);
+
+        SimpleGroovyMethodDoc values = new SimpleGroovyMethodDoc("values", currentClassDoc);
+        values.setRawCommentText("Returns an array containing the constants of this enum type, in the order they are declared.");
+        values.setReturnType(new SimpleGroovyType(currentClassDoc.name() + "[]"));
+        currentClassDoc.add(values);
+    }
+
+    private String extractImportPath(GroovySourceAST t) {
+        GroovySourceAST child = t.childOfType(DOT);
+        if (child == null) {
+            child = t.childOfType(IDENT);
         }
+        return recurseDownImportBranch(child);
     }
-    public String recurseDownImportBranch(GroovySourceAST t) {
+
+    private String recurseDownImportBranch(GroovySourceAST t) {
         if (t != null) {
-            if (t.getType() == GroovyTokenTypes.DOT) {
+            if (t.getType() == DOT) {
                 GroovySourceAST firstChild = (GroovySourceAST) t.getFirstChild();
                 GroovySourceAST secondChild = (GroovySourceAST) firstChild.getNextSibling();
                 return (recurseDownImportBranch(firstChild) + "/" + recurseDownImportBranch(secondChild));
             }
-            if (t.getType() == GroovyTokenTypes.IDENT) {
+            if (t.getType() == IDENT) {
                 return t.getText();
             }
-            if (t.getType() == GroovyTokenTypes.STAR) {
+            if (t.getType() == STAR) {
                 return t.getText();
             }
         }
         return "";
     }
-    public void visitExtendsClause(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-        	GroovySourceAST superClassNode = t.childOfType(GroovyTokenTypes.IDENT);
-        	if (superClassNode != null) {
-        		String superClassName = superClassNode.getText();
-        		currentClassDoc.setSuperClassName(superClassName); // un 'packaged' class name
-        	}
-        }
-    }
-	
-	public void visitClassDef(GroovySourceAST t,int visit) {
-        if (visit == OPENING_VISIT) {
-            // todo is this correct for java + groovy src?
-        	String className = t.childOfType(GroovyTokenTypes.IDENT).getText();
-        	currentClassDoc = (SimpleGroovyClassDoc) classDocs.get(packagePath + FS + className);
-        	if (currentClassDoc == null) {
-        		currentClassDoc = new SimpleGroovyClassDoc(importedClassesAndPackages, className, importedClassesAndPackages);
-        	}
-    		// comments
-    		String commentText = getJavaDocCommentsBeforeNode(t);
-    		currentClassDoc.setRawCommentText(commentText);
 
-    		currentClassDoc.setFullPathName(packagePath + FS + currentClassDoc.name());
-        	classDocs.put(currentClassDoc.getFullPathName(), currentClassDoc);
+    private void addAnnotationRef(SimpleGroovyProgramElementDoc node, GroovySourceAST t) {
+        GroovySourceAST classNode = t.childOfType(IDENT);
+        if (classNode != null) {
+            node.addAnnotationRef(new SimpleGroovyAnnotationRef(extractName(classNode), getChildTextFromSource(t).trim()));
         }
     }
 
-	public void visitCtorIdent(GroovySourceAST t,int visit) {
-    	if (visit == OPENING_VISIT) {
-            if (!insideAnonymousInnerClass()) {
-                // now... get relevant values from the AST
-
-                // name of class for the constructor
-                currentConstructorDoc = new SimpleGroovyConstructorDoc(currentClassDoc.name());
-
-                // comments
-                String commentText = getJavaDocCommentsBeforeNode(t);
-                currentConstructorDoc.setRawCommentText(commentText);
-
-                // modifiers
-                processModifiers(t, currentConstructorDoc);
-
-                addParametersTo(currentConstructorDoc, t, visit);
-
-                // don't forget to tell the class about this constructor.
-                currentClassDoc.add(currentConstructorDoc);
-            }
-    	}
-	}
-
-
-	public void visitMethodDef(GroovySourceAST t, int visit) {
-    	if (visit == OPENING_VISIT) {
-            if (!insideAnonymousInnerClass()) {
-                // init
-
-                // now... get relevant values from the AST
-
-                // method name
-                String methodName = t.childOfType(GroovyTokenTypes.IDENT).getText();
-                currentMethodDoc = new SimpleGroovyMethodDoc(methodName, links);
-
-                // comments
-                String commentText = getJavaDocCommentsBeforeNode(t);
-                currentMethodDoc.setRawCommentText(commentText);
-
-                // modifiers
-                processModifiers(t, currentMethodDoc);
-
-                // return type
-                String returnTypeName = getTypeNodeAsText(t.childOfType(GroovyTokenTypes.TYPE),"def");
-                SimpleGroovyType returnType = new SimpleGroovyType(returnTypeName); // todo !!!
-                currentMethodDoc.setReturnType(returnType);
-
-                addParametersTo(currentMethodDoc, t, visit);
-
-                // don't forget to tell the class about this method so carefully constructed.
-                currentClassDoc.add(currentMethodDoc);
-            }
-        }
-	}
-
-    public void visitVariableDef(GroovySourceAST t, int visit) {
-        if (visit == OPENING_VISIT) {
-            if (!insideAnonymousInnerClass()) {
-                GroovySourceAST parentNode = getParentNode();
-
-                // todo - what about fields in interfaces/enums etc
-                if (parentNode != null && parentNode.getType() == GroovyTokenTypes.OBJBLOCK) {  // this should restrict us to just field definitions, and not local variable definitions
-
-                    // field name
-                    String fieldName = t.childOfType(GroovyTokenTypes.IDENT).getText();
-                    SimpleGroovyFieldDoc currentFieldDoc = new SimpleGroovyFieldDoc(fieldName);
-
-                    // comments - todo check this is doing the right thing for fields...
-                    String commentText = getJavaDocCommentsBeforeNode(t);
-                    currentFieldDoc.setRawCommentText(commentText);
-
-                    // modifiers
-                    processModifiers(t, currentFieldDoc);
-
-                    // type
-                    String typeName = getTypeNodeAsText(t.childOfType(GroovyTokenTypes.TYPE),"def");
-                    SimpleGroovyType type = new SimpleGroovyType(typeName); // todo !!!
-                    currentFieldDoc.setType(type);
-
-                    // don't forget to tell the class about this field so carefully constructed.
-                    currentClassDoc.add(currentFieldDoc);
-                }
-            }
+    private void addAnnotationRef(SimpleGroovyParameter node, GroovySourceAST t) {
+        GroovySourceAST classNode = t.childOfType(IDENT);
+        if (classNode != null) {
+            node.addAnnotationRef(new SimpleGroovyAnnotationRef(extractName(classNode), getChildTextFromSource(t).trim()));
         }
     }
 
+    private void addAnnotationRefs(SimpleGroovyProgramElementDoc node, List<GroovySourceAST> nodes) {
+        for (GroovySourceAST t : nodes) {
+            addAnnotationRef(node, t);
+        }
+    }
+
+    private void processAnnotations(GroovySourceAST t, SimpleGroovyProgramElementDoc node) {
+        GroovySourceAST modifiers = t.childOfType(MODIFIERS);
+        if (modifiers != null) {
+            addAnnotationRefs(node, modifiers.childrenOfType(ANNOTATION));
+        }
+    }
+
+    // hack warning! fragile! TODO find a better way
+    private String getDefaultValue(GroovySourceAST t) {
+        GroovySourceAST child = (GroovySourceAST) t.getFirstChild();
+        if (t.getNumberOfChildren() != 4) return null;
+        for (int i = 1; i < t.getNumberOfChildren(); i++) {
+            child = (GroovySourceAST) child.getNextSibling();
+        }
+        GroovySourceAST nodeToProcess = child;
+        if (child.getNumberOfChildren() > 0) {
+            nodeToProcess = (GroovySourceAST) child.getFirstChild();
+        }
+        return getChildTextFromSource(nodeToProcess, ";");
+    }
+
+    private String getChildTextFromSource(GroovySourceAST child) {
+        return sourceBuffer.getSnippet(
+                new LineColumn(child.getLine(), child.getColumn()),
+                new LineColumn(child.getLineLast(), child.getColumnLast()));
+    }
+
+    private String getChildTextFromSource(GroovySourceAST child, String tokens) {
+        String text = sourceBuffer.getSnippet(
+                new LineColumn(child.getLine(), child.getColumn()),
+                new LineColumn(child.getLine() + 1, 0));
+        StringTokenizer st = new StringTokenizer(text, tokens);
+        return st.nextToken();
+    }
+
+    private boolean isFieldDefinition() {
+        GroovySourceAST parentNode = getParentNode();
+        return parentNode != null && parentNode.getType() == OBJBLOCK;
+    }
 
     private boolean insideAnonymousInnerClass() {
         GroovySourceAST grandParentNode = getGrandParentNode();
-        if (grandParentNode != null && grandParentNode.getType() == GroovyTokenTypes.LITERAL_new) {
-            return true;
-        }
-        return false;
+        return grandParentNode != null && grandParentNode.getType() == LITERAL_new;
     }
-    private void processModifiers(GroovySourceAST t,SimpleGroovyProgramElementDoc programElementDoc) {
-        GroovySourceAST modifiers = t.childOfType(GroovyTokenTypes.MODIFIERS);
+
+    private void processModifiers(GroovySourceAST t, SimpleGroovyMemberDoc memberDoc) {
+        GroovySourceAST modifiers = t.childOfType(MODIFIERS);
         if (modifiers != null) {
             AST currentModifier = modifiers.getFirstChild();
             boolean seenNonPublicVisibilityModifier = false;
             while (currentModifier != null) {
                 int type = currentModifier.getType();
                 switch (type) {
-                    case GroovyTokenTypes.LITERAL_protected:
-                    case GroovyTokenTypes.LITERAL_private:
+                    case LITERAL_protected:
+                        memberDoc.setProtected(true);
                         seenNonPublicVisibilityModifier = true;
                         break;
-                    case GroovyTokenTypes.LITERAL_static:
-                        programElementDoc.setStatic(true);
+                    case LITERAL_private:
+                        memberDoc.setPrivate(true);
+                        seenNonPublicVisibilityModifier = true;
+                        break;
+                    case LITERAL_static:
+                        memberDoc.setStatic(true);
+                        break;
+                    case FINAL:
+                        memberDoc.setFinal(true);
+                        break;
+                    case ABSTRACT:
+                        memberDoc.setAbstract(true);
                         break;
                 }
                 currentModifier = currentModifier.getNextSibling();
             }
             if (!seenNonPublicVisibilityModifier) {
                 // in groovy (and java asts turned into groovy by Groovifier), methods are assumed public, unless informed otherwise
-                programElementDoc.setPublic(true);
+                memberDoc.setPublic(true);
             }
         }
     }
 
     // todo - If no comment before node, then get comment from same node on parent class - ouch!
-	
-	private String getJavaDocCommentsBeforeNode(GroovySourceAST t) {
-		String returnValue = "";
-		
-		String text = sourceBuffer.getSnippet(new LineColumn(1,1), new LineColumn(t.getLine(), t.getColumn()));
-        if (text != null) {
-            int openBlockIndex = text.lastIndexOf("{");
-            int closingBlockIndex = text.lastIndexOf("}");
-            int lastBlockIndex = Math.max(openBlockIndex, closingBlockIndex);
-            if (lastBlockIndex > 0) {
-                text = text.substring(lastBlockIndex);
-            }
 
-            Matcher m = previousJavaDocCommentPattern.matcher(text);
+    private String getJavaDocCommentsBeforeNode(GroovySourceAST t) {
+        String result = "";
+        LineColumn thisLineCol = new LineColumn(t.getLine(), t.getColumn());
+        String text = sourceBuffer.getSnippet(lastLineCol, thisLineCol);
+        if (text != null) {
+            Matcher m = PREV_JAVADOC_COMMENT_PATTERN.matcher(text);
             if (m.find()) {
-                returnValue = m.group(1);
+                result = m.group(1);
             }
         }
-		
-		return returnValue;
-	}
+        if (isMajorType(t)) {
+            lastLineCol = thisLineCol;
+        }
+        return result;
+    }
 
-	private String getText(GroovySourceAST node) {
-		String returnValue = null;
-		if (node != null) {
-			returnValue = node.getText();
-		}
-		return returnValue;
-	}
+    private boolean isMajorType(GroovySourceAST t) {
+        if (t == null) return false;
+        int tt = t.getType();
+        return tt == CLASS_DEF || tt == INTERFACE_DEF || tt == METHOD_DEF || tt == ANNOTATION_DEF ||
+                tt == VARIABLE_DEF || tt == ANNOTATION_FIELD_DEF || tt == ENUM_CONSTANT_DEF;
+    }
 
-	private String getTypeNodeAsText(GroovySourceAST typeNode, String defaultText) {
-		String returnValue = defaultText;
-		if (typeNode != null && 
-				typeNode.getType() == GroovyTokenTypes.TYPE && 
-				typeNode.getNumberOfChildren() > 0) {
-			GroovySourceAST child = (GroovySourceAST) typeNode.getFirstChild(); // assume type has only one child // todo type of "foo.bar.Wibble"
-			switch (child.getType()) {
-				// literals
-				case GroovyTokenTypes.LITERAL_boolean: returnValue = "boolean"; break;	
-				case GroovyTokenTypes.LITERAL_byte: returnValue = "byte"; break;	
-				case GroovyTokenTypes.LITERAL_char: returnValue = "char"; break;	
-				// note: LITERAL_def never created
-				case GroovyTokenTypes.LITERAL_double: returnValue = "double"; break;	
-				case GroovyTokenTypes.LITERAL_float: returnValue = "float"; break;	
-				case GroovyTokenTypes.LITERAL_int: returnValue = "int"; break;	
-				case GroovyTokenTypes.LITERAL_long: returnValue = "long"; break;	
-				case GroovyTokenTypes.LITERAL_short: returnValue = "short"; break;	
-				case GroovyTokenTypes.LITERAL_void: returnValue = "void"; break;	
-				
-				// identifiers
-				case GroovyTokenTypes.IDENT: returnValue = child.getText(); break;	
-			}
-		}
-		return returnValue;
-	}
+    private String getText(GroovySourceAST node) {
+        String returnValue = null;
+        if (node != null) {
+            returnValue = node.getText();
+        }
+        return returnValue;
+    }
 
-	
-	private void addParametersTo(SimpleGroovyExecutableMemberDoc executableMemberDoc, GroovySourceAST t,int visit) {
-		// parameters
-		GroovySourceAST parametersNode = t.childOfType(GroovyTokenTypes.PARAMETERS);
-		if (parametersNode != null && parametersNode.getNumberOfChildren() > 0) {
-			GroovySourceAST currentNode = (GroovySourceAST) parametersNode.getFirstChild();
-    		while (currentNode != null) {
-    			String parameterTypeName = getTypeNodeAsText(currentNode.childOfType(GroovyTokenTypes.TYPE),"def");
-        		String parameterName = getText(currentNode.childOfType(GroovyTokenTypes.IDENT));
-        		SimpleGroovyParameter parameter = new SimpleGroovyParameter(parameterName);
-        		parameter.setTypeName(parameterTypeName);
-        		
-        		executableMemberDoc.add(parameter);
-        		
-        		currentNode = (GroovySourceAST)currentNode.getNextSibling();
-    		}
-		}
-	}
+    // preempt resolve as info is available here - TODO is this always safe?
+    private String extractName(GroovySourceAST typeNode) {
+        String typeName = typeNode.getText();
+        if (typeName.indexOf(".") == -1) {
+            for (String name : importedClassesAndPackages) {
+                if (name.endsWith(typeName)) {
+                    typeName = name;
+                }
+            }
+        }
+        return typeName;
+    }
 
-	
-	
-	public void push(GroovySourceAST t) {
+    private String getTypeOrDefault(GroovySourceAST t) {
+        GroovySourceAST typeNode = t.childOfType(TYPE);
+        return getTypeNodeAsText(typeNode, "def");
+    }
+
+    private String getTypeNodeAsText(GroovySourceAST typeNode, String defaultText) {
+        if (typeNode != null && typeNode.getType() == TYPE && typeNode.getNumberOfChildren() > 0) {
+            return getAsText(typeNode, defaultText);
+        }
+        return defaultText;
+    }
+
+    private String getAsText(GroovySourceAST typeNode, String defaultText) {
+        String returnValue = defaultText;
+        GroovySourceAST child = (GroovySourceAST) typeNode.getFirstChild(); // assume type has only one child // todo type of "foo.bar.Wibble"
+        switch (child.getType()) {
+            // literals
+            case LITERAL_boolean:
+                returnValue = "boolean";
+                break;
+            case LITERAL_byte:
+                returnValue = "byte";
+                break;
+            case LITERAL_char:
+                returnValue = "char";
+                break;
+            // note: LITERAL_def never created
+            case LITERAL_double:
+                returnValue = "double";
+                break;
+            case LITERAL_float:
+                returnValue = "float";
+                break;
+            case LITERAL_int:
+                returnValue = "int";
+                break;
+            case LITERAL_long:
+                returnValue = "long";
+                break;
+            case LITERAL_short:
+                returnValue = "short";
+                break;
+            case LITERAL_void:
+                returnValue = "void";
+                break;
+            case ARRAY_DECLARATOR:
+                String componentType = getAsText(child, defaultText);
+                if (!componentType.equals("def")) returnValue = componentType + "[]";
+                break;
+
+            // identifiers
+            case IDENT:
+                returnValue = child.getText();
+                break;
+        }
+        return returnValue;
+    }
+
+    private void addParametersTo(GroovySourceAST t, SimpleGroovyExecutableMemberDoc executableMemberDoc) {
+        // parameters
+        GroovySourceAST parametersNode = t.childOfType(PARAMETERS);
+        if (parametersNode != null && parametersNode.getNumberOfChildren() > 0) {
+            GroovySourceAST currentNode = (GroovySourceAST) parametersNode.getFirstChild();
+            while (currentNode != null) {
+                String parameterTypeName = getTypeOrDefault(currentNode);
+                String parameterName = getText(currentNode.childOfType(IDENT));
+                SimpleGroovyParameter parameter = new SimpleGroovyParameter(parameterName);
+                parameter.setTypeName(parameterTypeName);
+                GroovySourceAST modifiers = currentNode.childOfType(MODIFIERS);
+                if (modifiers != null) {
+                    List<GroovySourceAST> annotations = modifiers.childrenOfType(ANNOTATION);
+                    for (GroovySourceAST a : annotations) {
+                        addAnnotationRef(parameter, a);
+                    }
+                }
+                executableMemberDoc.add(parameter);
+                if (currentNode.getNumberOfChildren() == 4) {
+                    handleDefaultValue(currentNode, parameter);
+                }
+                currentNode = (GroovySourceAST) currentNode.getNextSibling();
+            }
+        }
+    }
+
+    private void handleDefaultValue(GroovySourceAST currentNode, SimpleGroovyParameter parameter) {
+        GroovySourceAST paramPart = (GroovySourceAST) currentNode.getFirstChild();
+        for (int i = 1; i < currentNode.getNumberOfChildren(); i++) {
+            paramPart = (GroovySourceAST) paramPart.getNextSibling();
+        }
+        GroovySourceAST nodeToProcess = paramPart;
+        if (paramPart.getNumberOfChildren() > 0) {
+            nodeToProcess = (GroovySourceAST) paramPart.getFirstChild();
+        }
+        // hack warning!
+        // TODO handle , and ) when they occur within Strings
+        parameter.setDefaultValue(getChildTextFromSource(nodeToProcess, ",)"));
+    }
+
+    public void push(GroovySourceAST t) {
         stack.push(t);
     }
+
     public GroovySourceAST pop() {
         if (!stack.empty()) {
-            return (GroovySourceAST) stack.pop();
+            return stack.pop();
         }
         return null;
     }
 
     private GroovySourceAST getParentNode() {
-        Object parentNode = null;
-        Object currentNode = stack.pop();
+        GroovySourceAST parentNode = null;
+        GroovySourceAST currentNode = stack.pop();
         if (!stack.empty()) {
             parentNode = stack.peek();
         }
         stack.push(currentNode);
-        return (GroovySourceAST) parentNode;
+        return parentNode;
     }
 
     private GroovySourceAST getGrandParentNode() {
-        Object grandParentNode = null;
-        Object parentNode;
-        Object currentNode = stack.pop();
+        GroovySourceAST grandParentNode = null;
+        GroovySourceAST parentNode;
+        GroovySourceAST currentNode = stack.pop();
         if (!stack.empty()) {
             parentNode = stack.pop();
             if (!stack.empty()) {
@@ -380,7 +593,24 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter {
             stack.push(parentNode);
         }
         stack.push(currentNode);
-        return (GroovySourceAST) grandParentNode;
+        return grandParentNode;
     }
 
+    private SimpleGroovyClassDoc getCurrentOrTopLevelClassDoc(GroovySourceAST node) {
+        SimpleGroovyClassDoc current = getCurrentClassDoc();
+        if (current != null) return current;
+        return foundClasses.get(getIdentFor(node));
+    }
+
+    private SimpleGroovyClassDoc getCurrentClassDoc() {
+        GroovySourceAST pn = getParentNode();
+        if (isTopLevelConstruct(pn)) return foundClasses.get(getIdentFor(pn));
+        GroovySourceAST gpn = getGrandParentNode();
+        if (isTopLevelConstruct(gpn)) return foundClasses.get(getIdentFor(gpn));
+        return null;
+    }
+
+    private String getIdentFor(GroovySourceAST gpn) {
+        return gpn.childOfType(IDENT).getText();
+    }
 }

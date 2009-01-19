@@ -1,7 +1,7 @@
 package groovy
 
 /**
- * @TODO: GROOVY-1037
+ * @todo GROOVY-1037
  *
  *    $Revision 1.0
  *    Test for non-initialized fields or variables of the primitive types.

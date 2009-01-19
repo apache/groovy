@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 Jeremy Rayner
+ * Copyright 2007-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,44 +24,52 @@ import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Properties;
 
+/**
+ * @author Jeremy Rayner
+ */
 public class GroovyDocTool {
+
+    private final GroovyRootDocBuilder rootDocBuilder;
+    private final GroovyDocTemplateEngine templateEngine;
 
     /**
      * Constructor for use by people who only want to interact with the Groovy Doclet Tree (rootDoc)
+     *
      * @param sourcepath where the sources to be added can be found
      */
     public GroovyDocTool(Path sourcepath) {
-        this(null,sourcepath,null);
+        this(null, sourcepath, null);
     }
 
     public GroovyDocTool(ResourceManager resourceManager, Path sourcepath, String classTemplate) {
-		this(resourceManager, sourcepath, new String[]{}, new String[]{}, new String[] {classTemplate}, new ArrayList());
-	}
+        this(resourceManager, sourcepath, new String[]{}, new String[]{}, new String[]{classTemplate}, new ArrayList(), new Properties());
+    }
 
-	public GroovyDocTool(ResourceManager resourceManager, Path sourcepath, String[] docTemplates, String[] packageTemplates, String[] classTemplates, List links) {
-		rootDocBuilder = new GroovyRootDocBuilder(this, sourcepath, links);
-		if (resourceManager == null) {
+    public GroovyDocTool(ResourceManager resourceManager, Path sourcepath, String[] docTemplates, String[] packageTemplates, String[] classTemplates, List links, Properties properties) {
+        rootDocBuilder = new GroovyRootDocBuilder(this, sourcepath, links, properties);
+        if (resourceManager == null) {
             templateEngine = null;
         } else {
-            templateEngine = new GroovyDocTemplateEngine(this, resourceManager, docTemplates, packageTemplates, classTemplates);
+            templateEngine = new GroovyDocTemplateEngine(this, resourceManager, docTemplates, packageTemplates, classTemplates, properties);
         }
     }
 
-    public void add(List filenames) throws RecognitionException, TokenStreamException, IOException {
-		if (templateEngine != null) {
+    public void add(List<String> filenames) throws RecognitionException, TokenStreamException, IOException {
+        if (templateEngine != null) {
             // only print out if we are being used for template generation
             System.out.println("Loading source files for " + filenames);
         }
-		rootDocBuilder.buildTree(filenames);
-	}
-	
-	public GroovyRootDoc getRootDoc() {
-		return rootDocBuilder.getRootDoc();
-	}
+        rootDocBuilder.buildTree(filenames);
+    }
 
-	public void renderToOutput(OutputTool output, String destdir) throws Exception {
-		if (templateEngine != null) {
+    public GroovyRootDoc getRootDoc() {
+        return rootDocBuilder.getRootDoc();
+    }
+
+    public void renderToOutput(OutputTool output, String destdir) throws Exception {
+        if (templateEngine != null) {
             GroovyDocWriter writer = new GroovyDocWriter(this, output, templateEngine);
             GroovyRootDoc rootDoc = rootDocBuilder.getRootDoc();
             writer.writeRoot(rootDoc, destdir);
@@ -70,22 +78,19 @@ public class GroovyDocTool {
         } else {
             throw new UnsupportedOperationException("No template engine was found");
         }
-	}
-	
-	private final GroovyRootDocBuilder rootDocBuilder;
-	private final GroovyDocTemplateEngine templateEngine;
+    }
 
-	String getPath(String filename) {
-		String path = new File(filename).getParent();
-		// path length of 1 indicates that probably is 'default package' i.e. "/"
-		if (path == null || path.length() == 1) {
-			path = "DefaultPackage"; // "DefaultPackage" for 'default package' path, rather than null...
-		}
-		return path;
-	}
-	String getFile(String filename) {
-        return new File(filename).getName();        
-	}
-		
+    String getPath(String filename) {
+        String path = new File(filename).getParent();
+        // path length of 1 indicates that probably is 'default package' i.e. "/"
+        if (path == null || path.length() == 1) {
+            path = "DefaultPackage"; // "DefaultPackage" for 'default package' path, rather than null...
+        }
+        return path;
+    }
+
+    String getFile(String filename) {
+        return new File(filename).getName();
+    }
 
 }

@@ -11,7 +11,7 @@ import junit.framework.TestCase;
 
 public class Groovy1567_Bug extends TestCase {
    public void testGroovyScriptEngineVsGroovyShell() throws IOException, ResourceException, ScriptException {
-      // @TODO refactor this path	   
+      // @todo refactor this path	   
       File currentDir = new File("./src/test/groovy/bugs");	   
       String file = "bug1567_script.groovy";
 	   

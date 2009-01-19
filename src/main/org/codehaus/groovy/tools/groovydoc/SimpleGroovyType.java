@@ -14,29 +14,55 @@
  * limitations under the License.
  */
 package org.codehaus.groovy.tools.groovydoc;
-import org.codehaus.groovy.groovydoc.*;
+
+import org.codehaus.groovy.groovydoc.GroovyClassDoc;
+import org.codehaus.groovy.groovydoc.GroovyType;
 
 public class SimpleGroovyType implements GroovyType {
-	public SimpleGroovyType(String typeName) {
-		this.typeName = typeName;
-	}
-	private String typeName;
-	public String typeName() {return typeName;}
+    private String typeName;
 
-
-    //	public GroovyAnnotationTypeDoc asAnnotationTypeDoc() {/*todo*/return null;}
-	public GroovyClassDoc asClassDoc() {/*todo*/return null;}
-//	public GroovyParameterizedType asParameterizedType() {/*todo*/return null;}
-//	public GroovyTypeVariable asTypeVariable() {/*todo*/return null;}
-//	public GroovyWildcardType asWildcardType() {/*todo*/return null;}
-	public String dimension() {/*todo*/return null;}
-	public boolean isPrimitive() {/*todo*/return false;}
-	public String qualifiedTypeName() {/*todo*/return null;}
-	public String simpleTypeName() {/*todo*/return null;}
-
-
-    // ----
-    public String fullDottedName() {
-        return typeName;  // todo - package name prefixed
+    public SimpleGroovyType(String typeName) {
+        this.typeName = typeName;
     }
+
+    public String typeName() {
+        return typeName;
+    }
+
+    public boolean isPrimitive() {
+        return false; // TODO
+    }
+
+    public String qualifiedTypeName() {
+        return typeName;
+    }
+
+    public String simpleTypeName() {
+        return typeName;
+    }
+
+//    public GroovyAnnotationTypeDoc asAnnotationTypeDoc() {/*todo*/
+//        return null;
+//    }
+//
+//    public GroovyClassDoc asClassDoc() {/*todo*/
+//        return null;
+//    }
+//
+//    public GroovyParameterizedType asParameterizedType() {/*todo*/
+//        return null;
+//    }
+//
+//    public GroovyTypeVariable asTypeVariable() {/*todo*/
+//        return null;
+//    }
+//
+//    public GroovyWildcardType asWildcardType() {/*todo*/
+//        return null;
+//    }
+//
+//    public String dimension() {/*todo*/
+//        return null;
+//    }
+
 }

@@ -1,18 +1,25 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
 <HTML>
 <HEAD>
-<TITLE>
-${packageDoc.nameWithDots()} ({todo.title})
-</TITLE>
-
+<%
+def title = packageDoc.nameWithDots() + (props.windowTitle ? " ($props.windowTitle)" : "")
+// TODO enable errors(), enums() etc in SimpleGroovyPackageDoc then replace closures below
+def classTypes = [
+    "Interface" : { it.isInterface() },
+    "Class" : { it.isClass() && !it.parentClasses*.qualifiedTypeName().contains('java.lang.Throwable') },
+    "Enum" : { it.isEnum() },
+    "Exception" : { it.isClass() && it.parentClasses*.qualifiedTypeName().contains('java.lang.Exception') },
+    "Error" : { it.isClass() && it.parentClasses*.qualifiedTypeName().contains('java.lang.Error') },
+    "Annotation Type" : { it.isAnnotationType() }
+]
+%>
+<TITLE>${title}</TITLE>
 <META NAME="keywords" CONTENT="${packageDoc.nameWithDots()} package">
-
 <LINK REL ="stylesheet" TYPE="text/css" HREF="${packageDoc.getRelativeRootPath()}stylesheet.css" TITLE="Style">
-
 <SCRIPT type="text/javascript">
 function windowTitle()
 {
-    parent.document.title="${packageDoc.nameWithDots()} ({todo.title})";
+    parent.document.title="${title}";
 }
 </SCRIPT>
 <NOSCRIPT>
@@ -22,47 +29,43 @@ function windowTitle()
 
 <BODY BGCOLOR="white" onload="windowTitle();">
 
-
-
 <HR>
 <H2>
 Package ${packageDoc.nameWithDots()}
 </H2>
 
-<TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
-<TR BGCOLOR="#90DDF7" CLASS="TableHeadingColor">
-<TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2">
-<B>Interface Summary</B></FONT></TH>
-</TR>
-<!--<TR BGCOLOR="white" CLASS="TableRowColor">
-<TD WIDTH="15%"><B><A HREF="../../../com/javanicus/redbook/Pausable.html" title="interface in com.javanicus.redbook">Pausable</A></B></TD>
-<TD>&nbsp;</TD>
-</TR>-->
-</TABLE>
-&nbsp;
+${packageDoc.description()}
 
-<P>
+<P>&nbsp;</P>
+
+<%
+classTypes.each{ k, v ->
+    if (packageDoc.allClasses().any{ v(it) }) {
+%>
 
 <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
-<TR BGCOLOR="#90DDF7" CLASS="TableHeadingColor">
-<TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2">
-<B>Class Summary</B></FONT></TH>
-</TR>
-<% for (classDoc in packageDoc.ordinaryClasses()) { %>
-<TR BGCOLOR="white" CLASS="TableRowColor">
-<TD WIDTH="15%"><B><A HREF="${classDoc.name()}.html" title="class in ${packageDoc.name()}">${classDoc.name()}</A></B></TD>
-<TD>&nbsp;</TD>
-</TR>
-<% } %>
+    <TR BGCOLOR="#90DDF7" CLASS="TableHeadingColor">
+    <TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2">
+    <B>${k} Summary</B></FONT></TH>
+    </TR>
+<%
+    for (classDoc in packageDoc.allClasses()) {
+        if (v(classDoc)) {
+%>
+            <TR BGCOLOR="white" CLASS="TableRowColor">
+            <TD WIDTH="15%"><B><A HREF="${classDoc.name()}.html" title="class in ${packageDoc.name()}">${classDoc.name()}</A></B></TD>
+            <TD>${classDoc.firstSentenceCommentText()}</TD>
+            </TR>
+        <% } %>
+    <% } %>
 </TABLE>
 &nbsp;
-
 <P>
 <DL>
 </DL>
-
-
 <HR>
+    <% } %>
+<% } %>
 
 </BODY>
 </HTML>
