@@ -52,6 +52,7 @@ public class RichActionWidgetFactory extends AbstractFactory {
     
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) throws InstantiationException, IllegalAccessException {
         try {
+            if (value instanceof GString) value = value as String
             if (value == null) {
                 return klass.newInstance();
             } else if (value instanceof Action) {
