@@ -3025,6 +3025,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return theCachedClass.classInfo.getVersion();
     }
 
+    public void incVersion() {
+        theCachedClass.classInfo.incVersion();
+    }
+
     public MetaMethod[] getAdditionalMetaMethods() {
         return additionalMetaMethods;
     }

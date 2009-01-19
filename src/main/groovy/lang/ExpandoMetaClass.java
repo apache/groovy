@@ -733,6 +733,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 
     private void performRegistryCallbacks() {
 		MetaClassRegistry registry =  GroovySystem.getMetaClassRegistry();
+        incVersion();
 		if(!modified) {
 			modified = true;
             // Implementation note: By default Groovy uses soft references to store MetaClass
