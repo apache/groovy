@@ -1,4 +1,12 @@
 <antlib>
     <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc"/>
     <taskdef name="groovy"  classname="org.codehaus.groovy.ant.Groovy"/>
+    <taskdef name="groovydoc"  classname="org.codehaus.groovy.ant.Groovydoc"/>
+    <!-- These tasks exist but are probably not useful ATM:
+    <taskdef name="generatestubs"  classname="org.codehaus.groovy.ant.GenerateStubsTask"/>
+    <taskdef name="ubercompile"  classname="org.codehaus.groovy.ant.UberCompileTask"/>
+    <taskdef name="rootloaderref"  classname="org.codehaus.groovy.ant.RootLoaderRef"/>
+    <taskdef name="verify"  classname="org.codehaus.groovy.ant.VerifyClass"/>
+    <taskdef name="filescanner"  classname="org.codehaus.groovy.ant.FileScanner"/>
+     -->
 </antlib>
