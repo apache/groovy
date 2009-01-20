@@ -358,14 +358,14 @@ public class XmlNodePrinter {
         }
     }
 
-    private class NamespaceContext {
+    protected class NamespaceContext {
         private final Map<String, String> namespaceMap;
 
-        private NamespaceContext() {
+        public NamespaceContext() {
             namespaceMap = new HashMap<String, String>();
         }
 
-        private NamespaceContext(NamespaceContext context) {
+        public NamespaceContext(NamespaceContext context) {
             this();
             namespaceMap.putAll(context.namespaceMap);
         }
