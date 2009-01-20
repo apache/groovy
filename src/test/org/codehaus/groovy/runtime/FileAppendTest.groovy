@@ -215,6 +215,23 @@ class FileAppendTest extends GroovyTestCase {
 		assert hasContents( file, total )
 	}
 
+	void testBinaryAppend() {
+		def total = []
+
+		def array = [0x0,0x1,0x2] 
+		total.addAll array
+
+		file.append new ByteArrayInputStream( array as byte[] )
+		assert hasContents( file, total )
+
+		//test leftShift here as well, which should simply be an alias for 'append'
+
+		array = [0x5,0x6,0x7,0x8]
+		total.addAll array
+		file << new ByteArrayInputStream( array as byte[] )
+		assert hasContents( file, total )
+	}
+
 	boolean hasContents(File f, String expected)
 	{
 		assert file.length() == expected.length()
