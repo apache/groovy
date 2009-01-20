@@ -9489,7 +9489,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static void append(File file, byte[] bytes) throws IOException {
         BufferedOutputStream stream = null;
         try {
-            stream = newOutputStream(file);
+            stream = new BufferedOutputStream( new FileOutputStream(file,true) );
             stream.write(bytes, 0, bytes.length);
             stream.flush();
 
