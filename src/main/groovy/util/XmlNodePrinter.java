@@ -22,7 +22,6 @@ import org.codehaus.groovy.runtime.InvokerHelper;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -37,6 +36,7 @@ public class XmlNodePrinter {
     protected final IndentPrinter out;
     private String quote;
     private boolean namespaceAware = true;
+    private boolean preserveWhitespace = false;
 
     public XmlNodePrinter(PrintWriter out) {
         this(out, "  ");
@@ -48,6 +48,10 @@ public class XmlNodePrinter {
 
     public XmlNodePrinter(PrintWriter out, String indent, String quote) {
         this(new IndentPrinter(out, indent), quote);
+    }
+
+    public XmlNodePrinter(IndentPrinter out) {
+        this(out, "\"");
     }
 
     public XmlNodePrinter(IndentPrinter out, String quote) {
@@ -68,6 +72,7 @@ public class XmlNodePrinter {
 
     /**
      * Check if namespace handling is enabled.
+     * Defaults to <code>true</code>.
      *
      * @return true if namespace handling is enabled
      */
@@ -82,6 +87,25 @@ public class XmlNodePrinter {
      */
     public void setNamespaceAware(boolean namespaceAware) {
         this.namespaceAware = namespaceAware;
+    }
+
+    /**
+     * Check if whitespace preservation is enabled.
+     * Defaults to <code>true</code>.
+     *
+     * @return true if whitespaces are honoured when printing simple text nodes
+     */
+    public boolean isPreserveWhitespace() {
+        return preserveWhitespace;
+    }
+
+    /**
+     * Enable and/or disable preservation of whitespace.
+     *
+     * @param preserveWhitespace the new desired value
+     */
+    public void setPreserveWhitespace(boolean preserveWhitespace) {
+        this.preserveWhitespace = preserveWhitespace;
     }
 
     /**
@@ -133,18 +157,25 @@ public class XmlNodePrinter {
          */
         Object value = node.value();
         if (value instanceof List) {
-            printName(node, ctx, true);
+            printName(node, ctx, true, isListOfSimple((List) value));
             printList((List) value, ctx);
-            printName(node, ctx, false);
+            printName(node, ctx, false, isListOfSimple((List) value));
             out.flush();
             return;
         }
 
         // treat as simple type - probably a String
-        printName(node, ctx, true);
+        printName(node, ctx, true, preserveWhitespace);
         printSimpleItemWithIndent(value);
-        printName(node, ctx, false);
+        printName(node, ctx, false, preserveWhitespace);
         out.flush();
+    }
+
+    private boolean isListOfSimple(List value) {
+        for (Object p : value) {
+            if (p instanceof Node) return false;
+        }
+        return preserveWhitespace;
     }
 
     protected void printLineBegin() {
@@ -161,14 +192,14 @@ public class XmlNodePrinter {
             out.print(comment);
             out.print(" -->");
         }
-        out.print("\n");
+        out.println();
+        out.flush();
     }
 
     protected void printList(List list, NamespaceContext ctx) {
         out.incrementIndent();
-        for (Iterator iter = list.iterator(); iter.hasNext();) {
+        for (Object value : list) {
             NamespaceContext context = new NamespaceContext(ctx);
-            Object value = iter.next();
             /*
              * If the current value is a node, recurse into that node.
              */
@@ -177,18 +208,17 @@ public class XmlNodePrinter {
                 continue;
             }
             printSimpleItem(value);
-
         }
         out.decrementIndent();
     }
 
     protected void printSimpleItem(Object value) {
-        printLineBegin();
+        if (!preserveWhitespace) printLineBegin();
         printEscaped(InvokerHelper.toString(value));
-        printLineEnd();
+        if (!preserveWhitespace) printLineEnd();
     }
 
-    protected void printName(Node node, NamespaceContext ctx, boolean begin) {
+    protected void printName(Node node, NamespaceContext ctx, boolean begin, boolean preserve) {
         if (node == null) {
             throw new NullPointerException("Node must not be null.");
         }
@@ -196,7 +226,7 @@ public class XmlNodePrinter {
         if (name == null) {
             throw new NullPointerException("Name must not be null.");
         }
-        printLineBegin();
+        if (!preserve || begin) printLineBegin();
         out.print("<");
         if (!begin) {
             out.print("/");
@@ -209,7 +239,7 @@ public class XmlNodePrinter {
             printNameAttributes(node.attributes(), ctx);
         }
         out.print(">");
-        printLineEnd();
+        if (!preserve || !begin) printLineEnd();
     }
 
     protected boolean printSpecialNode(Node node) {
@@ -246,8 +276,8 @@ public class XmlNodePrinter {
         if (attributes == null || attributes.isEmpty()) {
             return;
         }
-        for (Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {
-            Map.Entry entry = (Map.Entry) iter.next();
+        for (Object p : attributes.entrySet()) {
+            Map.Entry entry = (Map.Entry) p;
             out.print(" ");
             out.print(getName(entry.getKey()));
             out.print("=");
@@ -290,9 +320,9 @@ public class XmlNodePrinter {
     }
 
     private void printSimpleItemWithIndent(Object value) {
-        out.incrementIndent();
+        if (!preserveWhitespace) out.incrementIndent();
         printSimpleItem(value);
-        out.decrementIndent();
+        if (!preserveWhitespace) out.decrementIndent();
     }
 
     // For ' and " we only escape if needed. As far as XML is concerned,
@@ -329,10 +359,10 @@ public class XmlNodePrinter {
     }
 
     private class NamespaceContext {
-        private final Map namespaceMap;
+        private final Map<String, String> namespaceMap;
 
         private NamespaceContext() {
-            namespaceMap = new HashMap();
+            namespaceMap = new HashMap<String, String>();
         }
 
         private NamespaceContext(NamespaceContext context) {
@@ -354,12 +384,5 @@ public class XmlNodePrinter {
             Object uri = namespaceMap.get(prefix);
             return (uri == null) ? null : uri.toString();
         }
-//
-//        public String getNamespacePrefix(String uri) {
-//            Object prefix = namespaceMap.get(uri);
-//            return (prefix == null) ? null : prefix.toString();
-//        }
-
     }
-
 }
