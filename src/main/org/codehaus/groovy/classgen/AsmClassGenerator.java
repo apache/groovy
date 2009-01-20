@@ -3596,7 +3596,7 @@ public class AsmClassGenerator extends ClassGenerator {
         Parameter[] localVariableParams = getClosureSharedVariables(expression);
         removeInitialValues(localVariableParams);
 
-        InnerClassNode answer = new InnerClassNode(outerClass, name, ACC_SYNTHETIC, ClassHelper.CLOSURE_TYPE); // closures are local inners and not public
+        InnerClassNode answer = new InnerClassNode(outerClass, name, 0, ClassHelper.CLOSURE_TYPE); // closures are local inners and not public
         answer.setEnclosingMethod(this.methodNode);
         answer.setSynthetic(true);
 
