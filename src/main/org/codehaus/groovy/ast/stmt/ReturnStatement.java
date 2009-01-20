@@ -26,7 +26,10 @@ import org.codehaus.groovy.ast.expr.Expression;
  * @version $Revision$
  */
 public class ReturnStatement extends Statement {
-
+    /**
+     * Only used for synthetic return statements emitted by the compiler.
+     * For comparisons use isReturningNullOrVoid() instead.
+     */
     public static final ReturnStatement RETURN_NULL_OR_VOID = new ReturnStatement(ConstantExpression.NULL);
 
     private Expression expression;
@@ -54,5 +57,10 @@ public class ReturnStatement extends Statement {
 
     public void setExpression(Expression expression) {
         this.expression = expression;
+    }
+
+    public boolean isReturningNullOrVoid() {
+        return expression instanceof ConstantExpression
+            && ((ConstantExpression)expression).isNullExpression();
     }
 }
