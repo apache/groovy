@@ -9400,6 +9400,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Append binary data to the file.  See {@link #append(File, InputStream)} 
+     * @param file
+     * @param data
+     * @return the file
+     * @throws IOException
+     */
+    public static File leftShift(File file, InputStream data) throws IOException {
+    	append(file, data);
+    	return file;
+    }
+
+    /**
      * Write the text to the File, using the specified encoding.
      *
      * @param file    a File
@@ -9467,6 +9479,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         } finally {
             closeWithWarning(stream);
         }
+    }
+
+    /**
+     * Append binary data to the file.  It <strong>will not</strong> be 
+     * interpreted as text.
+     * @param self
+     * @param stream stream to read data from.  
+     * @throws IOException
+     */
+    public static void append(File self, InputStream stream ) throws IOException {
+    	OutputStream out = new FileOutputStream( self, true );
+    	try {
+    		leftShift( out, stream );
+    	}
+    	finally {
+    		closeWithWarning( out ); 
+    	}
     }
 
     /**
