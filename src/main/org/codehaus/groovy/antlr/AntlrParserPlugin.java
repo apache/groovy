@@ -1251,21 +1251,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 		//if (exprNode == null) {
         //    exprNode = node.getNextSibling();
         //}
-        if (exprNode != null) {
-            Expression expression = expression(exprNode);
-            if (expression instanceof ConstantExpression) {
-                ConstantExpression constantExpr = (ConstantExpression) expression;
-                if (constantExpr.getValue() == null) {
-                    return ReturnStatement.RETURN_NULL_OR_VOID;
-                }
-            }
-            ReturnStatement returnStatement = new ReturnStatement(expression);
-            configureAST(returnStatement, node);
-            return returnStatement;
-        }
-        else {
-            return ReturnStatement.RETURN_NULL_OR_VOID;
-        }
+        Expression expression = exprNode == null ? ConstantExpression.NULL : expression(exprNode);
+        ReturnStatement returnStatement = new ReturnStatement(expression);
+        configureAST(returnStatement, node);
+        return returnStatement;
     }
 
     protected Statement switchStatement(AST switchNode) {
@@ -1363,7 +1352,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             finallyStatement = statement(node);
             node = node.getNextSibling();
         }
-        
+
         if (finallyStatement instanceof EmptyStatement && catches.size() == 0) {
             throw new ASTRuntimeException(tryStatementNode, "A try block must have at least one try or finally block.");
         }

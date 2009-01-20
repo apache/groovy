@@ -1235,7 +1235,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
 
         if (returnType == ClassHelper.VOID_TYPE) {
-            if (!(statement == ReturnStatement.RETURN_NULL_OR_VOID)) {
+            if (!(statement.isReturningNullOrVoid())) {
                 throwException("Cannot use return statement with an expression on a method that returns void");
             }
             compileStack.applyFinallyBlocks();
