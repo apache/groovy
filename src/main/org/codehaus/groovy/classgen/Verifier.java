@@ -76,7 +76,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         if (metaClassField != null) return metaClassField;
         final String classInternalName = BytecodeHelper.getClassInternalName(node);
         metaClassField =
-            node.addField("metaClass", ACC_PRIVATE | ACC_TRANSIENT, ClassHelper.METACLASS_TYPE, new BytecodeExpression() {
+            node.addField("metaClass", ACC_PRIVATE | ACC_TRANSIENT | ACC_SYNTHETIC, ClassHelper.METACLASS_TYPE, new BytecodeExpression() {
                 public void visit(MethodVisitor mv) {
                     mv.visitVarInsn(ALOAD, 0);
                     mv.visitInsn(DUP);
@@ -339,7 +339,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     protected void addTimeStamp(ClassNode node) {
         FieldNode timeTagField = new FieldNode(
                 Verifier.__TIMESTAMP,
-                Modifier.PUBLIC | Modifier.STATIC,
+                ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC,
                 ClassHelper.Long_TYPE,
                 //"",
                 node,
@@ -350,7 +350,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         timeTagField = new FieldNode(
                 Verifier.__TIMESTAMP__ + String.valueOf(System.currentTimeMillis()),
-                Modifier.PUBLIC | Modifier.STATIC,
+                ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC,
                 ClassHelper.Long_TYPE,
                 //"",
                 node,

@@ -67,7 +67,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
         FieldNode maxValue = new FieldNode("MAX_VALUE", PUBLIC_FS, enumClass, enumClass, null);
 
         // create values field
-        FieldNode values = new FieldNode("$VALUES",PRIVATE_FS,enumArray,enumClass,null);
+        FieldNode values = new FieldNode("$VALUES",PRIVATE_FS|Opcodes.ACC_SYNTHETIC,enumArray,enumClass,null);
         values.setSynthetic(true);
         {
             // create values() method

@@ -16,7 +16,7 @@ public class Groovy3175_Bug extends GroovyTestCase {
             def anotherSomething() { assert true }
         }
         def fields = MyService.getDeclaredFields().grep { !it.synthetic }
-        assert fields.size() == 1 
+        assert fields.size() == 2 
         def methods = MyService.getDeclaredMethods().grep { !it.synthetic }
         assert methods.size() == 4 
      """
