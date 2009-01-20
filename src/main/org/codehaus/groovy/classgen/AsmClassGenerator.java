@@ -459,7 +459,7 @@ public class AsmClassGenerator extends ClassGenerator {
             helper.doReturn(method.getReturnType());
             mv.visitMaxs(0, 0);
             mv.visitEnd();
-            classNode.addMethod(name, Opcodes.ACC_PUBLIC & Opcodes.ACC_SYNTHETIC, method.getReturnType(), parameters, null, null);
+            classNode.addMethod(name, Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, method.getReturnType(), parameters, null, null);
         }
     }
 
@@ -627,10 +627,8 @@ public class AsmClassGenerator extends ClassGenerator {
         onLineNumber(fieldNode, "visitField: " + fieldNode.getName());
         ClassNode t = fieldNode.getType();
         String signature = helper.getGenericsBounds(t);
-        int modifiers = fieldNode.getModifiers();
-        if (fieldNode.isSynthetic()) modifiers |= ACC_SYNTHETIC;
         FieldVisitor fv = cv.visitField(
-                modifiers,
+                fieldNode.getModifiers(),
                 fieldNode.getName(),
                 BytecodeHelper.getTypeDescription(t),
                 signature, 
@@ -3598,7 +3596,7 @@ public class AsmClassGenerator extends ClassGenerator {
         Parameter[] localVariableParams = getClosureSharedVariables(expression);
         removeInitialValues(localVariableParams);
 
-        InnerClassNode answer = new InnerClassNode(outerClass, name, 0, ClassHelper.CLOSURE_TYPE); // closures are local inners and not public
+        InnerClassNode answer = new InnerClassNode(outerClass, name, ACC_SYNTHETIC, ClassHelper.CLOSURE_TYPE); // closures are local inners and not public
         answer.setEnclosingMethod(this.methodNode);
         answer.setSynthetic(true);
 

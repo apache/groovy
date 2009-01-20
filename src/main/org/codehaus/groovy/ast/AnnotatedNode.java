@@ -61,10 +61,25 @@ public class AnnotatedNode extends ASTNode {
         }
     }
 
+    /**
+     * returns true if this node is added by the compiler.
+     * <b>NOTE</b>: 
+     * This method has nothing to do with the synthetic flag
+     * for fields, methods or classes.              
+     * @return true if this node is added by the compiler
+     */
     public boolean isSynthetic() {
         return synthetic;
     }
 
+    /**
+     * sets this node as a node added by the compiler.
+     * <b>NOTE</b>: 
+     * This method has nothing to do with the synthetic flag
+     * for fields, methods or classes.              
+     * @param synthetic - if true this node is marked as
+     *                    added by the compiler
+     */
     public void setSynthetic(boolean synthetic) {
         this.synthetic = synthetic;
     }
@@ -74,7 +89,7 @@ public class AnnotatedNode extends ASTNode {
     }
 
     /**
-     * @param declaringClass The declaringClass to set.
+     * @param declaringClass - The declaringClass to set.
      */
     public void setDeclaringClass(ClassNode declaringClass) {
         this.declaringClass = declaringClass;
