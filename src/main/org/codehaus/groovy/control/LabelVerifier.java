@@ -161,8 +161,10 @@ public class LabelVerifier extends ClassCodeVisitorSupport {
     }
     
     public void visitSwitch(SwitchStatement statement) {
-        inSwitch=true;
+        boolean oldInSwitch = inSwitch;
+        inSwitch = true;
         super.visitSwitch(statement);
+        inSwitch = oldInSwitch;
     }
 
 }
