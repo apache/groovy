@@ -85,6 +85,10 @@ before groovy.mock.example.CheeseSlicer.coffeeBreak(java.lang.String)
 after  groovy.mock.example.CheeseSlicer.coffeeBreak(java.lang.String)
 """, log.toString())
     }
+    
+    void testProxyMetaClassUseMethodShouldReturnTheResultOfClosure(){
+    	assertEquals true, proxy.use { true }
+    }
 }
 
 
