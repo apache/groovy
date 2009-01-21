@@ -2,6 +2,11 @@ package groovy.util
 
 class XmlNodePrinterTest extends GroovyTestCase {
 
+    StringWriter writer
+    PrintWriter pw
+    XmlNodePrinter printer
+    XmlParser parser
+
     def namespaceInput = """\
 <soap:Envelope xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
   <soap:Body>
@@ -26,7 +31,7 @@ class XmlNodePrinterTest extends GroovyTestCase {
 </soap:Envelope>
 """
 
-    def noNamespaceInput = """\
+    def noNamespaceInputVerbose = """\
 <Envelope>
   <Body>
     <Locator>
@@ -38,75 +43,101 @@ class XmlNodePrinterTest extends GroovyTestCase {
 </Envelope>
 """
 
+    def noNamespaceInputCompact = """\
+<Envelope>
+  <Body>
+    <Locator>
+      <Address>1000 Main St</Address>
+    </Locator>
+  </Body>
+</Envelope>
+"""
+
     def attributeInput = """<Field Text="&lt;html&gt;&quot;Some &apos;Text&apos;&quot;&lt;/html&gt;" />"""
     def attributeExpectedOutputQuot = """<Field Text="&lt;html&gt;&quot;Some 'Text'&quot;&lt;/html&gt;"/>\n"""
     def attributeExpectedOutputApos = """<Field Text='&lt;html&gt;"Some &apos;Text&apos;"&lt;/html&gt;'/>\n"""
+
     def tagWithSpecialCharsInput = """<Field>&lt;&amp;&gt;</Field>"""
     def tagWithSpecialCharsOutput = """<Field>\n  &lt;&amp;&gt;\n</Field>\n"""
 
-    void testNamespaces() {
-        def root = new XmlParser().parseText(namespaceInput)
-        def writer = new StringWriter()
-        new XmlNodePrinter(new PrintWriter(writer), "  ").print(root)
-        def result = writer.toString()
-        assertEquals namespaceInput, result
+    protected void setUp() {
+        writer = new StringWriter()
+        pw = new PrintWriter(writer)
+        printer = new XmlNodePrinter(pw, "  ")
+        parser = new XmlParser()
+    }
+
+    private void setUpNoindentingPrinter() {
+        printer = new XmlNodePrinter(new IndentPrinter(pw, "", false))
+        printer.preserveWhitespace = true
+    }
+
+    void testNamespacesDefault() {
+        checkRoundtrip namespaceInput, namespaceInput
+    }
+
+    void testNamespacesPreserving() {
+        parser.trimWhitespace = false
+        setUpNoindentingPrinter()
+        checkRoundtrip namespaceInput, namespaceInput.trim()
     }
 
     void testNamespacesDisabledOnParsing() {
-        def root = new XmlParser(false, false).parseText(namespaceInput)
-        def writer = new StringWriter()
-        new XmlNodePrinter(new PrintWriter(writer), "  ").print(root)
-        def result = writer.toString()
-        assertEquals namespaceInput, result
+        parser = new XmlParser(false, false)
+        checkRoundtrip namespaceInput, namespaceInput
     }
 
     void testNamespacesDisabledOnPrinting() {
-        def root = new XmlParser().parseText(namespaceInput)
-        def writer = new StringWriter()
-        def printer = new XmlNodePrinter(new PrintWriter(writer), "  ")
         printer.namespaceAware = false
-        printer.print(root)
-        def result = writer.toString()
-        assertEquals noNamespaceInput, result
+        checkRoundtrip namespaceInput, noNamespaceInputVerbose
     }
 
-    void testWithoutNamespaces() {
-        def root = new XmlParser().parseText(noNamespaceInput)
-        def writer = new StringWriter()
-        new XmlNodePrinter(new PrintWriter(writer), "  ").print(root)
-        def result = writer.toString()
-        assertEquals noNamespaceInput, result
+    void testWithoutNamespacesVerboseInDefaultOut() {
+        checkRoundtrip noNamespaceInputVerbose, noNamespaceInputVerbose
+    }
+
+    void testWithoutNamespacesVerbosePreserving() {
+        parser.trimWhitespace = false
+        setUpNoindentingPrinter()
+        checkRoundtrip noNamespaceInputVerbose, noNamespaceInputVerbose.trim()
+    }
+
+    void testWithoutNamespacesVerboseInPreserveOut() {
+        printer.preserveWhitespace = true
+        checkRoundtrip noNamespaceInputVerbose, noNamespaceInputCompact
+    }
+
+    void testWithoutNamespacesCompactInPreserveOut() {
+        printer.preserveWhitespace = true
+        checkRoundtrip noNamespaceInputCompact, noNamespaceInputCompact
+    }
+
+    void testWithoutNamespacesCompactInDefaultOut() {
+        checkRoundtrip noNamespaceInputCompact, noNamespaceInputVerbose
     }
 
     void testAttributeWithQuot() {
-        def root = new XmlParser().parseText(attributeInput)
-        def writer = new StringWriter()
-        new XmlNodePrinter(new PrintWriter(writer), "  ", "\"").print(root)
-        def result = writer.toString()
-        assertEquals attributeExpectedOutputQuot, result
+        printer = new XmlNodePrinter(pw, "  ", "\"")
+        checkRoundtrip attributeInput, attributeExpectedOutputQuot
     }
 
     void testAttributeWithApos() {
-        def root = new XmlParser().parseText(attributeInput)
-        def writer = new StringWriter()
-        new XmlNodePrinter(new PrintWriter(writer), "  ", "'").print(root)
-        def result = writer.toString()
-        assertEquals attributeExpectedOutputApos, result
+        printer = new XmlNodePrinter(pw, "  ", "'")
+        checkRoundtrip attributeInput, attributeExpectedOutputApos
     }
 
     void testContentWithSpecialSymbols() {
-        def root = new XmlParser().parseText(tagWithSpecialCharsInput)
-        def writer = new StringWriter()
-        new XmlNodePrinter(new PrintWriter(writer), "  ", "'").print(root)
-        def result = writer.toString()
-        assertEquals tagWithSpecialCharsOutput, result
+        printer = new XmlNodePrinter(pw, "  ", "'")
+        checkRoundtrip tagWithSpecialCharsOutput, tagWithSpecialCharsOutput
     }
 
     void testAttributeWithNamespaceInput() {
-        def root = new XmlParser().parseText(attributeWithNamespaceInput)
-        def writer = new StringWriter()
-        new XmlNodePrinter(new PrintWriter(writer), "  ").print(root)
-        def result = writer.toString()
-        assertEquals attributeWithNamespaceInput, result
+        checkRoundtrip attributeWithNamespaceInput, attributeWithNamespaceInput
+    }
+
+    private checkRoundtrip(String intext, String outtext) {
+        def root = parser.parseText(intext)
+        printer.print(root)
+        assertEquals outtext, writer.toString()
     }
 }

@@ -18,7 +18,7 @@ package groovy.util;
 import java.io.PrintWriter;
 
 /**
- * A helper class for printing indented text
+ * A helper class for printing indented text.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
@@ -28,6 +28,7 @@ public class IndentPrinter {
     private int indentLevel;
     private String indent;
     private PrintWriter out;
+    private final boolean addNewlines;
 
     public IndentPrinter() {
         this(new PrintWriter(System.out), "  ");
@@ -38,6 +39,11 @@ public class IndentPrinter {
     }
 
     public IndentPrinter(PrintWriter out, String indent) {
+        this(out, indent, true);
+    }
+
+    public IndentPrinter(PrintWriter out, String indent, boolean addNewlines) {
+        this.addNewlines = addNewlines;
         if (out == null) {
             /** @todo temporary hack */
             out = new PrintWriter(System.out);
@@ -49,7 +55,7 @@ public class IndentPrinter {
 
     public void println(String text) {
         out.print(text);
-        out.println();
+        println();
     }
 
     public void print(String text) {
@@ -67,7 +73,7 @@ public class IndentPrinter {
     }
 
     public void println() {
-        out.println();
+        if (addNewlines) out.print("\n");
     }
 
     public void incrementIndent() {
