@@ -1,5 +1,7 @@
 package groovy
 
+import org.codehaus.groovy.control.MultipleCompilationErrorsException
+
 /**
  * todo: add BreakContinueLabelWithClosureTest (when break is used to return from a Closure)
 
@@ -102,5 +104,47 @@ class BreakContinueLabelTest extends GroovyTestCase {
             log += 'never reached'
         }
         assertEquals '1323',log
+    }
+
+    void testBreakToLastLabelSucceeds() {
+        one:
+        two:
+        three:
+        for (i in 1..2) {
+            break three
+            fail()
+        }
+    }
+
+    void testBreakToOtherThanLastLabelCausesSyntaxError() {
+        try {
+            new GroovyShell().parse("one: two: three: while (true)\nbreak one")
+            fail()
+        } catch (MultipleCompilationErrorsException e) {
+            def syntaxError = e.errorCollector.getSyntaxError(0)
+            assert syntaxError
+            assert syntaxError.line == 2
+        }
+    }
+
+    void testContinueToLastLabelSucceeds() {
+        one:
+        two:
+        three:
+        for (i in 1..2) {
+            continue three
+            fail()
+        }
+    }
+
+    void testContinueToOtherThanLastLabelCausesSyntaxError() {
+        try {
+            new GroovyShell().parse("one: two: three: while (true)\ncontinue two")
+            fail()
+        } catch (MultipleCompilationErrorsException e) {
+            def syntaxError = e.errorCollector.getSyntaxError(0)
+            assert syntaxError
+            assert syntaxError.line == 2
+        }
     }
 }
