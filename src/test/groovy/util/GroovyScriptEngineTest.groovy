@@ -1,7 +1,9 @@
 /*
 	@author Chuck Tassoni
 */
-package groovy.util;
+package groovy.util
+
+import org.codehaus.groovy.control.CompilerConfiguration;
 
 class GroovyScriptEngineTest extends GroovyTestCase {
 
@@ -124,7 +126,21 @@ class GroovyScriptEngineTest extends GroovyTestCase {
     	
     	assertEquals('worked', binding.getVariable("returnedMessage") )
 	}
-	
+
+    /**
+     * Test for GROOVY-3281, to ensure details passed through CompilerConfiguration are inherited by GSE.
+     */
+    void testCompilerConfigurationInheritance() {
+        CompilerConfiguration cc = new CompilerConfiguration();
+        cc.scriptBaseClass = CustomBaseClass.name
+
+        GroovyClassLoader cl = new GroovyClassLoader(this.class.getClassLoader(), cc)
+        GroovyScriptEngine engine = new GroovyScriptEngine("src/test/groovy/util", cl)
+        def aScript = engine.createScript("groovyScriptEngineSampleScript.groovy", new Binding())
+
+        assert aScript instanceof CustomBaseClass
+    }
+
 	/*
 	 * The script passes the className of the class it's supposed to
 	 * instantiate to this method, expecting a newly instantiated object
@@ -177,3 +193,5 @@ class MyDimension {
 
     int hashCode() { width + 13 * height }
 }
+
+abstract class CustomBaseClass extends Script {}
