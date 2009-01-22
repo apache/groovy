@@ -16,6 +16,7 @@
 
 package org.codehaus.groovy.transform;
 
+import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
@@ -25,6 +26,8 @@ import org.codehaus.groovy.control.messages.SimpleMessage;
 
 import groovy.lang.GroovyClassLoader;
 
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
 import java.util.Collection;
 
 /**
@@ -38,6 +41,16 @@ import java.util.Collection;
  * @author Danno Ferrin (shemnon)
  */
 public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSupport {
+    
+    private final static Method valueMethod;
+    static {
+        try {
+            valueMethod = GroovyASTTransformationClass.class.getMethod("value");
+        } catch (Exception e) {
+            throw new GroovyBugError("unable to get value method of GroovyASTTransformationClass",e);
+        }
+    }
+    
     private SourceUnit source;
     private ClassNode classNode;
     private GroovyClassLoader transformLoader;
@@ -67,12 +80,12 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
     public void visitAnnotations(AnnotatedNode node) {
         super.visitAnnotations(node);
         for (AnnotationNode annotation : (Collection<AnnotationNode>) node.getAnnotations()) {
-            GroovyASTTransformationClass transformClassAnnotation = getTransformClassAnnotation(annotation.getClassNode());
+            Annotation transformClassAnnotation = getTransformClassAnnotation(annotation.getClassNode());
             if (transformClassAnnotation == null) {
                 // skip if there is no such annotation
                 continue;
             }
-            for (String transformClass : transformClassAnnotation.value()) {
+            for (String transformClass : getTransformClasses(transformClassAnnotation)) {
                 try {
                     Class klass = transformLoader.loadClass(transformClass, false, true, false);
                     if (ASTTransformation.class.isAssignableFrom(klass)) {
@@ -85,7 +98,7 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
                                         source));
                     }
                 } catch (ClassNotFoundException e) {
-                    source.getErrorCollector().addError(
+                    source.getErrorCollector().addErrorAndContinue(
                             new SimpleMessage(
                                     "Could not find class for Transformation Processor " + transformClass
                                     + " declared by " + annotation.getClassNode().getName(),
@@ -95,9 +108,29 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
         }
     }
 
-    private static GroovyASTTransformationClass getTransformClassAnnotation(ClassNode annotatedType) {
+    private static Annotation getTransformClassAnnotation(ClassNode annotatedType) {
         if (!annotatedType.isResolved()) return null;
-        return (GroovyASTTransformationClass) annotatedType.getTypeClass().getAnnotation(GroovyASTTransformationClass.class);
+
+        for (Annotation ann : annotatedType.getTypeClass().getAnnotations()) {
+            // because compiler clients are free to choose any GroovyClassLoader for
+            // resolving ClassNodeS such as annotatedType, we have to compare by name,
+            // and cannot cast the return value to GroovyASTTransformationClass
+            if (ann.annotationType().getName().equals(GroovyASTTransformationClass.class.getName())){
+                return ann;
+            }
+        }  
+
+        return null;
     }
+
+    private String[] getTransformClasses(Annotation transformClassAnnotation) {
+        try {
+            return (String[]) valueMethod.invoke(transformClassAnnotation);
+        } catch (Exception e) {
+            source.addException(e);
+            return new String[0];
+        }
+    }
+
 
 }

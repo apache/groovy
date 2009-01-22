@@ -119,9 +119,16 @@ public class CompilationUnit extends ProcessingUnit {
     /**
      * Initializes the CompilationUnit with a CodeSource for controlling
      * security stuff, a class loader for loading classes, and a class
-     * loader for loading AST transformations. Note that the latter must be
-     * able to load compiler classes, and must delegate such requests to the
-     * compiler's defining class loader.
+     * loader for loading AST transformations. 
+     * <b>Note</b> The transform loader must be
+     * able to load compiler classes. That means CompilationUnit.class.classLoader
+     * must be at last a parent to transformLoader. The other loader has no such constraint.
+     * 
+     * @param transformLoader - the loader for transforms
+     * @param loader - loader used to resolve classes against during compilation
+     * @param security - security setting for the compilation
+     * @param configuration - compilation configuration
+     * 
      */
     public CompilationUnit(CompilerConfiguration configuration, CodeSource security, 
                            GroovyClassLoader loader, GroovyClassLoader transformLoader) 
