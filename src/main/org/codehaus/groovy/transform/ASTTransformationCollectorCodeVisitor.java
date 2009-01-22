@@ -23,6 +23,8 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SimpleMessage;
 
+import groovy.lang.GroovyClassLoader;
+
 import java.util.Collection;
 
 /**
@@ -38,9 +40,11 @@ import java.util.Collection;
 public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSupport {
     private SourceUnit source;
     private ClassNode classNode;
+    private GroovyClassLoader transformLoader;
 
-    public ASTTransformationCollectorCodeVisitor(SourceUnit source) {
+    public ASTTransformationCollectorCodeVisitor(SourceUnit source, GroovyClassLoader transformLoader) {
         this.source = source;
+        this.transformLoader = transformLoader;
     }
 
     protected SourceUnit getSourceUnit() {
@@ -63,35 +67,37 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
     public void visitAnnotations(AnnotatedNode node) {
         super.visitAnnotations(node);
         for (AnnotationNode annotation : (Collection<AnnotationNode>) node.getAnnotations()) {
-            ClassNode annotationClassNode = annotation.getClassNode();
-            if (!annotationClassNode.isResolved()) continue;
-            GroovyASTTransformationClass transformClassAnnotation =
-                (GroovyASTTransformationClass) annotation.getClassNode().getTypeClass().getAnnotation(GroovyASTTransformationClass.class);
+            GroovyASTTransformationClass transformClassAnnotation = getTransformClassAnnotation(annotation.getClassNode());
             if (transformClassAnnotation == null) {
-                // stop if there is no appropriately typed annotation
+                // skip if there is no such annotation
                 continue;
             }
             for (String transformClass : transformClassAnnotation.value()) {
                 try {
-                    Class klass = source.getClassLoader().loadClass(transformClass, false, true, false);
+                    Class klass = transformLoader.loadClass(transformClass, false, true, false);
                     if (ASTTransformation.class.isAssignableFrom(klass)) {
                         classNode.addTransform(klass, annotation);
                     } else {
                         source.getErrorCollector().addError(
                                 new SimpleMessage(
-                                        "Not an ASTTransformatnion: " + transformClass
+                                        "Not an ASTTransformation: " + transformClass
                                         + " declared by " + annotation.getClassNode().getName(),
                                         source));
                     }
                 } catch (ClassNotFoundException e) {
                     source.getErrorCollector().addError(
                             new SimpleMessage(
-                                    "Could find class for Transformation Processor " + transformClass
+                                    "Could not find class for Transformation Processor " + transformClass
                                     + " declared by " + annotation.getClassNode().getName(),
                                     source));
                 }
             }
         }
+    }
+
+    private static GroovyASTTransformationClass getTransformClassAnnotation(ClassNode annotatedType) {
+        if (!annotatedType.isResolved()) return null;
+        return (GroovyASTTransformationClass) annotatedType.getTypeClass().getAnnotation(GroovyASTTransformationClass.class);
     }
 
 }
