@@ -78,6 +78,45 @@ public class GroovyScriptEngine implements ResourceConnector {
         private Map dependencies = new HashMap();
     }
 
+    private class ScriptClassLoader extends GroovyClassLoader {
+        public ScriptClassLoader(ClassLoader loader) {
+            super(loader);
+        }
+
+        public ScriptClassLoader(GroovyClassLoader parent) {
+            super(parent);
+        }
+
+        protected Class findClass(String className) throws ClassNotFoundException {
+            String filename = className.replace('.', File.separatorChar) + ".groovy";
+            URLConnection dependentScriptConn = null;
+            try {
+                dependentScriptConn = rc.getResourceConnection(filename);
+                ScriptCacheEntry currentCacheEntry = (ScriptCacheEntry) currentCacheEntryHolder.get();
+                if(currentCacheEntry != null)
+                    currentCacheEntry.dependencies.put(
+                            dependentScriptConn.getURL(),
+                            new Long(dependentScriptConn.getLastModified()));
+                return parseClass(dependentScriptConn.getInputStream(), filename);
+            } catch (ResourceException e1) {
+                throw new ClassNotFoundException("Could not read " + className + ": " + e1);
+            } catch (CompilationFailedException e2) {
+                throw new ClassNotFoundException("Syntax error in " + className + ": " + e2);
+            } catch (IOException e3) {
+                throw new ClassNotFoundException("Problem reading " + className + ": " + e3);
+            } finally {
+                try {
+                    if (dependentScriptConn != null && dependentScriptConn.getInputStream() != null) {
+                        dependentScriptConn.getInputStream().close();
+                    }
+                } catch (IOException e) {
+                    // IGNORE
+                }
+            }
+        }
+    }
+
+
     /**
      * Initialize a new GroovyClassLoader with the parentClassLoader passed as a parameter.
      * A GroovyScriptEngine should only use one GroovyClassLoader but since in version
@@ -91,35 +130,12 @@ public class GroovyScriptEngine implements ResourceConnector {
             groovyLoader =
                     (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
                         public Object run() {
-                            return new GroovyClassLoader(parentClassLoader) {
-                                protected Class findClass(String className) throws ClassNotFoundException {
-                                    String filename = className.replace('.', File.separatorChar) + ".groovy";
-                                    URLConnection dependentScriptConn = null;
-                                    try {
-                                        dependentScriptConn = rc.getResourceConnection(filename);
-                                        ScriptCacheEntry currentCacheEntry = (ScriptCacheEntry) currentCacheEntryHolder.get();
-                                        if(currentCacheEntry != null)
-	                                        currentCacheEntry.dependencies.put(
-	                                                dependentScriptConn.getURL(),
-	                                                new Long(dependentScriptConn.getLastModified()));
-                                        return parseClass(dependentScriptConn.getInputStream(), filename);
-                                    } catch (ResourceException e1) {
-                                        throw new ClassNotFoundException("Could not read " + className + ": " + e1);
-                                    } catch (CompilationFailedException e2) {
-                                        throw new ClassNotFoundException("Syntax error in " + className + ": " + e2);
-                                    } catch (IOException e3) {
-                                        throw new ClassNotFoundException("Problem reading " + className + ": " + e3);
-                                    } finally {
-                                        try {
-                                            if (dependentScriptConn != null && dependentScriptConn.getInputStream() != null) {
-                                                dependentScriptConn.getInputStream().close();
-                                            }
-                                        } catch (IOException e) {
-                                            // IGNORE
-                                        }
-                                    }
-                                }
-                            };
+                            ScriptClassLoader loader;
+                            if (parentClassLoader instanceof GroovyClassLoader)
+                                loader = new ScriptClassLoader((GroovyClassLoader)parentClassLoader);
+                            else
+                                loader = new ScriptClassLoader(parentClassLoader);
+                            return loader;
                         }
                     });
         }
