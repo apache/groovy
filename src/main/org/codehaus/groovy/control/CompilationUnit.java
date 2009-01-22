@@ -59,6 +59,7 @@ public class CompilationUnit extends ProcessingUnit {
     //---------------------------------------------------------------------------
     // CONSTRUCTION AND SUCH
 
+    private GroovyClassLoader transformLoader;  // Classloader for global and local transforms
 
     protected Map sources;    // The SourceUnits from which this unit is built
     protected Map summariesBySourceName;      // Summary of each SourceUnit
@@ -112,7 +113,21 @@ public class CompilationUnit extends ProcessingUnit {
      * security stuff and a class loader for loading classes.
      */
     public CompilationUnit(CompilerConfiguration configuration, CodeSource security, GroovyClassLoader loader) {
+        this(configuration, security, loader, null);
+    }
+
+    /**
+     * Initializes the CompilationUnit with a CodeSource for controlling
+     * security stuff, a class loader for loading classes, and a class
+     * loader for loading AST transformations. Note that the latter must be
+     * able to load compiler classes, and must delegate such requests to the
+     * compiler's defining class loader.
+     */
+    public CompilationUnit(CompilerConfiguration configuration, CodeSource security, 
+                           GroovyClassLoader loader, GroovyClassLoader transformLoader) 
+    {
         super(configuration, loader, null);
+        this.transformLoader = transformLoader;
         this.names = new ArrayList();
         this.queuedSources = new LinkedList();
         this.sources = new HashMap();
@@ -157,6 +172,15 @@ public class CompilationUnit extends ProcessingUnit {
         this.classgenCallback = null;
     }
 
+    /**
+     * Returns the class loader for loading AST transformations.
+     * @return - the transform class loader
+     */
+    public GroovyClassLoader getTransformLoader() {
+        return transformLoader == null ? getClassLoader() : transformLoader;
+    }
+    
+    
     public void addPhaseOperation(SourceUnitOperation op, int phase) {
         if (phase < 0 || phase > Phases.ALL) throw new IllegalArgumentException("phase " + phase + " is unknown");
         phaseOperations[phase].add(op);
