@@ -34,6 +34,9 @@ public class BigDecimalCachedClass extends DoubleCachedClass {
             return argument;
         }
 
-        return new BigDecimal(((Number) argument).doubleValue());
+        if (argument instanceof Number) {
+            return new BigDecimal(((Number) argument).doubleValue());
+        }
+        return argument;
     }
 }

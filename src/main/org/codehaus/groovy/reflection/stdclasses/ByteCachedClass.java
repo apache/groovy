@@ -29,8 +29,10 @@ public class ByteCachedClass extends NumberCachedClass {
         if (argument instanceof Byte) {
             return argument;
         }
-
-        return new Byte(((Number) argument).byteValue());
+        if (argument instanceof Number) {
+            return new Byte(((Number) argument).byteValue());
+        }
+        return argument;
     }
 
     public boolean isDirectlyAssignable(Object argument) {

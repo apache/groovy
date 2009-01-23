@@ -31,8 +31,10 @@ public class IntegerCachedClass extends NumberCachedClass {  // int, Integer
         if (argument instanceof Integer) {
             return argument;
         }
-
-        return new Integer(((Number) argument).intValue());
+        if (argument instanceof Number) {
+            return new Integer(((Number) argument).intValue());
+        }
+        return argument;
     }
 
     public boolean isDirectlyAssignable(Object argument) {

@@ -31,8 +31,10 @@ public class LongCachedClass extends NumberCachedClass {
         if (argument instanceof Long) {
             return argument;
         }
-
-        return new Long(((Number) argument).longValue());
+        if (argument instanceof Number) {
+            return new Long(((Number) argument).longValue());
+        }
+        return argument;
     }
 
     public boolean isDirectlyAssignable(Object argument) {
