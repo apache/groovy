@@ -3,7 +3,7 @@ package groovy.bugs
 class Groovy3305Bug extends GroovyTestCase {
     def void testSingleListExpandingToMultipleArgs() {
         assert foo1([1, "A"]) == "1,A"
-        assert foo2([BigDecimal.ZERO, "B"]) == "0,B"
+        assert foo2([new BigDecimal("0"), "B"]) == "0,B"
         assert foo3([(byte)3, "C"]) == "3,C"
         assert foo4([(float)4, "D"]) == "4.0,D"
         assert foo5([(long)5, "E"]) == "5,E"
