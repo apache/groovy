@@ -32,7 +32,10 @@ public class ShortCachedClass extends NumberCachedClass {
             return argument;
         }
 
-        return new Short(((Number) argument).shortValue());
+        if (argument instanceof Number) {
+            return new Short(((Number) argument).shortValue());
+        }
+        return argument;
     }
 
     public boolean isDirectlyAssignable(Object argument) {

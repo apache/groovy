@@ -39,11 +39,14 @@ public class DoubleCachedClass extends NumberCachedClass { // Double, double
             return argument;
         }
 
-        Double res = new Double(((Number) argument).doubleValue());
-        if (argument instanceof BigDecimal && res.isInfinite()) {
-            throw new IllegalArgumentException(Double.class + " out of range while converting from BigDecimal");
+        if (argument instanceof Number) {
+            Double res = new Double(((Number) argument).doubleValue());
+            if (argument instanceof BigDecimal && res.isInfinite()) {
+                throw new IllegalArgumentException(Double.class + " out of range while converting from BigDecimal");
+            }
+            return res;
         }
-        return res;
+        return argument;
     }
 
     public boolean isAssignableFrom(Class classToTransformFrom) {
