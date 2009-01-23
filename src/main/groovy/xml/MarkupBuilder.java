@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,13 +20,12 @@ import groovy.util.IndentPrinter;
 
 import java.io.PrintWriter;
 import java.io.Writer;
-import java.util.Iterator;
 import java.util.Map;
 
 /**
  * <p>A helper class for creating XML or HTML markup.  This implementation outputs
  * markup in a 'pretty printed' format.</p>
- * 
+ * <p/>
  * <p>Example:</p>
  * <pre>new MarkupBuilder().root {
  *   a( a1:'one' ) {
@@ -34,13 +33,13 @@ import java.util.Map;
  *     c( a2:'two', 'blah' )
  *   }
  * }</pre>
- * Will print the following to System.out:  
+ * Will print the following to System.out:
  * <pre>&lt;root&gt;
  *   &lt;a a1='one'&gt;
  *     &lt;b&gt;3 &amp;lt; 5&lt;/b&gt;
  *     &lt;c a2='two'&gt;blah&lt;/c&gt;
  *   &lt;/a&gt;
- * &lt;/root&gt;</pre> 
+ * &lt;/root&gt;</pre>
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Stefan Matthias Aust
@@ -59,6 +58,7 @@ public class MarkupBuilder extends BuilderSupport {
 
     /**
      * Prints markup to System.out
+     *
      * @see IndentPrinter#IndentPrinter()
      */
     public MarkupBuilder() {
@@ -66,7 +66,8 @@ public class MarkupBuilder extends BuilderSupport {
     }
 
     /**
-     * Sends markup to the given PrintWriter 
+     * Sends markup to the given PrintWriter
+     *
      * @see IndentPrinter#IndentPrinter(PrintWriter)
      */
     public MarkupBuilder(PrintWriter writer) {
@@ -74,7 +75,8 @@ public class MarkupBuilder extends BuilderSupport {
     }
 
     /**
-     * Sends markup to the given PrintWriter 
+     * Sends markup to the given PrintWriter
+     *
      * @see IndentPrinter#IndentPrinter(PrintWriter)
      */
     public MarkupBuilder(Writer writer) {
@@ -83,7 +85,7 @@ public class MarkupBuilder extends BuilderSupport {
 
     /**
      * Sends markup to the given IndentPrinter.  Use this option if you want
-     * to customize the indent used. 
+     * to customize the indent used.
      */
     public MarkupBuilder(IndentPrinter out) {
         this.out = out;
@@ -93,6 +95,7 @@ public class MarkupBuilder extends BuilderSupport {
      * Returns <code>true</code> if attribute values are output with
      * double quotes; <code>false</code> if single quotes are used.
      * By default, single quotes are used.
+     *
      * @return true if double quotes are used for attributes
      */
     public boolean getDoubleQuotes() {
@@ -102,8 +105,9 @@ public class MarkupBuilder extends BuilderSupport {
     /**
      * Sets whether the builder outputs attribute values in double
      * quotes or single quotes.
+     *
      * @param useDoubleQuotes If this parameter is <code>true</code>,
-     * double quotes are used; otherwise, single quotes are.
+     *                        double quotes are used; otherwise, single quotes are.
      */
     public void setDoubleQuotes(boolean useDoubleQuotes) {
         this.useDoubleQuotes = useDoubleQuotes;
@@ -113,7 +117,7 @@ public class MarkupBuilder extends BuilderSupport {
      * Determine whether null attributes will appear in the produced markup.
      *
      * @return <code>true</code>, if null attributes will be
-     * removed from the resulting markup.
+     *         removed from the resulting markup.
      */
     public boolean isOmitNullAttributes() {
         return omitNullAttributes;
@@ -123,10 +127,10 @@ public class MarkupBuilder extends BuilderSupport {
      * Allows null attributes to be removed from the generated markup.
      *
      * @param omitNullAttributes if <code>true</code>, null
-     * attributes will not be included in the resulting markup.
-     * If <code>false</code> null attributes will be included in the
-     * markup as empty strings regardless of the omitEmptyAttribute
-     * setting. Defaults to <code>false</code>.
+     *                           attributes will not be included in the resulting markup.
+     *                           If <code>false</code> null attributes will be included in the
+     *                           markup as empty strings regardless of the omitEmptyAttribute
+     *                           setting. Defaults to <code>false</code>.
      */
     public void setOmitNullAttributes(boolean omitNullAttributes) {
         this.omitNullAttributes = omitNullAttributes;
@@ -136,7 +140,7 @@ public class MarkupBuilder extends BuilderSupport {
      * Determine whether empty attributes will appear in the produced markup.
      *
      * @return <code>true</code>, if empty attributes will be
-     * removed from the resulting markup.
+     *         removed from the resulting markup.
      */
     public boolean isOmitEmptyAttributes() {
         return omitEmptyAttributes;
@@ -146,8 +150,8 @@ public class MarkupBuilder extends BuilderSupport {
      * Allows empty attributes to be removed from the generated markup.
      *
      * @param omitEmptyAttributes if <code>true</code>, empty
-     * attributes will not be included in the resulting markup.
-     * Defaults to <code>false</code>.
+     *                            attributes will not be included in the resulting markup.
+     *                            Defaults to <code>false</code>.
      */
     public void setOmitEmptyAttributes(boolean omitEmptyAttributes) {
         this.omitEmptyAttributes = omitEmptyAttributes;
@@ -157,12 +161,14 @@ public class MarkupBuilder extends BuilderSupport {
         return this.out;
     }
 
-    protected void setParent(Object parent, Object child) { }
+    protected void setParent(Object parent, Object child) {
+    }
 
     /**
-     * Property that may be called from within your builder closure to access 
-     * helper methods, namely {@link #yield(String)} and 
+     * Property that may be called from within your builder closure to access
+     * helper methods, namely {@link #yield(String)} and
      * {@link #yieldUnescaped(String)}.
+     *
      * @return this MarkupBuilder
      */
     public Object getMkp() {
@@ -172,6 +178,7 @@ public class MarkupBuilder extends BuilderSupport {
     /**
      * Prints data in the body of the current tag, escaping XML entities.
      * For example: <code>mkp.yield('5 &lt; 7')</code>
+     *
      * @param value text to print
      */
     public void yield(String value) {
@@ -181,6 +188,7 @@ public class MarkupBuilder extends BuilderSupport {
     /**
      * Print data in the body of the current tag.  Does not escape XML entities.
      * For example: <code>mkp.yieldUnescaped('I am &lt;i&gt;happy&lt;/i&gt;!')</code>.
+     *
      * @param value the text or markup to print.
      */
     public void yieldUnescaped(String value) {
@@ -207,7 +215,7 @@ public class MarkupBuilder extends BuilderSupport {
 
     protected Object createNode(Object name, Object value) {
         Object theName = getName(name);
-        if (value == null){
+        if (value == null) {
             return createNode(theName);
         } else {
             toState(2, theName);
@@ -221,8 +229,8 @@ public class MarkupBuilder extends BuilderSupport {
     protected Object createNode(Object name, Map attributes, Object value) {
         Object theName = getName(name);
         toState(1, theName);
-        for (Iterator iter = attributes.entrySet().iterator(); iter.hasNext();) {
-            Map.Entry entry = (Map.Entry) iter.next();
+        for (Object p : attributes.entrySet()) {
+            Map.Entry entry = (Map.Entry) p;
             Object attributeValue = entry.getValue();
             boolean skipNull = attributeValue == null && omitNullAttributes;
             boolean skipEmpty = attributeValue != null && omitEmptyAttributes &&
@@ -233,9 +241,9 @@ public class MarkupBuilder extends BuilderSupport {
                 print(entry.getKey().toString());
                 // Output the attribute value within quotes. Use whichever
                 // type of quotes are currently configured.
-                out.print(this.useDoubleQuotes ? "=\"" : "='");
+                out.print(useDoubleQuotes ? "=\"" : "='");
                 print(attributeValue == null ? "" : escapeAttributeValue(attributeValue.toString()));
-                out.print(this.useDoubleQuotes ? "\"" : "'");
+                out.print(useDoubleQuotes ? "\"" : "'");
             }
         }
         if (value != null) {
@@ -269,16 +277,16 @@ public class MarkupBuilder extends BuilderSupport {
      * output XML is valid. Escapes the following characters as corresponding
      * entities:
      * <ul>
-     *   <li>\' as &amp;apos;</li>
-     *   <li>&amp; as &amp;amp;</li>
-     *   <li>&lt; as &amp;lt;</li>
-     *   <li>&gt; as &amp;gt;</li>
+     * <li>\' as &amp;apos;</li>
+     * <li>&amp; as &amp;amp;</li>
+     * <li>&lt; as &amp;lt;</li>
+     * <li>&gt; as &amp;gt;</li>
      * </ul>
      *
      * @param value to be searched and replaced for XML special characters.
      * @return value with XML characters escaped
-     * @deprecated
      * @see #escapeXmlValue(String, boolean)
+     * @deprecated
      */
     protected String transformValue(String value) {
         // & has to be checked and replaced before others
@@ -286,7 +294,7 @@ public class MarkupBuilder extends BuilderSupport {
             value = value.replaceAll("&", "&amp;");
         }
         if (value.matches(".*\\'.*")) {
-            value = value.replaceAll("\\'", "&apos;");
+            value = value.replaceAll("\'", "&apos;");
         }
         if (value.matches(".*<.*")) {
             value = value.replaceAll("<", "&lt;");
@@ -300,9 +308,10 @@ public class MarkupBuilder extends BuilderSupport {
     /**
      * Escapes a string so that it can be used directly as an XML
      * attribute value.
+     *
      * @param value The string to escape.
      * @return A new string in which all characters that require escaping
-     * have been replaced with the corresponding XML entities.
+     *         have been replaced with the corresponding XML entities.
      * @see #escapeXmlValue(String, boolean)
      */
     private String escapeAttributeValue(String value) {
@@ -312,9 +321,10 @@ public class MarkupBuilder extends BuilderSupport {
     /**
      * Escapes a string so that it can be used directly in XML element
      * content.
+     *
      * @param value The string to escape.
      * @return A new string in which all characters that require escaping
-     * have been replaced with the corresponding XML entities.
+     *         have been replaced with the corresponding XML entities.
      * @see #escapeXmlValue(String, boolean)
      */
     private String escapeElementContent(String value) {
@@ -326,92 +336,70 @@ public class MarkupBuilder extends BuilderSupport {
      * It replaces the following characters with the corresponding XML
      * entities:
      * <ul>
-     *   <li>&amp; as &amp;amp;</li>
-     *   <li>&lt; as &amp;lt;</li>
-     *   <li>&gt; as &amp;gt;</li>
+     * <li>&amp; as &amp;amp;</li>
+     * <li>&lt; as &amp;lt;</li>
+     * <li>&gt; as &amp;gt;</li>
      * </ul>
      * If the string is to be added as an attribute value, these
      * characters are also escaped:
      * <ul>
-     *   <li>' as &amp;apos;</li>
+     * <li>' as &amp;apos;</li>
      * </ul>
-     * @param value The string to escape.
+     *
+     * @param value       The string to escape.
      * @param isAttrValue <code>true</code> if the string is to be used
-     * as an attribute value, otherwise <code>false</code>.
+     *                    as an attribute value, otherwise <code>false</code>.
      * @return A new string in which all characters that require escaping
-     * have been replaced with the corresponding XML entities.
+     *         have been replaced with the corresponding XML entities.
      */
     private String escapeXmlValue(String value, boolean isAttrValue) {
-        StringBuffer buffer = new StringBuffer(value);
-        for (int i = 0, n = buffer.length(); i < n; i++) {
-            switch (buffer.charAt(i)) {
+        if (value == null)
+            throw new IllegalArgumentException();
+
+        StringBuilder sb = null; // lazy create for edge-case efficiency
+        for (int i = 0, len = value.length(); i < len; i++) {
+            final char ch = value.charAt(i);
+            final String replacement = checkForReplacement(isAttrValue, ch);
+
+            if (replacement != null) {
+                // output differs from input; we write to our local buffer
+                if (sb == null) {
+                    sb = new StringBuilder((int) (1.1 * len));
+                    sb.append(value.substring(0, i));
+                }
+                sb.append(replacement);
+            } else if (sb != null) {
+                // earlier output differs from input; we write to our local buffer
+                sb.append(ch);
+            }
+        }
+
+        return sb == null ? value : sb.toString();
+    }
+
+    private String checkForReplacement(boolean isAttrValue, char ch) {
+        switch (ch) {
             case '&':
-                buffer.replace(i, i + 1, "&amp;");
-
-                // We're replacing a single character by a string of
-                // length 5, so we need to update the index variable
-                // and the total length.
-                i += 4;
-                n += 4;
-                break;
-
+                return "&amp;";
             case '<':
-                buffer.replace(i, i + 1, "&lt;");
-
-                // We're replacing a single character by a string of
-                // length 4, so we need to update the index variable
-                // and the total length.
-                i += 3;
-                n += 3;
-                break;
-
+                return "&lt;";
             case '>':
-                buffer.replace(i, i + 1, "&gt;");
-
-                // We're replacing a single character by a string of
-                // length 4, so we need to update the index variable
-                // and the total length.
-                i += 3;
-                n += 3;
-                break;
-
+                return "&gt;";
             case '"':
                 // The double quote is only escaped if the value is for
                 // an attribute and the builder is configured to output
                 // attribute values inside double quotes.
-                if (isAttrValue && this.useDoubleQuotes) {
-                    buffer.replace(i, i + 1, "&quot;");
-
-                    // We're replacing a single character by a string of
-                    // length 6, so we need to update the index variable
-                    // and the total length.
-                    i += 5;
-                    n += 5;
-                }
+                if (isAttrValue && useDoubleQuotes) return "&quot;";
                 break;
-
             case '\'':
                 // The apostrophe is only escaped if the value is for an
                 // attribute, as opposed to element content, and if the
                 // builder is configured to surround attribute values with
                 // single quotes.
-                if (isAttrValue && !this.useDoubleQuotes){
-                    buffer.replace(i, i + 1, "&apos;");
-
-                    // We're replacing a single character by a string of
-                    // length 6, so we need to update the index variable
-                    // and the total length.
-                    i += 5;
-                    n += 5;
-                }
+                if (isAttrValue && !useDoubleQuotes) return "&apos;";
                 break;
-
-            default:
-                break;
-            }
         }
-
-        return buffer.toString();
+        return null;
     }
 
     private void toState(int next, Object name) {
@@ -456,7 +444,7 @@ public class MarkupBuilder extends BuilderSupport {
                         if (!nodeIsEmpty) {
                             out.println();
                             out.incrementIndent();
-                            out.printIndent();                            
+                            out.printIndent();
                         }
                         out.print("<");
                         print(name);

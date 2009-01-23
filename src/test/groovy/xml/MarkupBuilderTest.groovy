@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,8 @@
  */
 package groovy.xml
 
-import org.custommonkey.xmlunit.*
+import org.custommonkey.xmlunit.Diff
+import org.custommonkey.xmlunit.XMLUnit
 
 /**
  * Tests that special XML chars are entitized by MarkupBuilder.
@@ -346,6 +347,12 @@ require escaping. The other characters consist of:
         xml.omitNullAttributes = true
         xml.element(att1:null, att2:'')
         assertExpectedXml "<element />"
+    }
+
+    void testWithIndentPrinter() {
+        xml = new MarkupBuilder(new IndentPrinter(new PrintWriter(writer), "", false))
+        xml.element(att1:'attr') { subelement('foo') }
+        assert writer.toString() == "<element att1='attr'><subelement>foo</subelement></element>"
     }
 
     private myMethod(x) {
