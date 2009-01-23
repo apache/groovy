@@ -139,7 +139,7 @@ public class Grape {
         if (enableGrapes) {
             GrapeEngine instance = getInstance();
             if (instance != null) {
-                if (!args.containsKey("autoDoanload")) {
+                if (!args.containsKey("autoDownload")) {
                     args.put("autoDownload" , Boolean.valueOf(enableAutoDownload));
                 }
                 instance.grab(args, dependencies);
