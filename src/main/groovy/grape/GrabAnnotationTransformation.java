@@ -158,7 +158,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                                     "grab",
                                     new ArgumentListExpression(me))));
 
-                        // instert at beginning so we have the classlaoder setup before the class is called
+                        // insert at beginning so we have the classlaoder setup before the class is called
                         classNode.addStaticInitializerStatements(grabInitializers, true);
                     }
                 }
