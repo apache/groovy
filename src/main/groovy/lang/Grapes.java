@@ -34,7 +34,7 @@ public @interface Grapes {
 
     /**
      * This will be pushed into the child grab annotations if the value is not
-     * set in the child annotaiton already.
+     * set in the child annotation already.
      *
      * This results in an effective change in the default value, which each &#064;Grab 
      * can still override
