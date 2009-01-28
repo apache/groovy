@@ -27,7 +27,7 @@ class GrapeIvyTest extends GroovyTestCase {
         [[groupId:'log4j', artifactId:'log4j', version:'1.1.3'],
             [groupId:'org.apache.poi', artifactId:'poi', version:'3.0.1-FINAL'],
             [groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,2.3)'],
-            [groupId:'org.apache.ivy', artifactId:'ivy', version:'2.0.0-beta1', conf:['default', 'optional']]
+            [groupId:'org.apache.ivy', artifactId:'ivy', version:'2.0.0', conf:['default', 'optional']]
         ].each {
             Grape.resolve([autoDownload:true, classLoader:new GroovyClassLoader()], it)
         }
@@ -191,25 +191,25 @@ class GrapeIvyTest extends GroovyTestCase {
     public void testConf() {
         GroovyClassLoader loader = new GroovyClassLoader()
 
-        def coreJars = ["ivy-2.0.0-beta1.jar"] as Set
+        def coreJars = ["ivy-2.0.0.jar"] as Set
         def optionalJars = [
-                "ant-1.6.jar",
+                "ant-1.6.2.jar",
+                "ant-trax-1.6.2.jar",
+                "ant-nodeps-1.6.2.jar",
                 "commons-httpclient-3.0.jar",
                 "junit-3.8.1.jar",
                 "commons-codec-1.2.jar",
-                "commons-cli-1.0.jar",
-                "commons-lang-1.0.jar",
                 "oro-2.0.8.jar",
                 "commons-vfs-1.0.jar",
                 "commons-logging-1.0.4.jar",
-                "jsch-0.1.25.jar",
+                "jsch-0.1.31.jar",
             ]  as Set
         def testJars = [
                 "junit-3.8.2.jar",
                 "commons-lang-2.3.jar",
             ]  as Set
 
-        Grape.grab(groupId:'org.apache.ivy', artifactId:'ivy', version:'2.0.0-beta1', classLoader:loader, preserveFiles:true)
+        Grape.grab(groupId:'org.apache.ivy', artifactId:'ivy', version:'2.0.0', classLoader:loader, preserveFiles:true)
         def jars = loader.getURLs().collect {URL it -> it.getPath().split('/')[-1]} as Set
         assert coreJars - jars == Collections.EMPTY_SET, "assert that all core jars are present"
         assert testJars - jars == testJars, "assert that no test jars are present"
@@ -217,7 +217,7 @@ class GrapeIvyTest extends GroovyTestCase {
         assert jars == coreJars, "assert that no extraneous jars are present"
 
         loader = new GroovyClassLoader()
-        Grape.grab(groupId:'org.apache.ivy', artifactId:'ivy', version:'2.0.0-beta1', conf:'optional', classLoader:loader)
+        Grape.grab(groupId:'org.apache.ivy', artifactId:'ivy', version:'2.0.0', conf:'optional', classLoader:loader)
         jars = loader.getURLs().collect {URL it -> it.getPath().split('/')[-1]} as Set
         assert coreJars - jars == coreJars, "assert that no core jars are present"
         assert testJars - jars == testJars, "assert that no test jars are present"
@@ -225,7 +225,7 @@ class GrapeIvyTest extends GroovyTestCase {
         assert jars == optionalJars, "assert that no extraneous jars are present"
 
         loader = new GroovyClassLoader()
-        Grape.grab(groupId:'org.apache.ivy', artifactId:'ivy', version:'2.0.0-beta1', conf:['default', 'optional'], classLoader:loader)
+        Grape.grab(groupId:'org.apache.ivy', artifactId:'ivy', version:'2.0.0', conf:['default', 'optional'], classLoader:loader)
         jars = loader.getURLs().collect {URL it -> it.getPath().split('/')[-1]} as Set
         assert coreJars - jars == Collections.EMPTY_SET, "assert that all core jars are present"
         assert testJars - jars == testJars, "assert that no test jars are present"
