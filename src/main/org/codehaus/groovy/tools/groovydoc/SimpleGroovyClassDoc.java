@@ -479,8 +479,12 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         return fullPathName == null ? "null" : fullPathName.replace('/', '.');
     }
 
-    public String simpleTypeName() {/*todo*/
-        return null;
+    // TODO remove dupe with SimpleGroovyType
+    public String simpleTypeName() {
+        String typeName = qualifiedTypeName();
+        int lastDot = typeName.lastIndexOf('.');
+        if (lastDot < 0) return typeName;
+        return typeName.substring(lastDot + 1);
     }
 
     public String typeName() {/*todo*/

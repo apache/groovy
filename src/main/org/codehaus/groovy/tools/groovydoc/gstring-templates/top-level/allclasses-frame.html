@@ -20,8 +20,9 @@ All Classes
 <TD NOWRAP><FONT CLASS="FrameItemFont">
 <!--<A HREF="org/omg/CORBA/ARG_IN.html" title="interface in org.omg.CORBA" target="classFrame"><I>ARG_IN</I></A>-->
 <!--<BR>-->
-<% for (classDoc in rootDoc.classes()) { %>
-<A HREF="${classDoc.getFullPathName()}.html" title="todo classDoc.getTitle()" target="classFrame">${classDoc.isInterface()?'<I>':''}${classDoc.name()}${classDoc.isInterface()?'</I>':''}</A>
+<% for (classDoc in rootDoc.classes()) {
+    def packageOrInnerName = classDoc.qualifiedTypeName() - ('.' + classDoc.simpleTypeName())
+    %><A HREF="${classDoc.getFullPathName()}.html" title="${classDoc.typeDescription.toLowerCase()} in ${packageOrInnerName}" target="classFrame">${classDoc.isInterface()?'<I>':''}${classDoc.name()}${classDoc.isInterface()?'</I>':''}</A>
 <BR>
 <% } %>
 	  

@@ -1,6 +1,6 @@
 <!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
-<HTML>
-<HEAD>
+<html>
+<head>
 <%
 def title = packageDoc.nameWithDots() + (props.windowTitle ? " ($props.windowTitle)" : "")
 // TODO enable errors(), enums() etc in SimpleGroovyPackageDoc then replace closures below
@@ -13,7 +13,7 @@ def classTypes = [
     "Annotation Type" : { it.isAnnotationType() }
 ]
 %>
-<TITLE>${title}</TITLE>
+<title>${title}</title>
 <META NAME="keywords" CONTENT="${packageDoc.nameWithDots()} package">
 <LINK REL ="stylesheet" TYPE="text/css" HREF="${packageDoc.getRelativeRootPath()}stylesheet.css" TITLE="Style">
 <SCRIPT type="text/javascript">
@@ -25,9 +25,60 @@ function windowTitle()
 <NOSCRIPT>
 </NOSCRIPT>
 
-</HEAD>
+</head>
 
-<BODY BGCOLOR="white" onload="windowTitle();">
+<body BGCOLOR="white" onload="windowTitle();">
+<hr>
+
+<!-- ========= START OF TOP NAVBAR ======= -->
+<a name="navbar_top"><!-- --></a>
+<table summary="" width="100%" border="0" cellpadding="1" cellspacing="0">
+<tbody><tr>
+<td colspan="2" class="NavBarCell1" bgcolor="#eeeeff">
+<a name="navbar_top_firstrow"><!-- --></a>
+<table summary="" border="0" cellpadding="0" cellspacing="3">
+  <tbody><tr valign="top" align="center">
+  <td class="NavBarCell1" bgcolor="#eeeeff">    <a href="${packageDoc.relativeRootPath}overview-summary.html"><font class="NavBarFont1"><b>Overview</b></font></a>&nbsp;</td>
+  <td class="NavBarCell1Rev" bgcolor="#ffffff"> &nbsp;<font class="NavBarFont1Rev"><b>Package</b></font>&nbsp;</td>
+  <td class="NavBarCell1" bgcolor="#eeeeff">    <font class="NavBarFont1">Class</font>&nbsp;</td>
+  <!--
+  <td class="NavBarCell1" bgcolor="#eeeeff">    <a href="overview-tree.html"><font class="NavBarFont1"><b>Tree</b></font></a>&nbsp;</td>
+  <td class="NavBarCell1" bgcolor="#eeeeff">    <a href="deprecated-list.html"><font class="NavBarFont1"><b>Deprecated</b></font></a>&nbsp;</td>
+  <td class="NavBarCell1" bgcolor="#eeeeff">    <a href="index-all.html"><font class="NavBarFont1"><b>Index</b></font></a>&nbsp;</td>
+  -->
+  <td class="NavBarCell1" bgcolor="#eeeeff">    <a href="${packageDoc.relativeRootPath}help-doc.html"><font class="NavBarFont1"><b>Help</b></font></a>&nbsp;</td>
+  </tr>
+</tbody></table>
+</td>
+<td rowspan="3" valign="top" align="right"><em>
+</em>
+</td>
+</tr>
+
+<tr>
+<td class="NavBarCell2" bgcolor="white"><font size="-2">
+&nbsp;PREV&nbsp;
+&nbsp;NEXT</font></td>
+<td class="NavBarCell2" bgcolor="white"><font size="-2">
+  <a href="index.html?overview-summary.html" target="_top"><b>FRAMES</b></a>  &nbsp;
+&nbsp;<a href="overview-summary.html" target="_top"><b>NO FRAMES</b></a>  &nbsp;
+&nbsp;<script type="text/javascript">
+  <!--
+  if(window==top) {
+    document.writeln('<A HREF="allclasses-noframe-todo.html"><B>All Classes</B></A>');
+  }
+  //-->
+</script>
+<noscript>
+  <A HREF="allclasses-noframe-todo.html"><B>All Classes</B></A>
+</noscript>
+
+
+</font></td>
+</tr>
+</tbody></table>
+<!-- ========= END OF TOP NAVBAR ========= -->
+
 
 <HR>
 <H2>
@@ -63,9 +114,10 @@ classTypes.each{ k, v ->
 <P>
 <DL>
 </DL>
-<HR>
+<hr>
     <% } %>
 <% } %>
-
-</BODY>
-</HTML>
+<p>${props['footer']?:""}</p>
+<hr>
+</body>
+</html>

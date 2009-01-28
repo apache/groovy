@@ -38,7 +38,9 @@ public class SimpleGroovyType implements GroovyType {
     }
 
     public String simpleTypeName() {
-        return typeName;
+        int lastDot = typeName.lastIndexOf('.');
+        if (lastDot < 0) return typeName;
+        return typeName.substring(lastDot + 1);
     }
 
 //    public GroovyAnnotationTypeDoc asAnnotationTypeDoc() {/*todo*/
