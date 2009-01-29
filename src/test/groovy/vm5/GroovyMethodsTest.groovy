@@ -73,6 +73,7 @@ class GroovyMethodsTest extends GroovyTestCase {
         assert result == 'fooabcxyz'
     }
 
+    // FIXME: This test has a race and may fail based on CPU load.
     void testThreadNaming() {
         def t = Thread.start("MyNamedThread"){
             sleep 200 // give ourselves time to find the thread
