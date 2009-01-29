@@ -210,66 +210,58 @@ public class DefaultGroovyMethodsSupport {
     }
 
     private static Collection createCollectionFromClass(Collection orig) {
-        if (orig instanceof AbstractCollection) {
-            try {
-                final Constructor constructor = orig.getClass().getConstructor();
-                return (Collection) constructor.newInstance();
-            } catch (Exception e) {
-                // ignore
-            }
+        try {
+            final Constructor constructor = orig.getClass().getConstructor();
+            return (Collection) constructor.newInstance();
+        } catch (Exception e) {
+            // ignore
         }
         return null;
     }
 
     private static Collection cloneCollectionFromClass(Collection orig) {
-        if (orig instanceof AbstractCollection) {
-			try {
-				final Constructor constructor = orig.getClass().getConstructor(Collection.class);
-				return (Collection) constructor.newInstance(orig);
-			} catch (Exception e) {
-				// ignore
-			}
-			try {
-				final Constructor constructor = orig.getClass().getConstructor();
-				final Collection result = (Collection) constructor.newInstance();
-				result.addAll(orig);
-				return result;
-			} catch (Exception e) {
-				// ignore
-			}
-		}
+        try {
+            final Constructor constructor = orig.getClass().getConstructor(Collection.class);
+            return (Collection) constructor.newInstance(orig);
+        } catch (Exception e) {
+            // ignore
+        }
+        try {
+            final Constructor constructor = orig.getClass().getConstructor();
+            final Collection result = (Collection) constructor.newInstance();
+            result.addAll(orig);
+            return result;
+        } catch (Exception e) {
+            // ignore
+        }
         return null;
     }
 
     private static Map createMapFromClass(Map orig) {
-        if ((orig instanceof AbstractMap) || (orig instanceof Hashtable)) {
-            try {
-                final Constructor constructor = orig.getClass().getConstructor();
-                return (Map) constructor.newInstance();
-            } catch (Exception e) {
-                // ignore
-            }
+        try {
+            final Constructor constructor = orig.getClass().getConstructor();
+            return (Map) constructor.newInstance();
+        } catch (Exception e) {
+            // ignore
         }
         return null;
     }
 
     private static Map cloneMapFromClass(Map orig) {
-        if ((orig instanceof AbstractMap) || (orig instanceof Hashtable)) {
-			try {
-				final Constructor constructor = orig.getClass().getConstructor(Map.class);
-				return (Map) constructor.newInstance(orig);
-			} catch (Exception e) {
-				// ignore
-			}
-			try {
-				final Constructor constructor = orig.getClass().getConstructor();
-				final Map result = (Map) constructor.newInstance();
-				result.putAll(orig);
-				return result;
-			} catch (Exception e) {
-				// ignore
-			}
-		}
+        try {
+            final Constructor constructor = orig.getClass().getConstructor(Map.class);
+            return (Map) constructor.newInstance(orig);
+        } catch (Exception e) {
+            // ignore
+        }
+        try {
+            final Constructor constructor = orig.getClass().getConstructor();
+            final Map result = (Map) constructor.newInstance();
+            result.putAll(orig);
+            return result;
+        } catch (Exception e) {
+            // ignore
+        }
         return null;
     }
 
