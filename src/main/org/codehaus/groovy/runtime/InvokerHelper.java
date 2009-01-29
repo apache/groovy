@@ -402,7 +402,12 @@ public class InvokerHelper {
                     // though the bindings will be ignored
                     script = new Script() {
                         public Object run() {
-                            object.invokeMethod("main", EMPTY_MAIN_ARGS);
+                            Object args = getBinding().getVariables().get("args");
+                            Object argsToPass = EMPTY_MAIN_ARGS;
+                            if(args != null && args instanceof String[]) {
+                                argsToPass = args;
+                            }
+                            object.invokeMethod("main", argsToPass);
                             return null;
                         }
                     };
