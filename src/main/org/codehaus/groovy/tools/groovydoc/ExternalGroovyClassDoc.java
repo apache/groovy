@@ -245,6 +245,10 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
         return false;
     }
 
+    public boolean isDeprecated() {
+        return false;
+    }
+
     public boolean isEnum() {
         return false;
     }
