@@ -34,11 +34,14 @@ public class FloatCachedClass extends NumberCachedClass {
             return argument;
         }
 
-        Float res = new Float(((Number) argument).floatValue());
-        if (argument instanceof BigDecimal && res.isInfinite()) {
-            throw new IllegalArgumentException(Float.class + " out of range while converting from BigDecimal");
+        if (argument instanceof Number) {
+            Float res = new Float(((Number) argument).floatValue());
+            if (argument instanceof BigDecimal && res.isInfinite()) {
+                throw new IllegalArgumentException(Float.class + " out of range while converting from BigDecimal");
+            }
+            return res;
         }
-        return res;
+        return argument;
     }
 
     public boolean isDirectlyAssignable(Object argument) {
