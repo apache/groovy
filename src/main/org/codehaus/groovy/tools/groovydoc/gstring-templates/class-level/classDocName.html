@@ -85,7 +85,9 @@ function windowTitle()
   <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="package-summary.html"><FONT CLASS="NavBarFont1"><B>Package</B></FONT></A>&nbsp;</TD>
   <TD BGCOLOR="#FFFFFF" CLASS="NavBarCell1Rev"> &nbsp;<FONT CLASS="NavBarFont1Rev"><B>Class</B></FONT>&nbsp;</TD>
   <!--<TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="package-tree.html"><FONT CLASS="NavBarFont1"><B>Tree</B></FONT></A>&nbsp;</TD>
+  -->
   <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="${classDoc.relativeRootPath}deprecated-list.html"><FONT CLASS="NavBarFont1"><B>Deprecated</B></FONT></A>&nbsp;</TD>
+<!--
   <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="${classDoc.relativeRootPath}index-all.html"><FONT CLASS="NavBarFont1"><B>Index</B></FONT></A>&nbsp;</TD>
 -->
   <TD BGCOLOR="#EEEEFF" CLASS="NavBarCell1">    <A HREF="${classDoc.relativeRootPath}help-doc.html"><FONT CLASS="NavBarFont1"><B>Help</B></FONT></A>&nbsp;</TD>
@@ -105,8 +107,16 @@ function windowTitle()
 <TD BGCOLOR="white" CLASS="NavBarCell2"><FONT SIZE="-2">
   <A HREF="${classDoc.relativeRootPath}index.html?${classDoc.fullPathName}.html" target="_top"><B>FRAMES</B></A>  &nbsp;
 &nbsp;<A HREF="${classDoc.name()}.html" target="_top"><B>NO FRAMES</B></A>  &nbsp;
-&nbsp;
-
+&nbsp;<script type="text/javascript">
+  <!--
+  if(window==top) {
+    document.writeln('<A HREF="${classDoc.relativeRootPath}allclasses-frame.html"><B>All Classes</B></A>');
+  }
+  //-->
+</script>
+<noscript>
+  <A HREF="${classDoc.relativeRootPath}allclasses-frame.html"><B>All Classes</B></A>
+</noscript>
 
 </FONT></TD>
 

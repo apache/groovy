@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,41 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package org.codehaus.groovy.groovydoc;
 
-package groovy.util;
+public interface GroovyTag {
 
-/**
- * @author sam
- */
-public class ScriptException extends Exception {
+    /**
+     * The tag name, e.g. "deprecated", "param", "see" or "author".
+     */
+    String name();
 
-	/**
-	 * 
-	 */
-	public ScriptException() {
-		super();
-	}
+    /**
+     * The optional parameter for tags like "throws" and "param".
+     */
+    String param();
 
-	/**
-	 * @param message
-	 */
-	public ScriptException(String message) {
-		super(message);
-	}
-
-	/**
-	 * @param message
-	 * @param cause
-	 */
-	public ScriptException(String message, Throwable cause) {
-		super(message, cause);
-	}
-
-	/**
-	 * @param cause
-	 */
-	public ScriptException(Throwable cause) {
-		super(cause);
-	}
-
+    /**
+     * The text associated with the tag.
+     */
+    String text();
 }

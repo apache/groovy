@@ -42,6 +42,10 @@ public class SimpleGroovyMemberDoc extends SimpleGroovyProgramElementDoc impleme
         return false;
     }
 
+    public GroovyClassDoc getBelongsToClass() {
+        return belongsToClass;
+    }
+
     public void setRawCommentText(String rawCommentText) {
         super.setRawCommentText(rawCommentText);
         setCommentText(((SimpleGroovyClassDoc)belongsToClass).replaceTags(rawCommentText));

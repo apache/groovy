@@ -7,14 +7,14 @@ ${packageDoc.nameWithDots()}
 <%
 // TODO enable errors(), enums() etc in SimpleGroovyPackageDoc then replace closures below
 def classTypes = [
-    "interface" : { it.isInterface() },
-    "class" : { it.isClass() && !it.parentClasses*.qualifiedTypeName().contains('java.lang.Throwable') },
-    "enum" : { it.isEnum() },
-    "exception" : { it.isClass() && it.parentClasses*.qualifiedTypeName().contains('java.lang.Exception') },
-    "error" : { it.isClass() && it.parentClasses*.qualifiedTypeName().contains('java.lang.Error') },
-    "annotation Type" : { it.isAnnotationType() }
+    "Interface" : { it.isInterface() },
+    "Class" : { it.isClass() && !it.parentClasses*.qualifiedTypeName().contains('java.lang.Throwable') },
+    "Enum" : { it.isEnum() },
+    "Exception" : { it.isClass() && it.parentClasses*.qualifiedTypeName().contains('java.lang.Exception') },
+    "Error" : { it.isClass() && it.parentClasses*.qualifiedTypeName().contains('java.lang.Error') },
+    "Annotation Type" : { it.isAnnotationType() }
 ]
-def pluralize = { name -> name[0].toUpperCase() + name[1..-1] + (name.endsWith("s") ? "es" : "s") }
+def pluralize = { name -> name + (name.endsWith("s") ? "es" : "s") }
 %>
 
 <META NAME="keywords" CONTENT="${packageDoc.name()} package">
@@ -39,7 +39,7 @@ ${pluralize(k)}</FONT>&nbsp;
 <FONT CLASS="FrameItemFont"><%
     for (classDoc in packageDoc.allClasses()) {
         if (v(classDoc)) {
-            %><BR><A HREF="${classDoc.name()}.html" title="${k} in ${packageDoc.nameWithDots()}" target="classFrame"><%
+            %><BR><A HREF="${classDoc.name()}.html" title="${k.toLowerCase()} in ${packageDoc.nameWithDots()}" target="classFrame"><%
             if (classDoc.isInterface()) { %><I><% }
             %>${classDoc.name()}<%
             if (classDoc.isInterface()) { %></I><% }
