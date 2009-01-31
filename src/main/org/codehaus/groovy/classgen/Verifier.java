@@ -791,7 +791,13 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                         Token.newSymbol(Types.EQUAL, fieldNode.getLineNumber(), fieldNode.getColumnNumber()),
                         expression));
             if (fieldNode.isStatic()) {
-                staticList.add(statement);
+            	// GROOVY-3311: pre-defined constants added by groovy compiler for numbers/characters should be
+            	// initialized first so that code dependent on it does not see their values as empty
+            	if (fieldNode.isStatic() && expression instanceof ConstantExpression) {
+                    staticList.add(0, statement);
+            	} else {
+                    staticList.add(statement);
+            	}
                 fieldNode.setInitialValueExpression(null); // to avoid double initialization in case of several constructors
                 /*
                  * If it is a statement for an explicitly declared static field inside an enum, store its
