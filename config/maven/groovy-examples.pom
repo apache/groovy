@@ -7,12 +7,26 @@
     <artifactId>groovy-examples</artifactId>
     <version>internal</version>
     <packaging>jar</packaging>
-    <!-- intentionally leaving off scope here as scope is probably overkill for examples -->
+    <repositories>
+        <repository>
+            <id>wso2 repo</id>
+            <name>wso2 maven2 repository</name>
+            <url>http://dist.wso2.org/maven2</url>
+        </repository>
+    </repositories>
     <dependencies>
         <dependency>
             <groupId>lucene</groupId>
             <artifactId>lucene</artifactId>
             <version>1.4.3</version>
+            <scope>compile</scope>
+        </dependency>
+        <!-- TODO: find better repo (above) and version (below) -->
+        <dependency>
+            <groupId>org.eclipse.osgi</groupId>
+            <artifactId>org.eclipse.osgi</artifactId>
+            <version>3.4.2.R34x_v20080826-1230</version>
+            <scope>compile</scope>
         </dependency>
         <dependency>
             <groupId>commons-httpclient</groupId>

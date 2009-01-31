@@ -289,7 +289,7 @@ Not found: ${groovyJar14path}
         </groovyc>
     </target>
 
-    <target name="compileExamples" depends="-initGroovyc,compileMain,-includeExamplesResources" unless="_skipExamples_"
+    <target name="compileExamples" depends="-init,-initGroovyc,compileMain,-includeExamplesResources" unless="_skipExamples_"
             description="Compile the Java and Groovy code in the examples source directory.">
         <mkdir dir="${examplesClassesDirectory}"/>
         <echo message="Compiling example code."/>
