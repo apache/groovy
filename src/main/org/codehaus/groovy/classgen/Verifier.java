@@ -793,7 +793,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             if (fieldNode.isStatic()) {
             	// GROOVY-3311: pre-defined constants added by groovy compiler for numbers/characters should be
             	// initialized first so that code dependent on it does not see their values as empty
-            	if (fieldNode.isStatic() && expression instanceof ConstantExpression) {
+            	if (expression instanceof ConstantExpression) {
                     staticList.add(0, statement);
             	} else {
                     staticList.add(statement);
