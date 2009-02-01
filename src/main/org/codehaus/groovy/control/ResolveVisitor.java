@@ -264,7 +264,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (val == null || val == NO_CLASS) {
             return false;
         } else {
-            setClass(type, (Class) val);
+            type.setRedirect((ClassNode)val);
             return true;
         }
     }
@@ -430,11 +430,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             return true;
         }
         return false;
-    }
-
-    private void setClass(ClassNode n, Class cls) {
-        ClassNode cn = ClassHelper.make(cls);
-        n.setRedirect(cn);
     }
 
     private void ambiguousClass(ClassNode type, ClassNode iType, String name) {
@@ -620,8 +615,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             return false;
         }*/
         if (cls == null) return false;
-        cachedClasses.put(name, cls);
-        setClass(type, cls);
+        ClassNode cn = ClassHelper.make(cls);
+        cachedClasses.put(name, cn);
+        type.setRedirect(cn);
         //NOTE: we might return false here even if we found a class,
         //      because  we want to give a possible script a chance to
         //      recompile. This can only be done if the loader was not
