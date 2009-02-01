@@ -806,7 +806,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             if (!isClass) {
                 // It was no primitive type, so next we see if the name,
                 // which is a vanilla name, starts with a lower case letter.
-                // In that case we change t to a LowerCaseClass to let the
+                // In that case we change it to a LowerCaseClass to let the
                 // compiler skip the resolving at several places in this class.
                 if (Character.isLowerCase(name.charAt(0))) {
                   t = new LowerCaseClass(name);
