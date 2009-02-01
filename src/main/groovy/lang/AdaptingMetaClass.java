@@ -17,14 +17,10 @@ package groovy.lang;
 
 /**
  * An interface for MetaClass instances that "adapt" other MetaClass instances such as a proxy or
- * delegating MetaClass
+ * delegating MetaClass.
  *
  * @author Graeme Rocher
- * @since 1.1
- *
- *        <p/>
- *        Created: Apr 16, 2007
- *        Time: 9:35:42 PM
+ * @since 1.5
  */
 public interface AdaptingMetaClass extends MetaClass {
 
