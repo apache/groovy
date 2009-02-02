@@ -17,7 +17,6 @@ package org.codehaus.groovy.runtime;
 
 import groovy.io.EncodingAwareBufferedWriter;
 import groovy.io.GroovyPrintWriter;
-import groovy.io.PlatformLineWriter;
 import groovy.lang.*;
 import groovy.sql.GroovyRowResult;
 import groovy.util.*;
