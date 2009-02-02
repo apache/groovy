@@ -41,16 +41,6 @@ import java.util.Collection;
  * @author Danno Ferrin (shemnon)
  */
 public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSupport {
-    
-    private final static Method valueMethod;
-    static {
-        try {
-            valueMethod = GroovyASTTransformationClass.class.getMethod("value");
-        } catch (Exception e) {
-            throw new GroovyBugError("unable to get value method of GroovyASTTransformationClass",e);
-        }
-    }
-    
     private SourceUnit source;
     private ClassNode classNode;
     private GroovyClassLoader transformLoader;
@@ -125,12 +115,11 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
 
     private String[] getTransformClasses(Annotation transformClassAnnotation) {
         try {
+            Method valueMethod = transformClassAnnotation.getClass().getMethod("value");
             return (String[]) valueMethod.invoke(transformClassAnnotation);
         } catch (Exception e) {
             source.addException(e);
             return new String[0];
         }
     }
-
-
 }
