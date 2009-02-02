@@ -192,9 +192,7 @@ public class DefaultGroovyStaticMethods {
      * @since 1.6.0
      */
     public static ResourceBundle getBundle(ResourceBundle self, String bundleName) {
-        return ResourceBundle.getBundle(bundleName,
-            Locale.getDefault(),
-            ReflectionUtils.getCallingClass().getClassLoader());
+        return getBundle(self,bundleName,Locale.getDefault());
     }
 
     /**
@@ -212,6 +210,6 @@ public class DefaultGroovyStaticMethods {
     public static ResourceBundle getBundle(ResourceBundle self, String bundleName, Locale locale) {
         ClassLoader targetCL = ReflectionUtils.getCallingClass().getClassLoader();
         if (targetCL == null) targetCL = ClassLoader.getSystemClassLoader();
-        return ResourceBundle.getBundle(bundleName, locale, targetCL);
+        return ResourceBundle.getBundle(bundleName, locale, targetCL);        
     }
 }
