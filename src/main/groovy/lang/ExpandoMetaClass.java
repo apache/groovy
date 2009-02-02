@@ -561,8 +561,13 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 	public Object invokeMethod(String name, Object args) {
         final Object[] argsArr = args instanceof Object[] ? (Object[]) args : new Object[]{args};
         MetaMethod metaMethod = myMetaClass.getMetaMethod(name, argsArr);
-        if (metaMethod != null)
-          return metaMethod.invoke(this, argsArr);
+        if (metaMethod != null) {
+            // we have to use doMethodInvoke here instead of simply invoke,
+            // because getMetaMethod may provide a method that can not be called
+            // without further argument transformation, which is done only in 
+            // doMethodInvoke
+            return metaMethod.doMethodInvoke(this, argsArr);
+        }
 
         if (argsArr.length == 2 && argsArr[0] instanceof Class && argsArr[1] instanceof Closure) {
             if (argsArr[0] == theClass)

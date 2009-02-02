@@ -735,6 +735,18 @@ class ExpandoMetaClassTest extends GroovyTestCase {
         def x = new Implemented()
         assertEquals "META js", x.format
     }
+    
+    void testHasMethodForVarg() {
+       // as of 1.6 a metaClass is often the HandleMetaclass, which delegates
+       // methods to an underlaying meta class. hasMethod is a Method on EMC
+       // that takes a Class[] vargs argument as last part. If that part is not
+       // given, then hasMetaMethod will still work, but the code actually 
+       // invoking the method in EMC.invokeMehod(String,Object) has to correct the
+       // arguments. 
+       def mc = "".metaClass
+       assert mc.class == org.codehaus.groovy.runtime.HandleMetaClass
+       "".metaClass.hasMetaMethod("trim")
+    }
 }
 
 interface InterfaceWithFormat {
