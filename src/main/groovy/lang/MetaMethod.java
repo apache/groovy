@@ -207,13 +207,13 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
 
     public final RuntimeException processDoMethodInvokeException (Exception e, Object object, Object [] argumentArray) {
         if (e instanceof IllegalArgumentException) {
-            //TODO: test if this is ok with new MOP, should be changed!
+            //TODO: test if this is OK with new MOP, should be changed!
             // we don't want the exception being unwrapped if it is a IllegalArgumentException
             // but in the case it is for example a IllegalThreadStateException, we want the unwrapping
             // from the runtime
             //Note: the reason we want unwrapping sometimes and sometimes not is that the method
-            // invokation tries to invoke the method with and then reacts with type transformation
-            // if the invokation failed here. This is ok for IllegalArgumentException, but it is
+            // invocation tries to invoke the method with and then reacts with type transformation
+            // if the invocation failed here. This is OK for IllegalArgumentException, but it is
             // possible that a Reflector will be used to execute the call and then an Exception from inside
             // the method is not wrapped in a InvocationTargetException and we will end here.
             boolean setReason = e.getClass() != IllegalArgumentException.class || this instanceof GeneratedMetaMethod;
@@ -227,7 +227,7 @@ public abstract class MetaMethod extends ParameterTypes implements Cloneable {
     }
 
     // This method is not final but it should be overloaded very carefully and only by generated methods
-    // there is no garantee that it will be called
+    // there is no guarantee that it will be called
     public Object doMethodInvoke(Object object, Object[] argumentArray) {
         argumentArray = coerceArgumentsToClasses(argumentArray);
         try {
