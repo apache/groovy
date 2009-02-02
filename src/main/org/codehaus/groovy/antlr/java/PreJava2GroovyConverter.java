@@ -45,7 +45,10 @@ public class PreJava2GroovyConverter extends VisitorAdapter{
     	// todo - incomplete, as body of do...while... should be executed at least once, which this doesn't provide.
     	swapTwoChildren(t);        		    	
     }
+
     /**
+     * Handle Arrays. Examples:
+     *
      * <pre>
      * String[] myArray = new String[] {"a","b","c"};
      * 

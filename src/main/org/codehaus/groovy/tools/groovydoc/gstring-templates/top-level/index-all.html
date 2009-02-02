@@ -9,6 +9,20 @@ def elementTypes = [
     "Field" : { it.fields() },
     "Enum Constant" : { it.enumConstants() },
 ]
+/*
+def dolink = { t, classDoc, boolean b ->
+    if (!t || t instanceof String) {
+        return classDoc.getDocUrl(t, b)
+    }
+    if (t instanceof org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc) {
+        return "<a href='" + classDoc.relativeRootPath + t.fullPathName + ".html'>" + (b ? t.qualifiedTypeName() : t.name()) + "</a>"
+    }
+    return classDoc.getDocUrl(t.qualifiedTypeName(), b)
+}
+def linkable = { t, classDoc -> dolink(t, classDoc, false) }
+*/
+def paramsOf = { n, classDoc, boolean brief -> n.parameters().collect{ param -> param.isTypeAvailable()?param.type():param.typeName() }.join(", ") }
+def nameFromParams = { n -> n.name() + '(' + n.parameters().collect{ param -> param.isTypeAvailable()?param.type().qualifiedTypeName():param.typeName() }.join(', ') + ')' }
 %>
 <html><head>
 <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
@@ -86,19 +100,35 @@ function windowTitle()
 <%
 letters.each { letter ->
     def entries = [] as TreeMap
-    def lowLetter = letter.toLowerCase()
+    def upperLower = "$letter${letter.toLowerCase()}"
     for (classDoc in rootDoc.classes()) {
-        if ("$letter$lowLetter".contains(classDoc.name()[0])) {
+        if (upperLower.contains(classDoc.name()[0])) {
             def packageOrInnerName = classDoc.qualifiedTypeName() - ('.' + classDoc.simpleTypeName())
             def packageName = classDoc.qualifiedTypeName() - ('.' + classDoc.name())
             def desc = classDoc.typeDescription + ' in '
-            entries[classDoc.name()] = """
+            entries[classDoc.name().toLowerCase()] = """
 <dt><a href="${classDoc.fullPathName}.html" title="${desc + packageOrInnerName}"><b>${classDoc.name()}</b></a> - ${desc}<a href="./${packageName.replace('.', '/')}/package-summary.html">${packageName}</a>
 </dt><dd>${classDoc.firstSentenceCommentText()}</dd>"""
         }
-// TODO methods and other elements
-//        elementTypes.each { k, v ->
-//        }
+        elementTypes.each { k, v ->
+            def elements = v(classDoc)
+            elements.each { e ->
+                if (upperLower.contains(e.name()[0])) {
+                    def packageOrInnerName = classDoc.qualifiedTypeName() - ('.' + classDoc.simpleTypeName())
+                    def packageName = classDoc.qualifiedTypeName() - ('.' + classDoc.name())
+                    def desc = k + ' in '
+                    if (k in ['Method', 'Constructor']) {
+                        entries[e.name().toLowerCase()] = """
+<dt><a href="${classDoc.fullPathName}.html#${nameFromParams(e)}" title="${desc + classDoc.name()}"><b>${e.name()}</b>(${paramsOf(e, classDoc, true)})</b></a> - ${desc}<a href="${classDoc.fullPathName}.html">${classDoc.name()}</a>
+</dt><dd>${e.firstSentenceCommentText()}</dd>"""
+                    } else {
+//                        entries[e.name()] = """
+//<dt><a href="${classDoc.fullPathName}.html#${e.name()}" title="${desc + classDoc.name()}"><b>${classDoc.name()}#${e.name()}</b></a> - ${desc}<a href="${classDoc.fullPathName}.html">${classDoc.name()}</a>
+//</dt><dd>${e.firstSentenceCommentText()}</dd>"""
+                    }
+                }
+            }
+        }
     }
 %>
 
