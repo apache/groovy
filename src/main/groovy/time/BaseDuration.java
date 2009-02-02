@@ -100,7 +100,11 @@ public abstract class BaseDuration {
         if (this.seconds != 0 || this.millis != 0)
             buffer.add(this.seconds + "." + DefaultGroovyMethods.padLeft("" + this.millis, new Integer(3), "0")  + " seconds");
 
-        return DefaultGroovyMethods.join(buffer, ", ");
+        if (buffer.size()!=0) {
+            return DefaultGroovyMethods.join(buffer, ", ");
+        } else {
+            return "0";
+        }
     }
 
     public abstract long toMilliseconds();
