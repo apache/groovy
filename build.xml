@@ -65,6 +65,10 @@ $Date$
         <contains string="${ant.java.version}" substring="1.6"/>
     </condition>
 
+    <presetdef name="javac">
+        <javac memoryMaximumSize="500m"/>
+    </presetdef>
+
     <target name="-initCoverage">
         <condition property="_forceCoverage_">
             <and>
