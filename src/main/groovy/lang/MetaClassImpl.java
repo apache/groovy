@@ -1353,13 +1353,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
     private MetaMethod pickStaticMethod(String methodName, Class[] arguments) {
         MetaMethod method = null;
+        MethodSelectionException mse = null;
         Object methods = getStaticMethods(theClass, methodName);
 
         if (!(methods instanceof FastArray) || !((FastArray)methods).isEmpty()) {
             try {
                 method = (MetaMethod) chooseMethod(methodName, methods, arguments);
-            } catch(MethodSelectionException mse) {
-                // ignore - so that next few ways of finding a method can be explored
+            } catch(MethodSelectionException msex) {
+                mse = msex;
             }
         }
         if (method == null && theClass != Class.class) {
@@ -1369,7 +1370,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (method == null) {
             method = (MetaMethod) chooseMethod(methodName, methods, MetaClassHelper.convertToTypeArray(arguments));
         }
-        return method;
+
+        if(method == null && mse != null) {
+        	throw mse;
+        } else {
+            return method;
+        }
     }
 
     /**
