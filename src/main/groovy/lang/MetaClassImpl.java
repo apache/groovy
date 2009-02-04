@@ -1160,7 +1160,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         Object methods = getStaticMethods(theClass, methodName);
 
         if (!(methods instanceof FastArray) || !((FastArray)methods).isEmpty()) {
-            method = (MetaMethod) chooseMethod(methodName, methods, arguments, false);
+            try {
+                method = (MetaMethod) chooseMethod(methodName, methods, arguments, false);
+            } catch(MethodSelectionException mse) {
+                // ignore - so that next few ways of finding a method can be explored
+            }
         }
         if (method == null && theClass != Class.class) {
             MetaClass classMetaClass = registry.getMetaClass(Class.class);
