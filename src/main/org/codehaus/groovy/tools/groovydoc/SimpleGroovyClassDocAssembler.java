@@ -391,17 +391,22 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         GroovySourceAST modifiers = t.childOfType(MODIFIERS);
         if (modifiers != null) {
             AST currentModifier = modifiers.getFirstChild();
-            boolean seenNonPublicVisibilityModifier = false;
+            boolean hasNonPublicVisibility = false;
+            boolean hasPublicVisibility = false;
             while (currentModifier != null) {
                 int type = currentModifier.getType();
                 switch (type) {
+                    case LITERAL_public:
+                        memberDoc.setPublic(true);
+                        hasPublicVisibility = true;
+                        break;
                     case LITERAL_protected:
                         memberDoc.setProtected(true);
-                        seenNonPublicVisibilityModifier = true;
+                        hasNonPublicVisibility = true;
                         break;
                     case LITERAL_private:
                         memberDoc.setPrivate(true);
-                        seenNonPublicVisibilityModifier = true;
+                        hasNonPublicVisibility = true;
                         break;
                     case LITERAL_static:
                         memberDoc.setStatic(true);
@@ -415,11 +420,11 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 }
                 currentModifier = currentModifier.getNextSibling();
             }
-            if (!seenNonPublicVisibilityModifier) {
+            if (!hasNonPublicVisibility && !(memberDoc instanceof GroovyFieldDoc)) {
                 // in groovy (and java asts turned into groovy by Groovifier), methods are assumed public, unless informed otherwise
-                if (!isGroovy || !(t instanceof GroovyFieldDoc)) memberDoc.setPublic(true);
-                return isGroovy;
+                memberDoc.setPublic(true);
             }
+            if (memberDoc instanceof GroovyFieldDoc && !hasNonPublicVisibility && !hasPublicVisibility && isGroovy) return true;
         }
         return false;
     }

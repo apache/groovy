@@ -11,7 +11,7 @@ def elementTypes = [
     "Enum Constant" : { it.enumConstants() },
 ]
 def isVisible = { !it.isPrivate() || props.privateScope }
-def paramsOf = { n, classDoc, boolean brief -> n.parameters().collect{ param -> param.isTypeAvailable()?param.type():param.typeName() }.join(", ") }
+def paramsOf = { n, classDoc, boolean brief -> n.parameters().collect{ param -> param.isTypeAvailable()?param.type().name():param.typeName() }.join(", ") }
 def nameFromParams = { n -> n.name() + '(' + n.parameters().collect{ param -> param.isTypeAvailable()?param.type().qualifiedTypeName():param.typeName() }.join(', ') + ')' }
 %>
 <html><head>
