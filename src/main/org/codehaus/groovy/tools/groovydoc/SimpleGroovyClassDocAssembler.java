@@ -24,6 +24,7 @@ import org.codehaus.groovy.antlr.treewalker.VisitorAdapter;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyConstructorDoc;
+import org.codehaus.groovy.groovydoc.GroovyFieldDoc;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -414,10 +415,10 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 }
                 currentModifier = currentModifier.getNextSibling();
             }
-            if (!seenNonPublicVisibilityModifier && isGroovy) {
+            if (!seenNonPublicVisibilityModifier) {
                 // in groovy (and java asts turned into groovy by Groovifier), methods are assumed public, unless informed otherwise
-                memberDoc.setPublic(true);
-                return true;
+                if (!isGroovy || !(t instanceof GroovyFieldDoc)) memberDoc.setPublic(true);
+                return isGroovy;
             }
         }
         return false;
@@ -429,19 +430,10 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         String result = "";
         LineColumn thisLineCol = new LineColumn(t.getLine(), t.getColumn());
         String text = sourceBuffer.getSnippet(lastLineCol, thisLineCol);
-//        if (classDocs.keySet().contains("groovy/lang/MetaClassImpl")) {
-//            System.out.print("getJavaDocCommentsBeforeNode[" + t.getText());
-//            System.out.println("," + t.getType() + "]:" + lastLineCol + ":" + thisLineCol);
-//        }
         if (text != null) {
             Matcher m = PREV_JAVADOC_COMMENT_PATTERN.matcher(text);
             if (m.find()) {
                 result = m.group(1);
-//                if (classDocs.keySet().contains("groovy/lang/MetaClassImpl")) {
-//                    System.out.println("-------------------\ntext:" + text);
-//                    System.out.println("-------------------\nresult:" + result);
-//                    System.out.println("-------------------\n");
-//                }
             }
         }
         if (isMajorType(t)) {
