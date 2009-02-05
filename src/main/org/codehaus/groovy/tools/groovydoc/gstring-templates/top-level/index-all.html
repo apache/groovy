@@ -7,6 +7,7 @@ def elementTypes = [
     "Method" : { it.methods() },
     "Constructor" : { it.constructors() },
     "Field" : { it.fields() },
+    "Property" : { it.properties() },
     "Enum Constant" : { it.enumConstants() },
 ]
 def isVisible = { !it.isPrivate() || props.privateScope }
@@ -115,6 +116,7 @@ letters.each { letter ->
 </dt><dd>${e.firstSentenceCommentText()}</dd>"""
                         break
                     case 'Field':
+                    case 'Property':
                     case 'Enum Constant':
                         entries[e.name().toLowerCase()+'_'+classLower] = """
 <dt><a href="${classDoc.fullPathName}.html#${e.name()}" title="${desc + classDoc.name()}"><b>${e.name()}</b></a> - ${desc}<a href="${classDoc.fullPathName}.html">${classDoc.name()}</a>

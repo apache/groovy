@@ -11,11 +11,12 @@ def classTypes = [
     "Error" : { it.isClass() && it.parentClasses*.qualifiedTypeName().contains('java.lang.Error') && it.isDeprecated() },
     "Annotation Type" : { it.isAnnotationType() && it.isDeprecated() }
 ]
+// TODO fields, properties, enum constants
 def methodTypes = [
     "Method" : { it.methods().findAll{ it.isDeprecated() } },
     "Constructor" : { it.constructors().findAll{ it.isDeprecated() } },
 ]
-def pluralize = { name -> name+ (name.endsWith("s") ? "es" : "s") }
+def pluralize = { name -> name + (name.endsWith("s") ? "es" : "s") }
 def dolink = { t, classDoc, boolean b ->
     if (!t || t instanceof String) {
         return classDoc.getDocUrl(t, b)

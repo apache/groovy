@@ -6,7 +6,9 @@
 <%
     def title = classDoc.name() + (props.docTitle ? " (${props.docTitle})" : "")
     def visibleFields = classDoc.fields().findAll{ !it.isPrivate() || props.privateScope }
+    def visibleProperties = classDoc.properties().findAll{ !it.isPrivate() || props.privateScope }
     boolean hasFields = !classDoc.isAnnotationType() && visibleFields.size() > 0
+    boolean hasProperties = !classDoc.isAnnotationType() && visibleProperties.size() > 0
     boolean hasElements = classDoc.isAnnotationType() && visibleFields.size() > 0
     boolean hasConstructors = classDoc.constructors().size() > 0
     boolean hasNested = classDoc.innerClasses().size() > 0
@@ -133,6 +135,7 @@ SUMMARY:&nbsp;<%
             %>&nbsp;|&nbsp;<% if (hasEnumConstants) { %><A HREF="#enum_constant_summary"><% } %>ENUM CONSTANTS<% if (hasEnumConstants) { %></A><% }
         }
         %>&nbsp;|&nbsp;<% if (hasFields) { %><A HREF="#field_summary"><% } %>FIELD<% if (hasFields) { %></A><% }
+        if (hasProperties) { %>&nbsp;|&nbsp;<A HREF="#property_summary">PROPERTY</A><% }
         if (classDoc.isClass()) {
             %>&nbsp;|&nbsp;<% if (hasConstructors) { %><A HREF="#constructor_summary"><% } %>CONSTR<% if (hasConstructors) { %></A><% }
         }
@@ -148,6 +151,7 @@ DETAIL:&nbsp;<%
             if (hasEnumConstants) { %><A HREF="#enum_constant_detail"><% } %>ENUM CONSTANTS<% if (hasEnumConstants) { %></A>&nbsp;|&nbsp;<% }
         }
         if (hasFields) { %><A HREF="#field_detail"><% } %>FIELD<% if (hasFields) { %></A><% }
+        if (hasProperties) { %>&nbsp;|&nbsp;<A HREF="#prop_detail">PROPERTY</A><% }
         if (classDoc.isClass()) {
             %>&nbsp;|&nbsp;<% if (hasConstructors) { %><A HREF="#constructor_detail"><% } %>CONSTR<% if (hasConstructors) { %></A><% }
         }
@@ -322,6 +326,30 @@ ${classDoc.commentText()}
     }
 %>
 
+<!-- =========== PROPERTY SUMMARY =========== -->
+
+<A NAME="property_summary"><!-- --></A>
+<% if (hasProperties) { %>
+    <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
+    <TR BGCOLOR="#CCCCFF" CLASS="TableHeadingColor">
+    <TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2">
+    <B>Property Summary</B></FONT></TH>
+    </TR>
+    <% for (prop in visibleProperties) { %>
+        <TR BGCOLOR="white" CLASS="TableRowColor">
+        <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
+        <CODE>${modifiersBrief(prop) + linkable(prop.type())}</CODE></FONT></TD>
+        <TD>
+            <CODE><B><A HREF="#${prop.name()}">${prop.name()}</A></B></CODE>
+            <BR>
+            <P>${prop.firstSentenceCommentText()}</P>
+        </TD>
+        </TR>
+    <% } %>
+    </TABLE>
+    &nbsp;
+<% } %>
+
 <!-- =========== ELEMENT SUMMARY =========== -->
 
 <% if (hasElements) { %>
@@ -488,6 +516,29 @@ ${classDoc.commentText()}
         <PRE>${annotations(field, '\n') + modifiers(field) + linkable(field.type())} <B>${field.name()}</B></PRE>
         <DL>
         <DD>${field.commentText()}
+        </DD>
+        <P>
+        </DL>
+        <HR>
+    <% } %>
+    &nbsp;
+<% } %>
+
+<!-- =========== PROPERTY DETAIL =========== -->
+
+<A NAME="prop_detail"><!-- --></A>
+<% if (hasProperties) { %>
+    <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
+    <TR BGCOLOR="#CCCCFF" CLASS="TableHeadingColor">
+    <TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2">
+    <B>Property Detail</B></FONT></TH>
+    </TR>
+    </TABLE>
+    <% for (prop in visibleProperties) { %>
+        <A NAME="${prop.name()}"><!-- --></A><H3>${prop.name()}</H3>
+        <PRE>${annotations(prop, '\n') + modifiers(prop) + linkable(prop.type())} <B>${prop.name()}</B></PRE>
+        <DL>
+        <DD>${prop.commentText()}
         </DD>
         <P>
         </DL>

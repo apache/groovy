@@ -43,12 +43,14 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     private LineColumn lastLineCol;
     private boolean insideEnum;
     private Map<String, SimpleGroovyClassDoc> foundClasses;
+    private boolean isGroovy;
 
     public SimpleGroovyClassDocAssembler(String packagePath, String file, SourceBuffer sourceBuffer, List<LinkArgument> links, Properties properties, boolean isGroovy) {
         this.sourceBuffer = sourceBuffer;
         this.packagePath = packagePath;
         this.links = links;
         this.properties = properties;
+        this.isGroovy = isGroovy;
 
         stack = new Stack<GroovySourceAST>();
         classDocs = new HashMap<String, GroovyClassDoc>();
@@ -238,10 +240,14 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 String fieldName = getIdentFor(t);
                 currentFieldDoc = new SimpleGroovyFieldDoc(fieldName, currentClassDoc);
                 currentFieldDoc.setRawCommentText(getJavaDocCommentsBeforeNode(t));
-                processModifiers(t, currentFieldDoc);
+                boolean isProp = processModifiers(t, currentFieldDoc);
                 currentFieldDoc.setType(new SimpleGroovyType(getTypeOrDefault(t)));
                 processAnnotations(t, currentFieldDoc);
-                currentClassDoc.add(currentFieldDoc);
+                if (isProp) {
+                    currentClassDoc.addProperty(currentFieldDoc);
+                } else {
+                    currentClassDoc.add(currentFieldDoc);
+                }
             }
         }
     }
@@ -380,7 +386,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         return grandParentNode != null && grandParentNode.getType() == LITERAL_new;
     }
 
-    private void processModifiers(GroovySourceAST t, SimpleGroovyMemberDoc memberDoc) {
+    private boolean processModifiers(GroovySourceAST t, SimpleGroovyMemberDoc memberDoc) {
         GroovySourceAST modifiers = t.childOfType(MODIFIERS);
         if (modifiers != null) {
             AST currentModifier = modifiers.getFirstChild();
@@ -408,11 +414,13 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 }
                 currentModifier = currentModifier.getNextSibling();
             }
-            if (!seenNonPublicVisibilityModifier) {
+            if (!seenNonPublicVisibilityModifier && isGroovy) {
                 // in groovy (and java asts turned into groovy by Groovifier), methods are assumed public, unless informed otherwise
                 memberDoc.setPublic(true);
+                return true;
             }
         }
+        return false;
     }
 
     // todo - If no comment before node, then get comment from same node on parent class - ouch!
