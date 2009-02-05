@@ -269,6 +269,9 @@ public class Groovydoc extends Task {
                         TEMPLATE_BASEDIR + "top-level/overview-frame.html", // needs all package names
                         TEMPLATE_BASEDIR + "top-level/allclasses-frame.html", // needs all packages / class names
                         TEMPLATE_BASEDIR + "top-level/overview-summary.html", // needs all packages
+                        TEMPLATE_BASEDIR + "top-level/help-doc.html",
+                        TEMPLATE_BASEDIR + "top-level/index-all.html",
+                        TEMPLATE_BASEDIR + "top-level/deprecated-list.html",
                         TEMPLATE_BASEDIR + "top-level/stylesheet.css",
                         TEMPLATE_BASEDIR + "top-level/inherit.gif",
                 },

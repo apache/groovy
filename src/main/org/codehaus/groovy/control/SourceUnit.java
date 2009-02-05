@@ -72,7 +72,8 @@ public class SourceUnit extends ProcessingUnit {
     /**
      * A descriptive name of the source unit. This name shouldn't
      * be used for controlling the SourceUnit, it is only for error
-     * messages
+     * messages and to determine the name of the class for
+     * a script.
      */
     protected String name;
 

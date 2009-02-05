@@ -51,8 +51,9 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * A MetaClass that implements GroovyObject and behaves like an Expando, allowing the addition of new methods on the fly
+ * A MetaClass that implements GroovyObject and behaves like an Expando, allowing the addition of new methods on the fly.
  *
+ * Some examples of usage:
  * <code><pre>
  * // defines or replaces instance method:
  * metaClass.myMethod = { args -> }
@@ -77,7 +78,6 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * // defines a new property with an initial value of "blah"
  * metaClass.myProperty = "blah"
- *
  * </code></pre>
  *
  * By default methods are only allowed to be added before initialize() is called. In other words you create a new
@@ -95,7 +95,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * for long periods because as soon as the JVM is running low on memory or the thread dies they will be garbage collected.
  *
  * @author Graeme Rocher
- * @since 1.1
+ * @since 1.5
  */
 public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 

@@ -24,6 +24,7 @@ import org.codehaus.groovy.antlr.treewalker.VisitorAdapter;
 import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyConstructorDoc;
+import org.codehaus.groovy.groovydoc.GroovyFieldDoc;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -43,12 +44,14 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     private LineColumn lastLineCol;
     private boolean insideEnum;
     private Map<String, SimpleGroovyClassDoc> foundClasses;
+    private boolean isGroovy;
 
     public SimpleGroovyClassDocAssembler(String packagePath, String file, SourceBuffer sourceBuffer, List<LinkArgument> links, Properties properties, boolean isGroovy) {
         this.sourceBuffer = sourceBuffer;
         this.packagePath = packagePath;
         this.links = links;
         this.properties = properties;
+        this.isGroovy = isGroovy;
 
         stack = new Stack<GroovySourceAST>();
         classDocs = new HashMap<String, GroovyClassDoc>();
@@ -238,10 +241,14 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 String fieldName = getIdentFor(t);
                 currentFieldDoc = new SimpleGroovyFieldDoc(fieldName, currentClassDoc);
                 currentFieldDoc.setRawCommentText(getJavaDocCommentsBeforeNode(t));
-                processModifiers(t, currentFieldDoc);
+                boolean isProp = processModifiers(t, currentFieldDoc);
                 currentFieldDoc.setType(new SimpleGroovyType(getTypeOrDefault(t)));
                 processAnnotations(t, currentFieldDoc);
-                currentClassDoc.add(currentFieldDoc);
+                if (isProp) {
+                    currentClassDoc.addProperty(currentFieldDoc);
+                } else {
+                    currentClassDoc.add(currentFieldDoc);
+                }
             }
         }
     }
@@ -380,21 +387,26 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         return grandParentNode != null && grandParentNode.getType() == LITERAL_new;
     }
 
-    private void processModifiers(GroovySourceAST t, SimpleGroovyMemberDoc memberDoc) {
+    private boolean processModifiers(GroovySourceAST t, SimpleGroovyMemberDoc memberDoc) {
         GroovySourceAST modifiers = t.childOfType(MODIFIERS);
         if (modifiers != null) {
             AST currentModifier = modifiers.getFirstChild();
-            boolean seenNonPublicVisibilityModifier = false;
+            boolean hasNonPublicVisibility = false;
+            boolean hasPublicVisibility = false;
             while (currentModifier != null) {
                 int type = currentModifier.getType();
                 switch (type) {
+                    case LITERAL_public:
+                        memberDoc.setPublic(true);
+                        hasPublicVisibility = true;
+                        break;
                     case LITERAL_protected:
                         memberDoc.setProtected(true);
-                        seenNonPublicVisibilityModifier = true;
+                        hasNonPublicVisibility = true;
                         break;
                     case LITERAL_private:
                         memberDoc.setPrivate(true);
-                        seenNonPublicVisibilityModifier = true;
+                        hasNonPublicVisibility = true;
                         break;
                     case LITERAL_static:
                         memberDoc.setStatic(true);
@@ -408,11 +420,13 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 }
                 currentModifier = currentModifier.getNextSibling();
             }
-            if (!seenNonPublicVisibilityModifier) {
+            if (!hasNonPublicVisibility && !(memberDoc instanceof GroovyFieldDoc)) {
                 // in groovy (and java asts turned into groovy by Groovifier), methods are assumed public, unless informed otherwise
                 memberDoc.setPublic(true);
             }
+            if (memberDoc instanceof GroovyFieldDoc && !hasNonPublicVisibility && !hasPublicVisibility && isGroovy) return true;
         }
+        return false;
     }
 
     // todo - If no comment before node, then get comment from same node on parent class - ouch!
@@ -437,7 +451,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         if (t == null) return false;
         int tt = t.getType();
         return tt == CLASS_DEF || tt == INTERFACE_DEF || tt == METHOD_DEF || tt == ANNOTATION_DEF ||
-                tt == VARIABLE_DEF || tt == ANNOTATION_FIELD_DEF || tt == ENUM_CONSTANT_DEF;
+                tt == VARIABLE_DEF || tt == ANNOTATION_FIELD_DEF || tt == ENUM_CONSTANT_DEF || tt == CTOR_IDENT;
     }
 
     private String getText(GroovySourceAST node) {

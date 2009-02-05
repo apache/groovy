@@ -25,6 +25,7 @@ public interface GroovyDoc extends Comparable {
     boolean isAnnotationTypeElement();
     boolean isClass();
     boolean isConstructor();
+    boolean isDeprecated();
     boolean isEnum();
     boolean isEnumConstant();
     boolean isError();

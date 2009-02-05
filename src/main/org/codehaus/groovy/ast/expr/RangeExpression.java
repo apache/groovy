@@ -18,9 +18,9 @@ package org.codehaus.groovy.ast.expr;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
- * Represents a range expression such as for iterating
- * <pre>for i in 0..10 {...}
- * </pre>
+ * Represents a range expression such as for iterating.
+ * E.g.:
+ * <pre>for i in 0..10 {...}</pre>
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$

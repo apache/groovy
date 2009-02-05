@@ -29,6 +29,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
 
     private final List<GroovyConstructorDoc> constructors;
     private final List<GroovyFieldDoc> fields;
+    private final List<GroovyFieldDoc> properties;
     private final List<GroovyFieldDoc> enumConstants;
     private final List<GroovyMethodDoc> methods;
     private final List<String> importedClassesAndPackages;
@@ -47,6 +48,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         this.links = links;
         constructors = new ArrayList<GroovyConstructorDoc>();
         fields = new ArrayList<GroovyFieldDoc>();
+        properties = new ArrayList<GroovyFieldDoc>();
         enumConstants = new ArrayList<GroovyFieldDoc>();
         methods = new ArrayList<GroovyMethodDoc>();
         interfaceNames = new ArrayList<String>();
@@ -101,6 +103,18 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
 
     public boolean add(GroovyFieldDoc field) {
         return fields.add(field);
+    }
+
+    /**
+     * returns a sorted array of properties
+     */
+    public GroovyFieldDoc[] properties() {
+        Collections.sort(properties);
+        return properties.toArray(new GroovyFieldDoc[properties.size()]);
+    }
+
+    public boolean addProperty(GroovyFieldDoc property) {
+        return properties.add(property);
     }
 
     /**
@@ -479,8 +493,12 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         return fullPathName == null ? "null" : fullPathName.replace('/', '.');
     }
 
-    public String simpleTypeName() {/*todo*/
-        return null;
+    // TODO remove dupe with SimpleGroovyType
+    public String simpleTypeName() {
+        String typeName = qualifiedTypeName();
+        int lastDot = typeName.lastIndexOf('.');
+        if (lastDot < 0) return typeName;
+        return typeName.substring(lastDot + 1);
     }
 
     public String typeName() {/*todo*/

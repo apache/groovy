@@ -125,7 +125,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                             }
                         }
                     }
-                    // don't worry if it's not a ListExpression, aqnd AnnotationConstant, etc.
+                    // don't worry if it's not a ListExpression, or AnnotationConstant, etc.
                     // the rest of GroovyC will flag it as a syntax error later, so we don't
                     // need to raise the error ourselves
                 }
@@ -158,7 +158,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                                     "grab",
                                     new ArgumentListExpression(me))));
 
-                        // instert at beginning so we have the classlaoder setup before the class is called
+                        // insert at beginning so we have the classloader set up before the class is called
                         classNode.addStaticInitializerStatements(grabInitializers, true);
                     }
                 }
@@ -184,7 +184,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
     }
 
     /**
-     * Addes the annotation to the internal target list if a match is found
+     * Adds the annotation to the internal target list if a match is found
      * @param node
      */
     public void visitAnnotations(AnnotatedNode node) {
