@@ -105,6 +105,10 @@ public class ExternalGroovyClassDoc implements GroovyClassDoc {
         return new GroovyFieldDoc[0];
     }
 
+    public GroovyFieldDoc[] properties() {
+        return new GroovyFieldDoc[0];
+    }
+
     public GroovyFieldDoc[] fields(boolean filter) {
         return new GroovyFieldDoc[0];
     }
