@@ -166,9 +166,59 @@ class ServletBindingTest extends GroovyTestCase {
                 context as ServletContext
         )
 
-        assert writer == binding.getVariable("out")
+        assert binding.getVariable("out") instanceof PrintWriter
         assert binding.getVariable("html") instanceof groovy.xml.MarkupBuilder
-        assert outputStream == binding.getVariable("sout")
+        assert binding.getVariable("sout") instanceof ServletOutputStream
+    }
+    
+    void testOutSoutWriteException() {
+
+        def writer = new PrintWriter(new StringWriter())
+        def outputStream = new OutputStreamStub()
+
+        def response = [
+                getWriter: {writer},
+                getOutputStream: {outputStream}] as HttpServletResponse
+
+        def request = makeDefaultRequest()
+
+        def binding = new ServletBinding(
+                request as HttpServletRequest,
+                response as HttpServletResponse,
+                context as ServletContext
+        )
+
+        binding.out.print("foo")
+        binding.html.foo()
+        shouldFail(IllegalStateException) {
+            binding.sout.print("foo")
+        }
+    }
+    
+    void testSoutOutWriteException() {
+
+        def writer = new PrintWriter(new StringWriter())
+        def outputStream = new OutputStreamStub()
+
+        def response = [
+                getWriter: {writer},
+                getOutputStream: {outputStream}] as HttpServletResponse
+
+        def request = makeDefaultRequest()
+
+        def binding = new ServletBinding(
+                request as HttpServletRequest,
+                response as HttpServletResponse,
+                context as ServletContext
+        )
+
+        binding.sout.print("foo")
+        shouldFail(IllegalStateException) {
+            binding.out.print("foo")
+        }
+        shouldFail(IllegalStateException) {
+            binding.html.foo()
+        }
     }
 
     /**
