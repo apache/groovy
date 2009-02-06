@@ -927,6 +927,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 return delegateMetaClass.invokeMethod(closure.getClass(), closure, CLOSURE_DO_CALL_METHOD, originalArguments, false, fromInsideClass);
             }
 
+            if(object instanceof Script) {
+            	Object bindingVar = ((Script)object).getBinding().getVariables().get(methodName);
+            	if(bindingVar != null) {
+            		MetaClass bindingVarMC = registry.getMetaClass(bindingVar.getClass());
+            		return bindingVarMC.invokeMethod(bindingVar, CLOSURE_CALL_METHOD, originalArguments);
+            	}
+            }
             return invokeMissingMethod(object, methodName, originalArguments);
         }
     }
@@ -1136,6 +1143,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
 
             superClass = superClass.getSuperclass();
+        }
+
+        if(prop != null) {
+        	MetaClass propMC = registry.getMetaClass(prop.getClass());
+    		return propMC.invokeMethod(prop, CLOSURE_CALL_METHOD, arguments);
         }
 
         return invokeStaticMissingMethod(sender, methodName, arguments);
