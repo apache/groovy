@@ -56,11 +56,6 @@ public class ASTHelper {
     // TODO should this really be static???
     protected static Map resolutions = new HashMap();  // cleared on build(), to be safe
 
-//    private static String NOT_RESOLVED = new String();
-
-    /** temporarily store the class names that the current modulenode contains */
-    private final List newClasses = new ArrayList();
-
     public ASTHelper(SourceUnit controller, ClassLoader classLoader) {
         this();
         this.controller = controller;
@@ -269,7 +264,6 @@ public class ASTHelper {
     }
 
     protected void makeModule() {
-        this.newClasses.clear();
         this.output = new ModuleNode(controller);
         resolutions.clear();
     }
@@ -279,19 +273,6 @@ public class ASTHelper {
      */
     protected String dot(String base) {
         return dot(base, "");
-    }
-
-    /*protected String resolveNewClassOrName(String name, boolean safe) {
-        if (this.newClasses.contains(name)) {
-            return dot(packageName, name);
-        }
-        else {
-            return resolveName(name, safe);
-        }
-    }*/
-
-    protected void addNewClassName(String name) {
-        this.newClasses.add(name);
     }
 
     protected void importClass(ClassNode type, String name, String as) {
