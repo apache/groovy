@@ -142,6 +142,8 @@ public class GroovyRootDocBuilder {
     }
 
     public void buildTree(List<String> filenames) throws IOException, RecognitionException, TokenStreamException {
+        setOverview();
+
         List<File> sourcepathFiles = new ArrayList<File>();
         for (String sourcepath : sourcepaths) {
             sourcepathFiles.add(new File(sourcepath).getAbsoluteFile());
@@ -154,6 +156,18 @@ public class GroovyRootDocBuilder {
                     processFile(filename, srcFile);
                     break;
                 }
+            }
+        }
+    }
+
+    private void setOverview() {
+        String path = properties.getProperty("overviewFile");
+        if (path != null && path.length() > 0) {
+            try {
+                String content = DefaultGroovyMethods.getText(new File(path));
+                calcThenSetOverviewDescription(content);
+            } catch (IOException e) {
+                System.err.println("Unable to load overview file: " + e.getMessage());
             }
         }
     }
@@ -183,7 +197,7 @@ public class GroovyRootDocBuilder {
     }
 
     private void processHtmlPackage(String src, SimpleGroovyPackageDoc packageDoc) {
-        String description = calcThenSetDescription(src, packageDoc);
+        String description = calcThenSetPackageDescription(src, packageDoc);
         calcThenSetSummary(description, packageDoc);
     }
 
@@ -191,10 +205,15 @@ public class GroovyRootDocBuilder {
         packageDoc.setSummary(SimpleGroovyDoc.calculateFirstSentence(src));
     }
 
-    private String calcThenSetDescription(String src, SimpleGroovyPackageDoc packageDoc) {
+    private String calcThenSetPackageDescription(String src, SimpleGroovyPackageDoc packageDoc) {
         String description = scrubOffExcessiveTags(src);
         packageDoc.setDescription(description);
         return description;
+    }
+
+    private void calcThenSetOverviewDescription(String src) {
+        String description = scrubOffExcessiveTags(src);
+        rootDoc.setDescription(description);
     }
 
     private String scrubOffExcessiveTags(String src) {
