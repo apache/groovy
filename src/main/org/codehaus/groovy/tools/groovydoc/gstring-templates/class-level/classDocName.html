@@ -95,8 +95,8 @@ function windowTitle()
 </TABLE>
 </TD>
 <TD ALIGN="right" VALIGN="top" ROWSPAN=3><EM>
-</EM>
-</TD>
+<% if (props.header) { %><td bgcolor="#ffffff"><b>${props.header}</b></td><% } %>
+</EM></TD>
 </TR>
 
 <TR>

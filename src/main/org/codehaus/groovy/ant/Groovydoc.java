@@ -46,12 +46,18 @@ public class Groovydoc extends Task {
     private String windowTitle = "Groovy Documentation";
     private String docTitle = "Groovy Documentation";
     private String footer = "Groovy Documentation";
+    private String header = "Groovy Documentation";
     private boolean privateScope;
+    private boolean protectedScope;
+    private boolean packageScope;
+    private boolean publicScope;
     private boolean useDefaultExcludes;
     private boolean includeNoSourcePackages;
+    private boolean author;
     private List<DirSet> packageSets;
     private List<String> sourceFilesToDoc;
     private List<LinkArgument> links = new ArrayList<LinkArgument>();
+    private File overviewFile;
 
     public Groovydoc() {
         packageNames = new ArrayList<String>();
@@ -59,8 +65,12 @@ public class Groovydoc extends Task {
         packageSets = new ArrayList<DirSet>();
         sourceFilesToDoc = new ArrayList<String>();
         privateScope = false;
+        protectedScope = false;
+        publicScope = false;
+        packageScope = false;
         useDefaultExcludes = true;
         includeNoSourcePackages = false;
+        author = true;
     }
 
     /**
@@ -84,6 +94,17 @@ public class Groovydoc extends Task {
     public void setDestdir(File dir) {
         destDir = dir;
         // todo: maybe tell groovydoc to use file output
+    }
+
+
+    /**
+     * If set to false, author will not be displayed.
+     * Currently not used.
+     *
+     * @param author new value
+     */
+    public void setAuthor(boolean author) {
+        this.author = author;
     }
 
     /**
@@ -124,13 +145,52 @@ public class Groovydoc extends Task {
     }
 
     /**
+     * Specify the file containing the overview to be included in the generated documentation.
+     *
+     * @param file the overview file
+     */
+    public void setOverview(java.io.File file) {
+        overviewFile = file;
+    }
+
+    /**
      * Indicate whether all classes and
-     * members are to be included in the scope processed
+     * members are to be included in the scope processed.
      *
      * @param b true if scope is to be private level.
      */
     public void setPrivate(boolean b) {
         privateScope = b;
+    }
+
+    /**
+     * Indicate whether only public classes and members are to be included in the scope processed.
+     * Currently not used.
+     *
+     * @param b true if scope only includes public level classes and members
+     */
+    public void setPublic(boolean b) {
+        publicScope = b;
+    }
+
+    /**
+     * Indicate whether only protected and public classes and members are to be included in the scope processed.
+     * Currently not used.
+     *
+     * @param b true if scope includes protected level classes and members
+     */
+    public void setProtected(boolean b) {
+        protectedScope = b;
+    }
+
+    /**
+     * Indicate whether only package, protected and public classes and members are to be included in the scope processed.
+     * Currently not used.
+     *
+     * @param b true if scope includes package level classes and members
+     */
+    public void setPackage(boolean b) {
+        packageScope = b;
     }
 
     /**
@@ -140,6 +200,19 @@ public class Groovydoc extends Task {
      */
     public void setFooter(String footer) {
         this.footer = footer;
+    }
+
+    /**
+     * Specifies the header text to be placed at the top of each output file.
+     * The header will be placed to the right of the upper navigation bar.
+     * It may contain HTML tags and white space, though if it does, it must
+     * be enclosed in quotes. Any internal quotation marks within the header
+     * may have to be escaped.
+     *
+     * @param header the header value
+     */
+    public void setHeader(String header) {
+        this.header = header;
     }
 
     /**
@@ -254,7 +327,13 @@ public class Groovydoc extends Task {
         properties.put("windowTitle", windowTitle);
         properties.put("docTitle", docTitle);
         properties.put("footer", footer);
+        properties.put("header", header);
         properties.put("privateScope", privateScope);
+        properties.put("protectedScope", protectedScope);
+        properties.put("publicScope", publicScope);
+        properties.put("packageScope", packageScope);
+        properties.put("author", author);
+        properties.put("overviewFile", overviewFile != null ? overviewFile.getAbsolutePath() : "");
 
         if (sourcePath != null) {
             sourceDirs.addExisting(sourcePath);
@@ -305,5 +384,4 @@ public class Groovydoc extends Task {
         links.add(result);
         return result;
     }
-
 }

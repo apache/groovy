@@ -38,6 +38,7 @@ function windowTitle()
 </tbody></table>
 </td>
 <td rowspan="3" valign="top" align="right"><em>
+<% if (props.header) { %><td bgcolor="#ffffff"><b>${props.header}</b></td><% } %>
 </em>
 </td>
 </tr>
@@ -71,6 +72,7 @@ function windowTitle()
 <h1>
 ${props.docTitle ?: ''}</h1>
 </center>
+<p>${rootDoc.description()}</p>
 <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
 <TR BGCOLOR="#90DDF7" CLASS="TableHeadingColor">
 <TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2">
