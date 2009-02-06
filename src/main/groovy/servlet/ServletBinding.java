@@ -19,11 +19,19 @@ import groovy.lang.Binding;
 import groovy.xml.MarkupBuilder;
 
 import javax.servlet.ServletContext;
+import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+import org.codehaus.groovy.GroovyBugError;
+
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
+import java.io.PrintWriter;
 import java.util.Enumeration;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 
 /**
@@ -31,7 +39,7 @@ import java.util.Map;
  * stream from the response.
  * <p/>
  * <p>
- * <h3>Eager variables bound</h3>
+ * <h3>Eager variables</h3>
  * <ul>
  * <li><tt>"request"</tt> : the HttpServletRequest object</li>
  * <li><tt>"response"</tt> : the HttpServletRequest object</li>
@@ -43,18 +51,140 @@ import java.util.Map;
  * </ul>
  * <p/>
  * <p>
- * <h3>Lazy variables bound</h3>
+ * <h3>Lazy variables</h3>
  * <ul>
  * <li><tt>"out"</tt> : response.getWriter()</li>
  * <li><tt>"sout"</tt> : response.getOutputStream()</li>
  * <li><tt>"html"</tt> : new MarkupBuilder(response.getWriter())</li>
  * </ul>
+ * As per specification a call to response.getWriter() should not be done if
+ * a call to response.getOutputStream() have been done already and the other way
+ * around. Lazy bound variables can be requested without side effects, since the 
+ * writer and stream is wrapped. That means response.getWriter() is not directly 
+ * called if 'out' or 'html' is requested. Only if a write method call is done
+ * using the variable, a write method call on 'sout' will cause a IllegalStateException.
+ * If a write method call on 'sout' has been done already any further write method call
+ * on 'out' or 'html' will cause a IllegalStateException. 
+ * </p><p>
+ * If response.getWriter() is called directly (without using out), then a write method 
+ * call on 'sout' will not cause the IllegalStateException, but it will still be invalid. 
+ * It is the responsibility of the user of this class, to not to mix these different usage
+ * styles. The same applies to calling response.getOoutputStream() and using 'out' or 'html'.
  * </p>
  *
  * @author Guillaume Laforge
  * @author Christian Stein
+ * @author Jochen Theodorou
  */
 public class ServletBinding extends Binding {
+    
+    /**
+     * A OutputStream dummy that will throw a GroovyBugError for any
+     * write method call to it. 
+     * 
+     * @author Jochen Theodorou
+     */
+    private static class InvalidOutputStream extends OutputStream {
+        /**
+         * Will always throw a GroovyBugError
+         * @see java.io.OutputStream#write(int)
+         */
+        public void write(int b) {
+            throw new GroovyBugError("Any write calls to this stream are invalid!");
+        }
+    }
+    /**
+     * A class to manage the response output stream and writer.
+     * If the stream have been 'used', then using the writer will cause
+     * a IllegalStateException. If the writer have been 'used', then 
+     * using the stream will cause a IllegalStateException. 'used' means
+     * any write method has been called. Simply requesting the objects will
+     * not cause an exception. 
+     * 
+     * @author Jochen Theodorou
+     */
+    private static class ServletOutput {
+        private HttpServletResponse response;
+        private ServletOutputStream outputStream;
+        private PrintWriter writer;
+        
+        public ServletOutput(HttpServletResponse response) {
+            this.response = response;
+        }
+        private ServletOutputStream getResponseStream() throws IOException {
+            if (writer!=null) throw new IllegalStateException("The variable 'out' or 'html' have been used already. Use either out/html or sout, not both.");
+            if (outputStream==null) outputStream = response.getOutputStream();
+            return outputStream;
+        }
+        public ServletOutputStream getOutputStream() {
+            return new ServletOutputStream() {
+                public void write(int b) throws IOException {
+                    getResponseStream().write(b);                    
+                }
+                public void close() throws IOException {
+                    getResponseStream().close();
+                }
+                public void flush() throws IOException {
+                    getResponseStream().flush();
+                }
+                public void write(byte[] b) throws IOException {
+                    getResponseStream().write(b);
+                }
+                public void write(byte[] b, int off, int len) throws IOException {
+                    getResponseStream().write(b, off, len);
+                }
+            };
+        }
+        private PrintWriter getResponseWriter() {
+            if (outputStream!=null) throw new IllegalStateException("The variable 'sout' have been used already. Use either out/html or sout, not both.");
+            if (writer==null) {
+                try {
+                    writer = response.getWriter();
+                } catch (IOException ioe) {
+                    writer = new PrintWriter(new ByteArrayOutputStream());
+                    throw new IllegalStateException("unable to get response writer",ioe);
+                }
+            }
+            return writer;
+        }
+        public PrintWriter getWriter() {
+            return new PrintWriter(new InvalidOutputStream()) {
+                public boolean checkError() {
+                    return getResponseWriter().checkError();
+                }
+                public void close() {
+                    getResponseWriter().close();
+                }
+                public void flush() {
+                    getResponseWriter().flush();
+                }
+                public void write(char[] buf) {
+                    getResponseWriter().write(buf);
+                }
+                public void write(char[] buf, int off, int len) {
+                    getResponseWriter().write(buf, off, len);
+                }
+                public void write(int c) {
+                    getResponseWriter().write(c);
+                }
+                public void write(String s, int off, int len) {
+                    getResponseWriter().write(s, off, len);
+                }
+                public void println() {
+                    getResponseWriter().println();
+                }
+                public PrintWriter format(String format, Object... args) {
+                    getResponseWriter().format(format, args);
+                    return this;
+                }
+                public PrintWriter format(Locale l, String format,  Object... args) {
+                    getResponseWriter().format(l, format, args);
+                    return this;
+                }
+            };
+        }        
+    }    
+    
     private boolean initialized;
 
     /**
@@ -141,15 +271,10 @@ public class ServletBinding extends Binding {
         initialized = true;
         HttpServletResponse response = (HttpServletResponse) super.getVariable("response");
         ServletContext context = (ServletContext) super.getVariable("context");
-        try {
-            super.setVariable("out", response.getWriter());
-            super.setVariable("sout", response.getOutputStream());
-            super.setVariable("html", new MarkupBuilder(response.getWriter()));
-        } catch (IOException e) {
-            String message = "Failed to get writer or output stream from response.";
-            context.log(message, e);
-            throw new RuntimeException(message, e);
-        }
+        ServletOutput output = new ServletOutput(response);
+        super.setVariable("out", output.getWriter());
+        super.setVariable("sout", output.getOutputStream());
+        super.setVariable("html", new MarkupBuilder(output.getWriter()));
     }
 
     private void validateArgs(String name, String message) {
