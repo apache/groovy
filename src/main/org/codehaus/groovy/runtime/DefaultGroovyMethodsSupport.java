@@ -115,8 +115,6 @@ public class DefaultGroovyMethodsSupport {
     protected static Collection cloneSimilarCollection(Collection orig, int newCapacity) {
         Collection answer = (Collection) cloneObject(orig);
         if (answer != null) return answer;
-        answer = cloneCollectionFromClass(orig);
-        if (answer != null) return answer;
 
         // fall back to creation
         answer = createSimilarCollection(orig, newCapacity);
@@ -153,9 +151,6 @@ public class DefaultGroovyMethodsSupport {
         if (orig instanceof List) {
             return createSimilarList((List) orig, newCapacity);
         }
-        Collection answer = createCollectionFromClass(orig);
-        if (answer != null) return answer;
-
         if (orig instanceof Queue) {
             return new LinkedList();
         }
@@ -163,26 +158,19 @@ public class DefaultGroovyMethodsSupport {
     }
 
     protected static List createSimilarList(List orig, int newCapacity) {
-        List answer = (List) createCollectionFromClass(orig);
-        if (answer != null) return answer;
-
         if (orig instanceof LinkedList) {
-            answer = new LinkedList();
-        } else if (orig instanceof Stack) {
-            answer = new Stack();
-        } else if (orig instanceof Vector) {
-            answer = new Vector();
-        } else {
-            answer = new ArrayList(newCapacity);
+            return new LinkedList();
         }
-        return answer;
+        if (orig instanceof Stack) {
+            return new Stack();
+        }
+        if (orig instanceof Vector) {
+            return new Vector();
+        }
+        return new ArrayList(newCapacity);
     }
 
     protected static Set createSimilarSet(Set orig) {
-        Set answer = (Set) createCollectionFromClass(orig);
-        if (answer != null) return answer;
-
-        // fall back to some defaults
         if (orig instanceof SortedSet) {
             return new TreeSet();
         }
@@ -193,10 +181,6 @@ public class DefaultGroovyMethodsSupport {
     }
 
     protected static Map createSimilarMap(Map orig) {
-        Map answer = createMapFromClass(orig);
-        if (answer != null) return answer;
-
-        // fall back to some defaults
         if (orig instanceof SortedMap) {
             return new TreeMap();
         }
@@ -209,66 +193,8 @@ public class DefaultGroovyMethodsSupport {
         return new LinkedHashMap();
     }
 
-    private static Collection createCollectionFromClass(Collection orig) {
-        try {
-            final Constructor constructor = orig.getClass().getConstructor();
-            return (Collection) constructor.newInstance();
-        } catch (Exception e) {
-            // ignore
-        }
-        return null;
-    }
-
-    private static Collection cloneCollectionFromClass(Collection orig) {
-        try {
-            final Constructor constructor = orig.getClass().getConstructor(Collection.class);
-            return (Collection) constructor.newInstance(orig);
-        } catch (Exception e) {
-            // ignore
-        }
-        try {
-            final Constructor constructor = orig.getClass().getConstructor();
-            final Collection result = (Collection) constructor.newInstance();
-            result.addAll(orig);
-            return result;
-        } catch (Exception e) {
-            // ignore
-        }
-        return null;
-    }
-
-    private static Map createMapFromClass(Map orig) {
-        try {
-            final Constructor constructor = orig.getClass().getConstructor();
-            return (Map) constructor.newInstance();
-        } catch (Exception e) {
-            // ignore
-        }
-        return null;
-    }
-
-    private static Map cloneMapFromClass(Map orig) {
-        try {
-            final Constructor constructor = orig.getClass().getConstructor(Map.class);
-            return (Map) constructor.newInstance(orig);
-        } catch (Exception e) {
-            // ignore
-        }
-        try {
-            final Constructor constructor = orig.getClass().getConstructor();
-            final Map result = (Map) constructor.newInstance();
-            result.putAll(orig);
-            return result;
-        } catch (Exception e) {
-            // ignore
-        }
-        return null;
-    }
-
     protected static Map cloneSimilarMap(Map orig) {
         Map answer = (Map) cloneObject(orig);
-        if (answer != null) return answer;
-        answer = cloneMapFromClass(orig);
         if (answer != null) return answer;
 
         // fall back to some defaults
