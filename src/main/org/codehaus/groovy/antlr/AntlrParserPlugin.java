@@ -341,7 +341,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             node = node.getNextSibling();
         }
 
-        addNewClassName(name);
         classNode = new ClassNode(dot(getPackageName(), name), modifiers, superClass, interfaces, null);
         classNode.addAnnotations(annotations);
         classNode.setGenericsTypes(genericsType);
@@ -381,7 +380,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             node = node.getNextSibling();
         }
 
-        addNewClassName(name);
         classNode = new ClassNode(dot(getPackageName(), name), modifiers, superClass, interfaces, null);
         classNode.addAnnotations(annotations);
         classNode.setGenericsTypes(genericsType);
@@ -392,8 +390,13 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         output.addClass(classNode);
         classNode = null;
     }
-
+    
     protected void classDef(AST classDef) {
+        innerClassDef(classDef);
+        classNode = null;
+    }
+
+    protected void innerClassDef(AST classDef) {
         List annotations = new ArrayList();
         AST node = classDef.getFirstChild();
         int modifiers = Opcodes.ACC_PUBLIC;
@@ -426,9 +429,14 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         // TODO read mixins
         MixinNode[] mixins = {};
-
-        addNewClassName(name);
-        classNode = new ClassNode(dot(getPackageName(), name), modifiers, superClass, interfaces, mixins);
+        ClassNode outerClass = classNode;
+        if (classNode!=null) {
+            name = classNode.getNameWithoutPackage()+"$"+name;
+            String fullName = dot(classNode.getPackageName(), name);
+            classNode = new InnerClassNode(classNode, fullName, modifiers, superClass, interfaces, mixins);
+        } else {
+            classNode = new ClassNode(dot(getPackageName(), name), modifiers, superClass, interfaces, mixins);
+        }
         classNode.addAnnotations(annotations);
         classNode.setGenericsTypes(genericsType);
         configureAST(classNode, classDef);
@@ -436,7 +444,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         assertNodeType(OBJBLOCK, node);
         objectBlock(node);
         output.addClass(classNode);
-        classNode = null;
+        classNode = outerClass;
     }
 
     protected void objectBlock(AST objectBlock) {
@@ -474,6 +482,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                     
                 case ENUM_CONSTANT_DEF:
                     enumConstantDef(node);
+                    break;
+                    
+                case CLASS_DEF:
+                    innerClassDef(node);
                     break;
                     
                 default:
