@@ -198,6 +198,37 @@ class EnumTest extends GroovyTestCase {
             x = X
     """
     }
+
+    void testCallBehaviorOnEnumForGROOVY3284() {
+        // test the usage in a non-script class first
+        for (f in Foo3284) {
+            assert f() == "A"
+        }
+        assert Foo3284.A.call() == "A"
+        assert Foo3284.A() == "A"
+        def a = Foo3284.A
+        assert a() == "A"
+
+        // now test the usage in a script but this time type Closure not specified explicitly
+        assertScript """
+            enum Foo32842 {
+                B({ "B" })
+                Foo32842(c) {
+                  call = c
+                }
+                def call
+            }
+            for (f in Foo32842) {
+                assert f() == "B"
+            }
+    
+            assert Foo32842.B.call() == "B"
+    
+            assert Foo32842.B() == "B"
+            b = Foo32842.B
+            assert b() == "B"
+        """
+    }
 }
 
 enum UsCoin {
@@ -212,4 +243,12 @@ enum EmptyEnum{}
 enum GroovyColors3161 {
     red, blue, green
     static def ALL_COLORS = [red, blue, green]
+}
+
+enum Foo3284 {
+    A({ "A" })
+    Foo3284(Closure c) {
+      call = c
+    }
+    final Closure call
 }
