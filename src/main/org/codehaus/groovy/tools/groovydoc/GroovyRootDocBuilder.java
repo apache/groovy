@@ -162,7 +162,7 @@ public class GroovyRootDocBuilder {
 
     private void setOverview() {
         String path = properties.getProperty("overviewFile");
-        if (path.length() > 0) {
+        if (path != null && path.length() > 0) {
             try {
                 String content = DefaultGroovyMethods.getText(new File(path));
                 calcThenSetOverviewDescription(content);
