@@ -46,6 +46,7 @@ import org.codehaus.groovy.runtime.callsite.PojoMetaMethodSite;
 import org.codehaus.groovy.runtime.callsite.StaticMetaClassSite;
 import org.codehaus.groovy.runtime.callsite.StaticMetaMethodSite;
 import org.codehaus.groovy.runtime.metaclass.ClosureMetaMethod;
+import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.metaclass.MetaMethodIndex;
 import org.codehaus.groovy.runtime.metaclass.MethodSelectionException;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExceptionNoStack;
@@ -1100,6 +1101,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return delegateMetaClass.invokeMethod(closure.getClass(), closure, CLOSURE_DO_CALL_METHOD, originalArguments, false, fromInsideClass);
         }
 
+        if(object instanceof Script) {
+        	Object bindingVar = ((Script)object).getBinding().getVariables().get(methodName);
+        	if(bindingVar != null) {
+        		MetaClass bindingVarMC = ((MetaClassRegistryImpl)registry).getMetaClass(bindingVar);
+        		return bindingVarMC.invokeMethod(bindingVar, CLOSURE_CALL_METHOD, originalArguments);
+        	}
+        }
         return invokeMissingMethod(object, methodName, originalArguments, null, isCallToSuper);
     }
 
@@ -1332,6 +1340,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
 
             superClass = superClass.getSuperclass();
+        }
+
+        if(prop != null) {
+        	MetaClass propMC = registry.getMetaClass(prop.getClass());
+    		return propMC.invokeMethod(prop, CLOSURE_CALL_METHOD, arguments);
         }
 
         return invokeStaticMissingMethod(sender, methodName, arguments);
