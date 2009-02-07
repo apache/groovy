@@ -69,7 +69,7 @@ import java.util.Map;
  * If response.getWriter() is called directly (without using out), then a write method 
  * call on 'sout' will not cause the IllegalStateException, but it will still be invalid. 
  * It is the responsibility of the user of this class, to not to mix these different usage
- * styles. The same applies to calling response.getOoutputStream() and using 'out' or 'html'.
+ * styles. The same applies to calling response.getOutputStream() and using 'out' or 'html'.
  * </p>
  *
  * @author Guillaume Laforge
@@ -142,7 +142,7 @@ public class ServletBinding extends Binding {
                     writer = response.getWriter();
                 } catch (IOException ioe) {
                     writer = new PrintWriter(new ByteArrayOutputStream());
-                    throw new IllegalStateException("unable to get response writer",ioe);
+                    throw new IllegalStateException("Unable to get response writer: " + ioe.getMessage());
                 }
             }
             return writer;
