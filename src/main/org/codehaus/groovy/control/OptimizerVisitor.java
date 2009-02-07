@@ -18,6 +18,7 @@ package org.codehaus.groovy.control;
 import org.codehaus.groovy.ast.ClassCodeExpressionTransformer;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.expr.ClosureExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.objectweb.asm.Opcodes;
@@ -92,5 +93,11 @@ public class OptimizerVisitor extends ClassCodeExpressionTransformer {
 
     protected SourceUnit getSourceUnit() {
         return source;
+    }
+
+    public void visitClosureExpression(ClosureExpression expression) {
+    	/*
+    	 * GROOVY-3339 - do nothing - so that numbers don't get replaced by cached constants in closure classes
+    	 */
     }
 }
