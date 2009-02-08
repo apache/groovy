@@ -426,7 +426,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             }
             if (memberDoc instanceof GroovyFieldDoc && !hasNonPublicVisibility && !hasPublicVisibility && isGroovy) return true;
         }
-        return false;
+        return memberDoc instanceof GroovyFieldDoc && isGroovy;
     }
 
     // todo - If no comment before node, then get comment from same node on parent class - ouch!
