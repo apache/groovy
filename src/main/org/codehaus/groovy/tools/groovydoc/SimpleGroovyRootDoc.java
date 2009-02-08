@@ -28,6 +28,7 @@ import java.util.Map;
 public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDoc {
     private Map<String, GroovyPackageDoc> packageDocs;
     private Map<String, GroovyClassDoc> classDocs;
+    private String description = "";
 
     public SimpleGroovyRootDoc(String name) {
         super(name);
@@ -48,6 +49,14 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
             }
         }
         return null;
+    }
+
+    public void setDescription(String description) {
+        this.description = description;
+    }
+
+    public String description() {
+        return description;
     }
 
     public GroovyClassDoc[] classes() {

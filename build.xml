@@ -855,7 +855,9 @@ Not found: ${groovyJar14path}
                 use="true"
                 windowtitle="${title}"
                 doctitle="${title}"
+                header="${title}"
                 footer="${docFooter}"
+                overview="src/main/overview.html"
                 private="false">
             <link packages="java.,org.xml.,javax.,org.xml." href="http://java.sun.com/j2se/1.5.0/docs/api"/>
             <link packages="org.apache.ant.,org.apache.tools.ant." href="http://www.dpml.net/api/ant/1.7.0"/>

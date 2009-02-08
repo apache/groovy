@@ -17,16 +17,23 @@ package org.codehaus.groovy.tools.groovydoc;
 
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 import org.codehaus.groovy.groovydoc.GroovyDoc;
+import org.codehaus.groovy.groovydoc.GroovyTag;
 
 import java.text.BreakIterator;
-import java.util.Locale;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
+    private static final Pattern TAG2_PATTERN = Pattern.compile("(?s)([a-z]+)\\s+(.*)");
+    private static final Pattern TAG3_PATTERN = Pattern.compile("(?s)([a-z]+)\\s+(\\S*)\\s+(.*)");
     private String name;
     private String commentText = "";
     private String rawCommentText = "";
     private String firstSentenceCommentText = "";
     private int definitionType;
+    private boolean deprecated;
+    private GroovyTag[] tags;
 
     public SimpleGroovyDoc(String name) {
         this.name = name;
@@ -64,6 +71,35 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
     public void setRawCommentText(String rawCommentText) {
         this.rawCommentText = rawCommentText;
         setFirstSentenceCommentText(calculateFirstSentence(rawCommentText));
+        calculateTags(rawCommentText);
+    }
+
+    private void calculateTags(String rawCommentText) {
+        String trimmed = rawCommentText.replaceFirst("(?s).*?\\*\\s*@", "@");
+        if (trimmed.equals(rawCommentText)) return;
+        String cleaned = trimmed.replaceAll("(?m)^\\s*\\*\\s*([^*]*)$", "$1").trim();
+        String[] split = cleaned.split("(?m)^@");
+        List<GroovyTag> result = new ArrayList<GroovyTag>();
+        for (String s : split) {
+            String tagname = null;
+            if (s.startsWith("param") || s.startsWith("throws")) {
+                Matcher m = TAG3_PATTERN.matcher(s);
+                if (m.find()) {
+                    tagname = m.group(1);
+                    result.add(new SimpleGroovyTag(tagname, m.group(2), m.group(3)));
+                }
+            } else {
+                Matcher m = TAG2_PATTERN.matcher(s);
+                if (m.find()) {
+                    tagname = m.group(1);
+                    result.add(new SimpleGroovyTag(tagname, null, m.group(2)));
+                }
+            }
+            if ("deprecated".equals(tagname)) {
+                setDeprecated(true);
+            }
+        }
+        tags = result.toArray(new GroovyTag[result.size()]);
     }
 
     public static String calculateFirstSentence(String raw) {
@@ -150,6 +186,10 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
         return false;
     }
 
+    public boolean isDeprecated() {
+        return deprecated;
+    }
+
     public boolean isError() {/*todo*/
         return false;
     }
@@ -175,7 +215,14 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
     }
 //	public GroovySourcePosition position() {/*todo*/return null;}
 //	public GroovySeeTag[] seeTags() {/*todo*/return null;}
-//	public GroovyTag[] tags() {/*todo*/return null;}
+
+	public GroovyTag[] tags() {
+        return tags;
+    }
+
 //	public GroovyTag[] tags(String arg0) {/*todo*/return null;}
 
+    public void setDeprecated(boolean deprecated) {
+        this.deprecated = deprecated;
+    }
 }

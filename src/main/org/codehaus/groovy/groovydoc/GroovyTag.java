@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,28 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package groovy.lang;
+package org.codehaus.groovy.groovydoc;
 
-/**
- * An interface for MetaClass instances that "adapt" other MetaClass instances such as a proxy or
- * delegating MetaClass.
- *
- * @author Graeme Rocher
- * @since 1.5
- */
-public interface AdaptingMetaClass extends MetaClass {
+public interface GroovyTag {
 
     /**
-     * Returns the MetaClass that this adapter adapts
-     *
-     * @return The MetaClass instance
+     * The tag name, e.g. "deprecated", "param", "see" or "author".
      */
-    MetaClass getAdaptee();
+    String name();
 
     /**
-     * Sets the MetaClass adapted by this MetaClass
-     *
-     * @param metaClass The MetaClass to adapt
+     * The optional parameter for tags like "throws" and "param".
      */
-    void setAdaptee(MetaClass metaClass);
+    String param();
+
+    /**
+     * The text associated with the tag.
+     */
+    String text();
 }
