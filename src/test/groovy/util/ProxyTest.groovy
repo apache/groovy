@@ -54,6 +54,32 @@ class ProxyTest extends GroovyTestCase {
     proxy.each { testString += it }
     assertEquals ( '123' , testString )
   }
+  
+  void testMultipleWrapping() {
+    assertScript """
+        import groovy.util.Proxy
+        
+        class Proxy1 extends Proxy {
+            def foo() { "Foo" }
+        }
+        
+        class Proxy2 extends Proxy {
+            def bar() { "Bar" }
+        }
+        
+        class Obj {
+            def baz() { "Baz" }
+        }
+        
+        def proxy1 = new Proxy1()
+        def proxy2 = new Proxy2()
+        proxy1.adaptee = proxy2
+        proxy2.adaptee = new Obj()
+        
+        assert proxy1.foo() == "Foo"
+        assert proxy1.bar() == "Bar"
+    """
+  }
 
 }
 
