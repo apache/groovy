@@ -56,7 +56,7 @@ public class Proxy extends GroovyObjectSupport {
             return super.invokeMethod(name, args);
         }
         catch (MissingMethodException e) {
-            return InvokerHelper.getMetaClass(adaptee).invokeMethod(adaptee, name, args);
+            return InvokerHelper.invokeMethod(adaptee, name, args);
         }
     }
     
