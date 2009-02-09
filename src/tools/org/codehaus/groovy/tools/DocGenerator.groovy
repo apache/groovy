@@ -167,7 +167,7 @@ class DocGenerator {
                             'class': packageName + '.' + simpleClassName,
                             'method': method,
                             'parametersSignature': getParametersDecl(method),
-                            'shortComment': getComment(method).replaceAll('\\..*', ''),
+                            'shortComment': getFirstSentence(getComment(method)),
                     ])
                 }
             }
@@ -194,6 +194,17 @@ class DocGenerator {
         return indexMap
     }
 
+    private getFirstSentence(text) {
+        def boundary = java.text.BreakIterator.getSentenceInstance(Locale.getDefault()) // todo - allow locale to be passed in
+        boundary.setText(text)
+        int start = boundary.first()
+        int end = boundary.next()
+        if (start > -1 && end > -1) {
+            text = text.substring(start, end)
+        }
+        text
+    }
+
     private generateClassDetails(template, curPackage, aClass) {
         def packagePath = generatePackagePath(curPackage)
         def dir = new File(outputFolder, packagePath)
@@ -214,7 +225,7 @@ class DocGenerator {
             def methodInfo = [
                     name: method.name,
                     comment: getComment(method),
-                    shortComment: getComment(method).replaceAll('\\..*', ''),
+                    shortComment: getFirstSentence(getComment(method)),
                     returnComment: method.getTagByName("return")?.getValue() ?: '',
                     seeComments: seeComments,
                     returnTypeDocUrl: getDocUrl(returnType),
