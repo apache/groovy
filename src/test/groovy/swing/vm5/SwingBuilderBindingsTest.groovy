@@ -72,9 +72,30 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         assert swing.txt.enabled == swing.cb.enabled
       }
     }
+
+    public void testConverter() {
+      testInEDT {
+        def model = new BindableBean()
+        
+        def toNumber = { v ->
+          if( v == null || v == "" ) return null
+          try { return new Integer(v) }
+          catch( x ) { return null }
+        }
+
+        new SwingBuilder().edt {
+          frame( title: "Binding test", size: [100,60], visible: true ) {
+            textField( id: "t1", text: bind(target:model,
+              targetProperty: "value", converter: {toNumber(it)}) )
+          }
+        }
+      }
+    }
+
 }
 
 
 class BindableBean {
     @Bindable boolean enabled
+    @Bindable Integer value
 }
