@@ -166,7 +166,6 @@ public class CachedClass {
     public  CachedMethod [] mopMethods;
     public static final CachedClass[] EMPTY_ARRAY = new CachedClass[0];
 
-    /* nicht SOFT xxx */
     private final LazyReference<Set<CachedClass>> declaredInterfaces = new LazyReference<Set<CachedClass>> (softBundle) {
         public Set<CachedClass> initValue() {
             HashSet<CachedClass> res = new HashSet<CachedClass> (0);
