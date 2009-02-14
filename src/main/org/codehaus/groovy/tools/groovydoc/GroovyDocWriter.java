@@ -89,7 +89,7 @@ public class GroovyDocWriter {
     }
 
     private boolean hasBinaryExtension(String template) {
-        return template.endsWith(".gif");
+        return template.endsWith(".gif") || template.endsWith(".ico");
     }
 
 }
