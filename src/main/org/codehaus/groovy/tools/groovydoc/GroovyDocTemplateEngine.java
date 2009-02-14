@@ -171,7 +171,7 @@ public class GroovyDocTemplateEngine {
             } catch (IOException e) {
                 System.err.println("Resource " + template + " skipped due to: " + e.getMessage());
             } catch (NullPointerException e) {
-                System.err.println("Resource " + template + " not found: " + e.getMessage());
+                System.err.println("Resource " + template + " not found so skipped");
             } finally {
                 DefaultGroovyMethods.closeQuietly(outputStream);
             }
