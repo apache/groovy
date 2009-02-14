@@ -107,9 +107,8 @@ public class GroovyCategorySupport {
                 endScope();
             }
         }
-
-        private void use(Class categoryClass) {
-            CachedClass cachedClass = ReflectionCache.getCachedClass(categoryClass);
+        
+        private void applyUse(CachedClass cachedClass) {
             CachedMethod[] methods = cachedClass.getMethods();
             for (int i = 0; i < methods.length; i++) {
                 CachedMethod cachedMethod = methods[i];
@@ -128,6 +127,19 @@ public class GroovyCategorySupport {
                         Collections.sort(list);
                     }
                 }
+            }
+        }
+
+        private void use(Class categoryClass) {
+            CachedClass cachedClass = ReflectionCache.getCachedClass(categoryClass);
+            LinkedList classStack = new LinkedList();
+            for (CachedClass superClass = cachedClass; superClass.getTheClass()!=Object.class; superClass = superClass.getCachedSuperClass()) {
+                classStack.add(superClass);
+            }
+            
+            while (!classStack.isEmpty()) {
+                CachedClass klazz = (CachedClass) classStack.removeLast();
+                applyUse(klazz);
             }
         }
 
