@@ -116,7 +116,6 @@ public class CachedClass {
         }
     };
 
-    /* nicht SOFT xxx */
     private LazyReference<CachedClass> cachedSuperClass = new LazyReference<CachedClass>(softBundle) {
         public CachedClass initValue() {
             if (!isArray)
