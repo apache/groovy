@@ -104,6 +104,33 @@ class CategoryTest extends GroovyTestCase {
       """
     }
     
+    void testCategoryInheritance() {
+      assertScript """
+        public class Foo {
+          static Object foo(Object obj) {
+            "Foo.foo()"
+          }
+        }
+        
+        public class Bar extends Foo{
+          static Object bar(Object obj) {
+            "Bar.bar()"
+          }
+        }
+        
+        def obj = new Object()
+        
+        use(Foo){
+          assert obj.foo() == "Foo.foo()"
+        }
+        
+        use(Bar){
+          assert obj.bar() == "Bar.bar()"
+          assert obj.foo() == "Foo.foo()"
+        }
+      """
+    }
+    
 }
 
 class StringCategory {
