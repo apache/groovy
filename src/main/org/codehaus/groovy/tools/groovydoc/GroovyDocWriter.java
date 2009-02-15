@@ -62,7 +62,6 @@ public class GroovyDocWriter {
         }
         String destFileName = destdir + FS + "package-list";
         System.out.println("Generating " + destFileName);
-        output.makeOutputArea(destFileName);
         output.writeToOutput(destFileName, sb.toString());
     }
 
