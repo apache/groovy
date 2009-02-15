@@ -15,7 +15,9 @@ def classTypes = [
 %>
 <title>${title}</title>
 <META NAME="keywords" CONTENT="${packageDoc.nameWithDots()} package">
-<LINK REL ="stylesheet" TYPE="text/css" HREF="${packageDoc.getRelativeRootPath()}stylesheet.css" TITLE="Style">
+<LINK REL ="stylesheet" TYPE="text/css" HREF="${packageDoc.relativeRootPath}stylesheet.css" TITLE="Style">
+<link href="${packageDoc.relativeRootPath}groovy.ico" type="image/x-icon" rel="shortcut icon">
+<link href="${packageDoc.relativeRootPath}groovy.ico" type="image/x-icon" rel="icon">
 <SCRIPT type="text/javascript">
 function windowTitle()
 {

@@ -55,6 +55,14 @@ public class GroovyDocWriter {
             output.makeOutputArea(destdir + FS + packageDoc.name());
             writePackageToOutput(packageDoc, destdir);
         }
+        StringBuilder sb = new StringBuilder();
+        for (GroovyPackageDoc packageDoc : Arrays.asList(rootDoc.specifiedPackages())) {
+            sb.append(packageDoc.nameWithDots());
+            sb.append("\n");
+        }
+        String destFileName = destdir + FS + "package-list";
+        System.out.println("Generating " + destFileName);
+        output.writeToOutput(destFileName, sb.toString());
     }
 
     public void writePackageToOutput(GroovyPackageDoc packageDoc, String destdir) throws Exception {
@@ -89,7 +97,7 @@ public class GroovyDocWriter {
     }
 
     private boolean hasBinaryExtension(String template) {
-        return template.endsWith(".gif");
+        return template.endsWith(".gif") || template.endsWith(".ico");
     }
 
 }

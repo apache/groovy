@@ -37,6 +37,7 @@ import java.util.*;
  */
 public class Groovydoc extends Task {
     private static final String TEMPLATE_BASEDIR = "org/codehaus/groovy/tools/groovydoc/gstring-templates/";
+    private static final String DOCGEN_BASEDIR = "org/codehaus/groovy/tools/";
     private final LoggingHelper log = new LoggingHelper(this);
 
     private Path sourcePath;
@@ -353,6 +354,7 @@ public class Groovydoc extends Task {
                         TEMPLATE_BASEDIR + "top-level/deprecated-list.html",
                         TEMPLATE_BASEDIR + "top-level/stylesheet.css",
                         TEMPLATE_BASEDIR + "top-level/inherit.gif",
+                        DOCGEN_BASEDIR + "groovy.ico",
                 },
                 new String[]{ // package level templates
                         TEMPLATE_BASEDIR + "package-level/package-frame.html",
