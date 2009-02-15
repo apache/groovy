@@ -720,7 +720,7 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         assert x.sum() == 10
         assert x.size() == 4
         assert x.class == WackyList
-        def y = x.findAll{ it % 2 == 1 }
+        def y = x.findAll{ it % 2 == 1 } as WackyList
         assert y.size() == 2
         assert y.class == WackyList
     }
