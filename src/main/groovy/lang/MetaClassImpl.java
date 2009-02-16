@@ -620,7 +620,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
-     * @return all the normal instance methods avaiable on this class for the
+     * @return all the normal instance methods available on this class for the
      *         given name
      */
     private Object getMethods(Class sender, String name, boolean isCallToSuper) {
