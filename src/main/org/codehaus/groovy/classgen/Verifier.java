@@ -555,6 +555,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         Statement getterBlock = node.getGetterBlock();
         if (getterBlock == null) {
             MethodNode getter = classNode.getGetterMethod(getterName);
+            if(getter == null && ClassHelper.boolean_TYPE==node.getType()) {
+            	String secondGetterName = "is" + capitalize(name);
+            	getter = classNode.getGetterMethod(secondGetterName);
+            }
             if (!node.isPrivate() && methodNeedsReplacement(getter)) {
                 getterBlock = createGetterBlock(node, field);
             }
