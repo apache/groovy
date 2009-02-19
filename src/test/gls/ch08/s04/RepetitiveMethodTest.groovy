@@ -13,4 +13,15 @@ class RepetitiveMethodTest extends CompilableTestSupport{
 	"""
 	shouldNotCompile(text)
   }
+
+  void testRepetitiveMethodsCreationForBooleanProperties() {
+      shouldCompile """
+          class BoolTest {
+              boolean success
+              boolean isSuccess() {
+                  return success
+              }
+          }
+      """
+  }
 }
