@@ -261,16 +261,15 @@ public class BindFactory extends AbstractFactory {
                 PropertyBinding psb = new PropertyBinding(node, property)
                 fb = getTriggerBinding(psb).createBinding(psb, value)
 
-                Object o = bindAttrs.remove("bind")
+                Object bindValue = bindAttrs.remove("bind")
+                bindAttrs.each{k, v -> fb."$k" = v}
 
-                if (    (o == null)
-                    || ((o instanceof Boolean) && ((Boolean)o).booleanValue()))
+                if (    (bindValue == null)
+                    || ((bindValue instanceof Boolean) && ((Boolean)bindValue).booleanValue()))
                 {
                     fb.bind()
                 }
                 fb.update()
-
-                bindAttrs.each{k, v -> fb."$k" = v}
 
                 builder.addDisposalClosure(fb.&unbind)
 
