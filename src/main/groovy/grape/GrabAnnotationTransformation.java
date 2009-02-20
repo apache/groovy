@@ -99,7 +99,6 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
 
             ClassNode grapeClassNode = new ClassNode(Grape.class);
 
-            //TODO process @Grapes
             if (!grapesAnnotations.isEmpty()) {
                 for (int j = 0; j < grapesAnnotations.size(); j++) {
                     AnnotationNode node = grapesAnnotations.get(j);
@@ -132,9 +131,16 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             }
 
             if (!grabAnnotations.isEmpty()) {
+                grabAnnotationLoop:
                 for (int j = 0; j < grabAnnotations.size(); j++) {
                     AnnotationNode node = grabAnnotations.get(j);
                     Map<String,Object> grabMap = new HashMap();
+                    for (String s : new String[] {"group", "module", "version"}) {
+                        if (node.getMember(s) == null) {
+                            addError("The missing attribute \"" + s + "\" is required in @" + node.getClassNode().getNameWithoutPackage() + " annotations", node);
+                            continue grabAnnotationLoop;
+                        }
+                    }
                     grabMap.put("group", ((ConstantExpression)node.getMember("group")).getValue());
                     grabMap.put("module", ((ConstantExpression)node.getMember("module")).getValue());
                     grabMap.put("version", ((ConstantExpression)node.getMember("version")).getValue());
