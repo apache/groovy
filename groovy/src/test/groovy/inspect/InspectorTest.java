@@ -1,7 +1,6 @@
 package groovy.inspect;
 
 import groovy.lang.GroovyShell;
-import groovy.lang.MetaMethod;
 import groovy.lang.MetaProperty;
 import groovy.lang.PropertyValue;
 import org.jmock.Mock;
@@ -49,7 +48,7 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
         assertEquals("is Primitive: false, is Array: false, is Groovy: false", classProps[Inspector.CLASS_OTHER_IDX]);
     }
 
-    public void testClassPropsGroovy() throws RuntimeException, Throwable {
+    public void testClassPropsGroovy() {
         Object testObject = new GroovyShell().evaluate("class Test {def meth1(a,b){}}\nreturn new Test()");
         Inspector insp = new Inspector(testObject);
         String[] classProps = insp.getClassProps();
