@@ -522,4 +522,13 @@ class GStringTest extends GroovyTestCase {
         assert gs1.getValues() == ["dog", "woof-woof"]
         assert gs1.toString() == "the dog says  woof-woof  not the cat"
     }
+
+    /**
+     * Tests GString splitting. GROOVY-3359
+     */
+    void testGStringSplitting() {
+        def gs = "The quick brown ${'xof'.reverse()}"
+        assert gs.split() == ['The', 'quick', 'brown', 'fox'] as String[]
+        assert gs.split('o') == ['The quick br', 'wn f', 'x'] as String[]
+    }
 }

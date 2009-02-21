@@ -82,8 +82,8 @@ public class Inspector {
         result[CLASS_CLASS_IDX] = modifiers + " class "+ shortName(getClassUnderInspection());
         result[CLASS_INTERFACE_IDX] = "implements ";
         Class[] interfaces = getClassUnderInspection().getInterfaces();
-        for (int i = 0; i < interfaces.length; i++) {
-            result[CLASS_INTERFACE_IDX] += shortName(interfaces[i])+ " ";
+        for (Class anInterface : interfaces) {
+            result[CLASS_INTERFACE_IDX] += shortName(anInterface) + " ";
         }
         result[CLASS_SUPERCLASS_IDX] = "extends " + shortName(getClassUnderInspection().getSuperclass());
         result[CLASS_OTHER_IDX] = "is Primitive: "+getClassUnderInspection().isPrimitive()
@@ -98,6 +98,8 @@ public class Inspector {
 
     /**
      * Gets the object being inspected.
+     *
+     * @return the object
      */
     public Object getObject() {
     	return objectUnderInspection;
@@ -294,20 +296,19 @@ public class Inspector {
         for (int i = 0; i < memberInfo.length; i++) {
             String[] metaMethod = (String[]) memberInfo[i];
             out.print(i+":\t");
-            for (int j = 0; j < metaMethod.length; j++) {
-                String s = metaMethod[j];
-                out.print(s+" ");
+            for (String s : metaMethod) {
+                out.print(s + " ");
             }
             out.println("");
         }
     }
 
-    public static Collection sort(List memberInfo) {
+    public static Collection sort(List<Object> memberInfo) {
         Collections.sort(memberInfo, new MemberComparator());
         return memberInfo;
     }
 
-    public static class MemberComparator implements Comparator {
+    public static class MemberComparator implements Comparator<Object> {
         public int compare(Object a, Object b) {
             String[] aStr = (String[]) a;
             String[] bStr = (String[]) b;
