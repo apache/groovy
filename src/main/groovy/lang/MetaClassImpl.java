@@ -199,7 +199,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
-     * @see MetaObjectProtocol#respondsTo(Object,String, Object[])
+     * @see MetaObjectProtocol#respondsTo(Object, String, Object[])
      */
     public List respondsTo(Object obj, String name, Object[] argTypes) {
         Class[] classes = MetaClassHelper.castArgumentsToClassArray(argTypes);
@@ -212,7 +212,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     /**
-     * @see MetaObjectProtocol#respondsTo(Object,String, Object[])
+     * @see MetaObjectProtocol#respondsTo(Object, String)
      */
     public List respondsTo(final Object obj, final String name) {
         final Object o = getMethods(getTheClass(), name, false);
