@@ -26,6 +26,8 @@ import java.lang.annotation.Target;
 /**
  * Annotates a groovy class or interface to become category
  * - all methods transformed to static ones with additional parameter self of type defined by annotation parameter
+ * Properties invoked using 'this' reference are transformed so that 
+ * they are invoked on the additional self parameter and not on the Category instance 
  *
  * @author Alex Tkachman
  */
