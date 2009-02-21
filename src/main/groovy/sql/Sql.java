@@ -179,6 +179,7 @@ public class Sql {
      * Gets the resultSetType for statements created using the connection.
      *
      * @return the current resultSetType value
+     * @since 1.5.2
      */
     public int getResultSetType() {
         return resultSetType;
@@ -194,6 +195,7 @@ public class Sql {
      *         <code>ResultSet.TYPE_FORWARD_ONLY</code>,
      *         <code>ResultSet.TYPE_SCROLL_INSENSITIVE</code>, or
      *         <code>ResultSet.TYPE_SCROLL_SENSITIVE</code>
+     * @since 1.5.2
      */
     public void setResultSetType(int resultSetType) {
         this.resultSetType = resultSetType;
@@ -203,6 +205,7 @@ public class Sql {
      * Gets the resultSetConcurrency for statements created using the connection.
      *
      * @return the current resultSetConcurrency value
+     * @since 1.5.2
      */
     public int getResultSetConcurrency() {
         return resultSetConcurrency;
@@ -217,6 +220,7 @@ public class Sql {
      *        constants:
      *         <code>ResultSet.CONCUR_READ_ONLY</code> or
      *         <code>ResultSet.CONCUR_UPDATABLE</code>
+     * @since 1.5.2
      */
     public void setResultSetConcurrency(int resultSetConcurrency) {
         this.resultSetConcurrency = resultSetConcurrency;
@@ -226,6 +230,7 @@ public class Sql {
      * Gets the resultSetHoldability for statements created using the connection.
      *
      * @return the current resultSetHoldability value or -1 if not set
+     * @since 1.5.2
      */
     public int getResultSetHoldability() {
         return resultSetHoldability;
@@ -240,6 +245,7 @@ public class Sql {
      *        constants:
      *         <code>ResultSet.HOLD_CURSORS_OVER_COMMIT</code> or
      *         <code>ResultSet.CLOSE_CURSORS_AT_COMMIT</code>
+     * @since 1.5.2
      */
     public void setResultSetHoldability(int resultSetHoldability) {
         this.resultSetHoldability = resultSetHoldability;
