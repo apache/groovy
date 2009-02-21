@@ -41,6 +41,11 @@ import java.util.HashSet;
 public class CategoryASTTransformation implements ASTTransformation, Opcodes {
     private static final VariableExpression THIS_EXPRESSION = new VariableExpression("$this");
 
+    /**
+     * Property invocations done on 'this' reference are transformed so that the invocations at runtime are
+     * done on the additional parameter 'self'
+     *
+     */
     public void visit(ASTNode[] nodes, final SourceUnit source) {
         AnnotationNode annotation = (AnnotationNode) nodes[0];
         ClassNode parent = (ClassNode) nodes[1];
@@ -97,6 +102,15 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
                             return new PropertyExpression(THIS_EXPRESSION, ve.getName());
                         }
                     }
+                } else if(exp instanceof PropertyExpression) {
+                	PropertyExpression pe = (PropertyExpression) exp;
+                	if (pe.getObjectExpression() instanceof VariableExpression) {
+                		VariableExpression vex = (VariableExpression) pe.getObjectExpression();
+                		if (vex.isThisExpression()) {
+                			pe.setObjectExpression(THIS_EXPRESSION);
+                			return pe;
+                		}
+                	}
                 }
                 return super.transform(exp);
             }
