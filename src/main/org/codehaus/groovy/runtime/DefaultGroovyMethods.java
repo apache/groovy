@@ -6064,6 +6064,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Convenience method to split a GString (with whitespace as delimiter).
+     *
+     * @param self the GString to split
+     * @return String[] result of split
+     * @see #split(String)
+     * @since 1.6.1
+     */
+    public static String[] split(GString self) {
+        return split(self.toString());
+    }
+
+    /**
      * Tokenize a String based on the given string delimiter.
      *
      * @param self  a String
