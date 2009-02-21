@@ -12217,7 +12217,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @see MetaObjectProtocol#respondsTo(Object,String, Object[])
+     * <p>Returns an object satisfying Groovy truth if the implementing MetaClass responds to
+     * a method with the given name and arguments types.
+     *
+     * <p>Note that this method's return value is based on realised methods and does not take into account
+     * objects or classes that implement invokeMethod or methodMissing
+     *
+     * <p>This method is "safe" in that it will always return a value and never throw an exception
+     *
+     * @param self The object to inspect
+     * @param name The name of the method of interest
+     * @param argTypes The argument types to match against
+     * @return A List of MetaMethods matching the argument types which will be empty if no matching methods exist
+     * @see MetaObjectProtocol#respondsTo(Object, String, Object[])
      * @since 1.6.0
      */
     public static List respondsTo(Object self, String name, Object[] argTypes) {
@@ -12225,19 +12237,38 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @see MetaObjectProtocol#respondsTo(Object,String, Object[])
-     * @since 1.6.0
+     * <p>Returns an object satisfying Groovy truth if the implementing MetaClass responds to
+     * a method with the given name regardless of the arguments.
+     *
+     * <p>Note that this method's return value is based on realised methods and does not take into account
+     * objects or classes that implement invokeMethod or methodMissing
+     *
+     * <p>This method is "safe" in that it will always return a value and never throw an exception
+     *
+     * @param self The object to inspect
+     * @param name The name of the method of interest
+     * @return A List of MetaMethods matching the given name or an empty list if no matching methods exist
+     * @see MetaObjectProtocol#respondsTo(Object, String)
+     * @since 1.6.1
      */
-    public List respondsTo(final Object self, final String name) {
+    public static List respondsTo(Object self, String name) {
         return InvokerHelper.getMetaClass(self).respondsTo(self, name);
     }
 
     /**
-     * @see MetaObjectProtocol#hasProperty(Object,String)
-     * @since 1.6.0
+     * <p>Returns true of the implementing MetaClass has a property of the given name
+     *
+     * <p>Note that this method will only return true for realised properties and does not take into
+     * account implementation of getProperty or propertyMissing
+     *
+     * @param self The object to inspect
+     * @param name The name of the property of interest
+     * @return The found MetaProperty or null if it doesn't exist
+     * @see MetaObjectProtocol#hasProperty(Object, String)
+     * @since 1.6.1
      */
-    public MetaProperty hasProperty(Object self, String name) {
-        return InvokerHelper.getMetaClass(self).getMetaProperty(name);
+    public static MetaProperty hasProperty(Object self, String name) {
+        return InvokerHelper.getMetaClass(self).hasProperty(self, name);
     }
 
 }

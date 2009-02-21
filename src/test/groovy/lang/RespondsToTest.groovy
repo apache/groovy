@@ -63,23 +63,47 @@ class RespondsToTest extends GroovyTestCase {
         assert t.metaClass.respondsTo(t, "foo", String)
         assert t.metaClass.respondsTo(t, "bar", String)
         assert t.metaClass.respondsTo(t, "stuff")
-        //assert t.metaClass.respondsTo(t, "two") // THIS DOESN'T WORK! Should responds to deal with closure properties?
+        //assert t.metaClass.respondsTo(t, "two") // THIS DOESN'T WORK! Should respondsTo deal with closure properties?
+//        assert t.metaClass.respondsTo(t, "newtwo") // THIS DOESN'T WORK! Should respondsTo deal with closure properties?
         assert t.metaClass.respondsTo(t, "getFive")
         assert t.metaClass.respondsTo(t, "setFive")
         assert t.metaClass.respondsTo(t, "setFive", String)
         assert t.metaClass.respondsTo(t, "newM")
         assert !t.metaClass.respondsTo(t, "one", String, Integer)
+        // and again for DGM variations
+        assert t.respondsTo("one")
+        assert t.respondsTo("three")
+        assert t.respondsTo("one", String)
+        assert t.respondsTo("foo", String)
+        assert t.respondsTo("bar", String)
+        assert t.respondsTo("stuff")
+        //assert t.respondsTo("two") // THIS DOESN'T WORK! Should respondsTo deal with closure properties?
+//        assert t.respondsTo("newtwo") // THIS DOESN'T WORK! Should respondsTo deal with closure properties?
+        assert t.respondsTo("getFive")
+        assert t.respondsTo("setFive")
+        assert t.respondsTo("setFive", String)
+        assert t.respondsTo("newM")
+        assert !t.respondsTo("one", String, Integer)
     }
 
     void testHasProperty() {
         RTTest2.metaClass.getNewProp = {-> "new" }
         def t = new RTTest2()
         assert t.metaClass.hasProperty(t, "two")
+        assert t.metaClass.hasProperty(t, "newtwo")
         assert t.metaClass.hasProperty(t, "five")
         assert t.metaClass.hasProperty(t, "six")
         assert t.metaClass.hasProperty(t, "seven")
         assert t.metaClass.hasProperty(t, "eight")
         assert t.metaClass.hasProperty(t, "newProp")
+        // and again for DGM variations
+        assert t.hasProperty("two")
+        assert t.hasProperty("newtwo")
+        assert t.hasProperty("five")
+        assert t.hasProperty("six")
+        assert t.hasProperty("seven")
+        assert t.hasProperty("eight")
+        assert t.hasProperty("newProp")
     }
 }
 
@@ -118,6 +142,8 @@ class RTTest1 {
 
 class RTTest2 extends RTTest1 {
     String six
+
+    def newtwo = { "newthree" }
 
     def bar(String name) { "foo" }
 
