@@ -17,8 +17,36 @@ package org.codehaus.groovy.transform.vm5
 
 /**
  * @author Alex Tkachman
+ * @author Guillaume Laforge
  */
 class DelegateTransformTest extends GroovyShellTestCase {
+
+    /** fix for GROOVY-3380 */
+    void testDelegateImplementingANonPublicInterface() {
+        assertScript """
+            import org.codehaus.groovy.transform.vm5.ClassImplementingANonPublicInterface
+
+            class DelegatingToClassImplementingANonPublicInterface {
+                @Delegate ClassImplementingANonPublicInterface delegate = new ClassImplementingANonPublicInterface()
+            }
+
+            def constant = new DelegatingToClassImplementingANonPublicInterface().returnConstant()
+            assert constant == "constant"
+        """
+    }
+
+    /** fix for GROOVY-3380 */
+    void testDelegateImplementingANonPublicInterfaceWithZipFileConcreteCase() {
+        assertScript """
+            import java.util.zip.*
+
+            class ZipWrapper{
+               @Delegate ZipFile zipFile
+            }
+
+            new ZipWrapper()
+        """
+    }
 
     void testLock () {
         def res = evaluate("""
