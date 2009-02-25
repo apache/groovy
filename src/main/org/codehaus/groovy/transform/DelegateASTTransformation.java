@@ -29,14 +29,16 @@ import org.codehaus.groovy.classgen.Verifier;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.ref.SoftReference;
+import java.lang.reflect.Modifier;
 import java.util.Map;
 import java.util.Iterator;
 import java.util.Set;
 
 /**
- * Handles generation of code for the @Delegate annotation
+ * Handles generation of code for the <code>@Delegate</code> annotation
  *
  * @author Alex Tkachman
+ * @author Guillaume Laforge
  */
 @GroovyASTTransformation(phase=CompilePhase.CANONICALIZATION)
 public class DelegateASTTransformation implements ASTTransformation, Opcodes {
@@ -109,7 +111,7 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
             final Set ownerIfaces = owner.getAllInterfaces();
             for (Iterator it = allInterfaces.iterator(); it.hasNext(); ) {
                 ClassNode iface = (ClassNode) it.next();
-                if (!ownerIfaces.contains(iface)) {
+                if (Modifier.isPublic(iface.getModifiers()) && !ownerIfaces.contains(iface) ) {
                     final ClassNode[] ifaces = owner.getInterfaces();
                     final ClassNode[] newIfaces = new ClassNode[ifaces.length + 1];
                     System.arraycopy(ifaces, 0, newIfaces, 0, ifaces.length);
