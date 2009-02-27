@@ -2949,7 +2949,7 @@ public class AsmClassGenerator extends ClassGenerator {
             ClassRef ref = (ClassRef) iter.next();
             String staticFieldName = getStaticFieldName(ref.type);
             // generate a field node
-            interfaceClassLoadingClass.addField(staticFieldName, ACC_STATIC + ACC_SYNTHETIC, ClassHelper.CLASS_Type, null);
+            interfaceClassLoadingClass.addField(staticFieldName, ACC_STATIC + ACC_SYNTHETIC, ClassHelper.CLASS_Type, new ClassExpression(ref.type));
         }
     }
 
@@ -3037,9 +3037,10 @@ public class AsmClassGenerator extends ClassGenerator {
             String internalClassName = this.internalClassName;
             if (classNode.isInterface()) {
                 internalClassName = BytecodeHelper.getClassInternalName(interfaceClassLoadingClass);
+                mv.visitFieldInsn(GETSTATIC, internalClassName, staticFieldName, "Ljava/lang/Class;");
+            } else {
+                mv.visitMethodInsn(INVOKESTATIC, internalClassName, "$get$" + staticFieldName, "()Ljava/lang/Class;");
             }
-
-            mv.visitMethodInsn(INVOKESTATIC, internalClassName, "$get$" + staticFieldName, "()Ljava/lang/Class;");
         }
     }
 
