@@ -26,8 +26,8 @@ import java.lang.reflect.Modifier;
 import java.util.*;
 
 /**
- * Classes to generate 'Proxy' objects which implement interfaces
- * and/or extend classes.
+ * Classes to generate 'Proxy' objects which implement interfaces,
+ * maps of closures and/or extend classes/delegates.
  *
  * @author Paul King
  * @author Guillaume Laforge
@@ -50,6 +50,13 @@ public class ProxyGenerator {
         return debug;
     }
 
+    /**
+     * Instructs <code>ProxyGenerator</code> to dump generated Groovy
+     * source code to standard output during construction. This is useful
+     * for debugging purposes but should be turned off in production.
+     *
+     * @param debug true if you want generated source to be printed
+     */
     public void setDebug(boolean debug) {
         this.debug = debug;
     }
@@ -58,6 +65,16 @@ public class ProxyGenerator {
         return emptyMethods;
     }
 
+    /**
+     * Changes generated methods to have empty implementations.
+     *
+     * Methods in generated aggregates not supplied in a closures map or
+     * base class are given 'default' implementations. The implementation
+     * will normally throw an <code>UnsupportedOperationException</code>
+     * but setting this boolean will leave it empty.
+     *
+     * @param emptyMethods true if you want generated methods to be empty
+     */
     public void setEmptyMethods(boolean emptyMethods) {
         this.emptyMethods = emptyMethods;
     }
