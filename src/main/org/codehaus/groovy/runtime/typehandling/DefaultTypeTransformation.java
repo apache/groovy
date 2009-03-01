@@ -85,15 +85,15 @@ public class DefaultTypeTransformation {
     }
 
     public static Object box(byte value) {
-        return new Byte(value);
+        return Byte.valueOf(value);
     }
 
     public static Object box(char value) {
-        return new Character(value);
+        return Character.valueOf(value);
     }
 
     public static Object box(short value) {
-        return new Short(value);
+        return Short.valueOf(value);
     }
 
     public static Object box(int value) {
@@ -101,15 +101,15 @@ public class DefaultTypeTransformation {
     }
 
     public static Object box(long value) {
-        return new Long(value);
+        return Long.valueOf(value);
     }
 
     public static Object box(float value) {
-        return new Float(value);
+        return Float.valueOf(value);
     }
 
     public static Object box(double value) {
-        return new Double(value);
+        return Double.valueOf(value);
     }
     
     public static Number castToNumber(Object object) {
