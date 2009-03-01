@@ -322,9 +322,9 @@ public class CompileStack implements Opcodes {
     
     /**
      * initializes this class for a MethodNode. This method will
-     * automatically define varibales for the method parameters
-     * and will create references if needed. the created variables
-     * can be get by getVariable
+     * automatically define variables for the method parameters
+     * and will create references if needed.  The created variables
+     * can be accessed by calling getVariable().
      * 
      */
     protected void init(VariableScope el, Parameter[] parameters, MethodVisitor mv, ClassNode cn) {
