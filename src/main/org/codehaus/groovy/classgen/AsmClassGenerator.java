@@ -3910,7 +3910,12 @@ public class AsmClassGenerator extends ClassGenerator {
         // let's evaluate the RHS then hopefully the LHS will be a field
         Expression rightExpression = expression.getRightExpression();
         if (!(leftExpression instanceof TupleExpression)) {
-            ClassNode type = getLHSType(leftExpression);
+        	ClassNode type = null;
+        	if(expression instanceof DeclarationExpression) {
+        		type = leftExpression.getType();
+        	} else {
+        		type = getLHSType(leftExpression);
+        	}
             assignmentCastAndVisit(type,rightExpression);
         }  else {
             // multiple assignment here!
