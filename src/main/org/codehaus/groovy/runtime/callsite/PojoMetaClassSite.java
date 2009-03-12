@@ -20,7 +20,7 @@ import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
-import groovy.lang.ProxyMetaClass;
+import groovy.mock.interceptor.MockProxyMetaClass;
 
 /**
  * POJO call site
@@ -38,9 +38,9 @@ public class PojoMetaClassSite extends MetaClassSite{
         if(checkCall(receiver)) {
           try{
         	  MetaClass metaClassToInvoke = metaClass;
-        	  // if it is ProxyMetaClass, use the one from the registry and not the cached one
+        	  // if it is MockProxyMetaClass, use the one from the registry and not the cached one
         	  // as the mock/stub infrastructure replaces metaClass at runtime in the context of use {..}
-        	  if(metaClass instanceof ProxyMetaClass) {
+        	  if(metaClass instanceof MockProxyMetaClass) {
         		  metaClassToInvoke = GroovySystem.getMetaClassRegistry().getMetaClass(receiver.getClass()); 
         	  }
             return metaClassToInvoke.invokeMethod(receiver, name, args);
