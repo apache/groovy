@@ -249,6 +249,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      */
     private void lazyClassInit() {
         synchronized (lazyInitLock) {
+            if (redirect!=null) {
+                throw new GroovyBugError("lazyClassInit called on a proxy ClassNode, that must not happen."+
+                                         "A redirect() call is missing somewhere!");
+            }   
             if (lazyInitDone) return;
             VMPluginFactory.getPlugin().configureClassNode(compileUnit,this);
             lazyInitDone = true;
@@ -324,9 +328,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * each field in the class represented by this ClassNode
      */
     public List<FieldNode> getFields() {
-        if (!lazyInitDone) {
-            lazyClassInit();
-        }
+        if (!redirect().lazyInitDone) redirect().lazyClassInit();
         if (redirect!=null) return redirect().getFields();
         return fields;
     }
@@ -336,9 +338,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * interfaces the class implements
      */
     public ClassNode[] getInterfaces() {
-        if (!lazyInitDone) {
-            lazyClassInit();
-        }
+        if (!redirect().lazyInitDone) redirect().lazyClassInit();
         if (redirect!=null) return redirect().getInterfaces();
         return interfaces;
     }
@@ -360,7 +360,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * each method in the class represented by this ClassNode
      */
     public List<MethodNode> getMethods() {
-        if (!lazyInitDone) lazyClassInit();
+        if (!redirect().lazyInitDone) redirect().lazyClassInit();
         if (redirect!=null) return redirect().getMethods();
         return methodsList;
     }
@@ -458,9 +458,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public List getDeclaredConstructors() {
-        if (!lazyInitDone) {
-            lazyClassInit();
-        }
+        if (!redirect().lazyInitDone) redirect().lazyClassInit();
         return redirect().constructors;
     }
 
@@ -743,7 +741,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @see #getMethods(String)
      */
     public List getDeclaredMethods(String name) {
-        if (!lazyInitDone) lazyClassInit();
+        if (!redirect().lazyInitDone) redirect().lazyClassInit();
         if (redirect!=null) return redirect().getDeclaredMethods(name);
         return methods.getNotNull(name);
     }
@@ -884,9 +882,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public ClassNode getUnresolvedSuperClass(boolean useRedirect) {
         if (!useRedirect) return superClass;
-        if (!lazyInitDone) {
-            lazyClassInit();
-        }
+        if (!redirect().lazyInitDone) redirect().lazyClassInit();
         return redirect().superClass;
     }
 
