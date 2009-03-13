@@ -32,7 +32,7 @@ import java.util.*;
  * Represents a class in the AST.<br/>
  * A ClassNode should be created using the methods in ClassHelper. 
  * This ClassNode may be used to represent a class declaration or
- * any other type. This class uses a proxy meschanism allowing to
+ * any other type. This class uses a proxy mechanism allowing to
  * create a class for a plain name at ast creation time. In another 
  * phase of the compiler the real ClassNode for the plain name may be
  * found. To avoid the need of exchanging this ClassNode with an 
@@ -43,8 +43,8 @@ import java.util.*;
  * as primary ClassNode which means they represent no actual class. 
  * The redirect itself can be any type of ClassNode
  * <br>
- * To descirbe generic type signature see {@link #getGenericsTypes()} and
- * {@link #setGenericsTypes(GenericsType[])}. These emthods are not proxied,
+ * To describe generic type signature see {@link #getGenericsTypes()} and
+ * {@link #setGenericsTypes(GenericsType[])}. These methods are not proxied,
  * they describe the type signature used at the point of declaration or the
  * type signatures provided by the class. If the type signatures provided
  * by the class are needed, then a call to {@link #redirect()} will help.
@@ -205,8 +205,12 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      */
     private void lazyClassInit() {       
         synchronized (lazyInitLock) {
+            if (redirect!=null) {
+                    throw new GroovyBugError("lazyClassInit called on a proxy ClassNode, that must not happen."+
+                                             "A redirect() call is missing somewhere!");
+            }                     
             if (lazyInitDone) return;
-            VMPluginFactory.getPlugin().configureClassNode(compileUnit,this);
+            VMPluginFactory.getPlugin().configureClassNode(redirect().compileUnit,this);
             lazyInitDone = true;
         }
     }
@@ -274,9 +278,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * each field in the class represented by this ClassNode
      */
     public List getFields() {
-        if (!lazyInitDone) {
-            lazyClassInit();
-        }
+        if (!redirect().lazyInitDone) redirect().lazyClassInit();
         if (redirect!=null) return redirect().getFields();
         return fields;
     }
@@ -286,9 +288,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * interfaces the class implements
      */
     public ClassNode[] getInterfaces() {
-        if (!lazyInitDone) {
-            lazyClassInit();
-        }
+        if (!redirect().lazyInitDone) redirect().lazyClassInit();
         if (redirect!=null) return redirect().getInterfaces();
         return interfaces;
     }
@@ -310,7 +310,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * each method in the class represented by this ClassNode
      */
     public List getMethods() {
-        if (!lazyInitDone) lazyClassInit();
+        if (!redirect().lazyInitDone) redirect().lazyClassInit();
         if (redirect!=null) return redirect().getMethods();
         return methodsList;
     }
@@ -392,9 +392,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public List getDeclaredConstructors() {
-        if (!lazyInitDone) {
-            lazyClassInit();
-        }
+        if (!redirect().lazyInitDone) redirect().lazyClassInit();
         return redirect().constructors;
     }
 
@@ -662,7 +660,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @see #getMethods(String)
      */
     public List getDeclaredMethods(String name) {
-        if (!lazyInitDone) lazyClassInit();
+        if (!redirect().lazyInitDone) redirect().lazyClassInit();
         if (redirect!=null) return redirect().getDeclaredMethods(name);
         return methods.getNotNull(name);
     }
@@ -801,9 +799,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public ClassNode getUnresolvedSuperClass(boolean useRedirect) {
         if (!useRedirect) return superClass;
-        if (!lazyInitDone) {
-            lazyClassInit();
-        }
+        if (!redirect().lazyInitDone) redirect().lazyClassInit();
         return redirect().superClass;
     }
 
