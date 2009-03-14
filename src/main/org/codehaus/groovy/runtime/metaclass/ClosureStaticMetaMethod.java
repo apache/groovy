@@ -43,12 +43,16 @@ public class ClosureStaticMetaMethod extends MetaMethod implements ClosureInvoki
      * @param c The closure that this ClosureMetaMethod will invoke when called
      */
     public ClosureStaticMetaMethod(String name, Class declaringClass, Closure c) {
-        super(c.getParameterTypes());
+    	this(name, declaringClass, c, c.getParameterTypes());
+	}
+
+    public ClosureStaticMetaMethod(String name, Class declaringClass, Closure c, Class[] paramTypes) {
+        super(paramTypes);
         this.callable = c;
 		this.declaringClass = ReflectionCache.getCachedClass(declaringClass);
         this.name = name;
 	}
-
+    
 	public Object invoke(Object object, Object[] arguments) {
 		Closure cloned = (Closure) callable.clone();
 		cloned.setDelegate(object);

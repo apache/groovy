@@ -439,7 +439,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         private void registerStatic(Closure callable, boolean replace, Class[] paramTypes) {
             Method foundMethod = checkIfMethodExists(theClass, propertyName, paramTypes, true);
             if(foundMethod != null && !replace) throw new GroovyRuntimeException("Cannot add new static method ["+propertyName+"] for arguments ["+ DefaultGroovyMethods.inspect(paramTypes)+"]. It already exists!");
-            registerStaticMethod(propertyName, callable);
+            registerStaticMethod(propertyName, callable, paramTypes);
         }
 
         private void registerInstance(MetaMethod method, boolean replace, Class[] paramTypes) {
@@ -785,13 +785,17 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         addMetaBeanProperty(beanProperty);
 	}
 
+	protected void registerStaticMethod(final String name, final Closure callable) {
+		registerStaticMethod(name, callable, null);
+	}
+	
 	/**
 	 * Registers a new static method for the given method name and closure on this MetaClass
 	 *
 	 * @param name The method name
 	 * @param callable The callable Closure
 	 */
-	protected void registerStaticMethod(final String name, final Closure callable) {
+	protected void registerStaticMethod(final String name, final Closure callable, final Class[] paramTypes) {
 		performOperationOnMetaClass(new Callable() {
 			public void call() {
                 String methodName;
@@ -802,7 +806,14 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                 else
                     methodName = name;
 
-                ClosureStaticMetaMethod metaMethod = new ClosureStaticMetaMethod(methodName, theClass,callable);
+                ClosureStaticMetaMethod metaMethod = null;
+                
+                if(paramTypes != null) {
+                	metaMethod = new ClosureStaticMetaMethod(methodName, theClass, callable, paramTypes);
+                } else {
+                	metaMethod = new ClosureStaticMetaMethod(methodName, theClass, callable);
+                }
+                
                 if(methodName.equals(INVOKE_METHOD_METHOD) && callable.getParameterTypes().length == 2) {
                     invokeStaticMethodMethod = metaMethod;
                 }
