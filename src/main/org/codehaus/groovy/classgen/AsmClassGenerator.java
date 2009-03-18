@@ -4376,8 +4376,8 @@ public class AsmClassGenerator extends ClassGenerator {
 
         public void visitMethodInsn(int opcode, String owner, String name, String desc) {
             if (boxing(opcode,owner,name)) {
-                dropBoxing();
                 boxingDesc = desc;
+                dropBoxing();
             }
             else {
               if (unboxing(opcode, owner, name)) {
