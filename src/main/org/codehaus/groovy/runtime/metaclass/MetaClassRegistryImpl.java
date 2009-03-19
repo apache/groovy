@@ -392,10 +392,13 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             public boolean hasNext() {
             	if (hasNextCalled) return hasNext;
             	hasNextCalled = true;
-            	hasNext=true;
-            	
-                currentMeta= refs[index];
-                index++;
+            	if(index < refs.length) {
+                	hasNext=true;
+                    currentMeta= refs[index];
+                    index++;
+            	} else {
+            		hasNext=false;
+            	}
                 return hasNext;
             }
             
