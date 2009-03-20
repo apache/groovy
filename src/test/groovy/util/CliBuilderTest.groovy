@@ -72,9 +72,9 @@ class CliBuilderTest extends GroovyTestCase {
     cli.i ( argName : 'extension' , optionalArg : true, 'modify files in place, create backup if extension is given (e.g. \'.bak\')' )
     def stringified = cli.options.toString ( )
     assert stringified =~ /i=\[ option: i  :: modify files in place, create backup if extension is given/
-    assert stringified =~ /c=\[ option: c encoding  \[ARG] :: character encoding/ // 1.2-SNAPSHOT behaves differently to 1.0 and 1.1 here.
+    assert stringified =~ /c=\[ option: c encoding  \[ARG] :: character encoding/ // 1.2 behaves differently to 1.0 and 1.1 here.
     assert stringified =~ /h=\[ option: h help  :: usage information/
-    assert stringified =~ /encoding=\[ option: c encoding  \[ARG] :: character encoding/ // 1.2-SNAPSHOT behaves differently to 1.0 and 1.1 here.
+    assert stringified =~ /encoding=\[ option: c encoding  \[ARG] :: character encoding/ // 1.2 behaves differently to 1.0 and 1.1 here.
     assert stringified =~ /help=\[ option: h help  :: usage information/
     def options = cli.parse ( optionList )
     assert options.hasOption ( 'h' )
