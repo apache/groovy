@@ -35,15 +35,11 @@ install = {arg, cmd ->
 
     // set the instance so we can re-set the logger
     Grape.getInstance()
+    setupLogging()
+
     try {
-        // set the logger to louder
-        Message.setDefaultLogger(new DefaultMessageLogger(Message.MSG_INFO))
-    } catch (Throwable e) {
-        e.printStackTrace(System.out);
-        // doesn't matter, we just won't turn up ivy's logging
-    }
-    def ex = Grape.grab(autoDownload: true, group: arg[1], module: arg[2], version: ver, noExceptions: true)
-    if (ex) {
+        Grape.grab(autoDownload: true, group: arg[1], module: arg[2], version: ver, noExceptions: true)
+    } catch (Exception e) {
         println "An error occured : $ex"
     }
 }
@@ -53,6 +49,10 @@ list = {arg, cmd ->
 
     int moduleCount = 0
     int versionCount = 0
+
+    // set the instance so we can re-set the logger
+    Grape.getInstance()
+    setupLogging()
 
     Grape.enumerateGrapes().each {String groupName, Map group ->
         group.each {String moduleName, List<String> versions ->
@@ -88,6 +88,7 @@ resolve = {arg, cmd ->
 
     // set the instance so we can re-set the logger
     Grape.getInstance()
+    setupLogging(Message.MSG_ERR)
 
     if ((arg.size() % 3) != 0) {
         println 'There need to be a multiple of three arguments: (group module version)+'
@@ -169,12 +170,37 @@ options.addOption(
         .withLongOpt("help")
         .create('h')
 );
-// this will turn on grape logging, once grape logging is written
-//options.addOption(
-//    OptionBuilder.hasArg(false)
-//    .withDescription("more verbose output")
-//    .withLongOpt("debug")
-//    .create('d'));
+
+// Logging Level Options
+options.addOptionGroup(
+    new OptionGroup().addOption(
+        OptionBuilder.hasArg(false)
+        .withDescription("Log level 0 - only errors")
+        .withLongOpt("quiet")
+        .create('q'))
+    .addOption(
+        OptionBuilder.hasArg(false)
+        .withDescription("Log level 1 - errors and warnings")
+        .withLongOpt("warn")
+        .create('w'))
+    .addOption(
+        OptionBuilder.hasArg(false)
+        .withDescription("Log level 2 - info")
+        .withLongOpt("info")
+        .create('i'))
+    .addOption(
+        OptionBuilder.hasArg(false)
+        .withDescription("Log level 3 - verbose")
+        .withLongOpt("verbose")
+        .create('V'))
+    .addOption(
+        OptionBuilder.hasArg(false)
+        .withDescription("Log level 4 - debug")
+        .withLongOpt("debug")
+        .create('d'))
+)
+
+
 options.addOption(
     OptionBuilder.hasArg(false)
         .withDescription("display the Groovy and JVM versions")
@@ -199,7 +225,7 @@ grapeHelp = {
         2,
         4,
         null, // footer
-        false);
+        true);
     pw.flush()
 
     println ""
@@ -208,6 +234,22 @@ grapeHelp = {
         println "  ${(k + spaces).substring(0, spacesLen)} $v.shortHelp"
     }
     println ""
+}
+
+setupLogging = {int defaultLevel = 2 -> // = Message.MSG_INFO -> some parsing error :(
+    if (cmd.hasOption('q')) {
+        Message.setDefaultLogger(new DefaultMessageLogger(Message.MSG_ERR))
+    } else if (cmd.hasOption('w')) {
+        Message.setDefaultLogger(new DefaultMessageLogger(Message.MSG_WARN))
+    } else if (cmd.hasOption('i')) {
+        Message.setDefaultLogger(new DefaultMessageLogger(Message.MSG_INFO))
+    } else if (cmd.hasOption('V')) {
+        Message.setDefaultLogger(new DefaultMessageLogger(Message.MSG_VERBOSE))
+    } else if (cmd.hasOption('d')) {
+        Message.setDefaultLogger(new DefaultMessageLogger(Message.MSG_DEBUG))
+    } else {
+        Message.setDefaultLogger(new DefaultMessageLogger(defaultLevel))
+    }
 }
 
 if (cmd.hasOption('h')) {
@@ -220,6 +262,7 @@ if (cmd.hasOption('v')) {
     println "Groovy Version: $version JVM: ${System.getProperty('java.version')}"
     return
 }
+
 
 cmd.getOptionValues('D')?.each {String prop ->
     def (k, v) = prop.split ('=', 2) as List // array multiple assignement quirk
