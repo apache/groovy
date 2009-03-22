@@ -23,25 +23,32 @@ group = 'org.codehaus.groovy'
 version = ant.antProject.properties.groovyVersion
 
 usePlugin ( 'groovy' )
-sourceCompatibility = 1.5
-targetCompatibility = 1.5
+
+sourceCompatibility = 5
+targetCompatibility = 5
 groovySrcDirName = 'src/main'
 groovyTestSrcDirName = 'src/test'
+
 dependencies {
   addMavenRepo ( )
-  groovy ( 'org.codehaus.groovy:groovy-all:1.6-RC-1' )
+  groovy ( 'org.codehaus.groovy:groovy-all:1.6.0' )
   compile ( [
+             //  Core dependencies.
              'antlr:antlr:2.7.7' ,
              'asm:asm:2.2.3' ,
              'asm:asm-util:2.2.3' ,
              'asm:asm-analysis:2.2.3' ,
              'asm:asm-tree:2.2.3' ,
              'junit:junit:4.5' ,
-             'commons-cli:commons-cli:1.0' ,
+             //  Used by optional features.
+             'commons-cli:commons-cli:1.2' ,
              'org.apache.ant:ant:1.7.1' ,
+             'bsf:bsf:2.4.0' ,
              'javax.servlet:servlet-api:2.4' ,
              'javax.servlet:jsp-api:2.0' ,
+             'com.thoughtworks.xstream:xstream:1.3' ,
              'jline:jline:0.9.94' ,
+             'org.apache.ivy:ivy:2.0.0' ,
              ] )
   testRuntime ( [
                  'asm:asm-attrs:2.2.3' ,
@@ -53,6 +60,7 @@ dependencies {
   runtime ( [
              'org.apache.ant:ant-junit:1.7.1' ,
              'org.apache.ant:ant-launcher:1.7.1' ,
+             'commons-logging:commons-logging:1.1' ,
              ] )
 }
 
