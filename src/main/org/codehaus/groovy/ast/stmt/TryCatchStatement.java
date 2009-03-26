@@ -75,4 +75,8 @@ public class TryCatchStatement extends Statement {
     public void setCatchStatement(int idx, Statement catchStatement) {
         catchStatements.set(idx, catchStatement);
     }
+
+    public void setFinallyStatement(Statement finallyStatement) {
+        this.finallyStatement = finallyStatement;
+    }
 }
