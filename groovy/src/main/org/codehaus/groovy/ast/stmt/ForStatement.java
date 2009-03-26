@@ -74,4 +74,8 @@ public class ForStatement extends Statement {
     public VariableScope getVariableScope() {
         return scope;
     }
+
+    public void setLoopBlock(Statement loopBlock) {
+        this.loopBlock = loopBlock;
+    }
 }
