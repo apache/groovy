@@ -67,4 +67,8 @@ public class TryCatchStatement extends Statement {
         }
         return null;
     }
+
+    public void setFinallyStatement(Statement finallyStatement) {
+        this.finallyStatement = finallyStatement;
+    }
 }

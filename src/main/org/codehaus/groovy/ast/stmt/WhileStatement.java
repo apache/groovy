@@ -50,4 +50,8 @@ public class WhileStatement extends Statement {
 	public void setBooleanExpression(BooleanExpression booleanExpression) {
 		this.booleanExpression = booleanExpression;
 	}
+
+    public void setLoopBlock(Statement loopBlock) {
+        this.loopBlock = loopBlock;
+    }
 }
