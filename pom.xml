@@ -345,6 +345,15 @@
                 <role>Developer</role>
             </roles>
         </developer>
+        <developer>
+            <name>Peter Niederwieser</name>
+            <id>pniederw</id>
+            <email>pniederw@gmail.com</email>
+            <organization></organization>
+            <roles>
+                <role>Developer</role>
+            </roles>
+        </developer>
     </developers>
 
     <contributors>
