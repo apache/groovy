@@ -162,42 +162,44 @@ class ConfigObject extends LinkedHashMap implements Writable {
 
 
 			if(value instanceof ConfigObject) {
-                def dotsInKeys = value.find { entry -> entry.key.indexOf('.') > -1 }
-                def configSize = value.size()
-                def firstKey = value.keySet().iterator().next()
-                def firstValue = value.values().iterator().next()
-                def firstSize
-                if(firstValue instanceof ConfigObject){
-                    firstSize = firstValue.size()
+                if(!value.isEmpty()) {
+                  def dotsInKeys = value.find { entry -> entry.key.indexOf('.') > -1 }
+                  def configSize = value.size()
+                  def firstKey = value.keySet().iterator().next()
+                  def firstValue = value.values().iterator().next()
+                  def firstSize
+                  if(firstValue instanceof ConfigObject){
+                      firstSize = firstValue.size()
+                  }
+                  else { firstSize = 1 }
+                  if(configSize == 1|| dotsInKeys )  {
+
+                      if(firstSize == 1 && firstValue instanceof ConfigObject) {
+                          key = KEYWORDS.contains(key) ? key.inspect() : key
+                          def writePrefix = "${prefix}${key}.${firstKey}."
+                          writeConfig(writePrefix, firstValue, out, tab, true)
+                      }
+                      else if(!dotsInKeys && firstValue instanceof ConfigObject) {
+                          writeNode(key, space, tab,value, out)
+                      }  else {
+                          for(j in value.keySet()) {
+                              def v2 = value.get(j)
+                              def k2 = j.indexOf('.') > -1 ? j.inspect() : j
+                              if(v2 instanceof ConfigObject) {
+                                  key = KEYWORDS.contains(key) ? key.inspect() : key
+                                  writeConfig("${prefix}${key}", v2, out, tab, false)
+                              }
+                              else {
+                                  writeValue("${key}.${k2}", space, prefix, v2, out)
+                              }
+                          }
+                      }
+
+                  }
+                  else {
+                      writeNode(key, space,tab, value, out)
+                  }                  
                 }
-                else { firstSize = 1 }
-				if(configSize == 1|| dotsInKeys )  {
-
-                    if(firstSize == 1 && firstValue instanceof ConfigObject) {
-                        key = KEYWORDS.contains(key) ? key.inspect() : key
-                        def writePrefix = "${prefix}${key}.${firstKey}."
-                        writeConfig(writePrefix, firstValue, out, tab, true)
-                    }
-                    else if(!dotsInKeys && firstValue instanceof ConfigObject) {
-                        writeNode(key, space, tab,value, out)
-                    }  else {
-                        for(j in value.keySet()) {
-                            def v2 = value.get(j)
-                            def k2 = j.indexOf('.') > -1 ? j.inspect() : j
-                            if(v2 instanceof ConfigObject) {
-                                key = KEYWORDS.contains(key) ? key.inspect() : key
-                                writeConfig("${prefix}${key}", v2, out, tab, false)
-                            }
-                            else {
-                                writeValue("${key}.${k2}", space, prefix, v2, out)
-                            }
-                        }
-                    }
-
-				}
-				else {
-                    writeNode(key, space,tab, value, out)
-				}
 			}
 			else {
 
