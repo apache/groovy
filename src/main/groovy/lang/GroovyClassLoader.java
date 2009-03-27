@@ -32,10 +32,7 @@ import org.objectweb.asm.ClassWriter;
 
 import java.io.*;
 import java.net.*;
-import java.security.AccessController;
-import java.security.CodeSource;
-import java.security.PrivilegedAction;
-import java.security.ProtectionDomain;
+import java.security.*;
 import java.util.*;
 
 /**
@@ -325,6 +322,28 @@ public class GroovyClassLoader extends URLClassLoader {
      */
     protected Class defineClass(String name, byte[] bytecode, ProtectionDomain domain) {
         throw new DeprecationException("the method groovy.lang.GroovyClassLoader#defineClass(String,byte[],ProtectionDomain) is no longer used internally and removed");
+    }
+
+    protected PermissionCollection getPermissions(CodeSource codeSource) {
+        PermissionCollection perms;
+        try {
+            perms = super.getPermissions(codeSource);
+        } catch (SecurityException e) {
+            // We lied about our CodeSource and that makes URLClassLoader unhappy.
+            perms = new Permissions();
+        }
+
+        ProtectionDomain myDomain = AccessController.doPrivileged(new PrivilegedAction<ProtectionDomain>() {
+            public ProtectionDomain run() {
+                return getClass().getProtectionDomain();
+            }
+        });
+        PermissionCollection myPerms = myDomain.getPermissions();
+        for (Enumeration<Permission> elements = myPerms.elements(); elements.hasMoreElements();) {
+            perms.add(elements.nextElement());
+        }
+        perms.setReadOnly();
+        return perms;
     }
 
     public static class InnerLoader extends GroovyClassLoader {
@@ -621,16 +640,6 @@ public class GroovyClassLoader extends URLClassLoader {
         boolean recompile = isRecompilable(cls);
         if (!recompile) return cls;
 
-        // check security manager
-        SecurityManager sm = System.getSecurityManager();
-        if (sm != null) {
-            String className = name.replace('/', '.');
-            int i = className.lastIndexOf('.');
-            if (i != -1) {
-                sm.checkPackageAccess(className.substring(0, i));
-            }
-        }
-
         // try parent loader
         ClassNotFoundException last = null;
         try {
@@ -647,6 +656,19 @@ public class GroovyClassLoader extends URLClassLoader {
             }
         }
         
+        // check security manager
+        SecurityManager sm = System.getSecurityManager();
+        if (sm != null) {
+            String className = name.replace('/', '.');
+            int i = className.lastIndexOf('.');
+            // no checks on the sun.reflect classes for reflection speed-up
+            // in particular ConstructorAccessorImpl, MethodAccessorImpl, FieldAccessorImpl and SerializationConstructorAccessorImpl
+            // which are generated at runtime by the JDK
+            if (i != -1 && !className.startsWith("sun.reflect.")) {
+                sm.checkPackageAccess(className.substring(0, i));
+            }
+        }
+
         // prefer class if no recompilation
         if (cls != null && preferClassOverScript) return cls;
 

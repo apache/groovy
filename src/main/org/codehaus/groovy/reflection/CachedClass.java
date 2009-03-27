@@ -45,7 +45,11 @@ public class CachedClass {
                AccessController.doPrivileged(new PrivilegedAction/*<Field[]>*/() {
                    public /*Field[]*/ Object run() {
                        final Field[] df = getTheClass().getDeclaredFields();
-                       AccessibleObject.setAccessible(df, true);
+                       try {
+                           AccessibleObject.setAccessible(df, true);
+                       } catch (SecurityException e) {
+                           // swallow for strict security managers
+                       }
                        return df;                                                   
                    }
                });
@@ -77,7 +81,11 @@ public class CachedClass {
                AccessController.doPrivileged(new PrivilegedAction/*<Method[]>*/() {
                    public /*Method[]*/ Object run() {
                        final Method[] dm = getTheClass().getDeclaredMethods();
-                       AccessibleObject.setAccessible(dm, true);
+                       try {
+                           AccessibleObject.setAccessible(dm, true);
+                       } catch (SecurityException e) {
+                           // swallow for strict security managers
+                       }
                        return dm;
                    }
                });
