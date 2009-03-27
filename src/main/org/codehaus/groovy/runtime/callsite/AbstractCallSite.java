@@ -308,6 +308,11 @@ public class AbstractCallSite implements CallSite {
     private CallSite createPogoMetaClassGetPropertySite(GroovyObject receiver) {
         final MetaClass metaClass = receiver.getMetaClass();
 
+        if (metaClass.getTheClass() != receiver.getClass()) {
+            // It happens when object was proxied, for example by Hibernate
+            return new PogoGetPropertySite(this, metaClass.getTheClass());
+        }
+
         CallSite site;
         if (metaClass.getClass() != MetaClassImpl.class || GroovyCategorySupport.hasCategoryInCurrentThread()) {
             site = new PogoMetaClassGetPropertySite(this, metaClass);
