@@ -21,6 +21,8 @@ import org.codehaus.groovy.runtime.InvokerInvocationException;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 
 /**
  * @author Alex.Tkachman
@@ -30,11 +32,16 @@ public class CachedConstructor extends ParameterTypes {
 
     public final Constructor cachedConstructor;
 
-    public CachedConstructor(CachedClass clazz, Constructor c) {
+    public CachedConstructor(CachedClass clazz, final Constructor c) {
         this.cachedConstructor = c;
         this.clazz = clazz;
         try {
-            c.setAccessible(true);
+            AccessController.doPrivileged(new PrivilegedAction() {
+                public Object run() {
+                    c.setAccessible(true);
+                    return null;
+                }
+            });
         }
         catch (SecurityException e) {
             // IGNORE

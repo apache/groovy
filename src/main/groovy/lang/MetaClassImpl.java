@@ -2217,18 +2217,23 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             // get the getter method
             Method method = pd.getReadMethod();
             MetaMethod getter;
-            if (method != null)
-                getter = findMethod(CachedMethod.find(method));
-            else
+
+            if (method != null) {
+                CachedMethod cachedGetter = CachedMethod.find(method);
+                getter = cachedGetter == null ? null : findMethod(cachedGetter);
+            } else {
                 getter = null;
+            }
 
             // get the setter method
             MetaMethod setter;
             method = pd.getWriteMethod();
-            if (method != null)
-                setter = findMethod(CachedMethod.find(method));
-            else
+            if (method != null) {
+                CachedMethod cachedSetter = CachedMethod.find(method);
+                setter = cachedSetter == null ? null : findMethod(cachedSetter);
+            } else {
                 setter = null;
+            }
 
             // now create the MetaProperty object
             MetaBeanProperty mp = new MetaBeanProperty(pd.getName(), pd.getPropertyType(), getter, setter);
