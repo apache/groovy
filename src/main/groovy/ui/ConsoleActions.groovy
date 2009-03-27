@@ -239,6 +239,13 @@ inspectVariablesAction = action(
     accelerator: shortcut('J')
 )
 
+inspectAstAction = action(
+    name: 'Inspect Ast',
+    closure: controller.&inspectAst,
+    mnemonic: 'A',
+    accelerator: shortcut('T'),
+)
+
 captureStdOutAction = action(
     name: 'Capture Standard Output',
     closure: controller.&captureStdOut,

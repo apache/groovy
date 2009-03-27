@@ -58,6 +58,7 @@ menuBar {
         separator()
         menuItem(inspectLastAction)
         menuItem(inspectVariablesAction)
+        menuItem(inspectAstAction)
     }
 
     menu(text: 'Help', mnemonic: 'H') {

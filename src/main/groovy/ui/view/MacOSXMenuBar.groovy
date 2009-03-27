@@ -95,6 +95,7 @@ menuBar {
         separator()
         menuItem(inspectLastAction, icon:null)
         menuItem(inspectVariablesAction, icon:null)
+        menuItem(inspectAstAction, icon:null)
     }
 }
 

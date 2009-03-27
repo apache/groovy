@@ -16,6 +16,7 @@
 package groovy.ui
 
 import groovy.inspect.swingui.ObjectBrowser
+import groovy.inspect.swingui.AstBrowser
 import groovy.swing.SwingBuilder
 import groovy.ui.ConsoleTextEditor
 import groovy.ui.SystemOutputInterceptor
@@ -58,6 +59,7 @@ import org.codehaus.groovy.control.messages.ExceptionMessage
  * @author Dierk Koenig, changed Layout, included Selection sensitivity, included ObjectBrowser
  * @author Alan Green more features: history, System.out capture, bind result to _
  * @author Guillaume Laforge, stacktrace hyperlinking to the current script line
+ * @author Hamlet D'Arcy, AST browser
  */
 class Console implements CaretListener, HyperlinkListener {
 
@@ -138,7 +140,8 @@ class Console implements CaretListener, HyperlinkListener {
     Closure beforeExecution
     Closure afterExecution
 
-    public static String ICON_PATH = '/groovy/ui/ConsoleIcon.png' // used by ObjectBrowser too
+    public static String ICON_PATH = '/groovy/ui/ConsoleIcon.png' // used by ObjectBrowser and AST Viewer 
+    public static String NODE_ICON_PATH = '/groovy/ui/icons/bullet_green.png' // used by AST Viewer 
 
     static void main(args) {
         // allow the full stack traces to bubble up to the root logger
@@ -636,6 +639,10 @@ class Console implements CaretListener, HyperlinkListener {
 
     void inspectVariables(EventObject evt = null) {
         ObjectBrowser.inspect(shell.context.variables)
+    }
+
+    void inspectAst(EventObject evt = null) {
+        new AstBrowser(inputArea, rootElement).run({ inputArea.getText() } )
     }
 
     void largerFont(EventObject evt = null) {
