@@ -26,7 +26,23 @@ package groovy.util
  */
 
 class  ConfigSlurperTest extends GroovyTestCase {
+    void testConsecutiveSlurperValues() {
+      def config = new ConfigSlurper().parse('''
+grails.views.default.codec="none"
+grails {
+	mail {
+		host = "smtp.foo.com"
+     	port = 25
+     	username = "foo"
+     	password = "bar"
+  }
+}
+''')
 
+
+      assertEquals "none", config.grails.views.default.codec
+      assertEquals "smtp.foo.com", config.grails.mail.host
+    }
 
     void testConfigSlurperNestedValues() {
         def config = new ConfigSlurper().parse('''

@@ -217,7 +217,13 @@ class ConfigSlurper {
                         stack.pop()
                     }
                 } else {
-                    def co = new ConfigObject()
+                    def co
+                    if(config.get(name) instanceof ConfigObject) {
+                        co = config.get(name)
+                    }
+                    else {
+                        co = new ConfigObject()
+                    }
                     assignName.call(name, co)
                     pushStack.call(co)
                     args[0].call()
