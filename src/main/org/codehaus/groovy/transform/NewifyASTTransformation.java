@@ -127,7 +127,8 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
 
     private void checkDuplicateNameClashes(ListExpression list) {
         final HashSet<String> seen = new HashSet<String>();
-        final List<ClassExpression> classes = list.getExpressions();
+        @SuppressWarnings("unchecked")
+        final List<ClassExpression> classes = (List)list.getExpressions();
         for (ClassExpression ce : classes) {
             final String name = ce.getType().getNameWithoutPackage();
             if (seen.contains(name)) {
@@ -146,7 +147,8 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
     }
 
     private void checkClassLevelClashes(ListExpression list) {
-        final List<ClassExpression> classes = list.getExpressions();
+        @SuppressWarnings("unchecked")
+        final List<ClassExpression> classes = (List)list.getExpressions();
         for (ClassExpression ce : classes) {
             final String name = ce.getType().getNameWithoutPackage();
             if (findClassWithMatchingBasename(name)) {
@@ -158,7 +160,8 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
 
     private boolean findClassWithMatchingBasename(String nameWithoutPackage) {
         if (classesToNewify == null) return false;
-        final List<ClassExpression> classes = classesToNewify.getExpressions();
+        @SuppressWarnings("unchecked")
+        final List<ClassExpression> classes = (List)classesToNewify.getExpressions();
         for (ClassExpression ce : classes) {
             if (ce.getType().getNameWithoutPackage().equals(nameWithoutPackage)) {
                 return true;
@@ -194,7 +197,8 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
 
     private ClassNode findMatchingCandidateClass(MethodCallExpression mce) {
         if (classesToNewify == null) return null;
-        List<ClassExpression> classes = classesToNewify.getExpressions();
+        @SuppressWarnings("unchecked")
+        List<ClassExpression> classes = (List)classesToNewify.getExpressions();
         for (ClassExpression ce : classes) {
             final ClassNode type = ce.getType();
             if (type.getNameWithoutPackage().equals(mce.getMethodAsString())) {
