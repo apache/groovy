@@ -16,7 +16,6 @@
 package org.codehaus.groovy.ast.expr;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.codehaus.groovy.ast.ClassHelper;
@@ -29,14 +28,14 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * @version $Revision$
  */
 public class ListExpression extends Expression {
-    private List expressions;
+    private List<Expression> expressions;
     private boolean wrapped = false;
 
     public ListExpression() {
-        this(new ArrayList());
+        this(new ArrayList<Expression>());
     }
     
-    public ListExpression(List expressions) {
+    public ListExpression(List<Expression> expressions) {
         this.expressions = expressions;
         //TODO: get the type's of the expressions to specify the
         // list type to List<X> if possible.
@@ -47,7 +46,7 @@ public class ListExpression extends Expression {
         expressions.add(expression);
     }
     
-    public List getExpressions() {
+    public List<Expression> getExpressions() {
         return expressions;
     }
     
@@ -70,13 +69,13 @@ public class ListExpression extends Expression {
     }
 
     public Expression getExpression(int i) {
-        return (Expression) expressions.get(i);
+        return expressions.get(i);
     }
 
     public String getText() {
         StringBuffer buffer = new StringBuffer("[");
         boolean first = true;
-        for (Iterator iter = expressions.iterator(); iter.hasNext(); ) {
+        for (Expression expression : expressions) {
             if (first) {
                 first = false;
             }
@@ -84,7 +83,7 @@ public class ListExpression extends Expression {
                 buffer.append(", ");
             }
             
-            buffer.append(((Expression)iter.next()).getText());
+            buffer.append(expression.getText());
         }
         buffer.append("]");
         return buffer.toString();

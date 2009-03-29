@@ -30,7 +30,7 @@ import org.codehaus.groovy.ast.expr.Expression;
 public class SwitchStatement extends Statement {
 
     private Expression expression;
-    private List caseStatements = new ArrayList();
+    private List<CaseStatement> caseStatements = new ArrayList<CaseStatement>();
     private Statement defaultStatement;
     
 
@@ -43,7 +43,7 @@ public class SwitchStatement extends Statement {
         this.defaultStatement = defaultStatement;
     }
 
-    public SwitchStatement(Expression expression, List caseStatements, Statement defaultStatement) {
+    public SwitchStatement(Expression expression, List<CaseStatement> caseStatements, Statement defaultStatement) {
         this.expression = expression;
         this.caseStatements = caseStatements;
         this.defaultStatement = defaultStatement;
@@ -53,7 +53,7 @@ public class SwitchStatement extends Statement {
         visitor.visitSwitch(this);
     }
     
-    public List getCaseStatements() {
+    public List<CaseStatement> getCaseStatements() {
         return caseStatements;
     }
 
@@ -82,7 +82,7 @@ public class SwitchStatement extends Statement {
      */
     public CaseStatement getCaseStatement(int idx) {
         if (idx >= 0 && idx < caseStatements.size()) {
-            return (CaseStatement) caseStatements.get(idx);
+            return caseStatements.get(idx);
         }
         return null;
     }

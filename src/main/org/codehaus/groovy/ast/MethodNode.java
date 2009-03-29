@@ -193,11 +193,11 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
         if (code == null) return null;
         Statement first = code;
         while (first instanceof BlockStatement) {
-            List list = ((BlockStatement) first).getStatements();
+            List<Statement> list = ((BlockStatement) first).getStatements();
             if (list.isEmpty()) {
                 first=null;
             } else {
-                first = (Statement) list.get(0);
+                first = list.get(0);
             }
         }
         return first;

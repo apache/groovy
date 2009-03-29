@@ -24,21 +24,20 @@ import java.util.*;
  * @version $Revision$
  */
 public class AnnotatedNode extends ASTNode {
-    private List annotations = Collections.EMPTY_LIST;
+    private List<AnnotationNode> annotations = Collections.emptyList();
     private boolean synthetic;
     ClassNode declaringClass;
 
     public AnnotatedNode() {
     }
 
-    public List getAnnotations() {
+    public List<AnnotationNode> getAnnotations() {
         return annotations;
     }
 
-    public List getAnnotations(ClassNode type) {
-        List ret = new ArrayList(annotations.size());
-        for (Iterator it = annotations.iterator(); it.hasNext();) {
-            AnnotationNode node = (AnnotationNode) it.next();
+    public List<AnnotationNode> getAnnotations(ClassNode type) {
+        List<AnnotationNode> ret = new ArrayList<AnnotationNode>(annotations.size());
+        for (AnnotationNode node: annotations) {
             if (type.equals(node.getClassNode())) ret.add(node);
         }
         return ret;
@@ -51,12 +50,11 @@ public class AnnotatedNode extends ASTNode {
 
     private void checkInit() {
         if (annotations == Collections.EMPTY_LIST)
-          annotations = new ArrayList(3);
+            annotations = new ArrayList<AnnotationNode>(3);
     }
 
-    public void addAnnotations(List annotations) {
-        for (Iterator iter = annotations.iterator(); iter.hasNext();) {
-            AnnotationNode node = (AnnotationNode) iter.next();
+    public void addAnnotations(List<AnnotationNode> annotations) {
+        for (AnnotationNode node : annotations) {
             addAnnotation(node);
         }
     }

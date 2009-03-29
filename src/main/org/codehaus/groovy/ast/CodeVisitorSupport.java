@@ -19,7 +19,6 @@ import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.classgen.BytecodeExpression;
 
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -32,9 +31,7 @@ import java.util.List;
 public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
 
     public void visitBlockStatement(BlockStatement block) {
-        List statements = block.getStatements();
-        for (Iterator iter = statements.iterator(); iter.hasNext(); ) {
-            Statement statement = (Statement) iter.next();
+        for (Statement statement : block.getStatements() ) {
             statement.visit(this);
         }
     }
@@ -75,9 +72,7 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
 
     public void visitTryCatchFinally(TryCatchStatement statement) {
         statement.getTryStatement().visit(this);
-        List list = statement.getCatchStatements();
-        for (Iterator iter = list.iterator(); iter.hasNext(); ) {
-            CatchStatement catchStatement = (CatchStatement) iter.next();
+        for (CatchStatement catchStatement : statement.getCatchStatements() ) {
             catchStatement.visit(this);
         }
         statement.getFinallyStatement().visit(this);
@@ -85,9 +80,7 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
 
     public void visitSwitch(SwitchStatement statement) {
         statement.getExpression().visit(this);
-        List list = statement.getCaseStatements();
-        for (Iterator iter = list.iterator(); iter.hasNext(); ) {
-            CaseStatement caseStatement = (CaseStatement) iter.next();
+        for (CaseStatement caseStatement : statement.getCaseStatements() ) {
             caseStatement.visit(this);
         }
         statement.getDefaultStatement().visit(this);
@@ -254,10 +247,9 @@ public abstract class CodeVisitorSupport implements GroovyCodeVisitor {
         visitListOfExpressions(expression.getValues());
     }
 
-    protected void visitListOfExpressions(List list) {
+    protected void visitListOfExpressions(List<? extends Expression> list) {
         if (list==null) return;
-        for (Iterator iter = list.iterator(); iter.hasNext(); ) {
-            Expression expression = (Expression) iter.next();
+        for (Expression expression : list) {
             if (expression instanceof SpreadExpression) {
                 Expression spread = ((SpreadExpression) expression).getExpression();
                 spread.visit(this);

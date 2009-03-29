@@ -16,12 +16,12 @@
 package org.codehaus.groovy.ast.expr;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.GroovyBugError;
 
 /**
  * Represents a base class for expressions which evaluate as an object
@@ -43,10 +43,28 @@ public abstract class Expression extends ASTNode {
      * Transforms the list of expressions
      * @return a new list of transformed expressions
      */
-    protected List transformExpressions(List expressions, ExpressionTransformer transformer) {
-        List list = new ArrayList(expressions.size());
-        for (Iterator iter = expressions.iterator(); iter.hasNext(); ) {
-            list.add(transformer.transform((Expression) iter.next()));
+    protected List<Expression> transformExpressions(List<? extends Expression> expressions, ExpressionTransformer transformer) {
+        List<Expression> list = new ArrayList<Expression>(expressions.size());
+        for (Expression expr : expressions ) {
+            list.add(transformer.transform(expr));
+        }
+        return list;
+    }
+
+    /**
+     * Transforms the list of expressions, and checks that all transformed expressions have the given type.
+     *
+     * @return a new list of transformed expressions
+     */
+    protected <T extends Expression> List<T> transformExpressions(List<? extends Expression> expressions,
+            ExpressionTransformer transformer, Class<T> transformedType) {
+        List<T> list = new ArrayList<T>(expressions.size());
+        for (Expression expr : expressions) {
+            Expression transformed = transformer.transform(expr);
+            if (!transformedType.isInstance(transformed))
+                throw new GroovyBugError(String.format("Transformed expression should have type %s but has type %s",
+                    transformedType, transformed.getClass()));
+            list.add(transformedType.cast(transformed));
         }
         return list;
     }

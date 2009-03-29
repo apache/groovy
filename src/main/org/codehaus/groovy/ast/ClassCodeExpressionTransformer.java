@@ -15,7 +15,6 @@
  */
 package org.codehaus.groovy.ast;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -56,9 +55,7 @@ public abstract class ClassCodeExpressionTransformer extends ClassCodeVisitorSup
     public void visitSwitch(SwitchStatement statement) {
         Expression exp = statement.getExpression();
         statement.setExpression(transform(exp));
-        List list = statement.getCaseStatements();
-        for (Iterator iter = list.iterator(); iter.hasNext(); ) {
-            CaseStatement caseStatement = (CaseStatement) iter.next();
+        for (CaseStatement caseStatement : statement.getCaseStatements()) {
             caseStatement.visit(this);
         }
         statement.getDefaultStatement().visit(this);
@@ -91,17 +88,13 @@ public abstract class ClassCodeExpressionTransformer extends ClassCodeVisitorSup
     }
         
     public void visitAnnotations(AnnotatedNode node) {
-        List annotions = node.getAnnotations();
+        List<AnnotationNode> annotions = node.getAnnotations();
         if (annotions.isEmpty()) return;
-        Iterator it = annotions.iterator();
-        while (it.hasNext()) {
-            AnnotationNode an = (AnnotationNode) it.next();
+        for (AnnotationNode an : annotions) {
             //skip builtin properties
             if (an.isBuiltIn()) continue;
-            for (Iterator iter = an.getMembers().entrySet().iterator(); iter.hasNext();) {
-                Map.Entry member = (Map.Entry) iter.next();
-                Expression memberValue = (Expression) member.getValue();
-                member.setValue(transform(memberValue));
+            for (Map.Entry<String, Expression> member : an.getMembers().entrySet()) {
+                member.setValue(transform(member.getValue()));
             }
         }
     }

@@ -42,13 +42,13 @@ import org.codehaus.groovy.syntax.SyntaxException;
  */
 public class CompileUnit {
 
-    private final List modules = new ArrayList();
-    private Map classes = new HashMap();
+    private final List<ModuleNode> modules = new ArrayList<ModuleNode>();
+    private Map<String,ClassNode> classes = new HashMap<String, ClassNode>();
     private CompilerConfiguration config;
     private GroovyClassLoader classLoader;
     private CodeSource codeSource;
-    private Map classesToCompile = new HashMap();
-    private Map classNameToSource = new HashMap();
+    private Map<String,ClassNode> classesToCompile = new HashMap<String, ClassNode>();
+    private Map<String,SourceUnit> classNameToSource = new HashMap<String, SourceUnit>();
     
     public CompileUnit(GroovyClassLoader classLoader, CompilerConfiguration config) {
     	this(classLoader, null, config);
@@ -60,7 +60,7 @@ public class CompileUnit {
         this.codeSource = codeSource;
     }
 
-    public List getModules() {
+    public List<ModuleNode> getModules() {
         return modules;
     }
 
@@ -79,18 +79,17 @@ public class CompileUnit {
      *         (ignoring the .class files on the classpath)
      */
     public ClassNode getClass(String name) {
-        ClassNode cn = (ClassNode) classes.get(name);
+        ClassNode cn = classes.get(name);
         if (cn!=null) return cn;
-        return (ClassNode) classesToCompile.get(name);
+        return classesToCompile.get(name);
     }
 
     /**
      * @return a list of all the classes in each module in the compilation unit
      */
     public List getClasses() {
-        List answer = new ArrayList();
-        for (Iterator iter = modules.iterator(); iter.hasNext();) {
-            ModuleNode module = (ModuleNode) iter.next();
+        List<ClassNode> answer = new ArrayList<ClassNode>();
+        for (ModuleNode module : modules) {
             answer.addAll(module.getClasses());
         }
         return answer;
@@ -112,9 +111,9 @@ public class CompileUnit {
      * Appends all of the fully qualified class names in this
      * module into the given map
      */
-    void addClasses(List classList) {
-        for (Iterator iter = classList.iterator(); iter.hasNext();) {
-            addClass((ClassNode) iter.next());
+    void addClasses(List<ClassNode> classList) {
+        for (ClassNode node : classList) {
+            addClass(node);
         }
     }
     
@@ -124,7 +123,7 @@ public class CompileUnit {
     public void addClass(ClassNode node) {
     	node = node.redirect();
         String name = node.getName();
-        ClassNode stored = (ClassNode) classes.get(name);
+        ClassNode stored = classes.get(name);
         if (stored != null && stored != node) {
             // we have a duplicate class!
             // One possibility for this is, that we delcared a script and a 
@@ -149,7 +148,7 @@ public class CompileUnit {
         classes.put(name, node);
         
         if (classesToCompile.containsKey(name)) {
-            ClassNode cn = (ClassNode) classesToCompile.get(name);
+            ClassNode cn = classesToCompile.get(name);
             cn.setRedirect(node);
             classesToCompile.remove(name);
         }        
@@ -166,14 +165,14 @@ public class CompileUnit {
     }
     
     public SourceUnit getScriptSourceLocation(String className) {
-        return (SourceUnit) classNameToSource.get(className);
+        return classNameToSource.get(className);
     }
 
     public boolean hasClassNodeToCompile(){
         return !classesToCompile.isEmpty();
     }
     
-    public Iterator iterateClassNodeToCompile(){
+    public Iterator<String> iterateClassNodeToCompile(){
         return classesToCompile.keySet().iterator();
     }
 }

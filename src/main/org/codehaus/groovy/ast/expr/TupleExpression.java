@@ -17,7 +17,6 @@ package org.codehaus.groovy.ast.expr;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
@@ -29,7 +28,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * @version $Revision$
  */
 public class TupleExpression extends Expression {
-    private List expressions;
+    private List<Expression> expressions;
 
     public TupleExpression() {
         this(0);
@@ -54,10 +53,10 @@ public class TupleExpression extends Expression {
     }
     
     public TupleExpression(int length) {
-        this.expressions = new ArrayList(length);
+        this.expressions = new ArrayList<Expression>(length);
     }
     
-    public TupleExpression(List expressions) {
+    public TupleExpression(List<Expression> expressions) {
         this.expressions = expressions;
     }
     
@@ -71,7 +70,7 @@ public class TupleExpression extends Expression {
         return this;
     }
     
-    public List getExpressions() {
+    public List<Expression> getExpressions() {
         return expressions;
     }
 
@@ -86,13 +85,13 @@ public class TupleExpression extends Expression {
     }
 
     public Expression getExpression(int i) {
-        return (Expression) expressions.get(i);
+        return expressions.get(i);
     }
 
     public String getText() {
         StringBuffer buffer = new StringBuffer("(");
         boolean first = true;
-        for (Iterator iter = expressions.iterator(); iter.hasNext(); ) {
+        for (Expression expression : expressions) {
             if (first) {
                 first = false;
             }
@@ -100,7 +99,7 @@ public class TupleExpression extends Expression {
                 buffer.append(", ");
             }
             
-            buffer.append(((Expression)iter.next()).getText());
+            buffer.append(expression.getText());
         }
         buffer.append(")");
         return buffer.toString();

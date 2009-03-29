@@ -16,7 +16,6 @@
 package org.codehaus.groovy.ast.expr;
 
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 
 import org.codehaus.groovy.ast.ClassNode;
@@ -30,12 +29,12 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * @version $Revision$
  */
 public class ArrayExpression extends Expression {
-    private List expressions;
-    private List sizeExpression;
+    private List<Expression> expressions;
+    private List<Expression> sizeExpression;
 
     private ClassNode elementType;
     
-    private static ClassNode makeArray(ClassNode base, List sizeExpression) {
+    private static ClassNode makeArray(ClassNode base, List<Expression> sizeExpression) {
     	ClassNode ret = base.makeArray();
     	if (sizeExpression==null) return ret;
     	int size = sizeExpression.size();
@@ -45,23 +44,21 @@ public class ArrayExpression extends Expression {
     	return ret;
     }
     
-    public ArrayExpression(ClassNode elementType, List expressions, List sizeExpression) {
+    public ArrayExpression(ClassNode elementType, List<Expression> expressions, List<Expression> sizeExpression) {
         //expect to get the elementType
         super.setType(makeArray(elementType,sizeExpression));
-        if (expressions==null) expressions=Collections.EMPTY_LIST;
+        if (expressions==null) expressions=Collections.emptyList();
         this.elementType = elementType;
         this.expressions = expressions;
         this.sizeExpression = sizeExpression;
         
-        for (Iterator iter = expressions.iterator(); iter.hasNext();) {
-            Object item = iter.next();
+        for (Object item : expressions) {
             if (item!=null && !(item instanceof Expression)) {
                 throw new ClassCastException("Item: " + item + " is not an Expression");
             }
         }
         if (sizeExpression!=null) {
-	        for (Iterator iter = sizeExpression.iterator(); iter.hasNext();) {
-	            Object item = iter.next();
+	        for (Object item : sizeExpression) {
 	            if (!(item instanceof Expression)) {
 	                throw new ClassCastException("Item: " + item + " is not an Expression");
 	            }
@@ -73,7 +70,7 @@ public class ArrayExpression extends Expression {
     /**
      * Creates an array using an initializer expression
      */
-    public ArrayExpression(ClassNode elementType, List expressions) {
+    public ArrayExpression(ClassNode elementType, List<Expression> expressions) {
         this(elementType,expressions,null);
     }
 
@@ -81,7 +78,7 @@ public class ArrayExpression extends Expression {
         expressions.add(expression);
     }
 
-    public List getExpressions() {
+    public List<Expression> getExpressions() {
         return expressions;
     }
 
@@ -94,8 +91,8 @@ public class ArrayExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-    	List exprList = transformExpressions(expressions, transformer);
-    	List sizes = null;
+    	List<Expression> exprList = transformExpressions(expressions, transformer);
+    	List<Expression> sizes = null;
     	if (sizeExpression!=null) sizes = transformExpressions(sizeExpression,transformer);
         Expression ret = new ArrayExpression(elementType, exprList, sizes);
         ret.setSourcePosition(this);
@@ -103,8 +100,7 @@ public class ArrayExpression extends Expression {
     }
 
     public Expression getExpression(int i) {
-        Object object = expressions.get(i);
-        return (Expression) object;
+        return expressions.get(i);
     }
 
     public ClassNode getElementType() {
@@ -114,7 +110,7 @@ public class ArrayExpression extends Expression {
     public String getText() {
         StringBuffer buffer = new StringBuffer("[");
         boolean first = true;
-        for (Iterator iter = expressions.iterator(); iter.hasNext();) {
+        for (Expression expression : expressions) {
             if (first) {
                 first = false;
             }
@@ -122,13 +118,13 @@ public class ArrayExpression extends Expression {
                 buffer.append(", ");
             }
 
-            buffer.append(((Expression) iter.next()).getText());
+            buffer.append(expression.getText());
         }
         buffer.append("]");
         return buffer.toString();
     }
 
-    public List getSizeExpression() {
+    public List<Expression> getSizeExpression() {
         return sizeExpression;
     }
 

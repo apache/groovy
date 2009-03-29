@@ -15,7 +15,6 @@
  */
 package org.codehaus.groovy.ast;
 
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
@@ -46,26 +45,20 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
     public void visitClass(ClassNode node) {
         visitAnnotations(node);
         node.visitContents(this);
-        List list = node.getObjectInitializerStatements();
-        for (Iterator iter = list.iterator(); iter.hasNext();) {
-            Statement element = (Statement) iter.next();
+        for (Statement element : node.getObjectInitializerStatements()) {
             element.visit(this);
         }
     }
     
     public void visitAnnotations(AnnotatedNode node) {
-        List annotions = node.getAnnotations();
+        List<AnnotationNode> annotions = node.getAnnotations();
         if (annotions.isEmpty()) return;
-        Iterator it = annotions.iterator();
-        while (it.hasNext()) {
-            AnnotationNode an = (AnnotationNode) it.next();
+        for (AnnotationNode an : annotions) {
             //skip builtin properties
             if (an.isBuiltIn()) continue;
-            for (Iterator iter = an.getMembers().entrySet().iterator(); iter.hasNext();) {
-                Map.Entry member = (Map.Entry) iter.next();
-                Expression memberValue = (Expression) member.getValue();
-                memberValue.visit(this);
-            }  
+            for (Map.Entry<String, Expression> member : an.getMembers().entrySet()) {
+                member.getValue().visit(this);
+            }
         }
     }
         

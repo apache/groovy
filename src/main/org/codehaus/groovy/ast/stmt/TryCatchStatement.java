@@ -29,7 +29,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 public class TryCatchStatement extends Statement {
 
     private Statement tryStatement;
-    private List catchStatements = new ArrayList();
+    private List<CatchStatement> catchStatements = new ArrayList<CatchStatement>();
     private Statement finallyStatement;
     
 
@@ -42,7 +42,7 @@ public class TryCatchStatement extends Statement {
         visitor.visitTryCatchFinally(this);
     }
     
-    public List getCatchStatements() {
+    public List<CatchStatement> getCatchStatements() {
         return catchStatements;
     }
 
@@ -63,7 +63,7 @@ public class TryCatchStatement extends Statement {
      */
     public CatchStatement getCatchStatement(int idx) {
         if (idx >= 0 && idx < catchStatements.size()) {
-            return (CatchStatement) catchStatements.get(idx);
+            return catchStatements.get(idx);
         }
         return null;
     }
@@ -72,7 +72,7 @@ public class TryCatchStatement extends Statement {
         this.tryStatement = tryStatement;
     }
 
-    public void setCatchStatement(int idx, Statement catchStatement) {
+    public void setCatchStatement(int idx, CatchStatement catchStatement) {
         catchStatements.set(idx, catchStatement);
     }
 

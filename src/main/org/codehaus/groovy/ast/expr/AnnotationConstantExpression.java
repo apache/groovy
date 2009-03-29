@@ -15,7 +15,6 @@
  */
 package org.codehaus.groovy.ast.expr;
 
-import java.util.Iterator;
 import java.util.Map;
 
 import org.codehaus.groovy.ast.AnnotationNode;
@@ -37,9 +36,9 @@ public class AnnotationConstantExpression extends ConstantExpression {
     
     public void visit(GroovyCodeVisitor visitor) {
         AnnotationNode node = (AnnotationNode) getValue();
-        Map attrs = node.getMembers();
-        for(Iterator it = attrs.values().iterator(); it.hasNext(); ) {
-            ((Expression) it.next()).visit(visitor);
+        Map<String, Expression> attrs = node.getMembers();
+        for(Expression expr : attrs.values() ) {
+            expr.visit(visitor);
         }
     }
 }

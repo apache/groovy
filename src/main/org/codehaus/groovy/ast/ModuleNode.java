@@ -42,14 +42,14 @@ import java.util.*;
 public class ModuleNode extends ASTNode implements Opcodes {
 
     private BlockStatement statementBlock = new BlockStatement();
-    List classes = new LinkedList();
-    private List methods = new ArrayList();
-    private List imports = new ArrayList();
-    private List importPackages = new ArrayList();
-    private Map importIndex = new HashMap();
-    private Map staticImportAliases = new HashMap();
-    private Map staticImportFields = new LinkedHashMap();
-    private Map staticImportClasses = new LinkedHashMap();
+    List<ClassNode> classes = new LinkedList<ClassNode>();
+    private List<MethodNode> methods = new ArrayList<MethodNode>();
+    private List<ImportNode> imports = new ArrayList<ImportNode>();
+    private List<String> importPackages = new ArrayList<String>();
+    private Map<String, ClassNode> importIndex = new HashMap<String, ClassNode>();
+    private Map<String, ClassNode> staticImportAliases = new HashMap<String, ClassNode>();
+    private Map<String, String> staticImportFields = new LinkedHashMap<String, String>();
+    private Map<String, ClassNode> staticImportClasses = new LinkedHashMap<String, ClassNode>();
     private CompileUnit unit;
     private String packageName;
     private String description;
@@ -71,11 +71,11 @@ public class ModuleNode extends ASTNode implements Opcodes {
         return statementBlock;
     }
 
-    public List getMethods() {
+    public List<MethodNode> getMethods() {
         return methods;
     }
 
-    public List getClasses() {
+    public List<ClassNode> getClasses() {
         if (createClassForStatements && (!statementBlock.isEmpty() || !methods.isEmpty())) {
             ClassNode mainClass = createStatementsClass();
             createClassForStatements = false;
@@ -86,11 +86,11 @@ public class ModuleNode extends ASTNode implements Opcodes {
         return classes;
     }
 
-    public List getImports() {
+    public List<ImportNode> getImports() {
         return imports;
     }
 
-    public List getImportPackages() {
+    public List<String> getImportPackages() {
         return importPackages;
     }
 
@@ -98,7 +98,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
      * @return the class name for the given alias or null if none is available
      */
     public ClassNode getImport(String alias) {
-        return (ClassNode) importIndex.get(alias);
+        return importIndex.get(alias);
     }
 
     public void addImport(String alias, ClassNode type) {
@@ -238,8 +238,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
 			ClassNode.EMPTY_ARRAY,
             stmt);
 
-        for (Iterator iter = methods.iterator(); iter.hasNext();) {
-            MethodNode node = (MethodNode) iter.next();
+        for (MethodNode node : methods) {
             int modifiers = node.getModifiers();
             if ((modifiers & ACC_ABSTRACT) != 0) {
                 throw new RuntimeException(
@@ -282,12 +281,12 @@ public class ModuleNode extends ASTNode implements Opcodes {
     
     public void sortClasses(){
     	if (isEmpty()) return;
-    	List classes = getClasses();
-    	LinkedList sorted = new LinkedList();
+    	List<ClassNode> classes = getClasses();
+    	LinkedList<ClassNode> sorted = new LinkedList<ClassNode>();
     	int level=1;
     	while (!classes.isEmpty()) {
-	    	for (Iterator cni = classes.iterator(); cni.hasNext();) {
-				ClassNode cn = (ClassNode) cni.next();
+	    	for (Iterator<ClassNode> cni = classes.iterator(); cni.hasNext();) {
+				ClassNode cn = cni.next();
 				ClassNode sn = cn;
 				for (int i=0; sn!=null && i<level; i++) sn = sn.getSuperClass();
 				if (sn!=null && sn.isPrimaryClassNode()) continue;
@@ -307,15 +306,15 @@ public class ModuleNode extends ASTNode implements Opcodes {
         this.importsResolved = importsResolved;
     }
 
-    public Map getStaticImportAliases() {
+    public Map<String, ClassNode> getStaticImportAliases() {
         return staticImportAliases;
     }
 
-    public Map getStaticImportClasses() {
+    public Map<String, ClassNode> getStaticImportClasses() {
         return staticImportClasses;
     }
 
-    public Map getStaticImportFields() {
+    public Map<String, String> getStaticImportFields() {
         return staticImportFields;
     }
 

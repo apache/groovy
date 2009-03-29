@@ -16,7 +16,6 @@
 package org.codehaus.groovy.ast.expr;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.codehaus.groovy.ast.ClassHelper;
@@ -32,15 +31,15 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 public class GStringExpression extends Expression {
 
     private String verbatimText;
-    private List strings = new ArrayList();
-    private List values = new ArrayList();
+    private List<ConstantExpression> strings = new ArrayList<ConstantExpression>();
+    private List<Expression> values = new ArrayList<Expression>();
     
     public GStringExpression(String verbatimText) {
         this.verbatimText = verbatimText;
         super.setType(ClassHelper.GSTRING_TYPE);
     }
 
-    public GStringExpression(String verbatimText, List strings, List values) {
+    public GStringExpression(String verbatimText, List<ConstantExpression> strings, List<Expression> values) {
         this.verbatimText = verbatimText;
         this.strings = strings;
         this.values = values;
@@ -54,7 +53,7 @@ public class GStringExpression extends Expression {
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression ret = new GStringExpression(
                 verbatimText,
-                transformExpressions(strings, transformer),
+                transformExpressions(strings, transformer, ConstantExpression.class),
                 transformExpressions(values, transformer));
         ret.setSourcePosition(this);
         return ret;        
@@ -68,11 +67,11 @@ public class GStringExpression extends Expression {
         return verbatimText;
     }
 
-    public List getStrings() {
+    public List<ConstantExpression> getStrings() {
         return strings;
     }
 
-    public List getValues() {
+    public List<Expression> getValues() {
         return values;
     }
 
@@ -92,7 +91,7 @@ public class GStringExpression extends Expression {
     }
 
     public Expression getValue(int idx) {
-        return (Expression) values.get(idx);
+        return values.get(idx);
     }
 
     public boolean isConstantString() {
@@ -101,8 +100,7 @@ public class GStringExpression extends Expression {
 
     public Expression asConstantString() {
         StringBuffer buffer = new StringBuffer();
-        for (Iterator iter = strings.iterator(); iter.hasNext();) {
-            ConstantExpression expression = (ConstantExpression) iter.next();
+        for (ConstantExpression expression : strings) {
             Object value = expression.getValue();
             if (value != null) {
                 buffer.append(value);

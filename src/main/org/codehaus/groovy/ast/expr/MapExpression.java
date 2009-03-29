@@ -28,13 +28,13 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * @version $Revision$
  */
 public class MapExpression extends Expression {
-    private final List mapEntryExpressions;
+    private final List<MapEntryExpression> mapEntryExpressions;
 
     public MapExpression() {
-        this(new ArrayList());
+        this(new ArrayList<MapEntryExpression>());
     }
 
-    public MapExpression(List mapEntryExpressions) {
+    public MapExpression(List<MapEntryExpression> mapEntryExpressions) {
         this.mapEntryExpressions = mapEntryExpressions;
         //TODO: get the type's of the expressions to specify the
         // map type to Map<X> if possible.
@@ -45,7 +45,7 @@ public class MapExpression extends Expression {
         mapEntryExpressions.add(expression);
     }
 
-    public List getMapEntryExpressions() {
+    public List<MapEntryExpression> getMapEntryExpressions() {
         return mapEntryExpressions;
     }
 
@@ -58,7 +58,7 @@ public class MapExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        Expression ret = new MapExpression(transformExpressions(getMapEntryExpressions(), transformer));
+        Expression ret = new MapExpression(transformExpressions(getMapEntryExpressions(), transformer, MapEntryExpression.class));
         ret.setSourcePosition(this);
         return ret;
     }
@@ -73,10 +73,10 @@ public class MapExpression extends Expression {
         int size = mapEntryExpressions.size();
         MapEntryExpression mapEntryExpression = null;
         if (size > 0) {
-            mapEntryExpression = (MapEntryExpression) mapEntryExpressions.get(0);
+            mapEntryExpression = mapEntryExpressions.get(0);
             sb.append(mapEntryExpression.getKeyExpression().getText() + ":" + mapEntryExpression.getValueExpression().getText());
             for (int i = 1; i < size; i++) {
-                mapEntryExpression = (MapEntryExpression) mapEntryExpressions.get(i);
+                mapEntryExpression = mapEntryExpressions.get(i);
                 sb.append(", " + mapEntryExpression.getKeyExpression().getText() + ":" + mapEntryExpression.getValueExpression().getText());
                 if (sb.length() > 120 && i < size - 1) {
                     sb.append(", ... ");

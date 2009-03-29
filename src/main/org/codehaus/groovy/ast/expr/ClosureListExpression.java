@@ -17,7 +17,6 @@
 package org.codehaus.groovy.ast.expr;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
@@ -41,13 +40,13 @@ public class ClosureListExpression extends ListExpression {
 
     private VariableScope scope;
     
-    public ClosureListExpression(List expressions) {
+    public ClosureListExpression(List<Expression> expressions) {
         super(expressions);
         scope = new VariableScope();
     }
     
     public ClosureListExpression() {
-        this(new ArrayList(3));
+        this(new ArrayList<Expression>(3));
     }
     
     public void visit(GroovyCodeVisitor visitor) {
@@ -71,14 +70,14 @@ public class ClosureListExpression extends ListExpression {
     public String getText() {
         StringBuffer buffer = new StringBuffer("(");
         boolean first = true;
-        for (Iterator iter = getExpressions().iterator(); iter.hasNext(); ) {
+        for (Expression expression : getExpressions()) {
             if (first) {
                 first = false;
             } else {
                 buffer.append("; ");
             }
             
-            buffer.append(((Expression)iter.next()).getText());
+            buffer.append(expression.getText());
         }
         buffer.append(")");
         return buffer.toString();

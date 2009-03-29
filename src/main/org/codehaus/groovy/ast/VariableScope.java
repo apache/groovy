@@ -29,9 +29,9 @@ import java.util.Map;
  * @version $Revision$
  */
 public class VariableScope  {
-    private Map declaredVariables = Collections.EMPTY_MAP;
-    private Map referencedLocalVariables = Collections.EMPTY_MAP;
-    private Map referencedClassVariables = Collections.EMPTY_MAP;
+    private Map<String, Variable> declaredVariables = Collections.emptyMap();
+    private Map<String, Variable> referencedLocalVariables = Collections.emptyMap();
+    private Map<String, Variable> referencedClassVariables = Collections.emptyMap();
  
     private boolean inStaticContext = false;
     private boolean resolvesDynamic = false; 
@@ -47,7 +47,7 @@ public class VariableScope  {
     }
 
     public Variable getDeclaredVariable(String name) {
-        return (Variable) declaredVariables.get(name);
+        return declaredVariables.get(name);
     }
 
     public boolean isReferencedLocalVariable(String name) {
@@ -105,17 +105,17 @@ public class VariableScope  {
         VariableScope copy = new VariableScope();
         copy.clazzScope = clazzScope;
         if (declaredVariables.size() > 0) {
-          copy.declaredVariables = new HashMap();
+          copy.declaredVariables = new HashMap<String, Variable>();
           copy.declaredVariables.putAll(declaredVariables);
         }
         copy.inStaticContext = inStaticContext;
         copy.parent = parent;
         if (referencedClassVariables.size() > 0) {
-            copy.referencedClassVariables = new HashMap();
+            copy.referencedClassVariables = new HashMap<String, Variable>();
             copy.referencedClassVariables.putAll(referencedClassVariables);
         }
         if (referencedLocalVariables.size() > 0) {
-            copy.referencedLocalVariables = new HashMap();
+            copy.referencedLocalVariables = new HashMap<String, Variable>();
             copy.referencedLocalVariables.putAll(referencedLocalVariables);
         }
         copy.resolvesDynamic = resolvesDynamic;
@@ -124,11 +124,11 @@ public class VariableScope  {
 
     public void putDeclaredVariable(Variable var) {
         if (declaredVariables == Collections.EMPTY_MAP)
-          declaredVariables = new HashMap();
+          declaredVariables = new HashMap<String, Variable>();
         declaredVariables.put(var.getName(), var);
     }
 
-    public Iterator getReferencedLocalVariablesIterator() {
+    public Iterator<Variable> getReferencedLocalVariablesIterator() {
         return referencedLocalVariables.values().iterator();
     }
 
@@ -137,23 +137,23 @@ public class VariableScope  {
     }
 
     public Variable getReferencedLocalVariable(String name) {
-        return (Variable) referencedLocalVariables.get(name);
+        return referencedLocalVariables.get(name);
     }
 
     public void putReferencedLocalVariable(Variable var) {
         if (referencedLocalVariables == Collections.EMPTY_MAP)
-          referencedLocalVariables = new HashMap();
+          referencedLocalVariables = new HashMap<String, Variable>();
         referencedLocalVariables.put(var.getName(), var);
     }
 
     public void putReferencedClassVariable(Variable var) {
         if (referencedClassVariables == Collections.EMPTY_MAP)
-          referencedClassVariables = new HashMap();
+          referencedClassVariables = new HashMap<String, Variable>();
         referencedClassVariables.put(var.getName(), var);
     }
 
     public Variable getReferencedClassVariable(String name) {
-        return (Variable) referencedClassVariables.get(name); 
+        return referencedClassVariables.get(name);
     }
 
     public Object removeReferencedClassVariable(String name) {
@@ -168,9 +168,9 @@ public class VariableScope  {
      * by this scope. This not can not be modified.
      * @return a map containing the class variable references
      */
-    public Map getReferencedClassVariables() {
+    public Map<String, Variable> getReferencedClassVariables() {
         if (referencedClassVariables == Collections.EMPTY_MAP) {
-            return Collections.EMPTY_MAP;
+            return referencedClassVariables;
         } else {
             return Collections.unmodifiableMap(referencedClassVariables);
         }
@@ -181,7 +181,7 @@ public class VariableScope  {
      * remove operation is not supported.
      * @return an iterator for the referenced class variables
      */
-    public Iterator getReferencedClassVariablesIterator() {
+    public Iterator<Variable> getReferencedClassVariablesIterator() {
         return getReferencedClassVariables().values().iterator();
     }
 }

@@ -28,12 +28,13 @@ public class NamedArgumentListExpression extends MapExpression {
     public NamedArgumentListExpression() {
     }
     
-    public NamedArgumentListExpression(List mapEntryExpressions) {
+    public NamedArgumentListExpression(List<MapEntryExpression> mapEntryExpressions) {
         super(mapEntryExpressions);
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        Expression ret = new NamedArgumentListExpression(transformExpressions(getMapEntryExpressions(), transformer)); 
+        Expression ret = new NamedArgumentListExpression(
+            transformExpressions(getMapEntryExpressions(), transformer, MapEntryExpression.class)); 
         ret.setSourcePosition(this);
         return ret;        
     }

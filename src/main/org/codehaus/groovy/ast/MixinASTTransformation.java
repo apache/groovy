@@ -26,8 +26,6 @@ import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 import org.objectweb.asm.Opcodes;
 
-import java.util.Iterator;
-
 @GroovyASTTransformation(phase= CompilePhase.CANONICALIZATION)
 public class MixinASTTransformation implements ASTTransformation {
     private static final ClassNode useClassNode = new ClassNode(Mixin.class);
@@ -51,8 +49,7 @@ public class MixinASTTransformation implements ASTTransformation {
 
         if (expr instanceof ListExpression) {
             ListExpression listExpression = (ListExpression) expr;
-            for (Iterator it = listExpression.getExpressions().iterator(); it.hasNext(); ) {
-                Expression ex = (Expression) it.next();
+            for (Expression ex : listExpression.getExpressions()) {
                 if (!(ex instanceof ClassExpression))
                   return;
             }

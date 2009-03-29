@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.GroovyBugError;
 
 
 /**
@@ -43,7 +44,7 @@ public class AnnotationNode extends ASTNode {
         | FIELD_TARGET | PARAMETER_TARGET | LOCAL_VARIABLE_TARGET | ANNOTATION_TARGET;
     
     private final ClassNode classNode;
-    private Map members = new HashMap();
+    private Map<String, Expression> members = new HashMap<String, Expression>();
     private boolean runtimeRetention= false, sourceRetention= false, classRetention = false;
     private int allowedTargets = ALL_TARGETS;
 
@@ -55,30 +56,21 @@ public class AnnotationNode extends ASTNode {
         return classNode;
     }
 
-    public Map getMembers() {
+    public Map<String, Expression> getMembers() {
         return members;
     }
     
     public Expression getMember(String name) {
-        return (Expression) members.get(name);
+        return members.get(name);
     }
 
     public void addMember(String name, Expression value) {
-        Expression oldValue = (Expression) members.get(name);
+        Expression oldValue = members.get(name);
         if (oldValue == null) {
             members.put(name, value);
         }
         else {
-            List list = null;
-            if (oldValue instanceof List) {
-                list = (List) oldValue;
-            }
-            else {
-                list = new ArrayList();
-                list.add(oldValue);
-                members.put(name, list);
-            }
-            list.add(value);
+            throw new GroovyBugError("encountered two annotation members with the same name");
         }
     }
 

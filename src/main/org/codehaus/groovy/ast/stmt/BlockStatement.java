@@ -17,7 +17,6 @@ package org.codehaus.groovy.ast.stmt;
 
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Iterator;
 import java.util.List;
 
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
@@ -31,14 +30,14 @@ import org.codehaus.groovy.ast.VariableScope;
  */
 public class BlockStatement extends Statement {
 
-    private List statements = new ArrayList();
+    private List<Statement> statements = new ArrayList<Statement>();
     private VariableScope scope;
     
     public BlockStatement() {
-        this(new ArrayList(), new VariableScope());
+        this(new ArrayList<Statement>(), new VariableScope());
     }
     
-    public BlockStatement(List statements, VariableScope scope) {
+    public BlockStatement(List<Statement> statements, VariableScope scope) {
         this.statements = statements;
         this.scope = scope;
     }
@@ -52,7 +51,7 @@ public class BlockStatement extends Statement {
         visitor.visitBlockStatement(this);
     }
 
-    public List getStatements() {
+    public List<Statement> getStatements() {
         return statements;
     }
 
@@ -60,7 +59,7 @@ public class BlockStatement extends Statement {
         statements.add(statement);
     }
 
-    public void addStatements(List listOfStatements) {
+    public void addStatements(List<Statement> listOfStatements) {
         statements.addAll(listOfStatements);
     }
 
@@ -71,14 +70,13 @@ public class BlockStatement extends Statement {
     public String getText() {
         StringBuffer buffer = new StringBuffer("{ ");
         boolean first = true;
-        for (Iterator iter = statements.iterator(); iter.hasNext(); ) {
+        for (Statement statement : statements) {
             if (first) {
                 first = false;
             }
             else {
                 buffer.append("; ");
             }
-            Statement statement = (Statement) iter.next();
             buffer.append(statement.getText());
         }
         buffer.append(" }");
