@@ -320,4 +320,13 @@ assert my.things().size() == 1
 assert my.things()[0] == "x"
     """
   }
+
+  void testSettingAnnotationMemberTwice() {
+    shouldNotCompile """
+package gls.annotations.vm5
+
+@JavaAnnotation(in = 1, in = 2) 
+class Foo {}
+    """
+  }
 }

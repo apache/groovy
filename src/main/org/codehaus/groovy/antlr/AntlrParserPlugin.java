@@ -979,7 +979,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 AST memberNode = node.getFirstChild();
                 String param = identifier(memberNode);
                 Expression expression = expression(memberNode.getNextSibling());
-                annotatedNode.addMember(param, expression);
+                if (annotatedNode.getMember(param) != null) {
+                    throw new ASTRuntimeException(memberNode, "Annotation member '" + param + "' has already been associated with a value");
+                }
+                annotatedNode.setMember(param, expression);
             } else {
                 break;
             }

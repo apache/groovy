@@ -70,7 +70,7 @@ public class AnnotationNode extends ASTNode {
             members.put(name, value);
         }
         else {
-            throw new GroovyBugError("encountered two annotation members with the same name");
+            throw new GroovyBugError(String.format("Annotation member %s has already been added", name));
         }
     }
 
