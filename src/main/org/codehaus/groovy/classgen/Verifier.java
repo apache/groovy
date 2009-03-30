@@ -625,7 +625,19 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 } else {
                     code = new ReturnStatement(expression);
                 }
-                node.addMethod(method.getName(), method.getModifiers(), method.getReturnType(), newParams, method.getExceptions(), code);
+
+                MethodNode newMethod = new MethodNode(method.getName(), method.getModifiers(), method.getReturnType(), newParams, method.getExceptions(), code);
+                MethodNode oldMethod = node.getDeclaredMethod(method.getName(), newParams);
+                if (oldMethod!=null) {
+                    throw new RuntimeParserException(
+                            "The method with default parameters \""+
+                            method.getTypeDescriptor()+
+                            "\" defines a method \""+
+                            newMethod.getTypeDescriptor()+
+                            "\" that is already defined.",
+                            method);
+                }
+                node.addMethod(newMethod);
             }
         });
     }
