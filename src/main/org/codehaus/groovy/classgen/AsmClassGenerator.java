@@ -1269,7 +1269,7 @@ public class AsmClassGenerator extends ClassGenerator {
      */
     protected void doConvertAndCast(ClassNode type, Expression expression, boolean ignoreAutoboxing, boolean forceCast, boolean coerce) {
         ClassNode expType = getExpressionType(expression);
-        // temp resolution: convert all primitive casting to corresponsing Object type
+        // temp resolution: convert all primitive casting to corresponding Object type
         if (!ignoreAutoboxing && ClassHelper.isPrimitiveType(type)) {
             type = ClassHelper.getWrapper(type);
         }
@@ -3859,13 +3859,14 @@ public class AsmClassGenerator extends ClassGenerator {
                 compileStack.removeVar(resultVar);
                 return;
             }
-        }
+        } 
 
         evaluateBinaryExpression(method, expression);
 
         // br to leave a copy of rvalue on the stack. see also isPopRequired()
         mv.visitInsn(DUP);
-
+        doConvertAndCast(ClassHelper.getWrapper(leftExpression.getType()));
+        
         leftHandExpression = true;
         evaluateExpression(leftExpression);
         leftHandExpression = false;
