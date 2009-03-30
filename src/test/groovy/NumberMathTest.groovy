@@ -142,4 +142,17 @@ class NumberMathTest extends GroovyTestCase {
         assert 20 == new Short("10") << 1
         assert 2 == new Byte("1") << 1
     }
+    
+    void testLongDivAssign() {
+        long d = 100L
+        d /= 33L
+        assert d.class == Long.class
+    }
+    
+    void testIntegerPlusCastException() {
+        shouldFail(ClassCastException) {
+           Integer i = 12
+           i += " angry men"
+        }
+    }
 }
