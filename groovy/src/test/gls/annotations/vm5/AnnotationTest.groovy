@@ -35,7 +35,7 @@ class AnnotationTest extends CompilableTestSupport {
     }
 
     void testSettingAnnotationMemberTwice() {
-        shouldCompile """
+        shouldNotCompile """
             @SuppressWarnings(value = "one", value = "two") 
             class Foo {}
         """
