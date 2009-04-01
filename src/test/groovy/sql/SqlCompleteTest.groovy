@@ -5,7 +5,9 @@ class SqlCompleteTest extends TestHelper {
     void testSqlQuery() {
         def sql = createSql()
         def results = [:]
-        sql.eachRow("select * from PERSON") { results.put(it.firstname, it['lastname']) }
+        sql.eachRow("select * from PERSON") {
+          results.put(it.firstname, it['lastname'])
+        }
         def expected = ["James":"Strachan", "Bob":"Mcwhirter", "Sam":"Pullara"]
         assert results == expected
     }

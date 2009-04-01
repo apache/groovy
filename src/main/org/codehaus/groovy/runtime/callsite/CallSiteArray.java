@@ -88,11 +88,15 @@ public final class CallSiteArray {
           site = new PogoInterceptableSite(callSite);
         else {
             MetaClass metaClass = receiver.getMetaClass();
-            if (metaClass instanceof MetaClassImpl) {
-                site = ((MetaClassImpl)metaClass).createPogoCallCurrentSite(callSite, sender, args);
+            if (receiver.getClass() != metaClass.getTheClass() && !metaClass.getTheClass().isInterface()) {
+                site = new PogoInterceptableSite(callSite);
             }
             else
-              site = new PogoMetaClassSite(callSite, metaClass);
+                if (metaClass instanceof MetaClassImpl) {
+                    site = ((MetaClassImpl)metaClass).createPogoCallCurrentSite(callSite, sender, args);
+                }
+                else
+                  site = new PogoMetaClassSite(callSite, metaClass);
         }
 
         replaceCallSite(callSite, site);
@@ -126,6 +130,9 @@ public final class CallSiteArray {
           return new PogoInterceptableSite(callSite);
 
         MetaClass metaClass = ((GroovyObject)receiver).getMetaClass();
+        if (receiver.getClass() != metaClass.getTheClass() && !metaClass.getTheClass().isInterface())
+            return new PogoInterceptableSite(callSite);
+
         if (metaClass instanceof MetaClassImpl) {
             return ((MetaClassImpl)metaClass).createPogoCallSite(callSite, args);
         }

@@ -41,7 +41,7 @@ public class PogoInterceptableSite extends AbstractCallSite {
     }
 
     public final Object call(Object receiver, Object[] args) throws Throwable {
-        if(receiver instanceof GroovyInterceptable) {
+        if(receiver instanceof GroovyObject) {
             try {
                 return ((GroovyObject) receiver).invokeMethod(name, InvokerHelper.asUnwrappedArray(args));
             } catch (GroovyRuntimeException gre) {
