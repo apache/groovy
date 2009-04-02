@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -77,6 +77,7 @@ import java.util.regex.Pattern;
  * @author Michael Baehr
  * @author Joachim Baumann
  * @author Alex Tkachman
+ * @author Ted Naleid
  * @version $Revision$
  */
 public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
@@ -1771,7 +1772,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a List of lists
      * @return a List of the transposed lists
-     * @see groovy.util.GroovyCollections#transpose(java.util.List)
+     * @see groovy.util.GroovyCollections#transpose(java.util.Collection)
      * @since 1.5.0
      */
     public static List transpose(List self) {
@@ -2717,7 +2718,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Turns a String into a regular expression pattern
+     * Turns a String into a regular expression Pattern
      *
      * @param self a String to convert into a regular expression
      * @return the regular expression pattern
@@ -2725,6 +2726,382 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Pattern bitwiseNegate(String self) {
         return Pattern.compile(self);
+    }
+
+    /**
+     * Replaces the first substring of a String that matches the given
+     * compiled regular expression with the given replacement.
+     * <p>
+     * Note that backslashes (<tt>\</tt>) and dollar signs (<tt>$</tt>) in the
+     * replacement string may cause the results to be different than if it were
+     * being treated as a literal replacement string; see
+     * {@link java.util.regex.Matcher#replaceFirst}.
+     * Use {@link java.util.regex.Matcher#quoteReplacement} to suppress the special
+     * meaning of these characters, if desired.
+     *
+     * @param   self the string that is to be matched
+     * @param   regex the regex Pattern to which the string of interest is to be matched
+     * @param   replacement the string to be substituted for the first match
+     * @return  The resulting <tt>String</tt>
+     * @see java.lang.String#replaceFirst(String, String)
+     *
+     * @since 1.6.1
+     */
+    public static String replaceFirst(String self, Pattern regex, String replacement) {
+        return regex.matcher(self).replaceFirst(replacement);
+    }
+
+    /**
+     * Replaces all substrings of a String that match the given
+     * compiled regular expression with the given replacement.
+     * <p>
+     * Note that backslashes (<tt>\</tt>) and dollar signs (<tt>$</tt>) in the
+     * replacement string may cause the results to be different than if it were
+     * being treated as a literal replacement string; see
+     * {@link java.util.regex.Matcher#replaceAll}.
+     * Use {@link java.util.regex.Matcher#quoteReplacement} to suppress the special
+     * meaning of these characters, if desired.
+     *
+     * @param   self the string that is to be matched
+     * @param   regex the regex Pattern to which the string of interest is to be matched
+     * @param   replacement the string to be substituted for the first match
+     * @return  The resulting <tt>String</tt>
+     * @see java.lang.String#replaceAll(String, String)
+     *
+     * @since 1.6.1
+     */
+    public static String replaceAll(String self, Pattern regex, String replacement) {
+        return regex.matcher(self).replaceAll(replacement);
+    }
+
+    /**
+     * Tells whether or not self matches the given
+     * compiled regular expression Pattern.
+     *
+     * @param   self the string that is to be matched
+     * @param   regex the regex Pattern to which the string of interest is to be matched
+     * @return  The resulting <tt>String</tt>
+     * @see java.lang.String#matches(String)
+     *
+     * @since 1.6.1
+     */
+    public static boolean matches(String self, Pattern regex) {
+        return regex.matcher(self).matches();
+    }
+
+    /**
+     * Finds the first occurrence of a regular expression String within a String.
+     * If the pattern doesn't match, null will be returned.
+     * <p/>
+     * <p> For example, if the pattern doesn't match the result is null:
+     * <pre>
+     *     assert null == "New York, NY".find(/\d{5}/)
+     * </pre>
+     * </p>
+     * <p> If it does match, we get the matching string back:
+     * <pre>
+     *      assert "10292" == "New York, NY 10292-0098".find(/\d{5}/)
+     * </pre>
+     * </p>
+     * <p> If we have capture groups in our expression, we still get back the full match
+     * <pre>
+     *      assert "10292-0098" == "New York, NY 10292-0098".find(/(\d{5})-?(\d{4})/)
+     * </pre>
+     * </p>
+     *
+     * @param self  a String
+     * @param regex the capturing regex
+     * @return a String containing the matched portion, or null if the regex pattern doesn't match
+     * @since 1.6.1
+     */
+    public static String find(String self, String regex) {
+        return find(self, Pattern.compile(regex));
+    }
+
+    /**
+     * Finds the first occurrence of a compiled regular expression Pattern within a String.
+     * If the pattern doesn't match, null will be returned.
+     * <p/>
+     * <p> For example, if the pattern doesn't match the result is null:
+     * <pre>
+     *     assert null == "New York, NY".find(~/\d{5}/)
+     * </pre>
+     * </p>
+     * <p> If it does match, we get the matching string back:
+     * <pre>
+     *      assert "10292" == "New York, NY 10292-0098".find(~/\d{5}/)
+     * </pre>
+     * </p>
+     * <p> If we have capture groups in our expression, the groups are ignored and
+     * we get back the full match:
+     * <pre>
+     *      assert "10292-0098" == "New York, NY 10292-0098".find(~/(\d{5})-?(\d{4})/)
+     * </pre>
+     * If you need to work with capture groups, then use the closure version
+     * of this method or use Groovy's matcher operators or use <tt>eachMatch</tt>.
+     * </p>
+     *
+     * @param self    a String
+     * @param pattern the compiled regex Pattern
+     * @return a String containing the matched portion, or null if the regex pattern doesn't match
+     * @since 1.6.1
+     */
+    public static String find(String self, Pattern pattern) {
+        Matcher matcher = pattern.matcher(self);
+        if (matcher.find()) {
+            return matcher.group(0);
+        }
+        return null;
+    }
+
+    /**
+     * Finds the first occurrence of a regular expression String within a String.
+     * If the pattern doesn't match, the closure will not be called and find will return null.
+     * <p/>
+     * <p> For example, if the pattern doesn't match, the result is null:
+     * <pre>
+     *     assert null == "New York, NY".find(~/\d{5}/) { match -> return "-$match-"}
+     * </pre>
+     * </p>
+     * <p> If it does match and we don't have any capture groups in our regex, there is a single parameter
+     * on the closure that the match gets passed to:
+     * <pre>
+     *      assert "-10292-" == "New York, NY 10292-0098".find(~/\d{5}/) { match -> return "-$match-"}
+     * </pre>
+     * </p>
+     * <p> If we have capture groups in our expression, our closure has one parameter for the match, followed by
+     * one for each of the capture groups:
+     * <pre>
+     *      assert "10292" == "New York, NY 10292-0098".find(~/(\d{5})-?(\d{4})/) { match, zip, plusFour ->
+     *          assert match == "10292-0098"
+     *          assert zip == "10292"
+     *          assert plusFour == "0098"
+     *          return zip
+     *      }
+     * </pre>
+     * <p> If we have capture groups in our expression, and our closure has one parameter,
+     * the closure will be passed an array with the first element corresponding to the whole match,
+     * followed by an element for each of the capture groups:
+     * <pre>
+     *      assert "10292" == "New York, NY 10292-0098".find(~/(\d{5})-?(\d{4})/) { match, zip, plusFour ->
+     *          assert array[0] == "10292-0098"
+     *          assert array[1] == "10292"
+     *          assert array[2] == "0098"
+     *          return array[1]
+     *      }
+     * </pre>
+     * <p> If a capture group is optional, and doesn't match, then the corresponding value
+     * for that capture group passed to the closure will be null as illustrated here:
+     * <pre>
+     *      assert "2339999" == "adsf 233-9999 adsf".find(~/(\d{3})?-?(\d{3})-(\d{4})/) { match, areaCode, exchange, stationNumber ->
+     *          assert "233-9999" == match
+     *          assert null == areaCode
+     *          assert "233" == exchange
+     *          assert "9999" == stationNumber
+     *          return "$exchange$stationNumber"
+     *      }
+     * </pre>
+     * </p>
+     *
+     * @param self    a String
+     * @param regex   the capturing regex string
+     * @param closure the closure that will be passed the full match, plus each of the capturing groups
+     * @return a String containing the result of the closure, or null if the regex pattern doesn't match
+     * @since 1.6.1
+     */
+    public static String find(String self, String regex, Closure closure) {
+        return find(self, Pattern.compile(regex), closure);
+    }
+
+    /**
+     * Finds the first occurrence of a compiled regular expression Pattern within a String.
+     * If the pattern doesn't match, the closure will not be called and find will return null.
+     * <p/>
+     * <p> For example, if the pattern doesn't match, the result is null:
+     * <pre>
+     *     assert null == "New York, NY".find(~/\d{5}/) { match -> return "-$match-"}
+     * </pre>
+     * </p>
+     * <p> If it does match and we don't have any capture groups in our regex, there is a single parameter
+     * on the closure that the match gets passed to:
+     * <pre>
+     *      assert "-10292-" == "New York, NY 10292-0098".find(~/\d{5}/) { match -> return "-$match-"}
+     * </pre>
+     * </p>
+     * <p> If we have capture groups in our expression, our closure has one parameter for the match, followed by
+     * one for each of the capture groups:
+     * <pre>
+     *      assert "10292" == "New York, NY 10292-0098".find(~/(\d{5})-?(\d{4})/) { match, zip, plusFour ->
+     *          assert match == "10292-0098"
+     *          assert zip == "10292"
+     *          assert plusFour == "0098"
+     *          return zip
+     *      }
+     * </pre>
+     * <p> If we have capture groups in our expression, and our closure has one parameter,
+     * the closure will be passed an array with the first element corresponding to the whole match,
+     * followed by an element for each of the capture groups:
+     * <pre>
+     *      assert "10292" == "New York, NY 10292-0098".find(~/(\d{5})-?(\d{4})/) { match, zip, plusFour ->
+     *          assert array[0] == "10292-0098"
+     *          assert array[1] == "10292"
+     *          assert array[2] == "0098"
+     *          return array[1]
+     *      }
+     * </pre>
+     * <p> If a capture group is optional, and doesn't match, then the corresponding value
+     * for that capture group passed to the closure will be null as illustrated here:
+     * <pre>
+     *      assert "2339999" == "adsf 233-9999 adsf".find(~/(\d{3})?-?(\d{3})-(\d{4})/) { match, areaCode, exchange, stationNumber ->
+     *          assert "233-9999" == match
+     *          assert null == areaCode
+     *          assert "233" == exchange
+     *          assert "9999" == stationNumber
+     *          return "$exchange$stationNumber"
+     *      }
+     * </pre>
+     * </p>
+     *
+     * @param self    a String
+     * @param pattern the compiled regex Pattern
+     * @param closure the closure that will be passed the full match, plus each of the capturing groups
+     * @return a String containing the result of the closure, or null if the regex pattern doesn't match
+     * @since 1.6.1
+     */
+    public static String find(String self, Pattern pattern, Closure closure) {
+        Matcher matcher = pattern.matcher(self);
+        if (matcher.find()) {
+            if (hasGroup(matcher)) {
+                int count = matcher.groupCount();
+                List groups = new ArrayList(count);
+                for (int i = 0; i <= count; i++) {
+                    groups.add(matcher.group(i));
+                }
+                return InvokerHelper.toString(closure.call(groups));
+            } else {
+                return InvokerHelper.toString(closure.call(matcher.group(0)));
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Finds all occurrences of a regular expression string within a String.  A List is returned containing all full matches or
+     * an empty list if there are no matches within the string.
+     * <p/>
+     * <p>For example, if the pattern doesn't match, it returns an empty list:
+     * <pre>
+     * assert [] == "foo".findAll(/(\w*) Fish/)
+     * </pre>
+     * <p>Any regular expression matches are returned in a list, and all regex capture groupings are ignored, only the full match is returned:
+     * <pre>
+     * def expected = ["One Fish", "Two Fish", "Red Fish", "Blue Fish"]
+     * assert expected == "One Fish, Two Fish, Red Fish, Blue Fish".findAll(/(\w*) Fish/)
+     * </pre>
+     * If you need to work with capture groups, then use the closure version
+     * of this method or use Groovy's matcher operators or use <tt>eachMatch</tt>.
+     * </p>
+     *
+     * @param self  a String
+     * @param regex the capturing regex String
+     * @return a List containing all full matches of the regex within the string, an empty list will be returned if there are no matches
+     * @since 1.6.1
+     */
+    public static List findAll(String self, String regex) {
+        return findAll(self, Pattern.compile(regex));
+    }
+
+    /**
+     * Finds all occurrences of a regular expression Pattern within a String.  A List is returned containing all full matches or
+     * an empty list if there are no matches within the string.
+     * <p/>
+     * <p>For example, if the pattern doesn't match, it returns an empty list:
+     * <pre>
+     * assert [] == "foo".findAll(~/(\w*) Fish/)
+     * </pre>
+     * <p>Any regular expression matches are returned in a list, and all regex capture groupings are ignored, only the full match is returned:
+     * <pre>
+     * def expected = ["One Fish", "Two Fish", "Red Fish", "Blue Fish"]
+     * assert expected == "One Fish, Two Fish, Red Fish, Blue Fish".findAll(~/(\w*) Fish/)
+     * </pre>
+     *
+     * @param self    a String
+     * @param pattern the compiled regex Pattern
+     * @return a List containing all full matches of the Pattern within the string, an empty list will be returned if there are no matches
+     * @since 1.6.1
+     */
+    public static List findAll(String self, Pattern pattern) {
+        Matcher matcher = pattern.matcher(self);
+        List list = new ArrayList();
+        for (Iterator iter = iterator(matcher); iter.hasNext();) {
+            if (hasGroup(matcher)) {
+                list.add(((List) iter.next()).get(0));
+            } else {
+                list.add(iter.next());
+            }
+        }
+        return list;
+    }
+
+    /**
+     * Finds all occurrences of a regular expression string within a String.   Any matches are passed to the specified closure.  The closure
+     * is expected to have the full match in the first parameter.  If there are any capture groups, they will be placed in subsequent parameters.
+     * <p/>
+     * If there are no matches, the closure will not be called, and an empty List will be returned.
+     * <p/>
+     * <p>For example, if the pattern doesn't match, it returns an empty list:
+     * <pre>
+     * assert [] == "foo".findAll(/(\w*) Fish/) { match, firstWord -> return firstWord }
+     * </pre>
+     * <p>Any regular expression matches are passed to the closure, if there are no capture groups, there will be one parameter for the match:
+     * <pre>
+     * assert ["couldn't", "wouldn't"] == "I could not, would not, with a fox.".findAll(/.ould/) { match -> "${match}n't"}
+     * </pre>
+     * <p>If there are capture groups, the first parameter will be the match followed by one parameter for each capture group:
+     * <pre>
+     * def orig = "There's a Wocket in my Pocket"
+     * assert ["W > Wocket", "P > Pocket"] == orig.findAll(/(.)ocket/) { match, firstLetter -> "$firstLetter > $match" }
+     * </pre>
+     *
+     * @param self    a String
+     * @param regex   the capturing regex String
+     * @param closure will be passed the full match plus each of the capturing groups
+     * @return a List containing all full matches of the regex within the string, an empty list will be returned if there are no matches
+     * @since 1.6.1
+     */
+    public static List findAll(String self, String regex, Closure closure) {
+        return findAll(self, Pattern.compile(regex), closure);
+    }
+
+    /**
+     * Finds all occurrences of a compiled regular expression Pattern within a String.   Any matches are passed to the specified closure.  The closure
+     * is expected to have the full match in the first parameter.  If there are any capture groups, they will be placed in subsequent parameters.
+     * <p/>
+     * If there are no matches, the closure will not be called, and an empty List will be returned.
+     * <p/>
+     * <p>For example, if the pattern doesn't match, it returns an empty list:
+     * <pre>
+     * assert [] == "foo".findAll(~/(\w*) Fish/) { match, firstWord -> return firstWord }
+     * </pre>
+     * <p>Any regular expression matches are passed to the closure, if there are no capture groups, there will be one parameter for the match:
+     * <pre>
+     * assert ["couldn't", "wouldn't"] == "I could not, would not, with a fox.".findAll(~/.ould/) { match -> "${match}n't"}
+     * </pre>
+     * <p>If there are capture groups, the first parameter will be the match followed by one parameter for each capture group:
+     * <pre>
+     * def orig = "There's a Wocket in my Pocket"
+     * assert ["W > Wocket", "P > Pocket"] == orig.findAll(~/(.)ocket/) { match, firstLetter -> "$firstLetter > $match" }
+     * </pre>
+     *
+     * @param self    a String
+     * @param pattern the compiled regex Pattern
+     * @param closure will be passed the full match plus each of the capturing groups
+     * @return a List containing all full matches of the regex within the string, an empty list will be returned if there are no matches
+     * @since 1.6.1
+     */
+    public static List findAll(String self, Pattern pattern, Closure closure) {
+        Matcher matcher = pattern.matcher(self);
+        return collect(matcher, closure);
     }
 
     /**
@@ -3487,8 +3864,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * <p/>
-     * Returns a new Map containing all entries from <code>left</code> and <code>right</code>,
+     * Returns a new <code>Map</code> containing all entries from <code>left</code> and <code>right</code>,
      * giving precedence to <code>right</code>.  Any keys appearing in both Maps
      * will appear in the resultant map with values from the <code>right</code>
      * operand. If the <code>left</code> map is one of TreeMap, LinkedHashMap, Hashtable
@@ -11455,8 +11831,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.6.0
      */
     public static String eachMatch(String self, String regex, Closure closure) {
-        Pattern p = Pattern.compile(regex);
-        Matcher m = p.matcher(self);
+        return eachMatch(self, Pattern.compile(regex), closure);
+    }
+
+    /**
+     * Process each regex group matched substring of the given pattern. If the closure
+     * parameter takes one argument, an array with all match groups is passed to it.
+     * If the closure takes as many arguments as there are match groups, then each
+     * parameter will be one match group.
+     *
+     * @param self    the source string
+     * @param pattern a regex Pattern
+     * @param closure a closure with one parameter or as much parameters as groups
+     * @return the source string
+     * @since 1.6.1
+     */
+    public static String eachMatch(String self, Pattern pattern, Closure closure) {
+        Matcher m = pattern.matcher(self);
         each(m, closure);
         return self;
     }
