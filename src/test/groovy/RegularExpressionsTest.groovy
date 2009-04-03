@@ -1,13 +1,29 @@
+/*
+ * Copyright 2003-2009 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package groovy
 
 /**
- * Tests the regular expression syntax.
+ * Tests Groovy's regular expression syntax and DGM methods.
  *
  * @author Sam Pullara
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Pilho Kim
  * @author Graham Miller
  * @author Paul King
+ * @author Ted Naleid
  * @version $Revision$
  */
 
@@ -203,7 +219,6 @@ class RegularExpressionsTest extends GroovyTestCase {
 
     void testMultiLinePattern() {
         def pattern = ~"""foo"""
-
         assert pattern instanceof Pattern
         assert pattern.matcher("foo").matches()
         assert !pattern.matcher("bar").matches()
@@ -259,6 +274,21 @@ class RegularExpressionsTest extends GroovyTestCase {
             found += match + ' '
         }
         assert found == 'rain Spain plain '
+    }
+
+    void testEachMatchWithPattern() {
+        def compiledPattern = ~/.at/
+        def result = []
+        "The cat sat on the hat".eachMatch(compiledPattern) { result << it }
+	    assert "cat sat hat" == result.join(" ")
+    }
+
+    void testPatternVersionsOfStringRegexMethods() {
+        def compiledPattern = ~/.at/
+        def s = "The cat sat on the hat"
+        assert "bat".matches(compiledPattern)
+        assert s.replaceFirst(compiledPattern, 'x') == "The x sat on the hat"
+        assert s.replaceAll(compiledPattern, 'x') == "The x x on the x"
     }
 
     void testFindOperatorCollect() {
@@ -406,5 +436,87 @@ class RegularExpressionsTest extends GroovyTestCase {
         assert '\\2345\\' == '\\23z45\\'.replaceAll(p, c)
         assert '\\23\\\\45\\' == '\\23\\\\45\\'.replaceAll(p, c)
         assert '$\\23\\$\\45\\' == '$\\23\\$\\45\\'.replaceAll(p, c)
+    }
+
+    void testFind() {
+        def p = /.ar/
+        assert null == 'foo foo baz'.find(p)
+        assert 'bar' == 'foo bar baz'.find(p)
+        assert 'car' == 'car'.find(p)
+        
+        def patternWithGroups = /(.)ar/
+        assert null == ''.find(patternWithGroups)
+        assert 'bar' == 'foo bar baz'.find(patternWithGroups)
+
+        def compiledPattern = ~/(.)ar/
+        assert null == ''.find(compiledPattern)
+        assert 'bar' == 'foo bar baz'.find(compiledPattern)
+    }
+
+    void testFindClosureNoGroups() {
+        def p = /.ar/
+        def c = { match -> return "-$match-" }
+        assert null == 'foo foo baz'.find(p, c)
+        assert '-bar-' == 'foo bar baz'.find(p, c)
+        assert '-car-' == 'car'.find(p, c)          
+
+        def compiledPattern = ~p
+        assert null == 'foo foo baz'.find(compiledPattern, c)
+        assert '-bar-' == 'foo bar baz'.find(compiledPattern, c)
+        assert '-car-' == 'car'.find(compiledPattern, c)
+    }
+    
+    void testFindClosureWithGroups() {
+        def AREA_CODE = /\d{3}/
+        def EXCHANGE = /\d{3}/
+        def STATION_NUMBER = /\d{4}/
+        def phone = /($AREA_CODE)-($EXCHANGE)-($STATION_NUMBER)/
+
+        def c = { match, areaCode, exchange, stationNumber -> 
+            return "($areaCode) $exchange-$stationNumber" 
+        }            
+        
+        assert null == 'foo'.find(phone) { match, areaCode, exchange, stationNumber -> return match } 
+        assert "612-555-1212" == 'foo 612-555-1212 bar'.find(phone) { match, areaCode, exchange, stationNumber -> return match } 
+        assert "(612) 555-1212" == 'foo 612-555-1212 bar'.find(phone, c) 
+
+        def compiledPhonePattern = ~phone
+        assert "(888) 555-1212" == "bar 888-555-1212 foo".find (compiledPhonePattern, c)
+
+        def closureSingleVar = { matchArray -> 
+            return "(${matchArray[1]}) ${matchArray[2]}-${matchArray[3]}" 
+	    }
+	
+	    assert "(888) 555-1212" == "bar 888-555-1212 foo".find (compiledPhonePattern, closureSingleVar)
+    }    
+
+    void testFindAll() {
+        def p = /.at/
+        def compiledPattern = ~p
+        assert [] == "".findAll(p)
+        assert [] == "".findAll(compiledPattern)
+    
+        def orig = "The cat sat on the hat"
+        assert ["cat", "sat", "hat"] == orig.findAll(p)
+        assert ["cat", "sat", "hat"] == orig.findAll(compiledPattern)
+        assert ["+cat", "+sat", "+hat"] == orig.findAll(p) { "+$it" }
+        assert ["+cat", "+sat", "+hat"] == orig.findAll(compiledPattern) { "+$it" }
+    }    
+
+    void testFindAllWithGroups() {
+        def p = /(.)a(.)/
+        def compiledPattern = ~p
+        def orig = "The cat sat on the hat"
+        assert ["cat", "sat", "hat"] == orig.findAll(p)
+        assert ["cat", "sat", "hat"] == orig.findAll(compiledPattern)
+        
+        def c = { match, firstLetter, lastLetter -> return  "$firstLetter+$match+$lastLetter" }
+        assert ["c+cat+t", "s+sat+t", "h+hat+t"] == orig.findAll(p, c) 
+        assert ["c+cat+t", "s+sat+t", "h+hat+t"] == orig.findAll(compiledPattern, c)
+
+        def closureSingleVar = { matchArray -> return "${matchArray[1]}+${matchArray[0]}+${matchArray[2]}" }
+        
+        assert ["c+cat+t", "s+sat+t", "h+hat+t"] == orig.findAll(p, closureSingleVar)
+        assert ["c+cat+t", "s+sat+t", "h+hat+t"] == orig.findAll(compiledPattern, closureSingleVar)
     }
 }
