@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -63,7 +63,7 @@ public class SunClassLoader extends ClassLoader implements Opcodes {
     }
 
     private void loadMagic() {
-        ClassWriter cw = new ClassWriter(true);
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         cw.visit(Opcodes.V1_4, Opcodes.ACC_PUBLIC, "sun/reflect/GroovyMagic", null, "sun/reflect/MagicAccessorImpl", null);
         MethodVisitor mv = cw.visitMethod(Opcodes.ACC_PUBLIC, "<init>", "()V", null, null);
         mv.visitCode();
@@ -80,8 +80,8 @@ public class SunClassLoader extends ClassLoader implements Opcodes {
     protected void loadFromRes(String name) throws IOException {
         final InputStream asStream = SunClassLoader.class.getClassLoader().getResourceAsStream(resName(name));
         ClassReader reader = new ClassReader(asStream);
-        final ClassWriter cw = new ClassWriter(true);
-        reader.accept(cw, true);
+        final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
+        reader.accept(cw, ClassWriter.COMPUTE_MAXS);
         asStream.close();
         define(cw.toByteArray(), name);
     }

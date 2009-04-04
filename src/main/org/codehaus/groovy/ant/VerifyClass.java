@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +18,7 @@ package org.codehaus.groovy.ant;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.taskdefs.MatchingTask;
 import org.objectweb.asm.ClassReader;
+import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.tree.AbstractInsnNode;
 import org.objectweb.asm.tree.ClassNode;
@@ -97,7 +98,7 @@ public class VerifyClass extends MatchingTask {
                 //accept(cv);
             }
         };
-        cr.accept(new CheckClassAdapter(ca), true);
+        cr.accept(new CheckClassAdapter(ca), ClassWriter.COMPUTE_MAXS);
         boolean failed = false;
 
         List methods = ca.methods;

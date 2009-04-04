@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -33,7 +33,6 @@ import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.*;
 
 import java.util.*;
-
 
 /**
  * Generates Java class versions of Groovy classes using ASM.
@@ -193,7 +192,7 @@ public class AsmClassGenerator extends ClassGenerator {
         this.cv = classVisitor;
         this.sourceFile = sourceFile;
 
-        this.dummyClassWriter = new ClassWriter(true);
+        this.dummyClassWriter = new ClassWriter(ClassWriter.COMPUTE_MAXS);
         dummyGen = new DummyClassGenerator(context, dummyClassWriter, classLoader, sourceFile);
         compileStack = new CompileStack();
         genericParameterNames = new HashMap();

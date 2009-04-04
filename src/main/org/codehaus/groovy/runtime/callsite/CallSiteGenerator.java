@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -204,7 +204,7 @@ public class CallSiteGenerator {
     }
 
     public static Constructor compilePogoMethod(CachedMethod cachedMethod) {
-        ClassWriter cw = new ClassWriter(true);
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 
         final CachedClass declClass = cachedMethod.getDeclaringClass();
         final CallSiteClassLoader callSiteLoader = declClass.getCallSiteLoader();
@@ -216,7 +216,7 @@ public class CallSiteGenerator {
     }
 
     public static Constructor compilePojoMethod(CachedMethod cachedMethod) {
-        ClassWriter cw = new ClassWriter(true);
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 
         final CachedClass declClass = cachedMethod.getDeclaringClass();
         final CallSiteClassLoader callSiteLoader = declClass.getCallSiteLoader();
@@ -228,7 +228,7 @@ public class CallSiteGenerator {
     }
 
     public static Constructor compileStaticMethod(CachedMethod cachedMethod) {
-        ClassWriter cw = new ClassWriter(true);
+        ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS);
 
         final CachedClass declClass = cachedMethod.getDeclaringClass();
         final CallSiteClassLoader callSiteLoader = declClass.getCallSiteLoader();

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,12 +56,12 @@ public class GroovySunClassLoader extends SunClassLoader {
     private void loadAbstract() throws IOException {
         final InputStream asStream = GroovySunClassLoader.class.getClass().getClassLoader().getResourceAsStream(resName("org.codehaus.groovy.runtime.callsite.AbstractCallSite"));
         ClassReader reader = new ClassReader(asStream);
-        final ClassWriter cw = new ClassWriter(true) {
+        final ClassWriter cw = new ClassWriter(ClassWriter.COMPUTE_MAXS) {
             public void visit(int version, int access, String name, String signature, String superName, String[] interfaces) {
                 super.visit(version, access, name, signature, "sun/reflect/GroovyMagic", interfaces);
             }
         };
-        reader.accept(cw, true);
+        reader.accept(cw, ClassWriter.COMPUTE_MAXS);
         asStream.close();
         define(cw.toByteArray(), "org.codehaus.groovy.runtime.callsite.AbstractCallSite");
     }
