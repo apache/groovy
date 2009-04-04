@@ -1,4 +1,4 @@
-package groovy.bugs
+package groovy.bugs.vm5
 
 public class Groovy4230Bug extends GroovyTestCase {
   void testMe () {
@@ -9,8 +9,6 @@ import org.hibernate.cfg.*
 import org.hibernate.annotations.LazyToOne
 import org.hibernate.annotations.LazyToOneOption
 import org.hibernate.annotations.Proxy
-
-
 
 @Grab(group='org.hibernate', module='hibernate-commons-annotations', version='3.3.0.ga')
 @Grab(group='org.hibernate', module='hibernate-annotations', version='3.3.0.ga')
