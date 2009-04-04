@@ -1772,7 +1772,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a List of lists
      * @return a List of the transposed lists
-     * @see groovy.util.GroovyCollections#transpose(java.util.Collection)
+     * @see groovy.util.GroovyCollections#transpose(java.util.List)
      * @since 1.5.0
      */
     public static List transpose(List self) {
