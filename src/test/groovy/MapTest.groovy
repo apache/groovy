@@ -86,8 +86,6 @@ class MapTest extends GroovyTestCase {
         
         def foo = m['def'] = 5
         assert m['def'] == 5
-//  it is not valid any more
-//        assert foo == null
         assert foo == 5
     }
 
@@ -107,6 +105,47 @@ class MapTest extends GroovyTestCase {
         assert [a:1] == ['a':1, 'b':2].findAll {key,value -> key == 'a'}
         assert [a:1] == ['a':1].findAll {true}
         assert [:]   == ['a':1].findAll {false}
+    }
+
+    void testPutAllCollectionMapEntry() {
+        def map1 = [a:1, b:2]
+        def map2 = [c:3, d:4]
+        def map3 = [3:'c', 4:'d']
+        def control = map1 + map2
+
+        map1.putAll(map2.entrySet())
+        assert map1 == control
+
+        map1 = [a:1, b:2]
+        map1.putAll(map3.entrySet().collect{ [it.value, it.key] as MapEntry })
+        assert map1 == control
+
+        map1 = [a:1, b:2]
+        def values = [3, 4]
+        def keys = ['c', 'd']
+        def items = [keys, values].transpose()
+        map1.putAll(items.collect{ it as MapEntry })
+        assert map1 == control
+    }
+
+    void testPlusCollectionMapEntry() {
+        def map1 = [a:1, b:2]
+        def map2 = [c:3, d:4]
+        def map3 = [3:'c', 4:'d']
+        def control = map1 + map2
+
+        assert control == map1 + map2.entrySet()
+        assert map1 == [a:1, b:2]
+
+        assert control == map1 + map3.entrySet().collect{ [it.value, it.key] as MapEntry }
+        assert map1 == [a:1, b:2]
+
+        map1 = [a:1, b:2]
+        def values = [3, 4]
+        def keys = ['c', 'd']
+        def items = [keys, values].transpose()
+        assert control == map1 + items.collect{ it as MapEntry }
+        assert map1 == [a:1, b:2]
     }
 
     void testMapSort(){

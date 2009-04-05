@@ -4300,6 +4300,41 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Provides an easy way to append multiple Map.Entry values to a Map.
+     *
+     * @param self    a Map
+     * @param entries a Collection of Map.Entry items to be added to the Map.
+     * @return the same map, after the items have been added to it.
+     * @since 1.6.1
+     */
+    public static Map putAll(Map self, Collection<Map.Entry> entries) {
+        for (Map.Entry entry : entries) {
+            self.put(entry.getKey(), entry.getValue());
+        }
+        return self;
+    }
+
+    /**
+     * Returns a new <code>Map</code> containing all entries from <code>self</code> and <code>entries</code>,
+     * giving precedence to <code>entries</code>.  Any keys appearing in both Maps
+     * will appear in the resultant map with values from the <code>entries</code>
+     * operand. If <code>self</code> map is one of TreeMap, LinkedHashMap, Hashtable
+     * or Properties, the returned Map will preserve that type, otherwise a HashMap will
+     * be returned.
+     * </p>
+     *
+     * @param self    a Map
+     * @param entries a Collection of Map.Entry items to be added to the Map.
+     * @return a new Map containing all key, value pairs from self and entries
+     * @since 1.6.1
+     */
+    public static Map plus(Map self, Collection<Map.Entry> entries) {
+        Map map = cloneSimilarMap(self);
+        putAll(map, entries);
+        return map;
+    }
+
+    /**
      * Appends an item to the List. Synonym for add().
      *
      * @param self a List
