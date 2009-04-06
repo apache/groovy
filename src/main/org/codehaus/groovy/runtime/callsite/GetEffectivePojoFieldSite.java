@@ -15,8 +15,8 @@
  */
 package org.codehaus.groovy.runtime.callsite;
 
-import groovy.lang.MetaClass;
 import groovy.lang.GroovyRuntimeException;
+import groovy.lang.MetaClassImpl;
 
 import java.lang.reflect.Field;
 
@@ -24,21 +24,24 @@ import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 
 class GetEffectivePojoFieldSite extends AbstractCallSite {
-    private final MetaClass metaClass;
+    private final MetaClassImpl metaClass;
     private final Field effective;
+    private final int version;
 
-    public GetEffectivePojoFieldSite(CallSite site, MetaClass metaClass, CachedField effective) {
+    public GetEffectivePojoFieldSite(CallSite site, MetaClassImpl metaClass, CachedField effective) {
         super(site);
         this.metaClass = metaClass;
         this.effective = effective.field;
+        version = metaClass.getVersion();
     }
 
-    public final Object callGetProperty (Object receiver) throws Throwable {
-        return acceptGetProperty(receiver).getProperty(receiver);
-    }
+//    public final Object callGetProperty (Object receiver) throws Throwable {
+//        return acceptGetProperty(receiver).getProperty(receiver);
+//    }
 
     public final CallSite acceptGetProperty(Object receiver) {
-        if (GroovyCategorySupport.hasCategoryInCurrentThread() || receiver.getClass() != metaClass.getTheClass()) {
+        if (GroovyCategorySupport.hasCategoryInCurrentThread() || receiver.getClass() != metaClass.getTheClass()
+            || version != metaClass.getVersion()) { // metaClass is invalid
             return createGetPropertySite(receiver);
         } else {
             return this;

@@ -16,6 +16,7 @@
 package org.codehaus.groovy.runtime.callsite;
 
 import groovy.lang.*;
+
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedField;
 import org.codehaus.groovy.reflection.ParameterTypes;
@@ -141,7 +142,7 @@ public class AbstractCallSite implements CallSite {
     public Object callCurrent (GroovyObject receiver, Object [] args) throws Throwable {
         return CallSiteArray.defaultCallCurrent(this, receiver, args);
     }
-    
+
     public Object callCurrent (GroovyObject receiver) throws Throwable {
         return callCurrent(receiver, CallSiteArray.NOPARAM);
     }
@@ -286,9 +287,9 @@ public class AbstractCallSite implements CallSite {
             final MetaProperty effective = ((MetaClassImpl) metaClass).getEffectiveGetMetaProperty(receiver.getClass(), receiver, name, false);
             if (effective != null) {
                 if (effective instanceof CachedField)
-                    site = new GetEffectivePojoFieldSite(this, metaClass, (CachedField) effective);
+                    site = new GetEffectivePojoFieldSite(this, (MetaClassImpl) metaClass, (CachedField) effective);
                 else
-                    site = new GetEffectivePojoPropertySite(this, metaClass, effective);
+                    site = new GetEffectivePojoPropertySite(this, (MetaClassImpl) metaClass, effective);
             }
             else {
                 site = new PojoMetaClassGetPropertySite(this);

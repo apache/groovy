@@ -16,36 +16,40 @@
 package org.codehaus.groovy.runtime.callsite;
 
 import groovy.lang.GroovyRuntimeException;
-import groovy.lang.MetaClass;
+import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaProperty;
-import groovy.lang.GroovyObject;
+
 import org.codehaus.groovy.runtime.GroovyCategorySupport;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
 public class GetEffectivePojoPropertySite extends AbstractCallSite {
-    private final MetaClass metaClass;
+    private final MetaClassImpl metaClass;
     private final MetaProperty effective;
+    private final int version;
 
-    public GetEffectivePojoPropertySite(CallSite site, MetaClass metaClass, MetaProperty effective) {
+    public GetEffectivePojoPropertySite(CallSite site, MetaClassImpl metaClass, MetaProperty effective) {
         super(site);
         this.metaClass = metaClass;
         this.effective = effective;
+        version = metaClass.getVersion();
     }
 
-    public final Object callGetProperty (Object receiver) throws Throwable {
-        if (GroovyCategorySupport.hasCategoryInCurrentThread() || receiver.getClass() != metaClass.getTheClass()) {
-            return createGetPropertySite(receiver).getProperty(receiver);
-        } else {
-            try {
-                return effective.getProperty(receiver);
-            } catch (GroovyRuntimeException gre) {
-                throw ScriptBytecodeAdapter.unwrap(gre);
-            }
-        }
-    }
+//    public final Object callGetProperty (Object receiver) throws Throwable {
+//        if (GroovyCategorySupport.hasCategoryInCurrentThread() || receiver.getClass() != metaClass.getTheClass()) {
+//            return createGetPropertySite(receiver).getProperty(receiver);
+//        } else {
+//            try {
+//                return effective.getProperty(receiver);
+//            } catch (GroovyRuntimeException gre) {
+//                throw ScriptBytecodeAdapter.unwrap(gre);
+//            }
+//        }
+//    }
 
     public final CallSite acceptGetProperty(Object receiver) {
-        if (GroovyCategorySupport.hasCategoryInCurrentThread() || !(receiver instanceof GroovyObject) || ((GroovyObject)receiver).getMetaClass() != metaClass) {
+//        if (GroovyCategorySupport.hasCategoryInCurrentThread() || !(receiver instanceof GroovyObject) || ((GroovyObject)receiver).getMetaClass() != metaClass) {
+        if (GroovyCategorySupport.hasCategoryInCurrentThread() || receiver.getClass() != metaClass.getTheClass()
+            || version != metaClass.getVersion()) { // metaClass is invalid
             return createGetPropertySite(receiver);
         } else {
             return this;
