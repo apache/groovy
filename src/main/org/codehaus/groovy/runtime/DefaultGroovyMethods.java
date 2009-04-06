@@ -8474,8 +8474,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static BigInteger toBigInteger(Number self) {
-        //TODO: This isn't a very good way to do this.
-        return new BigInteger(Long.toString(self.longValue()));
+        if (self instanceof BigInteger) {
+            return (BigInteger) self;
+        } else if (self instanceof BigDecimal) {
+            return ((BigDecimal) self).toBigInteger();
+        } else if (self instanceof Double) {
+            return new BigDecimal((Double)self).toBigInteger();
+        } else if (self instanceof Float) {
+            return new BigDecimal((Float)self).toBigInteger();
+        } else {
+            return new BigInteger(Long.toString(self.longValue()));
+        }
     }
 
     // Date methods
