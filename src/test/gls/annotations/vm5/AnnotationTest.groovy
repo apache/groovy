@@ -329,4 +329,13 @@ package gls.annotations.vm5
 class Foo {}
     """
   }
+
+  void testGetterCallWithSingletonAnnotation() {
+      assertScript """
+          @Singleton class MyService3410{}
+          assert MyService3410.instance != null     
+          assert MyService3410.getInstance() != null
+      """
+      println "testGetterCallWithSingletonAnnotation Done" 
+  }
 }

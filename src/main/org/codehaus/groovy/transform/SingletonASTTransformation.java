@@ -73,6 +73,10 @@ public class SingletonASTTransformation implements ASTTransformation, Opcodes {
     private void createNonLazy(ClassNode classNode) {
         final FieldNode fieldNode = classNode.addField("instance", ACC_PUBLIC|ACC_FINAL|ACC_STATIC, classNode, new ConstructorCallExpression(classNode, new ArgumentListExpression()));
         createConstructor(classNode, fieldNode);
+        
+        final BlockStatement body = new BlockStatement();
+        body.addStatement(new ReturnStatement(new FieldExpression(fieldNode)));
+        classNode.addMethod("getInstance", ACC_STATIC|ACC_PUBLIC, classNode, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
 
     private void createLazy(ClassNode classNode) {
