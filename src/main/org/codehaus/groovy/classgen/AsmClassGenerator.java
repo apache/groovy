@@ -2918,11 +2918,12 @@ public class AsmClassGenerator extends ClassGenerator {
             return expression.getType() != ClassHelper.VOID_TYPE;
         }
         if (expression instanceof DeclarationExpression) {
-            return false;
+            DeclarationExpression de = (DeclarationExpression) expression;
+            return de.getLeftExpression() instanceof TupleExpression;
         }
         if (expression instanceof BinaryExpression) {
             BinaryExpression binExp = (BinaryExpression) expression;
-            switch (binExp.getOperation().getType()) {   // br todo should leave a copy of the value on the stack for all the assignemnt.
+            switch (binExp.getOperation().getType()) {   // br todo should leave a copy of the value on the stack for all the assignment.                   
 //                case Types.EQUAL :   // br a copy of the right value is left on the stack (see evaluateEqual()) so a pop is required for a standalone assignment
 //                case Types.PLUS_EQUAL : // this and the following are related to evaluateBinaryExpressionWithAssignment()
 //                case Types.MINUS_EQUAL :
