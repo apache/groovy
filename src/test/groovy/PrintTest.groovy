@@ -7,13 +7,17 @@ import java.text.NumberFormat
 
 class PrintTest extends GroovyTestCase {
     PrintStream savedSystemOut
+    private locale
     
     void setUp() {
         savedSystemOut = System.out
+        locale = Locale.getDefault()
+        Locale.setDefault(Locale.US)
     }
     
     void tearDown() {
-        System.setOut(savedSystemOut)
+        Locale.setDefault(locale)
+        System.setOut(savedSystemOut)        
     }
 
     void testToString() {
