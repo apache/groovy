@@ -15,12 +15,11 @@
  */
 package org.codehaus.groovy.runtime.callsite;
 
-import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
-
 import groovy.lang.GroovyRuntimeException;
-import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
-import groovy.mock.interceptor.MockProxyMetaClass;
+
+import org.codehaus.groovy.reflection.ClassInfo;
+import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
 /**
  * POJO call site
@@ -30,20 +29,19 @@ import groovy.mock.interceptor.MockProxyMetaClass;
  * @author Alex Tkachman
 */
 public class PojoMetaClassSite extends MetaClassSite{
+    private final ClassInfo classInfo;
+    private final int version;
+
     public PojoMetaClassSite(CallSite site, MetaClass metaClass) {
         super(site, metaClass);
+        classInfo = ClassInfo.getClassInfo(metaClass.getTheClass());
+        version = classInfo.getVersion();
     }
 
     public Object call(Object receiver, Object[] args) throws Throwable {
         if(checkCall(receiver)) {
           try{
-        	  MetaClass metaClassToInvoke = metaClass;
-        	  // if it is MockProxyMetaClass, use the one from the registry and not the cached one
-        	  // as the mock/stub infrastructure replaces metaClass at runtime in the context of use {..}
-        	  if(metaClass instanceof MockProxyMetaClass) {
-        		  metaClassToInvoke = GroovySystem.getMetaClassRegistry().getMetaClass(receiver.getClass()); 
-        	  }
-            return metaClassToInvoke.invokeMethod(receiver, name, args);
+              return metaClass.invokeMethod(receiver, name, args);
           } catch (GroovyRuntimeException gre) {
               throw ScriptBytecodeAdapter.unwrap(gre);
           }
@@ -53,6 +51,7 @@ public class PojoMetaClassSite extends MetaClassSite{
     }
 
     protected final boolean checkCall(Object receiver) {
-        return receiver.getClass() == metaClass.getTheClass();
+        return receiver.getClass() == metaClass.getTheClass()
+            && version == classInfo.getVersion(); // metaClass is still valid
     }
 }
