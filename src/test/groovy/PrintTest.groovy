@@ -3,6 +3,19 @@ package groovy
 import java.text.NumberFormat
 
 class PrintTest extends GroovyTestCase {
+    PrintStream savedSystemOut
+    private locale
+    
+    void setUp() {
+        savedSystemOut = System.out
+        locale = Locale.getDefault()
+        Locale.setDefault(Locale.US)
+    }
+    
+    void tearDown() {
+        Locale.setDefault(locale)
+        System.setOut(savedSystemOut)        
+    }
 
     void testToString() {
         assertToString("hello", 'hello')
@@ -51,7 +64,6 @@ class PrintTest extends GroovyTestCase {
             def floatExpr = sprintf('%5.2f + %5.2f = %5.2f' , [3, 4, 3+4] as float[])
             assertEquals " 3${decimalSymbol}00 +  4${decimalSymbol}00 =  7${decimalSymbol}00", floatExpr
             def doubleExpr = sprintf('%5.2g + %5.2g = %5.2g' , [3, 4, 3+4] as double[])
-            // TODO: work out why decimalSymbol is not used here (at least for FR and RU)
             assertEquals "  3.0 +   4.0 =   7.0", doubleExpr
             assert sprintf('hi %s' , 'there') == 'hi there'
             assert sprintf('%c' , 0x41) == 'A'
