@@ -17,21 +17,27 @@ package org.codehaus.groovy.runtime.callsite;
 
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
-import org.codehaus.groovy.runtime.InvokerHelper;
+
+import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
 class ClassMetaClassGetPropertySite extends AbstractCallSite {
     final MetaClass metaClass;
     private final Class aClass;
+    private final ClassInfo classInfo;
+    private final int version;
 
     public ClassMetaClassGetPropertySite(CallSite parent, Class aClass) {
         super(parent);
         this.aClass = aClass;
-        metaClass = InvokerHelper.getMetaClass(aClass);
+        classInfo = ClassInfo.getClassInfo(aClass);
+        version = classInfo.getVersion();
+        metaClass = classInfo.getMetaClass();
     }
 
     public final CallSite acceptGetProperty(Object receiver) {
-        if (receiver != aClass)
+        if (receiver != aClass
+            || version != classInfo.getVersion()) // metaClass is invalid
             return createGetPropertySite(receiver);
         else
           return this;
