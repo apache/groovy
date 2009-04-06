@@ -1,7 +1,7 @@
 package org.codehaus.groovy.runtime.callsite;
 
 import groovy.lang.GroovyRuntimeException;
-import groovy.lang.MetaClass;
+import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
@@ -15,8 +15,11 @@ import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 */
 public class ConstructorMetaMethodSite extends MetaMethodSite {
 
-    public ConstructorMetaMethodSite(CallSite site, MetaClass metaClass, MetaMethod method, Class [] params) {
+    private final int version;
+
+    public ConstructorMetaMethodSite(CallSite site, MetaClassImpl metaClass, MetaMethod method, Class [] params) {
         super(site, metaClass, method, params);
+        this.version = metaClass.getVersion();
     }
 
     public final Object invoke(Object receiver, Object [] args) throws Throwable{
@@ -30,6 +33,7 @@ public class ConstructorMetaMethodSite extends MetaMethodSite {
 
     public final Object callConstructor(Object receiver, Object[] args) throws Throwable {
         if (receiver == metaClass.getTheClass() // meta class match receiver
+           && ((MetaClassImpl)metaClass).getVersion() == version // metaClass still be valid
            && MetaClassHelper.sameClasses(params, args) )  
         {
             MetaClassHelper.unwrap(args);

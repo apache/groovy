@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.runtime.callsite;
 
+import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 
 import groovy.lang.GroovyRuntimeException;
@@ -28,13 +29,20 @@ import groovy.lang.MetaClass;
  * @author Alex Tkachman
 */
 public class MetaClassConstructorSite extends MetaClassSite {
+
+    private final ClassInfo classInfo;
+    private final int version;
+
     public MetaClassConstructorSite(CallSite site, MetaClass metaClass) {
         super(site, metaClass);
+        classInfo = ClassInfo.getClassInfo(metaClass.getTheClass());
+        version = classInfo.getVersion();
     }
 
     public Object callConstructor(Object receiver, Object[] args) throws Throwable {
         try {
-            if (receiver == metaClass.getTheClass())
+            if (receiver == metaClass.getTheClass()
+                && version == classInfo.getVersion()) // metaClass still be valid
                 return metaClass.invokeConstructor(args);
             else
               return CallSiteArray.defaultCallConstructor(this, receiver, args);
