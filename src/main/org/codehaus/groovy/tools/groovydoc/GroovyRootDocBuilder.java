@@ -86,7 +86,12 @@ public class GroovyRootDocBuilder {
         SourceBuffer sourceBuffer = new SourceBuffer();
         JavaRecognizer parser = getJavaParser(src, sourceBuffer);
         String[] tokenNames = parser.getTokenNames();
-        parser.compilationUnit();
+        try {
+            parser.compilationUnit();
+        } catch (OutOfMemoryError e) {
+            System.out.println("Out of memory while processing: " + packagePath + "/" + file);
+            throw e;
+        }
         AST ast = parser.getAST();
 
         // modify the Java AST into a Groovy AST (just token types)
@@ -112,8 +117,12 @@ public class GroovyRootDocBuilder {
             throws RecognitionException, TokenStreamException {
         SourceBuffer sourceBuffer = new SourceBuffer();
         GroovyRecognizer parser = getGroovyParser(src, sourceBuffer);
-//        String[] tokenNames = parser.getTokenNames();
-        parser.compilationUnit();
+        try {
+            parser.compilationUnit();
+        } catch (OutOfMemoryError e) {
+            System.out.println("Out of memory while processing: " + packagePath + "/" + file);
+            throw e;
+        }
         AST ast = parser.getAST();
 
         // now do the business
