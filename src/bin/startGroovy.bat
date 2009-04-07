@@ -129,9 +129,11 @@ set _ARGS=%_ARGS:6*=6-s%
 set _ARGS=%_ARGS:7*=7-s%
 set _ARGS=%_ARGS:8*=8-s%
 set _ARGS=%_ARGS:9*=9-s%
+
 rem prequote all args for 'for' statement
 set _ARGS="%_ARGS%"
 
+set _ARG=
 :win9xME_args_loop
 rem split args by spaces into first and rest
 for /f "tokens=1,*" %%i in (%_ARGS%) do call :get_arg "%%i" "%%j"
@@ -139,24 +141,34 @@ goto process_arg
 
 :get_arg
 rem remove quotes around first arg
-for %%i in (%1) do set _ARG=%%~i
+for %%i in (%1) do set _ARG=%_ARG% %%~i
 rem set the remaining args
 set _ARGS=%2
+rem remove the leading space we'll add the first time
+if "x%_ARG:~0,1%" == "x " set _ARG=%_ARG:~1%
 rem return
 goto :EOF
 
 :process_arg
 if "%_ARG%" == "" goto execute
 
+rem collect all parts of a quoted argument containing spaces
+if not "%_ARG:~0,2%" == "-q" goto :argIsComplete
+if "%_ARG:~-2%" == "-q" goto :argIsComplete
+rem _ARG starts with a quote but does not end with one:
+rem  add the next part to _ARG until the matching quote is found
+goto :win9xME_args_loop
+
+:argIsComplete
 if "x4" == "x%_SKIP%" goto skip_4
 if "x3" == "x%_SKIP%" goto skip_3
 if "x2" == "x%_SKIP%" goto skip_2
 if "x1" == "x%_SKIP%" goto skip_1
 
 rem now unescape -q, -s, -d
-set _ARG=%_ARG:-q="%
 set _ARG=%_ARG:-s=*%
 set _ARG=%_ARG:-d=-%
+set _ARG=%_ARG:-q="%
 
 set CMD_LINE_ARGS=%CMD_LINE_ARGS% %_ARG%
 set _ARG=
