@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -68,9 +68,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
         allowShortGrapes = true;
         grabAliases = new HashSet();
         grapesAliases = new HashSet();
-        Iterator i = mn.getImports().iterator();
-        while (i.hasNext()) {
-            ImportNode im = (ImportNode) i.next();
+        for (ImportNode im : (Collection<ImportNode>) mn.getImports()) {
             String alias = im.getAlias();
             String className = im.getClassName();
             if ((className.endsWith(GRAB_DOT_NAME) && ((alias == null) || (alias.length() == 0)))
@@ -91,7 +89,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
 
         List<Map<String,Object>> grabMaps = new ArrayList();
 
-        for (ClassNode classNode : (List<ClassNode>) sourceUnit.getAST().getClasses()) {
+        for (ClassNode classNode : (Collection<ClassNode>) sourceUnit.getAST().getClasses()) {
             grabAnnotations = new ArrayList<AnnotationNode>();
             grapesAnnotations = new ArrayList<AnnotationNode>();
 
@@ -100,8 +98,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             ClassNode grapeClassNode = new ClassNode(Grape.class);
 
             if (!grapesAnnotations.isEmpty()) {
-                for (int j = 0; j < grapesAnnotations.size(); j++) {
-                    AnnotationNode node = grapesAnnotations.get(j);
+                for (AnnotationNode node : grapesAnnotations) {
                     Expression init = node.getMember("initClass");
 
                     Expression value = node.getMember("value");
@@ -132,10 +129,9 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
 
             if (!grabAnnotations.isEmpty()) {
                 grabAnnotationLoop:
-                for (int j = 0; j < grabAnnotations.size(); j++) {
-                    AnnotationNode node = grabAnnotations.get(j);
-                    Map<String,Object> grabMap = new HashMap();
-                    for (String s : new String[] {"group", "module", "version"}) {
+                for (AnnotationNode node : grabAnnotations) {
+                    Map<String, Object> grabMap = new HashMap();
+                    for (String s : new String[]{"group", "module", "version"}) {
                         if (node.getMember(s) == null) {
                             addError("The missing attribute \"" + s + "\" is required in @" + node.getClassNode().getNameWithoutPackage() + " annotations", node);
                             continue grabAnnotationLoop;
@@ -176,7 +172,14 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             Map basicArgs = new HashMap();
             basicArgs.put("classLoader", sourceUnit.getClassLoader());
 
-            Grape.grab(basicArgs, grabMaps.toArray(new Map[grabMaps.size()]));
+            try {
+                Grape.grab(basicArgs, grabMaps.toArray(new Map[grabMaps.size()]));
+            } catch (RuntimeException re) {
+                // Decided against syntax exception since this is not a syntax error.
+                // The down side is we lose line number information fo the offending
+                // @Grab annotation.
+                source.addException(re);
+            }
         }
     }
 
@@ -195,9 +198,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
      */
     public void visitAnnotations(AnnotatedNode node) {
         super.visitAnnotations(node);
-        Iterator i = node.getAnnotations().iterator();
-        while (i.hasNext()) {
-            AnnotationNode an = (AnnotationNode) i.next();
+        for (AnnotationNode an : (Collection<AnnotationNode>) node.getAnnotations()) {
             String name = an.getClassNode().getName();
             if ((GRAB_CLASS_NAME.equals(name))
                 || (allowShortGrab && GRAB_SHORT_NAME.equals(name))
