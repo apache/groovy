@@ -36,7 +36,6 @@ import org.objectweb.asm.Opcodes;
 
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
-import java.util.Collection;
 
 /**
  * Handles generation of code for the {@code @Bindable} annotation when {@code @Vetoable}
@@ -68,7 +67,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
      * @return true if the node is bindable
      */
     public static boolean hasBindableAnnotation(AnnotatedNode node) {
-        for (AnnotationNode annotation : (Collection<AnnotationNode>) node.getAnnotations()) {
+        for (AnnotationNode annotation : node.getAnnotations()) {
             if (boundClassNode.equals(annotation.getClassNode())) {
                 return true;
             }
@@ -96,8 +95,16 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
 
         ClassNode declaringClass = parent.getDeclaringClass();
         if (parent instanceof FieldNode) {
-            if (VetoableASTTransformation.hasVetoableAnnotation(parent.getDeclaringClass()))
-            {
+            if ((((FieldNode)parent).getModifiers() & Opcodes.ACC_FINAL) != 0) {
+                source.getErrorCollector().addErrorAndContinue(
+                            new SyntaxErrorMessage(new SyntaxException(
+                                "@groovy.beans.Bindable cannot annotate a final property.",
+                                node.getLineNumber(),
+                                node.getColumnNumber()),
+                                source));
+            }
+
+            if (VetoableASTTransformation.hasVetoableAnnotation(parent.getDeclaringClass())) {
                 // VetoableASTTransformation will handle both @Bindable and @Vetoable
                 return;
             }
@@ -109,7 +116,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
 
     private void addListenerToProperty(SourceUnit source, AnnotationNode node, ClassNode declaringClass, FieldNode field) {
         String fieldName = field.getName();
-        for (PropertyNode propertyNode : (Collection<PropertyNode>) declaringClass.getProperties()) {
+        for (PropertyNode propertyNode : declaringClass.getProperties()) {
             if (propertyNode.getName().equals(fieldName)) {
                 if (field.isStatic()) {
                     //noinspection ThrowableInstanceNeverThrown
@@ -141,14 +148,16 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
         if (needsPropertyChangeSupport(classNode, source)) {
             addPropertyChangeSupport(classNode);
         }
-        for (PropertyNode propertyNode : (Collection<PropertyNode>) classNode.getProperties()) {
+        for (PropertyNode propertyNode : classNode.getProperties()) {
             FieldNode field = propertyNode.getField();
             // look to see if per-field handlers will catch this one...
             if (hasBindableAnnotation(field)
+                || ((field.getModifiers() & Opcodes.ACC_FINAL) != 0)
                 || field.isStatic()
                 || VetoableASTTransformation.hasVetoableAnnotation(field))
             {
                 // explicitly labeled properties are already handled,
+                // don't transform final properties
                 // don't transform static properties
                 // VetoableASTTransformation will handle both @Bindable and @Vetoable
                 continue;

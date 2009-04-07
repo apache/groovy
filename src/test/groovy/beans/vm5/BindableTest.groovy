@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 the original author or authors.
+ * Copyright 2008-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -258,4 +258,64 @@ class BindableTest extends GroovySwingTestCase {
             """)
         }
     }
+
+    public void testFinalProperty() {
+        shouldFail(CompilationFailedException) {
+            GroovyShell shell = new GroovyShell()
+            shell.evaluate("""
+                import groovy.beans.Bindable
+
+                class BindableTestBean11  {
+                  @Bindable final String testField
+                }
+                1+1
+            """)
+        }
+    }
+
+    public void testOnClassFinalProperty() {
+        shouldFail(ReadOnlyPropertyException) {
+            GroovyShell shell = new GroovyShell()
+            shell.evaluate("""
+                import groovy.beans.Bindable
+
+                @Bindable class BindableTestBean12  {
+                  String testField
+                  final String anotherTestField = 'Fixed'
+                }
+
+                sb = new BindableTestBean12()
+                int changed = 0
+                sb.propertyChange = {changed++}
+                sb.testField = 'newValue'
+                assert changed == 1
+
+                sb.anotherTestField = 'Changed'
+            """)
+        }
+    }
+
+    public void testFinalClass() {
+        shouldFail(ReadOnlyPropertyException) {
+            GroovyShell shell = new GroovyShell()
+            shell.evaluate("""
+                import groovy.beans.Bindable
+
+                @Bindable final class BindableTestBean12  {
+                  String testField
+                  final String anotherTestField = 'Fixed'
+                }
+
+                sb = new BindableTestBean12()
+                int changed = 0
+                sb.propertyChange = {changed++}
+                sb.testField = 'newValue'
+                assert changed == 1
+
+                sb.anotherTestField = 'Changed'
+            """)
+        }
+    }
+
+
 }

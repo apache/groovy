@@ -31,11 +31,11 @@ import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
+import org.objectweb.asm.Opcodes;
 
 import java.beans.PropertyVetoException;
 import java.beans.VetoableChangeListener;
 import java.beans.VetoableChangeSupport;
-import java.util.Collection;
 
 /**
  * Handles generation of code for the {@code @Vetoable} annotation, and {@code @Bindable}
@@ -67,7 +67,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
      * @return true if the node is constrained
      */
     public static boolean hasVetoableAnnotation(AnnotatedNode node) {
-        for (AnnotationNode annotation : (Collection<AnnotationNode>) node.getAnnotations()) {
+        for (AnnotationNode annotation : node.getAnnotations()) {
             if (constrainedClassNode.equals(annotation.getClassNode())) {
                 return true;
             }
@@ -90,6 +90,15 @@ public class VetoableASTTransformation extends BindableASTTransformation {
         if (nodes[1] instanceof ClassNode) {
             addListenerToClass(source, node, (ClassNode) nodes[1]);
         } else {
+            if ((((FieldNode)nodes[1]).getModifiers() & Opcodes.ACC_FINAL) != 0) {
+                source.getErrorCollector().addErrorAndContinue(
+                            new SyntaxErrorMessage(new SyntaxException(
+                                "@groovy.beans.Vetoable cannot annotate a final property.",
+                                node.getLineNumber(),
+                                node.getColumnNumber()),
+                                source));
+            }
+
             addListenerToProperty(source, node, (AnnotatedNode) nodes[1]);
         }
     }
@@ -98,7 +107,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
         ClassNode declaringClass = parent.getDeclaringClass();
         FieldNode field = ((FieldNode) parent);
         String fieldName = field.getName();
-        for (PropertyNode propertyNode : (Collection<PropertyNode>) declaringClass.getProperties()) {
+        for (PropertyNode propertyNode : declaringClass.getProperties()) {
             boolean bindable = BindableASTTransformation.hasBindableAnnotation(parent)
                 || BindableASTTransformation.hasBindableAnnotation(parent.getDeclaringClass());
 
@@ -129,8 +138,9 @@ public class VetoableASTTransformation extends BindableASTTransformation {
 
     private void addListenerToClass(SourceUnit source, AnnotationNode node, ClassNode classNode) {
         boolean bindable = BindableASTTransformation.hasBindableAnnotation(classNode);
-        for (PropertyNode propertyNode : (Collection<PropertyNode>) classNode.getProperties()) {
+        for (PropertyNode propertyNode : classNode.getProperties()) {
             if (!hasVetoableAnnotation(propertyNode.getField())
+                && !((propertyNode.getField().getModifiers() & Opcodes.ACC_FINAL) != 0)
                 && !propertyNode.getField().isStatic())
             {
                 createListenerSetter(source, node,
