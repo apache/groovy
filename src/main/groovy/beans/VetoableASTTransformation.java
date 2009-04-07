@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 the original author or authors.
+ * Copyright 2008-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,6 +31,7 @@ import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
+import org.objectweb.asm.Opcodes;
 
 import java.beans.PropertyVetoException;
 import java.beans.VetoableChangeListener;
@@ -38,7 +39,7 @@ import java.beans.VetoableChangeSupport;
 import java.util.Collection;
 
 /**
- * Handles generation of code for the @Vetoable annotation, and @Bindable
+ * Handles generation of code for the {@code @Vetoable} annotation, and {@code @Bindable}
  * if also present.
  * <p/>
  * Generally, it adds (if needed) a VetoableChangeSupport field and
@@ -90,6 +91,15 @@ public class VetoableASTTransformation extends BindableASTTransformation {
         if (nodes[1] instanceof ClassNode) {
             addListenerToClass(source, node, (ClassNode) nodes[1]);
         } else {
+            if ((((FieldNode)nodes[1]).getModifiers() & Opcodes.ACC_FINAL) != 0) {
+                source.getErrorCollector().addErrorAndContinue(
+                            new SyntaxErrorMessage(new SyntaxException(
+                                "@groovy.beans.Vetoable cannot annotate a final property.",
+                                node.getLineNumber(),
+                                node.getColumnNumber()),
+                                source));
+            }
+
             addListenerToProperty(source, node, (AnnotatedNode) nodes[1]);
         }
     }
@@ -131,6 +141,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
         boolean bindable = BindableASTTransformation.hasBindableAnnotation(classNode);
         for (PropertyNode propertyNode : (Collection<PropertyNode>) classNode.getProperties()) {
             if (!hasVetoableAnnotation(propertyNode.getField())
+                && !((propertyNode.getField().getModifiers() & Opcodes.ACC_FINAL) != 0)
                 && !propertyNode.getField().isStatic())
             {
                 createListenerSetter(source, node,
