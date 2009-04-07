@@ -21,7 +21,7 @@ import org.codehaus.groovy.runtime.MethodClosure
 import java.lang.reflect.Method
 
 /**
- * ???
+ * Helper to interpret a source buffer.
  *
  * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
@@ -41,12 +41,21 @@ class Interpreter
         shell = new GroovyShell(classLoader, binding)
     }
 
+    //
+    // HACK: Use reflection to force the invocation of some get* methods on GroovyShell,
+    //       to avoid Groovy property insanity when "context" or "classLoader" is set in the shell
+    //
+    
+    private final def GET_CONTEXT_METHOD = GroovyShell.class.getMethod('getContext', new Class[0])
+
     Binding getContext() {
-        return shell.context
+        return GET_CONTEXT_METHOD.invoke(shell, null)
     }
 
+    private final def GET_CLASS_LOADER_METHOD = GroovyShell.class.getMethod('getClassLoader', new Class[0])
+
     GroovyClassLoader getClassLoader() {
-        return shell.classLoader
+        return GET_CLASS_LOADER_METHOD.invoke(shell, null)
     }
 
     def evaluate(final List buffer) {
@@ -75,12 +84,12 @@ class Interpreter
                 if (!(m.name in [ 'main', 'run' ] || m.name.startsWith('super$') || m.name.startsWith('class$') || m.name.startsWith('$'))) {
                     log.debug("Saving method definition: $m")
 
-                    shell.context["${m.name}"] = new MethodClosure(type.newInstance(), m.name)
+                    context["${m.name}"] = new MethodClosure(type.newInstance(), m.name)
                 }
             }
         }
         finally {
-            def cache = shell.classLoader.classCache
+            def cache = classLoader.classCache
 
             // Remove the script class generated
             cache.remove(type?.name)
