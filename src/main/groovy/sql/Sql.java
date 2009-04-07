@@ -1484,7 +1484,7 @@ public class Sql {
     }
 
     protected void closeResources(Connection connection, Statement statement) {
-        if (isCacheStatements()) return;
+        if (cacheStatements) return;
         if (statement != null) {
             try {
                 statement.close();
@@ -1493,6 +1493,7 @@ public class Sql {
                 log.log(Level.INFO, "Caught exception closing statement: " + e, e);
             }
         }
+        if (cacheConnection) return;
         if (dataSource != null) {
             try {
                 connection.close();
