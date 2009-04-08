@@ -41,21 +41,12 @@ class Interpreter
         shell = new GroovyShell(classLoader, binding)
     }
 
-    //
-    // HACK: Use reflection to force the invocation of some get* methods on GroovyShell,
-    //       to avoid Groovy property insanity when "context" or "classLoader" is set in the shell
-    //
-    
-    private final def GET_CONTEXT_METHOD = GroovyShell.class.getMethod('getContext', new Class[0])
-
     Binding getContext() {
-        return GET_CONTEXT_METHOD.invoke(shell, null)
+        return shell.getContext()
     }
 
-    private final def GET_CLASS_LOADER_METHOD = GroovyShell.class.getMethod('getClassLoader', new Class[0])
-
     GroovyClassLoader getClassLoader() {
-        return GET_CLASS_LOADER_METHOD.invoke(shell, null)
+        return shell.getClassLoader()
     }
 
     def evaluate(final List buffer) {
