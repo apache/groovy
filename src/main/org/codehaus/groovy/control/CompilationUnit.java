@@ -69,11 +69,11 @@ public class CompilationUnit extends ProcessingUnit {
     protected LinkedList queuedSources;
 
     protected CompileUnit ast;        // The overall AST for this CompilationUnit.
-    protected List generatedClasses;    // The classes generated during classgen.
+    protected List<GroovyClass> generatedClasses;  // The classes generated during classgen.
 
     protected Verifier verifier;   // For use by verify().
 
-    protected boolean debug;      // Controls behaviour of classgen() and other routines.
+    protected boolean debug;      // Controls behavior of classgen() and other routines.
     protected boolean configured; // Set true after the first configure() operation
 
     protected ClassgenCallback classgenCallback;  // A callback for use during classgen()
@@ -404,8 +404,7 @@ public class CompilationUnit extends ProcessingUnit {
     public abstract static class ClassgenCallback {
         public abstract void call(ClassVisitor writer, ClassNode node) throws CompilationFailedException;
     }
-
-
+    
     /**
      * Sets a ClassgenCallback.  You can have only one, and setting
      * it to null removes any existing setting.
@@ -413,7 +412,6 @@ public class CompilationUnit extends ProcessingUnit {
     public void setClassgenCallback(ClassgenCallback visitor) {
         this.classgenCallback = visitor;
     }
-
 
     /**
      * A callback interface you can use to get a callback after every
@@ -706,7 +704,6 @@ public class CompilationUnit extends ProcessingUnit {
             //
             ClassVisitor visitor = createClassVisitor();
 
-
             String sourceName = (source == null ? classNode.getModule().getDescription() : source.getName());
             // only show the file name and its extension like javac does in its stacktraces rather than the full path
             // also takes care of both \ and / depending on the host compiling environment
@@ -835,6 +832,24 @@ public class CompilationUnit extends ProcessingUnit {
         public abstract void call(GroovyClass gclass) throws CompilationFailedException;
     }
 
+    private int getSuperClassCount(ClassNode element) {
+        int count = 0;
+        while (element != null) {
+            count++;
+            element = element.getSuperClass();
+        }
+        return count;
+    }
+    
+    private int getSuperInterfaceCount(ClassNode element) {
+        int count = 1;
+        ClassNode[] interfaces = element.getInterfaces();
+        for (int i=0; i<interfaces.length; i++) {
+            count = Math.max(count, getSuperInterfaceCount(interfaces[i])+1);
+        }
+        return count;
+    }
+    
     private List getPrimaryClassNodes(boolean sort) {
         List unsorted = new ArrayList();
         Iterator modules = this.ast.getModules().iterator();
@@ -856,17 +871,12 @@ public class CompilationUnit extends ProcessingUnit {
             int i = 0;
             for (Iterator iter = unsorted.iterator(); iter.hasNext(); i++) {
                 ClassNode node = (ClassNode) iter.next();
-                int count = 0;
                 ClassNode element = node;
-                while (element != null) {
-                    count++;
-                    element = element.getSuperClass();
-                }
                 if (node.isInterface()) {
-                    indexInterface[i] = count;
+                    indexInterface[i] = getSuperInterfaceCount(element);
                     indexClass[i] = -1;
                 } else {
-                    indexClass[i] = count;
+                    indexClass[i] = getSuperClassCount(element);
                     indexInterface[i] = -1;
                 }
             }
@@ -914,7 +924,7 @@ public class CompilationUnit extends ProcessingUnit {
                     body.call(context, new GeneratorContext(this.ast), classNode);
                 }
             } catch (CompilationFailedException e) {
-                // fall thorugh, getErrorREporter().failIfErrors() will triger
+                // fall through, getErrorReporter().failIfErrors() will triger
             } catch (NullPointerException npe) {
                 throw npe;
             } catch (GroovyBugError e) {
