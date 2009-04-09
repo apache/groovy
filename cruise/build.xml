@@ -23,8 +23,6 @@
     <ant dir=".." antfile="build.xml" target="clean"/>
 	<ant dir=".." antfile="build.xml" target="cruise">
 		<property name="buildnumber" value="${label}"/>
-        <property name="forceRetro" value="true"/>
-        <property name="jdk14home" value="/usr/local/java/j2sdk1.4.2"/>
     </ant>
     <echo message="*** groovy (${label}) Ant build successfully ended ***"/>
   </target>

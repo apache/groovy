@@ -31,7 +31,6 @@ $Date$
     <import file="config/ant/build-maven.xml"/>
     <import file="config/ant/build-checkstyle.xml"/>
     <import file="config/ant/build-cobertura.xml"/>
-    <import file="config/ant/build-retro.xml"/>
 
     <condition property="_skipTests_">
         <or>
@@ -40,15 +39,12 @@ $Date$
         </or>
     </condition>
 
-    <condition property="_forceRetro_">
-        <and>
-            <isset property="jdk14home"/>
-            <istrue value="${forceRetro}"/>
-        </and>
-    </condition>
-
     <condition property="_skipExamples_">
         <istrue value="${skipExamples}"/>
+    </condition>
+
+    <condition property="_skipOsgi_">
+        <istrue value="${skipOsgi}"/>
     </condition>
 
     <condition property="_skipFetch_">
@@ -116,10 +112,9 @@ $Date$
     <target name="-jvm14BuildWarning" unless="groovy.build.vm5">
         <fail>Aborting!
 
-=================================================================
-  ERROR: You must build Groovy with a 1.5+ JDK - but you can
-         run the 'testOnly' target using Java 1.4.
-=================================================================
+================================================
+  ERROR: You must build Groovy with a 1.5+ JDK
+================================================
         </fail>
     </target>
 
@@ -191,8 +186,8 @@ $Date$
         </groovyc>
     </target>
 
-    <property name="vm5GroovySourceFiles" value="gls/**/vm5/*Test.groovy,org/codehaus/groovy/**/vm5/*.groovy,groovy/**/vm5/*.groovy"/>
-    <property name="vm5JavaSourceFiles" value="org/codehaus/groovy/**/vm5/**/*.java,groovy/**/vm5/*.java,gls/**/vm5/*.java"/>
+    <property name="vm5GroovySourceFiles" value="gls/**/*.groovy,org/codehaus/groovy/**/*.groovy,groovy/**/*.groovy"/>
+    <property name="vm5JavaSourceFiles" value="org/codehaus/groovy/**/*.java,groovy/**/*.java,gls/**/*.java"/>
     <property name="vm6GroovySourceFiles" value="groovy/**/vm6/*Test.groovy"/>
     <property name="antGroovySourceFiles" value="org/codehaus/groovy/ant/**/GroovyTest*.groovy"/>
 
@@ -200,34 +195,6 @@ $Date$
         <path id="groovyMainClasses">
             <pathelement path="${mainClassesDirectory}"/>
             <path refid="compilePath"/>
-        </path>
-        <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="groovyMainClasses"/>
-    </target>
-
-    <target name="-initGroovyc_vm4" unless="groovy.build.vm5">
-        <property name="groovyJar14path" location="${basedir}/${relativePathToRealBasedir}/target/dist/groovy-jdk14-${groovyVersion}.jar"/>
-        <condition property="groovyJar14Found">
-            <available file="${groovyJar14path}"/>
-        </condition>
-        <fail unless="groovyJar14Found">Aborting!
-
-Not found: ${groovyJar14path}
-
-=================================================================
-  ERROR: First build Groovy with a 1.5+ JDK:
-           use the 'install' target
-           set the flag: -DforceRetro=true
-           set the -Djdk14home variable your 1.4 JDK basedir
-         then you can run the 'testOnly' target on a 1.4 jvm.
-=================================================================
-        </fail>
-        <path id="groovyMainClasses">
-            <pathelement path="${basedir}/${relativePathToRealBasedir}/target/dist/groovy-jdk14-${groovyVersion}.jar"/>
-            <fileset dir="${toolsLibDirectory}">
-                <include name="backport-util-concurrent-*.jar"/>
-                <include name="retrotranslator-runtime-*.jar"/>
-            </fileset>
-            <path refid="runtimePath"/>
         </path>
         <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="groovyMainClasses"/>
     </target>
@@ -244,28 +211,11 @@ Not found: ${groovyJar14path}
         <antcall inheritrefs="true" target="-compileTest"/>
     </target>
 
-    <target name="-compileTest_vm4" depends="-initGroovyc_vm4">
-        <!-- compile Groovy test files excluding ones which we want to pick up from the file system -->
-        <groovyc srcdir="${testSourceDirectory}"
-                 destdir="${testClassesDirectory}"
-                 excludes="${antGroovySourceFiles},${vm5GroovySourceFiles},${vm5JavaSourceFiles},${vm6GroovySourceFiles}"
-                 stacktrace="true"
-                 fork="true"
-                 memorymaximumsize="${groovycTest_mx}">
-            <classpath>
-                <pathelement path="${testClassesDirectory}"/>
-                <path refid="groovyMainClasses"/>
-                <path refid="testLibPath"/>
-                <path refid="jdk14ExtrasPath"/>
-            </classpath>
-            <javac source="1.4" target="1.4" nowarn="true"/>
-        </groovyc>
-    </target>
-
-    <target name="-compileTest" depends="-initGroovyc,-compileTest_vm4,-compileTest_vm6" if="groovy.build.vm5">
+    <target name="-compileTest" depends="-initGroovyc,-compileTest_vm6" if="groovy.build.vm5">
         <groovyc srcdir="${testSourceDirectory}"
                  destdir="${testClassesDirectory}"
                  includes="${vm5GroovySourceFiles},${vm5JavaSourceFiles}"
+                 excludes="${vm6GroovySourceFiles}"
                  fork="true"
                  memorymaximumsize="${groovycTest_mx}">
             <classpath>
@@ -332,7 +282,7 @@ Not found: ${groovyJar14path}
                 <path refid="compilePath"/>
                 <path refid="examplesPath"/>
             </classpath>
-            <javac source="1.4" target="1.4"/>
+            <javac source="1.5" target="1.5"/>
         </groovyc>
 
     </target>
@@ -363,9 +313,6 @@ Not found: ${groovyJar14path}
             depends="-banner,-checkAntVersion,-initializeReports,compileTest,-coverageInstrument,-testInit,-testOne,-testAll,-reportTestFailed"
             description="Compile and test all the classes (or just one class if testCase property is defined)."/>
 
-    <target name="testOnly"
-            depends="-init,-checkAntVersion,-initializeReports,-cleanTest,compileTestOnly,-coverageInstrument,-testInit,-testOne,-testAll,-reportTestFailed"/>
-
     <target name="clean-test" depends="clean,test"
             description="Clean and compile and test all the classes (or just one class if testCase property is defined)."/>
 
@@ -378,7 +325,7 @@ Not found: ${groovyJar14path}
         </and>
     </condition>
 
-    <target name="-testOne" if="_testOne_" depends="-initGroovyc_vm4,-initGroovyc">
+    <target name="-testOne" if="_testOne_" depends="-initGroovyc">
         <mkdir dir="${junitRawDirectory}"/>
         <junit printsummary="true" fork="true" includeantruntime="false" failureproperty="testFailed" maxmemory="${groovyJUnit_mx}" dir="${basedir}">
             <jvmarg line="${junitJvmArgs}"/>
@@ -389,8 +336,6 @@ Not found: ${groovyJar14path}
                 <pathelement path="src/test"/>
                 <path refid="groovyMainClasses"/>
                 <path refid="testLibPath"/>
-                <!-- TODO: extras only for JDK14 -->
-                <path refid="jdk14ExtrasPath"/>
                 <pathelement path="${testClassesDirectory}"/>
                 <path refid="coberturaPath"/>
             </classpath>
@@ -415,10 +360,6 @@ Not found: ${groovyJar14path}
         <fileset id="optionalTests.fileset" dir="${testClassesDirectory}" includes="${networkTests.fileset.includes}"/>
     </target>
 
-    <target name="-collect14tests" unless="groovy.build.vm5">
-        <fileset id="ubertests.fileset" dir="${testClassesDirectory}" includes="UberTest*.class" excludes="Uber*VM5.class,Uber*VM6.class"/>
-    </target>
-
     <target name="-collect15tests" if="groovy.build.vm5" unless="groovy.build.vm6">
         <fileset id="ubertests.fileset" dir="${testClassesDirectory}" includes="UberTest*.class" excludes="Uber*VM6.class"/>
     </target>
@@ -427,7 +368,7 @@ Not found: ${groovyJar14path}
         <fileset id="ubertests.fileset" dir="${testClassesDirectory}" includes="UberTest*.class"/>
     </target>
 
-    <target name="-testAll" if="_testAll_" depends="-collect14tests,-collect15tests,-collect16tests,-collectOptionalTests,-initGroovyc_vm4,-initGroovyc">
+    <target name="-testAll" if="_testAll_" depends="-collect15tests,-collect16tests,-collectOptionalTests,-initGroovyc">
         <mkdir dir="${junitRawDirectory}"/>
         <junit printsummary="true" fork="true" includeantruntime="false" failureproperty="testFailed" maxmemory="${groovyJUnit_mx}" dir="${basedir}">
             <jvmarg line="${junitJvmArgs}"/>
@@ -442,8 +383,6 @@ Not found: ${groovyJar14path}
                 <pathelement path="src/test"/>
                 <path refid="groovyMainClasses"/>
                 <path refid="testLibPath"/>
-                <!-- TODO: extras only for JDK14 -->
-                <path refid="jdk14ExtrasPath"/>
                 <pathelement path="${testClassesDirectory}"/>
                 <path refid="coberturaPath"/>
             </classpath>
@@ -548,12 +487,6 @@ Not found: ${groovyJar14path}
         <jar destfile="${targetDistDirectory}/groovy.jar" basedir="${mainClassesDirectory}"
              excludes="*.groovy" manifest="${mainClassesDirectory}/META-INF/MANIFEST.MF"/>
         <jar destfile="${targetDistDirectory}/groovy-${groovyVersion}-sources.jar" basedir="${mainSourceDirectory}"/>
-        <antcall inheritrefs="true" target="-createBaseJarRetro"/>
-    </target>
-
-    <target name="-createBaseJarRetro" if="_forceRetro_">
-        <copy file="${targetDistDirectory}/groovy-${groovyVersion}-sources.jar"
-              tofile="${targetDistDirectory}/groovy-jdk14-${groovyVersion}-sources.jar"/>
     </target>
 
     <target name="-jarjarInit">
@@ -612,60 +545,12 @@ Not found: ${groovyJar14path}
         <copy file="${targetDistDirectory}/groovy-${groovyVersion}-sources.jar"
               tofile="${targetDistDirectory}/groovy-all-${groovyVersion}-sources.jar"/>
         <delete dir="${stagingDirectory}" quiet="true"/>
-        <antcall inheritrefs="true" target="-createEmbeddableJarRetro"/>
     </target>
     
-    <target name="-createEmbeddableJarRetro" if="_forceRetro_">
-        <copy file="${targetDistDirectory}/groovy-all-${groovyVersion}-sources.jar"
-              tofile="${targetDistDirectory}/groovy-all-jdk14-${groovyVersion}-sources.jar"/>
-    </target>
-
     <target name="createJars" depends="-checkAntVersion,test,-actuallyCreateJars"
             description="Build Groovy and create the jarfiles."/>
 
-    <target name="updateRetroJars" if="_forceRetro_">
-        <delete dir="${stagingDirectory}" quiet="true"/>
-        <mkdir dir="${stagingDirectory}"/>
-        <unzip dest="${stagingDirectory}">
-            <fileset dir="${targetDistDirectory}">
-                <include name="groovy-jdk14.jar"/>
-            </fileset>
-        </unzip>
-        <makeManifest file="${stagingDirectory}/META-INF/MANIFEST.MF" bundleEnvironment="J2SE-1.4" />
-        <jar basedir="${stagingDirectory}" manifest="${stagingDirectory}/META-INF/MANIFEST.MF"
-             destfile="${targetDistDirectory}/groovy-jdk14.jar"/>
-
-        <delete dir="${stagingDirectory}" quiet="true"/>
-        <mkdir dir="${stagingDirectory}"/>
-        <unzip dest="${stagingDirectory}">
-            <patternset>
-                <!-- we already have this -->
-                <exclude name="ASM-LICENSE.txt"/>
-                <!-- we don't need this -->
-                <exclude name="META-INF/maven/**/*"/>
-            </patternset>
-            <globmapper from="RETROTRANSLATOR-LICENSE.txt" to="META-INF/RETROTRANSLATOR-LICENSE.txt"/>
-            <fileset dir="${toolsLibDirectory}">
-                <include name="retrotranslator-runtime-*.jar" />
-                <include name="backport-util-concurrent-*.jar" />
-            </fileset>
-        </unzip>
-        <unzip dest="${stagingDirectory}">
-            <fileset dir="${targetDistDirectory}">
-                <include name="groovy-all-jdk14.jar"/>
-            </fileset>
-        </unzip>
-        <makeManifest file="${stagingDirectory}/META-INF/MANIFEST.MF" bundleEnvironment="J2SE-1.4" />
-        <jarjar jarfile="${targetDistDirectory}/groovy-all-jdk14.jar"
-                manifest="${stagingDirectory}/META-INF/MANIFEST.MF">
-            <fileset dir="${stagingDirectory}"/>
-            <rule pattern="net.sf.retrotranslator.runtime.**" result="groovyjarjarretroruntime.@1"/>
-            <rule pattern="edu.emory.mathcs.backport.**" result="groovyjarjarbackport.@1"/>
-        </jarjar>
-        <delete dir="${stagingDirectory}" quiet="true"/>
-    </target>
-
-    <target name="updateJarsForOsgi">
+    <target name="updateJarsForOsgi" unless="_skipOsgi_">
         <taskdef resource="aQute/bnd/ant/taskdef.properties" classpathref="toolsPath"/>
         <copy todir="${targetDistDirectory}">
             <fileset dir="config/bnd" includes="groovy*.bnd"/>
@@ -673,7 +558,7 @@ Not found: ${groovyJar14path}
                 <filter token="GROOVY_BUNDLE_VERSION" value="${groovyBundleVersion}"/>
             </filterset>
         </copy>
-        <property name="jarsToWrap" value="groovy.jar,groovy-all.jar,groovy-jdk14.jar,groovy-all-jdk14.jar" />
+        <property name="jarsToWrap" value="groovy.jar,groovy-all.jar" />
         <bndwrap definitions="${targetDistDirectory}" output="${targetDistDirectory}" failok="true">
             <fileset dir="${targetDistDirectory}" includes="${jarsToWrap}"/>
         </bndwrap>
@@ -685,7 +570,14 @@ Not found: ${groovyJar14path}
         <delete dir="${targetDistDirectory}" includes="groovy*.bnd"/>
     </target>
 
-    <target name="install" depends="createJars,translate,updateRetroJars,updateJarsForOsgi" unless="testFailed"
+    <target name="skipOsgi" if="_skipOsgi_">
+        <move todir="${targetDistDirectory}">
+            <fileset dir="${targetDistDirectory}" includes="groovy*.jar"/>
+            <globmapper from="groovy*.jar" to="groovy*-${groovyVersion}.jar"/>
+        </move>
+    </target>
+
+    <target name="install" depends="createJars,updateJarsForOsgi,skipOsgi" unless="testFailed"
             description="Create an installation hierarchy in target/install.">
 
         <!--
@@ -745,11 +637,6 @@ Not found: ${groovyJar14path}
         <chmod perm="ugo+x">
             <fileset dir="${installDirectory}/bin" includes="*,*.*"/>
         </chmod>
-    </target>
-
-    <target name="translate" depends="-retroInit" if="_forceRetro_">
-        <retroArtifact basedir="${targetDistDirectory}" artifact="groovy"/>
-        <retroArtifact basedir="${targetDistDirectory}" artifact="groovy-all"/>
     </target>
 
     <target name="checkstyle" depends="-init,-initializeReports,-checkstyleInit"
@@ -828,16 +715,6 @@ Not found: ${groovyJar14path}
         <copy toFile="${targetDistDirectory}/groovy-all-${groovyVersion}-javadoc.jar">
             <fileset file="${targetDistDirectory}/groovy-${groovyVersion}-javadoc.jar"/>
         </copy>
-        <antcall inheritrefs="true" target="-javadocRetro"/>
-    </target>
-
-    <target name="-javadocRetro" if="_forceRetro_">
-        <copy toFile="${targetDistDirectory}/groovy-all-jdk14-${groovyVersion}-javadoc.jar">
-            <fileset file="${targetDistDirectory}/groovy-all-${groovyVersion}-javadoc.jar"/>
-        </copy>
-        <copy toFile="${targetDistDirectory}/groovy-jdk14-${groovyVersion}-javadoc.jar">
-            <fileset file="${targetDistDirectory}/groovy-${groovyVersion}-javadoc.jar"/>
-        </copy>
     </target>
 
     <target name="groovydoc" depends="-fetchDependencies">
@@ -898,38 +775,16 @@ Not found: ${groovyJar14path}
         </delete>
     </target>
 
-    <target name="deploy" depends="-mavenDeployInit,install,doc,-deployPlainOnly,-deployPlainAndRetro"
-            description="Deploy jars to maven repository."/>
-
-    <target name="-deployPlainOnly" unless="_forceRetro_">
+    <target name="deploy" depends="-mavenDeployInit,install,doc"
+            description="Deploy jars to maven repository.">
         <mavenDeploy version="${groovyVersion}" prefix="groovy"/>
         <mavenDeploy version="${groovyVersion}" prefix="groovy-all"/>
-    </target>
-
-    <target name="-deployPlainAndRetro" if="_forceRetro_">
-        <!-- these were overwritten, so set them again -->
-        <maven.pom file="${targetDirectory}/groovy-jdk14.pom" id="groovy-jdk14.pom"/>
-        <maven.pom file="${targetDirectory}/groovy-all-jdk14.pom" id="groovy-all-jdk14.pom"/>
-
-        <!-- do them all in one hit like this because the maven ant libs like it that way -->
-        <mavenDeploy version="${groovyVersion}" prefix="groovy"/>
-        <mavenDeploy version="${groovyVersion}" prefix="groovy-all"/>
-        <mavenDeploy version="${groovyVersion}" prefix="groovy-jdk14"/>
-        <mavenDeploy version="${groovyVersion}" prefix="groovy-all-jdk14"/>
     </target>
 
     <target name="installRepo" depends="-mavenInit,install,doc"
             description="Deploy artifacts to local maven repository.">
         <mavenInstallRepo version="${groovyVersion}" prefix="groovy"/>
         <mavenInstallRepo version="${groovyVersion}" prefix="groovy-all"/>
-        <antcall inheritrefs="true" target="-installRepoRetro"/>
-    </target>
-
-    <target name="-installRepoRetro" if="_forceRetro_">
-        <maven.pom file="${targetDirectory}/groovy-jdk14.pom" id="groovy-jdk14.pom"/>
-        <mavenInstallRepo version="${groovyVersion}" prefix="groovy-jdk14"/>
-        <maven.pom file="${targetDirectory}/groovy-all-jdk14.pom" id="groovy-all-jdk14.pom"/>
-        <mavenInstallRepo version="${groovyVersion}" prefix="groovy-all-jdk14"/>
     </target>
 
     <target name="dist" depends="install,doc" description="Create everything needed for a distribution.">
@@ -974,56 +829,6 @@ Not found: ${groovyJar14path}
                 <exclude name="cobertura.ser"/>
                 <exclude name="junitvmwatcher*.properties"/>
             </zipfileset>
-        </zip>
-        <antcall inheritrefs="true" target="-distRetro"/>
-    </target>
-
-    <target name="-distRetro" if="_forceRetro_">
-        <mkdir dir="${stagingDirectory}" />
-        <mkdir dir="${stagingDirectory}/lib" />
-        <mkdir dir="${stagingDirectory}/embeddable" />
-        <copy todir="${stagingDirectory}/lib">
-            <fileset file="${targetDistDirectory}/groovy-jdk14-${groovyVersion}.jar"/>
-            <globmapper from="groovy-jdk14-${groovyVersion}.jar" to="groovy-${groovyVersion}.jar"/>
-        </copy>
-        <copy todir="${stagingDirectory}/embeddable">
-            <fileset file="${targetDistDirectory}/groovy-all-jdk14-${groovyVersion}.jar"/>
-            <globmapper from="groovy-all-jdk14-${groovyVersion}.jar" to="groovy-all-${groovyVersion}.jar"/>
-        </copy>
-        <copy todir="${stagingDirectory}/lib">
-            <fileset dir="${toolsLibDirectory}">
-                <include name="backport-util-concurrent-*.jar"/>
-                <include name="retrotranslator-runtime-*.jar"/>
-            </fileset>
-        </copy>
-        <copy todir="${stagingDirectory}/lib">
-            <fileset dir="${extrasLibDirectory}"/>
-        </copy>
-        <zip destfile="${targetDistDirectory}/groovy-binary-jdk14-${groovyVersion}.zip"
-             comment="The Groovy jdk14 ${groovyVersion} binary distribution.">
-
-            <!-- Make unix scripts executable -->
-            <zipfileset dir="${installDirectory}" prefix="groovy-${groovyVersion}" filemode="775">
-                <include name="bin/*"/>
-                <exclude name="bin/*.*"/>
-                <exclude name="bin/startGroovy*"/>
-            </zipfileset>
-
-            <!-- Include the other scripts as is -->
-            <zipfileset dir="${installDirectory}" prefix="groovy-${groovyVersion}">
-                <include name="bin/*.*"/>
-                <include name="bin/startGroovy*"/>
-            </zipfileset>
-
-            <!-- Include everything else as is too -->
-            <zipfileset dir="${installDirectory}" prefix="groovy-${groovyVersion}">
-                <exclude name="bin/**"/>
-                <exclude name="**/groovy*.jar"/>
-                <include name="**"/>
-            </zipfileset>
-
-            <!-- now the differences to normal zip -->
-            <zipfileset dir="${stagingDirectory}" prefix="groovy-${groovyVersion}"/>
         </zip>
     </target>
 

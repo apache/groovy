@@ -50,7 +50,6 @@ $Date$
     <macrodef name="fetch.maven.all.modules">
         <sequential>
             <fetch.maven.all.scopes module="groovy"/>
-            <fetch.maven scope="runtime" module="groovy-jdk14-extras"/>
             <fetch.maven scope="runtime" module="groovy-tools"/>
             <fetch.maven scope="runtime" module="groovy-examples"/>
         </sequential>
@@ -72,16 +71,6 @@ $Date$
         <maven.pom file="${targetDirectory}/groovy-all.pom" id="groovy-all.pom"/>
         <maven.pom file="config/maven/groovy-tools.pom" id="groovy-tools.pom"/>
         <maven.pom file="config/maven/groovy-examples.pom" id="groovy-examples.pom"/>
-        <maven.pom file="config/maven/groovy-jdk14-extras.pom" id="groovy-jdk14-extras.pom"/>
-        <antcall target="-mavenPomDefinitionsRetro"/>
-    </target>
-
-    <target name="-mavenPomDefinitionsRetro" if="_forceRetro_">
-        <xslt in="pom.xml" out="${targetDirectory}/groovy-jdk14.pom" style="config/maven/groovy-jdk14.xsl"/>
-        <xslt in="${targetDirectory}/groovy-all.pom" out="${targetDirectory}/groovy-all-jdk14.pom" style="config/maven/groovy-all-jdk14.xsl"/>
-        <!-- TODO: work out why setting these here get overriden; currently set in build.xml -->
-        <!--<maven.pom file="${targetDirectory}/groovy-jdk14.pom" id="groovy-jdk14.pom"/>-->
-        <!--<maven.pom file="${targetDirectory}/groovy-all-jdk14.pom" id="groovy-all-jdk14.pom"/>-->
     </target>
 
     <target name="-fetchDependencies" depends="-mavenFetchAllModules,-copyLibraries"/>
@@ -96,7 +85,6 @@ $Date$
         <definePath pathId="testLibPath" filesetId="fs.test.groovy" libdir="${testLibDirectory}"/>
         <definePath pathId="toolsPath" filesetId="fs.runtime.groovy-tools" libdir="${toolsLibDirectory}"/>
         <definePath pathId="examplesPath" filesetId="fs.runtime.groovy-examples" libdir="${examplesLibDirectory}"/>
-        <definePath pathId="jdk14ExtrasPath" filesetId="fs.runtime.groovy-jdk14-extras" libdir="${extrasLibDirectory}"/>
     </target>
 
     <target name="-mavenDeployInit" depends="-mavenInit">

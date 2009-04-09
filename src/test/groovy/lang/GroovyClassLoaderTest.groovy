@@ -68,9 +68,6 @@ public class GroovyClassLoaderTest extends GroovyTestCase {
             if (!sub.endsWith(".jar")) {
                 ret << ((new File(sub)).toURL())
             }
-            if (sub.endsWith(".jar") && sub.indexOf("groovy-jdk14-") > 0) {
-                ret << ((new File(sub)).toURL())
-            }
             end++
         }
         return ret
