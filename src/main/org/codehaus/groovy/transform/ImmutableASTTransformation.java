@@ -76,8 +76,8 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     private static final Token ASSIGN = Token.newSymbol(Types.ASSIGN, -1, -1);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
-        if (!(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
-            throw new RuntimeException("Internal error: wrong types: $node.class / $parent.class");
+        if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
+            throw new RuntimeException("Internal error: expecting [AnnotationNode, AnnotatedClass] but got: " + Arrays.asList(nodes));
         }
 
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
