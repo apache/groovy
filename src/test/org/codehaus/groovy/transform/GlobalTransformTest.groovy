@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.codehaus.groovy.transform.vm5
+package org.codehaus.groovy.transform
 
 /**
  * @author Danno.Ferrin
@@ -22,7 +22,7 @@ package org.codehaus.groovy.transform.vm5
 class GlobalTransformTest extends GroovyShellTestCase {
 
     URL transformRoot = new File(getClass().classLoader.
-            getResource("org/codehaus/groovy/transform/vm5/META-INF/services/org.codehaus.groovy.transform.ASTTransformation").
+            getResource("org/codehaus/groovy/transform/META-INF/services/org.codehaus.groovy.transform.ASTTransformation").
             toURI()).parentFile.parentFile.parentFile.toURL()
 
     void testGlobalTransform() {
@@ -30,9 +30,9 @@ class GlobalTransformTest extends GroovyShellTestCase {
         shell.evaluate("""
             import org.codehaus.groovy.control.CompilePhase
 
-            if (org.codehaus.groovy.transform.vm5.TestTransform.phases == [CompilePhase.CONVERSION, CompilePhase.CLASS_GENERATION]) {
+            if (org.codehaus.groovy.transform.TestTransform.phases == [CompilePhase.CONVERSION, CompilePhase.CLASS_GENERATION]) {
                println "Phase sync bug fixed"
-            } else if (org.codehaus.groovy.transform.vm5.TestTransform.phases == [CompilePhase.CONVERSION, CompilePhase.INSTRUCTION_SELECTION]) {
+            } else if (org.codehaus.groovy.transform.TestTransform.phases == [CompilePhase.CONVERSION, CompilePhase.INSTRUCTION_SELECTION]) {
                println "Phase sync bug still present"
             } else {
                assert false, "FAIL"

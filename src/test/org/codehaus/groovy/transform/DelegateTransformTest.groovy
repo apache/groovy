@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.codehaus.groovy.transform.vm5
+package org.codehaus.groovy.transform
 
 /**
  * @author Alex Tkachman
@@ -24,7 +24,7 @@ class DelegateTransformTest extends GroovyShellTestCase {
     /** fix for GROOVY-3380 */
     void testDelegateImplementingANonPublicInterface() {
         assertScript """
-            import org.codehaus.groovy.transform.vm5.ClassImplementingANonPublicInterface
+            import org.codehaus.groovy.transform.ClassImplementingANonPublicInterface
 
             class DelegatingToClassImplementingANonPublicInterface {
                 @Delegate ClassImplementingANonPublicInterface delegate = new ClassImplementingANonPublicInterface()

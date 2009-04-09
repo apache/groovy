@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.codehaus.groovy.transform.vm5;
+package org.codehaus.groovy.transform;
 
 /**
- * Implementation of a package-scoped interface.
+ * Define a package-scoped interface.
  * Fix for GROOVY-3380
  *
  * @author Guillaume Laforge
  */
-public class ClassImplementingANonPublicInterface implements NonPublicInterface {
-    public String returnConstant() { return CONSTANT; }
+interface NonPublicInterface {
+    static String CONSTANT = "constant";
 }

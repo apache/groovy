@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.codehaus.groovy.transform.vm5
+package org.codehaus.groovy.transform
 
 import org.codehaus.groovy.control.CompilationUnit
 import org.codehaus.groovy.control.SourceUnit
@@ -139,7 +139,7 @@ class ToUpperCaseTransformLoader extends GroovyClassLoader {
     }
 
     def getURL() {
-        return new FakeURLFactory().createURL("org.codehaus.groovy.transform.vm5.ToUpperCaseTransform")
+        return new FakeURLFactory().createURL("org.codehaus.groovy.transform.ToUpperCaseTransform")
     }
 }
 
