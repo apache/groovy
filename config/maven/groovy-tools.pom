@@ -66,7 +66,7 @@
         <dependency>
             <groupId>biz.aQute</groupId>
             <artifactId>bnd</artifactId>
-            <version>0.0.258</version>
+            <version>0.0.315</version>
         </dependency>
     </dependencies>
     <repositories>
