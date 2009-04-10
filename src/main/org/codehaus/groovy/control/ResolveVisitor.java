@@ -870,6 +870,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             for (int i = 0; i < paras.length; i++) {
                 ClassNode t = paras[i].getType();
                 resolveOrFail(t, ce);
+                if(paras[i].hasInitialExpression()) {
+                	Object initialVal = paras[i].getInitialExpression();
+                	if(initialVal instanceof Expression) {
+                		transform((Expression)initialVal);
+                	}
+                }
             }
         }
         Statement code = ce.getCode();
