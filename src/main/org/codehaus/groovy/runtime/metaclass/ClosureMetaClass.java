@@ -47,7 +47,7 @@ import java.util.*;
  * This MetaClass is for internal usage only!
  *
  * @author Jochen Theodorou
- * @since 1.1
+ * @since 1.5
  */
 public final class ClosureMetaClass extends MetaClassImpl {
     private boolean initialized;

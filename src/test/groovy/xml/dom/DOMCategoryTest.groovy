@@ -1,9 +1,25 @@
+/*
+ * Copyright 2003-2009 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package groovy.xml.dom
 
 import groovy.xml.DOMBuilder
 import groovy.xml.GpathSyntaxTestSupport
 import groovy.xml.MixedMarkupTestSupport
 import groovy.xml.TraversalTestSupport
+import static javax.xml.xpath.XPathConstants.*
 
 class DOMCategoryTest extends GroovyTestCase {
 
@@ -110,6 +126,21 @@ class DOMCategoryTest extends GroovyTestCase {
             assert true == MyClass.run()
         """
     }
+
+    void testXPathWithDomCategory() {
+        def reader = new StringReader('<a><b>B1</b><b>B2</b><c a1="4" a2="true">C</c></a>')
+        def root = DOMBuilder.parse(reader).documentElement
+        use(groovy.xml.dom.DOMCategory) {
+            assert root.xpath('c/text()') == 'C'
+            def text = { n -> n.xpath('text()') }
+            assert text(root.xpath('c', NODE)) == 'C'
+            assert root.xpath('c/@a1') == '4'
+            assert root.xpath('c/@a1', NUMBER) == 4
+            assert root.xpath('c/@a2', BOOLEAN)
+            assert root.xpath('b', NODESET).collect(text).join() == 'B1B2'
+        }
+    }
+
 }
 
 class Foo {

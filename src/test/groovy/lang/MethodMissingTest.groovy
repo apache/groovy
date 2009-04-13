@@ -1,17 +1,27 @@
+/*
+ * Copyright 2003-2009 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+package groovy.lang
+
 /**
  * Tests for method missing handling in Groovy
- 
+
  * @author Graeme Rocher
- * @since 1.1
-  *
- * Created: Jul 17, 2007
- * Time: 3:48:15 PM
- * 
+ * @since 1.5
  */
-
-package groovy.lang
 class MethodMissingTest extends GroovyTestCase {
-
 
     void testOverrideStaticMethodMissingTwice() {
         MMTest2.metaClass.'static'.methodMissing = { String name, args -> "foo" }
@@ -82,15 +92,18 @@ class MethodMissingTest extends GroovyTestCase {
     }
 
 }
+
 class MMTest {
     def hello() { "world" }
     def methodMissing(String name, args) {
         "foo"
     }
 }
+
 class MMTest2 {
     def hello() { "world" }
 }
+
 class MMTest3 {
     static hello() { "world" }
 }
@@ -98,6 +111,7 @@ class MMTest3 {
 class MMTest5 {
     static hello() { "world" }
 }
+
 class MMTest6 extends MMTest5 {
     static goodbye() { "cruel world" }
 }

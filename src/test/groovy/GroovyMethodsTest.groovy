@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,7 @@
 package groovy
 
 import java.awt.Dimension
-import org.codehaus.groovy.runtime.typehandling.GroovyCastException
+import java.util.concurrent.LinkedBlockingQueue
 
 /** 
  * Tests the various new Groovy methods
@@ -26,6 +26,7 @@ import org.codehaus.groovy.runtime.typehandling.GroovyCastException
  * @author Dierk Koenig
  * @author Paul King
  * @author Joachim Baumann
+ * @author Mike Dillon
  * @version $Revision$
  */
 class GroovyMethodsTest extends GroovySwingTestCase {
@@ -724,6 +725,86 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         assert y.size() == 2
         assert y.class == WackyList
     }
+
+    void testEachOnEnumClassIteratesThroughTheValuesOfTheEnum() {
+        def expected = Suit.values().toList()
+        def answer = []
+        Suit.each { answer << it }
+        assert answer == expected
+    }
+
+    void testForLoopWithEnumClassIteratesThroughTheValuesOfTheEnum() {
+        def expected = Suit.values().toList()
+        def answer = []
+        for (s in Suit) {
+            answer << s
+        }
+        assert answer == expected
+    }
+
+    void testAsEnumType() {
+        assert Suit.HEARTS == ("HEARTS" as Suit)
+
+        shouldFail(IllegalArgumentException) {
+            "FOO" as Suit
+        }
+    }
+
+    void testJavaEnumType() {
+        def x = Language.English
+        x++
+        assert x == Language.French
+        x = Language.English
+        x--
+        assert x == Language.Spanish
+        assert Language.French in Language.English..Language.Spanish
+    }
+
+    void testStringBuilderPlusPutAtSizeLeftShift() {
+        def sb = new StringBuilder('foo')
+        assert sb + 'bar' == 'foobar'
+        sb << 'baz'
+        assert sb.size() == 6
+        def result = sb.toString()
+        assert result == 'foobaz'
+        sb[3..4] = 'abc'
+        result = sb.toString()
+        assert result == 'fooabcz'
+        sb[6..<6] = 'xy'
+        result = sb.toString()
+        assert result == 'fooabcxyz'
+    }
+
+    void testThreadNaming() {
+        def t = Thread.start("MyNamedThread"){
+            sleep 200 // give ourselves time to find the thread
+        }
+        assert Thread.allStackTraces.keySet().any{ thread -> thread.name == 'MyNamedThread' }
+        t.join()
+    }
+
+    void testDefiningQueue() {
+        def result = [1, 2, 3, 4, 5] as Queue
+        assert result instanceof Queue
+        assert result.size() == 5
+        assert result.sum() == 15
+    }
+
+    void testLinkedBlockingQueue() {
+        def q = [1, 2, 3, 4, 5, 6, 7, 8, 9] as LinkedBlockingQueue
+        assert q.size() == 9
+        assert q.class == LinkedBlockingQueue
+        q += 10
+        assert q.size() == 10
+        assert q.class == LinkedBlockingQueue
+        def r = q.findAll{ it % 2 == 0 }
+        assert r.size() == 5
+        assert r.class == LinkedBlockingQueue
+        def s = ((r as LinkedList) - [4, 6]) as LinkedBlockingQueue
+        assert s.size() == 3
+        assert s.class == LinkedBlockingQueue
+        [2, 8, 10].each{ assert it in s }
+    }
 }
 
 class WackyList extends LinkedList {
@@ -734,3 +815,5 @@ class WackyList extends LinkedList {
 class WackyHashCode {
     int hashCode() {return 1;}
 }
+
+enum Suit { HEARTS, CLUBS, SPADES, DIAMONDS }

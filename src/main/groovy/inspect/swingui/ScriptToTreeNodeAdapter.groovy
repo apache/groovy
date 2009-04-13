@@ -16,7 +16,6 @@
 
 package groovy.inspect.swingui
 
-
 import groovy.inspect.swingui.TreeNodeWithProperties
 import groovy.text.GStringTemplateEngine
 import groovy.text.Template
@@ -70,8 +69,6 @@ class ScriptToTreeNodeAdapter {
             }
         }
     }
-
-
 
     /**
     * Performs the conversion from script to TreeNode.
@@ -181,12 +178,10 @@ private class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
             }
         }
 
-
         // methods
         def allMethods = new DefaultMutableTreeNode("Methods")
         if (classNode.methodsList) child.add(allMethods)
         classNode.methodsList?.each { MethodNode methodNode ->
-
             def ggrandchild = adapter.make(methodNode)
             allMethods.add(ggrandchild)
             TreeNodeBuildingVisitor visitor = new TreeNodeBuildingVisitor(adapter)
@@ -221,7 +216,6 @@ private class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
                 ggrandchild.add(visitor.currentNode)
             }
         }
-
 
         //annotations
         def allAnnotations = new DefaultMutableTreeNode("Annotations")

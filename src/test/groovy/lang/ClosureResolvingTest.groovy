@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,19 +17,19 @@ package groovy.lang
 
 /**
  * Tests how closures resolve to either a delegate or an owner for a given resolveStrategy
- 
+
  * @author Graeme Rocher
- * @since 1.1
-  *
- * Created: Jul 12, 2007
- * Time: 5:45:33 PM
- * 
+ * @since 1.5
  */
 
 class ClosureResolvingTest extends GroovyTestCase {
 
     def foo = "bar"
     def bar = "foo"
+
+    protected void tearDown() {
+        Closure.metaClass = null
+    }
 
     void testResolveToSelf() {
         def c = { foo }
@@ -69,14 +69,14 @@ class ClosureResolvingTest extends GroovyTestCase {
         assertEquals "bar", c.call()
 
         c.setResolveStrategy(Closure.DELEGATE_FIRST)
-        c.delegate = [foo:"hello!"]
+        c.delegate = [foo: "hello!"]
 
-        assertEquals "hello!", c.call()                        
+        assertEquals "hello!", c.call()
 
 
         c = { doStuff() }
         c.setResolveStrategy(Closure.DELEGATE_FIRST)
-        
+
         assertEquals "stuff", c.call()
         c.delegate = new TestResolve1()
         assertEquals "foo", c.call()
@@ -87,8 +87,8 @@ class ClosureResolvingTest extends GroovyTestCase {
         def c = { foo }
 
         assertEquals "bar", c.call()
-        
-        c.delegate = [foo:"hello!"]
+
+        c.delegate = [foo: "hello!"]
 
         assertEquals "bar", c.call()
 
@@ -140,12 +140,12 @@ class ClosureResolvingTest extends GroovyTestCase {
         assertEquals "stuff", c.call()
 
     }
-    
+
     void testOwnerDelegateChain() {
-        def outerdel= new TestResolve3(del: "outer delegate" )
-        def innerdel= new TestResolve3(del: "inner delegate")
-        
-        def cout= {
+        def outerdel = new TestResolve3(del: "outer delegate")
+        def innerdel = new TestResolve3(del: "inner delegate")
+
+        def cout = {
             assert delegate == outerdel
             assert delegate.whoisThis() == outerdel
             assert delegate.del == "outer delegate"
@@ -155,7 +155,7 @@ class ClosureResolvingTest extends GroovyTestCase {
             assert del == "outer delegate"
             assert met() == "I'm the method inside 'outer delegate'"
 
-            def cin= {
+            def cin = {
                 assert delegate == innerdel
                 assert delegate.whoisThis() == innerdel
                 assert delegate.del == "inner delegate"
@@ -164,17 +164,17 @@ class ClosureResolvingTest extends GroovyTestCase {
                 assert whoisThis() == outerdel
                 assert del == "outer delegate"
                 assert met() == "I'm the method inside 'outer delegate'"
-            
+
             }
 
-            cin.delegate= innerdel
+            cin.delegate = innerdel
             cin()
         }
 
-        cout.delegate= outerdel
-        cout() 
+        cout.delegate = outerdel
+        cout()
     }
-    
+
 }
 
 class TestResolve1 {
@@ -189,10 +189,13 @@ class TestResolve2 {
     def doStuff() { "bar" }
 }
 
- class TestResolve3 {
+class TestResolve3 {
     def del;
-    String toString(){del}
+
+    String toString() {del}
+
     def whoisThis() { return this }
-    def met() { return "I'm the method inside '"+del+"'" }
- }
+
+    def met() { return "I'm the method inside '" + del + "'" }
+}
 

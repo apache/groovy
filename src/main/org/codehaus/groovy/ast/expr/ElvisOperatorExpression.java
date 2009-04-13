@@ -39,7 +39,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
  * <pre>
  * 
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
- * @since 1.1
+ * @since 1.5
  */
 public class ElvisOperatorExpression extends TernaryExpression {
 

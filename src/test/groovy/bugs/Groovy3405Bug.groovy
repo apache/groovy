@@ -2,6 +2,10 @@ package groovy.bugs
 
 class Groovy3405Bug extends GroovyTestCase {
 
+    protected void tearDown() {
+        String.metaClass = null
+    }
+
     void testAddingStaticMethodsOnMCWithDefaultParameters() {
         // test with 2 params having default values
         String.metaClass.'static'.testStaticTwoParams = { first = "foo", second = "bar" ->  return "$first - $second" }

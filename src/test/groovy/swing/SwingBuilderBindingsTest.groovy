@@ -21,6 +21,7 @@ import java.awt.event.ActionEvent
 import javax.swing.DefaultBoundedRangeModel
 import javax.swing.DefaultButtonModel
 import javax.swing.text.PlainDocument
+import groovy.beans.Bindable
 
 public class SwingBuilderBindingsTest extends GroovySwingTestCase {
 
@@ -653,4 +654,81 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         assert swing.textField.text != bean.name
       }
     }
+
+    public void testMutualPropertyBinding() {
+      testInEDT {
+        SwingBuilder swing = new SwingBuilder()
+
+        swing.actions() {
+            bean(new BindableBean(), id:'cb')
+            textField(id:'txt', enabled:bind(source:cb, sourceProperty:'enabled', id:'binding', mutual:true))
+        }
+
+          // test gorward binding
+        assert swing.txt.enabled == swing.cb.enabled
+        swing.cb.enabled = !swing.cb.enabled
+        assert swing.txt.enabled == swing.cb.enabled
+        swing.cb.enabled = !swing.cb.enabled
+        assert swing.txt.enabled == swing.cb.enabled
+
+          // test reverse binding
+        swing.txt.enabled = !swing.txt.enabled
+        assert swing.txt.enabled == swing.cb.enabled
+        swing.txt.enabled = !swing.txt.enabled
+        assert swing.txt.enabled == swing.cb.enabled
+
+        // test rebound
+        swing.binding.rebind()
+        swing.cb.enabled = !swing.cb.enabled
+        assert swing.txt.enabled == swing.cb.enabled
+        swing.txt.enabled = !swing.txt.enabled
+        assert swing.txt.enabled == swing.cb.enabled
+
+        // test unbound not updating
+        swing.binding.unbind()
+        swing.cb.enabled = !swing.cb.enabled
+        assert swing.txt.enabled != swing.cb.enabled
+        swing.txt.enabled = !swing.txt.enabled
+        assert swing.txt.enabled == swing.cb.enabled
+        swing.txt.enabled = !swing.txt.enabled
+        assert swing.txt.enabled != swing.cb.enabled
+
+        // test manual forward update
+        swing.txt.enabled = !swing.cb.enabled
+        assert swing.txt.enabled != swing.cb.enabled
+        swing.binding.update()
+        assert swing.txt.enabled == swing.cb.enabled
+
+        // test manual reverse update
+        swing.txt.enabled = !swing.cb.enabled
+        assert swing.txt.enabled != swing.cb.enabled
+        swing.binding.reverseUpdate()
+        assert swing.txt.enabled == swing.cb.enabled
+      }
+    }
+
+    public void testConverter() {
+      testInEDT {
+        def model = new BindableBean()
+
+        def toNumber = { v ->
+          if( v == null || v == "" ) return null
+          try { return new Integer(v) }
+          catch( x ) { return null }
+        }
+
+        new SwingBuilder().edt {
+          frame( title: "Binding test", size: [100,60], visible: true ) {
+            textField( id: "t1", text: bind(target:model,
+              targetProperty: "value", converter: {toNumber(it)}) )
+          }
+        }
+      }
+    }
+
+}
+
+class BindableBean {
+    @Bindable boolean enabled
+    @Bindable Integer value
 }

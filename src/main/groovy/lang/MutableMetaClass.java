@@ -28,16 +28,11 @@ import java.lang.reflect.Method;
  * <p>The default implementation allows mutation of MetaClass instances before initialisation (before the initialize() method is called)
  * but not after, thus ensuring Thread safety once a MetaClass has been constructed and placed in the registry</p>
  *
- *
  * @see MetaClassImpl
  * @see MetaClass
  *
  * @author Graeme Rocher
- * @since 1.1
- *
- *        <p/>
- *        Created: Feb 24, 2007
- *        Time: 4:05:44 PM
+ * @since 1.5
  */
 public interface MutableMetaClass extends MetaClass {
 

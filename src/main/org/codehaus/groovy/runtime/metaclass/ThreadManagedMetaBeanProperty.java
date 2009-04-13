@@ -15,7 +15,6 @@
  */
 package org.codehaus.groovy.runtime.metaclass;
 
-
 import groovy.lang.Closure;
 import groovy.lang.MetaBeanProperty;
 import groovy.lang.MetaMethod;
@@ -32,12 +31,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * using weak references. The values will go out of scope and be garabage collected when
  * the the object is collected
  *
- * In fact, this class should be called ExpandoProperty
- * <p/>
+ * In fact, this class should be called ExpandoProperty.
  *
  * @author Graeme Rocher
  * @author Alex Tkachman
- * @since 1.1
+ * @since 1.5
  */
 public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
     private static final CachedClass[] ZERO_ARGUMENT_LIST = new CachedClass[0];
@@ -186,8 +184,6 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
 
     /**
      * Sets the ThreadBound state of the property like a setter
-     *
-     * @author Graeme Rocher
      */
     private class ThreadBoundSetter extends MetaMethod {
         private final String name;

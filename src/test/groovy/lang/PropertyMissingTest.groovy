@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,15 +14,12 @@
  * limitations under the License.
  */
 package groovy.lang
+
 /**
  * Tests the behaviour of the propertyMissing functionality of Groovy
-
- * @author Graeme Rocher
- * @since 1.1
-  *
- * Created: Sep 5, 2007
- * Time: 5:50:28 PM
  *
+ * @author Graeme Rocher
+ * @since 1.5
  */
 class PropertyMissingTest extends GroovyTestCase {
 
@@ -76,6 +73,7 @@ class PropertyMissingTest extends GroovyTestCase {
     }
 
 }
+
 class PMTest1 {
     def store = [:]
     String foo = "bar"
@@ -86,6 +84,7 @@ class PMTest1 {
         store.name = value
     }
 }
+
 class PMTest2 {
     String foo = "bar"
 }

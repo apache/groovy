@@ -25,7 +25,7 @@ class RespondsToTest extends GroovyTestCase {
 
     void testRespondsToForMethodEvaluation() {
         RespondsToTestClass.metaClass.invokeMethod = {String name, args ->
-            def methods = RespondsToTestClass.metaClass.respondsTo(delegate, name, args*.getClass() as Object[])
+            def methods = RespondsToTestClass.metaClass.respondsTo(delegate, name, args*.getClass() as Class[])
             def result
             if (methods) {
                 // only way to get var-args to work is to do this at the moment. Yuck!

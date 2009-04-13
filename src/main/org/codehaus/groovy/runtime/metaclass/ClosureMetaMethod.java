@@ -30,12 +30,11 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
  * A MetaMethod that accepts a closure in the constructor which is invoked when the MetaMethod is called.
  * The delegate of the closure is set to the instance that the MetaMethod is invoked on when called.
  *
  * @author Graeme Rocher
- * @since 1.1
+ * @since 1.5
  */
 public class ClosureMetaMethod extends MetaMethod implements ClosureInvokingMethod {
 

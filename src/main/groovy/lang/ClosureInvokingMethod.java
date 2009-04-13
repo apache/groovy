@@ -21,7 +21,7 @@ package groovy.lang;
  * @see groovy.lang.ExpandoMetaClass
  * 
  * @author Graeme Rocher
- * @since 1.1
+ * @since 1.5
  */
 public interface ClosureInvokingMethod {
 

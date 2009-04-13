@@ -37,11 +37,7 @@ import org.codehaus.groovy.runtime.InvokerHelper
 * of the latter an error will be thrown if a property cannot be bound.
 *
 * @author Graeme Rocher
-* @since 1.1
-*
-*        <p/>
-*        Created: Jun 19, 2007
-*        Time: 3:53:48 PM
+* @since 1.5
 */
 
 class ConfigSlurper { 

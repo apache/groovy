@@ -1,10 +1,11 @@
-/* Copyright 2006-2007 Graeme Rocher
+/*
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *      http://www.apache.org/licenses/LICENSE-2.0
+ *     http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -14,14 +15,13 @@
  */
 package groovy.util
 
-
 /**
 * A ConfigObject at a simple level is a Map that creates configuration entries (other ConfigObjects) when referencing them.
 * This means that navigating to foo.bar.stuff will not return null but nested ConfigObjects which are of course empty maps
 * The Groovy truth can be used to check for the existance of "real" entries.
 *
 * @author Graeme Rocher
-* @since 1.1
+* @since 1.5
 */
 class ConfigObject extends LinkedHashMap implements Writable {
 
