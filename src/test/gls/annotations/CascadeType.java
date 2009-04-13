@@ -13,23 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-import groovy.util.AllTestSuite;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+package gls.annotations;
 
 /**
- * All TCK testcases written in Groovy or Java.
- *
- * @author <a href="mailto:jeremy.rayner@bigfoot.com">Jeremy Rayner</a>
- * @author Dierk Koenig
- * @version $Revision$
+ * This class mimicks JPA's CascadeType enum
+ * 
+ * @author Guillaume Laforge
  */
-public class UberTestCaseTCK extends TestCase {
-    public static Test suite() {
-        TestSuite suite = (TestSuite) AllTestSuite.suite("src/test/gls", "**/*Test.groovy");
-        suite.addTest(JavaSourceTckSuite.suite());
-        return suite;
-    }
+public enum CascadeType {
+    ALL, PERSIST, MERGE, REMOVE, REFRESH
 }

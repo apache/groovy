@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gls.annotations.vm5
+package gls.annotations
 
 import gls.scope.CompilableTestSupport
 
@@ -63,7 +63,7 @@ class AnnotationTest extends CompilableTestSupport {
      */
     void testOmittingBracketsForSingleValueArrayParameter() {
         shouldCompile """
-            import gls.annotations.vm5.*
+            import gls.annotations.*
 
             class Book {}
 
@@ -277,7 +277,7 @@ assert my.defaultAnnotation() instanceof Target
 
   void testJavaAnnotationUsageWithGroovyKeyword() {
     assertScript """
-package gls.annotations.vm5
+package gls.annotations
 import java.lang.annotation.*
 @JavaAnnotation(in = 3)
 class Foo {}
@@ -323,7 +323,7 @@ assert my.things()[0] == "x"
 
   void testSettingAnnotationMemberTwice() {
     shouldNotCompile """
-package gls.annotations.vm5
+package gls.annotations
 
 @JavaAnnotation(in = 1, in = 2) 
 class Foo {}

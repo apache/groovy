@@ -13,23 +13,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package gls.annotations;
 
-import groovy.util.AllTestSuite;
-import junit.framework.Test;
-import junit.framework.TestCase;
-import junit.framework.TestSuite;
+import gls.annotations.CascadeType;
+
+import java.lang.annotation.*;
+
+import static java.lang.annotation.RetentionPolicy.*;
+import static java.lang.annotation.ElementType.*;
 
 /**
- * All TCK testcases written in Groovy or Java.
+ * This class mimicks JPA's @OneToMany annotation
  *
- * @author <a href="mailto:jeremy.rayner@bigfoot.com">Jeremy Rayner</a>
- * @author Dierk Koenig
- * @version $Revision$
+ * @author Guillaume Laforge
  */
-public class UberTestCaseTCK extends TestCase {
-    public static Test suite() {
-        TestSuite suite = (TestSuite) AllTestSuite.suite("src/test/gls", "**/*Test.groovy");
-        suite.addTest(JavaSourceTckSuite.suite());
-        return suite;
-    }
+
+@Retention(RUNTIME)
+@Target({ METHOD, FIELD })
+public @interface OneToMany {
+    public CascadeType[] cascade() default {};
 }

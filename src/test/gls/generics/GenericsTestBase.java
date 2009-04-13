@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package gls.generics.vm5;
+package gls.generics;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyClassLoader.InnerLoader;
