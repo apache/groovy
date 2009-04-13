@@ -834,28 +834,19 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @param classNode the class node for the interface
      * @return true if this class declares that it implements the given interface
      * or if one of its interfaces extends directly or indirectly the interface
+     *
+     * NOTE: Doesn't consider an interface to implement itself.
+     * I think this is intended to be called on ClassNodes representing
+     * classes, not interfaces.
+     * 
      */
     public boolean declaresInterface(ClassNode classNode) {
         ClassNode[] interfaces = redirect().getInterfaces();
-        if (declaresInterfaceDirect(interfaces, classNode)) return true;
-        List<ClassNode> superInterfaces = Arrays.asList(interfaces);
-        while (superInterfaces.size() > 0) {
-            List<ClassNode> keep = new ArrayList<ClassNode>();
-            for (ClassNode cn : superInterfaces) {
-                if (cn.declaresInterface(classNode)) return true;
-                keep.addAll(Arrays.asList(cn.getInterfaces()));
-            }
-            superInterfaces = keep;
+        for (ClassNode cn : interfaces) {
+            if (cn.equals(classNode)) return true;
         }
-        return false;
-    }
-
-    private boolean declaresInterfaceDirect(ClassNode[] interfaces, ClassNode classNode) {
-        int size = interfaces.length;
-        for (int i = 0; i < size; i++) {
-            if (interfaces[i].equals(classNode)) {
-                return true;
-            }
+        for (ClassNode cn : interfaces) {
+            if (cn.declaresInterface(classNode)) return true;
         }
         return false;
     }
