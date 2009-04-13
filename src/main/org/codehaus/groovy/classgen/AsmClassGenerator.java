@@ -2833,7 +2833,6 @@ public class AsmClassGenerator extends ClassGenerator {
 
         Variable variable = compileStack.getVariable(variableName, false);
 
-        VariableScope scope = compileStack.getScope();
         if (variable == null) {
             processClassVariable(variableName);
         } else {
