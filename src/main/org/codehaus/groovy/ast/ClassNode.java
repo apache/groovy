@@ -18,6 +18,7 @@ package org.codehaus.groovy.ast;
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
@@ -1131,6 +1132,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             TupleExpression tuple = (TupleExpression) arguments;
             // TODO this won't strictly be true when using list expansion in argument calls
             count = tuple.getExpressions().size();
+        } else if (arguments instanceof MapExpression) {
+        	count = 1;
         }
         
         for (Object o : getMethods(name)) {
