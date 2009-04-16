@@ -37,7 +37,7 @@ public abstract class AbstractFullBinding  implements FullBinding {
         }
         Object result = sourceBinding.getSourceValue();
         if (getValidator() != null) {
-            Object validation = getValidator().call();
+            Object validation = getValidator().call(result);
             if ((validation == null)
                 || ((validation instanceof Boolean) && !((Boolean)validation).booleanValue()))
             {

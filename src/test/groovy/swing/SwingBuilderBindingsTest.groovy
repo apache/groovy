@@ -616,6 +616,23 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         assert swing.s1.value == 15
         // s2 is target, not source, so it's value setting should have no effect
         assert swing.s2.value == 8
+
+        swing.actions() {
+            slider(id:'s3', value:4)
+            slider(id:'s4', value:8)
+            textArea(id:'t1', text:bind(target:s3, targetProperty:'value',
+                id:'binding3', value:'15',
+                converter: {Integer.parseInt(it)}))
+            textArea(id:'t2', text:bind(source:s4, sourceProperty:'value',
+                id:'binding4', value:'16',
+                converter: {Integer.parseInt(it)}))
+        }
+        // s1 is the source, so it's value should be reflected
+        assert swing.s3.value == 15
+        // s2 is target, not source, so it's value setting should have no effect
+        assert swing.s4.value == 8
+
+
       }
     }
 

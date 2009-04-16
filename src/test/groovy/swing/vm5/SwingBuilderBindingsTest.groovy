@@ -75,6 +75,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
 
     public void testConverter() {
       testInEDT {
+        SwingBuilder swing = new SwingBuilder()
         def model = new BindableBean()
 
         def toNumber = { v ->
@@ -83,19 +84,56 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
           catch( x ) { return null }
         }
 
-        new SwingBuilder().edt {
-          frame( title: "Binding test", size: [100,60], visible: true ) {
+        swing.actions {
+
+          frame( title: "Binding test", size: [100,60]) {
             textField( id: "t1", text: bind(target:model,
-              targetProperty: "value", converter: {toNumber(it)}) )
+            targetProperty: "value", converter: {toNumber(it)}) )
+          textField( id: "t2", text: bind(target:model,
+            'floatValue', value:'1234', converter: { Float.parseFloat(it) * 2 }))
           }
         }
+        assert model.floatValue == 2468
+        swing.t1.text = '1234'
+        assert model.value == 1234
       }
     }
 
+    public void testValidator() {
+      testInEDT {
+        SwingBuilder swing = new SwingBuilder()
+        def model = new BindableBean()
+
+        def isInteger = { v ->
+          try {
+              Float.parseFloat(v)
+              return true
+          } catch (NumberFormatException ignore) {
+              return false
+          }
+        }
+
+        swing.actions {
+          frame( title: "Binding test", size: [100,60]) {
+            textField( id: "t1", text: bind(target:model, value:'123',
+              targetProperty: "value", validator: isInteger, converter: Integer.&parseInt) )
+          }
+        }
+        assert model.value == 123
+        swing.t1.text = '1234'
+        assert model.value == 1234
+        swing.t1.text = 'Bogus'
+        assert model.value == 1234
+        swing.t1.text = '12345'
+        assert model.value == 12345
+      }
+    }
 }
 
 
 class BindableBean {
     @Bindable boolean enabled
     @Bindable Integer value
+    @Bindable float floatValue
+    @Bindable int pvalue
 }
