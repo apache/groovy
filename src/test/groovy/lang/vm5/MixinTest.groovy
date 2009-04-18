@@ -317,6 +317,28 @@ class MixinTest extends GroovyTestCase {
         final Overflow_B b = new Overflow_B()
         b.foo()
     }
+
+    void testStackOverflowErrorWithMixinsAndClosure() {
+        assertScript """
+            class Groovy3474A {
+                int counter = 1
+                protected def final foo() {
+                    bar { counter }
+                }
+                private final String bar(Closure code) { 
+                    return "Bar " + code() 
+                }
+            }
+            
+            class Groovy3474B extends Groovy3474A {}
+            
+            class Groovy3474C {}
+            Groovy3474C.metaClass { mixin Groovy3474B }
+            def c = new Groovy3474C()
+            assert c.foo() == 'Bar 1'
+            println "testStackOverflowErrorWithMixinsAndClosure() Done"
+        """
+	}
 }
 
 class ArrayListExt {
