@@ -54,7 +54,7 @@ public class Grape {
     /**
      * This is a static access auto download enabler.  It will set the
      * 'autoDownload' value to the passed in arguments map if not already
-     * set.  If 'autoDownlowd' is set the value will not be adjusted.
+     * set.  If 'autoDownload' is set the value will not be adjusted.
      *
      * This applies to the grab and resolve calls.
      *
@@ -62,9 +62,9 @@ public class Grape {
      * will be used.  This may cause failure in the grape call
      * if the library has not yet been downloaded
      *
-     * Ifit is set to true, then any jars not already downlaoded will
-     * automaticllay be downloaded.  Also, any versions expressed as a range
-     * will be checked for new versions and downloaded (with dependenceis)
+     * If it is set to true, then any jars not already downloaded will
+     * automatically be downloaded.  Also, any versions expressed as a range
+     * will be checked for new versions and downloaded (with dependencies)
      * if found.
      *
      * <br />
@@ -85,9 +85,9 @@ public class Grape {
      * will be used.  This may cause failure in the grape call
      * if the library has not yet been downloaded
      *
-     * Ifit is set to true, then any jars not already downlaoded will
-     * automaticllay be downloaded.  Also, any versions expressed as a range
-     * will be checked for new versions and downloaded (with dependenceis)
+     * If it is set to true, then any jars not already downloaded will
+     * automatically be downloaded.  Also, any versions expressed as a range
+     * will be checked for new versions and downloaded (with dependencies)
      * if found.
      *
      * <br />

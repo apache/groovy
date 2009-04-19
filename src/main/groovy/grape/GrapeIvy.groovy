@@ -56,7 +56,7 @@ class GrapeIvy implements GrapeEngine {
         Message.setDefaultLogger(new DefaultMessageLogger(-1))
         IvySettings settings = new IvySettings()
 
-        // configure settigns
+        // configure settings
         def grapeConfig = getLocalGrapeConfig()
         if (!grapeConfig.exists()) {
             grapeConfig = GrapeIvy.class.getResource("defaultGrapeConfig.xml")
@@ -210,7 +210,7 @@ class GrapeIvy implements GrapeEngine {
             if (!loader) return
 
             for (URI uri in resolve(loader, args, dependencies)) {
-                //TODO check artifcat type, jar vs library, etc
+                //TODO check artifact type, jar vs library, etc
                 loader.addURL(uri.toURL())
             }
         } catch (Exception e) {
