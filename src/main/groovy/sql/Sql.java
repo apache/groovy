@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -1250,10 +1250,16 @@ public class Sql {
         return useConnection;
     }
 
-
     /**
-     * Allows a closure to be passed in to configure the JDBC statements before they are executed
-     * to do things like set the query size etc. TODO more doco about arg passed to closure.
+     * Allows a closure to be passed in to configure the JDBC statements before they are executed.
+     * It can be used to do things like set the query size etc. When this method is invoked, the supplied
+     * closure is saved. Statements subsequent created from other methods will then be
+     * configured using this closure. The statement being configured is passed into the closure
+     * as its single argument, e.g.:
+     *  <pre>
+     * sql.withStatement{ stmt -> stmt.maxRows == 10 }
+     * def firstTenRows = sql.rows("select * from table")
+     * </pre>
      *
      * @param configureStatement the closure
      */
@@ -1539,7 +1545,9 @@ public class Sql {
     }
 
     /**
-     * Provides a hook for dervied classes to be able to configure JDBC statements.
+     * Provides a hook for derived classes to be able to configure JDBC statements.
+     * Default behavior is to call a previously saved closure, if any, using the
+     * statement as a parameter.
      *
      * @param statement the statement to configure
      */
@@ -1581,7 +1589,7 @@ public class Sql {
         Connection connection = null;
         try {
             connection = createConnection();
-            closure.call();
+            closure.call(connection);
         }
         finally {
             cacheConnection = false;
@@ -1602,7 +1610,7 @@ public class Sql {
         Connection connection = null;
         try {
             connection = createConnection();
-            closure.call();
+            closure.call(connection);
         }
         finally {
             setCacheStatements(false);
