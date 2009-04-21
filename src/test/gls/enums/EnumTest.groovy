@@ -229,6 +229,27 @@ class EnumTest extends GroovyTestCase {
 			assert b() == "B"
         """
     }
+
+    void testClassResolutionForInnerEnumsWithPackageNameGROOVY3483() {
+
+        assertScript """
+            package familie
+            
+            class Mother3483 {
+                Mother3483.Child child
+                
+                enum Child{
+                    Franz,
+                    Ferdi,
+                    Nand
+                }
+            }
+            
+            def mother = new Mother3483(child: Mother3483.Child.Franz)
+            
+            assert mother.child as String == 'Franz'
+        """
+    }
 }
 
 enum UsCoin {
