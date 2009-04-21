@@ -1591,11 +1591,7 @@ public class Sql {
         Connection connection = null;
         try {
             connection = createConnection();
-            if (closure.getMaximumNumberOfParameters() == 1) {
-                closure.call(connection);
-            } else {
-                closure.call();
-            }
+            callClosurePossiblyWithConnection(closure, connection);
         }
         finally {
             cacheConnection = false;
@@ -1618,22 +1614,26 @@ public class Sql {
         try {
             connection = createConnection();
             connection.setAutoCommit(false);
-            if (closure.getMaximumNumberOfParameters() == 1) {
-                closure.call(connection);
-            } else {
-                closure.call();
-            }
-            System.out.println("pre connection.dump() = " + DefaultGroovyMethods.dump(connection));
+            callClosurePossiblyWithConnection(closure, connection);
+//            System.out.println("pre connection.dump() = " + DefaultGroovyMethods.dump(connection));
             connection.commit();
         } catch (SQLException e) {
             log.log(Level.INFO, "Rolling back due to exception: " + e, e);
-            System.out.println("post connection.dump() = " + DefaultGroovyMethods.dump(connection));
+//            System.out.println("post connection.dump() = " + DefaultGroovyMethods.dump(connection));
             if (connection != null) connection.rollback();
             throw e;
         } finally {
             if (connection != null) connection.setAutoCommit(true);
             cacheConnection = savedCacheConnection;
             closeResources(connection, null);
+        }
+    }
+
+    private void callClosurePossiblyWithConnection(Closure closure, Connection connection) {
+        if (closure.getMaximumNumberOfParameters() == 1) {
+            closure.call(connection);
+        } else {
+            closure.call();
         }
     }
 
@@ -1652,11 +1652,7 @@ public class Sql {
         Connection connection = null;
         try {
             connection = createConnection();
-            if (closure.getMaximumNumberOfParameters() == 1) {
-                closure.call(connection);
-            } else {
-                closure.call();
-            }
+            callClosurePossiblyWithConnection(closure, connection);
         }
         finally {
             setCacheStatements(false);
