@@ -1580,6 +1580,8 @@ public class Sql {
 
     /**
      * Caches the connection used while the closure is active.
+     * If the closure takes a single argument, it will be called
+     * with the connection, otherwise it will be called with no arguments.
      *
      * @param closure the given closure
      * @throws SQLException if a database error occurs
@@ -1589,7 +1591,11 @@ public class Sql {
         Connection connection = null;
         try {
             connection = createConnection();
-            closure.call(connection);
+            if (closure.getMaximumNumberOfParameters() == 1) {
+                closure.call(connection);
+            } else {
+                closure.call();
+            }
         }
         finally {
             cacheConnection = false;
@@ -1600,6 +1606,8 @@ public class Sql {
     /**
      * Caches every created preparedStatement in closure <i>closure</i></br>
      * Every cached preparedStatement is closed after closure has been called.
+     * If the closure takes a single argument, it will be called
+     * with the connection, otherwise it will be called with no arguments.
      *
      * @param closure the given closure
      * @throws SQLException if a database error occurs
@@ -1610,7 +1618,11 @@ public class Sql {
         Connection connection = null;
         try {
             connection = createConnection();
-            closure.call(connection);
+            if (closure.getMaximumNumberOfParameters() == 1) {
+                closure.call(connection);
+            } else {
+                closure.call();
+            }
         }
         finally {
             setCacheStatements(false);

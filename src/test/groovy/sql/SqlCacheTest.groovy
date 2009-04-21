@@ -105,7 +105,7 @@ class SqlCacheTest extends GroovyTestCase {
     void testCachePreparedStatements() {
         prepareStatementCallCounter = 0
         prepareStatementExpectedCall = 3
-        sql.cacheStatements {
+        sql.cacheStatements { ->
             invokeQuery()
         }
         assert prepareStatementCallCounter == 3 // 3 diff statements
