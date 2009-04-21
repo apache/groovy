@@ -50,6 +50,9 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
  */
 public class Sql {
 
+    /**
+     * Hook to allow derived classes to access the log
+     */
     protected Logger log = Logger.getLogger(getClass().getName());
 
     private DataSource dataSource;
@@ -61,27 +64,27 @@ public class Sql {
     private int resultSetHoldability = -1;
 
     // store the last row count for executeUpdate
-    int updateCount = 0;
+    private int updateCount = 0;
 
-    /**
+    /*
      * allows a closure to be used to configure the statement before its use
      */
     private Closure configureStatement;
 
-    /**
+    /*
+     * property for allowing connection caching feature
+     */
+    private boolean cacheConnection;
+
+    /*
      * property for allowing statements caching feature
      */
     private boolean cacheStatements;
 
-    /**
+    /*
      * Statement cache
      */
     private final Map<String, Statement> statementCache = new HashMap<String, Statement>();
-
-    /**
-     * property for allowing connection caching feature
-     */
-    private boolean cacheConnection;
 
     /**
      * Creates a new Sql instance given a JDBC connection URL.
@@ -670,7 +673,7 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      */
     public List rows(String sql, Closure metaClosure) throws SQLException {
-        List results = new ArrayList();
+        List<GroovyRowResult> results = new ArrayList<GroovyRowResult>();
         Connection connection = createConnection();
         Statement statement = getStatement(connection, sql);
         configure(statement);
@@ -702,7 +705,7 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      */
     public List rows(String sql, List params) throws SQLException {
-        List results = new ArrayList();
+        List<GroovyRowResult> results = new ArrayList<GroovyRowResult>();
         Connection connection = createConnection();
         PreparedStatement statement = null;
         ResultSet rs = null;
@@ -863,7 +866,7 @@ public class Sql {
 
             // Prepare a list to contain the auto-generated column
             // values, and then fetch them from the statement.
-            List autoKeys = new ArrayList();
+            List<List> autoKeys = new ArrayList<List>();
             ResultSet keys = statement.getGeneratedKeys();
             int count = keys.getMetaData().getColumnCount();
 
@@ -919,7 +922,7 @@ public class Sql {
 
             // Prepare a list to contain the auto-generated column
             // values, and then fetch them from the statement.
-            List autoKeys = new ArrayList();
+            List<List> autoKeys = new ArrayList<List>();
             ResultSet keys = statement.getGeneratedKeys();
             int count = keys.getMetaData().getColumnCount();
 
@@ -1250,7 +1253,7 @@ public class Sql {
 
     /**
      * Allows a closure to be passed in to configure the JDBC statements before they are executed
-     * to do things like set the query size etc.
+     * to do things like set the query size etc. TODO more doco about arg passed to closure.
      *
      * @param configureStatement the closure
      */
@@ -1262,6 +1265,8 @@ public class Sql {
     //-------------------------------------------------------------------------
 
     /**
+     * Hook to allow derived classes to override sql generation from Gstrings.
+     *
      * @param gstring a GString containing the SQL query with embedded params
      * @param values  the values to embed
      * @return the SQL version of the given query using ? instead of any
@@ -1323,7 +1328,8 @@ public class Sql {
     }
 
     /**
-     * replace ?'"? references with NULLish
+     * Hook to allow derived classes to override null handling.
+     * Default behavior is to replace ?'"? references with NULLish
      *
      * @param sql the SQL statement
      * @return the modified SQL String
@@ -1353,7 +1359,9 @@ public class Sql {
     }
 
     /**
-     * Find the first 'where' keyword in the sql.
+     * Hook to allow derived classes to override where clause sniffing.
+     * Default behavior is to find the first 'where' keyword in the sql
+     * doing simple avoidance of the word 'where' within quotes.
      *
      * @param sql the SQL statement
      * @return the index of the found keyword or -1 if not found
@@ -1363,9 +1371,8 @@ public class Sql {
         char[] whereChars = "where".toCharArray();
         int i = 0;
         boolean inString = false; //TODO: Cater for comments?
-        boolean noWhere = true;
         int inWhere = 0;
-        while (i < chars.length && noWhere) {
+        while (i < chars.length) {
             switch (chars[i]) {
                 case '\'':
                     inString = !inString;
@@ -1384,6 +1391,9 @@ public class Sql {
     }
 
     /**
+     * Hook to allow derived classes to override behavior associated with
+     * extracting params from a GString.
+     *
      * @param gstring a GString containing the SQL query with embedded params
      * @return extracts the parameters from the expression as a List
      */
@@ -1392,7 +1402,9 @@ public class Sql {
     }
 
     /**
-     * Appends the parameters to the given statement.
+     * Hook to allow derived classes to override behavior associated with
+     * setting params for a prepared statement. Default behavior is to
+     * append the parameters to the given statement using <code>setObject</code>.
      *
      * @param params the parameters to append
      * @param statement the statement
@@ -1439,6 +1451,14 @@ public class Sql {
         }
     }
 
+    /**
+     * An extension point allowing derived classes to change the behavior of
+     * connection creation. The default behavior is to either use the
+     * supplied connection or obtain it from the supplied datasource.
+     *
+     * @return the connection associated with this Sql
+     * @throws java.sql.SQLException if a SQL error occurs
+     */
     protected Connection createConnection() throws SQLException {
         if ((cacheStatements || cacheConnection) && useConnection != null) {
             return useConnection;
@@ -1448,8 +1468,8 @@ public class Sql {
             // read, and the policy shouldn't have to list them all.
             Connection con;
             try {
-                con = (Connection) AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                    public Object run() throws SQLException {
+                con = AccessController.doPrivileged(new PrivilegedExceptionAction<Connection>() {
+                    public Connection run() throws SQLException {
                         return dataSource.getConnection();
                     }
                 });
@@ -1466,11 +1486,18 @@ public class Sql {
                 useConnection = con;
             }
             return con;
-        } else {
-            return useConnection;
         }
+        return useConnection;
     }
 
+    /**
+     * An extension point allowing derived classes to change the behavior
+     * of resource closing.
+     *
+     * @param connection the connection to close
+     * @param statement the statement to close
+     * @param results the results to close
+     */
     protected void closeResources(Connection connection, Statement statement, ResultSet results) {
         if (results != null) {
             try {
@@ -1483,6 +1510,13 @@ public class Sql {
         closeResources(connection, statement);
     }
 
+    /**
+     * An extension point allowing the behavior of resource closing to be
+     * overriden in derived classes.
+     *
+     * @param connection the connection to close
+     * @param statement the statement to close
+     */
     protected void closeResources(Connection connection, Statement statement) {
         if (cacheStatements) return;
         if (statement != null) {
@@ -1505,7 +1539,7 @@ public class Sql {
     }
 
     /**
-     * Provides a hook to be able to configure JDBC statements, such as to configure
+     * Provides a hook for dervied classes to be able to configure JDBC statements.
      *
      * @param statement the statement to configure
      */
