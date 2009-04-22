@@ -91,7 +91,7 @@ public class XmlNodePrinter {
 
     /**
      * Check if whitespace preservation is enabled.
-     * Defaults to <code>true</code>.
+     * Defaults to <code>false</code>.
      *
      * @return true if whitespaces are honoured when printing simple text nodes
      */
