@@ -19,6 +19,7 @@ import groovy.lang.*;
 import org.codehaus.groovy.reflection.stdclasses.*;
 import org.codehaus.groovy.util.*;
 
+import java.lang.ref.PhantomReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
@@ -304,7 +305,14 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
 
         private static final int CACHE_SIZE = 5;
 
-        public final Thread myThread = Thread.currentThread();
+        // We use a PhantomReference or a WeakReference for the Thread
+        // because the ThreadLocal manages a map with the thread as key.
+        // If we make a strong reference to the thread here, then it is 
+        // possible, that the map cannot be cleaned. If the number of 
+        // threads is not limited, then this map may consume too much memory
+        // This reference here is unmanaged (queue==null) because if the map 
+        // key gets collected, the reference will too. 
+        private final PhantomReference<Thread> myThread = new PhantomReference(Thread.currentThread(),null);
 
         private int nextCacheEntry;
 
@@ -362,7 +370,11 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
 
         public LocalMap get() {
             LocalMap recent = recentThreadMap;
-            if (recent != null && recent.myThread == Thread.currentThread())
+            // we don't need to handle myThread.get()==null, because in that
+            // case the thread has been collected, meaning the entry for the
+            // thread is invalid anyway, so it is valid if recent has a 
+            // different value. 
+            if (recent != null && recent.myThread.get() == Thread.currentThread())
               return recent;
             else {
                 final LocalMap res = super.get();
