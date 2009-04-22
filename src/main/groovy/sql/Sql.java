@@ -17,6 +17,7 @@ package groovy.sql;
 
 import groovy.lang.Closure;
 import groovy.lang.GString;
+import groovy.lang.GroovyRuntimeException;
 
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
@@ -1615,11 +1616,13 @@ public class Sql {
             connection = createConnection();
             connection.setAutoCommit(false);
             callClosurePossiblyWithConnection(closure, connection);
-//            System.out.println("pre connection.dump() = " + DefaultGroovyMethods.dump(connection));
             connection.commit();
         } catch (SQLException e) {
             log.log(Level.INFO, "Rolling back due to exception: " + e, e);
-//            System.out.println("post connection.dump() = " + DefaultGroovyMethods.dump(connection));
+            if (connection != null) connection.rollback();
+            throw e;
+        } catch (GroovyRuntimeException e) {
+            log.log(Level.INFO, "Rolling back due to exception: " + e, e);
             if (connection != null) connection.rollback();
             throw e;
         } finally {

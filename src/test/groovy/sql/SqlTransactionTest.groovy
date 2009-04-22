@@ -96,17 +96,19 @@ class SqlTransactionTest extends GroovyTestCase {
 
     void testWithTransactionRollback() {
         assert sql.rows("SELECT * FROM PERSON_FOOD").size() == 3
+        def numAdds = 0
         try {
             sql.withTransaction { ->
                 personFood.add(personid: 5, food: "veg")
+                numAdds++
                 personFood.add(personid: 99, food: "mash") // should fail
+                numAdds++
             }
             fail("Should have thrown an exception before now")
         } catch (SQLException se) {
+            assert numAdds == 1
             assert se.message.contains('Integrity constraint violation')
         }
-        println sql.rows("SELECT * FROM PERSON_FOOD")
-        // TODO fix below, currently returning 4, transaction not working!
-//        assert sql.rows("SELECT * FROM PERSON_FOOD").size() == 3
+        assert sql.rows("SELECT * FROM PERSON_FOOD").size() == 3
     }
 }
