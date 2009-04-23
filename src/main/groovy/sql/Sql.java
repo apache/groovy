@@ -1618,18 +1618,24 @@ public class Sql {
             callClosurePossiblyWithConnection(closure, connection);
             connection.commit();
         } catch (SQLException e) {
-            log.log(Level.INFO, "Rolling back due to exception: " + e, e);
-            if (connection != null) connection.rollback();
+            handleError(connection, e);
             throw e;
-        } catch (GroovyRuntimeException e) {
-            log.log(Level.INFO, "Rolling back due to exception: " + e, e);
-            if (connection != null) connection.rollback();
+        } catch (RuntimeException e) {
+            handleError(connection, e);
+            throw e;
+        } catch (Error e) {
+            handleError(connection, e);
             throw e;
         } finally {
             if (connection != null) connection.setAutoCommit(true);
             cacheConnection = savedCacheConnection;
             closeResources(connection, null);
         }
+    }
+
+    private void handleError(Connection connection, Throwable t) throws SQLException {
+        log.log(Level.INFO, "Rolling back due to: " + t, t);
+        if (connection != null) connection.rollback();
     }
 
     private void callClosurePossiblyWithConnection(Closure closure, Connection connection) {
