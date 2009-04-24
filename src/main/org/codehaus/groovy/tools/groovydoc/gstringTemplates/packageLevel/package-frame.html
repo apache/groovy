@@ -1,0 +1,56 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<HTML>
+<HEAD>
+<TITLE>
+${packageDoc.nameWithDots()}
+</TITLE>
+<%
+// TODO enable errors(), enums() etc in SimpleGroovyPackageDoc then replace closures below
+def classTypes = [
+    "Interface" : { it.isInterface() },
+    "Class" : { it.isClass() && !it.parentClasses*.qualifiedTypeName().contains('java.lang.Throwable') },
+    "Enum" : { it.isEnum() },
+    "Exception" : { it.isClass() && it.parentClasses*.qualifiedTypeName().contains('java.lang.Exception') },
+    "Error" : { it.isClass() && it.parentClasses*.qualifiedTypeName().contains('java.lang.Error') },
+    "Annotation Type" : { it.isAnnotationType() }
+]
+def pluralize = { name -> name + (name.endsWith("s") ? "es" : "s") }
+%>
+
+<META NAME="keywords" CONTENT="${packageDoc.name()} package">
+
+<LINK REL ="stylesheet" TYPE="text/css" HREF="${packageDoc.getRelativeRootPath()}stylesheet.css" TITLE="Style">
+
+</HEAD>
+
+<BODY BGCOLOR="white">
+<FONT size="+1" CLASS="FrameTitleFont">
+<A HREF="package-summary.html" target="classFrame">${packageDoc.nameWithDots()}</A></FONT>
+
+<%
+classTypes.each{ k, v ->
+    if (packageDoc.allClasses().any{ v(it) }) {
+%>
+
+<TABLE BORDER="0" WIDTH="100%" SUMMARY="">
+<TR>
+<TD NOWRAP><FONT size="+1" CLASS="FrameHeadingFont">
+${pluralize(k)}</FONT>&nbsp;
+<FONT CLASS="FrameItemFont"><%
+    for (classDoc in packageDoc.allClasses()) {
+        if (v(classDoc)) {
+            %><BR><A HREF="${classDoc.name()}.html" title="${k.toLowerCase()} in ${packageDoc.nameWithDots()}" target="classFrame"><%
+            if (classDoc.isInterface()) { %><I><% }
+            %>${classDoc.name()}<%
+            if (classDoc.isInterface()) { %></I><% }
+            %></A><%
+        }
+    }
+%></FONT></TD>
+</TR>
+</TABLE>
+<% } %>
+<% } %>
+
+</BODY>
+</HTML>
