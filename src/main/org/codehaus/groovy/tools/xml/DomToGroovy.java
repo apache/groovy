@@ -40,9 +40,7 @@ public class DomToGroovy {
     private IndentPrinter out;
     private boolean inMixed = false;
     private String qt = "'";
-    private List keywords = Arrays.asList(new String[]{
-        "import", "private", "public", "protected"
-    });
+    private List keywords = Arrays.asList("import", "private", "public", "protected");
 
     public DomToGroovy(PrintWriter out) {
         this(new IndentPrinter(out));
@@ -283,7 +281,7 @@ public class DomToGroovy {
             }
             buffer.append(qt);
             buffer.append(prefix);
-            buffer.append(".");
+            buffer.append(":");
             buffer.append(getLocalName(attribute));
             buffer.append(qt + ":" + qt);
             buffer.append(escapeQuote(getAttributeValue(attribute)));
@@ -315,7 +313,7 @@ public class DomToGroovy {
     }
 
     private boolean checkEscaping(String localName) {
-        return keywords.contains(localName) || localName.indexOf("-") != -1;
+        return keywords.contains(localName) || localName.indexOf("-") != -1 || localName.indexOf(":") != -1;
     }
 
     protected String getTextNodeData(Text node) {

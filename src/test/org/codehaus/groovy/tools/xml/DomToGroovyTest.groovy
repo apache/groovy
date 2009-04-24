@@ -35,6 +35,9 @@ public class DomToGroovyTest extends GroovyTestCase {
             </xsd:restriction>
           </xsd:simpleType>
         </xsd:schema>'''
+    private static final String TEST_XML_5 = '''
+        <element xml:lang="en-US" > blabla </element>
+    '''
     private static final String EXPECTED_BUILDER_SCRIPT_1 =
         "a(href:'http://groovy.codehaus.org', 'Groovy')"
     private static final String EXPECTED_BUILDER_SCRIPT_2 = '''
@@ -62,6 +65,9 @@ public class DomToGroovyTest extends GroovyTestCase {
             }
           }
         }'''
+    private static final String EXPECTED_BUILDER_SCRIPT_5 = '''
+        element('xml:lang':'en-US', 'blabla')
+    '''
 
     protected DocumentBuilder builder
     protected DomToGroovy converter
@@ -78,6 +84,7 @@ public class DomToGroovyTest extends GroovyTestCase {
         checkConversion(TEST_XML_2, EXPECTED_BUILDER_SCRIPT_2)
         checkConversion(TEST_XML_3, EXPECTED_BUILDER_SCRIPT_3)
         checkConversion(TEST_XML_4, EXPECTED_BUILDER_SCRIPT_4)
+        checkConversion(TEST_XML_5, EXPECTED_BUILDER_SCRIPT_5)
     }
 
     private void checkConversion(String testXml, String expectedScript) throws SAXException, IOException {
