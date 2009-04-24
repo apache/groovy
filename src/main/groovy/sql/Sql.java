@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package groovy.sql;
 
 import groovy.lang.Closure;
 import groovy.lang.GString;
+import groovy.lang.GroovyRuntimeException;
 
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
@@ -50,6 +51,9 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
  */
 public class Sql {
 
+    /**
+     * Hook to allow derived classes to access the log
+     */
     protected Logger log = Logger.getLogger(getClass().getName());
 
     private DataSource dataSource;
@@ -61,27 +65,27 @@ public class Sql {
     private int resultSetHoldability = -1;
 
     // store the last row count for executeUpdate
-    int updateCount = 0;
+    private int updateCount = 0;
 
-    /**
+    /*
      * allows a closure to be used to configure the statement before its use
      */
     private Closure configureStatement;
 
-    /**
+    /*
+     * property for allowing connection caching feature
+     */
+    private boolean cacheConnection;
+
+    /*
      * property for allowing statements caching feature
      */
     private boolean cacheStatements;
 
-    /**
+    /*
      * Statement cache
      */
     private final Map<String, Statement> statementCache = new HashMap<String, Statement>();
-
-    /**
-     * property for allowing connection caching feature
-     */
-    private boolean cacheConnection;
 
     /**
      * Creates a new Sql instance given a JDBC connection URL.
@@ -670,7 +674,7 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      */
     public List rows(String sql, Closure metaClosure) throws SQLException {
-        List results = new ArrayList();
+        List<GroovyRowResult> results = new ArrayList<GroovyRowResult>();
         Connection connection = createConnection();
         Statement statement = getStatement(connection, sql);
         configure(statement);
@@ -702,7 +706,7 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      */
     public List rows(String sql, List params) throws SQLException {
-        List results = new ArrayList();
+        List<GroovyRowResult> results = new ArrayList<GroovyRowResult>();
         Connection connection = createConnection();
         PreparedStatement statement = null;
         ResultSet rs = null;
@@ -863,7 +867,7 @@ public class Sql {
 
             // Prepare a list to contain the auto-generated column
             // values, and then fetch them from the statement.
-            List autoKeys = new ArrayList();
+            List<List> autoKeys = new ArrayList<List>();
             ResultSet keys = statement.getGeneratedKeys();
             int count = keys.getMetaData().getColumnCount();
 
@@ -919,7 +923,7 @@ public class Sql {
 
             // Prepare a list to contain the auto-generated column
             // values, and then fetch them from the statement.
-            List autoKeys = new ArrayList();
+            List<List> autoKeys = new ArrayList<List>();
             ResultSet keys = statement.getGeneratedKeys();
             int count = keys.getMetaData().getColumnCount();
 
@@ -1247,10 +1251,16 @@ public class Sql {
         return useConnection;
     }
 
-
     /**
-     * Allows a closure to be passed in to configure the JDBC statements before they are executed
-     * to do things like set the query size etc.
+     * Allows a closure to be passed in to configure the JDBC statements before they are executed.
+     * It can be used to do things like set the query size etc. When this method is invoked, the supplied
+     * closure is saved. Statements subsequent created from other methods will then be
+     * configured using this closure. The statement being configured is passed into the closure
+     * as its single argument, e.g.:
+     *  <pre>
+     * sql.withStatement{ stmt -> stmt.maxRows == 10 }
+     * def firstTenRows = sql.rows("select * from table")
+     * </pre>
      *
      * @param configureStatement the closure
      */
@@ -1262,6 +1272,8 @@ public class Sql {
     //-------------------------------------------------------------------------
 
     /**
+     * Hook to allow derived classes to override sql generation from Gstrings.
+     *
      * @param gstring a GString containing the SQL query with embedded params
      * @param values  the values to embed
      * @return the SQL version of the given query using ? instead of any
@@ -1323,7 +1335,8 @@ public class Sql {
     }
 
     /**
-     * replace ?'"? references with NULLish
+     * Hook to allow derived classes to override null handling.
+     * Default behavior is to replace ?'"? references with NULLish
      *
      * @param sql the SQL statement
      * @return the modified SQL String
@@ -1353,7 +1366,9 @@ public class Sql {
     }
 
     /**
-     * Find the first 'where' keyword in the sql.
+     * Hook to allow derived classes to override where clause sniffing.
+     * Default behavior is to find the first 'where' keyword in the sql
+     * doing simple avoidance of the word 'where' within quotes.
      *
      * @param sql the SQL statement
      * @return the index of the found keyword or -1 if not found
@@ -1363,9 +1378,8 @@ public class Sql {
         char[] whereChars = "where".toCharArray();
         int i = 0;
         boolean inString = false; //TODO: Cater for comments?
-        boolean noWhere = true;
         int inWhere = 0;
-        while (i < chars.length && noWhere) {
+        while (i < chars.length) {
             switch (chars[i]) {
                 case '\'':
                     inString = !inString;
@@ -1384,6 +1398,9 @@ public class Sql {
     }
 
     /**
+     * Hook to allow derived classes to override behavior associated with
+     * extracting params from a GString.
+     *
      * @param gstring a GString containing the SQL query with embedded params
      * @return extracts the parameters from the expression as a List
      */
@@ -1392,7 +1409,9 @@ public class Sql {
     }
 
     /**
-     * Appends the parameters to the given statement.
+     * Hook to allow derived classes to override behavior associated with
+     * setting params for a prepared statement. Default behavior is to
+     * append the parameters to the given statement using <code>setObject</code>.
      *
      * @param params the parameters to append
      * @param statement the statement
@@ -1439,6 +1458,14 @@ public class Sql {
         }
     }
 
+    /**
+     * An extension point allowing derived classes to change the behavior of
+     * connection creation. The default behavior is to either use the
+     * supplied connection or obtain it from the supplied datasource.
+     *
+     * @return the connection associated with this Sql
+     * @throws java.sql.SQLException if a SQL error occurs
+     */
     protected Connection createConnection() throws SQLException {
         if ((cacheStatements || cacheConnection) && useConnection != null) {
             return useConnection;
@@ -1448,8 +1475,8 @@ public class Sql {
             // read, and the policy shouldn't have to list them all.
             Connection con;
             try {
-                con = (Connection) AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                    public Object run() throws SQLException {
+                con = AccessController.doPrivileged(new PrivilegedExceptionAction<Connection>() {
+                    public Connection run() throws SQLException {
                         return dataSource.getConnection();
                     }
                 });
@@ -1466,11 +1493,18 @@ public class Sql {
                 useConnection = con;
             }
             return con;
-        } else {
-            return useConnection;
         }
+        return useConnection;
     }
 
+    /**
+     * An extension point allowing derived classes to change the behavior
+     * of resource closing.
+     *
+     * @param connection the connection to close
+     * @param statement the statement to close
+     * @param results the results to close
+     */
     protected void closeResources(Connection connection, Statement statement, ResultSet results) {
         if (results != null) {
             try {
@@ -1483,6 +1517,13 @@ public class Sql {
         closeResources(connection, statement);
     }
 
+    /**
+     * An extension point allowing the behavior of resource closing to be
+     * overriden in derived classes.
+     *
+     * @param connection the connection to close
+     * @param statement the statement to close
+     */
     protected void closeResources(Connection connection, Statement statement) {
         if (isCacheStatements()) return;
         if (statement != null) {
@@ -1504,7 +1545,9 @@ public class Sql {
     }
 
     /**
-     * Provides a hook to be able to configure JDBC statements, such as to configure
+     * Provides a hook for derived classes to be able to configure JDBC statements.
+     * Default behavior is to call a previously saved closure, if any, using the
+     * statement as a parameter.
      *
      * @param statement the statement to configure
      */
@@ -1537,6 +1580,8 @@ public class Sql {
 
     /**
      * Caches the connection used while the closure is active.
+     * If the closure takes a single argument, it will be called
+     * with the connection, otherwise it will be called with no arguments.
      *
      * @param closure the given closure
      * @throws SQLException if a database error occurs
@@ -1546,7 +1591,7 @@ public class Sql {
         Connection connection = null;
         try {
             connection = createConnection();
-            closure.call();
+            callClosurePossiblyWithConnection(closure, connection);
         }
         finally {
             cacheConnection = false;
@@ -1555,8 +1600,56 @@ public class Sql {
     }
 
     /**
+     * Performs the closure within a transaction using a cached connection.
+     * If the closure takes a single argument, it will be called
+     * with the connection, otherwise it will be called with no arguments.
+     *
+     * @param closure the given closure
+     * @throws SQLException if a database error occurs
+     */
+    public synchronized void withTransaction(Closure closure) throws SQLException {
+        boolean savedCacheConnection = cacheConnection;
+        cacheConnection = true;
+        Connection connection = null;
+        try {
+            connection = createConnection();
+            connection.setAutoCommit(false);
+            callClosurePossiblyWithConnection(closure, connection);
+            connection.commit();
+        } catch (SQLException e) {
+            handleError(connection, e);
+            throw e;
+        } catch (RuntimeException e) {
+            handleError(connection, e);
+            throw e;
+        } catch (Error e) {
+            handleError(connection, e);
+            throw e;
+        } finally {
+            if (connection != null) connection.setAutoCommit(true);
+            cacheConnection = savedCacheConnection;
+            closeResources(connection, null);
+        }
+    }
+
+    private void handleError(Connection connection, Throwable t) throws SQLException {
+        log.log(Level.INFO, "Rolling back due to: " + t, t);
+        if (connection != null) connection.rollback();
+    }
+
+    private void callClosurePossiblyWithConnection(Closure closure, Connection connection) {
+        if (closure.getMaximumNumberOfParameters() == 1) {
+            closure.call(connection);
+        } else {
+            closure.call();
+        }
+    }
+
+    /**
      * Caches every created preparedStatement in closure <i>closure</i></br>
      * Every cached preparedStatement is closed after closure has been called.
+     * If the closure takes a single argument, it will be called
+     * with the connection, otherwise it will be called with no arguments.
      *
      * @param closure the given closure
      * @throws SQLException if a database error occurs
@@ -1567,7 +1660,7 @@ public class Sql {
         Connection connection = null;
         try {
             connection = createConnection();
-            closure.call();
+            callClosurePossiblyWithConnection(closure, connection);
         }
         finally {
             setCacheStatements(false);

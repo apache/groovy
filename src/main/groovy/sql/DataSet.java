@@ -88,15 +88,13 @@ public class DataSet extends Sql {
         this.reversed = true;
     }
 
-    public void add(Map values) throws SQLException {
+    public void add(Map<String, Object> map) throws SQLException {
         StringBuffer buffer = new StringBuffer("insert into ");
         buffer.append(table);
         buffer.append(" (");
         StringBuffer paramBuffer = new StringBuffer();
         boolean first = true;
-        for (Iterator iter = values.entrySet().iterator(); iter.hasNext();) {
-            Map.Entry entry = (Map.Entry) iter.next();
-            String column = entry.getKey().toString();
+        for (String column : map.keySet()) {
             if (first) {
                 first = false;
                 paramBuffer.append("?");
@@ -115,17 +113,16 @@ public class DataSet extends Sql {
         try {
             statement = connection.prepareStatement(buffer.toString());
             int i = 1;
-            for (Iterator iter = values.entrySet().iterator(); iter.hasNext();) {
-                Map.Entry entry = (Map.Entry) iter.next();
-                setObject(statement, i++, entry.getValue());
+            for (Object value : map.values()) {
+                setObject(statement, i++, value);
             }
             int answer = statement.executeUpdate();
             if (answer != 1) {
-                log.log(Level.WARNING, "Should have updated 1 row not " + answer + " when trying to add: " + values);
+                log.log(Level.WARNING, "Should have updated 1 row not " + answer + " when trying to add: " + map);
             }
         }
         catch (SQLException e) {
-            log.log(Level.WARNING, "Failed to add row for: " + values, e);
+            log.log(Level.WARNING, "Failed to add row for: " + map, e);
             throw e;
         }
         finally {
