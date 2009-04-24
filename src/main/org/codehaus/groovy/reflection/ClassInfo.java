@@ -20,6 +20,7 @@ import org.codehaus.groovy.reflection.stdclasses.*;
 import org.codehaus.groovy.util.*;
 
 import java.lang.ref.PhantomReference;
+import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -93,7 +94,11 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
 
     public static ClassInfo getClassInfo (Class cls) {
         ThreadLocalMapHandler handler = localMapRef.get();
-        if (handler!=null) return handler.get().get(cls);
+        SoftReference<LocalMap> ref=null;
+        if (handler!=null) ref = handler.get();
+        LocalMap map=null;
+        if (ref!=null) map = ref.get();
+        if (map!=null) return map.get(cls);
         return (ClassInfo) globalClassSet.getOrPut(cls,null);
     }
 
@@ -365,25 +370,27 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
         }
     }
 
-    private static class ThreadLocalMapHandler extends ThreadLocal<LocalMap> {
-        LocalMap recentThreadMap;
+    private static class ThreadLocalMapHandler extends ThreadLocal<SoftReference<LocalMap>> {
+        SoftReference<LocalMap> recentThreadMapRef;
         
-        protected LocalMap initialValue() {
-            return new LocalMap();
+        protected SoftReference<LocalMap> initialValue() {
+            return new SoftReference(new LocalMap(),null);
         }
 
-        public LocalMap get() {
-            LocalMap recent = recentThreadMap;
+        public SoftReference<LocalMap> get() {
+            SoftReference<LocalMap> mapRef = recentThreadMapRef;
+            LocalMap recent = null;
+            if (mapRef!=null) recent = mapRef.get();
             // we don't need to handle myThread.get()==null, because in that
             // case the thread has been collected, meaning the entry for the
             // thread is invalid anyway, so it is valid if recent has a 
             // different value. 
-            if (recent != null && recent.myThread.get() == Thread.currentThread())
-              return recent;
-            else {
-                final LocalMap res = super.get();
-                recentThreadMap = res;
-                return res;
+            if (recent != null && recent.myThread.get() == Thread.currentThread()) {
+                return mapRef;
+            } else {
+                SoftReference<LocalMap> ref = super.get();
+                recentThreadMapRef = ref;
+                return ref;
             }
         }
     }
