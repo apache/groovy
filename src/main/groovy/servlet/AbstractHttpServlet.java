@@ -364,4 +364,67 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
             log("resource.name.replacement = " + resourceNameReplacement);
         }
     }
+    
+    /**
+     * Override this method to set your variables to the Groovy binding.
+     * <p>
+     * All variables bound the binding are passed to the template source text, 
+     * e.g. the HTML file, when the template is merged.
+     * </p>
+     * <p>
+     * The binding provided by TemplateServlet does already include some default
+     * variables. As of this writing, they are (copied from 
+     * {@link groovy.servlet.ServletBinding}):
+     * <ul>
+     * <li><tt>"request"</tt> : HttpServletRequest </li>
+     * <li><tt>"response"</tt> : HttpServletResponse </li>
+     * <li><tt>"context"</tt> : ServletContext </li>
+     * <li><tt>"application"</tt> : ServletContext </li>
+     * <li><tt>"session"</tt> : request.getSession(<b>false</b>) </li>
+     * </ul>
+     * </p>
+     * <p>
+     * And via implicite hard-coded keywords:
+     * <ul>
+     * <li><tt>"out"</tt> : response.getWriter() </li>
+     * <li><tt>"sout"</tt> : response.getOutputStream() </li>
+     * <li><tt>"html"</tt> : new MarkupBuilder(response.getWriter()) </li>
+     * </ul>
+     * </p>
+     * <p>
+     * The binding also provides convenient methods:
+     * <ul>
+     * <li><tt>"forward(String path)"</tt> : request.getRequestDispatcher(path).forward(request, response);</li>
+     * <li><tt>"include(String path)"</tt> : request.getRequestDispatcher(path).include(request, response);</li>
+     * <li><tt>"redirect(String location)"</tt> : response.sendRedirect(location);</li>
+     * </ul>
+     * </p>
+     *
+     * <p>Example binding all servlet context variables:
+     * <pre><code>
+     * class Mytlet extends TemplateServlet {
+     * 
+     *   protected void setVariables(ServletBinding binding) {
+     *     // Bind a simple variable
+     *     binding.setVariable("answer", new Long(42));
+     *   
+     *     // Bind all servlet context attributes...
+     *     ServletContext context = (ServletContext) binding.getVariable("context");
+     *     Enumeration enumeration = context.getAttributeNames();
+     *     while (enumeration.hasMoreElements()) {
+     *       String name = (String) enumeration.nextElement();
+     *       binding.setVariable(name, context.getAttribute(name));
+     *     }
+     *   }
+     * 
+     * }
+     * <code></pre>
+     * </p>
+     * 
+     * @param binding
+     *  to be modified
+     */
+    protected void setVariables(ServletBinding binding) {
+        // empty
+    }    
 }

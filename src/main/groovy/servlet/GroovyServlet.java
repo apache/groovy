@@ -15,7 +15,6 @@
  */
 package groovy.servlet;
 
-import groovy.lang.Binding;
 import groovy.lang.Closure;
 import groovy.util.GroovyScriptEngine;
 import groovy.util.ResourceException;
@@ -109,7 +108,7 @@ public class GroovyServlet extends AbstractHttpServlet {
         response.setContentType("text/html; charset="+encoding);
 
         // Set up the script context
-        final Binding binding = new ServletBinding(request, response, servletContext);
+        final ServletBinding binding = new ServletBinding(request, response, servletContext);
         setVariables(binding);
 
         // Run the script
@@ -190,59 +189,4 @@ public class GroovyServlet extends AbstractHttpServlet {
     protected GroovyScriptEngine createGroovyScriptEngine(){
         return new GroovyScriptEngine(this);
     }
-
-    /**
-     * Override this method to set your variables to the Groovy binding.
-     * <p>
-     * All variables bound the binding are passed to the Groovlet,
-     * when the script is evaluated.
-     * </p>
-     * <p>
-     * The binding provided by GroovyServlet does already include some default
-     * variables. As of this writing, they are (copied from
-     * {@link groovy.servlet.ServletBinding}):
-     * <ul>
-     * <li><tt>"request"</tt> : HttpServletRequest </li>
-     * <li><tt>"response"</tt> : HttpServletResponse </li>
-     * <li><tt>"context"</tt> : ServletContext </li>
-     * <li><tt>"application"</tt> : ServletContext </li>
-     * <li><tt>"session"</tt> : request.getSession(<b>false</b>) </li>
-     * </ul>
-     * </p>
-     * <p>
-     * And via implicite hard-coded keywords:
-     * <ul>
-     * <li><tt>"out"</tt> : response.getWriter() </li>
-     * <li><tt>"sout"</tt> : response.getOutputStream() </li>
-     * <li><tt>"html"</tt> : new MarkupBuilder(response.getWriter()) </li>
-     * </ul>
-     * </p>
-     *
-     * <p>Example binding all servlet context variables:
-     * <pre><code>
-     * class Mytlet extends GroovyServlet {
-     *
-     *   protected void setVariables(Binding binding) {
-     *     // Bind a simple variable
-     *     binding.setVariable("answer", new Long(42));
-     *
-     *     // Bind all servlet context attributes...
-     *     ServletContext context = (ServletContext) binding.getVariable("context");
-     *     Enumeration enumeration = context.getAttributeNames();
-     *     while (enumeration.hasMoreElements()) {
-     *       String name = (String) enumeration.nextElement();
-     *       binding.setVariable(name, context.getAttribute(name));
-     *     }
-     *   }
-     *
-     * }
-     * <code></pre>
-     * </p>
-     *
-     * @param binding to be modified
-     */
-    protected void setVariables(Binding binding) {
-        // empty
-    }
-
 }

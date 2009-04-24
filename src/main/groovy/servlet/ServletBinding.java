@@ -18,12 +18,15 @@ package groovy.servlet;
 import groovy.lang.Binding;
 import groovy.xml.MarkupBuilder;
 
+import javax.servlet.RequestDispatcher;
 import javax.servlet.ServletContext;
+import javax.servlet.ServletException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.runtime.MethodClosure;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -70,6 +73,14 @@ import java.util.Map;
  * call on 'sout' will not cause the IllegalStateException, but it will still be invalid. 
  * It is the responsibility of the user of this class, to not to mix these different usage
  * styles. The same applies to calling response.getOoutputStream() and using 'out' or 'html'.
+ * </p>
+ * <p>
+ * <h3>Methods</h3>
+ * <ul>
+ * <li><tt>"forward(String path)"</tt> : request.getRequestDispatcher(path).forward(request, response);</li>
+ * <li><tt>"include(String path)"</tt> : request.getRequestDispatcher(path).include(request, response);</li>
+ * <li><tt>"redirect(String location)"</tt> : response.sendRedirect(location);</li>
+ * </ul>
  * </p>
  *
  * @author Guillaume Laforge
@@ -247,6 +258,9 @@ public class ServletBinding extends Binding {
         excludeReservedName(name, "out");
         excludeReservedName(name, "sout");
         excludeReservedName(name, "html");
+        excludeReservedName(name, "forward");
+        excludeReservedName(name, "include");
+        excludeReservedName(name, "redirect");
         super.setVariable(name, value);
     }
 
@@ -275,6 +289,18 @@ public class ServletBinding extends Binding {
         super.setVariable("out", output.getWriter());
         super.setVariable("sout", output.getOutputStream());
         super.setVariable("html", new MarkupBuilder(output.getWriter()));
+        
+        // bind forward method
+        MethodClosure c = new MethodClosure(this, "forward");
+        super.setVariable("forward", c);
+        
+        // bind include method
+        c = new MethodClosure(this, "include");
+        super.setVariable("include", c);
+        
+        // bind redirect method
+        c = new MethodClosure(this, "redirect");
+        super.setVariable("redirect", c);
     }
 
     private void validateArgs(String name, String message) {
@@ -291,5 +317,24 @@ public class ServletBinding extends Binding {
             throw new IllegalArgumentException("Can't bind variable to key named '" + name + "'.");
         }
     }
+    
+    public void forward(String path) throws ServletException, IOException {
+        HttpServletRequest request = (HttpServletRequest) super.getVariable("request");
+        HttpServletResponse response = (HttpServletResponse) super.getVariable("response");
+        RequestDispatcher dispatcher = request.getRequestDispatcher(path);
+        dispatcher.forward(request, response);
+    } 
+    
+    public void include(String path) throws ServletException, IOException {
+        HttpServletRequest request = (HttpServletRequest) super.getVariable("request");
+        HttpServletResponse response = (HttpServletResponse) super.getVariable("response");
+        RequestDispatcher dispatcher = request.getRequestDispatcher(path);
+        dispatcher.include(request, response);
+    }
+
+    public void redirect(String location) throws IOException {
+        HttpServletResponse response = (HttpServletResponse) super.getVariable("response");
+        response.sendRedirect(location);
+    }    
 }
 
