@@ -387,6 +387,12 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 call.getArguments().visit(this);
                 type=null;
             }
+            public void visitConstructorCallExpression(ConstructorCallExpression call) {
+            	if (!call.isSpecialCall()) return;
+            	type=call.getText();
+            	call.getArguments().visit(this);
+            	type=null;
+            }
             public void visitVariableExpression(VariableExpression expression) {
                 if (type==null) return;
                 String name = expression.getName();

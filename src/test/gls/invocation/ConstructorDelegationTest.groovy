@@ -69,4 +69,50 @@ public class ConstructorDelegationTest extends CompilableTestSupport {
           1
       """
   }
+
+  public void testConstructorDelegationWithThisOrSuperInArgs() {
+      def scriptStr
+      // all 4 cases below were compiling earlier but giving VerifyError at runtime
+      scriptStr = """
+        class MyClosure3128V1 extends Closure {
+            MyClosure3128V1() {
+                super(this)
+            }
+            void run() { println 'running' }
+        }
+      """
+      shouldNotCompile(scriptStr)
+
+      scriptStr = """
+        class MyClosure3128V2 extends Closure {
+            MyClosure3128V2() {
+                super(super)
+            }
+            void run() { println 'running' }
+        }
+        """
+        shouldNotCompile(scriptStr)
+
+        scriptStr = """
+            class MyClosure3128V3 extends Closure {
+                MyClosure3128V3() {
+                    this(this)
+                }
+                MyClosure3128V3(owner) {}
+                void run() { println 'running' }
+            }
+          """
+          shouldNotCompile(scriptStr)
+          
+          scriptStr = """
+              class MyClosure3128V4 extends Closure {
+                  MyClosure3128V4() {
+                      this(super)
+                  }
+                  MyClosure3128V4(owner) {}
+                  void run() { println 'running' }
+              }
+              """
+          shouldNotCompile(scriptStr)
+  }  
 }
