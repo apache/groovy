@@ -468,6 +468,7 @@ class Console implements CaretListener, HyperlinkListener {
                 new HashMap(shell.context.variables)))
         consoleController.systemOutInterceptor = systemOutInterceptor
         SwingBuilder swing = new SwingBuilder()
+        consoleController.swing = swing 
         frameConsoleDelegates.each {k, v -> swing[k] = v}
         swing.controller = consoleController
         swing.build(ConsoleActions)
