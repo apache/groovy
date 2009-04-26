@@ -338,4 +338,59 @@ class Foo {}
       """
       println "testGetterCallWithSingletonAnnotation Done" 
   }
+
+  void testAnnotationWithValuesNotGivenForAttributesWithoutDefaults() {
+	  def scriptStr
+	  scriptStr = """
+		import java.lang.annotation.Retention
+		import java.lang.annotation.RetentionPolicy
+		
+		@Retention(RetentionPolicy.RUNTIME)
+		@interface Annot3454V1 {
+		  String x()
+		}
+		
+		@Annot3454V1
+		class Bar {}
+	  """
+	  // compiler should not allow this, because there is no default value for x
+	  shouldNotCompile(scriptStr)
+	  
+      scriptStr = """
+			import java.lang.annotation.Retention
+			import java.lang.annotation.RetentionPolicy
+			
+			@Retention(RetentionPolicy.RUNTIME)
+			@interface Annot3454V2 {
+			  String x() default 'xxx'
+			  String y()
+			}
+			
+			@Annot3454V2
+			class Bar {}
+		"""
+        // compiler should not allow this, because there is no default value for y
+        shouldNotCompile(scriptStr)
+	  
+        scriptStr = """
+			import java.lang.annotation.Retention
+			import java.lang.annotation.RetentionPolicy
+			
+			@Retention(RetentionPolicy.RUNTIME)
+			@interface Annot3454V3 {
+			  String x() default 'xxx'
+			  String y()
+			}
+			
+			@Annot3454V3(y = 'yyy')
+			class Bar {}
+			
+			def anno = Bar.class.getAnnotation(Annot3454V3)
+			assert anno.x() == 'xxx'
+			assert anno.y() == 'yyy'
+        """
+        // compiler should allow this, because there is default value for x and value provided for y
+        assertScript(scriptStr)
+  }
+
 }
