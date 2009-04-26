@@ -60,6 +60,11 @@ public class AnnotationVisitor {
             return node;
         }
         
+        // check if values have been passed for all annotation attributes that don't have defaults
+        if(!checkIfMandatoryAnnotationValuesPassed(node)) {
+        	return node;
+        }
+
         Map attributes = node.getMembers();
         for(Iterator it = attributes.entrySet().iterator(); it.hasNext(); ) {
             Map.Entry entry = (Map.Entry) it.next();
@@ -72,6 +77,21 @@ public class AnnotationVisitor {
         VMPluginFactory.getPlugin().configureAnnotation(node);
 
         return this.annotation;
+    }
+
+    private boolean checkIfMandatoryAnnotationValuesPassed(AnnotationNode node) {
+    	boolean ok = true;
+    	Map attributes = node.getMembers();
+    	List<MethodNode> methods = node.getClassNode().getMethods();
+    	for(MethodNode mn : methods) {
+    		String methodName = mn.getName();
+    		// if the annotation attribute has a default, getCode() returns a ReturnStatement with the default value
+    		if(mn.getCode() == null && !attributes.containsKey(methodName)) {
+    			addError("No explicit/default value found for annotation attribute '" + methodName + "' in annotation " + node.getClassNode(), node);
+    			ok = false;
+    		}
+    	}
+    	return ok;
     }
 
     private ClassNode getAttributeType(AnnotationNode node, String attrName) {
