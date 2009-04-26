@@ -229,4 +229,17 @@ class AbstractClassAndInterfaceTest extends CompilableTestSupport {
         }
         """
     }
+	
+    void testClassImplementsItselfCreatingACycle() {
+        def scriptStr = """
+            package p1
+            class XXX implements XXX {}
+        """
+        shouldNotCompile scriptStr
+        
+        scriptStr = """
+            class YYY implements YYY {}
+        """
+        shouldNotCompile scriptStr
+    }
 }
