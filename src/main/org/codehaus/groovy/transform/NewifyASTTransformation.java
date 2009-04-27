@@ -192,6 +192,8 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
         if (classType != null) {
             return new ConstructorCallExpression(classType, args);
         }
+        // set the args as they might have gotten Newify transformed GROOVY-3491
+        mce.setArguments(args);
         return mce;
     }
 
