@@ -33,4 +33,44 @@ class NewifyTransformTest extends GroovyShellTestCase {
         assertEquals main.field1, 42
         assertEquals main.field2, 43
     }
+    
+    void testNewificationUsedInMethodArguments() {
+        evaluate """
+            @Newify class Main1 {
+                static main(args) {
+                    println Integer.new(43)
+                }
+            }
+          """
+        
+        evaluate """
+            @Newify(Integer) class Main2 {
+                static main(args) {
+                    println Integer(42)
+                }
+            }
+          """
+
+        evaluate """
+            class Main3 {
+                static main(args) {
+                    foo()
+                }
+                @Newify static foo() {
+                    println Integer.new(41)
+                }
+            }
+          """
+      
+        evaluate """
+            class Main4 {
+                static main(args) {
+                    foo()
+                }
+                @Newify(Integer) static foo() {
+                    println Integer(40)
+                }
+            }
+          """
+    }
 }
