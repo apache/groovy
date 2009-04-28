@@ -24,6 +24,7 @@ import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.HashSet;
 import java.util.List;
+import java.util.Arrays;
 
 /**
  * Handles generation of code for the @Newify annotation.
@@ -40,8 +41,8 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         this.source = source;
-        if (!(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
-            internalError("Transformation called with wrong types: $node.class / $parent.class");
+        if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
+            throw new RuntimeException("Internal error: expecting [AnnotationNode, AnnotatedClass] but got: " + Arrays.asList(nodes));
         }
 
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
