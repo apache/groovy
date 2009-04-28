@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,7 +32,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     private ClassNode currentClass;
     private MethodNode currentMethod;
     private SourceUnit source;
-    private CompilationUnit compilationUnit;
+    private CompilationUnit compilationUnit; // TODO use it or lose it
     private boolean stillResolving;
     private boolean inSpecialConstructorCall;
     private boolean inClosure;
@@ -230,9 +230,12 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         if (ve.isThisExpression() || ve.isSuperExpression()) return;
         Variable v = ve.getAccessedVariable();
         if (v != null && !(v instanceof DynamicVariable) && v.isInStaticContext()) return;
-        addError("The name " + ve.getName() + " doesn't refer to a declared variable or class. The static" +
-                " scope requires that you declare variables before using them. If the variable should have" +
-                " been a class check the spelling.", ve);
+        addError("Apparent variable '" + ve.getName() + "' was found in a static scope but doesn't refer" +
+                " to a local variable, static field or class. Possible causes:\n" +
+                "You attemped to reference a variable in the binding or an instance variable from a static context.\n" +
+                "You mispelled a classname or statically imported field. Please check the spelling.\n" +
+                "You attempted to use a method '" + ve.getName() +
+                "' but left out brackets in a place not allowed by the grammar.", ve);
     }
 
     private Expression findStaticFieldImportFromModule(String name) {
