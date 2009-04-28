@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.codehaus.groovy.transform.vm5
+package org.codehaus.groovy.transform
 
 /**
  * @author Paul King
@@ -33,42 +33,62 @@ class NewifyTransformTest extends GroovyShellTestCase {
         assertEquals main.field1, 42
         assertEquals main.field2, 43
     }
-    
-    void testNewificationUsedInMethodArguments() {
+
+    void testClassLevelNewification() {
         evaluate """
-            @Newify class Main1 {
+            @Newify class Rubyesque {
                 static main(args) {
-                    println Integer.new(43)
-                }
-            }
-          """
-        
-        evaluate """
-            @Newify(Integer) class Main2 {
-                static main(args) {
-                    println Integer(42)
+                    assert Integer.new(40) == 40
                 }
             }
           """
 
         evaluate """
-            class Main3 {
+            @Newify(Integer) class Pythonesque {
+                static main(args) {
+                    assert Integer(41) == 41
+                }
+            }
+          """
+    }
+
+    void testMethodLevelNewification() {
+        evaluate """
+            class Rubyesque {
                 static main(args) {
                     foo()
                 }
                 @Newify static foo() {
-                    println Integer.new(41)
+                    assert Integer.new(42) == 42
                 }
             }
           """
-      
+
         evaluate """
-            class Main4 {
+            class Pythonesque {
                 static main(args) {
                     foo()
                 }
                 @Newify(Integer) static foo() {
-                    println Integer(40)
+                    assert Integer(43) == 43
+                }
+            }
+          """
+    }
+
+    void testNewificationInProperties() {
+        evaluate """
+            class Rubyesque {
+                @Newify static main(args) {
+                    assert Integer.new(44).class == Integer
+                }
+            }
+          """
+
+        evaluate """
+            class Pythonesque {
+                @Newify(Integer) static main(args) {
+                    assert Integer(45).class == Integer
                 }
             }
           """
