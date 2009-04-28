@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 the original author or authors.
+ * Copyright 2008-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -42,7 +42,7 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
     public void visit(ASTNode[] nodes, SourceUnit source) {
         this.source = source;
         if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
-            throw new RuntimeException("Internal error: expecting [AnnotationNode, AnnotatedClass] but got: " + Arrays.asList(nodes));
+            internalError("Expecting [AnnotationNode, AnnotatedClass] but got: " + Arrays.asList(nodes));
         }
 
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
@@ -94,6 +94,10 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
                 return transformMethodCall(mce, args);
             }
             return new MethodCallExpression(object, method, args);
+        } else if (expr instanceof PropertyExpression) {
+            PropertyExpression pe = (PropertyExpression) expr;
+            pe.setObjectExpression(transform(pe.getObjectExpression()));
+            return pe;
         }
         return expr.transformExpression(this);
     }
