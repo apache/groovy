@@ -27,13 +27,11 @@ import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;
-import org.apache.tools.ant.taskdefs.condition.ConditionBase;
 
 import java.lang.reflect.Array;
 import java.util.*;
 
 import groovy.lang.GroovyObject;
-import com.sun.tools.javac.jvm.Pool;
 
 /**
  * Represents a class in the AST.<br/>
