@@ -27,11 +27,13 @@ import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;
+import org.apache.tools.ant.taskdefs.condition.ConditionBase;
 
 import java.lang.reflect.Array;
 import java.util.*;
 
 import groovy.lang.GroovyObject;
+import com.sun.tools.javac.jvm.Pool;
 
 /**
  * Represents a class in the AST.<br/>
@@ -126,13 +128,13 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     private final int modifiers;
     private ClassNode[] interfaces;
     private MixinNode[] mixins;
-    private List constructors = new ArrayList();
-    private List  objectInitializers = new ArrayList();
+    private List constructors;
+    private List  objectInitializers;
     private MapOfLists methods;
     private List<MethodNode> methodsList;
-    private LinkedList<FieldNode> fields = new LinkedList<FieldNode>();
-    private List properties = new ArrayList();
-    private Map fieldIndex = new HashMap();
+    private LinkedList<FieldNode> fields;
+    private List properties;
+    private Map fieldIndex;
     private ModuleNode module;
     private CompileUnit compileUnit;
     private boolean staticClass = false;
@@ -174,8 +176,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * Returns the ClassNode this ClassNode is redirecting to.
      */
     public ClassNode redirect(){
-        if (redirect==null) return this;
-        return redirect.redirect();
+        ClassNode res = this;
+        while (res.redirect != null) res = res.redirect;
+        return res;
     }
 
     /**
@@ -305,12 +308,12 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                 usesGenerics = usesGenerics || interfaces[i].isUsingGenerics();
             }
         }
-        this.methods = new MapOfLists();
-        this.methodsList = new ArrayList();
 
         if ((modifiers & ACC_INTERFACE) == 0)
           addField("$ownClass", ACC_STATIC|ACC_PUBLIC|ACC_FINAL|ACC_SYNTHETIC, ClassHelper.CLASS_Type, new ClassExpression(this)).setSynthetic(true);
+    }
 
+    private void getTransformInstancesLazy() {
         transformInstances = new EnumMap<CompilePhase, Map<Class <? extends ASTTransformation>, Set<ASTNode>>>(CompilePhase.class);
         for (CompilePhase phase : CompilePhase.values()) {
             transformInstances.put(phase, new HashMap<Class <? extends ASTTransformation>, Set<ASTNode>>());
@@ -331,6 +334,13 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     public List<FieldNode> getFields() {
         if (!redirect().lazyInitDone) redirect().lazyClassInit();
         if (redirect!=null) return redirect().getFields();
+        return getFieldsLazy();
+    }
+
+    private List<FieldNode> getFieldsLazy() {
+        if (fields == null) {
+            fields = new LinkedList<FieldNode>();
+        }
         return fields;
     }
 
@@ -363,7 +373,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     public List<MethodNode> getMethods() {
         if (!redirect().lazyInitDone) redirect().lazyClassInit();
         if (redirect!=null) return redirect().getMethods();
-        return methodsList;
+        return getMethodsListLazy();
     }
 
     /**
@@ -455,12 +465,24 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public List getProperties() {
-        return redirect().properties;
+        return redirect().getPropertiesLazy();
+    }
+
+    private List getPropertiesLazy() {
+        if (properties == null)
+            properties = new LinkedList ();
+        return properties;
     }
 
     public List getDeclaredConstructors() {
         if (!redirect().lazyInitDone) redirect().lazyClassInit();
-        return redirect().constructors;
+        return redirect().getDeclaredConstructorsLazy();
+    }
+
+    private List getDeclaredConstructorsLazy () {
+        if (constructors == null)
+            constructors = new LinkedList();
+        return constructors;
     }
 
     public ModuleNode getModule() {
@@ -477,15 +499,21 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     public void addField(FieldNode node) {
         node.setDeclaringClass(redirect());
         node.setOwner(redirect());
-        redirect().fields.add(node);
-        redirect().fieldIndex.put(node.getName(), node);
+        redirect().getFieldsLazy().add(node);
+        redirect().getFieldIndexLazy().put(node.getName(), node);
+    }
+
+    private Map getFieldIndexLazy() {
+        if (fieldIndex == null)
+            fieldIndex = new HashMap();
+        return fieldIndex;
     }
 
     public void addProperty(PropertyNode node) {
         node.setDeclaringClass(redirect());
         FieldNode field = node.getField();
         addField(field);
-        redirect().properties.add(node);
+        redirect().getPropertiesLazy().add(node);
     }
 
     public PropertyNode addProperty(String name,
@@ -529,7 +557,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public void addConstructor(ConstructorNode node) {
         node.setDeclaringClass(this);
-        redirect().constructors.add(node);
+        redirect().getDeclaredConstructorsLazy().add(node);
     }
 
     public ConstructorNode addConstructor(int modifiers, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
@@ -540,8 +568,20 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public void addMethod(MethodNode node) {
         node.setDeclaringClass(this);
-        redirect().methodsList.add(node);
-        redirect().methods.put(node.getName(), node);
+        redirect().getMethodsListLazy().add(node);
+        redirect().getMethodsLazy().put(node.getName(), node);
+    }
+
+    private MapOfLists getMethodsLazy() {
+        if (methods == null)
+            methods = new MapOfLists();
+        return methods;
+    }
+
+    private List<MethodNode> getMethodsListLazy() {
+        if (methodsList == null)
+            methodsList = new LinkedList<MethodNode>();
+        return methodsList;
     }
 
     /**
@@ -655,7 +695,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @return the method matching the given name and parameters or null
      */
     public FieldNode getDeclaredField(String name) {
-        return (FieldNode) redirect().fieldIndex.get(name);
+        return (FieldNode) redirect().getFieldIndexLazy().get(name);
     }
 
     /**
@@ -690,10 +730,14 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public void addObjectInitializerStatements(Statement statements) {
+        if (objectInitializers == null)
+            objectInitializers = new LinkedList();
         objectInitializers.add(statements);
     }
 
     public List getObjectInitializerStatements() {
+        if (objectInitializers == null)
+            objectInitializers = new LinkedList();
         return objectInitializers;
     }
 
@@ -744,7 +788,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     public List getDeclaredMethods(String name) {
         if (!redirect().lazyInitDone) redirect().lazyClassInit();
         if (redirect!=null) return redirect().getDeclaredMethods(name);
-        return methods.getNotNull(name);
+        return getMethodsLazy().getNotNull(name);
     }
 
     /**
@@ -1260,6 +1304,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public void addTransform(Class<? extends ASTTransformation> transform, ASTNode node) {
+        if (transformInstances == null)
+            getTransformInstancesLazy();
+
         GroovyASTTransformation annotation = transform.getAnnotation(GroovyASTTransformation.class);
         Set<ASTNode> nodes = transformInstances.get(annotation.phase()).get(transform);
         if (nodes == null) {
@@ -1270,11 +1317,14 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public Map<Class <? extends ASTTransformation>, Set<ASTNode>> getTransforms(CompilePhase phase) {
+        if (transformInstances == null)
+            return Collections.EMPTY_MAP;
+        
         return transformInstances.get(phase);
     }
 
     public void renameField(String oldName, String newName) {
-        final Map index = redirect().fieldIndex;
+        final Map index = redirect().getFieldIndexLazy();
         index.put(newName, index.remove(oldName));
     }
 }
