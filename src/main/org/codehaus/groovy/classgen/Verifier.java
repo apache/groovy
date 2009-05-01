@@ -440,9 +440,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             if (!(statement instanceof BytecodeSequence)) {
                 BlockStatement newBlock = new BlockStatement();
                 if (statement instanceof BlockStatement) {
-                    newBlock.addStatements(filterStatements(((BlockStatement)statement).getStatements()));
+                    newBlock.addStatements(((BlockStatement)statement).getStatements());
                 } else {
-                    newBlock.addStatement(filterStatement(statement));
+                    newBlock.addStatement(statement);
                 }
                 newBlock.addStatement(ReturnStatement.RETURN_NULL_OR_VOID);
                 newBlock.setSourcePosition(statement);
@@ -518,7 +518,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 return ret;
             }
 
-            return new BlockStatement(filterStatements(list),block.getVariableScope());
+            return new BlockStatement(list,block.getVariableScope());
         }
 
         if (statement == null)
@@ -883,31 +883,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 mv.visitInsn(RETURN);
             }
         });
-    }
-
-    /**
-     * Filters the given statements
-     */
-    protected List filterStatements(List list) {
-        List answer = new ArrayList(list.size());
-        for (Iterator iter = list.iterator(); iter.hasNext();) {
-            answer.add(filterStatement((Statement) iter.next()));
-        }
-        return answer;
-    }
-
-    protected Statement filterStatement(Statement statement) {
-        if (statement instanceof ExpressionStatement) {
-            ExpressionStatement expStmt = (ExpressionStatement) statement;
-            Expression expression = expStmt.getExpression();
-            if (expression instanceof ClosureExpression) {
-                ClosureExpression closureExp = (ClosureExpression) expression;
-                if (!closureExp.isParameterSpecified()) {
-                    return closureExp.getCode();
-                }
-            }
-        }
-        return statement;
     }
 
     public void visitGenericType(GenericsType genericsType) {
