@@ -40,8 +40,11 @@ import java.util.*;
 public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
 
     /*
-      currently leaving BigInteger and BigDecimal in list but see:
+      Currently leaving BigInteger and BigDecimal in list but see:
       http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6348370
+
+      Also, Color is not final so while not normally used with child
+      classes, it isn't strictly immutable. Use at your own risk.
      */
     private static Class[] immutableList = {
             Boolean.class,
@@ -292,7 +295,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     private void createConstructorMap(ClassNode cNode, FieldExpression constructorStyle, List<PropertyNode> list) {
         final BlockStatement body = new BlockStatement();
         for (PropertyNode pNode : list) {
-            body.addStatement(createConstructorStatement(pNode));
+            body.addStatement(createConstructorStatement(cNode, pNode));
         }
         createConstructorMapCommon(cNode, constructorStyle, body);
     }
@@ -328,7 +331,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         cNode.addConstructor(new ConstructorNode(ACC_PUBLIC, orderedParams, ClassNode.EMPTY_ARRAY, orderedBody));
     }
 
-    private Statement createConstructorStatement(PropertyNode pNode) {
+    private Statement createConstructorStatement(ClassNode cNode, PropertyNode pNode) {
         FieldNode fNode = pNode.getField();
         final ClassNode fieldType = fNode.getType();
         final Statement statement;
@@ -341,9 +344,9 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         } else if (isKnownImmutable(fieldType)) {
             statement = createConstructorStatementDefault(fNode);
         } else if (fieldType.isResolved()) {
-            throw new RuntimeException(createErrorMessage(fNode.getName(), fieldType.getName(), "compiling"));
+            throw new RuntimeException(createErrorMessage(cNode.getName(), fNode.getName(), fieldType.getName(), "compiling"));
         } else {
-            statement = createConstructorStatementGuarded(fNode);
+            statement = createConstructorStatementGuarded(cNode, fNode);
         }
         return statement;
     }
@@ -352,7 +355,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         return Arrays.asList(fieldType.getInterfaces()).contains(interfaceType);
     }
 
-    private Statement createConstructorStatementGuarded(FieldNode fNode) {
+    private Statement createConstructorStatementGuarded(ClassNode cNode, FieldNode fNode) {
         final FieldExpression fieldExpr = new FieldExpression(fNode);
         Expression initExpr = fNode.getInitialValueExpression();
         if (initExpr == null) initExpr = ConstantExpression.NULL;
@@ -362,12 +365,12 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
                 new IfStatement(
                         equalsNullExpr(initExpr),
                         new EmptyStatement(),
-                        assignStatement(fieldExpr, checkUnresolved(fNode, initExpr))),
-                assignStatement(fieldExpr, checkUnresolved(fNode, unknown)));
+                        assignStatement(fieldExpr, checkUnresolved(cNode, fNode, initExpr))),
+                assignStatement(fieldExpr, checkUnresolved(cNode, fNode, unknown)));
     }
 
-    private Expression checkUnresolved(FieldNode fNode, Expression value) {
-        Expression args = new TupleExpression(new ConstantExpression(fNode.getName()), value);
+    private Expression checkUnresolved(ClassNode cNode, FieldNode fNode, Expression value) {
+        Expression args = new TupleExpression(new ConstantExpression(cNode.getName()), new ConstantExpression(fNode.getName()), value);
         return new StaticMethodCallExpression(SELF_TYPE, "checkImmutable", args);
     }
 
@@ -540,9 +543,18 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         return new ExpressionStatement(fieldExpr);
     }
 
-    private static String createErrorMessage(String fieldName, String typeName, String mode) {
-        return "Possible mutable field '" + fieldName +
-                "' of type '" + typeName + "' found while " + mode + " " + MY_TYPE_NAME + " class.";
+    private static String createErrorMessage(String className, String fieldName, String typeName, String mode) {
+        return MY_TYPE_NAME + " processor doesn't know how to handle field '" + fieldName + "' of type '" + prettyTypeName(typeName) + "' while " + mode + " class " + className + ".\n" +
+                MY_TYPE_NAME + " classes currently only support properties with known immutable types " +
+                "or types where special handling achieves immutable behavior, including:\n" +
+                "- Strings, primitive types, wrapper types, BigInteger and BigDecimal\n" +
+                "- enums, other " + MY_TYPE_NAME + " classes and known immutables (java.awt.Color)\n" +
+                "- Cloneable classes, collections, maps and arrays, and other classes with special handling (java.util.Date)\n" +
+                "Other restrictions apply, please see the groovydoc for " + MY_TYPE_NAME + " for further details";
+    }
+
+    private static String prettyTypeName(String name) {
+        return name.equals("java.lang.Object") ? name + " or def" : name;
     }
 
     private Statement createGetterBodyArrayOrCloneable(FieldNode fNode) {
@@ -572,12 +584,12 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
                 new ExpressionStatement(expression));
     }
 
-    public static Object checkImmutable(String fieldName, Object field) {
+    public static Object checkImmutable(String className, String fieldName, Object field) {
         if (field == null || field instanceof Enum || inImmutableList(field.getClass())) return field;
         if (field instanceof Collection) return DefaultGroovyMethods.asImmutable((Collection) field);
         if (field.getClass().getAnnotation(MY_CLASS) != null) return field;
         final String typeName = field.getClass().getName();
-        throw new RuntimeException(createErrorMessage(fieldName, typeName, "constructing"));
+        throw new RuntimeException(createErrorMessage(className, fieldName, typeName, "constructing"));
     }
 
 }
