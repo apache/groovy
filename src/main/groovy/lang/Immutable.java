@@ -25,7 +25,7 @@ import java.lang.annotation.Target;
 
 /**
  * Class annotation used for making a class immutable.
- * </p>
+ * <p/>
  * It allows you to write code snippets like this:
  * <pre>
  * {@code @Immutable} final class Customer {
@@ -47,7 +47,7 @@ import java.lang.annotation.Target;
  * <li>A tuple-style constructor is provided which allows you to set properties in the same order as they are defined.
  * <li>Default {@code equals}, {@code hashCode} and {@code toString} methods are provided based on the property values.
  * <li>{@code Date}s, {@code Cloneable}s and arrays are defensively copied on the way in (constructor) and out (getters).
- * Arrays and cloneable objects use the {@code clone} method. For your own classes,
+ * Arrays and {@code Cloneable} objects use the {@code clone} method. For your own classes,
  * it is up to you to define this method and use deep cloning if appropriate.
  * <li>{@code Collection}s and {@code Map}s are wrapped by immutable wrapper classes (but not deeply cloned!).
  * Attempts to update them will result in an {@code UnsupportedOperationException}.
@@ -59,9 +59,31 @@ import java.lang.annotation.Target;
  * significant state of the object and aren't factored into the {@code equals} or {@code hashCode} methods.
  * Use at your own risk!
  * </ul>
- * </p>
+ * <p/>
  * Such classes are particularly useful for functional and concurrent styles of programming
  * and for use as key values within maps.
+ * <p/>
+ * Limitations:
+ * <ul>
+ * <li>
+ * As outlined above, Arrays and {@code Cloneable} objects use the {@code clone} method. For your own classes,
+ * it is up to you to define this method and use deep cloning if appropriate.
+ * </li>
+ * <li>
+ * As outlined above, {@code Collection}s and {@code Map}s are wrapped by immutable wrapper classes (but not deeply cloned!).
+ * </li>
+ * <li>
+ * Currently {@code BigInteger} and {#code BigDecimal} are deemed immutable but see:
+ * http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6348370
+ * </li>
+ * <li>
+ * {@code java.awt.Color} is treated as immutable but is not final so while not normally used with child
+ * classes, it isn't strictly immutable. Use at your own risk.
+ * </li>
+ * <li>
+ * {@code java.util.Date} is treated as immutable but is not final so it isn't strictly immutable. Use at your own risk.
+ * </li>
+ * </ul>
  *
  * @author Paul King
  */
