@@ -87,7 +87,6 @@ class SqlRowsTest extends TestHelper {
         def sql = createSql()
 
         def results = sql.rows("select firstname, lastname, firstname || ' ' || lastname as fullname from PERSON where id=1")
-        System.err.println results[0]
         assert results[0].firstname == "James"
         assert results[0].lastname == "Strachan"
         assert results[0].fullname == "James Strachan"
@@ -116,12 +115,10 @@ class SqlRowsTest extends TestHelper {
 
         // First check it's ok
         sql.rows( "select a.id, a.name, b.id, b.name from jointesta as a join jointestb as b on ( a.bid = b.id )" ).eachWithIndex { row, idx ->
-            System.err.println row
             assert row.size() == 2
         }
         // then check the aliases work now we are using getColumnLabel rather than getColumnName
         sql.rows( "select a.id as ai, a.name as an, b.id as bi, b.name as bn from jointesta as a join jointestb as b on ( a.bid = b.id )" ).each { row ->
-            System.err.println row
             assert row.size() == 4
         }
     }
