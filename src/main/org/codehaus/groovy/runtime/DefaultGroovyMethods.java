@@ -11179,7 +11179,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         ResultSetMetaData metadata = rs.getMetaData();
         LinkedHashMap lhm = new LinkedHashMap(metadata.getColumnCount(), 1);
         for (int i = 1; i <= metadata.getColumnCount(); i++) {
-            lhm.put(metadata.getColumnName(i), rs.getObject(i));
+            lhm.put(metadata.getColumnLabel(i), rs.getObject(i));
         }
         return new GroovyRowResult(lhm);
     }

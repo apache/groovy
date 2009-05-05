@@ -2,6 +2,25 @@ package groovy.sql
 
 class SqlRowsTest extends TestHelper {
 
+    protected Sql createSql() {
+        Sql sql = super.createSql()
+
+        ["JOINTESTA", "JOINTESTB"].each{ tryDrop(it) }
+        sql.execute("create table JOINTESTA ( id integer, bid integer, name varchar)")
+        sql.execute("create table JOINTESTB ( id integer, name varchar)")
+
+        def jointesta = sql.dataSet("JOINTESTA")
+        jointesta.add( id:1, bid:3, name:'A 1' )
+        jointesta.add( id:2, bid:2, name:'A 2' )
+        jointesta.add( id:3, bid:1, name:'A 3' )
+
+        def jointestb = sql.dataSet("JOINTESTB")
+        jointestb.add( id:1, name:'B 1' )
+        jointestb.add( id:2, name:'B 2' )
+        jointestb.add( id:3, name:'B 3' )
+        return sql
+    }
+
     void testFirstRowWithPropertyName() {
         def sql = createSql()
 
@@ -64,6 +83,15 @@ class SqlRowsTest extends TestHelper {
         assert results[1].lastname == "Mcwhirter"
     }
 
+    void testAsRenaming() {
+        def sql = createSql()
+
+        def results = sql.rows("select firstname, lastname, firstname || ' ' || lastname as fullname from PERSON where id=1")
+        assert results[0].firstname == "James"
+        assert results[0].lastname == "Strachan"
+        assert results[0].fullname == "James Strachan"
+    }
+
     void testAllRowsWithGStringPropertyName() {
         def sql = createSql()
         def name = "James"
@@ -80,6 +108,19 @@ class SqlRowsTest extends TestHelper {
         assert results[0].lastname == "Strachan"
         assert results[1].firstname == "Bob"
         assert results[1].lastname == "Mcwhirter"
+    }
+
+    void testJoinsWithSameName_Groovy3320() {
+        def sql = createSql()
+
+        // First check it's ok
+        sql.rows( "select a.id, a.name, b.id, b.name from jointesta as a join jointestb as b on ( a.bid = b.id )" ).eachWithIndex { row, idx ->
+            assert row.size() == 2
+        }
+        // then check the aliases work now we are using getColumnLabel rather than getColumnName
+        sql.rows( "select a.id as ai, a.name as an, b.id as bi, b.name as bn from jointesta as a join jointestb as b on ( a.bid = b.id )" ).each { row ->
+            assert row.size() == 4
+        }
     }
 
 }
