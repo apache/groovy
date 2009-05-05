@@ -59,6 +59,8 @@ class TestHelper extends GroovyTestCase {
     }
     
     protected newSql(String uri) {
+        // TODO once hsqldb 1.9.0 is out rename this
+        // def ds = new org.hsqldb.jdbc.JDBCDataSource()
 	    def ds = new org.hsqldb.jdbc.jdbcDataSource()
         ds.database = uri
         ds.user = 'sa'
