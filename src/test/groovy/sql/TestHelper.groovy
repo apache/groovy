@@ -9,18 +9,14 @@ class TestHelper extends GroovyTestCase {
         return foo.createSql()
     }
     
-    protected def createEmptySql() {
+    protected createEmptySql() {
         return newSql(getURI())
     }
     
-    protected def createSql() {
+    protected createSql() {
         def sql = newSql(getURI())
         
-        try {
-           sql.execute("drop table PERSON")
-           sql.execute("drop table FOOD")
-           sql.execute("drop table FEATURE")
-        } catch(Exception e){}
+        ["PERSON", "FOOD", "FEATURE"].each{ tryDrop(it) }
         
         sql.execute("create table PERSON ( firstname varchar, lastname varchar, id integer, location_id integer, location_name varchar )")     
         sql.execute("create table FOOD ( type varchar, name varchar)")
@@ -45,8 +41,14 @@ class TestHelper extends GroovyTestCase {
         features.add( id:3, name:'GroovyMarkup' )
         return sql
     }
-    
-    protected def getURI() {
+
+    protected tryDrop(String tableName) {
+        try {
+           sql.execute("drop table $tableName")
+        } catch(Exception e){}
+    }
+
+    protected getURI() {
 		def answer = "jdbc:hsqldb:mem:foo"
 		def name = getMethodName()
 		if (name == null) {
@@ -56,7 +58,7 @@ class TestHelper extends GroovyTestCase {
 		return answer + name
     }
     
-    protected def newSql(String uri) {
+    protected newSql(String uri) {
 	    def ds = new org.hsqldb.jdbc.jdbcDataSource()
         ds.database = uri
         ds.user = 'sa'
