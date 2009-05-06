@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 the original author or authors.
+ * Copyright 2007-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@ package org.codehaus.groovy.binding;
 
 import groovy.lang.MissingMethodException;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
@@ -31,6 +32,7 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
 
     Object bean;
     String propertyName;
+    boolean nonChangeCheck;
 
     public PropertyBinding(Object bean, String propertyName) {
         this.bean = bean;
@@ -38,7 +40,21 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
     }
 
     public void updateTargetValue(Object newValue) {
+        if (nonChangeCheck) {
+            if (DefaultTypeTransformation.compareEqual(getSourceValue(), newValue)) {
+                // not a change, don't fire it
+                return;
+            }
+        }
         InvokerHelper.setProperty(bean, propertyName, newValue);
+    }
+
+    public boolean isNonChangeCheck() {
+        return nonChangeCheck;
+    }
+
+    public void setNonChangeCheck(boolean nonChangeCheck) {
+        this.nonChangeCheck = nonChangeCheck;
     }
 
     public Object getSourceValue() {

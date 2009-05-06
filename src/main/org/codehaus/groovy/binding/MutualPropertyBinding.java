@@ -1,5 +1,5 @@
 /*
- * Copyright 2007 the original author or authors.
+ * Copyright 2007-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,12 +15,7 @@
  */
 package org.codehaus.groovy.binding;
 
-import groovy.lang.MissingMethodException;
-import org.codehaus.groovy.runtime.InvokerHelper;
-
-import java.beans.PropertyChangeEvent;
-import java.beans.PropertyChangeListener;
-
+import groovy.lang.Closure;
 
 /**
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
@@ -28,130 +23,158 @@ import java.beans.PropertyChangeListener;
  * @since Groovy 1.6
  */
 
-public class MutualPropertyBinding extends AbstractFullBinding implements PropertyChangeListener {
+public class MutualPropertyBinding implements FullBinding {
 
     boolean bound;
 
-    Object sourceBoundBean;
-    String sourceBoundProperty;
-    boolean sourceBoundToProperty;
-    Object targetBoundBean;
-    String targetBoundProperty;
-    boolean targetBoundToProperty;
+    PropertyBinding sourceBinding;
+    PropertyBinding targetBinding;
+    Closure validator;
+    Closure converter;
+    Closure reverseConverter;
 
-    MutualPropertyBinding(SourceBinding source, TargetBinding target) {
-        setSourceBinding(source);
+    Closure triggerFactory;
+
+    TriggerBinding forwardTriggerBinding;
+    FullBinding forwardBinding;
+    TriggerBinding reverseTriggerBinding;
+    FullBinding reverseBinding;
+
+    MutualPropertyBinding(TriggerBinding forwardTrigger, PropertyBinding source, PropertyBinding target, Closure triggerFactory) {
+        // order matters here!
+        this.triggerFactory = triggerFactory;
+        sourceBinding = source;
+        forwardTriggerBinding = forwardTrigger;
         setTargetBinding(target);
+        rebuildBindings();
     }
 
-    public void propertyChange(PropertyChangeEvent event) {
-        if (event.getSource() == targetBoundBean) {
-            if (sourceBoundToProperty || event.getPropertyName().equals(sourceBoundProperty)) {
-                update();
-            }
-        } else if (event.getSource() == sourceBoundBean) {
-            if (targetBoundToProperty || event.getPropertyName().equals(targetBoundProperty)) {
-                reverseUpdate();
-            }
-        }
+    public SourceBinding getSourceBinding() {
+        return sourceBinding;
+    }
+
+    public TargetBinding getTargetBinding() {
+        return targetBinding;
     }
 
     public void setSourceBinding(SourceBinding sourceBinding) {
-        if (sourceBinding instanceof PropertyBinding) {
-            if (bound && sourceBoundBean != null) {
-                unbindProperty(sourceBoundBean, sourceBoundToProperty ? sourceBoundProperty : (String) null, this);
-                sourceBoundBean = null;
-                sourceBoundProperty = null;
+        try {
+            if (sourceBinding == null) {
+                forwardTriggerBinding = null;
+            } else {
+                forwardTriggerBinding = (TriggerBinding) triggerFactory.call(sourceBinding);
             }
-            super.setSourceBinding(sourceBinding);
-            if (bound) {
-                sourceBoundBean = ((PropertyBinding)sourceBinding).bean;
-                sourceBoundProperty = bindProperty(sourceBoundBean, ((PropertyBinding)sourceBinding).propertyName, this);
-                sourceBoundToProperty = sourceBoundProperty != null;
-            }
-        } else {
-            throw new RuntimeException("Only PropertyBindings can be set in a Mutual Property Binding");
+            this.sourceBinding = (PropertyBinding) sourceBinding;
+        } catch (RuntimeException re) {
+            throw new UnsupportedOperationException("Mutual Bindings may only change source bindings to other PropertyBindings");
         }
+        rebuildBindings();
     }
 
     public void setTargetBinding(TargetBinding targetBinding) {
-        if (targetBinding instanceof PropertyBinding) {
-            if (bound && targetBoundBean != null) {
-                unbindProperty(targetBoundBean, targetBoundToProperty ? targetBoundProperty : (String) null, this);
-                targetBoundBean = null;
-                targetBoundProperty = null;
-            }
-            super.setTargetBinding(targetBinding);
-            if (bound) {
-                targetBoundBean = ((PropertyBinding)targetBinding).bean;
-                targetBoundProperty = bindProperty(targetBoundBean, ((PropertyBinding)targetBinding).propertyName, this);
-                targetBoundToProperty = targetBoundProperty != null;
-            }
-        } else if (targetBinding != null) {
-            throw new RuntimeException("Only PropertyBindings can be set in a Mutual Property Binding");
-        }
-    }
-
-    public static String bindProperty(Object bean, String propertyName, PropertyChangeListener that) {
         try {
-            InvokerHelper.invokeMethodSafe(bean, "addPropertyChangeListener", new Object[] {propertyName, that});
-            return propertyName;
-        } catch (MissingMethodException mme) {
-            try {
-                InvokerHelper.invokeMethodSafe(bean, "addPropertyChangeListener", new Object[] {that});
-                return null;
-            } catch (MissingMethodException mme2) {
-                throw new RuntimeException("Properties in beans of type " + bean.getClass().getName() + " are not observable in any capacity (no PropertyChangeListener support).");
+            if (targetBinding == null) {
+                reverseTriggerBinding = null;
+            } else {
+                reverseTriggerBinding = (TriggerBinding) triggerFactory.call(targetBinding);
             }
+            this.targetBinding = (PropertyBinding) targetBinding;
+        } catch (RuntimeException re) {
+            throw new UnsupportedOperationException("Mutual Bindings may only change target bindings to other PropertyBindings");
         }
+        rebuildBindings();
     }
 
-    public static void unbindProperty(Object bean, String propertyName, PropertyChangeListener that) {
-        if (propertyName != null) {
-            try {
-                InvokerHelper.invokeMethodSafe(bean, "removePropertyChangeListener", new Object[] {propertyName, that});
-            } catch (MissingMethodException mme) {
-                // ignore, too bad so sad they don't follow conventions, we'll just leave the listener attached
+    public void setValidator(Closure validator) {
+        this.validator = validator;
+        rebuildBindings();
+    }
+
+    public Closure getValidator() {
+        return validator;
+    }
+
+    public void setConverter(Closure converter) {
+        this.converter = converter;
+        rebuildBindings();
+    }
+
+    public Closure getConverter() {
+        return converter;
+    }
+
+    public void setReverseConverter(Closure reverseConverter) {
+       this.reverseConverter = reverseConverter;
+        rebuildBindings();
+    }
+
+    public Closure getReverseConverter() {
+        return reverseConverter;
+    }
+
+    protected void rebuildBindings() {
+        // tear stuff down, even if we are half built
+        if (bound) {
+            if (forwardBinding != null) {
+                forwardBinding.unbind();
             }
-        } else {
-            try {
-                InvokerHelper.invokeMethodSafe(bean, "removePropertyChangeListener", new Object[] {that});
-            } catch (MissingMethodException mme2) {
-                // ignore, too bad so sad they don't follow conventions, we'll just leave the listener attached
+            if (reverseBinding != null) {
+                reverseBinding.unbind();
             }
         }
+
+        // check for all pieces, if we don't have the triad quit silently
+        if (forwardTriggerBinding == null || sourceBinding == null || reverseTriggerBinding == null || targetBinding == null) {
+            return;
+        }
+
+        // build the pieces
+        forwardBinding = forwardTriggerBinding.createBinding(sourceBinding, targetBinding);
+        reverseBinding = reverseTriggerBinding.createBinding(targetBinding, sourceBinding);
+
+        // add the anciliary pieces
+        if ((converter != null) && (reverseConverter != null)) {
+            forwardBinding.setConverter(converter);
+            reverseBinding.setConverter(reverseConverter);
+        }
+        if (validator != null) {
+            forwardBinding.setValidator(validator);
+        }
+
+        // rebind if we were bound
+        if (bound) {
+            forwardBinding.bind();
+            reverseBinding.bind();
+        }
+
     }
 
     public void bind() {
         if (!bound) {
             bound = true;
-            if (sourceBinding != null) {
-                sourceBoundBean = ((PropertyBinding)sourceBinding).bean;
-                sourceBoundProperty = bindProperty(sourceBoundBean, ((PropertyBinding)sourceBinding).propertyName, this);
-                sourceBoundToProperty = sourceBoundProperty != null;
+            //guard checks
+
+            // both converter and reverseConverter must be set or not
+            if ((converter == null) != (reverseConverter == null)) {
+                throw new RuntimeException("Both converter or reverseConverter must be set or unset to bind.  Only "
+                        + ((converter != null) ? "converter": "reverseConverter") + " is set.");
+            }
+            // don't bind if we are half set up, quitly stop
+            if (forwardBinding == null || reverseBinding == null) {
+                // don't worry about the bind state, if the binding
+                // is completed we will bind in rebuild
+                return;
             }
 
-            if (targetBinding != null) {
-                targetBoundBean = ((PropertyBinding)targetBinding).bean;
-                targetBoundProperty = bindProperty(targetBoundBean, ((PropertyBinding)targetBinding).propertyName, this);
-                targetBoundToProperty = targetBoundProperty != null;
-            }
+            forwardBinding.bind();
+            reverseBinding.bind();
         }
     }
 
     public void unbind() {
         if (bound) {
-            if (sourceBoundBean != null) {
-                unbindProperty(sourceBoundBean, sourceBoundToProperty ? sourceBoundProperty : (String) null, this);
-                sourceBoundBean = null;
-                sourceBoundProperty = null;
-            }
-
-            if (targetBoundBean != null) {
-                unbindProperty(targetBoundBean, targetBoundToProperty ? targetBoundProperty : (String) null, this);
-                targetBoundBean = null;
-                targetBoundProperty = null;
-            }
+            forwardBinding.unbind();
+            reverseBinding.unbind();
             bound = false;
         }
     }
@@ -163,5 +186,12 @@ public class MutualPropertyBinding extends AbstractFullBinding implements Proper
         }
     }
 
+    public void update() {
+        forwardBinding.update();
+    }
+
+    public void reverseUpdate() {
+        reverseBinding.update();
+    }
 }
 
