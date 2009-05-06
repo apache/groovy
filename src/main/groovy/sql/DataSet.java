@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
+import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -50,9 +51,11 @@ public class DataSet extends Sql {
     private SqlOrderByVisitor sortVisitor;
     private String sql;
     private List params;
+    private Sql delegate;
 
     public DataSet(Sql sql, Class type) {
         super(sql);
+        delegate = sql;
         String table = type.getName();
         int idx = table.lastIndexOf('.');
         if (idx > 0) {
@@ -63,11 +66,13 @@ public class DataSet extends Sql {
 
     public DataSet(Sql sql, String table) {
         super(sql);
+        delegate = sql;
         this.table = table;
     }
 
     private DataSet(DataSet parent, Closure where) {
         super(parent);
+        this.delegate = parent.delegate;
         this.table = parent.table;
         this.parent = parent;
         this.where = where;
@@ -75,6 +80,7 @@ public class DataSet extends Sql {
 
     private DataSet(DataSet parent, Closure where, Closure sort) {
         super(parent);
+        this.delegate = parent.delegate;
         this.table = parent.table;
         this.parent = parent;
         this.where = where;
@@ -83,9 +89,45 @@ public class DataSet extends Sql {
 
     private DataSet(DataSet parent) {
         super(parent);
+        this.delegate = parent.delegate;
         this.table = parent.table;
         this.parent = parent;
         this.reversed = true;
+    }
+
+    @Override
+    protected Connection createConnection() throws SQLException {
+        return delegate.createConnection();
+    }
+
+    @Override
+    protected void closeResources(Connection connection, java.sql.Statement statement, ResultSet results) {
+        delegate.closeResources(connection, statement, results);
+    }
+
+    @Override
+    protected void closeResources(Connection connection, java.sql.Statement statement) {
+        delegate.closeResources(connection, statement);
+    }
+
+    @Override
+    public void cacheConnection(Closure closure) throws SQLException {
+        delegate.cacheConnection(closure);
+    }
+
+    @Override
+    public void withTransaction(Closure closure) throws SQLException {
+        delegate.withTransaction(closure);
+    }
+
+    @Override
+    public void commit() throws SQLException {
+        delegate.commit();
+    }
+
+    @Override
+    public void rollback() throws SQLException {
+        delegate.rollback();
     }
 
     public void add(Map<String, Object> map) throws SQLException {
