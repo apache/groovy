@@ -672,55 +672,196 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
       }
     }
 
+    def mutualPropertyShortWorkout = { source, sourceProperty, sourceMutators,
+        target, targetProperty, targetMutators, binding ->
+
+      sourceMutators[0]()
+      targetMutators[0]()
+
+      // test forward binding
+      assert source[sourceProperty] == target[targetProperty]
+      sourceMutators[1]()
+      assert source[sourceProperty] == target[targetProperty]
+      sourceMutators[0]()
+      assert source[sourceProperty] == target[targetProperty]
+                                                                                                                        
+      // test reverse binding
+      targetMutators[1]()
+      assert source[sourceProperty] == target[targetProperty]
+      targetMutators[0]()
+      assert source[sourceProperty] == target[targetProperty]
+    }
+
+    def mutualPropertyWorkout = { source, sourceProperty, sourceMutators,
+      target, targetProperty, targetMutators, binding ->
+
+      mutualPropertyShortWorkout(source, sourceProperty, sourceMutators,
+        target, targetProperty, targetMutators, binding)
+
+      // test rebound
+      binding.rebind()
+      targetMutators[1]()
+      assert source[sourceProperty] == target[targetProperty]
+      sourceMutators[0]()
+      assert source[sourceProperty] == target[targetProperty]
+
+      // test unbound not updating
+      binding.unbind()
+      sourceMutators[1]()
+      assert source[sourceProperty] != target[targetProperty]
+      targetMutators[1]()
+      assert source[sourceProperty] == target[targetProperty]
+      sourceMutators[0]()
+      assert source[sourceProperty] != target[targetProperty]
+
+      // test manual forward update
+      sourceMutators[0]()
+      assert source[sourceProperty] != target[targetProperty]
+      binding.update()
+      assert source[sourceProperty] == target[targetProperty]
+
+      // test manual reverse update
+      sourceMutators[1]()
+      assert source[sourceProperty] != target[targetProperty]
+      binding.reverseUpdate()
+      assert source[sourceProperty] == target[targetProperty]
+    }
+  
     public void testMutualPropertyBinding() {
       testInEDT {
-        SwingBuilder swing = new SwingBuilder()
+        ['full', 'source', 'target'].each { mode -> // contextual bind mode
+          ['prop', 'synth'].each { target -> // target binding
+            ['prop', 'synth'].each { source -> // source binding
+              println "Trying $mode binding on $source source and $target target"
 
-        swing.actions() {
-            bean(new BindableBean(), id:'cb')
-            textField(id:'txt', enabled:bind(source:cb, sourceProperty:'enabled', id:'binding', mutual:true))
+              SwingBuilder swing = new SwingBuilder()
+
+              def sProp, tProp
+              swing.actions() {
+                switch (source) {
+                  case 'prop':
+                    sProp = 'enabled'
+                    st = new BindableBean(text:'Baz')
+                    break
+                  case 'synth':
+                    sProp = 'selected'
+                    st = textField(text:'Baz')
+                    break
+                  default: fail()
+                }
+                switch (target) {
+                  case 'prop':
+                    tProp = 'enabled'
+                    tt = new BindableBean(text:'Baz')
+                    break
+                  case 'synth':
+                    tProp = 'selected'
+                    tt = textField(text:'Baz')
+                    break
+                  default: fail()
+                }
+                
+                switch (mode) {
+                  case 'full':
+                    checkBox(id:'cb1')
+                    checkBox(id:'cb2')
+                    bind(source: cb1, sourceProperty: sProp,
+                         target: cb2, targetProperty: tProp,
+                         id:'binding', mutual:'true')
+
+                    bind('text', source: st, target: tt,
+                         id:'textBinding', mutual:'true')
+
+                    break
+                  case 'source':
+                    checkBox(id:'cb2')
+                    checkBox(id:'cb1', "$sProp": bind(
+                         target: cb2, targetProperty:tProp,
+                         id:'binding', mutual:'true'))
+
+                    bean(st, text:bind(
+                         target: tt, 'text',
+                         id:'textBinding', mutual:'true'))
+                    break
+                  case 'target':
+                    checkBox(id:'cb1')
+                    checkBox(id:'cb2', "$tProp": bind(
+                         source: cb1, sourceProperty:sProp,
+                         id:'binding', mutual:'true'))
+
+                    bean(tt, text:bind(
+                         source: st, 'text',
+                         id:'textBinding', mutual:'true'))
+                  break
+                  default: fail()
+                }
+              }
+              mutualPropertyWorkout(swing.cb1, sProp, [{swing.cb1[sProp] = true}, {swing.cb1[sProp] = false}],
+                swing.cb2, tProp, [{swing.cb2[tProp] = true}, {swing.cb2[tProp] = false}],
+                swing.binding)
+
+              mutualPropertyWorkout(swing.st, 'text', [{swing.st.text = "Foo"}, {swing.st.text = "Bar"}],
+                swing.tt, 'text', [{swing.tt.text = "Foo"}, {swing.tt.text = "Bar"}],
+                swing.textBinding)
+            }
+            if (mode != 'source') {
+              println "Trying $mode binding on event source and $target target"
+
+              SwingBuilder swing = new SwingBuilder()
+
+              def tProp
+              swing.actions() {
+                st = button(actionCommand:'Baz')
+
+                switch (target) {
+                  case 'prop':
+                    tProp = 'enabled'
+                    tt = new BindableBean(text:'Baz')
+                    break
+                  case 'synth':
+                    tProp = 'selected'
+                    tt = textField(text:'Baz')
+                    break
+                  default: fail()
+                }
+                switch (mode) {
+                  case 'full':
+                    checkBox(id:'cb1')
+                    checkBox(id:'cb2')
+                    bind(source: cb1, sourceEvent: 'actionPerformed', sourceProperty: 'borderPaintedFlat',
+                         target: cb2, targetProperty: tProp,
+                         id:'binding', mutual:'true')
+
+                    bind('text', source: st, sourceEvent: 'actionPerformed', sourceProperty:'actionCommand', target: tt,
+                         id:'textBinding', mutual:'true')
+
+                    break
+                  case 'target':
+                    checkBox(id:'cb1')
+                    checkBox(id:'cb2', "$tProp": bind(  source: cb1,
+                         sourceEvent: 'actionPerformed', sourceProperty: 'borderPaintedFlat',
+                         id:'binding', mutual:'true'))
+
+                    bean(tt, text:bind(
+                         source: st, 'actionCommand', sourceEvent: 'actionPerformed',
+                         id:'textBinding', mutual:'true'))
+                  break
+                  default: fail()
+                }
+                mutualPropertyShortWorkout(swing.cb1, 'borderPaintedFlat', [{swing.cb1.borderPaintedFlat = true; swing.cb1.doClick()}, {swing.cb1.borderPaintedFlat = false; swing.cb1.doClick()}],
+                  swing.cb2, tProp, [{swing.cb2[tProp] = true}, {swing.cb2[tProp] = false}],
+                  swing.binding)
+
+                mutualPropertyShortWorkout(swing.st, 'actionCommand', [{swing.st.actionCommand = "Foo"; swing.st.doClick()}, {swing.st.actionCommand = "Bar"; swing.st.doClick()}],
+                  swing.tt, 'text', [{swing.tt.text = "Foo"}, {swing.tt.text = "Bar"}],
+                  swing.textBinding)
+              }
+            }
+          }
         }
 
-          // test gorward binding
-        assert swing.txt.enabled == swing.cb.enabled
-        swing.cb.enabled = !swing.cb.enabled
-        assert swing.txt.enabled == swing.cb.enabled
-        swing.cb.enabled = !swing.cb.enabled
-        assert swing.txt.enabled == swing.cb.enabled
+        println "finished all permutations successfully"
 
-          // test reverse binding
-        swing.txt.enabled = !swing.txt.enabled
-        assert swing.txt.enabled == swing.cb.enabled
-        swing.txt.enabled = !swing.txt.enabled
-        assert swing.txt.enabled == swing.cb.enabled
-
-        // test rebound
-        swing.binding.rebind()
-        swing.cb.enabled = !swing.cb.enabled
-        assert swing.txt.enabled == swing.cb.enabled
-        swing.txt.enabled = !swing.txt.enabled
-        assert swing.txt.enabled == swing.cb.enabled
-
-        // test unbound not updating
-        swing.binding.unbind()
-        swing.cb.enabled = !swing.cb.enabled
-        assert swing.txt.enabled != swing.cb.enabled
-        swing.txt.enabled = !swing.txt.enabled
-        assert swing.txt.enabled == swing.cb.enabled
-        swing.txt.enabled = !swing.txt.enabled
-        assert swing.txt.enabled != swing.cb.enabled
-
-        // test manual forward update
-        swing.txt.enabled = !swing.cb.enabled
-        assert swing.txt.enabled != swing.cb.enabled
-        swing.binding.update()
-        assert swing.txt.enabled == swing.cb.enabled
-
-        // test manual reverse update
-        swing.txt.enabled = !swing.cb.enabled
-        assert swing.txt.enabled != swing.cb.enabled
-        swing.binding.reverseUpdate()
-        assert swing.txt.enabled == swing.cb.enabled
       }
     }
 
@@ -781,9 +922,10 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
     }
 }
 
-class BindableBean {
-    @Bindable boolean enabled
-    @Bindable Integer value
-    @Bindable float floatValue
-    @Bindable int pvalue
+@Bindable class BindableBean {
+    boolean enabled
+    Integer value
+    float floatValue
+    int pvalue
+    String text
 }

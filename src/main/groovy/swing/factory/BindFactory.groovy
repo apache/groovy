@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2008 the original author or authors.
+ * Copyright 2007-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,38 +38,38 @@ public class BindFactory extends AbstractFactory {
         // covers JTextPane.text
         // covers JTextArea.text
         // covers JEditorPane.text
-        syntheticBindings.putAll(JTextComponentProperties.getSyntheticProperties())
+        syntheticBindings.putAll(JTextComponentProperties.syntheticProperties)
 
         // covers JCheckBox.selected
         // covers JChecBoxMenuItem.selected
         // covers JRadioButton.selected
         // covers JRadioButtonMenuItem.selected
         // covers JToggleButton.selected
-        syntheticBindings.putAll(AbstractButtonProperties.getSyntheticProperties())
+        syntheticBindings.putAll(AbstractButtonProperties.syntheticProperties)
 
         // covers JSlider.value
-        syntheticBindings.putAll(JSliderProperties.getSyntheticProperties())
+        syntheticBindings.putAll(JSliderProperties.syntheticProperties)
 
         // covers JScrollBar.value
-        syntheticBindings.putAll(JScrollBarProperties.getSyntheticProperties())
+        syntheticBindings.putAll(JScrollBarProperties.syntheticProperties)
 
         // JComboBox.elements / items
         // JComboBox.selectedElement / selectedItem
-        syntheticBindings.putAll(JComboBoxProperties.getSyntheticProperties())
+        syntheticBindings.putAll(JComboBoxProperties.syntheticProperties)
 
         // JList.elements
         // JList.selectedElement
         // JList.selectedElements
-        //syntheticBindings.putAll(JListProperties.getSyntheticProperties())
+        //syntheticBindings.putAll(JListProperties.syntheticProperties)
 
         // JSpinner.value
-        //syntheticBindings.putAll(JSpinnerProperties.getSyntheticProperties())
+        //syntheticBindings.putAll(JSpinnerProperties.syntheticProperties)
 
         // other properties handled in JSR-295
         // JTable.elements
         // JTable.selectedElement
         // JTable.selectedElements
-        syntheticBindings.putAll(JTableProperties.getSyntheticProperties());
+        syntheticBindings.putAll(JTableProperties.syntheticProperties);
 
         // JTree.root
         // JTree.selectedElement
@@ -103,15 +103,21 @@ public class BindFactory extends AbstractFactory {
 
         TargetBinding tb = null
         if (target != null) {
-            String targetProperty = (String) attributes.remove("targetProperty") ?: value
+            String targetProperty = attributes.remove("targetProperty") ?: value
             tb = new PropertyBinding(target, targetProperty)
             if (source == null) {
                 // if we have a target but no source assume the build context is the source and return
+                def result
+                if (attributes.remove("mutual")) {
+                  result = new MutualPropertyBinding(null, null, tb, this.&getTriggerBinding)
+                } else {
+                  result = tb
+                }
                 def newAttributes = [:]
                 newAttributes.putAll(attributes)
-                bindContext.put(tb, newAttributes)
+                bindContext.put(result, newAttributes)
                 attributes.clear()
-                return tb
+                return result
             }
         }
 
@@ -129,7 +135,7 @@ public class BindFactory extends AbstractFactory {
             fb = etb.createBinding(csb, tb)
         } else if (spa && !(sea && sva)) {
             // partially property driven binding
-            String property = (String) attributes.remove("sourceProperty") ?: value
+            String property = attributes.remove("sourceProperty") ?: value
             PropertyBinding pb = new PropertyBinding(source, property)
 
             TriggerBinding trigger
@@ -153,13 +159,9 @@ public class BindFactory extends AbstractFactory {
                 sb = pb
             }
 
-            if (!sea && !sva) {
-                // check for a mutual binding (bi-directional)
-                if (attributes.remove("mutual")) {
-                    fb = new MutualPropertyBinding(sb, tb)
-                } else {
-                    fb = trigger.createBinding(sb, tb)
-                }
+            // check for a mutual binding (bi-directional)
+            if (attributes.remove("mutual")) {
+                fb = new MutualPropertyBinding(trigger, sb, tb, this.&getTriggerBinding)
             } else {
                 fb = trigger.createBinding(sb, tb)
             }
@@ -254,50 +256,26 @@ public class BindFactory extends AbstractFactory {
             }
 
             FullBinding fb
-            if (value instanceof FullBinding) {
+            if (value instanceof MutualPropertyBinding) {
                 fb = (FullBinding) value
-                fb.setTargetBinding(new PropertyBinding(node, property))
+                PropertyBinding psb = new PropertyBinding(node, property)
+                if (fb.sourceBinding == null) {
+                    fb.sourceBinding = psb
+                    finishContextualBinding(fb, builder, bindAttrs, id)
+                } else if (fb.targetBinding == null) {
+                    fb.targetBinding = psb
+                }
+            } else if (value instanceof FullBinding) {
+                fb = (FullBinding) value
+                fb.targetBinding = new PropertyBinding(node, property)
             } else  if (value instanceof TargetBinding) {
                 PropertyBinding psb = new PropertyBinding(node, property)
                 fb = getTriggerBinding(psb).createBinding(psb, value)
-
-                Object bindValue = bindAttrs.remove("bind")
-                bindAttrs.each{k, v -> fb."$k" = v}
-
-                if (    (bindValue == null)
-                    || ((bindValue instanceof Boolean) && ((Boolean)bindValue).booleanValue()))
-                {
-                    fb.bind()
-                }
-                fb.update()
-
-                builder.addDisposalClosure(fb.&unbind)
-
-                // replaces ourselves in the variables
-                // id: is lost to us by now, so we just assume that any storage of us is a goner as well
-                //builder.getVariables().each{ Map.Entry me -> if (value.is(me.value)) me.setValue fb}
-                if (id) builder.setVariable(id, fb)
+                finishContextualBinding(fb, builder, bindAttrs, id)
             } else if (value instanceof ClosureTriggerBinding) {
                 PropertyBinding psb = new PropertyBinding(node, property)
                 fb = value.createBinding(value, psb);
-
-                Object o = bindAttrs.remove("bind")
-
-                if (    (o == null)
-                    || ((o instanceof Boolean) && ((Boolean)o).booleanValue()))
-                {
-                    fb.bind()
-                }
-                fb.update()
-
-                bindAttrs.each{k, v -> fb."$k" = v}
-
-                builder.addDisposalClosure(fb.&unbind)
-
-                // replaces ourselves in the variables
-                // id: is lost to us by now, so we just assume that any storage of us is a goner as well
-                //builder.getVariables().each{ Map.Entry me -> if (value.is(me.value)) me.setValue fb}
-                if (id) builder.setVariable(id, fb)
+                finishContextualBinding(fb, builder, bindAttrs, id)
             } else {
                 continue
             }
@@ -315,5 +293,23 @@ public class BindFactory extends AbstractFactory {
             iter.remove()
         }
     }
+
+  private def finishContextualBinding(FullBinding fb, FactoryBuilderSupport builder, bindAttrs, id) {
+
+    Object bindValue = bindAttrs.remove("bind")
+    bindAttrs.each {k, v -> fb."$k" = v}
+
+    if ((bindValue == null)
+            || ((bindValue instanceof Boolean) && ((Boolean) bindValue).booleanValue())) {
+      fb.bind()
+    }
+
+    builder.addDisposalClosure(fb.&unbind)
+
+    // replaces ourselves in the variables
+    // id: is lost to us by now, so we just assume that any storage of us is a goner as well
+    //builder.getVariables().each{ Map.Entry me -> if (value.is(me.value)) me.setValue fb}
+    if (id) builder.setVariable(id, fb)
+  }
 
 }
