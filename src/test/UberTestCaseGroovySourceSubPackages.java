@@ -33,7 +33,7 @@ public class UberTestCaseGroovySourceSubPackages extends TestCase {
         TestSuite suite = new TestSuite();
         String excludes = "true".equals(System.getProperty("java.awt.headless"))
                 ? EXCLUDES + ",groovy/*/**/SwingBuilderTest.groovy" : EXCLUDES;
-        suite.addTest(AllTestSuite.suite(BASE, "groovy/**/*Test.groovy", excludes));
+        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/*Test.groovy", excludes));
         return suite;
     }
 }
