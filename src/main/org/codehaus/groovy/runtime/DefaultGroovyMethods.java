@@ -3914,6 +3914,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         List answer = new ArrayList(coll.size());
         for (Iterator iter = coll.iterator(); iter.hasNext();) {
             Object item = iter.next();
+            if (item == null) continue;
             Object value;
             try {
                 value = InvokerHelper.getProperty(item, property);
