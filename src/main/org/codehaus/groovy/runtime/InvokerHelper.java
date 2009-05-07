@@ -117,9 +117,9 @@ public class InvokerHelper {
     }
 
     public static Object getAttribute(Object object, String attribute) {
-//        if (object == null) {
-//            throw new NullPointerException("Cannot get attribute: " + attribute + " on null object");
-//        }
+        if (object == null) {
+            object = NullObject.getNullObject();
+        }
 
         if (object instanceof Class) {
             return metaRegistry.getMetaClass((Class) object).getAttribute(object, attribute);
@@ -131,9 +131,9 @@ public class InvokerHelper {
     }
 
     public static void setAttribute(Object object, String attribute, Object newValue) {
-//        if (object == null) {
-//            throw new GroovyRuntimeException("Cannot set attribute on null object");
-//        }
+        if (object == null) {
+            object = NullObject.getNullObject();
+        }
 
         if (object instanceof Class) {
             metaRegistry.getMetaClass((Class) object).setAttribute(object, attribute, newValue);
@@ -145,9 +145,10 @@ public class InvokerHelper {
     }
 
     public static Object getProperty(Object object, String property) {
-//        if (object == null) {
-//            throw new NullPointerException("Cannot get property: " + property + " on null object");
-//        }
+        if (object == null) {
+            object = NullObject.getNullObject();
+        }
+        
         if (object instanceof GroovyObject) {
             GroovyObject pogo = (GroovyObject) object;
             return pogo.getProperty(property);
@@ -167,9 +168,10 @@ public class InvokerHelper {
     }
 
     public static void setProperty(Object object, String property, Object newValue) {
-//        if (object == null) {
-//            throw new GroovyRuntimeException("Cannot set property on null object");
-//        }
+        if (object == null) {
+            object = NullObject.getNullObject();
+        }
+
         if (object instanceof GroovyObject) {
             GroovyObject pogo = (GroovyObject) object;
             pogo.setProperty(property, newValue);
