@@ -113,6 +113,11 @@ public class DefaultTypeTransformation {
     }
     
     public static Number castToNumber(Object object) {
+    	// default to Number class in exception details, else use the specified Number subtype.
+    	return castToNumber(object, Number.class);
+    }
+    
+    public static Number castToNumber(Object object, Class type) {
         if (object instanceof Number)
             return (Number) object;
         if (object instanceof Character) {
@@ -124,10 +129,10 @@ public class DefaultTypeTransformation {
                 return Integer.valueOf(c.charAt(0));
             }
             else {
-                throw new GroovyCastException(c,Integer.class);
+                throw new GroovyCastException(c, type);
             }
         }
-        throw new GroovyCastException(object,Number.class);
+        throw new GroovyCastException(object, type);
     }
     
     public static boolean castToBoolean(Object object) {
@@ -253,7 +258,7 @@ public class DefaultTypeTransformation {
         } else if (type == Class.class) {
             return castToClass(object);
         } else if (Number.class.isAssignableFrom(type)) {
-            Number n = castToNumber(object);
+            Number n = castToNumber(object, type);
             if (type == Byte.class) {
                 return new Byte(n.byteValue());
             } else if (type == Character.class) {
