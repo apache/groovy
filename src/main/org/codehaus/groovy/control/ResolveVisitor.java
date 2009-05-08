@@ -195,7 +195,20 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             type.setName(name);
             if (resolve(type)) return true;
         }
+        if(resolveToInnerEnum (type)) return true;
+        
         type.setName(saved);
+        return false;
+    }
+    
+    private boolean resolveToInnerEnum (ClassNode type) {
+        // GROOVY-3483: It may be an inner enum defined by this class itself, in which case it does not need to be
+        // explicitly qualified by the currentClass name
+    	String name = type.getName();
+        if(currentClass != type && !name.contains(".") && type.getClass().equals(ClassNode.class)) {
+            type.setName(currentClass.getName() + "$" + name);
+            if (resolve(type)) return true;
+        }
         return false;
     }
 
@@ -812,6 +825,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                   t = new LowerCaseClass(name);
                 }
                 isClass = resolve(t);
+                if(!isClass) isClass = resolveToInnerEnum(t);
             }
             if (isClass) {
                 // the name is a type so remove it from the scoping
