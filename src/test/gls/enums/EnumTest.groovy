@@ -250,6 +250,26 @@ class EnumTest extends GroovyTestCase {
             assert mother.child as String == 'Franz'
         """
     }
+
+    void testInnerEnumUsedInDefiningClassWithUnqualifiedEnumNameUsed() {
+        //GROOVY-3110
+        assertScript """
+            class Class3110 {
+                enum Enum3110{FOO, BAR}
+                Enum3110 var
+                def setEnumVar() {
+                    var = Enum3110.FOO
+                }
+                def getEnumVar() {
+                    var
+                }
+            }
+            
+            def obj = new Class3110()
+            obj.setEnumVar()
+            assert obj.getEnumVar() == Class3110.Enum3110.FOO
+        """
+    }
 }
 
 enum UsCoin {
