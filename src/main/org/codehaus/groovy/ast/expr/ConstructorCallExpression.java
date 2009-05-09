@@ -28,6 +28,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 public class ConstructorCallExpression extends Expression {
 
     private final Expression arguments;
+    private boolean usesAnnonymousInnerClass;
 
     public ConstructorCallExpression(ClassNode type, Expression arguments) {
         super.setType(type);
@@ -44,8 +45,9 @@ public class ConstructorCallExpression extends Expression {
     
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression args = transformer.transform(arguments);
-        Expression ret = new ConstructorCallExpression(getType(), args);
+        ConstructorCallExpression ret = new ConstructorCallExpression(getType(), args);
         ret.setSourcePosition(this);
+        ret.setUsingAnonymousInnerClass(isUsingAnnonymousInnerClass());
         return ret;
     }
 
@@ -79,5 +81,13 @@ public class ConstructorCallExpression extends Expression {
     
     public boolean isThisCall() {
         return getType()==ClassNode.THIS;
+    }
+
+    public void setUsingAnonymousInnerClass(boolean usage) {
+        this.usesAnnonymousInnerClass=usage;
+    }
+    
+    public boolean isUsingAnnonymousInnerClass() {
+        return usesAnnonymousInnerClass;
     }
 }

@@ -24,6 +24,7 @@ package org.codehaus.groovy.ast;
 public class InnerClassNode extends ClassNode {
 
     private ClassNode outerClass;
+    private VariableScope scope;
 
     /**
      * @param name is the full name of the class
@@ -53,5 +54,13 @@ public class InnerClassNode extends ClassNode {
      */
     public FieldNode getOuterField(String name) {
         return outerClass.getDeclaredField(name);
+    }
+    
+    public VariableScope getVariableScope() {
+        return scope;        
+    }
+    
+    public void setVariableScope(VariableScope scope) {
+        this.scope = scope;
     }
 }

@@ -148,200 +148,207 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         final String classInternalName = BytecodeHelper.getClassInternalName(node);
 
-        String _staticClassInfoFieldName = "$staticClassInfo";
-        while (node.getDeclaredField(_staticClassInfoFieldName) != null)
-          _staticClassInfoFieldName = _staticClassInfoFieldName + "$";
-        final String staticMetaClassFieldName = _staticClassInfoFieldName;
-
-        FieldNode staticMetaClassField = node.addField(staticMetaClassFieldName, ACC_PRIVATE|ACC_STATIC|ACC_SYNTHETIC, ClassHelper.make(ClassInfo.class,false), null);
-        staticMetaClassField.setSynthetic(true);
-
-        node.addSyntheticMethod(
-            "$getStaticMetaClass",
-            ACC_PROTECTED,
-            ClassHelper.make(MetaClass.class),
-            Parameter.EMPTY_ARRAY,
-            ClassNode.EMPTY_ARRAY,
-            new BytecodeSequence(new BytecodeInstruction(){
-            public void visit(MethodVisitor mv) {
-                mv.visitFieldInsn(GETSTATIC, classInternalName, staticMetaClassFieldName, "Lorg/codehaus/groovy/reflection/ClassInfo;");
-                mv.visitVarInsn(ASTORE, 1);
-                mv.visitVarInsn(ALOAD, 1);
-                Label l0 = new Label();
-                mv.visitJumpInsn(IFNONNULL, l0);
-
-                mv.visitVarInsn(ALOAD, 0);
-                mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;");
-                mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/reflection/ClassInfo", "getClassInfo", "(Ljava/lang/Class;)Lorg/codehaus/groovy/reflection/ClassInfo;");
-                mv.visitInsn(DUP);
-                mv.visitVarInsn(ASTORE, 1);
-                mv.visitFieldInsn(PUTSTATIC, classInternalName, staticMetaClassFieldName, "Lorg/codehaus/groovy/reflection/ClassInfo;");
-
-                mv.visitLabel(l0);
-
-                mv.visitVarInsn(ALOAD, 1);
-                mv.visitMethodInsn(INVOKEVIRTUAL, "org/codehaus/groovy/reflection/ClassInfo", "getMetaClass", "()Lgroovy/lang/MetaClass;");
-                mv.visitInsn(ARETURN);
-
-            }
-        })
-        );
+        addStaticMetaClassField(node,classInternalName);
 
         boolean knownSpecialCase =
                 node.isDerivedFrom(ClassHelper.GSTRING_TYPE)
                         || node.isDerivedFrom(ClassHelper.make(GroovyObjectSupport.class))
                         || node.implementsInterface(ClassHelper.METACLASS_TYPE);
 
-        if (!knownSpecialCase) {
+        if (!knownSpecialCase) addGroovyObjectInterfaceAndMethods(node,classInternalName);
 
-            if (!node.isDerivedFromGroovyObject()) node.addInterface(ClassHelper.make(GroovyObject.class));
-            FieldNode metaClassField = getMetaClassField(node);
+        addDefaultConstructor(node);
 
-            if (!node.hasMethod("getMetaClass", Parameter.EMPTY_ARRAY)) {
-                metaClassField = setMetaClassFieldIfNotExists(node, metaClassField);
-                node.addSyntheticMethod(
-                        "getMetaClass",
-                        ACC_PUBLIC | ACC_SYNTHETIC,
-                        ClassHelper.METACLASS_TYPE,
-                        Parameter.EMPTY_ARRAY,
-                        ClassNode.EMPTY_ARRAY,
-                        new BytecodeSequence(new BytecodeInstruction() {
-                    public void visit(MethodVisitor mv) {
-                        Label nullLabel = new Label();
-
-                        mv.visitVarInsn(ALOAD, 0);
-                        mv.visitFieldInsn(GETFIELD, classInternalName, "metaClass", "Lgroovy/lang/MetaClass;");
-                        mv.visitInsn(DUP);
-                        mv.visitJumpInsn(IFNULL, nullLabel);
-                        mv.visitInsn(ARETURN);
-
-                        mv.visitLabel(nullLabel);
-                        mv.visitInsn(POP);
-                        mv.visitVarInsn(ALOAD, 0);
-                        mv.visitInsn(DUP);
-                        mv.visitMethodInsn(INVOKEVIRTUAL, classInternalName, "$getStaticMetaClass", "()Lgroovy/lang/MetaClass;");
-                        mv.visitFieldInsn(PUTFIELD, classInternalName, "metaClass", "Lgroovy/lang/MetaClass;");
-                        mv.visitVarInsn(ALOAD, 0);
-                        mv.visitFieldInsn(GETFIELD, classInternalName, "metaClass", "Lgroovy/lang/MetaClass;");
-                        mv.visitInsn(ARETURN);
-                    }
-                })
-                );
-            }
-
-            Parameter[] parameters = new Parameter[] { new Parameter(ClassHelper.METACLASS_TYPE, "mc") };
-            if (!node.hasMethod("setMetaClass", parameters)) {
-                metaClassField=setMetaClassFieldIfNotExists(node,metaClassField);
-                Statement setMetaClassCode;                
-                if (Modifier.isFinal(metaClassField.getModifiers())) {
-                    ConstantExpression text = new ConstantExpression("cannot set read-only meta class");
-                    ConstructorCallExpression cce = new ConstructorCallExpression(ClassHelper.make(IllegalArgumentException.class), text);
-                    setMetaClassCode = new ExpressionStatement(cce);
-                } else {
-                    List list = new ArrayList();
-                    list.add (new BytecodeInstruction() {
-                        public void visit(MethodVisitor mv) {
-                            mv.visitVarInsn(ALOAD, 0);
-                            mv.visitVarInsn(ALOAD, 1);
-                            mv.visitFieldInsn(PUTFIELD, classInternalName, "metaClass", "Lgroovy/lang/MetaClass;");
-                            mv.visitInsn(RETURN);
-                        }
-                    });
-                    setMetaClassCode = new BytecodeSequence(list);
-                }
-                
-                node.addSyntheticMethod(
-                        "setMetaClass",
-                        ACC_PUBLIC,
-                        ClassHelper.VOID_TYPE,
-                        SET_METACLASS_PARAMS,
-                        ClassNode.EMPTY_ARRAY,
-                        setMetaClassCode
-                );
-            }
-
-            if (!node.hasMethod("invokeMethod",INVOKE_METHOD_PARAMS)) {
-                VariableExpression vMethods = new VariableExpression("method");
-                VariableExpression vArguments = new VariableExpression("arguments");
-                VariableScope blockScope = new VariableScope();
-                blockScope.putReferencedLocalVariable(vMethods);
-                blockScope.putReferencedLocalVariable(vArguments);
-                node.addSyntheticMethod(
-                        "invokeMethod",
-                        ACC_PUBLIC,
-                        ClassHelper.OBJECT_TYPE, INVOKE_METHOD_PARAMS,
-                        ClassNode.EMPTY_ARRAY,
-                        new BytecodeSequence(new BytecodeInstruction() {
-                    public void visit(MethodVisitor mv) {
-                        mv.visitVarInsn(ALOAD, 0);
-                        mv.visitMethodInsn(INVOKEVIRTUAL, classInternalName, "getMetaClass", "()Lgroovy/lang/MetaClass;");
-                        mv.visitVarInsn(ALOAD, 0);
-                        mv.visitVarInsn(ALOAD, 1);
-                        mv.visitVarInsn(ALOAD, 2);
-                        mv.visitMethodInsn(INVOKEINTERFACE, "groovy/lang/MetaClass", "invokeMethod", "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;");
-                        mv.visitInsn(ARETURN);
-                    }
-                })
-                );
-            }
-
-            if (!node.hasMethod("getProperty", GET_PROPERTY_PARAMS)) {
-                node.addSyntheticMethod(
-                        "getProperty",
-                        ACC_PUBLIC,
-                        ClassHelper.OBJECT_TYPE,
-                        GET_PROPERTY_PARAMS,
-                        ClassNode.EMPTY_ARRAY,
-                        new BytecodeSequence(new BytecodeInstruction() {
-                    public void visit(MethodVisitor mv) {
-                        mv.visitVarInsn(ALOAD, 0);
-                        mv.visitMethodInsn(INVOKEVIRTUAL, classInternalName, "getMetaClass", "()Lgroovy/lang/MetaClass;");
-                        mv.visitVarInsn(ALOAD, 0);
-                        mv.visitVarInsn(ALOAD, 1);
-                        mv.visitMethodInsn(INVOKEINTERFACE, "groovy/lang/MetaClass", "getProperty", "(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;");
-                        mv.visitInsn(ARETURN);
-                    }
-                })
-                );
-            }
-
-            if (!node.hasMethod("setProperty", SET_PROPERTY_PARAMS)) {
-                node.addSyntheticMethod(
-                        "setProperty",
-                        ACC_PUBLIC,
-                        ClassHelper.VOID_TYPE,
-                        SET_PROPERTY_PARAMS,
-                        ClassNode.EMPTY_ARRAY,
-                        new BytecodeSequence(new BytecodeInstruction() {
-                    public void visit(MethodVisitor mv) {
-                        mv.visitVarInsn(ALOAD, 0);
-                        mv.visitMethodInsn(INVOKEVIRTUAL, classInternalName, "getMetaClass", "()Lgroovy/lang/MetaClass;");
-                        mv.visitVarInsn(ALOAD, 0);
-                        mv.visitVarInsn(ALOAD, 1);
-                        mv.visitVarInsn(ALOAD, 2);
-                        mv.visitMethodInsn(INVOKEINTERFACE, "groovy/lang/MetaClass", "setProperty", "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)V");
-                        mv.visitInsn(RETURN);                    }
-                })
-                );
-            }
-
-        }
-
-        if (node.getDeclaredConstructors().isEmpty()) {
-            ConstructorNode constructor = new ConstructorNode(ACC_PUBLIC, null);
-            constructor.setSynthetic(true);
-            node.addConstructor(constructor);
-        }
-
-        if (!(node instanceof InnerClassNode)) {// add a static timestamp field to the class
-            addTimeStamp(node);
-        }
+        // add a static timestamp field to the class
+        if (!(node instanceof InnerClassNode)) addTimeStamp(node);
 
         addInitialization(node);
         checkReturnInObjectInitializer(node.getObjectInitializerStatements());
         node.getObjectInitializerStatements().clear();
         addCovariantMethods(node);
         node.visitContents(this);
+    }
+
+    private void addDefaultConstructor(ClassNode node) {
+        if (!node.getDeclaredConstructors().isEmpty()) return;
+        
+        ConstructorNode constructor = new ConstructorNode(ACC_PUBLIC, null);
+        constructor.setSynthetic(true);
+        node.addConstructor(constructor);
+    }
+
+    private void addStaticMetaClassField(ClassNode node, final String classInternalName) {
+        String _staticClassInfoFieldName = "$staticClassInfo";
+        while (node.getDeclaredField(_staticClassInfoFieldName) != null)
+            _staticClassInfoFieldName = _staticClassInfoFieldName + "$";
+        final String staticMetaClassFieldName = _staticClassInfoFieldName;
+
+        FieldNode staticMetaClassField = node.addField(staticMetaClassFieldName, ACC_PRIVATE|ACC_STATIC|ACC_SYNTHETIC, ClassHelper.make(ClassInfo.class,false), null);
+        staticMetaClassField.setSynthetic(true);
+
+        node.addSyntheticMethod(
+                "$getStaticMetaClass",
+                ACC_PROTECTED,
+                ClassHelper.make(MetaClass.class),
+                Parameter.EMPTY_ARRAY,
+                ClassNode.EMPTY_ARRAY,
+                new BytecodeSequence(new BytecodeInstruction(){
+                    public void visit(MethodVisitor mv) {
+                        mv.visitFieldInsn(GETSTATIC, classInternalName, staticMetaClassFieldName, "Lorg/codehaus/groovy/reflection/ClassInfo;");
+                        mv.visitVarInsn(ASTORE, 1);
+                        mv.visitVarInsn(ALOAD, 1);
+                        Label l0 = new Label();
+                        mv.visitJumpInsn(IFNONNULL, l0);
+
+                        mv.visitVarInsn(ALOAD, 0);
+                        mv.visitMethodInsn(INVOKEVIRTUAL, "java/lang/Object", "getClass", "()Ljava/lang/Class;");
+                        mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/reflection/ClassInfo", "getClassInfo", "(Ljava/lang/Class;)Lorg/codehaus/groovy/reflection/ClassInfo;");
+                        mv.visitInsn(DUP);
+                        mv.visitVarInsn(ASTORE, 1);
+                        mv.visitFieldInsn(PUTSTATIC, classInternalName, staticMetaClassFieldName, "Lorg/codehaus/groovy/reflection/ClassInfo;");
+
+                        mv.visitLabel(l0);
+
+                        mv.visitVarInsn(ALOAD, 1);
+                        mv.visitMethodInsn(INVOKEVIRTUAL, "org/codehaus/groovy/reflection/ClassInfo", "getMetaClass", "()Lgroovy/lang/MetaClass;");
+                        mv.visitInsn(ARETURN);
+
+                    }
+                })
+        );        
+    }
+
+    private void addGroovyObjectInterfaceAndMethods(ClassNode node, final String classInternalName) {
+        if (!node.isDerivedFromGroovyObject()) node.addInterface(ClassHelper.make(GroovyObject.class));
+        FieldNode metaClassField = getMetaClassField(node);
+
+        if (!node.hasMethod("getMetaClass", Parameter.EMPTY_ARRAY)) {
+            metaClassField = setMetaClassFieldIfNotExists(node, metaClassField);
+            node.addSyntheticMethod(
+                    "getMetaClass",
+                    ACC_PUBLIC | ACC_SYNTHETIC,
+                    ClassHelper.METACLASS_TYPE,
+                    Parameter.EMPTY_ARRAY,
+                    ClassNode.EMPTY_ARRAY,
+                    new BytecodeSequence(new BytecodeInstruction() {
+                public void visit(MethodVisitor mv) {
+                    Label nullLabel = new Label();
+
+                    mv.visitVarInsn(ALOAD, 0);
+                    mv.visitFieldInsn(GETFIELD, classInternalName, "metaClass", "Lgroovy/lang/MetaClass;");
+                    mv.visitInsn(DUP);
+                    mv.visitJumpInsn(IFNULL, nullLabel);
+                    mv.visitInsn(ARETURN);
+
+                    mv.visitLabel(nullLabel);
+                    mv.visitInsn(POP);
+                    mv.visitVarInsn(ALOAD, 0);
+                    mv.visitInsn(DUP);
+                    mv.visitMethodInsn(INVOKEVIRTUAL, classInternalName, "$getStaticMetaClass", "()Lgroovy/lang/MetaClass;");
+                    mv.visitFieldInsn(PUTFIELD, classInternalName, "metaClass", "Lgroovy/lang/MetaClass;");
+                    mv.visitVarInsn(ALOAD, 0);
+                    mv.visitFieldInsn(GETFIELD, classInternalName, "metaClass", "Lgroovy/lang/MetaClass;");
+                    mv.visitInsn(ARETURN);
+                }
+            })
+            );
+        }
+
+        Parameter[] parameters = new Parameter[] { new Parameter(ClassHelper.METACLASS_TYPE, "mc") };
+        if (!node.hasMethod("setMetaClass", parameters)) {
+            metaClassField=setMetaClassFieldIfNotExists(node,metaClassField);
+            Statement setMetaClassCode;                
+            if (Modifier.isFinal(metaClassField.getModifiers())) {
+                ConstantExpression text = new ConstantExpression("cannot set read-only meta class");
+                ConstructorCallExpression cce = new ConstructorCallExpression(ClassHelper.make(IllegalArgumentException.class), text);
+                setMetaClassCode = new ExpressionStatement(cce);
+            } else {
+                List list = new ArrayList();
+                list.add (new BytecodeInstruction() {
+                    public void visit(MethodVisitor mv) {
+                        mv.visitVarInsn(ALOAD, 0);
+                        mv.visitVarInsn(ALOAD, 1);
+                        mv.visitFieldInsn(PUTFIELD, classInternalName, "metaClass", "Lgroovy/lang/MetaClass;");
+                        mv.visitInsn(RETURN);
+                    }
+                });
+                setMetaClassCode = new BytecodeSequence(list);
+            }
+            
+            node.addSyntheticMethod(
+                    "setMetaClass",
+                    ACC_PUBLIC,
+                    ClassHelper.VOID_TYPE,
+                    SET_METACLASS_PARAMS,
+                    ClassNode.EMPTY_ARRAY,
+                    setMetaClassCode
+            );
+        }
+
+        if (!node.hasMethod("invokeMethod",INVOKE_METHOD_PARAMS)) {
+            VariableExpression vMethods = new VariableExpression("method");
+            VariableExpression vArguments = new VariableExpression("arguments");
+            VariableScope blockScope = new VariableScope();
+            blockScope.putReferencedLocalVariable(vMethods);
+            blockScope.putReferencedLocalVariable(vArguments);
+            node.addSyntheticMethod(
+                    "invokeMethod",
+                    ACC_PUBLIC,
+                    ClassHelper.OBJECT_TYPE, INVOKE_METHOD_PARAMS,
+                    ClassNode.EMPTY_ARRAY,
+                    new BytecodeSequence(new BytecodeInstruction() {
+                public void visit(MethodVisitor mv) {
+                    mv.visitVarInsn(ALOAD, 0);
+                    mv.visitMethodInsn(INVOKEVIRTUAL, classInternalName, "getMetaClass", "()Lgroovy/lang/MetaClass;");
+                    mv.visitVarInsn(ALOAD, 0);
+                    mv.visitVarInsn(ALOAD, 1);
+                    mv.visitVarInsn(ALOAD, 2);
+                    mv.visitMethodInsn(INVOKEINTERFACE, "groovy/lang/MetaClass", "invokeMethod", "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;");
+                    mv.visitInsn(ARETURN);
+                }
+            })
+            );
+        }
+
+        if (!node.hasMethod("getProperty", GET_PROPERTY_PARAMS)) {
+            node.addSyntheticMethod(
+                    "getProperty",
+                    ACC_PUBLIC,
+                    ClassHelper.OBJECT_TYPE,
+                    GET_PROPERTY_PARAMS,
+                    ClassNode.EMPTY_ARRAY,
+                    new BytecodeSequence(new BytecodeInstruction() {
+                public void visit(MethodVisitor mv) {
+                    mv.visitVarInsn(ALOAD, 0);
+                    mv.visitMethodInsn(INVOKEVIRTUAL, classInternalName, "getMetaClass", "()Lgroovy/lang/MetaClass;");
+                    mv.visitVarInsn(ALOAD, 0);
+                    mv.visitVarInsn(ALOAD, 1);
+                    mv.visitMethodInsn(INVOKEINTERFACE, "groovy/lang/MetaClass", "getProperty", "(Ljava/lang/Object;Ljava/lang/String;)Ljava/lang/Object;");
+                    mv.visitInsn(ARETURN);
+                }
+            })
+            );
+        }
+
+        if (!node.hasMethod("setProperty", SET_PROPERTY_PARAMS)) {
+            node.addSyntheticMethod(
+                    "setProperty",
+                    ACC_PUBLIC,
+                    ClassHelper.VOID_TYPE,
+                    SET_PROPERTY_PARAMS,
+                    ClassNode.EMPTY_ARRAY,
+                    new BytecodeSequence(new BytecodeInstruction() {
+                public void visit(MethodVisitor mv) {
+                    mv.visitVarInsn(ALOAD, 0);
+                    mv.visitMethodInsn(INVOKEVIRTUAL, classInternalName, "getMetaClass", "()Lgroovy/lang/MetaClass;");
+                    mv.visitVarInsn(ALOAD, 0);
+                    mv.visitVarInsn(ALOAD, 1);
+                    mv.visitVarInsn(ALOAD, 2);
+                    mv.visitMethodInsn(INVOKEINTERFACE, "groovy/lang/MetaClass", "setProperty", "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)V");
+                    mv.visitInsn(RETURN);                    }
+            })
+            );
+        }
     }
 
     protected void addTimeStamp(ClassNode node) {

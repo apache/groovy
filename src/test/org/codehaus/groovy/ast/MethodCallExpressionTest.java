@@ -30,7 +30,7 @@ public class MethodCallExpressionTest extends ASTTest {
 	private ClassCodeVisitorSupport MethodCallVisitor = new ClassCodeVisitorSupport() {
 		
 		public void visitMethodCallExpression(MethodCallExpression methodCall) {
-			if (!defaultScriptMethods.contains(methodCall.getMethodAsString())) {
+			if (defaultScriptMethods.contains(methodCall.getMethodAsString())) {
 				visited = true;
 				isImplicitThis = methodCall.isImplicitThis();
 			}
@@ -42,8 +42,8 @@ public class MethodCallExpressionTest extends ASTTest {
 	};
 	
 	public MethodCallExpressionTest() {
-		defaultScriptMethods.add("setBinding");
-		defaultScriptMethods.add("runScript");
+		defaultScriptMethods.add("substring");
+		defaultScriptMethods.add("println");
 	}
 	
     protected void setUp() throws Exception {

@@ -28,6 +28,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 public class FieldExpression extends Expression {
 
     private final FieldNode field;
+    private boolean useRef;
     
     public FieldExpression(FieldNode field) {
         this.field = field;
@@ -64,5 +65,13 @@ public class FieldExpression extends Expression {
     
     public ClassNode getType() {
         return field.getType();
+    }
+    
+    public void setUseReferenceDirectly(boolean useRef) {
+        this.useRef = useRef;        
+    }
+    
+    public boolean isUseReferenceDirectly() {
+        return useRef;
     }
 }

@@ -56,6 +56,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
     private boolean createClassForStatements = true;
     private transient SourceUnit context;
     private boolean importsResolved = false;
+    private ClassNode scriptDummy;
     private static final String[] EMPTY_STRING_ARRAY = new String[] { /* class names, not qualified */ };
 
 
@@ -181,7 +182,9 @@ public class ModuleNode extends ASTNode implements Opcodes {
         this.unit = unit;
     }
 
-    protected ClassNode createStatementsClass() {
+    public ClassNode getScriptClassDummy() {
+        if (scriptDummy!=null) return scriptDummy;
+        
         String name = getPackageName();
         if (name == null) {
             name = "";
@@ -204,7 +207,14 @@ public class ModuleNode extends ASTNode implements Opcodes {
         ClassNode classNode = new ClassNode(name, ACC_PUBLIC, baseClass);
         classNode.setScript(true);
         classNode.setScriptBody(true);
-
+        
+        scriptDummy = classNode;
+        return classNode;
+    }
+    
+    protected ClassNode createStatementsClass() {
+        ClassNode classNode = getScriptClassDummy();
+        
         // return new Foo(new ShellContext(args)).run()
         classNode.addMethod(
             new MethodNode(

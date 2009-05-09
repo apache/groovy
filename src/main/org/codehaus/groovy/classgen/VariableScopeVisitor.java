@@ -505,6 +505,18 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         isSpecialConstructorCall = call.isSpecialCall();
         super.visitConstructorCallExpression(call);
         isSpecialConstructorCall = false;
+        if (!call.isUsingAnnonymousInnerClass()) return;
+        
+        pushState();
+        InnerClassNode innerClass = (InnerClassNode) call.getType();
+        innerClass.setVariableScope(currentScope);
+        for (MethodNode method : innerClass.getMethods()) {
+            Parameter[] parameters = method.getParameters();
+            if (parameters.length==0) parameters=null; // null means no implicit "it"
+            ClosureExpression cl = new ClosureExpression(parameters,method.getCode());
+            visitClosureExpression(cl);
+        }
+        popState();
     }
 
     public void visitProperty(PropertyNode node) {

@@ -2984,12 +2984,11 @@ newExpression {Token first = LT(1);}
 
             (
                 options { greedy=true; }:
-                apb1:appendedBlock[#mca]!
-                { #mca = #apb1; }
+                cb:classBlock
             )?
 
             {#mca = #mca.getFirstChild();
-            #newExpression = #(create(LITERAL_new,"new",first,LT(1)),#ta,#t,#mca);}
+            #newExpression = #(create(LITERAL_new,"new",first,LT(1)),#ta,#t,#mca,#cb);}
 
         //|
         //from blackrag: new Object.f{} matches this part here

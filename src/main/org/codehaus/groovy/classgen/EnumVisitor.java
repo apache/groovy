@@ -38,16 +38,12 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
     }    
     
     public void visitClass(ClassNode node) {
-        if (!isEnum(node)) return;
+        if (!node.isEnum()) return;
         completeEnum(node);
     }
 
     protected SourceUnit getSourceUnit() {
         return sourceUnit;
-    }
-    
-    private boolean isEnum(ClassNode node) {
-       return (node.getModifiers()&Opcodes.ACC_ENUM) != 0;
     }
 
     private void completeEnum(final ClassNode enumClass) {

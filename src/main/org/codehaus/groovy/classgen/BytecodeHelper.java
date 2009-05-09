@@ -462,12 +462,33 @@ public class BytecodeHelper implements Opcodes {
      * load the value of the variable on the operand stack. unbox it if it's a reference
      *
      * @param variable
+     * @deprecated use loadVar(Variable,boolean) instead
      */
     public void loadVar(Variable variable) {
         int index = variable.getIndex();
         if (variable.isHolder()) {
             mv.visitVarInsn(ALOAD, index);
             mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "get", "()Ljava/lang/Object;");
+        } else {
+            load(variable);
+            if (variable != Variable.THIS_VARIABLE && variable != Variable.SUPER_VARIABLE) {
+                box(variable.getType());
+            }
+        }
+    }
+    
+    /**
+     * load the value of the variable on the operand stack. unbox it if it's a reference
+     *
+     * @param variable
+     */
+    public void loadVar(Variable variable, boolean useReferenceDirectly) {
+        int index = variable.getIndex();
+        if (variable.isHolder()) {
+            mv.visitVarInsn(ALOAD, index);
+            if (!useReferenceDirectly) {
+                mv.visitMethodInsn(INVOKEVIRTUAL, "groovy/lang/Reference", "get", "()Ljava/lang/Object;");
+            }
         } else {
             load(variable);
             if (variable != Variable.THIS_VARIABLE && variable != Variable.SUPER_VARIABLE) {

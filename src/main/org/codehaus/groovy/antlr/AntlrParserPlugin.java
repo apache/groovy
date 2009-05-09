@@ -50,10 +50,19 @@ import java.util.List;
  */
 public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, GroovyTokenTypes {
 
+    private static class AnonymousInnerClassCarrier extends Expression {
+        ClassNode innerClass;
+
+        public Expression transformExpression(ExpressionTransformer transformer) {
+            return null;
+        }        
+    }
+    
     protected AST ast;
     private ClassNode classNode;
     private String[] tokenNames;
-
+    private int innerClassCounter = 1;
+    
     public /*final*/ Reduction parseCST(final SourceUnit sourceUnit, Reader reader) throws CompilationFailedException {
         final SourceBuffer sourceBuffer = new SourceBuffer();
         transformCSTIntoAST(sourceUnit, reader, sourceBuffer);
@@ -354,6 +363,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
     
     protected void interfaceDef(AST classDef) {
+        int oldInnerClassCounter = innerClassCounter;
         List annotations = new ArrayList();
         AST node = classDef.getFirstChild();
         int modifiers = Opcodes.ACC_PUBLIC;
@@ -389,13 +399,38 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         objectBlock(node);
         output.addClass(classNode);
         classNode = null;
+        innerClassCounter = oldInnerClassCounter;
     }
     
     protected void classDef(AST classDef) {
+        int oldInnerClassCounter = innerClassCounter;
         innerClassDef(classDef);
         classNode = null;
+        innerClassCounter = oldInnerClassCounter;
+    }
+    
+    private ClassNode getClassOrScript(ClassNode node) {
+        if (node!=null) return node;
+        return output.getScriptClassDummy();
     }
 
+    protected Expression anonymousInnerClassDef(AST node) {
+        ClassNode oldNode = classNode;
+        ClassNode outerClass = getClassOrScript(oldNode);        
+        String fullName = outerClass.getName()+'$'+innerClassCounter;
+        innerClassCounter++;
+        classNode = new InnerClassNode(outerClass, fullName, Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
+
+        assertNodeType(OBJBLOCK, node);
+        objectBlock(node);
+        output.addClass(classNode);
+        AnonymousInnerClassCarrier ret = new AnonymousInnerClassCarrier();
+        ret.innerClass = classNode;
+        classNode = oldNode;
+        
+        return ret;
+    }
+    
     protected void innerClassDef(AST classDef) {
         List annotations = new ArrayList();
         AST node = classDef.getFirstChild();
@@ -441,10 +476,14 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         classNode.setGenericsTypes(genericsType);
         configureAST(classNode, classDef);
 
+        int oldClassCount = innerClassCounter;
+        
         assertNodeType(OBJBLOCK, node);
         objectBlock(node);
         output.addClass(classNode);
+        
         classNode = outerClass;
+        innerClassCounter = oldClassCount;
     }
 
     protected void objectBlock(AST objectBlock) {
@@ -1737,6 +1776,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
             case LBRACK: case LPAREN:
                 return tupleExpression(node);
+                
+            case OBJBLOCK:
+                return anonymousInnerClassDef(node);
 
             default:
                 unknownAST(node);
@@ -2219,11 +2261,34 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             return arrayExpression;
         }
         Expression arguments = arguments(elist);
-        ConstructorCallExpression expression = new ConstructorCallExpression(type, arguments);
-        configureAST(expression, constructorCallNode);
-        return expression;
+        ClassNode innerClass = getAnonymousInnerClassNode(arguments);
+        ConstructorCallExpression ret = new ConstructorCallExpression(type, arguments); 
+        if (innerClass!=null) {
+            ret.setType(innerClass);
+            ret.setUsingAnonymousInnerClass(true);
+            innerClass.setUnresolvedSuperClass(type);
+        }
+
+        configureAST(ret, constructorCallNode);
+        return ret;
     }
     
+    private ClassNode getAnonymousInnerClassNode(Expression arguments) {
+        if (arguments instanceof TupleExpression) {
+            TupleExpression te = (TupleExpression) arguments;
+            List expressions = te.getExpressions();
+            if (expressions.size()==0) return null;
+            Expression last = (Expression) expressions.remove(expressions.size()-1);
+            if (last instanceof AnonymousInnerClassCarrier) {
+                AnonymousInnerClassCarrier carrier = (AnonymousInnerClassCarrier) last;
+                return carrier.innerClass;
+            } else {
+                expressions.add(last);
+            }
+        }
+        return null;
+    }
+
     protected List arraySizeExpression(AST node) {
         List list;
         Expression size = null;

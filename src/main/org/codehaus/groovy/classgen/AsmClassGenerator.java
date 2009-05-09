@@ -152,7 +152,7 @@ public class AsmClassGenerator extends ClassGenerator {
     private List exceptionBlocks = new ArrayList();
 
     private Set referencedClasses = new HashSet();
-    private boolean passingClosureParams;
+    private boolean passingParams;
 
     private ConstructorNode constructorNode;
     private MethodNode methodNode;
@@ -1551,9 +1551,9 @@ public class AsmClassGenerator extends ClassGenerator {
             addInnerClass(innerClass);
             innerClass.addInterface(ClassHelper.GENERATED_CLOSURE_Type);
         }
-        
+
         String innerClassinternalName = BytecodeHelper.getClassInternalName(innerClass);
-        passingClosureParams = true;
+        passingParams = true;
         List constructors = innerClass.getDeclaredConstructors();
         ConstructorNode node = (ConstructorNode) constructors.get(0);
 
@@ -1570,7 +1570,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
 
         // now let's load the various parameters we're passing
-        // we start at index 1 because the first variable we pass
+        // we start at index 2 because the first variable we pass
         // is the owner instance and at this point it is already
         // on the stack
         for (int i = 2; i < localVariableParams.length; i++) {
@@ -1606,7 +1606,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 mv.visitVarInsn(ALOAD, v.getIndex());
             }
         }
-        passingClosureParams = false;
+        passingParams = false;
 
         // we may need to pass in some other constructors
         //cv.visitMethodInsn(INVOKESPECIAL, innerClassinternalName, "<init>", prototype + ")V");
@@ -2709,7 +2709,7 @@ public class AsmClassGenerator extends ClassGenerator {
     public void storeThisInstanceField(FieldExpression expression) {
         FieldNode field = expression.getField();
 
-        boolean holder = field.isHolder() && !isInClosureConstructor();
+        boolean holder = field.isHolder() && !isInClosureConstructor() && !expression.isUseReferenceDirectly();
         ClassNode type = field.getType();
 
         String ownerName = (field.getOwner().equals(classNode)) ?
@@ -2836,7 +2836,7 @@ public class AsmClassGenerator extends ClassGenerator {
         if (variable == null) {
             processClassVariable(variableName);
         } else {
-            processStackVariable(variable);
+            processStackVariable(variable,expression.isUseReferenceDirectly());
         }
     }
 
@@ -2852,11 +2852,11 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    protected void processStackVariable(Variable variable) {
+    protected void processStackVariable(Variable variable, boolean useReferenceDirectly) {
         if (leftHandExpression) {
             helper.storeVar(variable);
         } else {
-            helper.loadVar(variable);
+            helper.loadVar(variable,useReferenceDirectly);
         }
         if (ASM_DEBUG) {
             helper.mark("var: " + variable.getName());
@@ -2864,7 +2864,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected void processClassVariable(String name) {
-        if (passingClosureParams && isInScriptBody()) {
+        if (passingParams && isInScriptBody()) {
             // let's create a ScriptReference to pass into the closure
             mv.visitTypeInsn(NEW, "org/codehaus/groovy/runtime/ScriptReference");
             mv.visitInsn(DUP);

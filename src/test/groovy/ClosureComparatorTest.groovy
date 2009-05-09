@@ -57,9 +57,9 @@ package groovy
 
   public void testClosureComparatorForGroovyObjects() {
 
-    def comparator = new ClosureComparator() { one, another ->
+    def comparator = new ClosureComparator({ one, another ->
       one.greaterThan(another)
-    }
+    })
 
     def one = new ComparableFoo(5)
     def another = new ComparableFoo(-5)
@@ -72,9 +72,9 @@ package groovy
 
   public void testClosureComparatorForNumericTypes() {
 
-    def comparator = new ClosureComparator() { one, another ->
+    def comparator = new ClosureComparator({ one, another ->
       one - another
-    }
+    })
 
     assertEquals(1, comparator.compare(Integer.MAX_VALUE, Integer.MAX_VALUE-1))
     assertEquals(0, comparator.compare(Double.MIN_VALUE, Double.MIN_VALUE))

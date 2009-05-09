@@ -168,6 +168,14 @@ public class CompilationUnit extends ProcessingUnit {
         }, Phases.CONVERSION);
         addPhaseOperation(resolve, Phases.SEMANTIC_ANALYSIS);
         addPhaseOperation(staticImport, Phases.SEMANTIC_ANALYSIS);
+        addPhaseOperation(new PrimaryClassNodeOperation() {
+            @Override
+            public void call(SourceUnit source, GeneratorContext context,
+                             ClassNode classNode) throws CompilationFailedException {
+                InnerClassVisitor iv = new InnerClassVisitor(CompilationUnit.this,source);
+                iv.visitClass(classNode);
+            }
+        }, Phases.SEMANTIC_ANALYSIS);
         addPhaseOperation(compileCompleteCheck, Phases.CANONICALIZATION);
         addPhaseOperation(classgen, Phases.CLASS_GENERATION);
         addPhaseOperation(output);

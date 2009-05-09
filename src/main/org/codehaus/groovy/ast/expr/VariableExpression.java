@@ -38,6 +38,7 @@ public class VariableExpression extends Expression implements Variable {
     private boolean isDynamicTyped=false;
     private Variable accessedVariable;
     boolean closureShare=false;
+    boolean useRef=false;
     private ClassNode originType;
 
     public Variable getAccessedVariable() {
@@ -116,6 +117,14 @@ public class VariableExpression extends Expression implements Variable {
     
     public void setClosureSharedVariable(boolean inClosure) {
         closureShare = inClosure;        
+    }
+    
+    public void setUseReferenceDirectly(boolean useRef) {
+        this.useRef = useRef;        
+    }
+    
+    public boolean isUseReferenceDirectly() {
+        return useRef;
     }
     
     public ClassNode getType() {
