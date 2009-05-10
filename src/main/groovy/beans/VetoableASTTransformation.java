@@ -358,7 +358,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
 
         // add method:
         // void addVetoableChangeListener(listener) {
-        //     this$vetoableChangeSupport.addVetoableChangeListner(listener)
+        //     this$vetoableChangeSupport.addVetoableChangeListener(listener)
         //  }
         declaringClass.addMethod(
                 new MethodNode(
@@ -376,7 +376,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
 
         // add method:
         // void addVetoableChangeListener(name, listener) {
-        //     this$vetoableChangeSupport.addVetoableChangeListner(name, listener)
+        //     this$vetoableChangeSupport.addVetoableChangeListener(name, listener)
         //  }
         declaringClass.addMethod(
                 new MethodNode(
@@ -449,7 +449,7 @@ public class VetoableASTTransformation extends BindableASTTransformation {
                                                         new VariableExpression("newValue")})))));
 
         // add method:
-        // VetoableChangeSupport[] getVetoableChangeListeners() {
+        // VetoableChangeListener[] getVetoableChangeListeners() {
         //   return this$vetoableChangeSupport.getVetoableChangeListeners
         // }
         declaringClass.addMethod(
@@ -465,6 +465,25 @@ public class VetoableASTTransformation extends BindableASTTransformation {
                                                 new FieldExpression(vcsField),
                                                 "getVetoableChangeListeners",
                                                 ArgumentListExpression.EMPTY_ARGUMENTS)))));
+
+        // add method:
+        // VetoableChangeListener[] getVetoableChangeListeners(String name) {
+        //   return this$vetoableChangeSupport.getVetoableChangeListeners(name)
+        // }
+        declaringClass.addMethod(
+                new MethodNode(
+                        "getVetoableChangeListeners",
+                        ACC_PUBLIC | ACC_SYNTHETIC,
+                        vclClassNode.makeArray(),
+                        new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "name")},
+                        ClassNode.EMPTY_ARRAY,
+                        new ReturnStatement(
+                                new ExpressionStatement(
+                                        new MethodCallExpression(
+                                                new FieldExpression(vcsField),
+                                                "getVetoableChangeListeners",
+                                                new ArgumentListExpression(
+                                                new Expression[]{new VariableExpression("name")}))))));
     }
 
 }

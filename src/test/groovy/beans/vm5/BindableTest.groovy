@@ -317,5 +317,29 @@ class BindableTest extends GroovySwingTestCase {
         }
     }
 
+    public void testGetPropertyChangeListeners() {
+        GroovyShell shell = new GroovyShell()
+        shell.evaluate("""
+            import groovy.beans.Bindable
+            import java.beans.PropertyChangeListener
+            import java.beans.PropertyChangeEvent
 
+            class BindableTestBean14 {
+                @Bindable String foo
+                @Bindable String bar
+            }
+
+            class FooListener implements PropertyChangeListener {
+               void propertyChange( PropertyChangeEvent e ) { }
+            }
+
+            sb = new BindableTestBean14()
+            assert !sb.propertyChangeListeners
+            listener = new FooListener()
+            sb.addPropertyChangeListener("foo",listener)
+            assert !sb.getPropertyChangeListeners("bar")
+            assert sb.getPropertyChangeListeners("foo") == [listener]
+            assert sb.propertyChangeListeners.size() == 1
+        """)
+    }
 }
