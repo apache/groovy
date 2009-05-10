@@ -46,6 +46,10 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         if (node.isEnum() || node.isInterface()) return;
         addDispatcherMethods();
         if (!(node instanceof InnerClassNode)) return;
+        if (node.getSuperClass().isInterface()) {
+            node.addInterface(node.getUnresolvedSuperClass());
+            node.setUnresolvedSuperClass(ClassHelper.OBJECT_TYPE);
+        }
         addDefaultMethods((InnerClassNode)node);
     }
     
@@ -54,7 +58,9 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         
         final String classInternalName = BytecodeHelper.getClassInternalName(node);
         final String outerClassInternalName = BytecodeHelper.getClassInternalName(node.getOuterClass());
-                
+        final String outerClassDescriptor = BytecodeHelper.getTypeDescription(node.getOuterClass());
+        final int objectDistance = getObjectDistance(node.getOuterClass());
+        
         // add method dispatcher
         Parameter[] parameters = new Parameter[] {
                 new Parameter(ClassHelper.STRING_TYPE, "name"),
@@ -74,10 +80,13 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
                 new BytecodeSequence(new BytecodeInstruction() {
                     public void visit(MethodVisitor mv) {
                         mv.visitVarInsn(ALOAD, 0);
-                        mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", "Ljava/lang/Object;");
+                        mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", outerClassDescriptor);
                         mv.visitVarInsn(ALOAD, 1);
                         mv.visitVarInsn(ALOAD, 2);
-                        mv.visitMethodInsn(INVOKESTATIC, outerClassInternalName, "this$dist$invoke", "(Ljava/lang/Object;Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;");
+                        mv.visitMethodInsn( INVOKEVIRTUAL, 
+                                            outerClassInternalName, 
+                                            "this$dist$invoke$"+objectDistance, 
+                                            "(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;");
                         mv.visitInsn(ARETURN);
                     }
                 })
@@ -92,7 +101,7 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         method = node.addSyntheticMethod(
                 "propertyMissing", 
                 Opcodes.ACC_PUBLIC, 
-                ClassHelper.OBJECT_TYPE,
+                ClassHelper.VOID_TYPE,
                 parameters, 
                 ClassNode.EMPTY_ARRAY, 
                 null
@@ -103,11 +112,14 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
                 new BytecodeSequence(new BytecodeInstruction() {
                     public void visit(MethodVisitor mv) {
                         mv.visitVarInsn(ALOAD, 0);
-                        mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", "Ljava/lang/Object;");
+                        mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", outerClassDescriptor);
                         mv.visitVarInsn(ALOAD, 1);
                         mv.visitVarInsn(ALOAD, 2);
-                        mv.visitMethodInsn(INVOKESTATIC, outerClassInternalName, "this$dist$set", "(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;");
-                        mv.visitInsn(ARETURN);
+                        mv.visitMethodInsn( INVOKEVIRTUAL, 
+                                            outerClassInternalName, 
+                                            "this$dist$set$"+objectDistance,
+                                            "(Ljava/lang/String;Ljava/lang/Object;)V");
+                        mv.visitInsn(RETURN);
                     }
                 })
         );
@@ -120,7 +132,7 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         method = node.addSyntheticMethod(
                 "propertyMissing", 
                 Opcodes.ACC_PUBLIC, 
-                ClassHelper.VOID_TYPE, 
+                ClassHelper.OBJECT_TYPE, 
                 parameters, 
                 ClassNode.EMPTY_ARRAY, 
                 null
@@ -131,10 +143,13 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
                 new BytecodeSequence(new BytecodeInstruction() {
                     public void visit(MethodVisitor mv) {
                         mv.visitVarInsn(ALOAD, 0);
-                        mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", "Ljava/lang/Object;");
+                        mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", outerClassDescriptor);
                         mv.visitVarInsn(ALOAD, 1);
-                        mv.visitMethodInsn(INVOKESTATIC, outerClassInternalName, "this$dist$get", "(Ljava/lang/Object;Ljava/lang/String;)V");
-                        mv.visitInsn(RETURN);
+                        mv.visitMethodInsn( INVOKEVIRTUAL, 
+                                            outerClassInternalName, 
+                                            "this$dist$get$"+objectDistance, 
+                                            "(Ljava/lang/String;)Ljava/lang/Object;");
+                        mv.visitInsn(ARETURN);
                     }
                 })
         );
@@ -148,10 +163,10 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         
         InnerClassNode innerClass = (InnerClassNode) call.getType();
         if (!innerClass.getDeclaredConstructors().isEmpty()) return;
-        if ((innerClass.getModifiers() & Opcodes.ACC_STATIC)!=0) return;
+        if ((innerClass.getModifiers() & ACC_STATIC)!=0) return;
         
         VariableScope scope = innerClass.getVariableScope();
-        if (scope==null || scope.getReferencedLocalVariablesCount()==0) return;
+        if (scope==null) return;
         
         // expressions = constructor call arguments
         List<Expression> expressions = ((TupleExpression) call.getArguments()).getExpressions();
@@ -186,10 +201,10 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         // this is saved in a field named this$0
         expressions.add(VariableExpression.THIS_EXPRESSION);
         pCount++;
-        Parameter thisParameter = new Parameter(classNode,"p"+pCount);
+        Parameter thisParameter = new Parameter(innerClass.getOuterClass(),"p"+pCount);
         parameters.add(thisParameter);
         int privateSynthetic = Opcodes.ACC_PRIVATE+Opcodes.ACC_SYNTHETIC;
-        FieldNode thisField = innerClass.addField("this$0", privateSynthetic, ClassHelper.OBJECT_TYPE, null);
+        FieldNode thisField = innerClass.addField("this$0", privateSynthetic, innerClass.getOuterClass(), null);
         addFieldInit(thisParameter,thisField,block,false);
 
         // for each shared variable we add a reference and save it as field
@@ -214,18 +229,19 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
     }
     
     private void addDispatcherMethods() {
+        final int objectDistance = getObjectDistance(classNode);
+        
         // since we added an anonymous inner class we should also
         // add the dispatcher methods
         
         // add method dispatcher
         Parameter[] parameters = new Parameter[] {
-                new Parameter(ClassHelper.OBJECT_TYPE, "receiver"),
                 new Parameter(ClassHelper.STRING_TYPE, "name"),
                 new Parameter(ClassHelper.OBJECT_TYPE, "args")
         };
         MethodNode method = classNode.addSyntheticMethod(
-                "this$dist$invoke", 
-                ACC_PUBLIC+ACC_BRIDGE+ACC_SYNTHETIC+ACC_STATIC, 
+                "this$dist$invoke$"+objectDistance, 
+                ACC_PUBLIC+ACC_BRIDGE+ACC_SYNTHETIC, 
                 ClassHelper.OBJECT_TYPE, 
                 parameters, 
                 ClassNode.EMPTY_ARRAY, 
@@ -237,17 +253,17 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         gStringStrings.add(new ConstantExpression(""));
         gStringStrings.add(new ConstantExpression(""));
         List gStringValues = new ArrayList();
-        gStringValues.add(new VariableExpression(parameters[1]));
+        gStringValues.add(new VariableExpression(parameters[0]));
         block.addStatement(
                 new ReturnStatement(
                         new MethodCallExpression(
-                               new VariableExpression(parameters[0]),
+                               VariableExpression.THIS_EXPRESSION,
                                new GStringExpression("$name",
                                        gStringStrings,
                                        gStringValues
                                ),
                                new ArgumentListExpression(
-                                       new SpreadExpression(new VariableExpression(parameters[2]))
+                                       new SpreadExpression(new VariableExpression(parameters[1]))
                                )
                         )
                 )
@@ -256,13 +272,12 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         
         // add property setter
         parameters = new Parameter[] {
-                new Parameter(ClassHelper.OBJECT_TYPE, "receiver"),
                 new Parameter(ClassHelper.STRING_TYPE, "name"),
                 new Parameter(ClassHelper.OBJECT_TYPE, "value")
         };
         method = classNode.addSyntheticMethod(
-                "this$dist$set", 
-                ACC_PUBLIC+ACC_BRIDGE+ACC_SYNTHETIC+ACC_STATIC, 
+                "this$dist$set$"+objectDistance, 
+                ACC_PUBLIC+ACC_BRIDGE+ACC_SYNTHETIC, 
                 ClassHelper.VOID_TYPE, 
                 parameters, 
                 ClassNode.EMPTY_ARRAY, 
@@ -274,19 +289,19 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         gStringStrings.add(new ConstantExpression(""));
         gStringStrings.add(new ConstantExpression(""));
         gStringValues = new ArrayList();
-        gStringValues.add(new VariableExpression(parameters[1]));
+        gStringValues.add(new VariableExpression(parameters[0]));
         block.addStatement(
                 new ExpressionStatement(
                         new BinaryExpression(
                                 new AttributeExpression(
-                                        new VariableExpression(parameters[0]),
+                                        VariableExpression.THIS_EXPRESSION,
                                         new GStringExpression("$name",
                                                 gStringStrings,
                                                 gStringValues
                                         )
                                 ),
                                 Token.newSymbol(Types.ASSIGN, -1, -1),
-                                new VariableExpression(parameters[2])
+                                new VariableExpression(parameters[1])
                         )
                 )
         );
@@ -294,12 +309,11 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
 
         // add property getter
         parameters = new Parameter[] {
-                new Parameter(ClassHelper.OBJECT_TYPE, "receiver"),
                 new Parameter(ClassHelper.STRING_TYPE, "name")
         };
         method = classNode.addSyntheticMethod(
-                "this$dist$get", 
-                ACC_PUBLIC+ACC_BRIDGE+ACC_SYNTHETIC+ACC_STATIC, 
+                "this$dist$get$"+objectDistance, 
+                ACC_PUBLIC+ACC_BRIDGE+ACC_SYNTHETIC, 
                 ClassHelper.OBJECT_TYPE, 
                 parameters, 
                 ClassNode.EMPTY_ARRAY, 
@@ -311,11 +325,11 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         gStringStrings.add(new ConstantExpression(""));
         gStringStrings.add(new ConstantExpression(""));
         gStringValues = new ArrayList();
-        gStringValues.add(new VariableExpression(parameters[1]));
+        gStringValues.add(new VariableExpression(parameters[0]));
         block.addStatement(
                 new ReturnStatement(
                         new AttributeExpression(
-                                new VariableExpression(parameters[0]),
+                                VariableExpression.THIS_EXPRESSION,
                                 new GStringExpression("$name",
                                         gStringStrings,
                                         gStringValues
@@ -338,6 +352,15 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
                         ve
                 )
         ));
+    }
+    
+    private int getObjectDistance(ClassNode node) {
+        int count = 1;
+        while (node!=null && node!=ClassHelper.OBJECT_TYPE) {
+            count++;
+            node = node.getSuperClass();
+        }
+        return count;
     }
     
 }

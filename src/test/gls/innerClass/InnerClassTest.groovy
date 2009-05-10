@@ -51,7 +51,7 @@ class InnerClassTest extends CompilableTestSupport {
         }
     """
   }
-  /*
+  
   void testUsageOfOuterField() {
     assertScript """
         interface Run {
@@ -73,7 +73,7 @@ class InnerClassTest extends CompilableTestSupport {
         assert foo.foo() == 2
     """
   }
-  
+  /*
   void testUsageOfOuterFieldOverriden() {
     assertScript """
         interface Run {
@@ -100,7 +100,7 @@ class InnerClassTest extends CompilableTestSupport {
         assert bar.foo() == 2
     """
   }
-  
+  */
   void testUsageOfOuterMethod() {
     assertScript """
         interface Run {
@@ -140,5 +140,5 @@ class InnerClassTest extends CompilableTestSupport {
         def bar = new Bar()
         assert bar.foo() == 1
     """
-  }*/
+  }
 } 
