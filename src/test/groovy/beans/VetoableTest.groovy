@@ -414,4 +414,30 @@ class VetoableTest extends GroovySwingTestCase {
             }
         }
     }
+
+    public void testGetVetoableChangeListeners() {
+        GroovyShell shell = new GroovyShell()
+        shell.evaluate("""
+            import groovy.beans.Vetoable
+            import java.beans.VetoableChangeListener
+            import java.beans.PropertyChangeEvent
+
+            class VetoableTestBean14 {
+                @Vetoable String foo
+                @Vetoable String bar
+            }
+
+            class FooVetoListener implements VetoableChangeListener {
+               void vetoableChange( PropertyChangeEvent e ) { }
+            }
+
+            sb = new VetoableTestBean14()
+            assert !sb.vetoableChangeListeners
+            listener = new FooVetoListener()
+            sb.addVetoableChangeListener("foo",listener)
+            assert !sb.getVetoableChangeListeners("bar")
+            assert sb.getVetoableChangeListeners("foo") == [listener]
+            assert sb.vetoableChangeListeners.size() == 1
+        """)
+    }
 }

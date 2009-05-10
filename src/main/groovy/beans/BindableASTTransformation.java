@@ -334,7 +334,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
 
         // add method:
         // void addPropertyChangeListener(listener) {
-        //     this$propertyChangeSupport.addPropertyChangeListner(listener)
+        //     this$propertyChangeSupport.addPropertyChangeListener(listener)
         //  }
         declaringClass.addMethod(
                 new MethodNode(
@@ -352,7 +352,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
 
         // add method:
         // void addPropertyChangeListener(name, listener) {
-        //     this$propertyChangeSupport.addPropertyChangeListner(name, listener)
+        //     this$propertyChangeSupport.addPropertyChangeListener(name, listener)
         //  }
         declaringClass.addMethod(
                 new MethodNode(
@@ -423,7 +423,7 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
                                                         new VariableExpression("newValue")})))));
 
         // add method:
-        // PropertyChangeSupport[] getPropertyChangeListeners() {
+        // PropertyChangeListener[] getPropertyChangeListeners() {
         //   return this$propertyChangeSupport.getPropertyChangeListeners
         // }
         declaringClass.addMethod(
@@ -439,5 +439,24 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
                                                 new FieldExpression(pcsField),
                                                 "getPropertyChangeListeners",
                                                 ArgumentListExpression.EMPTY_ARGUMENTS)))));
+
+        // add method:
+        // PropertyChangeListener[] getPropertyChangeListeners(String name) {
+        //   return this$propertyChangeSupport.getPropertyChangeListeners(name)
+        // }
+        declaringClass.addMethod(
+                new MethodNode(
+                        "getPropertyChangeListeners",
+                        ACC_PUBLIC | ACC_SYNTHETIC,
+                        pclClassNode.makeArray(),
+                        new Parameter[]{new Parameter(ClassHelper.STRING_TYPE, "name")},
+                        ClassNode.EMPTY_ARRAY,
+                        new ReturnStatement(
+                                new ExpressionStatement(
+                                        new MethodCallExpression(
+                                                new FieldExpression(pcsField),
+                                                "getPropertyChangeListeners",
+                                                new ArgumentListExpression(
+                                                new Expression[]{new VariableExpression("name")}))))));
     }
 }
