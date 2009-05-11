@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 import java.lang.reflect.Type;
 import java.lang.reflect.ParameterizedType;
 
@@ -47,6 +48,9 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
     public static final String CLASSNAME_RESOLVER_KEY = "name";
     public static final String CLASSNAME_RESOLVER_REFLECTION = "reflection";
     public static final String CLASSNAME_RESOLVER_REFLECTION_ROOT = "root";
+
+    // Regular expression pattern used to identify words ending in 'y' preceded by a consonant
+    private static final Pattern pluralIESPattern = Pattern.compile(".*[^aeiouy]y", Pattern.CASE_INSENSITIVE);
 
     private ChildPropertySetter childPropertySetter;
     private ClassNameResolver classNameResolver;
@@ -463,18 +467,23 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
      */
     public static class DefaultRelationNameResolver implements RelationNameResolver {
         /**
-         * Follow the most conventional plural in English, add 's' to childName.<br>
-         * If the property does not exist then it will return childName
-         * unchanged.
+         * Handles the common English regular plurals with the following rules.<br />
+         * <ul>
+         * <li>If childName ends in {consonant}y, replace 'y' with "ies". For example, allergy to allergies.</li>
+         * <li>Otherwise, append 's'. For example, monkey to monkeys; employee to employees.</li>
+         * </ul>
+         * If the property does not exist then it will return childName unchanged.
+         * @see http://en.wikipedia.org/wiki/English_plural
          */
         public String resolveChildRelationName( String parentName, Object parent, String childName,
                 Object child ) {
+            boolean matchesIESRule = pluralIESPattern.matcher(childName).matches();
+            String childNamePlural = matchesIESRule ? childName.substring(0, childName.length() - 1) + "ies" : childName + "s";
+
             MetaProperty metaProperty = InvokerHelper.getMetaClass( parent )
-                    .hasProperty( parent, childName + "s" );
-            if( metaProperty != null ){
-                return childName + "s";
-            }
-            return childName;
+                    .hasProperty( parent, childNamePlural );
+
+            return metaProperty != null ? childNamePlural : childName;
         }
 
         /**
