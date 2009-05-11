@@ -27,7 +27,8 @@ class GrapeIvyTest extends GroovyTestCase {
         [[groupId:'log4j', artifactId:'log4j', version:'1.1.3'],
             [groupId:'org.apache.poi', artifactId:'poi', version:'3.0.1-FINAL'],
             [groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,2.3)'],
-            [groupId:'org.apache.ivy', artifactId:'ivy', version:'2.0.0', conf:['default', 'optional']]
+            [groupId:'org.apache.ivy', artifactId:'ivy', version:'2.0.0', conf:['default', 'optional']],
+            [groupId:'net.sf.json-lib', artifactId:'json-lib', version:'2.2.3', classifier:'jdk15']
         ].each {
             Grape.resolve([autoDownload:true, classLoader:new GroovyClassLoader()], it)
         }
@@ -231,6 +232,62 @@ class GrapeIvyTest extends GroovyTestCase {
         assert testJars - jars == testJars, "assert that no test jars are present"
         assert optionalJars - jars == Collections.EMPTY_SET, "assert that all optional jars are present"
         assert jars == coreJars + optionalJars, "assert that no extraneous jars are present"
+    }
+
+    public void testClassifier() {
+        GroovyClassLoader loader = new GroovyClassLoader()
+        GroovyShell shell = new GroovyShell(loader)
+        shouldFail(CompilationFailedException) {
+            shell.evaluate("import net.sf.json.JSON; JSON")
+        }
+
+        Grape.grab(groupId:'net.sf.json-lib', artifactId:'json-lib', version:'2.2.3', classifier:'jdk15', classLoader:loader)
+
+        assert shell.evaluate("import net.sf.json.JSON; JSON").name == 'net.sf.json.JSON'
+    }
+
+    public void testClassifierWithConf() {
+        def coreJars = [
+                "json-lib-2.2.3-jdk15.jar",
+                "commons-lang-2.4.jar",
+                "commons-collections-3.2.jar",
+                "ezmorph-1.0.6.jar",
+                "commons-logging-1.1.1.jar",
+                "commons-beanutils-1.7.0.jar"
+            ] as Set
+        def optionalJars = [
+                "xercesImpl-2.6.2.jar",
+                "xmlParserAPIs-2.6.2.jar",
+                "groovy-all-1.5.7.jar",
+                "oro-2.0.8.jar",
+                "jruby-1.1.jar",
+                "junit-3.8.2.jar",
+                "ant-launcher-1.7.0.jar",
+                "xalan-2.7.0.jar",
+                "json-lib-2.2.3-jdk15.jar",
+                "ant-1.7.0.jar",
+                "xom-1.1.jar",
+                "jaxen-1.1-beta-8.jar",
+                "jdom-1.0.jar",
+                "jline-0.9.94.jar",
+                "log4j-1.2.14.jar",
+                "dom4j-1.6.1.jar"
+            ] as Set
+
+        GroovyClassLoader loader = new GroovyClassLoader()
+        Grape.grab(groupId:'net.sf.json-lib', artifactId:'json-lib', version:'2.2.3', classifier:'jdk15', classLoader:loader, preserveFiles:true)
+        def jars = loader.getURLs().collect {URL it -> it.getPath().split('/')[-1]} as Set
+        assert jars == coreJars
+
+        loader = new GroovyClassLoader()
+        Grape.grab(groupId:'net.sf.json-lib', artifactId:'json-lib', version:'2.2.3', classifier:'jdk15', conf:'optional', classLoader:loader)
+        jars = loader.getURLs().collect {URL it -> it.getPath().split('/')[-1]} as Set
+        assert jars == optionalJars
+
+        loader = new GroovyClassLoader()
+        Grape.grab(groupId:'net.sf.json-lib', artifactId:'json-lib', version:'2.2.3', classifier:'jdk15', conf:['default', 'optional'], classLoader:loader)
+        jars = loader.getURLs().collect {URL it -> it.getPath().split('/')[-1]} as Set
+        assert jars == coreJars + optionalJars
     }
 
 }

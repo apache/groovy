@@ -140,6 +140,8 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                     grabMap.put("group", ((ConstantExpression)node.getMember("group")).getValue());
                     grabMap.put("module", ((ConstantExpression)node.getMember("module")).getValue());
                     grabMap.put("version", ((ConstantExpression)node.getMember("version")).getValue());
+                    if (node.getMember("classifier") != null)
+                        grabMap.put("classifier", ((ConstantExpression)node.getMember("classifier")).getValue());
                     grabMaps.add(grabMap);
 
                     if ((node.getMember("initClass") == null)
@@ -148,11 +150,13 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                         List grabInitializers = new ArrayList();
 
 
-                        // add Grape.grab([group:group, module:module, version:version])
+                        // add Grape.grab([group:group, module:module, version:version, classifier:classifier])
                         MapExpression me = new MapExpression();
                         me.addMapEntryExpression(new ConstantExpression("group"),node.getMember("group"));
                         me.addMapEntryExpression(new ConstantExpression("module"),node.getMember("module"));
                         me.addMapEntryExpression(new ConstantExpression("version"),node.getMember("version"));
+                        if (node.getMember("classifier") != null)
+                            me.addMapEntryExpression(new ConstantExpression("classifier"),node.getMember("classifier"));
 
                         grabInitializers.add(new ExpressionStatement(
                                 new StaticMethodCallExpression(

@@ -19,7 +19,7 @@
     <chain name="downloadGrapes">
       <filesystem name="cachedGrapes">
         <ivy pattern="${user.home}/.groovy/grapes/[organisation]/[module]/ivy-[revision].xml"/>
-        <artifact pattern="${user.home}/.groovy/grapes/[organisation]/[module]/[type]s/[artifact]-[revision].[ext]"/>
+        <artifact pattern="${user.home}/.groovy/grapes/[organisation]/[module]/[type]s/[artifact]-[revision](-[classifier]).[ext]"/>
       </filesystem>
       <!-- todo add 'endorsed groovy extensions' resolver here -->
       <ibiblio name="codehaus" root="http://repository.codehaus.org/" m2compatible="true"/>
