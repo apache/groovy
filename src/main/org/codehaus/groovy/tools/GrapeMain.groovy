@@ -24,13 +24,17 @@ import org.apache.commons.cli.*
 //commands
 
 install = {arg, cmd ->
-    if (arg.size() > 4 || arg.size() < 3) {
-        println 'install requires two or three arguments, <group> <module> [<version>]'
+    if (arg.size() > 5 || arg.size() < 3) {
+        println 'install requires two to four arguments, <group> <module> [<version>] [<classifier>]'
         return
     }
     def ver = '*'
-    if (arg.size() == 4) {
+    if (arg.size() >= 4) {
         ver = arg[3]
+    }
+    def classifier = null
+    if (arg.size() >= 5) {
+        classifier = arg[4]
     }
 
     // set the instance so we can re-set the logger
@@ -38,7 +42,7 @@ install = {arg, cmd ->
     setupLogging()
 
     try {
-        Grape.grab(autoDownload: true, group: arg[1], module: arg[2], version: ver, noExceptions: true)
+        Grape.grab(autoDownload: true, group: arg[1], module: arg[2], version: ver, classifier: classifier, noExceptions: true)
     } catch (Exception e) {
         println "An error occured : $ex"
     }
@@ -219,7 +223,7 @@ grapeHelp = {
     new HelpFormatter().printHelp(
         pw,
         80,
-        "groovy [options] <command> [args]\n",
+        "grape [options] <command> [args]\n",
         "options:",
         options,
         2,

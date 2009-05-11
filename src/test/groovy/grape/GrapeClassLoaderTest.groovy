@@ -10,7 +10,8 @@ class GrapeClassLoaderTest extends GroovyTestCase {
     public GrapeClassLoaderTest() {
         // insure files are installed locally
         Grape.resolve([autoDownload:true, classLoader:new GroovyClassLoader()],
-            [groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,2.3)'])
+            [groupId:'com.jidesoft', artifactId:'jide-oss', version:'[2.2.1,2.3)'],
+            [groupId:'org.testng', artifactId:'testng', version:'5.8', classifier:'jdk15'])
     }
 
     public void testGrapes() {
@@ -246,6 +247,20 @@ public class TestAliasedAnnotation {
     }
 }""")
         assert testClass.testMethod() == 'com.jidesoft.swing.JideSplitButton'
+    }
+
+    void testClassifier() {
+        GroovyClassLoader loader = new GroovyClassLoader()
+        Class testClass = loader.parseClass("""
+import org.testng.TestNG
+
+@Grab(group = 'org.testng', module = 'testng', version = '5.8', classifier = 'jdk15')
+class TestTypeAnnotation {
+    static String testMethod() {
+        TestNG.name
+    }
+}""")
+        assert testClass.testMethod() == 'org.testng.TestNG'
     }
 
 }

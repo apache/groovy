@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
- package groovy.grape
+package groovy.grape
 
 import java.util.regex.Pattern
 import org.apache.ivy.Ivy
@@ -95,7 +95,7 @@ class GrapeIvy implements GrapeEngine {
         if(grapeConfig) {
             return new File(grapeConfig)
         }
-        else {           
+        else {
             return new File(getGrapeDir(), 'grapeConfig.xml')
         }
     }
@@ -183,8 +183,9 @@ class GrapeIvy implements GrapeEngine {
         if (conf instanceof String) {
             conf = [conf]
         }
+        def classifier = deps.classifier ?: null
 
-        return new IvyGrabRecord(mrid:mrid, conf:conf, changing:changing, transitive:transitive, force:force)
+        return new IvyGrabRecord(mrid:mrid, conf:conf, changing:changing, transitive:transitive, force:force, classifier:classifier)
     }
 
     public grab(String endorsedModule) {
@@ -235,6 +236,12 @@ class GrapeIvy implements GrapeEngine {
                     grabRecord.mrid, grabRecord.force, grabRecord.changing, grabRecord.transitive)
             def conf = grabRecord.conf ?: ['*']
             conf.each {dd.addDependencyConfiguration('default', it)}
+            if (grabRecord.classifier) {
+                DefaultDependencyArtifactDescriptor dad = new DefaultDependencyArtifactDescriptor(dd,
+                        grabRecord.mrid.name, 'jar', 'jar', null, [classifier:grabRecord.classifier])
+                conf.each { dad.addConfiguration(it)  }
+                dd.addDependencyArtifact('default', dad)
+            }
             md.addDependency(dd)
         }
 
@@ -244,7 +251,7 @@ class GrapeIvy implements GrapeEngine {
             .setOutputReport(false)\
             .setValidate(args.containsKey('validate') ? args.validate : false)
 
-        ivyInstance.getSettings().setDefaultResolver( args.autoDownload ? 'downloadGrapes' : 'cachedGrapes' ) 
+        ivyInstance.getSettings().setDefaultResolver( args.autoDownload ? 'downloadGrapes' : 'cachedGrapes' )
 
         ResolveReport report = ivyInstance.resolve(md, resolveOptions)
         if (report.hasError()) {
@@ -343,16 +350,19 @@ class GrapeIvy implements GrapeEngine {
                     version : grabbed.mrid.revision
                 ]
                 if (grabbed.conf != ['default']) {
-                    dep.conf = conf
+                    dep.conf = grabbed.conf
                 }
                 if (grabbed.changing) {
-                    dep.changing = changing
+                    dep.changing = grabbed.changing
                 }
                 if (!grabbed.transitive) {
-                    dep.transitive = transitive
+                    dep.transitive = grabbed.transitive
                 }
                 if (!grabbed.force) {
-                    dep.force = force
+                    dep.force = grabbed.force
+                }
+                if (grabbed.classifier) {
+                    dep.classifier = grabbed.classifier
                 }
                 results << dep
             }
@@ -369,12 +379,14 @@ class IvyGrabRecord {
     boolean changing
     boolean transitive
     boolean force
+    String classifier
 
     public int hashCode() {
         return (mrid.hashCode() ^ conf.hashCode()
             ^ (changing ? 0xaaaaaaaa : 0x55555555)
             ^ (transitive ? 0xbbbbbbbb : 0x66666666)
-            ^ (transitive ? 0xcccccccc: 0x77777777))
+            ^ (force ? 0xcccccccc: 0x77777777)
+            ^ (classifier ? classifier.hashCode() : 0))
     }
 
     public boolean equals(Object o) {
@@ -383,7 +395,7 @@ class IvyGrabRecord {
             && (transitive == o.transitive)
             && (force== o.force)
             && (mrid == o.mrid)
-            && (conf == o.conf))
+            && (conf == o.conf)
+            && (classifier == o.classifier))
     }
 }
-
