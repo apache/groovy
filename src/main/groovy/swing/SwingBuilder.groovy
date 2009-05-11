@@ -40,6 +40,8 @@ public class SwingBuilder extends FactoryBuilderSupport {
     public static final String DELEGATE_PROPERTY_OBJECT_ID = "_delegateProperty:id";
     public static final String DEFAULT_DELEGATE_PROPERTY_OBJECT_ID = "id";
 
+    private static final Random random = new Random()
+
     public SwingBuilder(boolean init = true) {
         super(init)
         //registerWidgets()
@@ -58,6 +60,11 @@ public class SwingBuilder extends FactoryBuilderSupport {
 
         //object id delegage, for propertyNotFound
         addAttributeDelegate(SwingBuilder.&objectIDAttributeDelegate)
+
+        addAttributeDelegate(SwingBuilder.&clientPropertyAttributeDelegate)
+        registerFactory("noparent", new CollectionFactory())
+        registerExplicitMethod("keyStrokeAction", this.&createKeyStrokeAction)
+        registerExplicitMethod("shortcut", this.&shortcut)
     }
 
     def registerBinding() {
@@ -414,5 +421,88 @@ public class SwingBuilder extends FactoryBuilderSupport {
         if (theID) {
             builder.setVariable(theID, node)
         }
+    }
+
+    public static clientPropertyAttributeDelegate(def builder, def node, def attributes) {
+        def clientPropertyMap = attributes.remove("clientProperties")
+        clientPropertyMap.each { key, value ->
+           node.putClientProperty key, value
+        }
+        attributes.findAll { it.key =~ /clientProperty(\w)/ }.each { key, value ->
+           attributes.remove(key)
+           node.putClientProperty(key - "clientProperty", value)
+        }
+    }
+
+    public void createKeyStrokeAction( Map attributes, JComponent component = null ) {
+        component = findTargetComponent(attributes, component)
+        if( !attributes.containsKey("keyStroke") ) {
+            throw new RuntimeException("You must define a value for keyStroke:")
+        }
+        if( !attributes.containsKey("action") ) {
+            throw new RuntimeException("You must define a value for action:")
+        }
+
+        def condition = attributes.remove("condition") ?: JComponent.WHEN_FOCUSED
+        if( condition instanceof String ) {
+            condition = condition.toUpperCase().replaceAll(" ","_")
+            if( !condition.startsWith("WHEN_") ) condition = "WHEN_"+condition
+        }
+        switch(condition) {
+            case JComponent.WHEN_FOCUSED:
+            case JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT:
+            case JComponent.WHEN_IN_FOCUSED_WINDOW:
+                // everything is fine, no further processing
+                break
+            case "WHEN_FOCUSED":
+                condition = JComponent.WHEN_FOCUSED
+                break
+            case "WHEN_ANCESTOR_OF_FOCUSED_COMPONENT":
+                condition = JComponent.WHEN_ANCESTOR_OF_FOCUSED_COMPONENT
+                break
+            case "WHEN_IN_FOCUSED_WINDOW":
+                condition = JComponent.WHEN_IN_FOCUSED_WINDOW
+                break
+            default:
+                // let's be lenient and asign WHEN_FOCUSED by default
+                condition = JComponent.WHEN_FOCUSED
+        }
+        def actionKey = attributes.remove("actionKey")
+        if( !actionKey ) actionKey = "Action"+Math.abs(random.nextLong())
+
+        def keyStroke = attributes.remove("keyStroke")
+        // accept String, KeyStroke, List<String>, List<KeyStroke>
+        def action = attributes.remove("action")
+
+        if( keyStroke instanceof String ) keyStroke = [keyStroke]
+        keyStroke.each { ks ->
+            switch(ks) {
+                case KeyStroke:
+                    component.getInputMap(condition).put(ks, actionKey)
+                    break
+                case String:
+                    component.getInputMap(condition).put(shortcut(ks), actionKey)
+                    break
+                default:
+                    throw new RuntimeException("Cannot apply ${ks} as a KeyStroke value.")
+            }
+        }
+        component.actionMap.put(actionKey, action)
+    }
+
+    private findTargetComponent( Map attributes, JComponent component ) {
+        if( component ) return component
+        if( attributes.containsKey("component") ) {
+            def c = attributes.remove("component")
+            if( !(c instanceof JComponent) ) {
+                throw new RuntimeException("The property component: is not of type JComponent.")
+            }
+            return c
+        }
+        def c = getCurrent()
+        if( c instanceof JComponent ) {
+            return c
+        }
+        throw new RuntimeException("You must define one of the following: a value of type JComponent, a component: attribute or nest this node inside another one that produces a JComponent.")
     }
 }

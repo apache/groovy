@@ -1860,4 +1860,65 @@ class SwingBuilderTest extends GroovySwingTestCase {
 
       }
     }
+
+    void testNoParent() {
+      testInEDT {
+        def swing = new SwingBuilder()
+        def panel = swing.panel {
+            button(id: "b1")
+            noparent {
+              button(id: "b2")
+            }
+        }
+        assert panel.componentCount == 1
+        assert swing.b1.parent == panel
+        assert !swing.b2.parent
+      }
+    }
+
+    void testClientProperties() {
+      testInEDT {
+        def swing = new SwingBuilder()
+        def button = swing.button(clientPropertyPropA: "A")
+        assert button.getClientProperty("PropA") == "A"
+
+        button = swing.button("clientPropertyPropWith.dotAnd:colon": ".&:")
+        assert button.getClientProperty("PropWith.dotAnd:colon") == ".&:"
+
+        button = swing.button(clientProperties: [prop1: "1", prop2: "2"])
+        assert button.getClientProperty("prop1") == "1"
+        assert button.getClientProperty("prop2") == "2"
+      }
+    }
+
+    void testKeyStrokeAction() {
+      testInEDT {
+        def swing = new SwingBuilder()
+
+        def noop = swing.action(name: "KeyAction", closure: {})
+
+        // component as value
+        def button = swing.button()
+        swing.keyStrokeAction(button,
+            actionKey: "asValue",
+            keyStroke: "V",
+            action: noop)
+        assert button.actionMap.get("asValue") == noop
+
+        // component as property
+        swing.keyStrokeAction(component: button,
+            actionKey: "asProperty",
+            keyStroke: "P",
+            action: noop)
+        assert button.actionMap.get("asProperty") == noop
+
+        // nested in component
+        button = swing.button {
+            keyStrokeAction(actionKey: "nested",
+               keyStroke: "N",
+               action: noop)
+        }
+        assert button.actionMap.get("nested") == noop
+      }
+    }
 }
