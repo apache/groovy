@@ -271,6 +271,20 @@ class ObjectGraphBuilderTest extends GroovyTestCase {
       assert actualCompany.drones[1].address.line1 == expectedAddress.line1
    }
 
+   void testPlural() {
+       def dracula = builder.person(name: 'Dracula') {
+           allergy(name: 'garlic', reaction: 'moderate burns')
+           allergy(name: 'cross', reaction: 'aversion')
+           allergy(name: 'wood stake', reaction: 'death')
+           allergy(name: 'sunlight', reaction: 'burst into flames')
+           petMonkey(name: 'La-la')
+           petMonkey(name: 'Ampersand')
+       }
+
+       assert dracula.allergies.size() == 4
+       assert dracula.petMonkeys.size() == 2
+   }
+
    void setUp() {
       builder = new ObjectGraphBuilder()
       builder.classNameResolver = "groovy.util"
@@ -313,4 +327,25 @@ class ReflectionCompany {
    List<Employee> drones
 
    String toString() { "Company=[name:${name}, address:${address}, director:${md}, financialController:${cio}, drones:${drones}]" }
+}
+
+class Person {
+    String name
+    List allergies = []
+    List petMonkeys = []
+
+    String toString() { "Person=[name:${name}, allergies:${allergies}, petMonkeys:${petMonkeys}]" }
+}
+
+class Allergy {
+    String name
+    String reaction
+
+    String toString() { "Allergy=[name:${name}, reaction:${reaction}]" }
+}
+
+class PetMonkey {
+    String name
+
+    String toString() { "PetMonkey=[name:${name}]" }
 }
