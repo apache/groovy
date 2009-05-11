@@ -25,6 +25,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.List;
 import java.util.ArrayList;
+import java.lang.reflect.Type;
+import java.lang.reflect.ParameterizedType;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
 
@@ -41,6 +43,10 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
     public static final String NODE_NAME = "_NODE_NAME_";
     public static final String OBJECT_ID = "_OBJECT_ID_";
     public static final String LAZY_REF = "_LAZY_REF_";
+
+    public static final String CLASSNAME_RESOLVER_KEY = "name";
+    public static final String CLASSNAME_RESOLVER_REFLECTION = "reflection";
+    public static final String CLASSNAME_RESOLVER_REFLECTION_ROOT = "root";
 
     private ChildPropertySetter childPropertySetter;
     private ClassNameResolver classNameResolver;
@@ -148,7 +154,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
     /**
      * Sets the current ClassNameResolver.<br>
      * It will assign DefaultClassNameResolver if null.<br>
-     * It accepts a ClassNameResolver instance, a String or a Closure.
+     * It accepts a ClassNameResolver instance, a String, a Closure or a Map.
      */
     public void setClassNameResolver( final Object classNameResolver ) {
         if( classNameResolver instanceof ClassNameResolver ){
@@ -156,8 +162,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
         }else if( classNameResolver instanceof String ){
             this.classNameResolver = new ClassNameResolver(){
                 public String resolveClassname( String classname ) {
-                    return classNameResolver + "." + classname.substring( 0, 1 )
-                            .toUpperCase() + classname.substring( 1 );
+                    return makeClassName((String)classNameResolver, classname);
                 }
             };
         }else if( classNameResolver instanceof Closure ){
@@ -169,7 +174,27 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
                     return (String) cls.call( new Object[] { classname } );
                 }
             };
-        }else{
+        }else if( classNameResolver instanceof Map ){
+            Map classNameResolverOptions = (Map)classNameResolver;
+
+            String resolverName = (String)classNameResolverOptions.get(CLASSNAME_RESOLVER_KEY);
+
+            if (resolverName == null) {
+                throw new RuntimeException("key '" + CLASSNAME_RESOLVER_KEY + "' not defined");
+            }
+
+            if (CLASSNAME_RESOLVER_REFLECTION.equals(resolverName)) {
+                String root = (String)classNameResolverOptions.get(CLASSNAME_RESOLVER_REFLECTION_ROOT);
+
+                if (root == null) {
+                    throw new RuntimeException("key '" + CLASSNAME_RESOLVER_REFLECTION_ROOT + "' not defined");
+                }
+                
+                this.classNameResolver = new ReflectionClassNameResolver(root);
+            } else {
+                throw new RuntimeException("unknown class name resolver " + resolverName);
+            }
+        } else{
             this.classNameResolver = new DefaultClassNameResolver();
         }
     }
@@ -355,6 +380,57 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
     }
 
     /**
+     * Build objects using reflection to resolve class names.
+     */
+    public class ReflectionClassNameResolver implements ClassNameResolver {
+        private final String root;
+
+        /**
+         * 
+         * @param root package where the graph root class is located
+         */
+        public ReflectionClassNameResolver(String root) {
+            this.root = root;
+        }
+
+        public String resolveClassname( String classname ) {
+            Object currentNode = getContext().get(CURRENT_NODE);
+
+            if (currentNode == null) {
+                return makeClassName(root, classname);
+            } else {
+                try {
+                    Class klass = currentNode.getClass().getDeclaredField(classname).getType();
+
+                    if (Collection.class.isAssignableFrom(klass)) {
+                        Type type = currentNode.getClass().getDeclaredField(classname).getGenericType();
+                        if (type instanceof ParameterizedType) {
+                            ParameterizedType ptype = (ParameterizedType)type;
+                            Type[] actualTypeArguments = ptype.getActualTypeArguments();
+                            if (actualTypeArguments.length != 1) {
+                                throw new RuntimeException("can't determine class name for collection field " + classname + " with multiple generics");
+                            }
+
+                            Type typeArgument = actualTypeArguments[0];
+                            if (typeArgument instanceof Class) {
+                                klass = (Class)actualTypeArguments[0];
+                            } else {
+                                throw new RuntimeException("can't instantiate collection field " + classname + " elements as they aren't a class" );
+                            }
+                        } else {
+                            throw new RuntimeException("collection field " + classname + " must be genericised");
+                        }
+                    }
+
+                    return klass.getName();
+                } catch (NoSuchFieldException e) {
+                    throw new RuntimeException("can't find field " + classname + " for node class " + currentNode.getClass().getName(), e);
+                }
+            }
+        }
+    }
+
+    /**
      * Default impl, always returns 'id'
      */
     public static class DefaultIdentifierResolver implements IdentifierResolver {
@@ -507,6 +583,10 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
                 metaProperty.setProperty( child, ref.parent );
             }
         }
+    }
+
+    private static String makeClassName(String root, String name) {
+        return root + "." + name.substring( 0, 1 ).toUpperCase() + name.substring( 1 );
     }
 
     private static class ObjectFactory extends AbstractFactory {
