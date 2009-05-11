@@ -38,9 +38,11 @@ import java.io.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+import java.util.Set;
 
 /**
  * A parser plugin which adapts the JSR Antlr Parser to the Groovy runtime
@@ -2336,6 +2338,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 }
                 if (!argumentList.isEmpty()) {
                     expressionList.removeAll(argumentList);
+                    checkDuplicateNamedParams(elist, expressionList);
                     MapExpression mapExpression = new MapExpression(expressionList);
                     configureAST(mapExpression, elist);
                     argumentList.add(0, mapExpression);
@@ -2344,6 +2347,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                     return argumentListExpression;
                 }
             }
+            checkDuplicateNamedParams(elist, expressionList);
             NamedArgumentListExpression namedArgumentListExpression = new NamedArgumentListExpression(expressionList);
             configureAST(namedArgumentListExpression, elist);
             return namedArgumentListExpression;
@@ -2353,6 +2357,25 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             configureAST(argumentListExpression, elist);
             return argumentListExpression;
         }
+    }
+    
+    private void checkDuplicateNamedParams(AST elist, List expressionList) {
+        if(expressionList.isEmpty()) return;
+        
+    	Set<String> namedArgumentNames = new HashSet<String>();
+    	MapEntryExpression meExp;
+    	for (Iterator iter = expressionList.iterator(); iter.hasNext();) {
+    		meExp = (MapEntryExpression) iter.next();                    		                    		
+            if(meExp.getKeyExpression() instanceof ConstantExpression) {
+            	String argName = ((ConstantExpression) meExp.getKeyExpression()).getText();
+            	if(!namedArgumentNames.contains(argName)) {
+            		namedArgumentNames.add(argName);
+            	} else {
+            		throw new ASTRuntimeException(elist, "Duplicate named parameter '" + argName
+            				+ "' found.");	
+            	}
+            }
+    	}
     }
 
     protected boolean addArgumentExpression(AST node, List expressionList) {
