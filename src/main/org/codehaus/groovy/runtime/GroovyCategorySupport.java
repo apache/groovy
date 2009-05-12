@@ -16,6 +16,7 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
+import java.lang.ref.SoftReference;
 import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ReflectionCache;
@@ -195,12 +196,12 @@ public class GroovyCategorySupport {
      * Create a scope based on given categoryClass and invoke closure within that scope.
      *
      * @param categoryClass the class containing category methods
-	 * @param closure the closure during which to make the category class methods available
+     * @param closure the closure during which to make the category class methods available
      * @return the value returned from the closure
-	 */
-	public static Object use(Class categoryClass, Closure closure) {
-       return threadInfo.get().use(categoryClass, closure);
-	}
+     */
+    public static Object use(Class categoryClass, Closure closure) {
+        return threadInfo.getInfo().use(categoryClass, closure);
+    }
 
     /**
      * Create a scope based on given categoryClasses and invoke closure within that scope.
@@ -210,11 +211,11 @@ public class GroovyCategorySupport {
      * @return the value returned from the closure
      */
     public static Object use(List<Class> categoryClasses, Closure closure) {
-        return threadInfo.get().use(categoryClasses, closure);
+        return threadInfo.getInfo().use(categoryClasses, closure);
     }
 
     public static boolean hasCategoryInCurrentThread() {
-        return categoriesInUse.get() != 0 && threadInfo.get().level != 0;
+        return categoriesInUse.get() != 0 && threadInfo.getInfo().level != 0;
     }
 
     public static boolean hasCategoryInAnyThread() {
@@ -228,16 +229,25 @@ public class GroovyCategorySupport {
      * @return the list of methods
      */
     public static CategoryMethodList getCategoryMethods(String name) {
-        return threadInfo.get().getCategoryMethods(name);
+        return threadInfo.getInfo().getCategoryMethods(name);
     }
 
-    private static class MyThreadLocal extends ThreadLocal<ThreadCategoryInfo> {
+    private static class MyThreadLocal extends ThreadLocal<SoftReference> {
 
         ConcurrentHashMap<String,AtomicInteger> usage = new ConcurrentHashMap<String,AtomicInteger> ();
 
-        protected ThreadCategoryInfo initialValue() {
-        		return new ThreadCategoryInfo();
-        	}
+        protected SoftReference initialValue() {
+            return new SoftReference(new ThreadCategoryInfo());
+        }
+
+        public ThreadCategoryInfo getInfo() {
+            ThreadCategoryInfo tcinfo = (ThreadCategoryInfo)get().get();
+            if( tcinfo == null ) {
+                tcinfo = new ThreadCategoryInfo();
+                set(new SoftReference(tcinfo));
+            }
+            return tcinfo;
+        }
 
         public AtomicInteger getUsage (String name) {
             AtomicInteger u = usage.get(name);
