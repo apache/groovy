@@ -1773,7 +1773,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a List of lists
      * @return a List of the transposed lists
-     * @see groovy.util.GroovyCollections#transpose(java.util.Collection)
+     * @see groovy.util.GroovyCollections#transpose(java.util.List)
      * @since 1.5.0
      */
     public static List transpose(List self) {
@@ -3166,7 +3166,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param replacement  the character sequence to replace the matches with
      * @return a String with replaced content
      * @since 1.5.8
-     * @see java.lang.String.replace(CharSequence, CharSequence)
+     * @see java.lang.String#replace(CharSequence, CharSequence)
      */
     public static String replace(final String self, final CharSequence target, final CharSequence replacement) {
         final String p = Pattern.quote(target.toString());
