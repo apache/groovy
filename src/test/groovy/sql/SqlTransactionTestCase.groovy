@@ -15,26 +15,34 @@
  */
 package groovy.sql
 
-import javax.sql.DataSource
 import java.sql.Connection
 import java.sql.SQLException
 
 /**
- * Test Sql transaction features
+ * Test Sql transaction features using a Sql built from a connection
  *
  * @author Paul King
  */
-class SqlTransactionTest extends GroovyTestCase {
+class SqlTransactionTestCase extends GroovyTestCase {
+
     Sql sql
-    def personFood
+    DataSet personFood
+
+    protected Sql setUpSql() {
+        throw new UnsupportedOperationException("Please provide setUpSql in derived class")
+    }
+
+    protected tryDrop(String tableName) {
+        try {
+           sql.execute("DROP TABLE $tableName".toString())
+        } catch(Exception e){ }
+    }
 
     void setUp() {
-        DataSource ds = new org.hsqldb.jdbc.jdbcDataSource()
-        ds.database = "jdbc:hsqldb:mem:foo" + getMethodName()
-        ds.user = 'sa'
-        ds.password = ''
-        Connection con = ds.connection
-        sql = new Sql(con)
+        sql = setUpSql()
+        // drop them in this order due to FK constraint
+        ["PERSON_FOOD", "PERSON"].each{ tryDrop(it) }
+
         sql.execute("CREATE TABLE person ( id INTEGER, firstname VARCHAR, lastname VARCHAR, PRIMARY KEY (id))")
         sql.execute("CREATE TABLE person_food ( personid INTEGER, food VARCHAR, FOREIGN KEY (personid) REFERENCES person(id))")
 
@@ -53,7 +61,7 @@ class SqlTransactionTest extends GroovyTestCase {
 
     void testManualTransactionSuccess() {
         assert sql.rows("SELECT * FROM PERSON_FOOD").size() == 3
-        sql.cacheConnection { connection ->
+        sql.cacheConnection { Connection connection ->
             connection.autoCommit = false
             personFood.add(personid: 3, food: "beef")
             personFood.add(personid: 4, food: "fish")
@@ -72,9 +80,9 @@ class SqlTransactionTest extends GroovyTestCase {
         assert sql.rows("SELECT * FROM PERSON_FOOD").size() == 5
     }
 
-    void testManualTransactionRollback() {
+    void testManualTransactionRollbackUsingSql() {
         assert sql.rows("SELECT * FROM PERSON_FOOD").size() == 3
-        sql.cacheConnection { connection ->
+        sql.cacheConnection { Connection connection ->
             connection.autoCommit = false
             def numAdds = 0
             try {
@@ -94,11 +102,51 @@ class SqlTransactionTest extends GroovyTestCase {
         assert sql.rows("SELECT * FROM PERSON_FOOD").size() == 3
     }
 
-    void testWithTransactionRollback() {
+    void testManualTransactionRollbackUsingDataSet() {
+        assert sql.rows("SELECT * FROM PERSON_FOOD").size() == 3
+        personFood.cacheConnection { Connection connection ->
+            connection.autoCommit = false
+            def numAdds = 0
+            try {
+                personFood.add(personid: 5, food: "veg")
+                numAdds++
+                personFood.add(personid: 99, food: "mash")
+                numAdds++      // should fail before here
+                personFood.commit()   // should never get here
+                fail("Should have thrown an exception before now")
+            } catch (SQLException se) {
+                assert numAdds == 1
+                assert se.message.contains('Integrity constraint violation')
+                personFood.rollback()
+            }
+            connection.autoCommit = true
+        }
+        assert sql.rows("SELECT * FROM PERSON_FOOD").size() == 3
+    }
+
+    void testWithTransactionRollbackUsingSql() {
         assert sql.rows("SELECT * FROM PERSON_FOOD").size() == 3
         def numAdds = 0
         try {
             sql.withTransaction { ->
+                personFood.add(personid: 5, food: "veg")
+                numAdds++
+                personFood.add(personid: 99, food: "mash") // should fail
+                numAdds++
+            }
+            fail("Should have thrown an exception before now")
+        } catch (SQLException se) {
+            assert numAdds == 1
+            assert se.message.contains('Integrity constraint violation')
+        }
+        assert sql.rows("SELECT * FROM PERSON_FOOD").size() == 3
+    }
+
+    void testWithTransactionRollbackUsingDataSet() {
+        assert sql.rows("SELECT * FROM PERSON_FOOD").size() == 3
+        def numAdds = 0
+        try {
+            personFood.withTransaction { ->
                 personFood.add(personid: 5, food: "veg")
                 numAdds++
                 personFood.add(personid: 99, food: "mash") // should fail

@@ -17,7 +17,6 @@ package groovy.sql;
 
 import groovy.lang.Closure;
 import groovy.lang.GString;
-import groovy.lang.GroovyRuntimeException;
 
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
@@ -1173,7 +1172,7 @@ public class Sql {
      */
     public void close() throws SQLException {
         if (useConnection == null) {
-            log.log(Level.FINEST, "Close operation not supported when using datasets");
+            log.log(Level.FINEST, "Close operation not supported when using datasets - attempt to close ignored");
             return;
         }
         try {
@@ -1199,7 +1198,7 @@ public class Sql {
      */
     public void commit() throws SQLException {
         if (useConnection == null) {
-            log.log(Level.FINEST, "Commit operation not supported when using datasets");
+            log.log(Level.FINEST, "Commit operation not supported when using datasets unless using withTransaction or cacheConnection - attempt to commit ignored");
             return;
         }
         try {
@@ -1220,7 +1219,7 @@ public class Sql {
      */
     public void rollback() throws SQLException {
         if (useConnection == null) {
-            log.log(Level.FINEST, "Rollback operation not supported when using datasets");
+            log.log(Level.FINEST, "Rollback operation not supported when using datasets unless using withTransaction or cacheConnection - attempt to rollback ignored");
             return;
         }
         try {
@@ -1257,7 +1256,7 @@ public class Sql {
      * closure is saved. Statements subsequent created from other methods will then be
      * configured using this closure. The statement being configured is passed into the closure
      * as its single argument, e.g.:
-     *  <pre>
+     * <pre>
      * sql.withStatement{ stmt -> stmt.maxRows == 10 }
      * def firstTenRows = sql.rows("select * from table")
      * </pre>
@@ -1525,21 +1524,22 @@ public class Sql {
      * @param statement the statement to close
      */
     protected void closeResources(Connection connection, Statement statement) {
-        if (isCacheStatements()) return;
+        if (cacheStatements) return;
         if (statement != null) {
             try {
                 statement.close();
             }
             catch (SQLException e) {
-                log.log(Level.INFO, "Caught exception closing statement: " + e, e);
+                log.log(Level.INFO, "Caught exception closing statement: " + e.getMessage() + " - continuing", e);
             }
         }
+        if (cacheConnection) return;
         if (dataSource != null) {
             try {
                 connection.close();
             }
             catch (SQLException e) {
-                log.log(Level.INFO, "Caught exception closing connection: " + e, e);
+                log.log(Level.INFO, "Caught exception closing connection: " + e.getMessage() + " - continuing", e);
             }
         }
     }
@@ -1587,6 +1587,7 @@ public class Sql {
      * @throws SQLException if a database error occurs
      */
     public synchronized void cacheConnection(Closure closure) throws SQLException {
+        boolean savedCacheConnection = cacheConnection;
         cacheConnection = true;
         Connection connection = null;
         try {
@@ -1596,6 +1597,10 @@ public class Sql {
         finally {
             cacheConnection = false;
             closeResources(connection, null);
+            cacheConnection = savedCacheConnection;
+            if (dataSource != null && !cacheConnection) {
+                useConnection = null;
+            }
         }
     }
 
@@ -1627,14 +1632,20 @@ public class Sql {
             throw e;
         } finally {
             if (connection != null) connection.setAutoCommit(true);
-            cacheConnection = savedCacheConnection;
+            cacheConnection = false;
             closeResources(connection, null);
+            cacheConnection = savedCacheConnection;
+            if (dataSource != null && !cacheConnection) {
+                useConnection = null;
+            }
         }
     }
 
     private void handleError(Connection connection, Throwable t) throws SQLException {
-        log.log(Level.INFO, "Rolling back due to: " + t, t);
-        if (connection != null) connection.rollback();
+        if (connection != null) {
+            log.log(Level.INFO, "Rolling back due to: " + t.getMessage(), t);
+            connection.rollback();
+        }
     }
 
     private void callClosurePossiblyWithConnection(Closure closure, Connection connection) {
@@ -1656,26 +1667,29 @@ public class Sql {
      * @see #setCacheStatements(boolean)
      */
     public synchronized void cacheStatements(Closure closure) throws SQLException {
-        setCacheStatements(true);
+        boolean savedCacheStatements = cacheStatements;
+        cacheStatements = true;
         Connection connection = null;
         try {
             connection = createConnection();
             callClosurePossiblyWithConnection(closure, connection);
         }
         finally {
-            setCacheStatements(false);
+            cacheStatements = false;
             closeResources(connection, null);
+            cacheStatements = savedCacheStatements;
         }
     }
 
     private synchronized void clearStatementCache() {
         if (!statementCache.isEmpty()) {
-            for (Object o : statementCache.values())
+            for (Object o : statementCache.values()) {
                 try {
                     ((Statement) o).close();
                 } catch (SQLException e) {
                     log.log(Level.FINEST, "Failed to close statement. Already closed?", e);
                 }
+            }
             statementCache.clear();
         }
     }

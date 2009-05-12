@@ -75,7 +75,7 @@ public interface GroovyResultSet extends GroovyObject, ResultSet {
     /**
      * Adds a new row to this result set
      *
-     * @param values teh new values to add
+     * @param values the new values to add
      * @throws SQLException if a database error occurs
      */
     void add(Map values) throws SQLException;
