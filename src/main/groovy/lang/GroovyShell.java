@@ -239,6 +239,9 @@ public class GroovyShell extends GroovyObjectSupport {
         if (scriptClass == null) {
             return null;
         }
+        System.err.println(scriptClass +" ? "+(Script.class.isAssignableFrom(scriptClass)));
+        System.err.println(scriptClass.getSuperclass());
+        System.err.println(java.util.Arrays.toString(scriptClass.getInterfaces()));
         try {
             if (Script.class.isAssignableFrom(scriptClass)) {
                 // treat it just like a script if it is one
@@ -251,6 +254,7 @@ public class GroovyShell extends GroovyObjectSupport {
                    // ignore instaintiations errors, try to do main
                 }
                 if (script != null) {
+                    System.err.println(script);
                     script.setBinding(context);
                     script.setProperty("args", args);
                     return script.run();
@@ -488,6 +492,7 @@ public class GroovyShell extends GroovyObjectSupport {
      */
     public Object evaluate(GroovyCodeSource codeSource) throws CompilationFailedException {
         Script script = parse(codeSource);
+        script.setBinding(context);
         return script.run();
     }
 
@@ -558,6 +563,7 @@ public class GroovyShell extends GroovyObjectSupport {
         Script script = null;
         try {
             script = parse(in, fileName);
+            script.setBinding(context);
             return script.run();
         } finally {
             if (script != null) {

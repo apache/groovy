@@ -1903,6 +1903,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
             actionKey: "asValue",
             keyStroke: "V",
             action: noop)
+        assert button.getInputMap(JComponent.WHEN_FOCUSED).get(KeyStroke.getKeyStroke("V")) == "asValue"
         assert button.actionMap.get("asValue") == noop
 
         // component as property
@@ -1910,6 +1911,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
             actionKey: "asProperty",
             keyStroke: "P",
             action: noop)
+        assert button.getInputMap(JComponent.WHEN_FOCUSED).get(KeyStroke.getKeyStroke("P")) == "asProperty"
         assert button.actionMap.get("asProperty") == noop
 
         // nested in component
@@ -1918,7 +1920,17 @@ class SwingBuilderTest extends GroovySwingTestCase {
                keyStroke: "N",
                action: noop)
         }
+        assert button.getInputMap(JComponent.WHEN_FOCUSED).get(KeyStroke.getKeyStroke("N")) == "nested"
         assert button.actionMap.get("nested") == noop
+
+        // nested in component + shortcut
+        button = swing.button {
+            keyStrokeAction(actionKey: "nested_shortcut",
+               keyStroke: shortcut("N"),
+               action: noop)
+        }
+        assert button.getInputMap(JComponent.WHEN_FOCUSED).get(swing.shortcut("N")) == "nested_shortcut"
+        assert button.actionMap.get("nested_shortcut") == noop
       }
     }
 }
