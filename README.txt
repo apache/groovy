@@ -5,7 +5,7 @@ Building
 
 To build you will need:
 
- * JDK 1.4+ (J2SE 1.4.0+) (http://java.sun.com/j2se/1.4.2)
+ * JDK 1.5+ (http://java.sun.com/j2se/)
  * Apache Ant 1.7+ (http://ant.apache.org)
 
 For detailed instructions please see:
