@@ -471,17 +471,20 @@ public class SwingBuilder extends FactoryBuilderSupport {
         if( !actionKey ) actionKey = "Action"+Math.abs(random.nextLong())
 
         def keyStroke = attributes.remove("keyStroke")
-        // accept String, KeyStroke, List<String>, List<KeyStroke>
+        // accept String, Number, KeyStroke, List<String>, List<Number>, List<KeyStroke>
         def action = attributes.remove("action")
 
-        if( keyStroke instanceof String ) keyStroke = [keyStroke]
+        if( keyStroke instanceof String || keyStroke instanceof Number ) keyStroke = [keyStroke]
         keyStroke.each { ks ->
             switch(ks) {
                 case KeyStroke:
                     component.getInputMap(condition).put(ks, actionKey)
                     break
                 case String:
-                    component.getInputMap(condition).put(shortcut(ks), actionKey)
+                    component.getInputMap(condition).put(KeyStroke.getKeyStroke(ks), actionKey)
+                    break
+                case Number:
+                    component.getInputMap(condition).put(KeyStroke.getKeyStroke(ks.intValue()), actionKey)
                     break
                 default:
                     throw new RuntimeException("Cannot apply ${ks} as a KeyStroke value.")
