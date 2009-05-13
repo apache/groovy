@@ -25,13 +25,11 @@ import org.objectweb.asm.Opcodes;
 
 public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcodes {
 
-    private final CompilationUnit compilationUnit;
     private final SourceUnit sourceUnit;
     private ClassNode classNode;
     
     
     public InnerClassVisitor(CompilationUnit cu, SourceUnit su) {
-        compilationUnit = cu;
         sourceUnit = su;
     }
     
@@ -55,10 +53,11 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
     
     private void addDefaultMethods(InnerClassNode node) {
         if(node.getVariableScope()==null) return;
+        final boolean isStatic = node.getVariableScope().isInStaticContext();
         
         final String classInternalName = BytecodeHelper.getClassInternalName(node);
-        final String outerClassInternalName = BytecodeHelper.getClassInternalName(node.getOuterClass());
-        final String outerClassDescriptor = BytecodeHelper.getTypeDescription(node.getOuterClass());
+        final String outerClassInternalName = getInternalName(node.getOuterClass(),isStatic);
+        final String outerClassDescriptor = getTypeDescriptor(node.getOuterClass(),isStatic);
         final int objectDistance = getObjectDistance(node.getOuterClass());
         
         // add method dispatcher
@@ -76,21 +75,25 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         );
 
         BlockStatement block = new BlockStatement();
-        block.addStatement(
-                new BytecodeSequence(new BytecodeInstruction() {
-                    public void visit(MethodVisitor mv) {
-                        mv.visitVarInsn(ALOAD, 0);
-                        mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", outerClassDescriptor);
-                        mv.visitVarInsn(ALOAD, 1);
-                        mv.visitVarInsn(ALOAD, 2);
-                        mv.visitMethodInsn( INVOKEVIRTUAL, 
-                                            outerClassInternalName, 
-                                            "this$dist$invoke$"+objectDistance, 
-                                            "(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;");
-                        mv.visitInsn(ARETURN);
-                    }
-                })
-        );
+        if (isStatic) {
+        	setMethodDispatcherCode(block, new ClassExpression(node.getOuterClass()), parameters);
+        } else {
+	        block.addStatement(
+	                new BytecodeSequence(new BytecodeInstruction() {
+	                    public void visit(MethodVisitor mv) {
+	                        mv.visitVarInsn(ALOAD, 0);
+	                        mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", outerClassDescriptor);
+	                        mv.visitVarInsn(ALOAD, 1);
+	                        mv.visitVarInsn(ALOAD, 2);
+	                        mv.visitMethodInsn( INVOKEVIRTUAL, 
+	                                            outerClassInternalName, 
+	                                            "this$dist$invoke$"+objectDistance, 
+	                                            "(Ljava/lang/String;Ljava/lang/Object;)Ljava/lang/Object;");
+	                        mv.visitInsn(ARETURN);
+	                    }
+	                })
+	        );
+        }
         method.setCode(block);
         
         // add property getter dispatcher
@@ -108,21 +111,25 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         );
         
         block = new BlockStatement();
-        block.addStatement(
-                new BytecodeSequence(new BytecodeInstruction() {
-                    public void visit(MethodVisitor mv) {
-                        mv.visitVarInsn(ALOAD, 0);
-                        mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", outerClassDescriptor);
-                        mv.visitVarInsn(ALOAD, 1);
-                        mv.visitVarInsn(ALOAD, 2);
-                        mv.visitMethodInsn( INVOKEVIRTUAL, 
-                                            outerClassInternalName, 
-                                            "this$dist$set$"+objectDistance,
-                                            "(Ljava/lang/String;Ljava/lang/Object;)V");
-                        mv.visitInsn(RETURN);
-                    }
-                })
-        );
+        if (isStatic) {
+        	setPropertySetDispatcher(block, new ClassExpression(node.getOuterClass()), parameters);
+	    } else {
+	        block.addStatement(
+	                new BytecodeSequence(new BytecodeInstruction() {
+	                    public void visit(MethodVisitor mv) {
+	                        mv.visitVarInsn(ALOAD, 0);
+	                        mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", outerClassDescriptor);
+	                        mv.visitVarInsn(ALOAD, 1);
+	                        mv.visitVarInsn(ALOAD, 2);
+	                        mv.visitMethodInsn( INVOKEVIRTUAL, 
+	                                            outerClassInternalName, 
+	                                            "this$dist$set$"+objectDistance,
+	                                            "(Ljava/lang/String;Ljava/lang/Object;)V");
+	                        mv.visitInsn(RETURN);
+	                    }
+	                })
+	        );
+	    }
         method.setCode(block);
         
         // add property setter dispatcher
@@ -139,24 +146,36 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         );
         
         block = new BlockStatement();
-        block.addStatement(
-                new BytecodeSequence(new BytecodeInstruction() {
-                    public void visit(MethodVisitor mv) {
-                        mv.visitVarInsn(ALOAD, 0);
-                        mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", outerClassDescriptor);
-                        mv.visitVarInsn(ALOAD, 1);
-                        mv.visitMethodInsn( INVOKEVIRTUAL, 
-                                            outerClassInternalName, 
-                                            "this$dist$get$"+objectDistance, 
-                                            "(Ljava/lang/String;)Ljava/lang/Object;");
-                        mv.visitInsn(ARETURN);
-                    }
-                })
-        );
+	    if (isStatic) {
+	    	setPropertyGetterDispatcher(block, new ClassExpression(node.getOuterClass()), parameters);
+	    } else {
+	        block.addStatement(
+	                new BytecodeSequence(new BytecodeInstruction() {
+	                    public void visit(MethodVisitor mv) {
+	                        mv.visitVarInsn(ALOAD, 0);
+	                        mv.visitFieldInsn(GETFIELD, classInternalName, "this$0", outerClassDescriptor);
+	                        mv.visitVarInsn(ALOAD, 1);
+	                        mv.visitMethodInsn( INVOKEVIRTUAL, 
+	                                            outerClassInternalName, 
+	                                            "this$dist$get$"+objectDistance, 
+	                                            "(Ljava/lang/String;)Ljava/lang/Object;");
+	                        mv.visitInsn(ARETURN);
+	                    }
+	                })
+	        );
+	    }
         method.setCode(block);
     }
 
-    @Override
+    private String getTypeDescriptor(ClassNode node, boolean isStatic) {
+    	return BytecodeHelper.getTypeDescription(getClassNode(node,isStatic));
+	}
+
+	private String getInternalName(ClassNode node, boolean isStatic) {
+    	return BytecodeHelper.getClassInternalName(getClassNode(node,isStatic));
+	}
+
+	@Override
     public void visitConstructorCallExpression(ConstructorCallExpression call) {
         super.visitConstructorCallExpression(call);
         if (!call.isUsingAnnonymousInnerClass()) return;
@@ -168,6 +187,8 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         VariableScope scope = innerClass.getVariableScope();
         if (scope==null) return;
         
+        
+        boolean isStatic = scope.isInStaticContext();
         // expressions = constructor call arguments
         List<Expression> expressions = ((TupleExpression) call.getArguments()).getExpressions();
         // block = init code for the constructor we produce
@@ -201,10 +222,11 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         // this is saved in a field named this$0
         expressions.add(VariableExpression.THIS_EXPRESSION);
         pCount++;
-        Parameter thisParameter = new Parameter(innerClass.getOuterClass(),"p"+pCount);
+        ClassNode outerClassType = getClassNode(innerClass.getOuterClass(),isStatic);
+        Parameter thisParameter = new Parameter(outerClassType,"p"+pCount);
         parameters.add(thisParameter);
         int privateSynthetic = Opcodes.ACC_PRIVATE+Opcodes.ACC_SYNTHETIC;
-        FieldNode thisField = innerClass.addField("this$0", privateSynthetic, innerClass.getOuterClass(), null);
+        FieldNode thisField = innerClass.addField("this$0", privateSynthetic, outerClassType, null);
         addFieldInit(thisParameter,thisField,block,false);
 
         // for each shared variable we add a reference and save it as field
@@ -228,7 +250,12 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         
     }
     
-    private void addDispatcherMethods() {
+    private ClassNode getClassNode(ClassNode node, boolean isStatic) {
+    	if (isStatic) node = ClassHelper.CLASS_Type;
+    	return node;
+	}
+
+	private void addDispatcherMethods() {
         final int objectDistance = getObjectDistance(classNode);
         
         // since we added an anonymous inner class we should also
@@ -249,25 +276,7 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         );
 
         BlockStatement block = new BlockStatement();
-        List gStringStrings = new ArrayList();
-        gStringStrings.add(new ConstantExpression(""));
-        gStringStrings.add(new ConstantExpression(""));
-        List gStringValues = new ArrayList();
-        gStringValues.add(new VariableExpression(parameters[0]));
-        block.addStatement(
-                new ReturnStatement(
-                        new MethodCallExpression(
-                               VariableExpression.THIS_EXPRESSION,
-                               new GStringExpression("$name",
-                                       gStringStrings,
-                                       gStringValues
-                               ),
-                               new ArgumentListExpression(
-                                       new SpreadExpression(new VariableExpression(parameters[1]))
-                               )
-                        )
-                )
-        );
+        setMethodDispatcherCode(block, VariableExpression.THIS_EXPRESSION, parameters);
         method.setCode(block);
         
         // add property setter
@@ -285,26 +294,7 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         );
 
         block = new BlockStatement();
-        gStringStrings = new ArrayList();
-        gStringStrings.add(new ConstantExpression(""));
-        gStringStrings.add(new ConstantExpression(""));
-        gStringValues = new ArrayList();
-        gStringValues.add(new VariableExpression(parameters[0]));
-        block.addStatement(
-                new ExpressionStatement(
-                        new BinaryExpression(
-                                new AttributeExpression(
-                                        VariableExpression.THIS_EXPRESSION,
-                                        new GStringExpression("$name",
-                                                gStringStrings,
-                                                gStringValues
-                                        )
-                                ),
-                                Token.newSymbol(Types.ASSIGN, -1, -1),
-                                new VariableExpression(parameters[1])
-                        )
-                )
-        );
+        setPropertySetDispatcher(block,VariableExpression.THIS_EXPRESSION,parameters);
         method.setCode(block);
 
         // add property getter
@@ -321,26 +311,75 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         );
 
         block = new BlockStatement();
-        gStringStrings = new ArrayList();
+        setPropertyGetterDispatcher(block, VariableExpression.THIS_EXPRESSION, parameters);
+        method.setCode(block);
+    }
+
+    private void setPropertyGetterDispatcher(BlockStatement block, Expression thiz, Parameter[] parameters) {
+    	List gStringStrings = new ArrayList();
         gStringStrings.add(new ConstantExpression(""));
         gStringStrings.add(new ConstantExpression(""));
-        gStringValues = new ArrayList();
+        List gStringValues = new ArrayList();
         gStringValues.add(new VariableExpression(parameters[0]));
         block.addStatement(
                 new ReturnStatement(
                         new AttributeExpression(
-                                VariableExpression.THIS_EXPRESSION,
+                                thiz,
                                 new GStringExpression("$name",
                                         gStringStrings,
                                         gStringValues
                                 )
                         )
                 )
-        );
-        method.setCode(block);
-    }
+        );		
+	}
 
-    private static void addFieldInit(Parameter p, FieldNode fn, BlockStatement block, boolean ref) {
+	private void setPropertySetDispatcher(BlockStatement block, Expression thiz, Parameter[] parameters) {
+    	List gStringStrings = new ArrayList();
+        gStringStrings.add(new ConstantExpression(""));
+        gStringStrings.add(new ConstantExpression(""));
+        List gStringValues = new ArrayList();
+        gStringValues.add(new VariableExpression(parameters[0]));
+        block.addStatement(
+                new ExpressionStatement(
+                        new BinaryExpression(
+                                new AttributeExpression(
+                                        thiz,
+                                        new GStringExpression("$name",
+                                                gStringStrings,
+                                                gStringValues
+                                        )
+                                ),
+                                Token.newSymbol(Types.ASSIGN, -1, -1),
+                                new VariableExpression(parameters[1])
+                        )
+                )
+        );
+	}
+
+	private void setMethodDispatcherCode(BlockStatement block, Expression thiz, Parameter[] parameters) {
+        List gStringStrings = new ArrayList();
+        gStringStrings.add(new ConstantExpression(""));
+        gStringStrings.add(new ConstantExpression(""));
+        List gStringValues = new ArrayList();
+        gStringValues.add(new VariableExpression(parameters[0]));
+        block.addStatement(
+                new ReturnStatement(
+                        new MethodCallExpression(
+                               thiz,
+                               new GStringExpression("$name",
+                                       gStringStrings,
+                                       gStringValues
+                               ),
+                               new ArgumentListExpression(
+                                       new SpreadExpression(new VariableExpression(parameters[1]))
+                               )
+                        )
+                )
+        );
+	}
+
+	private static void addFieldInit(Parameter p, FieldNode fn, BlockStatement block, boolean ref) {
         VariableExpression ve = new VariableExpression(p);
         ve.setUseReferenceDirectly(ref);
         FieldExpression fe = new FieldExpression(fn);

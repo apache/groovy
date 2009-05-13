@@ -82,7 +82,7 @@ class TransformsAndCustomClassLoadersTest extends GroovyTestCase {
  * but does so without delegating to another class loader.
  */
 class GroovyProjectClassesLoader extends GroovyClassLoader {
-    private bootstrapClassLoader = new URLClassLoader([] as URL[], null)
+    private bootstrapClassLoader = new URLClassLoader([] as URL[], (ClassLoader) null)
 
     GroovyProjectClassesLoader() {
         super(null, null, false)
