@@ -474,7 +474,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
         // accept String, Number, KeyStroke, List<String>, List<Number>, List<KeyStroke>
         def action = attributes.remove("action")
 
-        if( keyStroke instanceof String || KeyStroke instanceof Number ) keyStroke = [keyStroke]
+        if( keyStroke instanceof String || keyStroke instanceof Number ) keyStroke = [keyStroke]
         keyStroke.each { ks ->
             switch(ks) {
                 case KeyStroke:
