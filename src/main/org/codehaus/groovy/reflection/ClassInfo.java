@@ -15,26 +15,17 @@
  */
 package org.codehaus.groovy.reflection;
 
-import groovy.lang.Closure;
-import groovy.lang.ExpandoMetaClass;
-import groovy.lang.GroovySystem;
-import groovy.lang.MetaClass;
-import groovy.lang.MetaClassRegistry;
-import groovy.lang.MetaMethod;
+import groovy.lang.*;
 import org.codehaus.groovy.reflection.stdclasses.*;
-import org.codehaus.groovy.util.LazyReference;
-import org.codehaus.groovy.util.LockableObject;
-import org.codehaus.groovy.util.ManagedConcurrentMap;
-import org.codehaus.groovy.util.ManagedReference;
-import org.codehaus.groovy.util.ReferenceBundle;
+import org.codehaus.groovy.util.*;
+import org.codehaus.groovy.util.*;
 
+import java.lang.ref.PhantomReference;
+import java.lang.ref.SoftReference;
 import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Iterator;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -104,7 +95,11 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
 
     public static ClassInfo getClassInfo (Class cls) {
         ThreadLocalMapHandler handler = localMapRef.get();
-        if (handler!=null) return handler.get().get(cls);
+        SoftReference<LocalMap> ref=null;
+        if (handler!=null) ref = handler.get();
+        LocalMap map=null;
+        if (ref!=null) map = ref.get();
+        if (map!=null) return map.get(cls);
         return (ClassInfo) globalClassSet.getOrPut(cls,null);
     }
 
@@ -320,7 +315,14 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
 
         private static final int CACHE_SIZE = 5;
 
-        public final Thread myThread = Thread.currentThread();
+        // We use a PhantomReference or a WeakReference for the Thread
+        // because the ThreadLocal manages a map with the thread as key.
+        // If we make a strong reference to the thread here, then it is 
+        // possible, that the map cannot be cleaned. If the number of 
+        // threads is not limited, then this map may consume too much memory
+        // This reference here is unmanaged (queue==null) because if the map 
+        // key gets collected, the reference will too. 
+        private final PhantomReference<Thread> myThread = new PhantomReference(Thread.currentThread(),null);
 
         private int nextCacheEntry;
 
@@ -369,21 +371,27 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
         }
     }
 
-    private static class ThreadLocalMapHandler extends ThreadLocal<LocalMap> {
-        LocalMap recentThreadMap;
+    private static class ThreadLocalMapHandler extends ThreadLocal<SoftReference<LocalMap>> {
+        SoftReference<LocalMap> recentThreadMapRef;
         
-        protected LocalMap initialValue() {
-            return new LocalMap();
+        protected SoftReference<LocalMap> initialValue() {
+            return new SoftReference(new LocalMap(),null);
         }
 
-        public LocalMap get() {
-            LocalMap recent = recentThreadMap;
-            if (recent != null && recent.myThread == Thread.currentThread())
-              return recent;
-            else {
-                final LocalMap res = super.get();
-                recentThreadMap = res;
-                return res;
+        public SoftReference<LocalMap> get() {
+            SoftReference<LocalMap> mapRef = recentThreadMapRef;
+            LocalMap recent = null;
+            if (mapRef!=null) recent = mapRef.get();
+            // we don't need to handle myThread.get()==null, because in that
+            // case the thread has been collected, meaning the entry for the
+            // thread is invalid anyway, so it is valid if recent has a 
+            // different value. 
+            if (recent != null && recent.myThread.get() == Thread.currentThread()) {
+                return mapRef;
+            } else {
+                SoftReference<LocalMap> ref = super.get();
+                recentThreadMapRef = ref;
+                return ref;
             }
         }
     }
