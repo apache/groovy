@@ -25,6 +25,7 @@ import org.codehaus.groovy.control.SourceUnit;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Arrays;
+import java.util.Set;
 
 /**
  * Handles generation of code for the @Newify annotation.
@@ -94,10 +95,6 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
                 return transformMethodCall(mce, args);
             }
             return new MethodCallExpression(object, method, args);
-        } else if (expr instanceof PropertyExpression) {
-            PropertyExpression pe = (PropertyExpression) expr;
-            pe.setObjectExpression(transform(pe.getObjectExpression()));
-            return pe;
         }
         return expr.transformExpression(this);
     }
@@ -131,7 +128,7 @@ public class NewifyASTTransformation extends ClassCodeExpressionTransformer impl
     }
 
     private void checkDuplicateNameClashes(ListExpression list) {
-        final HashSet<String> seen = new HashSet<String>();
+        final Set<String> seen = new HashSet<String>();
         @SuppressWarnings("unchecked")
         final List<ClassExpression> classes = (List)list.getExpressions();
         for (ClassExpression ce : classes) {
