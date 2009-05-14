@@ -250,7 +250,6 @@ public class GroovyShell extends GroovyObjectSupport {
                    // ignore instaintiations errors, try to do main
                 }
                 if (script != null) {
-                    System.err.println(script);
                     script.setBinding(context);
                     script.setProperty("args", args);
                     return script.run();
