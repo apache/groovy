@@ -221,7 +221,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
             }
 
             if (delegateMetaClass instanceof MetaClassImpl) {
-                method = ((MetaClassImpl)delegateMetaClass).findMethodInClassHierarchy(getTheClass(), methodName, argClasses, this);
+                method = MetaClassImpl.findMethodInClassHierarchy(getTheClass(), methodName, argClasses, this);
                 if(method != null) {
                     onSuperMethodFoundInHierarchy(method);
                     return method;
@@ -381,11 +381,6 @@ public final class ClosureMetaClass extends MetaClassImpl {
 
     private Object[] makeArguments(Object[] arguments, String methodName) {
         if (arguments == null) return EMPTY_ARGUMENTS;
-        if (CLOSURE_CALL_METHOD.equals(methodName)) {
-            if (arguments.length==1 && arguments[0] instanceof Object[]) {
-                return (Object[]) arguments[0];
-            }
-        }
         return arguments;
     }
     
@@ -554,21 +549,6 @@ public final class ClosureMetaClass extends MetaClassImpl {
         }
     }
 
-    private void generateReflector() {
-//        if (GroovySystem.isUseReflection())
-//          return;
-//
-//        reflector = ((MetaClassRegistryImpl) registry).loadReflector(theClass, closureMethods);
-//        if (reflector == null) {
-//            throw new RuntimeException("Should have a reflector for " + theClass.getName());
-//        }
-//        // lets set the reflector on all the methods
-//        for (Iterator iter = closureMethods.iterator(); iter.hasNext();) {
-//            StdMetaMethod metaMethod = (StdMetaMethod) iter.next();
-//            metaMethod.setReflector(reflector);
-//        }
-    }
-
     private MetaClass lookupObjectMetaClass(Object object) {
         if (object instanceof GroovyObject) {
             GroovyObject go = (GroovyObject) object;
@@ -677,11 +657,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
     public void setProperties(Object bean, Map map) {
         throw new UnsupportedOperationException();
     }
-
-    private Object invokeConstructor(Class at, Object[] arguments) {
-        throw new UnsupportedOperationException();
-    }
-
+    
     public void addMetaBeanProperty(MetaBeanProperty mp) {
         throw new UnsupportedOperationException();
     }

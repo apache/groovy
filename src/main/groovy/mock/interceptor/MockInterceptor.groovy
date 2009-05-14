@@ -27,19 +27,19 @@ class MockInterceptor implements PropertyAccessInterceptor {
 
     Object beforeInvoke(Object object, String methodName, Object[] arguments) {
         if (!expectation) throw new IllegalStateException("Property 'expectation' must be set before use.")
-        return expectation.match(methodName).call(arguments)
+        return expectation.match(methodName)(*arguments)
     }
 
     Object beforeGet(Object object, String property) {
         if (!expectation) throw new IllegalStateException("Property 'expectation' must be set before use.")
         String name = "get${property[0].toUpperCase()}${property[1..-1]}"
-        return expectation.match(name).call()                    
+        return expectation.match(name)()                    
     }
 
     void beforeSet(Object object, String property, Object newValue) {
         if (!expectation) throw new IllegalStateException("Property 'expectation' must be set before use.")
         String name = "set${property[0].toUpperCase()}${property[1..-1]}"
-        expectation.match(name).call(newValue)
+        expectation.match(name)(newValue)
     }
 
     Object afterInvoke(Object object, String methodName, Object[] arguments, Object result) {
