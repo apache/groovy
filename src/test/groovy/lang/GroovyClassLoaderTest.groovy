@@ -95,7 +95,7 @@ public class GroovyClassLoaderTest extends GroovyTestCase {
           """
             file << script
             paths << file.parentFile.toURL()
-            def cl = new URLClassLoader(paths as URL[], null)
+            def cl = new URLClassLoader(paths as URL[], (ClassLoader) null)
             def gcl = new GroovyClassLoader(cl)
             try {
                 gcl.loadClass(name)

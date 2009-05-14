@@ -72,6 +72,25 @@ class InnerClassTest extends CompilableTestSupport {
         foo.x(2)
         assert foo.foo() == 2
     """
+    
+    assertScript """
+        interface Run {
+          def run(){}
+        }
+        class Foo {
+           private static x = 1
+           static foo() {
+               def runner = new Run(){
+                  def run() {return x}
+               }
+               runner.run()
+           }
+           static x(y){x=y}
+        }
+        assert Foo.foo() == 1
+        Foo.x(2)
+        assert Foo.foo() == 2
+    """
   }
   /*
   void testUsageOfOuterFieldOverriden() {
@@ -99,6 +118,9 @@ class InnerClassTest extends CompilableTestSupport {
         bar.x = "new string"
         assert bar.foo() == 2
     """
+    
+    //TODO: static part
+    
   }
   */
   void testUsageOfOuterMethod() {
@@ -108,6 +130,23 @@ class InnerClassTest extends CompilableTestSupport {
         }
         class Foo {
            private x(){1}
+           def foo() {
+               def runner = new Run(){
+                  def run() {return x()}
+               }
+               runner.run()
+           }
+        }
+        def foo = new Foo()
+        assert foo.foo() == 1
+    """
+    
+    assertScript """
+        interface Run {
+          def run(){}
+        }
+        class Foo {
+           private static x(){1}
            def foo() {
                def runner = new Run(){
                   def run() {return x()}
@@ -140,5 +179,26 @@ class InnerClassTest extends CompilableTestSupport {
         def bar = new Bar()
         assert bar.foo() == 1
     """
+
+    assertScript """
+        interface Run {
+          def run(){}
+        }
+        class Foo {
+           private static x(){1}
+           static foo() {
+               def runner = new Run(){
+                  def run() {return x()}
+               }
+               runner.run()
+           }
+        }
+        class Bar extends Foo{
+          static x(){2}
+        }
+        def bar = new Bar()
+        assert bar.foo() == 1
+    """
   }
+  
 } 
