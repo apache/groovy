@@ -2683,14 +2683,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a String
      * @return a new string with all the characters reversed.
      * @since 1.0
+     * @see StringBuilder#reverse()
      */
     public static String reverse(String self) {
-        int size = self.length();
-        StringBuilder buffer = new StringBuilder(size);
-        for (int i = size - 1; i >= 0; i--) {
-            buffer.append(self.charAt(i));
-        }
-        return buffer.toString();
+        return new StringBuilder(self).reverse().toString();
     }
 
     /**
