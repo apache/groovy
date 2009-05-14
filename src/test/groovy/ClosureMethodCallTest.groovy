@@ -20,10 +20,20 @@ class ClosureMethodCallTest extends GroovyTestCase {
     }
     
     void testClosureCallMethodWithObjectArray() {
-      // GROOVY-2266
-      def args = [1] as Object[]
-      def closure = {x -> x}
-      assert closure.call(args) == 1
+        // GROOVY-2266
+        def args = [1] as Object[]
+        def closure = {x -> x[0]}
+        assert closure.call(args) == 1
+    }
+    
+    void testClosureWithStringArrayCastet() {
+        def doSomething={ list ->  list }
+
+        String[] x=["hello", "world"]
+        String[] y=["hello", "world"]
+
+        assert doSomething(x as String[]) == x
+        assert doSomething( y ) == y
     }
     
     void testClosureAsLocalVar() {
