@@ -171,7 +171,6 @@ public class GroovyShell extends GroovyObjectSupport {
         int p = scriptName.lastIndexOf(".");
         if (p++ >= 0) {
             if (scriptName.substring(p).equals("java")) {
-                System.err.println("error: cannot compile file with .java extension: " + scriptName);
                 throw new CompilationFailedException(0, null);
             }
         }
@@ -239,9 +238,6 @@ public class GroovyShell extends GroovyObjectSupport {
         if (scriptClass == null) {
             return null;
         }
-        System.err.println(scriptClass +" ? "+(Script.class.isAssignableFrom(scriptClass)));
-        System.err.println(scriptClass.getSuperclass());
-        System.err.println(java.util.Arrays.toString(scriptClass.getInterfaces()));
         try {
             if (Script.class.isAssignableFrom(scriptClass)) {
                 // treat it just like a script if it is one
