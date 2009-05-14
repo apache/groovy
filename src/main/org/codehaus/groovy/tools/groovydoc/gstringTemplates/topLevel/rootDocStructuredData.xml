@@ -1,0 +1,10 @@
+<root>
+  <packages><% for (packageDoc in rootDoc.specifiedPackages()) { %>
+  <package name="${packageDoc.name()}" />
+<% } %>
+<packages>
+  <classes><% for (classDoc in rootDoc.classes()) { %>
+    <class path="${classDoc.getFullPathName()}" name="${classDoc.name()}" />
+<% } %>
+  </classes>
+</root>

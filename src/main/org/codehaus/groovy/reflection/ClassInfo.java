@@ -28,6 +28,7 @@ import org.codehaus.groovy.util.ManagedConcurrentMap;
 import org.codehaus.groovy.util.ManagedReference;
 import org.codehaus.groovy.util.ReferenceBundle;
 
+import java.lang.ref.WeakReference;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.HashMap;
@@ -59,6 +60,7 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
     private ManagedConcurrentMap perInstanceMetaClassMap;
     
     private static ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();
+    private static ReferenceBundle weakBundle = ReferenceBundle.getWeakBundle();
     private static final ClassInfoSet globalClassSet = new ClassInfoSet(softBundle);
 
     ClassInfo(ManagedConcurrentMap.Segment segment, Class klazz, int hash) {
@@ -101,7 +103,9 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
     }
 
     public static ClassInfo getClassInfo (Class cls) {
-        return localMap.get().get(cls);
+        ThreadLocalMapHandler handler = localMapRef.get();
+        if (handler!=null) return handler.get().get(cls);
+        return (ClassInfo) globalClassSet.getOrPut(cls,null);
     }
 
     public MetaClass getStrongMetaClass() {
@@ -365,9 +369,9 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
         }
     }
 
-    private static final ThreadLocal<LocalMap> localMap = new ThreadLocal<LocalMap> () {
+    private static class ThreadLocalMapHandler extends ThreadLocal<LocalMap> {
         LocalMap recentThreadMap;
-
+        
         protected LocalMap initialValue() {
             return new LocalMap();
         }
@@ -382,7 +386,13 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
                 return res;
             }
         }
-    };
+    }
+    
+    private static final WeakReference<ThreadLocalMapHandler> localMapRef;
+    static {
+        ThreadLocalMapHandler localMap = new ThreadLocalMapHandler();
+        localMapRef = new WeakReference<ThreadLocalMapHandler>(localMap,null);
+    }
 
     private static class LazyCachedClassRef extends LazyReference<CachedClass> {
         private final ClassInfo info;

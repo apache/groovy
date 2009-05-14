@@ -15,14 +15,11 @@
  */
 package org.codehaus.groovy.runtime.callsite;
 
-import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaClass;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.GroovyInterceptable;
 import groovy.lang.GroovyObject;
 import org.codehaus.groovy.runtime.InvokerHelper;
-import org.codehaus.groovy.runtime.NullObject;
-import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.reflection.ClassInfo;
 
 public final class CallSiteArray {
@@ -130,8 +127,6 @@ public final class CallSiteArray {
           return new PogoInterceptableSite(callSite);
 
         MetaClass metaClass = ((GroovyObject)receiver).getMetaClass();
-        if (receiver.getClass() != metaClass.getTheClass() && !metaClass.getTheClass().isInterface())
-            return new PogoInterceptableSite(callSite);
 
         if (metaClass instanceof MetaClassImpl) {
             return ((MetaClassImpl)metaClass).createPogoCallSite(callSite, args);

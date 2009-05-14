@@ -1,0 +1,24 @@
+<class name="${classDoc.name()}">
+  <containingPackage name="${classDoc.containingPackage().name()}">${classDoc.containingPackage().nameWithDots()}</containingPackage>
+  <extends>${classDoc.superclass()?.name()}</extends>
+  <comment>${classDoc.commentText()}</comment>
+  <constructors><% for (constructor in classDoc.constructors()) { %>
+    <constructor modifiers="${constructor.isPublic()?'public ':''}" name="${constructor.name()}">
+      <parameters><% for (parameter in constructor.parameters()) { %>
+        <parameter type="${parameter.typeName()}" name="${parameter.name()}" /><% } %>
+      </parameters>
+      <comment>${constructor.commentText()}</comment>
+    </constructor>
+<% } %>
+  </constructors>
+
+  <methods><% for (method in classDoc.methods()) { %>
+    <method modifiers="${method.isPublic()?'public ':''}${method.isStatic()?'static ':''}" returns="${method.returnType().qualifiedTypeName()}" name="${method.name()}">
+      <parameters><% for (parameter in method.parameters()) { %>
+        <parameter type="${parameter.isTypeAvailable()?parameter.type().qualifiedTypeName():parameter.typeName()}" name="${parameter.name()}" /><% } %>
+      </parameters>
+      <comment>${method.commentText()}</comment>
+    </method>
+<% } %>
+  </methods>
+</class>

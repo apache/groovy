@@ -31,7 +31,7 @@ import java.util.Properties;
  */
 public class GroovyDocToolTest extends GroovyTestCase {
     private static final String MOCK_DIR = "mock/doc";
-    private static final String TEMPLATES_DIR = "main/org/codehaus/groovy/tools/groovydoc/gstring-templates";
+    private static final String TEMPLATES_DIR = "main/org/codehaus/groovy/tools/groovydoc/gstringTemplates";
 
     GroovyDocTool xmlTool;
     GroovyDocTool xmlToolForTests;
@@ -43,9 +43,9 @@ public class GroovyDocToolTest extends GroovyTestCase {
         xmlTool = new GroovyDocTool(
                 new FileSystemResourceManager("src"), // template storage
                 new String[] {"src/main"}, // source file dirs
-                new String[]{TEMPLATES_DIR + "/top-level/rootDocStructuredData.xml"},
-                new String[]{TEMPLATES_DIR + "/package-level/packageDocStructuredData.xml"},
-                new String[]{TEMPLATES_DIR + "/class-level/classDocStructuredData.xml"},
+                new String[]{TEMPLATES_DIR + "/topLevel/rootDocStructuredData.xml"},
+                new String[]{TEMPLATES_DIR + "/packageLevel/packageDocStructuredData.xml"},
+                new String[]{TEMPLATES_DIR + "/classLevel/classDocStructuredData.xml"},
                 new ArrayList(),
                 new Properties()
         );
@@ -53,9 +53,9 @@ public class GroovyDocToolTest extends GroovyTestCase {
         xmlToolForTests = new GroovyDocTool(
                 new FileSystemResourceManager("src"), // template storage
                 new String[] {"src/test"}, // source file dirs, // source file dirs
-                new String[]{TEMPLATES_DIR + "/top-level/rootDocStructuredData.xml"},
-                new String[]{TEMPLATES_DIR + "/package-level/packageDocStructuredData.xml"},
-                new String[]{TEMPLATES_DIR + "/class-level/classDocStructuredData.xml"},
+                new String[]{TEMPLATES_DIR + "/topLevel/rootDocStructuredData.xml"},
+                new String[]{TEMPLATES_DIR + "/packageLevel/packageDocStructuredData.xml"},
+                new String[]{TEMPLATES_DIR + "/classLevel/classDocStructuredData.xml"},
                 new ArrayList(),
                 new Properties()
         );
@@ -254,9 +254,9 @@ public class GroovyDocToolTest extends GroovyTestCase {
         GroovyDocTool multipleXmlTool = new GroovyDocTool(
                 new FileSystemResourceManager("src"), // template storage
                 new String[] {"src/main", "src/test"}, // source file dirs, // source file dirs
-                new String[]{TEMPLATES_DIR + "/top-level/rootDocStructuredData.xml"},
-                new String[]{TEMPLATES_DIR + "/package-level/packageDocStructuredData.xml"},
-                new String[]{TEMPLATES_DIR + "/class-level/classDocStructuredData.xml"},
+                new String[]{TEMPLATES_DIR + "/topLevel/rootDocStructuredData.xml"},
+                new String[]{TEMPLATES_DIR + "/packageLevel/packageDocStructuredData.xml"},
+                new String[]{TEMPLATES_DIR + "/classLevel/classDocStructuredData.xml"},
                 new ArrayList(),
                 new Properties()
         );

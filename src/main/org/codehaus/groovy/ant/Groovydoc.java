@@ -36,7 +36,7 @@ import java.util.*;
  * @version $Id$
  */
 public class Groovydoc extends Task {
-    private static final String TEMPLATE_BASEDIR = "org/codehaus/groovy/tools/groovydoc/gstring-templates/";
+    private static final String TEMPLATE_BASEDIR = "org/codehaus/groovy/tools/groovydoc/gstringTemplates/";
     private static final String DOCGEN_BASEDIR = "org/codehaus/groovy/tools/";
     private final LoggingHelper log = new LoggingHelper(this);
 
@@ -345,23 +345,23 @@ public class Groovydoc extends Task {
                 new ClasspathResourceManager(), // we're gonna get the default templates out of the dist jar file
                 sourcePath.list(), // sourcepaths
                 new String[]{ // top level templates
-                        TEMPLATE_BASEDIR + "top-level/index.html",
-                        TEMPLATE_BASEDIR + "top-level/overview-frame.html", // needs all package names
-                        TEMPLATE_BASEDIR + "top-level/allclasses-frame.html", // needs all packages / class names
-                        TEMPLATE_BASEDIR + "top-level/overview-summary.html", // needs all packages
-                        TEMPLATE_BASEDIR + "top-level/help-doc.html",
-                        TEMPLATE_BASEDIR + "top-level/index-all.html",
-                        TEMPLATE_BASEDIR + "top-level/deprecated-list.html",
-                        TEMPLATE_BASEDIR + "top-level/stylesheet.css",
-                        TEMPLATE_BASEDIR + "top-level/inherit.gif",
+                        TEMPLATE_BASEDIR + "topLevel/index.html",
+                        TEMPLATE_BASEDIR + "topLevel/overview-frame.html", // needs all package names
+                        TEMPLATE_BASEDIR + "topLevel/allclasses-frame.html", // needs all packages / class names
+                        TEMPLATE_BASEDIR + "topLevel/overview-summary.html", // needs all packages
+                        TEMPLATE_BASEDIR + "topLevel/help-doc.html",
+                        TEMPLATE_BASEDIR + "topLevel/index-all.html",
+                        TEMPLATE_BASEDIR + "topLevel/deprecated-list.html",
+                        TEMPLATE_BASEDIR + "topLevel/stylesheet.css",
+                        TEMPLATE_BASEDIR + "topLevel/inherit.gif",
                         DOCGEN_BASEDIR + "groovy.ico",
                 },
                 new String[]{ // package level templates
-                        TEMPLATE_BASEDIR + "package-level/package-frame.html",
-                        TEMPLATE_BASEDIR + "package-level/package-summary.html"
+                        TEMPLATE_BASEDIR + "packageLevel/package-frame.html",
+                        TEMPLATE_BASEDIR + "packageLevel/package-summary.html"
                 },
                 new String[]{ // class level templates
-                        TEMPLATE_BASEDIR + "class-level/classDocName.html"
+                        TEMPLATE_BASEDIR + "classLevel/classDocName.html"
                 },
                 links,
                 properties
