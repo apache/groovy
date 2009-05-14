@@ -60,6 +60,8 @@ public class PropertyExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
+        property = transformer.transform(property);
+        objectExpression = transformer.transform(objectExpression);
         return this;
     }
 
