@@ -2299,7 +2299,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         	if (right!=null) {
         		size = expression(right);
         	} else {
-        		size = ConstantExpression.EMTPY_EXPRESSION;
+        		size = ConstantExpression.EMPTY_EXPRESSION;
         	}
         	list = arraySizeExpression(node.getFirstChild());
         } else {

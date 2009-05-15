@@ -20,11 +20,10 @@ import java.util.Map;
 import org.codehaus.groovy.ast.AnnotationNode;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
-
 /**
- * Represents an annotation "constant" that may appear in annotation attributes 
+ * Represents an annotation "constant" that may appear in annotation attributes
  * (mainly used as a marker).
- * 
+ *
  * @author <a href='mailto:the[dot]mindstorm[at]gmail[dot]com'>Alex Popescu</a>
  * @version $Revision: 3264 $
  */
@@ -33,11 +32,11 @@ public class AnnotationConstantExpression extends ConstantExpression {
         super(node);
         setType(node.getClassNode());
     }
-    
+
     public void visit(GroovyCodeVisitor visitor) {
         AnnotationNode node = (AnnotationNode) getValue();
         Map<String, Expression> attrs = node.getMembers();
-        for(Expression expr : attrs.values() ) {
+        for (Expression expr : attrs.values()) {
             expr.visit(visitor);
         }
     }

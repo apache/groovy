@@ -36,11 +36,11 @@ public class ConstantExpression extends Expression {
 
     // the following fields are only used internally; there are no user-defined expressions of the same kind
     public static final ConstantExpression VOID = new ConstantExpression(Void.class);
-    public static final ConstantExpression EMTPY_EXPRESSION = new ConstantExpression(null);
+    public static final ConstantExpression EMPTY_EXPRESSION = new ConstantExpression(null);
     
     private Object value;
     private String constantName;
-    
+
     public ConstantExpression(Object value) {
         this.value = value;
         if (this.value != null)

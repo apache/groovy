@@ -55,7 +55,7 @@ class AnnotationTest extends CompilableTestSupport {
     }
 
     /**
-     * The @OneToMany cascadeparameter takes an array of CascadeType.
+     * The @OneToMany cascade parameter takes an array of CascadeType.
      * To use this annotation in Java with this parameter, you do <code>@OneToMany(cascade = { CascadeType.ALL })</code>
      * In Groovy, you do <code>@OneToMany(cascade = [ CascadeType.ALL ])</code> (brackets instead of braces)
      * But when there's just one value in the array, the curly braces or brackets can be omitted:
@@ -93,6 +93,29 @@ class AnnotationTest extends CompilableTestSupport {
 @interface X {
   int x() default 1
 }
+    """
+  }
+
+  void testConstant() {
+    assertScript """
+    class Baz {
+        // static final int OTHER = 5
+        // below we would like to but can't use:
+        // constant field expressions, e.g. OTHER, or
+        // constant property expressions, e.g. Short.MAX_VALUE
+        @Foo(5) void run() {
+            assert Baz.class.getMethod('run').annotations[0].value() == 5
+        }
+    }
+
+    import java.lang.annotation.*
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.METHOD)
+    @interface Foo {
+        int value() default -3
+    }
+
+    new Baz().run()
     """
   }
 
