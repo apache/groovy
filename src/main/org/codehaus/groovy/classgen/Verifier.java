@@ -152,8 +152,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         boolean knownSpecialCase =
                 node.isDerivedFrom(ClassHelper.GSTRING_TYPE)
-                        || node.isDerivedFrom(ClassHelper.make(GroovyObjectSupport.class))
-                        || node.implementsInterface(ClassHelper.METACLASS_TYPE);
+                        || node.isDerivedFrom(ClassHelper.make(GroovyObjectSupport.class));
 
         if (!knownSpecialCase) addGroovyObjectInterfaceAndMethods(node,classInternalName);
 
