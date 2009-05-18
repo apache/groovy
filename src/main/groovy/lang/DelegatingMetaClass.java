@@ -208,10 +208,6 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
         return this.delegate.getMetaMethod(name, args);
     }
 
-    public MetaMethod getMetaMethod(String name, Class[] argTypes) {
-        return this.delegate.getMetaMethod(name, argTypes);
-    }
-
     public Class getTheClass() {
         return this.delegate.getTheClass();
     }
