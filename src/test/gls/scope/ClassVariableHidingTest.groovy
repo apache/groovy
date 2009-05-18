@@ -1,5 +1,7 @@
 package gls.scope;
 
+import gls.CompilableTestSupport
+
 public class ClassVariableHidingTest extends CompilableTestSupport {
 
    def foo=1;

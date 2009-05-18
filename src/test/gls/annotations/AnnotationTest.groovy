@@ -15,7 +15,7 @@
  */
 package gls.annotations
 
-import gls.scope.CompilableTestSupport
+import gls.CompilableTestSupport
 
 /**
  * Tests various properties of annotation defintions.
