@@ -1,6 +1,6 @@
 package gls.expressions
 
-import gls.scope.CompilableTestSupport
+import gls.CompilableTestSupport
 
 public class DeclarationTest extends CompilableTestSupport {
 

@@ -2276,8 +2276,9 @@ public class AsmClassGenerator extends ClassGenerator {
         if (methodName==null) return false;
         if (!call.isImplicitThis()) return false;
         if (!isThisExpression(call.getObjectExpression())) return false;
-        //if (isNotExplicitThisInClosure(call.isImplicitThis()) return false;
-        if (classNode.getDeclaredField(methodName) == null) return false;
+        FieldNode field = classNode.getDeclaredField(methodName);
+        if (field == null) return false;
+        if (isStaticInvocation(call) && !field.isStatic()) return false;
         Expression arguments = call.getArguments();
         return ! classNode.hasPossibleMethod(methodName, arguments);
     }

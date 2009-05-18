@@ -1,6 +1,6 @@
 package gls.invocation
 
-import gls.scope.CompilableTestSupport
+import gls.CompilableTestSupport
 
 public class MethodSelectionTest extends CompilableTestSupport {
 

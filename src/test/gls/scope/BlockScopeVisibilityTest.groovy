@@ -1,5 +1,7 @@
 package gls.scope
 
+import gls.CompilableTestSupport
+
 class BlockScopeVisibilityTest extends CompilableTestSupport {
 
   public void testForLoopVariableNotVisibleOutside() {

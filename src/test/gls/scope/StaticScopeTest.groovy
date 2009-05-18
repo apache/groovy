@@ -1,5 +1,7 @@
 package gls.scope
 
+import gls.CompilableTestSupport
+
 public class StaticScopeTest extends CompilableTestSupport {
 
     public void testNormalStaticScopeInScript() {
@@ -198,6 +200,16 @@ public class StaticScopeTest extends CompilableTestSupport {
             static allowUsageOfStaticPropertiesAndFields
             B(x) { super(allowUsageOfStaticPropertiesAndFields) }
         }
+        """
+    }
+    
+    public void testStaticMethodAccessingDynamicField() {
+        shouldFail MissingMethodException, """
+            class A {
+                def x = { }
+                static foo() { x() }
+            } 
+            A.foo()
         """
     }
 }

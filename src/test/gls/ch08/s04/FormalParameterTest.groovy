@@ -1,6 +1,6 @@
 package gls.ch08.s04
 
-import gls.scope.CompilableTestSupport
+import gls.CompilableTestSupport
 
 /**
 * a formal parameter is a parameter to a method, this parameter must work

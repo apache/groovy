@@ -1,6 +1,6 @@
 package gls.statements
 
-import gls.scope.CompilableTestSupport
+import gls.CompilableTestSupport
 
 public class ReturnTest extends CompilableTestSupport {
 
