@@ -23,6 +23,7 @@ import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.objectweb.asm.Opcodes;
@@ -92,6 +93,15 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
                 super.visitDeclarationExpression(expression);
             }
 
+            public void visitExpressionStatement(ExpressionStatement es) {
+            	// GROOVY-3543: visit the declaration expressions so that declaration variables get added on the varStack
+            	Expression exp = es.getExpression();
+            	if(exp instanceof DeclarationExpression) {
+            		exp.visit(this);
+            	}
+                super.visitExpressionStatement(es);
+            }
+            
             public Expression transform(Expression exp) {
                 if (exp instanceof VariableExpression) {
                     VariableExpression ve = (VariableExpression) exp;

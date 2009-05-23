@@ -131,6 +131,36 @@ class CategoryTest extends GroovyTestCase {
       """
     }
     
+    void testCategoryMethodsHavingDeclarationStatements() {
+        // GROOVY-3543: Declaration statements in category class' methods were not being visited by 
+        // CategoryASTTransformation's expressionTransformer resulting in declaration variables not being 
+        // defined on varStack resulting in compilation errors later
+        assertScript """
+            @Category(Test)
+            class TestCategory {
+                String getSuperName() { 
+                    String myname = "" // 
+                    return myname + "hi from category" 
+                }
+            }
+    
+            interface Test { 
+                String getName() 
+            }
+    
+            class MyTest implements Test {
+                String getName() {
+                    return "hi"
+                }
+            }
+    
+            def onetest = new MyTest()
+            assert onetest.getName() == "hi"
+            use(TestCategory) { 
+                assert onetest.getSuperName() == "hi from category" 
+            }
+        """
+    }
 }
 
 class StringCategory {
