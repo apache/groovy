@@ -1,6 +1,6 @@
 package gls.invocation.vm5
 
-import gls.scope.CompilableTestSupport
+import gls.CompilableTestSupport
 
 public class CovariantReturnTest extends CompilableTestSupport {
 
