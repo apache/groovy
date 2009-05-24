@@ -39,5 +39,48 @@ class CategoryAnnotationTest extends GroovyTestCase {
         """
     }
     
+    void testCategoryMethodsHavingDeclarationStatements() {
+        // GROOVY-3543: Declaration statements in category class' methods were not being visited by 
+        // CategoryASTTransformation's expressionTransformer resulting in declaration variables not being 
+        // defined on varStack resulting in compilation errors later
+        assertScript """
+            @Category(Test)
+            class TestCategory {
+                String getSuperName1() { 
+                    String myname = "" 
+                    return myname + "hi from category" 
+                }
+                // 2nd test case of JIRA
+                String getSuperName2() { 
+			        String myname = this.getName() 
+			        for(int i = 0; i < 5; i++) myname += i 
+			        return myname + "-Post"
+                }
+                // 3rd test case of JIRA
+                String getSuperName3() { 
+                    String myname = this.getName() 
+                    for(i in 0..4) myname += i
+                    return myname + "-Post"
+                }
+            }
+    
+            interface Test { 
+                String getName() 
+            }
+    
+            class MyTest implements Test {
+                String getName() {
+                    return "Pre-"
+                }
+            }
+    
+            def onetest = new MyTest()
+            use(TestCategory) { 
+                assert onetest.getSuperName1() == "hi from category"
+                assert onetest.getSuperName2() == "Pre-01234-Post"
+                assert onetest.getSuperName3() == "Pre-01234-Post"
+            }
+        """
+    }
 }
 
