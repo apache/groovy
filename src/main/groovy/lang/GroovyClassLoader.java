@@ -339,8 +339,10 @@ public class GroovyClassLoader extends URLClassLoader {
             }
         });
         PermissionCollection myPerms = myDomain.getPermissions();
-        for (Enumeration<Permission> elements = myPerms.elements(); elements.hasMoreElements();) {
-            perms.add(elements.nextElement());
+        if(myPerms != null) {
+            for (Enumeration<Permission> elements = myPerms.elements(); elements.hasMoreElements();) {
+                perms.add(elements.nextElement());
+            }
         }
         perms.setReadOnly();
         return perms;
