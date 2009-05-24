@@ -31,9 +31,21 @@ class CategoryAnnotationTest extends GroovyTestCase {
         assertScript """
             @Category(Test)
             class TestCategory {
-                String getSuperName() { 
-                    String myname = "" // 
+                String getSuperName1() { 
+                    String myname = "" 
                     return myname + "hi from category" 
+                }
+                // 2nd test case of JIRA
+                String getSuperName2() { 
+                    String myname = this.getName() 
+                    for(int i = 0; i < 5; i++) myname += i 
+                    return myname + "-Post"
+                }
+                // 3rd test case of JIRA
+                String getSuperName3() { 
+                    String myname = this.getName() 
+                    for(i in 0..4) myname += i
+                    return myname + "-Post"
                 }
             }
     
@@ -43,14 +55,15 @@ class CategoryAnnotationTest extends GroovyTestCase {
     
             class MyTest implements Test {
                 String getName() {
-                    return "hi"
+                    return "Pre-"
                 }
             }
     
             def onetest = new MyTest()
-            assert onetest.getName() == "hi"
             use(TestCategory) { 
-                assert onetest.getSuperName() == "hi from category" 
+                assert onetest.getSuperName1() == "hi from category"
+                assert onetest.getSuperName2() == "Pre-01234-Post"
+                assert onetest.getSuperName3() == "Pre-01234-Post"
             }
         """
     }

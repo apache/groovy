@@ -24,6 +24,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformation;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.objectweb.asm.Opcodes;
@@ -91,6 +92,16 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
             public void visitDeclarationExpression(DeclarationExpression expression) {
                 varStack.getLast().add(expression.getVariableExpression().getName());
                 super.visitDeclarationExpression(expression);
+            }
+
+            public void visitForLoop(ForStatement forLoop) {
+            	Expression exp = forLoop.getCollectionExpression();
+            	exp.visit(this);
+            	Parameter loopParam = forLoop.getVariable();
+            	if(loopParam != null) {
+            		varStack.getLast().add(loopParam.getName());
+            	}
+                super.visitForLoop(forLoop);
             }
 
             public void visitExpressionStatement(ExpressionStatement es) {
