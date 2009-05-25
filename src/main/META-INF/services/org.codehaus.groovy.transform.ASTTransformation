@@ -1,2 +1,5 @@
-# global annotation to handle @Grab annotation
+# global transformation to handle @Grab annotation
 groovy.grape.GrabAnnotationTransformation
+
+# global transformation for power assertions
+org.codehaus.groovy.transform.powerassert.AssertionTransformation
