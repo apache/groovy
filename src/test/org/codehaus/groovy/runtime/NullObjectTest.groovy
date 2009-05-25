@@ -3,11 +3,8 @@ package org.codehaus.groovy.runtime
 class NullObjectTest extends GroovyTestCase {
     void testCallingMethod() {
         def foo = null
-        try {
+        shouldFail(NullPointerException) {
           println foo.bar
-          assert false  // should throw exception
-        } catch (NullPointerException ex) {
-          // is successfull
         }
     }
     
@@ -44,7 +41,14 @@ class NullObjectTest extends GroovyTestCase {
                 assert n + " is a null value" == " is a null value"
                 assert "this is a null value " + null == "this is a null value "
             }
-        } 
+        }
+
+    void testClone() {
+        def foo = null
+        shouldFail(NullPointerException) {
+            foo.clone()    
+        }
+    }
 }
 
 class MyCategory {
