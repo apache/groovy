@@ -42,8 +42,8 @@ public class NullObject extends GroovyObjectSupport {
      * Since this is implemented as a singleton, we should avoid the
      * use of the clone method
      */
-    public Object clone() throws CloneNotSupportedException {
-        throw new CloneNotSupportedException();
+    public Object clone() {
+        throw new NullPointerException("Cannot invoke method clone() on null object");
     }
 
     /**
@@ -136,6 +136,6 @@ public class NullObject extends GroovyObjectSupport {
     }
 
     public int hashCode() {
-        throw new NullPointerException("hashCode() not allowed on null");
+        throw new NullPointerException("Cannot invoke method hashCode() on null object");
     }
 }
