@@ -60,9 +60,13 @@ public class PropertyExpression extends Expression {
     }
 
     public Expression transformExpression(ExpressionTransformer transformer) {
-        property = transformer.transform(property);
-        objectExpression = transformer.transform(objectExpression);
-        return this;
+        PropertyExpression ret = new PropertyExpression(transformer.transform(objectExpression),
+                transformer.transform(property), safe);
+        ret.setSpreadSafe(spreadSafe);
+        ret.setStatic(isStatic);
+        ret.setImplicitThis(implicitThis);
+        ret.setSourcePosition(this);
+        return ret;
     }
 
     public Expression getObjectExpression() {
