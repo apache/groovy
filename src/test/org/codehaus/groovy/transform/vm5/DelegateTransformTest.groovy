@@ -119,4 +119,13 @@ class DelegateTransformTest extends GroovyShellTestCase {
         Foo
       """
     }
+
+    /** fix for GROOVY-3471 */
+    void testDelegateOnAMapTypeFieldWithInitializationUsingConstructorProperties() {
+        assertScript """
+            class Test3471 { @Delegate Map mp }
+            def t = new Test3471(mp: new HashMap()) // this was resulting in a NPE
+            assert t.keySet().size() == 0
+        """
+    }
 }
