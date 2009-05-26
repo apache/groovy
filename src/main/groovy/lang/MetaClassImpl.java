@@ -2294,15 +2294,6 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         //----------------------------------------------------------------------
         if (newValue instanceof Wrapper) newValue = ((Wrapper) newValue).unwrap();
 
-        //----------------------------------------------------------------------
-        // turn setProperty on a Map to put on the Map itself
-        //----------------------------------------------------------------------
-        if (!isStatic && this.isMap) {
-            ((Map) object).put(name, newValue);
-            return;
-        }
-
-
         MetaMethod method = null;
         Object[] arguments = null;
 
@@ -2400,6 +2391,14 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                 arguments[1] = newValue;
             }
             method.doMethodInvoke(object, arguments);
+            return;
+        }
+
+        //----------------------------------------------------------------------
+        // turn setProperty on a Map to put on the Map itself
+        //----------------------------------------------------------------------
+        if (!isStatic && this.isMap) {
+            ((Map) object).put(name, newValue);
             return;
         }
 
