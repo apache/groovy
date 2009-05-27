@@ -21,8 +21,9 @@ import java.security.CodeSource
 import org.codehaus.groovy.control.*
 import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.classgen.*
+import org.objectweb.asm.Opcodes
 
-public class GroovyClassLoaderTest extends GroovyTestCase {
+public class GroovyClassLoaderTest extends GroovyTestCase implements Opcodes {
 
     private final GroovyClassLoader classLoader = new GroovyClassLoader()
 
@@ -175,6 +176,37 @@ public class GroovyClassLoaderTest extends GroovyTestCase {
         } finally {
             System.setProperty("file.encoding", encoding)
         }
+    }
+    
+    void testPackageDefinitionForGroovyClassesInParseClass() {
+    	def loader = new GroovyClassLoader(this.class.classLoader)
+    	def script = """
+    		package pkg1
+			def x = 1
+    	"""
+    	verifyPackageDetails(loader.parseClass(script), "pkg1")
+    	
+    	script = """
+    		package pkg1.pkg2
+    		class Groovy3537A{}
+    	"""
+    	verifyPackageDetails(loader.parseClass(script), "pkg1.pkg2")
+    }
+    
+    void testPackageDefinitionForGroovyClassesInDefineClass() {
+    	def loader = new GroovyClassLoader(this.class.classLoader)
+    	def classNode = new ClassNode("pkg3.Groovy3537B", ACC_PUBLIC, ClassHelper.OBJECT_TYPE)
+    	classNode.addConstructor(new ConstructorNode(ACC_PUBLIC, null))
+    	def unit = new CompileUnit(loader, new CompilerConfiguration())
+    	def module = new ModuleNode(unit)
+    	classNode.setModule(module)
+    	def clazz = loader.defineClass(classNode, classNode.getName() + ".groovy", "")
+    	verifyPackageDetails(clazz, "pkg3")
+    }
+    
+    void verifyPackageDetails(clazz, expectedPkgName) {
+    	assert clazz.package instanceof java.lang.Package
+    	assert clazz.package.name == expectedPkgName
     }
 }
 
