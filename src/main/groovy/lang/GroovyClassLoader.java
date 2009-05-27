@@ -172,7 +172,7 @@ public class GroovyClassLoader extends URLClassLoader {
             unit.addClassNode(classNode);
             unit.setClassgenCallback(collector);
             unit.compile(Phases.CLASS_GENERATION);
-
+            definePackage(collector.generatedClass.getName());
             return collector.generatedClass;
         } catch (CompilationFailedException e) {
             throw new RuntimeException(e);
@@ -280,6 +280,7 @@ public class GroovyClassLoader extends URLClassLoader {
             answer = collector.generatedClass;
             for (Iterator iter = collector.getLoadedClasses().iterator(); iter.hasNext();) {
                 Class clazz = (Class) iter.next();
+                definePackage(clazz.getName());
                 setClassCacheEntry(clazz);
             }
             if (shouldCacheSource) sourceCache.put(codeSource.getName(), answer);
@@ -287,6 +288,17 @@ public class GroovyClassLoader extends URLClassLoader {
         }
     }
 
+    private void definePackage(String className) {
+    	int i = className.lastIndexOf('.');
+    	if (i != -1) {
+    		String pkgName = className.substring(0, i);
+    		Package pkg = getPackage(pkgName);
+    		if (pkg == null) {
+    			definePackage(pkgName, null, null, null, null, null, null, null);
+    		}
+    	}
+    }
+    	
     /**
      * gets the currently used classpath.
      *
