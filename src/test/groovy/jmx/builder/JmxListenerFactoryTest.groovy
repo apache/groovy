@@ -45,7 +45,7 @@ class JmxListenerFactoryTest extends GroovyTestCase {
     def lstr = builder.listener(from: "test:type=timer", call: {event ->
       eventCount = eventCount + 1
     })
-    Thread.currentThread().sleep(700)
+    Thread.currentThread().sleep(800)
     assert eventCount > 1
 
     shouldFail {

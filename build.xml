@@ -486,7 +486,7 @@ $Date$
     </target>
 
     <target name="-jarjarInit">
-        <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask"  classpathref="toolsPath"/>
+        <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpathref="toolsPath"/>
     </target>
 
     <target name="-createEmbeddableJar" depends="-jarjarInit" unless="testFailed">
