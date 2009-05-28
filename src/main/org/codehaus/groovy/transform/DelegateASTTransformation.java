@@ -36,6 +36,7 @@ import java.util.Set;
  *
  * @author Alex Tkachman
  * @author Guillaume Laforge
+ * @author Paul King
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class DelegateASTTransformation implements ASTTransformation, Opcodes {
