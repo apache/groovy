@@ -669,7 +669,6 @@ $Date$
     <target name="cruiseInit">
         <property name="noTextReports" value="true"/>
         <property name="forceCoverage" value="true"/>
-        <delete file="cobertura.ser" quiet="true" failonerror="false"/>
         <delete dir="${reportsDirectory}" quiet="true" failonerror="false"/>
         <delete dir="${junitRawDirectory}" quiet="true" failonerror="false"/>
     </target>
@@ -761,6 +760,7 @@ $Date$
 
     <target name="clean" description="Clean up build artifacts.">
         <delete dir="${targetDirectory}" quiet="true"/>
+        <delete file="cobertura.ser" quiet="true" failonerror="false"/>
         <delete quiet="true">
             <fileset dir="." includes="**/*~"/>
             <fileset dir="${groovyParserDirectory}" includes="Groovy*.*"/>
