@@ -673,7 +673,7 @@ $Date$
         <delete dir="${junitRawDirectory}" quiet="true" failonerror="false"/>
     </target>
 
-    <target name="cruise" depends="cruiseInit,fulldist,checkstyle,cruiseReportExtras"/>
+    <target name="cruise" depends="cruiseInit,fulldist,cruiseReportExtras"/>
 
     <target name="-docInit">
         <mkdir dir="${docsDirectory}"/>
@@ -780,7 +780,7 @@ $Date$
         <mavenInstallRepo version="${groovyVersion}" prefix="groovy-all"/>
     </target>
 
-    <target name="fulldist" depends="dist,compileExamples" description="dist plus examples and all tests"/>
+    <target name="fulldist" depends="dist,compileExamples,checkstyle" description="dist plus examples plus checkstyle"/>
 
     <target name="dist" depends="install,doc" description="Create everything needed for a distribution.">
         <zip destfile="${targetDistDirectory}/groovy-binary-${groovyVersion}.zip"
