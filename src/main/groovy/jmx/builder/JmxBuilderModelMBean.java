@@ -63,15 +63,15 @@ public class JmxBuilderModelMBean extends RequiredModelMBean implements Notifica
     /**
      * Registers listeners for operation calls (i.e. method, getter, and setter calls) when
      * invoked on this bean from the MBeanServer.  Descriptor should contain a map with layout
-     * item -> [Map[methodListner:[target:"", tpe:"", callback:&amp;Closure], ... ,]]
+     * item -> [Map[methodListener:[target:"", tpe:"", callback:&amp;Closure], ... ,]]
      *
      * @param descriptor MetaMap descriptor containing description of operation call listeners
      */
     public void addOperationCallListeners(Map<String, Map> descriptor) {
         if (descriptor == null) return;
         for (Map.Entry<String, Map> item : descriptor.entrySet()) {
-            // setup method listeners (such as attributeListener and Operation Listners)
-            // item -> [Map[methodListner:[target:"", tpe:"", callback:&Closure], ... ,]]
+            // set up method listeners (such as attributeListener and Operation Listeners)
+            // item -> [Map[methodListener:[target:"", tpe:"", callback:&Closure], ... ,]]
             if (item.getValue().containsKey("methodListener")) {
                 Map listener = (Map) item.getValue().get("methodListener");
                 String target = (String) listener.get("target");
@@ -82,7 +82,7 @@ public class JmxBuilderModelMBean extends RequiredModelMBean implements Notifica
                 if (listenerType.equals("attributeChangeListener")) {
                     try {
                         this.addAttributeChangeNotificationListener(
-                                AttributeChangedListener.getListner(), (String) listener.get("attribute"), listener
+                                AttributeChangedListener.getListener(), (String) listener.get("attribute"), listener
                         );
                     } catch (MBeanException e) {
                         throw new JmxBuilderException(e);
@@ -141,14 +141,12 @@ public class JmxBuilderModelMBean extends RequiredModelMBean implements Notifica
     }
 
     private Notification buildCallListenerNotification(String target) {
-        Notification note = new Notification(
+        return new Notification(
                 "jmx.operation.call." + target,
                 this,
                 NumberSequencer.getNextSequence(),
                 System.currentTimeMillis()
         );
-
-        return note;
     }
 
 
@@ -164,21 +162,21 @@ public class JmxBuilderModelMBean extends RequiredModelMBean implements Notifica
         }
     }
 
-    /***
-     * Internal class AttributeChangedListener provides hooks toa handle attribute-change events 
+    /**
+     * Internal class AttributeChangedListener provides hooks to handle attribute-change events
      * that occurs on registered MBeans.
      *
      * @author Vladimir Vivien
      * @see groovy.jmx.builder.JmxBuilderModelMBean
      */
-    private static class AttributeChangedListener implements NotificationListener {
+    private static final class AttributeChangedListener implements NotificationListener {
         private static AttributeChangedListener listener;
 
         /**
          * Returns an instance of the AttributeChangedListener.
          * @return
          */
-        public static synchronized AttributeChangedListener getListner() {
+        public static synchronized AttributeChangedListener getListener() {
             if (listener == null) {
                 listener = new AttributeChangedListener();
             }
