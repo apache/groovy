@@ -23,16 +23,13 @@ import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
-import org.codehaus.groovy.transform.ASTTransformation;
-import org.codehaus.groovy.transform.GroovyASTTransformation;
 import org.codehaus.groovy.classgen.Verifier;
 import org.objectweb.asm.Opcodes;
 
-import java.lang.ref.SoftReference;
 import java.lang.reflect.Modifier;
 import java.util.Map;
-import java.util.Iterator;
 import java.util.Set;
+import java.util.Arrays;
 
 /**
  * Handles generation of code for the <code>@Delegate</code> annotation
@@ -44,8 +41,8 @@ import java.util.Set;
 public class DelegateASTTransformation implements ASTTransformation, Opcodes {
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
-        if (!(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
-            throw new RuntimeException("Internal error: wrong types: $node.class / $parent.class");
+        if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
+            throw new RuntimeException("Internal error: expecting [AnnotationNode, AnnotatedClass] but got: " + Arrays.asList(nodes));
         }
 
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
@@ -54,26 +51,23 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
         if (parent instanceof FieldNode) {
             FieldNode fieldNode = (FieldNode) parent;
             final ClassNode type = fieldNode.getType();
-            final Map fieldMethods = type.getDeclaredMethodsMap();
+            final Map<String, MethodNode> fieldMethods = type.getDeclaredMethodsMap();
             final ClassNode owner = fieldNode.getOwner();
 
-            final Map ownMethods = owner.getDeclaredMethodsMap();
-            for (Iterator it = fieldMethods.entrySet().iterator(); it.hasNext(); ) {
-                Map.Entry e = (Map.Entry) it.next();
-
+            final Map<String, MethodNode> ownMethods = owner.getDeclaredMethodsMap();
+            for (Map.Entry<String, MethodNode> e : fieldMethods.entrySet()) {
                 addDelegateMethod(fieldNode, owner, ownMethods, e);
             }
 
-            for (Iterator it = type.getProperties().iterator(); it.hasNext(); ) {
-                PropertyNode prop = (PropertyNode) it.next();
+            for (PropertyNode prop : type.getProperties()) {
 
-                if (prop.isStatic() || !prop.isPublic ())
-                  continue;
+                if (prop.isStatic() || !prop.isPublic())
+                    continue;
 
                 String name = prop.getName();
 
                 String getterName = "get" + Verifier.capitalize(name);
-                if(owner.getGetterMethod(getterName) == null) {
+                if (owner.getGetterMethod(getterName) == null) {
                     owner.addMethod(getterName,
                             ACC_PUBLIC,
                             nonGeneric(prop.getType()),
@@ -86,17 +80,17 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
                 }
 
                 String setterName = "set" + Verifier.capitalize(name);
-                if((prop.getModifiers() & ACC_FINAL) != 0 && owner.getSetterMethod(setterName) == null) {
+                if ((prop.getModifiers() & ACC_FINAL) != 0 && owner.getSetterMethod(setterName) == null) {
                     owner.addMethod(setterName,
                             ACC_PUBLIC,
                             ClassHelper.VOID_TYPE,
-                            new Parameter[] {new Parameter(nonGeneric(prop.getType()), "value")},
+                            new Parameter[]{new Parameter(nonGeneric(prop.getType()), "value")},
                             null,
                             new ExpressionStatement(
                                     new BinaryExpression(
                                             new PropertyExpression(
-                                               new FieldExpression(fieldNode),
-                                               name),
+                                                    new FieldExpression(fieldNode),
+                                                    name),
                                             Token.newSymbol(Types.EQUAL, -1, -1),
                                             new VariableExpression("value"))));
                 }
@@ -107,11 +101,10 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
             if(member instanceof ConstantExpression && ((ConstantExpression)member).getValue().equals(false))
               return;
 
-            final Set allInterfaces = type.getAllInterfaces();
-            final Set ownerIfaces = owner.getAllInterfaces();
-            for (Iterator it = allInterfaces.iterator(); it.hasNext(); ) {
-                ClassNode iface = (ClassNode) it.next();
-                if (Modifier.isPublic(iface.getModifiers()) && !ownerIfaces.contains(iface) ) {
+            final Set<ClassNode> allInterfaces = type.getAllInterfaces();
+            final Set<ClassNode> ownerIfaces = owner.getAllInterfaces();
+            for (ClassNode iface : allInterfaces) {
+                if (Modifier.isPublic(iface.getModifiers()) && !ownerIfaces.contains(iface)) {
                     final ClassNode[] ifaces = owner.getInterfaces();
                     final ClassNode[] newIfaces = new ClassNode[ifaces.length + 1];
                     System.arraycopy(ifaces, 0, newIfaces, 0, ifaces.length);
@@ -122,8 +115,8 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
         }
     }
 
-    private void addDelegateMethod(FieldNode fieldNode, ClassNode owner, Map ownMethods, Map.Entry e) {
-        MethodNode method = (MethodNode) e.getValue();
+    private void addDelegateMethod(FieldNode fieldNode, ClassNode owner, Map<String, MethodNode> ownMethods, Map.Entry<String, MethodNode> e) {
+        MethodNode method = e.getValue();
         if (!method.isPublic() || method.isStatic())
             return;
 

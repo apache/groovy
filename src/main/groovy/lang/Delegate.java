@@ -70,6 +70,10 @@ import java.lang.annotation.Target;
  * annotation's {@code interfaces} element to false,
  * i.e. {@code @Delegate(interfaces = false)}.
  *
+ * If multiple delegate fields are used and the same method signature occurs
+ * in more than one of the respective field types, then the delegate will be
+ * to the first defined field having that signature.
+ *
  * @author Alex Tkachman
  */
 @Retention(RetentionPolicy.SOURCE)
