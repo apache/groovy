@@ -68,13 +68,40 @@ import java.lang.annotation.Target;
  *
  * This behavior can be disabled by setting the
  * annotation's {@code interfaces} element to false,
- * i.e. {@code @Delegate(interfaces = false)}.
+ * i.e. {@code @Delegate(interfaces = false)}, e.g. in the above
+ * example, the delegate definition would become:
+ * <pre>
+ *     {@code @Delegate}(interfaces = false) Date when
+ * </pre>
+ * and the following would be true:
+ * <pre>
+ * assert !(gr8conf instanceof Cloneable)
+ * </pre>
  *
  * If multiple delegate fields are used and the same method signature occurs
  * in more than one of the respective field types, then the delegate will be
- * to the first defined field having that signature.
+ * made to the first defined field having that signature.
+ *
+ * By default, methods of the delegate type marked as {@code @Deprecated} are
+ * not automatically added to the owner class. You can add these methods by
+ * setting the annotation's {@code deprecated} element to true,
+ * i.e. {@code @Delegate(deprecated = true)}.
+ *
+ * For example, in the example above if we change the delegate definition to:
+ * <pre>
+ *     {@code @Delegate}(deprecated = true) Date when
+ * </pre>
+ * then the following additional lines will execute successfully (during 2009):
+ * <pre>
+ * assert gr8conf.year + 1900 == 2009
+ * assert gr8conf.toGMTString().contains(" 2009 ")
+ * </pre>
+ * Otherwise these lines produce a groovy.lang.MissingPropertyException
+ * or groovy.lang.MissingMethodException respectively as those two methods are
+ * {@code @Deprecated} in {@code Date}.
  *
  * @author Alex Tkachman
+ * @author Paul King
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.FIELD})
@@ -84,4 +111,9 @@ public @interface Delegate {
      * @return true if owner class should implement interfaces implemented by field
      */
     boolean interfaces() default true;
+
+    /**
+     * @return true if owner class should delegate to methods annotated with @Deprecated
+     */
+    boolean deprecated() default false;
 }
