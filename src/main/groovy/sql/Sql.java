@@ -40,7 +40,19 @@ import javax.sql.DataSource;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 /**
- * Represents an extent of objects
+ * A facade over Java's normal JDBC apis providing greatly simplified
+ * resource management and result set handling. Under the covers the
+ * facade hides away details associated with getting connections,
+ * constructing and configuring statements, interacting with the
+ * connection, closing resources and logging errors. Special
+ * features of the facade include using closures to iterate
+ * through result sets, a special GString syntax for representing
+ * prepared statements and treating result sets like collections
+ * of maps with the normal Groovy collection methods available.
+ *
+ * The class provides numerous extension points for overriding the
+ * facade behavior associated with the various aspects of managing
+ * the connection with the underlying database.
  *
  * @author Chris Stevenson
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
