@@ -131,7 +131,9 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
         if (!method.getAnnotations(DEPRECATED_TYPE).isEmpty() && !deprecated)
             return;
 
-        if (!ownMethods.containsKey(e.getKey())) {
+        MethodNode existingNode = ownMethods.get(e.getKey());
+        // TODO work out why the code was null for super interfaces
+        if (existingNode == null || existingNode.getCode() == null) {
             final ArgumentListExpression args = new ArgumentListExpression();
             final Parameter[] params = method.getParameters();
             final Parameter[] newParams = new Parameter[params.length];
