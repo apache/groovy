@@ -474,6 +474,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             Expression expr = expStmt.getExpression(); 
             ReturnStatement ret = new ReturnStatement(expr);
             ret.setSourcePosition(expr);
+            ret.setStatementLabel(statement.getStatementLabel());
             return ret;
         }
 
