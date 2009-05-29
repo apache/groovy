@@ -16,7 +16,6 @@
 package org.codehaus.groovy.vmplugin;
 
 import org.codehaus.groovy.ast.*;
-import java.lang.reflect.Method;
 
 /**
  * Interface to access VM version based actions.

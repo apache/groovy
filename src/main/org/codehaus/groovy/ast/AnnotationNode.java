@@ -15,9 +15,7 @@
  */
 package org.codehaus.groovy.ast;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.codehaus.groovy.ast.expr.Expression;

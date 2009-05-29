@@ -6,7 +6,6 @@ package org.codehaus.groovy.ast;
 import junit.framework.TestCase;
 
 import org.codehaus.groovy.ast.expr.VariableExpression;
-import org.objectweb.asm.Opcodes;
 
 /**
  * Tests the VariableExpressionNode

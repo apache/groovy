@@ -16,13 +16,10 @@
 
 package org.codehaus.groovy.runtime.metaclass;
 
-import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
-import java.lang.reflect.Method;
 import java.lang.ref.WeakReference;
-import java.util.List;
 
 import groovy.lang.*;
 

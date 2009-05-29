@@ -15,7 +15,6 @@
  */
 package org.codehaus.groovy.runtime.dgmimpl.arrays;
 
-import groovy.lang.GString;
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.CachedClass;

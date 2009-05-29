@@ -5,10 +5,8 @@ import java.io.StringReader;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import junit.framework.TestResult;
 // Jsr parser
 // @todo - refactor pulling generic parser interface up
-import org.codehaus.groovy.antlr.parser.GroovyLexer;
 import org.codehaus.groovy.antlr.parser.GroovyRecognizer;
 
 // codehaus reference implementation usage

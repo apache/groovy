@@ -18,7 +18,6 @@ package org.codehaus.groovy.reflection;
 import groovy.lang.*;
 import org.codehaus.groovy.reflection.stdclasses.*;
 import org.codehaus.groovy.util.*;
-import org.codehaus.groovy.util.*;
 
 import java.lang.ref.PhantomReference;
 import java.lang.ref.SoftReference;

@@ -16,10 +16,6 @@
 package org.codehaus.groovy.tools.groovydoc;
 
 import org.codehaus.groovy.groovydoc.*;
-import org.codehaus.groovy.ant.Groovydoc;
-
-import java.util.List;
-import java.util.ArrayList;
 
 public class SimpleGroovyMemberDoc extends SimpleGroovyProgramElementDoc implements GroovyMemberDoc {
     private boolean abstractElement;

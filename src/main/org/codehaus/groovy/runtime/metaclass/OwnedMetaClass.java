@@ -1,7 +1,6 @@
 package org.codehaus.groovy.runtime.metaclass;
 
 import groovy.lang.*;
-import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.ast.ClassNode;
 
 import java.util.List;

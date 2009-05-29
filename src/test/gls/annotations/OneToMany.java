@@ -15,8 +15,6 @@
  */
 package gls.annotations;
 
-import gls.annotations.CascadeType;
-
 import java.lang.annotation.*;
 
 import static java.lang.annotation.RetentionPolicy.*;

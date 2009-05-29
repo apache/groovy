@@ -25,7 +25,6 @@ import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 
 import java.util.List;
-import java.util.ListIterator;
 
 /**
  * Rewrites all assertions in a source unit.

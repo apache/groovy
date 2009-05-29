@@ -16,12 +16,10 @@
 
 package org.codehaus.groovy.vmplugin.v5;
 
-import groovy.lang.MetaClass;
 import groovy.lang.IntRange;
 import groovy.lang.EmptyRange;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.DefaultGroovyMethodsSupport;
-import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.util.Arrays;
 import java.lang.reflect.Method;

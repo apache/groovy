@@ -17,9 +17,6 @@ package org.codehaus.groovy.tools.groovydoc;
 
 import org.codehaus.groovy.groovydoc.*;
 
-import java.util.ArrayList;
-import java.util.List;
-
 public class SimpleGroovyMethodDoc extends SimpleGroovyExecutableMemberDoc implements GroovyMethodDoc {
     private GroovyType returnType;
 
