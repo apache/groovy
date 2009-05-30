@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 the original author or authors.
+ * Copyright 2008-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,10 +24,50 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Annotates a groovy class or interface to become category
- * - all methods transformed to static ones with additional parameter self of type defined by annotation parameter
- * Properties invoked using 'this' reference are transformed so that 
- * they are invoked on the additional self parameter and not on the Category instance 
+ * Transforms an instance-style Groovy class or interface to become a static-style
+ * conventional Groovy category.
+ * </p>
+ * All methods are transformed to static ones with an additional self
+ * parameter having the type supplied as the required annotation parameter.
+ * Properties invoked using 'this' references are transformed so that
+ * they are instead invoked on the additional self parameter and not on
+ * the Category instance.
+ * </p>
+ * Classes conforming to the conventional Groovy category conventions can be used
+ * within {@code use} statements or mixed in with the {@code Mixin} transformation.
+ * An example showing a {@code use} statement:
+ * <pre>
+ * {@code @Category}(Integer)
+ * class IntegerOps {
+ *     def triple() {
+ *         this * 3
+ *     }
+ * }
+ *
+ * use (IntegerOps) {
+ *     assert 25.triple() == 75
+ * }
+ * </pre>
+ * Or, using the {@code @Mixin} flavor:
+ * <pre>
+ * {@code @Category}(List)
+ * class Shuffler {
+ *     def shuffle() {
+ *         def result = new ArrayList(this)
+ *         Collections.shuffle(result)
+ *         result
+ *     }
+ * }
+ *
+ * {@code @Mixin}(Shuffler)
+ * class Sentence extends ArrayList {
+ *     Sentence(Collection initial) { super(initial) }
+ * }
+ *
+ * def words = ["The", "quick", "brown", "fox"]
+ * println new Sentence(words).shuffle()
+ * // => [quick, fox, The, brown]       (order will vary)
+ * </pre>
  *
  * @author Alex Tkachman
  */

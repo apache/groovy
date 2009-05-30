@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 the original author or authors.
+ * Copyright 2008-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,6 +30,7 @@ import org.objectweb.asm.Opcodes;
 import java.util.Set;
 import java.util.LinkedList;
 import java.util.HashSet;
+import java.util.Arrays;
 
 /**
  * Handles generation of code for the @Category annotation
@@ -37,25 +38,28 @@ import java.util.HashSet;
  *
  * @author Alex Tkachman
  */
-@GroovyASTTransformation(phase=CompilePhase.CANONICALIZATION)
+@GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class CategoryASTTransformation implements ASTTransformation, Opcodes {
     private static final VariableExpression THIS_EXPRESSION = new VariableExpression("$this");
 
     /**
      * Property invocations done on 'this' reference are transformed so that the invocations at runtime are
      * done on the additional parameter 'self'
-     *
      */
     public void visit(ASTNode[] nodes, final SourceUnit source) {
+        if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof ClassNode)) {
+            throw new RuntimeException("Internal error: expecting [AnnotationNode, ClassNode] but got: " + Arrays.asList(nodes));
+        }
+
         AnnotationNode annotation = (AnnotationNode) nodes[0];
         ClassNode parent = (ClassNode) nodes[1];
 
         ClassNode targetClass = getTargetClass(source, annotation);
 
-        final LinkedList<Set<String>> varStack = new LinkedList<Set<String>> ();
+        final LinkedList<Set<String>> varStack = new LinkedList<Set<String>>();
         Set<String> names = new HashSet<String>();
         for (FieldNode field : parent.getFields()) {
-          names.add(field.getName());
+            names.add(field.getName());
         }
         varStack.add(names);
 
@@ -68,14 +72,11 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
                 Set<String> names = new HashSet<String>();
                 names.addAll(varStack.getLast());
                 final Parameter[] params = node.getParameters();
-                for (int i = 0; i < params.length; i++) {
-                    Parameter param = params[i];
+                for (Parameter param : params) {
                     names.add(param.getName());
                 }
                 varStack.add(names);
-
                 super.visitMethod(node);
-
                 varStack.removeLast();
             }
 
@@ -93,23 +94,23 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
             }
 
             public void visitForLoop(ForStatement forLoop) {
-            	Expression exp = forLoop.getCollectionExpression();
-            	exp.visit(this);
-            	Parameter loopParam = forLoop.getVariable();
-            	if(loopParam != null) {
-            		varStack.getLast().add(loopParam.getName());
-            	}
+                Expression exp = forLoop.getCollectionExpression();
+                exp.visit(this);
+                Parameter loopParam = forLoop.getVariable();
+                if (loopParam != null) {
+                    varStack.getLast().add(loopParam.getName());
+                }
                 super.visitForLoop(forLoop);
             }
 
             public void visitExpressionStatement(ExpressionStatement es) {
-            	// GROOVY-3543: visit the declaration expressions so that declaration variables get added on the varStack
-            	Expression exp = es.getExpression();
-            	if(exp instanceof DeclarationExpression) {
-            		exp.visit(this);
-            	}
+                // GROOVY-3543: visit the declaration expressions so that declaration variables get added on the varStack
+                Expression exp = es.getExpression();
+                if (exp instanceof DeclarationExpression) {
+                    exp.visit(this);
+                }
                 super.visitExpressionStatement(es);
-            }    
+            }
 
             public Expression transform(Expression exp) {
                 if (exp instanceof VariableExpression) {
@@ -121,29 +122,28 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
                             return new PropertyExpression(THIS_EXPRESSION, ve.getName());
                         }
                     }
-                } else if(exp instanceof PropertyExpression) {
-                	PropertyExpression pe = (PropertyExpression) exp;
-                	if (pe.getObjectExpression() instanceof VariableExpression) {
-                		VariableExpression vex = (VariableExpression) pe.getObjectExpression();
-                		if (vex.isThisExpression()) {
-                			pe.setObjectExpression(THIS_EXPRESSION);
-                			return pe;
-                		}
-                	}
+                } else if (exp instanceof PropertyExpression) {
+                    PropertyExpression pe = (PropertyExpression) exp;
+                    if (pe.getObjectExpression() instanceof VariableExpression) {
+                        VariableExpression vex = (VariableExpression) pe.getObjectExpression();
+                        if (vex.isThisExpression()) {
+                            pe.setObjectExpression(THIS_EXPRESSION);
+                            return pe;
+                        }
+                    }
                 }
                 return super.transform(exp);
             }
         };
 
-        for (MethodNode method : parent.getMethods() ) {
+        for (MethodNode method : parent.getMethods()) {
             if (!method.isStatic()) {
                 method.setModifiers(method.getModifiers() | Opcodes.ACC_STATIC);
                 final Parameter[] origParams = method.getParameters();
-                final Parameter[] newParams = new Parameter [origParams.length + 1];
-                newParams [0] = new Parameter(targetClass, "$this");
+                final Parameter[] newParams = new Parameter[origParams.length + 1];
+                newParams[0] = new Parameter(targetClass, "$this");
                 System.arraycopy(origParams, 0, newParams, 1, origParams.length);
                 method.setParameters(newParams);
-
 
                 expressionTransformer.visitMethod(method);
             }
@@ -155,14 +155,13 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
         if (value == null || !(value instanceof ClassExpression)) {
             //noinspection ThrowableInstanceNeverThrown
             source.getErrorCollector().addErrorAndContinue(
-                new SyntaxErrorMessage(new SyntaxException(
-                        "@groovy.lang.Category must define 'value' which is class to apply this category",
-                        annotation.getLineNumber(),
-                        annotation.getColumnNumber()),
-                        source));
+                    new SyntaxErrorMessage(new SyntaxException(
+                            "@groovy.lang.Category must define 'value' which is the class to apply this category to",
+                            annotation.getLineNumber(),
+                            annotation.getColumnNumber()),
+                            source));
         }
 
-        ClassNode targetClass = ((ClassExpression)value).getType();
-        return targetClass;
+        return value != null ? value.getType() : null;
     }
 }
