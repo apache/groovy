@@ -78,6 +78,7 @@ public class JavaStubGenerator
             protected void addPropertyMethod(MethodNode method) {
             	propertyMethods.add(method);
             }
+            protected void addReturnIfNeeded(MethodNode node) {}
         };
         verifier.visitClass(classNode);
         
