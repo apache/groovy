@@ -627,6 +627,28 @@ public class MetaClassHelper {
             // all arguments were null
             baseClass = fallback;
         }
+        /*
+         * If no specific super class has been found and type fallback is an interface, check if all arg classes 
+         * implement it. If yes, then that interface is the common type across arguments.
+         */
+        if(baseClass == Object.class && fallback.isInterface()) {
+        	int tmpCount = 0;
+        	for (int i = offset; i < arguments.length; i++) {
+        		if(arguments[i] != null) {
+        			Class[] intfs = arguments[i].getClass().getInterfaces();
+        			for (int j = 0; j < intfs.length; j++) {
+        				if(intfs[j] == fallback) {
+        					tmpCount++;
+        					break;
+        				}
+        			}
+        		}
+        	}
+        	// all arg classes implement interface fallback, so use that as the array component type
+        	if(tmpCount == arguments.length - offset) {
+        		baseClass = fallback;
+        	}
+        }
         Object result = makeArray(null, baseClass, arguments.length - offset);
         System.arraycopy(arguments, offset, result, 0, arguments.length - offset);
         return result;
