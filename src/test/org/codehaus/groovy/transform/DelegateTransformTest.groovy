@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,10 +18,11 @@ package org.codehaus.groovy.transform
 /**
  * @author Alex Tkachman
  * @author Guillaume Laforge
+ * @author Paul King
  */
 class DelegateTransformTest extends GroovyShellTestCase {
 
-    /** fix for GROOVY-3380 */
+    /** fix for GROOVY-3380   */
     void testDelegateImplementingANonPublicInterface() {
         assertScript """
             import org.codehaus.groovy.transform.ClassImplementingANonPublicInterface
@@ -35,7 +36,7 @@ class DelegateTransformTest extends GroovyShellTestCase {
         """
     }
 
-    /** fix for GROOVY-3380 */
+    /** fix for GROOVY-3380   */
     void testDelegateImplementingANonPublicInterfaceWithZipFileConcreteCase() {
         assertScript """
             import java.util.zip.*
@@ -48,7 +49,7 @@ class DelegateTransformTest extends GroovyShellTestCase {
         """
     }
 
-    void testLock () {
+    void testLock() {
         def res = evaluate("""
               import java.util.concurrent.locks.*
 
@@ -63,28 +64,28 @@ class DelegateTransformTest extends GroovyShellTestCase {
               new LockableMap ()
         """)
 
-        res.lock ()
+        res.lock()
         try {
-            res [0] = 0
-            res [1] = 1
-            res [2] = 2
+            res[0] = 0
+            res[1] = 1
+            res[2] = 2
 
             res.add("in list")
         }
         finally {
-           res.unlock ()
+            res.unlock()
         }
 
-        assertEquals( [0:0,1:1,2:2], res.@map)
-        assertEquals( "in list", res.@list[0])
+        assertEquals([0: 0, 1: 1, 2: 2], res.@map)
+        assertEquals("in list", res.@list[0])
 
         assertTrue res instanceof Map
         assertTrue res instanceof java.util.concurrent.locks.Lock
         assertFalse res instanceof List
     }
 
-    void testMultiple () {
-        def res = evaluate ("""
+    void testMultiple() {
+        def res = evaluate("""
         class X {
           def value = 10
         }
@@ -110,9 +111,9 @@ class DelegateTransformTest extends GroovyShellTestCase {
         res.value = 123
         assertEquals 12, res.value
     }
-    
-    void testUsingDateCompiles () {
-      assertScript """
+
+    void testUsingDateCompiles() {
+        assertScript """
         class Foo { 
           @Delegate Date d = new Date(); 
         } 
@@ -120,7 +121,7 @@ class DelegateTransformTest extends GroovyShellTestCase {
       """
     }
 
-    /** fix for GROOVY-3471 */
+    /** fix for GROOVY-3471   */
     void testDelegateOnAMapTypeFieldWithInitializationUsingConstructorProperties() {
         assertScript """
             class Test3471 { @Delegate Map mp }
@@ -128,4 +129,55 @@ class DelegateTransformTest extends GroovyShellTestCase {
             assert t.keySet().size() == 0
         """
     }
+
+    /** GROOVY-3323   */
+    void testDelegateTransformCorrectlyDelegatesMethodsFromSuperInterfaces() {
+        assert new DelegateBarImpl(new DelegateFooImpl()).bar() == 'bar impl'
+        assert new DelegateBarImpl(new DelegateFooImpl()).foo() == 'foo impl'
+    }
+
+    /** GROOVY-3323   */
+    void testDelegateTransformIgnoresDeprecatedMethodsByDefault() {
+        def b1 = new DelegateBarForcingDeprecated(baz: new BazWithDeprecatedFoo())
+        def b2 = new DelegateBarWithoutDeprecated(baz: new BazWithDeprecatedFoo())
+        assert b1.bar() == 'bar'
+        assert b2.bar() == 'bar'
+        assert b1.foo() == 'foo'
+        shouldFail(MissingMethodException) {
+            assert b2.foo() == 'foo'
+        }
+    }
+}
+
+interface DelegateFoo {
+    def foo()
+}
+
+class DelegateFooImpl implements DelegateFoo {
+    def foo() { 'foo impl' }
+}
+
+interface DelegateBar extends DelegateFoo {
+    def bar()
+}
+
+class DelegateBarImpl implements DelegateBar {
+    @Delegate DelegateFoo foo;
+
+    DelegateBarImpl(DelegateFoo f) { this.foo = f}
+
+    def bar() { 'bar impl'}
+}
+
+class BazWithDeprecatedFoo {
+    @Deprecated foo() { 'foo' }
+    def bar() { 'bar' }
+}
+
+class DelegateBarWithoutDeprecated {
+    @Delegate BazWithDeprecatedFoo baz
+}
+
+class DelegateBarForcingDeprecated {
+    @Delegate(deprecated=true) BazWithDeprecatedFoo baz
 }
