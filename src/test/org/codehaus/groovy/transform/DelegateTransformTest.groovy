@@ -136,7 +136,7 @@ class DelegateTransformTest extends GroovyShellTestCase {
         assert new DelegateBarImpl(new DelegateFooImpl()).foo() == 'foo impl'
     }
 
-    /** GROOVY-3323   */
+    /** GROOVY-3555   */
     void testDelegateTransformIgnoresDeprecatedMethodsByDefault() {
         def b1 = new DelegateBarForcingDeprecated(baz: new BazWithDeprecatedFoo())
         def b2 = new DelegateBarWithoutDeprecated(baz: new BazWithDeprecatedFoo())
