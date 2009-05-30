@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,8 @@ package org.codehaus.groovy.vmplugin.v5;
 
 import java.lang.reflect.*;
 import java.lang.annotation.*;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Iterator;
 
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.vmplugin.VMPlugin;
@@ -30,11 +30,11 @@ import org.codehaus.groovy.ast.ClassHelper;
 
 /**
  * java 5 based functions
- * @author Jochen Theodorou
  *
+ * @author Jochen Theodorou
  */
 public class Java5 implements VMPlugin {
-    private static Class[] PLUGIN_DGM={PluginDefaultGroovyMethods.class};
+    private static final Class[] PLUGIN_DGM = {PluginDefaultGroovyMethods.class};
 
     public void setAdditionalClassInformation(ClassNode cn) {
         setGenericsTypes(cn);
@@ -47,7 +47,7 @@ public class Java5 implements VMPlugin {
     }
 
     private GenericsType[] configureTypeVariable(TypeVariable[] tvs) {
-        if (tvs.length==0) return null;
+        if (tvs.length == 0) return null;
         GenericsType[] gts = new GenericsType[tvs.length];
         for (int i = 0; i < tvs.length; i++) {
             gts[i] = configureTypeVariableDefintion(tvs[i]);
@@ -56,27 +56,27 @@ public class Java5 implements VMPlugin {
     }
 
     private GenericsType configureTypeVariableDefintion(TypeVariable tv) {
-       ClassNode base = configureTypeVariableReference(tv);
-       ClassNode redirect = base.redirect();
-       base.setRedirect(null);
-       Type[] tBounds = tv.getBounds();
-       GenericsType gt;
-       if (tBounds.length==0) {
-           gt = new GenericsType(base);
-       } else {
-           ClassNode[] cBounds = configureTypes(tBounds);
-           gt = new GenericsType(base,cBounds,null);
-           gt.setName(base.getName());
-           gt.setPlaceholder(true);
-       }
-       base.setRedirect(redirect);
-       return gt;
+        ClassNode base = configureTypeVariableReference(tv);
+        ClassNode redirect = base.redirect();
+        base.setRedirect(null);
+        Type[] tBounds = tv.getBounds();
+        GenericsType gt;
+        if (tBounds.length == 0) {
+            gt = new GenericsType(base);
+        } else {
+            ClassNode[] cBounds = configureTypes(tBounds);
+            gt = new GenericsType(base, cBounds, null);
+            gt.setName(base.getName());
+            gt.setPlaceholder(true);
+        }
+        base.setRedirect(redirect);
+        return gt;
     }
 
-    private ClassNode[] configureTypes(Type[] types){
-        if (types.length==0) return null;
+    private ClassNode[] configureTypes(Type[] types) {
+        if (types.length == 0) return null;
         ClassNode[] nodes = new ClassNode[types.length];
-        for (int i=0; i<types.length; i++){
+        for (int i = 0; i < types.length; i++) {
             nodes[i] = configureType(types[i]);
         }
         return nodes;
@@ -98,7 +98,7 @@ public class Java5 implements VMPlugin {
         }
     }
 
-    private ClassNode configureClass(Class c){
+    private ClassNode configureClass(Class c) {
         if (c.isPrimitive()) {
             return ClassHelper.make(c);
         } else {
@@ -116,14 +116,15 @@ public class Java5 implements VMPlugin {
         ClassNode base = ClassHelper.makeWithoutCaching("?");
         //TODO: more than one lower bound for wildcards?
         ClassNode[] lowers = configureTypes(wildcardType.getLowerBounds());
-        ClassNode lower=null;
-        if (lower!=null) lower = lowers[0];
+        ClassNode lower = null;
+        // TODO: is it safe to remove this? What was the original intention?
+        if (lower != null) lower = lowers[0];
 
         ClassNode[] upper = configureTypes(wildcardType.getUpperBounds());
-        GenericsType t = new GenericsType(base,upper,lower);
+        GenericsType t = new GenericsType(base, upper, lower);
         t.setWildcard(true);
 
-        ClassNode ref = ClassHelper.makeWithoutCaching(Object.class,false);
+        ClassNode ref = ClassHelper.makeWithoutCaching(Object.class, false);
         ref.setGenericsTypes(new GenericsType[]{t});
 
         return ref;
@@ -147,7 +148,7 @@ public class Java5 implements VMPlugin {
     }
 
     private GenericsType[] configureTypeArguments(Type[] ta) {
-        if (ta.length==0) return null;
+        if (ta.length == 0) return null;
         GenericsType[] gts = new GenericsType[ta.length];
         for (int i = 0; i < ta.length; i++) {
             gts[i] = new GenericsType(configureType(ta[i]));
@@ -160,12 +161,20 @@ public class Java5 implements VMPlugin {
     }
 
     private void setAnnotationMetaData(ClassNode cn) {
-        Annotation[] annotations =  cn.getTypeClass().getAnnotations();
-        for (int i=0; i<annotations.length; i++) {
-            Annotation annotation = annotations[i];
+        Annotation[] annotations = cn.getTypeClass().getAnnotations();
+        for (Annotation annotation : annotations) {
             AnnotationNode node = new AnnotationNode(ClassHelper.make(annotation.annotationType()));
-            configureAnnotation(node,annotation);
+            configureAnnotation(node, annotation);
             cn.addAnnotation(node);
+        }
+    }
+
+    private void setAnnotationMetaData(MethodNode mn, Method m) {
+        Annotation[] annotations = m.getAnnotations();
+        for (Annotation annotation : annotations) {
+            AnnotationNode node = new AnnotationNode(ClassHelper.make(annotation.annotationType()));
+            configureAnnotation(node, annotation);
+            mn.addAnnotation(node);
         }
     }
 
@@ -173,18 +182,19 @@ public class Java5 implements VMPlugin {
         ClassNode type = definition.getClassNode();
         if (!type.isResolved()) return;
         Class clazz = type.getTypeClass();
-        if (clazz==Retention.class) {
+        if (clazz == Retention.class) {
             Expression exp = definition.getMember("value");
             if (!(exp instanceof PropertyExpression)) return;
             PropertyExpression pe = (PropertyExpression) exp;
             String name = pe.getPropertyAsString();
             RetentionPolicy policy = RetentionPolicy.valueOf(name);
-            setRetentionPolicy(policy,root);
-        } else if (clazz==Target.class) {
+            setRetentionPolicy(policy, root);
+        } else if (clazz == Target.class) {
             Expression exp = definition.getMember("value");
             if (!(exp instanceof ListExpression)) return;
             ListExpression le = (ListExpression) exp;
             int bitmap = 0;
+
             for (Iterator it=le.getExpressions().iterator(); it.hasNext();) {
                 PropertyExpression element = (PropertyExpression) it.next();
                 String name = element.getPropertyAsString();
@@ -197,13 +207,12 @@ public class Java5 implements VMPlugin {
 
     public void configureAnnotation(AnnotationNode node) {
         ClassNode type = node.getClassNode();
-        List annotations = type.getAnnotations();
-        for (Iterator it=annotations.iterator(); it.hasNext();) {
-            AnnotationNode an = (AnnotationNode) it.next();
-            configureAnnotationFromDefinition(an,node);
+        List<AnnotationNode> annotations = type.getAnnotations();
+        for (AnnotationNode an : annotations) {
+            configureAnnotationFromDefinition(an, node);
         }
 
-        configureAnnotationFromDefinition(node,node);
+        configureAnnotationFromDefinition(node, node);
     }
 
     private void configureAnnotation(AnnotationNode node, Annotation annotation) {
@@ -211,41 +220,57 @@ public class Java5 implements VMPlugin {
         if (type == Retention.class) {
             Retention r = (Retention) annotation;
             RetentionPolicy value = r.value();
-            setRetentionPolicy(value,node);
-            node.setMember("value",new PropertyExpression(
-                    new ClassExpression(ClassHelper.makeWithoutCaching(RetentionPolicy.class,false)),
+            setRetentionPolicy(value, node);
+            node.setMember("value", new PropertyExpression(
+                    new ClassExpression(ClassHelper.makeWithoutCaching(RetentionPolicy.class, false)),
                     value.toString()));
         } else if (type == Target.class) {
             Target t = (Target) annotation;
             ElementType[] elements = t.value();
             int bitmap = 0;
-            for (int i=0; i<elements.length; i++) {
-                bitmap |= getElementCode(elements[i]);
+            for (ElementType element : elements) {
+                bitmap |= getElementCode(element);
             }
             node.setAllowedTargets(bitmap);
         }
     }
 
-    private void setRetentionPolicy(RetentionPolicy value,  AnnotationNode node) {
+    private void setRetentionPolicy(RetentionPolicy value, AnnotationNode node) {
         switch (value) {
-          case RUNTIME: node.setRuntimeRetention(true); break;
-          case SOURCE:  node.setSourceRetention(true); break;
-          case CLASS:   node.setClassRetention(true); break;
-          default: throw new GroovyBugError("unsupported Retention "+value);
+            case RUNTIME:
+                node.setRuntimeRetention(true);
+                break;
+            case SOURCE:
+                node.setSourceRetention(true);
+                break;
+            case CLASS:
+                node.setClassRetention(true);
+                break;
+            default:
+                throw new GroovyBugError("unsupported Retention " + value);
         }
     }
 
     private int getElementCode(ElementType value) {
         switch (value) {
-            case TYPE:            return AnnotationNode.TYPE_TARGET;
-            case CONSTRUCTOR:     return AnnotationNode.CONSTRUCTOR_TARGET;
-            case METHOD:          return AnnotationNode.METHOD_TARGET;
-            case FIELD:           return AnnotationNode.FIELD_TARGET;
-            case PARAMETER:       return AnnotationNode.PARAMETER_TARGET;
-            case LOCAL_VARIABLE:  return AnnotationNode.LOCAL_VARIABLE_TARGET;
-            case ANNOTATION_TYPE: return AnnotationNode.ANNOTATION_TARGET;
-            case PACKAGE:         return AnnotationNode.PACKAGE_TARGET;
-            default: throw new GroovyBugError("unsupported Target " + value);
+            case TYPE:
+                return AnnotationNode.TYPE_TARGET;
+            case CONSTRUCTOR:
+                return AnnotationNode.CONSTRUCTOR_TARGET;
+            case METHOD:
+                return AnnotationNode.METHOD_TARGET;
+            case FIELD:
+                return AnnotationNode.FIELD_TARGET;
+            case PARAMETER:
+                return AnnotationNode.PARAMETER_TARGET;
+            case LOCAL_VARIABLE:
+                return AnnotationNode.LOCAL_VARIABLE_TARGET;
+            case ANNOTATION_TYPE:
+                return AnnotationNode.ANNOTATION_TARGET;
+            case PACKAGE:
+                return AnnotationNode.PACKAGE_TARGET;
+            default:
+                throw new GroovyBugError("unsupported Target " + value);
         }
     }
 
@@ -258,44 +283,42 @@ public class Java5 implements VMPlugin {
     public void configureClassNode(CompileUnit compileUnit, ClassNode classNode) {
         Class clazz = classNode.getTypeClass();
         Field[] fields = clazz.getDeclaredFields();
-        for (int i = 0; i < fields.length; i++) {
-            Field f = fields[i];
-            ClassNode ret = makeClassNode(compileUnit,f.getGenericType(),f.getType());
-            classNode.addField(fields[i].getName(), fields[i].getModifiers(), ret, null);
+        for (Field f : fields) {
+            ClassNode ret = makeClassNode(compileUnit, f.getGenericType(), f.getType());
+            classNode.addField(f.getName(), f.getModifiers(), ret, null);
         }
         Method[] methods = clazz.getDeclaredMethods();
-        for (int i = 0; i < methods.length; i++) {
-            Method m = methods[i];
-            ClassNode ret = makeClassNode(compileUnit,m.getGenericReturnType(),m.getReturnType());
-            Parameter[] params = makeParameters(compileUnit,m.getGenericParameterTypes(),m.getParameterTypes());
-            ClassNode[] exceptions = makeClassNodes(compileUnit,m.getGenericExceptionTypes(),m.getExceptionTypes());
+        for (Method m : methods) {
+            ClassNode ret = makeClassNode(compileUnit, m.getGenericReturnType(), m.getReturnType());
+            Parameter[] params = makeParameters(compileUnit, m.getGenericParameterTypes(), m.getParameterTypes());
+            ClassNode[] exceptions = makeClassNodes(compileUnit, m.getGenericExceptionTypes(), m.getExceptionTypes());
             MethodNode mn = new MethodNode(m.getName(), m.getModifiers(), ret, params, exceptions, null);
-            setMethodDefaultValue(mn,m);
+            setMethodDefaultValue(mn, m);
+            setAnnotationMetaData(mn, m);
             classNode.addMethod(mn);
         }
         Constructor[] constructors = clazz.getDeclaredConstructors();
-        for (int i = 0; i < constructors.length; i++) {
-            Constructor ctor = constructors[i];
-            Parameter[] params = makeParameters(compileUnit,ctor.getGenericParameterTypes(), ctor.getParameterTypes());
-            ClassNode[] exceptions = makeClassNodes(compileUnit,ctor.getGenericExceptionTypes(),ctor.getExceptionTypes());
+        for (Constructor ctor : constructors) {
+            Parameter[] params = makeParameters(compileUnit, ctor.getGenericParameterTypes(), ctor.getParameterTypes());
+            ClassNode[] exceptions = makeClassNodes(compileUnit, ctor.getGenericExceptionTypes(), ctor.getExceptionTypes());
             classNode.addConstructor(ctor.getModifiers(), params, exceptions, null);
         }
 
         Class sc = clazz.getSuperclass();
-        if (sc != null) classNode.setUnresolvedSuperClass(makeClassNode(compileUnit,clazz.getGenericSuperclass(),sc));
-        makeInterfaceTypes(compileUnit,classNode,clazz);
+        if (sc != null) classNode.setUnresolvedSuperClass(makeClassNode(compileUnit, clazz.getGenericSuperclass(), sc));
+        makeInterfaceTypes(compileUnit, classNode, clazz);
         setAnnotationMetaData(classNode);
 
     }
 
     private void makeInterfaceTypes(CompileUnit cu, ClassNode classNode, Class clazz) {
         Type[] interfaceTypes = clazz.getGenericInterfaces();
-        if (interfaceTypes.length==0) {
+        if (interfaceTypes.length == 0) {
             classNode.setInterfaces(ClassNode.EMPTY_ARRAY);
         } else {
             Class[] interfaceClasses = clazz.getInterfaces();
             ClassNode[] ret = new ClassNode[interfaceTypes.length];
-            for (int i=0;i<interfaceTypes.length;i++){
+            for (int i = 0; i < interfaceTypes.length; i++) {
                 ret[i] = makeClassNode(cu, interfaceTypes[i], interfaceClasses[i]);
             }
             classNode.setInterfaces(ret);
@@ -304,16 +327,16 @@ public class Java5 implements VMPlugin {
 
     private ClassNode[] makeClassNodes(CompileUnit cu, Type[] types, Class[] cls) {
         ClassNode[] nodes = new ClassNode[types.length];
-        for (int i=0;i<nodes.length;i++) {
-            nodes[i] = makeClassNode(cu, types[i],cls[i]);
+        for (int i = 0; i < nodes.length; i++) {
+            nodes[i] = makeClassNode(cu, types[i], cls[i]);
         }
         return nodes;
     }
 
     private ClassNode makeClassNode(CompileUnit cu, Type t, Class c) {
         ClassNode back = null;
-        if (cu!=null)   back = cu.getClass(c.getName());
-        if (back==null) back = ClassHelper.make(c);
+        if (cu != null) back = cu.getClass(c.getName());
+        if (back == null) back = ClassHelper.make(c);
         if (!(t instanceof Class)) {
             ClassNode front = configureType(t);
             front.setRedirect(back);
@@ -324,17 +347,17 @@ public class Java5 implements VMPlugin {
 
     private Parameter[] makeParameters(CompileUnit cu, Type[] types, Class[] cls) {
         Parameter[] params = Parameter.EMPTY_ARRAY;
-        if (types.length>0) {
+        if (types.length > 0) {
             params = new Parameter[types.length];
-            for (int i=0;i<params.length;i++) {
-                params[i] = makeParameter(cu,types[i],cls[i],i);
+            for (int i = 0; i < params.length; i++) {
+                params[i] = makeParameter(cu, types[i], cls[i], i);
             }
         }
         return params;
     }
 
-    private Parameter makeParameter(CompileUnit cu, Type type, Class cl,int idx) {
-        ClassNode cn = makeClassNode(cu,type,cl);
+    private Parameter makeParameter(CompileUnit cu, Type type, Class cl, int idx) {
+        ClassNode cn = makeClassNode(cu, type, cl);
         return new Parameter(cn, "param" + idx);
     }
 }

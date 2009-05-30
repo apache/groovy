@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 the original author or authors.
+ * Copyright 2008-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,39 +13,39 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.codehaus.groovy.transform;
 
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
-import org.codehaus.groovy.ast.stmt.*;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
-import org.codehaus.groovy.transform.ASTTransformation;
-import org.codehaus.groovy.transform.GroovyASTTransformation;
-import org.codehaus.groovy.classgen.Verifier;
 import org.objectweb.asm.Opcodes;
 
-import java.lang.ref.SoftReference;
 import java.lang.reflect.Modifier;
+import java.util.Arrays;
 import java.util.Map;
-import java.util.Iterator;
 import java.util.Set;
+import java.util.Iterator;
 
 /**
  * Handles generation of code for the <code>@Delegate</code> annotation
  *
  * @author Alex Tkachman
  * @author Guillaume Laforge
+ * @author Paul King
  */
-@GroovyASTTransformation(phase=CompilePhase.CANONICALIZATION)
+@GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class DelegateASTTransformation implements ASTTransformation, Opcodes {
+    private static final ClassNode DEPRECATED_TYPE = new ClassNode(Deprecated.class);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
-        if (!(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
-            throw new RuntimeException("Internal error: wrong types: $node.class / $parent.class");
+        if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
+            throw new RuntimeException("Internal error: expecting [AnnotationNode, AnnotatedNode] but got: " + Arrays.asList(nodes));
         }
 
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
@@ -54,14 +54,14 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
         if (parent instanceof FieldNode) {
             FieldNode fieldNode = (FieldNode) parent;
             final ClassNode type = fieldNode.getType();
-            final Map fieldMethods = type.getDeclaredMethodsMap();
+            final Map<String, MethodNode> fieldMethods = type.getDeclaredMethodsMap();
             final ClassNode owner = fieldNode.getOwner();
+            final Expression deprecatedElement = node.getMember("deprecated");
+            final boolean deprecated = (deprecatedElement instanceof ConstantExpression && ((ConstantExpression) deprecatedElement).getValue().equals(true));
 
-            final Map ownMethods = owner.getDeclaredMethodsMap();
-            for (Iterator it = fieldMethods.entrySet().iterator(); it.hasNext(); ) {
-                Map.Entry e = (Map.Entry) it.next();
-
-                addDelegateMethod(fieldNode, owner, ownMethods, e);
+            final Map<String, MethodNode> ownMethods = owner.getDeclaredMethodsMap();
+            for (Map.Entry<String, MethodNode> e : fieldMethods.entrySet()) {
+                addDelegateMethod(fieldNode, owner, ownMethods, e, deprecated);
             }
 
             for (Iterator it = type.getProperties().iterator(); it.hasNext(); ) {
@@ -71,47 +71,18 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
                   continue;
 
                 String name = prop.getName();
-
-                String getterName = "get" + Verifier.capitalize(name);
-                if(owner.getGetterMethod(getterName) == null) {
-                    owner.addMethod(getterName,
-                            ACC_PUBLIC,
-                            nonGeneric(prop.getType()),
-                            Parameter.EMPTY_ARRAY,
-                            null,
-                            new ReturnStatement(
-                                    new PropertyExpression(
-                                            new FieldExpression(fieldNode),
-                                            name)));
-                }
-
-                String setterName = "set" + Verifier.capitalize(name);
-                if((prop.getModifiers() & ACC_FINAL) != 0 && owner.getSetterMethod(setterName) == null) {
-                    owner.addMethod(setterName,
-                            ACC_PUBLIC,
-                            ClassHelper.VOID_TYPE,
-                            new Parameter[] {new Parameter(nonGeneric(prop.getType()), "value")},
-                            null,
-                            new ExpressionStatement(
-                                    new BinaryExpression(
-                                            new PropertyExpression(
-                                               new FieldExpression(fieldNode),
-                                               name),
-                                            Token.newSymbol(Types.EQUAL, -1, -1),
-                                            new VariableExpression("value"))));
-                }
+                addGetterIfNeeded(fieldNode, owner, prop, name);
+                addSetterIfNeeded(fieldNode, owner, prop, name);
             }
 
-            final Expression member = node.getMember("interfaces");
+            final Expression interfacesElement = node.getMember("interfaces");
+            if (interfacesElement instanceof ConstantExpression && ((ConstantExpression) interfacesElement).getValue().equals(false))
+                return;
 
-            if(member instanceof ConstantExpression && ((ConstantExpression)member).getValue().equals(false))
-              return;
-
-            final Set allInterfaces = type.getAllInterfaces();
-            final Set ownerIfaces = owner.getAllInterfaces();
-            for (Iterator it = allInterfaces.iterator(); it.hasNext(); ) {
-                ClassNode iface = (ClassNode) it.next();
-                if (Modifier.isPublic(iface.getModifiers()) && !ownerIfaces.contains(iface) ) {
+            final Set<ClassNode> allInterfaces = type.getAllInterfaces();
+            final Set<ClassNode> ownerIfaces = owner.getAllInterfaces();
+            for (ClassNode iface : allInterfaces) {
+                if (Modifier.isPublic(iface.getModifiers()) && !ownerIfaces.contains(iface)) {
                     final ClassNode[] ifaces = owner.getInterfaces();
                     final ClassNode[] newIfaces = new ClassNode[ifaces.length + 1];
                     System.arraycopy(ifaces, 0, newIfaces, 0, ifaces.length);
@@ -122,12 +93,51 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
         }
     }
 
-    private void addDelegateMethod(FieldNode fieldNode, ClassNode owner, Map ownMethods, Map.Entry e) {
-        MethodNode method = (MethodNode) e.getValue();
+    private void addSetterIfNeeded(FieldNode fieldNode, ClassNode owner, PropertyNode prop, String name) {
+        String setterName = "set" + Verifier.capitalize(name);
+        if ((prop.getModifiers() & ACC_FINAL) != 0 && owner.getSetterMethod(setterName) == null) {
+            owner.addMethod(setterName,
+                    ACC_PUBLIC,
+                    ClassHelper.VOID_TYPE,
+                    new Parameter[]{new Parameter(nonGeneric(prop.getType()), "value")},
+                    null,
+                    new ExpressionStatement(
+                            new BinaryExpression(
+                                    new PropertyExpression(
+                                            new FieldExpression(fieldNode),
+                                            name),
+                                    Token.newSymbol(Types.EQUAL, -1, -1),
+                                    new VariableExpression("value"))));
+        }
+    }
+
+    private void addGetterIfNeeded(FieldNode fieldNode, ClassNode owner, PropertyNode prop, String name) {
+        String getterName = "get" + Verifier.capitalize(name);
+        if (owner.getGetterMethod(getterName) == null) {
+            owner.addMethod(getterName,
+                    ACC_PUBLIC,
+                    nonGeneric(prop.getType()),
+                    Parameter.EMPTY_ARRAY,
+                    null,
+                    new ReturnStatement(
+                            new PropertyExpression(
+                                    new FieldExpression(fieldNode),
+                                    name)));
+        }
+    }
+
+    private void addDelegateMethod(FieldNode fieldNode, ClassNode owner, Map<String, MethodNode> ownMethods, Map.Entry<String, MethodNode> e, boolean deprecated) {
+        MethodNode method = e.getValue();
+
         if (!method.isPublic() || method.isStatic())
             return;
 
-        if (!ownMethods.containsKey(e.getKey())) {
+        if (!method.getAnnotations(DEPRECATED_TYPE).isEmpty() && !deprecated)
+            return;
+
+        MethodNode existingNode = ownMethods.get(e.getKey());
+        // TODO work out why the code was null for super interfaces
+        if (existingNode == null || existingNode.getCode() == null) {
             final ArgumentListExpression args = new ArgumentListExpression();
             final Parameter[] params = method.getParameters();
             final Parameter[] newParams = new Parameter[params.length];
@@ -156,8 +166,7 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
             nonGen.setGenericsTypes(null);
             nonGen.setUsingGenerics(false);
             return nonGen;
-        }
-        else {
+        } else {
             return type;
         }
     }

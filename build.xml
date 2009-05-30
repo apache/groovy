@@ -412,15 +412,15 @@ Not found: ${groovyJar14path}
     </target>
 
     <target name="-collect14tests" unless="groovy.build.vm5">
-        <fileset id="ubertests.fileset" dir="${testClassesDirectory}" includes="UberTest*.class" excludes="Uber*VM5.class,Uber*VM6.class"/>
+        <fileset id="ubertests.fileset" dir="${testClassesDirectory}" includes="UberTest*.class" excludes="Uber*VM5.class,Uber*VM6.class,groovy/grape/*Test.class"/>
     </target>
 
     <target name="-collect15tests" if="groovy.build.vm5" unless="groovy.build.vm6">
-        <fileset id="ubertests.fileset" dir="${testClassesDirectory}" includes="UberTest*.class" excludes="Uber*VM6.class"/>
+        <fileset id="ubertests.fileset" dir="${testClassesDirectory}" includes="UberTest*.class" excludes="Uber*VM6.class,groovy/grape/*Test.class"/>
     </target>
 
     <target name="-collect16tests" if="groovy.build.vm6">
-        <fileset id="ubertests.fileset" dir="${testClassesDirectory}" includes="UberTest*.class"/>
+        <fileset id="ubertests.fileset" dir="${testClassesDirectory}" includes="UberTest*.class" excludes="groovy/grape/*Test.class"/>
     </target>
 
     <target name="-testAll" if="_testAll_" depends="-collect14tests,-collect15tests,-collect16tests,-collectOptionalTests,-initGroovyc_vm4,-initGroovyc">
@@ -552,11 +552,7 @@ Not found: ${groovyJar14path}
     </target>
 
     <target name="-jarjarInit">
-        <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask">
-            <classpath>
-                <fileset dir="${bootstrapDirectory}" includes="jarjar-*.jar"/>
-            </classpath>
-        </taskdef>
+        <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpathref="toolsPath"/>
     </target>
 
     <target name="-createEmbeddableJar" depends="-jarjarInit" unless="testFailed">
@@ -886,6 +882,7 @@ Not found: ${groovyJar14path}
 
     <target name="clean" description="Clean up build artifacts.">
         <delete dir="${targetDirectory}" quiet="true"/>
+        <delete file="cobertura.ser" quiet="true" failonerror="false"/>
         <delete quiet="true">
             <fileset dir="." includes="**/*~"/>
             <fileset dir="${groovyParserDirectory}" includes="Groovy*.*"/>
