@@ -16,11 +16,11 @@
 package groovy.jmx.builder;
 
 public interface MockSimpleObjectMBean {
-    public void setPriority(int prio);
+    void setPriority(int prio);
 
-    public int getPriority();
+    int getPriority();
 
-    public void setId(String id);
+    void setId(String id);
 
-    public String getId();
+    String getId();
 }

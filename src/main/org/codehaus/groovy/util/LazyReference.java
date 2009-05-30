@@ -6,8 +6,8 @@ package org.codehaus.groovy.util;
  * Soft reference with lazy initialization under lock
  */
 public abstract class LazyReference<T> extends LockableObject {
-    private final static ManagedReference INIT = new ManagedReference(ReferenceType.HARD,null,null){}; 
-    private final static ManagedReference NULL_REFERENCE = new ManagedReference(ReferenceType.HARD,null,null){};
+    private static final ManagedReference INIT = new ManagedReference(ReferenceType.HARD,null,null){};
+    private static final ManagedReference NULL_REFERENCE = new ManagedReference(ReferenceType.HARD,null,null){};
     private ManagedReference<T> reference = INIT;
     private final ReferenceBundle bundle;
     

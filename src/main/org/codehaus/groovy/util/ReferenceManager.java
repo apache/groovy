@@ -131,7 +131,7 @@ public class ReferenceManager {
         return "ReferenceManager(idling)";
     }
     
-    private final static ReferenceBundle  softBundle, weakBundle;
+    private static final ReferenceBundle  softBundle, weakBundle;
     static {
         ReferenceQueue queue = new ReferenceQueue();
         ReferenceManager callBack = ReferenceManager.createCallBackedManager(queue);

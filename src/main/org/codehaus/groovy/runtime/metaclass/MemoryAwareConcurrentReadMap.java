@@ -658,7 +658,7 @@ public class MemoryAwareConcurrentReadMap {
     /**
      * Reference class used to support get()
      */
-    private static interface Reference {
+    private interface Reference {
         Object get();
     }
     

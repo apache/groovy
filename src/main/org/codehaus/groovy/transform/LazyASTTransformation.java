@@ -35,7 +35,7 @@ import java.lang.ref.SoftReference;
 @GroovyASTTransformation(phase= CompilePhase.CANONICALIZATION)
 public class LazyASTTransformation implements ASTTransformation, Opcodes {
 
-    final static ClassNode SOFT_REF = ClassHelper.make(SoftReference.class);
+    static final ClassNode SOFT_REF = ClassHelper.make(SoftReference.class);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         if (!(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {

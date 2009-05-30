@@ -31,7 +31,7 @@ public class ReferenceBundle{
         return manager;
     }      
     
-    private final static ReferenceBundle softReferences, weakReferences;
+    private static final ReferenceBundle softReferences, weakReferences;
     static {
         ReferenceQueue queue = new ReferenceQueue();
         ReferenceManager callBack = ReferenceManager.createCallBackedManager(queue);

@@ -40,7 +40,7 @@ public class ReflectionUtils {
         ignoredPackages.add("sun.reflect");
     }
 
-    final private static Method magicMethod;
+    private static final Method magicMethod;
     static {
         Method meth;
         try {

@@ -32,5 +32,5 @@ public interface ASTTransformation {
      * @param nodes The ASTnodes when the call was triggered
      * @param source The source unit being compiled
      */
-    public void visit(ASTNode nodes[], SourceUnit source);
+    void visit(ASTNode nodes[], SourceUnit source);
 }

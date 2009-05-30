@@ -23,7 +23,7 @@ import java.util.Collections;
 
 public class CallSiteClassLoader extends ClassLoaderForClassArtifacts {
 
-    private final static Set<String> knownClasses = new HashSet<String>();
+    private static final Set<String> knownClasses = new HashSet<String>();
     static {
         Collections.addAll(knownClasses
                 , "org.codehaus.groovy.runtime.callsite.PogoMetaMethodSite"

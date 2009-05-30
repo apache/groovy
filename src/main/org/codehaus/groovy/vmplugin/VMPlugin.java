@@ -27,6 +27,6 @@ public interface VMPlugin {
 
     void setAdditionalClassInformation(ClassNode c);
     Class[] getPluginDefaultGroovyMethods();
-    public void configureAnnotation(AnnotationNode an);
-    public void configureClassNode(CompileUnit compileUnit, ClassNode classNode);
+    void configureAnnotation(AnnotationNode an);
+    void configureClassNode(CompileUnit compileUnit, ClassNode classNode);
 }
