@@ -21,7 +21,7 @@ import static java.lang.annotation.RetentionPolicy.*;
 import static java.lang.annotation.ElementType.*;
 
 /**
- * This class mimicks JPA's @OneToMany annotation
+ * This class mimics JPA's @OneToMany annotation
  *
  * @author Guillaume Laforge
  */
