@@ -15,7 +15,6 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
-import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyType;
 
 public class SimpleGroovyType implements GroovyType {

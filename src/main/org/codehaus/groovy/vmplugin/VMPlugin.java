@@ -16,7 +16,6 @@
 package org.codehaus.groovy.vmplugin;
 
 import org.codehaus.groovy.ast.*;
-import java.lang.reflect.Method;
 
 /**
  * Interface to access VM version based actions.
@@ -28,6 +27,6 @@ public interface VMPlugin {
 
     void setAdditionalClassInformation(ClassNode c);
     Class[] getPluginDefaultGroovyMethods();
-    public void configureAnnotation(AnnotationNode an);
-    public void configureClassNode(CompileUnit compileUnit, ClassNode classNode);
+    void configureAnnotation(AnnotationNode an);
+    void configureClassNode(CompileUnit compileUnit, ClassNode classNode);
 }

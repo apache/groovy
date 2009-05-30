@@ -23,8 +23,6 @@ import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.Token;
-import org.codehaus.groovy.transform.ASTTransformation;
-import org.codehaus.groovy.transform.GroovyASTTransformation;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.ref.SoftReference;
@@ -37,7 +35,7 @@ import java.lang.ref.SoftReference;
 @GroovyASTTransformation(phase= CompilePhase.CANONICALIZATION)
 public class LazyASTTransformation implements ASTTransformation, Opcodes {
 
-    final static ClassNode SOFT_REF = ClassHelper.make(SoftReference.class);
+    static final ClassNode SOFT_REF = ClassHelper.make(SoftReference.class);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         if (!(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {

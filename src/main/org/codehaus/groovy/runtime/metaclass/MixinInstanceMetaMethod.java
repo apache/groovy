@@ -4,8 +4,6 @@ import groovy.lang.MetaMethod;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
 import org.codehaus.groovy.reflection.CachedClass;
 
-import java.lang.reflect.Modifier;
-
 /**
  * MetaMethod for mixed in classes
  */

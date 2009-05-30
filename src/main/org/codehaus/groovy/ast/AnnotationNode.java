@@ -15,10 +15,10 @@
  */
 package org.codehaus.groovy.ast;
 
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 
 import org.codehaus.groovy.ast.expr.Expression;
 
@@ -44,7 +44,7 @@ public class AnnotationNode extends ASTNode {
     
     private final ClassNode classNode;
     private Map members = new HashMap();
-    private boolean runtimeRetention= false, sourceRetention= false, classRetention = false;
+    private boolean runtimeRetention = false, sourceRetention = false, classRetention = false;
     private int allowedTargets = ALL_TARGETS;
 
     public AnnotationNode(ClassNode classNode) {

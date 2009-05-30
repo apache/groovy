@@ -19,7 +19,7 @@ public class MockJmxListener implements MockJmxListenerMBean, NotificationListen
 }
 
 interface MockJmxListenerMBean {
-    public String getObjectName();
+    String getObjectName();
 
-    public void makeObject();
+    void makeObject();
 }

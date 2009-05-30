@@ -51,7 +51,7 @@ public class ThreadManagedMetaBeanProperty extends MetaBeanProperty {
     private Object initialValue;
     private Closure initialValueCreator;
     
-    private final static ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();
+    private static final ReferenceBundle softBundle = ReferenceBundle.getSoftBundle();
 
     /**
      * Retrieves the initial value of the ThreadBound property

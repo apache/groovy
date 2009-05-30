@@ -15,8 +15,6 @@
  */
 package org.codehaus.groovy.runtime.metaclass;
 
-import groovy.lang.MissingMethodException;
-
 /**
  * A stack less exception used to indicate, that the execution of a missingMethod
  * method failed with a MissingMethodException. This is used to preven a call to

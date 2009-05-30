@@ -22,5 +22,5 @@ package org.codehaus.groovy.transform.vm5;
  * @author Guillaume Laforge
  */
 interface NonPublicInterface {
-    static String CONSTANT = "constant";
+    String CONSTANT = "constant";
 }

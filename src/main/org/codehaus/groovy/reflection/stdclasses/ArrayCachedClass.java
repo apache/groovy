@@ -20,8 +20,6 @@ import org.codehaus.groovy.reflection.CachedClass;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
-import java.math.BigDecimal;
-
 /**
  * @author Alex.Tkachman
  */

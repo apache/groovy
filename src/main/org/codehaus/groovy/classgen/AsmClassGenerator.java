@@ -2022,8 +2022,8 @@ public class AsmClassGenerator extends ClassGenerator {
         return sig[numberOfArguments];
     }
 
-    private final static HashSet<String> names = new HashSet<String>();
-    private final static HashSet<String> basic = new HashSet<String>();
+    private static final HashSet<String> names = new HashSet<String>();
+    private static final HashSet<String> basic = new HashSet<String>();
 
     static {
         Collections.addAll(names, "plus", "minus", "multiply", "div", "compareTo", "or", "and", "xor", "intdiv", "mod", "leftShift", "rightShift", "rightShiftUnsigned");

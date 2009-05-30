@@ -76,7 +76,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
         return classMetaClass;
     }
 
-    private static interface MethodChooser {
+    private interface MethodChooser {
         Object chooseMethod(Class[] arguments, boolean coerce);
     }
 

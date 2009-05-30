@@ -152,7 +152,7 @@ public class SingleKeyHashMap extends ComplexKeyHashMap
       return dst;
   }
 
-  public static interface Copier {
+  public interface Copier {
       Object copy (Object value);
   }
 }

@@ -51,7 +51,7 @@ public class ManagedDoubleKeyMap<K1,K2,V> extends AbstractConcurrentDoubleKeyMap
     }
 
     public static class Entry<K1,K2, V> implements AbstractConcurrentDoubleKeyMap.Entry<K1,K2,V> {
-        final private int hash;
+        private final int hash;
         final Ref<K1> ref1;
         final Ref<K2> ref2;
         final Segment segment;

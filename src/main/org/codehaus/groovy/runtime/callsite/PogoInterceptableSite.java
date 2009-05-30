@@ -15,7 +15,6 @@
  */
 package org.codehaus.groovy.runtime.callsite;
 
-import groovy.lang.GroovyInterceptable;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyRuntimeException;
 

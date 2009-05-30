@@ -179,7 +179,7 @@ public abstract class AbstractConcurrentDoubleKeyMap<K1,K2,V> extends AbstractCo
         protected abstract Entry<K1,K2,V> createEntry(K1 key1, K2 key2, int hash);
     }
 
-    static interface Entry<K1, K2, V> extends AbstractConcurrentMapBase.Entry<V>{
+    interface Entry<K1, K2, V> extends AbstractConcurrentMapBase.Entry<V>{
         boolean isEqual(K1 key1, K2 key2, int hash);
     }
 }
