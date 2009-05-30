@@ -436,7 +436,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         if (statement!=null) statement.visit(new VerifierCodeVisitor(this));
     }
 
-    private void addReturnIfNeeded(MethodNode node) {
+    protected void addReturnIfNeeded(MethodNode node) {
         Statement statement = node.getCode();
         if (!node.isVoidMethod()) {
             if (statement != null) // it happens with @interface methods
