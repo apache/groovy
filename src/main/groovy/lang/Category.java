@@ -27,15 +27,39 @@ import java.lang.annotation.Target;
  * Transforms an instance-style Groovy class or interface to become a static-style
  * conventional Groovy category.
  * </p>
- * All methods are transformed to static ones with an additional self
- * parameter having the type supplied as the required annotation parameter.
+ * Groovy categories are the original mechanism used
+ * by Groovy when augmenting classes with new methods. Writing categories required
+ * using a class writing style where all methods were static and an additional
+ * self parameter was defined. The self parameter and static nature of the methods
+ * disappeared once applied by Groovy's metaclass framework but some regarded
+ * the writing style as a little noisy. This transformation allows you to write
+ * your categories without the "apparent noise" but adds it back in during
+ * compilation so that the classes appear as normal categories.
+ * </p>
+ * It might seem strange writing your class/object enhancements using a succinct
+ * notation, then having "noise" added, then having the noise removed during
+ * category application. If this worries you, then you may also like to consider
+ * using Groovy's {@code ExpandoMetaClass} mechanism which avoids
+ * the category definition altogether. If you already have an investment in
+ * categories or like some of the other features which categories currently give you,
+ * then read on.
+ * </p>
+ * The mechanics: during compilation, all methods are transformed to static ones with an additional
+ * self parameter of the type you supply as the annotation parameter (the default type
+ * for the self parameters is {@code Object} which might be more broad reaching than
+ * you like so it is usually wise to specify a type).
  * Properties invoked using 'this' references are transformed so that
  * they are instead invoked on the additional self parameter and not on
- * the Category instance.
+ * the Category instance. (Remember that once the category is applied, the reverse
+ * will occur and we will be back to conceptually having methods on the {@code this}
+ * references again!)
  * </p>
  * Classes conforming to the conventional Groovy category conventions can be used
- * within {@code use} statements or mixed in with the {@code Mixin} transformation.
- * An example showing a {@code use} statement:
+ * within {@code use} statements or mixed in at compile time with the {@code @Mixin}
+ * transformation or at runtime with the {@code mixin} method on classes.
+ * </p>
+ * An example showing a {@code use} statement (allowing fine-grained application of
+ * the category methods):
  * <pre>
  * {@code @Category}(Integer)
  * class IntegerOps {
@@ -48,7 +72,7 @@ import java.lang.annotation.Target;
  *     assert 25.triple() == 75
  * }
  * </pre>
- * Or, using the {@code @Mixin} flavor:
+ * Or, using the {@code @Mixin} flavor for compile-time "mixing in" of the methods:
  * <pre>
  * {@code @Category}(List)
  * class Shuffler {
@@ -67,6 +91,17 @@ import java.lang.annotation.Target;
  * def words = ["The", "quick", "brown", "fox"]
  * println new Sentence(words).shuffle()
  * // => [quick, fox, The, brown]       (order will vary)
+ * </pre>
+ * Or, instead of using {@code @Mixin}, try "mixing in" your methods at runtime:
+ * <pre>
+ * // ... as before ...
+ *
+ * class Sentence extends ArrayList {
+ *     Sentence(Collection initial) { super(initial) }
+ * }
+ * Sentence.mixin Shuffler
+ *
+ * // ... as before ...
  * </pre>
  *
  * @author Alex Tkachman
