@@ -438,7 +438,7 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
-     * The property to set on compliation success.
+     * The property to set on compilation success.
      * This property will not be set if the compilation
      * fails, or if there are no files to compile.
      *
@@ -449,7 +449,7 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
-     * The property to set on compliation failure.
+     * The property to set on compilation failure.
      * This property will be set if the compilation
      * fails.
      *
@@ -484,7 +484,7 @@ public class Groovyc extends MatchingTask {
      * Get the result of the groovyc task (success or failure).
      *
      * @return true if compilation succeeded, or
-     *         was not neccessary, false if the compilation failed.
+     *         was not necessary, false if the compilation failed.
      */
     public boolean getTaskSuccess() {
         return taskSuccess;
@@ -635,7 +635,7 @@ public class Groovyc extends MatchingTask {
                     for (Iterator i = javac.getRuntimeConfigurableWrapper().getAttributeMap().entrySet().iterator(); i.hasNext();) {
                         final Map.Entry e = (Map.Entry) i.next();
                         final String key = e.getKey().toString();
-                        final String value = e.getValue().toString();
+                        final String value = getProject().replaceProperties(e.getValue().toString());
                         if (key.indexOf("debug") != -1) {
                             String level = "";
                             if (javac.getDebugLevel() != null) {
@@ -666,7 +666,6 @@ public class Groovyc extends MatchingTask {
                         // includes? excludes?
                     }
                 }
-
 
                 String separator = System.getProperty("file.separator");
                 List commandLineList = new ArrayList();
@@ -737,7 +736,7 @@ public class Groovyc extends MatchingTask {
                         pw.close();
                         commandLineList.add("@" + tempFile.getPath());
                     } catch (IOException e) {
-                        log("Error createing file list", e, Project.MSG_ERR);
+                        log("Error creating file list", e, Project.MSG_ERR);
                     }
                 } else {
                     for (int i = 0; i < compileList.length; i++) {
@@ -781,7 +780,6 @@ public class Groovyc extends MatchingTask {
 
                         configuration = FileSystemCompiler.generateCompilerConfigurationFromOptions(cli);
 
-                        //
                         // Load the file name list
                         String[] filenames = FileSystemCompiler.generateFileNamesFromOptions(cli);
                         boolean fileNameErrors = filenames == null;
@@ -812,13 +810,11 @@ public class Groovyc extends MatchingTask {
                 }
             }
         } finally {
-            Iterator<File> files = temporaryFiles.iterator();
-            while (files.hasNext()) {
-                File tmpFile = files.next();
+            for (File temporaryFile : temporaryFiles) {
                 try {
-                    FileSystemCompiler.deleteRecursive(tmpFile);
+                    FileSystemCompiler.deleteRecursive(temporaryFile);
                 } catch (Throwable t) {
-                    System.err.println("error: could not delete temp files - " + tmpFile.getPath());
+                    System.err.println("error: could not delete temp files - " + temporaryFile.getPath());
                 }
             }
         }
