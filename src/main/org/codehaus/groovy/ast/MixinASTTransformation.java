@@ -26,16 +26,22 @@ import org.codehaus.groovy.transform.ASTTransformation;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 import org.objectweb.asm.Opcodes;
 
-@GroovyASTTransformation(phase= CompilePhase.CANONICALIZATION)
-public class MixinASTTransformation implements ASTTransformation {
-    private static final ClassNode useClassNode = new ClassNode(Mixin.class);
+import java.util.Arrays;
 
+@GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
+public class MixinASTTransformation implements ASTTransformation {
+    private static final ClassNode MY_TYPE = new ClassNode(Mixin.class);
+
+    // TODO would it be better to actually statically mixin the methods?
     public void visit(ASTNode nodes[], SourceUnit source) {
+        if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
+            throw new RuntimeException("Internal error: expecting [AnnotationNode, AnnotatedNode] but got: " + Arrays.asList(nodes));
+        }
         AnnotationNode node = (AnnotationNode) nodes[0];
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
 
-        if (!useClassNode.equals(node.getClassNode()))
-          return;
+        if (!MY_TYPE.equals(node.getClassNode()))
+            return;
 
         final Expression expr = node.getMember("value");
         if (expr == null) {
@@ -45,20 +51,17 @@ public class MixinASTTransformation implements ASTTransformation {
         Expression useClasses = null;
         if (expr instanceof ClassExpression) {
             useClasses = expr;
-        }
-
-        if (expr instanceof ListExpression) {
+        } else if (expr instanceof ListExpression) {
             ListExpression listExpression = (ListExpression) expr;
             for (Expression ex : listExpression.getExpressions()) {
                 if (!(ex instanceof ClassExpression))
-                  return;
+                    return;
             }
-
             useClasses = expr;
         }
 
         if (useClasses == null)
-          return;
+            return;
 
         if (parent instanceof ClassNode) {
             ClassNode annotatedClass = (ClassNode) parent;
@@ -66,7 +69,7 @@ public class MixinASTTransformation implements ASTTransformation {
             final Parameter[] NOPARAMS = new Parameter[0];
             MethodNode clinit = annotatedClass.getDeclaredMethod("<clinit>", NOPARAMS);
             if (clinit == null) {
-                clinit = annotatedClass.addMethod("<clinit>", Opcodes.ACC_PUBLIC|Opcodes.ACC_STATIC| Opcodes.ACC_SYNTHETIC, ClassHelper.VOID_TYPE, NOPARAMS, null, new BlockStatement());
+                clinit = annotatedClass.addMethod("<clinit>", Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_SYNTHETIC, ClassHelper.VOID_TYPE, NOPARAMS, null, new BlockStatement());
                 clinit.setSynthetic(true);
             }
 

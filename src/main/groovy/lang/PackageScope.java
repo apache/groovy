@@ -28,6 +28,9 @@ import java.lang.annotation.Target;
  * conversion of default or package scoped fields. Place it on the field(s)
  * of interest or on the class to apply for all package-scoped fields.
  *
+ * This transformation is normally only used in conjunction with a third-party
+ * library or framework which already uses package scoping.
+ *
  * @author Paul King
  */
 @Retention(RetentionPolicy.RUNTIME)

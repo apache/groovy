@@ -24,9 +24,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Field annotation to make field lazy initializable.
+ * Field annotation to make a field lazy initializable.
  *
- * If field declared volatile then initialization will be synchronized
+ * If the field is declared volatile then initialization will be synchronized.
  *
  * <pre>
  * {@code @Lazy} volatile T x
@@ -47,10 +47,10 @@ import java.lang.annotation.Target;
  * }
  * </pre>
  *
- * By default field will be initialized by call to default constructor
+ * By default a field will be initialized by calling its default constructor.
  *
- * If field has initial value expression then this expression will be used instead of default constructor.
- * In particularly it is possible to use closures <code>{ ... } ()</code> syntax
+ * If the field has an initial value expression then this expression will be used instead of default constructor.
+ * In particular, it is possible to use closure <code>{ ... } ()</code> syntax as follows:
  *
  * <pre>
  * {@code @Lazy} T x = { [1,2,3] } ()
@@ -69,7 +69,7 @@ import java.lang.annotation.Target;
  * }
  * </pre>
  *
- * <code>@Lazy(soft=true)</code> will use soft reference instead of the field and use above rules each time re-initialization required
+ * <code>@Lazy(soft=true)</code> will use a soft reference instead of the field and use the above rules each time re-initialization is required.
  *
  * @author Alex Tkachman
  */
