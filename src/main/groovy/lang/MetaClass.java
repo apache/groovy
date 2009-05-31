@@ -28,7 +28,6 @@ import java.util.List;
  * In general the compiler and Groovy runtime engine interact with methods on this class whilst MetaClass
  * clients interact with the method defined by the MetaObjectProtocol interface
  *
- *
  * @see MetaClassImpl
  * @see groovy.lang.MetaObjectProtocol
  * 
@@ -36,7 +35,6 @@ import java.util.List;
  * @author Graeme Rocher
  */
 public interface MetaClass extends MetaObjectProtocol {
-
 
     /**
      * <p>Invokes a method on the given receiver for the specified arguments. The sender is the class that invoked the method on the object.
@@ -55,7 +53,6 @@ public interface MetaClass extends MetaObjectProtocol {
      * @return The return value of the method
      */
      Object invokeMethod(Class sender, Object receiver, String methodName, Object[] arguments, boolean isCallToSuper, boolean fromInsideClass);
-
 
     /**
      * <p>Retrieves a property on the given receiver for the specified arguments. The sender is the class that is requesting the property from the object.
@@ -87,7 +84,6 @@ public interface MetaClass extends MetaObjectProtocol {
      * @param value The new value of the property to set
      * @param isCallToSuper Whether the call is to a super class property
      * @param fromInsideClass ??
-     *
      */
      void setProperty(Class sender, Object receiver, String property, Object value, boolean isCallToSuper, boolean fromInsideClass);
 
@@ -116,7 +112,6 @@ public interface MetaClass extends MetaObjectProtocol {
      */
      Object invokeMissingProperty(Object instance, String propertyName, Object optionalValue, boolean isGetter);
 
-
     /**
      * Retrieves the value of an attribute (field). This method is to support the Groovy runtime and not for general client API usage.
      *
@@ -140,7 +135,6 @@ public interface MetaClass extends MetaObjectProtocol {
      */
      void setAttribute(Class sender, Object receiver, String messageName, Object messageValue, boolean useSuper, boolean fromInsideClass);
     
-
     /**
      * complete the initlialisation process. After this method
      * is called no methods should be added to the meta class.
@@ -153,7 +147,6 @@ public interface MetaClass extends MetaObjectProtocol {
      */
      void initialize();
 
-
     /**
      * Retrives a list of MetaProperty instances that the MetaClass has
      *
@@ -161,15 +154,14 @@ public interface MetaClass extends MetaObjectProtocol {
      *
      * @return A list of MetaProperty instances
      */
-     List getProperties();
+     List<MetaProperty> getProperties();
 
     /**
      * Retrieves a list of MetaMethods held by the class
      *
      * @return A list of MetaMethods
-     *
      */
-     List getMethods();
+     List<MetaMethod> getMethods();
      
      /**
       * Obtains a reference to the original AST for the MetaClass if it is available at runtime
@@ -178,14 +170,12 @@ public interface MetaClass extends MetaObjectProtocol {
       */
      ClassNode getClassNode();
      
-     
      /**
       * Retrieves a list of MetaMethod instances held by this class
       * @return A list of MetaMethod instances
       */
-     List getMetaMethods();
+     List<MetaMethod> getMetaMethods();
     
-
      /**
       *
       * Internal method to support Groovy runtime. Not for client usage.

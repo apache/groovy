@@ -277,12 +277,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static List getMetaPropertyValues(Object self) {
         MetaClass metaClass = InvokerHelper.getMetaClass(self);
-        List mps = metaClass.getProperties();
-        List props = new ArrayList(mps.size());
-        for (Iterator itr = mps.iterator(); itr.hasNext();) {
-            MetaProperty mp = (MetaProperty) itr.next();
-            PropertyValue pv = new PropertyValue(self, mp);
-            props.add(pv);
+        List<MetaProperty> mps = metaClass.getProperties();
+        List<PropertyValue> props = new ArrayList<PropertyValue>(mps.size());
+        for (MetaProperty mp : mps) {
+            props.add(new PropertyValue(self, mp));
         }
         return props;
     }
