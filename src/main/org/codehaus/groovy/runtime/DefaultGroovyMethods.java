@@ -83,7 +83,7 @@ import java.util.regex.Pattern;
 public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     private static final Logger LOG = Logger.getLogger(DefaultGroovyMethods.class.getName());
-    private static final Integer ONE = Integer.valueOf(1);
+    private static final Integer ONE = 1;
 
     public static final Class [] additionals = {
             NumberNumberPlus.class,
@@ -1004,14 +1004,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Returns an iterator equivalent to this iterator all duplicated items
-     * removed by using a closure as a comparator.  If the closure takes a
+     * Returns an iterator equivalent to this iterator but with all duplicated items
+     * removed by using a Closure to determine duplicate (equal) items.
+     * The original iterator will be fully processed after the call.
+     * </p>
+     * If the closure takes a
      * single parameter, the argument passed will be each element, and the
      * closure should return a value used for comparison (either using
-     * {@link Comparable#compareTo(Object)} or Object#equals() ).
+     * {@link Comparable#compareTo(Object)} or {@link Object#equals(Object)}).
+     * If the closure takes two parameters, two items from the Iterator
+     * will be passed as arguments, and the closure should return an
+     * int value (with 0 indicating the items are not unique).
      *
      * @param self an Iterator
-     * @param closure a Closure used as a comparator
+     * @param closure a Closure used to determine unique items
      * @return the modified Iterator
      * @since 1.5.5
      */
@@ -1020,17 +1026,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * A convenience method for making a collection unique using a closure
-     * as a comparator.  If the closure takes a single parameter, the
+     * A convenience method for making a collection unique using a Closure
+     * to determine duplicate (equal) items.
+     * </p>
+     * If the closure takes a single parameter, the
      * argument passed will be each element, and the closure
      * should return a value used for comparison (either using
-     * {@link Comparable#compareTo(Object)} or Object#equals() ).  If the
-     * closure takes two parameters, two items from the collection
+     * {@link Comparable#compareTo(Object)} or {@link Object#equals(Object)}).
+     * If the closure takes two parameters, two items from the collection
      * will be passed as arguments, and the closure should return an
      * int value (with 0 indicating the items are not unique).
      *
      * @param self    a Collection
-     * @param closure a Closure used as a comparator
+     * @param closure a Closure used to determine unique items
      * @return self   without any duplicates
      * @since 1.0 
      */
@@ -1154,7 +1162,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static Object eachWithIndex(Object self, Closure closure) {
         int counter = 0;
         for (Iterator iter = InvokerHelper.asIterator(self); iter.hasNext();) {
-            closure.call(new Object[]{iter.next(), Integer.valueOf(counter++)});
+            closure.call(new Object[]{iter.next(), counter++});
         }
         return self;
     }
@@ -1177,9 +1185,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return returns the self parameter
      * @since 1.5.0
      */
-    public static Map each(Map self, Closure closure) {
-        for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
-            Map.Entry entry = (Map.Entry) iter.next();
+    public static <K, V> Map<K, V> each(Map<K, V> self, Closure closure) {
+        for (Map.Entry entry : self.entrySet()) {
             callClosureForMapEntry(closure, entry);
         }
         return self;
@@ -1197,10 +1204,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the self Object
      * @since 1.5.0
      */
-    public static Object eachWithIndex(Map self, Closure closure) {
+    public static <K, V> Map<K, V> eachWithIndex(Map<K, V> self, Closure closure) {
         int counter = 0;
-        for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
-            Map.Entry entry = (Map.Entry) iter.next();
+        for (Map.Entry entry : self.entrySet()) {
             callClosureForMapEntryAndCounter(closure, entry, counter++);
         }
         return self;
@@ -1274,9 +1280,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return true if every entry of the map matches the closure predicate
      * @since 1.5.0
      */
-    public static boolean every(Map self, Closure closure) {
-        for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
-            Map.Entry entry = (Map.Entry) iter.next();
+    public static <K, V> boolean every(Map<K, V> self, Closure closure) {
+        for (Map.Entry entry : self.entrySet()) {
             if (!DefaultTypeTransformation.castToBoolean(callClosureForMapEntry(closure, entry))) {
                 return false;
             }
@@ -1330,9 +1335,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return true if any entry in the map matches the closure predicate
      * @since 1.5.0
      */
-    public static boolean any(Map self, Closure closure) {
-        for (Iterator iter = self.entrySet().iterator(); iter.hasNext();) {
-            Map.Entry entry = (Map.Entry) iter.next();
+    public static <K, V> boolean any(Map<K, V> self, Closure closure) {
+        for (Map.Entry entry : self.entrySet()) {
             if (DefaultTypeTransformation.castToBoolean(callClosureForMapEntry(closure, entry))) {
                 return true;
             }
@@ -1413,8 +1417,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static int count(Collection self, Object value) {
         int answer = 0;
-        for (Iterator iter = self.iterator(); iter.hasNext();) {
-            if (DefaultTypeTransformation.compareEqual(iter.next(), value)) {
+        for (Object item : self) {
+            if (DefaultTypeTransformation.compareEqual(item, value)) {
                 ++answer;
             }
         }
@@ -2276,14 +2280,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Selects the minimum value found in the collection using the given closure
-     * as a comparator.  The closure should return a comparable value (i.e. a
-     * number) for each item passed.  The collection item for which the closure
-     * returns the smallest comparable value will be returned from this method
-     * as the minimum.
+     * Selects the minimum value found in the collection
+     * using the closure to determine the correct ordering.
+     * </p>
+     * If the closure has two parameters
+     * it is used like a traditional Comparator. I.e. it should compare
+     * its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than,
+     * equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a
+     * Comparable (typically an Integer) which is then used for
+     * further comparison.
      *
      * @param self    a Collection
-     * @param closure a closure used as a comparator
+     * @param closure a Closure used to determine the correct ordering
      * @return the minimum value
      * @since 1.0
      */
@@ -2294,8 +2304,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
         Object answer = null;
         Object answer_value = null;
-        for (Iterator iter = self.iterator(); iter.hasNext();) {
-            Object item = iter.next();
+        for (Object item : self) {
             Object value = closure.call(item);
             if (answer == null || ScriptBytecodeAdapter.compareLessThan(value, answer_value)) {
                 answer = item;
@@ -2306,13 +2315,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Selects the minimum value found from the Iterator using the given closure
-     * as a comparator.  The closure should return a comparable value (i.e. a
-     * number) for each item passed. The iterator will become
+     * Selects the minimum value found from the Iterator
+     * using the closure to determine the correct ordering.
+     * The iterator will become
      * exhausted of elements after this operation.
+     * </p>
+     * If the closure has two parameters
+     * it is used like a traditional Comparator. I.e. it should compare
+     * its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than,
+     * equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a
+     * Comparable (typically an Integer) which is then used for
+     * further comparison.
      *
      * @param self    an Iterator
-     * @param closure a closure used as a comparator
+     * @param closure a Closure used to determine the correct ordering
      * @return the minimum value
      * @see #min(java.util.Collection, groovy.lang.Closure)
      * @since 1.5.5
@@ -2322,12 +2340,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Selects the minimum value found from the Object array using the given closure
-     * as a comparator.  The closure should return a comparable value (i.e. a
-     * number) for each item passed.
+     * Selects the minimum value found from the Object array
+     * using the closure to determine the correct ordering.
+     * </p>
+     * If the closure has two parameters
+     * it is used like a traditional Comparator. I.e. it should compare
+     * its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than,
+     * equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a
+     * Comparable (typically an Integer) which is then used for
+     * further comparison.
      *
      * @param self    an Object array
-     * @param closure a closure used as a comparator
+     * @param closure a Closure used to determine the correct ordering
      * @return the minimum value
      * @see #min(java.util.Collection, groovy.lang.Closure)
      * @since 1.5.5
@@ -2374,14 +2400,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Selects the maximum value found in the collection using the given closure
-     * as a comparator.  The closure should return a comparable value (i.e. a
-     * number) for each item passed.  The collection item for which the closure
-     * returns the largest comparable value will be returned from this method
-     * as the maximum.
+     * Selects the maximum value found in the collection
+     * using the closure to determine the correct ordering.
+     * </p>
+     * If the closure has two parameters
+     * it is used like a traditional Comparator. I.e. it should compare
+     * its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than,
+     * equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a
+     * Comparable (typically an Integer) which is then used for
+     * further comparison.
      *
      * @param self    a Collection
-     * @param closure a closure used as a comparator
+     * @param closure a Closure used to determine the correct ordering
      * @return the maximum value
      * @since 1.0
      */
@@ -2392,8 +2424,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
         Object answer = null;
         Object AnswerValue = null;
-        for (Iterator iter = self.iterator(); iter.hasNext();) {
-            Object item = iter.next();
+        for (Object item : self) {
             Object value = closure.call(item);
             if (answer == null || ScriptBytecodeAdapter.compareLessThan(AnswerValue, value)) {
                 answer = item;
@@ -2404,13 +2435,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Selects the maximum value found from the Iterator using the given closure
-     * as a comparator.  The closure should return a comparable value (i.e. a
-     * number) for each item passed. The iterator will become
-     * exhausted of elements after this operation.
+     * Selects the maximum value found from the Iterator
+     * using the closure to determine the correct ordering.
+     * The iterator will become exhausted of elements after this operation.
+     * </p>
+     * If the closure has two parameters
+     * it is used like a traditional Comparator. I.e. it should compare
+     * its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than,
+     * equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a
+     * Comparable (typically an Integer) which is then used for
+     * further comparison.
      *
      * @param self    an Iterator
-     * @param closure a closure used as a comparator
+     * @param closure a Closure used to determine the correct ordering
      * @return the maximum value
      * @see #max(java.util.Collection, groovy.lang.Closure)
      * @since 1.5.5
@@ -2420,12 +2459,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Selects the maximum value found from the Object array using the given closure
-     * as a comparator.  The closure should return a comparable value (i.e. a
-     * number) for each item passed.
+     * Selects the maximum value found from the Object array
+     * using the closure to determine the correct ordering.
+     * </p>
+     * If the closure has two parameters
+     * it is used like a traditional Comparator. I.e. it should compare
+     * its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than,
+     * equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a
+     * Comparable (typically an Integer) which is then used for
+     * further comparison.
      *
      * @param self    an Object array
-     * @param closure a closure used as a comparator
+     * @param closure a Closure used to determine the correct ordering
      * @return the maximum value
      * @see #max(java.util.Collection, groovy.lang.Closure)
      * @since 1.5.5
@@ -4224,10 +4271,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Sorts the given iterator items into a sorted iterator using
-     * the closure as a comparator.
+     * the Closure to determine the correct ordering. The original
+     * iterator will be fully processed after the method call.
+     * </p>
+     * If the closure has two parameters
+     * it is used like a traditional Comparator. I.e. it should compare
+     * its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than,
+     * equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a
+     * Comparable (typically an Integer) which is then used for
+     * further comparison.
      *
      * @param self       the Iterator to be sorted
-     * @param closure a Closure used as a comparator
+     * @param closure a Closure used to determine the correct ordering
      * @return the sorted items as an Iterator
      * @since 1.5.5
      */
@@ -4236,10 +4293,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts the given Object array into a newly created array using the given comparator.
+     * Sorts the given Object array into a newly created array using
+     * the Closure to determine the correct ordering.
+     * </p>
+     * If the closure has two parameters
+     * it is used like a traditional Comparator. I.e. it should compare
+     * its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than,
+     * equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a
+     * Comparable (typically an Integer) which is then used for
+     * further comparison.
      *
      * @param self the array to be sorted
-     * @param closure a Closure used as a comparator
+     * @param closure a Closure used to determine the correct ordering
      * @return the sorted array
      * @since 1.5.5
      */
@@ -4248,12 +4315,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts this Collection using the given closure as a comparator.  The
-     * closure is passed each item from the collection, and is assumed to
-     * return a comparable value (i.e. an int).
+     * Sorts this Collection using
+     * the closure to determine the correct ordering.
+     * </p>
+     * If the closure has two parameters
+     * it is used like a traditional Comparator. I.e. it should compare
+     * its two parameters for order, returning a negative integer,
+     * zero, or a positive integer when the first parameter is less than,
+     * equal to, or greater than the second respectively. Otherwise,
+     * the Closure is assumed to take a single parameter and return a
+     * Comparable (typically an Integer) which is then used for
+     * further comparison.
      *
      * @param self    a Collection to be sorted
-     * @param closure a Closure used as a comparator
+     * @param closure a Closure used to determine the correct ordering
      * @return a newly created sorted List
      * @since 1.0
      */
