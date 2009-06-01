@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,18 +51,15 @@ public class FileSystemCompiler {
         }
     }
 
-
     public void compile(String[] paths) throws Exception {
         unit.addSources(paths);
         unit.compile();
     }
 
-
     public void compile(File[] files) throws Exception {
         unit.addSources(files);
         unit.compile();
     }
-
 
     public static void displayHelp(final Options options) {
         final HelpFormatter formatter = new HelpFormatter();
@@ -72,16 +69,15 @@ public class FileSystemCompiler {
     public static void displayVersion() {
         String version = InvokerHelper.getVersion();
         System.err.println("Groovy compiler version " + version);
-        System.err.println("Copyright 2003-2008 The Codehaus. http://groovy.codehaus.org/");
+        System.err.println("Copyright 2003-2009 The Codehaus. http://groovy.codehaus.org/");
         System.err.println("");
     }
 
     public static int checkFiles(String[] filenames) {
         int errors = 0;
 
-        for (int i = 0; i < filenames.length; ++i) {
-            File file = new File(filenames[i]);
-
+        for (String filename : filenames) {
+            File file = new File(filename);
             if (!file.exists()) {
                 System.err.println("error: file not found: " + file);
                 ++errors;
@@ -182,18 +178,18 @@ public class FileSystemCompiler {
 
     public static String[] generateFileNamesFromOptions(CommandLine cli) {
         String[] filenames = cli.getArgs();
-        List fileList = new ArrayList(filenames.length);
+        List<String> fileList = new ArrayList<String>(filenames.length);
         boolean errors = false;
-        for (int i = 0; i < filenames.length; i++) {
-            if (filenames[i].startsWith("@")) {
+        for (String filename : filenames) {
+            if (filename.startsWith("@")) {
                 try {
-                    BufferedReader br = new BufferedReader(new FileReader(filenames[i].substring(1)));
+                    BufferedReader br = new BufferedReader(new FileReader(filename.substring(1)));
                     String file;
                     while ((file = br.readLine()) != null) {
                         fileList.add(file);
                     }
                 } catch (IOException ioe) {
-                    System.err.println("error: file not readable: " + filenames[i].substring(1));
+                    System.err.println("error: file not readable: " + filename.substring(1));
                     errors = true;
                 }
             } else {
@@ -203,7 +199,7 @@ public class FileSystemCompiler {
         if (errors) {
             return null;
         } else {
-            return (String[]) fileList.toArray(new String[fileList.size()]);
+            return fileList.toArray(new String[fileList.size()]);
         }
     }
 
@@ -227,7 +223,7 @@ public class FileSystemCompiler {
 
         // joint compilation parameters
         if (cli.hasOption('j')) {
-            Map compilerOptions = new HashMap();
+            Map<String, String[]> compilerOptions = new HashMap<String, String[]>();
 
             String[] opts = cli.getOptionValues("J");
             compilerOptions.put("namedValues", opts);

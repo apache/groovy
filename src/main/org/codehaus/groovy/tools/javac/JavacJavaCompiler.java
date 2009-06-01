@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -41,24 +41,24 @@ public class JavacJavaCompiler implements JavaCompiler {
         this.config = config;
     }
 
-    public void compile(List files, CompilationUnit cu) {
+    public void compile(List<String> files, CompilationUnit cu) {
         String[] javacParameters = makeParameters(files, cu.getClassLoader());
-        StringWriter javacOutput=null;
+        StringWriter javacOutput = null;
         int javacReturnValue = 0;
         try {
             Class javac = findJavac(cu);
-            Method method=null;
+            Method method = null;
             try {
                 method = javac.getMethod("compile", new Class[]{String[].class, PrintWriter.class});
                 javacOutput = new StringWriter();
                 PrintWriter writer = new PrintWriter(javacOutput);
-                Object ret = method.invoke(null, new Object[]{javacParameters,writer});
-                javacReturnValue = ((Integer) ret).intValue();
-            } catch (NoSuchMethodException e) {}
-            if (method==null) {
+                Object ret = method.invoke(null, javacParameters, writer);
+                javacReturnValue = (Integer) ret;
+            } catch (NoSuchMethodException e) { }
+            if (method == null) {
                 method = javac.getMethod("compile", new Class[]{String[].class});
                 Object ret = method.invoke(null, new Object[]{javacParameters});
-                javacReturnValue = ((Integer) ret).intValue();
+                javacReturnValue = (Integer) ret;
             }
             cu.getConfiguration().getOutput();
         } catch (InvocationTargetException ite) {
@@ -66,33 +66,32 @@ public class JavacJavaCompiler implements JavaCompiler {
         } catch (Exception e) {
             cu.getErrorCollector().addFatalError(new ExceptionMessage(e, true, cu));
         }
-        if (javacReturnValue!=0) {
+        if (javacReturnValue != 0) {
             switch (javacReturnValue) {
-                case 1: addJavacError("Compile error during compilation with javac.",cu,javacOutput); break;
-                case 2: addJavacError("Invalid commandline usage for javac.",cu,javacOutput); break;
-                case 3: addJavacError("System error during compilation with javac.",cu,javacOutput); break;
-                case 4: addJavacError("Abnormal termination of javac.",cu,javacOutput); break;
-                default: addJavacError("unexpected return value by javac.",cu,javacOutput); break;
+                case 1: addJavacError("Compile error during compilation with javac.", cu, javacOutput); break;
+                case 2: addJavacError("Invalid commandline usage for javac.", cu, javacOutput); break;
+                case 3: addJavacError("System error during compilation with javac.", cu, javacOutput); break;
+                case 4: addJavacError("Abnormal termination of javac.", cu, javacOutput); break;
+                default: addJavacError("unexpected return value by javac.", cu, javacOutput); break;
             }
-        }        
-    }
-    
-    private void addJavacError(String header, CompilationUnit cu, StringWriter msg) {
-        if (msg!=null)  {
-            header = header+"\n"+msg.getBuffer().toString();
-        } else {
-            header = header+
-            "\nThis javac version does not support compile(String[],PrintWriter), "+
-            "so no further details of the error are available. The message error text "+
-            "should be found on System.err.\n";
         }
-        cu.getErrorCollector().addFatalError(new SimpleMessage(header,cu));
     }
-    
 
-    private String[] makeParameters(List files, GroovyClassLoader parentClassLoader) {
+    private void addJavacError(String header, CompilationUnit cu, StringWriter msg) {
+        if (msg != null) {
+            header = header + "\n" + msg.getBuffer().toString();
+        } else {
+            header = header +
+                    "\nThis javac version does not support compile(String[],PrintWriter), " +
+                    "so no further details of the error are available. The message error text " +
+                    "should be found on System.err.\n";
+        }
+        cu.getErrorCollector().addFatalError(new SimpleMessage(header, cu));
+    }
+
+    private String[] makeParameters(List<String> files, GroovyClassLoader parentClassLoader) {
         Map options = config.getJointCompilationOptions();
-        LinkedList paras = new LinkedList();
+        LinkedList<String> paras = new LinkedList<String>();
 
         File target = config.getTargetDirectory();
         if (target == null) target = new File(".");
@@ -102,16 +101,16 @@ public class JavacJavaCompiler implements JavaCompiler {
         paras.add(target.getAbsolutePath());
         paras.add("-sourcepath");
         paras.add(((File) options.get("stubDir")).getAbsolutePath());
-        
+
         // add flags
         String[] flags = (String[]) options.get("flags");
         if (flags != null) {
-            for (int i = 0; i < flags.length; i++) {
-                paras.add('-' + flags[i]);
+            for (String flag : flags) {
+                paras.add('-' + flag);
             }
         }
 
-        boolean hadClasspath=false;
+        boolean hadClasspath = false;
         // add namedValues
         String[] namedValues = (String[]) options.get("namedValues");
         if (namedValues != null) {
@@ -122,7 +121,7 @@ public class JavacJavaCompiler implements JavaCompiler {
                 paras.add(namedValues[i + 1]);
             }
         }
-        
+
         // append classpath if not already defined
         if (!hadClasspath) {
             // add all classpaths that compilation unit sees
@@ -130,7 +129,7 @@ public class JavacJavaCompiler implements JavaCompiler {
             ClassLoader cl = parentClassLoader;
             while (cl != null) {
                 if (cl instanceof URLClassLoader) {
-                    for (URL u : ((URLClassLoader)cl).getURLs()) {
+                    for (URL u : ((URLClassLoader) cl).getURLs()) {
                         try {
                             resultPath.append(File.pathSeparator);
                             resultPath.append(new File(u.toURI()).getPath());
@@ -145,11 +144,11 @@ public class JavacJavaCompiler implements JavaCompiler {
             paras.add("-classpath");
             paras.add(resultPath.toString());
         }
-        
+
         // files to compile
         paras.addAll(files);
 
-        return (String[]) paras.toArray(new String[paras.size()]);
+        return paras.toArray(new String[paras.size()]);
     }
 
     private Class findJavac(CompilationUnit cu) throws ClassNotFoundException {
@@ -157,21 +156,21 @@ public class JavacJavaCompiler implements JavaCompiler {
         try {
             return Class.forName(main);
         } catch (ClassNotFoundException e) {}
-            
+
         try {
             ClassLoader cl = this.getClass().getClassLoader();
             return cl.loadClass(main);
         } catch (ClassNotFoundException e) {}
-        
+
         try {
             return ClassLoader.getSystemClassLoader().loadClass(main);
         } catch (ClassNotFoundException e) {}
-        
+
         try {
             return cu.getClassLoader().getParent().loadClass(main);
         } catch (ClassNotFoundException e3) {}
-        
-        
+
+
         // couldn't find compiler - try to find tools.jar
         // based on java.home setting
         String javaHome = System.getProperty("java.home");
@@ -184,7 +183,7 @@ public class JavacJavaCompiler implements JavaCompiler {
             loader.addClasspath(toolsJar.getAbsolutePath());
             return loader.loadClass(main);
         }
-        
+
         throw new ClassNotFoundException("unable to locate the java compiler com.sun.tools.javac.Main, please change your classloader settings");
     }
 }
