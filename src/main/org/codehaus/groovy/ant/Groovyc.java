@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -528,8 +528,8 @@ public class Groovyc extends MatchingTask {
         // scan source directories and dest directory to build up
         // compile lists
         String[] list = src.list();
-        for (int i = 0; i < list.length; i++) {
-            File file = getProject().resolveFile(list[i]);
+        for (String filename : list) {
+            File file = getProject().resolveFile(filename);
             if (!file.exists()) {
                 throw new BuildException("srcdir \"" + file.getPath() + "\" does not exist!", getLocation());
             }
@@ -644,12 +644,12 @@ public class Groovyc extends MatchingTask {
                             jointOptions.add("-Fg" + level);
                         } else if (key.contains("debugLevel")) {
                             // ignore, taken care of in debug
-                        } else if (((key.contains("nowarn"))
+                        } else if ((key.contains("nowarn"))
                                 || (key.contains("verbose"))
-                                || (key.contains("deprecation"))
-                        ) && ("on".equalsIgnoreCase(value) || "true".equalsIgnoreCase(value) || "yes".equalsIgnoreCase("value"))
-                                ) {
-                            jointOptions.add("-F" + key);
+                                || (key.contains("deprecation"))) {
+                            // false is default, so something to do only in true case
+                            if ("on".equalsIgnoreCase(value) || "true".equalsIgnoreCase(value) || "yes".equalsIgnoreCase("value"))
+                                jointOptions.add("-F" + key);
                         } else if (key.contains("classpath")) {
                             classpath.add(javac.getClasspath());
                         } else if ((key.contains("depend"))
@@ -657,8 +657,7 @@ public class Groovyc extends MatchingTask {
                                 || (key.contains("encoding"))
                                 || (key.contains("source"))
                                 || (key.contains("target"))
-                                || (key.contains("verbose"))
-                                || (key.contains("-Xmaxwarns"))) {
+                                || (key.contains("verbose"))) {
                             jointOptions.add("-J" + key + "=" + value);
                         } else {
                             log("The option " + key + " cannot be set on the contained <javac> element. The option will be ignored", Project.MSG_WARN);
@@ -846,17 +845,16 @@ public class Groovyc extends MatchingTask {
         if (parent instanceof AntClassLoader) {
             AntClassLoader antLoader = (AntClassLoader) parent;
             String[] pathElm = antLoader.getClasspath().split(File.pathSeparator);
-            List classpath = configuration.getClasspath();
+            List<String> classpath = configuration.getClasspath();
             /*
              * Iterate over the classpath provided to groovyc, and add any missing path
              * entries to the AntClassLoader.  This is a workaround, since for some reason
              * 'directory' classpath entries were not added to the AntClassLoader' classpath.
              */
-            for (Iterator iter = classpath.iterator(); iter.hasNext();) {
-                String cpEntry = (String) iter.next();
+            for (String cpEntry : classpath) {
                 boolean found = false;
-                for (int i = 0; i < pathElm.length; i++) {
-                    if (cpEntry.equals(pathElm[i])) {
+                for (String path : pathElm) {
+                    if (cpEntry.equals(path)) {
                         found = true;
                         break;
                     }

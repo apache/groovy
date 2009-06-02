@@ -157,7 +157,7 @@ public class FileSystemCompiler {
 
     public static void doCompilation(CompilerConfiguration configuration, CompilationUnit unit, String[] filenames) throws Exception {
         File tmpDir = null;
-        // if there are any joint compilation options set stub dir if not set
+        // if there are any joint compilation options set stubDir if not set
         try {
             if ((configuration.getJointCompilationOptions() != null)
                 && !configuration.getJointCompilationOptions().containsKey("stubDir"))
@@ -223,7 +223,7 @@ public class FileSystemCompiler {
 
         // joint compilation parameters
         if (cli.hasOption('j')) {
-            Map<String, String[]> compilerOptions = new HashMap<String, String[]>();
+            Map<String, Object> compilerOptions = new HashMap<String, Object>();
 
             String[] opts = cli.getOptionValues("J");
             compilerOptions.put("namedValues", opts);

@@ -74,6 +74,9 @@ public class JavacJavaCompiler implements JavaCompiler {
                 case 4: addJavacError("Abnormal termination of javac.", cu, javacOutput); break;
                 default: addJavacError("unexpected return value by javac.", cu, javacOutput); break;
             }
+        } else {
+            // print warnings if any
+            System.out.print(javacOutput);
         }
     }
 
