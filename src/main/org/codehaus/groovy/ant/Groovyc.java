@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.tools.ErrorReporter;
 import org.codehaus.groovy.tools.FileSystemCompiler;
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -527,8 +528,8 @@ public class Groovyc extends MatchingTask {
         // scan source directories and dest directory to build up
         // compile lists
         String[] list = src.list();
-        for (int i = 0; i < list.length; i++) {
-            File file = getProject().resolveFile(list[i]);
+        for (String filename : list) {
+            File file = getProject().resolveFile(filename);
             if (!file.exists()) {
                 throw new BuildException("srcdir \"" + file.getPath() + "\" does not exist!", getLocation());
             }
@@ -622,43 +623,41 @@ public class Groovyc extends MatchingTask {
                         + (destDir != null ? " to " + destDir : ""));
 
                 if (listFiles) {
-                    for (int i = 0; i < compileList.length; ++i) {
-                        String filename = compileList[i].getAbsolutePath();
-                        log(filename);
+                    for (File srcFile : compileList) {
+                        log(srcFile.getAbsolutePath());
                     }
                 }
 
                 Path classpath = getClasspath() != null ? getClasspath() : new Path(getProject());
                 // extract joint options, some get pushed up...
-                List jointOptions = new ArrayList();
+                List<String> jointOptions = new ArrayList<String>();
                 if (jointCompilation) {
                     for (Iterator i = javac.getRuntimeConfigurableWrapper().getAttributeMap().entrySet().iterator(); i.hasNext();) {
                         final Map.Entry e = (Map.Entry) i.next();
                         final String key = e.getKey().toString();
                         final String value = getProject().replaceProperties(e.getValue().toString());
-                        if (key.indexOf("debug") != -1) {
+                        if (key.contains("debug")) {
                             String level = "";
                             if (javac.getDebugLevel() != null) {
                                 level = ":" + javac.getDebugLevel();
                             }
                             jointOptions.add("-Fg" + level);
-                        } else if (key.indexOf("debugLevel") != -1) {
+                        } else if (key.contains("debugLevel")) {
                             // ignore, taken care of in debug
-                        } else if (((key.indexOf("nowarn") != -1)
-                                || (key.indexOf("verbose") != -1)
-                                || (key.indexOf("deprecation") != -1)
-                        ) && ("on".equalsIgnoreCase(value) || "true".equalsIgnoreCase(value) || "yes".equalsIgnoreCase("value"))
-                                ) {
-                            jointOptions.add("-F" + key);
-                        } else if (key.indexOf("classpath") != -1) {
+                        } else if ((key.contains("nowarn"))
+                                || (key.contains("verbose"))
+                                || (key.contains("deprecation"))) {
+                            // false is default, so something to do only in true case
+                            if ("on".equalsIgnoreCase(value) || "true".equalsIgnoreCase(value) || "yes".equalsIgnoreCase("value"))
+                                jointOptions.add("-F" + key);
+                        } else if (key.contains("classpath")) {
                             classpath.add(javac.getClasspath());
-                        } else if ((key.indexOf("depend") != -1)
-                                || (key.indexOf("extdirs") != -1)
-                                || (key.indexOf("encoding") != -1)
-                                || (key.indexOf("source") != -1)
-                                || (key.indexOf("target") != -1)
-                                || (key.indexOf("verbose") != -1)
-                                || (key.indexOf("depend") != -1)) {
+                        } else if ((key.contains("depend"))
+                                || (key.contains("extdirs"))
+                                || (key.contains("encoding"))
+                                || (key.contains("source"))
+                                || (key.contains("target"))
+                                || (key.contains("verbose"))) {
                             jointOptions.add("-J" + key + "=" + value);
                         } else {
                             log("The option " + key + " cannot be set on the contained <javac> element. The option will be ignored", Project.MSG_WARN);
@@ -668,7 +667,7 @@ public class Groovyc extends MatchingTask {
                 }
 
                 String separator = System.getProperty("file.separator");
-                List commandLineList = new ArrayList();
+                List<String> commandLineList = new ArrayList<String>();
 
                 if (fork) {
                     String javaHome;
@@ -715,11 +714,11 @@ public class Groovyc extends MatchingTask {
                 int count = 0;
                 if (fork) {
 
-                    for (int i = 0; i < compileList.length; i++) {
-                        count += compileList[i].getPath().length();
+                    for (File srcFile : compileList) {
+                        count += srcFile.getPath().length();
                     }
-                    for (Iterator iter = commandLineList.iterator(); iter.hasNext();) {
-                        count += iter.next().toString().length();
+                    for (Object commandLineArg : commandLineList) {
+                        count += commandLineArg.toString().length();
                     }
                     count += compileList.length;
                     count += commandLineList.size();
@@ -730,8 +729,8 @@ public class Groovyc extends MatchingTask {
                         File tempFile = File.createTempFile("groovyc-files-", ".txt");
                         temporaryFiles.add(tempFile);
                         PrintWriter pw = new PrintWriter(new FileWriter(tempFile));
-                        for (int i = 0; i < compileList.length; i++) {
-                            pw.println(compileList[i].getPath());
+                        for (File srcFile : compileList) {
+                            pw.println(srcFile.getPath());
                         }
                         pw.close();
                         commandLineList.add("@" + tempFile.getPath());
@@ -739,14 +738,17 @@ public class Groovyc extends MatchingTask {
                         log("Error creating file list", e, Project.MSG_ERR);
                     }
                 } else {
-                    for (int i = 0; i < compileList.length; i++) {
-                        commandLineList.add(compileList[i].getPath());
+                    for (File srcFile : compileList) {
+                        commandLineList.add(srcFile.getPath());
                     }
                 }
                 final String[] commandLine = new String[commandLineList.size()];
                 for (int i = 0; i < commandLine.length; ++i) {
-                    commandLine[i] = (String) commandLineList.get(i);
+                    commandLine[i] = commandLineList.get(i);
                 }
+                log("Compilation arguments:", Project.MSG_VERBOSE);
+                log(DefaultGroovyMethods.join(commandLine, "\n"), Project.MSG_VERBOSE);
+
                 if (fork) {
                     // use the main method in FileSystemCompiler
                     final Execute executor = new Execute(); // new LogStreamHandler ( attributes , Project.MSG_INFO , Project.MSG_WARN ) ) ;
@@ -843,17 +845,16 @@ public class Groovyc extends MatchingTask {
         if (parent instanceof AntClassLoader) {
             AntClassLoader antLoader = (AntClassLoader) parent;
             String[] pathElm = antLoader.getClasspath().split(File.pathSeparator);
-            List classpath = configuration.getClasspath();
+            List<String> classpath = configuration.getClasspath();
             /*
              * Iterate over the classpath provided to groovyc, and add any missing path
              * entries to the AntClassLoader.  This is a workaround, since for some reason
              * 'directory' classpath entries were not added to the AntClassLoader' classpath.
              */
-            for (Iterator iter = classpath.iterator(); iter.hasNext();) {
-                String cpEntry = (String) iter.next();
+            for (String cpEntry : classpath) {
                 boolean found = false;
-                for (int i = 0; i < pathElm.length; i++) {
-                    if (cpEntry.equals(pathElm[i])) {
+                for (String path : pathElm) {
+                    if (cpEntry.equals(path)) {
                         found = true;
                         break;
                     }

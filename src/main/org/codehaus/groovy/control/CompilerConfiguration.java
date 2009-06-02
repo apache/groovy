@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,7 +27,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.StringTokenizer;
-
 
 /**
  * Compilation control flags and coordination stuff.
@@ -65,34 +64,43 @@ public class CompilerConfiguration {
      * See {@link WarningMessage} for levels.
      */
     private int warningLevel;
+
     /**
      * Encoding for source files
      */
+
     private String sourceEncoding;
     /**
      * A <code>PrintWriter</code> for communicating with the user
      */
+
     private PrintWriter output;
+
     /**
      * Directory into which to write classes
      */
     private File targetDirectory;
+
     /**
      * Classpath for use during compilation
      */
-    private LinkedList classpath;
+    private LinkedList<String> classpath;
+
     /**
      * If true, the compiler should produce action information
      */
     private boolean verbose;
+
     /**
      * If true, debugging code should be activated
      */
     private boolean debug;
+
     /**
      * The number of non-fatal errors to allow before bailing
      */
     private int tolerance;
+
     /**
      * Base class name for scripts (must derive from Script)
      */
@@ -123,7 +131,7 @@ public class CompilerConfiguration {
     /**
      * options for joint compilation (null by default == no joint compilation)
      */
-    private Map jointCompilationOptions;
+    private Map<String, Object> jointCompilationOptions;
     
     /**
      * Sets the Flags to defaults.
@@ -194,7 +202,7 @@ public class CompilerConfiguration {
         setWarningLevel(configuration.getWarningLevel());
         setOutput(configuration.getOutput());
         setTargetDirectory(configuration.getTargetDirectory());
-        setClasspathList(new LinkedList(configuration.getClasspath()));
+        setClasspathList(new LinkedList<String>(configuration.getClasspath()));
         setVerbose(configuration.getVerbose());
         setDebug(configuration.getDebug());
         setTolerance(configuration.getTolerance());
@@ -206,14 +214,13 @@ public class CompilerConfiguration {
         setSourceEncoding(configuration.getSourceEncoding());
         setOutput(configuration.getOutput());
         setTargetDirectory(configuration.getTargetDirectory());
-        Map jointCompilationOptions = configuration.getJointCompilationOptions();
-        if (jointCompilationOptions!=null) {
-            jointCompilationOptions = new HashMap(jointCompilationOptions);
+        Map<String, Object> jointCompilationOptions = configuration.getJointCompilationOptions();
+        if (jointCompilationOptions != null) {
+            jointCompilationOptions = new HashMap<String, Object>(jointCompilationOptions);
         }
         setJointCompilationOptions(jointCompilationOptions);
         setPluginFactory(configuration.getPluginFactory());
     }
-
 
     /**
      * Sets the Flags to the specified configuration, with defaults
@@ -224,8 +231,8 @@ public class CompilerConfiguration {
      * If you want to set a few flags but keep Groovy's default
      * configuration behavior then be sure to make your settings in
      * a Properties that is backed by <code>System.getProperties()</code> (which
-     * is done using the {@link #CompilerConfiguration(Properties)} constructor).<br/>
-     *   That might be done like this:<br/>
+     * is done using this constructor).<br/>
+     * That might be done like this:<br/>
      * <pre>
      *    Properties myProperties = new Properties(System.getProperties());
      *    myProperties.setProperty("groovy.output.debug", "true");
@@ -317,7 +324,6 @@ public class CompilerConfiguration {
         text = configuration.getProperty("groovy.source.encoding");
         if (text != null) setSourceEncoding(text);
 
-
         //
         // Target directory for classes
         //
@@ -357,7 +363,6 @@ public class CompilerConfiguration {
         }
         setTolerance(numeric);
 
-
         //
         // Script Base Class
         //
@@ -385,10 +390,7 @@ public class CompilerConfiguration {
             throw new ConfigurationException(e);
         }
         setMinimumRecompilationInterval(numeric);
-        
-        
     }
-
 
     /**
      * Gets the currently configured warning level.  See WarningMessage
@@ -397,7 +399,6 @@ public class CompilerConfiguration {
     public int getWarningLevel() {
         return this.warningLevel;
     }
-
 
     /**
      * Sets the warning level.  See WarningMessage for level details.
@@ -411,14 +412,12 @@ public class CompilerConfiguration {
         }
     }
 
-
     /**
      * Gets the currently configured source file encoding.
      */
     public String getSourceEncoding() {
         return this.sourceEncoding;
     }
-
 
     /**
      * Sets the encoding to be used when reading source files.
@@ -428,14 +427,12 @@ public class CompilerConfiguration {
         this.sourceEncoding = encoding;
     }
 
-
     /**
      * Gets the currently configured output writer.
      */
     public PrintWriter getOutput() {
         return this.output;
     }
-
 
     /**
      * Sets the output writer.
@@ -449,14 +446,12 @@ public class CompilerConfiguration {
         }
     }
 
-
     /**
      * Gets the target directory for writing classes.
      */
     public File getTargetDirectory() {
         return this.targetDirectory;
     }
-
 
     /**
      * Sets the target directory.
@@ -469,7 +464,6 @@ public class CompilerConfiguration {
         }
     }
 
-
     /**
      * Sets the target directory.
      */
@@ -477,21 +471,18 @@ public class CompilerConfiguration {
         this.targetDirectory = directory;
     }
 
-
     /**
-     * Gets the classpath.
+     * @return the classpath
      */
-    public List getClasspath() {
+    public List<String> getClasspath() {
         return this.classpath;
     }
-
 
     /**
      * Sets the classpath.
      */
     public void setClasspath(String classpath) {
-        this.classpath = new LinkedList();
-
+        this.classpath = new LinkedList<String>();
         StringTokenizer tokenizer = new StringTokenizer(classpath, File.pathSeparator);
         while (tokenizer.hasMoreTokens()) {
             this.classpath.add(tokenizer.nextToken());
@@ -502,10 +493,9 @@ public class CompilerConfiguration {
      * sets the classpath using a list of Strings
      * @param l list of strings containg the classpathparts
      */
-    public void setClasspathList(List l) {
-        this.classpath = new LinkedList(l);
+    public void setClasspathList(List<String> l) {
+        this.classpath = new LinkedList<String>(l);
     }
-
 
     /**
      * Returns true if verbose operation has been requested.
@@ -514,14 +504,12 @@ public class CompilerConfiguration {
         return this.verbose;
     }
 
-
     /**
      * Turns verbose operation on or off.
      */
     public void setVerbose(boolean verbose) {
         this.verbose = verbose;
     }
-
 
     /**
      * Returns true if debugging operation has been requested.
@@ -530,7 +518,6 @@ public class CompilerConfiguration {
         return this.debug;
     }
 
-
     /**
      * Turns debugging operation on or off.
      */
@@ -538,14 +525,12 @@ public class CompilerConfiguration {
         this.debug = debug;
     }
 
-
     /**
      * Returns the requested error tolerance.
      */
     public int getTolerance() {
         return this.tolerance;
     }
-
 
     /**
      * Sets the error tolerance, which is the number of
@@ -556,7 +541,6 @@ public class CompilerConfiguration {
         this.tolerance = tolerance;
     }
 
-
     /**
      * Gets the name of the base class for scripts.  It must be a subclass
      * of Script.
@@ -564,7 +548,6 @@ public class CompilerConfiguration {
     public String getScriptBaseClass() {
         return this.scriptBaseClass;
     }
-
 
     /**
      * Sets the name of the base class for scripts.  It must be a subclass
@@ -639,7 +622,6 @@ public class CompilerConfiguration {
         } catch(Exception ex) {
             // IGNORE
         }
-        
         return PRE_JDK5;
     }
     
@@ -647,7 +629,7 @@ public class CompilerConfiguration {
      * Gets the joint compilation options for this configuration.
      * @return the options
      */
-    public Map getJointCompilationOptions() {
+    public Map<String, Object> getJointCompilationOptions() {
         return jointCompilationOptions;
     }
     
@@ -656,7 +638,7 @@ public class CompilerConfiguration {
      * Using null will disable joint compilation.
      * @param options the options
      */
-    public void setJointCompilationOptions(Map options) {
+    public void setJointCompilationOptions(Map<String, Object> options) {
         jointCompilationOptions = options;
     }
 }
