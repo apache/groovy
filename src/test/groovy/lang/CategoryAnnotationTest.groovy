@@ -82,5 +82,39 @@ class CategoryAnnotationTest extends GroovyTestCase {
             }
         """
     }
+    
+    void testPropertyNameExpandingToGetterInsideCategoryMethod() {
+    	//GROOVY-3543: Inside the category method, this.getType().name was failng but this.getType().getName() was not.
+    	assertScript """
+			@Category(Guy)
+			class Naming {
+			    String getTypeName() {
+			        if(this.getType() != null)
+			            this.getType().name
+			        else
+			            ""
+			    }
+			}
+			
+			interface Guy {
+			    Type getType()
+			}
+			
+			class Type {
+			    String name
+			}
+			
+			class MyGuyver implements Guy {
+			    Type type
+			}
+			
+			def atype = new Type(name: 'String')
+			def onetest = new MyGuyver(type:atype)
+			
+			use(Naming) {
+			    assert onetest.getTypeName() == onetest.getType().getName()
+			}
+    	"""
+    }
 }
 
