@@ -5473,7 +5473,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self  an ObjectOutputStream
      * @param value an object to write to the stream
      * @throws IOException if an I/O error occurs.
-     * @since 1.5.0 beta 2
+     * @since 1.5.0
      */
     public static void leftShift(ObjectOutputStream self, Object value) throws IOException {
         self.writeObject(value);
@@ -10177,7 +10177,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @since 1.5.0 beta 1
+     * @since 1.5.0
      * @see #eachFileRecurse(File,Closure,boolean)
      * @since 1.5.0
      */
@@ -10239,7 +10239,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the closure to invoke
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @since 1.5.0 beta 1
+     * @since 1.5.0
      */
     public static void eachDirMatch(final File self, final Object filter, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
         eachFileMatch(self, filter, closure, true);
