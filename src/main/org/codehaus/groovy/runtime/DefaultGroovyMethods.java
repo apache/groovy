@@ -9013,16 +9013,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             ois = null;
             temp.close();
         } finally {
-            if (ois != null) {
-                try {
-                    ois.close();
-                }
-                catch (Exception e) {
-                    // ignore this exception since there
-                    // has to be another already
-                    LOG.warning("Caught exception closing ObjectInputStream: " + e);
-                }
-            }
+            closeWithWarning(ois);
         }
     }
 
@@ -11333,18 +11324,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         DataInputStream dis = new DataInputStream(fileInputStream);
         try {
             dis.readFully(bytes);
-
             InputStream temp = dis;
             dis = null;
             temp.close();
         } finally {
-            if (dis != null) {
-                try {
-                    dis.close();
-                } catch (IOException e) {
-                    LOG.warning("Caught exception closing DataInputStream: " + e);
-                }
-            }
+            closeWithWarning(dis);
         }
         return bytes;
     }
@@ -11392,7 +11376,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a Closure
      * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
-     * @since 1.5.0 beta 2
+     * @since 1.5.0
      */
     public static Object withObjectStreams(Socket socket, Closure closure) throws IOException {
         InputStream input = socket.getInputStream();
@@ -11470,10 +11454,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 try {
                     closure.call(socket);
                 } finally {
-                    try {
-                        socket.close();
-                    } catch (IOException e) {
-                        LOG.warning("Caught exception closing socket: " + e);
+                    if (socket != null) {
+                        try {
+                            socket.close();
+                        } catch (IOException e) {
+                            LOG.warning("Caught exception closing socket: " + e);
+                        }
                     }
                 }
             }
