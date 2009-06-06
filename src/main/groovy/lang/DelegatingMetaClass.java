@@ -88,13 +88,13 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#getMetaMethods()
      */
-    public List getMetaMethods() {
+    public List<MetaMethod> getMetaMethods() {
         return delegate.getMetaMethods();
     }
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#getMethods()
      */
-    public List getMethods() {
+    public List<MetaMethod> getMethods() {
         return delegate.getMethods();
     }
 
@@ -113,7 +113,7 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
     /* (non-Javadoc)
     * @see groovy.lang.MetaClass#getProperties()
     */
-    public List getProperties() {
+    public List<MetaProperty> getProperties() {
         return delegate.getProperties();
     }
     /* (non-Javadoc)
