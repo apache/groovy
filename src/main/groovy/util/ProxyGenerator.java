@@ -494,9 +494,7 @@ public class ProxyGenerator {
 
     private static void setMetaClass(final MetaClass metaClass) {
         final MetaClass newMetaClass = new DelegatingMetaClass(metaClass) {
-            /* (non-Javadoc)
-            * @see groovy.lang.MetaClass#invokeStaticMethod(java.lang.Object, java.lang.String, java.lang.Object[])
-            */
+            @Override
             public Object invokeStaticMethod(Object object, String methodName, Object[] arguments) {
                 return InvokerHelper.invokeMethod(INSTANCE, methodName, arguments);
             }

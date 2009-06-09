@@ -1,11 +1,26 @@
+/*
+ * Copyright 2003-2009 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package groovy.bugs
 
 import org.codehaus.groovy.runtime.InvokerHelper
 
-class CustomMetaClassTest extends GroovyTestCase{
+class CustomMetaClassTest extends GroovyTestCase {
     void testReplaceMetaClass() {
         /*
-         * Constructing first instance before meta class replacment
+         * Constructing first instance before meta class replacement
          * is made.
          */
         def firstInstance = "first"
@@ -27,7 +42,7 @@ class CustomMetaClassTest extends GroovyTestCase{
         /*
          * Since we are replacing a meta class at the class level
          * we are changing the behavior of the first and second
-         * instance of the string.
+         * instances of the string.
          */
         assertEquals "changed first", firstInstance.toString()
         assertEquals "changed second", secondInstance.toString()
@@ -37,80 +52,77 @@ class CustomMetaClassTest extends GroovyTestCase{
         assert stored instanceof MetaClassImpl
     }
 
-  void testNormalCreated () {
-      assertEquals groovy.runtime.metaclass.groovy.bugs.CustomMetaClassTestMetaClass, metaClass.class
-      assertEquals  MetaClassImpl, metaClass.delegate.class
-  }
+    void testNormalCreated() {
+        assertEquals groovy.runtime.metaclass.groovy.bugs.CustomMetaClassTestMetaClass, metaClass.class
+        assertEquals MetaClassImpl, metaClass.delegate.class
+    }
 
-  void testEmcCreated () {
-    GroovySystem.metaClassRegistry.removeMetaClass metaClass.theClass
-    ExpandoMetaClass.enableGlobally()
+    void testEmcCreated() {
+        GroovySystem.metaClassRegistry.removeMetaClass metaClass.theClass
+        ExpandoMetaClass.enableGlobally()
         metaClass = GroovySystem.metaClassRegistry.getMetaClass(CustomMetaClassTest)
         assertTrue metaClass instanceof groovy.runtime.metaclass.groovy.bugs.CustomMetaClassTestMetaClass
-        assertEquals  ExpandoMetaClass, metaClass.delegate.class
-    ExpandoMetaClass.disableGlobally()
+        assertEquals ExpandoMetaClass, metaClass.delegate.class
+        ExpandoMetaClass.disableGlobally()
 
-    GroovySystem.metaClassRegistry.removeMetaClass metaClass.theClass
-    metaClass = null
-    assert getMetaClass() instanceof org.codehaus.groovy.runtime.HandleMetaClass
-    assertEquals groovy.runtime.metaclass.groovy.bugs.CustomMetaClassTestMetaClass, getMetaClass().delegate.class
-  }
+        GroovySystem.metaClassRegistry.removeMetaClass metaClass.theClass
+        metaClass = null
+        assert getMetaClass() instanceof org.codehaus.groovy.runtime.HandleMetaClass
+        assertEquals groovy.runtime.metaclass.groovy.bugs.CustomMetaClassTestMetaClass, getMetaClass().delegate.class
+    }
 
-  void testStaticMetaClass () {
-      // Custom metaclass created
-      assertEquals  groovy.runtime.metaclass.groovy.bugs.CustomMetaClassTestMetaClass, metaClass.class
-      // delegated to MCImpl
-      assertEquals  MetaClassImpl, metaClass.delegate.class
+    void testStaticMetaClass() {
+        // Custom metaclass created
+        assertEquals groovy.runtime.metaclass.groovy.bugs.CustomMetaClassTestMetaClass, metaClass.class
+        // delegated to MCImpl
+        assertEquals MetaClassImpl, metaClass.delegate.class
 
-      MetaClass handle = CustomMetaClassTest.metaClass
+        MetaClass handle = CustomMetaClassTest.metaClass
 
-      // It still to be custom
-      assertEquals org.codehaus.groovy.runtime.HandleMetaClass, handle.class
-      // delegated to CustomMetaClassTestMetaClass
-      assertEquals  groovy.runtime.metaclass.groovy.bugs.CustomMetaClassTestMetaClass, handle.delegate.class
+        // It should still be custom
+        assertEquals org.codehaus.groovy.runtime.HandleMetaClass, handle.class
+        // delegated to CustomMetaClassTestMetaClass
+        assertEquals groovy.runtime.metaclass.groovy.bugs.CustomMetaClassTestMetaClass, handle.delegate.class
 
-      // But object still to hold reference to old one
-      assertEquals  MetaClassImpl, metaClass.delegate.class
-      // let give it chance to reinitialize
-      metaClass = null
-      // it is still to be default one
-      assertEquals  org.codehaus.groovy.runtime.HandleMetaClass, getMetaClass().class
-      assertEquals  groovy.runtime.metaclass.groovy.bugs.CustomMetaClassTestMetaClass, getMetaClass().delegate.class
+        // object should still hold reference to old one
+        assertEquals MetaClassImpl, metaClass.delegate.class
+        // let's give it a chance to reinitialize
+        metaClass = null
+        // should still be default one
+        assertEquals org.codehaus.groovy.runtime.HandleMetaClass, getMetaClass().class
+        assertEquals groovy.runtime.metaclass.groovy.bugs.CustomMetaClassTestMetaClass, getMetaClass().delegate.class
 
-      handle.toString = {
-          -> "I am modified"
-      }
-      // let give it chance to reinitialize
-      metaClass = null
+        handle.toString = {
+            -> "I am modified"
+        }
+        // let's give it a chance to reinitialize
+        metaClass = null
 
-      assertEquals "I am modified", toString()
+        assertEquals "I am modified", toString()
 
-      assertEquals "I am modified", metaClass.invokeMethod(this, "toString", null)
+        assertEquals "I am modified", metaClass.invokeMethod(this, "toString", null)
 
-      handle.static.toString = {
-          -> "I am modified static"
-      }
+        handle.static.toString = {
+            -> "I am modified static"
+        }
 
-      assertEquals "I am modified static", getClass().toString()
-      
-      GroovySystem.metaClassRegistry.removeMetaClass metaClass.theClass
-      metaClass = null
-      assert getMetaClass() instanceof org.codehaus.groovy.runtime.HandleMetaClass
-      assertEquals groovy.runtime.metaclass.groovy.bugs.CustomMetaClassTestMetaClass, getMetaClass().delegate.class
-  }
+        assertEquals "I am modified static", getClass().toString()
+
+        GroovySystem.metaClassRegistry.removeMetaClass metaClass.theClass
+        metaClass = null
+        assert getMetaClass() instanceof org.codehaus.groovy.runtime.HandleMetaClass
+        assertEquals groovy.runtime.metaclass.groovy.bugs.CustomMetaClassTestMetaClass, getMetaClass().delegate.class
+    }
 
 }
 
-class MyDelegatingMetaClass extends groovy.lang.DelegatingMetaClass
-{
-    MyDelegatingMetaClass(final Class a_class)
-    {
+class MyDelegatingMetaClass extends groovy.lang.DelegatingMetaClass {
+    MyDelegatingMetaClass(final Class a_class) {
         super(a_class);
         initialize()
     }
 
-    public Object invokeMethod(Object a_object, String a_methodName, Object[] a_arguments)
-    {
+    public Object invokeMethod(Object a_object, String a_methodName, Object[] a_arguments) {
         return "changed ${super.invokeMethod(a_object, a_methodName, a_arguments)}"
     }
 }

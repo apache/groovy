@@ -51,9 +51,7 @@ public class NodeList extends ArrayList {
 
     protected static void setMetaClass(final Class nodelistClass, final MetaClass metaClass) {
         final MetaClass newMetaClass = new DelegatingMetaClass(metaClass) {
-            /* (non-Javadoc)
-            * @see groovy.lang.DelegatingMetaClass#getAttribute(java.lang.Object, java.lang.String)
-            */
+            @Override
             public Object getAttribute(final Object object, final String attribute) {
                 NodeList nl = (NodeList) object;
                 Iterator it = nl.iterator();
@@ -65,6 +63,7 @@ public class NodeList extends ArrayList {
                 return result;
             }
 
+            @Override
             public void setAttribute(final Object object, final String attribute, final Object newValue) {
                 NodeList nl = (NodeList) object;
                 Iterator it = nl.iterator();
@@ -74,9 +73,7 @@ public class NodeList extends ArrayList {
                 }
             }
 
-            /* (non-Javadoc)
-            * @see groovy.lang.MetaClass#getProperty(java.lang.Object, java.lang.String)
-            */
+            @Override
             public Object getProperty(Object object, String property) {
                 if (object instanceof NodeList) {
                     NodeList nl = (NodeList) object;

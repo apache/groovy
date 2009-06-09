@@ -15,7 +15,7 @@ class StaticPropertyBug extends GroovyTestCase {
     }
 
     void testCallSiteShouldBeUpdatedAfterProxyMetaClassIsSet() {
-        def getFoo = { -> StaticPropertyFoo.bar }
+        def getFoo = {-> StaticPropertyFoo.bar }
 
         assert 'foo' == StaticPropertyFoo.bar
         assert 'foo' == getFoo()
@@ -28,7 +28,7 @@ class StaticPropertyBug extends GroovyTestCase {
     }
 
     void testCallSiteShouldBeUpdatedAfterOriginalMetaClassIsRestored() {
-        def getFoo = { -> StaticPropertyFoo.bar }
+        def getFoo = {-> StaticPropertyFoo.bar }
 
         MetaClass mc = new StaticPropertyClassProxyMetaClass(registry, StaticPropertyFoo, originalMetaClass)
         registry.setMetaClass(StaticPropertyFoo, mc)
@@ -52,6 +52,7 @@ class StaticPropertyClassProxyMetaClass extends ProxyMetaClass {
     StaticPropertyClassProxyMetaClass(MetaClassRegistry metaClassRegistry, Class aClass, MetaClass adaptee) {
         super(metaClassRegistry, aClass, adaptee)
     }
+
     public Object getProperty(Class aClass, Object object, String property, boolean b, boolean b1) {
         'static'
     }

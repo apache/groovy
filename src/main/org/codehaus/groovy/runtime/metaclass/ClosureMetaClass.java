@@ -563,20 +563,24 @@ public final class ClosureMetaClass extends MetaClassImpl {
         return metaClass;
     }
 
-    public List getMethods() {
-        List answer = CLOSURE_METACLASS.getMetaMethods();
+    @Override
+    public List<MetaMethod> getMethods() {
+        List<MetaMethod> answer = CLOSURE_METACLASS.getMetaMethods();
         answer.addAll(closureMethods.toList());
         return answer;
     }
 
-    public List getMetaMethods() {
+    @Override
+    public List<MetaMethod> getMetaMethods() {
         return CLOSURE_METACLASS.getMetaMethods();
     }
 
-    public List getProperties() {
+    @Override
+    public List<MetaProperty> getProperties() {
         return CLOSURE_METACLASS.getProperties();
     }
 
+    @Override
     public MetaMethod pickMethod(String name, Class[] argTypes) {
         if (argTypes == null) argTypes = MetaClassHelper.EMPTY_CLASS_ARRAY;
         if (name.equals(CLOSURE_CALL_METHOD) || name.equals(CLOSURE_DO_CALL_METHOD)) {
@@ -609,6 +613,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
         }
     }
 
+    @Override
     public Object getAttribute(Class sender, Object object, String attribute, boolean useSuper, boolean fromInsideClass) {
         if (object instanceof Class) {
             return getStaticMetaClass().getAttribute(sender, object, attribute, useSuper);
@@ -623,6 +628,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
         }
     }
 
+    @Override
     public void setAttribute(Class sender, Object object, String attribute,
                              Object newValue, boolean useSuper, boolean fromInsideClass) {
         if (object instanceof Class) {

@@ -15,7 +15,7 @@ class POJOCallSiteBug extends GroovyTestCase {
     }
 
     void testPOJOCallSiteShouldBeUpdatedAfterMetaClassIsChanged() {
-        def foo = { s -> s.foo() }
+        def foo = {s -> s.foo() }
         def s = new POJOCallSiteBugFoo()
 
         POJOCallSiteBugFoo.metaClass = new POJOCallSiteBugProxyMetaClass(registry, POJOCallSiteBugFoo, originalMetaClass, 'foo')
@@ -28,7 +28,7 @@ class POJOCallSiteBug extends GroovyTestCase {
     }
 
     void testPOJOPropertyCallSiteShouldBeUpdatedAfterMetaClassIsChanged() {
-        def bar = { foo -> foo.bar }
+        def bar = {foo -> foo.bar }
         def foo = new POJOCallSiteBugFoo()
 
         assert 'bar' == foo.bar
@@ -41,7 +41,7 @@ class POJOCallSiteBug extends GroovyTestCase {
     }
 
     void testPOJOFieldCallSiteShouldBeUpdatedAfterMetaClassIsChanged() {
-        def field = { foo -> foo.field }
+        def field = {foo -> foo.field }
         def foo = new POJOCallSiteBugFoo()
 
         assert 'field' == foo.field
@@ -57,13 +57,16 @@ class POJOCallSiteBug extends GroovyTestCase {
 
 class POJOCallSiteBugProxyMetaClass extends ProxyMetaClass {
     String result
+
     POJOCallSiteBugProxyMetaClass(MetaClassRegistry metaClassRegistry, Class aClass, MetaClass adaptee, String result) {
         super(metaClassRegistry, aClass, adaptee)
         this.result = result
     }
+
     public Object invokeMethod(final Object object, final String methodName, final Object[] arguments) {
         result
     }
+
     public Object getProperty(Class aClass, Object object, String property, boolean b, boolean b1) {
         result
     }

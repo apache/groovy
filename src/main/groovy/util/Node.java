@@ -119,25 +119,19 @@ public class Node implements Serializable {
 
     protected static void setMetaClass(final MetaClass metaClass, Class nodeClass) {
         final MetaClass newMetaClass = new DelegatingMetaClass(metaClass) {
-            /* (non-Javadoc)
-            * @see groovy.lang.DelegatingMetaClass#getAttribute(java.lang.Object, java.lang.String)
-            */
+            @Override
             public Object getAttribute(final Object object, final String attribute) {
                 Node n = (Node) object;
                 return n.get("@" + attribute);
             }
 
-            /* (non-Javadoc)
-             * @see groovy.lang.MetaClass#setAttribute(java.lang.Object, java.lang.String, java.lang.Object)
-             */
+            @Override
             public void setAttribute(final Object object, final String attribute, final Object newValue) {
                 Node n = (Node) object;
                 n.attributes().put(attribute, newValue);
             }
 
-            /* (non-Javadoc)
-            * @see groovy.lang.MetaClass#getProperty(java.lang.Object, java.lang.String)
-            */
+            @Override
             public Object getProperty(Object object, String property) {
                 if (object instanceof Node) {
                     Node n = (Node) object;
@@ -146,9 +140,7 @@ public class Node implements Serializable {
                 return super.getProperty(object, property);
             }
 
-            /* (non-Javadoc)
-             * @see groovy.lang.MetaClass#setProperty(java.lang.Object, java.lang.String, java.lang.Object)
-             */
+            @Override
             public void setProperty(Object object, String property, Object newValue) {
                 if (property.startsWith("@")) {
                     String attribute = property.substring(1);

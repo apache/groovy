@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,17 +31,17 @@ public interface MetaObjectProtocol {
     /**
      * Obtain a list of all meta properties available on this meta class
      *
-     * @see groovy.lang.MetaBeanProperty
-     * @return A list of MetaBeanProperty instances
+     * @see groovy.lang.MetaProperty
+     * @return A list of MetaProperty instances
      */
-    List getProperties();
+    List<MetaProperty> getProperties();
     /**
      * Obtain a list of all the meta methods available on this meta class
      *
      * @see groovy.lang.MetaMethod
      * @return A list of MetaMethod instances
      */
-    List getMethods();
+    List<MetaMethod> getMethods();
     
     /**
      * <p>Returns an object satisfying Groovy truth if the implementing MetaClass responds to
@@ -57,7 +57,7 @@ public interface MetaObjectProtocol {
      * @param argTypes The argument types to match against
      * @return A List of MetaMethods matching the argument types which will be empty if no matching methods exist
      */
-    List respondsTo(Object obj, String name, Object[] argTypes);
+    List<MetaMethod> respondsTo(Object obj, String name, Object[] argTypes);
 
     /**
      * <p>Returns an object satisfying Groovy truth if the implementing MetaClass responds to
@@ -73,7 +73,7 @@ public interface MetaObjectProtocol {
      * @param name The name of the method of interest
      * @return A List of MetaMethods which will be empty if no methods with the given name exist
      */
-    List respondsTo(Object obj, String name);
+    List<MetaMethod> respondsTo(Object obj, String name);
 
     /**
      * <p>Returns true of the implementing MetaClass has a property of the given name

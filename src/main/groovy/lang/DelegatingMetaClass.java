@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,16 +24,15 @@ import java.util.List;
 
 /**
  * @author John Wilson
- *
  */
 
 public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyObject {
     protected MetaClass delegate;
-    
+
     public DelegatingMetaClass(final MetaClass delegate) {
         this.delegate = delegate;
     }
-   
+
     public DelegatingMetaClass(final Class theClass) {
         this(GroovySystem.getMetaClassRegistry().getMetaClass(theClass));
     }
@@ -41,29 +40,31 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
     public boolean isModified() {
         return this.delegate instanceof MutableMetaClass && ((MutableMetaClass) this.delegate).isModified();
     }
+
     /* (non-Javadoc)
-     * @see groovy.lang.MetaClass#addNewInstanceMethod(java.lang.reflect.Method)
-     */
+    * @see groovy.lang.MetaClass#addNewInstanceMethod(java.lang.reflect.Method)
+    */
     public void addNewInstanceMethod(Method method) {
-        if(delegate instanceof MutableMetaClass)
-            ((MutableMetaClass)delegate).addNewInstanceMethod(method);
+        if (delegate instanceof MutableMetaClass)
+            ((MutableMetaClass) delegate).addNewInstanceMethod(method);
     }
+
     /* (non-Javadoc)
-     * @see groovy.lang.MetaClass#addNewStaticMethod(java.lang.reflect.Method)
-     */
+    * @see groovy.lang.MetaClass#addNewStaticMethod(java.lang.reflect.Method)
+    */
     public void addNewStaticMethod(Method method) {
-        if(delegate instanceof MutableMetaClass)
-            ((MutableMetaClass)delegate).addNewStaticMethod(method);
+        if (delegate instanceof MutableMetaClass)
+            ((MutableMetaClass) delegate).addNewStaticMethod(method);
     }
 
     public void addMetaMethod(MetaMethod metaMethod) {
-        if(delegate instanceof MutableMetaClass)
-            ((MutableMetaClass)delegate).addMetaMethod(metaMethod);
+        if (delegate instanceof MutableMetaClass)
+            ((MutableMetaClass) delegate).addMetaMethod(metaMethod);
     }
 
     public void addMetaBeanProperty(MetaBeanProperty metaBeanProperty) {
-        if(delegate instanceof MutableMetaClass)
-            ((MutableMetaClass)delegate).addMetaBeanProperty(metaBeanProperty);
+        if (delegate instanceof MutableMetaClass)
+            ((MutableMetaClass) delegate).addMetaBeanProperty(metaBeanProperty);
     }
 
     /* (non-Javadoc)
@@ -79,18 +80,21 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
     public Object getAttribute(Object object, String attribute) {
         return delegate.getAttribute(object, attribute);
     }
+
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#getClassNode()
      */
     public ClassNode getClassNode() {
-         return delegate.getClassNode();
+        return delegate.getClassNode();
     }
+
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#getMetaMethods()
      */
     public List<MetaMethod> getMetaMethods() {
         return delegate.getMetaMethods();
     }
+
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#getMethods()
      */
@@ -98,11 +102,11 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
         return delegate.getMethods();
     }
 
-    public List respondsTo(Object obj, String name, Object[] argTypes) {
+    public List<MetaMethod> respondsTo(Object obj, String name, Object[] argTypes) {
         return delegate.respondsTo(obj, name, argTypes);
     }
 
-    public List respondsTo(Object obj, String name) {
+    public List<MetaMethod> respondsTo(Object obj, String name) {
         return delegate.respondsTo(obj, name);
     }
 
@@ -116,12 +120,14 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
     public List<MetaProperty> getProperties() {
         return delegate.getProperties();
     }
+
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#getProperty(java.lang.Object, java.lang.String)
      */
     public Object getProperty(Object object, String property) {
         return delegate.getProperty(object, property);
     }
+
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#invokeConstructor(java.lang.Object[])
      */
@@ -135,12 +141,14 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
     public Object invokeMethod(Object object, String methodName, Object arguments) {
         return delegate.invokeMethod(object, methodName, arguments);
     }
+
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#invokeMethod(java.lang.Object, java.lang.String, java.lang.Object[])
      */
     public Object invokeMethod(Object object, String methodName, Object[] arguments) {
         return delegate.invokeMethod(object, methodName, arguments);
     }
+
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#invokeStaticMethod(java.lang.Object, java.lang.String, java.lang.Object[])
      */
@@ -154,18 +162,21 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
     public void setAttribute(Object object, String attribute, Object newValue) {
         delegate.setAttribute(object, attribute, newValue);
     }
+
     /* (non-Javadoc)
      * @see groovy.lang.MetaClass#setProperty(java.lang.Object, java.lang.String, java.lang.Object)
      */
     public void setProperty(Object object, String property, Object newValue) {
         delegate.setProperty(object, property, newValue);
     }
+
     /* (non-Javadoc)
      * @see java.lang.Object#equals(java.lang.Object)
      */
     public boolean equals(Object obj) {
         return delegate.equals(obj);
     }
+
     /* (non-Javadoc)
      * @see java.lang.Object#hashCode()
      */
@@ -173,15 +184,15 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
         return delegate.hashCode();
     }
 
-    public String toString() { 
-        return super.toString() + "[" + delegate.toString()+ "]";
+    public String toString() {
+        return super.toString() + "[" + delegate.toString() + "]";
     }
 
     /**
      * @deprecated
      */
     public MetaMethod pickMethod(String methodName, Class[] arguments) {
-        return delegate.pickMethod(methodName,arguments);
+        return delegate.pickMethod(methodName, arguments);
     }
 
     public Object getAttribute(Class sender, Object receiver, String messageName, boolean useSuper) {
@@ -240,47 +251,47 @@ public class DelegatingMetaClass implements MetaClass, MutableMetaClass, GroovyO
         return this.delegate.selectConstructorAndTransformArguments(numberOfConstructors, arguments);
     }
 
-	public void setAdaptee(MetaClass adaptee) {
-		this.delegate = adaptee; 
-	}
+    public void setAdaptee(MetaClass adaptee) {
+        this.delegate = adaptee;
+    }
 
     public MetaClass getAdaptee() {
-        return this.delegate; 
+        return this.delegate;
     }
 
     public Object invokeMethod(String name, Object args) {
-      try {
-        return getMetaClass().invokeMethod(this, name, args);
-      }
-      catch (MissingMethodException e) {
-        if (delegate instanceof GroovyObject)
-          return ((GroovyObject)delegate).invokeMethod(name, args);
-        else
-          throw e;
-      }
+        try {
+            return getMetaClass().invokeMethod(this, name, args);
+        }
+        catch (MissingMethodException e) {
+            if (delegate instanceof GroovyObject)
+                return ((GroovyObject) delegate).invokeMethod(name, args);
+            else
+                throw e;
+        }
     }
 
     public Object getProperty(String property) {
-      try {
-        return getMetaClass().getProperty(this, property);
-      }
-      catch (MissingPropertyException e) {
-        if (delegate instanceof GroovyObject)
-          return ((GroovyObject)delegate).getProperty(property);
-        else
-          throw e;
-      }
+        try {
+            return getMetaClass().getProperty(this, property);
+        }
+        catch (MissingPropertyException e) {
+            if (delegate instanceof GroovyObject)
+                return ((GroovyObject) delegate).getProperty(property);
+            else
+                throw e;
+        }
     }
 
     public void setProperty(String property, Object newValue) {
         try {
-          getMetaClass().setProperty(this, property, newValue);
+            getMetaClass().setProperty(this, property, newValue);
         }
         catch (MissingPropertyException e) {
-          if (delegate instanceof GroovyObject)
-            ((GroovyObject)delegate).setProperty(property, newValue);
-          else
-            throw e;
+            if (delegate instanceof GroovyObject)
+                ((GroovyObject) delegate).setProperty(property, newValue);
+            else
+                throw e;
         }
     }
 

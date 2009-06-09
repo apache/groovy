@@ -48,7 +48,6 @@ public class MixedInMetaClass extends OwnedMetaClass {
         if (isCallToSuper) {
             return delegate.invokeMethod(sender, receiver, methodName, arguments, true, fromInsideClass);
         }
-        else
-            return super.invokeMethod(sender, receiver, methodName, arguments, false, fromInsideClass);
+        return super.invokeMethod(sender, receiver, methodName, arguments, false, fromInsideClass);
     }
 }
