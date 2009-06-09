@@ -745,7 +745,7 @@ public class Sql {
      * Performs the given SQL query and return the first row of the result set.
      *
      * @param sql the SQL statement
-     * @return a GroovyRowResult object
+     * @return a GroovyRowResult object or <code>null</code> if no row is found
      * @throws SQLException if a database access error occurs
      */
     public Object firstRow(String sql) throws SQLException {
@@ -759,7 +759,7 @@ public class Sql {
      * the first row of the result set.
      *
      * @param gstring a GString containing the SQL query with embedded params
-     * @return a GroovyRowResult object
+     * @return a GroovyRowResult object or <code>null</code> if no row is found
      * @throws SQLException if a database access error occurs
      */
     public Object firstRow(GString gstring) throws SQLException {
@@ -774,7 +774,7 @@ public class Sql {
      *
      * @param sql    the SQL statement
      * @param params a list of parameters
-     * @return a GroovyRowResult object
+     * @return a GroovyRowResult object or <code>null</code> if no row is found
      * @throws SQLException if a database access error occurs
      */
     public Object firstRow(String sql, List params) throws SQLException {
