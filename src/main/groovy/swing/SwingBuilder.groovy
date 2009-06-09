@@ -300,19 +300,23 @@ public class SwingBuilder extends FactoryBuilderSupport {
     }
 
     /**
-     * Utility method to run a closure in a separate Thread.
+     * Utility method to run a closure outside of the EDT.
      * <p>
      * The closure is wrapped in a thread, and the thread is started
-     * immediatly.
+     * immediatly, only if the current thread is the EDT, otherwise the
+     * closure will be called immediatly.
      *
-     * @param c this closure is started in a separate thread
+     * @param c this closure is started outside of the EDT
      */
     public SwingBuilder doOutside(Closure c) {
         c.setDelegate(this)
         if (!(c instanceof MethodClosure)) {
             c = c.curry([this])
         }
-        Thread.start(c)
+        if( SwingUtilities.isEventDispatchThread() )
+            Thread.start(c)
+        else
+            c.call()
         return this
     }
 
