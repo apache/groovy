@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 the original author or authors.
+ * Copyright 2008-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -72,6 +72,22 @@ class ImmutableTransformTest extends GroovyShellTestCase {
             assert new HasHashMap(map:5, c:3).map == [map:5, c:3]
             assert new HasHashMap(map:null).map == null
             assert new HasHashMap(map:[:]).map == [:]
+        """
+    }
+
+    void testImmutableEquals() {
+        assertScript """
+            @Immutable final class This { String value }
+            @Immutable final class That { String value }
+            class Other { }
+
+            assert new This('foo') == new This("foo")
+            assert new This('f${"o"}o') == new This("foo")
+
+            assert new This('foo') != new This("bar")
+            assert new This('foo') != new That("foo")
+            assert new This('foo') != new Other()
+            assert new Other() != new This("foo")
         """
     }
 }
