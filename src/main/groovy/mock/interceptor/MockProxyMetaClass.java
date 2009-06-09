@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package groovy.mock.interceptor;
 
 import groovy.lang.*;
@@ -44,7 +43,6 @@ public class MockProxyMetaClass extends ProxyMetaClass {
         return new MockProxyMetaClass(metaRegistry, theClass, meta);
     }
 
-
     public Object invokeMethod(final Object object, final String methodName, final Object[] arguments) {
         if (null == interceptor) {
             throw new RuntimeException("cannot invoke without interceptor");
@@ -69,8 +67,6 @@ public class MockProxyMetaClass extends ProxyMetaClass {
         else {
             return super.getProperty(aClass,object,property,b,b);
         }
-
-
     }
 
     public void setProperty(Class aClass, Object object, String property, Object newValue, boolean b, boolean b1) {
@@ -84,7 +80,6 @@ public class MockProxyMetaClass extends ProxyMetaClass {
         else {
             super.setProperty(aClass,object,property,newValue,b,b);
         }
-
     }
 
     /**

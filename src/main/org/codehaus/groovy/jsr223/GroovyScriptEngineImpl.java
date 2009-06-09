@@ -291,6 +291,7 @@ public class GroovyScriptEngineImpl
                                 return callGlobal(name, args, ctx);
                             }
                         }
+
                         @Override
                         public Object invokeStaticMethod(Object object, String name, Object[] args) {
                             try {

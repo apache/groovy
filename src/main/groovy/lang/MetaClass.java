@@ -171,8 +171,9 @@ public interface MetaClass extends MetaObjectProtocol {
      ClassNode getClassNode();
      
      /**
-      * Retrieves a list of MetaMethod instances held by this class
-      * @return A list of MetaMethod instances
+      * Retrieves a list of MetaMethods held by this class
+      *
+      * @return A list of MetaMethods
       */
      List<MetaMethod> getMetaMethods();
     

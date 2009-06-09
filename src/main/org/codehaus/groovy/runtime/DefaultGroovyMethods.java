@@ -1427,8 +1427,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a List
      * @since 1.0
      */
-    public static List toList(Collection self) {
-        List answer = new ArrayList(self.size());
+    public static <T> List<T> toList(Collection<T> self) {
+        List<T> answer = new ArrayList<T>(self.size());
         answer.addAll(self);
         return answer;
     }
@@ -1441,8 +1441,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a List
      * @since 1.5.0
      */
-    public static List toList(Iterator self) {
-        List answer = new ArrayList();
+    public static <T> List<T> toList(Iterator<T> self) {
+        List<T> answer = new ArrayList<T>();
         while (self.hasNext()) {
             answer.add(self.next());
         }
@@ -1456,8 +1456,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a List
      * @since 1.5.0
      */
-    public static List toList(Enumeration self) {
-        List answer = new ArrayList();
+    public static <T> List<T> toList(Enumeration<T> self) {
+        List<T> answer = new ArrayList<T>();
         while (self.hasMoreElements()) {
             answer.add(self.nextElement());
         }
@@ -1695,9 +1695,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return findAll(closure, answer, iter);
     }
 
-    private static Collection findAll(Closure closure, Collection answer, Iterator iter) {
+    private static <T> Collection<T> findAll(Closure closure, Collection<T> answer, Iterator<T> iter) {
         while (iter.hasNext()) {
-            Object value = iter.next();
+            T value = iter.next();
             if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
                 answer.add(value);
             }
@@ -1739,10 +1739,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return split(closure, accept, reject, iter);
     }
 
-    private static Collection split(Closure closure, Collection accept, Collection reject, Iterator iter) {
-        List answer = new ArrayList();
+    private static <T> Collection<Collection<T>> split(Closure closure, Collection<T> accept, Collection<T> reject, Iterator<T> iter) {
+        List<Collection<T>> answer = new ArrayList<Collection<T>>();
         while (iter.hasNext()) {
-            Object value = iter.next();
+            T value = iter.next();
             if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
                 accept.add(value);
             } else {
@@ -3734,7 +3734,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
     }
 
-    private static List resizeListWithRangeAndGetSublist(List self, IntRange range) {
+    private static <T> List<T> resizeListWithRangeAndGetSublist(List<T> self, IntRange range) {
         RangeInfo info = subListBorders(self.size(), range);
         int size = self.size();
         if (info.to >= size) {
@@ -3742,7 +3742,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 self.add(size++, null);
             }
         }
-        List sublist = self.subList(info.from, info.to);
+        List<T> sublist = self.subList(info.from, info.to);
         sublist.clear();
         return sublist;
     }
