@@ -227,7 +227,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
 
     private Statement returnFalseIfWrongType(ClassNode cNode, Expression other) {
         return new IfStatement(
-                identicalExpr(new ClassExpression(cNode), new ClassExpression(other.getType())),
+                notEqualClasses(cNode, other),
                 new ReturnStatement(ConstantExpression.FALSE),
                 new EmptyStatement()
         );
@@ -505,6 +505,11 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
 
     private BooleanExpression identicalExpr(Expression self, Expression other) {
         return new BooleanExpression(new BinaryExpression(self, COMPARE_IDENTICAL, other));
+    }
+
+    private BooleanExpression notEqualClasses(ClassNode cNode, Expression other) {
+        return new BooleanExpression(new BinaryExpression(new ClassExpression(cNode), COMPARE_NOT_EQUAL,
+                new MethodCallExpression(other, "getClass", MethodCallExpression.NO_ARGUMENTS)));
     }
 
     private Expression findArg(String fName) {
