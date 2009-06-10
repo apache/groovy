@@ -75,7 +75,7 @@ public abstract class ConversionHandler implements InvocationHandler, Serializab
      * @see InvocationHandler#invoke(java.lang.Object, java.lang.reflect.Method, java.lang.Object[])
      */
     public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
-        if (!isCoreObjectMethod(method)) {
+        if (!checkMethod(method)) {
             return invokeCustom(proxy, method, args);
         }
         try {
@@ -83,6 +83,10 @@ public abstract class ConversionHandler implements InvocationHandler, Serializab
         } catch (InvocationTargetException ite) {
             throw ite.getTargetException();
         }
+    }
+    
+    protected boolean checkMethod(Method method) {
+    	return isCoreObjectMethod(method);
     }
 
     /**
@@ -147,7 +151,7 @@ public abstract class ConversionHandler implements InvocationHandler, Serializab
      * @return true if the method is deemed to be a core method
      */
     public static boolean isCoreObjectMethod(Method method) {
-        return Object.class.equals(method.getDeclaringClass()) && !"toString".equals(method.getName());
+        return Object.class.equals(method.getDeclaringClass());
     }
 
 }
