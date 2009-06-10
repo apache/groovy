@@ -93,21 +93,22 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         metaClassField.setSynthetic(true);
         return metaClassField;
     }
-    
+
     private FieldNode getMetaClassField(ClassNode node) {
         FieldNode ret = node.getDeclaredField("metaClass");
-        if (ret!=null) return ret;
+        if (ret != null) return ret;
         ClassNode current = node;
-        while (current!=null && current!=ClassHelper.OBJECT_TYPE) {
+        while (current != ClassHelper.OBJECT_TYPE) {
             current = current.getSuperClass();
+            if (current == null) break;
             ret = current.getDeclaredField("metaClass");
-            if (ret==null) continue;
+            if (ret == null) continue;
             if (Modifier.isPrivate(ret.getModifiers())) continue;
             return ret;
         }
         return null;
     }
-    
+
     /**
      * add code to implement GroovyObject
      * @param node
