@@ -49,5 +49,22 @@ public class ConvertedMap extends ConversionHandler {
     public String toString() {
         return DefaultGroovyMethods.toString((Map) getDelegate());
     }
+
+    protected boolean checkMethod(Method method) {
+    	return isCoreObjectMethod(method);
+    }
+
+    /**
+     * Checks whether a method is a core method from java.lang.Object.
+     * Such methods often receive special treatment because they are
+     * deemed fundamental enough to not be tampered with.
+     * call toString() is an exception to allow overriding toString() by a closure specified in the map  
+     *
+     * @param method the method to check
+     * @return true if the method is deemed to be a core method
+     */
+    public static boolean isCoreObjectMethod(Method method) {
+        return ConversionHandler.isCoreObjectMethod(method) && !"toString".equals(method.getName());
+    }
 }
 
