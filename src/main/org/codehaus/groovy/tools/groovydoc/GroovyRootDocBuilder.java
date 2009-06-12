@@ -43,12 +43,7 @@ import java.util.Map;
 import java.util.Properties;
 
 /*
- * todo
- *  comma at the end of method parameters
- *  add comments
- *  static modifier
- *  order methods alphabetically (implement compareTo enough?)
- *  provide links to other html files (e.g. return type of a method)
+ *  todo: order methods alphabetically (implement compareTo enough?)
  */
 public class GroovyRootDocBuilder {
     private static final char FS = '/';
@@ -189,8 +184,9 @@ public class GroovyRootDocBuilder {
         if (packageDoc == null) {
             packageDoc = new SimpleGroovyPackageDoc(packagePath);
         }
-        if (filename.endsWith("package.html")) {
-            processHtmlPackage(src, packageDoc);
+        if (filename.endsWith("package.html") || filename.endsWith("package-info.java") || filename.endsWith("package-info.groovy")) {
+            processPackageInfo(src, filename, packageDoc);
+            rootDoc.put(packagePath, packageDoc);
             return;
         }
         try {
@@ -205,24 +201,35 @@ public class GroovyRootDocBuilder {
         }
     }
 
-    private void processHtmlPackage(String src, SimpleGroovyPackageDoc packageDoc) {
-        String description = calcThenSetPackageDescription(src, packageDoc);
+    private void processPackageInfo(String src, String filename, SimpleGroovyPackageDoc packageDoc) {
+        String description = calcThenSetPackageDescription(src, filename, packageDoc);
         calcThenSetSummary(description, packageDoc);
+    }
+
+    private String calcThenSetPackageDescription(String src, String filename, SimpleGroovyPackageDoc packageDoc) {
+        String description;
+        if (filename.endsWith(".html")) {
+            description = scrubOffExcessiveTags(src);
+        } else {
+            description = trimPackageAndComments(src);
+        }
+        packageDoc.setDescription(description);
+        return description;
     }
 
     private void calcThenSetSummary(String src, SimpleGroovyPackageDoc packageDoc) {
         packageDoc.setSummary(SimpleGroovyDoc.calculateFirstSentence(src));
     }
 
-    private String calcThenSetPackageDescription(String src, SimpleGroovyPackageDoc packageDoc) {
-        String description = scrubOffExcessiveTags(src);
-        packageDoc.setDescription(description);
-        return description;
-    }
-
     private void calcThenSetOverviewDescription(String src) {
         String description = scrubOffExcessiveTags(src);
         rootDoc.setDescription(description);
+    }
+
+    private String trimPackageAndComments(String src) {
+        return src.replaceFirst("(?sm)^package.*", "")
+                .replaceFirst("(?sm).*/\\*\\*(.*)\\*/", "$1")
+                .replaceAll("^\\s*\\*", "");
     }
 
     private String scrubOffExcessiveTags(String src) {
