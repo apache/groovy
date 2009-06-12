@@ -32,6 +32,7 @@ import org.codehaus.groovy.control.SourceUnit
 import org.codehaus.groovy.ast.*
 import org.codehaus.groovy.ast.expr.*
 import org.codehaus.groovy.ast.stmt.*
+import org.codehaus.groovy.control.CompilationFailedException
 
 /**
  * This class controls the conversion from a Groovy script as a String into
@@ -86,7 +87,19 @@ class ScriptToTreeNodeAdapter {
         TreeNodeBuildingNodeOperation operation = new TreeNodeBuildingNodeOperation(this)
         cu.addPhaseOperation(operation, compilePhase)
         cu.addSource(codeSource.getName(), codeSource.getInputStream());
-        cu.compile(compilePhase)
+        try {
+            cu.compile(compilePhase)
+        } catch (CompilationFailedException cfe) {
+            operation.root.add(new DefaultMutableTreeNode("Unable to produce AST for this phase due to earlier compilation error:"))
+            cfe.message.eachLine {
+                operation.root.add(new DefaultMutableTreeNode(it))
+            }
+            operation.root.add(new DefaultMutableTreeNode("Fix the above error(s) and then press Refresh"))
+        } catch (Throwable t) {
+            operation.root.add(new DefaultMutableTreeNode("Unable to produce AST for this phase due to an error:"))
+            operation.root.add(new DefaultMutableTreeNode(t))
+            operation.root.add(new DefaultMutableTreeNode("Fix the above error(s) and then press Refresh"))
+        }
         return operation.root
     }
 
@@ -106,7 +119,7 @@ class ScriptToTreeNodeAdapter {
                 try {
                     value = it.getProperty(node).toString()
                 } catch (GroovyBugError reflectionArtefact) {
-                    // compiler throws error is it thinks a field is being accessed
+                    // compiler throws error if it thinks a field is being accessed
                     // before it is set under certain conditions. It wasn't designed
                     // to be walked reflectively like this.
                     value = null

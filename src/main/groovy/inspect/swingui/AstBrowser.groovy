@@ -20,7 +20,8 @@ package groovy.inspect.swingui
 import groovy.inspect.swingui.ScriptToTreeNodeAdapter
 import groovy.swing.SwingBuilder
 import java.awt.Cursor
-import java.awt.GridBagConstraints
+import static java.awt.GridBagConstraints.*
+import javax.swing.UIManager
 import javax.swing.WindowConstants
 import javax.swing.event.TreeSelectionEvent
 import javax.swing.event.TreeSelectionListener
@@ -34,7 +35,7 @@ import java.util.prefs.Preferences
 /**
  * This object is a GUI for looking at the AST that Groovy generates. 
  * 
- * Usage: groovy AstBrowser [filename]
+ * Usage: java groovy.inspect.swingui.AstBrowser [filename]
  *         where [filename] is an existing Groovy script. 
  * 
  * @author Hamlet D'Arcy (hamletdrc@gmail.com)
@@ -55,25 +56,30 @@ public class AstBrowser {
     public static void main(args) {
         
         if (!args) {
-            println "Usage: groovy AstBrowser [filename] where [filename] is a Groovy script."
+            println "Usage: java groovy.inspect.swingui.AstBrowser [filename]\nwhere [filename] is a Groovy script"
         } else {
-            def file = new File(args[0])
+            def file = new File((String)args[0])
             if (!file.exists()) {
                 println "File $args[0] cannot be found."
             } else {
-                new AstBrowser().run({file.text})
+                UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); 
+                new AstBrowser(null, null).run({file.text}, file.path)
             }
         }
     }
 
     void run(Closure script) {
+        run(script, null)
+    }
+
+    void run(Closure script, String name) {
 
         swing = new SwingBuilder()
         def prefs = new AstBrowserUiPreferences()
         def rootNode = new DefaultTreeModel(new DefaultMutableTreeNode("Loading...")) // populated later
         def phasePicker, jTree, propertyTable, splitterPane
 
-        frame = swing.frame(title: 'Groovy AST Browser',
+        frame = swing.frame(title: 'Groovy AST Browser' + (name ? " - $name":''),
                 location: prefs.frameLocation,
                 size: prefs.frameSize,
                 iconImage: swing.imageIcon(groovy.ui.Console.ICON_PATH).image,
@@ -85,21 +91,21 @@ public class AstBrowser {
                     menuItem() {action(name: 'About', closure: this.&showAbout)}
                 }
             }
-            panel() {
+            panel {
                 gridBagLayout()
-                label(text: "Phase: ",
-                        constraints: gbc(gridx: 0, gridy: 0, gridwidth: 1, gridheight: 1, weightx: 0, weighty: 0, anchor: GridBagConstraints.WEST, fill: GridBagConstraints.HORIZONTAL, insets: [2, 2, 2, 2]))
+                label(text: "At end of Phase: ",
+                        constraints: gbc(gridx: 0, gridy: 0, gridwidth: 1, gridheight: 1, weightx: 0, weighty: 0, anchor: WEST, fill: HORIZONTAL, insets: [2, 2, 2, 2]))
                 phasePicker = comboBox(items: CompilePhaseAdapter.values(),
                         selectedItem: CompilePhaseAdapter.SEMANTIC_ANALYSIS,
                         actionPerformed: {
-                            rootNode.setRoot(compile(script(), phasePicker.getSelectedItem().phaseId))
+                            compile(rootNode, swing, script(), phasePicker.selectedItem.phaseId)
                         }, 
-                        constraints: gbc(gridx: 1, gridy: 0, gridwidth: 1, gridheight: 1, weightx: 1.0, weighty: 0, anchor: GridBagConstraints.NORTHWEST, fill: GridBagConstraints.NONE, insets: [2, 2, 2, 2]))
+                        constraints: gbc(gridx: 1, gridy: 0, gridwidth: 1, gridheight: 1, weightx: 1.0, weighty: 0, anchor: NORTHWEST, fill: NONE, insets: [2, 2, 2, 2]))
                 button(text: 'Refresh',
                         actionPerformed: {
-                            rootNode.setRoot(compile(script(), phasePicker.getSelectedItem().phaseId))
+                            compile(rootNode, swing, script(), phasePicker.selectedItem.phaseId)
                         },
-                        constraints: gbc(gridx: 2, gridy: 0, gridwidth: 1, gridheight: 1, weightx: 0, weighty: 0, anchor: GridBagConstraints.NORTHEAST, fill: GridBagConstraints.NONE, insets: [2, 2, 2, 3]))
+                        constraints: gbc(gridx: 2, gridy: 0, gridwidth: 1, gridheight: 1, weightx: 0, weighty: 0, anchor: NORTHEAST, fill: NONE, insets: [2, 2, 2, 3]))
                 splitterPane = splitPane(
                         dividerLocation :  prefs.dividerLocation,
                         leftComponent: scrollPane() {
@@ -116,7 +122,7 @@ public class AstBrowser {
                                 }
                             }
                         },
-                        constraints: gbc(gridx: 0, gridy: 1, gridwidth: 3, gridheight: 1, weightx: 1.0, weighty: 1.0, anchor: GridBagConstraints.NORTHWEST, fill: GridBagConstraints.BOTH, insets: [2, 2, 2, 2])) { }
+                        constraints: gbc(gridx: 0, gridy: 1, gridwidth: 3, gridheight: 1, weightx: 1.0, weighty: 1.0, anchor: NORTHWEST, fill: BOTH, insets: [2, 2, 2, 2])) { }
             }
         }
 
@@ -130,28 +136,30 @@ public class AstBrowser {
         jTree.addTreeSelectionListener({ TreeSelectionEvent e ->
 
             propertyTable.model.rows.clear()
-            TreeNode node = jTree.getLastSelectedPathComponent()
+            TreeNode node = jTree.lastSelectedPathComponent
             if (node != null && node instanceof TreeNodeWithProperties) {
 
                 node.properties.each {
                     propertyTable.model.rows << ["name": it[0], "value": it[1], "type": it[2]]
                 }
 
-                // get the line / column information to select the text represented by the current selected node
-                def lineInfo = node.properties.findAll { it[0] in ['lineNumber', 'columnNumber', 'lastLineNumber', 'lastColumnNumber'] }
-                def lineInfoMap = lineInfo.inject([:]) { map, info -> map[(info[0])] = Integer.valueOf(info[1]); return map }
+                if (inputArea && rootElement) {
+                    // get the line / column information to select the text represented by the current selected node
+                    def lineInfo = node.properties.findAll { it[0] in ['lineNumber', 'columnNumber', 'lastLineNumber', 'lastColumnNumber'] }
+                    def lineInfoMap = lineInfo.inject([:]) { map, info -> map[(info[0])] = Integer.valueOf(info[1]); return map }
 
-                // when there are valid line / column information (ie. != -1), create a selection in the input area
-                if (!lineInfoMap.every { k, v -> v == -1 }) {
-                    def startOffset = rootElement.getElement(lineInfoMap.lineNumber - 1).startOffset
-                    inputArea.setCaretPosition(startOffset + lineInfoMap.columnNumber - 1)
+                    // when there are valid line / column information (ie. != -1), create a selection in the input area
+                    if (!lineInfoMap.every { k, v -> v == -1 }) {
+                        def startOffset = rootElement.getElement(lineInfoMap.lineNumber - 1).startOffset
+                        inputArea.setCaretPosition(startOffset + lineInfoMap.columnNumber - 1)
 
-                    def endOffset = rootElement.getElement(lineInfoMap.lastLineNumber - 1).startOffset
-                    inputArea.moveCaretPosition(endOffset + lineInfoMap.lastColumnNumber - 1)
-                } else {
-                    // if no line number is provided, unselect the current selection
-                    // but keep the caret at the same position
-                    inputArea.moveCaretPosition(inputArea.getCaretPosition())
+                        def endOffset = rootElement.getElement(lineInfoMap.lastLineNumber - 1).startOffset
+                        inputArea.moveCaretPosition(endOffset + lineInfoMap.lastColumnNumber - 1)
+                    } else {
+                        // if no line number is provided, unselect the current selection
+                        // but keep the caret at the same position
+                        inputArea.moveCaretPosition(inputArea.getCaretPosition())
+                    }
                 }
             }
             propertyTable.model.fireTableDataChanged()
@@ -159,12 +167,9 @@ public class AstBrowser {
 
         frame.pack()
         frame.show()
-
-        TreeNode ast = compile(script(), phasePicker.getSelectedItem().phaseId)
-        rootNode.setRoot(ast)
+        compile(rootNode, swing, script(), phasePicker.selectedItem.phaseId)
         jTree.setRootVisible(false)
     }
-
 
     void showAbout(EventObject evt) {
          def pane = swing.optionPane()
@@ -174,15 +179,10 @@ public class AstBrowser {
     }
 
 
-    def compile(String script, int compilePhase) {
-        try {
-            frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR));
-            return new ScriptToTreeNodeAdapter().compile(script, compilePhase)
-        } catch (e) {
-            return new DefaultMutableTreeNode("Impossible to load the AST of your script. Please fix any compilation error first, then hit Refresh.")
-        } finally {
-            frame.setCursor(Cursor.getDefaultCursor())
-        }
+    void compile(node, swing, String script, int compilePhase) {
+        frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR))
+        node.setRoot(new ScriptToTreeNodeAdapter().compile(script, compilePhase))
+        frame.setCursor(Cursor.defaultCursor)
     }
 }
 

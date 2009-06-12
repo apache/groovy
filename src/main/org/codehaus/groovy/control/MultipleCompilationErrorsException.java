@@ -43,11 +43,12 @@ public class MultipleCompilationErrorsException extends
     }
     
     public String getMessage() {
-        
         StringWriter data = new StringWriter();
         PrintWriter writer = new PrintWriter(data);
         Janitor janitor = new Janitor();
 
+        writer.write(super.getMessage());
+        writer.println(":");
         try {
             collector.write(writer, janitor);
         }
@@ -55,6 +56,6 @@ public class MultipleCompilationErrorsException extends
             janitor.cleanup();
         }
 
-        return super.getMessage() + ", " + data.toString();
+        return data.toString();
     }
 }

@@ -312,9 +312,9 @@ public class ErrorCollector {
                 SyntaxErrorMessage sem = (SyntaxErrorMessage) message;
                 sem.getCause().printStackTrace(writer);
             } 
+            writer.println();
         }
 
-        writer.println();
         writer.print(messages.size());
         writer.print(" "+txt);
         if (messages.size()>1) writer.print("s");
