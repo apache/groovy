@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,7 +66,7 @@ public class Groovy extends Java {
     /**
      * files to load
      */
-    private Vector filesets = new Vector();
+    private Vector<FileSet> filesets = new Vector<FileSet>();
 
     /**
      * input file
@@ -241,8 +241,7 @@ public class Groovy extends Java {
 
         command = command.trim();
 
-        if (srcFile == null && command.length() == 0
-                && filesets.isEmpty()) {
+        if (srcFile == null && command.length() == 0 && filesets.isEmpty()) {
             throw new BuildException("Source file does not exist!", getLocation());
         }
 
@@ -250,9 +249,10 @@ public class Groovy extends Java {
             throw new BuildException("Source file does not exist!", getLocation());
         }
 
+        // TODO: any of this used?
         // deal with the filesets
         for (int i = 0; i < filesets.size(); i++) {
-            FileSet fs = (FileSet) filesets.elementAt(i);
+            FileSet fs = filesets.elementAt(i);
             DirectoryScanner ds = fs.getDirectoryScanner(getProject());
             File srcDir = fs.getDir(getProject());
             String[] srcFiles = ds.getIncludedFiles();
@@ -475,10 +475,9 @@ public class Groovy extends Java {
         }
         String groovyHome = null;
         final String[] strings = getSysProperties().getVariables();
-        for (int i = 0; i < strings.length; i++) {
-            String string = strings[i];
-            if (string.startsWith("-Dgroovy.home=")) {
-                groovyHome = string.substring("-Dgroovy.home=".length());
+        for (String prop : strings) {
+            if (prop.startsWith("-Dgroovy.home=")) {
+                groovyHome = prop.substring("-Dgroovy.home=".length());
             }
         }
         if (groovyHome == null) {
@@ -495,8 +494,7 @@ public class Groovy extends Java {
             throw new IllegalStateException("GROOVY_HOME incorrectly defined. No embeddable directory found in: " + groovyHome);
         }
         final File[] files = jarDir.listFiles();
-        for (int i = 0; i < files.length; i++) {
-            File file = files[i];
+        for (File file : files) {
             try {
                 log.debug("Adding jar to classpath: " + file.getCanonicalPath());
             } catch (IOException e) {
@@ -516,9 +514,9 @@ public class Groovy extends Java {
         commandline[0] = tempFile.getCanonicalPath();
         System.arraycopy(args, 0, commandline, 1, args.length);
         super.clearArgs();
-        for (int i = 0; i < commandline.length; i++) {
+        for (String arg : commandline) {
             final Commandline.Argument argument = super.createArg();
-            argument.setValue(commandline[i]);
+            argument.setValue(arg);
         }
     }
 
@@ -533,7 +531,7 @@ public class Groovy extends Java {
         } else {
             String name = PREFIX;
             if (getLocation().getFileName().length() > 0)
-                name += getLocation().getFileName().replaceAll("[^\\w_\\.]", "_");
+                name += getLocation().getFileName().replaceAll("[^\\w_\\.]", "_").replaceAll("[\\.]", "_dot_");
             else
                 name += SUFFIX;
 
@@ -563,7 +561,6 @@ public class Groovy extends Java {
         log.debug("printResults()");
         StringBuffer line = new StringBuffer();
         out.println(line);
-        line = new StringBuffer();
         out.println();
     }
 }
