@@ -95,7 +95,7 @@ public class GroovyTest extends GroovyTestCase {
      * Test that helpful "file name" appears in the stack trace and not just "Script1" 
      */
     public void testFileNameInStackTrace() {
-    	testFileNameInStackTrace("groovyErrorMsg", "\\(embedded_script_in_.*GroovyTest.xml");
+    	testFileNameInStackTrace("groovyErrorMsg", "\\(embedded_script_in_.*GroovyTest_dot_xml");
     	testFileNameInStackTrace("groovyErrorMsg_ExternalFile", "GroovyTest_errorMessage.groovy");
     }
 
