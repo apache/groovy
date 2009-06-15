@@ -3419,13 +3419,13 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private void visitAnnotations(AnnotatedNode targetNode, Object visitor) {
-        List annotions = targetNode.getAnnotations();
-        if (annotions.isEmpty()) return;
+        List annotations = targetNode.getAnnotations();
+        if (annotations.isEmpty()) return;
 
-        Iterator it = annotions.iterator();
+        Iterator it = annotations.iterator();
         while (it.hasNext()) {
             AnnotationNode an = (AnnotationNode) it.next();
-            //skip builtin properties
+            // skip built-in properties
             if (an.isBuiltIn()) continue;
             if (an.hasSourceRetention()) continue;
 
@@ -3437,13 +3437,13 @@ public class AsmClassGenerator extends ClassGenerator {
 
     // TODO remove dup between this and visitAnnotations
     private void visitParameterAnnotations(Parameter parameter, int paramNumber, MethodVisitor mv) {
-        List annotions = parameter.getAnnotations();
-        if (annotions.isEmpty()) return;
+        List annotations = parameter.getAnnotations();
+        if (annotations.isEmpty()) return;
 
-        Iterator it = annotions.iterator();
+        Iterator it = annotations.iterator();
         while (it.hasNext()) {
             AnnotationNode an = (AnnotationNode) it.next();
-            //skip builtin properties
+            // skip built-in properties
             if (an.isBuiltIn()) continue;
             if (an.hasSourceRetention()) continue;
 

@@ -18,7 +18,7 @@ package gls.annotations.vm5
 import gls.CompilableTestSupport
 
 /**
- * Tests various properties of annotation defintions.
+ * Tests various properties of annotation definitions.
  *
  * @author Jochen Theodorou
  * @author Guillaume Laforge

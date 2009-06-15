@@ -34,13 +34,13 @@ import org.codehaus.groovy.ast.stmt.ThrowStatement;
 import org.codehaus.groovy.ast.stmt.WhileStatement;
 
 /**
- * Visitor to transform expressions in a whole class. 
- * Transformed Expressions are usually not visited. 
+ * Visitor to transform expressions in a whole class.
+ * Transformed Expressions are usually not visited.
  *
  * @author Jochen Theodorou
  */
 public abstract class ClassCodeExpressionTransformer extends ClassCodeVisitorSupport implements ExpressionTransformer {
-    
+
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
         Parameter[] paras = node.getParameters();
         for (int i=0; i<paras.length; i++) {
@@ -69,16 +69,16 @@ public abstract class ClassCodeExpressionTransformer extends ClassCodeVisitorSup
         Expression init = node.getInitialExpression();
         node.setInitialValueExpression(transform(init));
     }
-    
+
     public void visitProperty(PropertyNode node) {
         visitAnnotations(node);
         Statement statement = node.getGetterBlock();
         visitClassCodeContainer(statement);
-        
+
         statement = node.getSetterBlock();
         visitClassCodeContainer(statement);
     }
-    
+
     public void visitIfElse(IfStatement ifElse) {
         ifElse.setBooleanExpression((BooleanExpression) (transform(ifElse.getBooleanExpression())));
         ifElse.getIfBlock().visit(this);
@@ -89,14 +89,14 @@ public abstract class ClassCodeExpressionTransformer extends ClassCodeVisitorSup
         if (exp==null) return null;
         return exp.transformExpression(this);
     }
-        
+
     public void visitAnnotations(AnnotatedNode node) {
-        List annotions = node.getAnnotations();
-        if (annotions.isEmpty()) return;
-        Iterator it = annotions.iterator();
+        List annotations = node.getAnnotations();
+        if (annotations.isEmpty()) return;
+        Iterator it = annotations.iterator();
         while (it.hasNext()) {
             AnnotationNode an = (AnnotationNode) it.next();
-            //skip builtin properties
+            // skip built-in properties
             if (an.isBuiltIn()) continue;
             for (Iterator iter = an.getMembers().entrySet().iterator(); iter.hasNext();) {
                 Map.Entry member = (Map.Entry) iter.next();
@@ -146,5 +146,5 @@ public abstract class ClassCodeExpressionTransformer extends ClassCodeVisitorSup
 
     public void visitExpressionStatement(ExpressionStatement es) {
         es.setExpression(transform(es.getExpression()));
-    }    
+    }
 }

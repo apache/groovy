@@ -49,12 +49,12 @@ public class Java5 implements VMPlugin {
         if (tvs.length == 0) return null;
         GenericsType[] gts = new GenericsType[tvs.length];
         for (int i = 0; i < tvs.length; i++) {
-            gts[i] = configureTypeVariableDefintion(tvs[i]);
+            gts[i] = configureTypeVariableDefinition(tvs[i]);
         }
         return gts;
     }
 
-    private GenericsType configureTypeVariableDefintion(TypeVariable tv) {
+    private GenericsType configureTypeVariableDefinition(TypeVariable tv) {
         ClassNode base = configureTypeVariableReference(tv);
         ClassNode redirect = base.redirect();
         base.setRedirect(null);

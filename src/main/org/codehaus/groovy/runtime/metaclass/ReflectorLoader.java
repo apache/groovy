@@ -32,7 +32,7 @@ import java.util.Map;
  * After the new class is defined Reflector will resolve like other Groovy
  * classes. This loader is able to resolve all Groovy classes even if the
  * parent does not know them, but the parent serves first (Reflector during a
- * class defintion is different). 
+ * class definition is different). 
  * 
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
  * @version $Revision$

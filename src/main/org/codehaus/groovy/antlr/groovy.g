@@ -1415,7 +1415,7 @@ variableDefinitions[AST mods, AST t] {Token first = cloneToken(LT(1));
         // The parser allows a method definition anywhere a variable definition is accepted.
 
         (   id:IDENT
-        |   qid:STRING_LITERAL          {#qid.setType(IDENT);}  // use for operator defintions, etc.
+        |   qid:STRING_LITERAL          {#qid.setType(IDENT);}  // use for operator definitions, etc.
         )
 
         // parse the formal parameter declarations.
