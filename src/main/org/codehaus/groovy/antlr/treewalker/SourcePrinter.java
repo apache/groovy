@@ -108,7 +108,7 @@ public class SourcePrinter extends VisitorAdapter {
 		//<ARRAY_DECLARATOR>int</ARRAY_DECLARATOR> primes = new int(<ARRAY_DECLARATOR>5</ARRAY_DECLARATOR>)
 		if (getParentNode().getType() == GroovyTokenTypes.TYPE ||
 				getParentNode().getType() == GroovyTokenTypes.TYPECAST) { // ugly hack
-			// type defintion, i.e.   int[] x;
+			// type definition, i.e.   int[] x;
 			print(t,visit,null,null,"[]");
 		} else {
 			// usually in new, i.e.   def y = new int[5];

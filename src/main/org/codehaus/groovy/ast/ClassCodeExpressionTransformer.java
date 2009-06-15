@@ -88,10 +88,10 @@ public abstract class ClassCodeExpressionTransformer extends ClassCodeVisitorSup
     }
         
     public void visitAnnotations(AnnotatedNode node) {
-        List<AnnotationNode> annotions = node.getAnnotations();
-        if (annotions.isEmpty()) return;
-        for (AnnotationNode an : annotions) {
-            //skip builtin properties
+        List<AnnotationNode> annotations = node.getAnnotations();
+        if (annotations.isEmpty()) return;
+        for (AnnotationNode an : annotations) {
+            // skip built-in properties
             if (an.isBuiltIn()) continue;
             for (Map.Entry<String, Expression> member : an.getMembers().entrySet()) {
                 member.setValue(transform(member.getValue()));

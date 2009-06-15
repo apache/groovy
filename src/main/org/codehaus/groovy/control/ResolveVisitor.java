@@ -945,12 +945,12 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     public void visitAnnotations(AnnotatedNode node) {
-        List annotions = node.getAnnotations();
-        if (annotions.isEmpty()) return;
-        Iterator it = annotions.iterator();
+        List annotations = node.getAnnotations();
+        if (annotations.isEmpty()) return;
+        Iterator it = annotations.iterator();
         while (it.hasNext()) {
             AnnotationNode an = (AnnotationNode) it.next();
-            //skip builtin properties
+            // skip built-in properties
             if (an.isBuiltIn()) continue;
             ClassNode type = an.getClassNode();
             resolveOrFail(type, ",  unable to find class for annotation", an);

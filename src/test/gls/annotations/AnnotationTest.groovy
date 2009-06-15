@@ -18,7 +18,7 @@ package gls.annotations
 import gls.CompilableTestSupport
 
 /**
- * Tests various properties of annotation defintions.
+ * Tests various properties of annotation definitions.
  *
  * @author Jochen Theodorou
  * @author Guillaume Laforge

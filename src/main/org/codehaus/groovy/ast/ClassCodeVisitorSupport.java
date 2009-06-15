@@ -51,10 +51,10 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
     }
     
     public void visitAnnotations(AnnotatedNode node) {
-        List<AnnotationNode> annotions = node.getAnnotations();
-        if (annotions.isEmpty()) return;
-        for (AnnotationNode an : annotions) {
-            //skip builtin properties
+        List<AnnotationNode> annotations = node.getAnnotations();
+        if (annotations.isEmpty()) return;
+        for (AnnotationNode an : annotations) {
+            // skip built-in properties
             if (an.isBuiltIn()) continue;
             for (Map.Entry<String, Expression> member : an.getMembers().entrySet()) {
                 member.getValue().visit(this);
