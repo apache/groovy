@@ -154,7 +154,7 @@ public class AnnotationNode extends ASTNode {
         return (this.allowedTargets & target) == target;
     }
     
-    public static final String targetToName(int target) {
+    public static String targetToName(int target) {
         switch(target) {
             case TYPE_TARGET:
                 return "TYPE";

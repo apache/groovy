@@ -339,6 +339,44 @@ class Foo {}
       println "testGetterCallWithSingletonAnnotation Done" 
   }
 
+    void testRuntimeRetentionAtAllLevels() {
+        assertScript """
+        import java.lang.annotation.*
+
+        @Retention(RetentionPolicy.RUNTIME)
+        @Target([ElementType.TYPE, ElementType.METHOD, ElementType.PARAMETER, ElementType.CONSTRUCTOR, ElementType.FIELD])
+        @interface MyAnnotation {
+            String value() default ""
+        }
+
+        @MyAnnotation('class')
+        class MyClass {
+            @MyAnnotation('field')
+            public myField
+
+            @MyAnnotation('constructor')
+            MyClass(@MyAnnotation('constructor param') arg){}
+
+            @MyAnnotation('method')
+            def myMethod(@MyAnnotation('method param') arg) {}
+        }
+
+        def c1 = new MyClass()
+        assert c1.class.annotations[0].value() == 'class'
+
+        def field = c1.class.fields.find{ it.name == 'myField' }
+        assert field.annotations[0].value() == 'field'
+
+        def method = c1.class.methods.find{ it.name == 'myMethod' }
+        assert method.annotations[0].value() == 'method'
+        assert method.parameterAnnotations[0][0].value() == 'method param'
+
+        def constructor = c1.class.constructors[0]
+        assert constructor.annotations[0].value() == 'constructor'
+        assert constructor.parameterAnnotations[0][0].value() == 'constructor param'
+        """
+    }
+
   void testAnnotationWithValuesNotGivenForAttributesWithoutDefaults() {
 	  def scriptStr
 	  scriptStr = """
