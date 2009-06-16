@@ -224,7 +224,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
 
     private void addStaticVariableError(VariableExpression ve) {
         // closures are always dynamic
-        // propertiesExpressions will handle the error a bit different
+        // propertiesExpressions will handle the error a bit differently
         if (!inSpecialConstructorCall && (inClosure || !ve.isInStaticContext())) return;
         if (stillResolving) return;
         if (ve.isThisExpression() || ve.isSuperExpression()) return;
@@ -232,8 +232,8 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         if (v != null && !(v instanceof DynamicVariable) && v.isInStaticContext()) return;
         addError("Apparent variable '" + ve.getName() + "' was found in a static scope but doesn't refer" +
                 " to a local variable, static field or class. Possible causes:\n" +
-                "You attemped to reference a variable in the binding or an instance variable from a static context.\n" +
-                "You mispelled a classname or statically imported field. Please check the spelling.\n" +
+                "You attempted to reference a variable in the binding or an instance variable from a static context.\n" +
+                "You misspelled a classname or statically imported field. Please check the spelling.\n" +
                 "You attempted to use a method '" + ve.getName() +
                 "' but left out brackets in a place not allowed by the grammar.", ve);
     }
