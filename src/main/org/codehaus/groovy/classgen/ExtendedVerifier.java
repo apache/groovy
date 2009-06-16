@@ -54,16 +54,20 @@ public class ExtendedVerifier implements GroovyClassVisitor {
         node.visitContents(this);
     }
 
-    public void visitConstructor(ConstructorNode node) {
-        visitAnnotations(node, AnnotationNode.CONSTRUCTOR_TARGET);
-    }
-
     public void visitField(FieldNode node) {
         visitAnnotations(node, AnnotationNode.FIELD_TARGET);
     }
 
+    public void visitConstructor(ConstructorNode node) {
+        visitConstructorOrMethod(node, AnnotationNode.CONSTRUCTOR_TARGET);
+    }
+
     public void visitMethod(MethodNode node) {
-        visitAnnotations(node, AnnotationNode.METHOD_TARGET);
+        visitConstructorOrMethod(node, AnnotationNode.METHOD_TARGET);
+    }
+
+    private void visitConstructorOrMethod(MethodNode node, int methodTarget) {
+        visitAnnotations(node, methodTarget);
         for (int i = 0; i < node.getParameters().length; i++) {
             Parameter parameter = node.getParameters()[i];
             visitAnnotations(parameter, AnnotationNode.PARAMETER_TARGET);
