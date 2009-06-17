@@ -102,6 +102,20 @@ public class FieldNode extends AnnotatedNode implements Opcodes, Variable {
     }
 
     /**
+     * @return true if the field is an enum
+     */
+    public boolean isEnum() {
+        return (modifiers & ACC_ENUM) != 0;
+    }
+
+    /**
+     * @return true if the field is final
+     */
+    public boolean isFinal() {
+        return (modifiers & ACC_FINAL) != 0;
+    }
+
+    /**
      * @return true if the field is public
      */
     public boolean isPublic() {

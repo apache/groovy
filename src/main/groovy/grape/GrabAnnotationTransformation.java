@@ -21,6 +21,7 @@ import groovy.lang.Grapes;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.ASTTransformation;
@@ -29,12 +30,8 @@ import org.codehaus.groovy.transform.GroovyASTTransformation;
 import java.util.*;
 
 /**
- * Created by IntelliJ IDEA.
- * User: Danno
- * Date: Jan 18, 2008
- * Time: 9:48:57 PM
+ * Transformation for declarative dependency management.
  */
-
 @GroovyASTTransformation(phase=CompilePhase.CONVERSION)
 public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implements ASTTransformation {
     private static final String GRAB_CLASS_NAME = Grab.class.getName();
@@ -66,8 +63,8 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
 
         allowShortGrab = true;
         allowShortGrapes = true;
-        grabAliases = new HashSet();
-        grapesAliases = new HashSet();
+        grabAliases = new HashSet<String>();
+        grapesAliases = new HashSet<String>();
         for (ImportNode im : mn.getImports()) {
             String alias = im.getAlias();
             String className = im.getClassName();
@@ -87,7 +84,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             }
         }
 
-        List<Map<String,Object>> grabMaps = new ArrayList();
+        List<Map<String,Object>> grabMaps = new ArrayList<Map<String,Object>>();
 
         for (ClassNode classNode : sourceUnit.getAST().getClasses()) {
             grabAnnotations = new ArrayList<AnnotationNode>();
@@ -130,10 +127,14 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             if (!grabAnnotations.isEmpty()) {
                 grabAnnotationLoop:
                 for (AnnotationNode node : grabAnnotations) {
-                    Map<String, Object> grabMap = new HashMap();
-                    for (String s : new String[]{"group", "module", "version"}) {
-                        if (node.getMember(s) == null) {
+                    Map<String, Object> grabMap = new HashMap<String, Object>();
+                    for (String s : new String[]{"group", "module", "version", "classifier"}) {
+                        Expression member = node.getMember(s);
+                        if (member == null && !s.equals("classifier")) {
                             addError("The missing attribute \"" + s + "\" is required in @" + node.getClassNode().getNameWithoutPackage() + " annotations", node);
+                            continue grabAnnotationLoop;
+                        } else if (member != null && !(member instanceof ConstantExpression)) {
+                            addError("Attribute \"" + s + "\" has value " + member.getText() + " but should be an inline constant in @" + node.getClassNode().getNameWithoutPackage() + " annotations", node);
                             continue grabAnnotationLoop;
                         }
                     }
@@ -147,8 +148,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                     if ((node.getMember("initClass") == null)
                         || (node.getMember("initClass") == ConstantExpression.TRUE))
                     {
-                        List grabInitializers = new ArrayList();
-
+                        List<Statement> grabInitializers = new ArrayList<Statement>();
 
                         // add Grape.grab([group:group, module:module, version:version, classifier:classifier])
                         MapExpression me = new MapExpression();
@@ -173,7 +173,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
 
         }
         if (!grabMaps.isEmpty()) {
-            Map basicArgs = new HashMap();
+            Map<String, Object> basicArgs = new HashMap<String, Object>();
             basicArgs.put("classLoader", sourceUnit.getClassLoader());
 
             try {
@@ -187,18 +187,10 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
         }
     }
 
-    protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
-        super.visitConstructorOrMethod(node, isConstructor);
-
-        // this should be pushed into the super class...
-        for (Parameter param : node.getParameters()) {
-            visitAnnotations(param);
-        }
-    }
-
     /**
-     * Adds the annotation to the internal target list if a match is found
-     * @param node
+     * Adds the annotation to the internal target list if a match is found.
+     *
+     * @param node the AST node we are processing
      */
     public void visitAnnotations(AnnotatedNode node) {
         super.visitAnnotations(node);

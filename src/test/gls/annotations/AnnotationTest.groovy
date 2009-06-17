@@ -362,6 +362,40 @@ class Foo {}
       println "testGetterCallWithSingletonAnnotation Done" 
   }
 
+    void testAttributePropertyConstants() {
+        assertScript """
+        import java.lang.annotation.*
+        import static Constants.*
+
+        @Retention(RetentionPolicy.RUNTIME)
+        @Target(ElementType.FIELD)
+        @interface Anno {
+            double value() default 0.0d
+            String[] array() default []
+        }
+
+        class Constants {
+            static final String FOO = "foo"
+            static final String BAR = "bar"
+            static final APPROX_PI = 3.14d
+        }
+
+        class ClassWithAnnotationUsingConstant {
+            @Anno(array = [Constants.FOO, BAR, groovy.inspect.Inspector.GROOVY])
+            public annotatedStrings
+
+            @Anno(Math.PI)
+            public annotatedMath1
+            @Anno(APPROX_PI)
+            public annotatedMath2
+        }
+
+        assert ClassWithAnnotationUsingConstant.getDeclaredField('annotatedStrings').annotations[0].array() == ['foo', 'bar', "GROOVY"]
+        assert ClassWithAnnotationUsingConstant.getDeclaredField('annotatedMath1').annotations[0].value() == Math.PI
+        assert ClassWithAnnotationUsingConstant.getDeclaredField('annotatedMath2').annotations[0].value() == Constants.APPROX_PI
+      """
+    }
+
     void testRuntimeRetentionAtAllLevels() {
         assertScript """
         import java.lang.annotation.*

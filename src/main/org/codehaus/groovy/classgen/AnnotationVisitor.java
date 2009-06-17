@@ -231,6 +231,10 @@ public class AnnotationVisitor {
 
     public void checkCircularReference(ClassNode searchClass, ClassNode attrType, Expression startExp) {
         if (!isValidAnnotationClass(attrType)) return;
+        if (!(startExp instanceof AnnotationConstantExpression)) {
+            addError("Found '" + startExp.getText() + "' when expecting an Annotation Constant", startExp);
+            return;
+        }
         AnnotationConstantExpression ace = (AnnotationConstantExpression) startExp;
         AnnotationNode annotationNode = (AnnotationNode) ace.getValue();
         if (annotationNode.getClassNode().equals(searchClass)) {

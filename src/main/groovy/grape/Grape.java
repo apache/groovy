@@ -21,9 +21,7 @@ import java.util.Map;
 import java.net.URI;
 
 /**
- * User: Danno.Ferrin
- * Date: Sep 30, 2008
- * Time: 9:36:46 PM
+ * Facade to GrapeEngine.
  */
 public class Grape {
 
@@ -123,24 +121,24 @@ public class Grape {
         }
     }
 
-    public static void grab(Map dependency) {
+    public static void grab(Map<String, Object> dependency) {
         if (enableGrapes) {
             GrapeEngine instance = getInstance();
             if (instance != null) {
                 if (!dependency.containsKey("autoDownload")) {
-                    dependency.put("autoDownload" , Boolean.valueOf(enableAutoDownload));
+                    dependency.put("autoDownload" , enableAutoDownload);
                 }
                 instance.grab(dependency);
             }
         }
     }
 
-    public static void grab(Map args, Map... dependencies) {
+    public static void grab(Map<String, Object> args, Map... dependencies) {
         if (enableGrapes) {
             GrapeEngine instance = getInstance();
             if (instance != null) {
                 if (!args.containsKey("autoDownload")) {
-                    args.put("autoDownload" , Boolean.valueOf(enableAutoDownload));
+                    args.put("autoDownload" , enableAutoDownload);
                 }
                 instance.grab(args, dependencies);
             }
@@ -162,13 +160,13 @@ public class Grape {
         }
     }
 
-    public static URI[] resolve(Map args, Map... dependencies) {
+    public static URI[] resolve(Map<String, Object> args, Map... dependencies) {
         URI[] uris = null;
         if (enableGrapes) {
             GrapeEngine instance = getInstance();
             if (instance != null) {
                 if (!args.containsKey("autoDownload")) {
-                    args.put("autoDownload" , Boolean.valueOf(enableAutoDownload));
+                    args.put("autoDownload" , enableAutoDownload);
                 }
                 uris = instance.resolve(args, dependencies);
             }

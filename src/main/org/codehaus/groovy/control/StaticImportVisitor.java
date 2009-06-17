@@ -21,6 +21,7 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.objectweb.asm.Opcodes;
 
 import java.util.*;
+import java.lang.reflect.Field;
 
 /**
  * Visitor to resolve constants and method calls from static Imports
@@ -39,6 +40,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     private boolean inPropertyExpression;
     private Expression foundConstant;
     private Expression foundArgs;
+    private boolean inAnnotation;
 
     public StaticImportVisitor(CompilationUnit cu) {
         compilationUnit = cu;
@@ -54,6 +56,14 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         this.currentMethod = node;
         super.visitConstructorOrMethod(node, isConstructor);
         this.currentMethod = null;
+    }
+
+    @Override
+    public void visitAnnotations(AnnotatedNode node) {
+        boolean oldInAnnotation = inAnnotation;
+        inAnnotation = true;
+        super.visitAnnotations(node);
+        inAnnotation = oldInAnnotation;
     }
 
     public Expression transform(Expression exp) {
@@ -80,10 +90,24 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
             }
             return result;
         }
-        if (exp.getClass() == ConstantExpression.class) {
+        if (exp instanceof ConstantExpression) {
             Expression result = exp.transformExpression(this);
             if (inPropertyExpression) {
                 foundConstant = result;
+            }
+            if (inAnnotation && exp instanceof AnnotationConstantExpression) {
+                ConstantExpression ce = (ConstantExpression) result;
+                if (ce.getValue() instanceof AnnotationNode) {
+                    // replicate a little bit of AnnotationVisitor here
+                    // because we can't wait until later to do this
+                    AnnotationNode an = (AnnotationNode) ce.getValue();
+                    Map<String, Expression> attributes = an.getMembers();
+                    for (Map.Entry entry : attributes.entrySet()) {
+                        Expression attrExpr = transform((Expression) entry.getValue());
+                        entry.setValue(attrExpr);
+                    }
+
+                }
             }
             return result;
         }
@@ -96,11 +120,49 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
             Expression result = findStaticFieldImportFromModule(v.getName());
             if (result != null) {
             	result.setSourcePosition(ve);
+                if (inAnnotation) {
+                    result = transformConstantAttributeExpression(result);
+                }
             	return result;
             }
             if (!inPropertyExpression || inSpecialConstructorCall) addStaticVariableError(ve);
         }
         return ve;
+    }
+
+    // resolve constant-looking expressions statically (do here as gets transformed away later)
+    private Expression transformConstantAttributeExpression(Expression exp) {
+        if (exp instanceof PropertyExpression) {
+            PropertyExpression pe = (PropertyExpression) exp;
+            if (pe.getObjectExpression() instanceof ClassExpression) {
+                ClassExpression ce = (ClassExpression) pe.getObjectExpression();
+                ClassNode type = ce.getType();
+                if (type.isEnum()) return exp;
+                FieldNode fn = type.getField(pe.getPropertyAsString());
+                if (fn != null && !fn.isEnum() && fn.isStatic() && fn.isFinal()) {
+                    if (fn.getInitialValueExpression() instanceof ConstantExpression) {
+                        return fn.getInitialValueExpression();
+                    }
+                }
+                try {
+                    if (type.isResolved()) {
+                        Field field = type.getTypeClass().getField(pe.getPropertyAsString());
+                        if (field != null) {
+                            return new ConstantExpression(field.get(null));
+                        }
+                    }
+                } catch(Exception e) {/*ignore*/}
+            }
+        } else if (exp instanceof ListExpression) {
+            ListExpression le = (ListExpression) exp;
+            ListExpression result = new ListExpression();
+            for (Expression e : le.getExpressions()) {
+                result.addExpression(transformConstantAttributeExpression(e));
+            }
+            return result;
+        }
+
+        return exp;
     }
 
     protected Expression transformMethodCallExpression(MethodCallExpression mce) {

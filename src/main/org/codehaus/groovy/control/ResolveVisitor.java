@@ -34,6 +34,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.*;
+import java.lang.reflect.Field;
 
 /**
  * Visitor to resolve Types and convert VariableExpression to
@@ -935,8 +936,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         AnnotationNode an = (AnnotationNode) ace.getValue();
         ClassNode type = an.getClassNode();
         resolveOrFail(type, ", unable to find class for annotation", an);
-        for (Iterator iter = an.getMembers().entrySet().iterator(); iter.hasNext();) {
-            Map.Entry member = (Map.Entry) iter.next();
+        for (Map.Entry member : an.getMembers().entrySet()) {
             Expression memberValue = (Expression) member.getValue();
             member.setValue(transform(memberValue));
         }
@@ -954,17 +954,64 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             if (an.isBuiltIn()) continue;
             ClassNode type = an.getClassNode();
             resolveOrFail(type, ",  unable to find class for annotation", an);
-            for (Iterator iter = an.getMembers().entrySet().iterator(); iter.hasNext();) {
-                Map.Entry member = (Map.Entry) iter.next();
+            for (Map.Entry member : an.getMembers().entrySet()) {
                 Expression memberValue = (Expression) member.getValue();
                 Expression newValue = transform(memberValue);
+                newValue = transformConstantAttributeExpression(newValue);
                 member.setValue(newValue);
-                if (newValue instanceof PropertyExpression) {
-                    PropertyExpression pe = (PropertyExpression) newValue;
-                    if (!(pe.getObjectExpression() instanceof ClassExpression)) {
-                        addError("unable to find class for enum",pe.getObjectExpression());
+                checkAnnotationMemberValue(newValue);
+            }
+        }
+    }
+
+    // resolve constant-looking expressions statically (do here as gets transformed away later)
+    private Expression transformConstantAttributeExpression(Expression exp) {
+        if (exp instanceof PropertyExpression) {
+            PropertyExpression pe = (PropertyExpression) exp;
+            if (pe.getObjectExpression() instanceof ClassExpression) {
+                ClassExpression ce = (ClassExpression) pe.getObjectExpression();
+                ClassNode type = ce.getType();
+                if (type.isEnum())
+                    return exp;
+
+                FieldNode fn = type.getField(pe.getPropertyAsString());
+                if (fn != null && !fn.isEnum() && fn.isStatic() && fn.isFinal()) {
+                    if (fn.getInitialValueExpression() instanceof ConstantExpression) {
+                        return fn.getInitialValueExpression();
                     }
                 }
+
+                try {
+                    if (type.isResolved()) {
+                        Field field = type.getTypeClass().getField(pe.getPropertyAsString());
+                        if (field != null) {
+                            return new ConstantExpression(field.get(null));
+                        }
+                    }
+                } catch(Exception e) {/*ignore*/}
+            }
+        } else if (exp instanceof ListExpression) {
+            ListExpression le = (ListExpression) exp;
+            ListExpression result = new ListExpression();
+            for (Expression e : le.getExpressions()) {
+                result.addExpression(transformConstantAttributeExpression(e));
+            }
+            return result;
+        }
+
+        return exp;
+    }
+
+    private void checkAnnotationMemberValue(Expression newValue) {
+        if (newValue instanceof PropertyExpression) {
+            PropertyExpression pe = (PropertyExpression) newValue;
+            if (!(pe.getObjectExpression() instanceof ClassExpression)) {
+                addError("unable to find class '" + pe.getText() + "' for annotation attribute constant", pe.getObjectExpression());
+            }
+        } else if (newValue instanceof ListExpression) {
+            ListExpression le = (ListExpression) newValue;
+            for (Expression e : le.getExpressions()) {
+                checkAnnotationMemberValue(e);
             }
         }
     }

@@ -69,16 +69,18 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
         visitAnnotations(node);
         Statement code = node.getCode();
-        
         visitClassCodeContainer(code);
+        for (Parameter param : node.getParameters()) {
+            visitAnnotations(param);
+        }
     }
     
     public void visitConstructor(ConstructorNode node) {
-        visitConstructorOrMethod(node,true);        
+        visitConstructorOrMethod(node, true);
     }
 
     public void visitMethod(MethodNode node) {
-        visitConstructorOrMethod(node,false);
+        visitConstructorOrMethod(node, false);
     }
 
     public void visitField(FieldNode node) {
