@@ -21,6 +21,7 @@ import java.awt.event.ActionEvent
 import javax.swing.DefaultBoundedRangeModel
 import javax.swing.DefaultButtonModel
 import javax.swing.text.PlainDocument
+import java.text.SimpleDateFormat
 import groovy.beans.Bindable
 
 public class SwingBuilderBindingsTest extends GroovySwingTestCase {
@@ -603,6 +604,50 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
       }
     }
 
+    public void testDateConverters() {
+      testInEDT {
+        BindableBean model = new BindableBean()
+        model.date = new Date()
+        def dateConverter = { dateString ->
+                new SimpleDateFormat("dd.MM.yyyy").parse(dateString)
+        }
+
+        def dateValidator = { dateString ->
+                try {
+                        def parser = new SimpleDateFormat("dd.MM.yyyy")
+                        parser.lenient = false
+                        parser.parse(dateString)
+                }
+                catch (Exception e) {
+                        return false
+                }
+                return true
+        }
+
+
+        SwingBuilder swing = new SwingBuilder()
+
+        swing.actions() {
+            tf1 = textField('01.01.1970', id:'birthdayText', columns:20,
+              text:bind (
+                 validator: dateValidator,
+                 converter: dateConverter,
+                 target:model, targetProperty:'birthday'
+                 ))
+            tf2 = textField('01.01.1970', id:'birthdayText', columns:20)
+            binding = bind (
+                  source: tf2,
+                  sourceProperty: 'text',
+                  validator: dateValidator,
+                  converter: dateConverter,
+                  target:model,
+                  targetProperty:'birthday'
+                  )
+
+        }
+      }
+    }
+
     public void testPropertyValuePassthrough() {
       testInEDT {
         SwingBuilder swing = new SwingBuilder()
@@ -928,4 +973,5 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
     float floatValue
     int pvalue
     String text
+    Date date
 }

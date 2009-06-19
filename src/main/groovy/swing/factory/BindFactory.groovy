@@ -186,9 +186,6 @@ public class BindFactory extends AbstractFactory {
         {
             fb.bind()
         }
-        if (target != null) {
-            fb.update()
-        }
 
         if ((attributes.group instanceof AggregateBinding) && (fb instanceof BindingUpdatable)) {
             attributes.remove('group').addBinding(fb)
@@ -196,6 +193,23 @@ public class BindFactory extends AbstractFactory {
 
         builder.addDisposalClosure(fb.&unbind)
         return fb
+    }
+
+    public void onNodeCompleted(FactoryBuilderSupport builder, Object parent, Object node) {
+        super.onNodeCompleted(builder, parent, node);
+
+        if (node instanceof FullBinding && node.sourceBinding && node.targetBinding) {
+            try {
+                node.update()
+            } catch (Exception ignored) {
+                // don't throw out to top
+            }
+            try {
+                node.rebind()
+            } catch (Exception ignored) {
+                // don't throw out to top
+            }
+        }
     }
 
     public boolean isLeaf() {
