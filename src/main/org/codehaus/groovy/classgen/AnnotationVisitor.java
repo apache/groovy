@@ -191,6 +191,7 @@ public class AnnotationVisitor {
     protected void visitAnnotationExpression(String attrName, AnnotationConstantExpression expression, ClassNode attrType) {
         AnnotationNode annotationNode = (AnnotationNode) expression.getValue();
         AnnotationVisitor visitor = new AnnotationVisitor(this.source, this.errorCollector);
+        // TODO track Deprecated usage and give a warning?
         visitor.visit(annotationNode);
     }
 

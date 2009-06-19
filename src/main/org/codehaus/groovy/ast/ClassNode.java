@@ -123,7 +123,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     public static ClassNode SUPER = new ClassNode(Object.class);
 
     private String name;
-    private final int modifiers;
+    private int modifiers;
     private ClassNode[] interfaces;
     private MixinNode[] mixins;
     private List<ConstructorNode> constructors = new ArrayList<ConstructorNode>();
@@ -448,6 +448,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public int getModifiers() {
         return redirect().modifiers;
+    }
+
+    public void setModifiers(int modifiers) {
+        this.modifiers = modifiers;
     }
 
     public List<PropertyNode> getProperties() {
