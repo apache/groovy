@@ -26,6 +26,7 @@ import org.codehaus.groovy.control.ErrorCollector;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage;
 import org.codehaus.groovy.syntax.SyntaxException;
+import org.objectweb.asm.Opcodes;
 
 
 /**
@@ -130,6 +131,22 @@ public class ExtendedVerifier implements GroovyClassVisitor {
                 addError("Annotation @" + annotation.getClassNode().getName()
                         + " is not allowed on element " + AnnotationNode.targetToName(target),
                         annotation);
+            }
+            visitDeprecation(node, visited);
+        }
+    }
+
+    private void visitDeprecation(AnnotatedNode node, AnnotationNode visited) {
+        if (visited.getClassNode().isResolved() && visited.getClassNode().getTypeClass() == Deprecated.class) {
+            if (node instanceof MethodNode) {
+                MethodNode mn = (MethodNode) node;
+                mn.setModifiers(mn.getModifiers() | Opcodes.ACC_DEPRECATED);
+            } else if (node instanceof FieldNode) {
+                FieldNode fn = (FieldNode) node;
+                fn.setModifiers(fn.getModifiers() | Opcodes.ACC_DEPRECATED);
+            } else if (node instanceof ClassNode) {
+                ClassNode cn = (ClassNode) node;
+                cn.setModifiers(cn.getModifiers() | Opcodes.ACC_DEPRECATED);
             }
         }
     }

@@ -49,37 +49,37 @@ import groovy.lang.GroovyObject;
  * <ol>
  * <li> Primary ClassNodes:<br>
  * A primary ClassNode is one where we have a source representation
- * which is to be compiled by Groovy and which we have an AST for. 
+ * which is to be compiled by Groovy and which we have an AST for.
  * The groovy compiler will output one class for each such ClassNode
  * that passes through AsmBytecodeGenerator... not more, not less.
  * That means for example Closures become such ClassNodes too at
- * some point. 
- * 
+ * some point.
+ *
  * <li> ClassNodes create through different sources (typically created
  * from a java.lang.reflect.Class object):<br>
  * The compiler will not output classes from these, the methods
  * usually do not contain bodies. These kind of ClassNodes will be
- * used in different checks, but not checks that work on the method 
+ * used in different checks, but not checks that work on the method
  * bodies. For example if such a ClassNode is a super class to a primary
- * ClassNode, then the abstract method test and others will be done 
- * with data based on these. Theoretically it is also possible to mix both 
+ * ClassNode, then the abstract method test and others will be done
+ * with data based on these. Theoretically it is also possible to mix both
  * (1 and 2) kind of classes in a hierarchy, but this probably works only
  *  in the newest Groovy versions. Such ClassNodes normally have to
- *  isResolved() returning true without having a redirect.In the Groovy 
- *  compiler the only version of this, that exists, is a ClassNode created 
+ *  isResolved() returning true without having a redirect.In the Groovy
+ *  compiler the only version of this, that exists, is a ClassNode created
  *  through a Class instance
  *
  * <li> Labels:<br>
- * ClassNodes created through ClassHelper.makeWithoutCaching. They 
+ * ClassNodes created through ClassHelper.makeWithoutCaching. They
  * are place holders, its redirect points to the real structure, which can
  * be a label too, but following all redirects it should end with a ClassNode
- * from one of the other two categories. If ResolveVisitor finds such a 
- * node, it tries to set the redirects. Any such label created after 
- * ResolveVisitor has done its work needs to have a redirect pointing to 
- * case 1 or 2. If not the compiler may react strange... this can be considered 
- * as a kind of dangling pointer. 
+ * from one of the other two categories. If ResolveVisitor finds such a
+ * node, it tries to set the redirects. Any such label created after
+ * ResolveVisitor has done its work needs to have a redirect pointing to
+ * case 1 or 2. If not the compiler may react strange... this can be considered
+ * as a kind of dangling pointer.
  * <br>
- * <b>Note:</b> the redirect mechanism is only allowed for classes 
+ * <b>Note:</b> the redirect mechanism is only allowed for classes
  * that are not primary ClassNodes. Typically this is done for classes
  * created by name only.  The redirect itself can be any type of ClassNode.
  * <br>
@@ -123,7 +123,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     public static ClassNode SUPER = new ClassNode(Object.class);
 
     private String name;
-    private final int modifiers;
+    private int modifiers;
     private ClassNode[] interfaces;
     private MixinNode[] mixins;
     private List constructors;
@@ -211,7 +211,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * Returns if this instance is a primary ClassNode
      */
     public boolean isPrimaryClassNode(){
-    	return redirect().isPrimaryNode || (componentType!= null && componentType.isPrimaryClassNode());
+    return redirect().isPrimaryNode || (componentType!= null && componentType.isPrimaryClassNode());
     }
 
     /**
@@ -254,7 +254,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             if (redirect!=null) {
                 throw new GroovyBugError("lazyClassInit called on a proxy ClassNode, that must not happen."+
                                          "A redirect() call is missing somewhere!");
-            }   
+            }
             if (lazyInitDone) return;
             VMPluginFactory.getPlugin().configureClassNode(compileUnit,this);
             lazyInitDone = true;
@@ -388,7 +388,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                 result.add(method);
             }
         }
-        
+
         if (result.isEmpty()) {
             return null;
         } else {
@@ -409,7 +409,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     private void getAllInterfaces(Set res) {
         if (isInterface())
           res.add(this);
-        
+
         ClassNode[] interfaces = getInterfaces();
         for (int i = 0; i < interfaces.length; i++) {
             res.add(interfaces[i]);
@@ -460,6 +460,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public int getModifiers() {
         return redirect().modifiers;
+    }
+
+    public void setModifiers(int modifiers) {
+        redirect().modifiers = modifiers;
     }
 
     public List getProperties() {
@@ -544,13 +548,13 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     public boolean hasProperty(String name) {
     	return getProperty(name)!=null;
     }
-    
+
     public PropertyNode getProperty(String name) {
     	for (Object o : getProperties()) {
             PropertyNode pn = (PropertyNode) o;
             if (pn.getName().equals(name)) return pn;
         }
-        return null;   	
+        return null;
     }
 
     public void addConstructor(ConstructorNode node) {
@@ -1177,18 +1181,18 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         } else if (arguments instanceof MapExpression) {
         	count = 1;
         }
-        
+
         for (Object o : getMethods(name)) {
             MethodNode method = (MethodNode) o;
             if(method.isStatic()) {
-                Parameter[] parameters = method.getParameters(); 
+                Parameter[] parameters = method.getParameters();
                 if (parameters.length == count) return true;
 
                 // handle varargs case
                 if (parameters.length > 0 && parameters[parameters.length - 1].getType().isArray()) {
                     if (count >= parameters.length - 1) return true;
                 }
-                
+
                 // handle parameters with default values
                 int nonDefaultParameters = 0;
                 for(int i = 0; i < parameters.length; i++) {
@@ -1196,7 +1200,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
                 		nonDefaultParameters++;
                 	}
                 }
-                
+
             	if(count < parameters.length && nonDefaultParameters <= count) {
             		return true;
             	}
@@ -1317,7 +1321,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     public Map<Class <? extends ASTTransformation>, Set<ASTNode>> getTransforms(CompilePhase phase) {
         if (transformInstances == null)
             return Collections.EMPTY_MAP;
-        
+
         return transformInstances.get(phase);
     }
 
