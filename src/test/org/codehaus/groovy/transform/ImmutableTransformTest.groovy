@@ -23,7 +23,7 @@ class ImmutableTransformTest extends GroovyShellTestCase {
     void testImmutable() {
         def objects = evaluate("""
               enum Coin { HEAD, TAIL }
-              @Immutable final class Bar {
+              @Immutable class Bar {
                   String x, y
                   Coin c
                   Collection nums
@@ -77,8 +77,8 @@ class ImmutableTransformTest extends GroovyShellTestCase {
 
     void testImmutableEquals() {
         assertScript """
-            @Immutable final class This { String value }
-            @Immutable final class That { String value }
+            @Immutable class This { String value }
+            @Immutable class That { String value }
             class Other { }
 
             assert new This('foo') == new This("foo")
