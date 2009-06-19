@@ -28,7 +28,7 @@ import java.lang.annotation.Target;
  * <p/>
  * It allows you to write code snippets like this:
  * <pre>
- * {@code @Immutable} final class Customer {
+ * {@code @Immutable} class Customer {
  *     String first, last
  *     int age
  *     Date since
@@ -41,6 +41,7 @@ import java.lang.annotation.Target;
  * </pre>
  * A class created in this way has the following characteristics:
  * <ul>
+ * <li>The class is automatically made final if not already final.
  * <li>Properties automatically have private, final backing fields with getters.
  * Attempts to update the property will result in a {@code ReadOnlyPropertyException}.
  * <li>A map-based constructor is provided which allows you to set properties by name.

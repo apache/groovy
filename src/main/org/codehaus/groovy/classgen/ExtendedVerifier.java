@@ -32,10 +32,10 @@ import org.objectweb.asm.Opcodes;
 /**
  * A specialized Groovy AST visitor meant to perform additional verifications upon the
  * current AST. Currently it does checks on annotated nodes and annotations itself.
- * 
+ *
  * Current limitations:
  * - annotations on local variables are not supported
- * 
+ *
  * @author <a href='mailto:the[dot]mindstorm[at]gmail[dot]com'>Alex Popescu</a>
  */
 public class ExtendedVerifier implements GroovyClassVisitor {
@@ -43,7 +43,7 @@ public class ExtendedVerifier implements GroovyClassVisitor {
 
     private SourceUnit source;
     private ClassNode currentClass;
-    
+
     public ExtendedVerifier(SourceUnit sourceUnit) {
         this.source = sourceUnit;
     }
@@ -84,7 +84,7 @@ public class ExtendedVerifier implements GroovyClassVisitor {
             visitor.setReportClass(currentClass);
 
             visitor.checkReturnType(node.getReturnType(),node);
-            
+
             if (node.getParameters().length>0) {
                 addError ("Annotation members may not have parameters.",node.getParameters()[0]);
             }
@@ -92,7 +92,7 @@ public class ExtendedVerifier implements GroovyClassVisitor {
             if (node.getExceptions().length>0) {
                 addError ("Annotation members may not have a throws clause.",node.getExceptions()[0]);
             }
-            
+
             ReturnStatement code = (ReturnStatement) node.getCode();
             if (code!=null) {
                 visitor.visitExpression(node.getName(),code.getExpression(),node.getReturnType());
@@ -132,7 +132,7 @@ public class ExtendedVerifier implements GroovyClassVisitor {
                         + " is not allowed on element " + AnnotationNode.targetToName(target),
                         annotation);
             }
-            visitDeprecation(node, visited);
+            visitDeprecation(node, annotation);
         }
     }
 
@@ -166,9 +166,9 @@ public class ExtendedVerifier implements GroovyClassVisitor {
      * Check if the current runtime allows Annotation usage.
      */
     protected boolean isAnnotationCompatible() {
-        return CompilerConfiguration.POST_JDK5.equals(this.source.getConfiguration().getTargetBytecode()); 
+        return CompilerConfiguration.POST_JDK5.equals(this.source.getConfiguration().getTargetBytecode());
     }
-    
+
     protected void addError(String msg, ASTNode expr) {
         this.source.getErrorCollector().addErrorAndContinue(
             new SyntaxErrorMessage(

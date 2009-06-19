@@ -95,7 +95,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
                 throw new RuntimeException("Error processing interface '" + cName + "'. " + MY_TYPE_NAME + " not allowed for interfaces.");
             }
             if ((cNode.getModifiers() & ACC_FINAL) == 0) {
-                throw new RuntimeException("Error processing class '" + cName + "'. " + MY_TYPE_NAME + " classes must be final.");
+                cNode.setModifiers(cNode.getModifiers() | ACC_FINAL);
             }
 
             final List<PropertyNode> pList = cNode.getProperties();
