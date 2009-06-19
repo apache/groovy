@@ -308,9 +308,6 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         this.methods = new MapOfLists();
         this.methodsList = new ArrayList<MethodNode>();
 
-        if ((modifiers & ACC_INTERFACE) == 0)
-          addField("$ownClass", ACC_STATIC|ACC_PUBLIC|ACC_FINAL|ACC_SYNTHETIC, ClassHelper.CLASS_Type, new ClassExpression(this)).setSynthetic(true);
-
         transformInstances = new EnumMap<CompilePhase, Map<Class <? extends ASTTransformation>, Set<ASTNode>>>(CompilePhase.class);
         for (CompilePhase phase : CompilePhase.values()) {
             transformInstances.put(phase, new HashMap<Class <? extends ASTTransformation>, Set<ASTNode>>());

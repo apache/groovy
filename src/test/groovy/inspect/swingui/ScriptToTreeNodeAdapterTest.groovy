@@ -51,7 +51,7 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
     }
 
     public void testCompile_SimpleClass() {
-        def script = " class Foo { } "
+        def script = " class Foo { public aField } "
         ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter()
         TreeNode root = adapter.compile(script, Phases.SEMANTIC_ANALYSIS)
 
@@ -61,11 +61,7 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
         }?.children()?.find {
             it.toString() == 'Fields'
         }?.children()?.find {
-            it.toString() == 'FieldNode - $ownClass : java.lang.Class'
-        }?.children()?.find {
-            it.toString() == 'Class - Foo'
-        }?.children()?.find {
-            it.toString() == 'Class - Foo'
+            it.toString() == 'FieldNode - aField : java.lang.Object'
         }
         assertNotNull('Could not locate ClassExpression in AST', result)
     }

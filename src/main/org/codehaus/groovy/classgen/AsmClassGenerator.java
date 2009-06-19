@@ -244,6 +244,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 if (!classNode.declaresInterface(ClassHelper.GENERATED_CLOSURE_Type)) {
                     createMopMethods();
                 }
+                generateCallSiteArray();
                 createSyntheticStaticFields();
             }
 
@@ -270,7 +271,6 @@ public class AsmClassGenerator extends ClassGenerator {
             }
             //TODO: an inner class should have an entry of itself
 
-            generateCallSiteArray();
             cv.visitEnd();
         }
         catch (GroovyRuntimeException e) {
@@ -322,11 +322,11 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private void generateCreateCallSiteArray() {
-        MethodVisitor mv = cv.visitMethod(ACC_PRIVATE+ACC_SYNTHETIC+ACC_STATIC,"$createCallSiteArray", "()Lorg/codehaus/groovy/runtime/callsite/CallSiteArray;", null, null);
+        mv = cv.visitMethod(ACC_PRIVATE+ACC_SYNTHETIC+ACC_STATIC,"$createCallSiteArray", "()Lorg/codehaus/groovy/runtime/callsite/CallSiteArray;", null, null);
         mv.visitCode();
         mv.visitTypeInsn(NEW, "org/codehaus/groovy/runtime/callsite/CallSiteArray");
         mv.visitInsn(DUP);
-        mv.visitFieldInsn(GETSTATIC, internalClassName, "$ownClass", "Ljava/lang/Class;");
+        visitClassExpression(new ClassExpression(classNode));
 
         final int size = callSites.size();
         mv.visitLdcInsn(size);
