@@ -451,7 +451,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     public void setModifiers(int modifiers) {
-        this.modifiers = modifiers;
+        redirect().modifiers = modifiers;
     }
 
     public List<PropertyNode> getProperties() {
