@@ -375,13 +375,16 @@ class Foo {}
         }
 
         class Constants {
-            static final String FOO = "foo"
-            static final String BAR = "bar"
-            static final APPROX_PI = 3.14d
+            public static final String BAR = "bar"
+            public static final APPROX_PI = 3.14d
+        }
+
+        interface IConstants {
+            String FOO = "foo"
         }
 
         class ClassWithAnnotationUsingConstant {
-            @Anno(array = [Constants.FOO, BAR, groovy.inspect.Inspector.GROOVY])
+            @Anno(array = [IConstants.FOO, BAR, groovy.inspect.Inspector.GROOVY])
             public annotatedStrings
 
             @Anno(Math.PI)
@@ -393,6 +396,45 @@ class Foo {}
         assert ClassWithAnnotationUsingConstant.getDeclaredField('annotatedStrings').annotations[0].array() == ['foo', 'bar', "GROOVY"]
         assert ClassWithAnnotationUsingConstant.getDeclaredField('annotatedMath1').annotations[0].value() == Math.PI
         assert ClassWithAnnotationUsingConstant.getDeclaredField('annotatedMath2').annotations[0].value() == Constants.APPROX_PI
+      """
+    }
+
+    void testNestedAttributePropertyConstants() {
+        assertScript """
+        import java.lang.annotation.*
+        import static Constants.*
+
+        @Retention(RetentionPolicy.RUNTIME)
+        @Target(ElementType.FIELD)
+        @interface Outer {
+            Inner value()
+            String[] array() default []
+        }
+
+        @Retention(RetentionPolicy.RUNTIME)
+        @Target(ElementType.FIELD)
+        @interface Inner {
+            String[] value() default []
+        }
+
+        class Constants {
+            public static final String BAR = "bar"
+            public static final String BAZ = "baz"
+        }
+
+        interface IConstants {
+            String FOO = "foo"
+            String FOOBAR = "foobar"
+        }
+
+        class ClassWithNestedAnnotationUsingConstant {
+            @Outer(value = @Inner([IConstants.FOOBAR, BAR, groovy.inspect.Inspector.GROOVY]),
+                   array = [IConstants.FOO, groovy.inspect.Inspector.GROOVY, BAZ])
+            public outer
+        }
+
+        assert ClassWithNestedAnnotationUsingConstant.getDeclaredField('outer').annotations[0].array() == ['foo', 'GROOVY', 'baz']
+        assert ClassWithNestedAnnotationUsingConstant.getDeclaredField('outer').annotations[0].value().value() == ['foobar', 'bar', 'GROOVY']
       """
     }
 

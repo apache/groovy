@@ -16,6 +16,8 @@
 package org.codehaus.groovy.classgen;
 
 import java.util.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
@@ -66,12 +68,43 @@ public class AnnotationVisitor {
         Map<String, Expression> attributes = node.getMembers();
         for (Map.Entry entry : attributes.entrySet()) {
             String attrName = (String) entry.getKey();
-            Expression attrExpr = (Expression) entry.getValue();
+            Expression attrExpr = transformInlineConstants((Expression) entry.getValue());
+            entry.setValue(attrExpr);
             ClassNode attrType = getAttributeType(node, attrName);
             visitExpression(attrName, attrExpr, attrType);
         }
         VMPluginFactory.getPlugin().configureAnnotation(node);
         return this.annotation;
+    }
+
+    private Expression transformInlineConstants(Expression exp) {
+        if (exp instanceof PropertyExpression) {
+            PropertyExpression pe = (PropertyExpression) exp;
+            if (pe.getObjectExpression() instanceof ClassExpression) {
+                ClassExpression ce = (ClassExpression) pe.getObjectExpression();
+                ClassNode type = ce.getType();
+                if (type.isEnum() || !type.isResolved())
+                    return exp;
+
+                try {
+                    type.getFields();
+                    Field field = type.getTypeClass().getField(pe.getPropertyAsString());
+                    if (field != null && Modifier.isStatic(field.getModifiers()) && Modifier.isFinal(field.getModifiers())) {
+                        return new ConstantExpression(field.get(null));
+                    }
+                } catch(Exception e) {
+                    // ignore, leave property expression in place and we'll report later
+                }
+            }
+        } else if (exp instanceof ListExpression) {
+            ListExpression le = (ListExpression) exp;
+            ListExpression result = new ListExpression();
+            for (Expression e : le.getExpressions()) {
+                result.addExpression(transformInlineConstants(e));
+            }
+            return result;
+        }
+        return exp;
     }
 
     private boolean checkIfMandatoryAnnotationValuesPassed(AnnotationNode node) {

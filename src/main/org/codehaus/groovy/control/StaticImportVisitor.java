@@ -21,7 +21,6 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.objectweb.asm.Opcodes;
 
 import java.util.*;
-import java.lang.reflect.Field;
 
 /**
  * Visitor to resolve constants and method calls from static Imports
@@ -121,7 +120,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
             if (result != null) {
             	result.setSourcePosition(ve);
                 if (inAnnotation) {
-                    result = transformConstantAttributeExpression(result);
+                    result = transformInlineConstants(result);
                 }
             	return result;
             }
@@ -131,7 +130,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     }
 
     // resolve constant-looking expressions statically (do here as gets transformed away later)
-    private Expression transformConstantAttributeExpression(Expression exp) {
+    private Expression transformInlineConstants(Expression exp) {
         if (exp instanceof PropertyExpression) {
             PropertyExpression pe = (PropertyExpression) exp;
             if (pe.getObjectExpression() instanceof ClassExpression) {
@@ -144,20 +143,12 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                         return fn.getInitialValueExpression();
                     }
                 }
-                try {
-                    if (type.isResolved()) {
-                        Field field = type.getTypeClass().getField(pe.getPropertyAsString());
-                        if (field != null) {
-                            return new ConstantExpression(field.get(null));
-                        }
-                    }
-                } catch(Exception e) {/*ignore*/}
             }
         } else if (exp instanceof ListExpression) {
             ListExpression le = (ListExpression) exp;
             ListExpression result = new ListExpression();
             for (Expression e : le.getExpressions()) {
-                result.addExpression(transformConstantAttributeExpression(e));
+                result.addExpression(transformInlineConstants(e));
             }
             return result;
         }

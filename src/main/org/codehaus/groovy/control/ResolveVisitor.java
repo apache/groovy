@@ -34,7 +34,6 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.*;
-import java.lang.reflect.Field;
 
 /**
  * Visitor to resolve Types and convert VariableExpression to
@@ -957,7 +956,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             for (Map.Entry member : an.getMembers().entrySet()) {
                 Expression memberValue = (Expression) member.getValue();
                 Expression newValue = transform(memberValue);
-                newValue = transformConstantAttributeExpression(newValue);
+                newValue = transformInlineConstants(newValue);
                 member.setValue(newValue);
                 checkAnnotationMemberValue(newValue);
             }
@@ -965,7 +964,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     // resolve constant-looking expressions statically (do here as gets transformed away later)
-    private Expression transformConstantAttributeExpression(Expression exp) {
+    private Expression transformInlineConstants(Expression exp) {
         if (exp instanceof PropertyExpression) {
             PropertyExpression pe = (PropertyExpression) exp;
             if (pe.getObjectExpression() instanceof ClassExpression) {
@@ -980,25 +979,28 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                         return fn.getInitialValueExpression();
                     }
                 }
-
-                try {
-                    if (type.isResolved()) {
-                        Field field = type.getTypeClass().getField(pe.getPropertyAsString());
-                        if (field != null) {
-                            return new ConstantExpression(field.get(null));
-                        }
-                    }
-                } catch(Exception e) {/*ignore*/}
             }
         } else if (exp instanceof ListExpression) {
             ListExpression le = (ListExpression) exp;
             ListExpression result = new ListExpression();
             for (Expression e : le.getExpressions()) {
-                result.addExpression(transformConstantAttributeExpression(e));
+                result.addExpression(transformInlineConstants(e));
             }
             return result;
-        }
+        } else if (exp instanceof AnnotationConstantExpression) {
+            ConstantExpression ce = (ConstantExpression) exp;
+            if (ce.getValue() instanceof AnnotationNode) {
+                // replicate a little bit of AnnotationVisitor here
+                // because we can't wait until later to do this
+                AnnotationNode an = (AnnotationNode) ce.getValue();
+                Map<String, Expression> attributes = an.getMembers();
+                for (Map.Entry entry : attributes.entrySet()) {
+                    Expression attrExpr = transformInlineConstants((Expression) entry.getValue());
+                    entry.setValue(attrExpr);
+                }
 
+            }
+        }
         return exp;
     }
 
