@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package groovy.text;
 
 import groovy.lang.Binding;
@@ -41,7 +40,63 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Template engine for xml data input.
+ * Template engine for XML-oriented templates.
+ *
+ * If both the template source and the expected output are intended to be XML,
+ * the XML template engine can be used. Comments and processing instructions
+ * will be removed as part of processing and special XML characters such as
+ * &lt;, &gt;, &quot and &apos; will be escaped using the respective XML notation.
+ * The output will also be indented using standard XML pretty printing.
+ * </p>
+ * Templates may use the normal '${expression}' and '$variable' notations
+ * to insert an arbitrary expression into the template.
+ * In addition, support is also provided for special tags:
+ * &lt;gsp:scriptlet&gt; (for inserting code fragments) and
+ * &lt;gsp:expression&gt; (for code fragments which produce output).
+ * The xmlns namespace definition for gsp tags will be removed but other
+ * namespace definitions will be preserved (but may change to an
+ * equivalent position within the XML tree).
+ * </p>
+ * Normally, the template source will be in a file but here is a simple
+ * example providing the XML template as a string:
+ * <pre>
+ * def binding = [firstname:"Jochen", lastname:"Theodorou",
+ *                nickname:"blackdrag", salutation:"Dear"]
+ * def engine = new groovy.text.XmlTemplateEngine()
+ * def text = '''\
+ * &lt;?xml version="1.0" encoding="UTF-8"?&gt;
+ * &lt;document xmlns:gsp='http://groovy.codehaus.org/2005/gsp' xmlns:foo='baz' type='letter'&gt;
+ *   &lt;gsp:scriptlet&gt;def greeting = "${salutation}est"&lt;/gsp:scriptlet&gt;
+ *   &lt;gsp:expression&gt;greeting&lt;/gsp:expression&gt;
+ *   &lt;foo:to&gt;$firstname "$nickname" $lastname&lt;/foo:to&gt;
+ *   How are you today?
+ * &lt;/document>
+ * '''
+ * def template = engine.createTemplate(text).make(binding)
+ * println template.toString()
+ * </pre>
+ * This example will produce this output:
+ * <pre>
+ * &lt;document type='letter'&gt;
+ * Dearest
+ * &lt;foo:to xmlns:foo='baz'&gt;
+ *   Jochen &amp;quot;blackdrag&amp;quot; Theodorou
+ * &lt;/foo:to&gt;
+ * How are you today?
+ * &lt;/document&gt;
+ * </pre>
+ * The XML template engine can also be used as the engine for TemplateServlet by placing the
+ * following in your web.xml file (plus a corresponding servlet-mapping element):
+ * <pre>
+ * &lt;servlet&gt;
+ *   &lt;servlet-name&gt;Template|XML&lt;/servlet-name&gt;
+ *   &lt;servlet-class&gt;groovy.servlet.TemplateServlet&lt;/servlet-class&gt;
+ *   &lt;init-param&gt;
+ *     &lt;param-name&gt;template.engine&lt;/param-name&gt;
+ *     &lt;param-value&gt;groovy.text.XmlTemplateEngine&lt;/param-value&gt;
+ *   &lt;/init-param&gt;
+ * &lt;/servlet&gt;
+ * </pre>
  *
  * @author Christian Stein
  * @author Paul King
@@ -142,7 +197,8 @@ public class XmlTemplateEngine extends TemplateEngine {
             Object name = node.name();
             if (name != null && name instanceof QName) {
                 QName qn = (QName) name;
-                if (qn.getPrefix().equals("gsp")) {
+                // check uri and for legacy cases just check prefix name (not recommended)
+                if (qn.getNamespaceURI().equals("http://groovy.codehaus.org/2005/gsp") || qn.getPrefix().equals("gsp")) {
                     String s = qn.getLocalPart();
                     if (s.length() == 0) {
                         throw new RuntimeException("No local part after 'gsp:' given in node " + node);
@@ -153,7 +209,6 @@ public class XmlTemplateEngine extends TemplateEngine {
             }
             return false;
         }
-
     }
 
     private static class XmlTemplate implements Template {
