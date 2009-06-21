@@ -40,7 +40,7 @@ public class GroovyRowResult extends GroovyObjectSupport implements Map {
     }
 
     /**
-     * Retrieve the value of the property by its name    *
+     * Retrieve the value of the property by its name
      *
      * @param property is the name of the property to look at
      * @return the value of the property
