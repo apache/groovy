@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,63 @@ import java.util.Map;
 import org.codehaus.groovy.control.CompilationFailedException;
 
 /**
+ * Processes template source files substituting variables and expressions into
+ * placeholders in a template source text to produce the desired output using
+ * a streaming approach. This engine has equivalent functionality to the
+ * {@link SimpleTemplateEngine} but creates the template using writable
+ * closures making it potentially more scalable for large templates or in streaming scenarios.
+ * </P>
+ * The template engine uses JSP style &lt;% %&gt; script and &lt;%= %&gt; expression syntax
+ * or GString style expressions. The variable '<code>out</code>' is bound to the writer that the template
+ * is being written to.
+ * </p>
+ * Frequently, the template source will be in a file but here is a simple
+ * example providing the template as a string:
+ * <pre>
+ * def binding = [
+ *     firstname : "Grace",
+ *     lastname  : "Hopper",
+ *     accepted  : true,
+ *     title     : 'Groovy for COBOL programmers'
+ * ]
+ * def engine = new groovy.text.GStringTemplateEngine()
+ * def text = '''\
+ * Dear &lt;%= firstname %&gt; $lastname,
+ *
+ * We &lt;% if (accepted) print 'are pleased' else print 'regret' %&gt; \
+ * to inform you that your paper entitled
+ * '$title' was ${ accepted ? 'accepted' : 'rejected' }.
+ *
+ * The conference committee.
+ * '''
+ * def template = engine.createTemplate(text).make(binding)
+ * println template.toString()
+ * </pre>
+ * This example uses a mix of the JSP style and GString style placeholders
+ * but you can typically use just one style if you wish. Running this
+ * example will produce this output:
+ * <pre>
+ * Dear Grace Hopper,
+ *
+ * We are pleased to inform you that your paper entitled
+ * 'Groovy for COBOL programmers' was accepted.
+ *
+ * The conference committee.
+ * </pre>
+ * The template engine can also be used as the engine for {@link groovy.servlet.TemplateServlet} by placing the
+ * following in your <code>web.xml</code> file (plus a corresponding servlet-mapping element):
+ * <pre>
+ * &lt;servlet&gt;
+ *   &lt;servlet-name&gt;GStringTemplate&lt;/servlet-name&gt;
+ *   &lt;servlet-class&gt;groovy.servlet.TemplateServlet&lt;/servlet-class&gt;
+ *   &lt;init-param&gt;
+ *     &lt;param-name&gt;template.engine&lt;/param-name&gt;
+ *     &lt;param-value&gt;groovy.text.GStringTemplateEngine&lt;/param-value&gt;
+ *   &lt;/init-param&gt;
+ * &lt;/servlet&gt;
+ * </pre>
+ * In this case, your template source file should be HTML with the appropriate embedded placeholders.
+ *
  * @author tug@wilson.co.uk
  * @author Paul King
  */

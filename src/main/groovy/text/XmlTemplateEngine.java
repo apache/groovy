@@ -40,21 +40,22 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * Template engine for XML-oriented templates.
- *
- * If both the template source and the expected output are intended to be XML,
- * the XML template engine can be used. Comments and processing instructions
- * will be removed as part of processing and special XML characters such as
- * &lt;, &gt;, &quot and &apos; will be escaped using the respective XML notation.
- * The output will also be indented using standard XML pretty printing.
+ * Template engine for use in templating scenarios where both the template
+ * source and the expected output are intended to be XML.
  * </p>
  * Templates may use the normal '${expression}' and '$variable' notations
  * to insert an arbitrary expression into the template.
  * In addition, support is also provided for special tags:
  * &lt;gsp:scriptlet&gt; (for inserting code fragments) and
  * &lt;gsp:expression&gt; (for code fragments which produce output).
- * The xmlns namespace definition for gsp tags will be removed but other
- * namespace definitions will be preserved (but may change to an
+ * </p>
+ * Comments and processing instructions
+ * will be removed as part of processing and special XML characters such as
+ * &lt;, &gt;, &quot and &apos; will be escaped using the respective XML notation.
+ * The output will also be indented using standard XML pretty printing.
+ * </p>
+ * The xmlns namespace definition for <code>gsp:</code> tags will be removed
+ * but other namespace definitions will be preserved (but may change to an
  * equivalent position within the XML tree).
  * </p>
  * Normally, the template source will be in a file but here is a simple
@@ -85,11 +86,11 @@ import java.util.Map;
  * How are you today?
  * &lt;/document&gt;
  * </pre>
- * The XML template engine can also be used as the engine for TemplateServlet by placing the
+ * The XML template engine can also be used as the engine for {@link groovy.servlet.TemplateServlet} by placing the
  * following in your web.xml file (plus a corresponding servlet-mapping element):
  * <pre>
  * &lt;servlet&gt;
- *   &lt;servlet-name&gt;Template|XML&lt;/servlet-name&gt;
+ *   &lt;servlet-name&gt;XmlTemplate&lt;/servlet-name&gt;
  *   &lt;servlet-class&gt;groovy.servlet.TemplateServlet&lt;/servlet-class&gt;
  *   &lt;init-param&gt;
  *     &lt;param-name&gt;template.engine&lt;/param-name&gt;
