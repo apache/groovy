@@ -87,9 +87,14 @@ public class GroovyClassLoaderTest extends GroovyTestCase implements Opcodes {
         paths += getPaths(System.getProperty("java.class.path"))
         paths = paths.unique()
 
-        def file
+        def file, tempFolder
         try {
-            file = File.createTempFile("Foo", ".groovy")
+            // On the latest update of the Mac JDK (as of 2009/06/24), the default placement of temp files seems problematic
+            // specifying explicitely a custom target directory seems to solve the build issue.
+            tempFolder = new File('./target/generated')
+            tempFolder.mkdir()
+            file = File.createTempFile("Foo", ".groovy", tempFolder)
+
             def name = file.name - ".groovy"
             def script = """
             class $name extends GroovyTestCase{}
@@ -107,7 +112,12 @@ public class GroovyClassLoaderTest extends GroovyTestCase implements Opcodes {
             }
         } finally {
             try {
-                if (file != null) { file.delete() }
+                if (file != null) {
+                    file.delete()
+                    if (tempFolder != null) {
+                        tempFolder.delete()
+                    }
+                }
             } catch (Throwable t) { /*drop it*/ }
         }
     }
