@@ -3584,12 +3584,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static Object get(Map map, Object key, Object defaultValue) {
-        Object answer = map.get(key);
-        if (answer == null) {
-            answer = defaultValue;
-            map.put(key, answer);
+        if (!map.containsKey(key)) {
+            map.put(key, defaultValue);
         }
-        return answer;
+        return map.get(key);
     }
 
     /**
