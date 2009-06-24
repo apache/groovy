@@ -134,7 +134,7 @@ class Console implements CaretListener, HyperlinkListener {
 
     // Running scripts
     GroovyShell shell
-    Binding initBinding
+    //Binding initBinding
     int scriptNameCounter = 0
     SystemOutputInterceptor systemOutInterceptor
     Thread runThread = null
@@ -169,7 +169,7 @@ class Console implements CaretListener, HyperlinkListener {
     }
 
     Console(ClassLoader parent, Binding binding) {
-        this.initBinding = binding ?: new Binding()
+        //this.initBinding = binding ?: new Binding()
         newScript(parent, binding);
         try {
             System.setProperty("groovy.full.stacktrace",
@@ -183,8 +183,8 @@ class Console implements CaretListener, HyperlinkListener {
     }
 
     void newScript(ClassLoader parent, Binding binding) {
-        def bindingCopy = new Binding(new HashMap(binding.variables))
-        shell = new GroovyShell(parent, bindingCopy)
+        //def bindingCopy = new Binding(new HashMap(binding.variables))
+        shell = new GroovyShell(parent, binding)
     }
 
     static def frameConsoleDelegates = [
@@ -708,7 +708,8 @@ class Console implements CaretListener, HyperlinkListener {
     }
 
     void clearContext(EventObject evt = null) {
-        newScript(null, initBinding)
+        //newScript(null, initBinding)
+        newScript(null, new Binding())
     }
 
     private void runScriptImpl(boolean selected) {
