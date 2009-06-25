@@ -137,7 +137,7 @@ public class ExtendedVerifier implements GroovyClassVisitor {
     }
 
     private void visitDeprecation(AnnotatedNode node, AnnotationNode visited) {
-        if (visited.getClassNode().isResolved() && visited.getClassNode().getTypeClass() == Deprecated.class) {
+        if (visited.getClassNode().isResolved() && visited.getClassNode().getTypeClass().getName().equals(Deprecated.class.getName())) {
             if (node instanceof MethodNode) {
                 MethodNode mn = (MethodNode) node;
                 mn.setModifiers(mn.getModifiers() | Opcodes.ACC_DEPRECATED);
@@ -176,6 +176,7 @@ public class ExtendedVerifier implements GroovyClassVisitor {
         );
     }
 
+    // TODO use it or lose it
     public void visitGenericType(GenericsType genericsType) {
 
     }
