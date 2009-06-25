@@ -105,6 +105,8 @@ controller.fullStackTracesAction = fullStackTracesAction
 controller.showToolbarAction = showToolbarAction
 
 // some more UI linkage
+controller.outputArea.addComponentListener(controller)
+controller.inputArea.addComponentListener(controller)
 controller.outputArea.addHyperlinkListener(controller)
 controller.inputArea.addCaretListener(controller)
 controller.inputArea.document.addDocumentListener({ controller.setDirty(true) } as DocumentListener)

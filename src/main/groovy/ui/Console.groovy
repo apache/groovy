@@ -28,6 +28,8 @@ import java.awt.Font
 import java.awt.Toolkit
 import java.awt.Window
 import java.awt.event.ActionEvent
+import java.awt.event.ComponentEvent
+import java.awt.event.ComponentListener
 import java.util.prefs.Preferences
 import javax.swing.*
 import javax.swing.event.CaretEvent
@@ -61,7 +63,7 @@ import org.codehaus.groovy.control.messages.ExceptionMessage
  * @author Guillaume Laforge, stacktrace hyperlinking to the current script line
  * @author Hamlet D'Arcy, AST browser
  */
-class Console implements CaretListener, HyperlinkListener {
+class Console implements CaretListener, HyperlinkListener, ComponentListener {
 
     static final String DEFAULT_SCRIPT_NAME_START = "ConsoleScript"
 
@@ -134,7 +136,6 @@ class Console implements CaretListener, HyperlinkListener {
 
     // Running scripts
     GroovyShell shell
-    //Binding initBinding
     int scriptNameCounter = 0
     SystemOutputInterceptor systemOutInterceptor
     Thread runThread = null
@@ -169,7 +170,6 @@ class Console implements CaretListener, HyperlinkListener {
     }
 
     Console(ClassLoader parent, Binding binding) {
-        //this.initBinding = binding ?: new Binding()
         newScript(parent, binding);
         try {
             System.setProperty("groovy.full.stacktrace",
@@ -183,7 +183,6 @@ class Console implements CaretListener, HyperlinkListener {
     }
 
     void newScript(ClassLoader parent, Binding binding) {
-        //def bindingCopy = new Binding(new HashMap(binding.variables))
         shell = new GroovyShell(parent, binding)
     }
 
@@ -650,11 +649,7 @@ class Console implements CaretListener, HyperlinkListener {
     }
 
     void largerFont(EventObject evt = null) {
-        if (inputArea.font.size > 40) return
-        // don't worry, the fonts won't be changed to monospaced face, the styles will only derive from this
-        def newFont = new Font('Monospaced', Font.PLAIN, inputArea.font.size + 2)
-        inputArea.font = newFont
-        outputArea.font = newFont
+        updateFontSize(inputArea.font.size + 2)
     }
 
     static boolean notifySystemOut(String str) {
@@ -708,7 +703,6 @@ class Console implements CaretListener, HyperlinkListener {
     }
 
     void clearContext(EventObject evt = null) {
-        //newScript(null, initBinding)
         newScript(null, new Binding())
     }
 
@@ -861,11 +855,8 @@ class Console implements CaretListener, HyperlinkListener {
     }
 
     void smallerFont(EventObject evt = null){
-        if (inputArea.font.size < 5) return
-        // don't worry, the fonts won't be changed to monospaced face, the styles will only derive from this
-        def newFont = new Font('Monospaced', Font.PLAIN, inputArea.font.size - 2)
-        inputArea.font = newFont
-        outputArea.font = newFont
+        updateFontSize(inputArea.font.size - 2)
+
     }
 
     void updateTitle() {
@@ -876,6 +867,21 @@ class Console implements CaretListener, HyperlinkListener {
                 frame.title = "GroovyConsole"
             }
         }
+    }
+
+    private updateFontSize(newFontSize) {
+        if (newFontSize > 40) {
+            newFontSize = 40
+        } else if (newFontSize < 4) {
+            newFontSize = 4
+        }
+        
+        prefs.putInt("fontSize", newFontSize)
+
+        // don't worry, the fonts won't be changed to monospaced face, the styles will only derive from this
+        def newFont = new Font('Monospaced', Font.PLAIN, newFontSize)
+        inputArea.font = newFont
+        outputArea.font = newFont
     }
 
     void invokeTextAction(evt, closure) {
@@ -956,4 +962,18 @@ class Console implements CaretListener, HyperlinkListener {
             editor.moveCaretPosition(newlineAfter)
         }
     }
+
+
+    void componentHidden(ComponentEvent e) { }
+
+    void componentMoved(ComponentEvent e) { }
+
+    void componentResized(ComponentEvent e) {
+        def component = e.getComponent()
+        prefs.putInt("${component.name}Width", component.width)
+        prefs.putInt("${component.name}Height", component.height)
+    }
+
+    public void componentShown(ComponentEvent e) { }
+
 }

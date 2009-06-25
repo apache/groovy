@@ -1,12 +1,18 @@
 package groovy.ui.view
 
 import groovy.ui.ConsoleTextEditor
+import groovy.ui.Console
 import java.awt.*
 import java.awt.image.BufferedImage
 import static javax.swing.JSplitPane.VERTICAL_SPLIT
 import javax.swing.text.Style
 import javax.swing.text.StyleContext
 import javax.swing.text.StyledDocument
+import java.util.prefs.Preferences
+
+
+def prefs = Preferences.userNodeForPackage(Console)
+
 
 splitPane = splitPane(resizeWeight: 0.50F,
     orientation: VERTICAL_SPLIT)
@@ -15,9 +21,10 @@ splitPane = splitPane(resizeWeight: 0.50F,
     scrollPane(border:emptyBorder(0)) {
         outputArea = textPane(
             editable: false,
+            name: "outputArea",
             contentType: "text/html",
             background: new Color(255,255,218),
-            font:new Font("Monospaced", Font.PLAIN, 12),
+            font:new Font("Monospaced", Font.PLAIN, prefs.getInt("fontSize", 12)),
             border:emptyBorder(4)
         )
     }
@@ -28,7 +35,7 @@ inputArea = inputEditor.textEditor
 // attach ctrl-enter to input area
 // need to wrap in actions to keep it from being added as a component
 actions {
-    container(inputArea, font:new Font("Monospaced", Font.PLAIN, 12), border:emptyBorder(4)) {
+    container(inputArea, name: "inputArea", font:new Font("Monospaced", Font.PLAIN, prefs.getInt("fontSize", 12)), border:emptyBorder(4)) {
         action(runAction)
         action(runSelectionAction)
     }
@@ -77,10 +84,14 @@ styles.each {styleName, defs ->
 // this is a good enough solution, there are margins and scrollbars and such to worry about for 80x12x2
 Graphics g = GraphicsEnvironment.localGraphicsEnvironment.createGraphics (new BufferedImage(100, 100, BufferedImage.TYPE_INT_RGB))
 FontMetrics fm = g.getFontMetrics(outputArea.font)
+
 outputArea.preferredSize = [
-    fm.charWidth(0x77) * 81,
-    (fm.getHeight() + fm.leading) * 12] as Dimension
+    prefs.getInt("outputAreaWidth", fm.charWidth(0x77) * 81),
+    prefs.getInt("outputAreaHeight", (fm.getHeight() + fm.leading) * 12)
+] as Dimension
 
 //inputArea.setFont(outputArea.font)
-inputEditor.preferredSize = outputArea.preferredSize
-
+inputEditor.preferredSize = [
+    prefs.getInt("inputAreaWidth", fm.charWidth(0x77) * 81),
+    prefs.getInt("inputAreaHeight", (fm.getHeight() + fm.leading) * 12)
+] as Dimension
