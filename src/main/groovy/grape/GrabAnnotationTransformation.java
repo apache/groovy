@@ -180,7 +180,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                 Grape.grab(basicArgs, grabMaps.toArray(new Map[grabMaps.size()]));
             } catch (RuntimeException re) {
                 // Decided against syntax exception since this is not a syntax error.
-                // The down side is we lose line number information fo the offending
+                // The down side is we lose line number information for the offending
                 // @Grab annotation.
                 source.addException(re);
             }
@@ -205,15 +205,13 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
         for (AnnotationNode an : (Collection<AnnotationNode>) node.getAnnotations()) {
             String name = an.getClassNode().getName();
             if ((GRAB_CLASS_NAME.equals(name))
-                || (allowShortGrab && GRAB_SHORT_NAME.equals(name))
-                || (grabAliases.contains(name)))
-            {
+                    || (allowShortGrab && GRAB_SHORT_NAME.equals(name))
+                    || (grabAliases.contains(name))) {
                 grabAnnotations.add(an);
             }
             if ((GRAPES_CLASS_NAME.equals(name))
-                || (allowShortGrapes && GRAPES_SHORT_NAME.equals(name))
-                || (grapesAliases.contains(name)))
-            {
+                    || (allowShortGrapes && GRAPES_SHORT_NAME.equals(name))
+                    || (grapesAliases.contains(name))) {
                 grapesAnnotations.add(an);
             }
         }

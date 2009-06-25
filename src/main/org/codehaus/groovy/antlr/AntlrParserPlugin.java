@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -163,7 +163,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         if ("html".equals(System.getProperty("antlr.ast"))) {
             try {
                 PrintStream out = new PrintStream(new FileOutputStream(sourceUnit.getName() + ".html"));
-                List v = new ArrayList();
+                List<VisitorAdapter> v = new ArrayList<VisitorAdapter>();
                 v.add(new NodeAsHTMLPrinter(out,tokenNames));
                 v.add(new SourcePrinter(out,tokenNames));
                 Visitor visitors = new CompositeVisitor(v);
@@ -1062,8 +1062,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected Statement statementList(AST code) {
-        Statement st = statementListNoChild(code.getFirstChild(),code);
-        return st;
+        return statementListNoChild(code.getFirstChild(),code);
     }
 
     protected Statement statementListNoChild(AST node, AST alternativeConfigureNode) {
@@ -1420,7 +1419,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     protected Expression expression(AST node, boolean convertToConstant) {
         Expression expression = expressionSwitch(node);
         if (convertToConstant && expression instanceof VariableExpression) {
-            // a method name can never be a VariableExprssion, so it must converted
+            // a method name can never be a VariableExpression, so it must converted
             // to a ConstantExpression then. This is needed as the expression
             // method doesn't know we want a ConstantExpression instead of a
             // VariableExpression
