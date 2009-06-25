@@ -81,7 +81,7 @@ class AnnotationTest extends CompilableTestSupport {
 
   void testPrimitiveDefault() {
     // NOTE: for int anything else than a plain number will fail.
-    // For exmaple 1l will fail too, even if it could be converted.
+    // For example 1l will fail too, even if it could be converted.
     // If this should be changed, then further discussion is needed.
     shouldNotCompile """
 @interface X {

@@ -51,7 +51,7 @@ public class ASTHelper {
     protected ModuleNode output;
 
     /** The package name in which the module sits */
-    private String packageName;   //
+    private String packageName;
 
     // TODO should this really be static???
     protected static Map resolutions = new HashMap();  // cleared on build(), to be safe
@@ -277,8 +277,7 @@ public class ASTHelper {
 
     protected void importClass(ClassNode type, String name, String as) {
         if (as == null) as=name;
-
-        output.addImport(as, type); 
+        output.addImport(as, type);
         imports.put(as, type);
     }
 
