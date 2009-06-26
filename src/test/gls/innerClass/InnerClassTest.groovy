@@ -3,6 +3,85 @@ package gls.innerClass
 import gls.CompilableTestSupport
 
 class InnerClassTest extends CompilableTestSupport {
+
+    void testTimerAIC() {
+        assertScript """
+            boolean called = false
+
+            Timer timer = new Timer()
+            timer.schedule(new TimerTask() {
+                void run() {
+                    called = true
+                }
+            }, 0)
+            sleep 100
+
+            assert called
+        """
+    }
+
+    void testExtendsObjectAndAccessAFinalVariableInScope() {
+        assertScript """
+            final String objName = "My name is Guillaume"
+
+            assert new Object() {
+                String toString() { objName }
+            }.toString() == objName
+        """
+    }
+
+    void testExtendsObjectAndReferenceAMethodParameterWithinAGString_FAILS() {
+        if (notYetImplemented()) return
+        
+        assertScript """
+            Object makeObj0(String name) {
+                 new Object() {
+                    String toString() { "My name is ${name}" }
+                 }
+            }
+
+            assert makeObj0("Guillaume").toString() == objName
+        """
+    }
+
+    void testExtendsObjectAndReferenceAGStringPropertyDependingOnAMethodParameter_FAILS() {
+        if (notYetImplemented()) return
+
+        assertScript """
+            Object makeObj1(String name) {
+                 new Object() {
+                    String objName = "My name is ${name}"
+
+                    String toString() { objName }
+                 }
+            }
+
+            assert makeObj1("Guillaume").toString() == objName
+        """
+    }
+
+    void testUsageOfInitializerBlockWithinAnAIC_FAILS() {
+        if (notYetImplemented()) return
+        
+        assertScript """
+            Object makeObj2(String name) {
+                 new Object() {
+                    String objName
+                    // initializer block
+                    {
+                        objName = "My name is " + name
+                    }
+
+                    String toString() {
+                        objName
+                    }
+                 }
+            }
+
+            assert makeObj2("Guillaume").toString() == objName
+        """
+    }
+
     void testStaticInnerClass() {
         assertScript """
             class A {
@@ -12,15 +91,17 @@ class InnerClassTest extends CompilableTestSupport {
             assert x != null
         """
     }
-    /*
-    void testNonStaticInnerClass() {
-      shouldNotCompile """
-          class A {
-              class B{}
-          }
-          def x = new A.B()
-      """
-    }*/
+
+    void testNonStaticInnerClass_FAILS() {
+        if (notYetImplemented()) return
+
+        shouldNotCompile """
+            class A {
+                class B {}
+            }
+            def x = new A.B()
+        """
+    }
 
     void testAnonymousInnerClass() {
         assertScript """
@@ -98,8 +179,10 @@ class InnerClassTest extends CompilableTestSupport {
             assert Foo.foo() == 2
         """
     }
-/*
-    void testUsageOfOuterFieldOverriden() {
+
+    void testUsageOfOuterFieldOverriden_FAILS() {
+        if (notYetImplemented()) return
+
         assertScript """
             interface Run {
                 def run(){}
@@ -128,7 +211,6 @@ class InnerClassTest extends CompilableTestSupport {
     //TODO: static part
 
     }
-*/
 
     void testUsageOfOuterMethod() {
         assertScript """
