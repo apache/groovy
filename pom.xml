@@ -354,6 +354,15 @@
                 <role>Developer</role>
             </roles>
         </developer>
+        <developer>
+            <name>Hamlet D'Arcy</name>
+            <id>hamletdrc</id>
+            <email>hamletdrc@gmail.com</email>
+            <organization></organization>
+            <roles>
+                <role>Developer</role>
+            </roles>
+        </developer>
     </developers>
 
     <contributors>
@@ -447,10 +456,6 @@
         </contributor>
         <contributor>
             <name>Evan A Slatis</name>
-            <email></email>
-        </contributor>
-        <contributor>
-            <name>Hamlet D'Arcy</name>
             <email></email>
         </contributor>
         <contributor>
