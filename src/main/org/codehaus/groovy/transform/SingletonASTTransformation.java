@@ -42,7 +42,12 @@ public class SingletonASTTransformation implements ASTTransformation, Opcodes {
      */
     public void visit(ASTNode[] nodes, SourceUnit source) {
         if (!(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
-            throw new RuntimeException("Internal error: wrong types: $node.class / $parent.class");
+            throw new RuntimeException(
+                String.format(
+                    "Internal error: wrong types: %s / %s. Expected: AnnotationNode / AnnotatedNode", 
+                    nodes[0].getClass(), 
+                    nodes[1].getClass())
+                );
         }
 
         AnnotatedNode parent = (AnnotatedNode) nodes[1];
