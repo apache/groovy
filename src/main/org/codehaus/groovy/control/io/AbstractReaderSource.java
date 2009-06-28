@@ -87,7 +87,9 @@ public abstract class AbstractReaderSource implements ReaderSource {
             }
 
             if (janitor == null) {
+                final String result = line;   // otherwise cleanup() will wipe out value
                 cleanup();
+                return result;
             } else {
                 janitor.register(this);
             }
