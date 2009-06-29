@@ -56,7 +56,7 @@ public class ClassHelper {
         DYNAMIC_TYPE = new ClassNode(Object.class),  OBJECT_TYPE = DYNAMIC_TYPE,
         VOID_TYPE = new ClassNode(Void.TYPE),        CLOSURE_TYPE = new ClassNode(Closure.class),
         GSTRING_TYPE = new ClassNode(GString.class), LIST_TYPE = makeWithoutCaching(List.class),
-        MAP_TYPE = new ClassNode(Map.class),         RANGE_TYPE = new ClassNode(Range.class),
+        MAP_TYPE = makeWithoutCaching(Map.class),         RANGE_TYPE = new ClassNode(Range.class),
         PATTERN_TYPE = new ClassNode(Pattern.class), STRING_TYPE = new ClassNode(String.class),
         SCRIPT_TYPE = new ClassNode(Script.class),   REFERENCE_TYPE = makeWithoutCaching(Reference.class),
         
