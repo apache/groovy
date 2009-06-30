@@ -1,0 +1,32 @@
+<?xml version="1.0"?>
+<project name="groovy-global-ast-transformation-example" default="jar-transform">
+
+    <!-- groovy-all .jar is assumed to be on your classpath. -->
+    <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" />
+    
+    <target name="init" description="cleanup old class files">
+        <delete>
+            <fileset dir="." includes="**/*.class"/>
+            <fileset dir="." includes="**/*.jar"/>
+        </delete>        
+    </target>
+
+    <target name="compile-transform" depends="init" description="Compiles the AST Transformation">
+    
+        <groovyc destdir="."
+                srcdir="."
+                includes="LoggingASTTransformation.groovy" 
+                listfiles="true">
+        </groovyc>
+        
+    </target>
+
+    <target name="jar-transform" depends="compile-transform" description="Creates a .jar file for the global transform" >
+        <jar destfile="LoggingTransform.jar"
+            basedir="."
+            includes="**/*.class,META-INF/**" />
+
+        <echo>You can now run "groovy -cp LoggingTransform.jar LoggingExample.groovy" to see that the transformation worked.</echo>
+    </target>
+</project>
+
