@@ -197,6 +197,19 @@ private class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
         classNode.methodsList?.each { MethodNode methodNode ->
             def ggrandchild = adapter.make(methodNode)
             allMethods.add(ggrandchild)
+            
+            // print out parameters of method
+            methodNode.parameters?.each { Parameter parameter -> 
+              def gggrandchild = adapter.make(parameter)
+              ggrandchild.add(gggrandchild)
+              if (parameter.initialExpression) {
+                TreeNodeBuildingVisitor visitor = new TreeNodeBuildingVisitor(adapter)
+                parameter.initialExpression.visit(visitor)
+                if (visitor.currentNode) gggrandchild.add(visitor.currentNode)
+              }
+            }
+            
+            // print out code of method
             TreeNodeBuildingVisitor visitor = new TreeNodeBuildingVisitor(adapter)
             if (methodNode.code) {
                 methodNode.code.visit(visitor)
@@ -388,7 +401,16 @@ private class TreeNodeBuildingVisitor extends CodeVisitorSupport {
     }
 
     public void visitClosureExpression(ClosureExpression node) {
-        addNode(node, ClosureExpression, { super.visitClosureExpression(it) });
+        addNode(node, ClosureExpression, { 
+          it.parameters?.each { parameter -> 
+            addNode(parameter, Parameter, { 
+              if (parameter.initialExpression) {
+                parameter.initialExpression.visit(this)
+              }
+            });
+          }
+          super.visitClosureExpression(it) 
+        });
     }
 
     public void visitTupleExpression(TupleExpression node) {

@@ -27,6 +27,7 @@ org {
                 FieldNode           = "FieldNode - \$expression.name : \$expression.type"
                 PropertyNode        = "PropertyNode - \${expression.field?.name} : \${expression.field?.type}"
                 AnnotationNode      = "AnnotationNode - \${expression.classNode?.name}"
+                Parameter           = "Parameter - \$expression.name"
 
                 stmt {
 					BlockStatement      = "BlockStatement"
