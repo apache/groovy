@@ -1,3 +1,4 @@
+package examples.global
 
 import org.codehaus.groovy.transform.ASTTransformation
 import org.codehaus.groovy.ast.ASTNode

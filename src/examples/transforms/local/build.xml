@@ -6,9 +6,7 @@
     
     
     <target name="init" description="cleanup old class files">
-        <delete>
-            <fileset dir="." includes="**/*.class"/>
-        </delete>        
+        <delete dir="examples"/>
     </target>
 
     <target name="compile-transform" depends="init" description="Compiles the AST Transformation">

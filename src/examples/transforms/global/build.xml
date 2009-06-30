@@ -5,8 +5,8 @@
     <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" />
     
     <target name="init" description="cleanup old class files">
+        <delete dir="examples"/>
         <delete>
-            <fileset dir="." includes="**/*.class"/>
             <fileset dir="." includes="**/*.jar"/>
         </delete>        
     </target>

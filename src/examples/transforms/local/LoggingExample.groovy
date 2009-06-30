@@ -1,3 +1,4 @@
+package examples.local
 
 /**
 * Demonstrates how a local transformation works. 
