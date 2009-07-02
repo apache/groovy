@@ -158,6 +158,15 @@ public abstract class FactoryBuilderSupport extends Binding {
         }
     }
 
+    private Set<String> getRegistrationGroup(String name) {
+        Set<String> group = registrationGroup.get(name);
+        if (group == null ) {
+            group = new TreeSet<String>();
+            registrationGroup.put(name, group);
+        }
+        return group;
+    }
+
     /**
      * Ask the nodes to be registered
      */
@@ -571,10 +580,10 @@ public abstract class FactoryBuilderSupport extends Binding {
         explicitProperties.put(name, new Closure[]{getter, setter});
         String methodNameBase = MetaClassHelper.capitalize(name);
         if (getter != null) {
-            registrationGroup.get(groupName).add("get" + methodNameBase);
+            getRegistrationGroup(groupName).add("get" + methodNameBase);
         }
         if (setter != null) {
-            registrationGroup.get(groupName).add("set" + methodNameBase);
+            getRegistrationGroup(groupName).add("set" + methodNameBase);
         }
     }
 
@@ -586,7 +595,7 @@ public abstract class FactoryBuilderSupport extends Binding {
         // set the delegate to FBS so the closure closes over the builder
         closure.setDelegate(this);
         explicitMethods.put(name, closure);
-        registrationGroup.get(groupName).add(name);
+        getRegistrationGroup(groupName).add(name);
     }
 
     /**
@@ -620,7 +629,7 @@ public abstract class FactoryBuilderSupport extends Binding {
             }
 
         });
-        registrationGroup.get(groupName).add(theName);
+        getRegistrationGroup(groupName).add(theName);
     }
 
     /**
@@ -642,7 +651,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      */
     public void registerFactory(String name, String groupName, Factory factory) {
         getProxyBuilder().factories.put(name, factory);
-        registrationGroup.get(groupName).add(name);
+        getRegistrationGroup(groupName).add(name);
         factory.onFactoryRegistration(this, name, groupName);
     }
 
