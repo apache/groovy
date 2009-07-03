@@ -171,7 +171,7 @@ class Groovysh
         assert buffer
 
         buffer.eachWithIndex { line, index ->
-            def lineNum = formatLineNumber(index + 1)
+            def lineNum = formatLineNumber(index)
             
             io.out.println(" ${lineNum}@|bold >| $line")
         }
