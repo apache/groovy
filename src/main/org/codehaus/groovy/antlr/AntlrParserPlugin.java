@@ -1014,7 +1014,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         AST node = annotationNode.getFirstChild();
         String name = qualifiedName(node);
         AnnotationNode annotatedNode = new AnnotationNode(ClassHelper.make(name));
-        configureAST(annotatedNode, node);
+        configureAST(annotatedNode, annotationNode);
         while (true) {
             node = node.getNextSibling();
             if (isType(ANNOTATION_MEMBER_VALUE_PAIR, node)) {
