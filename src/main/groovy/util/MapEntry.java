@@ -20,8 +20,7 @@ import java.util.Map;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 /**
- * Represents a list of Integer objects key a specified Object up to but not including
- * a given and to.
+ * A Map.Entry implementation.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
