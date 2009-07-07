@@ -1,4 +1,4 @@
-package org.codehaus.groovy.ast;
+package org.codehaus.groovy.ast.vm5;
 
 import java.io.FileNotFoundException;
 import java.io.FileReader;
@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.Reader;
 
 import junit.framework.TestSuite;
+import org.codehaus.groovy.ast.vm5.LineColumnChecker;
 
 /**
  * Tests the LineColumn information in file specified in TEST_FILE_PATH
@@ -34,7 +35,7 @@ import junit.framework.TestSuite;
  */
 public class LineColumnCheckTestSuite extends TestSuite {
 
-	public static final String TEST_FILE_PATH = "./src/test/org/codehaus/groovy/ast/LineColumnCheck.txt";
+	public static final String TEST_FILE_PATH = "./src/test/org/codehaus/groovy/ast/vm5/LineColumnCheck.txt";
 
 	public static TestSuite suite() {
 		TestSuite ts = new TestSuite("LineColumnCheckTestSuite");
