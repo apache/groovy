@@ -6,7 +6,6 @@ import java.io.IOException;
 import java.io.Reader;
 
 import junit.framework.TestSuite;
-import org.codehaus.groovy.ast.vm5.LineColumnChecker;
 
 /**
  * Tests the LineColumn information in file specified in TEST_FILE_PATH
