@@ -188,7 +188,7 @@ $Date$
     </target>
 
     <property name="vm5GroovySourceFiles" value="gls/**/vm5/*Test.groovy,org/codehaus/groovy/**/vm5/*.groovy,groovy/**/vm5/*.groovy"/>
-    <property name="vm5JavaSourceFiles" value="org/codehaus/groovy/**/vm5/**/*.java,groovy/**/vm5/*.java,gls/**/vm5/*.java"/>
+    <property name="vm5JavaSourceFiles" value="org/codehaus/groovy/**/vm5/**/*.java,groovy/**/vm5/*.java,gls/**/vm5/*.java,*_VM5.java"/>
     <property name="vm6GroovySourceFiles" value="groovy/**/vm6/*Test.groovy"/>
     <property name="antGroovySourceFiles" value="org/codehaus/groovy/ant/**/GroovyTest*.groovy"/>
 
@@ -412,7 +412,7 @@ Not found: ${groovyJar14path}
     </target>
 
     <target name="-collect14tests" unless="groovy.build.vm5">
-        <fileset id="ubertests.fileset" dir="${testClassesDirectory}" includes="UberTest*.class" excludes="Uber*VM5.class,Uber*VM6.class,groovy/grape/*Test.class"/>
+        <fileset id="ubertests.fileset" dir="${testClassesDirectory}" includes="UberTest*.class" excludes="Uber*VM5.class,Uber*VM6.class,Java*Suite_VM5.class,groovy/grape/*Test.class"/>
     </target>
 
     <target name="-collect15tests" if="groovy.build.vm5" unless="groovy.build.vm6">
