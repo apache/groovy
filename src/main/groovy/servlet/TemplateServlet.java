@@ -20,6 +20,9 @@ import groovy.text.Template;
 import groovy.text.TemplateEngine;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
+import java.io.Reader;
 import java.io.FileReader;
 import java.io.IOException;
 import java.io.Writer;
@@ -242,9 +245,12 @@ public class TemplateServlet extends AbstractHttpServlet {
             if (verbose) {
                 log("Creating new template from file " + file + "...");
             }
-            FileReader reader = null;
+            
+            String fileEncoding = System.getProperty("groovy.source.encoding");
+            
+            Reader reader = null;
             try {
-                reader = new FileReader(file);
+                reader = fileEncoding == null ? new FileReader(file) : new InputStreamReader(new FileInputStream(file), fileEncoding);
                 template = engine.createTemplate(reader);
             } catch (Exception e) {
                 throw new ServletException("Creation of template failed: " + e, e);
