@@ -25,7 +25,7 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class ClosureComparator implements Comparator {
+public class ClosureComparator<T> implements Comparator<T> {
 
     Closure closure;
 
@@ -33,7 +33,7 @@ public class ClosureComparator implements Comparator {
         this.closure = closure;
     }
 
-    public int compare(Object object1, Object object2) {
+    public int compare(T object1, T object2) {
         Object value = closure.call(new Object[] {object1, object2});
         return DefaultTypeTransformation.intUnbox(value);
     }

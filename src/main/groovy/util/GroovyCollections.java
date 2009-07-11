@@ -127,7 +127,7 @@ public class GroovyCollections {
      * @param items an array of items
      * @return the minimum value
      */
-    public static Object min(Object[] items) {
+    public static <T> T min(T[] items) {
         return min(Arrays.asList(items));
     }
 
@@ -137,10 +137,9 @@ public class GroovyCollections {
      * @param items a Collection
      * @return the minimum value
      */
-    public static Object min(Collection items) {
-        Object answer = null;
-        for (Iterator iter = items.iterator(); iter.hasNext();) {
-            Object value = iter.next();
+    public static <T> T min(Collection<T> items) {
+        T answer = null;
+        for (T value : items) {
             if (value != null) {
                 if (answer == null || ScriptBytecodeAdapter.compareLessThan(value, answer)) {
                     answer = value;
@@ -157,7 +156,7 @@ public class GroovyCollections {
      * @param items an array of items
      * @return the maximum value
      */
-    public static Object max(Object[] items) {
+    public static <T> T max(T[] items) {
         return max(Arrays.asList(items));
     }
 
@@ -167,10 +166,9 @@ public class GroovyCollections {
      * @param items a Collection
      * @return the maximum value
      */
-    public static Object max(Collection items) {
-        Object answer = null;
-        for (Iterator iter = items.iterator(); iter.hasNext();) {
-            Object value = iter.next();
+    public static <T> T max(Collection<T> items) {
+        T answer = null;
+        for (T value : items) {
             if (value != null) {
                 if (answer == null || ScriptBytecodeAdapter.compareGreaterThan(value, answer)) {
                     answer = value;

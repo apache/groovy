@@ -112,8 +112,8 @@ public class DefaultGroovyMethodsSupport {
         }
     }
 
-    protected static Collection cloneSimilarCollection(Collection orig, int newCapacity) {
-        Collection answer = (Collection) cloneObject(orig);
+    protected static <T> Collection<T> cloneSimilarCollection(Collection<T> orig, int newCapacity) {
+        Collection<T> answer = (Collection<T>) cloneObject(orig);
         if (answer != null) return answer;
         answer = cloneCollectionFromClass(orig);
         if (answer != null) return answer;
@@ -142,78 +142,78 @@ public class DefaultGroovyMethodsSupport {
         return new ArrayList();
     }
 
-    protected static Collection createSimilarCollection(Collection collection) {
+    protected static <T> Collection<T> createSimilarCollection(Collection<T> collection) {
         return createSimilarCollection(collection, collection.size());
     }
 
-    protected static Collection createSimilarCollection(Collection orig, int newCapacity) {
+    protected static <T> Collection<T> createSimilarCollection(Collection<T> orig, int newCapacity) {
         if (orig instanceof Set) {
-            return createSimilarSet((Set) orig);
+            return createSimilarSet((Set<T>) orig);
         }
         if (orig instanceof List) {
-            return createSimilarList((List) orig, newCapacity);
+            return createSimilarList((List<T>) orig, newCapacity);
         }
-        Collection answer = createCollectionFromClass(orig);
+        Collection<T> answer = createCollectionFromClass(orig);
         if (answer != null) return answer;
 
         if (orig instanceof Queue) {
-            return new LinkedList();
+            return new LinkedList<T>();
         }
-        return new ArrayList(newCapacity);
+        return new ArrayList<T>(newCapacity);
     }
 
-    protected static List createSimilarList(List orig, int newCapacity) {
-        List answer = (List) createCollectionFromClass(orig);
+    protected static <T> List<T> createSimilarList(List<T> orig, int newCapacity) {
+        List<T> answer = (List<T>) createCollectionFromClass(orig);
         if (answer != null) return answer;
 
         if (orig instanceof LinkedList) {
-            answer = new LinkedList();
+            answer = new LinkedList<T>();
         } else if (orig instanceof Stack) {
-            answer = new Stack();
+            answer = new Stack<T>();
         } else if (orig instanceof Vector) {
-            answer = new Vector();
+            answer = new Vector<T>();
         } else {
-            answer = new ArrayList(newCapacity);
+            answer = new ArrayList<T>(newCapacity);
         }
         return answer;
     }
 
-    protected static Set createSimilarSet(Set orig) {
-        Set answer = (Set) createCollectionFromClass(orig);
+    protected static <T> Set<T> createSimilarSet(Set<T> orig) {
+        Set<T> answer = (Set<T>) createCollectionFromClass(orig);
         if (answer != null) return answer;
 
         // fall back to some defaults
         if (orig instanceof SortedSet) {
-            return new TreeSet();
+            return new TreeSet<T>();
         }
         if (orig instanceof LinkedHashSet) {
-            return new LinkedHashSet();
+            return new LinkedHashSet<T>();
         }
-        return new HashSet();
+        return new HashSet<T>();
     }
 
-    protected static Map createSimilarMap(Map orig) {
-        Map answer = createMapFromClass(orig);
+    protected static <K, V> Map<K, V> createSimilarMap(Map<K, V> orig) {
+        Map<K, V> answer = createMapFromClass(orig);
         if (answer != null) return answer;
 
         // fall back to some defaults
         if (orig instanceof SortedMap) {
-            return new TreeMap();
+            return new TreeMap<K, V>();
         }
         if (orig instanceof Properties) {
-            return new Properties();
+            return (Map<K, V>) new Properties();
         }
         if (orig instanceof Hashtable) {
-            return new Hashtable();
+            return new Hashtable<K, V>();
         }
-        return new LinkedHashMap();
+        return new LinkedHashMap<K, V>();
     }
 
-    private static Collection createCollectionFromClass(Collection orig) {
+    private static <T> Collection<T> createCollectionFromClass(Collection<T> orig) {
         if (orig instanceof AbstractCollection) {
             try {
                 final Constructor constructor = orig.getClass().getConstructor();
-                return (Collection) constructor.newInstance();
+                return (Collection<T>) constructor.newInstance();
             } catch (Exception e) {
                 // ignore
             }
@@ -221,17 +221,17 @@ public class DefaultGroovyMethodsSupport {
         return null;
     }
 
-    private static Collection cloneCollectionFromClass(Collection orig) {
+    private static <T> Collection<T> cloneCollectionFromClass(Collection<T> orig) {
         if (orig instanceof AbstractCollection) {
 			try {
 				final Constructor constructor = orig.getClass().getConstructor(Collection.class);
-				return (Collection) constructor.newInstance(orig);
+				return (Collection<T>) constructor.newInstance(orig);
 			} catch (Exception e) {
 				// ignore
 			}
 			try {
 				final Constructor constructor = orig.getClass().getConstructor();
-				final Collection result = (Collection) constructor.newInstance();
+				final Collection<T> result = (Collection<T>) constructor.newInstance();
 				result.addAll(orig);
 				return result;
 			} catch (Exception e) {
@@ -241,11 +241,11 @@ public class DefaultGroovyMethodsSupport {
         return null;
     }
 
-    private static Map createMapFromClass(Map orig) {
+    private static <K, V> Map<K, V> createMapFromClass(Map<K, V> orig) {
         if ((orig instanceof AbstractMap) || (orig instanceof Hashtable)) {
             try {
                 final Constructor constructor = orig.getClass().getConstructor();
-                return (Map) constructor.newInstance();
+                return (Map<K, V>) constructor.newInstance();
             } catch (Exception e) {
                 // ignore
             }
@@ -253,17 +253,17 @@ public class DefaultGroovyMethodsSupport {
         return null;
     }
 
-    private static Map cloneMapFromClass(Map orig) {
+    private static <K, V> Map<K, V> cloneMapFromClass(Map<K, V> orig) {
         if ((orig instanceof AbstractMap) || (orig instanceof Hashtable)) {
 			try {
 				final Constructor constructor = orig.getClass().getConstructor(Map.class);
-				return (Map) constructor.newInstance(orig);
+				return (Map<K, V>) constructor.newInstance(orig);
 			} catch (Exception e) {
 				// ignore
 			}
 			try {
 				final Constructor constructor = orig.getClass().getConstructor();
-				final Map result = (Map) constructor.newInstance();
+				final Map<K, V> result = (Map<K, V>) constructor.newInstance();
 				result.putAll(orig);
 				return result;
 			} catch (Exception e) {
@@ -273,26 +273,26 @@ public class DefaultGroovyMethodsSupport {
         return null;
     }
 
-    protected static Map cloneSimilarMap(Map orig) {
-        Map answer = (Map) cloneObject(orig);
+    protected static <K, V> Map<K ,V> cloneSimilarMap(Map<K, V> orig) {
+        Map<K, V> answer = (Map<K, V>) cloneObject(orig);
         if (answer != null) return answer;
         answer = cloneMapFromClass(orig);
         if (answer != null) return answer;
 
         // fall back to some defaults
         if (orig instanceof TreeMap)
-            return new TreeMap(orig);
+            return new TreeMap<K, V>(orig);
 
         if (orig instanceof Properties) {
-            Map map = new Properties();
+            Map<K, V> map = (Map<K, V>) new Properties();
             map.putAll(orig);
             return map;
         }
 
         if (orig instanceof Hashtable)
-            return new Hashtable(orig);
+            return new Hashtable<K, V>(orig);
 
-        return new LinkedHashMap(orig);
+        return new LinkedHashMap<K, V>(orig);
     }
 
     /**

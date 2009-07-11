@@ -13,14 +13,14 @@ import java.util.ListIterator;
  *
  * @author Mike Dillon
  */
-public class ReverseListIterator implements Iterator {
-    private ListIterator delegate;
+public class ReverseListIterator<T> implements Iterator<T> {
+    private ListIterator<T> delegate;
 
     /**
      * Constructs a new <code>ReverseListIterator</code> for the provided list.
      * @param list the list to iterate over in reverse
      */
-    public ReverseListIterator(List list) {
+    public ReverseListIterator(List<T> list) {
         this.delegate = list.listIterator(list.size());
     }
 
@@ -34,7 +34,7 @@ public class ReverseListIterator implements Iterator {
     /**
      * {@inheritDoc}
      */
-    public Object next() {
+    public T next() {
         return delegate.previous();
     }
 
