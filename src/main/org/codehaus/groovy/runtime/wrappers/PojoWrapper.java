@@ -31,15 +31,6 @@ public class PojoWrapper extends Wrapper {
   public PojoWrapper(final Object wrapped, final Class constrainedType) {
     super(constrainedType);
     this.wrapped = wrapped;
-    
-    /*
-     * This check is temporary - remove before 1.0 release
-     */
-//    if (wrapped instanceof GroovyObject) {
-//      throw new RuntimeException("trying to wrap the groovyObject "
-//                                 + wrapped.getClass().getName()
-//                                 + " in a PojoWrapper");
-//    }
   }
   
   public Object unwrap() {
