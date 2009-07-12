@@ -99,9 +99,8 @@ public class GroovyCategorySupport {
         public Object use(List<Class> categoryClasses, Closure closure) {
             newScope();
             try {
-                for (Iterator i = categoryClasses.iterator(); i.hasNext(); ) {
-                    Class clazz = (Class) i.next();
-                    use(clazz);
+                for (Class categoryClass : categoryClasses) {
+                    use(categoryClass);
                 }
                 return closure.call();
             } finally {
@@ -111,8 +110,7 @@ public class GroovyCategorySupport {
         
         private void applyUse(CachedClass cachedClass) {
             CachedMethod[] methods = cachedClass.getMethods();
-            for (int i = 0; i < methods.length; i++) {
-                CachedMethod cachedMethod = methods[i];
+            for (CachedMethod cachedMethod : methods) {
                 if (cachedMethod.isStatic() && cachedMethod.isPublic()) {
                     CachedClass[] paramTypes = cachedMethod.getParameterTypes();
                     if (paramTypes.length > 0) {
@@ -121,8 +119,8 @@ public class GroovyCategorySupport {
                         final String name = cachedMethod.getName();
                         CategoryMethodList list = get(name);
                         if (list == null || list.level != level) {
-                            list = new CategoryMethodList(name,level,list);
-                            put (name, list);
+                            list = new CategoryMethodList(name, level, list);
+                            put(name, list);
                         }
                         list.add(mmethod);
                         Collections.sort(list);
@@ -133,13 +131,13 @@ public class GroovyCategorySupport {
 
         private void use(Class categoryClass) {
             CachedClass cachedClass = ReflectionCache.getCachedClass(categoryClass);
-            LinkedList classStack = new LinkedList();
+            LinkedList<CachedClass> classStack = new LinkedList<CachedClass>();
             for (CachedClass superClass = cachedClass; superClass.getTheClass()!=Object.class; superClass = superClass.getCachedSuperClass()) {
                 classStack.add(superClass);
             }
             
             while (!classStack.isEmpty()) {
-                CachedClass klazz = (CachedClass) classStack.removeLast();
+                CachedClass klazz = classStack.removeLast();
                 applyUse(klazz);
             }
         }

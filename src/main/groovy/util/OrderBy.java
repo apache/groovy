@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,7 +19,6 @@ import groovy.lang.Closure;
 
 import java.util.ArrayList;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -29,12 +28,12 @@ import java.util.List;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class OrderBy implements Comparator {
+public class OrderBy<T> implements Comparator<T> {
 
-    private List closures;
+    private List<Closure> closures;
 
     public OrderBy() {
-        this.closures = new ArrayList();
+        this.closures = new ArrayList<Closure>();
     }
 
     public OrderBy(Closure closure) {
@@ -42,7 +41,7 @@ public class OrderBy implements Comparator {
         closures.add(closure);
     }
 
-    public OrderBy(List closures) {
+    public OrderBy(List<Closure> closures) {
         this.closures = closures;
     }
 
@@ -50,9 +49,8 @@ public class OrderBy implements Comparator {
         closures.add(closure);
     }
 
-    public int compare(Object object1, Object object2) {
-        for (Iterator iter = closures.iterator(); iter.hasNext();) {
-            Closure closure = (Closure) iter.next();
+    public int compare(T object1, T object2) {
+        for (Closure closure : closures) {
             Object value1 = closure.call(object1);
             Object value2 = closure.call(object2);
 

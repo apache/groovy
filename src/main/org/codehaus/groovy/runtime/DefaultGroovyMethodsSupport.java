@@ -112,8 +112,8 @@ public class DefaultGroovyMethodsSupport {
         }
     }
 
-    protected static Collection cloneSimilarCollection(Collection orig, int newCapacity) {
-        Collection answer = (Collection) cloneObject(orig);
+    protected static <T> Collection<T> cloneSimilarCollection(Collection<T> orig, int newCapacity) {
+        Collection<T> answer = (Collection<T>) cloneObject(orig);
         if (answer != null) return answer;
 
         // fall back to creation
@@ -140,77 +140,75 @@ public class DefaultGroovyMethodsSupport {
         return new ArrayList();
     }
 
-    protected static Collection createSimilarCollection(Collection collection) {
+    protected static <T> Collection<T> createSimilarCollection(Collection<T> collection) {
         return createSimilarCollection(collection, collection.size());
     }
 
-    protected static Collection createSimilarCollection(Collection orig, int newCapacity) {
+    protected static <T> Collection<T> createSimilarCollection(Collection<T> orig, int newCapacity) {
         if (orig instanceof Set) {
-            return createSimilarSet((Set) orig);
+            return createSimilarSet((Set<T>) orig);
         }
         if (orig instanceof List) {
-            return createSimilarList((List) orig, newCapacity);
+            return createSimilarList((List<T>) orig, newCapacity);
         }
         if (orig instanceof Queue) {
-            return new LinkedList();
+            return new LinkedList<T>();
         }
-        return new ArrayList(newCapacity);
+        return new ArrayList<T>(newCapacity);
     }
 
-    protected static List createSimilarList(List orig, int newCapacity) {
+    protected static <T> List<T> createSimilarList(List<T> orig, int newCapacity) {
         if (orig instanceof LinkedList) {
-            return new LinkedList();
+            return new LinkedList<T>();
+        } else if (orig instanceof Stack) {
+            return new Stack<T>();
+        } else if (orig instanceof Vector) {
+            return new Vector<T>();
         }
-        if (orig instanceof Stack) {
-            return new Stack();
-        }
-        if (orig instanceof Vector) {
-            return new Vector();
-        }
-        return new ArrayList(newCapacity);
+        return new ArrayList<T>(newCapacity);
     }
 
-    protected static Set createSimilarSet(Set orig) {
+    protected static <T> Set<T> createSimilarSet(Set<T> orig) {
         if (orig instanceof SortedSet) {
-            return new TreeSet();
+            return new TreeSet<T>();
         }
         if (orig instanceof LinkedHashSet) {
-            return new LinkedHashSet();
+            return new LinkedHashSet<T>();
         }
-        return new HashSet();
+        return new HashSet<T>();
     }
 
-    protected static Map createSimilarMap(Map orig) {
+    protected static <K, V> Map<K, V> createSimilarMap(Map<K, V> orig) {
         if (orig instanceof SortedMap) {
-            return new TreeMap();
+            return new TreeMap<K, V>();
         }
         if (orig instanceof Properties) {
-            return new Properties();
+            return (Map<K, V>) new Properties();
         }
         if (orig instanceof Hashtable) {
-            return new Hashtable();
+            return new Hashtable<K, V>();
         }
-        return new LinkedHashMap();
+        return new LinkedHashMap<K, V>();
     }
 
-    protected static Map cloneSimilarMap(Map orig) {
-        Map answer = (Map) cloneObject(orig);
+    protected static <K, V> Map<K ,V> cloneSimilarMap(Map<K, V> orig) {
+        Map<K, V> answer = (Map<K, V>) cloneObject(orig);
         if (answer != null) return answer;
 
         // fall back to some defaults
         if (orig instanceof TreeMap)
-            return new TreeMap(orig);
+            return new TreeMap<K, V>(orig);
 
         if (orig instanceof Properties) {
-            Map map = new Properties();
+            Map<K, V> map = (Map<K, V>) new Properties();
             map.putAll(orig);
             return map;
         }
 
         if (orig instanceof Hashtable)
-            return new Hashtable(orig);
+            return new Hashtable<K, V>(orig);
 
-        return new LinkedHashMap(orig);
+        return new LinkedHashMap<K, V>(orig);
     }
 
     /**

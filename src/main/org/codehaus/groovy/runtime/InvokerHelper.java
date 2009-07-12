@@ -489,7 +489,8 @@ public class InvokerHelper {
         }
     }
 
-    public static Iterator asIterator(Object o) {
+    @SuppressWarnings("unchecked")
+    public static Iterator<Object> asIterator(Object o) {
         return (Iterator) invokeMethod(o, "iterator", EMPTY_ARGS);
     }
 
