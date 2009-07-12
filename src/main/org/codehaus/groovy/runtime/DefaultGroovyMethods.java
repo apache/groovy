@@ -1397,8 +1397,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the number of occurrences
      * @since 1.5.0
      */
-    public static int count(Iterator self, Object value) {
-        return count(toList(self), value);
+    public static Number count(Iterator self, Object value) {
+        long answer = 0;
+        while (self.hasNext()) {
+            if (DefaultTypeTransformation.compareEqual(self.next(), value)) {
+                ++answer;
+            }
+        }
+        // for b/c with Java return an int if we can
+        if (answer <= Integer.MAX_VALUE) return new Long(answer).intValue();
+        return answer;
     }
 
     /**
@@ -1411,14 +1419,134 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the number of occurrences
      * @since 1.0
      */
-    public static int count(Collection self, Object value) {
-        int answer = 0;
-        for (Iterator iter = self.iterator(); iter.hasNext();) {
-            if (DefaultTypeTransformation.compareEqual(iter.next(), value)) {
-                ++answer;
-            }
-        }
-        return answer;
+    public static Number count(Collection self, Object value) {
+        return count(self.iterator(), value);
+    }
+
+    /**
+     * Counts the number of occurrences of the given value inside this array.
+     * Comparison is done using Groovy's == operator (using
+     * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
+     *
+     * @param self  the array within which we count the number of occurrences
+     * @param value the value being searched for
+     * @return the number of occurrences
+     * @since 1.6.4
+     */
+    public static Number count(Object[] self, Object value) {
+        return count(Arrays.asList(self), value);
+    }
+
+    /**
+     * Counts the number of occurrences of the given value inside this array.
+     * Comparison is done using Groovy's == operator (using
+     * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
+     *
+     * @param self  the array within which we count the number of occurrences
+     * @param value the value being searched for
+     * @return the number of occurrences
+     * @since 1.6.4
+     */
+    public static Number count(int[] self, Object value) {
+        return count(InvokerHelper.asIterator(self), value);
+    }
+
+    /**
+     * Counts the number of occurrences of the given value inside this array.
+     * Comparison is done using Groovy's == operator (using
+     * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
+     *
+     * @param self  the array within which we count the number of occurrences
+     * @param value the value being searched for
+     * @return the number of occurrences
+     * @since 1.6.4
+     */
+    public static Number count(long[] self, Object value) {
+        return count(InvokerHelper.asIterator(self), value);
+    }
+
+    /**
+     * Counts the number of occurrences of the given value inside this array.
+     * Comparison is done using Groovy's == operator (using
+     * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
+     *
+     * @param self  the array within which we count the number of occurrences
+     * @param value the value being searched for
+     * @return the number of occurrences
+     * @since 1.6.4
+     */
+    public static Number count(short[] self, Object value) {
+        return count(InvokerHelper.asIterator(self), value);
+    }
+
+    /**
+     * Counts the number of occurrences of the given value inside this array.
+     * Comparison is done using Groovy's == operator (using
+     * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
+     *
+     * @param self  the array within which we count the number of occurrences
+     * @param value the value being searched for
+     * @return the number of occurrences
+     * @since 1.6.4
+     */
+    public static Number count(char[] self, Object value) {
+        return count(InvokerHelper.asIterator(self), value);
+    }
+
+    /**
+     * Counts the number of occurrences of the given value inside this array.
+     * Comparison is done using Groovy's == operator (using
+     * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
+     *
+     * @param self  the array within which we count the number of occurrences
+     * @param value the value being searched for
+     * @return the number of occurrences
+     * @since 1.6.4
+     */
+    public static Number count(boolean[] self, Object value) {
+        return count(InvokerHelper.asIterator(self), value);
+    }
+
+    /**
+     * Counts the number of occurrences of the given value inside this array.
+     * Comparison is done using Groovy's == operator (using
+     * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
+     *
+     * @param self  the array within which we count the number of occurrences
+     * @param value the value being searched for
+     * @return the number of occurrences
+     * @since 1.6.4
+     */
+    public static Number count(double[] self, Object value) {
+        return count(InvokerHelper.asIterator(self), value);
+    }
+
+    /**
+     * Counts the number of occurrences of the given value inside this array.
+     * Comparison is done using Groovy's == operator (using
+     * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
+     *
+     * @param self  the array within which we count the number of occurrences
+     * @param value the value being searched for
+     * @return the number of occurrences
+     * @since 1.6.4
+     */
+    public static Number count(float[] self, Object value) {
+        return count(InvokerHelper.asIterator(self), value);
+    }
+
+    /**
+     * Counts the number of occurrences of the given value inside this array.
+     * Comparison is done using Groovy's == operator (using
+     * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
+     *
+     * @param self  the array within which we count the number of occurrences
+     * @param value the value being searched for
+     * @return the number of occurrences
+     * @since 1.6.4
+     */
+    public static Number count(byte[] self, Object value) {
+        return count(InvokerHelper.asIterator(self), value);
     }
 
     /**

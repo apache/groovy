@@ -59,8 +59,7 @@ public class InheritedInterfaceMethodTest extends TestCase {
     public void testInvokeNewListMethodOnArrayList() {
         List list = new ArrayList();
         Object answer = InvokerHelper.invokeMethod(list, "count", new Object[]{"123"});
-        assertEquals(new Integer(0), answer);
-
+        assertEquals(0, answer);
         System.out.println("Found: " + answer);
     }
 }

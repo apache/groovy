@@ -530,6 +530,21 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         assert [1, 2, 3, 2, 1].iterator().count(2) == 2
     }
 
+    void testCountForPrimitiveArray() {
+        int[] nums = [1, 2, 3, 2, 1]
+        assert nums.count(2) == 2
+    }
+
+    void testCountForCollection() {
+        def nums = [1, 2, 3, 2, 1]
+        assert nums.count(2) == 2
+    }
+
+    void testCountForString() {
+        def string = 'google'
+        assert string.count('g') == 2
+    }
+
     void testJoinForIterator() {
         assert ['a', 'b', 'c', 'a'].iterator().join('-') == 'a-b-c-a'
     }
@@ -618,7 +633,7 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         def expectedKeys = [Integer: [1, 3], String: [2, 4], BigDecimal: [5, 6]]
         def expectedVals = [Integer: [1, 2], String: ["a", "b"], BigDecimal: [3.5, 4.6]]
         def map = [1: 1, 2: "a", 3: 2, 4: "b", 5: 3.5, 6: 4.6]
-        def result = map.groupEntriesBy {entry -> entry.value.class}
+        def result = map.groupEntriesBy {Map.Entry entry -> entry.value.class}
         assert expectedKeys.Integer == result[Integer].collect {it.key}
         assert expectedVals.Integer == result[Integer].collect {it.value}
         assert expectedKeys.String == result[String].collect {it.key}
