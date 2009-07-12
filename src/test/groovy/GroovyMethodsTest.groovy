@@ -736,7 +736,7 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         assert x.sum() == 10
         assert x.size() == 4
         assert x.class == WackyList
-        def y = x.findAll{ it % 2 == 1 }
+        def y = x.findAll{ it % 2 == 1 } as WackyList
         assert y.size() == 2
         assert y.class == WackyList
     }
@@ -809,10 +809,10 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         def q = [1, 2, 3, 4, 5, 6, 7, 8, 9] as LinkedBlockingQueue
         assert q.size() == 9
         assert q.class == LinkedBlockingQueue
-        q += 10
+        q = (q + 10) as LinkedBlockingQueue
         assert q.size() == 10
         assert q.class == LinkedBlockingQueue
-        def r = q.findAll{ it % 2 == 0 }
+        def r = q.findAll{ it % 2 == 0 } as LinkedBlockingQueue
         assert r.size() == 5
         assert r.class == LinkedBlockingQueue
         def s = ((r as LinkedList) - [4, 6]) as LinkedBlockingQueue
