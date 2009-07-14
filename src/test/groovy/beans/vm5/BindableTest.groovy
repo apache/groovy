@@ -259,6 +259,35 @@ class BindableTest extends GroovySwingTestCase {
         }
     }
 
+    public void testBindableParent() {
+        GroovyShell shell = new GroovyShell()
+        shell.evaluate("""
+            import groovy.beans.Bindable
+            import java.beans.PropertyChangeEvent
+            import java.beans.PropertyChangeListener
+
+            @Bindable
+            class BindableTestBeanChild extends BindableTestBeanParent {
+                String prop2
+                BindableTestBeanChild() {
+                    super()
+                }
+            }
+
+            @Bindable
+            class BindableTestBeanParent implements PropertyChangeListener {
+                String prop1
+                BindableTestBeanParent() {
+                    addPropertyChangeListener(this)
+                }
+
+                void propertyChange(PropertyChangeEvent event) {}
+            }
+
+            new BindableTestBeanChild()
+        """)
+    }
+
     public void testFinalProperty() {
         shouldFail(CompilationFailedException) {
             GroovyShell shell = new GroovyShell()
