@@ -75,6 +75,15 @@ public class BindFactory extends AbstractFactory {
         // JTree.selectedElement
         // JTree.selectedElements
 
+        // covers JComponent.size
+        // covers JComponent.width
+        // covers JComponent.height
+        // covers JComponent.bounds
+        // covers JComponent.x
+        // covers JComponent.y
+        // covers JComponent.visible
+        syntheticBindings.putAll(JComponentProperties.syntheticProperties)
+
     }
 
     /**
