@@ -291,6 +291,15 @@ public class BindableASTTransformation implements ASTTransformation, Opcodes {
             }
             consideredClass = consideredClass.getSuperClass();
         }
+        // check if a super class has @Bindable annotations
+        consideredClass = declaringClass.getSuperClass();
+        while (consideredClass!=null) {
+            if (hasBindableAnnotation(consideredClass)) return false;
+            for (FieldNode field : consideredClass.getFields()) {
+                if (hasBindableAnnotation(field)) return false;
+            }
+            consideredClass = consideredClass.getSuperClass();
+        }
         if (foundAdd || foundRemove || foundFire) {
             sourceUnit.getErrorCollector().addErrorAndContinue(
                 new SimpleMessage("@Bindable cannot be processed on "

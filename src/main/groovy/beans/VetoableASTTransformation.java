@@ -294,6 +294,15 @@ public class VetoableASTTransformation extends BindableASTTransformation {
             }
             consideredClass = consideredClass.getSuperClass();
         }
+        // check if a super class has @Vetoable annotations
+        consideredClass = declaringClass.getSuperClass();
+        while (consideredClass!=null) {
+            if (hasVetoableAnnotation(consideredClass)) return false;
+            for (FieldNode field : consideredClass.getFields()) {
+                if (hasVetoableAnnotation(field)) return false;
+            }
+            consideredClass = consideredClass.getSuperClass();
+        }
         if (foundAdd || foundRemove || foundFire) {
             sourceUnit.getErrorCollector().addErrorAndContinue(
                 new SimpleMessage("@Vetoable cannot be processed on "

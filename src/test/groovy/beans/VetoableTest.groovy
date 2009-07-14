@@ -308,6 +308,35 @@ class VetoableTest extends GroovySwingTestCase {
         }
     }
 
+    public void testVetoableParent() {
+        GroovyShell shell = new GroovyShell()
+        shell.evaluate("""
+            import groovy.beans.Vetoable
+            import java.beans.PropertyChangeEvent
+            import java.beans.VetoableChangeListener
+
+            @Vetoable
+            class VetoableTestBeanChild extends VetoableTestBeanParent {
+                String prop2
+                VetoableTestBeanChild() {
+                    super()
+                }
+            }
+
+            @Vetoable
+            class VetoableTestBeanParent implements VetoableChangeListener {
+                String prop1
+                VetoableTestBeanParent() {
+                    addVetoableChangeListener(this)
+                }
+
+                void vetoableChange(PropertyChangeEvent event) {}
+            }
+
+            new VetoableTestBeanChild()
+        """)
+    }
+
     public void testFinalProperty() {
         shouldFail(CompilationFailedException) {
             GroovyShell shell = new GroovyShell()
