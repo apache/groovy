@@ -29,15 +29,15 @@ public class AstBuilder {
      * <code>
      *      def builder = new AstBuilder()
      *      builder.buildFromCode {
-	 * 			// some code
+     *             // some code
      *      }
-	 * </code>
+     * </code>
      * While this code will:
      * <code>
      *      new AstBuilder().buildFromCode {
-	 * 			// some code
+     *             // some code
      *      }
-	 * </code>
+     * </code>
      *
      * The compiler rewrites buildFromCode invocations into  {@link AstBuilder#buildFromString(CompilePhase, boolean, String)}
      * invocations. An exception raised during AST generation will show a stack trace from  {@link AstBuilder#buildFromString(CompilePhase, boolean, String)}

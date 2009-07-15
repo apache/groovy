@@ -179,8 +179,8 @@ public class AstAssert {
             },
             GStringExpression : { expected, actual ->
                 Assert.assertEquals("Wrong text", expected.verbatimText, actual.verbatimText)
-				assertSyntaxTree(expected.strings, actual.strings)
-				assertSyntaxTree(expected.values, actual.values)
+                assertSyntaxTree(expected.strings, actual.strings)
+                assertSyntaxTree(expected.values, actual.values)
             },
             MethodPointerExpression : { expected, actual ->
                 assertSyntaxTree([expected.expression], [actual.expression])
@@ -227,34 +227,34 @@ public class AstAssert {
                 assertSyntaxTree([expected.variable], [actual.variable])
                 assertSyntaxTree([expected.code], [actual.code])
             },
-			ThrowStatement : { expected, actual ->
-				assertSyntaxTree([expected.expression], [actual.expression])
-			},
-			StaticMethodCallExpression : { expected, actual ->
-				Assert.assertEquals("Wrong method", expected.method, actual.method)
-				assertSyntaxTree([expected.ownerType], [actual.ownerType])
-				assertSyntaxTree([expected.arguments], [actual.arguments])
-			},
-			ForStatement : { expected, actual ->
-				assertSyntaxTree([expected.variable], [actual.variable])
-				assertSyntaxTree([expected.collectionExpression], [actual.collectionExpression])
-				assertSyntaxTree([expected.loopBlock], [actual.loopBlock])
-			},
-			ClosureListExpression : { expected, actual ->
-				assertSyntaxTree(expected.expressions, actual.expressions)
-			},
-			WhileStatement : { expected, actual ->
-				assertSyntaxTree([expected.booleanExpression], [actual.booleanExpression])
-				assertSyntaxTree([expected.loopBlock], [actual.loopBlock])
-			},
-			ContinueStatement : { expected, actual ->
-				Assert.assertEquals("Wrong label", expected.label, actual.label)
-			},
-			TernaryExpression : { expected, actual ->
-				assertSyntaxTree([expected.booleanExpression], [actual.booleanExpression])
-				assertSyntaxTree([expected.trueExpression], [actual.trueExpression])
-				assertSyntaxTree([expected.falseExpression], [actual.falseExpression])
-			},
+            ThrowStatement : { expected, actual ->
+                assertSyntaxTree([expected.expression], [actual.expression])
+            },
+            StaticMethodCallExpression : { expected, actual ->
+                Assert.assertEquals("Wrong method", expected.method, actual.method)
+                assertSyntaxTree([expected.ownerType], [actual.ownerType])
+                assertSyntaxTree([expected.arguments], [actual.arguments])
+            },
+            ForStatement : { expected, actual ->
+                assertSyntaxTree([expected.variable], [actual.variable])
+                assertSyntaxTree([expected.collectionExpression], [actual.collectionExpression])
+                assertSyntaxTree([expected.loopBlock], [actual.loopBlock])
+            },
+            ClosureListExpression : { expected, actual ->
+                assertSyntaxTree(expected.expressions, actual.expressions)
+            },
+            WhileStatement : { expected, actual ->
+                assertSyntaxTree([expected.booleanExpression], [actual.booleanExpression])
+                assertSyntaxTree([expected.loopBlock], [actual.loopBlock])
+            },
+            ContinueStatement : { expected, actual ->
+                Assert.assertEquals("Wrong label", expected.label, actual.label)
+            },
+            TernaryExpression : { expected, actual ->
+                assertSyntaxTree([expected.booleanExpression], [actual.booleanExpression])
+                assertSyntaxTree([expected.trueExpression], [actual.trueExpression])
+                assertSyntaxTree([expected.falseExpression], [actual.falseExpression])
+            },
             ElvisOperatorExpression : { expected, actual ->
                 assertSyntaxTree([expected.booleanExpression], [actual.booleanExpression])
                 assertSyntaxTree([expected.trueExpression], [actual.trueExpression])

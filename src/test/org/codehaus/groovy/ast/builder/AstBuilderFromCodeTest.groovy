@@ -608,8 +608,8 @@ public class AstBuilderFromCodeTest extends GroovyTestCase {
         def expected = new BlockStatement(
                 [new ExpressionStatement(
                         new GStringExpression('$foo',
-						[new ConstantExpression(''), new ConstantExpression('')],
-						[new VariableExpression('foo')])
+                        [new ConstantExpression(''), new ConstantExpression('')],
+                        [new VariableExpression('foo')])
                 )], new VariableScope())
 
         AstAssert.assertSyntaxTree([expected], result)
