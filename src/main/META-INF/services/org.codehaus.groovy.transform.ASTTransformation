@@ -3,3 +3,6 @@ groovy.grape.GrabAnnotationTransformation
 
 # global transformation for power assertions
 org.codehaus.groovy.transform.powerassert.AssertionTransformation
+
+#global transformation for AST Builder
+org.codehaus.groovy.ast.builder.AstBuilderTransformation
