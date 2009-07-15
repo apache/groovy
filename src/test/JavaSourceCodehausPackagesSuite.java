@@ -24,6 +24,7 @@ import org.codehaus.groovy.syntax.TokenTest;
 import org.codehaus.groovy.tools.CompilerTest;
 import org.codehaus.groovy.tools.FileSystemCompilerTest;
 import org.codehaus.groovy.tools.groovydoc.GroovyDocToolTest;
+import org.codehaus.groovy.tools.gse.DependencyTest;
 
 /**
  * All Java Unit tests in the 'org.codehaus.groovy' dir
@@ -92,6 +93,7 @@ public class JavaSourceCodehausPackagesSuite {
         suite.addTestSuite(VariableExpressionTest.class);
         suite.addTest(LineColumnCheckTestSuite.suite());
         suite.addTestSuite(MethodCallExpressionTest.class);
+        suite.addTestSuite(DependencyTest.class);
         return suite;
     }
 }

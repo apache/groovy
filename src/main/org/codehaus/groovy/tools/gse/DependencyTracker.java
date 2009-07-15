@@ -12,6 +12,8 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
 import org.codehaus.groovy.ast.expr.CastExpression;
 import org.codehaus.groovy.ast.expr.ClassExpression;
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
+import org.codehaus.groovy.ast.expr.NotExpression;
 import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.control.SourceUnit;
@@ -65,10 +67,7 @@ public class DependencyTracker extends ClassCodeVisitorSupport {
             addToCache(p.getType());
         }
         addToCache(node.getReturnType());
-        ClassNode[] exceptions = node.getExceptions();
-        if (exceptions!=null) {
-            for (ClassNode cn : exceptions) addToCache(cn);
-        }
+        addToCache(node.getExceptions());
         super.visitMethod(node);
     }
     @Override
@@ -97,5 +96,10 @@ public class DependencyTracker extends ClassCodeVisitorSupport {
         for (AnnotationNode an : node.getAnnotations()) {
             addToCache(an.getClassNode());
         }
+    }
+    @Override
+    public void visitConstructorCallExpression(ConstructorCallExpression call) {
+        super.visitConstructorCallExpression(call);
+        addToCache(call.getType());
     }
 }
