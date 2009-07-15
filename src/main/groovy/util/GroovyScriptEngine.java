@@ -57,15 +57,21 @@ import org.codehaus.groovy.tools.gse.StringSetMap;
 public class GroovyScriptEngine implements ResourceConnector {
 
     private static final ClassLoader CL_STUB = new ClassLoader(){};
-    private static final WeakReference<ThreadLocal<StringSetMap>> dependencyCache = 
-        new WeakReference<ThreadLocal<StringSetMap>>(
-                new ThreadLocal<StringSetMap>() {
-                    @Override
-                    protected StringSetMap initialValue() {
-                        return new StringSetMap();
-                    }
-                }
-        );
+    private static WeakReference<ThreadLocal<StringSetMap>> dependencyCache = new WeakReference<ThreadLocal<StringSetMap>>(null);
+    
+    
+    private static ThreadLocal<StringSetMap> getDepCache() {
+        ThreadLocal<StringSetMap> local = dependencyCache.get();
+        if (local!=null) return local;
+        local = new ThreadLocal<StringSetMap>() {
+            @Override
+            protected StringSetMap initialValue() {
+                return new StringSetMap();
+            }
+        };
+        dependencyCache = new WeakReference<ThreadLocal<StringSetMap>>(local);
+        return local;
+    }
 
     private URL[] roots;
     private ResourceConnector rc;
@@ -113,7 +119,7 @@ public class GroovyScriptEngine implements ResourceConnector {
         @Override
         protected CompilationUnit createCompilationUnit(CompilerConfiguration config, CodeSource source) {
             CompilationUnit cu = super.createCompilationUnit(config, source);
-            final StringSetMap cache = dependencyCache.get().get();
+            final StringSetMap cache = getDepCache().get();
             cu.addPhaseOperation(new CompilationUnit.PrimaryClassNodeOperation() {
                 @Override
                 public void call(final SourceUnit source, GeneratorContext context, ClassNode classNode) 
@@ -128,7 +134,7 @@ public class GroovyScriptEngine implements ResourceConnector {
         @Override
         public Class parseClass(GroovyCodeSource codeSource, boolean shouldCacheSource) throws CompilationFailedException {
             Class answer = super.parseClass(codeSource, shouldCacheSource);
-            StringSetMap cache = dependencyCache.get().get();
+            StringSetMap cache = getDepCache().get();
             long time = System.currentTimeMillis();
             for (Map.Entry<String,Set<String>> entry: cache.entrySet()) {
                 String entryName = entry.getKey();
