@@ -33,7 +33,7 @@ public class DependencyTest extends GroovyTestCase {
                 "class A2 extends C2{}\n" +
                 "class A3 {C1 foo(C2 x){new C3()}}\n"
         ));
-        cu.compile();
+        cu.compile(Phases.CLASS_GENERATION);
         assertEquals(cache.get("C1").size(),0);
         assertEquals(cache.get("C2").size(),0);
         assertEquals(cache.get("C3").size(),0);
