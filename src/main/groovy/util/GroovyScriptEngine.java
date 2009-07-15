@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -166,12 +166,10 @@ public class GroovyScriptEngine implements ResourceConnector {
    }
 
     /**
-     * Initialize a new GroovyClassLoader with the parentClassLoader passed as a parameter.
-     * A GroovyScriptEngine should only use one GroovyClassLoader but since in version
-     * prior to 1.0-RC-01 you could set a new parentClassLoader
-     * Ultimately groovyLoader should be final and only set in the constructor
-     *
-     * @param parentClassLoader the class loader to use
+     * Initialize a new GroovyClassLoader with a default or
+     * constructor-supplied parentClassLoader.
+     * 
+     * @return the parent classloader used to load scripts
      */
     private GroovyClassLoader initGroovyLoader() {
         return (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
@@ -238,7 +236,7 @@ public class GroovyScriptEngine implements ResourceConnector {
      * groovy in other containers like games and application servers.
      *
      * @param roots This an array of URLs where Groovy scripts will be stored. They should
-     *              be layed out using their package structure like Java classes
+     *              be laid out using their package structure like Java classes
      */
     private GroovyScriptEngine(URL[] roots, ClassLoader parent, ResourceConnector rc) {
         if (roots==null) roots = new URL[0]; 
@@ -301,7 +299,7 @@ public class GroovyScriptEngine implements ResourceConnector {
      * {@link GroovyClassLoader} in which scripts will be executed. By default, this is the
      * ClassLoader that loaded the <code>GroovyScriptEngine</code> class.
      *
-     * @return parent classloader used to load scripts
+     * @return the parent classloader used to load scripts
      */
     public ClassLoader getParentClassLoader() {
         return parentLoader;
@@ -315,7 +313,7 @@ public class GroovyScriptEngine implements ResourceConnector {
     public void setParentClassLoader(ClassLoader parentClassLoader) {
         throw new DeprecationException(
                 "The method GroovyScriptEngine#setParentClassLoader(ClassLoader) " +
-                "is no longer supported."
+                "is no longer supported. Specify a parentLoader in the constructor instead."
         );
     }
 
@@ -357,8 +355,8 @@ public class GroovyScriptEngine implements ResourceConnector {
     public Class loadScriptByName(String scriptName, ClassLoader parentClassLoader)
             throws ResourceException, ScriptException {
         throw new DeprecationException(
-                "The method GroovyScriptEngine#loadScripByName(String,ClassLoader) "+
-                "is no longer supported. Use GroovyScriptEngine#loadScripByName(String) instead."
+                "The method GroovyScriptEngine#loadScriptByName(String,ClassLoader) "+
+                "is no longer supported. Use GroovyScriptEngine#loadScriptByName(String) instead."
         );
     }
 
