@@ -154,7 +154,7 @@ class GroovyScriptEngineTest extends GroovyTestCase {
 		Class clazz = null;
 		try {
 			clazz = Class.forName(className, true, classLoader) ;
-		} catch (ClassNotFoundException e) {
+		} catch (ClassNotFoundException ex) {
 			throw new RuntimeException("Class.forName failed for  " + className, ex);
 		}
 		try {
