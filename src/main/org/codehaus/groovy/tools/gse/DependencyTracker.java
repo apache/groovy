@@ -30,11 +30,18 @@ public class DependencyTracker extends ClassCodeVisitorSupport {
         if (!node.isPrimaryClassNode()) return;
         current.add(node.getName());
     }
+    
+    private void addToCache(ClassNode[] nodes){
+        if (nodes==null) return;
+        for (ClassNode node : nodes) addToCache(node);
+    }
 
     @Override
     public void visitClass(ClassNode node) {
         Set<String> old = current;
         current = cache.get(node.getName());
+        addToCache(node.getSuperClass());
+        addToCache(node.getInterfaces());
         super.visitClass(node);
         current =  old;
     }

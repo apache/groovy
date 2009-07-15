@@ -60,9 +60,9 @@ public class GroovyScriptEngine implements ResourceConnector {
     private static WeakReference<ThreadLocal<StringSetMap>> dependencyCache = new WeakReference<ThreadLocal<StringSetMap>>(null);
     
     
-    private static ThreadLocal<StringSetMap> getDepCache() {
+    private static StringSetMap getDepCache() {
         ThreadLocal<StringSetMap> local = dependencyCache.get();
-        if (local!=null) return local;
+        if (local!=null) return local.get();
         local = new ThreadLocal<StringSetMap>() {
             @Override
             protected StringSetMap initialValue() {
@@ -70,7 +70,7 @@ public class GroovyScriptEngine implements ResourceConnector {
             }
         };
         dependencyCache = new WeakReference<ThreadLocal<StringSetMap>>(local);
-        return local;
+        return local.get();
     }
 
     private URL[] roots;
@@ -119,7 +119,7 @@ public class GroovyScriptEngine implements ResourceConnector {
         @Override
         protected CompilationUnit createCompilationUnit(CompilerConfiguration config, CodeSource source) {
             CompilationUnit cu = super.createCompilationUnit(config, source);
-            final StringSetMap cache = getDepCache().get();
+            final StringSetMap cache = getDepCache();
             cu.addPhaseOperation(new CompilationUnit.PrimaryClassNodeOperation() {
                 @Override
                 public void call(final SourceUnit source, GeneratorContext context, ClassNode classNode) 
@@ -134,7 +134,7 @@ public class GroovyScriptEngine implements ResourceConnector {
         @Override
         public Class parseClass(GroovyCodeSource codeSource, boolean shouldCacheSource) throws CompilationFailedException {
             Class answer = super.parseClass(codeSource, shouldCacheSource);
-            StringSetMap cache = getDepCache().get();
+            StringSetMap cache = getDepCache();
             long time = System.currentTimeMillis();
             for (Map.Entry<String,Set<String>> entry: cache.entrySet()) {
                 String entryName = entry.getKey();
