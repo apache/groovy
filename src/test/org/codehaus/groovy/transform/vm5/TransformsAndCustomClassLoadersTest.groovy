@@ -23,6 +23,7 @@ import org.codehaus.groovy.transform.ASTTransformation
 import org.codehaus.groovy.ast.ASTNode
 import org.codehaus.groovy.ast.ModuleNode
 import org.codehaus.groovy.control.CompilePhase
+import org.codehaus.groovy.control.Phases
 
 /**
  * Tests whether local and global transforms are successfully detected, loaded,
@@ -55,7 +56,7 @@ class TransformsAndCustomClassLoadersTest extends GroovyTestCase {
     private compileAndLoadClass(String source, GroovyClassLoader dependencyLoader, GroovyClassLoader transformLoader) {
         def unit = new CompilationUnit(null, null, dependencyLoader, transformLoader)
         unit.addSource(new SourceUnit("", source, new CompilerConfiguration(), null, null))
-        unit.compile()
+        unit.compile(Phases.CLASS_GENERATION)
 
         def classInfo = unit.classes[0]
         assert classInfo
