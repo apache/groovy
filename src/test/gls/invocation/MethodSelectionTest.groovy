@@ -112,14 +112,32 @@ public class MethodSelectionTest extends CompilableTestSupport {
     """
   }
   
-  void testNullUsageForPrimtives() {
-    [byte,int,short,float,double].each { type ->
+  void testNullUsageForPrimtivesWithExplcitNull() {
+    [byte,int,short,float,double,boolean,char].each { type ->
       assertScript """
          def foo($type x) {}
          
          boolean catched = false
          try {
            foo(null)
+         } catch (MissingMethodException mme) {
+           catched = true
+         }
+         def txt = "expected to see a MissingMethodEception when using foo(null) "+
+                   "to call foo($type), but no exception was thrown"
+         assert catched, txt
+      """
+    }
+  }
+  
+  void testNullUsageForPrimtivesWithImplcitNull() {
+    [byte,int,short,float,double,boolean,char].each { type ->
+      assertScript """
+         def foo($type x) {}
+         
+         boolean catched = false
+         try {
+           foo()
          } catch (MissingMethodException mme) {
            catched = true
          }

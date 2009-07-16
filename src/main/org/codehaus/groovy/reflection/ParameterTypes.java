@@ -226,7 +226,7 @@ public class ParameterTypes
             if (pt.length == size)
                 return isValidExactMethod(arguments, pt);
             else
-                if (pt.length == 1 && size == 0)
+                if (pt.length == 1 && size == 0 && !pt[0].isPrimitive)
                     return true;
         return false;
     }
@@ -344,7 +344,7 @@ public class ParameterTypes
                 return false;
             }
             return true;
-        } else if (paramTypes.length == 1 && size == 0) {
+        } else if (paramTypes.length == 1 && size == 0 && !paramTypes[0].isPrimitive) {
             return true;
         }
         return false;
