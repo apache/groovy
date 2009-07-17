@@ -18,16 +18,8 @@ package org.codehaus.groovy.transform.powerassert
 
 // show that assertions in script body and script methods are transformed and work as expected
 
-// for some reason, class AssertionTestUtil cannot be resolved from here, so we copy this method over
-private static fails(Closure assertion) {
-        try {
-            assertion.call();
-            junit.framework.Assert.fail("assertion should have failed but didn't")
-        } catch (PowerAssertionError expected) {}
-    }
-
 assert true
-fails { assert false }
+AssertionTestUtil.fails { assert false }
 
 x = 0
 method()
@@ -35,5 +27,5 @@ assert x == 2
 
 def method() {
     assert ++x == 1
-    fails { assert ++x == 1 }
+    AssertionTestUtil.fails { assert ++x == 1 }
 }
