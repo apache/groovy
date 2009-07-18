@@ -114,11 +114,14 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         }
 
         if (mce.isImplicitThis() || isExplicitThisOrSuper) {
-            Expression ret = findStaticMethodImportFromModule(method, args);
-            if (ret != null) {
-            	ret.setSourcePosition(mce);
-                return ret;
+            if (mce.isImplicitThis()) {
+                Expression ret = findStaticMethodImportFromModule(method, args);
+                if (ret != null) {
+                    ret.setSourcePosition(mce);
+                    return ret;
+                }
             }
+
             if (method instanceof ConstantExpression) {
                 ConstantExpression ce = (ConstantExpression) method;
                 Object value = ce.getValue();

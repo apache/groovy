@@ -7,6 +7,7 @@ import static java.text.DateFormat.MEDIUM
 import static junit.framework.Assert.format
 import static junit.framework.Assert.assertEquals
 import static StaticImportTarget.x
+import static StaticImportTarget.z // do not remove
 import static java.lang.Math.*
 import static java.util.Calendar.getInstance as now
 import static groovy.API.*
@@ -89,7 +90,7 @@ class StaticImportTest extends GroovyTestCase {
         assert pfield == 42
     }
     
-    void testStaticimportAndDefaultValue() {
+    void testStaticImportAndDefaultValue() {
       assertScript """
         import static Foo.*
         import static Bar.*
@@ -107,6 +108,22 @@ class StaticImportTest extends GroovyTestCase {
         
         Bar.bar()
       """  
+    }
+
+    void testMethodCallWithThisTargetIsNotResolvedToStaticallyImportedMethod() {
+        // not using shouldFail() to avoid closure scope
+        try {
+            this.z()
+            fail()
+        } catch (MissingMethodException expected) {}
+    }
+
+    void testMethodCallWithSuperTargetIsNotResolvedToStaticallyImportedMethod() {
+        // not using shouldFail() to avoid closure scope
+        try {
+            super.z()
+            fail()
+        } catch (MissingMethodException expected) {}
     }
 }
 
