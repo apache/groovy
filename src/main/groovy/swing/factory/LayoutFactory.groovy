@@ -36,7 +36,7 @@ class LayoutFactory extends BeanFactory {
 
     public Object newInstance(FactoryBuilderSupport builder, Object name, Object value, Map attributes) {
         builder.context[DELEGATE_PROPERTY_CONSTRAINT] = attributes.remove("constraintsProperty") ?: DEFAULT_DELEGATE_PROPERTY_CONSTRAINT
-        Object o = super.newInstance(builder, name, value, attributes); //To change body of overridden methods use File | Settings | File Templates.
+        Object o = super.newInstance(builder, name, value, attributes);
         addLayoutProperties(builder.getContext());
         return o;
     }
