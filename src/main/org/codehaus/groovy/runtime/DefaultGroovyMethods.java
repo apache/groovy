@@ -7174,7 +7174,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Increment a Character by one.
      *
      * @param self a Character
-     * @return an incremented Number
+     * @return an incremented Character
      * @since 1.5.7
      */
     public static Character next(Character self) {
@@ -7196,7 +7196,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Decrement a Character by one.
      *
      * @param self a Character
-     * @return a decremented Number
+     * @return a decremented Character
      * @since 1.5.7
      */
     public static Character previous(Character self) {
@@ -7227,8 +7227,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the Number corresponding to the addition of left and right
      * @since 1.0
      */
-    public static Number plus(Character left, Number right) {
-        return NumberNumberPlus.plus(Integer.valueOf(left), right);
+    public static Character plus(Character left, Number right) {
+        return (char) (left + right.intValue());
     }
 
     /**
@@ -7257,14 +7257,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the Number corresponding to the addition of left and right
      * @since 1.0
      */
-    public static Number plus(Character left, Character right) {
-        return plus(Integer.valueOf(left), right);
+    public static Character plus(Character left, Character right) {
+        return (char)(left + right);
     }
 
     /**
-     * Compare a Character and a Number.  The character is assumed to be a 
-     * digit (i.e. '0' through '9') which is converted to its Integer 
-     * representation.
+     * Compare a Character and a Number.  The ASCII value of the
+     * character is compared to the number.
      *
      * @param left  a Character
      * @param right a Number
@@ -7276,9 +7275,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Compare a Number and a Character.  The character is assumed to be a 
-     * digit (i.e. '0' through '9') which is converted to its Integer 
-     * representation.
+     * Compare a Number and a Character.  The ASCII value of the
+     * character is compared to the number.
      *
      * @param left  a Number
      * @param right a Character
@@ -7290,9 +7288,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Compare two Characters.  Each character is assumed to be a 
-     * digit (i.e. '0' through '9') which is converted to its Integer 
-     * representation.
+     * Compare two Characters.  Uses their ASCII values.
      *
      * @param left  a Character
      * @param right a Character
@@ -7317,23 +7313,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Subtract a Number from a Character.  The character is assumed to be a 
-     * digit (i.e. '0' through '9') which is converted to its Integer 
-     * representation.
+     * Subtract a Number from a Character.  The ASCII value of the new
+     * character will be the ASCII value of the original character reduced by number.
      *
      * @param left  a Character
      * @param right a Number
-     * @return the Number corresponding to the subtraction of right from left
+     * @return the Character corresponding to the subtraction of right from left
      * @since 1.0
      */
-    public static Number minus(Character left, Number right) {
-        return NumberNumberMinus.minus(Integer.valueOf(left), right);
+    public static Character minus(Character left, Number right) {
+        return (char)(left - right.intValue());
     }
 
     /**
-     * Subtract a Character from a Number.  The character is assumed to be a 
-     * digit (i.e. '0' through '9') which is converted to its Integer 
-     * representation.
+     * Subtract a Character from a Number.  The ASCII value of
+     * the Character is subtracted from the number.
      *
      * @param left  a Number
      * @param right a Character
@@ -7345,24 +7339,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Subtract one Characters from another by converting them both to their 
-     * Integer representations.  Each character is assumed to be a 
-     * digit (i.e. '0' through '9') which is converted to its Integer 
-     * representation.
+     * Subtract one Character from by subtracting the ASCII
+     * value of the second Character from the ASCII value of the
+     * first Character. The returned Character will have an ASCII
+     * value equal to the result of the subtraction.
      *
      * @param left  a Character
      * @param right a Character
-     * @return the Number corresponding to the subtraction of right from left
+     * @return the Character corresponding to the subtraction of right from left
      * @since 1.0
      */
-    public static Number minus(Character left, Character right) {
-        return minus(Integer.valueOf(left), right);
+    public static Character minus(Character left, Character right) {
+        return (char)(left - right);
     }
 
     /**
-     * Multiply a Character by a Number.  The character is assumed to be a 
-     * digit (i.e. '0' through '9') which is converted to its Integer 
-     * representation.
+     * Multiply a Character by a Number.  Returns a number whose
+     * value equals the ASCII code for the Character multiplied by
+     * the number.
      *
      * @param left  a Character
      * @param right a Number
@@ -7374,9 +7368,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Multiply a Number by a Character.  The character is assumed to be a 
-     * digit (i.e. '0' through '9') which is converted to its Integer 
-     * representation.
+     * Multiply a Number by a Character.  The ASCII value of the character is used.
      *
      * @param left  a Number
      * @param right a Character
@@ -7388,9 +7380,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Multiply two Characters.  Each character is assumed to be a 
-     * digit (i.e. '0' through '9') which is converted to its Integer 
-     * representation.
+     * Multiply two Characters.  Returns a number corresponding the
+     * multiplcation of the two Characters ASCII values.
      *
      * @param left  a Character
      * @param right another Character
@@ -7462,9 +7453,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Divide a Character by a Number.  The character is assumed to be a 
-     * digit (i.e. '0' through '9') which is converted to its Integer 
-     * representation.
+     * Divide a Character by a Number.  Divides the ASCII value of
+     * the character by the number.
      *
      * @param left  a Character
      * @param right a Number
@@ -7476,9 +7466,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Divide a Number by a Character.  The character is assumed to be a 
-     * digit (i.e. '0' through '9') which is converted to its Integer 
-     * representation.
+     * Divide a Number by a Character.  Divides the number by the ASCII
+     * value of the Character.
      *
      * @param left  a Number
      * @param right a Character
@@ -7490,9 +7479,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Divide one Character by another.  Each character is assumed to be a 
-     * digit (i.e. '0' through '9') which is converted to its Integer 
-     * representation.
+     * Divide one Character by another.  Divides the ASCII value
+     * of one Character by the ASCII value of the other.
      *
      * @param left  a Character
      * @param right another Character

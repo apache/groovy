@@ -18,15 +18,21 @@ class NumberMathTest extends GroovyTestCase {
         def BI = new BigInteger("1")
         def BD = new BigDecimal("1.0")
 
-        //+, -, and * all promote the same way, so sample the matrix
-        assert C + B instanceof Integer
-        assert C - BD instanceof BigDecimal
+        // +, - has special treatment for Characters
+        assert C + B instanceof Character
+        assert C - I instanceof Character
+        assert C - BD instanceof Character
+
+        // apart from above, +, -, and * all promote the same way, so sample the matrix
+        assert I + B instanceof Integer
+        assert B - BD instanceof BigDecimal
         assert B + C instanceof Integer
         assert B + I instanceof Integer
         assert B + F instanceof Double
 
         assert I + I instanceof Integer
         assert I - F instanceof Double
+        assert C * I instanceof Integer
         assert I * D instanceof Double
         assert I + BI instanceof BigInteger
         assert I - BD instanceof BigDecimal
