@@ -701,7 +701,7 @@ public class GroovyClassLoader extends URLClassLoader {
                     // if recompilation fails, we want cls==null
                     Class oldClass = cls;
                     cls = null;
-                    cls = recompile(source, name, oldClass);
+                    cls = recompile(source, name, cls);
                 } catch (IOException ioe) {
                     last = new ClassNotFoundException("IOException while opening groovy source: " + name, ioe);
                 } finally {
@@ -741,11 +741,6 @@ public class GroovyClassLoader extends URLClassLoader {
             // found a source, compile it if newer
             if ((oldClass != null && isSourceNewer(source, oldClass)) || (oldClass == null)) {
                 sourceCache.remove(className);
-                if (isFile(source)) {
-                    String path = source.getPath().replace('/', File.separatorChar).replace('|', ':');
-                    File file = new File(path);
-                    if (file.exists()) return parseClass(file);
-                } 
                 return parseClass(source.openStream(), className);
             }
         }
