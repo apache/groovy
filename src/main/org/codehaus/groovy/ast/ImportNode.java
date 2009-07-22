@@ -104,7 +104,7 @@ public class ImportNode extends AnnotatedNode implements Opcodes {
             return "import static " + type.getName() + ".*";
         }
         if (isStatic) {
-            if (alias != null && !alias.isEmpty() && !alias.equals(fieldName)) {
+            if (alias != null && alias.length() != 0 && !alias.equals(fieldName)) {
                 return "import static " + type.getName() + "." + fieldName + " as " + alias;
             }
             return "import static " + type.getName() + "." + fieldName;
