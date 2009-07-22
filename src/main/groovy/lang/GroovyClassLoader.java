@@ -698,7 +698,10 @@ public class GroovyClassLoader extends URLClassLoader {
                     final Class classCacheEntry = getClassCacheEntry(name);
                     if (classCacheEntry != cls) return classCacheEntry;
                     URL source = resourceLoader.loadGroovySource(name);
-                    cls = recompile(source, name, cls);
+                    // if recompilation fails, we want cls==null
+                    Class oldClass = cls;
+                    cls = null;
+                    cls = recompile(source, name, oldClass);
                 } catch (IOException ioe) {
                     last = new ClassNotFoundException("IOException while opening groovy source: " + name, ioe);
                 } finally {
@@ -738,6 +741,11 @@ public class GroovyClassLoader extends URLClassLoader {
             // found a source, compile it if newer
             if ((oldClass != null && isSourceNewer(source, oldClass)) || (oldClass == null)) {
                 sourceCache.remove(className);
+                if (isFile(source)) {
+                    String path = source.getPath().replace('/', File.separatorChar).replace('|', ':');
+                    File file = new File(path);
+                    if (file.exists()) return parseClass(file);
+                } 
                 return parseClass(source.openStream(), className);
             }
         }
@@ -790,32 +798,38 @@ public class GroovyClassLoader extends URLClassLoader {
 
         return decodedFile;
     }
+    
+    private boolean isFile(URL ret) {
+         return ret != null && ret.getProtocol().equals("file");
+    }
 
+    private File getFileForUrl(URL ret, String filename) {
+        String fileWithoutPackage = filename;
+        if (fileWithoutPackage.indexOf('/') != -1) {
+            int index = fileWithoutPackage.lastIndexOf('/');
+            fileWithoutPackage = fileWithoutPackage.substring(index + 1);
+        }
+        File path = new File(decodeFileName(ret.getFile())).getParentFile();
+        if (path.exists() && path.isDirectory()) {
+            File file = new File(path, fileWithoutPackage);
+            if (file.exists()) {
+                // file.exists() might be case insensitive. Let's do
+                // case sensitive match for the filename
+                File parent = file.getParentFile();
+                String[] files = parent.list();
+                for (int j = 0; j < files.length; j++) {
+                    if (files[j].equals(fileWithoutPackage)) return file;
+                }
+            }
+        }
+        //file does not exist!
+        return null;
+    }
+    
     private URL getSourceFile(String name) {
         String filename = name.replace('.', '/') + config.getDefaultScriptExtension();
         URL ret = getResource(filename);
-        if (ret != null && ret.getProtocol().equals("file")) {
-            String fileWithoutPackage = filename;
-            if (fileWithoutPackage.indexOf('/') != -1) {
-                int index = fileWithoutPackage.lastIndexOf('/');
-                fileWithoutPackage = fileWithoutPackage.substring(index + 1);
-            }
-            File path = new File(decodeFileName(ret.getFile())).getParentFile();
-            if (path.exists() && path.isDirectory()) {
-                File file = new File(path, fileWithoutPackage);
-                if (file.exists()) {
-                    // file.exists() might be case insensitive. Let's do
-                    // case sensitive match for the filename
-                    File parent = file.getParentFile();
-                    String[] files = parent.list();
-                    for (int j = 0; j < files.length; j++) {
-                        if (files[j].equals(fileWithoutPackage)) return ret;
-                    }
-                }
-            }
-            //file does not exist!
-            return null;
-        }
+        if (isFile(ret) && getFileForUrl(ret,filename)==null) return null;
         return ret;
     }
 
@@ -834,7 +848,7 @@ public class GroovyClassLoader extends URLClassLoader {
 
         // Special handling for file:// protocol, as getLastModified() often reports
         // incorrect results (-1)
-        if (source.getProtocol().equals("file")) {
+        if (isFile(source)) {
             // Coerce the file URL to a File
             String path = source.getPath().replace('/', File.separatorChar).replace('|', ':');
             File file = new File(path);
