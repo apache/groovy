@@ -701,7 +701,7 @@ public class GroovyClassLoader extends URLClassLoader {
                     // if recompilation fails, we want cls==null
                     Class oldClass = cls;
                     cls = null;
-                    cls = recompile(source, name, cls);
+                    cls = recompile(source, name, oldClass);
                 } catch (IOException ioe) {
                     last = new ClassNotFoundException("IOException while opening groovy source: " + name, ioe);
                 } finally {
