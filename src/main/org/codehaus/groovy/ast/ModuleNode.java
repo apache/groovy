@@ -246,7 +246,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
         }
         ClassNode classNode;
         if (isPackageInfo()) {
-            classNode = new ClassNode(name, ACC_ABSTRACT | ACC_INTERFACE | ACC_SYNTHETIC, ClassHelper.OBJECT_TYPE);
+            classNode = new ClassNode(name, ACC_ABSTRACT | ACC_INTERFACE, ClassHelper.OBJECT_TYPE);
         } else {
             classNode = new ClassNode(name, ACC_PUBLIC, baseClass);
             classNode.setScript(true);
