@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package org.codehaus.groovy.classgen;
 
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.Opcodes;
 
@@ -31,13 +32,13 @@ import java.util.LinkedList;
 public abstract class ClassGenerator extends ClassCodeVisitorSupport implements Opcodes {
     protected ClassLoader classLoader;
     // inner classes created while generating bytecode
-    protected LinkedList innerClasses = new LinkedList();
+    protected LinkedList<ClassNode> innerClasses = new LinkedList<ClassNode>();
 
     public ClassGenerator(ClassLoader classLoader) {
         this.classLoader = classLoader;
     }
 
-    public LinkedList getInnerClasses() {
+    public LinkedList<ClassNode> getInnerClasses() {
         return innerClasses;
     }
 

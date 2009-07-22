@@ -32,11 +32,11 @@ import antlr.collections.AST;
  */
 
 public abstract class TraversalHelper implements AntlrASTProcessor {
-    protected List unvisitedNodes;
+    protected List<GroovySourceAST> unvisitedNodes;
     private final Visitor v;
 
     public TraversalHelper(Visitor visitor) {
-        this.unvisitedNodes = new ArrayList();
+        this.unvisitedNodes = new ArrayList<GroovySourceAST>();
         this.v = visitor;
     }
 

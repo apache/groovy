@@ -56,7 +56,6 @@ class ArithmeticShell {
     }
 }
 
-
 /**
  * This classloader hooks the security enforcer into the compilation process.
  */
@@ -84,10 +83,9 @@ private class StaticImportOperation extends SourceUnitOperation {
         ModuleNode ast = source.getAST()
 
         // add a static import for java.lang.Math
-        ast.addStaticImportClass('java.lang.Math', ClassHelper.make(java.lang.Math))
+        ast.addStaticStarImport('java.lang.Math', ClassHelper.make(java.lang.Math))
     }
 }
-
 
 /**
  * This operation will force only arithmetic operations to be compiled.
@@ -97,17 +95,21 @@ private class SecurityFilteringNodeOperation extends PrimaryClassNodeOperation {
     void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
         ModuleNode ast = source.getAST()
 
-        if (ast.getImportPackages())        { throw new SecurityException("Package import statements are not allowed.") }
-        if (ast.getImports())               { throw new SecurityException("Import statements are not allowed.") }
-        if (ast.getStaticImportAliases())   { throw new SecurityException("Static import aliases are not allowed.") }
-        if (ast.getStaticImportFields())    { throw new SecurityException("Static field import statements are not allowed.") }
+        if (ast.getImports())            { throw new SecurityException("Imports of the form 'import package.ClassName' are not allowed.") }
+        if (ast.getStarImports())        { throw new SecurityException("Imports of the form 'import package.*' are not allowed.") }
+        if (ast.getStaticImports())      { throw new SecurityException("Static imports of the form 'import static package.ClassName.fieldOrMethodName' are not allowed.") }
+        if (ast.getStaticStarImports())  { throw new SecurityException("Static imports of the form 'import static package.ClassName.*' are not allowed.") }
 
-        if (ast.getStaticImportClasses() != ['java.lang.Math': ClassHelper.make(java.lang.Math)]) {
+        def staticImports = ast.getStaticStarImports().values()
+        def javaLangMath = new ImportNode(ClassHelper.make(java.lang.Math))
+        // don't allow import annotations
+        javaLangMath.addAnnotations(new ArrayList<AnnotationNode>())
+        if (staticImports != ['java.lang.Math': javaLangMath]) {
             throw new SecurityException("Only java.lang.Math is allowed for static imports.")
         }
 
         // do not allow package names
-        if (ast.getPackageName()) { throw new SecurityException("Package names are not allowed.") }
+        if (ast.getPackage()) { throw new SecurityException("Package definitions are not allowed.") }
 
         // do not allow method definitions
         if (ast.getMethods()) { throw new SecurityException("Method definition is not allowed.") }
@@ -116,7 +118,6 @@ private class SecurityFilteringNodeOperation extends PrimaryClassNodeOperation {
         ast.getStatementBlock().visit(new ArithmeticExpressionEnforcer())
     }
 }
-
 
 /**
  * This code visitor throws a SecurityException if anything but an arithmetic expression is found.

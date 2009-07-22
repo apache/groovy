@@ -39,7 +39,7 @@ public class AnnotationNode extends ASTNode {
     public static final int ANNOTATION_TARGET = 1 << 6;
     public static final int PACKAGE_TARGET = 1 << 7;
     private static final int ALL_TARGETS = TYPE_TARGET | CONSTRUCTOR_TARGET | METHOD_TARGET
-        | FIELD_TARGET | PARAMETER_TARGET | LOCAL_VARIABLE_TARGET | ANNOTATION_TARGET;
+        | FIELD_TARGET | PARAMETER_TARGET | LOCAL_VARIABLE_TARGET | ANNOTATION_TARGET | PACKAGE_TARGET;
     
     private final ClassNode classNode;
     private Map<String, Expression> members = new HashMap<String, Expression>();

@@ -66,9 +66,9 @@ public class AnnotationVisitor {
         }
 
         Map<String, Expression> attributes = node.getMembers();
-        for (Map.Entry entry : attributes.entrySet()) {
-            String attrName = (String) entry.getKey();
-            Expression attrExpr = transformInlineConstants((Expression) entry.getValue());
+        for (Map.Entry<String, Expression> entry : attributes.entrySet()) {
+            String attrName = entry.getKey();
+            Expression attrExpr = transformInlineConstants(entry.getValue());
             entry.setValue(attrExpr);
             ClassNode attrType = getAttributeType(node, attrName);
             visitExpression(attrName, attrExpr, attrType);

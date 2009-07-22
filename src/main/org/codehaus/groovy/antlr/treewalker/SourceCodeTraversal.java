@@ -26,7 +26,6 @@ import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
  * AST nodes in the order needed to generate valid groovy source code.
  *
  * @author <a href="mailto:groovy@ross-rayner.com">Jeremy Rayner</a>
- * @version $Revision$
  */
 public class SourceCodeTraversal extends TraversalHelper {
     /**
@@ -46,7 +45,7 @@ public class SourceCodeTraversal extends TraversalHelper {
         super.setUp(t);
         
         // gather and sort all unvisited AST nodes
-        unvisitedNodes = new ArrayList();
+        unvisitedNodes = new ArrayList<GroovySourceAST>();
         traverse(t);
         Collections.sort(unvisitedNodes);
     }
@@ -115,6 +114,7 @@ public class SourceCodeTraversal extends TraversalHelper {
                 case GroovyTokenTypes.ENUM_CONSTANT_DEF: // enum Foo(THESE,ARE,THEY)
                 case GroovyTokenTypes.EXPR:
                 case GroovyTokenTypes.IMPORT:
+                case GroovyTokenTypes.STATIC_IMPORT:
                 case GroovyTokenTypes.VARIABLE_DEF:
                 case GroovyTokenTypes.METHOD_DEF:
                 case GroovyTokenTypes.OBJBLOCK: //class Foo {def bar()}  <-- this block

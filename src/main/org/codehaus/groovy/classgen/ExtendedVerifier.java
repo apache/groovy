@@ -52,6 +52,10 @@ public class ExtendedVerifier implements GroovyClassVisitor {
         } else {
             visitAnnotations(node, AnnotationNode.TYPE_TARGET);
         }
+        PackageNode packageNode = node.getPackage();
+        if (packageNode != null) {
+            visitAnnotations(packageNode, AnnotationNode.PACKAGE_TARGET);
+        }
         node.visitContents(this);
     }
 

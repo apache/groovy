@@ -158,21 +158,11 @@ public class Java5 implements VMPlugin {
         return PLUGIN_DGM;
     }
 
-    private void setAnnotationMetaData(ClassNode cn) {
-        Annotation[] annotations = cn.getTypeClass().getAnnotations();
+    private void setAnnotationMetaData(Annotation[] annotations, AnnotatedNode an) {
         for (Annotation annotation : annotations) {
             AnnotationNode node = new AnnotationNode(ClassHelper.make(annotation.annotationType()));
             configureAnnotation(node, annotation);
-            cn.addAnnotation(node);
-        }
-    }
-
-    private void setAnnotationMetaData(MethodNode mn, Method m) {
-        Annotation[] annotations = m.getAnnotations();
-        for (Annotation annotation : annotations) {
-            AnnotationNode node = new AnnotationNode(ClassHelper.make(annotation.annotationType()));
-            configureAnnotation(node, annotation);
-            mn.addAnnotation(node);
+            an.addAnnotation(node);
         }
     }
 
@@ -208,7 +198,6 @@ public class Java5 implements VMPlugin {
         for (AnnotationNode an : annotations) {
             configureAnnotationFromDefinition(an, node);
         }
-
         configureAnnotationFromDefinition(node, node);
     }
 
@@ -291,7 +280,7 @@ public class Java5 implements VMPlugin {
             ClassNode[] exceptions = makeClassNodes(compileUnit, m.getGenericExceptionTypes(), m.getExceptionTypes());
             MethodNode mn = new MethodNode(m.getName(), m.getModifiers(), ret, params, exceptions, null);
             setMethodDefaultValue(mn, m);
-            setAnnotationMetaData(mn, m);
+            setAnnotationMetaData(m.getAnnotations(), mn);
             classNode.addMethod(mn);
         }
         Constructor[] constructors = clazz.getDeclaredConstructors();
@@ -304,8 +293,12 @@ public class Java5 implements VMPlugin {
         Class sc = clazz.getSuperclass();
         if (sc != null) classNode.setUnresolvedSuperClass(makeClassNode(compileUnit, clazz.getGenericSuperclass(), sc));
         makeInterfaceTypes(compileUnit, classNode, clazz);
-        setAnnotationMetaData(classNode);
+        setAnnotationMetaData(classNode.getTypeClass().getAnnotations(), classNode);
 
+        PackageNode packageNode = classNode.getPackage();
+        if (packageNode != null) {
+            setAnnotationMetaData(classNode.getTypeClass().getPackage().getAnnotations(), packageNode);
+        }
     }
 
     private void makeInterfaceTypes(CompileUnit cu, ClassNode classNode, Class clazz) {

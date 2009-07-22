@@ -280,7 +280,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
 
     private void addStaticVariableError(VariableExpression ve) {
         // closures are always dynamic
-        // propertiesExpressions will handle the error a bit differently
+        // propertyExpressions will handle the error a bit differently
         if (!inSpecialConstructorCall && (inClosure || !ve.isInStaticContext())) return;
         if (stillResolving) return;
         if (ve.isThisExpression() || ve.isSuperExpression()) return;
@@ -297,19 +297,15 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     private Expression findStaticFieldImportFromModule(String name) {
         ModuleNode module = currentClass.getModule();
         if (module == null) return null;
-        Map aliases = module.getStaticImportAliases();
+        Map<String, ImportNode> importNodes = module.getStaticImports();
         stillResolving = false;
-        if (aliases.containsKey(name)) {
-            ClassNode node = (ClassNode) aliases.get(name);
-            Map fields = module.getStaticImportFields();
-            String fieldName = (String) fields.get(name);
-            Expression expression = findStaticField(node, fieldName);
+        if (importNodes.containsKey(name)) {
+            ImportNode importNode = importNodes.get(name);
+            Expression expression = findStaticField(importNode.getType(), importNode.getFieldName());
             if (expression != null) return expression;
         }
-        Map importedClasses = module.getStaticImportClasses();
-        for (Object o : importedClasses.keySet()) {
-            String className = (String) o;
-            ClassNode node = (ClassNode) importedClasses.get(className);
+        for (ImportNode importNode : module.getStaticStarImports().values()) {
+            ClassNode node = importNode.getType();
             Expression expression = findStaticField(node, name);
             if (expression != null) return expression;
         }
@@ -332,30 +328,32 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
     private Expression findStaticMethodImportFromModule(Expression method, Expression args) {
         ModuleNode module = currentClass.getModule();
         if (module == null || !(method instanceof ConstantExpression)) return null;
-        Map aliases = module.getStaticImportAliases();
+        Map<String, ImportNode> importNodes = module.getStaticImports();
         ConstantExpression ce = (ConstantExpression) method;
         Object value = ce.getValue();
         // skip non-Strings, e.g. Integer
         if (!(value instanceof String)) return null;
         final String name = (String) value;
-        if (aliases.containsKey(name)) {
-            ClassNode node = (ClassNode) aliases.get(name);
-            Map fields = module.getStaticImportFields();
-            String fieldName = (String) fields.get(name);
-            Expression expression = findStaticMethod(node, fieldName, args);
+        if (importNodes.containsKey(name)) {
+            ImportNode importNode = importNodes.get(name);
+            Expression expression = findStaticMethod(importNode.getType(), importNode.getFieldName(), args);
             if (expression != null) return expression;
         }
-        Map importPackages = module.getStaticImportClasses();
-        for (Object o : importPackages.keySet()) {
-            String className = (String) o;
-            ClassNode starImportType = null;
-            if(isEnum(currentClass) && importPackages.containsKey(currentClass.getName())) {
-            	starImportType = (ClassNode) importPackages.get(currentClass.getName());
-            } else {
-                starImportType = (ClassNode) importPackages.get(className);
-            }
+        Map<String, ImportNode> importPackages = module.getStaticStarImports();
+        ClassNode starImportType = null;
+        if(isEnum(currentClass) && importPackages.containsKey(currentClass.getName())) {
+            ImportNode importNode = importPackages.get(currentClass.getName());
+            starImportType = importNode == null ? null : importNode.getType();
             Expression expression = findStaticMethod(starImportType, name, args);
             if (expression != null) return expression;
+        } else {
+            for (Map.Entry<String, ImportNode> entry : importPackages.entrySet()) {
+                String className = entry.getKey();
+                ImportNode importNode = importPackages.get(className);
+                starImportType = importNode == null ? null : importNode.getType();
+                Expression expression = findStaticMethod(starImportType, name, args);
+                if (expression != null) return expression;
+            }
         }
         return null;
     }

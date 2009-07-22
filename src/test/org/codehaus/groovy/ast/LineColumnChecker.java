@@ -1,7 +1,5 @@
 package org.codehaus.groovy.ast;
 
-import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import org.codehaus.groovy.ast.expr.ArgumentListExpression;
 import org.codehaus.groovy.ast.expr.ArrayExpression;
@@ -76,9 +74,9 @@ public class LineColumnChecker extends ASTTest {
 		String was = visitor.getASTString();
 		//comment out next line to view the output of the visitor
 		//System.out.println(name + ": " + was);
-		for (int i = 0; i < expected.length; i++) {
-			assertTrue("'"+ expected[i] + "' not found in '" + was + "'", was.indexOf(expected[i].trim()) != -1);
-		}
+        for (String anExpected : expected) {
+            assertTrue("'" + anExpected + "' not found in '" + was + "'", was.indexOf(anExpected.trim()) != -1);
+        }
 	}
 }
 
@@ -107,32 +105,31 @@ class LineCheckVisitor extends ClassCodeVisitorSupport {
 	
 	protected void visitTypes(ClassNode[] classNodes) {
         if (classNodes != null) {
-        	for(int i = 0; i < classNodes.length; i++){
-        		visitType(classNodes[i]);
-        	}
+            for (ClassNode classNode : classNodes) {
+                visitType(classNode);
+            }
         }
 	}
 	
 	protected void visitGenerics(ClassNode node) {
 		if (node.isUsingGenerics()) {
 			GenericsType[] generics = node.getGenericsTypes();
-			for (int i = 0; i < generics.length; i++) {
-				GenericsType genericType = generics[i];
-				visitNode(genericType);
-				visitType(genericType.getType());
-				if (genericType.getLowerBound() != null) {
-					visitType(genericType.getLowerBound());
-				}
-				visitTypes(genericType.getUpperBounds());
-			}
+            for (GenericsType genericType : generics) {
+                visitNode(genericType);
+                visitType(genericType.getType());
+                if (genericType.getLowerBound() != null) {
+                    visitType(genericType.getLowerBound());
+                }
+                visitTypes(genericType.getUpperBounds());
+            }
 		}
 	}
 	
 	protected void visitNodes(ASTNode[] nodes) {
         if (nodes != null) {
-        	for(int i = 0; i < nodes.length; i++){
-        		visitNode(nodes[i]);
-        	}
+            for (ASTNode node : nodes) {
+                visitNode(node);
+            }
         }
 	}
 
@@ -161,38 +158,29 @@ class LineCheckVisitor extends ClassCodeVisitorSupport {
 	public void visitModuleNode(ModuleNode moduleNode) {
 		
 		//visit imports like import java.io.File and import java.io.File as MyFile
-		Object[] imports = moduleNode.getImports().toArray();
-		for (int i = 0; i < imports.length; i++) {
-			visitNode(((ImportNode)imports[i]).getType());
-		}
+        for (ImportNode importNode : moduleNode.getImports()) {
+            visitNode(importNode.getType());
+        }
 		
 		//visit static imports like import java.lang.Math.*
-		Collection staticImportClasses = moduleNode.getStaticImportClasses().values();
-		for (Iterator staticClassIt = staticImportClasses.iterator(); staticClassIt.hasNext();) {
-			ClassNode staticClass = (ClassNode)staticClassIt.next();
-			visitNode(staticClass);
-		}
+        for (ImportNode importNode : moduleNode.getStaticStarImports().values()) {
+            visitNode(importNode.getType());
+        }
 		
 		//visit static imports like import java.lang.Math.cos
-		Collection staticImportAliases = moduleNode.getStaticImportAliases().values();
-		for (Iterator staticAliasesIt = staticImportAliases.iterator(); staticAliasesIt.hasNext();) {
-			ClassNode staticAlias = (ClassNode)staticAliasesIt.next();
-			visitNode(staticAlias);
-		}
-		
-		List classes = moduleNode.getClasses();
-		for (Iterator classIt = classes.iterator(); classIt.hasNext();) {
-			ClassNode classNode = (ClassNode)classIt.next();
-			if (!classNode.isScript()) {
-				visitClass(classNode);
-			} else {
-				List methods = moduleNode.getMethods();
-				for (Iterator methodIt = methods.iterator(); methodIt.hasNext();) {
-					MethodNode method = (MethodNode)methodIt.next();
-					visitMethod(method);	
-				}
-			}
-		}
+        for (ImportNode importNode : moduleNode.getStaticImports().values()) {
+            visitNode(importNode.getType());
+        }
+
+        for (ClassNode classNode : moduleNode.getClasses()) {
+            if (!classNode.isScript()) {
+                visitClass(classNode);
+            } else {
+                for (MethodNode method : moduleNode.getMethods()) {
+                    visitMethod(method);
+                }
+            }
+        }
 		//visit Statements that are not inside a class
 		if (!moduleNode.getStatementBlock().isEmpty()) {
 			visitBlockStatement(moduleNode.getStatementBlock());
@@ -207,13 +195,11 @@ class LineCheckVisitor extends ClassCodeVisitorSupport {
 	}
 
 	public void visitAnnotations(AnnotatedNode node) {
-        List annotionMap = node.getAnnotations();
-        if (annotionMap.isEmpty()) return;
+        List<AnnotationNode> annotationMap = node.getAnnotations();
+        if (annotationMap.isEmpty()) return;
 		visitNode(node);
-        Iterator it = annotionMap.iterator(); 
-        while (it.hasNext()) {
-            AnnotationNode an = (AnnotationNode) it.next();
-            visitNode(an);
+        for (AnnotationNode annotationNode : annotationMap) {
+            visitNode(annotationNode);
         }
 	}
 	
@@ -232,11 +218,10 @@ class LineCheckVisitor extends ClassCodeVisitorSupport {
 	}
 	
 	private void analyseParameters(Parameter[] parameters) {
-		for (int i = 0; i < parameters.length; i++) {
-        	Parameter parameter = parameters[i];
-        	visitType(parameter.getOriginType());
+        for (Parameter parameter : parameters) {
+            visitType(parameter.getOriginType());
             if (parameter.hasInitialExpression()) {
-            	parameter.getInitialExpression().visit(this);
+                parameter.getInitialExpression().visit(this);
             }
         }
 	}

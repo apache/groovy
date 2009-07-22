@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,29 +36,25 @@ import java.util.*;
  * intermixed with statements like scripts in Python or Ruby
  *
  * @author Jochen Theodorou
+ * @author Paul King
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
- * @version $Revision$
  */
 public class ModuleNode extends ASTNode implements Opcodes {
 
     private BlockStatement statementBlock = new BlockStatement();
     List<ClassNode> classes = new LinkedList<ClassNode>();
     private List<MethodNode> methods = new ArrayList<MethodNode>();
-    private List<ImportNode> imports = new ArrayList<ImportNode>();
-    private List<String> importPackages = new ArrayList<String>();
-    private Map<String, ClassNode> importIndex = new HashMap<String, ClassNode>();
-    private Map<String, ClassNode> staticImportAliases = new HashMap<String, ClassNode>();
-    private Map<String, String> staticImportFields = new LinkedHashMap<String, String>();
-    private Map<String, ClassNode> staticImportClasses = new LinkedHashMap<String, ClassNode>();
+    private Map<String, ImportNode> imports = new HashMap<String, ImportNode>();
+    private List<ImportNode> starImports = new ArrayList<ImportNode>();
+    private Map<String, ImportNode> staticImports = new LinkedHashMap<String, ImportNode>();
+    private Map<String, ImportNode> staticStarImports = new LinkedHashMap<String, ImportNode>();
     private CompileUnit unit;
-    private String packageName;
+    private PackageNode packageNode;
     private String description;
     private boolean createClassForStatements = true;
     private transient SourceUnit context;
     private boolean importsResolved = false;
     private ClassNode scriptDummy;
-    private static final String[] EMPTY_STRING_ARRAY = new String[] { /* class names, not qualified */ };
-
 
     public ModuleNode (SourceUnit context ) {
         this.context = context;
@@ -77,7 +73,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
     }
 
     public List<ClassNode> getClasses() {
-        if (createClassForStatements && (!statementBlock.isEmpty() || !methods.isEmpty())) {
+        if (createClassForStatements && (!statementBlock.isEmpty() || !methods.isEmpty() || isPackageInfo())) {
             ClassNode mainClass = createStatementsClass();
             createClassForStatements = false;
             classes.add(0, mainClass);
@@ -87,29 +83,61 @@ public class ModuleNode extends ASTNode implements Opcodes {
         return classes;
     }
 
+    private boolean isPackageInfo() {
+        return context != null && context.getName() != null && context.getName().endsWith("package-info.groovy");
+    }
+
     public List<ImportNode> getImports() {
-        return imports;
+        return new ArrayList<ImportNode>(imports.values());
     }
 
     public List<String> getImportPackages() {
-        return importPackages;
+        List<String> result = new ArrayList<String>();
+        for (ImportNode importStarNode : starImports) {
+            result.add(importStarNode.getPackageName());
+        }
+        return result;
+    }
+
+    public List<ImportNode> getStarImports() {
+        return starImports;
     }
 
     /**
-     * @return the class name for the given alias or null if none is available
+     * @param alias the name of interest
+     * @return the class node for the given alias or null if none is available
      */
-    public ClassNode getImport(String alias) {
-        return importIndex.get(alias);
+    public ClassNode getImportType(String alias) {
+        ImportNode importNode = imports.get(alias);
+        return importNode == null ? null : importNode.getType();
+    }
+
+    /**
+     * @param alias the name of interest
+     * @return the import node for the given alias or null if none is available
+     */
+    public ImportNode getImport(String alias) {
+        return imports.get(alias);
     }
 
     public void addImport(String alias, ClassNode type) {
-        imports.add(new ImportNode(type, alias));
-        importIndex.put(alias, type);
+        addImport(alias, type, new ArrayList<AnnotationNode>());
     }
 
-    public String[]  addImportPackage(String packageName) {
-        importPackages.add(packageName);
-        return EMPTY_STRING_ARRAY;
+    public void addImport(String alias, ClassNode type, List<AnnotationNode> annotations) {
+        ImportNode importNode = new ImportNode(type, alias);
+        imports.put(alias, importNode);
+        importNode.addAnnotations(annotations);
+    }
+
+    public void addStarImport(String packageName) {
+        addStarImport(packageName, new ArrayList<AnnotationNode>());
+    }
+
+    public void addStarImport(String packageName, List<AnnotationNode> annotations) {
+        ImportNode importNode = new ImportNode(packageName);
+        importNode.addAnnotations(annotations);
+        starImports.add(importNode);
     }
 
     public void addStatement(Statement node) {
@@ -122,9 +150,6 @@ public class ModuleNode extends ASTNode implements Opcodes {
         addToCompileUnit(node);
     }
 
-    /**
-     * @param node
-     */
     private void addToCompileUnit(ClassNode node) {
         // register the new class with the compile unit
         if (unit != null) {
@@ -140,15 +165,29 @@ public class ModuleNode extends ASTNode implements Opcodes {
     }
 
     public String getPackageName() {
-        return packageName;
+        return packageNode == null ? null : packageNode.getName();
     }
 
-    public void setPackageName(String packageName) {
-        this.packageName = packageName;
+    public PackageNode getPackage() {
+        return packageNode;
     }
-    
+
+    // TODO don't allow override?
+    public void setPackage(PackageNode packageNode) {
+        this.packageNode = packageNode;
+    }
+
+    // TODO don't allow override?
+    public void setPackageName(String packageName) {
+        this.packageNode = new PackageNode(packageName);
+    }
+
     public boolean hasPackageName(){
-        return this.packageName != null;
+        return packageNode != null && packageNode.getName() != null;
+    }
+
+    public boolean hasPackage(){
+        return this.packageNode != null;
     }
 
     public SourceUnit getContext() {
@@ -171,6 +210,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
 
     public void setDescription(String description) {
         // DEPRECATED -- context.getName() is now sufficient
+        // TODO add deprecated annotation or javadoc comment?
         this.description = description;
     }
 
@@ -189,7 +229,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
         if (name == null) {
             name = "";
         }
-        // now lets use the file name to determine the class name
+        // now let's use the file name to determine the class name
         if (getDescription() == null) {
             throw new RuntimeException("Cannot generate main(String[]) class for statements when we have no file description");
         }
@@ -204,16 +244,24 @@ public class ModuleNode extends ASTNode implements Opcodes {
         if (baseClass == null) {
             baseClass = ClassHelper.SCRIPT_TYPE;
         }
-        ClassNode classNode = new ClassNode(name, ACC_PUBLIC, baseClass);
-        classNode.setScript(true);
-        classNode.setScriptBody(true);
-        
+        ClassNode classNode;
+        if (isPackageInfo()) {
+            classNode = new ClassNode(name, ACC_ABSTRACT | ACC_INTERFACE | ACC_SYNTHETIC, ClassHelper.OBJECT_TYPE);
+        } else {
+            classNode = new ClassNode(name, ACC_PUBLIC, baseClass);
+            classNode.setScript(true);
+            classNode.setScriptBody(true);
+        }
+
         scriptDummy = classNode;
         return classNode;
     }
     
     protected ClassNode createStatementsClass() {
         ClassNode classNode = getScriptClassDummy();
+        if (classNode.getName().endsWith("package-info")) {
+            return classNode;
+        }
         
         // return new Foo(new ShellContext(args)).run()
         classNode.addMethod(
@@ -316,24 +364,68 @@ public class ModuleNode extends ASTNode implements Opcodes {
         this.importsResolved = importsResolved;
     }
 
+    @Deprecated
     public Map<String, ClassNode> getStaticImportAliases() {
-        return staticImportAliases;
+        Map<String, ClassNode> result = new HashMap<String, ClassNode>();
+        for (Map.Entry<String, ImportNode> entry : staticImports.entrySet()) {
+            result.put(entry.getKey(), entry.getValue().getType());
+        }
+        return result;
     }
 
+    @Deprecated
     public Map<String, ClassNode> getStaticImportClasses() {
-        return staticImportClasses;
+        Map<String, ClassNode> result = new HashMap<String, ClassNode>();
+        for (Map.Entry<String, ImportNode> entry : staticStarImports.entrySet()) {
+            result.put(entry.getKey(), entry.getValue().getType());
+        }
+        return result;
     }
 
+    @Deprecated
     public Map<String, String> getStaticImportFields() {
-        return staticImportFields;
+        Map<String, String> result = new HashMap<String, String>();
+        for (Map.Entry<String, ImportNode> entry : staticImports.entrySet()) {
+            result.put(entry.getKey(), entry.getValue().getFieldName());
+        }
+        return result;
     }
 
+    public Map<String, ImportNode> getStaticImports() {
+        return staticImports;
+    }
+
+    public Map<String, ImportNode> getStaticStarImports() {
+        return staticStarImports;
+    }
+
+    @Deprecated
     public void addStaticMethodOrField(ClassNode type, String fieldName, String alias) {
-        staticImportAliases.put(alias, type);
-        staticImportFields.put(alias, fieldName);
+        addStaticImport(type, fieldName, alias);
     }
 
+    public void addStaticImport(ClassNode type, String fieldName, String alias) {
+        addStaticImport(type, fieldName, alias, new ArrayList<AnnotationNode>());
+    }
+
+    public void addStaticImport(ClassNode type, String fieldName, String alias, List<AnnotationNode> annotations) {
+        ImportNode node = new ImportNode(type, fieldName, alias);
+        node.addAnnotations(annotations);
+        staticImports.put(alias, node);
+    }
+
+    @Deprecated
     public void addStaticImportClass(String name, ClassNode type) {
-        staticImportClasses.put(name, type);
+        addStaticStarImport(name, type);
+    }
+
+    public void addStaticStarImport(String name, ClassNode type) {
+        addStaticStarImport(name, type, new ArrayList<AnnotationNode>());
+    }
+
+    public void addStaticStarImport(String name, ClassNode type, List<AnnotationNode> annotations) {
+        ImportNode node = new ImportNode(type);
+        node.addAnnotations(annotations);
+        staticStarImports.put(name, node);
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,8 @@ package org.codehaus.groovy.syntax;
 
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.ast.AnnotationNode;
+import org.codehaus.groovy.ast.PackageNode;
 import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.ArrayList;
@@ -32,7 +34,6 @@ import java.util.Map;
  * @author Bob McWhirter
  * @author Sam Pullara
  * @author Chris Poirier
- * @version $Revision$
  */
 public class ASTHelper {
 
@@ -42,12 +43,6 @@ public class ASTHelper {
     /** Our ClassLoader, which provides information on external types */
     private ClassLoader classLoader;
 
-    /** Our imports, simple name => fully qualified name */
-    protected Map imports;
-    /** Our explicit static imports, simple name => fully qualified name */
-    protected Map staticImports;
-    /** Our implicit static imports */
-    protected List staticDotImports;
     protected ModuleNode output;
 
     /** The package name in which the module sits */
@@ -63,9 +58,6 @@ public class ASTHelper {
     }
 
     public ASTHelper() {
-        imports = new HashMap();
-        staticImports = new HashMap();
-        staticDotImports = new ArrayList();
     }
 
     public String getPackageName() {
@@ -73,13 +65,19 @@ public class ASTHelper {
     }
 
     public void setPackageName(String packageName) {
-        this.packageName = packageName;
-        if (packageName!=null && packageName.length()>0){
-            packageName+='.';
-        }
-        output.setPackageName(packageName);
+        setPackage(packageName, new ArrayList<AnnotationNode>());
     }
 
+    public PackageNode setPackage(String packageName, List<AnnotationNode> annotations) {
+        this.packageName = packageName;
+        if (packageName != null && packageName.length() > 0) {
+            packageName += '.';
+        }
+        PackageNode packageNode = new PackageNode(packageName);
+        packageNode.addAnnotations(annotations);
+        output.setPackage(packageNode);
+        return packageNode;
+    }
 
     /**
      * Returns our class loader (as supplied on construction).
@@ -101,165 +99,15 @@ public class ASTHelper {
     }
     
     /**
-     * Returns a fully qualified name for any given potential type
-     * name.  Returns null if no qualified name could be determined.
-     */
-/*    protected String resolveName(String name, boolean safe) {
-        //
-        // Use our cache of resolutions, if possible
-
-        String resolution = (String) resolutions.get(name);
-        if (NOT_RESOLVED.equals(resolution)) {
-            return (safe ? name : null);
-        }
-        else if (resolution != null) {
-            return (String) resolution;
-        }
-
-        try {
-            getClassLoader().loadClass(name);
-            resolutions.put(name,name);
-            return name;
-        } catch (ClassNotFoundException cnfe){
-            if (cnfe.getCause() instanceof MultipleCompilationErrorsException) {
-                MultipleCompilationErrorsException mcee = (MultipleCompilationErrorsException) cnfe.getCause();
-                controller.getErrorCollector().addCollectorContents(mcee.getErrorCollector());
-                resolutions.put(name,name);
-                return name;
-            }
-        } catch (NoClassDefFoundError ncdfe) {
-            //fall through
-        }
-
-        do {
-            //
-            // If the type name contains a ".", it's probably fully
-            // qualified, and we don't take it to verification here.
-
-            if (name.indexOf(".") >= 0) {
-                resolution = name;
-                break;                                            // <<< FLOW CONTROL <<<<<<<<<
-            }
-
-
-            //
-            // Otherwise, we'll need the scalar type for checking, and
-            // the postfix for reassembly.
-
-            String scalar = name, postfix = "";
-            while (scalar.endsWith("[]")) {
-                scalar = scalar.substring(0, scalar.length() - 2);
-                postfix += "[]";
-            }
-
-
-            //
-            // Primitive types are all valid...
-
-            if (Types.ofType(Types.lookupKeyword(scalar), Types.PRIMITIVE_TYPE)) {
-                resolution = name;
-                break;                                            // <<< FLOW CONTROL <<<<<<<<<
-            }
-
-
-            //
-            // Next, check our imports and return the qualified name,
-            // if available.
-
-            if (this.imports.containsKey(scalar)) {
-                resolution = ((String) this.imports.get(scalar)) + postfix;
-                break;                                            // <<< FLOW CONTROL <<<<<<<<<
-            }
-
-
-            //
-            // Next, see if our class loader can resolve it in the current package.
-
-            if (packageName != null && packageName.length() > 0) {
-                try {
-                    getClassLoader().loadClass(dot(packageName, scalar));
-                    resolution = dot(packageName, name);
-
-                    break;                                        // <<< FLOW CONTROL <<<<<<<<<
-                } catch (ClassNotFoundException cnfe){
-                    if (cnfe.getCause() instanceof CompilationFailedException) {
-                        resolution = dot(packageName, name);
-                        break;
-                    }
-                } catch (NoClassDefFoundError ncdfe) {
-                    //fall through
-                }
-            }
-
-            // search the package imports path
-            List packageImports = output.getImportPackages();
-            for (int i = 0; i < packageImports.size(); i++) {
-                String pack = (String) packageImports.get(i);
-                String clsName = pack + name;
-                try {
-                    getClassLoader().loadClass(clsName);
-                    resolution = clsName;
-                    break;
-                } catch (ClassNotFoundException cnfe){
-                    if (cnfe.getCause() instanceof CompilationFailedException) {
-                        resolution = clsName;
-                        break;
-                    }
-                } catch (NoClassDefFoundError ncdfe) {
-                    //fall through
-                }
-            }
-            if (resolution != null) {
-                break;
-            }
-
-            //
-            // Last chance, check the default imports.
-
-            for (int i = 0; i < DEFAULT_IMPORTS.length; i++) {
-                String qualified = DEFAULT_IMPORTS[i] + scalar;
-                try {
-                    getClassLoader().loadClass(qualified);
-
-                    resolution = qualified + postfix;
-                    break;                                        // <<< FLOW CONTROL <<<<<<<<<
-                } catch (ClassNotFoundException cnfe){
-                    if (cnfe.getCause() instanceof CompilationFailedException) {
-                        resolution = qualified + postfix;
-                        break;
-                    }
-                } catch (NoClassDefFoundError ncdfee) {
-                    // fall through
-                }
-            }
-
-        }
-        while (false);
-
-
-        //
-        // Cache the solution and return it
-
-        if (resolution == null) {
-            resolutions.put(name, NOT_RESOLVED);
-            return (safe ? name : null);
-        }
-        else {
-            resolutions.put(name, resolution);
-            return resolution;
-        }
-    }
-*/
-    
-    /**
-     * Returns two names joined by a dot.  If the base name is
+     * @return Two names joined by a dot. If the base name is
      * empty, returns the name unchanged.
+     * @param base typically a package
+     * @param name typically a simple unqualified class name
      */
     public static String dot(String base, String name) {
         if (base != null && base.length() > 0) {
             return base + "." + name;
         }
-
         return name;
     }
 
@@ -275,26 +123,37 @@ public class ASTHelper {
         return dot(base, "");
     }
 
-    protected void importClass(ClassNode type, String name, String as) {
-        if (as == null) as=name;
-        output.addImport(as, type);
-        imports.put(as, type);
+    protected void addImport(ClassNode type, String name, String aliasName) {
+        addImport(type, name, aliasName, new ArrayList<AnnotationNode>());
     }
 
-    protected void staticImportMethodOrField(ClassNode type, String name, String alias) {
+    protected void addImport(ClassNode type, String name, String aliasName, List<AnnotationNode> annotations) {
+        if (aliasName == null) aliasName=name;
+        output.addImport(aliasName, type, annotations);
+    }
+
+    protected void addStaticImport(ClassNode type, String name, String alias) {
+        addStaticImport(type, name, alias, new ArrayList<AnnotationNode>());
+    }
+
+    protected void addStaticImport(ClassNode type, String name, String alias, List<AnnotationNode> annotations) {
         if (alias == null) alias = name;
-        output.addStaticMethodOrField(type, name, alias);
+        output.addStaticImport(type, name, alias, annotations);
     }
 
-    protected void staticImportClassWithStar(ClassNode type, String importClass) {
-        // keep track of the fact that it was a static import
-        output.addStaticImportClass(importClass, type);
+    protected void addStaticStarImport(ClassNode type, String importClass) {
+        addStaticStarImport(type, importClass, new ArrayList<AnnotationNode>());
     }
 
-    protected void importPackageWithStar(String importPackage) {
-        String[] classes = output.addImportPackage( dot(importPackage) );
-        for( int i = 0; i < classes.length; i++ ) {
-            imports.put( classes[i], dot(importPackage, classes[i]) );
-        }
+    protected void addStaticStarImport(ClassNode type, String importClass, List<AnnotationNode> annotations) {
+        output.addStaticStarImport(importClass, type, annotations);
+    }
+
+    protected void addStarImport(String importPackage) {
+        addStarImport(importPackage, new ArrayList<AnnotationNode>());
+    }
+
+    protected void addStarImport(String importPackage, List<AnnotationNode> annotations) {
+        output.addStarImport( dot(importPackage), annotations );
     }
 }

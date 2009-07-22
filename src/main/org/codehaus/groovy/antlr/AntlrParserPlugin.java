@@ -48,7 +48,6 @@ import java.util.Set;
  * A parser plugin which adapts the JSR Antlr Parser to the Groovy runtime
  *
  * @author <a href="mailto:jstrachan@protique.com">James Strachan</a>
- * @version $Revision$
  */
 public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, GroovyTokenTypes {
 
@@ -182,8 +181,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 System.out.println("Cannot create " + sourceUnit.getName() + ".html");
             }
         }
-
-
     }
 
     private void saveAsXML(String name, AST ast) {
@@ -260,18 +257,35 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     //-------------------------------------------------------------------------
 
     protected void packageDef(AST packageDef) {
+        List<AnnotationNode> annotations = new ArrayList<AnnotationNode>();
         AST node = packageDef.getFirstChild();
         if (isType(ANNOTATIONS, node)) {
+            if (node.getFirstChild() != null) {
+                AST child = node.getFirstChild();
+                if (isType(ANNOTATION, child))
+                    annotations.add(annotation(child));
+            }
             node = node.getNextSibling();
         }
         String name = qualifiedName(node);
-        setPackageName(name);
+        // TODO should we check package node doesn't already exist? conflict?
+        PackageNode packageNode = setPackage(name, annotations);
+        configureAST(packageNode, packageDef);
     }
-    
+
     protected void importDef(AST importNode) {
         boolean isStatic = importNode.getType() == STATIC_IMPORT;
+        List<AnnotationNode> annotations = new ArrayList<AnnotationNode>();
 
         AST node = importNode.getFirstChild();
+        if (isType(ANNOTATIONS, node)) {
+            if (node.getFirstChild() != null) {
+                AST child = node.getFirstChild();
+                if (isType(ANNOTATION, child))
+                    annotations.add(annotation(child));
+            }
+            node = node.getNextSibling();
+        }
 
         String alias = null;
         if (isType(LITERAL_as, node)) {
@@ -286,7 +300,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             // import is like  "import Foo"
             ClassNode type = ClassHelper.make(name);
             configureAST(type,importNode);
-            importClass(type, name, alias);
+            addImport(type, name, alias, annotations);
             return;
         }
 
@@ -299,10 +313,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 // packageName is actually a className in this case
                 ClassNode type = ClassHelper.make(packageName);
                 configureAST(type, importNode);
-                staticImportClassWithStar(type, packageName);
+                addStaticStarImport(type, packageName, annotations);
             } else {
                 // import is like "import foo.*"
-                importPackageWithStar(packageName);
+                addStarImport(packageName, annotations);
             }
 
             if (alias!=null) throw new GroovyBugError(
@@ -315,18 +329,18 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 // packageName is really class name in this case
                 ClassNode type = ClassHelper.make(packageName);
                 configureAST(type, importNode);
-                staticImportMethodOrField(type, name, alias);
+                addStaticImport(type, name, alias, annotations);
             } else {
                 // import is like "import foo.Bar"
                 ClassNode type = ClassHelper.make(packageName+"."+name);
                 configureAST(type, importNode);
-                importClass(type, name, alias);
+                addImport(type, name, alias, annotations);
             }
         }
     }
 
     protected void annotationDef(AST classDef) {
-        List annotations = new ArrayList();
+        List<AnnotationNode> annotations = new ArrayList<AnnotationNode>();
         AST node = classDef.getFirstChild();
         int modifiers = Opcodes.ACC_PUBLIC;
         if (isType(MODIFIERS, node)) {
@@ -366,7 +380,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     
     protected void interfaceDef(AST classDef) {
         int oldInnerClassCounter = innerClassCounter;
-        List annotations = new ArrayList();
+        List<AnnotationNode> annotations = new ArrayList<AnnotationNode>();
         AST node = classDef.getFirstChild();
         int modifiers = Opcodes.ACC_PUBLIC;
         if (isType(MODIFIERS, node)) {
@@ -434,7 +448,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
     
     protected void innerClassDef(AST classDef) {
-        List annotations = new ArrayList();
+        List<AnnotationNode> annotations = new ArrayList<AnnotationNode>();
         AST node = classDef.getFirstChild();
         int modifiers = Opcodes.ACC_PUBLIC;
         if (isType(MODIFIERS, node)) {
@@ -537,12 +551,12 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     
     protected void enumDef(AST enumNode) {
         assertNodeType(ENUM_DEF, enumNode);
-        List annotations = new ArrayList();
+        List<AnnotationNode> annotations = new ArrayList<AnnotationNode>();
         
         AST node = enumNode.getFirstChild();
         int modifiers = Opcodes.ACC_PUBLIC;
         if (isType(MODIFIERS, node)) {
-            modifiers = modifiers(node,annotations,modifiers);
+            modifiers = modifiers(node, annotations, modifiers);
             node = node.getNextSibling();
         }
         
@@ -585,7 +599,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         EnumHelper.addEnumConstant(classNode, identifier, init);
     }
     
-    protected void throwsList(AST node,List list) {
+    protected void throwsList(AST node, List list) {
     	String name;
     	if (isType(DOT, node)) {
     		name = qualifiedName(node);
@@ -600,7 +614,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
 	protected void methodDef(AST methodDef) {
-        List annotations = new ArrayList();
+        List<AnnotationNode> annotations = new ArrayList<AnnotationNode>();
         AST node = methodDef.getFirstChild();
         
         GenericsType[] generics=null;
@@ -705,7 +719,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
     
     protected void constructorDef(AST constructorDef) {
-        List annotations = new ArrayList();
+        List<AnnotationNode> annotations = new ArrayList<AnnotationNode>();
         AST node = constructorDef.getFirstChild();
         int modifiers = Opcodes.ACC_PUBLIC;
         if (isType(MODIFIERS, node)) {
@@ -736,7 +750,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected void fieldDef(AST fieldDef) {
-        List annotations = new ArrayList();
+        List<AnnotationNode> annotations = new ArrayList<AnnotationNode>();
         AST node = fieldDef.getFirstChild();
 
         int modifiers = 0;
@@ -769,28 +783,28 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         if (classNode.isInterface() && initialValue == null && type != null) {
             if (type==ClassHelper.int_TYPE) {
-                initialValue = new ConstantExpression(Integer.valueOf(0));
+                initialValue = new ConstantExpression(0);
             }
             else if (type==ClassHelper.long_TYPE) {
-                initialValue = new ConstantExpression(new Long(0L));
+                initialValue = new ConstantExpression(0L);
             }
             else if (type==ClassHelper.double_TYPE) {
-                initialValue = new ConstantExpression(new Double(0.0));
+                initialValue = new ConstantExpression(0.0);
             }
             else if (type==ClassHelper.float_TYPE) {
-                initialValue = new ConstantExpression(new Float(0.0F));
+                initialValue = new ConstantExpression(0.0F);
             }
             else if (type==ClassHelper.boolean_TYPE) {
                 initialValue = ConstantExpression.FALSE;
             }
             else if (type==ClassHelper.short_TYPE) {
-                initialValue = new ConstantExpression(new Short((short) 0));
+                initialValue = new ConstantExpression((short) 0);
             }
             else if (type==ClassHelper.byte_TYPE) {
-                initialValue = new ConstantExpression(new Byte((byte) 0));
+                initialValue = new ConstantExpression((byte) 0);
             }
             else if (type==ClassHelper.char_TYPE) {
-                initialValue = new ConstantExpression(new Character((char) 0));
+                initialValue = new ConstantExpression((char) 0);
             }
         }
 
@@ -844,7 +858,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected ClassNode[] interfaces(AST node) {
-        List interfaceList = new ArrayList();
+        List<ClassNode> interfaceList = new ArrayList<ClassNode>();
         for (AST implementNode = node.getFirstChild(); implementNode != null; implementNode = implementNode.getNextSibling()) {
             interfaceList.add(makeTypeWithArguments(implementNode));
         }
@@ -864,7 +878,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             return null;
         }
         else {
-            List parameters = new ArrayList();
+            List<Parameter> parameters = new ArrayList<Parameter>();
             do {
                 parameters.add(parameter(node));
                 node = node.getNextSibling();
@@ -877,7 +891,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected Parameter parameter(AST paramNode) {
-        List annotations = new ArrayList();
+        List<AnnotationNode> annotations = new ArrayList<AnnotationNode>();
         boolean variableParameterDef = isType(VARIABLE_PARAMETER_DEF,paramNode);
         AST node = paramNode.getFirstChild();
 
@@ -917,7 +931,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         return parameter;
     }
 
-    protected int modifiers(AST modifierNode, List annotations, int defaultModifiers) {
+    protected int modifiers(AST modifierNode, List<AnnotationNode> annotations, int defaultModifiers) {
         assertNodeType(MODIFIERS, modifierNode);
 
         boolean access = false;
@@ -1031,7 +1045,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
         return annotatedNode;
     }
-
 
 
     // Statements
@@ -1180,7 +1193,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 AST node = variableNode.getFirstChild();
                 // skip the final modifier if it's present
                 if (isType(MODIFIERS, node)) {
-                    int modifiersMask = modifiers(node, new ArrayList(), 0);
+                    int modifiersMask = modifiers(node, new ArrayList<AnnotationNode>(), 0);
                     // only final modifier allowed
                     if ((modifiersMask & ~Opcodes.ACC_FINAL) != 0) {
                         throw new ASTRuntimeException(node, "Only the 'final' modifier is allowed in front of the for loop variable.");
@@ -1247,7 +1260,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     protected Expression declarationExpression(AST variableDef) {
         AST node = variableDef.getFirstChild();
         ClassNode type = null;
-        List annotations = new ArrayList();
+        List<AnnotationNode> annotations = new ArrayList<AnnotationNode>();
         if (isType(MODIFIERS, node)) {
             // force check of modifier conflicts
             modifiers(node, annotations, 0);
@@ -1340,7 +1353,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected Statement caseStatements(AST node, List cases) {
-        List expressions = new LinkedList();
+        List<Expression> expressions = new LinkedList<Expression>();
         Statement statement = EmptyStatement.INSTANCE;
         Statement defaultStatement = EmptyStatement.INSTANCE;
         AST nextSibling = node;
@@ -1400,7 +1413,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         AST node = tryNode.getNextSibling();
 
         // let's do the catch nodes
-        List catches = new ArrayList();
+        List<CatchStatement> catches = new ArrayList<CatchStatement>();
         for (; node != null && isType(LITERAL_catch, node); node = node.getNextSibling()) {
             catches.add(catchStatement(node));
         }
@@ -1416,8 +1429,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         TryCatchStatement tryCatchStatement = new TryCatchStatement(tryStatement, finallyStatement);
         configureAST(tryCatchStatement, tryStatementNode);
-        for (Iterator iter = catches.iterator(); iter.hasNext();) {
-            CatchStatement statement = (CatchStatement) iter.next();
+        for (CatchStatement statement : catches) {
             tryCatchStatement.addCatch(statement);
         }
         return tryCatchStatement;
@@ -1804,8 +1816,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     
     private ClosureListExpression closureListExpression(AST node) {
         AST exprNode = node.getFirstChild();
-        LinkedList list = new LinkedList();
-        while (exprNode!=null) {
+        List<Expression> list = new LinkedList<Expression>();
+        while (exprNode != null) {
             if (isType(EXPR,exprNode)) {
                 Expression expr = expression(exprNode);
                 configureAST(expr, exprNode);
@@ -1915,7 +1927,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 */
 
     protected Expression listExpression(AST listNode) {
-        List expressions = new ArrayList();
+        List<Expression> expressions = new ArrayList<Expression>();
         AST elist = listNode.getFirstChild();
         assertNodeType(ELIST, elist);
 
@@ -2277,7 +2289,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     private ClassNode getAnonymousInnerClassNode(Expression arguments) {
         if (arguments instanceof TupleExpression) {
             TupleExpression te = (TupleExpression) arguments;
-            List expressions = te.getExpressions();
+            List<Expression> expressions = te.getExpressions();
             if (expressions.size()==0) return null;
             Expression last = (Expression) expressions.remove(expressions.size()-1);
             if (last instanceof AnonymousInnerClassCarrier) {
@@ -2617,10 +2629,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     
     protected ClassNode makeTypeWithArguments(AST rootNode) {
         ClassNode basicType = makeType(rootNode);
-        LinkedList typeArgumentList = new LinkedList();
+        List<GenericsType> typeArgumentList = new LinkedList<GenericsType>();
         AST node = rootNode.getFirstChild();
         if (node==null || isType(INDEX_OP, node) || isType(ARRAY_DECLARATOR, node)) return basicType;
-        //TODO: recognize combinatons of inner classes and generic types
+        //TODO: recognize combinations of inner classes and generic types
         if (isType(DOT, node)) return basicType;
         node = node.getFirstChild();
         if (node==null) return basicType;
@@ -2635,7 +2647,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
         
         if (typeArgumentList.size()>0) {
-            basicType.setGenericsTypes((GenericsType[]) typeArgumentList.toArray(new GenericsType[0]));
+            basicType.setGenericsTypes(typeArgumentList.toArray(new GenericsType[typeArgumentList.size()]));
         }
         return basicType;
     }
@@ -2773,7 +2785,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
 
-
     // Helper methods
     //-------------------------------------------------------------------------
 
@@ -2786,7 +2797,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     protected void configureAST(ASTNode node, AST ast) {
-        if (ast==null) throw new ASTRuntimeException(ast, "PARSER BUG: Tried to configure "+node.getClass().getName()+" with null Node");
+        if (ast == null) throw new ASTRuntimeException(ast, "PARSER BUG: Tried to configure "+node.getClass().getName()+" with null Node");
         node.setColumnNumber(ast.getColumn());
         node.setLineNumber(ast.getLine());
         if (ast instanceof GroovySourceAST) {
@@ -2813,7 +2824,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
 
     private String getTokenName(int token) {
-        if (tokenNames==null) return ""+token;
+        if (tokenNames == null) return ""+token;
         return tokenNames[token];
     }
     

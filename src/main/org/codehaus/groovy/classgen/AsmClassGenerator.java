@@ -149,7 +149,7 @@ public class AsmClassGenerator extends ClassGenerator {
     static final MethodCaller selectConstructorAndTransformArguments = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "selectConstructorAndTransformArguments");
 
     // exception blocks list
-    private List exceptionBlocks = new ArrayList();
+    private List<Runnable> exceptionBlocks = new ArrayList<Runnable>();
 
     private Set referencedClasses = new HashSet();
     private boolean passingParams;
@@ -226,7 +226,25 @@ public class AsmClassGenerator extends ClassGenerator {
                     BytecodeHelper.getClassInternalNames(classNode.getInterfaces())
             );
             cv.visitSource(sourceFile, null);
-            visitAnnotations(classNode, cv);
+            if (classNode.getName().endsWith("package-info")) {
+                PackageNode packageNode = classNode.getPackage();
+                if (packageNode != null) {
+                    // pull them out of package node but treat them like they were on class node
+                    for (AnnotationNode an : packageNode.getAnnotations()) {
+                        // skip built-in properties
+                        if (an.isBuiltIn()) continue;
+                        if (an.hasSourceRetention()) continue;
+
+                        AnnotationVisitor av = getAnnotationVisitor(classNode, an, cv);
+                        visitAnnotationAttributes(an, av);
+                        av.visitEnd();
+                    }
+                }
+                cv.visitEnd();
+                return;
+            } else {
+                visitAnnotations(classNode, cv);
+            }
 
             if (classNode.isInterface()) {
                 ClassNode owner = classNode;
@@ -372,10 +390,9 @@ public class AsmClassGenerator extends ClassGenerator {
      *
      * @param methods unfiltered list of methods for MOP
      * @param isThis  if true, then we are creating a MOP method on "this", "super" else
-     * @see #generateMopCalls(LinkedList,boolean)
+     * @see #generateMopCalls(LinkedList, boolean)
      */
     private void visitMopMethodList(List methods, boolean isThis) {
-        HashMap mops = new HashMap();
         class Key {
             int hash = 0;
             String name;
@@ -396,9 +413,10 @@ public class AsmClassGenerator extends ClassGenerator {
                 return other.name.equals(name) && equalParameterTypes(other.params,params);
             }
         }
-        LinkedList mopCalls = new LinkedList();
-        for (Iterator iter = methods.iterator(); iter.hasNext();) {
-            MethodNode mn = (MethodNode) iter.next();
+        HashMap<Key, MethodNode> mops = new HashMap<Key, MethodNode>();
+        LinkedList<MethodNode> mopCalls = new LinkedList<MethodNode>();
+        for (Object method : methods) {
+            MethodNode mn = (MethodNode) method;
             if ((mn.getModifiers() & ACC_ABSTRACT) != 0) continue;
             if (mn.isStatic()) continue;
             // no this$ methods for protected/public isThis=true
@@ -437,19 +455,18 @@ public class AsmClassGenerator extends ClassGenerator {
      * @param mopCalls list of methods a mop call method should be generated for
      * @param useThis  true if "this" should be used for the naming
      */
-    private void generateMopCalls(LinkedList mopCalls, boolean useThis) {
-        for (Iterator iter = mopCalls.iterator(); iter.hasNext();) {
-            MethodNode method = (MethodNode) iter.next();
+    private void generateMopCalls(LinkedList<MethodNode> mopCalls, boolean useThis) {
+        for (MethodNode method : mopCalls) {
             String name = getMopMethodName(method, useThis);
             Parameter[] parameters = method.getParameters();
             String methodDescriptor = BytecodeHelper.getMethodDescriptor(method.getReturnType(), method.getParameters());
             mv = cv.visitMethod(Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, name, methodDescriptor, null, null);
             mv.visitVarInsn(ALOAD, 0);
-            int newRegister = 1;            
+            int newRegister = 1;
             BytecodeHelper helper = new BytecodeHelper(mv);
-            for (int i = 0; i < parameters.length; i++) {
-                ClassNode type = parameters[i].getType();
-                helper.load(parameters[i].getType(), newRegister);
+            for (Parameter parameter : parameters) {
+                ClassNode type = parameter.getType();
+                helper.load(parameter.getType(), newRegister);
                 // increment to next register, double/long are using two places
                 newRegister++;
                 if (type == ClassHelper.double_TYPE || type == ClassHelper.long_TYPE) newRegister++;
@@ -549,8 +566,7 @@ public class AsmClassGenerator extends ClassGenerator {
         mv.visitJumpInsn(GOTO, finallyStart);
 
         // let's do all the exception blocks
-        for (Iterator iter = exceptionBlocks.iterator(); iter.hasNext();) {
-            Runnable runnable = (Runnable) iter.next();
+        for (Runnable runnable : exceptionBlocks) {
             runnable.run();
         }
         exceptionBlocks.clear();
@@ -561,9 +577,8 @@ public class AsmClassGenerator extends ClassGenerator {
            ListExpression list = (ListExpression) exp;
            AnnotationVisitor avl = av.visitArray(null);
            ClassNode componentType = type.getComponentType();
-           for (Iterator it = list.getExpressions().iterator(); it.hasNext();) {
-               Expression lExp = (Expression) it.next();
-               visitAnnotationDefaultExpression(avl,componentType, lExp);
+           for (Expression lExp : list.getExpressions()) {
+               visitAnnotationDefaultExpression(avl, componentType, lExp);
            }
        } else if (ClassHelper.isPrimitiveType(type) || type.equals(ClassHelper.STRING_TYPE)) {
            ConstantExpression constExp = (ConstantExpression) exp;
@@ -843,7 +858,7 @@ public class AsmClassGenerator extends ClassGenerator {
         mv.visitJumpInsn(IFEQ, l0);
 
         // if-else is here handled as a special version
-        // of a booelan expression
+        // of a boolean expression
         compileStack.pushBooleanExpression();
         ifElse.getIfBlock().visit(this);
         compileStack.pop();
@@ -922,7 +937,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
         // push expression string onto stack
         String expressionText = booleanExpression.getText();
-        List list = new ArrayList();
+        List<String> list = new ArrayList<String>();
         addVariableNames(booleanExpression, list);
         if (list.isEmpty()) {
             mv.visitLdcInsn(expressionText);
@@ -938,8 +953,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
             int tempIndex = compileStack.defineTemporaryVariable("assert", true);
 
-            for (Iterator iter = list.iterator(); iter.hasNext();) {
-                String name = (String) iter.next();
+            for (String name : list) {
                 String text = name + " = ";
                 if (first) {
                     first = false;
@@ -977,7 +991,7 @@ public class AsmClassGenerator extends ClassGenerator {
         mv.visitLabel(l1);
     }
 
-    private void addVariableNames(Expression expression, List list) {
+    private void addVariableNames(Expression expression, List<String> list) {
         if (expression instanceof BooleanExpression) {
             BooleanExpression boolExp = (BooleanExpression) expression;
             addVariableNames(boolExp.getExpression(), list);
@@ -995,7 +1009,6 @@ public class AsmClassGenerator extends ClassGenerator {
         onLineNumber(statement, "visitTryCatchFinally");
         visitStatement(statement);
 
-        CatchStatement catchStatement = statement.getCatchStatement(0);
         Statement tryStatement = statement.getTryStatement();
         final Statement finallyStatement = statement.getFinallyStatement();
 
@@ -1026,8 +1039,7 @@ public class AsmClassGenerator extends ClassGenerator {
         final Label tryEnd = new Label();
         mv.visitLabel(tryEnd);
 
-        for (Iterator it = statement.getCatchStatements().iterator(); it.hasNext();) {
-            catchStatement = (CatchStatement) it.next();
+        for (CatchStatement catchStatement : statement.getCatchStatements()) {
             ClassNode exceptionType = catchStatement.getExceptionType();
             // start catch block, label needed for exception table
             final Label catchStart = new Label();
@@ -3205,14 +3217,14 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitClosureListExpression(ClosureListExpression expression) {
         compileStack.pushVariableScope(expression.getVariableScope());
 
-        List expressions = expression.getExpressions();
+        List<Expression> expressions = expression.getExpressions();
         final int size = expressions.size();
         // init declarations
-        LinkedList declarations = new LinkedList();
+        LinkedList<DeclarationExpression> declarations = new LinkedList<DeclarationExpression>();
         for (int i = 0; i < size; i++) {
-            Object expr = expressions.get(i);
+            Expression expr = expressions.get(i);
             if (expr instanceof DeclarationExpression) {
-                declarations.add(expr);
+                declarations.add((DeclarationExpression) expr);
                 DeclarationExpression de = (DeclarationExpression) expr;
                 BinaryExpression be = new BinaryExpression(
                         de.getLeftExpression(),
@@ -3418,12 +3430,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private void visitAnnotations(AnnotatedNode targetNode, Object visitor) {
-        List annotations = targetNode.getAnnotations();
-        if (annotations.isEmpty()) return;
-
-        Iterator it = annotations.iterator();
-        while (it.hasNext()) {
-            AnnotationNode an = (AnnotationNode) it.next();
+        for (AnnotationNode an : targetNode.getAnnotations()) {
             // skip built-in properties
             if (an.isBuiltIn()) continue;
             if (an.hasSourceRetention()) continue;
@@ -3434,14 +3441,8 @@ public class AsmClassGenerator extends ClassGenerator {
         }
     }
 
-    // TODO remove dup between this and visitAnnotations
     private void visitParameterAnnotations(Parameter parameter, int paramNumber, MethodVisitor mv) {
-        List annotations = parameter.getAnnotations();
-        if (annotations.isEmpty()) return;
-
-        Iterator it = annotations.iterator();
-        while (it.hasNext()) {
-            AnnotationNode an = (AnnotationNode) it.next();
+        for (AnnotationNode an : parameter.getAnnotations()) {
             // skip built-in properties
             if (an.isBuiltIn()) continue;
             if (an.hasSourceRetention()) continue;
@@ -3651,8 +3652,7 @@ public class AsmClassGenerator extends ClassGenerator {
                                 conArgs)));
 
         // let's assign all the parameter fields from the outer context
-        for (int i = 0; i < localVariableParams.length; i++) {
-            Parameter param = localVariableParams[i];
+        for (Parameter param : localVariableParams) {
             String paramName = param.getName();
             Expression initialValue = null;
             ClassNode type = param.getType();
@@ -3698,7 +3698,7 @@ public class AsmClassGenerator extends ClassGenerator {
         return answer;
     }
 
-    /**
+    /*
      * this method is called for local variables shared between scopes.
      * These variables must not have init values because these would
      * then in later steps be used to create multiple versions of the
@@ -3778,7 +3778,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     // todo: optimization: change to return primitive boolean. need to adjust the BinaryExpression and isComparisonExpression for
-    // consistancy.
+    // consistency.
     protected void evaluateLogicalAndExpression(BinaryExpression expression) {
         visitBooleanExpression(new BooleanExpression(expression.getLeftExpression()));
         Label l0 = new Label();
@@ -3930,13 +3930,13 @@ public class AsmClassGenerator extends ClassGenerator {
                     mv.visitInsn(DUP_X1);
                 }
             };
-            for (Iterator iterator = tuple.getExpressions().iterator(); iterator.hasNext();) {
-                VariableExpression var = (VariableExpression) iterator.next();
+            for (Expression e : tuple.getExpressions()) {
+                VariableExpression var = (VariableExpression) e;
                 MethodCallExpression call = new MethodCallExpression(
                         lhsExpr, "getAt",
-                        new ArgumentListExpression(new ConstantExpression(Integer.valueOf(i))));
+                        new ArgumentListExpression(new ConstantExpression(i)));
                 ClassNode type = getLHSType(var);
-                assignmentCastAndVisit(type,call);
+                assignmentCastAndVisit(type, call);
                 i++;
                 if (defineVariable) {
                     compileStack.defineVariable(var, true);
@@ -3948,7 +3948,7 @@ public class AsmClassGenerator extends ClassGenerator {
             VariableExpression var = (VariableExpression) leftExpression;
             compileStack.defineVariable(var, true);
         } else {
-            mv.visitInsn(DUP);  // to leave a copy of the rightexpression value on the stack after the assignment.
+            mv.visitInsn(DUP);  // to leave a copy of the rightExpression value on the stack after the assignment.
             leftExpression.visit(this);
         }
         rightHandType = null;
@@ -4097,7 +4097,7 @@ public class AsmClassGenerator extends ClassGenerator {
     protected void evaluateInstanceof(BinaryExpression expression) {
         visitAndAutoboxBoolean(expression.getLeftExpression());
         Expression rightExp = expression.getRightExpression();
-        ClassNode classType = ClassHelper.DYNAMIC_TYPE;
+        ClassNode classType;
         if (rightExp instanceof ClassExpression) {
             ClassExpression classExp = (ClassExpression) rightExp;
             classType = classExp.getType();
@@ -4247,7 +4247,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 if (!variable.isDynamicTyped()) return type;
             }
             if (variable == null) {
-                org.codehaus.groovy.ast.Variable var = (org.codehaus.groovy.ast.Variable) compileStack.getScope().getReferencedClassVariable(varExpr.getName());
+                org.codehaus.groovy.ast.Variable var = compileStack.getScope().getReferencedClassVariable(varExpr.getName());
                 if (var != null && !var.isDynamicTyped()) return var.getType();
             }
         }
@@ -4347,27 +4347,27 @@ public class AsmClassGenerator extends ClassGenerator {
 
         public void visitInsn(int opcode) {
             dropBoxing ();
-            super.visitInsn(opcode);    //To change body of overridden methods use File | Settings | File Templates.
+            super.visitInsn(opcode);
         }
 
         public void visitIntInsn(int opcode, int operand) {
             dropBoxing ();
-            super.visitIntInsn(opcode, operand);    //To change body of overridden methods use File | Settings | File Templates.
+            super.visitIntInsn(opcode, operand);
         }
 
         public void visitVarInsn(int opcode, int var) {
             dropBoxing ();
-            super.visitVarInsn(opcode, var);    //To change body of overridden methods use File | Settings | File Templates.
+            super.visitVarInsn(opcode, var);
         }
 
         public void visitTypeInsn(int opcode, String desc) {
             dropBoxing ();
-            super.visitTypeInsn(opcode, desc);    //To change body of overridden methods use File | Settings | File Templates.
+            super.visitTypeInsn(opcode, desc);
         }
 
         public void visitFieldInsn(int opcode, String owner, String name, String desc) {
             dropBoxing ();
-            super.visitFieldInsn(opcode, owner, name, desc);    //To change body of overridden methods use File | Settings | File Templates.
+            super.visitFieldInsn(opcode, owner, name, desc);
         }
 
         public void visitMethodInsn(int opcode, String owner, String name, String desc) {
@@ -4380,11 +4380,11 @@ public class AsmClassGenerator extends ClassGenerator {
                   if (boxingDesc != null)
                     boxingDesc = null;
                   else
-                    super.visitMethodInsn(opcode, owner, name, desc);    //To change body of overridden methods use File | Settings | File Templates.
+                    super.visitMethodInsn(opcode, owner, name, desc);
               }
               else {
                 dropBoxing();
-                super.visitMethodInsn(opcode, owner, name, desc);    //To change body of overridden methods use File | Settings | File Templates.
+                super.visitMethodInsn(opcode, owner, name, desc);
               }
             }
         }
@@ -4399,42 +4399,42 @@ public class AsmClassGenerator extends ClassGenerator {
 
         public void visitJumpInsn(int opcode, Label label) {
             dropBoxing ();
-            super.visitJumpInsn(opcode, label);    //To change body of overridden methods use File | Settings | File Templates.
+            super.visitJumpInsn(opcode, label);
         }
 
         public void visitLabel(Label label) {
             dropBoxing ();
-            super.visitLabel(label);    //To change body of overridden methods use File | Settings | File Templates.
+            super.visitLabel(label);
         }
 
         public void visitLdcInsn(Object cst) {
             dropBoxing ();
-            super.visitLdcInsn(cst);    //To change body of overridden methods use File | Settings | File Templates.
+            super.visitLdcInsn(cst);
         }
 
         public void visitIincInsn(int var, int increment) {
             dropBoxing ();
-            super.visitIincInsn(var, increment);    //To change body of overridden methods use File | Settings | File Templates.
+            super.visitIincInsn(var, increment);
         }
 
         public void visitTableSwitchInsn(int min, int max, Label dflt, Label labels[]) {
             dropBoxing ();
-            super.visitTableSwitchInsn(min, max, dflt, labels);    //To change body of overridden methods use File | Settings | File Templates.
+            super.visitTableSwitchInsn(min, max, dflt, labels);
         }
 
         public void visitLookupSwitchInsn(Label dflt, int keys[], Label labels[]) {
             dropBoxing ();
-            super.visitLookupSwitchInsn(dflt, keys, labels);    //To change body of overridden methods use File | Settings | File Templates.
+            super.visitLookupSwitchInsn(dflt, keys, labels);
         }
 
         public void visitMultiANewArrayInsn(String desc, int dims) {
             dropBoxing ();
-            super.visitMultiANewArrayInsn(desc, dims);    //To change body of overridden methods use File | Settings | File Templates.
+            super.visitMultiANewArrayInsn(desc, dims);
         }
 
         public void visitTryCatchBlock(Label start, Label end, Label handler, String type) {
             dropBoxing ();
-            super.visitTryCatchBlock(start, end, handler, type);    //To change body of overridden methods use File | Settings | File Templates.
+            super.visitTryCatchBlock(start, end, handler, type);
         }
     }
 }

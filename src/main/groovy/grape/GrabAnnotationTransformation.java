@@ -97,26 +97,15 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             if (!grapesAnnotations.isEmpty()) {
                 for (AnnotationNode node : grapesAnnotations) {
                     Expression init = node.getMember("initClass");
-
                     Expression value = node.getMember("value");
                     if (value instanceof ListExpression) {
                         for (Object o : ((ListExpression)value).getExpressions()) {
-                            if (o instanceof AnnotationConstantExpression) {
-                                if (((AnnotationConstantExpression)o).getValue() instanceof AnnotationNode) {
-                                    AnnotationNode annotation = (AnnotationNode) ((AnnotationConstantExpression)o).getValue();
-                                    if ((init != null) && (annotation.getMember("initClass") != null)) {
-                                        annotation.setMember("initClass", init);
-                                    }
-                                    String name = annotation.getClassNode().getName();
-                                    if ((GRAB_CLASS_NAME.equals(name))
-                                        || (allowShortGrab && GRAB_SHORT_NAME.equals(name))
-                                        || (grabAliases.contains(name)))
-                                    {
-                                        grabAnnotations.add(annotation);
-                                    }
-                                }
+                            if (o instanceof ConstantExpression) {
+                                extractGrab(init, (ConstantExpression) o);
                             }
                         }
+                    } else if (value instanceof ConstantExpression) {
+                        extractGrab(init, (ConstantExpression) value);
                     }
                     // don't worry if it's not a ListExpression, or AnnotationConstant, etc.
                     // the rest of GroovyC will flag it as a syntax error later, so we don't
@@ -183,6 +172,21 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                 // The down side is we lose line number information for the offending
                 // @Grab annotation.
                 source.addException(re);
+            }
+        }
+    }
+
+    private void extractGrab(Expression init, ConstantExpression ce) {
+        if (ce.getValue() instanceof AnnotationNode) {
+            AnnotationNode annotation = (AnnotationNode) ce.getValue();
+            if ((init != null) && (annotation.getMember("initClass") != null)) {
+                annotation.setMember("initClass", init);
+            }
+            String name = annotation.getClassNode().getName();
+            if ((GRAB_CLASS_NAME.equals(name))
+                    || (allowShortGrab && GRAB_SHORT_NAME.equals(name))
+                    || (grabAliases.contains(name))) {
+                grabAnnotations.add(annotation);
             }
         }
     }

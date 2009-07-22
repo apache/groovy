@@ -546,7 +546,7 @@ public class JavaStubGenerator
     }
 
     private void genImports(ClassNode classNode, PrintWriter out) {
-        Set imports = new HashSet();
+        Set<String> imports = new HashSet<String>();
 
         //
         // HACK: Add the default imports... since things like Closure and GroovyObject seem to parse out w/o fully qualified classnames.
@@ -554,20 +554,18 @@ public class JavaStubGenerator
         imports.addAll(Arrays.asList(ResolveVisitor.DEFAULT_IMPORTS));
         
         ModuleNode moduleNode = classNode.getModule();
-        for (Iterator it = moduleNode.getImportPackages().iterator(); it.hasNext();) {
-            imports.add(it.next());
+        for (String packageName : moduleNode.getImportPackages()) {
+            imports.add(packageName);
         }
 
-        for (Iterator it = moduleNode.getImports().iterator(); it.hasNext();) {
-            ImportNode imp = (ImportNode) it.next();
+        for (ImportNode imp : moduleNode.getImports()) {
             String name = imp.getType().getName();
             int lastDot = name.lastIndexOf('.');
             if (lastDot != -1)
                 imports.add(name.substring(0, lastDot + 1));
         }
 
-        for (Iterator it = imports.iterator(); it.hasNext();) {
-            String imp = (String) it.next();
+        for (String imp : imports) {
             out.print("import ");
             out.print(imp);
             out.println("*;");

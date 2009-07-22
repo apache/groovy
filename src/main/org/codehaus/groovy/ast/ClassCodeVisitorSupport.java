@@ -44,12 +44,42 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
     
     public void visitClass(ClassNode node) {
         visitAnnotations(node);
+        visitPackage(node.getPackage());
+        visitImports(node.getModule());
         node.visitContents(this);
         for (Statement element : node.getObjectInitializerStatements()) {
             element.visit(this);
         }
     }
-    
+
+    public void visitPackage(PackageNode node) {
+        if (node != null) {
+            visitAnnotations(node);
+            node.visit(this);
+        }
+    }
+
+    public void visitImports(ModuleNode node) {
+        if (node != null) {
+            for (ImportNode importNode : node.getImports()) {
+                visitAnnotations(importNode);
+                importNode.visit(this);
+            }
+            for (ImportNode importStarNode : node.getStarImports()) {
+                visitAnnotations(importStarNode);
+                importStarNode.visit(this);
+            }
+            for (ImportNode importStaticNode : node.getStaticImports().values()) {
+                visitAnnotations(importStaticNode);
+                importStaticNode.visit(this);
+            }
+            for (ImportNode importStaticStarNode : node.getStaticStarImports().values()) {
+                visitAnnotations(importStaticStarNode);
+                importStaticStarNode.visit(this);
+            }
+        }
+    }
+
     public void visitAnnotations(AnnotatedNode node) {
         List<AnnotationNode> annotations = node.getAnnotations();
         if (annotations.isEmpty()) return;

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.ast.expr.ClassExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
@@ -117,22 +116,21 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         }
     }
 
-    public static ClassNode[] EMPTY_ARRAY = new ClassNode[0];
-
-    public static ClassNode THIS = new ClassNode(Object.class);
-    public static ClassNode SUPER = new ClassNode(Object.class);
+    public static final ClassNode[] EMPTY_ARRAY = new ClassNode[0];
+    public static final ClassNode THIS = new ClassNode(Object.class);
+    public static final ClassNode SUPER = new ClassNode(Object.class);
 
     private String name;
     private int modifiers;
     private ClassNode[] interfaces;
     private MixinNode[] mixins;
-    private List<ConstructorNode> constructors = new ArrayList<ConstructorNode>();
-    private List<Statement> objectInitializers = new ArrayList<Statement>();
+    private final List<ConstructorNode> constructors = new ArrayList<ConstructorNode>();
+    private final List<Statement> objectInitializers = new ArrayList<Statement>();
     private MapOfLists methods;
     private List<MethodNode> methodsList;
-    private LinkedList<FieldNode> fields = new LinkedList<FieldNode>();
-    private List<PropertyNode> properties = new ArrayList<PropertyNode>();
-    private Map<String,FieldNode> fieldIndex = new HashMap<String, FieldNode>();
+    private final LinkedList<FieldNode> fields = new LinkedList<FieldNode>();
+    private final List<PropertyNode> properties = new ArrayList<PropertyNode>();
+    private final Map<String, FieldNode> fieldIndex = new HashMap<String, FieldNode>();
     private ModuleNode module;
     private CompileUnit compileUnit;
     private boolean staticClass = false;
@@ -145,7 +143,6 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * The ASTTransformations to be applied to the Class
      */
     private Map<CompilePhase, Map<Class<? extends ASTTransformation>, Set<ASTNode>>> transformInstances;
-
 
     // use this to synchronize access for the lazy init
     protected Object lazyInitLock = new Object();
@@ -207,13 +204,13 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     /**
-     * Returns if this instance is a primary ClassNode
+     * @return true if this instance is a primary ClassNode
      */
     public boolean isPrimaryClassNode(){
     	return redirect().isPrimaryNode || (componentType!= null && componentType.isPrimaryClassNode());
     }
 
-    /**
+    /*
      * Constructor used by makeArray() if no real class is available
      */
     private ClassNode(ClassNode componentType) {
@@ -222,7 +219,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         isPrimaryNode=false;
     }
 
-    /**
+    /*
      * Constructor used by makeArray() if a real class is available
      */
     private ClassNode(Class c, ClassNode componentType) {
@@ -288,6 +285,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @param modifiers  the modifiers,
      * @param superClass the base class name - use "java.lang.Object" if no direct
      *                   base class
+     * @param interfaces the interfaces for this class
+     * @param mixins     the mixins for this class
      * @see org.objectweb.asm.Opcodes
      */
     public ClassNode(String name, int modifiers, ClassNode superClass, ClassNode[] interfaces, MixinNode[] mixins) {
@@ -301,8 +300,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             usesGenerics = superClass.isUsingGenerics();
         }
         if (!usesGenerics && interfaces!=null) {
-            for (int i = 0; i < interfaces.length; i++) {
-                usesGenerics = usesGenerics || interfaces[i].isUsingGenerics();
+            for (ClassNode anInterface : interfaces) {
+                usesGenerics = usesGenerics || anInterface.isUsingGenerics();
             }
         }
         this.methods = new MapOfLists();
@@ -322,8 +321,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     /**
-     * Returns a list containing FieldNode objects for
-     * each field in the class represented by this ClassNode
+     * @return the list of FieldNode's associated with this ClassNode
      */
     public List<FieldNode> getFields() {
         if (!redirect().lazyInitDone) redirect().lazyClassInit();
@@ -332,8 +330,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     /**
-     * Returns an array of ClassNodes representing the
-     * interfaces the class implements
+     * @return the array of interfaces which this ClassNode implements
      */
     public ClassNode[] getInterfaces() {
         if (!redirect().lazyInitDone) redirect().lazyClassInit();
@@ -349,13 +346,15 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         }
     }
 
+    /**
+     * @return the array of mixins associated with this ClassNode
+     */
     public MixinNode[] getMixins() {
         return redirect().mixins;
     }
 
     /**
-     * Returns a list containing MethodNode objects for
-     * each method in the class represented by this ClassNode
+     * @return the list of methods associated with this ClassNode
      */
     public List<MethodNode> getMethods() {
         if (!redirect().lazyInitDone) redirect().lazyClassInit();
@@ -364,9 +363,8 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     }
 
     /**
-     * Returns a list containing MethodNode objects for
-     * each abstract method in the class represented by
-     * this ClassNode
+     * @return the list of abstract methods associated with this
+     * ClassNode or null if there are no such methods
      */
     public List<MethodNode> getAbstractMethods() {
         List<MethodNode> result = new ArrayList<MethodNode>(3);
@@ -396,11 +394,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     private void getAllInterfaces(Set<ClassNode> res) {
         if (isInterface())
           res.add(this);
-        
-        ClassNode[] interfaces = getInterfaces();
-        for (int i = 0; i < interfaces.length; i++) {
-            res.add(interfaces[i]);
-            interfaces[i].getAllInterfaces(res);
+
+        for (ClassNode anInterface : getInterfaces()) {
+            res.add(anInterface);
+            anInterface.getAllInterfaces(res);
         }
     }
 
@@ -415,9 +412,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         }
 
         // add in unimplemented abstract methods from the interfaces
-        ClassNode[] interfaces = getInterfaces();
-        for (int i = 0; i < interfaces.length; i++) {
-            ClassNode iface = interfaces[i];
+        for (ClassNode iface : getInterfaces()) {
             Map<String, MethodNode> ifaceMethodsMap = iface.getDeclaredMethodsMap();
             for (String methSig : ifaceMethodsMap.keySet()) {
                 if (!result.containsKey(methSig)) {
@@ -462,6 +457,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public ModuleNode getModule() {
         return redirect().module;
+    }
+
+    public PackageNode getPackage() {
+        return getModule() == null ? null : getModule().getPackage();
     }
 
     public void setModule(ModuleNode module) {
