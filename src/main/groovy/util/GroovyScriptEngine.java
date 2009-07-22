@@ -79,7 +79,7 @@ public class GroovyScriptEngine implements ResourceConnector {
     private final GroovyClassLoader groovyLoader;
     private final Map<String, ScriptCacheEntry> scriptCache = new ConcurrentHashMap<String, ScriptCacheEntry>();
     private CompilerConfiguration config = new CompilerConfiguration(CompilerConfiguration.DEFAULT);
-    
+
     //TODO: more finals?
     private static class ScriptCacheEntry {
         final private Class scriptClass;
@@ -411,6 +411,8 @@ public class GroovyScriptEngine implements ResourceConnector {
 
     protected boolean isSourceNewer(URLConnection conn, ScriptCacheEntry entry) throws ResourceException  {
         if (entry==null) return true;
+        final long entryChangeTime = entry.lastModified + config.getMinimumRecompilationInterval();
+        if (entryChangeTime<System.currentTimeMillis()) return false;
         long lastMod;
         // Special handling for file:// protocol, as getLastModified() often reports
         // incorrect results (-1)
@@ -428,7 +430,7 @@ public class GroovyScriptEngine implements ResourceConnector {
                 throw new ResourceException(e);
             }
         }
-        return entry.lastModified + config.getMinimumRecompilationInterval() < lastMod;
+        return entryChangeTime < lastMod;
     }
     
     /**
@@ -439,5 +441,22 @@ public class GroovyScriptEngine implements ResourceConnector {
      */
     public GroovyClassLoader getGroovyClassLoader() {
         return groovyLoader;
+    }
+    
+    /**
+     * @return a non null compiler configuration
+     */
+    public CompilerConfiguration getConfig() {
+        return config;
+    }
+
+    /**
+     * sets a compiler configuration
+     * @param config - the compiler configuration
+     * @throws NullPointerException if config is null
+     */
+    public void setConfig(CompilerConfiguration config) {
+        if (config==null) throw new NullPointerException("configuration cannot be null");
+        this.config = config;
     }
 }
