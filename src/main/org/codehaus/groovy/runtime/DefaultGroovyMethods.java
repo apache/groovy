@@ -7217,9 +7217,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Add a Character and a Number.
      * This operation will always create a new object for the result,
-     * while the operands remain unchanged.  This character should be one 
-     * of the digits '0' through '9', and the result is addition of the integer
-     * conversion of this character plus the operand.
+     * while the operands remain unchanged.  The ASCII value of the new
+     * character will be the ASCII value of the original character increased by number.
      *
      * @see Integer#valueOf(String)
      * @param left  a Character
@@ -7232,8 +7231,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Add a Number and a Character.  This assumes the character is one of the 
-     * digits '0' through '9'.
+     * Add a Number and a Character. The number is increased by the
+     * ASCII value of the character.
      *
      * @see Integer#valueOf(String)
      * @param left  a Number
@@ -7246,8 +7245,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Add two Characters.  Both characters are assumed to represent digits ('0' 
-     * through '9') and add the results.
+     * Add one Character to another by adding the ASCII
+     * value of one Character to the ASCII value of the
+     * other. The returned Character will have an ASCII
+     * value equal to the result of the addition.
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
      *
@@ -7339,7 +7340,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Subtract one Character from by subtracting the ASCII
+     * Subtract one Character from another by subtracting the ASCII
      * value of the second Character from the ASCII value of the
      * first Character. The returned Character will have an ASCII
      * value equal to the result of the subtraction.
