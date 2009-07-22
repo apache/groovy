@@ -135,6 +135,7 @@ public class GroovyScriptEngine implements ResourceConnector {
         public Class parseClass(GroovyCodeSource codeSource, boolean shouldCacheSource) throws CompilationFailedException {
             Class answer = super.parseClass(codeSource, shouldCacheSource);
             StringSetMap cache = getDepCache();
+            cache.makeTransitiveHull();
             long time = System.currentTimeMillis();
             for (Map.Entry<String,Set<String>> entry: cache.entrySet()) {
                 String entryName = entry.getKey();
