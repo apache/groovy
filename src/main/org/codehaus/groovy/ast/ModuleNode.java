@@ -130,6 +130,12 @@ public class ModuleNode extends ASTNode implements Opcodes {
         importNode.addAnnotations(annotations);
     }
 
+    @Deprecated
+    public String[] addImportPackage(String packageName) {
+        addStarImport(packageName);
+        return new String[]{};
+    }
+
     public void addStarImport(String packageName) {
         addStarImport(packageName, new ArrayList<AnnotationNode>());
     }
