@@ -7215,10 +7215,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Add a Character and a Number.
+     * Add a Character and a Number. The ordinal value of the Character
+     * is used in the addition (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      * This operation will always create a new object for the result,
-     * while the operands remain unchanged.  The ASCII value of the new
-     * character will be the ASCII value of the original character increased by number.
+     * while the operands remain unchanged.
      *
      * @see Integer#valueOf(String)
      * @param left  a Character
@@ -7226,13 +7227,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the Number corresponding to the addition of left and right
      * @since 1.0
      */
-    public static Character plus(Character left, Number right) {
-        return (char) (left + right.intValue());
+    public static Number plus(Character left, Number right) {
+        return NumberNumberPlus.plus(Integer.valueOf(left), right);
     }
 
     /**
-     * Add a Number and a Character. The number is increased by the
-     * ASCII value of the character.
+     * Add a Number and a Character.  The ordinal value of the Character
+     * is used in the addition (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @see Integer#valueOf(String)
      * @param left  a Number
@@ -7245,10 +7247,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Add one Character to another by adding the ASCII
-     * value of one Character to the ASCII value of the
-     * other. The returned Character will have an ASCII
-     * value equal to the result of the addition.
+     * Add one Character to another. The ordinal values of the Characters
+     * are used in the addition (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
      *
@@ -7258,13 +7259,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the Number corresponding to the addition of left and right
      * @since 1.0
      */
-    public static Character plus(Character left, Character right) {
-        return (char)(left + right);
+    public static Number plus(Character left, Character right) {
+        return plus(Integer.valueOf(left), right);
     }
 
     /**
-     * Compare a Character and a Number.  The ASCII value of the
-     * character is compared to the number.
+     * Compare a Character and a Number. The ordinal value of the Character
+     * is used in the comparison (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @param left  a Character
      * @param right a Number
@@ -7276,8 +7278,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Compare a Number and a Character.  The ASCII value of the
-     * character is compared to the number.
+     * Compare a Number and a Character. The ordinal value of the Character
+     * is used in the comparison (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @param left  a Number
      * @param right a Character
@@ -7289,7 +7292,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Compare two Characters.  Uses their ASCII values.
+     * Compare two Characters. The ordinal values of the Characters
+     * are compared (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @param left  a Character
      * @param right a Character
@@ -7314,21 +7319,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Subtract a Number from a Character.  The ASCII value of the new
-     * character will be the ASCII value of the original character reduced by number.
+     * Subtract a Number from a Character. The ordinal value of the Character
+     * is used in the subtraction (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @param left  a Character
      * @param right a Number
-     * @return the Character corresponding to the subtraction of right from left
+     * @return the Number corresponding to the subtraction of right from left
      * @since 1.0
      */
-    public static Character minus(Character left, Number right) {
-        return (char)(left - right.intValue());
+    public static Number minus(Character left, Number right) {
+        return NumberNumberMinus.minus(Integer.valueOf(left), right);
     }
 
     /**
-     * Subtract a Character from a Number.  The ASCII value of
-     * the Character is subtracted from the number.
+     * Subtract a Character from a Number. The ordinal value of the Character
+     * is used in the subtraction (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @param left  a Number
      * @param right a Character
@@ -7340,24 +7347,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Subtract one Character from another by subtracting the ASCII
-     * value of the second Character from the ASCII value of the
-     * first Character. The returned Character will have an ASCII
-     * value equal to the result of the subtraction.
+     * Subtract one Character from another. The ordinal values of the Characters
+     * is used in the comparison (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @param left  a Character
      * @param right a Character
-     * @return the Character corresponding to the subtraction of right from left
+     * @return the Number corresponding to the subtraction of right from left
      * @since 1.0
      */
-    public static Character minus(Character left, Character right) {
-        return (char)(left - right);
+    public static Number minus(Character left, Character right) {
+        return minus(Integer.valueOf(left), right);
     }
 
     /**
-     * Multiply a Character by a Number.  Returns a number whose
-     * value equals the ASCII code for the Character multiplied by
-     * the number.
+     * Multiply a Character by a Number. The ordinal value of the Character
+     * is used in the multiplcation (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @param left  a Character
      * @param right a Number
@@ -7369,7 +7375,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Multiply a Number by a Character.  The ASCII value of the character is used.
+     * Multiply a Number by a Character. The ordinal value of the Character
+     * is used in the multiplication (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @param left  a Number
      * @param right a Character
@@ -7381,8 +7389,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Multiply two Characters.  Returns a number corresponding the
-     * multiplcation of the two Characters ASCII values.
+     * Multiply two Characters. The ordinal values of the Characters
+     * are used in the multiplication (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @param left  a Character
      * @param right another Character
@@ -7398,8 +7407,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Note: This method was added to enforce the Groovy rule of
      * BigDecimal*Double == Double. Without this method, the
      * multiply(BigDecimal) method in BigDecimal would respond
-     * and return a BigDecimal instead. Since BigDecimal is prefered
-     * over Number, the Number*Number method is not choosen as in older
+     * and return a BigDecimal instead. Since BigDecimal is preferred
+     * over Number, the Number*Number method is not chosen as in older
      * versions of Groovy.
      *
      * @param left  a BigDecimal
@@ -7416,9 +7425,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Note: This method was added to enforce the Groovy rule of
      * BigDecimal*long == long. Without this method, the
      * multiply(BigDecimal) method in BigDecimal would respond
-     * and return a BigDecimal instead. Since BigDecimal is prefered
-     * over Number, the Number*Number method is not choosen as in older
-     * versions of Groovy. Biginteger is the fallback for all integer
+     * and return a BigDecimal instead. Since BigDecimal is preferred
+     * over Number, the Number*Number method is not chosen as in older
+     * versions of Groovy. BigInteger is the fallback for all integer
      * types in Groovy
      *
      * @param left  a BigDecimal
@@ -7454,8 +7463,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Divide a Character by a Number.  Divides the ASCII value of
-     * the character by the number.
+     * Divide a Character by a Number. The ordinal value of the Character
+     * is used in the division (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @param left  a Character
      * @param right a Number
@@ -7467,8 +7477,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Divide a Number by a Character.  Divides the number by the ASCII
-     * value of the Character.
+     * Divide a Number by a Character. The ordinal value of the Character
+     * is used in the division (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @param left  a Number
      * @param right a Character
@@ -7480,8 +7491,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Divide one Character by another.  Divides the ASCII value
-     * of one Character by the ASCII value of the other.
+     * Divide one Character by another. The ordinal values of the Characters
+     * are used in the division (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @param left  a Character
      * @param right another Character
@@ -7493,7 +7505,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Integer Divide a Character by a Number.
+     * Integer Divide a Character by a Number. The ordinal value of the Character
+     * is used in the division (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @param left  a Character
      * @param right a Number
@@ -7505,7 +7519,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Integer Divide a Number by a Character.
+     * Integer Divide a Number by a Character. The ordinal value of the Character
+     * is used in the division (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @param left  a Number
      * @param right a Character
@@ -7517,7 +7533,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Integer Divide two Characters.
+     * Integer Divide two Characters. The ordinal values of the Characters
+     * are used in the division (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @param left  a Character
      * @param right another Character
