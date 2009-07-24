@@ -1,6 +1,6 @@
 package groovy.lang
 
-class SynteticReturnTest extends GroovyShellTestCase{
+class SyntheticReturnTest extends GroovyShellTestCase{
     void testExpt () {
         assertEquals( 5, evaluate("""
               5
