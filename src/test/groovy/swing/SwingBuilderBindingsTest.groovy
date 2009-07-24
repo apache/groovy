@@ -23,6 +23,7 @@ import javax.swing.DefaultButtonModel
 import javax.swing.text.PlainDocument
 import java.text.SimpleDateFormat
 import groovy.beans.Bindable
+import javax.swing.SpinnerNumberModel
 
 public class SwingBuilderBindingsTest extends GroovySwingTestCase {
 
@@ -64,41 +65,79 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
       }
     }
 
-    public void testScrollBarValueBinding() {
+    public void testSpinnerValueBinding() {
       testInEDT {
         SwingBuilder swing = new SwingBuilder()
 
         swing.actions() {
-            scrollBar(id:'sl')
-            textField(id:'txt', text:bind(source:sl, sourceProperty:'value', id:'binding'))
-            scrollBar(id:'slReverse', value:bind(source:sl, sourceProperty:'value', id:'bindingReverse'))
-            // need to use a second scrollBar for reverse test, because string->int autobox, not so happy
+            spinner(id:'sp', model:spinnerNumberModel(minimum:0, maximum:100, stepSize:5))
+            textField(id:'txt', text:bind(source:sp, sourceProperty:'value', id:'binding'))
+            spinner(id:'spReverse', value:bind(source:sp, sourceProperty:'value', id:'bindingReverse'))
+            // need to use a second spinner for reverse test, because string->int autobox, not so happy
         }
 
-        swing.sl.value = 10
+        swing.sp.value = 10
         assert swing.txt.text == '10'
-        swing.sl.value = 85
-        assert swing.txt.text == '85'
+        swing.sp.value = 95
+        assert swing.txt.text == '95'
 
         swing.binding.rebind()
-        swing.sl.value = 42
+        swing.sp.value = 42
         assert swing.txt.text == '42'
         swing.binding.unbind()
-        swing.sl.value = 13
+        swing.sp.value = 13
         assert swing.txt.text == '42'
         swing.binding.bind()
         assert swing.txt.text == '42'
         swing.binding.update()
         assert swing.txt.text == '13'
 
-        swing.sl.model = new DefaultBoundedRangeModel(30, 1, 20, 40)
+        swing.sp.model = new SpinnerNumberModel(30, 20, 40, 1)
         assert swing.txt.text == '30'
 
         // first make sure we've been fireing
-        assert swing.slReverse.value == 30
-        swing.slReverse.value = 21
+        assert swing.spReverse.value == 30
+        swing.spReverse.value = 21
         swing.bindingReverse.reverseUpdate()
-        assert swing.sl.value == 21
+        assert swing.sp.value == 21
+      }
+    }
+
+    public void testScrollBarValueBinding() {
+      testInEDT {
+        SwingBuilder swing = new SwingBuilder()
+
+        swing.actions() {
+            scrollBar(id:'sb')
+            textField(id:'txt', text:bind(source:sb, sourceProperty:'value', id:'binding'))
+            scrollBar(id:'sbReverse', value:bind(source:sb, sourceProperty:'value', id:'bindingReverse'))
+            // need to use a second scrollBar for reverse test, because string->int autobox, not so happy
+        }
+
+        swing.sb.value = 10
+        assert swing.txt.text == '10'
+        swing.sb.value = 85
+        assert swing.txt.text == '85'
+
+        swing.binding.rebind()
+        swing.sb.value = 42
+        assert swing.txt.text == '42'
+        swing.binding.unbind()
+        swing.sb.value = 13
+        assert swing.txt.text == '42'
+        swing.binding.bind()
+        assert swing.txt.text == '42'
+        swing.binding.update()
+        assert swing.txt.text == '13'
+
+        swing.sb.model = new DefaultBoundedRangeModel(30, 1, 20, 40)
+        assert swing.txt.text == '30'
+
+        // first make sure we've been fireing
+        assert swing.sbReverse.value == 30
+        swing.sbReverse.value = 21
+        swing.bindingReverse.reverseUpdate()
+        assert swing.sb.value == 21
       }
     }
 
