@@ -652,11 +652,11 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         bean.name = 'Jochen'
         assert swing.textField.text != bean.name
 
-        // test for update on bean change
+        // test for no update on bean change
         bean = new org.codehaus.groovy.runtime.DummyBean()
         bean.name = 'Alex'
         swing.dummyBean.setModel(bean)
-        assert swing.textField.text == bean.name
+        assert swing.textField.text != bean.name
 
 
         //test for auto-update
@@ -714,5 +714,5 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         assert swing.textField.text == bean.name
 
     }
-    
+
 }
