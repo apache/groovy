@@ -91,6 +91,10 @@ public class ModuleNode extends ASTNode implements Opcodes {
         return new ArrayList<ImportNode>(imports.values());
     }
 
+    /**
+     * @deprecated replaced by {@link #getStarImports()}
+     */
+    @Deprecated
     public List<String> getImportPackages() {
         List<String> result = new ArrayList<String>();
         for (ImportNode importStarNode : starImports) {
@@ -130,6 +134,9 @@ public class ModuleNode extends ASTNode implements Opcodes {
         importNode.addAnnotations(annotations);
     }
 
+    /**
+     * @deprecated replaced by {@link #addStarImport(String)}
+     */
     @Deprecated
     public String[] addImportPackage(String packageName) {
         addStarImport(packageName);
@@ -370,6 +377,9 @@ public class ModuleNode extends ASTNode implements Opcodes {
         this.importsResolved = importsResolved;
     }
 
+    /**
+     * @deprecated replaced by {@link #getStaticImports()}
+     */
     @Deprecated
     public Map<String, ClassNode> getStaticImportAliases() {
         Map<String, ClassNode> result = new HashMap<String, ClassNode>();
@@ -379,6 +389,9 @@ public class ModuleNode extends ASTNode implements Opcodes {
         return result;
     }
 
+    /**
+     * @deprecated replaced by {@link #getStaticStarImports()}
+     */
     @Deprecated
     public Map<String, ClassNode> getStaticImportClasses() {
         Map<String, ClassNode> result = new HashMap<String, ClassNode>();
@@ -388,6 +401,9 @@ public class ModuleNode extends ASTNode implements Opcodes {
         return result;
     }
 
+    /**
+     * @deprecated replaced by {@link #getStaticImports()}
+     */
     @Deprecated
     public Map<String, String> getStaticImportFields() {
         Map<String, String> result = new HashMap<String, String>();
@@ -405,6 +421,9 @@ public class ModuleNode extends ASTNode implements Opcodes {
         return staticStarImports;
     }
 
+    /**
+     * @deprecated replaced by {@link #addStaticImport(ClassNode, String, String)}
+     */
     @Deprecated
     public void addStaticMethodOrField(ClassNode type, String fieldName, String alias) {
         addStaticImport(type, fieldName, alias);
@@ -420,6 +439,9 @@ public class ModuleNode extends ASTNode implements Opcodes {
         staticImports.put(alias, node);
     }
 
+    /**
+     * @deprecated replaced by {@link #addStaticStarImport(String, ClassNode)}
+     */
     @Deprecated
     public void addStaticImportClass(String name, ClassNode type) {
         addStaticStarImport(name, type);
