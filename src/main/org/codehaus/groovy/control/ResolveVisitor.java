@@ -558,8 +558,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             }
 
             // check module node imports packages
-            List<String> packages = module.getImportPackages();
-            for (String packagePrefix : packages) {
+            for (ImportNode importNode : module.getStarImports()) {
+                String packagePrefix = importNode.getPackageName();
                 // We limit the inner class lookups here by using ConstructedClassWithPackage.
                 // This way only the name will change, the packagePrefix will
                 // not be included in the lookup. The case where the

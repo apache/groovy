@@ -554,8 +554,8 @@ public class JavaStubGenerator
         imports.addAll(Arrays.asList(ResolveVisitor.DEFAULT_IMPORTS));
         
         ModuleNode moduleNode = classNode.getModule();
-        for (String packageName : moduleNode.getImportPackages()) {
-            imports.add(packageName);
+        for (ImportNode importNode : moduleNode.getStarImports()) {
+            imports.add(importNode.getPackageName());
         }
 
         for (ImportNode imp : moduleNode.getImports()) {
