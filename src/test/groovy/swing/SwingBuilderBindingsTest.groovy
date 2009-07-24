@@ -20,6 +20,7 @@ package groovy.swing
 import java.awt.event.ActionEvent
 import javax.swing.DefaultBoundedRangeModel
 import javax.swing.DefaultButtonModel
+import javax.swing.SpinnerNumberModel
 import javax.swing.text.PlainDocument
 
 public class SwingBuilderBindingsTest extends GroovySwingTestCase {
@@ -59,6 +60,44 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         swing.slReverse.value = 21
         swing.bindingReverse.reverseUpdate()
         assert swing.sl.value == 21
+      }
+    }
+
+    public void testSpinnerValueBinding() {
+      testInEDT {
+        SwingBuilder swing = new SwingBuilder()
+
+        swing.actions() {
+            spinner(id:'sp', model:spinnerNumberModel(minimum:0, maximum:100, stepSize:5))
+            textField(id:'txt', text:bind(source:sp, sourceProperty:'value', id:'binding'))
+            spinner(id:'spReverse', value:bind(source:sp, sourceProperty:'value', id:'bindingReverse'))
+            // need to use a second spinner for reverse test, because string->int autobox, not so happy
+        }
+
+        swing.sp.value = 10
+        assert swing.txt.text == '10'
+        swing.sp.value = 95
+        assert swing.txt.text == '95'
+
+        swing.binding.rebind()
+        swing.sp.value = 42
+        assert swing.txt.text == '42'
+        swing.binding.unbind()
+        swing.sp.value = 13
+        assert swing.txt.text == '42'
+        swing.binding.bind()
+        assert swing.txt.text == '42'
+        swing.binding.update()
+        assert swing.txt.text == '13'
+
+        swing.sp.model = new SpinnerNumberModel(30, 20, 40, 1)
+        assert swing.txt.text == '30'
+
+        // first make sure we've been fireing
+        assert swing.spReverse.value == 30
+        swing.spReverse.value = 21
+        swing.bindingReverse.reverseUpdate()
+        assert swing.sp.value == 21
       }
     }
 

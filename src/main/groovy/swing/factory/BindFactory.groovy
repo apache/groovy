@@ -63,7 +63,7 @@ public class BindFactory extends AbstractFactory {
         //syntheticBindings.putAll(JListProperties.syntheticProperties)
 
         // JSpinner.value
-        //syntheticBindings.putAll(JSpinnerProperties.syntheticProperties)
+        syntheticBindings.putAll(JSpinnerProperties.syntheticProperties)
 
         // other properties handled in JSR-295
         // JTable.elements
