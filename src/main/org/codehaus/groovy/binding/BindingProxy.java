@@ -33,7 +33,7 @@ import java.util.Map;
  * Formerly Known as Model Binding.
  *
  * @author <a href="mailto:shemnon@yahoo.com">Danno Ferrin</a>
- * @version $Revision: 11298 $
+ * @version $Revision$
  * @since Groovy 1.5
  */
 public class BindingProxy extends GroovyObjectSupport implements BindingUpdatable {
@@ -55,15 +55,18 @@ public class BindingProxy extends GroovyObjectSupport implements BindingUpdatabl
     public synchronized void setModel(Object model) {
         // should we use a finer grained lock than this?
 
+        boolean bindAgain = bound;
         this.model = model;
-        //TODO see if bound, mark if so
+
         unbind();
         for (PropertyBinding propertyBinding : propertyBindings.values()) {
             (propertyBinding).setBean(model);
         }
 
-        rebind();
-        update();
+        if (bindAgain) {
+            bind();
+            update();
+        }
     }
 
     public Object getProperty(String property) {

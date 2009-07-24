@@ -670,4 +670,49 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         assert swing.textField.text != bean.name
       }
     }
+
+    public void testModelUpdate() {
+        SwingBuilder swing = new SwingBuilder()
+
+        def bean = new org.codehaus.groovy.runtime.DummyBean()
+
+        swing.bindProxy(bean, id:'dummyBean', bind:true)
+
+        // test initial binding
+        bean.name = 'Jochen'
+        swing.textField(id:'textField', text:swing.dummyBean.name)
+        assert swing.textField.text == bean.name
+
+        // test for update on bean change
+        bean = new org.codehaus.groovy.runtime.DummyBean()
+        bean.name = 'Alex'
+
+        swing.dummyBean.setModel(bean)
+        assert swing.textField.text == bean.name
+
+        // now simply one more live update: test fails here because
+        // setModel() has called rebind() instead of bind()!
+        bean.name = 'Danno'
+        assert swing.textField.text == bean.name
+
+        // test unbound, nothing should update no matter what we do
+        swing.dummyBean.unbind()
+        bean.name = 'Guillaume'
+        assert swing.textField.text != bean.name
+
+        bean = new org.codehaus.groovy.runtime.DummyBean()
+        bean.name = 'Andres'
+
+        swing.dummyBean.setModel(bean)
+        assert swing.textField.text != bean.name
+
+        bean.name = 'James'
+        assert swing.textField.text != bean.name
+
+        // but a manual update should work
+        swing.dummyBean.update()
+        assert swing.textField.text == bean.name
+
+    }
+    
 }
