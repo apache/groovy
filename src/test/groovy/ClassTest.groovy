@@ -19,4 +19,8 @@ class ClassTest extends GroovyTestCase {
     	assert c.name.endsWith("ClassTest") , c.name
     }
 
+    def testClassesHaveSuperModiferSet() {
+        assert java.lang.reflect.Modifier.isSynchronized(this.class.modifiers)
+    }
+
 }

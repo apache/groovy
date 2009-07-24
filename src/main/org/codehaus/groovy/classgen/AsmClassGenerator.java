@@ -217,9 +217,10 @@ public class AsmClassGenerator extends ClassGenerator {
 
             this.internalBaseClassName = BytecodeHelper.getClassInternalName(classNode.getSuperClass());
 
+            int modifiers = classNode.getModifiers();
             cv.visit(
                     getBytecodeVersion(),
-                    classNode.getModifiers(),
+                    adjustedModifiers(modifiers),
                     internalClassName,
                     BytecodeHelper.getGenericsSignature(classNode),
                     internalBaseClassName,
@@ -285,7 +286,7 @@ public class AsmClassGenerator extends ClassGenerator {
                         innerClassInternalName,
                         outerClassName,
                         innerClassName,
-                        innerClass.getModifiers());
+                        adjustedModifiers(innerClass.getModifiers()));
             }
             //TODO: an inner class should have an entry of itself
 
@@ -295,6 +296,14 @@ public class AsmClassGenerator extends ClassGenerator {
             e.setModule(classNode.getModule());
             throw e;
         }
+    }
+
+    /*
+     * Classes but not interfaces should have ACC_SUPER set
+     */
+    private int adjustedModifiers(int modifiers) {
+        boolean needsSuper = (modifiers & ACC_INTERFACE) == 0;
+        return needsSuper ? modifiers | ACC_SUPER : modifiers;
     }
 
     private void generateCallSiteArray() {
