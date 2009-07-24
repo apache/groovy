@@ -129,8 +129,6 @@ public class AstBrowser {
         propertyTable.model.rows.clear() //for some reason this suppress an empty row
         
         jTree.cellRenderer.setLeafIcon(swing.imageIcon(groovy.ui.Console.NODE_ICON_PATH));
-        //jTree.cellRenderer.setClosedIcon(swing.imageIcon(groovy.ui.Console.NODE_ICON_PATH));
-        //jTree.cellRenderer.setOpenIcon(swing.imageIcon(groovy.ui.Console.NODE_ICON_PATH));
 
         jTree.selectionModel.selectionMode = TreeSelectionModel.SINGLE_TREE_SELECTION;
         jTree.addTreeSelectionListener({ TreeSelectionEvent e ->
@@ -168,7 +166,8 @@ public class AstBrowser {
         frame.pack()
         frame.show()
         compile(rootNode, swing, script(), phasePicker.selectedItem.phaseId)
-        jTree.setRootVisible(false)
+        jTree.rootVisible = false
+        jTree.showsRootHandles = true   // some OS's require this as a step to show nodes
     }
 
     void showAbout(EventObject evt) {
