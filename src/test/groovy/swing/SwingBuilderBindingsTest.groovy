@@ -672,6 +672,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
     }
 
     public void testModelUpdate() {
+      testInEDT {
         SwingBuilder swing = new SwingBuilder()
 
         def bean = new org.codehaus.groovy.runtime.DummyBean()
@@ -713,6 +714,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         swing.dummyBean.update()
         assert swing.textField.text == bean.name
 
+      }
     }
 
 }
