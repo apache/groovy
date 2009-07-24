@@ -27,14 +27,14 @@ public class GroovySwingTestCase extends GroovyTestCase {
         return isHeadless();
     }
 
-    public static void testInEDT(Closure test) {
+    public static void testInEDT(Closure testClosure) {
         Throwable exception = null
         if (headless) {
             return
         }
         SwingUtilities.invokeAndWait {
             try {
-                test()
+                testClosure()
             } catch (Throwable t) {
                 exception = t
             }
