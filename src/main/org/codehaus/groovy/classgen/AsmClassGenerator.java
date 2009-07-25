@@ -217,10 +217,9 @@ public class AsmClassGenerator extends ClassGenerator {
 
             this.internalBaseClassName = BytecodeHelper.getClassInternalName(classNode.getSuperClass());
 
-            int modifiers = classNode.getModifiers();
             cv.visit(
                     getBytecodeVersion(),
-                    adjustedModifiers(modifiers),
+                    adjustedModifiers(classNode.getModifiers()),
                     internalClassName,
                     BytecodeHelper.getGenericsSignature(classNode),
                     internalBaseClassName,
