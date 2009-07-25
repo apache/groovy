@@ -1653,6 +1653,46 @@ public class Sql {
         }
     }
 
+    /**
+     * Performs the closure within a batch using a cached connection.
+     * The closure will be called with a single argument; the statement
+     * associated with this batch. Use it like this:
+     * <pre>
+     * def updateCounts = sql.withBatch { stmt ->
+     *     stmt.addBatch("insert into TABLENAME ...")
+     *     stmt.addBatch("insert into TABLENAME ...")
+     *     stmt.addBatch("insert into TABLENAME ...")
+     * }
+     * </pre>
+     *
+     * @param closure the closure containing batch and optionally other statements
+     * @return an array of update counts containing one element for each
+     * command in the batch.  The elements of the array are ordered according
+     * to the order in which commands were added to the batch.
+     * @exception SQLException if a database access error occurs,
+     * or this method is called on a closed <code>Statement</code>, or the
+     * driver does not support batch statements. Throws {@link java.sql.BatchUpdateException}
+     * (a subclass of <code>SQLException</code>) if one of the commands sent to the
+     * database fails to execute properly or attempts to return a result set.
+     */
+    public synchronized int[] withBatch(Closure closure) throws SQLException {
+        boolean savedCacheConnection = cacheConnection;
+        cacheConnection = true;
+        Connection connection = null;
+        Statement statement = null;
+        try {
+            connection = createConnection();
+            connection.setAutoCommit(false);
+            statement = connection.createStatement();
+            closure.call(statement);
+            return statement.executeBatch();
+        } finally {
+            if (connection != null) connection.setAutoCommit(true);
+            closeResources(connection, statement);
+            cacheConnection = savedCacheConnection;
+        }
+    }
+
     private void handleError(Connection connection, Throwable t) throws SQLException {
         if (connection != null) {
             log.log(Level.INFO, "Rolling back due to: " + t.getMessage(), t);
