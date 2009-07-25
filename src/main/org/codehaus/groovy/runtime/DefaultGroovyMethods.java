@@ -7221,7 +7221,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
      *
-     * @see Integer#valueOf(String)
+     * @see Integer#valueOf(int)
      * @param left  a Character
      * @param right a Number
      * @return the Number corresponding to the addition of left and right
@@ -7236,7 +7236,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * is used in the addition (the ordinal value is the unicode
      * value which for simple character sets is the ASCII value).
      *
-     * @see Integer#valueOf(String)
+     * @see Integer#valueOf(int)
      * @param left  a Number
      * @param right a Character
      * @return The Number corresponding to the addition of left and right
