@@ -61,26 +61,24 @@ import java.util.Map;
 /**
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Marc Guillemot
- * @version $Revision$
+ * @author Brad Long
  */
 public class DefaultGroovyMethodsTest extends GroovyTestCase {
 
     public void testPrint() throws Exception {
-        Map map = new HashMap();
+        Map<String, String> map = new HashMap<String, String>();
         map.put("bob", "drools");
         map.put("james", "geronimo");
-        List list = new ArrayList();
+        List<Map<String, String>> list = new ArrayList<Map<String, String>>();
         list.add(map);
-
-        /** @todo fix this! */
-        //assertConsoleOutput(list, "[['bob':'drools', 'james':'geronimo']]");
+        assertEquals("[[james:geronimo, bob:drools]]", InvokerHelper.toString(list));
     }
 
     public void testIncrementString() throws Exception {
         String original = "z";
         String answer = DefaultGroovyMethods.next(original);
 
-        System.out.println(answer);
+        assertEquals("{", answer);
         assertTrue(answer.compareTo(original) > 0);
     }
 
@@ -88,12 +86,65 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
         String original = "a";
         String answer = DefaultGroovyMethods.previous(original);
 
-        System.out.println(answer);
+        assertEquals("`", answer);
         assertTrue(ScriptBytecodeAdapter.compareLessThan(answer, original));
     }
+    
+    public void testFloatRounding() throws Exception {
+        Float d1 = 1000.123456f;
+
+        assertEquals(DefaultGroovyMethods.round(d1), new Float(1000.0).intValue());
+        assertEquals(DefaultGroovyMethods.round(d1,0), new Float(1000.0));
+        assertEquals(DefaultGroovyMethods.round(d1,1), new Float(1000.1));
+        assertEquals(DefaultGroovyMethods.round(d1,2), new Float(1000.12));
+        assertEquals(DefaultGroovyMethods.round(d1,3), new Float(1000.123));
+        assertEquals(DefaultGroovyMethods.round(d1,4), new Float(1000.1235));
+        assertEquals(DefaultGroovyMethods.round(d1,5), new Float(1000.12346));
+        assertEquals(DefaultGroovyMethods.round(d1,6), new Float(1000.123456));
+    }
+    
+    public void testDoubleRounding() throws Exception {
+        Double d1 = 1000.123456;
+
+        assertEquals(DefaultGroovyMethods.round(d1), new Double(1000.0).longValue());
+        assertEquals(DefaultGroovyMethods.round(d1,0), new Double(1000.0));
+        assertEquals(DefaultGroovyMethods.round(d1,1), new Double(1000.1));
+        assertEquals(DefaultGroovyMethods.round(d1,2), new Double(1000.12));
+        assertEquals(DefaultGroovyMethods.round(d1,3), new Double(1000.123));
+        assertEquals(DefaultGroovyMethods.round(d1,4), new Double(1000.1235));
+        assertEquals(DefaultGroovyMethods.round(d1,5), new Double(1000.12346));
+        assertEquals(DefaultGroovyMethods.round(d1,6), new Double(1000.123456));
+    }
+    
+    public void testFloatTruncate() throws Exception {
+        Float d1 = 1000.123456f;
+        
+        assertEquals(DefaultGroovyMethods.trunc(d1), new Float(1000.0));
+        assertEquals(DefaultGroovyMethods.trunc(d1,0), new Float(1000.0));
+        assertEquals(DefaultGroovyMethods.trunc(d1,1), new Float(1000.1));
+        assertEquals(DefaultGroovyMethods.trunc(d1,2), new Float(1000.12));
+        assertEquals(DefaultGroovyMethods.trunc(d1,3), new Float(1000.123));
+        assertEquals(DefaultGroovyMethods.trunc(d1,4), new Float(1000.1234));
+        assertEquals(DefaultGroovyMethods.trunc(d1,5), new Float(1000.12345));
+        assertEquals(DefaultGroovyMethods.trunc(d1,6), new Float(1000.123456));
+    }
+    
+    public void testDoubleTruncate() throws Exception {
+        Double d1 = 1000.123456;
+        
+        assertEquals(DefaultGroovyMethods.trunc(d1), new Double(1000.0));
+        assertEquals(DefaultGroovyMethods.trunc(d1,0), new Double(1000.0));
+        assertEquals(DefaultGroovyMethods.trunc(d1,1), new Double(1000.1));
+        assertEquals(DefaultGroovyMethods.trunc(d1,2), new Double(1000.12));
+        assertEquals(DefaultGroovyMethods.trunc(d1,3), new Double(1000.123));
+        assertEquals(DefaultGroovyMethods.trunc(d1,4), new Double(1000.1234));
+        assertEquals(DefaultGroovyMethods.trunc(d1,5), new Double(1000.12345));
+        assertEquals(DefaultGroovyMethods.trunc(d1,6), new Double(1000.123456));
+    }
+
 
     public void testToMethods() throws Exception {
-        Number n = new Long(7);
+        Number n = 7L;
 
         assertEquals(DefaultGroovyMethods.toInteger("1"), new Integer(1));
         assertEquals(DefaultGroovyMethods.toInteger(n), new Integer(7));
@@ -111,7 +162,7 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertEquals(DefaultGroovyMethods.toBigDecimal(n), new BigDecimal("7"));
 
         // The following is true starting with 1.6 (GROOVY-3171):
-        assertEquals(new BigDecimal("0.1"), DefaultGroovyMethods.toBigDecimal(new Double(0.1d)));
+        assertEquals(new BigDecimal("0.1"), DefaultGroovyMethods.toBigDecimal(0.1));
 
         assertEquals(DefaultGroovyMethods.toURL("http://example.org/"), new URL("http://example.org/"));
         assertEquals(DefaultGroovyMethods.toURI("http://example.org/"), new URI("http://example.org/"));

@@ -78,7 +78,7 @@ import java.util.regex.Pattern;
  * @author Joachim Baumann
  * @author Alex Tkachman
  * @author Ted Naleid
- * @version $Revision$
+ * @author Brad Long
  */
 public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
@@ -8246,25 +8246,95 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Get the absolute value
+     * Round the value
      *
      * @param number a Float
-     * @return the absolute value of that Float
+     * @return the rounded value of that Float
      * @since 1.0
      */
     public static int round(Float number) {
         return Math.round(number.floatValue());
+    }
+    
+    /**
+     * Round the value
+     *
+     * @param number a Float
+     * @param precision the number of decimal places to keep
+     * @return the Float rounded to the number of decimal places specified by precision
+     * @since 1.6.x
+     */
+    public static float round(Float number, int precision) {
+        return (float)(Math.floor(number.doubleValue()*Math.pow(10,precision)+0.5)/Math.pow(10,precision));
+    }
+    
+    /**
+     * Truncate the value
+     *
+     * @param number a Float
+     * @param precision the number of decimal places to keep
+     * @return the Float truncated to the number of decimal places specified by precision
+     * @since 1.6.x
+     */
+    public static float trunc(Float number, int precision) {
+        return (float)(Math.floor(number.doubleValue()*Math.pow(10,precision))/Math.pow(10,precision));
+    }
+    
+    /**
+     * Truncate the value
+     *
+     * @param number a Double
+     * @return the Double truncated to 0 decimal places (i.e. a synonym for floor)
+     * @since 1.6.x
+     */
+    public static float trunc(Float number) {
+        return (float)Math.floor(number.doubleValue());
     }
 
     /**
      * Round the value
      *
      * @param number a Double
-     * @return the absolute value of that Double
+     * @return the rounded value of that Double
      * @since 1.0
      */
     public static long round(Double number) {
         return Math.round(number);
+    }
+    
+    /**
+     * Round the value
+     *
+     * @param number a Double
+     * @param precision the number of decimal places to keep
+     * @return the Double rounded to the number of decimal places specified by precision
+     * @since 1.6.4
+     */
+    public static double round(Double number, int precision) {
+        return Math.floor(number *Math.pow(10,precision)+0.5)/Math.pow(10,precision);
+    }
+    
+    /**
+     * Truncate the value
+     *
+     * @param number a Double
+     * @return the Double truncated to 0 decimal places (i.e. a synonym for floor)
+     * @since 1.6.4
+     */
+    public static double trunc(Double number) {
+        return Math.floor(number);
+    }
+    
+    /**
+     * Truncate the value
+     *
+     * @param number a Double
+     * @param precision the number of decimal places to keep
+     * @return the Double truncated to the number of decimal places specified by precision
+     * @since 1.6.4
+     */
+    public static double trunc(Double number, int precision) {
+        return Math.floor(number *Math.pow(10,precision))/Math.pow(10,precision);
     }
 
     /**
