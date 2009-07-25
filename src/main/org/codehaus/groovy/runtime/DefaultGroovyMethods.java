@@ -7094,7 +7094,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Increment a Character by one.
      *
      * @param self a Character
-     * @return an incremented Number
+     * @return an incremented Character
      * @since 1.5.7
      */
     public static Character next(Character self) {
@@ -7116,7 +7116,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Decrement a Character by one.
      *
      * @param self a Character
-     * @return a decremented Number
+     * @return a decremented Character
      * @since 1.5.7
      */
     public static Character previous(Character self) {
@@ -7135,13 +7135,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Add a Character and a Number.
+     * Add a Character and a Number. The ordinal value of the Character
+     * is used in the addition (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      * This operation will always create a new object for the result,
-     * while the operands remain unchanged.  This character should be one
-     * of the digits '0' through '9', and the result is addition of the integer
-     * conversion of this character plus the operand.
+     * while the operands remain unchanged.
      *
-     * @see Integer#valueOf(String)
+     * @see Integer#valueOf(int)
      * @param left  a Character
      * @param right a Number
      * @return the Number corresponding to the addition of left and right
@@ -7152,10 +7152,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Add a Number and a Character.  This assumes the character is one of the
-     * digits '0' through '9'.
+     * Add a Number and a Character.  The ordinal value of the Character
+     * is used in the addition (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
-     * @see Integer#valueOf(String)
+     * @see Integer#valueOf(int)
      * @param left  a Number
      * @param right a Character
      * @return The Number corresponding to the addition of left and right
@@ -7166,8 +7167,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Add two Characters.  Both characters are assumed to represent digits ('0'
-     * through '9') and add the results.
+     * Add one Character to another. The ordinal values of the Characters
+     * are used in the addition (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
      *
@@ -7182,9 +7184,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Compare a Character and a Number.  The character is assumed to be a
-     * digit (i.e. '0' through '9') which is converted to its Integer
-     * representation.
+     * Compare a Character and a Number. The ordinal value of the Character
+     * is used in the comparison (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @param left  a Character
      * @param right a Number
@@ -7196,9 +7198,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Compare a Number and a Character.  The character is assumed to be a
-     * digit (i.e. '0' through '9') which is converted to its Integer
-     * representation.
+     * Compare a Number and a Character. The ordinal value of the Character
+     * is used in the comparison (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @param left  a Number
      * @param right a Character
@@ -7210,9 +7212,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Compare two Characters.  Each character is assumed to be a
-     * digit (i.e. '0' through '9') which is converted to its Integer
-     * representation.
+     * Compare two Characters. The ordinal values of the Characters
+     * are compared (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @param left  a Character
      * @param right a Character
@@ -7237,9 +7239,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Subtract a Number from a Character.  The character is assumed to be a
-     * digit (i.e. '0' through '9') which is converted to its Integer
-     * representation.
+     * Subtract a Number from a Character. The ordinal value of the Character
+     * is used in the subtraction (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @param left  a Character
      * @param right a Number
@@ -7251,9 +7253,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Subtract a Character from a Number.  The character is assumed to be a
-     * digit (i.e. '0' through '9') which is converted to its Integer
-     * representation.
+     * Subtract a Character from a Number. The ordinal value of the Character
+     * is used in the subtraction (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @param left  a Number
      * @param right a Character
@@ -7265,10 +7267,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Subtract one Characters from another by converting them both to their
-     * Integer representations.  Each character is assumed to be a
-     * digit (i.e. '0' through '9') which is converted to its Integer
-     * representation.
+     * Subtract one Character from another. The ordinal values of the Characters
+     * is used in the comparison (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @param left  a Character
      * @param right a Character
@@ -7280,9 +7281,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Multiply a Character by a Number.  The character is assumed to be a
-     * digit (i.e. '0' through '9') which is converted to its Integer
-     * representation.
+     * Multiply a Character by a Number. The ordinal value of the Character
+     * is used in the multiplcation (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @param left  a Character
      * @param right a Number
@@ -7294,9 +7295,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Multiply a Number by a Character.  The character is assumed to be a
-     * digit (i.e. '0' through '9') which is converted to its Integer
-     * representation.
+     * Multiply a Number by a Character. The ordinal value of the Character
+     * is used in the multiplication (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @param left  a Number
      * @param right a Character
@@ -7308,9 +7309,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Multiply two Characters.  Each character is assumed to be a
-     * digit (i.e. '0' through '9') which is converted to its Integer
-     * representation.
+     * Multiply two Characters. The ordinal values of the Characters
+     * are used in the multiplication (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @param left  a Character
      * @param right another Character
@@ -7326,8 +7327,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Note: This method was added to enforce the Groovy rule of
      * BigDecimal*Double == Double. Without this method, the
      * multiply(BigDecimal) method in BigDecimal would respond
-     * and return a BigDecimal instead. Since BigDecimal is prefered
-     * over Number, the Number*Number method is not choosen as in older
+     * and return a BigDecimal instead. Since BigDecimal is preferred
+     * over Number, the Number*Number method is not chosen as in older
      * versions of Groovy.
      *
      * @param left  a BigDecimal
@@ -7344,9 +7345,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Note: This method was added to enforce the Groovy rule of
      * BigDecimal*long == long. Without this method, the
      * multiply(BigDecimal) method in BigDecimal would respond
-     * and return a BigDecimal instead. Since BigDecimal is prefered
-     * over Number, the Number*Number method is not choosen as in older
-     * versions of Groovy. Biginteger is the fallback for all integer
+     * and return a BigDecimal instead. Since BigDecimal is preferred
+     * over Number, the Number*Number method is not chosen as in older
+     * versions of Groovy. BigInteger is the fallback for all integer
      * types in Groovy
      *
      * @param left  a BigDecimal
@@ -7382,9 +7383,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Divide a Character by a Number.  The character is assumed to be a
-     * digit (i.e. '0' through '9') which is converted to its Integer
-     * representation.
+     * Divide a Character by a Number. The ordinal value of the Character
+     * is used in the division (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @param left  a Character
      * @param right a Number
@@ -7396,9 +7397,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Divide a Number by a Character.  The character is assumed to be a
-     * digit (i.e. '0' through '9') which is converted to its Integer
-     * representation.
+     * Divide a Number by a Character. The ordinal value of the Character
+     * is used in the division (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @param left  a Number
      * @param right a Character
@@ -7410,9 +7411,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Divide one Character by another.  Each character is assumed to be a
-     * digit (i.e. '0' through '9') which is converted to its Integer
-     * representation.
+     * Divide one Character by another. The ordinal values of the Characters
+     * are used in the division (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @param left  a Character
      * @param right another Character
@@ -7424,7 +7425,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Integer Divide a Character by a Number.
+     * Integer Divide a Character by a Number. The ordinal value of the Character
+     * is used in the division (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @param left  a Character
      * @param right a Number
@@ -7436,7 +7439,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Integer Divide a Number by a Character.
+     * Integer Divide a Number by a Character. The ordinal value of the Character
+     * is used in the division (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @param left  a Number
      * @param right a Character
@@ -7448,7 +7453,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Integer Divide two Characters.
+     * Integer Divide two Characters. The ordinal values of the Characters
+     * are used in the division (the ordinal value is the unicode
+     * value which for simple character sets is the ASCII value).
      *
      * @param left  a Character
      * @param right another Character
