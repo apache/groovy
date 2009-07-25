@@ -53,16 +53,29 @@ class SqlBatchTest extends GroovyTestCase {
             try {
             connection.autoCommit = false
             def stmt = connection.createStatement()
-            others.eachWithIndex {entry, index ->
-                stmt.addBatch("insert into PERSON (id, firstname, lastname) values (${index + numRows + 1}, '$entry.key', '$entry.value')")
+            others.eachWithIndex {k, v, index ->
+                def id = index + numRows + 1
+                stmt.addBatch("insert into PERSON (id, firstname, lastname) values ($id, '$k', '$v')")
             }
             assert stmt.executeBatch() == [1, 1]
             connection.autoCommit = true
             } catch (Exception e) {
                 e.printStackTrace()
-                println e.dump()
             }
         }
+        assert sql.rows("SELECT * FROM PERSON").size() == 5
+    }
+
+    void testWithBatch() {
+        def numRows = sql.rows("SELECT * FROM PERSON").size()
+        assert numRows == 3
+        def result = sql.withBatch { stmt ->
+            others.eachWithIndex { k, v, index ->
+                def id = index + numRows + 1
+                stmt.addBatch("insert into PERSON (id, firstname, lastname) values ($id, '$k', '$v')")
+            }
+        }
+        assert result == [1, 1]
         assert sql.rows("SELECT * FROM PERSON").size() == 5
     }
 
