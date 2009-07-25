@@ -61,7 +61,7 @@ import java.util.Map;
 /**
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Marc Guillemot
- * @version $Revision$
+ * @author Brad Long
  */
 public class DefaultGroovyMethodsTest extends GroovyTestCase {
 
@@ -71,16 +71,14 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
         map.put("james", "geronimo");
         List list = new ArrayList();
         list.add(map);
-
-        /** @todo fix this! */
-        //assertConsoleOutput(list, "[['bob':'drools', 'james':'geronimo']]");
+        assertEquals("[[james:geronimo, bob:drools]]", InvokerHelper.toString(list));
     }
 
     public void testIncrementString() throws Exception {
         String original = "z";
         String answer = DefaultGroovyMethods.next(original);
 
-        System.out.println(answer);
+        assertEquals("{", answer);
         assertTrue(answer.compareTo(original) > 0);
     }
 
@@ -88,8 +86,76 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
         String original = "a";
         String answer = DefaultGroovyMethods.previous(original);
 
-        System.out.println(answer);
+        assertEquals("`", answer);
         assertTrue(ScriptBytecodeAdapter.compareLessThan(answer, original));
+    }
+
+    public void testFloatRounding() throws Exception {
+        Float f = new Float(1000.123456);
+
+        assertEquals(DefaultGroovyMethods.round(f), new Float(1000.0).intValue());
+        assertEquals(round(f, 0), new Float(1000.0));
+        assertEquals(round(f, 1), new Float(1000.1));
+        assertEquals(round(f, 2), new Float(1000.12));
+        assertEquals(round(f, 3), new Float(1000.123));
+        assertEquals(round(f, 4), new Float(1000.1235));
+        assertEquals(round(f, 5), new Float(1000.12346));
+        assertEquals(round(f, 6), new Float(1000.123456));
+    }
+
+    public void testDoubleRounding() throws Exception {
+        Double d = new Double(1000.123456);
+
+        assertEquals(DefaultGroovyMethods.round(d), new Double(1000.0).longValue());
+        assertEquals(round(d, 0), new Double(1000.0));
+        assertEquals(round(d, 1), new Double(1000.1));
+        assertEquals(round(d, 2), new Double(1000.12));
+        assertEquals(round(d, 3), new Double(1000.123));
+        assertEquals(round(d, 4), new Double(1000.1235));
+        assertEquals(round(d, 5), new Double(1000.12346));
+        assertEquals(round(d, 6), new Double(1000.123456));
+    }
+
+    public void testFloatTruncate() throws Exception {
+        Float f = new Float(1000.123456);
+
+        assertEquals(new Float(DefaultGroovyMethods.trunc(f)), new Float(1000.0));
+        assertEquals(trunc(f, 0), new Float(1000.0));
+        assertEquals(trunc(f, 1), new Float(1000.1));
+        assertEquals(trunc(f, 2), new Float(1000.12));
+        assertEquals(trunc(f, 3), new Float(1000.123));
+        assertEquals(trunc(f, 4), new Float(1000.1234));
+        assertEquals(trunc(f, 5), new Float(1000.12345));
+        assertEquals(trunc(f, 6), new Float(1000.123456));
+    }
+
+    public void testDoubleTruncate() throws Exception {
+        Double d = new Double(1000.123456);
+
+        assertEquals(new Double(DefaultGroovyMethods.trunc(d)), new Double(1000.0));
+        assertEquals(trunc(d, 0), new Double(1000.0));
+        assertEquals(trunc(d, 1), new Double(1000.1));
+        assertEquals(trunc(d, 2), new Double(1000.12));
+        assertEquals(trunc(d, 3), new Double(1000.123));
+        assertEquals(trunc(d, 4), new Double(1000.1234));
+        assertEquals(trunc(d, 5), new Double(1000.12345));
+        assertEquals(trunc(d, 6), new Double(1000.123456));
+    }
+
+    private Float round(Float f, int precision) {
+        return new Float(DefaultGroovyMethods.round(f, precision));
+    }
+
+    private Double round(Double d, int precision) {
+        return new Double(DefaultGroovyMethods.round(d, precision));
+    }
+
+    private Float trunc(Float f, int precision) {
+        return new Float(DefaultGroovyMethods.trunc(f, precision));
+    }
+
+    private Double trunc(Double d, int precision) {
+        return new Double(DefaultGroovyMethods.trunc(d, precision));
     }
 
     public void testToMethods() throws Exception {
