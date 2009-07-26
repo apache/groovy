@@ -1679,17 +1679,31 @@ public class Sql {
         boolean savedCacheConnection = cacheConnection;
         cacheConnection = true;
         Connection connection = null;
-        Statement statement = null;
         try {
             connection = createConnection();
             connection.setAutoCommit(false);
-            statement = connection.createStatement();
+            Statement statement = connection.createStatement();
             closure.call(statement);
-            return statement.executeBatch();
+            int[] result = statement.executeBatch();
+            connection.commit();
+            return result;
+        } catch (SQLException e) {
+            handleError(connection, e);
+            throw e;
+        } catch (RuntimeException e) {
+            handleError(connection, e);
+            throw e;
+        } catch (Error e) {
+            handleError(connection, e);
+            throw e;
         } finally {
             if (connection != null) connection.setAutoCommit(true);
-            closeResources(connection, statement);
+            cacheConnection = false;
+            closeResources(connection, null);
             cacheConnection = savedCacheConnection;
+            if (dataSource != null && !cacheConnection) {
+                useConnection = null;
+            }
         }
     }
 
