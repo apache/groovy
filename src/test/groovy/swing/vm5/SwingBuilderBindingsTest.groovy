@@ -322,7 +322,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
     }
 
     public void testBindableVetoable() {
-//      testInEDT {
+      testInEDT {
         def bbean = new BindableBean()
         bbean.vetoableChange = { PropertyChangeEvent pce ->
           if( pce.newValue ==~ /.*[ ]+.*/ ) {
@@ -340,7 +340,7 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         abean.text = "this should fail"
         assert abean.text != bbean.vetoField
 
-//      }
+      }
     }
 }
 
