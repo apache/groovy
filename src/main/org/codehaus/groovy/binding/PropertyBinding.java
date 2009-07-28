@@ -17,10 +17,12 @@ package org.codehaus.groovy.binding;
 
 import groovy.lang.MissingMethodException;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
+import java.beans.PropertyVetoException;
 
 
 /**
@@ -46,7 +48,14 @@ public class PropertyBinding implements SourceBinding, TargetBinding, TriggerBin
                 return;
             }
         }
-        InvokerHelper.setProperty(bean, propertyName, newValue);
+        try {
+            InvokerHelper.setProperty(bean, propertyName, newValue);
+        } catch (InvokerInvocationException iie) {
+            if (!(iie.getCause() instanceof PropertyVetoException)) {
+                throw iie;
+            }
+            // ignore veto exceptions, just let the binding fail like a validaiton does
+        }
     }
 
     public boolean isNonChangeCheck() {

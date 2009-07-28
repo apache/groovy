@@ -18,11 +18,14 @@
 package groovy.swing
 
 import java.awt.event.ActionEvent
+import java.beans.PropertyChangeEvent
+import java.beans.PropertyVetoException
 import javax.swing.DefaultBoundedRangeModel
 import javax.swing.DefaultButtonModel
 import javax.swing.text.PlainDocument
 import java.text.SimpleDateFormat
 import groovy.beans.Bindable
+import groovy.beans.Vetoable
 import javax.swing.SpinnerNumberModel
 
 public class SwingBuilderBindingsTest extends GroovySwingTestCase {
@@ -1050,6 +1053,28 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
         assert model.value == 12345
       }
     }
+
+    public void testBindableVetoable() {
+      testInEDT {
+        def bbean = new BindableBean()
+        bbean.vetoableChange = { PropertyChangeEvent pce ->
+          if( pce.newValue ==~ /.*[ ]+.*/ ) {
+            throw new PropertyVetoException( "No spaces allowed", pce )
+          }
+        }
+        def abean = null
+        SwingBuilder.build {
+            abean = bean(new BindableBean(), text:'text', id:'tf')
+            bean(bbean, vetoField:bind { tf.text } )
+        }
+        abean.text = "test1"
+        assert abean.text == bbean.vetoField
+
+        abean.text = "this should fail"
+        assert abean.text != bbean.vetoField
+
+      }
+    }
 }
 
 @Bindable class BindableBean {
@@ -1059,4 +1084,5 @@ public class SwingBuilderBindingsTest extends GroovySwingTestCase {
     int pvalue
     String text
     Date date
+    @Vetoable String vetoField
 }
