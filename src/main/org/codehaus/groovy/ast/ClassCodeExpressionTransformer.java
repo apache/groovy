@@ -41,15 +41,13 @@ import org.codehaus.groovy.ast.stmt.WhileStatement;
 public abstract class ClassCodeExpressionTransformer extends ClassCodeVisitorSupport implements ExpressionTransformer {
     
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
-        Parameter[] paras = node.getParameters();
-        for (int i=0; i<paras.length; i++) {
-            Parameter p = paras[i];
+        for (Parameter p : node.getParameters()) {
             if (p.hasInitialExpression()) {
                 Expression init = p.getInitialExpression();
                 p.setInitialExpression(transform(init));
             }
         }
-        super.visitConstructorOrMethod(node,isConstructor);
+        super.visitConstructorOrMethod(node, isConstructor);
     }
 
     public void visitSwitch(SwitchStatement statement) {
