@@ -117,6 +117,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                 grabAnnotationLoop:
                 for (AnnotationNode node : grabAnnotations) {
                     Map<String, Object> grabMap = new HashMap<String, Object>();
+                    checkForConvenienceForm(node);
                     for (String s : new String[]{"group", "module", "version", "classifier"}) {
                         Expression member = node.getMember(s);
                         if (member == null && !s.equals("classifier")) {
@@ -173,6 +174,23 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                 // @Grab annotation.
                 source.addException(re);
             }
+        }
+    }
+
+    private void checkForConvenienceForm(AnnotationNode node) {
+        Object val = node.getMember("value");
+        if (val == null || !(val instanceof ConstantExpression)) return;
+        Object allParts = ((ConstantExpression)val).getValue();
+        if (!(allParts instanceof String)) return;
+        String allstr = (String) allParts;
+        if (allstr.contains(":")) {
+            String[] parts = allstr.split(":");
+            if (parts.length > 4) return;
+            if (parts.length > 3) node.addMember("classifier", new ConstantExpression(parts[3]));
+            if (parts.length > 2) node.addMember("version", new ConstantExpression(parts[2]));
+            else node.addMember("version", new ConstantExpression("*")); // TODO '*' default in @Grab not working?
+            node.addMember("module", new ConstantExpression(parts[1]));
+            node.addMember("group", new ConstantExpression(parts[0]));
         }
     }
 
