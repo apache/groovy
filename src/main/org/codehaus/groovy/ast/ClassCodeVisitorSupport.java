@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.BreakStatement;
@@ -94,6 +95,12 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
 
     protected void visitClassCodeContainer(Statement code) {
         if (code != null) code.visit(this);
+    }
+
+    @Override
+    public void visitVariableExpression(VariableExpression expression) {
+        visitAnnotations(expression);
+        super.visitVariableExpression(expression);
     }
 
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {

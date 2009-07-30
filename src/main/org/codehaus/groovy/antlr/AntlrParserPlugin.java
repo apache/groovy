@@ -1289,7 +1289,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             if (right != null) rightExpression = expression(right);
         } else {
             String name = identifier(node);
-            leftExpression = new VariableExpression(name, type);
+            VariableExpression ve = new VariableExpression(name, type);
+            ve.addAnnotations(annotations);
+            leftExpression = ve;
+
             right = node.getNextSibling();
             if (right != null) {
                 assertNodeType(ASSIGN, right);

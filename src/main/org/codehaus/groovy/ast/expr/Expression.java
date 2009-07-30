@@ -18,9 +18,9 @@ package org.codehaus.groovy.ast.expr;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.AnnotatedNode;
 import org.codehaus.groovy.GroovyBugError;
 
 /**
@@ -29,7 +29,7 @@ import org.codehaus.groovy.GroovyBugError;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public abstract class Expression extends ASTNode {
+public abstract class Expression extends AnnotatedNode {
 
     private ClassNode type=ClassHelper.DYNAMIC_TYPE;
     
