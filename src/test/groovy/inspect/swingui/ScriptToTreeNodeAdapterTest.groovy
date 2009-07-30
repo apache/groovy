@@ -21,6 +21,10 @@ import javax.swing.tree.TreeNode
 /**
  * Unit test for ScriptToTreeNodeAdapter.
  *
+ * The assertions in this test case ofter assert against the toString() representation of
+ * an object. Normally, this is bad form. However, the class under test is meant to display
+ * toString() forms in a user interface. So in this case it is appropriate. 
+ *
  * @author Hamlet D'Arcy
  */
 public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
@@ -143,6 +147,42 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
             it.toString() == 'Constant - some_value : java.lang.String'
         }
         assertNotNull('Could not locate ClassExpression in AST', result)
+    }
+
+    public void testNamedArgumentListExpression() {
+        def script = "new String(foo: 'bar', baz: 'qux')"
+        ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter()
+        TreeNode root = adapter.compile(script, Phases.SEMANTIC_ANALYSIS)
+
+        def namedArgList = root.children()?.find {
+            it.toString() == 'BlockStatement'
+        }?.children()?.find {
+            it.toString() == 'BlockStatement'
+        }?.children()?.find {
+            it.toString() == 'ExpressionStatement'
+        }?.children()?.find {
+            it.toString() == 'ConstructorCallExpression'
+        }?.children()?.find {
+            it.toString() == 'TupleExpression'
+        }?.children()?.find {
+            it.toString() == 'NamedArgumentListExpression'
+        }
+        assertNotNull('Could not locate NamedArgumentListExpression in AST', namedArgList)
+
+        assertEquals('Wrong # named arguments', 2, namedArgList.children.size())
+
+        assertMapEntry(namedArgList.children[0], 'Constant - foo : java.lang.String', 'Constant - bar : java.lang.String')
+        assertMapEntry(namedArgList.children[1], 'Constant - baz : java.lang.String', 'Constant - qux : java.lang.String')
+    }
+
+    /**
+     * Helper method to assert a map entry element. 
+     */
+    private def assertMapEntry(mapEntry, expectedKey, expectedValue) {
+        assertNotNull('Could not locate 1st MapEntryExpression in AST', mapEntry)
+        assertEquals('Wrong # map entries', 2, mapEntry.children.size())
+        assertEquals('Wrong key', expectedKey, mapEntry.children[0].toString())
+        assertEquals('Wrong value', expectedValue, mapEntry.children[1].toString())
     }
 
     /**

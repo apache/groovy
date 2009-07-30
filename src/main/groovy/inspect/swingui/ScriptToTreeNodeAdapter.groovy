@@ -516,4 +516,14 @@ private class TreeNodeBuildingVisitor extends CodeVisitorSupport {
     public void visitBytecodeExpression(BytecodeExpression node) {
         addNode(node, BytecodeExpression, { super.visitBytecodeExpression(it) });
     }
+
+    protected void visitListOfExpressions(List<? extends Expression> list) {
+        list.each { Expression node ->
+            if (node instanceof NamedArgumentListExpression ) {
+                addNode(node, NamedArgumentListExpression, { it.visit(this) });
+            } else {
+                node.visit(this)
+            }
+        }
+    }
 }
