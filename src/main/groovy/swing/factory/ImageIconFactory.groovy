@@ -34,12 +34,15 @@ class ImageIconFactory extends AbstractFactory {
                 }
             } else if (attributes.containsKey("file")) {
                 value = attributes.remove("file")
+                if (value instanceof GString) value = value as String
                 if (value instanceof File) {
                     value = value.toURL()
                 } else if (!(value instanceof String)) {
                     throw new RuntimeException("In $name file: attributes must be of type java.io.File or a string")
                 }
             }
+        } else if (value instanceof GString) {
+            value = value as String
         }
 
         // not else if so we can adjust for the case of file string where the file does not exist

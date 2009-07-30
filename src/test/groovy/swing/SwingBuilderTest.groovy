@@ -442,9 +442,10 @@ class SwingBuilderTest extends GroovySwingTestCase {
             panel(id:'pA', title:'Title A', tabEnabled:false)
             panel(id:'pB', title:'Title B', tabMnemonic: 'T')
             panel(id:'pC', title:'Title C', tabDisplayedMnemonicIndex: 2)
+            panel(id:'pD', title:'Title D', tabMnemonic: "${'T'}")
         }
 
-        assert swing.tp.tabCount == 12
+        assert swing.tp.tabCount == 13
         assert swing.tp.indexOfComponent(swing.p1) == 0
         assert swing.tp.indexOfComponent(swing.p2) == 1
         assert swing.tp.indexOfComponent(swing.p3) == 2
@@ -460,6 +461,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         assert swing.tp.isEnabledAt(9) == false
         assert swing.tp.getMnemonicAt(10) == 0x54
         assert swing.tp.getDisplayedMnemonicIndexAt(11) == 2
+        assert swing.tp.getMnemonicAt(12) == 0x54
 
         swing.tabbedPane(id:'tp', selectedComponent:swing.p2) {
             panel(p1, name:'Title 1')
@@ -533,9 +535,10 @@ class SwingBuilderTest extends GroovySwingTestCase {
             panel(id:'pA', xTitle:'Title A', xTabEnabled:false)
             panel(id:'pB', xTitle:'Title B', xTabMnemonic: 'T')
             panel(id:'pC', xTitle:'Title C', xTabDisplayedMnemonicIndex: 2)
+            panel(id:'pD', xTitle:'Title D', xTabMnemonic: "${'T'}")
         }
 
-        assert swing.tp.tabCount == 12
+        assert swing.tp.tabCount == 13
         assert swing.tp.indexOfComponent(swing.p1) == 0
         assert swing.tp.indexOfComponent(swing.p2) == 1
         assert swing.tp.indexOfComponent(swing.p3) == 2
@@ -551,6 +554,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
         assert swing.tp.isEnabledAt(9) == false
         assert swing.tp.getMnemonicAt(10) == 0x54
         assert swing.tp.getDisplayedMnemonicIndexAt(11) == 2
+        assert swing.tp.getMnemonicAt(12) == 0x54
       }
     }
 
@@ -641,18 +645,22 @@ class SwingBuilderTest extends GroovySwingTestCase {
                 action(id:'action1', keyStroke:'ctrl W')
                 action(id:'action2',
                     keyStroke:KeyStroke.getKeyStroke(KeyEvent.VK_SPACE, InputEvent.ALT_MASK))
+                action(id:'action3', keyStroke:"${'ctrl Z'}")
             }
         }
         def component = swing.buttonId
         def expected1 = swing.action1.toString()
         def expected2 = swing.action2.toString()
+        def expected3 = swing.action3.toString()
         def keys = component.actionMap.allKeys().toList()
         assert keys.contains(expected1)
         assert keys.contains(expected2)
+        assert keys.contains(expected3)
         def inputMap = component.inputMap
         def values = inputMap.allKeys().toList().collect{ inputMap.get(it) }
         assert values.contains(expected1)
         assert values.contains(expected2)
+        assert values.contains(expected3)
       }
     }
 
@@ -1745,9 +1753,12 @@ class SwingBuilderTest extends GroovySwingTestCase {
         String baseDir = new File("src/main").absolutePath
 
         String resource = Console.ICON_PATH
+        GString gresource = "${Console.ICON_PATH}"
         String path = baseDir + resource
+        String gpath = "$baseDir$resource"
         File file = new File(path)
         String relativeResource = file.name
+        String grelativeResource = "$file.name"
         URL url = file.toURL()
 
         swing.imageIcon(path, id:'ii')
@@ -1761,6 +1772,21 @@ class SwingBuilderTest extends GroovySwingTestCase {
         assert swing.ii.description == '<none>'
 
         swing.imageIcon(file:path, description:'<none>', id:'ii')
+        assert swing.ii != null
+        assert swing.ii.description == '<none>'
+
+
+        swing.imageIcon(gpath, id:'ii')
+        assert swing.ii != null
+
+        swing.imageIcon(file:gpath, id:'ii')
+        assert swing.ii != null
+
+        swing.imageIcon(gpath, description:'<none>', id:'ii')
+        assert swing.ii != null
+        assert swing.ii.description == '<none>'
+
+        swing.imageIcon(file:gpath, description:'<none>', id:'ii')
         assert swing.ii != null
         assert swing.ii.description == '<none>'
 
@@ -1809,6 +1835,36 @@ class SwingBuilderTest extends GroovySwingTestCase {
         assert swing.ii != null
         assert swing.ii.description == '<none>'
 
+        swing.imageIcon(gresource, id:'ii')
+        assert swing.ii != null
+
+        swing.imageIcon(resource:gresource, id:'ii')
+        assert swing.ii != null
+
+        swing.imageIcon(gresource, description:'<none>', id:'ii')
+        assert swing.ii != null
+        assert swing.ii.description == '<none>'
+
+        swing.imageIcon(file:gresource, description:'<none>', id:'ii')
+        assert swing.ii != null
+        assert swing.ii.description == '<none>'
+
+
+
+        swing.imageIcon(gresource, class:Console, id:'ii')
+        assert swing.ii != null
+
+        swing.imageIcon(resource:gresource, class:Console, id:'ii')
+        assert swing.ii != null
+
+        swing.imageIcon(gresource, description:'<none>', class:Console, id:'ii')
+        assert swing.ii != null
+        assert swing.ii.description == '<none>'
+
+        swing.imageIcon(file:gresource, description:'<none>', class:Console, id:'ii')
+        assert swing.ii != null
+        assert swing.ii.description == '<none>'
+
 
         swing.imageIcon(relativeResource, class:Console, id:'ii')
         assert swing.ii != null
@@ -1821,6 +1877,21 @@ class SwingBuilderTest extends GroovySwingTestCase {
         assert swing.ii.description == '<none>'
 
         swing.imageIcon(file:relativeResource, description:'<none>', class:Console, id:'ii')
+        assert swing.ii != null
+        assert swing.ii.description == '<none>'
+
+
+        swing.imageIcon(grelativeResource, class:Console, id:'ii')
+        assert swing.ii != null
+
+        swing.imageIcon(resource:grelativeResource, class:Console, id:'ii')
+        assert swing.ii != null
+
+        swing.imageIcon(grelativeResource, description:'<none>', class:Console, id:'ii')
+        assert swing.ii != null
+        assert swing.ii.description == '<none>'
+
+        swing.imageIcon(file:grelativeResource, description:'<none>', class:Console, id:'ii')
         assert swing.ii != null
         assert swing.ii.description == '<none>'
 
@@ -1931,6 +2002,15 @@ class SwingBuilderTest extends GroovySwingTestCase {
         }
         assert button.getInputMap(JComponent.WHEN_FOCUSED).get(swing.shortcut("N")) == "nested_shortcut"
         assert button.actionMap.get("nested_shortcut") == noop
+
+        // kstroke as GString
+        swing.keyStrokeAction(component: button,
+            actionKey: "GringKeyStroke",
+            keyStroke: "G",
+            action: noop)
+        assert button.getInputMap(JComponent.WHEN_FOCUSED).get(KeyStroke.getKeyStroke("G")) == "GringKeyStroke"
+        assert button.actionMap.get("GringKeyStroke") == noop
+
       }
     }
 }
