@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,10 +24,7 @@ import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.control.SourceUnit;
 
-import java.util.Iterator;
 import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
 
 /**
  * goes through an AST and initializes the scopes
@@ -35,9 +32,9 @@ import java.util.Map;
  * @author Jochen Theodorou
  */
 public class VariableScopeVisitor extends ClassCodeVisitorSupport {
-    
+
     private static final Expression CALL = new ConstantExpression("call");
-    
+
     private VariableScope currentScope = null;
     private VariableScope headScope = new VariableScope();
     private ClassNode currentClass = null;
@@ -95,11 +92,11 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     private void declare(Parameter[] parameters, ASTNode node) {
-        for (int i = 0; i < parameters.length; i++) {
-            if (parameters[i].hasInitialExpression()) {
-                parameters[i].getInitialExpression().visit(this);
+        for (Parameter parameter : parameters) {
+            if (parameter.hasInitialExpression()) {
+                parameter.getInitialExpression().visit(this);
             }
-            declare(parameters[i], node);
+            declare(parameter, node);
         }
     }
 
@@ -156,27 +153,19 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         if (cn.isScript()) {
             return new DynamicVariable(name, false);
         }
-        List l = cn.getFields();
-        for (Iterator iter = l.iterator(); iter.hasNext();) {
-            FieldNode f = (FieldNode) iter.next();
-            if (f.getName().equals(name)) return f;
+
+        for (FieldNode fn : cn.getFields()) {
+            if (fn.getName().equals(name)) return fn;
         }
 
-        l = cn.getMethods();
-        for (Iterator iter = l.iterator(); iter.hasNext();) {
-            MethodNode f = (MethodNode) iter.next();
-            String methodName = f.getName();
-            String pName = getPropertyName(f);
-            if (pName == null) continue;
-            if (!pName.equals(name)) continue;
-            PropertyNode var = new PropertyNode(pName, f.getModifiers(), getPropertyType(f), cn, null, null, null);
-            return var;
+        for (MethodNode mn : cn.getMethods()) {
+            String pName = getPropertyName(mn);
+            if (pName != null && pName.equals(name))
+                return new PropertyNode(pName, mn.getModifiers(), getPropertyType(mn), cn, null, null, null);
         }
 
-        l = cn.getProperties();
-        for (Iterator iter = l.iterator(); iter.hasNext();) {
-            PropertyNode f = (PropertyNode) iter.next();
-            if (f.getName().equals(name)) return f;
+        for (PropertyNode pn : cn.getProperties()) {
+            if (pn.getName().equals(name)) return pn;
         }
 
         Variable ret = findClassMember(cn.getSuperClass(), name);
@@ -185,7 +174,6 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     private ClassNode getPropertyType(MethodNode m) {
-        String name = m.getName();
         if (m.getReturnType() != ClassHelper.VOID_TYPE) {
             return m.getReturnType();
         }
@@ -217,7 +205,6 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
         VariableScope scope = currentScope;
         Variable var = new DynamicVariable(name, currentScope.isInStaticContext());
-        Variable dummyStart = var;
         // try to find a declaration of a variable
         VariableScope dynamicScope = null;
         while (!scope.isRoot()) {
@@ -233,7 +220,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
                 break;
             }
 
-            var1 = (Variable) scope.getReferencedLocalVariable(var.getName());
+            var1 = scope.getReferencedLocalVariable(var.getName());
             if (var1 != null) {
                 var = var1;
                 break;
@@ -289,7 +276,6 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         if (!scope.isRoot()) {
             scope = currentScope;
             while (scope != end) {
-                Map references = null;
                 if (end.isClassScope() || end.isRoot() ||
                         (end.isReferencedClassVariable(name) && end.getDeclaredVariable(name) == null)) {
                     scope.putReferencedClassVariable(var);
@@ -313,6 +299,8 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
      * a property on "this", like this.x is transformed to a
      * direct field access, so we need to check the
      * static context here
+     *
+     * @param pe the property expression to check
      */
     private void checkPropertyOnExplicitThis(PropertyExpression pe) {
         if (!currentScope.isInStaticContext()) return;
@@ -354,7 +342,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     public void visitForLoop(ForStatement forLoop) {
         pushState();
         forLoop.setVariableScope(currentScope);
-        Parameter p = (Parameter) forLoop.getVariable();
+        Parameter p = forLoop.getVariable();
         p.setInStaticContext(currentScope.isInStaticContext());
         if (p != ForStatement.FOR_LOOP_DUMMY) declare(p, forLoop);
         super.visitForLoop(forLoop);
@@ -365,17 +353,17 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         // visit right side first to avoid the usage of a 
         // variable before its declaration
         expression.getRightExpression().visit(this);
-        
+
         // no need to visit left side, just get the variable name
         if (expression.isMultipleAssignmentDeclaration()) {
             ArgumentListExpression list = (ArgumentListExpression) expression.getLeftExpression();
-            for (Iterator it=list.getExpressions().iterator(); it.hasNext();) {
-                VariableExpression exp = (VariableExpression) it.next();
+            for (Expression e : list.getExpressions()) {
+                VariableExpression exp = (VariableExpression) e;
                 declare(exp);
             }
         } else {
-            declare(expression.getVariableExpression());           
-        }        
+            declare(expression.getVariableExpression());
+        }
     }
 
     public void visitVariableExpression(VariableExpression expression) {
@@ -408,15 +396,15 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
         if (expression.isParameterSpecified()) {
             Parameter[] parameters = expression.getParameters();
-            for (int i = 0; i < parameters.length; i++) {
-                parameters[i].setInStaticContext(currentScope.isInStaticContext());
-                if (parameters[i].hasInitialExpression()) {
-                    parameters[i].getInitialExpression().visit(this);
+            for (Parameter parameter : parameters) {
+                parameter.setInStaticContext(currentScope.isInStaticContext());
+                if (parameter.hasInitialExpression()) {
+                    parameter.getInitialExpression().visit(this);
                 }
-                declare(parameters[i], expression);                
+                declare(parameter, expression);
             }
         } else if (expression.getParameters() != null) {
-            Parameter var = new Parameter(ClassHelper.OBJECT_TYPE,"it");
+            Parameter var = new Parameter(ClassHelper.OBJECT_TYPE, "it");
             var.setInStaticContext(currentScope.isInStaticContext());
             currentScope.putDeclaredVariable(var);
         }
@@ -427,7 +415,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
     public void visitCatchStatement(CatchStatement statement) {
         pushState();
-        Parameter p = (Parameter) statement.getVariable();
+        Parameter p = statement.getVariable();
         p.setInStaticContext(currentScope.isInStaticContext());
         declare(p, statement);
         super.visitCatchStatement(statement);
@@ -464,8 +452,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
         // GROOVY-2156
         Parameter[] parameters = node.getParameters();
-        for (int i = 0; i < parameters.length; i++) {
-            Parameter parameter = parameters[i];
+        for (Parameter parameter : parameters) {
             visitAnnotations(parameter);
         }
 
@@ -479,11 +466,11 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         if (call.isImplicitThis() && call.getMethod() instanceof ConstantExpression) {
             ConstantExpression methodNameConstant = (ConstantExpression) call.getMethod();
             Object value = methodNameConstant.getText();
-            
+
             if (!(value instanceof String)) {
                 throw new GroovyBugError("tried to make a method call with a non-String constant method name.");
             }
-            
+
             String methodName = (String) value;
             Variable v = checkVariableNameForDeclaration(methodName, call);
             if (v != null && !(v instanceof DynamicVariable)) {
@@ -506,14 +493,14 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         super.visitConstructorCallExpression(call);
         isSpecialConstructorCall = false;
         if (!call.isUsingAnnonymousInnerClass()) return;
-        
+
         pushState();
         InnerClassNode innerClass = (InnerClassNode) call.getType();
         innerClass.setVariableScope(currentScope);
         for (MethodNode method : innerClass.getMethods()) {
             Parameter[] parameters = method.getParameters();
-            if (parameters.length==0) parameters=null; // null means no implicit "it"
-            ClosureExpression cl = new ClosureExpression(parameters,method.getCode());
+            if (parameters.length == 0) parameters = null; // null means no implicit "it"
+            ClosureExpression cl = new ClosureExpression(parameters, method.getCode());
             visitClosureExpression(cl);
         }
         popState();
