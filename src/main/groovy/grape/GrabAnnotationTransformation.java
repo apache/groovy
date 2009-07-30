@@ -131,6 +131,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                 grabAnnotationLoop:
                 for (AnnotationNode node : grabAnnotations) {
                     Map<String, Object> grabMap = new HashMap();
+                    checkForConvenienceForm(node);
                     for (String s : new String[]{"group", "module", "version"}) {
                         if (node.getMember(s) == null) {
                             addError("The missing attribute \"" + s + "\" is required in @" + node.getClassNode().getNameWithoutPackage() + " annotations", node);
@@ -184,6 +185,23 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                 // @Grab annotation.
                 source.addException(re);
             }
+        }
+    }
+
+    private void checkForConvenienceForm(AnnotationNode node) {
+        Object val = node.getMember("value");
+        if (val == null || !(val instanceof ConstantExpression)) return;
+        Object allParts = ((ConstantExpression)val).getValue();
+        if (!(allParts instanceof String)) return;
+        String allstr = (String) allParts;
+        if (allstr.contains(":")) {
+            String[] parts = allstr.split(":");
+            if (parts.length > 4) return;
+            if (parts.length > 3) node.addMember("classifier", new ConstantExpression(parts[3]));
+            if (parts.length > 2) node.addMember("version", new ConstantExpression(parts[2]));
+            else node.addMember("version", new ConstantExpression("*")); // TODO '*' default in @Grab not working?
+            node.addMember("module", new ConstantExpression(parts[1]));
+            node.addMember("group", new ConstantExpression(parts[0]));
         }
     }
 
