@@ -113,7 +113,7 @@ class TabbedPaneFactory extends BeanFactory {
             }
             if (title[7]) {
                 def mnemonic = title[7]
-                if (mnemonic instanceof String) {
+                if ((mnemonic instanceof String) || (mnemonic instanceof GString)) {
                     parent.setMnemonicAt(index, mnemonic.charAt(0) as int)
                 } else {
                     parent.setMnemonicAt(index, mnemonic as int)

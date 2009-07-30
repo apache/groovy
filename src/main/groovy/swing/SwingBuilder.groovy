@@ -448,6 +448,7 @@ public class SwingBuilder extends FactoryBuilderSupport {
         }
 
         def condition = attributes.remove("condition") ?: JComponent.WHEN_FOCUSED
+        if (condition instanceof GString) condition = condition as String
         if( condition instanceof String ) {
             condition = condition.toUpperCase().replaceAll(" ","_")
             if( !condition.startsWith("WHEN_") ) condition = "WHEN_"+condition
@@ -473,11 +474,12 @@ public class SwingBuilder extends FactoryBuilderSupport {
         }
         def actionKey = attributes.remove("actionKey")
         if( !actionKey ) actionKey = "Action"+Math.abs(random.nextLong())
-
+                           
         def keyStroke = attributes.remove("keyStroke")
         // accept String, Number, KeyStroke, List<String>, List<Number>, List<KeyStroke>
         def action = attributes.remove("action")
 
+        if( keyStroke instanceof GString ) keyStroke = keyStroke as String
         if( keyStroke instanceof String || keyStroke instanceof Number ) keyStroke = [keyStroke]
         keyStroke.each { ks ->
             switch(ks) {
