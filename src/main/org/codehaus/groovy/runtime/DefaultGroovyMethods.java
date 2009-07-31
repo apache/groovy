@@ -12607,8 +12607,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         };
     }
 
-    // TODO move into DOMCategory once we can make use of optional categories transparent
-
     /**
      * Makes NodeList iterable by returning a read-only Iterator which traverses
      * over each Node.
@@ -12617,15 +12615,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return an Iterator for a NodeList
      * @since 1.0
      */
-    public static Iterator iterator(final NodeList nodeList) {
-        return new Iterator() {
+    public static Iterator<org.w3c.dom.Node> iterator(final NodeList nodeList) {
+        return new Iterator<org.w3c.dom.Node>() {
             private int current /* = 0 */;
 
             public boolean hasNext() {
                 return current < nodeList.getLength();
             }
 
-            public Object next() {
+            public org.w3c.dom.Node next() {
                 return nodeList.item(current++);
             }
 
@@ -12699,13 +12697,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.io.BufferedReader#readLine()
      * @since 1.5.0
      */
-    public static Iterator iterator(Reader self) {
+    public static Iterator<String> iterator(Reader self) {
         final BufferedReader bufferedReader;
         if (self instanceof BufferedReader)
             bufferedReader = (BufferedReader) self;
         else
             bufferedReader = new BufferedReader(self);
-        return new Iterator() {
+        return new Iterator<String>() {
             String nextVal /* = null */;
             boolean nextMustRead = true;
             boolean hasNext = true;
@@ -12722,7 +12720,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 return hasNext;
             }
 
-            public Object next() {
+            public String next() {
                 String retval = null;
                 if (nextMustRead) {
                     try {
@@ -12757,20 +12755,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return an Iterator for the InputStream
      * @since 1.5.0
      */
-    public static Iterator iterator(InputStream self) {
+    public static Iterator<Byte> iterator(InputStream self) {
         return iterator(new DataInputStream(self));
     }
 
     /**
      * Standard iterator for a data input stream which iterates through the
-     * stream content a byte at a time.
+     * stream content a Byte at a time.
      *
      * @param self a DataInputStream object
      * @return an Iterator for the DataInputStream
      * @since 1.5.0
      */
-    public static Iterator iterator(final DataInputStream self) {
-        return new Iterator() {
+    public static Iterator<Byte> iterator(final DataInputStream self) {
+        return new Iterator<Byte>() {
             Byte nextVal;
             boolean nextMustRead = true;
             boolean hasNext = true;
@@ -12787,7 +12785,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 return hasNext;
             }
 
-            public Object next() {
+            public Byte next() {
                 Byte retval = null;
                 if (nextMustRead) {
                     try {
@@ -12802,7 +12800,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
 
             public void remove() {
-                throw new UnsupportedOperationException("Cannot remove() from an InputStream Iterator");
+                throw new UnsupportedOperationException("Cannot remove() from a DataInputStream Iterator");
             }
         };
     }
