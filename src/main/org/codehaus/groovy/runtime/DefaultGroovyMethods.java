@@ -11462,7 +11462,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param rs a java.sql.ResultSet
      * @return the resulting groovy.sql.GroovyRowResult
      * @throws java.sql.SQLException if a database error occurs
-     * @deprecated moved to {@link org.codehaus.groovy.runtime.SqlGroovyMethods.toRowResult(java.sql.ResultSet)}
+     * @deprecated moved to {@link org.codehaus.groovy.runtime.SqlGroovyMethods#toRowResult(java.sql.ResultSet)}
      * @since 1.6.0
      */
     @Deprecated
