@@ -472,5 +472,18 @@ log4j {
         assertEquals("false", props.get("catalog.prov"))
         assertEquals("sa", props.get("catalog.prov.db.user"))
     }
+    
+    public void testSameElementNestingWithoutDuplication() {
+        def cfg = """ 
+            a { b { a { foo = 1 } } } 
+            a.foo = 2
+            a { b { a { bar = 3 } } }
+        """
+        ConfigObject c = new ConfigSlurper().parse(cfg)
+        assert c.a.b.a.foo == 1
+        assert c.a != c.a.b.a
+        assert c.a.foo == 2
+        assert c.a.b.a.bar == 3
+    }
 
 }
