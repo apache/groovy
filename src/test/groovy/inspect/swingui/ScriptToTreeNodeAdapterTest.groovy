@@ -29,124 +29,135 @@ import javax.swing.tree.TreeNode
  */
 public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
 
-    ScriptToTreeNodeAdapter adapter
+    /**
+     * Asserts that a given script produces the expected tree like
+     * structure. 
+     */
 
-    protected void setUp() {
-        adapter = new ScriptToTreeNodeAdapter()
+    def assertTreeStructure(String script, List<Closure> specification) {
+        ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter()
+        TreeNode root = adapter.compile(script, Phases.SEMANTIC_ANALYSIS)
+        specification.each { spec ->
+            root = root?.children()?.find {
+                spec(it)
+            }
+        }
+        assertNotNull('Could not locate Expression in AST', root)
+    }
+
+
+    /**
+     * Helper method to assert a map entry element.
+     */
+    private def assertMapEntry(mapEntry, expectedKey, expectedValue) {
+        assertNotNull('Could not locate 1st MapEntryExpression in AST', mapEntry)
+        assertEquals('Wrong # map entries', 2, mapEntry.children.size())
+        assertEquals('Wrong key', expectedKey, mapEntry.children[0].toString())
+        assertEquals('Wrong value', expectedValue, mapEntry.children[1].toString())
+    }
+
+    /**
+     * Returns a function that tests for Groovy Truth equality. 
+     */
+    def eq(String target) {
+        return { it.toString() == target }
+    }
+
+    /**
+     * Helper method to print out the TreeNode to a test form in system out.
+     * Warning, this uses recursion.
+     */
+    def printnode(TreeNode node, String prefix = "") {
+        println prefix + node
+        node.children().each {
+            printnode(it, prefix + "  ")
+        }
+    }
+
+    /**
+     * Returns a function that acts much like String#startsWith for Objects.
+     */
+    def startsWith(String target) {
+        return { it.toString().startsWith(target) }
     }
 
     public void testHelloWorld() {
 
-        def script = "\"Hello World\""
-        ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter()
-        TreeNode root = adapter.compile(script, Phases.SEMANTIC_ANALYSIS)
-
-        def result = root.children()?.find {
-            it.toString() == 'BlockStatement'
-        }?.children()?.find {
-            it.toString() == 'BlockStatement'
-        }?.children()?.find {
-            it.toString() == 'ExpressionStatement'
-        }?.children()?.find {
-            it.toString() == 'Constant - Hello World : java.lang.String'
-        }
-        assertNotNull('Could not locate ConstantExpression in AST', result)
+        assertTreeStructure(
+                "\"Hello World\"",
+                [
+                        eq('BlockStatement'),
+                        eq('ExpressionStatement'),
+                        eq('Constant - Hello World : java.lang.String')
+                ])
     }
 
     public void testSimpleClass() {
-        def script = " class Foo { public aField } "
-        ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter()
-        TreeNode root = adapter.compile(script, Phases.SEMANTIC_ANALYSIS)
 
-        def result = root.children()?.find {
-            it.toString() == 'ClassNode - Foo'
-        }?.children()?.find {
-            it.toString() == 'Fields'
-        }?.children()?.find {
-            it.toString() == 'FieldNode - aField : java.lang.Object'
-        }
-        assertNotNull('Could not locate ClassExpression in AST', result)
+        assertTreeStructure(
+                " class Foo { public aField } ",
+                [
+                        eq('ClassNode - Foo'),
+                        eq('Fields'),
+                        eq('FieldNode - aField : java.lang.Object'),
+                ]
+        )
     }
 
-
     public void testMethodWithParameter() {
-        def script = " def foo(String bar) { println bar } "
-        ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter()
-        TreeNode root = adapter.compile(script, Phases.SEMANTIC_ANALYSIS)
 
-        def result = root.children()?.find {
-            it.toString().startsWith('ClassNode - script')
-        }?.children()?.find {
-            it.toString() == 'Methods'
-        }?.children()?.find {
-            it.toString() == 'MethodNode - foo'
-        }?.children()?.find {
-            it.toString() == 'Parameter - bar'
-        }
-        assertNotNull('Could not locate ClassExpression in AST', result)
+        assertTreeStructure(
+                " def foo(String bar) { println bar } ",
+                [
+                    startsWith('ClassNode - script'),
+                    eq('Methods'),
+                    eq('MethodNode - foo'),
+                    eq('Parameter - bar'),
+                ]
+            )
     }
 
     public void testMethodWithParameterAndInitialValue() {
-        def script = """ def foo(String bar = "some_value") { println bar } """
-        ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter()
-        TreeNode root = adapter.compile(script, Phases.SEMANTIC_ANALYSIS)
 
-        def result = root.children()?.find {
-            it.toString().startsWith('ClassNode - script')
-        }?.children()?.find {
-            it.toString() == 'Methods'
-        }?.children()?.find {
-            it.toString() == 'MethodNode - foo'
-        }?.children()?.find {
-            it.toString() == 'Parameter - bar'
-        }?.children()?.find {
-            it.toString() == 'Constant - some_value : java.lang.String'
-        }
-        assertNotNull('Could not locate ClassExpression in AST', result)
+        assertTreeStructure(
+                """ def foo(String bar = "some_value") { println bar } """,
+                [
+                        startsWith('ClassNode - script'),
+                        eq('Methods'),
+                        eq('MethodNode - foo'),
+                        eq('Parameter - bar'),
+                        eq('Constant - some_value : java.lang.String'),
+                ]
+            )
     }
 
     public void testClosureParameters() {
 
-        def script = " def x = { parm1 ->  println parm1 } "
-        ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter()
-        TreeNode root = adapter.compile(script, Phases.SEMANTIC_ANALYSIS)
-        def result = root.children()?.find {
-            it.toString() == 'BlockStatement'
-        }?.children()?.find {
-            it.toString() == 'BlockStatement'
-        }?.children()?.find {
-            it.toString() == 'ExpressionStatement'
-        }?.children()?.find {
-            it.toString().startsWith('Declaration - (x =')
-        }?.children()?.find {
-            it.toString() == 'ClosureExpression'
-        }?.children()?.find {
-            it.toString() == 'Parameter - parm1'
-        }
-        assertNotNull('Could not locate ClassExpression in AST', result)
+        assertTreeStructure(
+                " def x = { parm1 ->  println parm1 } ",
+                [
+                        eq('BlockStatement'),
+                        eq('ExpressionStatement'),
+                        startsWith('Declaration - (x ='),
+                        eq('ClosureExpression'),
+                        eq('Parameter - parm1'),
+                ]
+        )
     }
 
     public void testClosureParametersWithInitialValue() {
 
-        def script = """ def x = { parm1 = "some_value" ->  println parm1 } """
-        ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter()
-        TreeNode root = adapter.compile(script, Phases.SEMANTIC_ANALYSIS)
-        def result = root.children()?.find {
-            it.toString() == 'BlockStatement'
-        }?.children()?.find {
-            it.toString() == 'BlockStatement'
-        }?.children()?.find {
-            it.toString() == 'ExpressionStatement'
-        }?.children()?.find {
-            it.toString().startsWith('Declaration - (x =')
-        }?.children()?.find {
-            it.toString() == 'ClosureExpression'
-        }?.children()?.find {
-            it.toString() == 'Parameter - parm1'
-        }?.children()?.find {
-            it.toString() == 'Constant - some_value : java.lang.String'
-        }
-        assertNotNull('Could not locate ClassExpression in AST', result)
+        assertTreeStructure(
+                """ def x = { parm1 = "some_value" ->  println parm1 } """,
+                [
+                        eq('BlockStatement'),
+                        eq('ExpressionStatement'),
+                        startsWith('Declaration - (x ='),
+                        eq('ClosureExpression'),
+                        eq('Parameter - parm1'),
+                        eq('Constant - some_value : java.lang.String'),
+                ]
+        )
     }
 
     public void testNamedArgumentListExpression() {
@@ -155,8 +166,6 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
         TreeNode root = adapter.compile(script, Phases.SEMANTIC_ANALYSIS)
 
         def namedArgList = root.children()?.find {
-            it.toString() == 'BlockStatement'
-        }?.children()?.find {
             it.toString() == 'BlockStatement'
         }?.children()?.find {
             it.toString() == 'ExpressionStatement'
@@ -175,80 +184,48 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
         assertMapEntry(namedArgList.children[1], 'Constant - baz : java.lang.String', 'Constant - qux : java.lang.String')
     }
 
-
     public void testDynamicVariable() {
-        def script = " foo = 'bar' "
-        ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter()
-        TreeNode root = adapter.compile(script, Phases.SEMANTIC_ANALYSIS)
 
-        def result = root.children()?.find {
-            it.toString() == 'BlockStatement'
-        }?.children()?.find {
-            it.toString() == 'BlockStatement'
-        }?.children()?.find {
-            it.toString() == 'ExpressionStatement'
-        }?.children()?.find {
-            it.toString().startsWith('Binary')
-        }?.children()?.find {
-            it.toString().startsWith('Variable')
-        }?.children()?.find {
-            it.toString() == 'DynamicVariable'
-        }
-
-        assertNotNull('Could not locate DynamicVariable in AST', result)
+        assertTreeStructure(
+                " foo = 'bar' ",
+                [
+                        eq('BlockStatement'),
+                        eq('ExpressionStatement'),
+                        startsWith('Binary'),
+                        startsWith('Variable'),
+                        eq('DynamicVariable'),
+                ]
+            )
     }
-
 
     public void testVariableParameters() {
-        def script = " 'foo' "
-        ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter()
-        TreeNode root = adapter.compile(script, Phases.SEMANTIC_ANALYSIS)
-
-        def result = root.children()?.find {
-            it.toString().startsWith('ClassNode')
-        }?.children()?.find {
-            it.toString() == 'Methods'
-        }?.children()?.find {
-            it.toString().startsWith('MethodNode - this$dist$invoke$')
-        }?.children()?.find {
-            it.toString() == 'BlockStatement'
-        }?.children()?.find {
-            it.toString() == 'BlockStatement'
-        }?.children()?.find {
-            it.toString() == 'ReturnStatement'
-        }?.children()?.find {
-            it.toString() == 'MethodCallExpression'
-        }?.children()?.find {
-            it.toString() == 'ArgumentListExpression'
-        }?.children()?.find {
-            it.toString() == 'SpreadExpression'
-        }?.children()?.find {
-            it.toString().startsWith('Variable')
-        }?.children()?.find {
-            it.toString() == 'Parameter - args'
-        }
-
-        assertNotNull('Could not locate DynamicVariable in AST', result)
+        assertTreeStructure(
+                " 'foo' ",
+                [
+                        startsWith('ClassNode'),
+                        eq('Methods'),
+                        startsWith('MethodNode - this$dist$invoke$'),
+                        eq('BlockStatement'),
+                        eq('ReturnStatement'),
+                        eq('MethodCallExpression'),
+                        eq('ArgumentListExpression'),
+                        eq('SpreadExpression'),
+                        startsWith('Variable'),
+                        eq('Parameter - args'),
+                ]
+        )
     }
 
-    /**
-     * Helper method to assert a map entry element. 
-     */
-    private def assertMapEntry(mapEntry, expectedKey, expectedValue) {
-        assertNotNull('Could not locate 1st MapEntryExpression in AST', mapEntry)
-        assertEquals('Wrong # map entries', 2, mapEntry.children.size())
-        assertEquals('Wrong key', expectedKey, mapEntry.children[0].toString())
-        assertEquals('Wrong value', expectedValue, mapEntry.children[1].toString())
-    }
-
-    /**
-     * Helper method to print out the TreeNode to a test form in system out.
-     * Warning, this uses recursion. 
-     */
-    def printnode(TreeNode node, String prefix = "") {
-        println prefix + node
-        node.children().each {
-            printnode(it, prefix + "  ")
-        }
+    public void testExpression_DuplicateDoesNotAppear() {
+        assertTreeStructure(
+                " 'foo' ",
+                [
+                        startsWith('ClassNode'),
+                        eq('Methods'),
+                        eq('MethodNode - main'),
+                        eq('ExpressionStatement'),  //notice, there is only one ExpressionStatement
+                        eq('MethodCallExpression'),
+                ]
+        )
     }
 }

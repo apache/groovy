@@ -158,7 +158,7 @@ private class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
     final def sourceCollected = new AtomicBoolean(false)
     final ScriptToTreeNodeAdapter adapter
 
-    def TreeNodeBuildingNodeOperation(adapter) {
+    def TreeNodeBuildingNodeOperation(ScriptToTreeNodeAdapter adapter) {
         if (!adapter) throw new IllegalArgumentException("Null: adapter")
         this.adapter = adapter;
     }
@@ -279,22 +279,23 @@ private class TreeNodeBuildingVisitor extends CodeVisitorSupport {
      * nodes, for instance seeing an ArgumentListExpression and a TupleExpression in the tree, when
      * an ArgumentList is-a Tuple.
     */
-    private DefaultMutableTreeNode addNode(node, Class expectedSubclass, Closure superMethod) {
+    private void addNode(node, Class expectedSubclass, Closure superMethod) {
 
         if (expectedSubclass.getName() == node.getClass().getName()) {
-            DefaultMutableTreeNode parent
             if (currentNode == null) {
-                parent = adapter.make(node)
+                currentNode = adapter.make(node)
+                superMethod.call(node)
             } else {
-                parent = currentNode;
+                // visitor works off void methods... so we have to
+                // perform a swap to get accumulation like behavior.
+                DefaultMutableTreeNode temp = currentNode;
+                currentNode = adapter.make(node)
+
+                temp.add(currentNode)
+                currentNode.parent = temp
+                superMethod.call(node)
+                currentNode = temp
             }
-
-            currentNode = adapter.make(node)
-
-            parent.add(currentNode)
-            currentNode.parent = parent
-            superMethod.call(node)
-            currentNode = parent
         } else {
             superMethod.call(node)
         }
