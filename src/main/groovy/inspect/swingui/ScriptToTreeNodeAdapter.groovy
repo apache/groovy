@@ -103,14 +103,14 @@ class ScriptToTreeNodeAdapter {
         return operation.root
     }
 
-    TreeNode make(ASTNode node) {
+    TreeNode make(node) {
         new TreeNodeWithProperties(getStringForm(node), getPropertyTable(node))
     }
 
     /**
      * Creates the property table for the node so that the properties view can display nicely.
      */
-    private List<List<String>> getPropertyTable(ASTNode node) {
+    private List<List<String>> getPropertyTable(node) {
         node.metaClass.properties?.
             findAll { it.getter }?.
             collect {
@@ -133,7 +133,7 @@ class ScriptToTreeNodeAdapter {
     /**
      * Handles the property file templating for node types.
      */
-    private String getStringForm(ASTNode node) {
+    private String getStringForm(node) {
 		if (classNameToStringForm[node.class.name]) {
 			GStringTemplateEngine engine = new GStringTemplateEngine()
 			def script = classNameToStringForm[node.class.name]
@@ -279,7 +279,7 @@ private class TreeNodeBuildingVisitor extends CodeVisitorSupport {
      * nodes, for instance seeing an ArgumentListExpression and a TupleExpression in the tree, when
      * an ArgumentList is-a Tuple.
     */
-    private DefaultMutableTreeNode addNode(ASTNode node, Class expectedSubclass, Closure superMethod) {
+    private DefaultMutableTreeNode addNode(node, Class expectedSubclass, Closure superMethod) {
 
         if (expectedSubclass.getName() == node.getClass().getName()) {
             DefaultMutableTreeNode parent
@@ -402,14 +402,19 @@ private class TreeNodeBuildingVisitor extends CodeVisitorSupport {
 
     public void visitClosureExpression(ClosureExpression node) {
         addNode(node, ClosureExpression, { 
-          it.parameters?.each { parameter -> 
-            addNode(parameter, Parameter, { 
-              if (parameter.initialExpression) {
-                parameter.initialExpression.visit(this)
-              }
-            });
-          }
+          it.parameters?.each { parameter -> visitParameter(parameter) }
           super.visitClosureExpression(it) 
+        });
+    }
+
+    /**
+     * Makes walking parameters look like others in the visitor.
+     */
+    public void visitParameter(Parameter node) {
+        addNode(node, Parameter, {
+          if (node.initialExpression) {
+            node.initialExpression?.visit(this)
+          }
         });
     }
 
@@ -474,7 +479,15 @@ private class TreeNodeBuildingVisitor extends CodeVisitorSupport {
     }
 
     public void visitVariableExpression(VariableExpression node) {
-        addNode(node, VariableExpression, { super.visitVariableExpression(it) });
+        addNode(node, VariableExpression, { VariableExpression it ->
+            if (it.accessedVariable) {
+                if (it.accessedVariable instanceof Parameter) {
+                    visitParameter((Parameter)it.accessedVariable)
+                } else if (it.accessedVariable instanceof DynamicVariable) {
+                    addNode(it.accessedVariable, DynamicVariable,{ it.initialExpression?.visit(this)});
+                }
+            }
+        });
     }
 
     public void visitDeclarationExpression(DeclarationExpression node) {

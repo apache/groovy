@@ -35,7 +35,7 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
         adapter = new ScriptToTreeNodeAdapter()
     }
 
-    public void testCompile_HelloWorld() {
+    public void testHelloWorld() {
 
         def script = "\"Hello World\""
         ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter()
@@ -53,7 +53,7 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
         assertNotNull('Could not locate ConstantExpression in AST', result)
     }
 
-    public void testCompile_SimpleClass() {
+    public void testSimpleClass() {
         def script = " class Foo { public aField } "
         ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter()
         TreeNode root = adapter.compile(script, Phases.SEMANTIC_ANALYSIS)
@@ -69,7 +69,7 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
     }
 
 
-    public void testCompile_MethodWithParameter() {
+    public void testMethodWithParameter() {
         def script = " def foo(String bar) { println bar } "
         ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter()
         TreeNode root = adapter.compile(script, Phases.SEMANTIC_ANALYSIS)
@@ -86,7 +86,7 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
         assertNotNull('Could not locate ClassExpression in AST', result)
     }
 
-    public void testCompile_MethodWithParameterAndInitialValue() {
+    public void testMethodWithParameterAndInitialValue() {
         def script = """ def foo(String bar = "some_value") { println bar } """
         ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter()
         TreeNode root = adapter.compile(script, Phases.SEMANTIC_ANALYSIS)
@@ -105,7 +105,7 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
         assertNotNull('Could not locate ClassExpression in AST', result)
     }
 
-    public void testCompile_ClosureParameters() {
+    public void testClosureParameters() {
 
         def script = " def x = { parm1 ->  println parm1 } "
         ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter()
@@ -126,7 +126,7 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
         assertNotNull('Could not locate ClassExpression in AST', result)
     }
 
-    public void testCompile_ClosureParametersWithInitialValue() {
+    public void testClosureParametersWithInitialValue() {
 
         def script = """ def x = { parm1 = "some_value" ->  println parm1 } """
         ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter()
@@ -173,6 +173,62 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
 
         assertMapEntry(namedArgList.children[0], 'Constant - foo : java.lang.String', 'Constant - bar : java.lang.String')
         assertMapEntry(namedArgList.children[1], 'Constant - baz : java.lang.String', 'Constant - qux : java.lang.String')
+    }
+
+
+    public void testDynamicVariable() {
+        def script = " foo = 'bar' "
+        ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter()
+        TreeNode root = adapter.compile(script, Phases.SEMANTIC_ANALYSIS)
+
+        def result = root.children()?.find {
+            it.toString() == 'BlockStatement'
+        }?.children()?.find {
+            it.toString() == 'BlockStatement'
+        }?.children()?.find {
+            it.toString() == 'ExpressionStatement'
+        }?.children()?.find {
+            it.toString().startsWith('Binary')
+        }?.children()?.find {
+            it.toString().startsWith('Variable')
+        }?.children()?.find {
+            it.toString() == 'DynamicVariable'
+        }
+
+        assertNotNull('Could not locate DynamicVariable in AST', result)
+    }
+
+
+    public void testVariableParameters() {
+        def script = " 'foo' "
+        ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter()
+        TreeNode root = adapter.compile(script, Phases.SEMANTIC_ANALYSIS)
+
+        def result = root.children()?.find {
+            it.toString().startsWith('ClassNode')
+        }?.children()?.find {
+            it.toString() == 'Methods'
+        }?.children()?.find {
+            it.toString().startsWith('MethodNode - this$dist$invoke$')
+        }?.children()?.find {
+            it.toString() == 'BlockStatement'
+        }?.children()?.find {
+            it.toString() == 'BlockStatement'
+        }?.children()?.find {
+            it.toString() == 'ReturnStatement'
+        }?.children()?.find {
+            it.toString() == 'MethodCallExpression'
+        }?.children()?.find {
+            it.toString() == 'ArgumentListExpression'
+        }?.children()?.find {
+            it.toString() == 'SpreadExpression'
+        }?.children()?.find {
+            it.toString().startsWith('Variable')
+        }?.children()?.find {
+            it.toString() == 'Parameter - args'
+        }
+
+        assertNotNull('Could not locate DynamicVariable in AST', result)
     }
 
     /**
