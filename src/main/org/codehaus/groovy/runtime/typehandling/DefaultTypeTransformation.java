@@ -421,6 +421,10 @@ public class DefaultTypeTransformation {
         return array;
     }
     
+    public static <T> Collection<T> asCollection(T[] value) {
+        return arrayAsCollection(value);
+    }
+
     public static Collection asCollection(Object value) {
         if (value == null) {
             return Collections.EMPTY_LIST;
@@ -469,7 +473,11 @@ public class DefaultTypeTransformation {
         if (value.getClass().getComponentType().isPrimitive()) {
             return primitiveArrayToList(value);
         }
-        return Arrays.asList((Object[]) value);
+        return arrayAsCollection((Object[]) value);
+    }
+
+    public static <T> Collection<T> arrayAsCollection(T[] value) {
+        return Arrays.asList((T[]) value);
     }
 
     /**

@@ -17,8 +17,8 @@ package groovy.xml.dom;
 
 import groovy.xml.QName;
 import groovy.lang.GroovyRuntimeException;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.XmlGroovyMethods;
 import org.w3c.dom.*;
 
 import javax.xml.xpath.XPathFactory;
@@ -160,7 +160,7 @@ public class DOMCategory {
 
     public static List list(NodeList self) {
         List answer = new ArrayList();
-        Iterator it = DefaultGroovyMethods.iterator(self);
+        Iterator it = XmlGroovyMethods.iterator(self);
         while (it.hasNext()) {
             answer.add(it.next());
         }
@@ -316,7 +316,7 @@ public class DOMCategory {
     private static String toString(NodeList self) {
         StringBuffer sb = new StringBuffer();
         sb.append("[");
-        Iterator it = DefaultGroovyMethods.iterator(self);
+        Iterator it = XmlGroovyMethods.iterator(self);
         while (it.hasNext()) {
             if (sb.length() > 1) sb.append(", ");
             sb.append(it.next().toString());

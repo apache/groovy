@@ -18,7 +18,6 @@ package org.codehaus.groovy.runtime;
 import groovy.io.EncodingAwareBufferedWriter;
 import groovy.io.GroovyPrintWriter;
 import groovy.lang.*;
-import groovy.sql.GroovyRowResult;
 import groovy.util.*;
 import org.codehaus.groovy.reflection.ClassInfo;
 import org.codehaus.groovy.reflection.MixinInMetaClass;
@@ -33,7 +32,6 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
 import org.codehaus.groovy.tools.RootLoader;
-import org.w3c.dom.NodeList;
 
 import java.io.*;
 import java.lang.reflect.Array;
@@ -45,9 +43,6 @@ import java.math.BigInteger;
 import java.net.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
-import java.sql.ResultSet;
-import java.sql.ResultSetMetaData;
-import java.sql.SQLException;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -11464,18 +11459,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Returns a GroovyRowResult given a ResultSet.
      *
-     * @param rs a ResultSet
-     * @return the resulting GroovyRowResult
-     * @throws SQLException if a database error occurs
+     * @param rs a java.sql.ResultSet
+     * @return the resulting groovy.sql.GroovyRowResult
+     * @throws java.sql.SQLException if a database error occurs
+     * @deprecated moved to {@link org.codehaus.groovy.runtime.SqlGroovyMethods.toRowResult(java.sql.ResultSet)}
      * @since 1.6.0
      */
-    public static GroovyRowResult toRowResult(ResultSet rs) throws SQLException {
-        ResultSetMetaData metadata = rs.getMetaData();
-        LinkedHashMap<String, Object> lhm = new LinkedHashMap<String, Object>(metadata.getColumnCount(), 1);
-        for (int i = 1; i <= metadata.getColumnCount(); i++) {
-            lhm.put(metadata.getColumnLabel(i), rs.getObject(i));
-        }
-        return new GroovyRowResult(lhm);
+    @Deprecated
+    public static groovy.sql.GroovyRowResult toRowResult(java.sql.ResultSet rs) throws java.sql.SQLException {
+        return SqlGroovyMethods.toRowResult(rs);
     }
 
     /**
@@ -12652,6 +12644,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Attempts to create an Iterator for the given object by first
      * converting it to a Collection.
      *
+     * @param a an array
+     * @return an Iterator for the given Array.
+     * @see DefaultTypeTransformation#asCollection(Object[])
+     * @since 1.6.4
+     */
+    public static <T> Iterator<T> iterator(T[] a) {
+        return DefaultTypeTransformation.asCollection(a).iterator();
+    }
+
+    /**
+     * Attempts to create an Iterator for the given object by first
+     * converting it to a Collection.
+     *
      * @param o an object
      * @return an Iterator for the given Object.
      * @see DefaultTypeTransformation#asCollection(Object)
@@ -12689,32 +12694,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         };
     }
 
-    // TODO move into DOMCategory once we can make use of optional categories transparent
-
     /**
-     * Makes NodeList iterable by returning a read-only Iterator which traverses
+     * Makes org.w3c.dom.NodeList iterable by returning a read-only Iterator which traverses
      * over each Node.
      *
      * @param nodeList a NodeList
      * @return an Iterator for a NodeList
      * @since 1.0
+     * @deprecated moved to {@link org.codehaus.groovy.runtime.XmlGroovyMethods}
      */
-    public static Iterator iterator(final NodeList nodeList) {
-        return new Iterator() {
-            private int current /* = 0 */;
-
-            public boolean hasNext() {
-                return current < nodeList.getLength();
-            }
-
-            public Object next() {
-                return nodeList.item(current++);
-            }
-
-            public void remove() {
-                throw new UnsupportedOperationException("Cannot remove() from a NodeList iterator");
-            }
-        };
+    @Deprecated
+    public static Iterator<org.w3c.dom.Node> iterator(final org.w3c.dom.NodeList nodeList) {
+        return XmlGroovyMethods.iterator(nodeList);
     }
 
     /**
@@ -12781,13 +12772,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.io.BufferedReader#readLine()
      * @since 1.5.0
      */
-    public static Iterator iterator(Reader self) {
+    public static Iterator<String> iterator(Reader self) {
         final BufferedReader bufferedReader;
         if (self instanceof BufferedReader)
             bufferedReader = (BufferedReader) self;
         else
             bufferedReader = new BufferedReader(self);
-        return new Iterator() {
+        return new Iterator<String>() {
             String nextVal /* = null */;
             boolean nextMustRead = true;
             boolean hasNext = true;
@@ -12804,7 +12795,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 return hasNext;
             }
 
-            public Object next() {
+            public String next() {
                 String retval = null;
                 if (nextMustRead) {
                     try {
@@ -12839,20 +12830,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return an Iterator for the InputStream
      * @since 1.5.0
      */
-    public static Iterator iterator(InputStream self) {
+    public static Iterator<Byte> iterator(InputStream self) {
         return iterator(new DataInputStream(self));
     }
 
     /**
      * Standard iterator for a data input stream which iterates through the
-     * stream content a byte at a time.
+     * stream content a Byte at a time.
      *
      * @param self a DataInputStream object
      * @return an Iterator for the DataInputStream
      * @since 1.5.0
      */
-    public static Iterator iterator(final DataInputStream self) {
-        return new Iterator() {
+    public static Iterator<Byte> iterator(final DataInputStream self) {
+        return new Iterator<Byte>() {
             Byte nextVal;
             boolean nextMustRead = true;
             boolean hasNext = true;
@@ -12869,7 +12860,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 return hasNext;
             }
 
-            public Object next() {
+            public Byte next() {
                 Byte retval = null;
                 if (nextMustRead) {
                     try {
@@ -12884,7 +12875,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             }
 
             public void remove() {
-                throw new UnsupportedOperationException("Cannot remove() from an InputStream Iterator");
+                throw new UnsupportedOperationException("Cannot remove() from a DataInputStream Iterator");
             }
         };
     }

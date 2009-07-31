@@ -20,6 +20,7 @@ import groovy.lang.*;
 import org.codehaus.groovy.reflection.*;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
+import org.codehaus.groovy.runtime.SwingGroovyMethods;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.codehaus.groovy.util.FastArray;
 import org.codehaus.groovy.util.ManagedLinkedList;
@@ -27,11 +28,7 @@ import org.codehaus.groovy.util.ReferenceBundle;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.Map;
+import java.util.*;
 
 /**
  * A registry of MetaClass instances which caches introspection &
@@ -80,21 +77,20 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         this.useAccessible = useAccessible;
 
         if (loadDefault == LOAD_DEFAULT) {
-            HashMap map = new HashMap();
+            Map<CachedClass, List<MetaMethod>> map = new HashMap<CachedClass, List<MetaMethod>>();
 
-            // lets register the default methods
+            // let's register the default methods
             registerMethods(DefaultGroovyMethods.class, true, true, map);
+            registerMethods(SwingGroovyMethods.class, false, true, map);
             Class[] pluginDGMs = VMPluginFactory.getPlugin().getPluginDefaultGroovyMethods();
-            for (int i=0; i<pluginDGMs.length; i++) {
-                registerMethods(pluginDGMs[i], false, true, map);
+            for (Class plugin : pluginDGMs) {
+                registerMethods(plugin, false, true, map);
             }
             registerMethods(DefaultGroovyStaticMethods.class, false, false, map);
 
-            for (Iterator it = map.entrySet().iterator(); it.hasNext(); ) {
-                Map.Entry e = (Map.Entry) it.next();
-                CachedClass cls = (CachedClass) e.getKey();
-                ArrayList list = (ArrayList) e.getValue();
-                cls.setNewMopMethods(list);
+            for (Map.Entry<CachedClass, List<MetaMethod>> e : map.entrySet()) {
+                CachedClass cls = e.getKey();
+                cls.setNewMopMethods(e.getValue());
             }
         }
 
@@ -124,7 +120,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
 	       try {
 	           final Class customMetaClassHandle = Class.forName("groovy.runtime.metaclass.CustomMetaClassCreationHandle");
 	           final Constructor customMetaClassHandleConstructor = customMetaClassHandle.getConstructor(new Class[]{});
-				 this.metaClassCreationHandle = (MetaClassCreationHandle)customMetaClassHandleConstructor.newInstance(new Object[]{});
+				 this.metaClassCreationHandle = (MetaClassCreationHandle)customMetaClassHandleConstructor.newInstance();
 	       } catch (final ClassNotFoundException e) {
 	           this.metaClassCreationHandle = new MetaClassCreationHandle();
 	       } catch (final Exception e) {
@@ -132,13 +128,13 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
 	       }
     }
     
-    private void registerMethods(final Class theClass, final boolean useMethodrapper, final boolean useInstanceMethods, Map map) {
+    private void registerMethods(final Class theClass, final boolean useMethodWrapper, final boolean useInstanceMethods, Map<CachedClass, List<MetaMethod>> map) {
         CachedMethod[] methods = ReflectionCache.getCachedClass(theClass).getMethods();
 
-        if (useMethodrapper) {
+        if (useMethodWrapper) {
             // Here we instantiate objects representing MetaMethods for DGM methods.
             // Calls for such meta methods done without reflection, so more effectively.
-            // It gives 7-8% improvement for benchmarks involving just several ariphmetic operations
+            // It gives 7-8% improvement for benchmarks involving just several arithmetic operations
             for (int i = 0; ; ++i) {
                 try {
                     final String className = "org.codehaus.groovy.runtime.dgm$" + i;
@@ -154,16 +150,15 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
                 createMetaMethodFromClass(map, additionals[i]);
             }
         } else {
-            for (int i = 0; i < methods.length; i++) {
-                CachedMethod method = methods[i];
+            for (CachedMethod method : methods) {
                 final int mod = method.getModifiers();
                 if (Modifier.isStatic(mod) && Modifier.isPublic(mod)) {
                     CachedClass[] paramTypes = method.getParameterTypes();
                     if (paramTypes.length > 0) {
-                        ArrayList arr = (ArrayList) map.get(paramTypes[0]);
+                        List<MetaMethod> arr = map.get(paramTypes[0]);
                         if (arr == null) {
-                            arr = new ArrayList(4);
-                            map.put(paramTypes[0],arr);
+                            arr = new ArrayList<MetaMethod>(4);
+                            map.put(paramTypes[0], arr);
                         }
                         if (useInstanceMethods) {
                             final NewInstanceMetaMethod metaMethod = new NewInstanceMetaMethod(method);
@@ -180,14 +175,14 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         }
     }
 
-    private void createMetaMethodFromClass(Map map, Class aClass) {
+    private void createMetaMethodFromClass(Map<CachedClass, List<MetaMethod>> map, Class aClass) {
         try {
             MetaMethod method = (MetaMethod) aClass.newInstance();
             final CachedClass declClass = method.getDeclaringClass();
-            ArrayList arr = (ArrayList) map.get(declClass);
+            List<MetaMethod> arr = map.get(declClass);
             if (arr == null) {
-                arr = new ArrayList(4);
-                map.put(declClass,arr);
+                arr = new ArrayList<MetaMethod>(4);
+                map.put(declClass, arr);
             }
             arr.add(method);
             instanceMethods.add(method);
@@ -339,6 +334,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
      * Singleton of MetaClassRegistry. 
      *
      * @param includeExtension
+     * @return the registry
      */
     public static MetaClassRegistry getInstance(int includeExtension) {
         if (includeExtension != DONT_LOAD_DEFAULT) {

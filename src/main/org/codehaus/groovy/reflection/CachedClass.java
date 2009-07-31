@@ -89,8 +89,8 @@ public class CachedClass {
                        return dm;
                    }
                });
-            ArrayList methods = new ArrayList(declaredMethods.length);
-            ArrayList mopMethods = new ArrayList(declaredMethods.length);
+            List<CachedMethod> methods = new ArrayList<CachedMethod>(declaredMethods.length);
+            List<CachedMethod> mopMethods = new ArrayList<CachedMethod>(declaredMethods.length);
             for (int i = 0; i != declaredMethods.length; ++i) {
                 final CachedMethod cachedMethod = new CachedMethod(CachedClass.this, declaredMethods[i]);
                 final String name = cachedMethod.getName();
@@ -107,7 +107,7 @@ public class CachedClass {
                 else
                   methods.add(cachedMethod);
             }
-            CachedMethod [] resMethods = (CachedMethod[]) methods.toArray(new CachedMethod[methods.size()]);
+            CachedMethod [] resMethods = methods.toArray(new CachedMethod[methods.size()]);
             Arrays.sort(resMethods);
 
             final CachedClass superClass = getCachedSuperClass();
@@ -117,7 +117,7 @@ public class CachedClass {
                 for (int i = 0; i != superMopMethods.length; ++i)
                   mopMethods.add(superMopMethods[i]);
             }
-            CachedClass.this.mopMethods = (CachedMethod[]) mopMethods.toArray(new CachedMethod[mopMethods.size()]);
+            CachedClass.this.mopMethods = mopMethods.toArray(new CachedMethod[mopMethods.size()]);
             Arrays.sort(CachedClass.this.mopMethods, CachedMethodComparatorByName.INSTANCE);
 
             return resMethods;
@@ -179,8 +179,8 @@ public class CachedClass {
             HashSet<CachedClass> res = new HashSet<CachedClass> (0);
 
             Class[] classes = getTheClass().getInterfaces();
-            for (int i = 0; i < classes.length; i++) {
-                res.add(ReflectionCache.getCachedClass(classes[i]));
+            for (Class cls : classes) {
+                res.add(ReflectionCache.getCachedClass(cls));
             }
             return res;
         }
@@ -194,10 +194,10 @@ public class CachedClass {
               res.add(CachedClass.this);
 
             Class[] classes = getTheClass().getInterfaces();
-            for (int i = 0; i < classes.length; i++) {
-                final CachedClass aClass = ReflectionCache.getCachedClass(classes[i]);
+            for (Class cls : classes) {
+                final CachedClass aClass = ReflectionCache.getCachedClass(cls);
                 if (!res.contains(aClass))
-                  res.addAll(aClass.getInterfaces());
+                    res.addAll(aClass.getInterfaces());
             }
 
             final CachedClass superClass = getCachedSuperClass();
@@ -224,8 +224,7 @@ public class CachedClass {
         isInterface = klazz.isInterface();
         isNumber = Number.class.isAssignableFrom(klazz);
 
-        for (Iterator it = getInterfaces().iterator(); it.hasNext(); ) {
-            CachedClass inf = (CachedClass) it.next();
+        for (CachedClass inf : getInterfaces()) {
             ReflectionCache.isAssignableFrom(klazz, inf.cachedClass);
         }
 
@@ -262,8 +261,7 @@ public class CachedClass {
         CachedMethod[] methods = getMethods();
 
         CachedMethod res = null;
-        for (int i = 0; i < methods.length; i++) {
-            CachedMethod m = methods[i];
+        for (CachedMethod m : methods) {
             if (m.getName().equals(name)
                     && ReflectionCache.arrayContentsEq(parameterTypes, m.getParameterTypes())
                     && (res == null || res.getReturnType().isAssignableFrom(m.getReturnType())))
@@ -388,7 +386,7 @@ public class CachedClass {
         }
     }
 
-    public void setNewMopMethods(List arr) {
+    public void setNewMopMethods(List<MetaMethod> arr) {
         final MetaClass metaClass = classInfo.getStrongMetaClass();
         if (metaClass != null) {
           if (metaClass.getClass() == MetaClassImpl.class) {
@@ -414,9 +412,9 @@ public class CachedClass {
         updateSetNewMopMethods(arr);
     }
 
-    private void updateSetNewMopMethods(List arr) {
+    private void updateSetNewMopMethods(List<MetaMethod> arr) {
         if (arr != null) {
-            final MetaMethod[] metaMethods = (MetaMethod[]) arr.toArray(new MetaMethod[arr.size()]);
+            final MetaMethod[] metaMethods = arr.toArray(new MetaMethod[arr.size()]);
             classInfo.dgmMetaMethods = metaMethods;
             classInfo.newMetaMethods = metaMethods;
         }
@@ -424,7 +422,7 @@ public class CachedClass {
             classInfo.newMetaMethods = classInfo.dgmMetaMethods;
     }
 
-    public void addNewMopMethods(List arr) {
+    public void addNewMopMethods(List<MetaMethod> arr) {
         final MetaClass metaClass = classInfo.getStrongMetaClass();
         if (metaClass != null) {
           if (metaClass.getClass() == MetaClassImpl.class) {
@@ -439,8 +437,8 @@ public class CachedClass {
               classInfo.setStrongMetaClass(null);
               updateAddNewMopMethods(arr);
               ExpandoMetaClass newEmc = new ExpandoMetaClass(metaClass.getTheClass());
-              for (Iterator it = emc.getExpandoMethods().iterator(); it.hasNext(); ) {
-                  newEmc.registerInstanceMethod((MetaMethod) it.next());
+              for (MetaMethod mm : emc.getExpandoMethods()) {
+                  newEmc.registerInstanceMethod(mm);
               }
               newEmc.initialize();
               classInfo.setStrongMetaClass(newEmc);
@@ -455,13 +453,11 @@ public class CachedClass {
         updateAddNewMopMethods(arr);
     }
 
-    private void updateAddNewMopMethods(List arr) {
-        ArrayList res = new ArrayList();
+    private void updateAddNewMopMethods(List<MetaMethod> arr) {
+        List<MetaMethod> res = new ArrayList<MetaMethod>();
         res.addAll(Arrays.asList(classInfo.newMetaMethods));
         res.addAll(arr);
-
-        final MetaMethod[] metaMethods = (MetaMethod[]) res.toArray(new MetaMethod[res.size()]);
-        classInfo.newMetaMethods = metaMethods;
+        classInfo.newMetaMethods = res.toArray(new MetaMethod[res.size()]);
     }
 
     public boolean isAssignableFrom(Class argument) {

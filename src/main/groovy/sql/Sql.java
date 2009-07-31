@@ -38,6 +38,8 @@ import java.util.regex.Pattern;
 import javax.sql.DataSource;
 
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.XmlGroovyMethods;
+import org.codehaus.groovy.runtime.SqlGroovyMethods;
 
 /**
  * A facade over Java's normal JDBC apis providing greatly simplified
@@ -696,7 +698,7 @@ public class Sql {
             if (metaClosure != null) metaClosure.call(rs.getMetaData());
 
             while (rs.next()) {
-                results.add(DefaultGroovyMethods.toRowResult(rs));
+                results.add(SqlGroovyMethods.toRowResult(rs));
             }
             return (results);
         } catch (SQLException e) {
@@ -728,7 +730,7 @@ public class Sql {
             configure(statement);
             rs = statement.executeQuery();
             while (rs.next()) {
-                results.add(DefaultGroovyMethods.toRowResult(rs));
+                results.add(SqlGroovyMethods.toRowResult(rs));
             }
             return (results);
         }
