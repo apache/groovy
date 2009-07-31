@@ -214,8 +214,8 @@ class ConfigSlurper {
                     }
                 } else {
                     def co
-                    if(config.get(name) instanceof ConfigObject) {
-                        co = config.get(name)
+                    if (stack.last.get(name) instanceof ConfigObject) {
+                        co = stack.last.get(name)
                     }
                     else {
                         co = new ConfigObject()
