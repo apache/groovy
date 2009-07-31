@@ -500,6 +500,9 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
+        lineNumber = -1;
+        columnNumber = -1;
+        
         Parameter[] parameters = node.getParameters();
         String methodType = BytecodeHelper.getMethodDescriptor(node.getReturnType(), parameters);
 
@@ -4213,11 +4216,13 @@ public class AsmClassGenerator extends ClassGenerator {
         int col = statement.getColumnNumber();
         this.currentASTNode = statement;
 
-        if (line >= 0) {
-            lineNumber = line;
-            columnNumber = col;
-        }
-        if (line >= 0 && mv != null) {
+        if (line < 0) return;
+        if (!ASM_DEBUG && line==lineNumber) return;
+
+        lineNumber = line;
+        columnNumber = col;
+
+        if (mv != null) {
             Label l = new Label();
             mv.visitLabel(l);
             mv.visitLineNumber(line, l);
