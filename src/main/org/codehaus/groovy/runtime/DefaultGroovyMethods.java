@@ -12557,6 +12557,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Attempts to create an Iterator for the given object by first
      * converting it to a Collection.
      *
+     * @param a an array
+     * @return an Iterator for the given Array.
+     * @see DefaultTypeTransformation#asCollection(Object[])
+     * @since 1.6.4
+     */
+    public static <T> Iterator<T> iterator(T[] a) {
+        return DefaultTypeTransformation.asCollection(a).iterator();
+    }
+
+    /**
+     * Attempts to create an Iterator for the given object by first
+     * converting it to a Collection.
+     *
      * @param o an object
      * @return an Iterator for the given Object.
      * @see DefaultTypeTransformation#asCollection(Object)

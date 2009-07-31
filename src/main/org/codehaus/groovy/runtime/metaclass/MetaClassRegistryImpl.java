@@ -20,6 +20,7 @@ import groovy.lang.*;
 import org.codehaus.groovy.reflection.*;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
+import org.codehaus.groovy.runtime.SwingGroovyMethods;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.codehaus.groovy.util.FastArray;
 import org.codehaus.groovy.util.ManagedLinkedList;
@@ -84,6 +85,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
 
             // lets register the default methods
             registerMethods(DefaultGroovyMethods.class, true, true, map);
+            registerMethods(SwingGroovyMethods.class, false, true, map);
             Class[] pluginDGMs = VMPluginFactory.getPlugin().getPluginDefaultGroovyMethods();
             for (int i=0; i<pluginDGMs.length; i++) {
                 registerMethods(pluginDGMs[i], false, true, map);
