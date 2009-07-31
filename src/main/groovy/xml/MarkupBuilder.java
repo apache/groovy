@@ -40,6 +40,10 @@ import java.util.Map;
  *     &lt;c a2='two'&gt;blah&lt;/c&gt;
  *   &lt;/a&gt;
  * &lt;/root&gt;</pre>
+ * Note that <code>mkp</code> is a special namespace used to escape
+ * away from the normal building mode of the builder and get access
+ * to helper markup methods such as 'yield' and 'yieldUnescaped'.
+ * See the javadoc for {@link #getMkp()} for further details.
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Stefan Matthias Aust
