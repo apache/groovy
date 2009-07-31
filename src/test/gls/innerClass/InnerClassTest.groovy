@@ -32,7 +32,7 @@ class InnerClassTest extends CompilableTestSupport {
 
     void testExtendsObjectAndReferenceAMethodParameterWithinAGString_FAILS() {
         if (notYetImplemented()) return
-        
+
         assertScript """
             Object makeObj0(String name) {
                  new Object() {
@@ -40,7 +40,7 @@ class InnerClassTest extends CompilableTestSupport {
                  }
             }
 
-            assert makeObj0("Guillaume").toString() == objName
+            assert makeObj0("Guillaume").toString() == "My name is Guillaume"
         """
     }
 
@@ -56,7 +56,7 @@ class InnerClassTest extends CompilableTestSupport {
                  }
             }
 
-            assert makeObj1("Guillaume").toString() == objName
+            assert makeObj1("Guillaume").toString() == "My name is Guillaume"
         """
     }
 
@@ -78,7 +78,7 @@ class InnerClassTest extends CompilableTestSupport {
                  }
             }
 
-            assert makeObj2("Guillaume").toString() == objName
+            assert makeObj2("Guillaume").toString() == "My name is Guillaume"
         """
     }
 
