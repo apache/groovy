@@ -21,7 +21,7 @@ import groovy.xml.streamingmarkupsupport.BaseMarkupBuilder
 
 /**
  * <p>A builder class for creating XML markup.  This implementation uses a 
- * {@link groovy.lang.Writer} to handle output.</p>
+ * {@link StreamingMarkupWriter} to handle output.</p>
  * 
  * <p>Example:</p>
  * <pre>new StreamingMarkupBuilder().bind {
@@ -38,7 +38,11 @@ import groovy.xml.streamingmarkupsupport.BaseMarkupBuilder
  *     &lt;b&gt;3 &amp;lt; 5&lt;/b&gt;
  *     &lt;c a2='two'&gt;blah&lt;/c&gt;
  *   &lt;/a&gt;
- * &lt;/root&gt;</pre> 
+ * &lt;/root&gt;</pre>
+ * Note that <code>mkp</code> is a special namespace used to escape
+ * away from the normal building mode of the builder and get access
+ * to helper markup methods such as 'yield', 'pi', 'comment', 'out',
+ * 'namespaces' and 'yieldUnescaped'.
  *
  */
 class StreamingMarkupBuilder extends AbstractStreamingBuilder {
