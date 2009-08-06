@@ -1681,10 +1681,11 @@ public class Sql {
         boolean savedCacheConnection = cacheConnection;
         cacheConnection = true;
         Connection connection = null;
+        Statement statement = null;
         try {
             connection = createConnection();
             connection.setAutoCommit(false);
-            Statement statement = connection.createStatement();
+            statement = connection.createStatement();
             closure.call(statement);
             int[] result = statement.executeBatch();
             connection.commit();
@@ -1701,7 +1702,7 @@ public class Sql {
         } finally {
             if (connection != null) connection.setAutoCommit(true);
             cacheConnection = false;
-            closeResources(connection, null);
+            closeResources(connection, statement);
             cacheConnection = savedCacheConnection;
             if (dataSource != null && !cacheConnection) {
                 useConnection = null;
