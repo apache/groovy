@@ -1756,6 +1756,8 @@ public class Sql {
      * @param statement the statement to configure
      */
     protected void configure(Statement statement) {
+        // for thread safety, grab local copy
+        Closure configureStatement = this.configureStatement;
         if (configureStatement != null) {
             configureStatement.call(statement);
         }
