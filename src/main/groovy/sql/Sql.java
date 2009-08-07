@@ -58,6 +58,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Paul King
  * @author Marc DeXeT
+ * @author John Bito
  * @version $Revision$
  */
 public class Sql {
@@ -497,7 +498,6 @@ public class Sql {
     public void query(String sql, Closure closure) throws SQLException {
         Connection connection = createConnection();
         Statement statement = getStatement(connection, sql);
-        configure(statement);
         ResultSet results = null;
         try {
             log.fine(sql);
@@ -535,9 +535,7 @@ public class Sql {
         ResultSet results = null;
         try {
             log.fine(sql);
-            statement = getPreparedStatement(connection, sql);
-            setParameters(params, statement);
-            configure(statement);
+            statement = getPreparedStatement(connection, sql, params);
             results = statement.executeQuery();
             closure.call(results);
         }
@@ -586,7 +584,6 @@ public class Sql {
     public void eachRow(String sql, Closure metaClosure, Closure rowClosure) throws SQLException {
         Connection connection = createConnection();
         Statement statement = getStatement(connection, sql);
-        configure(statement);
         ResultSet results = null;
         try {
             log.fine(sql);
@@ -620,9 +617,7 @@ public class Sql {
         ResultSet results = null;
         try {
             log.fine(sql);
-            statement = getPreparedStatement(connection, sql);
-            setParameters(params, statement);
-            configure(statement);
+            statement = getPreparedStatement(connection, sql, params);
             results = statement.executeQuery();
 
             GroovyResultSet groovyRS = new GroovyResultSetProxy(results).getImpl();
@@ -688,7 +683,6 @@ public class Sql {
         List<GroovyRowResult> results = new ArrayList<GroovyRowResult>();
         Connection connection = createConnection();
         Statement statement = getStatement(connection, sql);
-        configure(statement);
         ResultSet rs = null;
         try {
             log.fine(sql);
@@ -723,9 +717,7 @@ public class Sql {
         ResultSet rs = null;
         try {
             log.fine(sql);
-            statement = getPreparedStatement(connection, sql);
-            setParameters(params, statement);
-            configure(statement);
+            statement = getPreparedStatement(connection, sql, params);
             rs = statement.executeQuery();
             while (rs.next()) {
                 results.add(DefaultGroovyMethods.toRowResult(rs));
@@ -798,7 +790,6 @@ public class Sql {
         try {
             log.fine(sql);
             statement = getStatement(connection, sql);
-            configure(statement);
             boolean isResultSet = statement.execute(sql);
             this.updateCount = statement.getUpdateCount();
             return isResultSet;
@@ -827,9 +818,7 @@ public class Sql {
         PreparedStatement statement = null;
         try {
             log.fine(sql);
-            statement = getPreparedStatement(connection, sql);
-            setParameters(params, statement);
-            configure(statement);
+            statement = getPreparedStatement(connection, sql, params);
             boolean isResultSet = statement.execute();
             this.updateCount = statement.getUpdateCount();
             return isResultSet;
@@ -873,7 +862,6 @@ public class Sql {
         try {
             log.fine(sql);
             statement = getStatement(connection, sql);
-            configure(statement);
             boolean hasResultSet = statement.execute(sql, Statement.RETURN_GENERATED_KEYS);
 
             // Prepare a list to contain the auto-generated column
@@ -927,9 +915,7 @@ public class Sql {
             log.fine(sql);
 
             // Prepare a statement for the SQL and then execute it.
-            statement = getPreparedStatement(connection, sql, Statement.RETURN_GENERATED_KEYS);
-            setParameters(params, statement);
-            configure(statement);
+            statement = getPreparedStatement(connection, sql, params, Statement.RETURN_GENERATED_KEYS);
             this.updateCount = statement.executeUpdate();
 
             // Prepare a list to contain the auto-generated column
@@ -1013,7 +999,6 @@ public class Sql {
         try {
             log.fine(sql);
             statement = getStatement(connection, sql);
-            configure(statement);
             this.updateCount = statement.executeUpdate(sql);
             return this.updateCount;
         }
@@ -1039,9 +1024,7 @@ public class Sql {
         PreparedStatement statement = null;
         try {
             log.fine(sql);
-            statement = getPreparedStatement(connection, sql);
-            setParameters(params, statement);
-            configure(statement);
+            statement = getPreparedStatement(connection, sql, params);
             this.updateCount = statement.executeUpdate();
             return this.updateCount;
         }
@@ -1265,7 +1248,7 @@ public class Sql {
     /**
      * Allows a closure to be passed in to configure the JDBC statements before they are executed.
      * It can be used to do things like set the query size etc. When this method is invoked, the supplied
-     * closure is saved. Statements subsequent created from other methods will then be
+     * closure is saved. Statements subsequently created from other methods will then be
      * configured using this closure. The statement being configured is passed into the closure
      * as its single argument, e.g.:
      * <pre>
@@ -1424,7 +1407,7 @@ public class Sql {
      * setting params for a prepared statement. Default behavior is to
      * append the parameters to the given statement using <code>setObject</code>.
      *
-     * @param params the parameters to append
+     * @param params    the parameters to append
      * @param statement the statement
      * @throws SQLException if a database access error occurs
      */
@@ -1440,8 +1423,8 @@ public class Sql {
      * such as for CLOBs etc.
      *
      * @param statement the statement of interest
-     * @param i the index of the object of interest
-     * @param value the new object value
+     * @param i         the index of the object of interest
+     * @param value     the new object value
      * @throws SQLException if a database access error occurs
      */
     protected void setObject(PreparedStatement statement, int i, Object value)
@@ -1513,8 +1496,8 @@ public class Sql {
      * of resource closing.
      *
      * @param connection the connection to close
-     * @param statement the statement to close
-     * @param results the results to close
+     * @param statement  the statement to close
+     * @param results    the results to close
      */
     protected void closeResources(Connection connection, Statement statement, ResultSet results) {
         if (results != null) {
@@ -1530,10 +1513,10 @@ public class Sql {
 
     /**
      * An extension point allowing the behavior of resource closing to be
-     * overriden in derived classes.
+     * overridden in derived classes.
      *
      * @param connection the connection to close
-     * @param statement the statement to close
+     * @param statement  the statement to close
      */
     protected void closeResources(Connection connection, Statement statement) {
         if (cacheStatements) return;
@@ -1564,6 +1547,8 @@ public class Sql {
      * @param statement the statement to configure
      */
     protected void configure(Statement statement) {
+        // for thread safety, grab local copy
+        Closure configureStatement = this.configureStatement;
         if (configureStatement != null) {
             configureStatement.call(statement);
         }
@@ -1667,22 +1652,23 @@ public class Sql {
      *
      * @param closure the closure containing batch and optionally other statements
      * @return an array of update counts containing one element for each
-     * command in the batch.  The elements of the array are ordered according
-     * to the order in which commands were added to the batch.
-     * @exception SQLException if a database access error occurs,
-     * or this method is called on a closed <code>Statement</code>, or the
-     * driver does not support batch statements. Throws {@link java.sql.BatchUpdateException}
-     * (a subclass of <code>SQLException</code>) if one of the commands sent to the
-     * database fails to execute properly or attempts to return a result set.
+     *         command in the batch.  The elements of the array are ordered according
+     *         to the order in which commands were added to the batch.
+     * @throws SQLException if a database access error occurs,
+     *                      or this method is called on a closed <code>Statement</code>, or the
+     *                      driver does not support batch statements. Throws {@link java.sql.BatchUpdateException}
+     *                      (a subclass of <code>SQLException</code>) if one of the commands sent to the
+     *                      database fails to execute properly or attempts to return a result set.
      */
     public synchronized int[] withBatch(Closure closure) throws SQLException {
         boolean savedCacheConnection = cacheConnection;
         cacheConnection = true;
         Connection connection = null;
+        Statement statement = null;
         try {
             connection = createConnection();
             connection.setAutoCommit(false);
-            Statement statement = connection.createStatement();
+            statement = connection.createStatement();
             closure.call(statement);
             int[] result = statement.executeBatch();
             connection.commit();
@@ -1699,7 +1685,7 @@ public class Sql {
         } finally {
             if (connection != null) connection.setAutoCommit(true);
             cacheConnection = false;
-            closeResources(connection, null);
+            closeResources(connection, statement);
             cacheConnection = savedCacheConnection;
             if (dataSource != null && !cacheConnection) {
                 useConnection = null;
@@ -1723,7 +1709,7 @@ public class Sql {
     }
 
     /**
-     * Caches every created preparedStatement in closure <i>closure</i></br>
+     * Caches every created preparedStatement in Closure <i>closure</i></br>
      * Every cached preparedStatement is closed after closure has been called.
      * If the closure takes a single argument, it will be called
      * with the connection, otherwise it will be called with no arguments.
@@ -1747,60 +1733,96 @@ public class Sql {
         }
     }
 
-    private synchronized void clearStatementCache() {
-        if (!statementCache.isEmpty()) {
-            for (Object o : statementCache.values()) {
-                try {
-                    ((Statement) o).close();
-                } catch (SQLException e) {
-                    log.log(Level.FINEST, "Failed to close statement. Already closed?", e);
-                }
-            }
+    private void clearStatementCache() {
+        Statement statements[];
+        synchronized (statementCache) {
+            if (statementCache.isEmpty())
+                return;
+            // Arrange to call close() outside synchronized block, since
+            // the close may involve server requests.
+            statements = new Statement[statementCache.size()];
+            statementCache.values().toArray(statements);
             statementCache.clear();
+        }
+        for (Statement s : statements) {
+            try {
+                s.close();
+            } catch (SQLException e) {
+                log.log(Level.INFO, "Failed to close statement. Already closed?", e);
+                // If there's a closed statement in the cache, the cache is corrupted.
+            }
         }
     }
 
-    private Statement getStatement(Connection connection, String sql) throws SQLException {
+    private Statement getAbstractStatement(AbstractStatementCommand cmd, Connection connection, String sql) throws SQLException {
         Statement stmt;
         if (cacheStatements) {
-            stmt = statementCache.get(sql);
-            if (stmt == null) {
-                synchronized (statementCache) {
-                    stmt = createStatement(connection);
+            synchronized (statementCache) { // checking for existence without sync can cause leak if object needs close().
+                stmt = statementCache.get(sql);
+                if (stmt == null) {
+                    stmt = cmd.execute(connection, sql);
                     statementCache.put(sql, stmt);
                 }
             }
         } else {
-            stmt = createStatement(connection);
+            stmt = cmd.execute(connection, sql);
         }
         return stmt;
     }
 
-    private PreparedStatement getPreparedStatement(Connection connection, String sql, int returnGeneratedKeys) throws SQLException {
-        PreparedStatement pStmt;
-        if (cacheStatements) {
-            pStmt = (PreparedStatement) statementCache.get(sql);
-            if (pStmt == null) {
-                synchronized (statementCache) {
-                    pStmt = createPreparedStatement(connection, sql, returnGeneratedKeys);
-                    statementCache.put(sql, pStmt);
-                }
+    private Statement getStatement(Connection connection, String sql) throws SQLException {
+        Statement stmt = getAbstractStatement(new CreateStatementCommand(), connection, sql);
+        configure(stmt);
+        return stmt;
+    }
+
+    private PreparedStatement getPreparedStatement(Connection connection, String sql, List params, int returnGeneratedKeys) throws SQLException {
+        PreparedStatement statement = (PreparedStatement) getAbstractStatement(new CreatePreparedStatementCommand(returnGeneratedKeys), connection, sql);
+        setParameters(params, statement);
+        configure(statement);
+        return statement;
+    }
+
+    private PreparedStatement getPreparedStatement(Connection connection, String sql, List params) throws SQLException {
+        return getPreparedStatement(connection, sql, params, 0);
+    }
+
+    private abstract class AbstractStatementCommand {
+        /**
+         * Execute the command that's defined by the subclass following
+         * the Command pattern.  Specialized parameters are held in the command instances.
+         *
+         * @param conn all commands accept a connection
+         * @param sql  all commands accept an SQL statement
+         * @return statement that can be cached, etc.
+         */
+        abstract Statement execute(Connection conn, String sql) throws SQLException;
+    }
+
+    private class CreatePreparedStatementCommand extends AbstractStatementCommand {
+        private final int returnGeneratedKeys;
+
+        CreatePreparedStatementCommand(int returnGeneratedKeys) {
+            this.returnGeneratedKeys = returnGeneratedKeys;
+        }
+
+        PreparedStatement execute(Connection connection, String sql) throws SQLException {
+            if (returnGeneratedKeys != 0) {
+                return connection.prepareStatement(sql, returnGeneratedKeys);
+            } else {
+                return connection.prepareStatement(sql);
             }
-        } else {
-            pStmt = createPreparedStatement(connection, sql, returnGeneratedKeys);
-        }
-        return pStmt;
-    }
-
-    private PreparedStatement createPreparedStatement(Connection connection, String sql, int returnGeneratedKeys) throws SQLException {
-        if (returnGeneratedKeys != 0) {
-            return connection.prepareStatement(sql, returnGeneratedKeys);
-        } else {
-            return connection.prepareStatement(sql);
         }
     }
 
-    private PreparedStatement getPreparedStatement(Connection connection, String sql) throws SQLException {
-        return getPreparedStatement(connection, sql, 0);
-    }
+    private class CreateStatementCommand extends AbstractStatementCommand {
+
+        @Override
+        Statement execute(Connection conn, String sql) throws SQLException {
+            Statement stmt = conn.createStatement();
+            return stmt;
+		}
+
+	}
+
 }
