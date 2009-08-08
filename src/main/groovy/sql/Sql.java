@@ -492,6 +492,13 @@ public class Sql {
 
     /**
      * Performs the given SQL query calling the closure with the result set.
+     * 
+     * Example usage:
+     * <pre>
+     * sql.query("select * from PERSON where firstname like 'S%'") { ResultSet rs ->
+     *     while (rs.next()) println rs.getString('firstname')
+     * }
+     * </pre>
      *
      * @param sql     the sql statement
      * @param closure called for each row with a GroovyResultSet
@@ -526,6 +533,13 @@ public class Sql {
      * Performs the given SQL query with parameters calling the closure with the
      * result set.
      *
+     * Example usage:
+     * <pre>
+     * sql.query("select * from PERSON where lastname like ?", ['%a%']) { ResultSet rs ->
+     *     while (rs.next()) println rs.getString('lastname')
+     * }
+     * </pre>
+     *
      * @param sql     the sql statement
      * @param params  a list of parameters
      * @param closure called for each row with a GroovyResultSet
@@ -553,6 +567,14 @@ public class Sql {
     /**
      * Performs the given SQL query calling the closure with the result set.
      *
+     * Example usage:
+     * <pre>
+     * def location = 25
+     * sql.query "select * from PERSON where location_id < $location", { ResultSet rs ->
+     *     while (rs.next()) println rs.getString('firstname')
+     * }
+     * </pre>
+     *
      * @param gstring a GString containing the SQL query with embedded params
      * @param closure called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
@@ -567,6 +589,13 @@ public class Sql {
      * Performs the given SQL query calling the closure with each row of the
      * result set.
      *
+     * Example usage:
+     * <pre>
+     * sql.eachRow("select * from PERSON where firstname like 'S%'") { row ->
+     *    println row.firstname
+     * }
+     * </pre>
+     *
      * @param sql     the sql statement
      * @param closure called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
@@ -576,7 +605,22 @@ public class Sql {
     }
 
     /**
-     * Performs the given SQL query calling closures for metadata and each row
+     * Performs the given SQL query calling closures for metadata and each row.
+     *
+     * Example usage:
+     * <pre>
+     * def printColNames = { meta ->
+     *     (1..meta.columnCount).each {
+     *         print meta.getColumnLabel(it).padRight(20)
+     *     }
+     *     println()
+     * }
+     * def printRow = { row ->
+     *     row.toRowResult().values().each{ print it.toString().padRight(20) }
+     *     println()
+     * }
+     * sql.eachRow("select * from PERSON", printColNames, printRow)
+     * </pre>
      *
      * @param sql         the sql statement
      * @param metaClosure called for meta data (only once after sql execution)
@@ -607,6 +651,13 @@ public class Sql {
 
     /**
      * Performs the given SQL query calling the closure with the result set.
+     *
+     * Example usage:
+     * <pre>
+     * sql.eachRow("select * from PERSON where lastname like ?", ['%a%']) { row ->
+     *     println row.lastname
+     * }
+     * </pre>
      *
      * @param sql     the sql statement
      * @param params  a list of parameters
@@ -639,6 +690,14 @@ public class Sql {
     /**
      * Performs the given SQL query calling the closure with the result set.
      *
+     * Example usage:
+     * <pre>
+     * def location = 25
+     * sql.eachRow("select * from PERSON where location_id < $location") { row ->
+     *     println row.firstname
+     * }
+     * </pre>
+     *
      * @param gstring a GString containing the SQL query with embedded params
      * @param closure called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
@@ -652,6 +711,11 @@ public class Sql {
     /**
      * Performs the given SQL query and return the rows of the result set.
      *
+     * Example usage:
+     * <pre>
+     * def ans = sql.rows("select * from PERSON where firstname like 'S%'")
+     * println "Found ${ans.size()} rows"     * </pre>
+     *
      * @param sql the SQL statement
      * @return a list of GroovyRowResult objects
      * @throws SQLException if a database access error occurs
@@ -662,6 +726,13 @@ public class Sql {
 
     /**
      * Performs the given SQL query and return the rows of the result set.
+     *
+     * Example usage:
+     * <pre>
+     * def location = 25
+     * def ans = sql.rows("select * from PERSON where location_id < $location")
+     * println "Found ${ans.size()} rows"
+     * </pre>
      *
      * @param gstring a GString containing the SQL query with embedded params
      * @return a list of GroovyRowResult objects
@@ -675,6 +746,13 @@ public class Sql {
 
     /**
      * Performs the given SQL query and return the rows of the result set.
+     *
+     * Example usage:
+     * <pre>
+     * def printNumCols = { meta -> println "Found $meta.columnCount columns" }
+     * def ans = sql.rows("select * from PERSON", printNumCols)
+     * println "Found ${ans.size()} rows"
+     * </pre>
      *
      * @param sql         the SQL statement
      * @param metaClosure called with meta data of the ResultSet
@@ -694,7 +772,13 @@ public class Sql {
 	/**
 	 * Performs the given SQL query with the list of params and return the rows
 	 * of the result set.
-	 * 
+     *
+     * Example usage:
+     * <pre>
+     * def ans = sql.rows("select * from PERSON where lastname like ?", ['%a%'])
+     * println "Found ${ans.size()} rows"
+     * </pre>
+	 *
 	 * @param sql
 	 *            the SQL statement
 	 * @param params
@@ -733,6 +817,12 @@ public class Sql {
 	/**
      * Performs the given SQL query and return the first row of the result set.
      *
+     * Example usage:
+     * <pre>
+     * def ans = sql.firstRow("select * from PERSON where firstname like 'S%'")
+     * println ans.firstname
+     * </pre>
+     *
      * @param sql the SQL statement
      * @return a GroovyRowResult object or <code>null</code> if no row is found
      * @throws SQLException if a database access error occurs
@@ -746,6 +836,13 @@ public class Sql {
     /**
      * Performs the given SQL query and return
      * the first row of the result set.
+     *
+     * Example usage:
+     * <pre>
+     * def location = 25
+     * def ans = sql.firstRow("select * from PERSON where location_id < $location")
+     * println ans.firstname
+     * </pre>
      *
      * @param gstring a GString containing the SQL query with embedded params
      * @return a GroovyRowResult object or <code>null</code> if no row is found
@@ -761,6 +858,12 @@ public class Sql {
      * Performs the given SQL query with the list of params and return
      * the first row of the result set.
      *
+     * Example usage:
+     * <pre>
+     * def ans = sql.firstRow("select * from PERSON where lastname like ?", ['%a%'])
+     * println ans.firstname
+     * </pre>
+     *
      * @param sql    the SQL statement
      * @param params a list of parameters
      * @return a GroovyRowResult object or <code>null</code> if no row is found
@@ -774,6 +877,24 @@ public class Sql {
 
     /**
      * Executes the given piece of SQL.
+     *
+     * Example usages:
+     * <pre>
+     * sql.execute "drop table if exists PERSON"
+     *
+     * sql.execute """
+     *     create table PERSON (
+     *         id integer not null,
+     *         firstname varchar(100),
+     *         lastname varchar(100),
+     *         location_id integer
+     *     )
+     * """
+     *
+     * sql.execute """
+     *     insert into PERSON (id, firstname, lastname, location_id) values (4, 'Paul', 'King', 40)
+     * """
+     * </pre>
      *
      * @param sql the SQL to execute
      * @return <code>true</code> if the first result is a <code>ResultSet</code>
@@ -803,6 +924,13 @@ public class Sql {
     /**
      * Executes the given piece of SQL with parameters.
      *
+     * Example usage:
+     * <pre>
+     * sql.execute """
+     *     insert into PERSON (id, firstname, lastname, location_id) values (?, ?, ?, ?)
+     * """, [1, "Guillaume", "Laforge", 10]
+     * </pre>
+     *
      * @param sql    the SQL statement
      * @param params a list of parameters
      * @return <code>true</code> if the first result is a <code>ResultSet</code>
@@ -831,6 +959,14 @@ public class Sql {
 
     /**
      * Executes the given SQL with embedded expressions inside.
+     *
+     * Example usage:
+     * <pre>
+     * def scott = [firstname: "Scott", lastname: "Davis", id: 5, location_id: 50]
+     * sql.execute """
+     *     insert into PERSON (id, firstname, lastname, location_id) values ($scott.id, $scott.firstname, $scott.lastname, $scott.location_id)
+     * """
+     * </pre>
      *
      * @param gstring a GString containing the SQL query with embedded params
      * @return <code>true</code> if the first result is a <code>ResultSet</code>
