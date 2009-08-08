@@ -1,4 +1,21 @@
+/*
+ * Copyright 2003-2009 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package groovy.sql
+
+import groovy.sql.GroovyResultSetProxy;
 
 /**
  * This is more of a sample program than a unit test and is here as an easy
@@ -97,7 +114,26 @@ class SqlTest extends GroovyTestCase {
 	  }
     }
 
-    protected def createSql() {
+    void testSubClass() {
+    	def sub = new SqlSubclass(sql)
+    	def res = null
+    	def firstNames = []
+    	sql.eachRow('select firstname from PERSON') {
+    		firstNames << it.firstname
+    	}
+    	try {
+    		res = sub.rowsCursor('select * from PERSON')
+    		while (res.next()) {
+    			assert firstNames.remove(res.firstname)
+    		}
+    		assert firstNames.isEmpty()
+    	} finally {
+    		if (res)
+    			res.close()
+    	}
+    }
+
+    private createSql() {
         def ds = new org.hsqldb.jdbc.jdbcDataSource()
         ds.database = "jdbc:hsqldb:mem:foo" + getMethodName()
         ds.user = 'sa'
@@ -121,5 +157,16 @@ class SqlTest extends GroovyTestCase {
         food.add( type:"drink", name:"coffee" )
 
         return sql
+    }
+}
+
+class SqlSubclass extends Sql {
+    SqlSubclass(Sql base) {
+        super(base)
+    }
+
+    def rowsCursor(String sql) {
+        def rs = executeQuery(sql)
+        return new GroovyResultSetProxy(rs).getImpl()
     }
 }

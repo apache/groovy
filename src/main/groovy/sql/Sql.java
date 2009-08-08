@@ -40,7 +40,7 @@ import javax.sql.DataSource;
 import org.codehaus.groovy.runtime.SqlGroovyMethods;
 
 /**
- * A facade over Java's normal JDBC apis providing greatly simplified
+ * A facade over Java's normal JDBC APIs providing greatly simplified
  * resource management and result set handling. Under the covers the
  * facade hides away details associated with getting connections,
  * constructing and configuring statements, interacting with the
@@ -66,7 +66,9 @@ public class Sql {
     /**
      * Hook to allow derived classes to access the log
      */
-    protected Logger log = Logger.getLogger(getClass().getName());
+    protected static Logger log = Logger.getLogger(Sql.class.getName());
+
+    private static final List<Object> EMPTY_LIST = Collections.emptyList();
 
     private DataSource dataSource;
 
@@ -307,276 +309,67 @@ public class Sql {
         }
     }
 
-    public static final OutParameter ARRAY = new OutParameter() {
-        public int getType() {
-            return Types.ARRAY;
-        }
-    };
-    public static final OutParameter BIGINT = new OutParameter() {
-        public int getType() {
-            return Types.BIGINT;
-        }
-    };
-    public static final OutParameter BINARY = new OutParameter() {
-        public int getType() {
-            return Types.BINARY;
-        }
-    };
-    public static final OutParameter BIT = new OutParameter() {
-        public int getType() {
-            return Types.BIT;
-        }
-    };
-    public static final OutParameter BLOB = new OutParameter() {
-        public int getType() {
-            return Types.BLOB;
-        }
-    };
-    public static final OutParameter BOOLEAN = new OutParameter() {
-        public int getType() {
-            return Types.BOOLEAN;
-        }
-    };
-    public static final OutParameter CHAR = new OutParameter() {
-        public int getType() {
-            return Types.CHAR;
-        }
-    };
-    public static final OutParameter CLOB = new OutParameter() {
-        public int getType() {
-            return Types.CLOB;
-        }
-    };
-    public static final OutParameter DATALINK = new OutParameter() {
-        public int getType() {
-            return Types.DATALINK;
-        }
-    };
-    public static final OutParameter DATE = new OutParameter() {
-        public int getType() {
-            return Types.DATE;
-        }
-    };
-    public static final OutParameter DECIMAL = new OutParameter() {
-        public int getType() {
-            return Types.DECIMAL;
-        }
-    };
-    public static final OutParameter DISTINCT = new OutParameter() {
-        public int getType() {
-            return Types.DISTINCT;
-        }
-    };
-    public static final OutParameter DOUBLE = new OutParameter() {
-        public int getType() {
-            return Types.DOUBLE;
-        }
-    };
-    public static final OutParameter FLOAT = new OutParameter() {
-        public int getType() {
-            return Types.FLOAT;
-        }
-    };
-    public static final OutParameter INTEGER = new OutParameter() {
-        public int getType() {
-            return Types.INTEGER;
-        }
-    };
-    public static final OutParameter JAVA_OBJECT = new OutParameter() {
-        public int getType() {
-            return Types.JAVA_OBJECT;
-        }
-    };
-    public static final OutParameter LONGVARBINARY = new OutParameter() {
-        public int getType() {
-            return Types.LONGVARBINARY;
-        }
-    };
-    public static final OutParameter LONGVARCHAR = new OutParameter() {
-        public int getType() {
-            return Types.LONGVARCHAR;
-        }
-    };
-    public static final OutParameter NULL = new OutParameter() {
-        public int getType() {
-            return Types.NULL;
-        }
-    };
-    public static final OutParameter NUMERIC = new OutParameter() {
-        public int getType() {
-            return Types.NUMERIC;
-        }
-    };
-    public static final OutParameter OTHER = new OutParameter() {
-        public int getType() {
-            return Types.OTHER;
-        }
-    };
-    public static final OutParameter REAL = new OutParameter() {
-        public int getType() {
-            return Types.REAL;
-        }
-    };
-    public static final OutParameter REF = new OutParameter() {
-        public int getType() {
-            return Types.REF;
-        }
-    };
-    public static final OutParameter SMALLINT = new OutParameter() {
-        public int getType() {
-            return Types.SMALLINT;
-        }
-    };
-    public static final OutParameter STRUCT = new OutParameter() {
-        public int getType() {
-            return Types.STRUCT;
-        }
-    };
-    public static final OutParameter TIME = new OutParameter() {
-        public int getType() {
-            return Types.TIME;
-        }
-    };
-    public static final OutParameter TIMESTAMP = new OutParameter() {
-        public int getType() {
-            return Types.TIMESTAMP;
-        }
-    };
-    public static final OutParameter TINYINT = new OutParameter() {
-        public int getType() {
-            return Types.TINYINT;
-        }
-    };
-    public static final OutParameter VARBINARY = new OutParameter() {
-        public int getType() {
-            return Types.VARBINARY;
-        }
-    };
-    public static final OutParameter VARCHAR = new OutParameter() {
-        public int getType() {
-            return Types.VARCHAR;
-        }
-    };
+    public static final OutParameter ARRAY         = new OutParameter(){ public int getType() { return Types.ARRAY; }};
+    public static final OutParameter BIGINT        = new OutParameter(){ public int getType() { return Types.BIGINT; }};
+    public static final OutParameter BINARY        = new OutParameter(){ public int getType() { return Types.BINARY; }};
+    public static final OutParameter BIT           = new OutParameter(){ public int getType() { return Types.BIT; }};
+    public static final OutParameter BLOB          = new OutParameter(){ public int getType() { return Types.BLOB; }};
+    public static final OutParameter BOOLEAN       = new OutParameter(){ public int getType() { return Types.BOOLEAN; }};
+    public static final OutParameter CHAR          = new OutParameter(){ public int getType() { return Types.CHAR; }};
+    public static final OutParameter CLOB          = new OutParameter(){ public int getType() { return Types.CLOB; }};
+    public static final OutParameter DATALINK      = new OutParameter(){ public int getType() { return Types.DATALINK; }};
+    public static final OutParameter DATE          = new OutParameter(){ public int getType() { return Types.DATE; }};
+    public static final OutParameter DECIMAL       = new OutParameter(){ public int getType() { return Types.DECIMAL; }};
+    public static final OutParameter DISTINCT      = new OutParameter(){ public int getType() { return Types.DISTINCT; }};
+    public static final OutParameter DOUBLE        = new OutParameter(){ public int getType() { return Types.DOUBLE; }};
+    public static final OutParameter FLOAT         = new OutParameter(){ public int getType() { return Types.FLOAT; }};
+    public static final OutParameter INTEGER       = new OutParameter(){ public int getType() { return Types.INTEGER; }};
+    public static final OutParameter JAVA_OBJECT   = new OutParameter(){ public int getType() { return Types.JAVA_OBJECT; }};
+    public static final OutParameter LONGVARBINARY = new OutParameter(){ public int getType() { return Types.LONGVARBINARY; }};
+    public static final OutParameter LONGVARCHAR   = new OutParameter(){ public int getType() { return Types.LONGVARCHAR; }};
+    public static final OutParameter NULL          = new OutParameter(){ public int getType() { return Types.NULL; }};
+    public static final OutParameter NUMERIC       = new OutParameter(){ public int getType() { return Types.NUMERIC; }};
+    public static final OutParameter OTHER         = new OutParameter(){ public int getType() { return Types.OTHER; }};
+    public static final OutParameter REAL          = new OutParameter(){ public int getType() { return Types.REAL; }};
+    public static final OutParameter REF           = new OutParameter(){ public int getType() { return Types.REF; }};
+    public static final OutParameter SMALLINT      = new OutParameter(){ public int getType() { return Types.SMALLINT; }};
+    public static final OutParameter STRUCT        = new OutParameter(){ public int getType() { return Types.STRUCT; }};
+    public static final OutParameter TIME          = new OutParameter(){ public int getType() { return Types.TIME; }};
+    public static final OutParameter TIMESTAMP     = new OutParameter(){ public int getType() { return Types.TIMESTAMP; }};
+    public static final OutParameter TINYINT       = new OutParameter(){ public int getType() { return Types.TINYINT; }};
+    public static final OutParameter VARBINARY     = new OutParameter(){ public int getType() { return Types.VARBINARY; }};
+    public static final OutParameter VARCHAR       = new OutParameter(){ public int getType() { return Types.VARCHAR; }};
 
-    public static InParameter ARRAY(Object value) {
-        return in(Types.ARRAY, value);
-    }
-
-    public static InParameter BIGINT(Object value) {
-        return in(Types.BIGINT, value);
-    }
-
-    public static InParameter BINARY(Object value) {
-        return in(Types.BINARY, value);
-    }
-
-    public static InParameter BIT(Object value) {
-        return in(Types.BIT, value);
-    }
-
-    public static InParameter BLOB(Object value) {
-        return in(Types.BLOB, value);
-    }
-
-    public static InParameter BOOLEAN(Object value) {
-        return in(Types.BOOLEAN, value);
-    }
-
-    public static InParameter CHAR(Object value) {
-        return in(Types.CHAR, value);
-    }
-
-    public static InParameter CLOB(Object value) {
-        return in(Types.CLOB, value);
-    }
-
-    public static InParameter DATALINK(Object value) {
-        return in(Types.DATALINK, value);
-    }
-
-    public static InParameter DATE(Object value) {
-        return in(Types.DATE, value);
-    }
-
-    public static InParameter DECIMAL(Object value) {
-        return in(Types.DECIMAL, value);
-    }
-
-    public static InParameter DISTINCT(Object value) {
-        return in(Types.DISTINCT, value);
-    }
-
-    public static InParameter DOUBLE(Object value) {
-        return in(Types.DOUBLE, value);
-    }
-
-    public static InParameter FLOAT(Object value) {
-        return in(Types.FLOAT, value);
-    }
-
-    public static InParameter INTEGER(Object value) {
-        return in(Types.INTEGER, value);
-    }
-
-    public static InParameter JAVA_OBJECT(Object value) {
-        return in(Types.JAVA_OBJECT, value);
-    }
-
-    public static InParameter LONGVARBINARY(Object value) {
-        return in(Types.LONGVARBINARY, value);
-    }
-
-    public static InParameter LONGVARCHAR(Object value) {
-        return in(Types.LONGVARCHAR, value);
-    }
-
-    public static InParameter NULL(Object value) {
-        return in(Types.NULL, value);
-    }
-
-    public static InParameter NUMERIC(Object value) {
-        return in(Types.NUMERIC, value);
-    }
-
-    public static InParameter OTHER(Object value) {
-        return in(Types.OTHER, value);
-    }
-
-    public static InParameter REAL(Object value) {
-        return in(Types.REAL, value);
-    }
-
-    public static InParameter REF(Object value) {
-        return in(Types.REF, value);
-    }
-
-    public static InParameter SMALLINT(Object value) {
-        return in(Types.SMALLINT, value);
-    }
-
-    public static InParameter STRUCT(Object value) {
-        return in(Types.STRUCT, value);
-    }
-
-    public static InParameter TIME(Object value) {
-        return in(Types.TIME, value);
-    }
-
-    public static InParameter TIMESTAMP(Object value) {
-        return in(Types.TIMESTAMP, value);
-    }
-
-    public static InParameter TINYINT(Object value) {
-        return in(Types.TINYINT, value);
-    }
-
-    public static InParameter VARBINARY(Object value) {
-        return in(Types.VARBINARY, value);
-    }
-
-    public static InParameter VARCHAR(Object value) {
-        return in(Types.VARCHAR, value);
-    }
+    public static InParameter ARRAY(Object value) { return in(Types.ARRAY, value); }
+    public static InParameter BIGINT(Object value) { return in(Types.BIGINT, value); }
+    public static InParameter BINARY(Object value) { return in(Types.BINARY, value); }
+    public static InParameter BIT(Object value) { return in(Types.BIT, value); }
+    public static InParameter BLOB(Object value) { return in(Types.BLOB, value); }
+    public static InParameter BOOLEAN(Object value) { return in(Types.BOOLEAN, value); }
+    public static InParameter CHAR(Object value) { return in(Types.CHAR, value); }
+    public static InParameter CLOB(Object value) { return in(Types.CLOB, value); }
+    public static InParameter DATALINK(Object value) { return in(Types.DATALINK, value); }
+    public static InParameter DATE(Object value) { return in(Types.DATE, value); }
+    public static InParameter DECIMAL(Object value) { return in(Types.DECIMAL, value); }
+    public static InParameter DISTINCT(Object value) { return in(Types.DISTINCT, value); }
+    public static InParameter DOUBLE(Object value) { return in(Types.DOUBLE, value); }
+    public static InParameter FLOAT(Object value) { return in(Types.FLOAT, value); }
+    public static InParameter INTEGER(Object value) { return in(Types.INTEGER, value); }
+    public static InParameter JAVA_OBJECT(Object value) { return in(Types.JAVA_OBJECT, value); }
+    public static InParameter LONGVARBINARY(Object value) { return in(Types.LONGVARBINARY, value); }
+    public static InParameter LONGVARCHAR(Object value) { return in(Types.LONGVARCHAR, value); }
+    public static InParameter NULL(Object value) { return in(Types.NULL, value); }
+    public static InParameter NUMERIC(Object value) { return in(Types.NUMERIC, value); }
+    public static InParameter OTHER(Object value) { return in(Types.OTHER, value); }
+    public static InParameter REAL(Object value) { return in(Types.REAL, value); }
+    public static InParameter REF(Object value) { return in(Types.REF, value); }
+    public static InParameter SMALLINT(Object value) { return in(Types.SMALLINT, value); }
+    public static InParameter STRUCT(Object value) { return in(Types.STRUCT, value); }
+    public static InParameter TIME(Object value) { return in(Types.TIME, value); }
+    public static InParameter TIMESTAMP(Object value) { return in(Types.TIMESTAMP, value); }
+    public static InParameter TINYINT(Object value) { return in(Types.TINYINT, value); }
+    public static InParameter VARBINARY(Object value) { return in(Types.VARBINARY, value); }
+    public static InParameter VARCHAR(Object value) { return in(Types.VARCHAR, value); }
 
     /**
      * Create a new InParameter
@@ -693,7 +486,7 @@ public class Sql {
         return new DataSet(this, table);
     }
 
-    public DataSet dataSet(Class type) {
+    public DataSet dataSet(Class<?> type) {
         return new DataSet(this, type);
     }
 
@@ -738,7 +531,7 @@ public class Sql {
      * @param closure called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      */
-    public void query(String sql, List params, Closure closure) throws SQLException {
+    public void query(String sql, List<Object> params, Closure closure) throws SQLException {
         Connection connection = createConnection();
         PreparedStatement statement = null;
         ResultSet results = null;
@@ -765,7 +558,7 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      */
     public void query(GString gstring, Closure closure) throws SQLException {
-        List params = getParameters(gstring);
+        List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
         query(sql, params, closure);
     }
@@ -820,7 +613,7 @@ public class Sql {
      * @param closure called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      */
-    public void eachRow(String sql, List params, Closure closure) throws SQLException {
+    public void eachRow(String sql, List<Object> params, Closure closure) throws SQLException {
         Connection connection = createConnection();
         PreparedStatement statement = null;
         ResultSet results = null;
@@ -851,7 +644,7 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      */
     public void eachRow(GString gstring, Closure closure) throws SQLException {
-        List params = getParameters(gstring);
+        List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
         eachRow(sql, params, closure);
     }
@@ -863,7 +656,7 @@ public class Sql {
      * @return a list of GroovyRowResult objects
      * @throws SQLException if a database access error occurs
      */
-    public List rows(String sql) throws SQLException {
+    public List<GroovyRowResult> rows(String sql) throws SQLException {
         return rows(sql, (Closure) null);
     }
 
@@ -874,8 +667,8 @@ public class Sql {
      * @return a list of GroovyRowResult objects
      * @throws SQLException if a database access error occurs
      */
-    public List rows(GString gstring) throws SQLException {
-        List params = getParameters(gstring);
+    public List<GroovyRowResult> rows(GString gstring) throws SQLException {
+        List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
         return rows(sql, params);
     }
@@ -888,61 +681,56 @@ public class Sql {
      * @return a list of GroovyRowResult objects
      * @throws SQLException if a database access error occurs
      */
-    public List rows(String sql, Closure metaClosure) throws SQLException {
-        List<GroovyRowResult> results = new ArrayList<GroovyRowResult>();
-        Connection connection = createConnection();
-        Statement statement = getStatement(connection, sql);
-        ResultSet rs = null;
-        try {
-            log.fine(sql);
-            rs = statement.executeQuery(sql);
-            if (metaClosure != null) metaClosure.call(rs.getMetaData());
+    public List<GroovyRowResult> rows(String sql, Closure metaClosure) throws SQLException {
+		ResultSet rs = executeQuery(sql);
+		if (metaClosure != null) metaClosure.call(rs.getMetaData());
+		return asList(sql, rs);
+    }
 
+	protected final ResultSet executeQuery(String sql) throws SQLException {
+		return new QueryCommand(sql).execute();
+	}
+
+	/**
+	 * Performs the given SQL query with the list of params and return the rows
+	 * of the result set.
+	 * 
+	 * @param sql
+	 *            the SQL statement
+	 * @param params
+	 *            a list of parameters
+	 * @return a list of GroovyRowResult objects
+	 * @throws SQLException
+	 *             if a database access error occurs
+	 */
+	public List<GroovyRowResult> rows(String sql, List<Object> params)
+			throws SQLException {
+		ResultSet rs = executePreparedQuery(sql, params);
+		return asList(sql, rs);
+	}
+
+	protected final ResultSet executePreparedQuery(String sql, List<Object> params)
+			throws SQLException {
+		return new PreparedQueryCommand(sql, params).execute();
+	}
+
+    protected List<GroovyRowResult> asList(String sql, ResultSet rs) throws SQLException {
+        List<GroovyRowResult> results = new ArrayList<GroovyRowResult>();
+
+        try {
             while (rs.next()) {
                 results.add(SqlGroovyMethods.toRowResult(rs));
             }
             return (results);
         } catch (SQLException e) {
-            log.log(Level.FINE, "Failed to execute: " + sql, e);
+            log.log(Level.INFO, "Failed to retrieve row from ResultSet for: " + sql, e);
             throw e;
         } finally {
-            closeResources(connection, statement, rs);
+            rs.close();
         }
     }
 
-    /**
-     * Performs the given SQL query with the list of params and return
-     * the rows of the result set.
-     *
-     * @param sql    the SQL statement
-     * @param params a list of parameters
-     * @return a list of GroovyRowResult objects
-     * @throws SQLException if a database access error occurs
-     */
-    public List rows(String sql, List params) throws SQLException {
-        List<GroovyRowResult> results = new ArrayList<GroovyRowResult>();
-        Connection connection = createConnection();
-        PreparedStatement statement = null;
-        ResultSet rs = null;
-        try {
-            log.fine(sql);
-            statement = getPreparedStatement(connection, sql, params);
-            rs = statement.executeQuery();
-            while (rs.next()) {
-                results.add(SqlGroovyMethods.toRowResult(rs));
-            }
-            return (results);
-        }
-        catch (SQLException e) {
-            log.log(Level.FINE, "Failed to execute: " + sql, e);
-            throw e;
-        }
-        finally {
-            closeResources(connection, statement, rs);
-        }
-    }
-
-    /**
+	/**
      * Performs the given SQL query and return the first row of the result set.
      *
      * @param sql the SQL statement
@@ -950,7 +738,7 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      */
     public Object firstRow(String sql) throws SQLException {
-        List rows = rows(sql);
+        List<GroovyRowResult> rows = rows(sql);
         if (rows.isEmpty()) return null;
         return (rows.get(0));
     }
@@ -964,7 +752,7 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      */
     public Object firstRow(GString gstring) throws SQLException {
-        List params = getParameters(gstring);
+        List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
         return firstRow(sql, params);
     }
@@ -978,8 +766,8 @@ public class Sql {
      * @return a GroovyRowResult object or <code>null</code> if no row is found
      * @throws SQLException if a database access error occurs
      */
-    public Object firstRow(String sql, List params) throws SQLException {
-        List rows = rows(sql, params);
+    public Object firstRow(String sql, List<Object> params) throws SQLException {
+        List<GroovyRowResult> rows = rows(sql, params);
         if (rows.isEmpty()) return null;
         return rows.get(0);
     }
@@ -1022,7 +810,7 @@ public class Sql {
      *         no results
      * @throws SQLException if a database access error occurs
      */
-    public boolean execute(String sql, List params) throws SQLException {
+    public boolean execute(String sql, List<Object> params) throws SQLException {
         Connection connection = createConnection();
         PreparedStatement statement = null;
         try {
@@ -1051,7 +839,7 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      */
     public boolean execute(GString gstring) throws SQLException {
-        List params = getParameters(gstring);
+        List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
         return execute(sql, params);
     }
@@ -1065,7 +853,7 @@ public class Sql {
      *         inserted row
      * @throws SQLException if a database access error occurs
      */
-    public List executeInsert(String sql) throws SQLException {
+    public List<List<Object>> executeInsert(String sql) throws SQLException {
         Connection connection = createConnection();
         Statement statement = null;
         try {
@@ -1075,13 +863,13 @@ public class Sql {
 
             // Prepare a list to contain the auto-generated column
             // values, and then fetch them from the statement.
-            List<List> autoKeys = new ArrayList<List>();
+            List<List<Object>> autoKeys = new ArrayList<List<Object>>();
             ResultSet keys = statement.getGeneratedKeys();
             int count = keys.getMetaData().getColumnCount();
 
             // Copy the column values into a list of a list.
             while (keys.next()) {
-                List rowKeys = new ArrayList(count);
+                List<Object> rowKeys = new ArrayList<Object>(count);
                 for (int i = 1; i <= count; i++) {
                     rowKeys.add(keys.getObject(i));
                 }
@@ -1116,7 +904,7 @@ public class Sql {
      *         inserted row
      * @throws SQLException if a database access error occurs
      */
-    public List executeInsert(String sql, List params) throws SQLException {
+    public List<List<Object>> executeInsert(String sql, List<Object> params) throws SQLException {
         // Now send the SQL to the database.
         Connection connection = createConnection();
         PreparedStatement statement = null;
@@ -1129,13 +917,13 @@ public class Sql {
 
             // Prepare a list to contain the auto-generated column
             // values, and then fetch them from the statement.
-            List<List> autoKeys = new ArrayList<List>();
+            List<List<Object>> autoKeys = new ArrayList<List<Object>>();
             ResultSet keys = statement.getGeneratedKeys();
             int count = keys.getMetaData().getColumnCount();
 
             // Copy the column values into a list of a list.
             while (keys.next()) {
-                List rowKeys = new ArrayList(count);
+                List<Object> rowKeys = new ArrayList<Object>(count);
                 for (int i = 1; i <= count; i++) {
                     rowKeys.add(keys.getObject(i));
                 }
@@ -1189,8 +977,8 @@ public class Sql {
      *         auto-generated keys
      * @throws SQLException if a database access error occurs
      */
-    public List executeInsert(GString gstring) throws SQLException {
-        List params = getParameters(gstring);
+    public List<List<Object>> executeInsert(GString gstring) throws SQLException {
+        List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
         return executeInsert(sql, params);
     }
@@ -1228,7 +1016,7 @@ public class Sql {
      * @return the number of rows updated or 0 for SQL statements that return nothing
      * @throws SQLException if a database access error occurs
      */
-    public int executeUpdate(String sql, List params) throws SQLException {
+    public int executeUpdate(String sql, List<Object> params) throws SQLException {
         Connection connection = createConnection();
         PreparedStatement statement = null;
         try {
@@ -1254,7 +1042,7 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      */
     public int executeUpdate(GString gstring) throws SQLException {
-        List params = getParameters(gstring);
+        List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
         return executeUpdate(sql, params);
     }
@@ -1267,7 +1055,7 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      */
     public int call(String sql) throws Exception {
-        return call(sql, Collections.EMPTY_LIST);
+        return call(sql, EMPTY_LIST);
     }
 
     /**
@@ -1278,7 +1066,7 @@ public class Sql {
      * @return the number of rows updated or 0 for SQL statements that return nothing
      * @throws SQLException if a database access error occurs
      */
-    public int call(String sql, List params) throws Exception {
+    public int call(String sql, List<Object> params) throws Exception {
         Connection connection = createConnection();
         CallableStatement statement = connection.prepareCall(sql);
         try {
@@ -1305,14 +1093,14 @@ public class Sql {
      * @param closure called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      */
-    public void call(String sql, List params, Closure closure) throws Exception {
+    public void call(String sql, List<Object> params, Closure closure) throws Exception {
         Connection connection = createConnection();
         CallableStatement statement = connection.prepareCall(sql);
         try {
             log.fine(sql);
             setParameters(params, statement);
             statement.execute();
-            List results = new ArrayList();
+            List<Object> results = new ArrayList<Object>();
             int indx = 0;
             int inouts = 0;
             for (Object value : params) {
@@ -1348,7 +1136,7 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      */
     public int call(GString gstring) throws Exception {
-        List params = getParameters(gstring);
+        List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
         return call(sql, params);
     }
@@ -1362,7 +1150,7 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      */
     public void call(GString gstring, Closure closure) throws Exception {
-        List params = getParameters(gstring);
+        List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
         call(sql, params, closure);
     }
@@ -1482,7 +1270,7 @@ public class Sql {
      * @return the SQL version of the given query using ? instead of any
      *         parameter
      */
-    protected String asSql(GString gstring, List values) {
+    protected String asSql(GString gstring, List<Object> values) {
         String[] strings = gstring.getStrings();
         if (strings.length <= 0) {
             throw new IllegalArgumentException("No SQL specified in GString: " + gstring);
@@ -1490,7 +1278,7 @@ public class Sql {
         boolean nulls = false;
         StringBuffer buffer = new StringBuffer();
         boolean warned = false;
-        Iterator iter = values.iterator();
+        Iterator<Object> iter = values.iterator();
         for (int i = 0; i < strings.length; i++) {
             String text = strings[i];
             if (text != null) {
@@ -1607,7 +1395,7 @@ public class Sql {
      * @param gstring a GString containing the SQL query with embedded params
      * @return extracts the parameters from the expression as a List
      */
-    protected List getParameters(GString gstring) {
+    protected List<Object> getParameters(GString gstring) {
         return new ArrayList<Object>(Arrays.asList(gstring.getValues()));
     }
 
@@ -1620,7 +1408,7 @@ public class Sql {
      * @param statement the statement
      * @throws SQLException if a database access error occurs
      */
-    protected void setParameters(List params, PreparedStatement statement) throws SQLException {
+    protected void setParameters(List<Object> params, PreparedStatement statement) throws SQLException {
         int i = 1;
         for (Object value : params) {
             setObject(statement, i++, value);
@@ -1881,6 +1669,7 @@ public class Sql {
             closure.call(statement);
             int[] result = statement.executeBatch();
             connection.commit();
+            log.fine("Successfully executed batch with " + result.length + " command(s)");
             return result;
         } catch (SQLException e) {
             handleError(connection, e);
@@ -1985,14 +1774,14 @@ public class Sql {
         return stmt;
     }
 
-    private PreparedStatement getPreparedStatement(Connection connection, String sql, List params, int returnGeneratedKeys) throws SQLException {
+    private PreparedStatement getPreparedStatement(Connection connection, String sql, List<Object> params, int returnGeneratedKeys) throws SQLException {
         PreparedStatement statement = (PreparedStatement) getAbstractStatement(new CreatePreparedStatementCommand(returnGeneratedKeys), connection, sql);
         setParameters(params, statement);
         configure(statement);
         return statement;
     }
 
-    private PreparedStatement getPreparedStatement(Connection connection, String sql, List params) throws SQLException {
+    private PreparedStatement getPreparedStatement(Connection connection, String sql, List<Object> params) throws SQLException {
         return getPreparedStatement(connection, sql, params, 0);
     }
 
@@ -2004,6 +1793,7 @@ public class Sql {
          * @param conn all commands accept a connection
          * @param sql  all commands accept an SQL statement
          * @return statement that can be cached, etc.
+         * @throws SQLException if a database error occurs
          */
         abstract Statement execute(Connection conn, String sql) throws SQLException;
     }
@@ -2028,10 +1818,81 @@ public class Sql {
 
         @Override
         Statement execute(Connection conn, String sql) throws SQLException {
-            Statement stmt = conn.createStatement();
-            return stmt;
+            return conn.createStatement();
 		}
 
 	}
 
+    private abstract class AbstractQueryCommand {
+    	protected final String sql;
+    	protected Statement statement;
+
+    	AbstractQueryCommand(String sql) {
+    		// Don't create statement in subclass constructors to avoid throw in constructors
+    		this.sql = sql;
+    	}
+
+        /**
+         * Execute the command that's defined by the subclass following
+         * the Command pattern.  Specialized parameters are held in the command instances.
+         *
+         * @return ResultSet from executing a query
+         * @throws SQLException if a database error occurs
+         */
+         final ResultSet execute() throws SQLException {
+     		Connection connection = createConnection();
+    		Statement statement = null;
+    		try {
+    			log.fine(sql);
+    			// The variation in the pattern is isolated
+    			ResultSet result = runQuery(connection);
+    			assert (null != statement);
+    			return result;
+    		} catch (SQLException e) {
+    			log.log(Level.FINE, "Failed to execute: " + sql, e);
+    			throw e;
+    		} finally {
+    			closeResources(connection, statement, null);
+    		}
+         }
+
+         /**
+          * Perform the query. Must set statement field so that the main ({@link #execute()}) method can clean up.
+          * This is the method that encloses the variant part of the code.
+          * @param connection the connection to use
+          * @return ResultSet from an executeQuery method.
+          * @throws SQLException if a database error occurs
+          */
+         protected abstract ResultSet runQuery(Connection connection) throws SQLException;
+    }
+
+    private class PreparedQueryCommand extends AbstractQueryCommand {
+    	private List<Object> params;
+
+		PreparedQueryCommand(String sql, List<Object> queryParams) {
+			super(sql);
+			params = queryParams;
+			// TODO Auto-generated constructor stub
+		}
+
+		@Override
+		protected ResultSet runQuery(Connection connection) throws SQLException {
+			PreparedStatement s = getPreparedStatement(connection, sql, params);
+			statement = s;
+			return s.executeQuery();
+		}
+    }
+
+    private class QueryCommand extends AbstractQueryCommand {
+    	
+    	QueryCommand(String sql) {
+    		super(sql);
+    	}
+    	
+    	@Override
+    	protected ResultSet runQuery(Connection connection) throws SQLException {
+    		statement = getStatement(connection, sql);
+    		return statement.executeQuery(sql);
+    	}
+    }
 }
