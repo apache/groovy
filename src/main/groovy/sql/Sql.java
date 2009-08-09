@@ -52,7 +52,7 @@ import org.codehaus.groovy.runtime.SqlGroovyMethods;
  * <p/>
  * The class provides numerous extension points for overriding the
  * facade behavior associated with the various aspects of managing
- * the connection with the underlying database.
+ * the interaction with the underlying database.
  *
  * @author Chris Stevenson
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
@@ -125,7 +125,7 @@ public class Sql {
      * some properties and a driver class name.
      *
      * @param url             a database url of the form
-     *                        <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     *                        <code>jdbc:<em>subprotocol</em>:<em>subname</em></code>
      * @param properties      a list of arbitrary string tag/value pairs
      *                        as connection arguments; normally at least a "user" and
      *                        "password" property should be included
@@ -145,7 +145,7 @@ public class Sql {
      * a username and a password.
      *
      * @param url      a database url of the form
-     *                 <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     *                 <code>jdbc:<em>subprotocol</em>:<em>subname</em></code>
      * @param user     the database user on whose behalf the connection
      *                 is being made
      * @param password the user's password
@@ -182,7 +182,7 @@ public class Sql {
      * and a driver class name.
      *
      * @param url             a database url of the form
-     *                        <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     *                        <code>jdbc:<em>subprotocol</em>:<em>subname</em></code>
      * @param driverClassName the fully qualified class name of the driver class
      * @return a new Sql instance with a connection
      * @throws SQLException           if a database access error occurs
@@ -742,7 +742,7 @@ public class Sql {
 
     /**
      * Performs the given SQL query and return the rows of the result set.
-     *
+     * <p/>
      * Example usage:
      * <pre>
      * def ans = sql.rows("select * from PERSON where firstname like 'S%'")
@@ -759,7 +759,7 @@ public class Sql {
     /**
      * Performs the given SQL query and return the rows of the result set.
      * The query may contain GString expressions.
-     *
+     * <p/>
      * Example usage:
      * <pre>
      * def location = 25
@@ -780,7 +780,7 @@ public class Sql {
 
     /**
      * Performs the given SQL query and return the rows of the result set.
-     *
+     * <p/>
      * Example usage:
      * <pre>
      * def printNumCols = { meta -> println "Found $meta.columnCount columns" }
@@ -802,7 +802,7 @@ public class Sql {
 	/**
 	 * Performs the given SQL query and return the rows of the result set.
      * The query may contain placeholder question marks which match the given list of parameters.
-     *
+     * <p/>
      * Example usage:
      * <pre>
      * def ans = sql.rows("select * from PERSON where lastname like ?", ['%a%'])
@@ -825,7 +825,7 @@ public class Sql {
 
 	/**
      * Performs the given SQL query and return the first row of the result set.
-     *
+     * <p/>
      * Example usage:
      * <pre>
      * def ans = sql.firstRow("select * from PERSON where firstname like 'S%'")
@@ -846,7 +846,7 @@ public class Sql {
      * Performs the given SQL query and return
      * the first row of the result set.
      * The query may contain GString expressions.
-     *
+     * <p/>
      * Example usage:
      * <pre>
      * def location = 25
@@ -868,7 +868,7 @@ public class Sql {
     /**
      * Performs the given SQL query and return the first row of the result set.
      * The query may contain placeholder question marks which match the given list of parameters.
-     *
+     * <p/>
      * Example usage:
      * <pre>
      * def ans = sql.firstRow("select * from PERSON where lastname like ?", ['%a%'])
@@ -889,7 +889,7 @@ public class Sql {
     /**
      * Executes the given piece of SQL.
      * Also saves the updateCount, if any, for subsequent examination.
-     *
+     * <p/>
      * Example usages:
      * <pre>
      * sql.execute "drop table if exists PERSON"
@@ -938,7 +938,7 @@ public class Sql {
      * 
      * Executes the given piece of SQL with parameters.
      * Also saves the updateCount, if any, for subsequent examination.
-     *
+     * <p/>
      * Example usage:
      * <pre>
      * sql.execute """
@@ -976,7 +976,7 @@ public class Sql {
     /**
      * Executes the given SQL with embedded expressions inside.
      * Also saves the updateCount, if any, for subsequent examination.
-     *
+     * <p/>
      * Example usage:
      * <pre>
      * def scott = [firstname: "Scott", lastname: "Davis", id: 5, location_id: 50]
@@ -1206,6 +1206,30 @@ public class Sql {
 
     /**
      * Performs a stored procedure call.
+     * <p/>
+     * Example usage - suppose we have the following stored procedure:
+     * <pre>
+     * sql.execute """
+     *     CREATE PROCEDURE HouseSwap(_first1 VARCHAR(50), _first2 VARCHAR(50))
+     *     BEGIN
+     *         DECLARE _loc1 INT;
+     *         DECLARE _loc2 INT;
+     *         SELECT location_id into _loc1 FROM PERSON where firstname = _first1;
+     *         SELECT location_id into _loc2 FROM PERSON where firstname = _first2;
+     *         UPDATE PERSON
+     *         set location_id = case firstname
+     *             when _first1 then _loc2
+     *             when _first2 then _loc1
+     *         end
+     *         where (firstname = _first1 OR firstname = _first2);
+     *     END
+     * """
+     * </pre>
+     * then you can invoke the procedure as follows:
+     * <pre>
+     * def rowsChanged = sql.call("{call HouseSwap('Guillaume', 'Paul')}")
+     * assert rowsChanged == 2
+     * </pre>
      *
      * @param sql the SQL statement
      * @return the number of rows updated or 0 for SQL statements that return nothing
@@ -1216,12 +1240,46 @@ public class Sql {
     }
 
     /**
+     * Performs a stored procedure call with the given embedded parameters.
+     * <p/>
+     * Example usage - see {@link #call(String)} for more details about
+     * creating a <code>HouseSwap(IN name1, IN name2)</code> stored procedure.
+     * Once created, it can be called like this:
+     * <pre>
+     * def p1 = 'Paul'
+     * def p2 = 'Guillaume'
+     * def rowsChanged = sql.call("{call HouseSwap($p1, $p2)}")
+     * assert rowsChanged == 2
+     * </pre>
+     *
+     * @param gstring a GString containing the SQL query with embedded params
+     * @return the number of rows updated or 0 for SQL statements that return nothing
+     * @throws SQLException if a database access error occurs
+     * @see #expand(Object)
+     * @see #call(String)
+     */
+    public int call(GString gstring) throws Exception {
+        List<Object> params = getParameters(gstring);
+        String sql = asSql(gstring, params);
+        return call(sql, params);
+    }
+
+    /**
      * Performs a stored procedure call with the given parameters.
+     * <p/>
+     * Example usage - see {@link #call(String)} for more details about
+     * creating a <code>HouseSwap(IN name1, IN name2)</code> stored procedure.
+     * Once created, it can be called like this:
+     * <pre>
+     * def rowsChanged = sql.call("{call HouseSwap(?, ?)}", ['Guillaume', 'Paul'])
+     * assert rowsChanged == 2
+     * </pre>
      *
      * @param sql    the SQL statement
      * @param params a list of parameters
      * @return the number of rows updated or 0 for SQL statements that return nothing
      * @throws SQLException if a database access error occurs
+     * @see #call(String)
      */
     public int call(String sql, List<Object> params) throws Exception {
         Connection connection = createConnection();
@@ -1244,6 +1302,33 @@ public class Sql {
     /**
      * Performs a stored procedure call with the given parameters.  The closure
      * is called once with all the out parameters.
+     * <p/>
+     * Example usage - suppose we create a stored procedure (ignore its simplistic implementation):
+     * <pre>
+     * sql.execute """
+     *     CREATE PROCEDURE Hemisphere(
+     *         IN p_firstname VARCHAR(50),
+     *         IN p_lastname VARCHAR(50),
+     *         OUT dwells VARCHAR(50))
+     *     BEGIN
+     *     DECLARE loc INT;
+     *     SELECT location_id into loc FROM PERSON where firstname = p_firstname and lastname = p_lastname;
+     *     CASE loc
+     *         WHEN 40 THEN
+     *             SET dwells = 'Southern Hemisphere';
+     *         ELSE
+     *             SET dwells = 'Northern Hemisphere';
+     *     END CASE;
+     *     END;
+     * """
+     * </pre>
+     * we can now call the stored procedure as follows:
+     * <pre>
+     * sql.call '{call Hemisphere(?, ?, ?)}', ['Guillaume', 'Laforge', Sql.VARCHAR], { dwells ->
+     *     println dwells
+     * }
+     * </pre>
+     * which will output '<code>Northern Hemisphere</code>'.
      *
      * @param sql     the sql statement
      * @param params  a list of parameters
@@ -1286,26 +1371,23 @@ public class Sql {
     }
 
     /**
-     * Performs a stored procedure call with the given parameters.
-     *
-     * @param gstring a GString containing the SQL query with embedded params
-     * @return the number of rows updated or 0 for SQL statements that return nothing
-     * @throws SQLException if a database access error occurs
-     * @see #expand(Object)
-     */
-    public int call(GString gstring) throws Exception {
-        List<Object> params = getParameters(gstring);
-        String sql = asSql(gstring, params);
-        return call(sql, params);
-    }
-
-    /**
      * Performs a stored procedure call with the given parameters,
      * calling the closure once with all result objects.
+     * See {@link #call(String, List, Closure)} for more details about
+     * creating a <code>Hemisphere(IN first, IN last, OUT dwells)</code> stored procedure.
+     * Once created, it can be called like this:
+     * <pre>
+     * def first = 'Scott'
+     * def last = 'Davis'
+     * sql.call "{call Hemisphere($first, $last, ${Sql.VARCHAR})}", { dwells ->
+     *     println dwells
+     * }
+     * </pre>
      *
      * @param gstring a GString containing the SQL query with embedded params
      * @param closure called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
+     * @see #call(String, List, Closure)
      * @see #expand(Object)
      */
     public void call(GString gstring, Closure closure) throws Exception {
