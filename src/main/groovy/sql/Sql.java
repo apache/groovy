@@ -921,6 +921,7 @@ public class Sql {
         try {
             log.fine(sql);
             statement = getStatement(connection, sql);
+            // TODO handle multiple results
             boolean isResultSet = statement.execute(sql);
             this.updateCount = statement.getUpdateCount();
             return isResultSet;
@@ -960,6 +961,7 @@ public class Sql {
         try {
             log.fine(sql);
             statement = getPreparedStatement(connection, sql, params);
+            // TODO handle multiple results
             boolean isResultSet = statement.execute();
             this.updateCount = statement.getUpdateCount();
             return isResultSet;
@@ -1000,8 +1002,10 @@ public class Sql {
     }
 
     /**
-     * Executes the given SQL statement. See {@link #executeInsert(GString)}
-     * for more details.
+     * Executes the given SQL statement (typically an INSERT statement).
+     * Use this variant when you want to receive the values of any
+     * auto-generated columns, such as an autoincrement ID field.
+     * See {@link #executeInsert(GString)} for more details.
      *
      * @param sql The SQL statement to execute
      * @return A list of the auto-generated column values for each
@@ -1014,29 +1018,9 @@ public class Sql {
         try {
             log.fine(sql);
             statement = getStatement(connection, sql);
-            boolean hasResultSet = statement.execute(sql, Statement.RETURN_GENERATED_KEYS);
-
-            // Prepare a list to contain the auto-generated column
-            // values, and then fetch them from the statement.
-            List<List<Object>> autoKeys = new ArrayList<List<Object>>();
+            this.updateCount = statement.executeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
             ResultSet keys = statement.getGeneratedKeys();
-            int count = keys.getMetaData().getColumnCount();
-
-            // Copy the column values into a list of a list.
-            while (keys.next()) {
-                List<Object> rowKeys = new ArrayList<Object>(count);
-                for (int i = 1; i <= count; i++) {
-                    rowKeys.add(keys.getObject(i));
-                }
-
-                autoKeys.add(rowKeys);
-            }
-
-            // Store the update count so that it can be retrieved by
-            // clients, and then return the list of auto-generated
-            // values.
-            this.updateCount = statement.getUpdateCount();
-            return autoKeys;
+            return calculateKeys(keys);
         }
         catch (SQLException e) {
             log.log(Level.FINE, "Failed to execute: " + sql, e);
@@ -1048,9 +1032,11 @@ public class Sql {
     }
 
     /**
-     * Executes the given SQL statement with a particular list of
-     * parameter values. See {@link #executeInsert(GString)} for
-     * more details.
+     * Executes the given SQL statement (typically an INSERT statement).
+     * Use this variant when you want to receive the values of any
+     * auto-generated columns, such as an autoincrement ID field.
+     * The query may contain placeholder question marks which match the given list of parameters.
+     * See {@link #executeInsert(GString)} for more details.
      *
      * @param sql    The SQL statement to execute
      * @param params The parameter values that will be substituted
@@ -1060,33 +1046,14 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      */
     public List<List<Object>> executeInsert(String sql, List<Object> params) throws SQLException {
-        // Now send the SQL to the database.
         Connection connection = createConnection();
         PreparedStatement statement = null;
         try {
             log.fine(sql);
-
-            // Prepare a statement for the SQL and then execute it.
             statement = getPreparedStatement(connection, sql, params, Statement.RETURN_GENERATED_KEYS);
             this.updateCount = statement.executeUpdate();
-
-            // Prepare a list to contain the auto-generated column
-            // values, and then fetch them from the statement.
-            List<List<Object>> autoKeys = new ArrayList<List<Object>>();
             ResultSet keys = statement.getGeneratedKeys();
-            int count = keys.getMetaData().getColumnCount();
-
-            // Copy the column values into a list of a list.
-            while (keys.next()) {
-                List<Object> rowKeys = new ArrayList<Object>(count);
-                for (int i = 1; i <= count; i++) {
-                    rowKeys.add(keys.getObject(i));
-                }
-
-                autoKeys.add(rowKeys);
-            }
-
-            return autoKeys;
+            return calculateKeys(keys);
         }
         catch (SQLException e) {
             log.log(Level.FINE, "Failed to execute: " + sql, e);
@@ -1098,13 +1065,17 @@ public class Sql {
     }
 
     /**
-     * <p>Executes the given SQL with embedded expressions inside, and
-     * returns the values of any auto-generated columns, such as an
-     * autoincrement ID field. These values can be accessed using
+     * <p>Executes the given SQL statement (typically an INSERT statement).
+     * Use this variant when you want to receive the values of any
+     * auto-generated columns, such as an autoincrement ID field.
+     * The query may contain GString expressions.</p>
+     *
+     * <p>Generated key values can be accessed using
      * array notation. For example, to return the second auto-generated
      * column value of the third row, use <code>keys[3][1]</code>. The
      * method is designed to be used with SQL INSERT statements, but is
      * not limited to them.</p>
+     * 
      * <p>The standard use for this method is when a table has an
      * autoincrement ID column and you want to know what the ID is for
      * a newly inserted row. In this example, we insert a single row
@@ -1341,6 +1312,7 @@ public class Sql {
         try {
             log.fine(sql);
             setParameters(params, statement);
+            // TODO handle multiple results and mechanism for retrieving ResultSet if any (GROOVY-3048)
             statement.execute();
             List<Object> results = new ArrayList<Object>();
             int indx = 0;
@@ -2010,6 +1982,24 @@ public class Sql {
 
     // private implementation methods
     //-------------------------------------------------------------------------
+
+    private List<List<Object>> calculateKeys(ResultSet keys) throws SQLException {
+        // Prepare a list to contain the auto-generated column
+        // values, and then fetch them from the statement.
+        List<List<Object>> autoKeys = new ArrayList<List<Object>>();
+        int count = keys.getMetaData().getColumnCount();
+
+        // Copy the column values into a list of a list.
+        while (keys.next()) {
+            List<Object> rowKeys = new ArrayList<Object>(count);
+            for (int i = 1; i <= count; i++) {
+                rowKeys.add(keys.getObject(i));
+            }
+
+            autoKeys.add(rowKeys);
+        }
+        return autoKeys;
+    }
 
     private Statement createStatement(Connection connection) throws SQLException {
         if (resultSetHoldability == -1) {
