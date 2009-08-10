@@ -1309,6 +1309,7 @@ public class Sql {
     public void call(String sql, List<Object> params, Closure closure) throws Exception {
         Connection connection = createConnection();
         CallableStatement statement = connection.prepareCall(sql);
+        List<GroovyResultSet> resultSetResources = new ArrayList<GroovyResultSet>();
         try {
             log.fine(sql);
             setParameters(params, statement);
@@ -1320,11 +1321,15 @@ public class Sql {
             for (Object value : params) {
                 if (value instanceof OutParameter) {
                     if (value instanceof ResultSetOutParameter) {
-                        results.add(CallResultSet.getImpl(statement, indx));
+                        GroovyResultSet resultSet = CallResultSet.getImpl(statement, indx);
+                        resultSetResources.add(resultSet);
+                        results.add(resultSet);
                     } else {
                         Object o = statement.getObject(indx + 1);
                         if (o instanceof ResultSet) {
-                            results.add(new GroovyResultSetProxy((ResultSet) o).getImpl());
+                            GroovyResultSet resultSet = new GroovyResultSetProxy((ResultSet) o).getImpl();
+                            results.add(resultSet);
+                            resultSetResources.add(resultSet);
                         } else {
                             results.add(o);
                         }
@@ -1339,6 +1344,9 @@ public class Sql {
             throw e;
         } finally {
             closeResources(connection, statement);
+            for (GroovyResultSet rs : resultSetResources) {
+                closeResources(null, null, rs);
+            }
         }
     }
 
