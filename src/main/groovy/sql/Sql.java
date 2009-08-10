@@ -2101,11 +2101,15 @@ public class Sql {
         }
 
         PreparedStatement execute(Connection connection, String sql) throws SQLException {
-            if (returnGeneratedKeys != 0) {
+            if (returnGeneratedKeys != 0)
                 return connection.prepareStatement(sql, returnGeneratedKeys);
-            } else {
-                return connection.prepareStatement(sql);
-            }
+            if (appearsLikeStoredProc(sql))
+                return connection.prepareCall(sql);
+            return connection.prepareStatement(sql);
+        }
+
+        boolean appearsLikeStoredProc(String sql) {
+            return sql.matches("\\s*[{]?\\s*[?]?\\s*[=]?\\s*[cC][aA][lL][lL].*");
         }
     }
 
