@@ -28,6 +28,7 @@ import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Array;
+import java.lang.reflect.Modifier;
 import java.util.*;
 
 import groovy.lang.GroovyObject;
@@ -1036,7 +1037,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         ClassNode node = this;
         do {
             for (MethodNode method : getMethods(name)) {
-                if (method.getParameters().length == count) {
+                if (method.getParameters().length == count && !Modifier.isStatic(method.getModifiers())) {
                     return true;
                 }
             }
