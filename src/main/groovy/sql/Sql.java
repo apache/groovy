@@ -1931,7 +1931,7 @@ public class Sql {
                 results.close();
             }
             catch (SQLException e) {
-                log.log(Level.INFO, "Caught exception closing resultSet: " + e, e);
+                log.log(Level.INFO, "Caught exception closing resultSet: " + e.getMessage() + " - continuing", e);
             }
         }
         closeResources(connection, statement);
