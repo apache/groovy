@@ -1178,7 +1178,7 @@ public class Sql {
     /**
      * Performs a stored procedure call.
      * <p/>
-     * Example usage - suppose we have the following stored procedure:
+     * Example usage (tested with MySQL) - suppose we have the following stored procedure:
      * <pre>
      * sql.execute """
      *     CREATE PROCEDURE HouseSwap(_first1 VARCHAR(50), _first2 VARCHAR(50))
@@ -1274,21 +1274,21 @@ public class Sql {
      * Performs a stored procedure call with the given parameters.  The closure
      * is called once with all the out parameters.
      * <p/>
-     * Example usage - suppose we create a stored procedure (ignore its simplistic implementation):
+     * Example usage (tested with MySQL) - suppose we create a stored procedure (ignore its simplistic implementation):
      * <pre>
      * sql.execute """
      *     CREATE PROCEDURE Hemisphere(
-     *         IN p_firstname VARCHAR(50),
-     *         IN p_lastname VARCHAR(50),
-     *         OUT dwells VARCHAR(50))
+     *         IN _firstname VARCHAR(50),
+     *         IN _lastname VARCHAR(50),
+     *         OUT _ans VARCHAR(50))
      *     BEGIN
      *     DECLARE loc INT;
-     *     SELECT location_id into loc FROM PERSON where firstname = p_firstname and lastname = p_lastname;
+     *     SELECT location_id into loc FROM PERSON where firstname = _firstname and lastname = _lastname;
      *     CASE loc
      *         WHEN 40 THEN
-     *             SET dwells = 'Southern Hemisphere';
+     *             SET _ans = 'Southern Hemisphere';
      *         ELSE
-     *             SET dwells = 'Northern Hemisphere';
+     *             SET _ans = 'Northern Hemisphere';
      *     END CASE;
      *     END;
      * """
