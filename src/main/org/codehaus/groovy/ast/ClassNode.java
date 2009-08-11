@@ -1037,7 +1037,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         ClassNode node = this;
         do {
             for (MethodNode method : getMethods(name)) {
-                if (method.getParameters().length == count && !Modifier.isStatic(method.getModifiers())) {
+                if (method.getParameters().length == count && !method.isStatic()) {
                     return true;
                 }
             }
