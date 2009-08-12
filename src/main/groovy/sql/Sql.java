@@ -1274,21 +1274,22 @@ public class Sql {
      * Performs a stored procedure call with the given parameters.  The closure
      * is called once with all the out parameters.
      * <p/>
-     * Example usage (tested with MySQL) - suppose we create a stored procedure (ignore its simplistic implementation):
+     * Example usage - suppose we create a stored procedure (ignore its simplistic implementation):
      * <pre>
+     * // Tested with MySql 5.0.75
      * sql.execute """
      *     CREATE PROCEDURE Hemisphere(
-     *         IN _firstname VARCHAR(50),
-     *         IN _lastname VARCHAR(50),
-     *         OUT _ans VARCHAR(50))
+     *         IN p_firstname VARCHAR(50),
+     *         IN p_lastname VARCHAR(50),
+     *         OUT ans VARCHAR(50))
      *     BEGIN
      *     DECLARE loc INT;
-     *     SELECT location_id into loc FROM PERSON where firstname = _firstname and lastname = _lastname;
+     *     SELECT location_id into loc FROM PERSON where firstname = p_firstname and lastname = p_lastname;
      *     CASE loc
      *         WHEN 40 THEN
-     *             SET _ans = 'Southern Hemisphere';
+     *             SET ans = 'Southern Hemisphere';
      *         ELSE
-     *             SET _ans = 'Northern Hemisphere';
+     *             SET ans = 'Northern Hemisphere';
      *     END CASE;
      *     END;
      * """
@@ -1300,6 +1301,47 @@ public class Sql {
      * }
      * </pre>
      * which will output '<code>Northern Hemisphere</code>'.
+     * <p/>
+     * We can also access stored functions with scalar return values where the return value
+     * will be treated as an OUT parameter. Here are examples for various databases for
+     * creating such a procedure:
+     * <pre>
+     * // Tested with MySql 5.0.75
+     * sql.execute """
+     *     create function FullName(p_firstname VARCHAR(40)) returns VARCHAR(80)
+     *     begin
+     *         declare ans VARCHAR(80);
+     *         SELECT CONCAT(firstname, ' ', lastname) INTO ans FROM PERSON WHERE firstname = p_firstname;
+     *         return ans;
+     *     end
+     * """
+     *
+     * // Tested with MS SQLServer Express 2008
+     * sql.execute """
+     *     create function FullName(@firstname VARCHAR(40)) returns VARCHAR(80)
+     *     begin
+     *         declare @ans VARCHAR(80)
+     *         SET @ans = (SELECT firstname + ' ' + lastname FROM PERSON WHERE firstname = @firstname)
+     *         return @ans
+     *     end
+     * """
+     *
+     * // Tested with Oracle XE 10g
+     * sql.execute """
+     *     create function FullName(p_firstname VARCHAR) return VARCHAR is
+     *     ans VARCHAR(80);
+     *     begin
+     *         SELECT CONCAT(CONCAT(firstname, ' '), lastname) INTO ans FROM PERSON WHERE firstname = p_firstname;
+     *         return ans;
+     *     end;
+     * """
+     * </pre>
+     * and here is how you access the stored function for all databases:
+     * <pre>
+     * sql.call("{? = call FullName(?)}", [Sql.VARCHAR, 'Sam']) { name ->
+     *     assert name == 'Sam Pullara'
+     * }
+     * </pre>
      *
      * @param sql     the sql statement
      * @param params  a list of parameters
@@ -1353,6 +1395,7 @@ public class Sql {
     /**
      * Performs a stored procedure call with the given parameters,
      * calling the closure once with all result objects.
+     * <p/>
      * See {@link #call(String, List, Closure)} for more details about
      * creating a <code>Hemisphere(IN first, IN last, OUT dwells)</code> stored procedure.
      * Once created, it can be called like this:
@@ -1361,6 +1404,16 @@ public class Sql {
      * def last = 'Davis'
      * sql.call "{call Hemisphere($first, $last, ${Sql.VARCHAR})}", { dwells ->
      *     println dwells
+     * }
+     * </pre>
+     * <p/>
+     * As another example, see {@link #call(String, List, Closure)} for more details about
+     * creating a <code>FullName(IN first)</code> stored function.
+     * Once created, it can be called like this:
+     * <pre>
+     * def first = 'Sam'
+     * sql.call("{$Sql.VARCHAR = call FullName($first)}") { name ->
+     *     assert name == 'Sam Pullara'
      * }
      * </pre>
      *
