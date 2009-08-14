@@ -34,7 +34,7 @@
         <dependency>
             <groupId>net.sourceforge.cobertura</groupId>
             <artifactId>cobertura</artifactId>
-            <version>1.9.1.1</version>
+            <version>1.9.2</version>
             <exclusions>
                 <exclusion>
                     <groupId>asm</groupId>
@@ -53,19 +53,19 @@
         <dependency>
             <groupId>asm</groupId>
             <artifactId>asm</artifactId>
-            <version>3.1</version>
+            <version>3.2</version>
         </dependency>
 
         <!-- used for the JavaDoc generator script -->
         <dependency>
-            <groupId>qdox</groupId>
+            <groupId>com.thoughtworks.qdox</groupId>
             <artifactId>qdox</artifactId>
-            <version>1.6.1</version>
+            <version>1.9.2</version>
         </dependency>
         <dependency>
             <groupId>biz.aQute</groupId>
             <artifactId>bnd</artifactId>
-            <version>0.0.323</version>
+            <version>0.0.342</version>
         </dependency>
     </dependencies>
     <repositories>
