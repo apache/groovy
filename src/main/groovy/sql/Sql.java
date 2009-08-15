@@ -869,10 +869,24 @@ public class Sql {
      * Performs the given SQL query and return the first row of the result set.
      * The query may contain placeholder question marks which match the given list of parameters.
      * <p/>
-     * Example usage:
+     * Example usages:
      * <pre>
      * def ans = sql.firstRow("select * from PERSON where lastname like ?", ['%a%'])
      * println ans.firstname
+     * </pre>
+     * If your database returns scalar functions as ResultSets, you can also use firstRow
+     * to gain access to stored procedure results, e.g. using hsqldb 1.9 RC4:
+     * <pre>
+     * sql.execute """
+     *     create function FullName(p_firstname VARCHAR(40)) returns VARCHAR(80)
+     *     BEGIN atomic
+     *     DECLARE ans VARCHAR(80);
+     *     SET ans = (SELECT firstname || ' ' || lastname FROM PERSON WHERE firstname = p_firstname);
+     *     RETURN ans;
+     *     END
+     * """
+     *
+     * assert sql.firstRow("{call FullName(?)}", ['Sam'])[0] == 'Sam Pullara'
      * </pre>
      *
      * @param sql    the SQL statement
@@ -1320,9 +1334,9 @@ public class Sql {
      * sql.execute """
      *     create function FullName(@firstname VARCHAR(40)) returns VARCHAR(80)
      *     begin
-     *         declare @ans VARCHAR(80)
-     *         SET @ans = (SELECT firstname + ' ' + lastname FROM PERSON WHERE firstname = @firstname)
-     *         return @ans
+     *         declare {@code @ans} VARCHAR(80)
+     *         SET {@code @ans} = (SELECT firstname + ' ' + lastname FROM PERSON WHERE firstname = @firstname)
+     *         return {@code @ans}
      *     end
      * """
      *
