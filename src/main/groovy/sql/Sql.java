@@ -1332,10 +1332,10 @@ public class Sql {
      *
      * // Tested with MS SQLServer Express 2008
      * sql.execute """
-     *     create function FullName(@firstname VARCHAR(40)) returns VARCHAR(80)
+     *     {@code create function FullName(@firstname VARCHAR(40)) returns VARCHAR(80)}
      *     begin
      *         declare {@code @ans} VARCHAR(80)
-     *         SET {@code @ans} = (SELECT firstname + ' ' + lastname FROM PERSON WHERE firstname = @firstname)
+     *         {@code SET @ans = (SELECT firstname + ' ' + lastname FROM PERSON WHERE firstname = @firstname)}
      *         return {@code @ans}
      *     end
      * """
