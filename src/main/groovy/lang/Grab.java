@@ -36,6 +36,7 @@ public @interface Grab {
     String module() ;
     String version() default "*";
     String classifier() default "";
+    String value() default "";
 
     /**
      * By default, when a @Grab annotation is used, the grab() call is added
