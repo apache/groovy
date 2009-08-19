@@ -1023,7 +1023,7 @@ public class Sql {
      *
      * @param sql The SQL statement to execute
      * @return A list of the auto-generated column values for each
-     *         inserted row
+     *         inserted row (typically auto-generated keys)
      * @throws SQLException if a database access error occurs
      */
     public List<List<Object>> executeInsert(String sql) throws SQLException {
@@ -1056,7 +1056,7 @@ public class Sql {
      * @param params The parameter values that will be substituted
      *               into the SQL statement's parameter slots
      * @return A list of the auto-generated column values for each
-     *         inserted row
+     *         inserted row (typically auto-generated keys)
      * @throws SQLException if a database access error occurs
      */
     public List<List<Object>> executeInsert(String sql, List<Object> params) throws SQLException {
@@ -1113,8 +1113,8 @@ public class Sql {
      * </pre>
      *
      * @param gstring a GString containing the SQL query with embedded params
-     * @return A list of column values representing each row's
-     *         auto-generated keys
+     * @return A list of the auto-generated column values for each
+     *         inserted row (typically auto-generated keys)
      * @throws SQLException if a database access error occurs
      * @see #expand(Object)
      */
