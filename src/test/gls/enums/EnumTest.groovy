@@ -270,6 +270,11 @@ class EnumTest extends GroovyTestCase {
             assert obj.getEnumVar() == Class3110.Enum3110.FOO
         """
     }
+
+    void testStaticFieldInitValuesInAStaticBlock() {
+        // GROOVY-3693 - trigger enum class load to test it - asserts are present in the enum 
+        GrooyColors3693.r
+    }
 }
 
 enum UsCoin {
@@ -292,4 +297,15 @@ enum Foo3284 {
       call = c
     }
     final Closure call
+}
+
+enum GrooyColors3693 {
+    r, g, b
+    static List list = [1, 2]
+    static init() {
+        assert list == [1, 2]
+    }
+    static { 
+        init() 
+    }
 }

@@ -16,9 +16,12 @@
 package org.codehaus.groovy.ast;
 
 import org.codehaus.groovy.GroovyBugError;
+import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.Expression;
+import org.codehaus.groovy.ast.expr.FieldExpression;
 import org.codehaus.groovy.ast.expr.MapExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
+import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.control.CompilePhase;
@@ -697,17 +700,22 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return objectInitializers;
     }
 
-    public void addStaticInitializerStatements(List<Statement> staticStatements, boolean fieldInit) {
+    private MethodNode getOrAddStaticConstructorNode() {
         MethodNode method = null;
-        List<MethodNode> declaredMethods = getDeclaredMethods("<clinit>");
+        List declaredMethods = getDeclaredMethods("<clinit>");
         if (declaredMethods.isEmpty()) {
             method =
                     addMethod("<clinit>", ACC_STATIC, ClassHelper.VOID_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, new BlockStatement());
             method.setSynthetic(true);
         }
         else {
-            method = declaredMethods.get(0);
+            method = (MethodNode) declaredMethods.get(0);
         }
+        return method;
+    }
+    
+    public void addStaticInitializerStatements(List<Statement> staticStatements, boolean fieldInit) {
+        MethodNode method = getOrAddStaticConstructorNode();
         BlockStatement block = null;
         Statement statement = method.getCode();
         if (statement == null) {
@@ -735,6 +743,33 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         }
     }
 
+    public void positionStmtsAfterEnumInitStmts(List<Statement> staticFieldStatements) {
+        MethodNode method = getOrAddStaticConstructorNode();
+        Statement statement = method.getCode();
+        if (statement instanceof BlockStatement) {
+        	BlockStatement block = (BlockStatement) statement;
+        	// add given statements for explicitly declared static fields just after enum-special fields
+        	// are found - the $VALUES binary expression marks the end of such fields.
+        	List<Statement> blockStatements = block.getStatements();
+        	ListIterator<Statement> litr = blockStatements.listIterator();
+        	while(litr.hasNext()) {
+        		Statement stmt = litr.next();
+        		if(stmt instanceof ExpressionStatement && 
+        				((ExpressionStatement)stmt).getExpression() instanceof BinaryExpression) {
+        			BinaryExpression bExp = (BinaryExpression) ((ExpressionStatement)stmt).getExpression();
+        			if (bExp.getLeftExpression() instanceof FieldExpression) {
+        				FieldExpression fExp = (FieldExpression) bExp.getLeftExpression();
+        				if(fExp.getFieldName().equals("$VALUES")) {
+        					for(Statement tmpStmt : staticFieldStatements) {
+        						litr.add(tmpStmt);
+        					}
+        				}
+        			}
+        		}
+        	}
+        }
+    }
+    
     /**
      * This methods returns a list of all methods of the given name
      * defined in the current class
