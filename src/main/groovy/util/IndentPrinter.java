@@ -30,14 +30,30 @@ public class IndentPrinter {
     private PrintWriter out;
     private final boolean addNewlines;
 
+    /**
+     * Creates a PrintWriter pointing to System.out, with an indent of two 
+     * spaces.
+     * @see #IndentPrinter(PrintWriter, String)
+     */
     public IndentPrinter() {
         this(new PrintWriter(System.out), "  ");
     }
 
+    /**
+     * Create an IndentPrinter to the given PrintWriter, with an indent of two 
+     * spaces.
+     * @param out PrintWriter to output to
+     * @see #IndentPrinter(PrintWriter, String)
+     */
     public IndentPrinter(PrintWriter out) {
         this(out, "  ");
     }
 
+    /**
+     * Create an IndentPrinter to the given PrintWriter
+     * @param out PrintWriter to output to
+     * @param indent character(s) used to indent each line
+     */
     public IndentPrinter(PrintWriter out, String indent) {
         this(out, indent, true);
     }
