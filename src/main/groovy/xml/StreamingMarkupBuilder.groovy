@@ -41,17 +41,25 @@ import groovy.xml.streamingmarkupsupport.BaseMarkupBuilder
  * &lt;/root&gt;</pre>
  * Note that <code>mkp</code> is a special namespace used to escape
  * away from the normal building mode of the builder and get access
- * to helper markup methods such as 'yield', 'pi', 'comment', 'out',
- * 'namespaces' and 'yieldUnescaped'.
+ * to helper markup methods 'yield', 'pi', 'comment', 'out',
+ * 'namespaces', 'xmlDeclaration' and 'yieldUnescaped'.
  *
  */
 class StreamingMarkupBuilder extends AbstractStreamingBuilder {
     def pendingStack = []
+    
+    /**
+     * Invoked by calling <code>mkp.comment</code>
+     */
     def commentClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
         out.unescaped() << "<!--"
         out.escaped() << body
         out.unescaped() << "-->"
     }
+
+    /**
+     * Invoked by calling <code>mkp.pi</code>
+     */
     def piClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
         attrs.each {target, instruction ->
             out.unescaped() << "<?"
@@ -70,11 +78,21 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
             out.unescaped() << "?>"
         }
     }
+
+    /**
+     * Invoked by calling <code>mkp.xmlDeclaration</code>
+     */
     def declarationClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
         out.unescaped() << '<?xml version="1.0"'
         if (out.encodingKnown) out.escaped() << " encoding=\"${out.encoding}\""
         out.unescaped() << '?>\n'
     }
+
+    /**
+     * Invoked by calling <code>mkp.yield</code>.  Used to render text to the 
+     * output stream.  Any XML reserved characters will be escaped to ensure
+     * well-formedness.
+     */
     def noopClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
         body.each {
             if (it instanceof Closure) {
@@ -89,9 +107,16 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
             }
         }
     }
+    
+    /**
+     * Invoked by calling <code>mkp.yieldUnescaped</code>.  Used to render 
+	 * literal text or markup to the output stream.  No escaping is done on the
+	 * output.
+     */
     def unescapedClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
         out.unescaped() << body
     }
+    
     def tagClosure = {tag, doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
         if (prefix != "") {
             if (!(namespaces.containsKey(prefix) || pendingNamespaces.containsKey(prefix))) {
