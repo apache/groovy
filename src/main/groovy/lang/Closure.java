@@ -343,7 +343,9 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
     }
 
     /**
-     * @return a version of this closure which implements Writable
+     * @return a version of this closure which implements Writable.  Note that 
+     * the returned Writable also overrides {@link #toString()} in order 
+     * to allow rendering the result directly to a String.
      */
     public Closure asWritable() {
         return new WritableClosure();
@@ -377,7 +379,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
         }
     }
     
-    /**
+    /*
      * Implementation note: 
      *   This has to be an inner class!
      * 
