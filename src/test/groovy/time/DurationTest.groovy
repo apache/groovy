@@ -1,6 +1,6 @@
 package groovy.time
 
-import org.codehaus.groovy.runtime.TimeCategory
+import groovy.time.TimeCategory
 
 class DurationTest extends GroovyTestCase {
     void testFixedDurationArithmetic() {
