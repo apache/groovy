@@ -2337,8 +2337,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             if (Modifier.isFinal(field.getModifiers())) {
                 throw new ReadOnlyPropertyException(name, theClass);
             }
-            field.setProperty(object, newValue);
-            return;
+            if(!(this.isMap && isPrivateOrPkgPrivate(field.getModifiers()))) {
+                field.setProperty(object, newValue);
+                return;
+            }
         }
 
         //----------------------------------------------------------------------
@@ -2398,6 +2400,10 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         invokeMissingProperty(object, name, newValue, false);
     }
 
+    private boolean isPrivateOrPkgPrivate(int mod) {
+    	return !Modifier.isProtected(mod) && !Modifier.isPublic(mod); 
+    }
+    
     private MetaProperty getMetaProperty(Class _clazz, String name, boolean useSuper, boolean useStatic) {
         if (_clazz == theClass)
           return getMetaProperty(name, useStatic);
