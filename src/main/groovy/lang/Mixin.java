@@ -24,6 +24,8 @@ import java.lang.annotation.Target;
 
 /**
  * Provides a mechanism for mixing in methods into a class.
+ *
+ * @author Alex Tkachman
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target(ElementType.TYPE)
