@@ -22,6 +22,11 @@ import java.util.Date;
 import java.util.List;
 import java.util.ArrayList;
 
+/**
+ * Base class for date and time durations.
+ * @see Duration
+ * @author John Wilson tug@wilson.co.uk
+ */
 public abstract class BaseDuration {
     protected final int years;
     protected final int months;    

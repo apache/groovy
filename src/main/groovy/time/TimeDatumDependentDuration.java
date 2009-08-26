@@ -19,7 +19,7 @@ import java.util.Calendar;
 import java.util.Date;
 
 /**
- * TimeDatumDuration represents a time perid which results from an
+ * TimeDatumDuration represents a time period which results from an
  * arithmetic operation between a TimeDuration object and a DatumDuration object
  * 
  * @author John Wilson tug@wilson.co.uk

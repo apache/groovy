@@ -19,16 +19,17 @@ import java.util.Calendar;
 import java.util.Date;
 
 /**
- * TimeDuration represents time periods expressed in units of hours, minutes, seconds and milliseconds.
+ * <p>TimeDuration represents time periods expressed in units of hours, minutes, 
+ * seconds and milliseconds.
  * 
  * Whilst we can't say how long a month is without knowing the year and the name of the month,
- * we know how long a second is independant of the date.
+ * we know how long a second is independent of the date.</p>
  * 
- * This is not 100% true for minutes.
- * Minutes can be 59, 60 or 61 seconds long (due to leap seconds)
+ * <p>This is not 100% true for minutes.
+ * Minutes can be 59, 60 or 61 seconds long (due to leap seconds.)
  * 
  * If you ask Duration to convert itself to milliseconds then it will work on the basis of 60 seconds in a minute.
- * If you add or subtract it from a date it will take leap seconds into account
+ * If you add or subtract it from a date it will take leap seconds into account.</p>
  *
  * @author John Wilson tug@wilson.co.uk
  *
