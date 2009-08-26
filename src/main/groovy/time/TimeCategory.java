@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.codehaus.groovy.runtime;
+package groovy.time;
 
 import groovy.time.BaseDuration;
 import groovy.time.DatumDependentDuration;
@@ -25,8 +25,20 @@ import java.util.Date;
 import java.util.TimeZone;
 
 /**
- * This class has been moved to a public (i.e. non org.codehaus.* package).
- * @deprecated in favor of {@link groovy.time.TimeCategory}
+ * Apply a number of methods to allow convenient Date/Time manipulation,such as:
+ * 
+ * <pre>
+ * use ( TimeCategory ) {
+ * 	// application on numbers:
+ * 	println 1.minute.from.now
+ * 	println 10.hours.ago
+ * 
+ * 	// application on dates
+ * 	def someDate = new Date()
+ * 	println someDate - 3.months 
+ * }</pre>
+ * 
+ * @see BaseDuration
  */
 public class TimeCategory {
     /*
@@ -52,13 +64,24 @@ public class TimeCategory {
         return cal.getTime();
     }
 
+    /**
+     * Retrieves the default TimeZone for a date by using the default Locale
+     * settings.
+     * @param self
+     * @return
+     */
     public static TimeZone getTimeZone(Date self) {
         Calendar calendar = Calendar.getInstance();
         calendar.setTime(self);
         return calendar.getTimeZone();
     }
 
-    public static Duration getDaylightSavingsOffset(Date self) {
+    /**
+     * Get the DST offset (if any) for the default locale and the given date.
+     * @param self
+     * @return the DST offset as a Duration.
+     */
+    public static Duration getDaylightSavingsOffset( Date self ) {
         TimeZone timeZone = getTimeZone(self);
         int millis = (timeZone.useDaylightTime() && timeZone.inDaylightTime(self))
                 ? timeZone.getDSTSavings() : 0;
@@ -69,12 +92,26 @@ public class TimeCategory {
         return getDaylightSavingsOffset(new Date(self.toMilliseconds() + 1));
     }
 
+    /**
+     * Return a Duration representing the DST difference (if any) between two 
+     * dates.  i.e. if one date is before the DST changeover, and the other 
+     * date is after, the resulting duration will represent the DST offset.
+     * @param self
+     * @param other
+     * @return
+     */
     public static Duration getRelativeDaylightSavingsOffset(Date self, Date other) {
         Duration d1 = getDaylightSavingsOffset(self);
         Duration d2 = getDaylightSavingsOffset(other);
         return new TimeDuration(0, 0, 0, (int) (d2.toMilliseconds() - d1.toMilliseconds()));
     }
 
+    /**
+     * Subtract one date from the other.
+     * @param lhs
+     * @param rhs
+     * @return
+     */
     public static TimeDuration minus(final Date lhs, final Date rhs) {
         long milliseconds = lhs.getTime() - rhs.getTime();
         long days = milliseconds / (24 * 60 * 60 * 1000);

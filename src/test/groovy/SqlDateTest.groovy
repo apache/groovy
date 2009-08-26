@@ -1,6 +1,6 @@
 package groovy;
 
-import org.codehaus.groovy.runtime.TimeCategory
+import groovy.time.TimeCategory
 
 class SqlDateTest extends GroovyTestCase {
 
