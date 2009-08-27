@@ -237,13 +237,17 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
             ve.setClosureSharedVariable(true);
             ve.setUseReferenceDirectly(true);
             expressions.add(ve);
-            
+
             Parameter p = new Parameter(ClassHelper.REFERENCE_TYPE,"p"+pCount);
             //p.setClosureSharedVariable(true);
             parameters.add(p);
-            FieldNode pField = innerClass.addField(ve.getName(), privateSynthetic, ClassHelper.REFERENCE_TYPE, null);
+            final VariableExpression initial = new VariableExpression(p);
+            initial.setUseReferenceDirectly(true);
+            final FieldNode pField = innerClass.addFieldFirst(ve.getName(), privateSynthetic, ClassHelper.REFERENCE_TYPE, initial);
+            final int finalPCount = pCount;
+//            pField.setInitialValueExpression(initial);
             pField.setHolder(true);
-            addFieldInit(p,pField,block,true);            
+//            addFieldInit(p,pField,block,true);
         }
         
         innerClass.addConstructor(ACC_PUBLIC, (Parameter[]) parameters.toArray(new Parameter[0]), ClassNode.EMPTY_ARRAY, block);

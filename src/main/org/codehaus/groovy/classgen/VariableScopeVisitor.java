@@ -503,6 +503,16 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             ClosureExpression cl = new ClosureExpression(parameters, method.getCode());
             visitClosureExpression(cl);
         }
+
+        boolean ic = inClosure;
+        inClosure = true;
+        for (FieldNode field : innerClass.getFields()) {
+            final Expression expression = field.getInitialExpression();
+            if (expression != null) {
+                expression.visit(this);
+            }
+        }
+        inClosure = ic;
         popState();
     }
 

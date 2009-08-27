@@ -481,6 +481,13 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         redirect().fieldIndex.put(node.getName(), node);
     }
 
+    public void addFieldFirst(FieldNode node) {
+        node.setDeclaringClass(redirect());
+        node.setOwner(redirect());
+        redirect().fields.addFirst(node);
+        redirect().fieldIndex.put(node.getName(), node);
+    }
+
     public void addProperty(PropertyNode node) {
         node.setDeclaringClass(redirect());
         FieldNode field = node.getField();
@@ -598,6 +605,12 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     public FieldNode addField(String name, int modifiers, ClassNode type, Expression initialValue) {
         FieldNode node = new FieldNode(name, modifiers, type, redirect(), initialValue);
         addField(node);
+        return node;
+    }
+
+    public FieldNode addFieldFirst(String name, int modifiers, ClassNode type, Expression initialValue) {
+        FieldNode node = new FieldNode(name, modifiers, type, redirect(), initialValue);
+        addFieldFirst(node);
         return node;
     }
 

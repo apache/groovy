@@ -818,10 +818,14 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     		boolean isEnumClassNode, List initStmtsAfterEnumValuesInit, Set explicitStaticPropsInEnum) {
         Expression expression = fieldNode.getInitialExpression();
         if (expression != null) {
+            final FieldExpression fe = new FieldExpression(fieldNode);
+            if (fieldNode.getType().equals(ClassHelper.REFERENCE_TYPE) && ((fieldNode.getModifiers() & Opcodes.ACC_SYNTHETIC) != 0)) {
+                fe.setUseReferenceDirectly(true);
+            }
             ExpressionStatement statement =
                 new ExpressionStatement(
                     new BinaryExpression(
-                        new FieldExpression(fieldNode),
+                            fe,
                         Token.newSymbol(Types.EQUAL, fieldNode.getLineNumber(), fieldNode.getColumnNumber()),
                         expression));
             if (fieldNode.isStatic()) {

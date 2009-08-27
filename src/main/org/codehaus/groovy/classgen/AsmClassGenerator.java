@@ -527,7 +527,10 @@ public class AsmClassGenerator extends ClassGenerator {
         int modifiers = node.getModifiers();
         if (isVargs(node.getParameters())) modifiers |= Opcodes.ACC_VARARGS;
         mv = cv.visitMethod(modifiers, node.getName(), methodType, signature, buildExceptions(node.getExceptions()));
+
         mv = new MyMethodAdapter();
+//        mv = DebugMethodAdapter.create(new MyMethodAdapter());
+
         visitAnnotations(node, mv);
         for (int i = 0; i < parameters.length; i++) {
             visitParameterAnnotations(parameters[i], i, mv);

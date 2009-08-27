@@ -30,13 +30,11 @@ class InnerClassTest extends CompilableTestSupport {
         """
     }
 
-    void testExtendsObjectAndReferenceAMethodParameterWithinAGString_FAILS() {
-        if (notYetImplemented()) return
-
+    void testExtendsObjectAndReferenceAMethodParameterWithinAGString() {
         assertScript """
             Object makeObj0(String name) {
                  new Object() {
-                    String toString() { "My name is ${name}" }
+                    String toString() { "My name is \${name}" }
                  }
             }
 
@@ -44,13 +42,11 @@ class InnerClassTest extends CompilableTestSupport {
         """
     }
 
-    void testExtendsObjectAndReferenceAGStringPropertyDependingOnAMethodParameter_FAILS() {
-        if (notYetImplemented()) return
-
+    void testExtendsObjectAndReferenceAGStringPropertyDependingOnAMethodParameter() {
         assertScript """
             Object makeObj1(String name) {
                  new Object() {
-                    String objName = "My name is ${name}"
+                    String objName = "My name is \${name}"
 
                     String toString() { objName }
                  }

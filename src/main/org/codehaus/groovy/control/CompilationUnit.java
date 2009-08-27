@@ -18,10 +18,7 @@ package org.codehaus.groovy.control;
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyRuntimeException;
 import org.codehaus.groovy.GroovyBugError;
-import org.codehaus.groovy.ast.ASTNode;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.CompileUnit;
-import org.codehaus.groovy.ast.ModuleNode;
+import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.classgen.*;
 import org.codehaus.groovy.control.io.InputStreamReaderSource;
 import org.codehaus.groovy.control.io.ReaderSource;
@@ -552,6 +549,11 @@ public class CompilationUnit extends ProcessingUnit {
             List classes = source.ast.getClasses();
             for (Iterator it = classes.iterator(); it.hasNext();) {
                 ClassNode node = (ClassNode) it.next();
+
+//                if (node instanceof InnerClassNode && ((InnerClassNode)node).getVariableScope() != null) {
+//                    // what we want to do is not to process anonymous here as they were processed already
+//                    continue;
+//                }
 
                 VariableScopeVisitor scopeVisitor = new VariableScopeVisitor(source);
                 scopeVisitor.visitClass(node);
