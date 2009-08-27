@@ -22,6 +22,7 @@ import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.SourceUnit;
 
 import java.util.LinkedList;
@@ -511,6 +512,10 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             if (expression != null) {
                 expression.visit(this);
             }
+        }
+
+        for (Statement statement : innerClass.getObjectInitializerStatements()) {
+            statement.visit(this);
         }
         inClosure = ic;
         popState();

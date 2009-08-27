@@ -56,9 +56,7 @@ class InnerClassTest extends CompilableTestSupport {
         """
     }
 
-    void testUsageOfInitializerBlockWithinAnAIC_FAILS() {
-        if (notYetImplemented()) return
-        
+    void testUsageOfInitializerBlockWithinAnAIC () {
         assertScript """
             Object makeObj2(String name) {
                  new Object() {
