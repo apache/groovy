@@ -70,10 +70,22 @@ public class TimeDuration extends Duration {
                                               this.getMillis() - rhs.getMillis());
     }
     
+    public Date getAgo() {
+        final Calendar cal = Calendar.getInstance();
+
+        cal.add(Calendar.DAY_OF_YEAR, -this.getDays());
+        cal.add(Calendar.HOUR_OF_DAY, -this.getHours());
+        cal.add(Calendar.MINUTE, -this.getMinutes());
+        cal.add(Calendar.SECOND, -this.getSeconds());
+        cal.add(Calendar.MILLISECOND, -this.getMillis());
+        
+        return cal.getTime();
+    }        
+
     public From getFrom() {
         return new From() {
             public Date getNow() {
-            final Calendar cal = Calendar.getInstance();
+                final Calendar cal = Calendar.getInstance();
 
                 cal.add(Calendar.DAY_OF_YEAR, TimeDuration.this.getDays());
                 cal.add(Calendar.HOUR_OF_DAY, TimeDuration.this.getHours());

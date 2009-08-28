@@ -1,6 +1,7 @@
 package groovy.time
 
 import groovy.time.TimeCategory
+import static java.util.Calendar.*
 
 class DurationTest extends GroovyTestCase {
     void testFixedDurationArithmetic() {
@@ -30,25 +31,59 @@ class DurationTest extends GroovyTestCase {
 
             // add two durations
             def twoMonthsA = 1.month + 1.month
-            def offsetA = twoMonthsA.daylightSavingsOffset - nowOffset
-            // subtract dates which are two months apart
-            def offsetB = 2.months.from.now.daylightSavingsOffset - 0.months.from.now.daylightSavingsOffset
-            def twoMonthsB = 2.months.from.now + offsetB - 0.months.from.now
-            
-// TODO: Fix this test - it started failing on 2008-1-8 because twoMonthsA is "2 months" and twoMonths B is "59 days".
-//            assertEquals "Two months absolute duration should be the same as the difference between two dates two months apart\n",
-//                (twoMonthsA + offsetA).toMilliseconds(), twoMonthsB.toMilliseconds()
+            // two months from an absolute day
+			def twoMonthsB = new Date(0) + 2.months + 2.days // for Feb.
+			
+            assertEquals "Two months absolute duration should be the same as the difference between two dates two months apart\n",
+                twoMonthsA.toMilliseconds(), twoMonthsB.time
 
             // add two durations
             def monthAndWeekA = 1.month + 1.week
-            offsetA = monthAndWeekA.daylightSavingsOffset - nowOffset
-            // subtract absolute date and a duration from another absolute date
-            offsetB = (1.month.from.now + 1.week).daylightSavingsOffset - 0.months.from.now.daylightSavingsOffset
-            def monthAndWeekB = 1.month.from.now + 1.week + offsetB - 0.months.from.now
-// TODO: Fix this test
-//            assertEquals "A week and a month absolute duration should be the same as the difference between two dates that far apart\n",
-//                (monthAndWeekA + offsetA).toMilliseconds(), monthAndWeekB.toMilliseconds()
+            // add absolute date and a duration
+			def monthAndWeekB = new Date(0) + 1.week + 1.month
+
+            assertEquals "A week and a month absolute duration should be the same as the difference between two dates that far apart\n",
+                monthAndWeekA.toMilliseconds(), monthAndWeekB.time
         }
+    }
+    
+    void testMinugesAgo() { // See GROOVY-3687
+    	use ( TimeCategory ) {
+	    	def now = Calendar.getInstance()
+	    	def before = 10.minutes.ago
+	    	now.add( Calendar.MINUTE, -11 )
+			assertTrue "10.minutes.ago should not zero out the date", 
+				now.timeInMillis < before.time
+				
+			now = Calendar.getInstance()
+			now.add( Calendar.MINUTE, -10 )
+			assertTrue "10.minutes.ago should be older than 'now - 10 minutes'", 
+				now.timeInMillis >= before.time
+    	}
+    }
+    
+    void testFromNow() {
+    	use ( TimeCategory ) {
+	    	def now = Calendar.getInstance()
+	    	now.add( MINUTE, 10 )
+			def later = 10.minutes.from.now
+	    	assertTrue "10.minutes.from.now should be later!", 
+				now.timeInMillis <= later.time
+
+			now = Calendar.getInstance() 
+			now.add( MINUTE, 11 )
+			assertTrue "10.minutes.from.now should be less calendar + 11 minutes", 
+				now.timeInMillis > later.time
+
+			now = Calendar.getInstance()
+			now.add( WEEK_OF_YEAR, 3 )
+			now.set( HOUR_OF_DAY, 0 )
+			now.set( MINUTE, 0 )
+			now.set( SECOND, 0 )
+			now.set( MILLISECOND, 0 )
+			later = 3.weeks.from.now
+			assertEquals "weeks from now!", now.timeInMillis, later.time
+    	}
     }
 
     void testDatumDependantArithmetic() {
