@@ -18,7 +18,7 @@ package org.codehaus.groovy.vmplugin;
 import org.codehaus.groovy.vmplugin.v4.Java4;
 
 /**
- * factory class to get functionlity based on the VM version.
+ * factory class to get functionality based on the VM version.
  * The usage of this class is not for public use, only for the
  * runtime.
  * @author Jochen Theodorou
@@ -30,9 +30,9 @@ public class VMPluginFactory {
     private static VMPlugin plugin;
     static {
         try {
-            ClassLoader.getSystemClassLoader().loadClass(JDK5_CLASSNAME_CHECK);
-            plugin = (VMPlugin) VMPluginFactory.class.getClassLoader()
-                                 .loadClass(JDK5_PLUGIN_NAME).newInstance();
+            ClassLoader loader = VMPluginFactory.class.getClassLoader();
+            loader.loadClass(JDK5_CLASSNAME_CHECK);
+            plugin = (VMPlugin) loader.loadClass(JDK5_PLUGIN_NAME).newInstance();
         } catch(Exception ex) {
             plugin = new Java4();
         }
