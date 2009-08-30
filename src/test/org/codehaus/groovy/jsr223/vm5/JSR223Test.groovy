@@ -83,4 +83,13 @@ public class JSR223Test extends TestCase {
         } catch (ScriptException e) {
         }
     }
+
+    public void testEmptyScriptWithJustImports() {
+        ScriptEngine engine = manager.getEngineByName("groovy");
+        assertNotNull(engine);
+
+        // GROOVY-3711: The eval of the following script earlier resulted in NPE
+        // as groovy did not generate a script class in this case
+        engine.eval("import java.lang.*");
+    }
 }
