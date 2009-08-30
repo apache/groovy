@@ -110,7 +110,9 @@ public class GroovyScriptEngineImpl
     public Object eval(String script, ScriptContext ctx) 
                        throws ScriptException {
         try {
-            return eval(getScriptClass(script), ctx);
+        	Class clazz = getScriptClass(script);
+            if(clazz == null) throw new ScriptException("Script class is null");
+            return eval(clazz, ctx);
         } catch (SyntaxException e) {
             throw new ScriptException(e.getMessage(), 
                                       e.getSourceLocator(), e.getLine());
