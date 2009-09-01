@@ -238,23 +238,23 @@ public class GroovyShell extends GroovyObjectSupport {
         if (scriptClass == null) {
             return null;
         }
-        try {
-            if (Script.class.isAssignableFrom(scriptClass)) {
-                // treat it just like a script if it is one
-                Script script  = null;
-                try {
-                    script = (Script) scriptClass.newInstance();
-                } catch (InstantiationException e) {
-                    // ignore instaintiations errors,, try to do main
-                } catch (IllegalAccessException e) {
-                   // ignore instaintiations errors, try to do main
-                }
-                if (script != null) {
-                    script.setBinding(context);
-                    script.setProperty("args", args);
-                    return script.run();
-                }
+        if (Script.class.isAssignableFrom(scriptClass)) {
+            // treat it just like a script if it is one
+            Script script  = null;
+            try {
+                script = (Script) scriptClass.newInstance();
+            } catch (InstantiationException e) {
+                // ignore instaintiations errors,, try to do main
+            } catch (IllegalAccessException e) {
+               // ignore instaintiations errors, try to do main
             }
+            if (script != null) {
+                script.setBinding(context);
+                script.setProperty("args", args);
+                return script.run();
+            }
+        }
+        try {
             // let's find a main method
             scriptClass.getMethod("main", new Class[]{String[].class});
             // if that main method exist, invoke it
