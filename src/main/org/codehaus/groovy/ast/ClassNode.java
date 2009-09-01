@@ -845,6 +845,9 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * @return true if this node is derived from the given ClassNode
      */
     public boolean isDerivedFrom(ClassNode type) {
+    	if(this.equals(ClassHelper.VOID_TYPE)) {
+    		return type.equals(ClassHelper.VOID_TYPE) ? true : false;
+    	}
         if (type.equals(ClassHelper.OBJECT_TYPE)) return true;
         ClassNode node = this;
         while (node != null) {
