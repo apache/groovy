@@ -26,24 +26,36 @@ class DurationTest extends GroovyTestCase {
 
     void testDurationArithmetic() {
         use(TimeCategory) {
-            //def nowOffset = (new Date()).daylightSavingsOffset
-            def nowOffset = 0.months.from.now.daylightSavingsOffset
+			def date = new Date(0)
+			def cal = Calendar.getInstance()
+			cal.timeInMillis = 0
 
-            // add two durations
-            def twoMonthsA = 1.month + 1.month
-            // two months from an absolute day
-			def twoMonthsB = new Date(0) + 2.months + 2.days // for Feb.
+			// add two durations
+            def twoMonths = 1.month + 1.month
+            cal.add MONTH, 2
 			
-            assertEquals "Two months absolute duration should be the same as the difference between two dates two months apart\n",
-                twoMonthsA.toMilliseconds(), twoMonthsB.time
+            assertEquals "Two months absolute duration",
+            	cal.timeInMillis, ( date + twoMonths ).time
 
             // add two durations
-            def monthAndWeekA = 1.month + 1.week
-            // add absolute date and a duration
-			def monthAndWeekB = new Date(0) + 1.week + 1.month
-
-            assertEquals "A week and a month absolute duration should be the same as the difference between two dates that far apart\n",
-                monthAndWeekA.toMilliseconds(), monthAndWeekB.time
+            def monthAndWeek = 1.month + 1.week
+			cal.timeInMillis = 0
+			cal.add MONTH, 1
+			cal.add DAY_OF_YEAR, 7
+            assertEquals "A week and a month absolute duration",
+                cal.timeInMillis, ( date + monthAndWeek ).time
+				
+			def twoAndaHalfWeeks = 3.weeks - 4.days + 12.hours
+			cal.timeInMillis = 0
+			cal.add DAY_OF_YEAR, 17
+			cal.add HOUR, 12
+			assertEquals "two and a half weeks\n",
+				cal.timeInMillis, ( date + twoAndaHalfWeeks ).time
+				
+			assertEquals "two weeks", 2.weeks.toMilliseconds(), 
+				14.days.toMilliseconds()
+			assertEquals "One year and 365 days", 
+				1.year.toMilliseconds(), 12.months.toMilliseconds()
         }
     }
     
@@ -93,6 +105,27 @@ class DurationTest extends GroovyTestCase {
             def week = then - (start + 1.month)
             assert week.toMilliseconds() == (7 * 24 * 60 * 60 * 1000): \
                 "Expected ${7 * 24 * 60 * 60 * 1000} but was ${week.toMilliseconds()}"
+				
+			
+			start = Calendar.getInstance() // our reference
+			def date = new Date( start.time.time ) // our test date
+            
+			date += 2.months
+			start.add MONTH, 2 
+			assertEquals "after adding two months", start.time, date
+			
+			date += 5.weeks
+			start.add WEEK_OF_YEAR, 5
+			assertEquals "after adding 5 weeks", start.time, date
+			
+			date -= ( 52.days + 123.minutes )
+			start.add DAY_OF_YEAR, -52
+			start.add MINUTE, -123
+			assertEquals "after subtracting 52 days and 123 minutes", start.time, date
+			
+			date -= 12345678.seconds
+			start.add SECOND, -12345678
+			assertEquals "after subtracting 12345678 seconds", start.time, date
         }
     }
 }

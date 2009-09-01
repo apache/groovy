@@ -84,12 +84,13 @@ public class DatumDependentDuration extends BaseDuration {
 
     }
 
-    /* (non-Javadoc)
-    * @see groovy.time.BaseDuration#toMilliseconds()
-    *
-    * Do our best to change the duration into milliseconds
-    * We calculate the duration relative to now
-    */
+    /**
+     * @see groovy.time.BaseDuration#toMilliseconds()
+     *
+     * Change the duration into milliseconds, relative to 'now.'  Therefore
+     * things like timezone and time of year will affect how this conversion 
+     * occurs.
+     */
     public long toMilliseconds() {
         final Date now = new Date();
         return TimeCategory.minus(plus(now), now).toMilliseconds();
