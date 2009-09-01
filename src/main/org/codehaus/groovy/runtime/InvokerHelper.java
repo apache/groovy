@@ -320,7 +320,10 @@ public class InvokerHelper {
         } else {
             pattern = Pattern.compile(toString(right));
         }
-        String stringToCompare = toString(left);
+        String stringToCompare = null;
+        if(left != null) {
+        	stringToCompare = toString(left);
+        }
         Matcher matcher = pattern.matcher(stringToCompare);
         RegexSupport.setLastMatcher(matcher);
         return matcher.matches();
