@@ -153,4 +153,15 @@ public class CovariantReturnTest extends CompilableTestSupport {
         } 
     """
   }
+
+  void testCovariantVoidReturnTypeOverridingObjectType() {
+    shouldNotCompile """
+        class BaseClass {
+            def foo() {}
+        }
+        class DerivedClass extends BaseClass {
+            void foo() {}
+        }
+    """
+  }
 }

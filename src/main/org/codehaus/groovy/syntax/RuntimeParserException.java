@@ -30,7 +30,7 @@ import org.codehaus.groovy.ast.ASTNode;
 public class RuntimeParserException extends GroovyRuntimeException {
 
     public RuntimeParserException(String message, ASTNode node) {
-        super(message + ".\nNode: " + node.getClass().getName(), node);
+        super(message + "\n", node);
     }
 
     public void throwParserException() throws SyntaxException {
