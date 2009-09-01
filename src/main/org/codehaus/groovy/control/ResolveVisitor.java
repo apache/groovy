@@ -690,9 +690,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 }
                 break;
             }
-            // anything other than PropertyExpressions, ClassExpression or
+            // anything other than PropertyExpressions or
             // VariableExpressions will stop resolving
-            else if (!(it.getClass() == PropertyExpression.class)) {
+            else if (it.getClass() != PropertyExpression.class) {
                 return null;
             } else {
                 PropertyExpression current = (PropertyExpression) it;
@@ -761,7 +761,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
         Expression objectExpression = pe.getObjectExpression();
         inPropertyExpression = true;
-        isTopLevelProperty = !(objectExpression.getClass() == PropertyExpression.class);
+        isTopLevelProperty = (objectExpression.getClass() != PropertyExpression.class);
         objectExpression = transform(objectExpression);
         // we handle the property part as if it were not part of the property
         inPropertyExpression = false;
