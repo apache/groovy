@@ -18,14 +18,16 @@ package groovy.time;
 import java.util.Calendar;
 import java.util.Date;
 
-import org.codehaus.groovy.runtime.TimeCategory;
+import groovy.time.TimeCategory;
 
 /**
- * DatumDependentDuration represents durations whose length in milliseconds cannot be determined without knowing the datum point.
+ * DatumDependentDuration represents durations whose length in milliseconds 
+ * cannot be determined without knowing the datum point.
  * <p/>
  * I don't know how many days in a year unless I know if it's a leap year or not.
  * <p/>
- * I don't know how many days in a month unless I know the name of the month (and if it's a leap year if the month is February)
+ * I don't know how many days in a month unless I know the name of the month 
+ * (and if it's a leap year if the month is February)
  *
  * @author John Wilson tug@wilson.co.uk
  */
@@ -82,12 +84,13 @@ public class DatumDependentDuration extends BaseDuration {
 
     }
 
-    /* (non-Javadoc)
-    * @see groovy.time.BaseDuration#toMilliseconds()
-    *
-    * Do our best to change the duration into milliseconds
-    * We calculate the duration relative to now
-    */
+    /**
+     * @see groovy.time.BaseDuration#toMilliseconds()
+     *
+     * Change the duration into milliseconds, relative to 'now.'  Therefore
+     * things like timezone and time of year will affect how this conversion 
+     * occurs.
+     */
     public long toMilliseconds() {
         final Date now = new Date();
         return TimeCategory.minus(plus(now), now).toMilliseconds();

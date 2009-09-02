@@ -15,10 +15,10 @@
  */
 package org.codehaus.groovy.runtime
 
-import org.codehaus.groovy.runtime.TimeCategory
+import groovy.time.TimeCategory
 
 /** 
- * Tests the org.codehaus.groovy.runtime.TimeCategory class. 
+ * Tests the groovy.time.TimeCategory class. 
  * Most of these tests use January 1 as a start time to avoid 
  * leap years and daylight savings time issues. 
  * 
