@@ -116,9 +116,9 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     private MetaClass myMetaClass;
     private boolean allowChangesAfterInit;
 
-    private boolean initialized;
+    private volatile boolean initialized;
     private boolean initCalled;
-    private boolean modified;
+    private volatile boolean modified;
     public boolean inRegistry;
     private final Set<MetaMethod> inheritedMetaMethods = new HashSet<MetaMethod>();
     private final Map<String, MetaProperty> beanPropertyCache = new ConcurrentHashMap<String, MetaProperty>();
@@ -235,7 +235,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         this.getPropertyMethod = method;
     }
 
-    public synchronized boolean isModified() {
+    public boolean isModified() {
         return this.modified;
     }
 
@@ -315,11 +315,11 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
 	/* (non-Javadoc)
 	 * @see groovy.lang.MetaClassImpl#isInitialized()
 	 */
-	protected synchronized boolean isInitialized() {
+	protected boolean isInitialized() {
 		return this.initialized;
 	}
 
-    protected synchronized void setInitialized(boolean b) {
+    protected void setInitialized(boolean b) {
         this.initialized = b;
     }
 
