@@ -101,6 +101,10 @@ public class ProxyGenerator {
         return instantiateAggregateFromBaseClass(m, clazz, null);
     }
 
+    public Object instantiateAggregateFromBaseClass(Class clazz, Object[] constructorArgs) {
+    	return instantiateAggregate(null, null, clazz, constructorArgs);
+    }
+    
     public Object instantiateAggregateFromBaseClass(Map map, Class clazz, Object[] constructorArgs) {
         return instantiateAggregate(map, null, clazz, constructorArgs);
     }
@@ -187,6 +191,9 @@ public class ProxyGenerator {
             if (map.containsKey(method.getName()) || closureIndicator) {
                 selectedMethods.put(method.getName(), method);
                 addOverridingMapCall(buffer, method, closureIndicator);
+            } else if(Modifier.isAbstract(method.getModifiers())) {
+            	selectedMethods.put(method.getName(), method);
+            	addMapOrDummyCall(map, buffer, method);
             }
         }
 
