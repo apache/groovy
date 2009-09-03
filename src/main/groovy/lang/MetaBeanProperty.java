@@ -48,6 +48,7 @@ public class MetaBeanProperty extends MetaProperty {
      * @throws Exception if the property could not be evaluated
      */
     public Object getProperty(Object object) {
+    	MetaMethod getter = getGetter();
         if (getter == null) {
             //TODO: we probably need a WriteOnlyException class
             throw new GroovyRuntimeException("Cannot read write-only property: " + name);
@@ -63,6 +64,7 @@ public class MetaBeanProperty extends MetaProperty {
      * @throws RuntimeException if the property could not be set
      */
     public void setProperty(Object object, Object newValue) {
+    	MetaMethod setter = getSetter();
         if (setter == null) {
             throw new GroovyRuntimeException("Cannot set read-only property: " + name);
         }
@@ -99,6 +101,8 @@ public class MetaBeanProperty extends MetaProperty {
     }
 
     public int getModifiers() {
+    	MetaMethod getter = getGetter();
+    	MetaMethod setter = getSetter();
         if (setter != null && getter == null) return setter.getModifiers();
         if (getter != null && setter == null) return getter.getModifiers();
         int modifiers = getter.getModifiers() | setter.getModifiers();
