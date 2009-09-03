@@ -169,8 +169,11 @@ $Date$
         <mkdir dir="${mainClassesDirectory}"/>
         <mkdir dir="${toolsClassesDirectory}"/>
 
-        <javac srcdir="${mainSourceDirectory}" includeantruntime="false" destdir="${mainClassesDirectory}"
-               deprecation="on" debug="yes" source="1.5" target="1.5" fork="true" classpathref="compilePath">
+        <javac srcdir="${mainSourceDirectory}" destdir="${mainClassesDirectory}"
+               includeantruntime="false" deprecation="on" debug="yes"
+               memorymaximumsize="${groovycMain_mx}"
+               source="1.5" target="1.5" fork="true"
+               classpathref="compilePath">
             <exclude name="groovy/ui/**/*.java"/>
         </javac>
         <antcall inheritrefs="true" target="-stagedcompile-groovy"/>
