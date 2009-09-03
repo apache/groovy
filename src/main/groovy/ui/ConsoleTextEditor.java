@@ -28,33 +28,100 @@ import javax.swing.Action;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
 import javax.swing.JComponent;
+import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.KeyStroke;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultStyledDocument;
+import javax.swing.text.Document;
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.event.ActionEvent;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.awt.print.PrinterJob;
+import java.awt.*;
 import java.beans.PropertyChangeEvent;
 import java.beans.PropertyChangeListener;
 import java.io.File;
+import java.util.prefs.Preferences;
+
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 /**
  * Component which provides a styled editor for the console.
  *
- * @version $Id$
  * @author hippy
+ * @author Danno Ferrin
+ * @author Tim Yates
+ * @author Guillaume Laforge
  */
 public class ConsoleTextEditor extends JScrollPane {
 
+    private class LineNumbersPanel extends JPanel {
+	
+	    public LineNumbersPanel() {
+            int initialSize = 3 * Preferences.userNodeForPackage(Console.class).getInt("fontSize", 12);
+            setMinimumSize  (new Dimension(initialSize, initialSize));
+			setPreferredSize(new Dimension(initialSize, initialSize));
+		}
+
+        @Override
+		public void paintComponent(Graphics g) {
+		    super.paintComponent(g);
+
+            // starting position in document
+			int start = textEditor.viewToModel(getViewport().getViewPosition());
+            // end position in document
+            int end = textEditor.viewToModel(new Point(10,
+                    getViewport().getViewPosition().y + 
+                    (int) textEditor.getVisibleRect().getHeight())
+            );
+
+			// translate offsets to lines
+			Document doc = textEditor.getDocument();
+			int startline = doc.getDefaultRootElement().getElementIndex(start) + 1;
+			int endline = doc.getDefaultRootElement().getElementIndex(end) + 1;
+
+			int fontHeight = g.getFontMetrics(textEditor.getFont()).getHeight();
+			int fontDesc = g.getFontMetrics(textEditor.getFont()).getDescent();
+			int starting_y = -1 ;
+
+			try	{
+				starting_y = textEditor.modelToView(start).y + fontHeight - fontDesc;
+			} catch(BadLocationException e1) {
+				e1.printStackTrace();
+			}
+			g.setFont(textEditor.getFont());
+			for(int line = startline, y = starting_y; line <= endline; y += fontHeight, line++) {
+                String lineNumber = DefaultGroovyMethods.padLeft(Integer.toString(line), 4, " ");
+                g.drawString(lineNumber, 0, y);
+			}
+		}
+    }
+	
     private static final PrinterJob PRINTER_JOB = PrinterJob.getPrinterJob();
-        
-    private TextEditor textEditor = new TextEditor(true, true, true);
-    
+
+	private LineNumbersPanel numbersPanel = new LineNumbersPanel();
+
+    private boolean documentChangedSinceLastRepaint = false;
+
+    private TextEditor textEditor = new TextEditor(true, true, true) { 
+
+		public void paintComponent(Graphics g) {
+			super.paintComponent(g);
+
+            // only repaint the line numbers in the gutter when the document has changed
+            // in case lines (hence line numbers) have been added or removed from the document
+            if (documentChangedSinceLastRepaint) {
+			    numbersPanel.repaint();
+                documentChangedSinceLastRepaint = false;
+            }
+		}
+	};
+
     private UndoAction undoAction = new UndoAction();
     private RedoAction redoAction = new RedoAction();
     private PrintAction printAction = new PrintAction();
@@ -70,18 +137,39 @@ public class ConsoleTextEditor extends JScrollPane {
      */
     public ConsoleTextEditor() {        
         textEditor.setFont(StructuredSyntaxResources.EDITOR_FONT);
-        
-        setWheelScrollingEnabled(true);
 
-        setViewportView(textEditor);
-        
+        setViewportView(new JPanel(new BorderLayout()) {{
+			add(numbersPanel, BorderLayout.WEST);
+			add(textEditor, BorderLayout.CENTER);
+		}});
+
         textEditor.setDragEnabled(editable);
-        
+
+        getVerticalScrollBar().setUnitIncrement(10);
+
         initActions();
-        
+
         DefaultStyledDocument doc = new DefaultStyledDocument();
         doc.setDocumentFilter(new GroovyFilter(doc));
         textEditor.setDocument(doc);
+
+        // add a document listener, to hint whether the line number gutter has to be repainted
+        // when the number of lines changes
+        doc.addDocumentListener(new DocumentListener() {
+            public void insertUpdate(DocumentEvent documentEvent) {
+                documentChangedSinceLastRepaint = true;
+            }
+
+            public void removeUpdate(DocumentEvent documentEvent) {
+                documentChangedSinceLastRepaint = true;
+            }
+
+            public void changedUpdate(DocumentEvent documentEvent) {
+                documentChangedSinceLastRepaint = true;
+                int width = 3 * Preferences.userNodeForPackage(Console.class).getInt("fontSize", 12);
+                numbersPanel.setPreferredSize(new Dimension(width, width));
+            }
+        });
 
         // create and add the undo/redo manager
         this.undoManager = new TextUndoManager();
