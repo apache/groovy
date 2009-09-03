@@ -29,7 +29,7 @@ import java.util.ArrayList;
  * Extracted from Verifier as it can be useful for some AST transformations
  */
 public class ReturnAdder {
-    protected static void addReturnIfNeeded(MethodNode node) {
+    public static void addReturnIfNeeded(MethodNode node) {
         Statement statement = node.getCode();
         if (!node.isVoidMethod()) {
             if (statement != null) // it happens with @interface methods

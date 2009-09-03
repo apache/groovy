@@ -422,7 +422,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     public void visitMethod(MethodNode node) {
         this.methodNode = node;
-        ReturnAdder.addReturnIfNeeded(node);
+        addReturnIfNeeded(node);
         Statement statement;
         if (node.getName().equals("main") && node.isStatic()) {
             Parameter[] params = node.getParameters();
@@ -435,6 +435,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
         statement = node.getCode();
         if (statement!=null) statement.visit(new VerifierCodeVisitor(this));
+    }
+
+    protected void addReturnIfNeeded(MethodNode node) {
+        ReturnAdder.addReturnIfNeeded(node);
     }
 
     public void visitField(FieldNode node) {
