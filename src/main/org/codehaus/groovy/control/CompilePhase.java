@@ -43,7 +43,6 @@ public enum CompilePhase {
     };
 
     int phaseNumber;
-
     CompilePhase(int phaseNumber) {
         this.phaseNumber = phaseNumber;
     }
