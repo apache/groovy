@@ -314,16 +314,14 @@ public class InvokerHelper {
      * @param right regular expression to compare the string to
      */
     public static boolean matchRegex(Object left, Object right) {
+    	if(left == null || right == null) return false;
         Pattern pattern;
         if (right instanceof Pattern) {
             pattern = (Pattern) right;
         } else {
             pattern = Pattern.compile(toString(right));
         }
-        String stringToCompare = null;
-        if(left != null) {
-        	stringToCompare = toString(left);
-        }
+        String stringToCompare = toString(left);
         Matcher matcher = pattern.matcher(stringToCompare);
         RegexSupport.setLastMatcher(matcher);
         return matcher.matches();
