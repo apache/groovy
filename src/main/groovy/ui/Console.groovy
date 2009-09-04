@@ -572,8 +572,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener {
     }
 
     private reportException(Throwable t) {
-        appendOutputNl("Exception thrown: ", commandStyle)
-        appendOutput(t.message + '\n', stacktraceStyle)
+        appendOutputNl("Exception thrown\n", commandStyle)
 
         StringWriter sw = new StringWriter()
         new PrintWriter(sw).withWriter {pw -> StackTraceUtils.deepSanitize(t).printStackTrace(pw) }

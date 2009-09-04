@@ -340,6 +340,9 @@ public class CompilationUnit extends ProcessingUnit {
         return addSource(new SourceUnit(name, source, configuration, classLoader, getErrorCollector()));
     }
 
+    public SourceUnit addSource(String name, String scriptText) {
+        return addSource(new SourceUnit(name, scriptText, configuration, classLoader, getErrorCollector()));
+    }
 
     /**
      * Adds a SourceUnit to the unit.

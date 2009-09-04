@@ -85,7 +85,7 @@ class InspectCommand
             }
             
             if (headless) {
-                io.err.println("@|red ERROR:| Running in AWT Headless mode, 'inspect' is not available.")
+                io.err.println("@|red ERROR:|@ Running in AWT Headless mode, 'inspect' is not available.")
                 return
             }
             

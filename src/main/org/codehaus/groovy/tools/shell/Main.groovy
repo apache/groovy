@@ -103,7 +103,7 @@ class Main
                 // will set an exit code through the proper channels
 
                 io.err.println()
-                io.err.println('@|red WARNING:| Abnormal JVM shutdown detected')
+                io.err.println('@|red WARNING:|@ Abnormal JVM shutdown detected')
             }
 
             io.flush()

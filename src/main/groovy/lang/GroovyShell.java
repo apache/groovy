@@ -20,6 +20,7 @@ import groovy.ui.GroovyMain;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.io.*;
 import java.lang.reflect.Constructor;
@@ -445,12 +446,14 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param fileName   is the logical file name of the script (which is used to create the class name of the script)
      * @param args       the command line arguments to pass in
      */
-    public Object run(String scriptText, String fileName, String[] args) throws CompilationFailedException {
-        try {
-            return run(new ByteArrayInputStream(scriptText.getBytes(config.getSourceEncoding())), fileName, args);
-        } catch (UnsupportedEncodingException e) {
-            throw new CompilationFailedException(0, null, e);
-        }
+    public Object run(final String scriptText, final String fileName, String[] args) throws CompilationFailedException {
+        GroovyCodeSource gcs = (GroovyCodeSource) AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
+                return new GroovyCodeSource(scriptText, fileName, "/groovy/shell");
+            }
+        });
+        Class scriptClass = parseClass(gcs);
+        return runScriptOrMainOrTestOrRunnable(scriptClass, args);
     }
 
     /**
@@ -459,11 +462,17 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param in       the stream reading the script
      * @param fileName is the logical file name of the script (which is used to create the class name of the script)
      * @param args     the command line arguments to pass in
+     *
+     * @deprecated Prefer using methods taking a Reader rather than an InputStream to avoid wrong encoding issues.
      */
     public Object run(final InputStream in, final String fileName, String[] args) throws CompilationFailedException {
         GroovyCodeSource gcs = (GroovyCodeSource) AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
-                return new GroovyCodeSource(in, fileName, "/groovy/shell");
+                try {
+                    return new GroovyCodeSource(DefaultGroovyMethods.getText(in), fileName, "/groovy/shell");
+                } catch (IOException e) {
+                    throw new RuntimeException("Impossible to read the content of the input stream for file named: " + fileName, e);
+                }
             }
         });
         Class scriptClass = parseClass(gcs);
@@ -498,11 +507,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param fileName   is the logical file name of the script (which is used to create the class name of the script)
      */
     public Object evaluate(String scriptText, String fileName) throws CompilationFailedException {
-        try {
-            return evaluate(new ByteArrayInputStream(scriptText.getBytes(config.getSourceEncoding())), fileName);
-        } catch (UnsupportedEncodingException e) {
-            throw new CompilationFailedException(0, null, e);
-        }
+        return evaluate(new GroovyCodeSource(scriptText, fileName));
     }
 
     /**
@@ -510,11 +515,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * The .class file created from the script is given the supplied codeBase
      */
     public Object evaluate(String scriptText, String fileName, String codeBase) throws CompilationFailedException {
-        try {
-            return evaluate(new GroovyCodeSource(new ByteArrayInputStream(scriptText.getBytes(config.getSourceEncoding())), fileName, codeBase));
-        } catch (UnsupportedEncodingException e) {
-            throw new CompilationFailedException(0, null, e);
-        }
+        return evaluate(new GroovyCodeSource(scriptText, fileName, codeBase));
     }
 
     /**
@@ -532,17 +533,15 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param scriptText the text of the script
      */
     public Object evaluate(String scriptText) throws CompilationFailedException {
-        try {
-            return evaluate(new ByteArrayInputStream(scriptText.getBytes(config.getSourceEncoding())), generateScriptName());
-        } catch (UnsupportedEncodingException e) {
-            throw new CompilationFailedException(0, null, e);
-        }
+        return evaluate(new GroovyCodeSource(scriptText, generateScriptName()));
     }
 
     /**
      * Evaluates some script against the current Binding and returns the result
      *
      * @param in the stream reading the script
+     *
+     * @deprecated Prefer using methods taking a Reader rather than an InputStream to avoid wrong encoding issues.
      */
     public Object evaluate(InputStream in) throws CompilationFailedException {
         return evaluate(in, generateScriptName());
@@ -553,6 +552,8 @@ public class GroovyShell extends GroovyObjectSupport {
      *
      * @param in       the stream reading the script
      * @param fileName is the logical file name of the script (which is used to create the class name of the script)
+     *
+     * @deprecated Prefer using methods taking a Reader rather than an InputStream to avoid wrong encoding issues.
      */
     public Object evaluate(InputStream in, String fileName) throws CompilationFailedException {
         Script script = null;
@@ -573,11 +574,17 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param in       the stream reading the script
      * @param fileName is the logical file name of the script (which is used to create the class name of the script)
      * @return the parsed script which is ready to be run via @link Script.run()
+     *
+     * @deprecated Prefer using methods taking a Reader rather than an InputStream to avoid wrong encoding issues.
      */
     public Script parse(final InputStream in, final String fileName) throws CompilationFailedException {
         GroovyCodeSource gcs = (GroovyCodeSource) AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
-                return new GroovyCodeSource(in, fileName, "/groovy/shell");
+                try {
+                    return new GroovyCodeSource(DefaultGroovyMethods.getText(in), fileName, "/groovy/shell");
+                } catch (IOException e) {
+                    throw new RuntimeException("Impossible to read the content of the input stream for file named: " + fileName, e);
+                }
             }
         });
         return parse(gcs);
@@ -618,25 +625,24 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param scriptText the text of the script
      */
     public Script parse(String scriptText) throws CompilationFailedException {
-        try {
-            return parse(new ByteArrayInputStream(scriptText.getBytes(config.getSourceEncoding())), generateScriptName());
-        } catch (UnsupportedEncodingException e) {
-            throw new CompilationFailedException(0, null, e);
-        }
+        return parse(scriptText, generateScriptName());
     }
 
-    public Script parse(String scriptText, String fileName) throws CompilationFailedException {
-        try {
-            return parse(new ByteArrayInputStream(scriptText.getBytes(config.getSourceEncoding())), fileName);
-        } catch (UnsupportedEncodingException e) {
-            throw new CompilationFailedException(0, null, e);
-        }
+    public Script parse(final String scriptText, final String fileName) throws CompilationFailedException {
+        GroovyCodeSource gcs = (GroovyCodeSource) AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
+                return new GroovyCodeSource(scriptText, fileName, "/groovy/shell");
+            }
+        });
+        return parse(gcs);
     }
 
     /**
      * Parses the given script and returns it ready to be run
      *
      * @param in the stream reading the script
+     *
+     * @deprecated Prefer using methods taking a Reader rather than an InputStream to avoid wrong encoding issues.
      */
     public Script parse(InputStream in) throws CompilationFailedException {
         return parse(in, generateScriptName());

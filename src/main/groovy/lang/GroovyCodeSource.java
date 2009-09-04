@@ -18,12 +18,7 @@ package groovy.lang;
 
 import groovy.security.GroovyCodeSourcePermission;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
+import java.io.*;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.security.AccessController;
@@ -32,11 +27,14 @@ import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.security.cert.Certificate;
 
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+
 /**
  * CodeSource wrapper class that allows specific security policies to be associated with a class
  * compiled from groovy source.
  * 
  * @author Steve Goetze
+ * @author Guillaume Laforge
  */
 public class GroovyCodeSource {
 	
@@ -48,7 +46,7 @@ public class GroovyCodeSource {
 	/** The name given to the generated class */
 	private String name;
 	/** The groovy source to be compiled and turned into a class */
-	private InputStream inputStream;
+	private String scriptText;
 	/** The certificates used to sign the items from the codesource */
 	Certificate[] certs;
     private boolean cachable;
@@ -56,7 +54,17 @@ public class GroovyCodeSource {
 	private File file;
 	
 	public GroovyCodeSource(String script, String name, String codeBase) {
-		this(new ByteArrayInputStream(script.getBytes()), name, codeBase);
+		this.name = name;
+        this.scriptText = script;
+        SecurityManager sm = System.getSecurityManager();
+		if (sm != null) {
+		    sm.checkPermission(new GroovyCodeSourcePermission(codeBase));
+		}
+		try {
+			this.codeSource = new CodeSource(new URL("file", "", codeBase), (java.security.cert.Certificate[])null);
+		} catch (MalformedURLException murle) {
+			throw new RuntimeException("A CodeSource file URL cannot be constructed from the supplied codeBase: " + codeBase);
+		}
 	}
 	
 	/**
@@ -70,9 +78,10 @@ public class GroovyCodeSource {
 	 * may be specified.  That is, the current Policy set must have a GroovyCodeSourcePermission that implies
 	 * the codeBase, or an exception will be thrown.  This is to prevent callers from hijacking
 	 * existing codeBase policy entries unless explicitly authorized by the user.
+     *
+     * @deprecated Prefer using methods taking a Reader rather than an InputStream to avoid wrong encoding issues.
 	 */
 	public GroovyCodeSource(InputStream inputStream, String name, String codeBase) {
-		this.inputStream = inputStream;
 		this.name = name;
 		SecurityManager sm = System.getSecurityManager();
 		if (sm != null) {
@@ -83,8 +92,23 @@ public class GroovyCodeSource {
 		} catch (MalformedURLException murle) {
 			throw new RuntimeException("A CodeSource file URL cannot be constructed from the supplied codeBase: " + codeBase);
 		}
-	}
+        try {
+            this.scriptText = DefaultGroovyMethods.getText(inputStream);
+        } catch (IOException e) {
+            throw new RuntimeException("Impossible to read the text content from that input stream, for script: " + name + " with codeBase: " + codeBase, e);
+        }
+    }
 
+    public GroovyCodeSource(final String scriptText, final String name) {
+        this.scriptText = scriptText;
+        this.name = name;
+    }
+
+    /**
+     * @param infile the file to create a GroovyCodeSource for.
+     *
+     * @throws IOException if an issue arises opening and reading the file.
+     */
     public GroovyCodeSource(final File infile) throws IOException {
         // avoid files which confuse us like ones with .. in path
         final File file = new File(infile.getCanonicalPath());
@@ -102,9 +126,7 @@ public class GroovyCodeSource {
             throw e;
         }
 
-        //this.inputStream = new FileInputStream(file);
         this.file = file;
-        this.inputStream = null;
         this.cachable = true;
         //The calls below require access to user.dir - allow here since getName() and getCodeSource() are
         //package private and used only by the GroovyClassLoader.
@@ -119,8 +141,10 @@ public class GroovyCodeSource {
                     return info;
                 }
             });
+
             this.name = (String) info[0];
             this.codeSource = (CodeSource) info[1];
+            this.scriptText = DefaultGroovyMethods.getText(file);
         } catch (PrivilegedActionException pae) {
             throw new RuntimeException("Could not construct a URL from: " + file);
         }
@@ -130,7 +154,6 @@ public class GroovyCodeSource {
 		if (url == null) {
 			throw new RuntimeException("Could not construct a GroovyCodeSource from a null URL");
 		}
-		this.inputStream = url.openStream();
 		this.name = url.toExternalForm();
 		this.codeSource = new CodeSource(url, (java.security.cert.Certificate[])null);
 	}
@@ -139,21 +162,38 @@ public class GroovyCodeSource {
 		return codeSource;
 	}
 
+    /**
+     * @deprecated Prefer using methods taking a Reader rather than an InputStream to avoid wrong encoding issues.
+     */
 	public InputStream getInputStream() {
-        if(this.inputStream != null) {
-            return this.inputStream;
-        }
-        else {
+        IOException ioe = null;
+        if (file == null) {
+            try {
+                new ByteArrayInputStream(scriptText.getBytes("UTF-8"));
+            } catch (UnsupportedEncodingException e) {
+                ioe = e;
+            }
+        } else {
             try {
                 if (file!=null) return new FileInputStream(file);
             } catch (FileNotFoundException fnfe) {
-                // IGNORE
+                ioe = fnfe;
             }
-            return inputStream;            
         }
-	}
 
-	public String getName() {
+        String errorMsg = "Impossible to read the bytes from the associated script: " + scriptText + " with name: " + name;
+        if (ioe != null) {
+            throw new RuntimeException(errorMsg, ioe);
+        } else {
+            throw new RuntimeException(errorMsg);
+        }
+    }
+
+    public String getScriptText() {
+        return scriptText;
+    }
+
+    public String getName() {
 		return name;
 	}
     

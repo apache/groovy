@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.ModuleNode;
 import org.codehaus.groovy.classgen.Verifier;
 import org.codehaus.groovy.control.*;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.objectweb.asm.ClassVisitor;
 import org.objectweb.asm.ClassWriter;
 
@@ -197,13 +198,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @return the main class defined in the given script
      */
     public Class parseClass(String text, String fileName) throws CompilationFailedException {
-        byte[] bytes = null;
-        try {
-            bytes = text.getBytes(config.getSourceEncoding());
-        } catch (UnsupportedEncodingException e) {
-            throw new CompilationFailedException(1,null,e);
-        }
-        return parseClass(new ByteArrayInputStream(bytes), fileName);
+        return parseClass(new GroovyCodeSource(text, fileName));
     }
 
     /**
@@ -221,6 +216,8 @@ public class GroovyClassLoader extends URLClassLoader {
      *
      * @param in an InputStream
      * @return the main class defined in the given script
+     *
+     * @deprecated Prefer using methods taking a Reader rather than an InputStream to avoid wrong encoding issues.
      */
     public Class parseClass(InputStream in) throws CompilationFailedException {
         return parseClass(in, generateScriptName());
@@ -231,6 +228,9 @@ public class GroovyClassLoader extends URLClassLoader {
         return "script" + scriptNameCounter + ".groovy";
     }
 
+    /**
+     * @deprecated Prefer using methods taking a Reader rather than an InputStream to avoid wrong encoding issues.
+     */
     public Class parseClass(final InputStream in, final String fileName) throws CompilationFailedException {
         // For generic input streams, provide a catch-all codebase of
         // GroovyScript
@@ -238,7 +238,11 @@ public class GroovyClassLoader extends URLClassLoader {
         // a codebase of file:groovy.script
         GroovyCodeSource gcs = (GroovyCodeSource) AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
-                return new GroovyCodeSource(in, fileName, "/groovy/script");
+                try {
+                    return new GroovyCodeSource(DefaultGroovyMethods.getText(in), fileName, "/groovy/script");
+                } catch (IOException e) {
+                    throw new RuntimeException("Impossible to read the content of the input stream for file named: " + fileName, e);
+                }
             }
         });
         return parseClass(gcs);
@@ -266,7 +270,7 @@ public class GroovyClassLoader extends URLClassLoader {
             CompilationUnit unit = createCompilationUnit(config, codeSource.getCodeSource());
             SourceUnit su = null;
             if (codeSource.getFile() == null) {
-                su = unit.addSource(codeSource.getName(), codeSource.getInputStream());
+                su = unit.addSource(codeSource.getName(), codeSource.getScriptText());
             } else {
                 su = unit.addSource(codeSource.getFile());
             }

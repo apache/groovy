@@ -68,7 +68,7 @@ class HelpCommand
         }
         
         io.out.println()
-        io.out.println("usage: @|bold ${command.name}| $command.usage") // TODO: i18n
+        io.out.println("usage: @|bold ${command.name}|@ $command.usage") // TODO: i18n
         io.out.println()
         io.out.println(command.help)
         io.out.println()
@@ -94,8 +94,8 @@ class HelpCommand
         }
         
         io.out.println()
-        io.out.println('For information about @|green Groovy|, visit:') // TODO: i18n
-        io.out.println('    @|cyan http://groovy.codehaus.org| ') // FIXME: parsing freaks out if end tok is at the last char...
+        io.out.println('For information about @|green Groovy|@, visit:') // TODO: i18n
+        io.out.println('    @|cyan http://groovy.codehaus.org|@ ') // FIXME: parsing freaks out if end tok is at the last char...
         io.out.println()
 
         // List the commands we know about
@@ -115,12 +115,12 @@ class HelpCommand
             
             def d = command.description
             
-            io.out.println("  @|bold ${n}|  (@|bold ${s}|) $d")
+            io.out.println("  @|bold ${n}|@  (@|bold ${s}|@) $d")
         }
         
         io.out.println()
         io.out.println('For help on a specific command type:') // TODO: i18n
-        io.out.println('    help @|bold command| ')
+        io.out.println('    help @|bold command|@ ')
         io.out.println()
     }
 }

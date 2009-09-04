@@ -54,14 +54,14 @@ class AssertionsInDifferentLocationsTest extends GroovyTestCase {
         }
     }
 
-    // not yet transformed because transforms don't currently have access to string-based source code
     void testInEmbeddedScript() {
         try {
             new GroovyShell().evaluate("assert true; assert false")
             fail()
         } catch (PowerAssertionError e) {
+        } catch (AssertionError expected) {
             fail()
-        } catch (AssertionError expected) {}
+        }
     }
 }
 

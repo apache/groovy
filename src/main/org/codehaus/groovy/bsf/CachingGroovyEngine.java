@@ -56,7 +56,7 @@ public class CachingGroovyEngine extends GroovyEngine {
         try {
             Class scriptClass = (Class) evalScripts.get(script);
             if (scriptClass == null) {
-                scriptClass = loader.parseClass(new ByteArrayInputStream(script.toString().getBytes()), source);
+                scriptClass = loader.parseClass(script.toString(), source);
                 evalScripts.put(script, scriptClass);
             } else {
                 LOG.fine("eval() - Using cached script...");
@@ -79,7 +79,7 @@ public class CachingGroovyEngine extends GroovyEngine {
 
             Class scriptClass = (Class) execScripts.get(script);
             if (scriptClass == null) {
-                scriptClass = loader.parseClass(new ByteArrayInputStream(script.toString().getBytes()), source);
+                scriptClass = loader.parseClass(script.toString(), source);
                 execScripts.put(script, scriptClass);
             } else {
                 LOG.fine("exec() - Using cached version of class...");

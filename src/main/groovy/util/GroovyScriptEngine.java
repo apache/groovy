@@ -42,6 +42,7 @@ import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.InvokerHelper;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.tools.gse.DependencyTracker;
 import org.codehaus.groovy.tools.gse.StringSetMap;
 
@@ -340,7 +341,8 @@ public class GroovyScriptEngine implements ResourceConnector {
         if (entry!=null) clazz=entry.scriptClass;
         if (isSourceNewer(conn, entry)) {
             try {
-                clazz = groovyLoader.parseClass(conn.getInputStream(), conn.getURL().getFile());
+                String encoding = conn.getContentEncoding() != null ? conn.getContentEncoding() : "UTF-8";
+                clazz = groovyLoader.parseClass(DefaultGroovyMethods.getText(conn.getInputStream(), encoding), conn.getURL().getFile());
             } catch (IOException e) {
                 throw new ResourceException(e);
             }

@@ -34,6 +34,7 @@ import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 /**
  * A Command line to execute groovy.
@@ -340,7 +341,7 @@ public class GroovyMain {
         GroovyShell groovy = new GroovyShell(conf);
         //check the script is currently valid before starting a server against the script
         if (isScriptFile) {
-            groovy.parse(new FileInputStream(huntForTheScriptFile(script)));
+            groovy.parse(DefaultGroovyMethods.getText(huntForTheScriptFile(script)));
         } else {
             groovy.parse(script);
         }

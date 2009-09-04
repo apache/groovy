@@ -86,7 +86,7 @@ class ScriptToTreeNodeAdapter {
         CompilationUnit cu = new CompilationUnit(CompilerConfiguration.DEFAULT, codeSource.codeSource, classLoader)
         TreeNodeBuildingNodeOperation operation = new TreeNodeBuildingNodeOperation(this)
         cu.addPhaseOperation(operation, compilePhase)
-        cu.addSource(codeSource.getName(), codeSource.getInputStream());
+        cu.addSource(codeSource.getName(), script);
         try {
             cu.compile(compilePhase)
         } catch (CompilationFailedException cfe) {

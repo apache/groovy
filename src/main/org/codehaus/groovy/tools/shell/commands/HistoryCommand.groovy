@@ -68,7 +68,7 @@ class HistoryCommand
         history.historyList.eachWithIndex { item, i ->
             i = i.toString().padLeft(3, ' ')
             
-            io.out.println(" @|bold $i|  $item")
+            io.out.println(" @|bold $i|@  $item")
         }
     }
     

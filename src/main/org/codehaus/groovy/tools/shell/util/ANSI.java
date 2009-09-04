@@ -257,7 +257,7 @@ public class ANSI
 
         private static final int BEGIN_TOKEN_SIZE = BEGIN_TOKEN.length();
 
-        public static final String END_TOKEN = "|";
+        public static final String END_TOKEN = "|@";
 
         private static final int END_TOKEN_SIZE = END_TOKEN.length();
 

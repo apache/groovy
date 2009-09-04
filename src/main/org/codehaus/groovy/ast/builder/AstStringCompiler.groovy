@@ -28,7 +28,7 @@ import org.codehaus.groovy.control.CompilerConfiguration
         GroovyClassLoader classLoader = new GroovyClassLoader()
         GroovyCodeSource codeSource = new GroovyCodeSource(script, scriptClassName + ".groovy", "/groovy/script")
         CompilationUnit cu = new CompilationUnit(CompilerConfiguration.DEFAULT, codeSource.codeSource, classLoader)
-        cu.addSource(codeSource.getName(), codeSource.getInputStream());
+        cu.addSource(codeSource.getName(), script);
         cu.compile(compilePhase.getPhaseNumber())
         // collect all the ASTNodes into the result, possibly ignoring the script body if desired
         return cu.ast.modules.inject([]) {List acc, ModuleNode node ->

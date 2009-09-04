@@ -87,7 +87,7 @@ class AliasTargetProxyCommand
     }
     
     String getDescription() {
-        return "User defined alias to: @|bold ${args.join(' ')}|"
+        return "User defined alias to: @|bold ${args.join(' ')}|@"
     }
 
     String getUsage() {

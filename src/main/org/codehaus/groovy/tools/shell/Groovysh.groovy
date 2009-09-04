@@ -173,7 +173,7 @@ class Groovysh
         buffer.eachWithIndex { line, index ->
             def lineNum = formatLineNumber(index)
             
-            io.out.println(" ${lineNum}@|bold >| $line")
+            io.out.println(" ${lineNum}@|bold >|@ $line")
         }
     }
 
@@ -186,7 +186,7 @@ class Groovysh
     private String renderPrompt() {
         def lineNum = formatLineNumber(buffers.current().size())
 
-        return prompt.render("@|bold groovy:|${lineNum}@|bold >| ")
+        return prompt.render("@|bold groovy:|@${lineNum}@|bold >|@ ")
     }
 
     /**
@@ -281,7 +281,7 @@ class Groovysh
 
         if (showLastResult) {
             // Need to use String.valueOf() here to avoid icky exceptions causes by GString coercion
-            io.out.println("@|bold ===>| ${String.valueOf(result)}")
+            io.out.println("@|bold ===>|@ ${String.valueOf(result)}")
         }
     }
 
@@ -306,7 +306,8 @@ class Groovysh
     final Closure defaultErrorHook = { Throwable cause ->
         assert cause != null
 
-        io.err.println("@|bold,red ERROR| ${cause.class.name}: @|bold,red ${cause.message}|")
+        io.err.println("@|bold,red ERROR|@ ${cause.class.name}:")
+        io.err.println("@|bold,red ${cause.message}|@")
 
         maybeRecordError(cause)
 
@@ -327,13 +328,13 @@ class Groovysh
             def buff = new StringBuffer()
 
             for (e in trace) {
-                buff << "        @|bold at| ${e.className}.${e.methodName} (@|bold "
+                buff << "        @|bold at|@ ${e.className}.${e.methodName} (@|bold "
 
                 buff << (e.nativeMethod ? 'Native Method' :
                             (e.fileName != null && e.lineNumber != -1 ? "${e.fileName}:${e.lineNumber}" :
                                 (e.fileName != null ? e.fileName : 'Unknown Source')))
 
-                buff << '|)'
+                buff << '|@)'
 
                 io.err.println(buff)
 
@@ -341,7 +342,7 @@ class Groovysh
 
                 // Stop the trace once we find the root of the evaluated script
                 if (e.className == Interpreter.SCRIPT_FILENAME && e.methodName == 'run') {
-                    io.err.println('        @|bold ...|')
+                    io.err.println('        @|bold ...|@')
                     break
                 }
             }

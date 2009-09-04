@@ -28,6 +28,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.URL;
 
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+
 /**
  * Simple server that executes supplied script against a socket
  *
@@ -66,7 +68,7 @@ public class GroovySocketServer implements Runnable {
                 Script script;
                 if (isScriptFile) {
                     GroovyMain gm = new GroovyMain();
-                    script = groovy.parse(new FileInputStream(gm.huntForTheScriptFile(scriptFilenameOrText)));
+                    script = groovy.parse(DefaultGroovyMethods.getText(gm.huntForTheScriptFile(scriptFilenameOrText)));
                 } else {
                     script = groovy.parse(scriptFilenameOrText);
                 }

@@ -319,8 +319,7 @@ public class GroovyScriptEngineImpl
             return clazz;
         }
        
-        InputStream stream = new ByteArrayInputStream(script.getBytes()); 
-        clazz = loader.parseClass(stream, generateScriptName());
+        clazz = loader.parseClass(script, generateScriptName());
         classMap.put(script, clazz);
         return clazz;
     }

@@ -38,16 +38,16 @@ public class StringReaderSource extends AbstractReaderSource {
     * @param string string containing script source
     * @param configuration configuration for compiling source
     */
-    public StringReaderSource( String string, CompilerConfiguration configuration ) {
+   public StringReaderSource( String string, CompilerConfiguration configuration ) {
        super( configuration );
-        this.string= string;
-    }
+       this.string = string;
+   }
     
    /**
     *  Returns a new Reader on the underlying source object.  
     */
-    public Reader getReader() throws IOException {
+   public Reader getReader() throws IOException {
        return new StringReader( string );
-    }
+   }
 
 }
