@@ -60,6 +60,18 @@ class LoaderConfigurationTest extends GroovyTestCase {
         assert url1.sameFile(url2)
     }
 
+    void testPropertyDefn() {
+        System.setProperty('myprop', 'baz')
+        def txt = 'property foo1=bar\nproperty foo2=${myprop}\nproperty foo3=!{myprop}'
+
+        def config = new LoaderConfiguration()
+        config.requireMain = false
+        config.configure(new StringBufferInputStream(txt))
+        assert System.getProperty('foo1') == 'bar'
+        assert System.getProperty('foo2') == 'baz'
+        assert System.getProperty('foo3') == 'baz'
+    }
+
     void testNonexistingProperty() {
         String name = getNonexistingPropertyName("foo")
 
