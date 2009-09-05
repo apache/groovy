@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -70,7 +70,7 @@ import java.util.regex.Pattern;
  */
 public class LoaderConfiguration {
 
-    private static final String MAIN_PREFIX = "main is", LOAD_PREFIX = "load";
+    private static final String MAIN_PREFIX = "main is", LOAD_PREFIX = "load", PROP_PREFIX = "property";
     private List classPath = new ArrayList();
     private String main;
     private boolean requireMain;
@@ -113,6 +113,15 @@ public class LoaderConfiguration {
                 if (main != null)
                     throw new IOException("duplicate definition of main in line " + lineNumber + " : " + line);
                 main = line.substring(MAIN_PREFIX.length()).trim();
+            } else if (line.startsWith(PROP_PREFIX)) {
+                String params = line.substring(PROP_PREFIX.length()).trim();
+                int index = params.indexOf('=');
+                if (index == -1) {
+                    throw new IOException("unexpected property format - expecting name=value" + lineNumber + " : " + line);
+                }
+                String propName = params.substring(0, index);
+                String propValue= assignProperties(params.substring(index+1));
+                System.setProperty(propName, propValue);
             } else {
                 throw new IOException("unexpected line in " + lineNumber + " : " + line);
             }
