@@ -90,4 +90,100 @@ class ImmutableTransformTest extends GroovyShellTestCase {
             assert new Other() != new This("foo")
         """
     }
+
+    void testExistingToString() {
+        assertScript """
+            @Immutable class Foo {
+                String value
+            }
+            @Immutable class Bar {
+                String value
+                String toString() { 'zzz' + _toString() }
+            }
+            @Immutable class Baz {
+                String value
+                String toString() { 'zzz' + _toString() }
+                def _toString() { 'xxx' }
+            }
+            def foo = new Foo('abc')
+            def bar = new Bar('abc')
+            def baz = new Baz('abc')
+            assert bar.toString() == 'zzz' + foo.toString().replaceAll('Foo', 'Bar')
+            assert baz.toString() == 'zzzxxx'
+        """
+    }
+
+    void testExistingEquals() {
+        assertScript """
+            @Immutable class Foo {
+                String value
+            }
+            @Immutable class Bar {
+                String value
+                // doesn't follow normal conventions - for testing only
+                boolean equals(other) { value == 'abc' || _equals(other) }
+            }
+            @Immutable class Baz {
+                String value
+                // doesn't follow normal conventions - for testing only
+                boolean equals(Baz other) { value == 'abc' || _equals(other) }
+                def _equals(other) { false }
+            }
+            def foo1 = new Foo('abc')
+            def foo2 = new Foo('abc')
+            def foo3 = new Foo('def')
+            assert foo1 == foo2
+            assert foo1 != foo3
+
+            def bar1 = new Bar('abc')
+            def bar2 = new Bar('abc')
+            def bar3 = new Bar('def')
+            def bar4 = new Bar('def')
+            assert bar1 == bar2
+            assert bar1 == bar3
+            assert bar3 != bar1
+
+            def baz1 = new Baz('abc')
+            def baz2 = new Baz('abc')
+            def baz3 = new Baz('def')
+            def baz4 = new Baz('def')
+            assert baz1 == baz2
+            assert baz1 == baz3
+            assert baz3 != baz1
+            assert baz3 != baz4
+        """
+    }
+
+    void testExistingHashCode() {
+        assertScript """
+            @Immutable class Foo {
+                String value
+            }
+            @Immutable class Bar {
+                String value
+                // doesn't follow normal conventions - for testing only
+                int hashCode() { value == 'abc' ? -1 : _hashCode() }
+            }
+            @Immutable class Baz {
+                String value
+                // doesn't follow normal conventions - for testing only
+                int hashCode() { value == 'abc' ? -1 : _hashCode() }
+                def _hashCode() { -100 }
+            }
+            def foo1 = new Foo('abc')
+            def foo2 = new Foo('abc')
+            assert foo1.hashCode() == foo2.hashCode()
+
+            def bar1 = new Bar('abc')
+            def bar2 = new Bar('def')
+            def bar3 = new Bar('def')
+            assert bar1.hashCode() == -1
+            assert bar2.hashCode() == bar3.hashCode()
+
+            def baz1 = new Baz('abc')
+            def baz2 = new Baz('def')
+            assert baz1.hashCode() == -1
+            assert baz2.hashCode() == -100
+        """
+    }
 }

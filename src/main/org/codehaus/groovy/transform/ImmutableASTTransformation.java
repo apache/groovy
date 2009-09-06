@@ -117,6 +117,17 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         }
     }
 
+    private boolean hasDeclaredMethod(ClassNode cNode, String name, int argsCount) {
+        List<MethodNode> ms = cNode.getDeclaredMethods(name);
+        for(MethodNode m : ms) {
+           Parameter[] paras = m.getParameters();
+           if(paras != null && paras.length == argsCount) {
+                return true;
+           }
+        }
+        return false;
+    }
+
     private void ensureNotPublic(String cNode, FieldNode fNode) {
         String fName = fNode.getName();
         // TODO: do we need to lock down things like: $ownClass
@@ -126,6 +137,10 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private void createHashCode(ClassNode cNode) {
+        // make a public method if none exists otherwise try a private method with leading underscore
+        boolean hasExistingHashCode = hasDeclaredMethod(cNode, "hashCode", 0);
+        if (hasExistingHashCode && hasDeclaredMethod(cNode, "_hashCode", 0)) return;
+
         final FieldNode hashField = cNode.addField("$hash$code", ACC_PRIVATE | ACC_SYNTHETIC, ClassHelper.int_TYPE, null);
         final BlockStatement body = new BlockStatement();
         final Expression hash = new FieldExpression(hashField);
@@ -139,10 +154,15 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
 
         body.addStatement(new ReturnStatement(hash));
 
-        cNode.addMethod(new MethodNode("hashCode", ACC_PUBLIC, ClassHelper.int_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body));
+        cNode.addMethod(new MethodNode(hasExistingHashCode ? "_hashCode" : "hashCode", hasExistingHashCode ? ACC_PRIVATE : ACC_PUBLIC,
+                ClassHelper.int_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body));
     }
 
     private void createToString(ClassNode cNode) {
+        // make a public method if none exists otherwise try a private method with leading underscore
+        boolean hasExistingToString = hasDeclaredMethod(cNode, "toString", 0);
+        if (hasExistingToString && hasDeclaredMethod(cNode, "_toString", 0)) return;
+        
         final BlockStatement body = new BlockStatement();
         final List<PropertyNode> list = cNode.getProperties();
         // def _result = new StringBuffer()
@@ -169,7 +189,8 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         }
         body.addStatement(append(result, new ConstantExpression(")")));
         body.addStatement(new ReturnStatement(new MethodCallExpression(result, "toString", MethodCallExpression.NO_ARGUMENTS)));
-        cNode.addMethod(new MethodNode("toString", ACC_PUBLIC, ClassHelper.STRING_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body));
+        cNode.addMethod(new MethodNode(hasExistingToString ? "_toString" : "toString", hasExistingToString ? ACC_PRIVATE : ACC_PUBLIC,
+                ClassHelper.STRING_TYPE, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body));
     }
 
     private Statement toStringPropertyName(Expression result, String fName) {
@@ -204,6 +225,10 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private void createEquals(ClassNode cNode) {
+        // make a public method if none exists otherwise try a private method with leading underscore
+        boolean hasExistingEquals = hasDeclaredMethod(cNode, "equals", 1);
+        if (hasExistingEquals && hasDeclaredMethod(cNode, "_equals", 1)) return;
+
         final BlockStatement body = new BlockStatement();
         Expression other = new VariableExpression("other");
 
@@ -222,7 +247,8 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         body.addStatement(new ReturnStatement(ConstantExpression.TRUE));
 
         Parameter[] params = {new Parameter(OBJECT_TYPE, "other")};
-        cNode.addMethod(new MethodNode("equals", ACC_PUBLIC, ClassHelper.boolean_TYPE, params, ClassNode.EMPTY_ARRAY, body));
+        cNode.addMethod(new MethodNode(hasExistingEquals ? "_equals" : "equals", hasExistingEquals ? ACC_PRIVATE : ACC_PUBLIC,
+                ClassHelper.boolean_TYPE, params, ClassNode.EMPTY_ARRAY, body));
     }
 
     private Statement returnFalseIfWrongType(ClassNode cNode, Expression other) {
@@ -490,11 +516,11 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private BooleanExpression isZeroExpr(Expression expr) {
-        return new BooleanExpression(new BinaryExpression(expr, COMPARE_EQUAL, new ConstantExpression(Integer.valueOf(0))));
+        return new BooleanExpression(new BinaryExpression(expr, COMPARE_EQUAL, new ConstantExpression(0)));
     }
 
     private BooleanExpression isOneExpr(Expression expr) {
-        return new BooleanExpression(new BinaryExpression(expr, COMPARE_EQUAL, new ConstantExpression(Integer.valueOf(1))));
+        return new BooleanExpression(new BinaryExpression(expr, COMPARE_EQUAL, new ConstantExpression(1)));
     }
 
     private BooleanExpression notEqualsExpr(PropertyNode pNode, Expression other) {
@@ -549,7 +575,8 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private static String createErrorMessage(String className, String fieldName, String typeName, String mode) {
-        return MY_TYPE_NAME + " processor doesn't know how to handle field '" + fieldName + "' of type '" + prettyTypeName(typeName) + "' while " + mode + " class " + className + ".\n" +
+        return MY_TYPE_NAME + " processor doesn't know how to handle field '" + fieldName + "' of type '" +
+                prettyTypeName(typeName) + "' while " + mode + " class " + className + ".\n" +
                 MY_TYPE_NAME + " classes currently only support properties with known immutable types " +
                 "or types where special handling achieves immutable behavior, including:\n" +
                 "- Strings, primitive types, wrapper types, BigInteger and BigDecimal\n" +
@@ -589,7 +616,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
                 new ExpressionStatement(expression));
     }
 
-    public static Object checkImmutable(String className, String fieldName, Object field) {
+    private static Object checkImmutable(String className, String fieldName, Object field) {
         if (field == null || field instanceof Enum || inImmutableList(field.getClass())) return field;
         if (field instanceof Collection) return DefaultGroovyMethods.asImmutable((Collection) field);
         if (field.getClass().getAnnotation(MY_CLASS) != null) return field;
