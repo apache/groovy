@@ -321,7 +321,7 @@ class GrapeIvy implements GrapeEngine {
         }
 
         dependencies.each { localDeps.add(createGrabRecord(it)) }
-        // the call to reverse insures that the newest additions are in
+        // the call to reverse ensures that the newest additions are in
         // front causing existing dependencies to come last and thus
         // claiming higher priority.  Thus when module versions clash we
         // err on the side of using the class already loaded into the
