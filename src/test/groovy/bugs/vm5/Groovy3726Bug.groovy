@@ -1,4 +1,4 @@
-package groovy.bugs
+package groovy.bugs.vm5
 
 import java.lang.reflect.*
 
