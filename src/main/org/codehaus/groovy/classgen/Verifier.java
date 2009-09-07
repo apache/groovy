@@ -457,10 +457,19 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     public void visitProperty(PropertyNode node) {
         String name = node.getName();
         FieldNode field = node.getField();
+        int propNodeModifiers = node.getModifiers();
 
         String getterName = "get" + capitalize(name);
         String setterName = "set" + capitalize(name);
 
+        // GROOVY-3726: clear volatile, transient modifiers so that they don't get applied to methods
+        if((propNodeModifiers & Modifier.VOLATILE) != 0) {
+        	propNodeModifiers = propNodeModifiers - Modifier.VOLATILE; 
+        }
+        if((propNodeModifiers & Modifier.TRANSIENT) != 0) {
+        	propNodeModifiers = propNodeModifiers - Modifier.TRANSIENT; 
+        }
+        
         Statement getterBlock = node.getGetterBlock();
         if (getterBlock == null) {
             MethodNode getter = classNode.getGetterMethod(getterName);
@@ -476,7 +485,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         if (setterBlock == null) {
             MethodNode setter = classNode.getSetterMethod(setterName);
             if ( !node.isPrivate() && 
-                 (node.getModifiers()&ACC_FINAL)==0 && 
+                 (propNodeModifiers & ACC_FINAL)==0 && 
                  methodNeedsReplacement(setter)) 
             {
                 setterBlock = createSetterBlock(node, field);
@@ -485,7 +494,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         if (getterBlock != null) {
             MethodNode getter =
-                new MethodNode(getterName, node.getModifiers(), node.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getterBlock);
+                new MethodNode(getterName, propNodeModifiers, node.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getterBlock);
             getter.setSynthetic(true);
             addPropertyMethod(getter);
             visitMethod(getter);
@@ -493,7 +502,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             if (ClassHelper.boolean_TYPE==node.getType() || ClassHelper.Boolean_TYPE==node.getType()) {
                 String secondGetterName = "is" + capitalize(name);
                 MethodNode secondGetter =
-                    new MethodNode(secondGetterName, node.getModifiers(), node.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getterBlock);
+                    new MethodNode(secondGetterName, propNodeModifiers, node.getType(), Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, getterBlock);
                 secondGetter.setSynthetic(true);
                 addPropertyMethod(secondGetter);
                 visitMethod(secondGetter);
@@ -502,7 +511,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         if (setterBlock != null) {
             Parameter[] setterParameterTypes = { new Parameter(node.getType(), "value")};
             MethodNode setter =
-                new MethodNode(setterName, node.getModifiers(), ClassHelper.VOID_TYPE, setterParameterTypes, ClassNode.EMPTY_ARRAY, setterBlock);
+                new MethodNode(setterName, propNodeModifiers, ClassHelper.VOID_TYPE, setterParameterTypes, ClassNode.EMPTY_ARRAY, setterBlock);
             setter.setSynthetic(true);
             addPropertyMethod(setter);
             visitMethod(setter);
