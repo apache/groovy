@@ -61,7 +61,7 @@ class GrapeIvy implements GrapeEngine {
         if (!grapeConfig.exists()) {
             grapeConfig = GrapeIvy.class.getResource("defaultGrapeConfig.xml")
         }
-        settings.load(grapeConfig) // exploit multi-methods for convience
+        settings.load(grapeConfig) // exploit multi-methods for convenience
 
         // set up the cache dirs
         settings.setDefaultCache(getGrapeCacheDir())
@@ -85,7 +85,7 @@ class GrapeIvy implements GrapeEngine {
         try {
             groovyRoot = groovyRoot.getCanonicalFile();
         } catch (IOException e) {
-            // skip cannonicalization then, it may not exist yet
+            // skip canonicalization then, it may not exist yet
         }
         return groovyRoot;
     }
@@ -110,7 +110,7 @@ class GrapeIvy implements GrapeEngine {
             try {
                 grapeRoot = grapeRoot.getCanonicalFile()
             } catch (IOException e) {
-                // skip cannonicalization then, it may not exist yet
+                // skip canonicalization then, it may not exist yet
             }
             return grapeRoot
         }
@@ -315,7 +315,7 @@ class GrapeIvy implements GrapeEngine {
 
         Set<IvyGrabRecord> localDeps = loadedDeps.get(loader)
         if (localDeps == null) {
-            // use a linked set to presrve intial insertion order
+            // use a linked set to preserve initial insertion order
             localDeps = new LinkedHashSet<IvyGrabRecord>()
             loadedDeps.put(loader, localDeps)
         }
@@ -332,7 +332,7 @@ class GrapeIvy implements GrapeEngine {
 
         List<URI> results = []
         for (ArtifactDownloadReport adl in report.getAllArtifactsReports()) {
-            //TODO check artifcat type, jar vs library, etc
+            //TODO check artifact type, jar vs library, etc
             if (adl.localFile) {
                 results += adl.localFile.toURI()
             }
