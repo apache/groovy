@@ -21,6 +21,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
+import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
@@ -33,6 +34,7 @@ import org.codehaus.groovy.ast.expr.TupleExpression;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.Opcodes;
+import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.syntax.Types;
 
 /**
@@ -307,6 +309,28 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         super.visitField(node);
     }
 
+    public void visitProperty(PropertyNode node) {
+    	checkDuplicateProperties(node);
+    	super.visitProperty(node);
+    }
+    
+    private void checkDuplicateProperties(PropertyNode node) {
+    	ClassNode cn = node.getDeclaringClass();
+    	String name = node.getName();
+    	String getterName = "get" + MetaClassHelper.capitalize(name);
+    	if(Character.isUpperCase(name.charAt(0))) {
+    		for (PropertyNode propNode : cn.getProperties()) {
+    			String otherName = propNode.getField().getName();
+    			String otherGetterName = "get" + MetaClassHelper.capitalize(otherName);
+    			if(node != propNode && getterName.equals(otherGetterName)) {
+    				String msg = "The field " + name + " and " + otherName + " on the class " +
+    				cn.getName() + " will result in duplicate JavaBean properties, which is not allowed";
+    				addError(msg, node);
+    			}
+    		}
+    	}
+    }
+    
     private void checkInterfaceFieldModifiers(FieldNode node) {
         if (!currentClass.isInterface()) return;
         if ((node.getModifiers() & (Opcodes.ACC_PUBLIC | Opcodes.ACC_STATIC | Opcodes.ACC_FINAL)) == 0) {
