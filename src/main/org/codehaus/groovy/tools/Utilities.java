@@ -46,7 +46,20 @@ public abstract class Utilities
     {
         return eol;
     }
+
+    /**
+     * Tells if the given string is a valid Java identifier.
+     */
+    public static boolean isJavaIdentifier(String name) {
+        if (name.length() == 0) return false;
+        char[] chars = name.toCharArray();
+        if (!Character.isJavaIdentifierStart(chars[0])) return false;
+        for (int i = 1; i < chars.length; i++ ) {
+            if (!Character.isJavaIdentifierPart(chars[i])) return false;
+        }
+        return true;
+    }    
     
-    private static String eol = System.getProperty( "line.separator", "\n" ); 
+    private static String eol = System.getProperty( "line.separator", "\n" );
 
 }
