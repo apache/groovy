@@ -339,7 +339,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             if (parts.length > 3) node.addMember("classifier", new ConstantExpression(parts[3]));
             if (parts.length > 2) node.addMember("version", new ConstantExpression(parts[2]));
             else node.addMember("version", new ConstantExpression("*"));
-            if (!ext.isEmpty()) node.addMember("ext", new ConstantExpression(ext));
+            if (ext.length() > 0) node.addMember("ext", new ConstantExpression(ext));
             node.addMember("module", new ConstantExpression(parts[1]));
             node.addMember("group", new ConstantExpression(parts[0]));
             node.getMembers().remove("value");
