@@ -22,19 +22,31 @@ import java.lang.annotation.Target;
 
 /**
  * Used to exclude the indirectly referenced artifact from the classpath.
- *
+ * <p/>
  * Add it within a {@code @Grapes} annotation.
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target({
-    ElementType.CONSTRUCTOR,
-    ElementType.FIELD,
-    ElementType.LOCAL_VARIABLE,
-    ElementType.METHOD,
-    ElementType.PARAMETER,
-    ElementType.TYPE})
+        ElementType.CONSTRUCTOR,
+        ElementType.FIELD,
+        ElementType.LOCAL_VARIABLE,
+        ElementType.METHOD,
+        ElementType.PARAMETER,
+        ElementType.TYPE})
 public @interface GrabExclude {
+    /**
+     * The organisation or group, e.g.: "org.apache.ant"
+     */
     String group() default "";
+
+    /**
+     * The module or artifact, e.g.: "ant-junit"
+     */
     String module();
+
+    /**
+     * Allows a more compact convenience format in one of two formats,
+     * e.g.: "org.apache.ant:ant-junit" or "org.apache.ant#ant-junit".
+     */
     String value() default "";
 }

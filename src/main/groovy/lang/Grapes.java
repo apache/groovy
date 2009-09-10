@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,20 +20,20 @@ package groovy.lang;
  * Sometimes we will need more than one grab per class, but we can only add
  * one annotation type per annotatable node.  This class allows for multiple
  * grabs to be added.
- *
+ * <p/>
  * For example:
- *
+ * <p/>
  * <pre>
  * {@code @Grapes([@Grab(module='m1'), @Grab(module='m2')])}
  * class AnnotatedClass { ... }
  * </pre>
- *
+ * <p/>
  * You can override an implicit transitive dependency by providing an explicit one.
  * E.g. htmlunit 2.6 normally uses xerces 2.9.1 but you can get 2.9.0 as follows:
  * <pre>
  * {@code @Grapes}([
  *     {@code @Grab}('net.sourceforge.htmlunit:htmlunit:2.6'),
- *     {@code @Grab}('xerces#xercesImpl;2.9.0'),
+ *     {@code @Grab}('xerces#xercesImpl;2.9.0')
  * ])
  * </pre>
  * Obviously, only do this if you understand the consequences.
@@ -45,7 +45,7 @@ package groovy.lang;
  * <pre>
  * {@code @Grapes}([
  *     {@code @Grab}('net.sourceforge.htmlunit:htmlunit:2.6'),
- *     {@code @GrabExclude}('xerces:xercesImpl'),
+ *     {@code @GrabExclude}('xerces:xercesImpl')
  * ])
  * </pre>
  * It is sometimes also useful to use {@code @GrabConfig} to further adjust how dependencies
@@ -57,8 +57,8 @@ public @interface Grapes {
     /**
      * This will be pushed into the child grab annotations if the value is not
      * set in the child annotation already.
-     *
-     * This results in an effective change in the default value, which each &#064;Grab 
+     * <p/>
+     * This results in an effective change in the default value, which each &#064;Grab
      * can still override
      */
     boolean initClass() default true;

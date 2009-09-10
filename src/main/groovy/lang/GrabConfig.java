@@ -21,14 +21,25 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Used to modify grab configuration.
- *
- * An example:
+ * Use within a {@code @Grapes} annotation to modify grab configuration.
+ * <p/>
+ * An example involving databases:
  * <pre>
  * {@code @Grapes}([
- *     {@code @Grab('com.thoughtworks.xstream:xstream:1.3.1'),
- *     {@code @Grab('xpp3:xpp3_min:1.1.4c'),
- *     {@code @GrabConfig(systemClassLoader=true, initContextClassLoader=true)
+ *     {@code @Grab}('mysql:mysql-connector-java:5.1.6'),
+ *     {@code @GrabConfig}(systemClassLoader=true)
+ * ])
+ * import groovy.sql.Sql
+ *
+ * def sql=Sql.newInstance("jdbc:mysql://localhost/test", "user", "password", "com.mysql.jdbc.Driver")
+ * println sql.firstRow('SELECT * FROM INFORMATION_SCHEMA.COLUMNS')
+ * </pre>
+ * Another example involving XStream:
+ * <pre>
+ * {@code @Grapes}([
+ *     {@code @Grab}('com.thoughtworks.xstream:xstream:1.3.1'),
+ *     {@code @Grab}('xpp3:xpp3_min:1.1.4c'),
+ *     {@code @GrabConfig}(systemClassLoader=true, initContextClassLoader=true)
  * ])
  * import com.thoughtworks.xstream.*
  *
@@ -54,26 +65,15 @@ import java.lang.annotation.Target;
  *
  * println john2.dump()
  * </pre>
- * Or this example:
- * <pre>
- * {@code @Grapes}([
- *     {@code @Grab('mysql:mysql-connector-java:5.1.6'),
- *     {@code @GrabConfig(systemClassLoader=true)
- * ])
- * import groovy.sql.Sql
- *
- * def sql=Sql.newInstance("jdbc:mysql://localhost/test", "manager", "password", "com.mysql.jdbc.Driver")
- * println sql.firstRow('SELECT * FROM INFORMATION_SCHEMA.COLUMNS')
- * </pre>
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target({
-    ElementType.CONSTRUCTOR,
-    ElementType.FIELD,
-    ElementType.LOCAL_VARIABLE,
-    ElementType.METHOD,
-    ElementType.PARAMETER,
-    ElementType.TYPE})
+        ElementType.CONSTRUCTOR,
+        ElementType.FIELD,
+        ElementType.LOCAL_VARIABLE,
+        ElementType.METHOD,
+        ElementType.PARAMETER,
+        ElementType.TYPE})
 public @interface GrabConfig {
     /**
      * Set to true if you want to use the system classloader when loading the grape.

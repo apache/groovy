@@ -22,20 +22,20 @@ import java.lang.annotation.ElementType;
 
 /**
  * Used to grab the referenced artifact and its dependencies and make it available on the Classpath.
- *
+ * <p/>
  * Some examples:
  * <pre>
  * {@code @Grab}(group='commons-lang', module='commons-lang', version='2.4')
  * import org.apache.commons.lang.WordUtils
  * println "Hello ${WordUtils.capitalize('world')}"
  * </pre>
- * Or using the compact syntax:
+ * Or using the compact Gradle-inspired syntax:
  * <pre>
  * {@code @Grab}('commons-lang:commons-lang:2.4')
  * import org.apache.commons.lang.WordUtils
  * println "Hello ${WordUtils.capitalize('world')}"
  * </pre>
- * or this variant:
+ * or the same thing again using the Ivy-inspired syntax variant:
  * <pre>
  * {@code @Grab}('commons-lang#commons-lang;2.4')
  * import org.apache.commons.lang.WordUtils
@@ -44,59 +44,66 @@ import java.lang.annotation.ElementType;
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target({
-    ElementType.CONSTRUCTOR,
-    ElementType.FIELD,
-    ElementType.LOCAL_VARIABLE,
-    ElementType.METHOD,
-    ElementType.PARAMETER,
-    ElementType.TYPE})
+        ElementType.CONSTRUCTOR,
+        ElementType.FIELD,
+        ElementType.LOCAL_VARIABLE,
+        ElementType.METHOD,
+        ElementType.PARAMETER,
+        ElementType.TYPE})
 public @interface Grab {
     /**
-     * @return the organisation or group, e.g. "org.apache.ant"
+     * The organisation or group, e.g.: "org.apache.ant"
      */
     String group() default "";
 
     /**
-     * @return the module or artifact, e.g. "ant-junit"
+     * The module or artifact, e.g.: "ant-junit"
      */
     String module();
 
     /**
-     * @return the revision or version, e.g. "1.7.1"
+     * The revision or version, e.g.: "1.7.1"
      */
     String version();
 
     /**
-     * @return the classifier if in use, e.g. "jdk14"
+     * The classifier if in use, e.g.: "jdk14"
      */
     String classifier() default "";
 
     /**
-     * @return set to false if you don't want transitive dependencies also to be downloaded
+     * Set to false if you don't want transitive dependencies also to be downloaded.
+     * You may then need additional {@code @Grab} statements for any required dependencies.
      */
     boolean transitive() default true;
 
     /**
-     * @return the configuration if in use (normally only used by internal ivy repositories)
+     * The configuration if in use (normally only used by internal ivy repositories).
+     * One or more coma separated values with or without square brackets,
+     * e.g. for hibernate you might have "default,proxool,oscache" or "[default,dbcp,swarmcache]".
+     * This last hibernate example assumes you have set up such configurations in your local Ivy repo
+     * and changed your grape config to point to that repo.
      */
     String conf() default "";
 
     /**
-     * @return the extension of the artifact (normally safe to leave at default value of "jar")
+     * The extension of the artifact (normally safe to leave at default value of "jar")
      */
     String ext() default "";
 
     /**
-     * allows a more compact convenience format in one of two formats:<br/>
-     * group:module:version:classifier@ext (where only group and module are required)<br/>
-     * group#module;version[confs] (where version is optional and confs is one or more comma separated configurations)<br/>
+     * Allows a more compact convenience format in one of two formats.
+     * <p/>
+     * You can choose either format but not mix-n-match:<br/>
+     * {@code group:module:version:classifier@ext} (where only group and module are required)<br/>
+     * {@code group#module;version[confs]} (where only group and module are required and confs, if used, is one or more comma separated configuration names)<br/>
      */
     String value() default "";
 
     /**
-     * By default, when a @Grab annotation is used, the grab() call is added
+     * By default, when a {@code @Grab} annotation is used, the {@code grab()} call is added
      * to the static initializers of the class the annotatable node appears in.
-     * If you wish to disable this add initClass=false to the annotation.
+     * If you wish to disable this, add {@code initClass=false} to the annotation.
      */
     boolean initClass() default true;
 }
