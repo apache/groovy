@@ -36,6 +36,6 @@ public class AssertionTransformation implements ASTTransformation {
         if (!(nodes[0] instanceof ModuleNode))
             throw new GroovyBugError("tried to apply AssertionTransformation to " + nodes[0]);
 
-        AssertionRewriter.rewrite(sourceUnit);
+        //AssertionRewriter.rewrite(sourceUnit);
     }
 }

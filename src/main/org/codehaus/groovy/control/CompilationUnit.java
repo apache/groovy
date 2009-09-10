@@ -720,8 +720,8 @@ public class CompilationUnit extends ProcessingUnit {
             // also takes care of both \ and / depending on the host compiling environment
             if (sourceName != null)
                 sourceName = sourceName.substring(Math.max(sourceName.lastIndexOf('\\'), sourceName.lastIndexOf('/')) + 1);
-            ClassGenerator generator = new AsmClassGenerator(context, visitor, classLoader, sourceName);
-
+            ClassGenerator generator = new AsmClassGenerator(source,context, visitor, classLoader, sourceName);
+            
             //
             // Run the generation and create the class (if required)
             //

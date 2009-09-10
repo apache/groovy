@@ -2527,15 +2527,15 @@ appendedBlock[AST callee]
  */
 indexPropertyArgs[AST indexee]
     :
-        LBRACK!
+        lb:LBRACK
         al:argList!
         RBRACK!
         { if (indexee != null && indexee.getFirstChild() != null) {
               //expression like obj.index[]
-              #indexPropertyArgs = #(create(INDEX_OP, "INDEX_OP",indexee.getFirstChild(),LT(1)), indexee, al); 
+              #indexPropertyArgs = #(create(INDEX_OP, "INDEX_OP",indexee.getFirstChild(),LT(1)), lb, indexee, al); 
           } else {
               //expression like obj[]
-              #indexPropertyArgs = #(create(INDEX_OP, "INDEX_OP",indexee,LT(1)), indexee, al);
+              #indexPropertyArgs = #(create(INDEX_OP, "INDEX_OP",indexee,LT(1)), lb, indexee, al);
           }
         }
     ;

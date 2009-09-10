@@ -22,13 +22,17 @@ import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.control.Janitor;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.runtime.callsite.CallSite;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.syntax.RuntimeParserException;
+import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
+import org.codehaus.groovy.transform.powerassert.SourceText;
+import org.codehaus.groovy.transform.powerassert.SourceTextNotAvailableException;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.*;
 
@@ -46,6 +50,12 @@ import java.util.*;
  */
 public class AsmClassGenerator extends ClassGenerator {
 
+    private static class AssertionTracker {
+        int recorderIndex;
+        SourceText sourceText;
+    }
+    
+    private AssertionTracker assertionTracker;
     private final ClassVisitor cv;
     private MethodVisitor mv;
     private GeneratorContext context;
@@ -181,13 +191,16 @@ public class AsmClassGenerator extends ClassGenerator {
     private List callSites = new ArrayList();
     private int callSiteArrayVarIndex;
     private HashMap closureClassMap;
+    private SourceUnit source;
     private static final String DTT = BytecodeHelper.getClassInternalName(DefaultTypeTransformation.class.getName());
 
     public AsmClassGenerator(
+            SourceUnit source,
             GeneratorContext context, ClassVisitor classVisitor,
             ClassLoader classLoader, String sourceFile
     ) {
         super(classLoader);
+        this.source = source;
         this.context = context;
         this.cv = classVisitor;
         this.sourceFile = sourceFile;
@@ -200,7 +213,7 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     protected SourceUnit getSourceUnit() {
-        return null;
+        return source;
     }
 
 
@@ -937,18 +950,96 @@ public class AsmClassGenerator extends ClassGenerator {
         onLineNumber(statement, "visitAssertStatement");
         visitStatement(statement);
 
+        boolean rewriteAssert = true;
+        // don't rewrite assertions with message
+        rewriteAssert = statement.getMessageExpression() == ConstantExpression.NULL;
+        AssertionTracker oldTracker = assertionTracker;
+        Janitor janitor = new Janitor();
+        final Label tryStart = new Label();
+        if (rewriteAssert){
+            assertionTracker = new AssertionTracker();
+            try {
+                // because source position seems to be more reliable for statements
+                // than for expressions, we get the source text for the whole statement
+                assertionTracker.sourceText = new SourceText(statement, source, janitor);
+                mv.visitTypeInsn(NEW, "org/codehaus/groovy/transform/powerassert/ValueRecorder");
+                mv.visitInsn(DUP);
+                mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/transform/powerassert/ValueRecorder", "<init>", "()V");
+                assertionTracker.recorderIndex = compileStack.defineTemporaryVariable("recorder", true);
+                mv.visitLabel(tryStart);
+            } catch (SourceTextNotAvailableException e) {
+                // don't rewrite assertions w/o source text
+                rewriteAssert = false;
+                assertionTracker = oldTracker;
+            }
+        }
+        
         BooleanExpression booleanExpression = statement.getBooleanExpression();
         booleanExpression.visit(this);
 
-        Label l0 = new Label();
-        mv.visitJumpInsn(IFEQ, l0);
+        Label exceptionThrower = new Label();
+        mv.visitJumpInsn(IFEQ, exceptionThrower);
 
-        // do nothing
-
-        Label l1 = new Label();
-        mv.visitJumpInsn(GOTO, l1);
-        mv.visitLabel(l0);
-
+        // do nothing, but clear the value recorder
+        if (rewriteAssert) {
+            //clean up assertion recorder
+            mv.visitVarInsn(ALOAD, assertionTracker.recorderIndex);
+            mv.visitMethodInsn(
+                    INVOKEVIRTUAL, 
+                    "org/codehaus/groovy/transform/powerassert/ValueRecorder", 
+                    "clear", 
+                    "()V");
+        }
+        Label afterAssert = new Label();
+        mv.visitJumpInsn(GOTO, afterAssert);
+        mv.visitLabel(exceptionThrower);
+        
+        if (rewriteAssert) {
+            mv.visitLdcInsn(assertionTracker.sourceText.getNormalizedText());
+            mv.visitVarInsn(ALOAD, assertionTracker.recorderIndex);
+            mv.visitMethodInsn(
+                    INVOKESTATIC, 
+                    "org/codehaus/groovy/transform/powerassert/AssertionRenderer", 
+                    "render", 
+                    "(Ljava/lang/String;Lorg/codehaus/groovy/transform/powerassert/ValueRecorder;)Ljava/lang/String;"
+            );
+        } else {
+            writeSourclessAssertText(statement);
+        }
+        AssertionTracker savedTracker = assertionTracker;
+        assertionTracker = null;
+        // now the optional exception expression
+        statement.getMessageExpression().visit(this);
+        assertFailedMethod.call(mv);
+        
+        if (rewriteAssert) {
+            final Label tryEnd = new Label();
+            mv.visitLabel(tryEnd);
+            mv.visitJumpInsn(GOTO, afterAssert);
+            // finally block to clean assertion recorder
+            final Label catchAny = new Label();
+            mv.visitLabel(catchAny);
+            mv.visitVarInsn(ALOAD, savedTracker.recorderIndex);
+            mv.visitMethodInsn(
+                    INVOKEVIRTUAL, 
+                    "org/codehaus/groovy/transform/powerassert/ValueRecorder", 
+                    "clear", 
+                    "()V");
+            mv.visitInsn(ATHROW);
+            // add catch any block to exception table
+            exceptionBlocks.add(new Runnable() {
+                public void run() {
+                    mv.visitTryCatchBlock(tryStart, tryEnd, catchAny, null);
+                }
+            });
+        }
+        
+        mv.visitLabel(afterAssert);
+        assertionTracker = oldTracker;
+    }
+    
+    private void writeSourclessAssertText(AssertStatement statement) {
+        BooleanExpression booleanExpression = statement.getBooleanExpression();
         // push expression string onto stack
         String expressionText = booleanExpression.getText();
         List<String> list = new ArrayList<String>();
@@ -998,11 +1089,6 @@ public class AsmClassGenerator extends ClassGenerator {
             mv.visitVarInsn(ALOAD, tempIndex);
             compileStack.removeVar(tempIndex);
         }
-        // now the optional exception expression
-        statement.getMessageExpression().visit(this);
-
-        assertFailedMethod.call(mv);
-        mv.visitLabel(l1);
     }
 
     private void addVariableNames(Expression expression, List<String> list) {
@@ -1526,6 +1612,7 @@ public class AsmClassGenerator extends ClassGenerator {
             default:
                 throwException("Operation: " + expression.getOperation() + " not supported");
         }
+        record(expression.getOperation(),isComparisonExpression(expression));
     }
 
     private void load(Expression exp) {
@@ -1552,6 +1639,42 @@ public class AsmClassGenerator extends ClassGenerator {
                 evaluatePostfixMethod("previous", expression.getExpression());
                 break;
         }
+        record(expression);
+    }
+
+    private void record(Token token, boolean unboxedValue) {
+        if (assertionTracker==null) return;
+        if (unboxedValue){
+            mv.visitInsn(DUP);
+            helper.boxBoolean();
+        }
+        record(assertionTracker.sourceText.getNormalizedColumn(token.getStartLine(), token.getStartColumn()));
+        if (unboxedValue) mv.visitInsn(POP);
+    }
+    
+    private void record(Expression expression) {
+        if (assertionTracker==null) return;
+        record(assertionTracker.sourceText.getNormalizedColumn(expression.getLineNumber(), expression.getColumnNumber()));
+    }
+    
+    private void recordBool(Expression expression) {
+        if (assertionTracker==null) return;
+        mv.visitInsn(DUP);
+        helper.boxBoolean();
+        record(expression);
+        mv.visitInsn(POP);
+    }
+    
+    private void record(int normalizedColumn) {
+        if (assertionTracker==null) return;
+        mv.visitVarInsn(ALOAD, assertionTracker.recorderIndex);
+        helper.swapWithObject(ClassHelper.OBJECT_TYPE);
+        mv.visitLdcInsn(normalizedColumn);
+        mv.visitMethodInsn(
+                INVOKEVIRTUAL, 
+                "org/codehaus/groovy/transform/powerassert/ValueRecorder", 
+                "record", 
+                "(Ljava/lang/Object;I)Ljava/lang/Object;");
     }
 
     private void throwException(String s) {
@@ -1567,6 +1690,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 evaluatePrefixMethod("previous", expression.getExpression());
                 break;
         }
+        record(expression);
     }
 
     public void visitClosureExpression(ClosureExpression expression) {
@@ -1681,8 +1805,16 @@ public class AsmClassGenerator extends ClassGenerator {
 
     public void visitSpreadMapExpression(SpreadMapExpression expression) {
         Expression subExpression = expression.getExpression();
+        // to not record the underlying MapExpression twice, we set
+        // assertionTracker = null
+        // see http://jira.codehaus.org/browse/GROOVY-3421
+        AssertionTracker old = assertionTracker;
+        assertionTracker = null;
+        
         subExpression.visit(this);
         spreadMap.call(mv);
+        
+        assertionTracker = old;
     }
 
     public void visitMethodPointerExpression(MethodPointerExpression expression) {
@@ -1708,18 +1840,21 @@ public class AsmClassGenerator extends ClassGenerator {
         Expression subExpression = expression.getExpression();
         subExpression.visit(this);
         unaryMinus.call(mv);
+        record(expression);
     }
 
     public void visitUnaryPlusExpression(UnaryPlusExpression expression) {
         Expression subExpression = expression.getExpression();
         subExpression.visit(this);
         unaryPlus.call(mv);
+        record(expression);
     }
 
     public void visitBitwiseNegationExpression(BitwiseNegationExpression expression) {
         Expression subExpression = expression.getExpression();
         subExpression.visit(this);
         bitwiseNegate.call(mv);
+        record(expression);
     }
 
     public void visitCastExpression(CastExpression castExpression) {
@@ -1743,6 +1878,7 @@ public class AsmClassGenerator extends ClassGenerator {
             helper.unbox(boolean.class);
         }
         helper.negateBoolean();
+        recordBool(expression);
     }
 
     /**
@@ -2292,6 +2428,7 @@ public class AsmClassGenerator extends ClassGenerator {
             if (isStaticInvocation(call)) adapter = invokeStaticMethod;
             makeInvokeMethodCall(call, isSuperMethodCall, adapter);
         }
+        record(call.getMethod());
     }
 
     private boolean isClosureCall(MethodCallExpression call) {
@@ -2364,6 +2501,8 @@ public class AsmClassGenerator extends ClassGenerator {
                 call.getArguments(),
                 invokeStaticMethod,
                 false, false, false);
+        
+        record(call);
     }
 
     private void addGeneratedClosureConstructorCall(ConstructorCallExpression call) {
@@ -2544,6 +2683,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 receiverClass, CONSTRUCTOR,
                 arguments,false, false, false,
                 false);
+        record(call);
     }
 
     private static String makeFieldClassName(ClassNode type) {
@@ -2645,6 +2785,7 @@ public class AsmClassGenerator extends ClassGenerator {
             if (isStaticContext() && isThisOrSuper(objectExpression)) adapter = getProperty;
         }
         visitAttributeOrProperty(expression, adapter);
+        record(expression.getProperty());
     }
 
     public void visitAttributeExpression(AttributeExpression expression) {
@@ -2660,6 +2801,7 @@ public class AsmClassGenerator extends ClassGenerator {
             if (usesSuper(expression)) adapter = getFieldOnSuper;
         }
         visitAttributeOrProperty(expression, adapter);
+        if (!leftHandExpression) record(expression.getProperty());
     }
 
     protected boolean isGroovyObject(Expression objectExpression) {
@@ -2681,6 +2823,7 @@ public class AsmClassGenerator extends ClassGenerator {
             } else {
                 loadInstanceField(expression);
             }
+            record(expression);
         }
     }
 
@@ -2823,9 +2966,7 @@ public class AsmClassGenerator extends ClassGenerator {
      * Visits a bare (unqualified) variable expression.
      */
 
-    public void
-    visitVariableExpression(VariableExpression expression) {
-
+    public void visitVariableExpression(VariableExpression expression) {
         String variableName = expression.getName();
 
         //-----------------------------------------------------------------------
@@ -2865,6 +3006,7 @@ public class AsmClassGenerator extends ClassGenerator {
         } else {
             processStackVariable(variable,expression.isUseReferenceDirectly());
         }
+        if (!leftHandExpression) record(expression);
     }
 
     private void loadThis() {

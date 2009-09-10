@@ -108,7 +108,8 @@ public class SourceCodeTraversal extends TraversalHelper {
                     break;
 
                 case GroovyTokenTypes.INDEX_OP:
-                    accept_FirstChild_v_SecondChild_v(t);
+                    //accept_FirstChild_v_SecondChild_v(t);
+                    accept_SecondChild_v_ThirdChild_v(t);
                     break;
 
                 case GroovyTokenTypes.ENUM_CONSTANT_DEF: // enum Foo(THESE,ARE,THEY)

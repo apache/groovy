@@ -224,8 +224,8 @@ assert a[b]
     void testPrefixExpression() {
         isRendered """
 assert ++x == null
-       |   |
-       1   false
+       | | |
+       1 0 false
         """, {
             def x = 0
             assert ++x == null
@@ -235,8 +235,10 @@ assert ++x == null
     void testPostfixExpression() {
         isRendered """
 assert x++ == null
-        |  |
-        0  false
+       ||  |
+       |0  false
+       |
+       0
         """, {
             def x = 0
             assert x++ == null

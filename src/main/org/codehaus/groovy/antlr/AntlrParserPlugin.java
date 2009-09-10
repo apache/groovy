@@ -2043,13 +2043,14 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
 
     protected Expression indexExpression(AST indexNode) {
-        AST leftNode = indexNode.getFirstChild();
+        AST bracket = indexNode.getFirstChild();
+        AST leftNode = bracket.getNextSibling();
         Expression leftExpression = expression(leftNode);
 
         AST rightNode = leftNode.getNextSibling();
         Expression rightExpression = expression(rightNode);
 
-        BinaryExpression binaryExpression = new BinaryExpression(leftExpression, makeToken(Types.LEFT_SQUARE_BRACKET, indexNode), rightExpression);
+        BinaryExpression binaryExpression = new BinaryExpression(leftExpression, makeToken(Types.LEFT_SQUARE_BRACKET, bracket), rightExpression);
         configureAST(binaryExpression, indexNode);
         return binaryExpression;
     }

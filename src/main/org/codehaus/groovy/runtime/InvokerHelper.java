@@ -21,6 +21,7 @@ import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.wrappers.PojoWrapper;
+import org.codehaus.groovy.transform.powerassert.PowerAssertionError;
 import org.w3c.dom.Element;
 
 import java.beans.Introspector;
@@ -373,7 +374,7 @@ public class InvokerHelper {
 
     public static void assertFailed(Object expression, Object message) {
         if (message == null || "".equals(message)) {
-            throw new AssertionError("Expression: " + expression);
+            throw new PowerAssertionError(expression.toString());
         }
         throw new AssertionError(String.valueOf(message) + ". Expression: " + expression);
     }
