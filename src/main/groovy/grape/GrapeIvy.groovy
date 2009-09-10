@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,9 +28,14 @@ import org.apache.ivy.util.DefaultMessageLogger
 import org.apache.ivy.util.Message
 import org.codehaus.groovy.reflection.ReflectionUtils
 import org.codehaus.groovy.runtime.InvokerHelper
+import org.apache.ivy.plugins.matcher.ExactPatternMatcher
+import org.apache.ivy.plugins.matcher.PatternMatcher
+import org.apache.ivy.core.module.id.ModuleId
+import org.apache.ivy.core.module.id.ArtifactId
 
 /**
  * @author Danno Ferrin
+ * @author Paul King
  */
 class GrapeIvy implements GrapeEngine {
 
@@ -181,7 +186,8 @@ class GrapeIvy implements GrapeEngine {
         boolean transitive = deps.containsKey('transitive') ? deps.transitive : true
         def conf = deps.conf ?: deps.scope ?: deps.configuration ?: ['default']
         if (conf instanceof String) {
-            conf = [conf]
+            if (conf.startsWith("[") && conf.endsWith("]")) conf = conf[1..-2]
+            conf = conf.split(",").toList()
         }
         def classifier = deps.classifier ?: null
 
@@ -227,18 +233,21 @@ class GrapeIvy implements GrapeEngine {
     public ResolveReport getDependencies(Map args, IvyGrabRecord... grabRecords) {
         ResolutionCacheManager cacheManager = ivyInstance.getResolutionCacheManager()
 
-        DefaultModuleDescriptor md = new DefaultModuleDescriptor(ModuleRevisionId
+        def md = new DefaultModuleDescriptor(ModuleRevisionId
                 .newInstance("caller", "all-caller", "working"), "integration", null, true)
         md.addConfiguration(new Configuration('default'))
         md.setLastModified(System.currentTimeMillis())
+
+        addExcludesIfNeeded(args, md)
+
         for (IvyGrabRecord grabRecord : grabRecords) {
             DefaultDependencyDescriptor dd = new DefaultDependencyDescriptor(md,
                     grabRecord.mrid, grabRecord.force, grabRecord.changing, grabRecord.transitive)
             def conf = grabRecord.conf ?: ['*']
             conf.each {dd.addDependencyConfiguration('default', it)}
             if (grabRecord.classifier) {
-                DefaultDependencyArtifactDescriptor dad = new DefaultDependencyArtifactDescriptor(dd,
-                        grabRecord.mrid.name, 'jar', 'jar', null, [classifier:grabRecord.classifier])
+                def dad = new DefaultDependencyArtifactDescriptor(dd,
+                        grabRecord.mrid.name, 'jar', grabRecord.ext ?: 'jar', null, [classifier:grabRecord.classifier])
                 conf.each { dad.addConfiguration(it)  }
                 dd.addDependencyArtifact('default', dad)
             }
@@ -267,6 +276,19 @@ class GrapeIvy implements GrapeEngine {
         return report
     }
 
+    private addExcludesIfNeeded(Map args, DefaultModuleDescriptor md) {
+        if (!args.containsKey('excludes')) return
+        args.excludes.each{ map ->
+            def excludeRule = new DefaultExcludeRule(new ArtifactId(
+                    new ModuleId(map.group, map.module), PatternMatcher.ANY_EXPRESSION,
+                    PatternMatcher.ANY_EXPRESSION,
+                    PatternMatcher.ANY_EXPRESSION),
+                    ExactPatternMatcher.INSTANCE, null)
+            excludeRule.addConfiguration('default')
+            md.addExcludeRule(excludeRule)
+        }
+    }
+
     public Map<String, Map<String, List<String>>> enumerateGrapes() {
         Map<String, Map<String, List<String>>> bunches = [:]
         Pattern ivyFilePattern = ~/ivy-(.*)\.xml/ //TODO get pattern from ivy conf
@@ -285,13 +307,13 @@ class GrapeIvy implements GrapeEngine {
         return bunches
     }
 
-    public URI [] resolve(Map args, Map... dependencies) {
+    public URI[] resolve(Map args, Map ... dependencies) {
         // identify the target classloader early, so we fail before checking repositories
         def loader = chooseClassLoader(
-            classLoader:args.remove('classLoader'),
-            refObject:args.remove('refObject'),
-            calleeDepth:args.calleeDepth?:DEFAULT_DEPTH,
-            )
+                classLoader: args.remove('classLoader'),
+                refObject: args.remove('refObject'),
+                calleeDepth: args.calleeDepth ?: DEFAULT_DEPTH,
+        )
 
         // check for non-fail null.
         // If we were in fail mode we would have already thrown an exception
@@ -364,6 +386,9 @@ class GrapeIvy implements GrapeEngine {
                 if (grabbed.classifier) {
                     dep.classifier = grabbed.classifier
                 }
+                if (grabbed.ext) {
+                    dep.ext = grabbed.ext
+                }
                 results << dep
             }
             return results
@@ -380,13 +405,15 @@ class IvyGrabRecord {
     boolean transitive
     boolean force
     String classifier
+    String ext
 
     public int hashCode() {
         return (mrid.hashCode() ^ conf.hashCode()
             ^ (changing ? 0xaaaaaaaa : 0x55555555)
             ^ (transitive ? 0xbbbbbbbb : 0x66666666)
             ^ (force ? 0xcccccccc: 0x77777777)
-            ^ (classifier ? classifier.hashCode() : 0))
+            ^ (classifier ? classifier.hashCode() : 0)
+            ^ (ext ? ext.hashCode() : 0))
     }
 
     public boolean equals(Object o) {
@@ -396,6 +423,7 @@ class IvyGrabRecord {
             && (force== o.force)
             && (mrid == o.mrid)
             && (conf == o.conf)
-            && (classifier == o.classifier))
+            && (classifier == o.classifier)
+            && (ext == o.ext))
     }
 }

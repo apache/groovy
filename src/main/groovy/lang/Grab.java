@@ -22,6 +22,25 @@ import java.lang.annotation.ElementType;
 
 /**
  * Used to grab the referenced artifact and its dependencies and make it available on the Classpath.
+ *
+ * Some examples:
+ * <pre>
+ * {@code @Grab}(group='commons-lang', module='commons-lang', version='2.4')
+ * import org.apache.commons.lang.WordUtils
+ * println "Hello ${WordUtils.capitalize('world')}"
+ * </pre>
+ * Or using the compact syntax:
+ * <pre>
+ * {@code @Grab}('commons-lang:commons-lang:2.4')
+ * import org.apache.commons.lang.WordUtils
+ * println "Hello ${WordUtils.capitalize('world')}"
+ * </pre>
+ * or this variant:
+ * <pre>
+ * {@code @Grab}('commons-lang#commons-lang;2.4')
+ * import org.apache.commons.lang.WordUtils
+ * println "Hello ${WordUtils.capitalize('world')}"
+ * </pre>
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target({
@@ -32,10 +51,46 @@ import java.lang.annotation.ElementType;
     ElementType.PARAMETER,
     ElementType.TYPE})
 public @interface Grab {
+    /**
+     * @return the organisation or group, e.g. "org.apache.ant"
+     */
     String group() default "";
-    String module() ;
-    String version() default "*";
+
+    /**
+     * @return the module or artifact, e.g. "ant-junit"
+     */
+    String module();
+
+    /**
+     * @return the revision or version, e.g. "1.7.1"
+     */
+    String version();
+
+    /**
+     * @return the classifier if in use, e.g. "jdk14"
+     */
     String classifier() default "";
+
+    /**
+     * @return set to false if you don't want transitive dependencies also to be downloaded
+     */
+    boolean transitive() default true;
+
+    /**
+     * @return the configuration if in use (normally only used by internal ivy repositories)
+     */
+    String conf() default "";
+
+    /**
+     * @return the extension of the artifact (normally safe to leave at default value of "jar")
+     */
+    String ext() default "";
+
+    /**
+     * allows a more compact convenience format in one of two formats:<br/>
+     * group:module:version:classifier@ext (where only group and module are required)<br/>
+     * group#module;version[confs] (where version is optional and confs is one or more comma separated configurations)<br/>
+     */
     String value() default "";
 
     /**

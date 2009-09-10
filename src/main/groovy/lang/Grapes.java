@@ -28,6 +28,28 @@ package groovy.lang;
  * class AnnotatedClass { ... }
  * </pre>
  *
+ * You can override an implicit transitive dependency by providing an explicit one.
+ * E.g. htmlunit 2.6 normally uses xerces 2.9.1 but you can get 2.9.0 as follows:
+ * <pre>
+ * {@code @Grapes}([
+ *     {@code @Grab}('net.sourceforge.htmlunit:htmlunit:2.6'),
+ *     {@code @Grab}('xerces#xercesImpl;2.9.0'),
+ * ])
+ * </pre>
+ * Obviously, only do this if you understand the consequences.
+ * <p/>
+ * You can also remove a transitive dependency altogether (provided you know you don't need them) using
+ * {@code @GrabExclude}.
+ * For the same example as above, here is how we would not grab the xerces dependency (htmlunit won't
+ * work without it but in other cases it is sometimes useful to do):
+ * <pre>
+ * {@code @Grapes}([
+ *     {@code @Grab}('net.sourceforge.htmlunit:htmlunit:2.6'),
+ *     {@code @GrabExclude}('xerces:xercesImpl'),
+ * ])
+ * </pre>
+ * It is sometimes also useful to use {@code @GrabConfig} to further adjust how dependencies
+ * are grabbed. See {@code @GrabConfig} for further information.
  */
 public @interface Grapes {
     Grab[] value();
