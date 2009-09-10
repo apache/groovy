@@ -17,6 +17,7 @@
 package groovy.lang;
 
 import groovy.security.GroovyCodeSourcePermission;
+import groovy.util.CharsetToolkit;
 
 import java.io.*;
 import java.net.MalformedURLException;
@@ -50,9 +51,9 @@ public class GroovyCodeSource {
 	/** The certificates used to sign the items from the codesource */
 	Certificate[] certs;
     private boolean cachable;
-    
+
 	private File file;
-	
+
 	public GroovyCodeSource(String script, String name, String codeBase) {
 		this.name = name;
         this.scriptText = script;
@@ -99,17 +100,7 @@ public class GroovyCodeSource {
         }
     }
 
-    public GroovyCodeSource(final String scriptText, final String name) {
-        this.scriptText = scriptText;
-        this.name = name;
-    }
-
-    /**
-     * @param infile the file to create a GroovyCodeSource for.
-     *
-     * @throws IOException if an issue arises opening and reading the file.
-     */
-    public GroovyCodeSource(final File infile) throws IOException {
+    public GroovyCodeSource(final File infile, final String encoding) throws IOException {
         // avoid files which confuse us like ones with .. in path
         final File file = new File(infile.getCanonicalPath());
         if (!file.exists()) {
@@ -120,7 +111,7 @@ public class GroovyCodeSource {
         }
         try {
             if (!file.canRead())
-                throw new RuntimeException(file.toString() + " can not be read. Check the read permisson of the file \"" + file.toString() + "\" (" + file.getAbsolutePath() + ").");
+                throw new RuntimeException(file.toString() + " can not be read. Check the read permission of the file \"" + file.toString() + "\" (" + file.getAbsolutePath() + ").");
         }
         catch (SecurityException e) {
             throw e;
@@ -132,7 +123,14 @@ public class GroovyCodeSource {
         //package private and used only by the GroovyClassLoader.
         try {
             Object[] info = (Object[]) AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                public Object run() throws MalformedURLException {
+                public Object run() throws IOException {
+                    // retrieve the content of the file using the provided encoding
+                    if (encoding != null) {
+                        scriptText = DefaultGroovyMethods.getText(infile, encoding);
+                    } else {
+                        scriptText = DefaultGroovyMethods.getText(infile);
+                    }
+
                     Object[] info = new Object[2];
                     URL url = file.toURI().toURL();
                     info[0] = url.toExternalForm();
@@ -144,10 +142,18 @@ public class GroovyCodeSource {
 
             this.name = (String) info[0];
             this.codeSource = (CodeSource) info[1];
-            this.scriptText = DefaultGroovyMethods.getText(file);
         } catch (PrivilegedActionException pae) {
             throw new RuntimeException("Could not construct a URL from: " + file);
         }
+    }
+
+    /**
+     * @param infile the file to create a GroovyCodeSource for.
+     *
+     * @throws IOException if an issue arises opening and reading the file.
+     */
+    public GroovyCodeSource(final File infile) throws IOException {
+        this(infile, CharsetToolkit.getDefaultSystemCharset().name());
     }
 
     public GroovyCodeSource(URL url) throws IOException {

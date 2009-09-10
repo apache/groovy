@@ -187,7 +187,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * @return the main class defined in the given script
      */
     public Class parseClass(File file) throws CompilationFailedException, IOException {
-        return parseClass(new GroovyCodeSource(file));
+        return parseClass(new GroovyCodeSource(file, config.getSourceEncoding()));
     }
 
     /**
@@ -197,8 +197,13 @@ public class GroovyClassLoader extends URLClassLoader {
      * @param fileName the file name to use as the name of the class
      * @return the main class defined in the given script
      */
-    public Class parseClass(String text, String fileName) throws CompilationFailedException {
-        return parseClass(new GroovyCodeSource(text, fileName));
+    public Class parseClass(final String text, final String fileName) throws CompilationFailedException {
+        GroovyCodeSource gcs = (GroovyCodeSource) AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
+                return new GroovyCodeSource(text, fileName, "/groovy/script");
+            }
+        });
+        return parseClass(gcs);
     }
 
     /**
@@ -239,7 +244,10 @@ public class GroovyClassLoader extends URLClassLoader {
         GroovyCodeSource gcs = (GroovyCodeSource) AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
                 try {
-                    return new GroovyCodeSource(DefaultGroovyMethods.getText(in), fileName, "/groovy/script");
+                    String scriptText = config.getSourceEncoding() != null ?
+                            DefaultGroovyMethods.getText(in, config.getSourceEncoding()) :
+                            DefaultGroovyMethods.getText(in);
+                    return new GroovyCodeSource(scriptText, fileName, "/groovy/script");
                 } catch (IOException e) {
                     throw new RuntimeException("Impossible to read the content of the input stream for file named: " + fileName, e);
                 }

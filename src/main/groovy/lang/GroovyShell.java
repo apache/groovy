@@ -16,6 +16,7 @@
 package groovy.lang;
 
 import groovy.ui.GroovyMain;
+import groovy.security.GroovyCodeSourcePermission;
 
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
@@ -469,7 +470,10 @@ public class GroovyShell extends GroovyObjectSupport {
         GroovyCodeSource gcs = (GroovyCodeSource) AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
                 try {
-                    return new GroovyCodeSource(DefaultGroovyMethods.getText(in), fileName, "/groovy/shell");
+                    String scriptText = config.getSourceEncoding() != null ?
+                            DefaultGroovyMethods.getText(in, config.getSourceEncoding()) :
+                            DefaultGroovyMethods.getText(in);
+                    return new GroovyCodeSource(scriptText, fileName, "/groovy/shell");
                 } catch (IOException e) {
                     throw new RuntimeException("Impossible to read the content of the input stream for file named: " + fileName, e);
                 }
@@ -504,18 +508,38 @@ public class GroovyShell extends GroovyObjectSupport {
      * Evaluates some script against the current Binding and returns the result
      *
      * @param scriptText the text of the script
+     */
+    public Object evaluate(final String scriptText) throws CompilationFailedException {
+        return evaluate(scriptText, generateScriptName(), "/groovy/shell");
+    }
+
+    /**
+     * Evaluates some script against the current Binding and returns the result
+     *
+     * @param scriptText the text of the script
      * @param fileName   is the logical file name of the script (which is used to create the class name of the script)
      */
     public Object evaluate(String scriptText, String fileName) throws CompilationFailedException {
-        return evaluate(new GroovyCodeSource(scriptText, fileName));
+        return evaluate(scriptText, fileName, "/groovy/shell");
     }
 
     /**
      * Evaluates some script against the current Binding and returns the result.
      * The .class file created from the script is given the supplied codeBase
      */
-    public Object evaluate(String scriptText, String fileName, String codeBase) throws CompilationFailedException {
-        return evaluate(new GroovyCodeSource(scriptText, fileName, codeBase));
+    public Object evaluate(final String scriptText, final String fileName, final String codeBase) throws CompilationFailedException {
+        SecurityManager sm = System.getSecurityManager();
+		if (sm != null) {
+		    sm.checkPermission(new GroovyCodeSourcePermission(codeBase));
+		}
+
+        GroovyCodeSource gcs = (GroovyCodeSource) AccessController.doPrivileged(new PrivilegedAction() {
+            public Object run() {
+                return new GroovyCodeSource(scriptText, fileName, codeBase);
+            }
+        });
+
+        return evaluate(gcs);
     }
 
     /**
@@ -524,16 +548,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param file is the file of the script (which is used to create the class name of the script)
      */
     public Object evaluate(File file) throws CompilationFailedException, IOException {
-        return evaluate(new GroovyCodeSource(file));
-    }
-
-    /**
-     * Evaluates some script against the current Binding and returns the result
-     *
-     * @param scriptText the text of the script
-     */
-    public Object evaluate(String scriptText) throws CompilationFailedException {
-        return evaluate(new GroovyCodeSource(scriptText, generateScriptName()));
+        return evaluate(new GroovyCodeSource(file, config.getSourceEncoding()));
     }
 
     /**
@@ -581,7 +596,10 @@ public class GroovyShell extends GroovyObjectSupport {
         GroovyCodeSource gcs = (GroovyCodeSource) AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
                 try {
-                    return new GroovyCodeSource(DefaultGroovyMethods.getText(in), fileName, "/groovy/shell");
+                    String scriptText = config.getSourceEncoding() != null ?
+                            DefaultGroovyMethods.getText(in, config.getSourceEncoding()) :
+                            DefaultGroovyMethods.getText(in);
+                    return new GroovyCodeSource(scriptText, fileName, "/groovy/shell");
                 } catch (IOException e) {
                     throw new RuntimeException("Impossible to read the content of the input stream for file named: " + fileName, e);
                 }
@@ -616,7 +634,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param file is the file of the script (which is used to create the class name of the script)
      */
     public Script parse(File file) throws CompilationFailedException, IOException {
-        return parse(new GroovyCodeSource(file));
+        return parse(new GroovyCodeSource(file, config.getSourceEncoding()));
     }
 
     /**
