@@ -264,6 +264,7 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
             // can take place)
             PRINT_PANE.setDocument(getDocument());
 
+            PRINT_PANE.setFont(getFont());
             PRINT_SIZE.setSize(paper.getImageableWidth(),
                                getSize().getHeight());
             PRINT_PANE.setSize(PRINT_SIZE);
