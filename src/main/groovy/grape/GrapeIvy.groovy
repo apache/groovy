@@ -61,7 +61,13 @@ class GrapeIvy implements GrapeEngine {
         if (!grapeConfig.exists()) {
             grapeConfig = GrapeIvy.class.getResource("defaultGrapeConfig.xml")
         }
-        settings.load(grapeConfig) // exploit multi-methods for convience
+        try {
+            settings.load(grapeConfig) // exploit multi-methods for convenience
+        } catch (java.text.ParseException ex) {
+            System.err.println "Local Ivy config file '$grapeConfig.canonicalPath' appears corrupt - ignoring it and using default config instead\nError was: " + ex.message
+            grapeConfig = GrapeIvy.class.getResource("defaultGrapeConfig.xml")
+            settings.load(grapeConfig)
+        }
 
         // set up the cache dirs
         settings.setDefaultCache(getGrapeCacheDir())
@@ -85,7 +91,7 @@ class GrapeIvy implements GrapeEngine {
         try {
             groovyRoot = groovyRoot.getCanonicalFile();
         } catch (IOException e) {
-            // skip cannonicalization then, it may not exist yet
+            // skip canonicalization then, it may not exist yet
         }
         return groovyRoot;
     }
@@ -110,7 +116,7 @@ class GrapeIvy implements GrapeEngine {
             try {
                 grapeRoot = grapeRoot.getCanonicalFile()
             } catch (IOException e) {
-                // skip cannonicalization then, it may not exist yet
+                // skip canonicalization then, it may not exist yet
             }
             return grapeRoot
         }
@@ -315,13 +321,13 @@ class GrapeIvy implements GrapeEngine {
 
         Set<IvyGrabRecord> localDeps = loadedDeps.get(loader)
         if (localDeps == null) {
-            // use a linked set to presrve intial insertion order
+            // use a linked set to preserve initial insertion order
             localDeps = new LinkedHashSet<IvyGrabRecord>()
             loadedDeps.put(loader, localDeps)
         }
 
         dependencies.each { localDeps.add(createGrabRecord(it)) }
-        // the call to reverse insures that the newest additions are in
+        // the call to reverse ensures that the newest additions are in
         // front causing existing dependencies to come last and thus
         // claiming higher priority.  Thus when module versions clash we
         // err on the side of using the class already loaded into the
@@ -332,7 +338,7 @@ class GrapeIvy implements GrapeEngine {
 
         List<URI> results = []
         for (ArtifactDownloadReport adl in report.getAllArtifactsReports()) {
-            //TODO check artifcat type, jar vs library, etc
+            //TODO check artifact type, jar vs library, etc
             if (adl.localFile) {
                 results += adl.localFile.toURI()
             }
