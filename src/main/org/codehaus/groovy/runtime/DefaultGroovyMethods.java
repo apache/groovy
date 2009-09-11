@@ -2892,15 +2892,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * meaning of these characters, if desired.
      *
      * @param   self the string that is to be matched
-     * @param   regex the regex Pattern to which the string of interest is to be matched
+     * @param   pattern the regex Pattern to which the string of interest is to be matched
      * @param   replacement the string to be substituted for the first match
      * @return  The resulting <tt>String</tt>
      * @see java.lang.String#replaceFirst(String, String)
      *
      * @since 1.6.1
      */
-    public static String replaceFirst(String self, Pattern regex, String replacement) {
-        return regex.matcher(self).replaceFirst(replacement);
+    public static String replaceFirst(String self, Pattern pattern, String replacement) {
+        return pattern.matcher(self).replaceFirst(replacement);
     }
 
     /**
@@ -2915,15 +2915,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * meaning of these characters, if desired.
      *
      * @param   self the string that is to be matched
-     * @param   regex the regex Pattern to which the string of interest is to be matched
+     * @param   pattern the regex Pattern to which the string of interest is to be matched
      * @param   replacement the string to be substituted for the first match
      * @return  The resulting <tt>String</tt>
      * @see java.lang.String#replaceAll(String, String)
      *
      * @since 1.6.1
      */
-    public static String replaceAll(String self, Pattern regex, String replacement) {
-        return regex.matcher(self).replaceAll(replacement);
+    public static String replaceAll(String self, Pattern pattern, String replacement) {
+        return pattern.matcher(self).replaceAll(replacement);
     }
 
     /**
@@ -2931,21 +2931,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * compiled regular expression Pattern.
      *
      * @param   self the string that is to be matched
-     * @param   regex the regex Pattern to which the string of interest is to be matched
+     * @param   pattern the regex Pattern to which the string of interest is to be matched
      * @return  The resulting <tt>String</tt>
      * @see java.lang.String#matches(String)
      *
      * @since 1.6.1
      */
-    public static boolean matches(String self, Pattern regex) {
-        return regex.matcher(self).matches();
+    public static boolean matches(String self, Pattern pattern) {
+        return pattern.matcher(self).matches();
     }
 
     /**
      * Finds the first occurrence of a regular expression String within a String.
-     * If the pattern doesn't match, null will be returned.
+     * If the regex doesn't match, null will be returned.
      * <p/>
-     * <p> For example, if the pattern doesn't match the result is null:
+     * <p> For example, if the regex doesn't match the result is null:
      * <pre>
      *     assert null == "New York, NY".find(/\d{5}/)
      * </pre>
@@ -2963,7 +2963,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self  a String
      * @param regex the capturing regex
-     * @return a String containing the matched portion, or null if the regex pattern doesn't match
+     * @return a String containing the matched portion, or null if the regex doesn't match
      * @since 1.6.1
      */
     public static String find(String self, String regex) {
@@ -3008,9 +3008,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Finds the first occurrence of a regular expression String within a String.
-     * If the pattern doesn't match, the closure will not be called and find will return null.
+     * If the regex doesn't match, the closure will not be called and find will return null.
      * <p/>
-     * <p> For example, if the pattern doesn't match, the result is null:
+     * <p> For example, if the regex doesn't match, the result is null:
      * <pre>
      *     assert null == "New York, NY".find(~/\d{5}/) { match -> return "-$match-"}
      * </pre>
@@ -3141,7 +3141,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Finds all occurrences of a regular expression string within a String.  A List is returned containing all full matches or
      * an empty list if there are no matches within the string.
      * <p/>
-     * <p>For example, if the pattern doesn't match, it returns an empty list:
+     * <p>For example, if the regex doesn't match, it returns an empty list:
      * <pre>
      * assert [] == "foo".findAll(/(\w*) Fish/)
      * </pre>
@@ -3201,7 +3201,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <p/>
      * If there are no matches, the closure will not be called, and an empty List will be returned.
      * <p/>
-     * <p>For example, if the pattern doesn't match, it returns an empty list:
+     * <p>For example, if the regex doesn't match, it returns an empty list:
      * <pre>
      * assert [] == "foo".findAll(/(\w*) Fish/) { match, firstWord -> return firstWord }
      * </pre>
@@ -3248,7 +3248,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    a String
      * @param pattern the compiled regex Pattern
      * @param closure will be passed the full match plus each of the capturing groups
-     * @return a List containing all full matches of the regex within the string, an empty list will be returned if there are no matches
+     * @return a List containing all full matches of the regex Pattern within the string, an empty list will be returned if there are no matches
      * @since 1.6.1
      */
     public static List findAll(String self, Pattern pattern, Closure closure) {
@@ -3276,7 +3276,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *          y is the first string in the matched group
      *          z is the second string in the matched group
      * </pre>
-     * <p>Note that unlike String.replaceAll(String pattern, String replacement), where the replacement string
+     * <p>Note that unlike String.replaceAll(String regex, String replacement), where the replacement string
      * treats '$' and '\' specially (for group substitution), the result of the closure is converted to a string
      * and that value is used literally for the replacement.</p>
      *
@@ -8918,7 +8918,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * <p>Create a String representation of this date according to the given 
-     * pattern.</p>
+     * format pattern.</p>
      * 
      * <p>For example, if the system timezone is GMT, 
      * <code>new Date(0).format('MM/dd/yy')</code> would return the string 
