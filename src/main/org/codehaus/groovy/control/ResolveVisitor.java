@@ -233,8 +233,8 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     }
 
     private boolean resolve(ClassNode type, boolean testModuleImports, boolean testDefaultImports, boolean testStaticInnerClasses) {
-        if (type.isResolved() || type.isPrimaryClassNode()) return true;
         resolveGenericsTypes(type.getGenericsTypes());
+        if (type.isResolved() || type.isPrimaryClassNode()) return true;
         if (type.isArray()) {
             ClassNode element = type.getComponentType();
             boolean resolved = resolve(element, testModuleImports, testDefaultImports, testStaticInnerClasses);
@@ -1120,6 +1120,6 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             resolveOrFail(genericsType.getLowerBound(), genericsType);
         }
         resolveGenericsTypes(type.getGenericsTypes());
-        genericsType.setResolved(true);
+        genericsType.setResolved(genericsType.getType().isResolved());
     }
 }
