@@ -114,6 +114,7 @@ class LineCheckVisitor extends ClassCodeVisitorSupport {
 	protected void visitGenerics(ClassNode node) {
 		if (node.isUsingGenerics()) {
 			GenericsType[] generics = node.getGenericsTypes();
+			if(generics == null) return;
             for (GenericsType genericType : generics) {
                 visitNode(genericType);
                 visitType(genericType.getType());
