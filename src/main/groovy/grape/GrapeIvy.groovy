@@ -66,7 +66,13 @@ class GrapeIvy implements GrapeEngine {
         if (!grapeConfig.exists()) {
             grapeConfig = GrapeIvy.class.getResource("defaultGrapeConfig.xml")
         }
-        settings.load(grapeConfig) // exploit multi-methods for convenience
+        try {
+            settings.load(grapeConfig) // exploit multi-methods for convenience
+        } catch (java.text.ParseException ex) {
+            System.err.println "Local Ivy config file '$grapeConfig.canonicalPath' appears corrupt - ignoring it and using default config instead\nError was: " + ex.message
+            grapeConfig = GrapeIvy.class.getResource("defaultGrapeConfig.xml")
+            settings.load(grapeConfig)
+        }
 
         // set up the cache dirs
         settings.setDefaultCache(getGrapeCacheDir())
