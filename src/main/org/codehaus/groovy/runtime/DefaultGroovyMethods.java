@@ -9534,36 +9534,51 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Iterates through this file line by line, splitting on the seperator.
-     * The list of tokens for each line is then passed to the given closure.
+     * Iterates through this file line by line, splitting each line using
+     * the given regex separator. For each line, the given closure is called with
+     * a single parameter being the list of strings computed by splitting the line
+     * around matches of the given regular expression.
      * Finally the resources used for processing the file are closed.
      *
      * @param self    a File
-     * @param sep     a String separator
+     * @param regex   the delimiting regular expression
      * @param closure a closure
      * @throws IOException if an IOException occurs.
+     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
      * @return the last value returned by the closure
      * @see #splitEachLine(Reader,String,Closure)
      * @since 1.5.5
      */
-    public static Object splitEachLine(File self, String sep, Closure closure) throws IOException {
-        return splitEachLine(newReader(self), sep, closure);
+    public static Object splitEachLine(File self, String regex, Closure closure) throws IOException {
+        return splitEachLine(newReader(self), regex, closure);
     }
 
     /**
      * Iterates through the given reader line by line, splitting each line using
-     * the given separator.  The list of tokens for each line is then passed to
-     * the given closure.  The Reader is closed afterwards.
+     * the given regex separator. For each line, the given closure is called with
+     * a single parameter being the list of strings computed by splitting the line
+     * around matches of the given regular expression.  The Reader is closed afterwards.
+     * <p/>
+     * Here is an example:
+     * <pre>
+     * def s = 'The 3 quick\nbrown 4 fox'
+     * def result = ''
+     * new StringReader(s).splitEachLine(/\d/){ parts ->
+     *     result += "${parts[0]}_${parts[1]}|"
+     * }
+     * assert result == 'The _ quick|brown _ fox|'
+     * </pre>
      *
      * @param self    a Reader, closed after the method returns
-     * @param sep     a String separator
+     * @param regex   the delimiting regular expression
      * @param closure a closure
      * @throws IOException if an IOException occurs.
+     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
      * @return the last value returned by the closure
-     * @see String#split(String)
+     * @see java.lang.String#split(String)
      * @since 1.5.5
      */
-    public static Object splitEachLine(Reader self, String sep, Closure closure) throws IOException {
+    public static Object splitEachLine(Reader self, String regex, Closure closure) throws IOException {
         BufferedReader br;
         Object result = null;
 
@@ -9578,7 +9593,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 if (line == null) {
                     break;
                 } else {
-                    List vals = Arrays.asList(line.split(sep));
+                    List vals = Arrays.asList(line.split(regex));
                     result = closure.call(vals);
                 }
             }
