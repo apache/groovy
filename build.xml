@@ -55,6 +55,10 @@ $Date$
         <istrue value="${skipFetch}"/>
     </condition>
 
+    <condition property="_skipEmbeddable_">
+        <istrue value="${skipEmbeddable}"/>
+    </condition>
+
     <condition property="groovy.build.vm5">
         <not>
             <contains string="${ant.java.version}" substring="1.4"/>
@@ -554,11 +558,13 @@ Not found: ${groovyJar14path}
               tofile="${targetDistDirectory}/groovy-jdk14-${groovyVersion}-sources.jar"/>
     </target>
 
-    <target name="-jarjarInit">
+    <target name="-jarjarInit" unless="_skipEmbeddable_">
         <taskdef name="jarjar" classname="com.tonicsystems.jarjar.JarJarTask" classpathref="toolsPath"/>
     </target>
 
-    <target name="-createEmbeddableJar" depends="-jarjarInit" unless="testFailed">
+    <target name="-createEmbeddableJar" depends="-jarjarInit,-actuallyCreateEmbeddableJar" unless="testFailed"/>
+
+    <target name="-actuallyCreateEmbeddableJar" unless="_skipEmbeddable_">
         <delete dir="${stagingDirectory}" quiet="true"/>
         <mkdir dir="${stagingDirectory}"/>
         <unzip dest="${stagingDirectory}">

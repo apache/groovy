@@ -66,7 +66,11 @@ $Date: 2007-03-11 19:14:07 +1000 (Sun, 11 Mar 2007) $
         <sequential>
             <java classname="org.apache.tools.ant.launch.Launcher" fork="true" maxmemory="@{maxmemory}" failonerror="true">
                 <classpath refid="@{classpathref}"/>
+                <jvmarg value="-Duser.home=${user.home}" />
                 <arg value="@{target}"/>
+                <arg value="-DskipFetch=${skipFetch}"/>
+                <arg value="-DruntimeLibDirectory=${runtimeLibDirectory}"/>
+                <arg value="-DtoolsLibDirectory=${toolsLibDirectory}" />
             </java>
         </sequential>
     </macrodef>

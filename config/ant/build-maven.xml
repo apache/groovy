@@ -58,7 +58,7 @@ $Date$
 
     <target name="-mavenInit" depends="-mavenTaskdef,-mavenPomDefinitions"/>
 
-    <target name="-mavenTaskdef">
+    <target name="-mavenTaskdef" unless="_skipFetch_">
         <typedef resource="org/apache/maven/artifact/ant/antlib.xml" uri="urn:maven-artifact-ant">
             <classpath>
                 <fileset dir="${bootstrapDirectory}" includes="maven-ant-tasks-*.jar"/>
@@ -66,7 +66,7 @@ $Date$
         </typedef>
     </target>
 
-    <target name="-mavenPomDefinitions">
+    <target name="-mavenPomDefinitions" unless="_skipFetch_">
         <maven.pom file="pom.xml" id="groovy.pom"/>
         <xslt in="pom.xml" out="${targetDirectory}/groovy-all.pom" style="config/maven/groovy-all.xsl"/>
         <maven.pom file="${targetDirectory}/groovy-all.pom" id="groovy-all.pom"/>
@@ -84,7 +84,7 @@ $Date$
         <!--<maven.pom file="${targetDirectory}/groovy-all-jdk14.pom" id="groovy-all-jdk14.pom"/>-->
     </target>
 
-    <target name="-fetchDependencies" depends="-mavenFetchAllModules,-copyLibraries"/>
+    <target name="-fetchDependencies" depends="-mavenFetchAllModules,-copyLibraries,-definePathsWithoutCopyingLibraries"/>
 
     <target name="-mavenFetchAllModules" depends="-mavenInit" unless="_skipFetch_">
         <fetch.maven.all.modules/>
@@ -97,6 +97,27 @@ $Date$
         <definePath pathId="toolsPath" filesetId="fs.runtime.groovy-tools" libdir="${toolsLibDirectory}"/>
         <definePath pathId="examplesPath" filesetId="fs.runtime.groovy-examples" libdir="${examplesLibDirectory}"/>
         <definePath pathId="jdk14ExtrasPath" filesetId="fs.runtime.groovy-jdk14-extras" libdir="${extrasLibDirectory}"/>
+    </target>
+
+    <target name="-definePathsWithoutCopyingLibraries" if="_skipFetch_">
+        <path id="compilePath">
+            <fileset dir="${compileLibDirectory}" includes="**/*.jar"/>
+        </path>
+        <path id="runtimePath">
+            <fileset dir="${runtimeLibDirectory}" includes="**/*.jar"/>
+        </path>
+        <path id="testLibPath">
+            <fileset dir="${testLibDirectory}" includes="**/*.jar"/>
+        </path>
+        <path id="toolsPath">
+            <fileset dir="${toolsLibDirectory}" includes="**/*.jar"/>
+        </path>
+        <path id="examplesPath">
+            <fileset dir="${examplesLibDirectory}" includes="**/*.jar"/>
+        </path>
+        <path id="jdk14ExtrasPath">
+            <fileset dir="${extrasLibDirectory}" includes="**/*.jar"/>
+        </path>
     </target>
 
     <target name="-mavenDeployInit" depends="-mavenInit">
