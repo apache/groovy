@@ -1150,7 +1150,7 @@ import org.codehaus.groovy.ast.ClassHelper
     private void staticMethodCall(MethodClosure target, Closure argBlock) {
         captureAndCreateNode("StaticMethodCallExpression", argBlock) {
             expression.add(0, target.method)
-            expression.add(0, ClassHelper.make(target.owner.class))
+            expression.add(0, ClassHelper.makeWithoutCaching(target.owner.class, false))
             new StaticMethodCallExpression(
                     * enforceConstraints('staticMethodCall', [ClassNode, String, Expression])
             )

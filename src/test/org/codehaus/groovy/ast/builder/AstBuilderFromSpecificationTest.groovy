@@ -1114,7 +1114,7 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
         }
 
         def expected = new StaticMethodCallExpression(
-                new ClassNode(Math),
+                ClassHelper.make(Math, false),
                 "min",
                 new ArgumentListExpression(
                         new ConstantExpression(1),

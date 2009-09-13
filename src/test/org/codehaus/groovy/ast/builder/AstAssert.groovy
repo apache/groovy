@@ -354,7 +354,7 @@ public class AstAssert {
     static void assertSyntaxTree(expected, actual) {
         if (expected == null && actual == null) return
         
-        if (expected.size() != actual?.size()) {
+        if (actual == null || expected == null || expected.size() != actual?.size()) {
             Assert.fail("AST comparison failure. \nExpected $expected \nReceived $actual")
         }
         expected.eachWithIndex { item, index ->
