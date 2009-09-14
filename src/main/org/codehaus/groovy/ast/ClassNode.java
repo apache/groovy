@@ -311,8 +311,18 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
             }
         }
 
-        if ((modifiers & ACC_INTERFACE) == 0)
-          addField("$ownClass", ACC_STATIC|ACC_PUBLIC|ACC_FINAL|ACC_SYNTHETIC, ClassHelper.CLASS_Type, new ClassExpression(this)).setSynthetic(true);
+        if ((modifiers & ACC_INTERFACE) == 0) {
+        	ClassNode ownClassType;
+        	if(!name.equals("Class")) {
+        		// The following is done to get rid of the generics from the type of field $ownClass
+        		// With generics, type info in bytecode gets written as Class<T>. It should be just Class.
+            	ownClassType = ClassHelper.makeWithoutCaching("Class");
+            	ownClassType.setRedirect(ClassHelper.CLASS_Type);
+        	} else {
+        		ownClassType = this;
+        	}
+            addField("$ownClass", ACC_STATIC|ACC_PUBLIC|ACC_FINAL|ACC_SYNTHETIC, ownClassType, new ClassExpression(this)).setSynthetic(true);
+        }
     }
 
     private void getTransformInstancesLazy() {

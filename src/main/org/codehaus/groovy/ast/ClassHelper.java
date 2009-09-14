@@ -72,7 +72,7 @@ public class ClassHelper {
         BigDecimal_TYPE = new ClassNode(java.math.BigDecimal.class),
         void_WRAPPER_TYPE = new ClassNode(Void.class),   
         
-        CLASS_Type = new ClassNode(Class.class),        METACLASS_TYPE = new ClassNode(MetaClass.class),
+        CLASS_Type = makeWithoutCaching(Class.class),        METACLASS_TYPE = new ClassNode(MetaClass.class),
         GENERATED_CLOSURE_Type = new ClassNode(GeneratedClosure.class),
         Enum_Type = new ClassNode("java.lang.Enum",0,OBJECT_TYPE),
         Annotation_TYPE = new ClassNode("java.lang.annotation.Annotation",0,OBJECT_TYPE);

@@ -18,7 +18,10 @@ package org.codehaus.groovy.control;
 
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.GenericsType;
+import org.codehaus.groovy.ast.MethodNode;
+import org.codehaus.groovy.ast.Parameter;
 
 /**
  * class used to verify correct usage of generics in 
@@ -44,6 +47,22 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
         for (int i = 0; i < interfaces.length; i++) {
             checkGenericsUsage(interfaces[i], interfaces[i].redirect());
         }
+        node.visitContents(this);
+    }
+    
+    public void visitField(FieldNode node) {
+    	ClassNode type = node.getType();
+    	checkGenericsUsage(type, type.redirect());
+    }
+    
+    public void visitMethod(MethodNode node) {
+    	Parameter[] parameters = node.getParameters();
+    	for (Parameter param : parameters) {
+    		ClassNode paramType = param.getType();
+    		checkGenericsUsage(paramType, paramType.redirect());
+    	}
+    	ClassNode returnType = node.getReturnType();
+    	checkGenericsUsage(returnType, returnType.redirect());
     }
     
     private boolean checkWildcard(ClassNode cn) {
@@ -62,6 +81,7 @@ public class GenericsVisitor extends ClassCodeVisitorSupport {
     }
 
     private void checkGenericsUsage(ClassNode n, ClassNode cn) {
+    	if(n.isGenericsPlaceHolder()) return;
         GenericsType[] nTypes = n.getGenericsTypes();
         GenericsType[] cnTypes = cn.getGenericsTypes();
         // raw type usage is always allowed
