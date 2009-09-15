@@ -794,9 +794,17 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      */
     public List<GroovyRowResult> rows(String sql, Closure metaClosure) throws SQLException {
-		ResultSet rs = executeQuery(sql);
-		if (metaClosure != null) metaClosure.call(rs.getMetaData());
-		return asList(sql, rs);
+        AbstractQueryCommand command = createQueryCommand(sql);
+        ResultSet rs = null;
+        try {
+        	rs = command.execute();
+        	if (metaClosure != null) metaClosure.call(rs.getMetaData());
+        	List<GroovyRowResult> result = asList(sql, rs);
+        	rs = null;
+        	return result;
+        } finally {
+        	command.closeResources(rs);
+        }
     }
 
 	/**
@@ -819,8 +827,12 @@ public class Sql {
 	 */
 	public List<GroovyRowResult> rows(String sql, List<Object> params)
 			throws SQLException {
-		ResultSet rs = executePreparedQuery(sql, params);
-		return asList(sql, rs);
+        AbstractQueryCommand command = createPreparedQueryCommand(sql, params);
+        try {
+        	return asList(sql, command.execute());
+        } finally {
+        	command.closeResources();
+        }
 	}
 
 	/**
@@ -1727,7 +1739,14 @@ public class Sql {
      * @throws SQLException if a database error occurs
      */
     protected final ResultSet executeQuery(String sql) throws SQLException {
-        return new QueryCommand(sql).execute();
+        AbstractQueryCommand command = createQueryCommand(sql);
+        ResultSet rs = null;
+        try {
+        	rs = command.execute();
+        } finally {
+        	command.closeResources();
+        }
+        return rs;
     }
 
     /**
@@ -1740,7 +1759,14 @@ public class Sql {
      */
 	protected final ResultSet executePreparedQuery(String sql, List<Object> params)
 			throws SQLException {
-		return new PreparedQueryCommand(sql, params).execute();
+        AbstractQueryCommand command = createPreparedQueryCommand(sql, params);
+        ResultSet rs = null;
+        try {
+        	rs = command.execute();
+        } finally {
+        	command.closeResources();
+        }
+        return rs;
 	}
 
     /**
@@ -2034,7 +2060,7 @@ public class Sql {
             }
         }
         if (cacheConnection) return;
-        if (dataSource != null) {
+        if (connection != null && dataSource != null) {
             try {
                 connection.close();
             }
@@ -2201,9 +2227,10 @@ public class Sql {
 
 	}
 
-    private abstract class AbstractQueryCommand {
+    protected abstract class AbstractQueryCommand {
     	protected final String sql;
     	protected Statement statement;
+		private Connection connection;
 
     	AbstractQueryCommand(String sql) {
     		// Don't create statement in subclass constructors to avoid throw in constructors
@@ -2218,7 +2245,8 @@ public class Sql {
          * @throws SQLException if a database error occurs
          */
          final ResultSet execute() throws SQLException {
-     		Connection connection = createConnection();
+     		connection = createConnection();
+     		setInternalConnection(connection);
     		Statement statement = null;
     		try {
     			log.fine(sql);
@@ -2228,10 +2256,29 @@ public class Sql {
     			return result;
     		} catch (SQLException e) {
     			log.log(Level.FINE, "Failed to execute: " + sql, e);
+    			closeResources();
+    			connection = null;
+    			statement = null;
     			throw e;
-    		} finally {
-    			closeResources(connection, statement, null);
     		}
+         }
+         
+         /**
+          * After performing the execute operation and making use of its return, it's necessary
+          * to free the resources allocated for the statement.
+          */
+         public final void closeResources(){
+        	 Sql.this.closeResources(connection, statement);
+         }
+         
+         /**
+          * After performing the execute operation and making use of its return, it's necessary
+          * to free the resources allocated for the statement.
+          * 
+          * @param rs allows the caller to conveniently close its resource as well
+          */
+         public final void closeResources(ResultSet rs) {
+        	 Sql.this.closeResources(connection, statement, rs);  	 
          }
 
          /**
@@ -2244,7 +2291,7 @@ public class Sql {
          protected abstract ResultSet runQuery(Connection connection) throws SQLException;
     }
 
-    private class PreparedQueryCommand extends AbstractQueryCommand {
+    protected final class PreparedQueryCommand extends AbstractQueryCommand {
     	private List<Object> params;
 
 		PreparedQueryCommand(String sql, List<Object> queryParams) {
@@ -2260,7 +2307,7 @@ public class Sql {
 		}
     }
 
-    private class QueryCommand extends AbstractQueryCommand {
+    protected final class QueryCommand extends AbstractQueryCommand {
     	
     	QueryCommand(String sql) {
     		super(sql);
@@ -2271,5 +2318,45 @@ public class Sql {
     		statement = getStatement(connection, sql);
     		return statement.executeQuery(sql);
     	}
+    }
+    
+    /**
+     * Factory for the QueryCommand command pattern object allows subclasses to 
+     * supply implementations of the command class. The factory will be used in a pattern
+     * similar to
+     *  <pre>
+     * AbstractQueryCommand q = createQueryCommand("update TABLE set count = 0) where count is null");
+     * try {
+     * 	   ResultSet rs = q.execute();
+     *     return asList(rs);
+     * } finally {
+     *     q.closeResources();
+     * }
+     * </pre>
+     * @param sql statement to be executed
+     * @return a command - invoke its execute() and closeResource() methods
+     */
+    protected AbstractQueryCommand createQueryCommand(String sql) {
+    	return new QueryCommand(sql);
+    }
+    
+    /**
+     * Factory for the PreparedQueryCommand command pattern object allows subclass to supply implementations
+     * of the command class.
+     * @see #createQueryCommand(String)
+     * @param sql statement to be executed, including optional parameter placeholders (?)
+     * @param queryParams List of parameter values corresponding to parameter placeholders
+     * @return a command - invoke its execute() and closeResource() methods
+     */
+    protected AbstractQueryCommand createPreparedQueryCommand(String sql, List<Object> queryParams) {
+    	return new PreparedQueryCommand(sql, queryParams);
+    }
+    
+    /**
+     * Stub needed for testing.  Called when a connection is opened by one of the command-pattern classes
+     * so that a test case can monitor the state of the connection through its subclass.
+     * @param conn the connection that is about to be used by a command
+     */
+    protected void setInternalConnection(Connection conn) {
     }
 }

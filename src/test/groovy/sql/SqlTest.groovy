@@ -16,6 +16,7 @@
 package groovy.sql
 
 import groovy.sql.GroovyResultSetProxy;
+import java.sql.Connection;
 
 /**
  * This is more of a sample program than a unit test and is here as an easy
@@ -117,20 +118,27 @@ class SqlTest extends GroovyTestCase {
     void testSubClass() {
     	def sub = new SqlSubclass(sql)
     	def res = null
-    	def firstNames = []
+    	def data  = []
     	sql.eachRow('select firstname from PERSON') {
-    		firstNames << it.firstname
+    		data << it.firstname
     	}
     	try {
     		res = sub.rowsCursor('select * from PERSON')
     		while (res.next()) {
-    			assert firstNames.remove(res.firstname)
+    			assert data.remove(res.firstname)
     		}
-    		assert firstNames.isEmpty()
+    		assert data.isEmpty()
     	} finally {
     		if (res)
     			res.close()
     	}
+    	res = sub.rows('select * from PERSON') { metaData ->
+    		assert sub.connection && !sub.connection.isClosed()
+    		data = (1..metaData.columnCount).collect {
+        		metaData.getColumnName(it).toLowerCase()
+        	}
+    	}
+    	assert data.size == 2 && !(data - ['firstname', 'lastname'])
     }
 
     private createSql() {
@@ -161,6 +169,7 @@ class SqlTest extends GroovyTestCase {
 }
 
 class SqlSubclass extends Sql {
+	def connection
     SqlSubclass(Sql base) {
         super(base)
     }
@@ -168,5 +177,10 @@ class SqlSubclass extends Sql {
     def rowsCursor(String sql) {
         def rs = executeQuery(sql)
         return new GroovyResultSetProxy(rs).getImpl()
+    }
+
+    @Override
+    void setInternalConnection(Connection conn) {
+    	connection = conn
     }
 }
