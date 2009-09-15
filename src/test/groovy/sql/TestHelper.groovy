@@ -1,7 +1,17 @@
 package groovy.sql
 
 class TestHelper extends GroovyTestCase {
+    TestHelper() {
+        def testdb = System.getProperty("groovy.testdb.props")
+        if (testdb && new File(testdb).exists()) {
+            props = new Properties()
+            new File(testdb).withReader { r ->
+                props.load(r)
+            }
+        }
+    }
 
+    protected props = null
     static def counter = 1
     
     static Sql makeSql() {
@@ -15,12 +25,27 @@ class TestHelper extends GroovyTestCase {
     
     protected createSql() {
         def sql = newSql(getURI())
-        
+
         ["PERSON", "FOOD", "FEATURE"].each{ tryDrop(it) }
-        
-        sql.execute("create table PERSON ( firstname varchar, lastname varchar, id integer, location_id integer, location_name varchar )")     
-        sql.execute("create table FOOD ( type varchar, name varchar)")
-        sql.execute("create table FEATURE ( id integer, name varchar)")
+
+        def ignoreErrors = { Closure c ->
+            try {
+                c()
+            } catch (java.sql.SQLException se) {}
+        }
+        ignoreErrors {
+            sql.execute "drop table PERSON"
+        }
+        ignoreErrors {
+            sql.execute "drop table FOOD"
+        }
+        ignoreErrors {
+            sql.execute "drop table FEATURE"
+        }
+
+        sql.execute("create table PERSON ( firstname varchar(100), lastname varchar(100), id integer, location_id integer, location_name varchar(100) )")
+        sql.execute("create table FOOD ( type varchar(100), name varchar(100))")
+        sql.execute("create table FEATURE ( id integer, name varchar(100))")
         
         // now let's populate the datasets
         def people = sql.dataSet("PERSON")
@@ -49,6 +74,8 @@ class TestHelper extends GroovyTestCase {
     }
 
     protected getURI() {
+        if (props && props."groovy.testdb.url")
+            return props."groovy.testdb.url"
 		def answer = "jdbc:hsqldb:mem:foo"
 		def name = getMethodName()
 		if (name == null) {
@@ -59,6 +86,14 @@ class TestHelper extends GroovyTestCase {
     }
     
     protected newSql(String uri) {
+        if (props) {
+            def url = props."groovy.testdb.url"
+            def driver = props."groovy.testdb.driver"
+            def username = props."groovy.testdb.username"
+            def password = props."groovy.testdb.password"
+            if (!username && !password) return Sql.newInstance(url, driver)
+            return Sql.newInstance(url, username, password, driver)
+        }
         // TODO once hsqldb 1.9.0 is out rename this
         // def ds = new org.hsqldb.jdbc.JDBCDataSource()
 	    def ds = new org.hsqldb.jdbc.jdbcDataSource()

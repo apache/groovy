@@ -301,7 +301,7 @@ $Date$
     <target name="-testInit" depends="-initHeadless">
         <property name="headlessArg" value=""/>
         <property name="junitJvmArgs"
-                  value="-Xms${groovyJUnit_ms} -XX:PermSize=${groovyJUnit_permSize} -XX:MaxPermSize=${groovyJUnit_maxPermSize} ${headlessArg}"/>
+                  value="-Xms${groovyJUnit_ms} -XX:PermSize=${groovyJUnit_permSize} -XX:MaxPermSize=${groovyJUnit_maxPermSize} ${headlessArg} -Dgroovy.testdb.props=${groovy.testdb.props}"/>
     </target>
 
     <target name="-initHeadless" if="_shouldBeHeadless_">

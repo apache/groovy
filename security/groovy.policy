@@ -159,6 +159,8 @@ grant codeBase "file:${user.dir}/src/test/-" {
     // SHOULD NOT HAVE TO DO THIS! - Level.getLocalizedName() should have a doPrivileged block.
     // Any test that logs, will encounter this (although it will be masked by the method
     permission java.lang.RuntimePermission "accessClassInPackage.sun.util.logging.resources";
+
+    permission java.util.PropertyPermission "groovy.testdb.props", "read";
 };
 
 grant codeBase "file:${user.dir}/src/test/groovy/security/forbiddenCodeBase.gvy" {
