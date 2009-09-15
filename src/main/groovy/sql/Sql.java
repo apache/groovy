@@ -1606,8 +1606,10 @@ public class Sql {
         boolean savedCacheConnection = cacheConnection;
         cacheConnection = true;
         Connection connection = null;
+        boolean savedAutoCommit = true;
         try {
             connection = createConnection();
+            savedAutoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
             callClosurePossiblyWithConnection(closure, connection);
             connection.commit();
@@ -1621,7 +1623,7 @@ public class Sql {
             handleError(connection, e);
             throw e;
         } finally {
-            if (connection != null) connection.setAutoCommit(true);
+            if (connection != null) connection.setAutoCommit(savedAutoCommit);
             cacheConnection = false;
             closeResources(connection, null);
             cacheConnection = savedCacheConnection;
@@ -1658,8 +1660,10 @@ public class Sql {
         cacheConnection = true;
         Connection connection = null;
         Statement statement = null;
+        boolean savedAutoCommit = true;
         try {
             connection = createConnection();
+            savedAutoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
             statement = createStatement(connection);
             closure.call(statement);
@@ -1677,7 +1681,7 @@ public class Sql {
             handleError(connection, e);
             throw e;
         } finally {
-            if (connection != null) connection.setAutoCommit(true);
+            if (connection != null) connection.setAutoCommit(savedAutoCommit);
             cacheConnection = false;
             closeResources(connection, statement);
             cacheConnection = savedCacheConnection;
