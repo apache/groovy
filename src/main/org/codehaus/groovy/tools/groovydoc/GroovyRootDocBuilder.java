@@ -201,7 +201,7 @@ public class GroovyRootDocBuilder {
         }
     }
 
-    private void processPackageInfo(String src, String filename, SimpleGroovyPackageDoc packageDoc) {
+    /* package private */ void processPackageInfo(String src, String filename, SimpleGroovyPackageDoc packageDoc) {
         String description = calcThenSetPackageDescription(src, filename, packageDoc);
         calcThenSetSummary(description, packageDoc);
     }
@@ -228,8 +228,8 @@ public class GroovyRootDocBuilder {
 
     private String trimPackageAndComments(String src) {
         return src.replaceFirst("(?sm)^package.*", "")
-                .replaceFirst("(?sm).*/\\*\\*(.*)\\*/", "$1")
-                .replaceAll("^\\s*\\*", "");
+                .replaceFirst("(?sm)/\\*\\*(.*)\\*/", "$1")
+                .replaceAll("(?m)^\\s*\\*", "");
     }
 
     private String scrubOffExcessiveTags(String src) {
