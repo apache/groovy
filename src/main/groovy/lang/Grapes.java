@@ -38,17 +38,21 @@ package groovy.lang;
  * </pre>
  * Obviously, only do this if you understand the consequences.
  * <p/>
- * You can also remove a transitive dependency altogether (provided you know you don't need them) using
- * {@code @GrabExclude}.
- * For the same example as above, here is how we would not grab the xerces dependency (htmlunit won't
- * work without it but in other cases it is sometimes useful to do):
+ * You can also remove transitive dependencies altogether (provided you
+ * know you don't need them) using {@code @GrabExclude}.
+ * For example, here is how we would not grab the {@code logkit} and
+ * {@code avalon-framework} transitive dependencies for Apache POI:
  * <pre>
  * {@code @Grapes}([
- *     {@code @Grab}('net.sourceforge.htmlunit:htmlunit:2.6'),
- *     {@code @GrabExclude}('xerces:xercesImpl')
+ *   {@code @Grab}("org.apache.poi#poi;3.5-beta6"),
+ *   {@code @GrabExclude}("logkit:logkit"),
+ *   {@code @GrabExclude}("avalon-framework#avalon-framework")
  * ])
+ * import org.apache.poi.hssf.util.CellReference
+ * assert new CellReference(0, 0, false, false).formatAsString() == 'A1'
+ * assert new CellReference(1, 3).formatAsString() == '$D$2'
  * </pre>
- * It is sometimes also useful to use {@code @GrabConfig} to further adjust how dependencies
+ * It is also sometimes also useful to use {@code @GrabConfig} to further adjust how dependencies
  * are grabbed. See {@code @GrabConfig} for further information.
  */
 public @interface Grapes {

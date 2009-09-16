@@ -172,7 +172,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                 grabExcludeAnnotationLoop:
                 for (AnnotationNode node : grabExcludeAnnotations) {
                     Map<String, Object> grabExcludeMap = new HashMap<String, Object>();
-                    checkForConvenienceForm(node);
+                    checkForConvenienceForm(node, true);
                     for (String s : GRABEXCLUDE_REQUIRED) {
                         Expression member = node.getMember(s);
                         if (member == null) {
@@ -192,7 +192,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
                 grabAnnotationLoop:
                 for (AnnotationNode node : grabAnnotations) {
                     Map<String, Object> grabMap = new HashMap<String, Object>();
-                    checkForConvenienceForm(node);
+                    checkForConvenienceForm(node, false);
                     for (String s : GRAB_ALL) {
                         Expression member = node.getMember(s);
                         if (member == null && !GRAB_OPTIONAL.contains(s)) {
@@ -306,7 +306,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
         initContextClassLoader = (Boolean) initContextClassLoaderObject;
     }
 
-    private void checkForConvenienceForm(AnnotationNode node) {
+    private void checkForConvenienceForm(AnnotationNode node, boolean exclude) {
         Object val = node.getMember("value");
         if (val == null || !(val instanceof ConstantExpression)) return;
         Object allParts = ((ConstantExpression)val).getValue();
@@ -321,7 +321,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             node.addMember("group", new ConstantExpression(m.group(1)));
             if (m.group(6) != null) node.addMember("conf", new ConstantExpression(m.group(6)));
             if (m.group(4) != null) node.addMember("version", new ConstantExpression(m.group(4)));
-            else node.addMember("version", new ConstantExpression("*"));
+            else if (!exclude) node.addMember("version", new ConstantExpression("*"));
             node.getMembers().remove("value");
         } else if (allstr.contains(":")) {
             // assume gradle syntax
@@ -338,7 +338,7 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
             if (parts.length > 4) return;
             if (parts.length > 3) node.addMember("classifier", new ConstantExpression(parts[3]));
             if (parts.length > 2) node.addMember("version", new ConstantExpression(parts[2]));
-            else node.addMember("version", new ConstantExpression("*"));
+            else if (!exclude) node.addMember("version", new ConstantExpression("*"));
             if (ext.length() > 0) node.addMember("ext", new ConstantExpression(ext));
             node.addMember("module", new ConstantExpression(parts[1]));
             node.addMember("group", new ConstantExpression(parts[0]));
