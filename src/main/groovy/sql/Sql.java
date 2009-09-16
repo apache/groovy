@@ -40,7 +40,7 @@ import javax.sql.DataSource;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 /**
- * A facade over Java's normal JDBC apis providing greatly simplified
+ * A facade over Java's normal JDBC APIs providing greatly simplified
  * resource management and result set handling. Under the covers the
  * facade hides away details associated with getting connections,
  * constructing and configuring statements, interacting with the
@@ -49,10 +49,10 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
  * through result sets, a special GString syntax for representing
  * prepared statements and treating result sets like collections
  * of maps with the normal Groovy collection methods available.
- *
+ * <p/>
  * The class provides numerous extension points for overriding the
  * facade behavior associated with the various aspects of managing
- * the connection with the underlying database.
+ * the interaction with the underlying database.
  *
  * @author Chris Stevenson
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
@@ -66,7 +66,9 @@ public class Sql {
     /**
      * Hook to allow derived classes to access the log
      */
-    protected Logger log = Logger.getLogger(getClass().getName());
+    protected static Logger log = Logger.getLogger(Sql.class.getName());
+
+    private static final List<Object> EMPTY_LIST = Collections.emptyList();
 
     private DataSource dataSource;
 
@@ -76,27 +78,16 @@ public class Sql {
     private int resultSetConcurrency = ResultSet.CONCUR_READ_ONLY;
     private int resultSetHoldability = -1;
 
-    // store the last row count for executeUpdate
+    // store last row update count for executeUpdate, executeInsert and execute
     private int updateCount = 0;
 
-    /*
-     * allows a closure to be used to configure the statement before its use
-     */
+    // allows a closure to be used to configure Statement objects before its use
     private Closure configureStatement;
 
-    /*
-     * property for allowing connection caching feature
-     */
     private boolean cacheConnection;
 
-    /*
-     * property for allowing statements caching feature
-     */
     private boolean cacheStatements;
 
-    /*
-     * Statement cache
-     */
     private final Map<String, Statement> statementCache = new HashMap<String, Statement>();
 
     /**
@@ -134,7 +125,7 @@ public class Sql {
      * some properties and a driver class name.
      *
      * @param url             a database url of the form
-     *                        <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     *                        <code>jdbc:<em>subprotocol</em>:<em>subname</em></code>
      * @param properties      a list of arbitrary string tag/value pairs
      *                        as connection arguments; normally at least a "user" and
      *                        "password" property should be included
@@ -154,7 +145,7 @@ public class Sql {
      * a username and a password.
      *
      * @param url      a database url of the form
-     *                 <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     *                 <code>jdbc:<em>subprotocol</em>:<em>subname</em></code>
      * @param user     the database user on whose behalf the connection
      *                 is being made
      * @param password the user's password
@@ -191,7 +182,7 @@ public class Sql {
      * and a driver class name.
      *
      * @param url             a database url of the form
-     *                        <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     *                        <code>jdbc:<em>subprotocol</em>:<em>subname</em></code>
      * @param driverClassName the fully qualified class name of the driver class
      * @return a new Sql instance with a connection
      * @throws SQLException           if a database access error occurs
@@ -218,10 +209,10 @@ public class Sql {
      * underlying database doesn't support the requested type value.
      *
      * @param resultSetType one of the following <code>ResultSet</code>
-     *        constants:
-     *         <code>ResultSet.TYPE_FORWARD_ONLY</code>,
-     *         <code>ResultSet.TYPE_SCROLL_INSENSITIVE</code>, or
-     *         <code>ResultSet.TYPE_SCROLL_SENSITIVE</code>
+     *                      constants:
+     *                      <code>ResultSet.TYPE_FORWARD_ONLY</code>,
+     *                      <code>ResultSet.TYPE_SCROLL_INSENSITIVE</code>, or
+     *                      <code>ResultSet.TYPE_SCROLL_SENSITIVE</code>
      * @since 1.5.2
      */
     public void setResultSetType(int resultSetType) {
@@ -244,9 +235,9 @@ public class Sql {
      * underlying database doesn't support the requested concurrency value.
      *
      * @param resultSetConcurrency one of the following <code>ResultSet</code>
-     *        constants:
-     *         <code>ResultSet.CONCUR_READ_ONLY</code> or
-     *         <code>ResultSet.CONCUR_UPDATABLE</code>
+     *                             constants:
+     *                             <code>ResultSet.CONCUR_READ_ONLY</code> or
+     *                             <code>ResultSet.CONCUR_UPDATABLE</code>
      * @since 1.5.2
      */
     public void setResultSetConcurrency(int resultSetConcurrency) {
@@ -269,9 +260,9 @@ public class Sql {
      * underlying database doesn't support the requested holdability value.
      *
      * @param resultSetHoldability one of the following <code>ResultSet</code>
-     *        constants:
-     *         <code>ResultSet.HOLD_CURSORS_OVER_COMMIT</code> or
-     *         <code>ResultSet.CLOSE_CURSORS_AT_COMMIT</code>
+     *                             constants:
+     *                             <code>ResultSet.HOLD_CURSORS_OVER_COMMIT</code> or
+     *                             <code>ResultSet.CLOSE_CURSORS_AT_COMMIT</code>
      * @since 1.5.2
      */
     public void setResultSetHoldability(int resultSetHoldability) {
@@ -435,11 +426,24 @@ public class Sql {
     }
 
     /**
-     * Creates a variable to be expanded in the Sql string rather
-     * than representing an sql parameter.
+     * When using GString SQL queries, allows a variable to be expanded
+     * in the Sql string rather than representing an sql parameter.
+     * <p/>
+     * Example usage:
+     * <pre>
+     * def fieldName = 'firstname'
+     * def fieldOp = Sql.expand('like')
+     * def fieldVal = '%a%'
+     * sql.query "select * from PERSON where ${Sql.expand(fieldName)} $fieldOp ${fieldVal}", { ResultSet rs ->
+     *     while (rs.next()) println rs.getString('firstname')
+     * }
+     * // query will be 'select * from PERSON where firstname like ?'
+     * // params will be [fieldVal]
+     * </pre>
      *
      * @param object the object of interest
      * @return the expanded variable
+     * @see #expand(Object)
      */
     public static ExpandedVariable expand(final Object object) {
         return new ExpandedVariable() {
@@ -484,12 +488,28 @@ public class Sql {
         return new DataSet(this, table);
     }
 
-    public DataSet dataSet(Class type) {
+    public DataSet dataSet(Class<?> type) {
         return new DataSet(this, type);
     }
 
     /**
-     * Performs the given SQL query calling the closure with the result set.
+     * Performs the given SQL query, which should return a single
+     * <code>ResultSet</code> object. The given closure is called
+     * with the <code>ResultSet</code> as its argument.
+     * <p/>
+     * Example usages:
+     * <pre>
+     * sql.query("select * from PERSON where firstname like 'S%'") { ResultSet rs ->
+     *     while (rs.next()) println rs.getString('firstname') + ' ' + rs.getString(3)
+     * }
+     *
+     * sql.query("call get_people_places()") { ResultSet rs ->
+     *     while (rs.next()) println rs.toRowResult().firstname
+     * }
+     * </pre>
+     *
+     * All resources including the ResultSet are closed automatically
+     * after the closure is called.
      *
      * @param sql     the sql statement
      * @param closure called for each row with a GroovyResultSet
@@ -513,23 +533,28 @@ public class Sql {
         }
     }
 
-    private Statement createStatement(Connection connection) throws SQLException {
-        if (resultSetHoldability == -1) {
-            return connection.createStatement(resultSetType, resultSetConcurrency);
-        }
-        return connection.createStatement(resultSetType, resultSetConcurrency, resultSetHoldability);
-    }
-
     /**
-     * Performs the given SQL query with parameters calling the closure with the
-     * result set.
+     * Performs the given SQL query, which should return a single
+     * <code>ResultSet</code> object. The given closure is called
+     * with the <code>ResultSet</code> as its argument.
+     * The query may contain placeholder question marks which match the given list of parameters.
+     * <p/>
+     * Example usage:
+     * <pre>
+     * sql.query('select * from PERSON where lastname like ?', ['%a%']) { ResultSet rs ->
+     *     while (rs.next()) println rs.getString('lastname')
+     * }
+     * </pre>
+     *
+     * All resources including the ResultSet are closed automatically
+     * after the closure is called.
      *
      * @param sql     the sql statement
      * @param params  a list of parameters
      * @param closure called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      */
-    public void query(String sql, List params, Closure closure) throws SQLException {
+    public void query(String sql, List<Object> params, Closure closure) throws SQLException {
         Connection connection = createConnection();
         PreparedStatement statement = null;
         ResultSet results = null;
@@ -549,21 +574,48 @@ public class Sql {
     }
 
     /**
-     * Performs the given SQL query calling the closure with the result set.
+     * Performs the given SQL query, which should return a single
+     * <code>ResultSet</code> object. The given closure is called
+     * with the <code>ResultSet</code> as its argument.
+     * The query may contain GString expressions.
+     * <p/>
+     * Example usage:
+     * <pre>
+     * def location = 25
+     * sql.query "select * from PERSON where location_id < $location", { ResultSet rs ->
+     *     while (rs.next()) println rs.getString('firstname')
+     * }
+     * </pre>
+     *
+     * All resources including the ResultSet are closed automatically
+     * after the closure is called.
      *
      * @param gstring a GString containing the SQL query with embedded params
      * @param closure called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
+     * @see #expand(Object)
      */
     public void query(GString gstring, Closure closure) throws SQLException {
-        List params = getParameters(gstring);
+        List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
         query(sql, params, closure);
     }
 
     /**
-     * Performs the given SQL query calling the closure with each row of the
-     * result set.
+     * Performs the given SQL query calling the given Closure with each row of the
+     * result set. The row will be a <code>GroovyRowResult</code> which is a Map
+     * that also supports accessing the fields using ordinal index values.
+     * <p/>
+     * Example usages:
+     * <pre>
+     * sql.eachRow("select * from PERSON where firstname like 'S%'") { row ->
+     *    println "$row.firstname ${row[2]}}"
+     * }
+     *
+     * sql.eachRow "call my_stored_proc_returning_resultset()", {
+     *     println it.firstname
+     * }
+     * </pre>
      *
      * @param sql     the sql statement
      * @param closure called for each row with a GroovyResultSet
@@ -574,7 +626,26 @@ public class Sql {
     }
 
     /**
-     * Performs the given SQL query calling closures for metadata and each row
+     * Performs the given SQL query calling the given <code>rowClosure</code> with each row of the
+     * result set. The row will be a <code>GroovyRowResult</code> which is a Map
+     * that also supports accessing the fields using ordinal index values.
+     * In addition, the <code>metaClosure</code> will be called once passing in the
+     * <code>ResultSetMetaData</code> as argument.
+     * <p/>
+     * Example usage:
+     * <pre>
+     * def printColNames = { meta ->
+     *     (1..meta.columnCount).each {
+     *         print meta.getColumnLabel(it).padRight(20)
+     *     }
+     *     println()
+     * }
+     * def printRow = { row ->
+     *     row.toRowResult().values().each{ print it.toString().padRight(20) }
+     *     println()
+     * }
+     * sql.eachRow("select * from PERSON", printColNames, printRow)
+     * </pre>
      *
      * @param sql         the sql statement
      * @param metaClosure called for meta data (only once after sql execution)
@@ -604,14 +675,24 @@ public class Sql {
     }
 
     /**
-     * Performs the given SQL query calling the closure with the result set.
+     * Performs the given SQL query calling the given Closure with each row of the
+     * result set. The row will be a <code>GroovyRowResult</code> which is a Map
+     * that also supports accessing the fields using ordinal index values.
+     * The query may contain placeholder question marks which match the given list of parameters.
+     * <p/>
+     * Example usage:
+     * <pre>
+     * sql.eachRow("select * from PERSON where lastname like ?", ['%a%']) { row ->
+     *     println "${row[1]} $row.lastname"
+     * }
+     * </pre>
      *
      * @param sql     the sql statement
      * @param params  a list of parameters
      * @param closure called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      */
-    public void eachRow(String sql, List params, Closure closure) throws SQLException {
+    public void eachRow(String sql, List<Object> params, Closure closure) throws SQLException {
         Connection connection = createConnection();
         PreparedStatement statement = null;
         ResultSet results = null;
@@ -635,113 +716,140 @@ public class Sql {
     }
 
     /**
-     * Performs the given SQL query calling the closure with the result set.
+     * Performs the given SQL query calling the given Closure with each row of the
+     * result set. The row will be a <code>GroovyRowResult</code> which is a Map
+     * that also supports accessing the fields using ordinal index values.
+     * The query may contain GString expressions.
+     * <p/>
+     * Example usage:
+     * <pre>
+     * def location = 25
+     * sql.eachRow("select * from PERSON where location_id < $location") { row ->
+     *     println row.firstname
+     * }
+     * </pre>
      *
      * @param gstring a GString containing the SQL query with embedded params
      * @param closure called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
+     * @see #expand(Object)
      */
     public void eachRow(GString gstring, Closure closure) throws SQLException {
-        List params = getParameters(gstring);
+        List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
         eachRow(sql, params, closure);
     }
 
     /**
      * Performs the given SQL query and return the rows of the result set.
+     * <p/>
+     * Example usage:
+     * <pre>
+     * def ans = sql.rows("select * from PERSON where firstname like 'S%'")
+     * println "Found ${ans.size()} rows"     * </pre>
      *
      * @param sql the SQL statement
      * @return a list of GroovyRowResult objects
      * @throws SQLException if a database access error occurs
      */
-    public List rows(String sql) throws SQLException {
+    public List<GroovyRowResult> rows(String sql) throws SQLException {
         return rows(sql, (Closure) null);
     }
 
     /**
      * Performs the given SQL query and return the rows of the result set.
+     * The query may contain GString expressions.
+     * <p/>
+     * Example usage:
+     * <pre>
+     * def location = 25
+     * def ans = sql.rows("select * from PERSON where location_id < $location")
+     * println "Found ${ans.size()} rows"
+     * </pre>
      *
      * @param gstring a GString containing the SQL query with embedded params
      * @return a list of GroovyRowResult objects
      * @throws SQLException if a database access error occurs
+     * @see #expand(Object)
      */
-    public List rows(GString gstring) throws SQLException {
-        List params = getParameters(gstring);
+    public List<GroovyRowResult> rows(GString gstring) throws SQLException {
+        List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
         return rows(sql, params);
     }
 
     /**
      * Performs the given SQL query and return the rows of the result set.
+     * <p/>
+     * Example usage:
+     * <pre>
+     * def printNumCols = { meta -> println "Found $meta.columnCount columns" }
+     * def ans = sql.rows("select * from PERSON", printNumCols)
+     * println "Found ${ans.size()} rows"
+     * </pre>
      *
      * @param sql         the SQL statement
      * @param metaClosure called with meta data of the ResultSet
      * @return a list of GroovyRowResult objects
      * @throws SQLException if a database access error occurs
      */
-    public List rows(String sql, Closure metaClosure) throws SQLException {
-        List<GroovyRowResult> results = new ArrayList<GroovyRowResult>();
-        Connection connection = createConnection();
-        Statement statement = getStatement(connection, sql);
+    public List<GroovyRowResult> rows(String sql, Closure metaClosure) throws SQLException {
+        AbstractQueryCommand command = createQueryCommand(sql);
         ResultSet rs = null;
         try {
-            log.fine(sql);
-            rs = statement.executeQuery(sql);
-            if (metaClosure != null) metaClosure.call(rs.getMetaData());
-
-            while (rs.next()) {
-                results.add(DefaultGroovyMethods.toRowResult(rs));
-            }
-            return (results);
-        } catch (SQLException e) {
-            log.log(Level.FINE, "Failed to execute: " + sql, e);
-            throw e;
+        	rs = command.execute();
+        	if (metaClosure != null) metaClosure.call(rs.getMetaData());
+        	List<GroovyRowResult> result = asList(sql, rs);
+        	rs = null;
+        	return result;
         } finally {
-            closeResources(connection, statement, rs);
+        	command.closeResources(rs);
         }
     }
 
-    /**
-     * Performs the given SQL query with the list of params and return
-     * the rows of the result set.
-     *
-     * @param sql    the SQL statement
-     * @param params a list of parameters
-     * @return a list of GroovyRowResult objects
-     * @throws SQLException if a database access error occurs
-     */
-    public List rows(String sql, List params) throws SQLException {
-        List<GroovyRowResult> results = new ArrayList<GroovyRowResult>();
-        Connection connection = createConnection();
-        PreparedStatement statement = null;
-        ResultSet rs = null;
+	/**
+	 * Performs the given SQL query and return the rows of the result set.
+     * The query may contain placeholder question marks which match the given list of parameters.
+     * <p/>
+     * Example usage:
+     * <pre>
+     * def ans = sql.rows("select * from PERSON where lastname like ?", ['%a%'])
+     * println "Found ${ans.size()} rows"
+     * </pre>
+	 *
+	 * @param sql
+	 *            the SQL statement
+	 * @param params
+	 *            a list of parameters
+	 * @return a list of GroovyRowResult objects
+	 * @throws SQLException
+	 *             if a database access error occurs
+	 */
+	public List<GroovyRowResult> rows(String sql, List<Object> params)
+			throws SQLException {
+        AbstractQueryCommand command = createPreparedQueryCommand(sql, params);
         try {
-            log.fine(sql);
-            statement = getPreparedStatement(connection, sql, params);
-            rs = statement.executeQuery();
-            while (rs.next()) {
-                results.add(DefaultGroovyMethods.toRowResult(rs));
-            }
-            return (results);
+        	return asList(sql, command.execute());
+        } finally {
+        	command.closeResources();
         }
-        catch (SQLException e) {
-            log.log(Level.FINE, "Failed to execute: " + sql, e);
-            throw e;
-        }
-        finally {
-            closeResources(connection, statement, rs);
-        }
-    }
+	}
 
-    /**
+	/**
      * Performs the given SQL query and return the first row of the result set.
+     * <p/>
+     * Example usage:
+     * <pre>
+     * def ans = sql.firstRow("select * from PERSON where firstname like 'S%'")
+     * println ans.firstname
+     * </pre>
      *
      * @param sql the SQL statement
      * @return a GroovyRowResult object or <code>null</code> if no row is found
      * @throws SQLException if a database access error occurs
      */
     public Object firstRow(String sql) throws SQLException {
-        List rows = rows(sql);
+        List<GroovyRowResult> rows = rows(sql);
         if (rows.isEmpty()) return null;
         return (rows.get(0));
     }
@@ -749,34 +857,83 @@ public class Sql {
     /**
      * Performs the given SQL query and return
      * the first row of the result set.
+     * The query may contain GString expressions.
+     * <p/>
+     * Example usage:
+     * <pre>
+     * def location = 25
+     * def ans = sql.firstRow("select * from PERSON where location_id < $location")
+     * println ans.firstname
+     * </pre>
      *
      * @param gstring a GString containing the SQL query with embedded params
      * @return a GroovyRowResult object or <code>null</code> if no row is found
      * @throws SQLException if a database access error occurs
+     * @see #expand(Object)
      */
     public Object firstRow(GString gstring) throws SQLException {
-        List params = getParameters(gstring);
+        List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
         return firstRow(sql, params);
     }
 
     /**
-     * Performs the given SQL query with the list of params and return
-     * the first row of the result set.
+     * Performs the given SQL query and return the first row of the result set.
+     * The query may contain placeholder question marks which match the given list of parameters.
+     * <p/>
+     * Example usages:
+     * <pre>
+     * def ans = sql.firstRow("select * from PERSON where lastname like ?", ['%a%'])
+     * println ans.firstname
+     * </pre>
+     * If your database returns scalar functions as ResultSets, you can also use firstRow
+     * to gain access to stored procedure results, e.g. using hsqldb 1.9 RC4:
+     * <pre>
+     * sql.execute """
+     *     create function FullName(p_firstname VARCHAR(40)) returns VARCHAR(80)
+     *     BEGIN atomic
+     *     DECLARE ans VARCHAR(80);
+     *     SET ans = (SELECT firstname || ' ' || lastname FROM PERSON WHERE firstname = p_firstname);
+     *     RETURN ans;
+     *     END
+     * """
+     *
+     * assert sql.firstRow("{call FullName(?)}", ['Sam'])[0] == 'Sam Pullara'
+     * </pre>
      *
      * @param sql    the SQL statement
      * @param params a list of parameters
      * @return a GroovyRowResult object or <code>null</code> if no row is found
      * @throws SQLException if a database access error occurs
      */
-    public Object firstRow(String sql, List params) throws SQLException {
-        List rows = rows(sql, params);
+    public Object firstRow(String sql, List<Object> params) throws SQLException {
+        List<GroovyRowResult> rows = rows(sql, params);
         if (rows.isEmpty()) return null;
         return rows.get(0);
     }
 
     /**
      * Executes the given piece of SQL.
+     * Also saves the updateCount, if any, for subsequent examination.
+     * <p/>
+     * Example usages:
+     * <pre>
+     * sql.execute "drop table if exists PERSON"
+     *
+     * sql.execute """
+     *     create table PERSON (
+     *         id integer not null,
+     *         firstname varchar(100),
+     *         lastname varchar(100),
+     *         location_id integer
+     *     )
+     * """
+     *
+     * sql.execute """
+     *     insert into PERSON (id, firstname, lastname, location_id) values (4, 'Paul', 'King', 40)
+     * """
+     * assert sql.updateCount == 1
+     * </pre>
      *
      * @param sql the SQL to execute
      * @return <code>true</code> if the first result is a <code>ResultSet</code>
@@ -790,6 +947,7 @@ public class Sql {
         try {
             log.fine(sql);
             statement = getStatement(connection, sql);
+            // TODO handle multiple results
             boolean isResultSet = statement.execute(sql);
             this.updateCount = statement.getUpdateCount();
             return isResultSet;
@@ -804,7 +962,17 @@ public class Sql {
     }
 
     /**
+     *
      * Executes the given piece of SQL with parameters.
+     * Also saves the updateCount, if any, for subsequent examination.
+     * <p/>
+     * Example usage:
+     * <pre>
+     * sql.execute """
+     *     insert into PERSON (id, firstname, lastname, location_id) values (?, ?, ?, ?)
+     * """, [1, "Guillaume", "Laforge", 10]
+     * assert sql.updateCount == 1
+     * </pre>
      *
      * @param sql    the SQL statement
      * @param params a list of parameters
@@ -813,12 +981,13 @@ public class Sql {
      *         no results
      * @throws SQLException if a database access error occurs
      */
-    public boolean execute(String sql, List params) throws SQLException {
+    public boolean execute(String sql, List<Object> params) throws SQLException {
         Connection connection = createConnection();
         PreparedStatement statement = null;
         try {
             log.fine(sql);
             statement = getPreparedStatement(connection, sql, params);
+            // TODO handle multiple results
             boolean isResultSet = statement.execute();
             this.updateCount = statement.getUpdateCount();
             return isResultSet;
@@ -834,57 +1003,50 @@ public class Sql {
 
     /**
      * Executes the given SQL with embedded expressions inside.
+     * Also saves the updateCount, if any, for subsequent examination.
+     * <p/>
+     * Example usage:
+     * <pre>
+     * def scott = [firstname: "Scott", lastname: "Davis", id: 5, location_id: 50]
+     * sql.execute """
+     *     insert into PERSON (id, firstname, lastname, location_id) values ($scott.id, $scott.firstname, $scott.lastname, $scott.location_id)
+     * """
+     * assert sql.updateCount == 1
+     * </pre>
      *
      * @param gstring a GString containing the SQL query with embedded params
      * @return <code>true</code> if the first result is a <code>ResultSet</code>
      *         object; <code>false</code> if it is an update count or there are
      *         no results
      * @throws SQLException if a database access error occurs
+     * @see #expand(Object)
      */
     public boolean execute(GString gstring) throws SQLException {
-        List params = getParameters(gstring);
+        List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
         return execute(sql, params);
     }
 
     /**
-     * Executes the given SQL statement. See {@link #executeInsert(GString)}
-     * for more details.
+     * Executes the given SQL statement (typically an INSERT statement).
+     * Use this variant when you want to receive the values of any
+     * auto-generated columns, such as an autoincrement ID field.
+     * See {@link #executeInsert(GString)} for more details.
      *
      * @param sql The SQL statement to execute
      * @return A list of the auto-generated column values for each
-     *         inserted row
+     *         inserted row (typically auto-generated keys)
      * @throws SQLException if a database access error occurs
      */
-    public List executeInsert(String sql) throws SQLException {
+    public List<List<Object>> executeInsert(String sql) throws SQLException {
         Connection connection = createConnection();
         Statement statement = null;
         try {
             log.fine(sql);
             statement = getStatement(connection, sql);
-            boolean hasResultSet = statement.execute(sql, Statement.RETURN_GENERATED_KEYS);
-
-            // Prepare a list to contain the auto-generated column
-            // values, and then fetch them from the statement.
-            List<List> autoKeys = new ArrayList<List>();
+            this.updateCount = statement.executeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
             ResultSet keys = statement.getGeneratedKeys();
-            int count = keys.getMetaData().getColumnCount();
-
-            // Copy the column values into a list of a list.
-            while (keys.next()) {
-                List rowKeys = new ArrayList(count);
-                for (int i = 1; i <= count; i++) {
-                    rowKeys.add(keys.getObject(i));
-                }
-
-                autoKeys.add(rowKeys);
-            }
-
-            // Store the update count so that it can be retrieved by
-            // clients, and then return the list of auto-generated
-            // values.
-            this.updateCount = statement.getUpdateCount();
-            return autoKeys;
+            return calculateKeys(keys);
         }
         catch (SQLException e) {
             log.log(Level.FINE, "Failed to execute: " + sql, e);
@@ -896,45 +1058,28 @@ public class Sql {
     }
 
     /**
-     * Executes the given SQL statement with a particular list of
-     * parameter values. See {@link #executeInsert(GString)} for
-     * more details.
+     * Executes the given SQL statement (typically an INSERT statement).
+     * Use this variant when you want to receive the values of any
+     * auto-generated columns, such as an autoincrement ID field.
+     * The query may contain placeholder question marks which match the given list of parameters.
+     * See {@link #executeInsert(GString)} for more details.
      *
      * @param sql    The SQL statement to execute
      * @param params The parameter values that will be substituted
      *               into the SQL statement's parameter slots
      * @return A list of the auto-generated column values for each
-     *         inserted row
+     *         inserted row (typically auto-generated keys)
      * @throws SQLException if a database access error occurs
      */
-    public List executeInsert(String sql, List params) throws SQLException {
-        // Now send the SQL to the database.
+    public List<List<Object>> executeInsert(String sql, List<Object> params) throws SQLException {
         Connection connection = createConnection();
         PreparedStatement statement = null;
         try {
             log.fine(sql);
-
-            // Prepare a statement for the SQL and then execute it.
             statement = getPreparedStatement(connection, sql, params, Statement.RETURN_GENERATED_KEYS);
             this.updateCount = statement.executeUpdate();
-
-            // Prepare a list to contain the auto-generated column
-            // values, and then fetch them from the statement.
-            List<List> autoKeys = new ArrayList<List>();
             ResultSet keys = statement.getGeneratedKeys();
-            int count = keys.getMetaData().getColumnCount();
-
-            // Copy the column values into a list of a list.
-            while (keys.next()) {
-                List rowKeys = new ArrayList(count);
-                for (int i = 1; i <= count; i++) {
-                    rowKeys.add(keys.getObject(i));
-                }
-
-                autoKeys.add(rowKeys);
-            }
-
-            return autoKeys;
+            return calculateKeys(keys);
         }
         catch (SQLException e) {
             log.log(Level.FINE, "Failed to execute: " + sql, e);
@@ -946,13 +1091,17 @@ public class Sql {
     }
 
     /**
-     * <p>Executes the given SQL with embedded expressions inside, and
-     * returns the values of any auto-generated colums, such as an
-     * autoincrement ID field. These values can be accessed using
+     * <p>Executes the given SQL statement (typically an INSERT statement).
+     * Use this variant when you want to receive the values of any
+     * auto-generated columns, such as an autoincrement ID field.
+     * The query may contain GString expressions.</p>
+     *
+     * <p>Generated key values can be accessed using
      * array notation. For example, to return the second auto-generated
      * column value of the third row, use <code>keys[3][1]</code>. The
      * method is designed to be used with SQL INSERT statements, but is
      * not limited to them.</p>
+     *
      * <p>The standard use for this method is when a table has an
      * autoincrement ID column and you want to know what the ID is for
      * a newly inserted row. In this example, we insert a single row
@@ -964,7 +1113,7 @@ public class Sql {
      *                               "password",
      *                               "com.mysql.jdbc.Driver")
      * <p/>
-     *     def keys = sql.insert("insert into test_table (INT_DATA, STRING_DATA) "
+     *     def keys = sql.executeInsert("insert into test_table (INT_DATA, STRING_DATA) "
      *                           + "VALUES (1, 'Key Largo')")
      * <p/>
      *     def id = keys[0][0]
@@ -976,12 +1125,13 @@ public class Sql {
      * </pre>
      *
      * @param gstring a GString containing the SQL query with embedded params
-     * @return A list of column values representing each row's
-     *         auto-generated keys
+     * @return A list of the auto-generated column values for each
+     *         inserted row (typically auto-generated keys)
      * @throws SQLException if a database access error occurs
+     * @see #expand(Object)
      */
-    public List executeInsert(GString gstring) throws SQLException {
-        List params = getParameters(gstring);
+    public List<List<Object>> executeInsert(GString gstring) throws SQLException {
+        List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
         return executeInsert(sql, params);
     }
@@ -1019,7 +1169,7 @@ public class Sql {
      * @return the number of rows updated or 0 for SQL statements that return nothing
      * @throws SQLException if a database access error occurs
      */
-    public int executeUpdate(String sql, List params) throws SQLException {
+    public int executeUpdate(String sql, List<Object> params) throws SQLException {
         Connection connection = createConnection();
         PreparedStatement statement = null;
         try {
@@ -1043,33 +1193,92 @@ public class Sql {
      * @param gstring a GString containing the SQL query with embedded params
      * @return the number of rows updated or 0 for SQL statements that return nothing
      * @throws SQLException if a database access error occurs
+     * @see #expand(Object)
      */
     public int executeUpdate(GString gstring) throws SQLException {
-        List params = getParameters(gstring);
+        List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
         return executeUpdate(sql, params);
     }
 
     /**
      * Performs a stored procedure call.
+     * <p/>
+     * Example usage (tested with MySQL) - suppose we have the following stored procedure:
+     * <pre>
+     * sql.execute """
+     *     CREATE PROCEDURE HouseSwap(_first1 VARCHAR(50), _first2 VARCHAR(50))
+     *     BEGIN
+     *         DECLARE _loc1 INT;
+     *         DECLARE _loc2 INT;
+     *         SELECT location_id into _loc1 FROM PERSON where firstname = _first1;
+     *         SELECT location_id into _loc2 FROM PERSON where firstname = _first2;
+     *         UPDATE PERSON
+     *         set location_id = case firstname
+     *             when _first1 then _loc2
+     *             when _first2 then _loc1
+     *         end
+     *         where (firstname = _first1 OR firstname = _first2);
+     *     END
+     * """
+     * </pre>
+     * then you can invoke the procedure as follows:
+     * <pre>
+     * def rowsChanged = sql.call("{call HouseSwap('Guillaume', 'Paul')}")
+     * assert rowsChanged == 2
+     * </pre>
      *
      * @param sql the SQL statement
      * @return the number of rows updated or 0 for SQL statements that return nothing
      * @throws SQLException if a database access error occurs
      */
     public int call(String sql) throws Exception {
-        return call(sql, Collections.EMPTY_LIST);
+        return call(sql, EMPTY_LIST);
+    }
+
+    /**
+     * Performs a stored procedure call with the given embedded parameters.
+     * <p/>
+     * Example usage - see {@link #call(String)} for more details about
+     * creating a <code>HouseSwap(IN name1, IN name2)</code> stored procedure.
+     * Once created, it can be called like this:
+     * <pre>
+     * def p1 = 'Paul'
+     * def p2 = 'Guillaume'
+     * def rowsChanged = sql.call("{call HouseSwap($p1, $p2)}")
+     * assert rowsChanged == 2
+     * </pre>
+     *
+     * @param gstring a GString containing the SQL query with embedded params
+     * @return the number of rows updated or 0 for SQL statements that return nothing
+     * @throws SQLException if a database access error occurs
+     * @see #expand(Object)
+     * @see #call(String)
+     */
+    public int call(GString gstring) throws Exception {
+        List<Object> params = getParameters(gstring);
+        String sql = asSql(gstring, params);
+        return call(sql, params);
     }
 
     /**
      * Performs a stored procedure call with the given parameters.
+     * <p/>
+     * Example usage - see {@link #call(String)} for more details about
+     * creating a <code>HouseSwap(IN name1, IN name2)</code> stored procedure.
+     * Once created, it can be called like this:
+     * <pre>
+     * def rowsChanged = sql.call("{call HouseSwap(?, ?)}", ['Guillaume', 'Paul'])
+     * assert rowsChanged == 2
+     * </pre>
      *
      * @param sql    the SQL statement
      * @param params a list of parameters
      * @return the number of rows updated or 0 for SQL statements that return nothing
      * @throws SQLException if a database access error occurs
+     * @see #call(String)
      */
-    public int call(String sql, List params) throws Exception {
+    public int call(String sql, List<Object> params) throws Exception {
         Connection connection = createConnection();
         CallableStatement statement = connection.prepareCall(sql);
         try {
@@ -1090,30 +1299,105 @@ public class Sql {
     /**
      * Performs a stored procedure call with the given parameters.  The closure
      * is called once with all the out parameters.
+     * <p/>
+     * Example usage - suppose we create a stored procedure (ignore its simplistic implementation):
+     * <pre>
+     * // Tested with MySql 5.0.75
+     * sql.execute """
+     *     CREATE PROCEDURE Hemisphere(
+     *         IN p_firstname VARCHAR(50),
+     *         IN p_lastname VARCHAR(50),
+     *         OUT ans VARCHAR(50))
+     *     BEGIN
+     *     DECLARE loc INT;
+     *     SELECT location_id into loc FROM PERSON where firstname = p_firstname and lastname = p_lastname;
+     *     CASE loc
+     *         WHEN 40 THEN
+     *             SET ans = 'Southern Hemisphere';
+     *         ELSE
+     *             SET ans = 'Northern Hemisphere';
+     *     END CASE;
+     *     END;
+     * """
+     * </pre>
+     * we can now call the stored procedure as follows:
+     * <pre>
+     * sql.call '{call Hemisphere(?, ?, ?)}', ['Guillaume', 'Laforge', Sql.VARCHAR], { dwells ->
+     *     println dwells
+     * }
+     * </pre>
+     * which will output '<code>Northern Hemisphere</code>'.
+     * <p/>
+     * We can also access stored functions with scalar return values where the return value
+     * will be treated as an OUT parameter. Here are examples for various databases for
+     * creating such a procedure:
+     * <pre>
+     * // Tested with MySql 5.0.75
+     * sql.execute """
+     *     create function FullName(p_firstname VARCHAR(40)) returns VARCHAR(80)
+     *     begin
+     *         declare ans VARCHAR(80);
+     *         SELECT CONCAT(firstname, ' ', lastname) INTO ans FROM PERSON WHERE firstname = p_firstname;
+     *         return ans;
+     *     end
+     * """
+     *
+     * // Tested with MS SQLServer Express 2008
+     * sql.execute """
+     *     {@code create function FullName(@firstname VARCHAR(40)) returns VARCHAR(80)}
+     *     begin
+     *         declare {@code @ans} VARCHAR(80)
+     *         {@code SET @ans = (SELECT firstname + ' ' + lastname FROM PERSON WHERE firstname = @firstname)}
+     *         return {@code @ans}
+     *     end
+     * """
+     *
+     * // Tested with Oracle XE 10g
+     * sql.execute """
+     *     create function FullName(p_firstname VARCHAR) return VARCHAR is
+     *     ans VARCHAR(80);
+     *     begin
+     *         SELECT CONCAT(CONCAT(firstname, ' '), lastname) INTO ans FROM PERSON WHERE firstname = p_firstname;
+     *         return ans;
+     *     end;
+     * """
+     * </pre>
+     * and here is how you access the stored function for all databases:
+     * <pre>
+     * sql.call("{? = call FullName(?)}", [Sql.VARCHAR, 'Sam']) { name ->
+     *     assert name == 'Sam Pullara'
+     * }
+     * </pre>
      *
      * @param sql     the sql statement
      * @param params  a list of parameters
      * @param closure called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
      */
-    public void call(String sql, List params, Closure closure) throws Exception {
+    public void call(String sql, List<Object> params, Closure closure) throws Exception {
         Connection connection = createConnection();
         CallableStatement statement = connection.prepareCall(sql);
+        List<GroovyResultSet> resultSetResources = new ArrayList<GroovyResultSet>();
         try {
             log.fine(sql);
             setParameters(params, statement);
+            // TODO handle multiple results and mechanism for retrieving ResultSet if any (GROOVY-3048)
             statement.execute();
-            List results = new ArrayList();
+            List<Object> results = new ArrayList<Object>();
             int indx = 0;
             int inouts = 0;
             for (Object value : params) {
                 if (value instanceof OutParameter) {
                     if (value instanceof ResultSetOutParameter) {
-                        results.add(CallResultSet.getImpl(statement, indx));
+                        GroovyResultSet resultSet = CallResultSet.getImpl(statement, indx);
+                        resultSetResources.add(resultSet);
+                        results.add(resultSet);
                     } else {
                         Object o = statement.getObject(indx + 1);
                         if (o instanceof ResultSet) {
-                            results.add(new GroovyResultSetProxy((ResultSet) o).getImpl());
+                            GroovyResultSet resultSet = new GroovyResultSetProxy((ResultSet) o).getImpl();
+                            results.add(resultSet);
+                            resultSetResources.add(resultSet);
                         } else {
                             results.add(o);
                         }
@@ -1128,32 +1412,45 @@ public class Sql {
             throw e;
         } finally {
             closeResources(connection, statement);
+            for (GroovyResultSet rs : resultSetResources) {
+                closeResources(null, null, rs);
+            }
         }
-    }
-
-    /**
-     * Performs a stored procedure call with the given parameters.
-     *
-     * @param gstring a GString containing the SQL query with embedded params
-     * @return the number of rows updated or 0 for SQL statements that return nothing
-     * @throws SQLException if a database access error occurs
-     */
-    public int call(GString gstring) throws Exception {
-        List params = getParameters(gstring);
-        String sql = asSql(gstring, params);
-        return call(sql, params);
     }
 
     /**
      * Performs a stored procedure call with the given parameters,
      * calling the closure once with all result objects.
+     * <p/>
+     * See {@link #call(String, List, Closure)} for more details about
+     * creating a <code>Hemisphere(IN first, IN last, OUT dwells)</code> stored procedure.
+     * Once created, it can be called like this:
+     * <pre>
+     * def first = 'Scott'
+     * def last = 'Davis'
+     * sql.call "{call Hemisphere($first, $last, ${Sql.VARCHAR})}", { dwells ->
+     *     println dwells
+     * }
+     * </pre>
+     * <p/>
+     * As another example, see {@link #call(String, List, Closure)} for more details about
+     * creating a <code>FullName(IN first)</code> stored function.
+     * Once created, it can be called like this:
+     * <pre>
+     * def first = 'Sam'
+     * sql.call("{$Sql.VARCHAR = call FullName($first)}") { name ->
+     *     assert name == 'Sam Pullara'
+     * }
+     * </pre>
      *
      * @param gstring a GString containing the SQL query with embedded params
      * @param closure called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
+     * @see #call(String, List, Closure)
+     * @see #expand(Object)
      */
     public void call(GString gstring, Closure closure) throws Exception {
-        List params = getParameters(gstring);
+        List<Object> params = getParameters(gstring);
         String sql = asSql(gstring, params);
         call(sql, params, closure);
     }
@@ -1262,18 +1559,251 @@ public class Sql {
         this.configureStatement = configureStatement;
     }
 
-    // Implementation methods
+    /**
+     * Enables statement caching.</br>
+     * if <i>b</i> is true, cache is created and all created prepared statements will be cached.</br>
+     * if <i>b</i> is false, all cached statements will be properly closed.
+     *
+     * @param cacheStatements the new value
+     */
+    public synchronized void setCacheStatements(boolean cacheStatements) {
+        this.cacheStatements = cacheStatements;
+        if (!cacheStatements) {
+            clearStatementCache();
+        }
+    }
+
+    /**
+     * @return boolean    true if cache is enabled
+     */
+    public boolean isCacheStatements() {
+        return cacheStatements;
+    }
+
+    /**
+     * Caches the connection used while the closure is active.
+     * If the closure takes a single argument, it will be called
+     * with the connection, otherwise it will be called with no arguments.
+     *
+     * @param closure the given closure
+     * @throws SQLException if a database error occurs
+     */
+    public synchronized void cacheConnection(Closure closure) throws SQLException {
+        boolean savedCacheConnection = cacheConnection;
+        cacheConnection = true;
+        Connection connection = null;
+        try {
+            connection = createConnection();
+            callClosurePossiblyWithConnection(closure, connection);
+        }
+        finally {
+            cacheConnection = false;
+            closeResources(connection, null);
+            cacheConnection = savedCacheConnection;
+            if (dataSource != null && !cacheConnection) {
+                useConnection = null;
+            }
+        }
+    }
+
+    /**
+     * Performs the closure within a transaction using a cached connection.
+     * If the closure takes a single argument, it will be called
+     * with the connection, otherwise it will be called with no arguments.
+     *
+     * @param closure the given closure
+     * @throws SQLException if a database error occurs
+     */
+    public synchronized void withTransaction(Closure closure) throws SQLException {
+        boolean savedCacheConnection = cacheConnection;
+        cacheConnection = true;
+        Connection connection = null;
+        boolean savedAutoCommit = true;
+        try {
+            connection = createConnection();
+            savedAutoCommit = connection.getAutoCommit();
+            connection.setAutoCommit(false);
+            callClosurePossiblyWithConnection(closure, connection);
+            connection.commit();
+        } catch (SQLException e) {
+            handleError(connection, e);
+            throw e;
+        } catch (RuntimeException e) {
+            handleError(connection, e);
+            throw e;
+        } catch (Error e) {
+            handleError(connection, e);
+            throw e;
+        } finally {
+            if (connection != null) connection.setAutoCommit(savedAutoCommit);
+            cacheConnection = false;
+            closeResources(connection, null);
+            cacheConnection = savedCacheConnection;
+            if (dataSource != null && !cacheConnection) {
+                useConnection = null;
+            }
+        }
+    }
+
+    /**
+     * Performs the closure within a batch using a cached connection.
+     * The closure will be called with a single argument; the statement
+     * associated with this batch. Use it like this:
+     * <pre>
+     * def updateCounts = sql.withBatch { stmt ->
+     *     stmt.addBatch("insert into TABLENAME ...")
+     *     stmt.addBatch("insert into TABLENAME ...")
+     *     stmt.addBatch("insert into TABLENAME ...")
+     * }
+     * </pre>
+     *
+     * @param closure the closure containing batch and optionally other statements
+     * @return an array of update counts containing one element for each
+     *         command in the batch.  The elements of the array are ordered according
+     *         to the order in which commands were added to the batch.
+     * @throws SQLException if a database access error occurs,
+     *                      or this method is called on a closed <code>Statement</code>, or the
+     *                      driver does not support batch statements. Throws {@link java.sql.BatchUpdateException}
+     *                      (a subclass of <code>SQLException</code>) if one of the commands sent to the
+     *                      database fails to execute properly or attempts to return a result set.
+     */
+    public synchronized int[] withBatch(Closure closure) throws SQLException {
+        boolean savedCacheConnection = cacheConnection;
+        cacheConnection = true;
+        Connection connection = null;
+        Statement statement = null;
+        boolean savedAutoCommit = true;
+        try {
+            connection = createConnection();
+            savedAutoCommit = connection.getAutoCommit();
+            connection.setAutoCommit(false);
+            statement = createStatement(connection);
+            closure.call(statement);
+            int[] result = statement.executeBatch();
+            connection.commit();
+            log.fine("Successfully executed batch with " + result.length + " command(s)");
+            return result;
+        } catch (SQLException e) {
+            handleError(connection, e);
+            throw e;
+        } catch (RuntimeException e) {
+            handleError(connection, e);
+            throw e;
+        } catch (Error e) {
+            handleError(connection, e);
+            throw e;
+        } finally {
+            if (connection != null) connection.setAutoCommit(savedAutoCommit);
+            cacheConnection = false;
+            closeResources(connection, statement);
+            cacheConnection = savedCacheConnection;
+            if (dataSource != null && !cacheConnection) {
+                useConnection = null;
+            }
+        }
+    }
+
+    /**
+     * Caches every created preparedStatement in Closure <i>closure</i></br>
+     * Every cached preparedStatement is closed after closure has been called.
+     * If the closure takes a single argument, it will be called
+     * with the connection, otherwise it will be called with no arguments.
+     *
+     * @param closure the given closure
+     * @throws SQLException if a database error occurs
+     * @see #setCacheStatements(boolean)
+     */
+    public synchronized void cacheStatements(Closure closure) throws SQLException {
+        boolean savedCacheStatements = cacheStatements;
+        cacheStatements = true;
+        Connection connection = null;
+        try {
+            connection = createConnection();
+            callClosurePossiblyWithConnection(closure, connection);
+        }
+        finally {
+            cacheStatements = false;
+            closeResources(connection, null);
+            cacheStatements = savedCacheStatements;
+        }
+    }
+
+    // protected implementation methods - extension points for subclasses
     //-------------------------------------------------------------------------
 
     /**
-     * Hook to allow derived classes to override sql generation from Gstrings.
+     * Hook to allow derived classes to access ResultSet returned from query.
+     *
+     * @param sql query to execute
+     * @return the resulting ResultSet
+     * @throws SQLException if a database error occurs
+     */
+    protected final ResultSet executeQuery(String sql) throws SQLException {
+        AbstractQueryCommand command = createQueryCommand(sql);
+        ResultSet rs = null;
+        try {
+        	rs = command.execute();
+        } finally {
+        	command.closeResources();
+        }
+        return rs;
+    }
+
+    /**
+     * Hook to allow derived classes to access ResultSet returned from query.
+     *
+     * @param sql query to execute
+     * @param params parameters matching question mark placeholders in the query
+     * @return the resulting ResultSet
+     * @throws SQLException if a database error occurs
+     */
+	protected final ResultSet executePreparedQuery(String sql, List<Object> params)
+			throws SQLException {
+        AbstractQueryCommand command = createPreparedQueryCommand(sql, params);
+        ResultSet rs = null;
+        try {
+        	rs = command.execute();
+        } finally {
+        	command.closeResources();
+        }
+        return rs;
+	}
+
+    /**
+     * Hook to allow derived classes to override list of result collection behavior.
+     * The default behavior is to return a list of GroovyRowResult objects corresponding
+     * to each row in the ResultSet.
+     *
+     * @param sql query to execute
+     * @param rs the ResultSet to process
+     * @return the resulting list of rows
+     * @throws SQLException if a database error occurs
+     */
+    protected List<GroovyRowResult> asList(String sql, ResultSet rs) throws SQLException {
+        List<GroovyRowResult> results = new ArrayList<GroovyRowResult>();
+
+        try {
+            while (rs.next()) {
+                results.add(DefaultGroovyMethods.toRowResult(rs));
+            }
+            return (results);
+        } catch (SQLException e) {
+            log.log(Level.INFO, "Failed to retrieve row from ResultSet for: " + sql, e);
+            throw e;
+        } finally {
+            rs.close();
+        }
+    }
+
+    /**
+     * Hook to allow derived classes to override sql generation from GStrings.
      *
      * @param gstring a GString containing the SQL query with embedded params
      * @param values  the values to embed
-     * @return the SQL version of the given query using ? instead of any
-     *         parameter
+     * @return the SQL version of the given query using ? instead of any parameter
+     * @see #expand(Object)
      */
-    protected String asSql(GString gstring, List values) {
+    protected String asSql(GString gstring, List<Object> values) {
         String[] strings = gstring.getStrings();
         if (strings.length <= 0) {
             throw new IllegalArgumentException("No SQL specified in GString: " + gstring);
@@ -1281,7 +1811,7 @@ public class Sql {
         boolean nulls = false;
         StringBuffer buffer = new StringBuffer();
         boolean warned = false;
-        Iterator iter = values.iterator();
+        Iterator<Object> iter = values.iterator();
         for (int i = 0; i < strings.length; i++) {
             String text = strings[i];
             if (text != null) {
@@ -1397,8 +1927,9 @@ public class Sql {
      *
      * @param gstring a GString containing the SQL query with embedded params
      * @return extracts the parameters from the expression as a List
+     * @see #expand(Object)
      */
-    protected List getParameters(GString gstring) {
+    protected List<Object> getParameters(GString gstring) {
         return new ArrayList<Object>(Arrays.asList(gstring.getValues()));
     }
 
@@ -1411,7 +1942,7 @@ public class Sql {
      * @param statement the statement
      * @throws SQLException if a database access error occurs
      */
-    protected void setParameters(List params, PreparedStatement statement) throws SQLException {
+    protected void setParameters(List<Object> params, PreparedStatement statement) throws SQLException {
         int i = 1;
         for (Object value : params) {
             setObject(statement, i++, value);
@@ -1505,7 +2036,7 @@ public class Sql {
                 results.close();
             }
             catch (SQLException e) {
-                log.log(Level.INFO, "Caught exception closing resultSet: " + e, e);
+                log.log(Level.INFO, "Caught exception closing resultSet: " + e.getMessage() + " - continuing", e);
             }
         }
         closeResources(connection, statement);
@@ -1529,7 +2060,7 @@ public class Sql {
             }
         }
         if (cacheConnection) return;
-        if (dataSource != null) {
+        if (connection != null && dataSource != null) {
             try {
                 connection.close();
             }
@@ -1554,143 +2085,32 @@ public class Sql {
         }
     }
 
-    /**
-     * Enables statement caching.</br>
-     * if <i>b</i> is true, cache is created and all created prepared statements will be cached.</br>
-     * if <i>b</i> is false, all cached statements will be properly closed.
-     *
-     * @param cacheStatements the new value
-     */
-    public synchronized void setCacheStatements(boolean cacheStatements) {
-        this.cacheStatements = cacheStatements;
-        if (!cacheStatements) {
-            clearStatementCache();
-        }
-    }
+    // private implementation methods
+    //-------------------------------------------------------------------------
 
-    /**
-     * @return boolean    true if cache is enabled
-     */
-    public boolean isCacheStatements() {
-        return cacheStatements;
-    }
+    private List<List<Object>> calculateKeys(ResultSet keys) throws SQLException {
+        // Prepare a list to contain the auto-generated column
+        // values, and then fetch them from the statement.
+        List<List<Object>> autoKeys = new ArrayList<List<Object>>();
+        int count = keys.getMetaData().getColumnCount();
 
-    /**
-     * Caches the connection used while the closure is active.
-     * If the closure takes a single argument, it will be called
-     * with the connection, otherwise it will be called with no arguments.
-     *
-     * @param closure the given closure
-     * @throws SQLException if a database error occurs
-     */
-    public synchronized void cacheConnection(Closure closure) throws SQLException {
-        boolean savedCacheConnection = cacheConnection;
-        cacheConnection = true;
-        Connection connection = null;
-        try {
-            connection = createConnection();
-            callClosurePossiblyWithConnection(closure, connection);
-        }
-        finally {
-            cacheConnection = false;
-            closeResources(connection, null);
-            cacheConnection = savedCacheConnection;
-            if (dataSource != null && !cacheConnection) {
-                useConnection = null;
+        // Copy the column values into a list of a list.
+        while (keys.next()) {
+            List<Object> rowKeys = new ArrayList<Object>(count);
+            for (int i = 1; i <= count; i++) {
+                rowKeys.add(keys.getObject(i));
             }
+
+            autoKeys.add(rowKeys);
         }
+        return autoKeys;
     }
 
-    /**
-     * Performs the closure within a transaction using a cached connection.
-     * If the closure takes a single argument, it will be called
-     * with the connection, otherwise it will be called with no arguments.
-     *
-     * @param closure the given closure
-     * @throws SQLException if a database error occurs
-     */
-    public synchronized void withTransaction(Closure closure) throws SQLException {
-        boolean savedCacheConnection = cacheConnection;
-        cacheConnection = true;
-        Connection connection = null;
-        try {
-            connection = createConnection();
-            connection.setAutoCommit(false);
-            callClosurePossiblyWithConnection(closure, connection);
-            connection.commit();
-        } catch (SQLException e) {
-            handleError(connection, e);
-            throw e;
-        } catch (RuntimeException e) {
-            handleError(connection, e);
-            throw e;
-        } catch (Error e) {
-            handleError(connection, e);
-            throw e;
-        } finally {
-            if (connection != null) connection.setAutoCommit(true);
-            cacheConnection = false;
-            closeResources(connection, null);
-            cacheConnection = savedCacheConnection;
-            if (dataSource != null && !cacheConnection) {
-                useConnection = null;
-            }
+    private Statement createStatement(Connection connection) throws SQLException {
+        if (resultSetHoldability == -1) {
+            return connection.createStatement(resultSetType, resultSetConcurrency);
         }
-    }
-
-    /**
-     * Performs the closure within a batch using a cached connection.
-     * The closure will be called with a single argument; the statement
-     * associated with this batch. Use it like this:
-     * <pre>
-     * def updateCounts = sql.withBatch { stmt ->
-     *     stmt.addBatch("insert into TABLENAME ...")
-     *     stmt.addBatch("insert into TABLENAME ...")
-     *     stmt.addBatch("insert into TABLENAME ...")
-     * }
-     * </pre>
-     *
-     * @param closure the closure containing batch and optionally other statements
-     * @return an array of update counts containing one element for each
-     *         command in the batch.  The elements of the array are ordered according
-     *         to the order in which commands were added to the batch.
-     * @throws SQLException if a database access error occurs,
-     *                      or this method is called on a closed <code>Statement</code>, or the
-     *                      driver does not support batch statements. Throws {@link java.sql.BatchUpdateException}
-     *                      (a subclass of <code>SQLException</code>) if one of the commands sent to the
-     *                      database fails to execute properly or attempts to return a result set.
-     */
-    public synchronized int[] withBatch(Closure closure) throws SQLException {
-        boolean savedCacheConnection = cacheConnection;
-        cacheConnection = true;
-        Connection connection = null;
-        Statement statement = null;
-        try {
-            connection = createConnection();
-            connection.setAutoCommit(false);
-            statement = connection.createStatement();
-            closure.call(statement);
-            int[] result = statement.executeBatch();
-            connection.commit();
-            return result;
-        } catch (SQLException e) {
-            handleError(connection, e);
-            throw e;
-        } catch (RuntimeException e) {
-            handleError(connection, e);
-            throw e;
-        } catch (Error e) {
-            handleError(connection, e);
-            throw e;
-        } finally {
-            if (connection != null) connection.setAutoCommit(true);
-            cacheConnection = false;
-            closeResources(connection, statement);
-            cacheConnection = savedCacheConnection;
-            if (dataSource != null && !cacheConnection) {
-                useConnection = null;
-            }
-        }
+        return connection.createStatement(resultSetType, resultSetConcurrency, resultSetHoldability);
     }
 
     private void handleError(Connection connection, Throwable t) throws SQLException {
@@ -1705,31 +2125,6 @@ public class Sql {
             closure.call(connection);
         } else {
             closure.call();
-        }
-    }
-
-    /**
-     * Caches every created preparedStatement in Closure <i>closure</i></br>
-     * Every cached preparedStatement is closed after closure has been called.
-     * If the closure takes a single argument, it will be called
-     * with the connection, otherwise it will be called with no arguments.
-     *
-     * @param closure the given closure
-     * @throws SQLException if a database error occurs
-     * @see #setCacheStatements(boolean)
-     */
-    public synchronized void cacheStatements(Closure closure) throws SQLException {
-        boolean savedCacheStatements = cacheStatements;
-        cacheStatements = true;
-        Connection connection = null;
-        try {
-            connection = createConnection();
-            callClosurePossiblyWithConnection(closure, connection);
-        }
-        finally {
-            cacheStatements = false;
-            closeResources(connection, null);
-            cacheStatements = savedCacheStatements;
         }
     }
 
@@ -1776,16 +2171,19 @@ public class Sql {
         return stmt;
     }
 
-    private PreparedStatement getPreparedStatement(Connection connection, String sql, List params, int returnGeneratedKeys) throws SQLException {
+    private PreparedStatement getPreparedStatement(Connection connection, String sql, List<Object> params, int returnGeneratedKeys) throws SQLException {
         PreparedStatement statement = (PreparedStatement) getAbstractStatement(new CreatePreparedStatementCommand(returnGeneratedKeys), connection, sql);
         setParameters(params, statement);
         configure(statement);
         return statement;
     }
 
-    private PreparedStatement getPreparedStatement(Connection connection, String sql, List params) throws SQLException {
+    private PreparedStatement getPreparedStatement(Connection connection, String sql, List<Object> params) throws SQLException {
         return getPreparedStatement(connection, sql, params, 0);
     }
+
+    // command pattern implementation classes
+    //-------------------------------------------------------------------------
 
     private abstract class AbstractStatementCommand {
         /**
@@ -1795,6 +2193,7 @@ public class Sql {
          * @param conn all commands accept a connection
          * @param sql  all commands accept an SQL statement
          * @return statement that can be cached, etc.
+         * @throws SQLException if a database error occurs
          */
         abstract Statement execute(Connection conn, String sql) throws SQLException;
     }
@@ -1807,11 +2206,15 @@ public class Sql {
         }
 
         PreparedStatement execute(Connection connection, String sql) throws SQLException {
-            if (returnGeneratedKeys != 0) {
+            if (returnGeneratedKeys != 0)
                 return connection.prepareStatement(sql, returnGeneratedKeys);
-            } else {
-                return connection.prepareStatement(sql);
-            }
+            if (appearsLikeStoredProc(sql))
+                return connection.prepareCall(sql);
+            return connection.prepareStatement(sql);
+        }
+
+        boolean appearsLikeStoredProc(String sql) {
+            return sql.matches("\\s*[{]?\\s*[?]?\\s*[=]?\\s*[cC][aA][lL][lL].*");
         }
     }
 
@@ -1819,10 +2222,141 @@ public class Sql {
 
         @Override
         Statement execute(Connection conn, String sql) throws SQLException {
-            Statement stmt = conn.createStatement();
-            return stmt;
+            return createStatement(conn);
 		}
 
 	}
 
+    protected abstract class AbstractQueryCommand {
+    	protected final String sql;
+    	protected Statement statement;
+		private Connection connection;
+
+    	AbstractQueryCommand(String sql) {
+    		// Don't create statement in subclass constructors to avoid throw in constructors
+    		this.sql = sql;
+    	}
+
+        /**
+         * Execute the command that's defined by the subclass following
+         * the Command pattern.  Specialized parameters are held in the command instances.
+         *
+         * @return ResultSet from executing a query
+         * @throws SQLException if a database error occurs
+         */
+         final ResultSet execute() throws SQLException {
+     		connection = createConnection();
+     		setInternalConnection(connection);
+    		Statement statement = null;
+    		try {
+    			log.fine(sql);
+    			// The variation in the pattern is isolated
+    			ResultSet result = runQuery(connection);
+    			assert (null != statement);
+    			return result;
+    		} catch (SQLException e) {
+    			log.log(Level.FINE, "Failed to execute: " + sql, e);
+    			closeResources();
+    			connection = null;
+    			statement = null;
+    			throw e;
+    		}
+         }
+
+         /**
+          * After performing the execute operation and making use of its return, it's necessary
+          * to free the resources allocated for the statement.
+          */
+         public final void closeResources(){
+        	 Sql.this.closeResources(connection, statement);
+         }
+
+         /**
+          * After performing the execute operation and making use of its return, it's necessary
+          * to free the resources allocated for the statement.
+          *
+          * @param rs allows the caller to conveniently close its resource as well
+          */
+         public final void closeResources(ResultSet rs) {
+        	 Sql.this.closeResources(connection, statement, rs);
+         }
+
+         /**
+          * Perform the query. Must set statement field so that the main ({@link #execute()}) method can clean up.
+          * This is the method that encloses the variant part of the code.
+          * @param connection the connection to use
+          * @return ResultSet from an executeQuery method.
+          * @throws SQLException if a database error occurs
+          */
+         protected abstract ResultSet runQuery(Connection connection) throws SQLException;
+    }
+
+    protected final class PreparedQueryCommand extends AbstractQueryCommand {
+    	private List<Object> params;
+
+		PreparedQueryCommand(String sql, List<Object> queryParams) {
+			super(sql);
+			params = queryParams;
+		}
+
+		@Override
+		protected ResultSet runQuery(Connection connection) throws SQLException {
+			PreparedStatement s = getPreparedStatement(connection, sql, params);
+			statement = s;
+			return s.executeQuery();
+		}
+    }
+
+    protected final class QueryCommand extends AbstractQueryCommand {
+
+    	QueryCommand(String sql) {
+    		super(sql);
+    	}
+
+    	@Override
+    	protected ResultSet runQuery(Connection connection) throws SQLException {
+    		statement = getStatement(connection, sql);
+    		return statement.executeQuery(sql);
+    	}
+    }
+
+    /**
+     * Factory for the QueryCommand command pattern object allows subclasses to
+     * supply implementations of the command class. The factory will be used in a pattern
+     * similar to
+     *  <pre>
+     * AbstractQueryCommand q = createQueryCommand("update TABLE set count = 0) where count is null");
+     * try {
+     * 	   ResultSet rs = q.execute();
+     *     return asList(rs);
+     * } finally {
+     *     q.closeResources();
+     * }
+     * </pre>
+     * @param sql statement to be executed
+     * @return a command - invoke its execute() and closeResource() methods
+     */
+    protected AbstractQueryCommand createQueryCommand(String sql) {
+    	return new QueryCommand(sql);
+    }
+
+    /**
+     * Factory for the PreparedQueryCommand command pattern object allows subclass to supply implementations
+     * of the command class.
+     * @see #createQueryCommand(String)
+     * @param sql statement to be executed, including optional parameter placeholders (?)
+     * @param queryParams List of parameter values corresponding to parameter placeholders
+     * @return a command - invoke its execute() and closeResource() methods
+     */
+    protected AbstractQueryCommand createPreparedQueryCommand(String sql, List<Object> queryParams) {
+    	return new PreparedQueryCommand(sql, queryParams);
+    }
+
+    /**
+     * Stub needed for testing.  Called when a connection is opened by one of the command-pattern classes
+     * so that a test case can monitor the state of the connection through its subclass.
+     * @param conn the connection that is about to be used by a command
+     */
+    protected void setInternalConnection(Connection conn) {
+    }
 }
