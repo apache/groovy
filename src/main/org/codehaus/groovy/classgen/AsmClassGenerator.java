@@ -170,15 +170,11 @@ public class AsmClassGenerator extends ClassGenerator {
 
     public static final boolean CREATE_DEBUG_INFO = true;
     public static final boolean CREATE_LINE_NUMBER_INFO = true;
-    private static final boolean MARK_START = true;
-
     public static final boolean ASM_DEBUG = false; // add marker in the bytecode to show source-byecode relationship
+    
     private int lineNumber = -1;
-    private int columnNumber = -1;
     private ASTNode currentASTNode = null;
 
-    // This isn't referenced from anywhere in the Java code, but groovyc uses it.
-    private DummyClassGenerator dummyGen = null;
     private ClassWriter dummyClassWriter = null;
 
     private ClassNode interfaceClassLoadingClass;
@@ -206,7 +202,7 @@ public class AsmClassGenerator extends ClassGenerator {
         this.sourceFile = sourceFile;
 
         this.dummyClassWriter = new ClassWriter(ClassWriter.COMPUTE_MAXS);
-        dummyGen = new DummyClassGenerator(context, dummyClassWriter, classLoader, sourceFile);
+        new DummyClassGenerator(context, dummyClassWriter, classLoader, sourceFile);
         compileStack = new CompileStack();
         genericParameterNames = new HashMap();
         closureClassMap = new HashMap();
@@ -531,8 +527,6 @@ public class AsmClassGenerator extends ClassGenerator {
 
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
         lineNumber = -1;
-        columnNumber = -1;
-        
         Parameter[] parameters = node.getParameters();
         String methodType = BytecodeHelper.getMethodDescriptor(node.getReturnType(), parameters);
 
@@ -667,7 +661,7 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitField(FieldNode fieldNode) {
         onLineNumber(fieldNode, "visitField: " + fieldNode.getName());
         ClassNode t = fieldNode.getType();
-        String signature = helper.getGenericsBounds(t);
+        String signature = BytecodeHelper.getGenericsBounds(t);
         FieldVisitor fv = cv.visitField(
                 fieldNode.getModifiers(),
                 fieldNode.getName(),
@@ -2192,169 +2186,6 @@ public class AsmClassGenerator extends ClassGenerator {
         Collections.addAll(basic, "plus", "minus", "multiply", "div");
     }
 
-    private void makeBinopCallSite(BinaryExpression bin, String message) {
-        final Expression left = bin.getLeftExpression();
-        final Expression right = bin.getRightExpression();
-        if (!names.contains(message)) {
-           makeBinopCallSite(left, message, right);
-        }
-        else {
-            improveExprType(bin);
-
-            ClassNode type1 = getLHSType(left);
-            ClassNode type2 = getLHSType(right);
-            if (ClassHelper.isNumberType(type1) && ClassHelper.isNumberType(type2)) {
-                ClassNode prim1 = ClassHelper.getUnwrapper(type1);
-                ClassNode prim2 = ClassHelper.getUnwrapper(type2);
-
-                if (message.equals("div") && prim1 == ClassHelper.int_TYPE && prim2 == ClassHelper.int_TYPE) {
-                    makeBinopCallSite(left, message, right);
-                    return;
-                }
-
-                ClassNode retType;
-                if (prim1 == ClassHelper.double_TYPE || prim2 == ClassHelper.double_TYPE) {
-                    retType = ClassHelper.double_TYPE;
-                }
-                else
-                if (prim1 == ClassHelper.float_TYPE || prim2 == ClassHelper.float_TYPE) {
-                    retType = ClassHelper.double_TYPE;
-                }
-                else
-                if (prim1 == ClassHelper.long_TYPE || prim2 == ClassHelper.long_TYPE) {
-                    retType = ClassHelper.long_TYPE;
-                }
-                else
-                    retType = ClassHelper.int_TYPE;
-
-                if (retType == ClassHelper.double_TYPE && !basic.contains(message)) {
-                    makeBinopCallSite(left, message, right);
-                    return;
-                }
-
-                if (left instanceof ConstantExpression) {
-                  mv.visitLdcInsn(((ConstantExpression)left).getValue());
-                }
-                else {
-                  visitAndAutoboxBoolean(left);
-                  helper.unbox(prim1);
-                }
-
-                if (right instanceof ConstantExpression) {
-                    mv.visitLdcInsn(((ConstantExpression)right).getValue());
-                }
-                else {
-                  visitAndAutoboxBoolean(right);
-                    helper.unbox(prim2);
-                }
-
-                mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/typehandling/NumberMathModificationInfo", message, "(" + BytecodeHelper.getTypeDescription(prim1) + BytecodeHelper.getTypeDescription(prim2) + ")" + BytecodeHelper.getTypeDescription(retType));
-                helper.box(retType);
-            }
-            else {
-                makeBinopCallSite(left, message, right);
-            }
-        }
-    }
-
-    private void improveExprType(Expression expr) {
-        if (expr instanceof BinaryExpression) {
-            if (ClassHelper.isNumberType(expr.getType()))
-              return;
-
-            final BinaryExpression bin = (BinaryExpression) expr;
-            String message = "";
-            switch (bin.getOperation().getType()) {
-                case Types.BITWISE_AND:
-                    message = "and";
-                    break;
-
-                case Types.BITWISE_OR:
-                    message = "or";
-                    break;
-
-                case Types.BITWISE_XOR:
-                    message = "xor";
-                    break;
-
-                case Types.PLUS:
-                    message = "plus";
-                    break;
-
-                case Types.MINUS:
-                    message = "minus";
-                    break;
-
-                case Types.MULTIPLY:
-                    message = "multiply";
-                    break;
-
-                case Types.DIVIDE:
-                    message = "div";
-                    break;
-
-                case Types.INTDIV:
-                    message = "intdiv";
-                    break;
-
-                case Types.MOD:
-                    message = "mod";
-                    break;
-
-                case Types.LEFT_SHIFT:
-                    message = "leftShift";
-                    break;
-
-                case Types.RIGHT_SHIFT:
-                    message = "rightShift";
-                    break;
-
-                case Types.RIGHT_SHIFT_UNSIGNED:
-                    message = "rightShiftUnsigned";
-                    break;
-            }
-
-            if (!names.contains(message))
-              return;
-
-            improveExprType(bin.getLeftExpression());
-            improveExprType(bin.getRightExpression());
-
-            ClassNode type1 = getLHSType(bin.getLeftExpression());
-            ClassNode type2 = getLHSType(bin.getRightExpression());
-
-            if (ClassHelper.isNumberType(type1) && ClassHelper.isNumberType(type2)) {
-                ClassNode prim1 = ClassHelper.getUnwrapper(type1);
-                ClassNode prim2 = ClassHelper.getUnwrapper(type2);
-
-                if (message.equals("div") && prim1 == ClassHelper.int_TYPE && prim2 == ClassHelper.int_TYPE) {
-                    return;
-                }
-
-                ClassNode retType;
-                if (prim1 == ClassHelper.double_TYPE || prim2 == ClassHelper.double_TYPE) {
-                    retType = ClassHelper.double_TYPE;
-                }
-                else
-                if (prim1 == ClassHelper.float_TYPE || prim2 == ClassHelper.float_TYPE) {
-                    retType = ClassHelper.double_TYPE;
-                }
-                else
-                if (prim1 == ClassHelper.long_TYPE || prim2 == ClassHelper.long_TYPE) {
-                    retType = ClassHelper.long_TYPE;
-                }
-                else
-                    retType = ClassHelper.int_TYPE;
-
-                if (retType == ClassHelper.double_TYPE && !basic.contains(message)) {
-                    return;
-                }
-
-                bin.setType(retType);
-            }
-        }
-    }
-
     private void makeBinopCallSite(Expression receiver, String message, Expression arguments) {
 
         prepareCallSite(message);
@@ -2513,7 +2344,7 @@ public class AsmClassGenerator extends ClassGenerator {
         arguments.getExpression(0).visit(this);
         arguments.getExpression(1).visit(this);
         Parameter p = new Parameter(ClassHelper.OBJECT_TYPE,"_p");
-        String descriptor = helper.getMethodDescriptor(ClassHelper.VOID_TYPE, new Parameter[]{p,p});
+        String descriptor = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, new Parameter[]{p,p});
         mv.visitMethodInsn(INVOKESPECIAL, BytecodeHelper.getClassInternalName(callNode), "<init>", descriptor);
     }
 
@@ -2601,7 +2432,7 @@ public class AsmClassGenerator extends ClassGenerator {
             }
 
             ConstructorNode cn = (ConstructorNode) constructors.get(i);
-            String descriptor = helper.getMethodDescriptor(ClassHelper.VOID_TYPE, cn.getParameters());
+            String descriptor = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, cn.getParameters());
             // unwrap the Object[] and make transformations if needed
             // that means, to duplicate the Object[], make a cast with possible
             // unboxing and then swap it with the Object[] for each parameter
@@ -2652,8 +2483,8 @@ public class AsmClassGenerator extends ClassGenerator {
             public int compare(Object arg0, Object arg1) {
                 ConstructorNode c0 = (ConstructorNode) arg0;
                 ConstructorNode c1 = (ConstructorNode) arg1;
-                String descriptor0 = helper.getMethodDescriptor(ClassHelper.VOID_TYPE, c0.getParameters());
-                String descriptor1 = helper.getMethodDescriptor(ClassHelper.VOID_TYPE, c1.getParameters());
+                String descriptor0 = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, c0.getParameters());
+                String descriptor1 = BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, c1.getParameters());
                 return descriptor0.compareTo(descriptor1);
             }
         };
@@ -2861,7 +2692,7 @@ public class AsmClassGenerator extends ClassGenerator {
         ClassNode type = field.getType();
         String ownerName = (field.getOwner().equals(classNode))
                 ? internalClassName
-                : helper.getClassInternalName(field.getOwner());
+                : BytecodeHelper.getClassInternalName(field.getOwner());
 
         mv.visitVarInsn(ALOAD, 0);
         mv.visitFieldInsn(GETFIELD, ownerName, fldExp.getFieldName(), BytecodeHelper.getTypeDescription(type));
@@ -2913,7 +2744,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
         String ownerName = (field.getOwner().equals(classNode))
                 ? internalClassName
-                : helper.getClassInternalName(field.getOwner());
+                : BytecodeHelper.getClassInternalName(field.getOwner());
         if (holder) {
             mv.visitFieldInsn(GETSTATIC, ownerName, expression.getFieldName(), BytecodeHelper.getTypeDescription(type));
             mv.visitInsn(SWAP);
@@ -4352,15 +4183,12 @@ public class AsmClassGenerator extends ClassGenerator {
     protected void onLineNumber(ASTNode statement, String message) {
         if (statement==null) return;
         int line = statement.getLineNumber();
-        int col = statement.getColumnNumber();
         this.currentASTNode = statement;
 
         if (line < 0) return;
         if (!ASM_DEBUG && line==lineNumber) return;
 
         lineNumber = line;
-        columnNumber = col;
-
         if (mv != null) {
             Label l = new Label();
             mv.visitLabel(l);
