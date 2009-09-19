@@ -481,6 +481,10 @@
             <name>John Bito</name>
             <email></email>
         </contributor>
+        <contributor>
+            <name>Christopher Wong</name>
+            <email></email>
+        </contributor>
     </contributors>
 
     <dependencies>
