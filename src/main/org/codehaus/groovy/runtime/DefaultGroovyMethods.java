@@ -74,6 +74,7 @@ import java.util.regex.Pattern;
  * @author Alex Tkachman
  * @author Ted Naleid
  * @author Brad Long
+ * @author Christopher Wong
  */
 public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
@@ -11955,6 +11956,54 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Gets the output and error streams from a process and reads them
+     * to keep the process from blocking due to a full output buffer. For this,
+     * two Threads are started, but join()ed, so we wait.
+     *
+     * @param self a Process
+     * @since 1.6.5
+     */
+    public static void consumeProcessOutputWait(Process self) {
+        consumeProcessOutputWait(self, (OutputStream)null, (OutputStream)null);
+    }
+
+    /**
+     * Gets the output and error streams from a process and reads them
+     * to keep the process from blocking due to a full output buffer.
+     * The processed stream data is appended to the supplied StringBuffer.
+     * For this, two Threads are started, but join()ed, so we wait.
+     *
+     * @param self a Process
+     * @param output a StringBuffer to capture the process stdout
+     * @param error a StringBuffer to capture the process stderr
+     * @since 1.6.5
+     */
+    public static void consumeProcessOutputWait(Process self, StringBuffer output, StringBuffer error) {
+        Thread tout = consumeProcessOutputStream(self, output);
+        Thread terr = consumeProcessErrorStream(self, error);
+        try { tout.join(); } catch (InterruptedException ignore) {}
+        try { terr.join(); } catch (InterruptedException ignore) {}
+    }
+
+    /**
+     * Gets the output and error streams from a process and reads them
+     * to keep the process from blocking due to a full output buffer.
+     * The processed stream data is appended to the supplied OutputStream.
+     * For this, two Threads are started, but join()ed, so we wait.
+     *
+     * @param self a Process
+     * @param output an OutputStream to capture the process stdout
+     * @param error an OutputStream to capture the process stderr
+     * @since 1.6.5
+     */
+    public static void consumeProcessOutputWait(Process self, OutputStream output, OutputStream error) {
+        Thread tout = consumeProcessOutputStream(self, output);
+        Thread terr = consumeProcessErrorStream(self, error);
+        try { tout.join(); } catch (InterruptedException ignore) {}
+        try { terr.join(); } catch (InterruptedException ignore) {}
+    }
+
+    /**
      * Gets the error stream from a process and reads it
      * to keep the process from blocking due to a full buffer.
      * The processed stream data is appended to the supplied StringBuffer.
@@ -11962,10 +12011,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a Process
      * @param error a StringBuffer to capture the process stderr
+     * @return the Thread
      * @since 1.5.2
      */
-    public static void consumeProcessErrorStream(Process self, StringBuffer error) {
-        new Thread(new TextDumper(self.getErrorStream(), error)).start();
+    public static Thread consumeProcessErrorStream(Process self, StringBuffer error) {
+        Thread thread = new Thread(new TextDumper(self.getErrorStream(), error));
+        thread.start();
+        return thread;
     }
 
     /**
@@ -11976,10 +12028,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a Process
      * @param err an OutputStream to capture the process stderr
+     * @return the Thread
      * @since 1.5.2
      */
-    public static void consumeProcessErrorStream(Process self, OutputStream err) {
-        new Thread(new ByteDumper(self.getErrorStream(), err)).start();
+    public static Thread consumeProcessErrorStream(Process self, OutputStream err) {
+        Thread thread = new Thread(new ByteDumper(self.getErrorStream(), err));
+        thread.start();
+        return thread;
     }
 
     /**
@@ -11990,10 +12045,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a Process
      * @param err a Writer to capture the process stderr
+     * @return the Thread
      * @since 1.5.2
      */
-    public static void consumeProcessErrorStream(Process self, Writer err) {
-        new Thread(new TextDumper(self.getErrorStream(), err)).start();
+    public static Thread consumeProcessErrorStream(Process self, Writer err) {
+        Thread thread = new Thread(new TextDumper(self.getErrorStream(), err));
+        thread.start();
+        return thread;
     }
 
     /**
@@ -12004,10 +12062,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a Process
      * @param output a StringBuffer to capture the process stdout
+     * @return the Thread
      * @since 1.5.2
      */
-    public static void consumeProcessOutputStream(Process self, StringBuffer output) {
-        new Thread(new TextDumper(self.getInputStream(), output)).start();
+    public static Thread consumeProcessOutputStream(Process self, StringBuffer output) {
+        Thread thread = new Thread(new TextDumper(self.getInputStream(), output));
+        thread.start();
+        return thread;
     }
 
     /**
@@ -12018,10 +12079,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a Process
      * @param output an OutputStream to capture the process stdout
+     * @return the Thread
      * @since 1.5.2
      */
-    public static void consumeProcessOutputStream(Process self, OutputStream output) {
-        new Thread(new ByteDumper(self.getInputStream(), output)).start();
+    public static Thread consumeProcessOutputStream(Process self, OutputStream output) {
+        Thread thread = new Thread(new ByteDumper(self.getInputStream(), output));
+        thread.start();
+        return thread;
     }
 
     /**
@@ -12032,10 +12096,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a Process
      * @param output a Writer to capture the process stdout
+     * @return the Thread
      * @since 1.5.2
      */
-    public static void consumeProcessOutputStream(Process self, Writer output) {
-        new Thread(new TextDumper(self.getInputStream(), output)).start();
+    public static Thread consumeProcessOutputStream(Process self, Writer output) {
+        Thread thread = new Thread(new TextDumper(self.getInputStream(), output));
+        thread.start();
+        return thread;
     }
 
     /**
