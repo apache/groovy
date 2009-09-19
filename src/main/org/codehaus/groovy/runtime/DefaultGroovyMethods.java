@@ -11913,8 +11913,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Gets the output and error streams from a process and reads them
-     * to keep the process from blocking due to a full output buffer. For this,
-     * two Threads are started, so this method will return immediately.
+     * to keep the process from blocking due to a full output buffer.
+     * The stream data is thrown away but blocking due to a full output buffer is avoided.
+     * Use this method if you don't care about the standard or error output and just
+     * want the process to run silently - use carefully however, because since the stream
+     * data is thrown away, it might be difficult to track down when something goes wrong.
+     * For this, two Threads are started, so this method will return immediately.
      *
      * @param self a Process
      * @since 1.0
@@ -11957,14 +11961,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Gets the output and error streams from a process and reads them
-     * to keep the process from blocking due to a full output buffer. For this,
-     * two Threads are started, but join()ed, so we wait.
+     * to keep the process from blocking due to a full output buffer.
+     * The stream data is thrown away but blocking due to a full output buffer is avoided.
+     * Use this method if you don't care about the standard or error output and just
+     * want the process to run silently - use carefully however, because since the stream
+     * data is thrown away, it might be difficult to track down when something goes wrong.
+     * For this, two Threads are started, but join()ed, so we wait.
      *
      * @param self a Process
      * @since 1.6.5
      */
-    public static void consumeProcessOutputWait(Process self) {
-        consumeProcessOutputWait(self, (OutputStream)null, (OutputStream)null);
+    public static void waitForProcessOutput(Process self) {
+        waitForProcessOutput(self, (OutputStream)null, (OutputStream)null);
     }
 
     /**
@@ -11978,7 +11986,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param error a StringBuffer to capture the process stderr
      * @since 1.6.5
      */
-    public static void consumeProcessOutputWait(Process self, StringBuffer output, StringBuffer error) {
+    public static void waitForProcessOutput(Process self, StringBuffer output, StringBuffer error) {
         Thread tout = consumeProcessOutputStream(self, output);
         Thread terr = consumeProcessErrorStream(self, error);
         try { tout.join(); } catch (InterruptedException ignore) {}
@@ -11996,7 +12004,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param error an OutputStream to capture the process stderr
      * @since 1.6.5
      */
-    public static void consumeProcessOutputWait(Process self, OutputStream output, OutputStream error) {
+    public static void waitForProcessOutput(Process self, OutputStream output, OutputStream error) {
         Thread tout = consumeProcessOutputStream(self, output);
         Thread terr = consumeProcessErrorStream(self, error);
         try { tout.join(); } catch (InterruptedException ignore) {}
