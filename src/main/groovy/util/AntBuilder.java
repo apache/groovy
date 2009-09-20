@@ -120,6 +120,14 @@ public class AntBuilder extends BuilderSupport {
     }
 
     /**
+     * Gets the xml context of Ant used while creating tasks
+     * @return the Ant xml context
+     */
+    public AntXMLContext getAntXmlContext() {
+        return antXmlContext;
+    }
+
+    /**
      * @return Factory method to create new Project instances
      */
     protected static Project createProject() {
