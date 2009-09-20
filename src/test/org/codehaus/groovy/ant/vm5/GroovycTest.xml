@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<project name="Test Groovyc Task" default="test1">
+
+  <property name="srcPath" value="."/>
+  <property name="destPath" value="${user.dir}/target/test-classes"/>
+  <property name="javaVersion" value="5"/>
+
+  <path id="groovyMaterials">
+      <pathelement path="${java.class.path}"/>
+  </path>
+
+  <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" classpathref="groovyMaterials"/>
+
+  <target name="Groovyc_Joint_NoFork_NestedCompilerArg_WithGroovyClasspath">
+    <groovyc srcdir="${srcPath}" destdir="${destPath}" includes="IncorrectGenericsUsage.java" classpathref="groovyMaterials">
+      <javac source="${javaVersion}" target="${javaVersion}" debug="true">
+        <compilerarg value="-Xlint"/>
+      </javac>
+    </groovyc>
+  </target>
+
+  <target name="clean">
+    <delete quiet="true">
+      <fileset dir="${destPath}/org/codehaus/groovy/ant/vm5">
+        <include name="IncorrectGenericsUsage.class"/>
+      </fileset>
+    </delete>
+  </target>
+
+</project>
