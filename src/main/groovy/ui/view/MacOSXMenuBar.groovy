@@ -1,6 +1,6 @@
 package groovy.ui.view
 
-static handler = false
+def handler = false
 if (!handler) {
     try {
         handler = build("""
