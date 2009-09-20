@@ -15,6 +15,7 @@
 package org.codehaus.groovy.ant;
 
 import java.io.*;
+import java.util.regex.Pattern;
 
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.Project;
@@ -59,7 +60,7 @@ public class GroovycTest extends GroovyTestCase {
             // End result is as if .exists() returned null
         }
     }
-
+    
     private void ensureNotPresent(final String classname) {
         if (!(new File(classDirectory + "GroovycTest.class")).exists()) {
             fail("Class file for GroovycTest does not exist and should.");
@@ -69,6 +70,12 @@ public class GroovycTest extends GroovyTestCase {
         }
     }
 
+    private void ensurePresent(final String classname) {
+        if (!(new File(classDirectory + classname + ".class")).exists()) {
+            fail("Class file for " + classname + " does not exist and should.");
+        }
+    }
+    
     private void ensureResultOK(final String classname) {
         if (!(new File(classDirectory + classname + ".class")).exists()) {
             fail("Class file for " + classname + " does not exist and should.");
@@ -128,6 +135,27 @@ public class GroovycTest extends GroovyTestCase {
         ensureExecutes("GroovycTest1_Joint_NoFork_WithGroovyClasspath");
     }
 
+    public void testGroovyc_Joint_NoFork_NestedCompilerArg_WithGroovyClasspath() {
+        // capture ant's output so we can verify the effect of passing compilerarg to javac
+        ByteArrayOutputStream allOutput = new ByteArrayOutputStream();
+        PrintStream out = new PrintStream(allOutput);
+        PrintStream origOut = System.out;
+        System.setOut(out);
+
+        ensureNotPresent("IncorrectGenericsUsage");
+        project.executeTarget("Groovyc_Joint_NoFork_NestedCompilerArg_WithGroovyClasspath");
+        ensurePresent("IncorrectGenericsUsage");
+        
+        String antOutput = allOutput.toString();
+        System.setOut(origOut);
+
+        // verify if passing -Xlint in compilerarg had its effect
+        Pattern p = Pattern.compile(".*?found[ ]*:[ ]*java.util.ArrayList.*", Pattern.DOTALL);
+        assertTrue("Expected line 1 not found in ant output", p.matcher(antOutput).matches());
+        p = Pattern.compile(".*?required[ ]*:[ ]*java.util.ArrayList<java.lang.String>.*", Pattern.DOTALL);
+        assertTrue("Expected line 2 not found in ant output", p.matcher(antOutput).matches());
+    }
+    
     public void testGroovycTest1_Joint_NoFork_WithJavaClasspath() {
         ensureExecutes("GroovycTest1_Joint_NoFork_WithJavaClasspath");
     }

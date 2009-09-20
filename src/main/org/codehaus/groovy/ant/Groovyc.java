@@ -24,6 +24,7 @@ import org.apache.tools.ant.AntClassLoader;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Project;
+import org.apache.tools.ant.RuntimeConfigurable;
 import org.apache.tools.ant.taskdefs.Execute;
 import org.apache.tools.ant.taskdefs.Javac;
 import org.apache.tools.ant.taskdefs.MatchingTask;
@@ -45,9 +46,11 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Enumeration;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.StringTokenizer;
 
 /**
  * Compiles Groovy source files. This task can take the following arguments:
@@ -632,7 +635,8 @@ public class Groovyc extends MatchingTask {
                 // extract joint options, some get pushed up...
                 List<String> jointOptions = new ArrayList<String>();
                 if (jointCompilation) {
-                    for (Iterator i = javac.getRuntimeConfigurableWrapper().getAttributeMap().entrySet().iterator(); i.hasNext();) {
+                    RuntimeConfigurable rc = javac.getRuntimeConfigurableWrapper();
+                    for (Iterator i = rc.getAttributeMap().entrySet().iterator(); i.hasNext();) {
                         final Map.Entry e = (Map.Entry) i.next();
                         final String key = e.getKey().toString();
                         final String value = getProject().replaceProperties(e.getValue().toString());
@@ -663,6 +667,26 @@ public class Groovyc extends MatchingTask {
                             log("The option " + key + " cannot be set on the contained <javac> element. The option will be ignored", Project.MSG_WARN);
                         }
                         // includes? excludes?
+                    }
+                    // ant's <javac> supports nested <compilerarg value=""> elements (there can be multiple of them)
+                    // for additional options to be passed to javac.
+                    Enumeration children = rc.getChildren();
+                    while (children.hasMoreElements()) {
+                        RuntimeConfigurable childrc = (RuntimeConfigurable) children.nextElement();
+                        if(childrc.getElementTag().equals("compilerarg")) {
+                            for (Iterator i = childrc.getAttributeMap().entrySet().iterator(); i.hasNext();) {
+                                final Map.Entry e = (Map.Entry) i.next();
+                                final String key = e.getKey().toString();
+                                if(key.equals("value")) {
+                                    final String value = getProject().replaceProperties(e.getValue().toString());
+                                    StringTokenizer st = new StringTokenizer(value, " ");
+                                    while(st.hasMoreTokens()) {
+                                        String optionStr = st.nextToken();
+                                        jointOptions.add(optionStr.replace("-X", "-FX"));
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 
