@@ -49,6 +49,18 @@ public final class CurriedClosure extends Closure {
         ((Closure)getOwner()).setDelegate(delegate);
     }
     
+    public Object getDelegate() {
+        return ((Closure)getOwner()).getDelegate();
+    }
+    
+    public void setResolveStrategy(int resolveStrategy) {
+        ((Closure)getOwner()).setResolveStrategy(resolveStrategy);
+    }
+    
+    public int getResolveStrategy() {
+        return ((Closure)getOwner()).getResolveStrategy();
+    }
+    
     public Object clone() {
         Closure uncurriedClosure = (Closure) ((Closure) getOwner()).clone();
         return new CurriedClosure(uncurriedClosure,curriedParams);
