@@ -42,5 +42,20 @@ public class ListFactory extends AbstractFactory {
             return new JList()
         }
     }
+
+    public boolean onHandleNodeAttributes(FactoryBuilderSupport builder, Object node, Map attributes) {
+        if (attributes.containsKey("listData")) {
+            def listData = attributes.remove("listData")
+            if (listData instanceof Vector || listData instanceof Object[]) {
+                node.listData = listData
+            } else if (listData instanceof Collection) {
+                node.listData = listData.toArray()
+            } else {
+                // allow any iterable ??
+                node.listData = listData.collect([]){it} as Object[]
+            }
+        }
+        return true
+    }
 }
 
