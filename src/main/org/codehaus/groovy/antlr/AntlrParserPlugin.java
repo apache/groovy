@@ -2712,6 +2712,11 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 answer = makeType(node).makeArray();
             } else {
                 answer = ClassHelper.make(qualifiedName(node));
+                if(answer.isUsingGenerics()) {
+                    ClassNode newAnswer = ClassHelper.makeWithoutCaching(answer.getName());
+                    newAnswer.setRedirect(answer);
+                    answer = newAnswer;
+                }
             }
             configureAST(answer,node);
         }
