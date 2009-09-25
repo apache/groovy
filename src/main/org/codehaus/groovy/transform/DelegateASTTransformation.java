@@ -161,7 +161,7 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
 
     private ClassNode nonGeneric(ClassNode type) {
         if (type.isUsingGenerics()) {
-            final ClassNode nonGen = ClassHelper.make(type.getName());
+            final ClassNode nonGen = ClassHelper.makeWithoutCaching(type.getName());
             nonGen.setRedirect(type);
             nonGen.setGenericsTypes(null);
             nonGen.setUsingGenerics(false);
