@@ -551,9 +551,6 @@ public class CompilationUnit extends ProcessingUnit {
                 scopeVisitor.visitClass(node);
 
                 resolveVisitor.startResolving(node, source);
-
-                GenericsVisitor genericsVisitor = new GenericsVisitor(source);
-                genericsVisitor.visitClass(node);
             }
 
         }
@@ -673,6 +670,10 @@ public class CompilationUnit extends ProcessingUnit {
 
         public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) throws CompilationFailedException {
 
+            if(!classNode.isSynthetic()) {
+                GenericsVisitor genericsVisitor = new GenericsVisitor(source);
+                genericsVisitor.visitClass(classNode);
+            }
             //
             // Run the Verifier on the outer class
             //
