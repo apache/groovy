@@ -1096,7 +1096,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         currentClass.setUsingGenerics(true);
         for (GenericsType type : types) {
             ClassNode classNode = type.getType();
-            String name = classNode.getName();
+            String name = type.getName();
             ClassNode[] bounds = type.getUpperBounds();
             if (bounds != null) {
                 boolean nameAdded = false;
