@@ -452,7 +452,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             }
         }
     }
-
+    
     private Statement addReturnsIfNeeded(Statement statement, VariableScope scope) {
         if (  statement instanceof ReturnStatement
            || statement instanceof BytecodeSequence
@@ -487,10 +487,16 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             return ifs;
         }
 
-//        if (statement instanceof SwitchStatement) {
-//            SwitchStatement swi = (SwitchStatement) statement;
-//            return swi;
-//        }
+        if (statement instanceof SwitchStatement) {
+            SwitchStatement swi = (SwitchStatement) statement;
+            List caseList = swi.getCaseStatements();
+            for (Iterator iter = caseList.iterator(); iter.hasNext(); ) {
+                CaseStatement caseStatement = (CaseStatement) iter.next();
+                caseStatement.setCode(adjustSwitchCaseCode(caseStatement.getCode(), scope));
+            }
+            swi.setDefaultStatement(adjustSwitchCaseCode(swi.getDefaultStatement(), scope)); 
+            return swi;
+        }
 
         if (statement instanceof TryCatchStatement) {
             TryCatchStatement trys = (TryCatchStatement) statement;
@@ -532,6 +538,21 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             list.add(new ReturnStatement(ConstantExpression.NULL));
             return new BlockStatement(list,new VariableScope(scope));
         }
+    }
+
+    private Statement adjustSwitchCaseCode(Statement statement, VariableScope scope) {
+        if(statement instanceof BlockStatement) {
+            final List list = ((BlockStatement)statement).getStatements();
+            if (!list.isEmpty()) {
+                int idx = list.size() - 1;
+                Statement last = (Statement) list.get(idx);
+                if(last instanceof BreakStatement) {
+                    list.remove(idx);
+                    return addReturnsIfNeeded(statement, scope);
+                }
+            }
+        }
+        return statement;
     }
 
     private boolean statementReturns(Statement last) {
