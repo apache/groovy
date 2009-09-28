@@ -416,7 +416,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             }
         };
         Statement s = node.getCode();
-        if (s == null) return;
+        if (s == null) {
+            return;
+        } else {
+            s.visit(new VerifierCodeVisitor(this));
+        }
         s.visit(checkSuper);
     }
 
