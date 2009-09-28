@@ -818,6 +818,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                                                             mme.getArguments(),mme.isStatic(),mme);
                 }
                 throw iie;
+            } catch (MissingMethodException mme) {
+                if (methodMissing instanceof ClosureMetaMethod)
+                    throw new MissingMethodExecutionFailed (mme.getMethod(), mme.getClass(),
+                                                        mme.getArguments(),mme.isStatic(),mme);
+                else
+                    throw mme;
             }
         } else if (original != null) throw original;
         else throw new MissingMethodExceptionNoStack(methodName, theClass, arguments, false);
@@ -1010,8 +1016,11 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
                             try {
                                 return invokeMethodOnGroovyObject(methodName, originalArguments, owner);
                             } catch (MissingMethodException mme) {
-                                // proboboly needed here, but we need a test case to trip it first
-                                if (last == null) last = mme;
+                                if (methodName.equals(mme.getMethod())) {
+                                    if (last == null) last = mme;
+                                } else {
+                                    throw mme;
+                                }
                             }
                             catch (InvokerInvocationException iie) {
                                 if (iie.getCause() instanceof MissingMethodException) {

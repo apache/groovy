@@ -76,13 +76,16 @@ public class CachedConstructor extends ParameterTypes {
         try {
             return constr.newInstance(argumentArray);
         } catch (InvocationTargetException e) {
-            throw new InvokerInvocationException(e);
+            throw e.getCause() instanceof RuntimeException ? (RuntimeException)e.getCause() : new InvokerInvocationException(e);
         } catch (IllegalArgumentException e) {
             throw createExceptionText("failed to invoke constructor: ", constr, argumentArray, e, false);
         } catch (IllegalAccessException e) {
             throw createExceptionText("could not access constructor: ", constr, argumentArray, e, false);
         } catch (Exception e) {
-            throw createExceptionText("failed to invoke constructor: ", constr, argumentArray, e, true);
+            if (e instanceof RuntimeException)
+                throw (RuntimeException)e;
+            else
+                throw createExceptionText("failed to invoke constructor: ", constr, argumentArray, e, true);
         }
     }
 

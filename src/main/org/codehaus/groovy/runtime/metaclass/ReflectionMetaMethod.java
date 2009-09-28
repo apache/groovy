@@ -54,7 +54,7 @@ public class ReflectionMetaMethod extends MetaMethod {
         } catch (IllegalAccessException e) {
             throw new InvokerInvocationException(e);
         } catch (InvocationTargetException e) {
-            throw new InvokerInvocationException(e);
+            throw e.getCause() instanceof RuntimeException ? (RuntimeException)e.getCause() : new InvokerInvocationException(e);
         }
     }
 

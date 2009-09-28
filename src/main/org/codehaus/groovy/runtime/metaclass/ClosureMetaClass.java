@@ -413,7 +413,7 @@ public final class ClosureMetaClass extends MetaClassImpl {
                 }
             }
         }
-        if (invoke2) {
+        if (invoke2 && (!invoke1 || o1 != o2)) {
             GroovyObject go = (GroovyObject) o2;
             try {
                 return go.invokeMethod(methodName, args);
