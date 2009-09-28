@@ -411,7 +411,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         };
         Statement s = node.getCode();
         //todo why can a statement can be null?
-        if (s == null) return;
+        if (s != null) {
+            s.visit(new VerifierCodeVisitor(this));
+        } else {
+            return;
+        }
         s.visit(checkSuper);
     }
 
