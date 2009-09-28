@@ -808,7 +808,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
                 tr()
             }
         }
-        assert msg == "'tr' must be within a 'tableLayout'"
+        assert msg =~ /'tr' must be within a 'tableLayout'/
         msg = shouldFailWithCause(RuntimeException){
             def frame = swing.frame(){
                 tableLayout(){
@@ -816,7 +816,7 @@ class SwingBuilderTest extends GroovySwingTestCase {
                 }
             }
         }
-        assert msg == "'td' must be within a 'tr'"
+        assert msg =~ /'td' must be within a 'tr'/
         swing.frame(id:'frame'){
             tableLayout(){
                 tr {

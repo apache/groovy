@@ -294,7 +294,7 @@ $Date$
     <condition property="_shouldBeHeadless_">
         <or>
             <istrue value="${java.awt.headless}"/>
-            <os name="Mac OS X"/>
+            <!--<os name="Mac OS X"/>-->
         </or>
     </condition>
 
@@ -328,6 +328,8 @@ $Date$
     <target name="-testOne" if="_testOne_" depends="-initGroovyc">
         <mkdir dir="${junitRawDirectory}"/>
         <junit printsummary="true" fork="true" includeantruntime="false" failureproperty="testFailed" maxmemory="${groovyJUnit_mx}" dir="${basedir}">
+            <sysproperty key="apple.awt.UIElement" value="true"/>
+            <!-- keeps the dock from showing the AWT startup -->
             <jvmarg line="${junitJvmArgs}"/>
             <test name="${testCase}" todir="${junitRawDirectory}"/>
             <formatter type="brief" usefile="false"/>
@@ -372,6 +374,8 @@ $Date$
         <mkdir dir="${junitRawDirectory}"/>
         <junit printsummary="true" fork="true" includeantruntime="false" failureproperty="testFailed" maxmemory="${groovyJUnit_mx}" dir="${basedir}">
             <jvmarg line="${junitJvmArgs}"/>
+            <sysproperty key="apple.awt.UIElement" value="true"/>
+            <!-- keeps the dock from showing the AWT startup -->
             <formatter type="xml"/>
             <formatter type="plain" unless="noTextReports"/>
             <batchtest todir="${junitRawDirectory}">
