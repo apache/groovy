@@ -31,8 +31,11 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -635,13 +638,15 @@ public class MetaClassHelper {
         	int tmpCount = 0;
         	for (int i = offset; i < arguments.length; i++) {
         		if(arguments[i] != null) {
-        			Class[] intfs = arguments[i].getClass().getInterfaces();
-        			for (int j = 0; j < intfs.length; j++) {
-        				if(intfs[j] == fallback) {
-        					tmpCount++;
-        					break;
-        				}
-        			}
+        		    Class argClass, tmpClass;
+        		    Set<Class> intfs = new HashSet<Class>();
+        		    tmpClass = argClass = arguments[i].getClass();
+        		    for (; tmpClass != Object.class; tmpClass = tmpClass.getSuperclass()) {
+        		        intfs.addAll(Arrays.asList(tmpClass.getInterfaces()));
+        		    }
+        		    if(intfs.contains(fallback)) {
+        		        tmpCount++;
+        		    }
         		}
         	}
         	// all arg classes implement interface fallback, so use that as the array component type
