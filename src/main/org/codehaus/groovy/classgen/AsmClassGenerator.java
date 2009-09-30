@@ -2598,6 +2598,9 @@ public class AsmClassGenerator extends ClassGenerator {
     }
 
     private boolean isStaticContext() {
+        if (compileStack!=null && compileStack.getScope()!=null) {
+            return compileStack.getScope().isInStaticContext();
+        }
         if (!isInClosure()) return false;
         if (constructorNode != null) return false;
         return classNode.isStaticClass() || methodNode.isStatic();
