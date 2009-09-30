@@ -66,6 +66,7 @@ public class GroovyCodeSource {
 		} catch (MalformedURLException murle) {
 			throw new RuntimeException("A CodeSource file URL cannot be constructed from the supplied codeBase: " + codeBase);
 		}
+		this.cachable = true;
 	}
 	
 	/**
