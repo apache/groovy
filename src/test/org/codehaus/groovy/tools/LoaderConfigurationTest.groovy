@@ -92,11 +92,26 @@ class LoaderConfigurationTest extends GroovyTestCase {
         assert config.classPathUrls.length == 0
     }
 
-
     private getNonexistingPropertyName(String base) {
         while (System.getProperty(base) != null) {
             base += "x"
         }
         return base
+    }
+    
+    void testSlashCorrection() {
+        def prop = getNonexistingPropertyName("nope")
+        System.setProperty("prop",'/')
+        
+        def txt = 'load ${prop}/'
+
+        def config = new LoaderConfiguration()
+        config.requireMain = false
+        config.configure(new StringBufferInputStream(txt))
+
+        assert config.classPathUrls.length == 1
+        def url = config.classPathUrls[0]
+        assert !url.path.endsWith("//")
+        System.setProperty("prop","")
     }
 }

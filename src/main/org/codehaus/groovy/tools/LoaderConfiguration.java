@@ -168,6 +168,7 @@ public class LoaderConfiguration {
                 }
             }
             propertyValue = getSlashyPath(propertyValue);
+            propertyValue = correctDoubleSlash(propertyValue,propertyIndexEnd,str);
             result += propertyValue;
 
             propertyIndexEnd++;
@@ -183,6 +184,17 @@ public class LoaderConfiguration {
         return result;
     }
 
+
+    private String correctDoubleSlash(String propertyValue, int propertyIndexEnd, String str) {
+        int index = propertyIndexEnd+1;
+        if ( index<str.length() && str.charAt(index)=='/' && 
+             propertyValue.endsWith("/") &&
+             propertyValue.length()>0)
+        {
+            propertyValue = propertyValue.substring(0,propertyValue.length()-1);
+        } 
+        return propertyValue;
+    }
 
     /*
      * Load a possibly filtered path. Filters are defined
