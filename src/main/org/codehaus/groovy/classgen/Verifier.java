@@ -725,7 +725,12 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     Parameter parameter = parameters[i];
                     if (parameter != null && parameter.hasInitialExpression()) {
                         paramValues.add(Integer.valueOf(i));
-                        paramValues.add(parameter.getInitialExpression());
+                        paramValues.add(
+                                new CastExpression(
+                                        parameter.getType(),
+                                        parameter.getInitialExpression()
+                                )
+                        );
                         counter++;
                     }
                 }
@@ -737,17 +742,32 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     int k = 1;
                     for (int i = 0; i < parameters.length; i++) {
                         if (k > counter - j && parameters[i] != null && parameters[i].hasInitialExpression()) {
-                            arguments.addExpression(parameters[i].getInitialExpression());
+                            arguments.addExpression(
+                                    new CastExpression(
+                                            parameters[i].getType(),
+                                            parameters[i].getInitialExpression()
+                                    )
+                            );
                             k++;
                         }
                         else if (parameters[i] != null && parameters[i].hasInitialExpression()) {
                             newParams[index++] = parameters[i];
-                            arguments.addExpression(new VariableExpression(parameters[i].getName()));
+                            arguments.addExpression(
+                                    new CastExpression(
+                                            parameters[i].getType(),
+                                            new VariableExpression(parameters[i].getName())
+                                    )
+                            );
                             k++;
                         }
                         else {
                             newParams[index++] = parameters[i];
-                            arguments.addExpression(new VariableExpression(parameters[i].getName()));
+                            arguments.addExpression(
+                                    new CastExpression(
+                                            parameters[i].getType(),
+                                            new VariableExpression(parameters[i].getName())
+                                    )
+                            );
                         }
                     }
                     action.call(arguments,newParams,method);
