@@ -100,5 +100,29 @@ class DefaultParamTest extends CompilableTestSupport {
             assert foo.j == 2        
         """
     }
+    
+    void testPrecendence() {
+        // def meth(Closure cl = null) will produce a call meth(null)
+        // since interfaces are prefered over normal classes and since
+        // def meth(Map args, Closure cl = null) will produce a method
+        // meth(Map) a simple call with meth(null) would normally call
+        // meth(Map). To ensure this will not happen the call has to 
+        // use a cast in the automatically created method. 
+        assertScript """
+            def meth(Closure cl = null) {
+              return '1' +meth([:], cl)
+            }
+            def meth(Map args, Closure cl = null) {
+                if(args==null) return "2" 
+                return '2'+args.size()
+            }
+            
+            assert meth() == "120"
+            assert meth(null) == "2"
+            assert meth {} == "120"
+            assert meth(a:1) == "21"
+            assert meth(a:1) {} == "21"
+        """
+    }
 }
 
