@@ -22,13 +22,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-
-/*
- * GroovyScriptEngineImpl.java
- * @author Mike Grogan
- * @author A. Sundararajan
- * @author Jim White
- */
 package org.codehaus.groovy.jsr223;
 
 import groovy.lang.Binding;
@@ -58,12 +51,7 @@ import javax.script.ScriptEngineFactory;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
 
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.PrintWriter;
-import java.io.Reader;
-import java.io.Writer;
+import java.io.*;
 
 import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Method;
@@ -73,6 +61,12 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
+/*
+ * @author Mike Grogan
+ * @author A. Sundararajan
+ * @author Jim White
+ * @author Guillaume Laforge
+ */
 public class GroovyScriptEngineImpl
     extends AbstractScriptEngine implements Compilable, Invocable {
 
@@ -219,7 +213,11 @@ public class GroovyScriptEngineImpl
 //            // always have readLine because the GDK supplies it for Reader.
 //            ctx.setAttribute("reader", ctx.getReader(), ScriptContext.ENGINE_SCOPE);
         }
-        
+
+        // Fix for GROOVY-3669: Can't use several times the same JSR-223 ScriptContext for differents groovy script
+        if (ctx.getWriter() != null) {
+            ctx.setAttribute("out", new PrintWriter(ctx.getWriter(), true), ScriptContext.ENGINE_SCOPE);
+        }
 
         /*
          * We use the following Binding instance so that global variable lookup
@@ -307,6 +305,12 @@ public class GroovyScriptEngineImpl
             return scriptObject.run();
         } catch (Exception e) {
             throw new ScriptException(e);
+        } finally {
+            // Fix for GROOVY-3669: Can't use several times the same JSR-223 ScriptContext for different groovy script
+            // Groovy's scripting engine implementation adds those two variables in the binding
+            // but should clean up afterwards
+            ctx.removeAttribute("context", ScriptContext.ENGINE_SCOPE);
+            ctx.removeAttribute("out", ScriptContext.ENGINE_SCOPE);
         }
     }
 

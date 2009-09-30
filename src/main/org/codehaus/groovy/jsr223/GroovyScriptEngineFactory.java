@@ -22,13 +22,6 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
-/*
- * GroovyScriptEngineFactory.java
- * @author Mike Grogan
- * @author A. Sundararajan
- * @author Jim White
- */
-
 package org.codehaus.groovy.jsr223;
 
 import org.codehaus.groovy.runtime.InvokerHelper;
@@ -40,6 +33,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+/*
+ * @author Mike Grogan
+ * @author A. Sundararajan
+ * @author Jim White
+ * @author Guillaume Laforge
+ */
 public class GroovyScriptEngineFactory implements ScriptEngineFactory {
 	
     private static final String VERSION = "2.0";
