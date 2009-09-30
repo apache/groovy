@@ -27,6 +27,8 @@ import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.syntax.SyntaxException;
 import org.objectweb.asm.Opcodes;
 
+import groovy.lang.Reference;
+
 import java.util.Set;
 import java.util.LinkedList;
 import java.util.HashSet;
@@ -40,7 +42,11 @@ import java.util.Arrays;
  */
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class CategoryASTTransformation implements ASTTransformation, Opcodes {
-    private static final VariableExpression THIS_EXPRESSION = new VariableExpression("$this");
+    private static final VariableExpression THIS_EXPRESSION;
+    static {
+        THIS_EXPRESSION = new VariableExpression("$this");
+        THIS_EXPRESSION.setClosureSharedVariable(true);
+    }
 
     /**
      * Property invocations done on 'this' reference are transformed so that the invocations at runtime are
@@ -62,20 +68,23 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
             names.add(field.getName());
         }
         varStack.add(names);
-
+        final Reference parameter = new Reference();
         final ClassCodeExpressionTransformer expressionTransformer = new ClassCodeExpressionTransformer() {
             protected SourceUnit getSourceUnit() {
                 return source;
             }
 
-            public void visitMethod(MethodNode node) {
+            private void addVariablesToStack(Parameter[] params) {
                 Set<String> names = new HashSet<String>();
                 names.addAll(varStack.getLast());
-                final Parameter[] params = node.getParameters();
                 for (Parameter param : params) {
                     names.add(param.getName());
                 }
                 varStack.add(names);
+            }
+            
+            public void visitMethod(MethodNode node) {
+                addVariablesToStack(node.getParameters());
                 super.visitMethod(node);
                 varStack.removeLast();
             }
@@ -131,6 +140,19 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
                             return pe;
                         }
                     }
+                } else if (exp instanceof ClosureExpression) {
+                    ClosureExpression ce = (ClosureExpression) exp;
+                    ce.getVariableScope().putReferencedLocalVariable((Parameter) parameter.get());
+                    Parameter[] params = ce.getParameters();
+                    if (params==null){
+                        params = new Parameter[0];
+                    } else if (params.length==0) {
+                        params = new Parameter[] {
+                                new Parameter(ClassHelper.OBJECT_TYPE, "it")
+                        };
+                    }
+                    addVariablesToStack(params);
+                    ce.getCode().visit(this);
                 }
                 return super.transform(exp);
             }
@@ -141,7 +163,10 @@ public class CategoryASTTransformation implements ASTTransformation, Opcodes {
                 method.setModifiers(method.getModifiers() | Opcodes.ACC_STATIC);
                 final Parameter[] origParams = method.getParameters();
                 final Parameter[] newParams = new Parameter[origParams.length + 1];
-                newParams[0] = new Parameter(targetClass, "$this");
+                Parameter p = new Parameter(targetClass, "$this");
+                p.setClosureSharedVariable(true);
+                newParams[0] = p; 
+                parameter.set(p);
                 System.arraycopy(origParams, 0, newParams, 1, origParams.length);
                 method.setParameters(newParams);
 
