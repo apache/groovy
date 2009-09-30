@@ -116,5 +116,34 @@ class CategoryAnnotationTest extends GroovyTestCase {
 			}
     	"""
     }
+    
+    void testClosureUsingThis() {
+        assertScript """
+            @Category(Guy)
+            class Filtering {
+                List process() {
+                    this.messages.findAll{it.name != this.getName()}
+                }
+            }
+            
+            interface Guy {
+                String getName()
+                List getMessages()
+            }
+            
+            class MyGuyver implements Guy {
+                List messages
+                String name
+            }
+            
+            def onetest = new MyGuyver(
+                    name: 'coucou',
+                    messages : [['name':'coucou'], ['name':'test'], ['name':'salut']])
+            
+            Guy.mixin   Filtering
+            
+            assert onetest.process() == onetest.messages.findAll{it.name != onetest.getName()}        
+        """
+    }
 }
 
