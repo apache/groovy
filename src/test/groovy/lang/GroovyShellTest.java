@@ -106,4 +106,17 @@ public class GroovyShellTest extends GroovyTestCase {
         assertEquals("I like Cheddar", result);
         assertEquals("abc", context.getVariable("x"));
     }
+    
+    public void testClassLoader() {
+        Binding context = new Binding();
+        CompilerConfiguration config = new CompilerConfiguration();
+        config.setScriptBaseClass(DerivedScript.class.getName());
+        GroovyShell shell = new GroovyShell(context, config);
+        String script = "evaluate '''\n"+
+                        "class XXXX{}\n"+
+                        "assert evaluate('XXXX') == XXXX\n"+
+                        "'''";
+        shell.evaluate(script);
+     
+    }
 }
