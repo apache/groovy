@@ -31,7 +31,6 @@ import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.objectweb.asm.Opcodes;
 
 import java.lang.reflect.Array;
-import java.lang.reflect.Modifier;
 import java.util.*;
 
 import groovy.lang.GroovyObject;
