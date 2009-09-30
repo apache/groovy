@@ -57,6 +57,7 @@ public class GroovyCodeSource {
 	
 	public GroovyCodeSource(String script, String name, String codeBase) {
 		this(new ByteArrayInputStream(script.getBytes()), name, codeBase);
+		this.cachable = true;
 	}
 	
 	/**
