@@ -166,7 +166,7 @@ public abstract class Script extends GroovyObjectSupport {
      * @param expression is the Groovy script expression to evaluate
      */
     public Object evaluate(String expression) throws CompilationFailedException {
-        GroovyShell shell = new GroovyShell(binding);
+        GroovyShell shell = new GroovyShell(getClass().getClassLoader(), binding);
         return shell.evaluate(expression);
     }
 
@@ -177,7 +177,7 @@ public abstract class Script extends GroovyObjectSupport {
      * @param file is the Groovy script to evaluate
      */
     public Object evaluate(File file) throws CompilationFailedException, IOException {
-        GroovyShell shell = new GroovyShell(binding);
+        GroovyShell shell = new GroovyShell(getClass().getClassLoader(), binding);
         return shell.evaluate(file);
     }
 
@@ -185,7 +185,7 @@ public abstract class Script extends GroovyObjectSupport {
      * A helper method to allow scripts to be run taking command line arguments
      */
     public void run(File file, String[] arguments) throws CompilationFailedException, IOException {
-        GroovyShell shell = new GroovyShell(binding);
+        GroovyShell shell = new GroovyShell(getClass().getClassLoader(), binding);
         shell.run(file, arguments);
     }
 }
