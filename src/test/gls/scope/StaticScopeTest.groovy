@@ -76,7 +76,7 @@ public class StaticScopeTest extends CompilableTestSupport {
         """
     }
 
-    public void testNormalStaticScopeInclass() {
+    public void testNormalStaticScopeInClass() {
         assertScript """
         class A {
             static i
@@ -212,4 +212,17 @@ public class StaticScopeTest extends CompilableTestSupport {
             A.foo()
         """
     }
+    
+    public void testStaticThisWithClass() {
+        assertScript """
+            static foo(){this}
+            assert foo() instanceof Class
+            assert foo() != Class
+        """
+        
+        assertScript """
+            static foo(){this.class}
+            assert foo() == Class
+        """
+    }    
 }

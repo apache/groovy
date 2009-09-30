@@ -527,7 +527,11 @@ public class ScriptBytecodeAdapter {
     //  --------------------------------------------------------
 
     public static void setGroovyObjectProperty(Object messageArgument, Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
-        receiver.setProperty(messageName, messageArgument);
+        try {
+            receiver.setProperty(messageName, messageArgument);
+        } catch (GroovyRuntimeException gre) {
+            throw unwrap(gre);
+        }
     }
 
     public static void setGroovyObjectPropertySafe(Object messageArgument, Class senderClass, GroovyObject receiver, String messageName) throws Throwable {
@@ -754,12 +758,20 @@ public class ScriptBytecodeAdapter {
             return InvokerHelper.unaryMinus(value);
     }
 
-    public static Object unaryPlus(Object value) {
-        return InvokerHelper.unaryPlus(value);
+    public static Object unaryPlus(Object value) throws Throwable {
+        try {
+            return InvokerHelper.unaryPlus(value);
+        } catch (GroovyRuntimeException gre) {
+            throw unwrap(gre);
+        }
     }
 
-    public static Object bitwiseNegate(Object value) {
-        return InvokerHelper.bitwiseNegate(value);
+    public static Object bitwiseNegate(Object value) throws Throwable {
+        try {
+            return InvokerHelper.bitwiseNegate(value);
+        } catch (GroovyRuntimeException gre) {
+            throw unwrap(gre);
+        }
     }
 
     public static MetaClass initMetaClass(Object object) {

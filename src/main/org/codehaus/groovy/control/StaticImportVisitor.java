@@ -189,13 +189,12 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
             }
         }
 
-        // some this/super validation
-        boolean isExplicitThisOrSuper = false;
+        // some super validation
         if (objectExpression instanceof VariableExpression) {
             VariableExpression ve = (VariableExpression) objectExpression;
-            isExplicitThisOrSuper = !pe.isImplicitThis() && (ve.getName().equals("this") || ve.getName().equals("super"));
-            if (isExplicitThisOrSuper && currentMethod != null && currentMethod.isStatic()) {
-                addError("Non-static variable '" + ve.getName() + "' cannot be referenced from the static method " + currentMethod.getName() + ".", pe);
+            boolean isExplicitSuper = ve.getName().equals("super");
+            if (isExplicitSuper && currentMethod != null && currentMethod.isStatic()) {
+                addError("'super' cannot be used in a static context, ex the exlicit class instead.", pe);
                 return null;
             }
         }
