@@ -426,19 +426,27 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     public void visitMethod(MethodNode node) {
         this.methodNode = node;
+        adjustTypesIfStaticMainMethod(node);
         addReturnIfNeeded(node);
         Statement statement;
+        statement = node.getCode();
+        if (statement!=null) statement.visit(new VerifierCodeVisitor(this));
+    }
+    
+    private void adjustTypesIfStaticMainMethod(MethodNode node) {
         if (node.getName().equals("main") && node.isStatic()) {
             Parameter[] params = node.getParameters();
             if (params.length == 1) {
                 Parameter param = params[0];
                 if (param.getType() == null || param.getType()==ClassHelper.OBJECT_TYPE) {
                     param.setType(ClassHelper.STRING_TYPE.makeArray());
+                    ClassNode returnType = node.getReturnType();
+                    if(returnType == ClassHelper.OBJECT_TYPE) {
+                        node.setReturnType(ClassHelper.VOID_TYPE);
+                    }
                 }
             }
         }
-        statement = node.getCode();
-        if (statement!=null) statement.visit(new VerifierCodeVisitor(this));
     }
 
     protected void addReturnIfNeeded(MethodNode node) {
