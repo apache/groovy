@@ -33,6 +33,7 @@ import org.codehaus.groovy.runtime.metaclass.MissingPropertyExceptionNoStack;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
+import org.codehaus.groovy.runtime.NullObject;
 import org.codehaus.groovy.tools.RootLoader;
 import org.w3c.dom.NodeList;
 
@@ -12413,10 +12414,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (metaClass == null)
           metaClassRegistry.removeMetaClass(self);
         else {
-          if (metaClass instanceof HandleMetaClass)
+          if (metaClass instanceof HandleMetaClass) {
             metaClassRegistry.setMetaClass(self, ((HandleMetaClass)metaClass).getAdaptee());
-          else
+          } else {
             metaClassRegistry.setMetaClass(self, metaClass);
+          }
+          if (self==NullObject.class) {
+              NullObject.getNullObject().setMetaClass(metaClass);
+          }
         }
     }
 
@@ -12430,13 +12435,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (metaClass instanceof HandleMetaClass)
             metaClass = ((HandleMetaClass)metaClass).getAdaptee();
 
-        if (self instanceof GroovyObject)
+        if (self instanceof GroovyObject) {
             ((GroovyObject)self).setMetaClass(metaClass);
-        else
-        if (self instanceof Class)
+        } else if (self instanceof Class) {
             ((MetaClassRegistryImpl)GroovySystem.getMetaClassRegistry()).setMetaClass((Class)self, metaClass);
-        else
+        } else {
             ((MetaClassRegistryImpl)GroovySystem.getMetaClassRegistry()).setMetaClass(self, metaClass);
+        }
     }
 
     /**
