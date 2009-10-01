@@ -97,6 +97,7 @@ public class Expando extends GroovyObjectSupport {
             Object value = this.getProperty(name);
             if (value instanceof Closure) {
                 Closure closure = (Closure) value;
+                closure = (Closure) closure.clone();
                 closure.setDelegate(this);
                 return closure.call((Object[]) args);
             }
