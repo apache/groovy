@@ -14,7 +14,7 @@ public final class NullCallSite extends AbstractCallSite {
     public final Object call(Object receiver, Object[] args) throws Throwable {
         if (receiver == null) {
             try{
-                return InvokerHelper.invokeMethod(NullObject.getNullObject(), name, args);
+                return CallSiteArray.defaultCall(this, NullObject.getNullObject(), args);
             } catch (GroovyRuntimeException gre) {
                 throw ScriptBytecodeAdapter.unwrap(gre);
             }
