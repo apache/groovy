@@ -12647,13 +12647,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         public ProcessRunner(Process process) {
             this.process = process;
         }
-
-        public void run() {
+        
+        private void doProcessWait() {
             try {
                 process.waitFor();
             } catch (InterruptedException e) {
                 // Ignore
             }
+        }
+
+        public void run() {
+            doProcessWait();
             synchronized (this) {
                 notifyAll();
                 finished = true;
@@ -12669,6 +12673,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 }
                 if (!finished) {
                     process.destroy();
+                    doProcessWait();
                 }
             }
         }
