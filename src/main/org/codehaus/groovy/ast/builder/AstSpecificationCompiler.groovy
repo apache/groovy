@@ -789,7 +789,7 @@ import org.codehaus.groovy.ast.ClassHelper
      */
 
     private void classNode(Class target) {
-        expression << ClassHelper.make(target)
+        expression << ClassHelper.make(target, false)
     }
 
 
@@ -870,7 +870,7 @@ import org.codehaus.groovy.ast.ClassHelper
     }
 
     /**
-     * Creates a list of ClassNodes.
+     * Creates a list of ClassNodes. 
      */
     private void lowerBound(Class target) {
         expression << ClassHelper.make(target)

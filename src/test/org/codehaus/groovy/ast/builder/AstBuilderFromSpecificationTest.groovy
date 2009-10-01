@@ -83,7 +83,7 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
 
         def expected = new AnnotationConstantExpression(
                 new AnnotationNode(
-                        new ClassNode(Override.class)
+                        ClassHelper.make(Override.class, false)
                 )
         )
         AstAssert.assertSyntaxTree([expected], result)
@@ -250,7 +250,7 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
         }
 
         def expected = new ArrayExpression(
-                new ClassNode(Integer),
+                ClassHelper.make(Integer, false),
                 [
                         new ConstantExpression(1),
                         new ConstantExpression(2),
@@ -281,7 +281,7 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
         }
 
         def expected = new CastExpression(
-                new ClassNode(Integer),
+                ClassHelper.make(Integer, false),
                 new ConstantExpression("")
         )
         AstAssert.assertSyntaxTree([expected], result)
@@ -312,7 +312,7 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
 
         def expected = new ClosureExpression(
                 [new Parameter(
-                        new ClassNode(Object), "parm"
+                        ClassHelper.make(Object, false), "parm"
                 )] as Parameter[],
                 new BlockStatement(
                         [new ExpressionStatement(
@@ -358,9 +358,9 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
 
         def expected = new ClosureExpression(
                 [
-                        new Parameter(new ClassNode(Object), "x"),
-                        new Parameter(new ClassNode(Object), "y"),
-                        new Parameter(new ClassNode(Object), "z")] as Parameter[],
+                        new Parameter(ClassHelper.make(Object, false), "x"),
+                        new Parameter(ClassHelper.make(Object, false), "y"),
+                        new Parameter(ClassHelper.make(Object, false), "z")] as Parameter[],
                 new BlockStatement(
                         [new ExpressionStatement(
                                 new MethodCallExpression(
@@ -390,7 +390,7 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
         }
 
         def expected = new ConstructorCallExpression(
-                new ClassNode(Integer),
+                ClassHelper.make(Integer, false),
                 new ArgumentListExpression(
                         new ConstantExpression(4)
                 )
@@ -496,7 +496,7 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
         def expected = new DeclarationExpression(
                 new VariableExpression("foo"),
                 new Token(Types.EQUALS, "=", -1, -1),
-                new ClassExpression(new ClassNode(String))
+                new ClassExpression(ClassHelper.make(String, false))
         )
 
         AstAssert.assertSyntaxTree([expected], result)
@@ -517,8 +517,8 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
                 new FieldNode(
                         "foo",
                         ACC_PUBLIC & ACC_STATIC,
-                        new ClassNode(String),
-                        new ClassNode(this.class),
+                        ClassHelper.make(String, false),
+                        ClassHelper.make(this.class, false),
                         new ConstantExpression("a value")
                 )
         )
@@ -630,7 +630,7 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
         }
 
         def expected = new MethodPointerExpression(
-                new ClassExpression(new ClassNode(Integer)),
+                new ClassExpression(ClassHelper.make(Integer, false)),
                 new ConstantExpression("toString")
         )
 
@@ -928,7 +928,7 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
         expected.addCatch(
                 new CatchStatement(
                         new Parameter(
-                                new ClassNode(Exception), "e"
+                                ClassHelper.make(Exception, false), "e"
                         ),
                         new BlockStatement(
                                 [new ThrowStatement(
@@ -1040,7 +1040,7 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
         }
 
         def expected = new ForStatement(
-                new Parameter(new ClassNode(Object), "forLoopDummyParameter"),
+                new Parameter(ClassHelper.make(Object, false), "forLoopDummyParameter"),
                 new ClosureListExpression(
                         [
                                 new DeclarationExpression(
@@ -1091,7 +1091,7 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
         }
 
         def expected = new StaticMethodCallExpression(
-                new ClassNode(Math),
+                ClassHelper.make(Math, false),
                 "min",
                 new ArgumentListExpression(
                         new ConstantExpression(1),
@@ -1180,13 +1180,13 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
         }
 
         def expected = new MethodCallExpression(
-                new VariableExpression('this', new ClassNode(Object)),
+                new VariableExpression('this', ClassHelper.make(Object, false)),
                 'func',
                 new MapEntryExpression(
                         new SpreadMapExpression(
-                                new VariableExpression('m', new ClassNode(Object))
+                                new VariableExpression('m', ClassHelper.make(Object, false))
                         ),
-                        new VariableExpression('m', new ClassNode(Object))
+                        new VariableExpression('m', ClassHelper.make(Object, false))
                 )
 
         )
@@ -1359,7 +1359,7 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
         }
 
         def expected = new ConstructorCallExpression(
-                new ClassNode(String),
+                ClassHelper.make(String),
                 new TupleExpression(
                         new NamedArgumentListExpression(
                                 [
@@ -1402,8 +1402,8 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
         def expected = new MethodNode(
                 "myMethod",
                 ACC_PUBLIC,
-                new ClassNode(String.class),
-                [new Parameter(new ClassNode(String), "parameter", new ConstantExpression(null))] as Parameter[],
+                ClassHelper.make(String.class, false),
+                [new Parameter(ClassHelper.make(String, false), "parameter", new ConstantExpression(null))] as Parameter[],
                 [] as ClassNode[],
                 new BlockStatement(
                         [new ReturnStatement(
@@ -1438,8 +1438,8 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
         def expected = new MethodNode(
                 "myMethod",
                 ACC_PUBLIC,
-                new ClassNode(String.class),
-                [new Parameter(new ClassNode(String[]), "parameters")] as Parameter[],
+                ClassHelper.make(String.class, false),
+                [new Parameter(ClassHelper.make(String[], false), "parameters")] as Parameter[],
                 [] as ClassNode[],
                 new BlockStatement(
                         [new ReturnStatement(
@@ -1480,14 +1480,14 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
                 new ClassNode(
                         "Foo",
                         ACC_PUBLIC,
-                        new ClassNode(Object),
-                        [new ClassNode(GroovyObject)] as ClassNode[],
+                        ClassHelper.make(Object, false),
+                        [ClassHelper.make(GroovyObject, false)] as ClassNode[],
                         [] as MixinNode[]
                 ),
                 'Foo$Bar',
                 ACC_PUBLIC,
-                new ClassNode(Object),
-                [new ClassNode(GroovyObject)] as ClassNode[],
+                ClassHelper.make(Object, false),
+                [ClassHelper.make(GroovyObject, false)] as ClassNode[],
                 [] as MixinNode[]
         )
 
@@ -1520,12 +1520,12 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
         def expected = new ConstructorNode(
                 ACC_PUBLIC,
                 [
-                        new Parameter(new ClassNode(String), "foo"),
-                        new Parameter(new ClassNode(Integer), "bar")
+                        new Parameter(ClassHelper.make(String, false), "foo"),
+                        new Parameter(ClassHelper.make(Integer, false), "bar")
                 ] as Parameter[],
                 [
-                        new ClassNode(Exception),
-                        new ClassNode(IOException)
+                        ClassHelper.make(Exception, false),
+                        ClassHelper.make(IOException, false)
                 ] as ClassNode[],
                 new BlockStatement()
         )
@@ -1554,12 +1554,12 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
         }
 
         def expected = new ClassNode(
-                "MyClass", ACC_PUBLIC, new ClassNode(Object)
+                "MyClass", ACC_PUBLIC, ClassHelper.make(Object, false)
         )
         expected.setGenericsTypes(
                 [
-                        new GenericsType(new ClassNode(Object)),
-                        new GenericsType(new ClassNode(Number), [new ClassNode(Number)] as ClassNode[], null),
+                        new GenericsType(ClassHelper.make(Object, false)),
+                        new GenericsType(ClassHelper.make(Number, false), [ClassHelper.make(Number, false)] as ClassNode[], null),
                 ] as GenericsType[]
         )
         AstAssert.assertSyntaxTree([expected], result)
@@ -1590,15 +1590,15 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
         }
 
         def expected = new ClassNode(
-                "MyClass", ACC_PUBLIC, new ClassNode(Object)
+                "MyClass", ACC_PUBLIC, ClassHelper.make(Object, false)
         )
         expected.setGenericsTypes(
                 [
-                        new GenericsType(new ClassNode(Object)),
+                        new GenericsType(ClassHelper.make(Object, false)),
                         new GenericsType(
-                                new ClassNode(Number),
-                                [new ClassNode(Number), ClassHelper.make(Comparable)] as ClassNode[],
-                                new ClassNode(Integer)),
+                                ClassHelper.make(Number, false),
+                                [ClassHelper.make(Number, false), ClassHelper.make(Comparable, false)] as ClassNode[],
+                                ClassHelper.make(Integer, false)),
                 ] as GenericsType[]
         )
         AstAssert.assertSyntaxTree([expected], result)
@@ -1612,8 +1612,8 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
         }
 
         def expected = [
-                new ImportNode(new ClassNode(String), "string"),
-                new ImportNode(new ClassNode(Integer), null)
+                new ImportNode(ClassHelper.make(String, false), "string"),
+                new ImportNode(ClassHelper.make(Integer, false), null)
         ]
 
         AstAssert.assertSyntaxTree(expected, result)
@@ -1651,16 +1651,16 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
         def expected = new MethodNode(
                 "myMethod",
                 ACC_PUBLIC,
-                new ClassNode(String.class),
-                [new Parameter(new ClassNode(String), "parameter")] as Parameter[],
-                [new ClassNode(Exception), new ClassNode(IOException)] as ClassNode[],
+                ClassHelper.make(String, false),
+                [new Parameter(ClassHelper.make(String, false), "parameter")] as Parameter[],
+                [ClassHelper.make(Exception, false), ClassHelper.make(IOException, false)] as ClassNode[],
                 new BlockStatement(
                         [new ReturnStatement(
                                 new ConstantExpression('some result')
                         )],
                         new VariableScope()
                 ))
-        expected.addAnnotation(new AnnotationNode(new ClassNode(Override)))
+        expected.addAnnotation(new AnnotationNode(ClassHelper.make(Override, false)))
         AstAssert.assertSyntaxTree([expected], result)
     }
 
@@ -1685,12 +1685,12 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
         def expected = new MethodNode(
                 "myMethod",
                 ACC_PUBLIC,
-                new ClassNode(Object.class),
+                ClassHelper.make(Object, false),
                 [] as Parameter[],
                 [] as ClassNode[],
                 new BlockStatement([], new VariableScope()))
 
-        def annotation = new AnnotationNode(new ClassNode(Override))
+        def annotation = new AnnotationNode(ClassHelper.make(Override, false))
         annotation.setMember('timeout', new ConstantExpression(50L))
         expected.addAnnotation(annotation)
 
@@ -1722,15 +1722,15 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
 
         def expected = new ClassNode(
                 "MyClass", ACC_PUBLIC,
-                new ClassNode(Object),
-                [new ClassNode(GroovyObject.class)] as ClassNode[],
+                ClassHelper.make(Object, false),
+                [ClassHelper.make(GroovyObject, false)] as ClassNode[],
                 [
-                        new MixinNode("ClassA", ACC_PUBLIC, new ClassNode(String)),
+                        new MixinNode("ClassA", ACC_PUBLIC, ClassHelper.make(String, false)),
                         new MixinNode(
                                 "ClassB",
                                 ACC_PUBLIC,
-                                new ClassNode(String),
-                                [new ClassNode(GroovyObject.class)] as ClassNode[]), // interfaces
+                                ClassHelper.make(String, false),
+                                [ClassHelper.make(GroovyObject, false)] as ClassNode[]), // interfaces
                 ] as MixinNode[]
         )
 
@@ -1752,8 +1752,8 @@ public class AstBuilderFromSpecificationTest extends GroovyTestCase {
         def expected = new PropertyNode(
                 "MY_VALUE",
                 ACC_PUBLIC,
-                new ClassNode(String.class),
-                new ClassNode(this.class),
+                ClassHelper.make(String, false),
+                ClassHelper.make(this.class, false),
                 new ConstantExpression("foo"),
                 null,
                 null        //todo: do we need to support getter and setter blocks?
