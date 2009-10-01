@@ -64,7 +64,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     // ------------------------------
-    // helper methods   
+    // helper methods
     //------------------------------
 
     private void pushState(boolean isStatic) {
@@ -198,7 +198,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     // -------------------------------
-    // different Variable based checks  
+    // different Variable based checks
     // -------------------------------
 
     private Variable checkVariableNameForDeclaration(String name, Expression expression) {
@@ -207,12 +207,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         VariableScope scope = currentScope;
         Variable var = new DynamicVariable(name, currentScope.isInStaticContext());
         // try to find a declaration of a variable
-        VariableScope dynamicScope = null;
-        while (!scope.isRoot()) {
-            if (dynamicScope == null && scope.isResolvingDynamic()) {
-                dynamicScope = scope;
-            }
-
+        while (true) {
             Variable var1;
             var1 = scope.getDeclaredVariable(var.getName());
 
@@ -237,24 +232,12 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             if (classScope != null) {
                 Variable member = findClassMember(classScope, var.getName());
                 if (member != null) {
-                    boolean cc = currentScope.isInStaticContext() || isSpecialConstructorCall;
-                    boolean cm = member.isInStaticContext();
-                    //
-                    // we don't allow access from dynamic context to static context
-                    //
-                    // cm==cc: 
-                    //   we always allow access if the context is in both cases static 
-                    //   or dynamic
-                    // cm==true: 
-                    //   the member is static, which means access is always allowed
-                    // cm||cm==cc:
-                    //   is false only for the case cc==true and cm==false, which means
-                    //   the member is a dynamic context, but the current scope is static.
-                    //
-                    // One example for (cm||cm==cc)==false is a static method trying to 
-                    // access a non static field.
-                    //
-                    if (cm || cm == cc) var = member;
+                    boolean staticScope = currentScope.isInStaticContext() || isSpecialConstructorCall;
+                    boolean staticMember = member.isInStaticContext();
+                    // We don't allow a static context (e.g. a static method) to access
+                    // a non-static variable (e.g. a non-static field).
+                    if (! (staticScope && ! staticMember))
+                        var = member;
                 }
                 break;
             }
@@ -263,33 +246,20 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
         VariableScope end = scope;
 
-        if (scope.isRoot() && dynamicScope == null) {
-            // no matching scope found
-            declare(var, expression);
-            addError("The variable " + var.getName() +
-                    " is undefined in the current scope", expression);
-        } else if (scope.isRoot() && dynamicScope != null) {
-            // no matching scope found, but there was a scope that
-            // resolves dynamic
-            scope = dynamicScope;
-        }
-
-        if (!scope.isRoot()) {
-            scope = currentScope;
-            while (scope != end) {
-                if (end.isClassScope() || end.isRoot() ||
-                        (end.isReferencedClassVariable(name) && end.getDeclaredVariable(name) == null)) {
-                    scope.putReferencedClassVariable(var);
-                } else {
-                    var.setClosureSharedVariable(var.isClosureSharedVariable() || inClosure);
-                    scope.putReferencedLocalVariable(var);
-                }
-                scope = scope.getParent();
+        scope = currentScope;
+        while (scope != end) {
+            if (end.isClassScope() ||
+                    (end.isReferencedClassVariable(name) && end.getDeclaredVariable(name) == null)) {
+                scope.putReferencedClassVariable(var);
+            } else {
+                var.setClosureSharedVariable(var.isClosureSharedVariable() || inClosure);
+                scope.putReferencedLocalVariable(var);
             }
-            if (end.isResolvingDynamic()) {
-                if (end.getDeclaredVariable(var.getName()) == null) {
-                    end.putDeclaredVariable(var);
-                }
+            scope = scope.getParent();
+        }
+        if (end.isResolvingDynamic()) {
+            if (end.getDeclaredVariable(var.getName()) == null) {
+                end.putDeclaredVariable(var);
             }
         }
 
@@ -331,7 +301,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     // ------------------------------
-    // code visit  
+    // code visit
     // ------------------------------
 
     public void visitBlockStatement(BlockStatement block) {
@@ -352,7 +322,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     public void visitDeclarationExpression(DeclarationExpression expression) {
-        // visit right side first to avoid the usage of a 
+        // visit right side first to avoid the usage of a
         // variable before its declaration
         expression.getRightExpression().visit(this);
 
@@ -432,7 +402,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     }
 
     // ------------------------------
-    // class visit  
+    // class visit
     // ------------------------------
 
     public void visitClass(ClassNode node) {
