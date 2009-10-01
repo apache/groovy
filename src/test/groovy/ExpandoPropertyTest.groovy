@@ -32,6 +32,18 @@ class ExpandoPropertyTest extends GroovyTestCase {
         shouldFail { foo.nameLength(1, 2) }
     }
     
+    void testExpandoMethodCloning() {
+        def foo = new Expando()
+        def c = {
+            assert delegate instanceof Expando
+            1
+        }
+        foo.one = c
+
+        assert foo.one() == 1
+        assert !(c.delegate instanceof Expando) 
+    }
+    
     void testExpandoConstructorAndToString() {
         def foo = new Expando(type:"sometype", value:42)
         println foo
