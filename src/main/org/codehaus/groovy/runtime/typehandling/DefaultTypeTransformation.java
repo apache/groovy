@@ -27,8 +27,12 @@ import java.lang.reflect.Modifier;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.*;
-import java.util.regex.Matcher;
 
+/**
+ * Class providing various type conversions, coercions and boxing/unboxing operations.
+ *
+ * @author Guillaume Laforge
+ */
 public class DefaultTypeTransformation {
     
     protected static final Object[] EMPTY_ARGUMENTS = {};
@@ -134,53 +138,22 @@ public class DefaultTypeTransformation {
         }
         throw new GroovyCastException(object, type);
     }
-    
+
+    /**
+     * Method used for coercing an object to a boolean value,
+     * thanks to an <code>asBoolean()</code> method added on types. 
+     *
+     * @param object to coerce to a boolean value
+     * @return a boolean value
+     */
     public static boolean castToBoolean(Object object) {
-    	if (object == null) {
-    		return false;
-    	}
-    	if (object instanceof Boolean) {
-            Boolean booleanValue = (Boolean) object;
-            return booleanValue.booleanValue();
+        // null is always false
+        if (object == null) {
+            return false;
         }
-        if (object instanceof Matcher) {
-            Matcher matcher = (Matcher) object;
-            RegexSupport.setLastMatcher(matcher);
-            return matcher.find();
-        }
-        if (object instanceof Collection) {
-            Collection collection = (Collection) object;
-            return !collection.isEmpty();
-        }
-        if (object instanceof Map) {
-            Map map = (Map) object;
-            return !map.isEmpty();
-        }
-        if (object instanceof Iterator) {
-            Iterator iterator = (Iterator) object;
-            return iterator.hasNext();
-        }
-        if (object instanceof Enumeration) {
-            Enumeration e = (Enumeration) object;
-            return e.hasMoreElements();
-        }
-        if (object instanceof CharSequence) {
-        	CharSequence string =  (CharSequence) object;
-            return string.length() > 0;
-        } 
-        if (object instanceof Object[]) {
-        	Object[] array =  (Object[]) object;
-            return array.length > 0;
-        } 
-        if (object instanceof Character) {
-            Character c = (Character) object;
-            return c.charValue() != 0;
-        }
-        if (object instanceof Number) {
-            Number n = (Number) object;
-            return n.doubleValue() != 0;
-        }
-        return true;
+
+        // if the object is not null, try to call an asBoolean() method on the object
+        return (Boolean)InvokerHelper.invokeMethod(object, "asBoolean", InvokerHelper.EMPTY_ARGS);
     }
     
     public static char castToChar(Object object) {

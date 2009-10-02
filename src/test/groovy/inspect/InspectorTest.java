@@ -90,7 +90,7 @@ public class InspectorTest extends MockObjectTestCase implements Serializable {
                 "use", "use", "use", "printf", "printf", "eachWithIndex", "every", "every", "any", "any", "grep", "collect", "collect", "findAll",
                 "split", "findIndexOf", "findIndexOf", "findLastIndexOf", "findLastIndexOf", "findIndexValues", "findIndexValues",
                 "iterator", "addShutdownHook", "sprintf", "sprintf", "with", "inject", "getMetaClass", "setMetaClass", "metaClass",
-                "respondsTo", "respondsTo", "hasProperty", "toString"
+                "respondsTo", "respondsTo", "hasProperty", "toString", "asBoolean"
         };
         assertEquals("Incorrect number of methods found examining: " + getNamesFor(metaMethods), names.length, metaMethods.length);
         assertNameEquals(names, metaMethods);
