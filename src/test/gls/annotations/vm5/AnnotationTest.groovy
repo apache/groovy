@@ -429,6 +429,26 @@ class Foo {}
         """
         // compiler should allow this, because there is default value for x and value provided for y
         assertScript(scriptStr)
-  }
+    }
 
+    void testAllowedTargetsCheckAlsoWorksForAnnotationTypesDefinedOutsideThisCompilationUnit() {
+	    shouldCompile """
+@java.lang.annotation.Documented
+@interface Foo {}
+        """
+
+        shouldNotCompile """
+@java.lang.annotation.Documented
+class Foo {
+    def bar
+}
+        """
+
+        shouldNotCompile """
+class Foo {
+    @java.lang.annotation.Documented
+    def bar
+}
+        """
+    }
 }

@@ -64,6 +64,9 @@ public class JavaStubGenerator
             return;
         }
 
+        // don't generate stubs for private classes, as they are only visible in the same file
+        if ((classNode.getModifiers() & Opcodes.ACC_PRIVATE) != 0) return;
+
         String fileName = classNode.getName().replace('.', '/');
         mkdirs(outputPath,fileName);
         toCompile.add(fileName);

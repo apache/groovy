@@ -75,7 +75,8 @@ public class ClassHelper {
         CLASS_Type = makeWithoutCaching(Class.class),        METACLASS_TYPE = new ClassNode(MetaClass.class),
         GENERATED_CLOSURE_Type = new ClassNode(GeneratedClosure.class),
         Enum_Type = new ClassNode("java.lang.Enum",0,OBJECT_TYPE),
-        Annotation_TYPE = new ClassNode("java.lang.annotation.Annotation",0,OBJECT_TYPE);
+        Annotation_TYPE = new ClassNode("java.lang.annotation.Annotation",0,OBJECT_TYPE),
+        ELEMENT_TYPE_TYPE = new ClassNode("java.lang.annotation.ElementType",0,Enum_Type);
         
     static {
         Enum_Type.isPrimaryNode = false;
