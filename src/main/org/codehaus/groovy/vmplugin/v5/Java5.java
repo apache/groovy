@@ -213,11 +213,12 @@ public class Java5 implements VMPlugin {
         } else if (type == Target.class) {
             Target t = (Target) annotation;
             ElementType[] elements = t.value();
-            int bitmap = 0;
+            ListExpression elementExprs = new ListExpression();
             for (ElementType element : elements) {
-                bitmap |= getElementCode(element);
+                elementExprs.addExpression(new PropertyExpression(
+                        new ClassExpression(ClassHelper.ELEMENT_TYPE_TYPE), element.name()));
             }
-            node.setAllowedTargets(bitmap);
+            node.setMember("value", elementExprs);
         }
     }
 

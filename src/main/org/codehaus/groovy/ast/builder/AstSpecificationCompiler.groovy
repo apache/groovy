@@ -98,7 +98,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Creates the DSL compiler.
      */
 
-    @PackageScope AstSpecificationCompiler(Closure spec) {
+    AstSpecificationCompiler(Closure spec) {
         spec.delegate = this
         spec()
     }
@@ -108,7 +108,7 @@ import org.codehaus.groovy.ast.ClassHelper
      * Gets the current generated expression.
      */
 
-    @PackageScope List<ASTNode> getExpression() {
+    List<ASTNode> getExpression() {
         return expression
     }
 

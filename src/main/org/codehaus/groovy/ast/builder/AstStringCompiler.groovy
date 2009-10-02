@@ -23,7 +23,7 @@ import org.codehaus.groovy.control.CompilerConfiguration
      *      the int based CompilePhase to compile it to.
      * @param statementsOnly
      */
-    @PackageScope List<ASTNode> compile(String script, CompilePhase compilePhase, boolean statementsOnly) {
+    List<ASTNode> compile(String script, CompilePhase compilePhase, boolean statementsOnly) {
         def scriptClassName = "script" + System.currentTimeMillis()
         GroovyClassLoader classLoader = new GroovyClassLoader()
         GroovyCodeSource codeSource = new GroovyCodeSource(script, scriptClassName + ".groovy", "/groovy/script")
