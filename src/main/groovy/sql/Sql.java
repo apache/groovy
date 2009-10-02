@@ -2247,7 +2247,7 @@ public class Sql {
          final ResultSet execute() throws SQLException {
      		connection = createConnection();
      		setInternalConnection(connection);
-    		Statement statement = null;
+    		statement = null;
     		try {
     			log.fine(sql);
     			// The variation in the pattern is isolated

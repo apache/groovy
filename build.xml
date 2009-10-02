@@ -397,6 +397,9 @@ Not found: ${groovyJar14path}
                 <pathelement path="${testClassesDirectory}"/>
                 <path refid="coberturaPath"/>
             </classpath>
+            <assertions>
+                <enable/>
+            </assertions>
         </junit>
     </target>
 
@@ -450,6 +453,9 @@ Not found: ${groovyJar14path}
                 <pathelement path="${testClassesDirectory}"/>
                 <path refid="coberturaPath"/>
             </classpath>
+            <assertions>
+                <enable/>
+            </assertions>
         </junit>
         <mkdir dir="${junitReportsDirectory}"/>
         <junitreport tofile="${junitRawDirectory}/Results.xml">
