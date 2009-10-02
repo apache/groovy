@@ -51,10 +51,10 @@ class NullObjectTest extends GroovyTestCase {
     }
     
     void testEMC() {
-        def oldMC = null.metaClass
+        def oldMC = null.getMetaClass()
         NullObject.metaClass.hello = { -> "Greeting from null" }
         assert null.hello() == "Greeting from null"
-        null.metaClass = oldMC
+        null.setMetaClass(oldMC)
     }
 }
 
