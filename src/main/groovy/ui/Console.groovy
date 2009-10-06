@@ -493,7 +493,8 @@ class Console implements CaretListener, HyperlinkListener {
                 scriptFile = file
                 swing.edt {
                     updateTitle()
-                    inputArea.text = consoleText
+                    inputArea.document.remove 0, inputArea.document.length
+                    inputArea.document.insertString 0, consoleText, null
                     setDirty(false)
                     inputArea.caretPosition = 0
                 }
