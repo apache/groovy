@@ -187,10 +187,30 @@ public class MarkupBuilder extends BuilderSupport {
      * Prints data in the body of the current tag, escaping XML entities.
      * For example: <code>mkp.yield('5 &lt; 7')</code>
      *
+     * @param value an Object whose toString() representation is to be printed
+     */
+    public void yield(Object value) {
+        yield(value.toString());
+    }
+
+    /**
+     * Prints data in the body of the current tag, escaping XML entities.
+     * For example: <code>mkp.yield('5 &lt; 7')</code>
+     *
      * @param value text to print
      */
     public void yield(String value) {
         yield(value, true);
+    }
+
+    /**
+     * Print data in the body of the current tag.  Does not escape XML entities.
+     * For example: <code>mkp.yieldUnescaped('I am &lt;i&gt;happy&lt;/i&gt;!')</code>.
+     *
+     * @param value an Object whose toString() representation is to be printed
+     */
+    public void yieldUnescaped(Object value) {
+        yieldUnescaped(value.toString());
     }
 
     /**
