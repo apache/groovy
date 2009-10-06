@@ -348,6 +348,21 @@ require escaping. The other characters consist of:
         assertExpectedXml "<element />"
     }
 
+    /**
+     * Fix for GROOVY-3786
+     *
+     * yield and yieldUnscaped should call toString() if a non-String object is passed as argument
+     */
+    void testYieldObjectToStringRepresentation() {
+        def out = new StringWriter()
+        new MarkupBuilder(out).table {
+            td(id: 999) { mkp.yield 999 }
+            td(id: 99) { mkp.yieldUnescaped 99 }
+        }
+
+        assert !out.toString().contains('yield')
+    }
+
     private myMethod(x) {
       x.value='call to outside'
       return x
