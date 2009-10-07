@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,24 +15,17 @@
  */
 package groovy.xml
 
-import org.custommonkey.xmlunit.*
-
 /**
  * This test uses the concise syntax to test the building of 
  * textual markup (XML or HTML) using GroovyMarkup
  */
-class StreamingMarkupBuilderTest extends TestXmlSupport {
+class StreamingMarkupBuilderTest extends BuilderTestSupport {
 
-    private assertExpectedXml(Closure markup, String expectedXml) {
-        assertExpectedXml new StreamingMarkupBuilder(), markup, expectedXml
-    }
-
-    private assertExpectedXml(StreamingMarkupBuilder builder, Closure markup, String expectedXml) {
+    protected assertExpectedXml(Closure markup, String expectedXml) {
+        def builder = new StreamingMarkupBuilder()
         def writer = new StringWriter()
         writer << builder.bind(markup)
-        XMLUnit.ignoreWhitespace = true
-        def xmlDiff = new Diff(expectedXml, writer.toString())
-        assert xmlDiff.similar(), xmlDiff.toString()
+        checkXml(expectedXml, writer)
     }
 
     void testSmallTree() {
@@ -51,38 +44,6 @@ class StreamingMarkupBuilderTest extends TestXmlSupport {
   <elem2>hello2</elem2>
   <elem3 x='7'/>
 </root1>'''
-    }
-
-    void testTree() {
-        def m = {
-            root2(a:5, b:7) {
-                elem1('hello1')
-                elem2('hello2')
-                nestedElem(x:'abc', y:'def') {
-                    child(z:'def')
-                    child2()
-                }
-
-                nestedElem2(z:'zzz') {
-                    child(z:'def')
-                    child2("hello")
-                }
-            }
-        }
-
-        assertExpectedXml m, '''\
-<root2 a='5' b='7'>
-  <elem1>hello1</elem1>
-  <elem2>hello2</elem2>
-  <nestedElem x='abc' y='def'>
-    <child z='def'/>
-    <child2/>
-  </nestedElem>
-  <nestedElem2 z='zzz'>
-    <child z='def'/>
-    <child2>hello</child2>
-  </nestedElem2>
-</root2>'''
     }
 
     void testObjectOperationsInMarkup() {

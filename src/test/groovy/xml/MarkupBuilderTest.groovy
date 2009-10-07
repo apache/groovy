@@ -15,31 +15,24 @@
  */
 package groovy.xml
 
-import org.custommonkey.xmlunit.Diff
-import org.custommonkey.xmlunit.XMLUnit
-
 /**
- * Tests that special XML chars are entitized by MarkupBuilder.
- *
- * @version $Revision: 1.4 $
+ * Tests for MarkupBuilder.
  *
  *   @author Scott Stirling
  *   @author Pilho Kim
  *   @author Paul King
  */
-class MarkupBuilderTest extends GroovyTestCase {
+class MarkupBuilderTest extends BuilderTestSupport {
     private StringWriter writer
     private MarkupBuilder xml
 
     protected void setUp() {
         writer = new StringWriter()
         xml = new MarkupBuilder(writer)
-        XMLUnit.setIgnoreWhitespace(true)
     }
 
     private assertExpectedXml(expectedXml) {
-        def xmlDiff = new Diff(expectedXml, writer.toString())
-        assert xmlDiff.similar(), xmlDiff.toString()
+        checkXml expectedXml, writer
     }
 
     void testSmallTree() {
@@ -56,37 +49,45 @@ class MarkupBuilderTest extends GroovyTestCase {
 </root1>'''
     }
 
-    // It is not recommended practice to use the value attribute
-    // when also using nested content as there is no way to specify
-    // the ordering of such mixed content. The default behaviour is
-    // to include the value as the first node in the resulting xml.
+    /**
+     * It is not recommended practice to use the value attribute
+     * when also using nested content as there is no way to specify
+     * the ordering of such mixed content. The default behaviour is
+     * to include the value as the first node in the resulting xml.
+     *
+     * StreamingMarkupBuilder excludes this behavior and requires
+     * yield or yieldUnescaped exclusively. MarkupBuilder also supports
+     * the yield approach but retains this style for backwards compatibility.
+     */
     void testSmallTreeWithTextAndAttributes() {
-        xml.root1('hello1', a:5, b:7) {
-            elem1('hello2', c:4) {
-                elem2('hello3', d:4)
-            }
-            elem1('hello2', c:4) {
-                elem2('hello3')
-                elem2('hello3', d:4)
-            }
-            elem1('hello2', c:4) {
-                elem2('hello3', d:4)
-                elem2('hello3')
-            }
-            elem1('hello2', c:4) {
-                elem2(d:4)
-                elem2('hello3', d:4)
-            }
-            elem1('hello2', c:4) {
-                elem2('hello3', d:4)
-                elem2(d:4)
-            }
-            elem1('hello2') {
-                elem2('hello3', d:4)
-                elem2(d:4)
+        def m = {
+            root1('hello1', a: 5, b: 7) {
+                elem1('hello2', c: 4) {
+                    elem2('hello3', d: 4)
+                }
+                elem1('hello2', c: 4) {
+                    elem2('hello3')
+                    elem2('hello3', d: 4)
+                }
+                elem1('hello2', c: 4) {
+                    elem2('hello3', d: 4)
+                    elem2('hello3')
+                }
+                elem1('hello2', c: 4) {
+                    elem2(d: 4)
+                    elem2('hello3', d: 4)
+                }
+                elem1('hello2', c: 4) {
+                    elem2('hello3', d: 4)
+                    elem2(d: 4)
+                }
+                elem1('hello2') {
+                    elem2('hello3', d: 4)
+                    elem2(d: 4)
+                }
             }
         }
-        assertExpectedXml '''\
+        assertExpectedXml m, '''\
 <root1 a='5' b='7'>hello1<elem1 c='4'>hello2<elem2 d='4'>hello3</elem2>
 </elem1>
 <elem1 c='4'>hello2<elem2>hello3</elem2>
@@ -105,39 +106,6 @@ class MarkupBuilderTest extends GroovyTestCase {
 <elem2 d='4' />
 </elem1>
 </root1>'''
-    }
-
-    void testTree() {
-        xml.root2(a:5, b:7) {
-            elem1('hello1')
-            elem2('hello2')
-            nestedElem(x:'abc', y:'def') {
-                child(z:'def', nulltest:null)
-                child2()
-            }
-            nestedElem2(z:'zzz') {
-                child(z:'def')
-                child2("hello")
-            }
-        }
-        assertExpectedXml '''\
-<root2 a='5' b='7'>
-  <elem1>hello1</elem1>
-  <elem2>hello2</elem2>
-  <nestedElem x='abc' y='def'>
-    <child z='def' nulltest=''/>
-    <child2 />
-  </nestedElem>
-  <nestedElem2 z='zzz'>
-    <child z='def' />
-    <child2>hello</child2>
-  </nestedElem2>
-</root2>'''
-    }
-
-    void testContentAndDataInMarkup() {
-        xml.a(href:"http://groovy.codehaus.org", "groovy")
-        assertExpectedXml "<a href='http://groovy.codehaus.org'>groovy</a>"
     }
 
     void testMarkupWithColonsAndNamespaces() {
@@ -236,87 +204,8 @@ class MarkupBuilderTest extends GroovyTestCase {
         assertEquals expectedXml, fixEOLs(writer.toString())
     }
 
-    /**
-     * Tests that MarkupBuilder escapes element content correctly, even
-     * when the content contains line-endings.
-     */
-    void testEscapingMultiLineContent() {
-
-        // Generate the markup.
-        xml.element('''This is multi-line content with characters, such as <, that
-require escaping. The other characters consist of:
-
-    * > - greater than
-    * & - ampersand
-''')
-
-        assertExpectedXml '''\
-<element>This is multi-line content with characters, such as &lt;, that
-require escaping. The other characters consist of:
-
-    * &gt; - greater than
-    * &amp; - ampersand
-</element>'''
-    }
-
-    /**
-     * Checks against a regression bug whereby some empty elements were
-     * not closed.
-     */
-    void testMarkupForClosingTags() {
-
-        // Generate the XML.
-        def list = ['first', 'second', 'third']
-
-        xml.ELEM1() {
-            list.each(){ r ->
-                xml.ELEM2(id:r, type:'2') {
-                    xml.ELEM3A(id:r)
-                    xml.ELEM3B(type:'3', 'text')
-                }
-            }
-        }
-
-        assertExpectedXml '''\
-<ELEM1>
-  <ELEM2 type='2' id='first'>
-    <ELEM3A id='first' />
-    <ELEM3B type='3'>text</ELEM3B>
-  </ELEM2>
-  <ELEM2 type='2' id='second'>
-    <ELEM3A id='second' />
-    <ELEM3B type='3'>text</ELEM3B>
-  </ELEM2>
-  <ELEM2 type='2' id='third'>
-    <ELEM3A id='third' />
-    <ELEM3B type='3'>text</ELEM3B>
-  </ELEM2>
-</ELEM1>'''
-    }
-
-    void testMixedMarkup() {
-        xml.p {
-            em('Usually')
-            mkp.yield ' Hearts & Diamonds '
-            b('beats')
-            mkp.yieldUnescaped ' Spades &amp; Clubs'
-        }
-        assertExpectedXml '''\
-<p><em>Usually</em> Hearts &amp; Diamonds <b>beats</b> Spades &amp; Clubs </p>'''
-    }
-
-    void testMixedMarkupWithEmptyNodes() {
-        xml.p {
-            yield 'Red: Hearts & Diamonds'
-            br()
-            yieldUnescaped 'Black: Spades &amp; Clubs'
-        }
-        assertExpectedXml '''\
-<p>Red: Hearts &amp; Diamonds\n  <br/>Black: Spades &amp; Clubs \n</p>'''
-    }
-
     void testCallingMethod() {
-       // this test is to ensure compatiblity only
+       // this test is to ensure compatibility only
        xml.p {
          def aValue = myMethod([:]).value
          em(aValue)
@@ -355,24 +244,28 @@ require escaping. The other characters consist of:
         assert writer.toString() == "<element att1='attr'><subelement>foo</subelement></element>"
     }
 
-    /**
-     * Fix for GROOVY-3786
-     *
-     * yield and yieldUnscaped should call toString() if a non-String object is passed as argument
-     */
-    void testYieldObjectToStringRepresentation() {
-        def out = new StringWriter()
-        new MarkupBuilder(out).table {
-            td(id: 999) { mkp.yield 999 }
-            td(id: 99) { mkp.yieldUnescaped 99 }
+    void testMarkupBuilderAllowsMkpToBeDropped() {
+        def m = {
+            p {
+                yield 'Red: Hearts & Diamonds'
+                br()
+                yieldUnescaped 'Black: Spades &amp; Clubs'
+            }
         }
-
-        assert !out.toString().contains('yield')
+        assertExpectedXml m, '''\
+<p>Red: Hearts &amp; Diamonds\n  <br/>Black: Spades &amp; Clubs \n</p>'''
     }
 
     private myMethod(x) {
       x.value='call to outside'
       return x
+    }
+
+    protected assertExpectedXml(Closure markup, String expectedXml) {
+        def writer = new StringWriter()
+        markup.delegate = new MarkupBuilder(writer)
+        markup()
+        checkXml(expectedXml, writer)
     }
 
 }
