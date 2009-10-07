@@ -19,7 +19,7 @@ import org.custommonkey.xmlunit.XMLUnit
 import org.custommonkey.xmlunit.Diff
 
 /**
- * Common test cases for StreamingMarkupBuilder and MarkupBuilder
+ * Common test cases for StreamingMarkupBuilder and MarkupBuilder.
  *
  * @author Paul King
  * @author Scott Stirling
@@ -32,7 +32,7 @@ abstract class BuilderTestSupport extends GroovyTestCase {
     protected checkXml(String expectedXml, StringWriter writer) {
         XMLUnit.ignoreWhitespace = true
         def xmlDiff = new Diff(expectedXml, writer.toString())
-        assert xmlDiff.similar(), xmlDiff.toString() + '\n====\n' + writer.toString() + '\n====='
+        assert xmlDiff.similar(), xmlDiff.toString()
     }
 
     void testHref() {
@@ -110,6 +110,30 @@ abstract class BuilderTestSupport extends GroovyTestCase {
 
     void testMixedMarkup() {
         def m = {
+// uncomment if you want entities like &nbsp; (and add to expected too)
+//            mkp.yieldUnescaped '''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+//                                  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">'''
+            html {
+                body {
+                    p {
+                        mkp.yield 'The '
+                        i('quick')
+                        mkp.yieldUnescaped ' brown fox jumped over the <b>lazy</b> dog &amp; sleepy cat'
+                    }
+                }
+            }
+        }
+
+        assertExpectedXml m, '''\
+<html>
+  <body>
+    <p>The <i>quick</i> brown fox jumped over the <b>lazy</b> dog &amp; sleepy cat</p>
+  </body>
+</html>'''
+    }
+
+    void testMixedMarkupWithEntityExpansion() {
+        def m = {
             p {
                 em('Usually')
                 mkp.yield ' Hearts & Diamonds '
@@ -154,6 +178,17 @@ require escaping. The other characters consist of:
     * &gt; - greater than
     * &amp; - ampersand
 </element>'''
+    }
+
+    void testObjectOperationsInMarkup() {
+        def m = {
+            root {
+                (1..3).each {
+                    item()
+                }
+            }
+        }
+        assertExpectedXml m, "<root><item/><item/><item/></root>"
     }
 
     /**
