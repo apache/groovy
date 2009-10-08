@@ -247,62 +247,70 @@ public class GroovyScriptEngineImpl
                           };
 
         try {
-            Script scriptObject = InvokerHelper.createScript(scriptClass, binding);
+            // if this class is not an instance of Script, it's a full-blown class
+            // then simply return that class
+            if (!Script.class.isAssignableFrom(scriptClass)) {
+                return scriptClass;
+            } else {
+                // it's a script
+                Script scriptObject = (Script) scriptClass.newInstance();
+                scriptObject.setBinding(binding);
 
-            // create a Map of MethodClosures from this new script object
-            Method[] methods = scriptClass.getMethods();
-            Map<String, Closure> closures = new HashMap<String, Closure>();
-            for (Method m : methods) {
-                String name = m.getName();
-                closures.put(name, new MethodClosure(scriptObject, name));
+                // create a Map of MethodClosures from this new script object
+                Method[] methods = scriptClass.getMethods();
+                Map<String, Closure> closures = new HashMap<String, Closure>();
+                for (Method m : methods) {
+                    String name = m.getName();
+                    closures.put(name, new MethodClosure(scriptObject, name));
+                }
+
+                // save all current closures into global closures map
+                globalClosures.putAll(closures);
+
+                MetaClass oldMetaClass = scriptObject.getMetaClass();
+
+                /*
+                * We override the MetaClass of this script object so that we can
+                * forward calls to global closures (of previous or future "eval" calls)
+                * This gives the illusion of working on the same "global" scope.
+                */
+                scriptObject.setMetaClass(new DelegatingMetaClass(oldMetaClass) {
+                    @Override
+                    public Object invokeMethod(Object object, String name, Object args) {
+                        if (args == null) {
+                            return invokeMethod(object, name, MetaClassHelper.EMPTY_ARRAY);
+                        }
+                        if (args instanceof Tuple) {
+                            return invokeMethod(object, name, ((Tuple) args).toArray());
+                        }
+                        if (args instanceof Object[]) {
+                            return invokeMethod(object, name, (Object[]) args);
+                        } else {
+                            return invokeMethod(object, name, new Object[]{args});
+                        }
+                    }
+
+                    @Override
+                    public Object invokeMethod(Object object, String name, Object[] args) {
+                        try {
+                            return super.invokeMethod(object, name, args);
+                        } catch (MissingMethodException mme) {
+                            return callGlobal(name, args, ctx);
+                        }
+                    }
+
+                    @Override
+                    public Object invokeStaticMethod(Object object, String name, Object[] args) {
+                        try {
+                            return super.invokeStaticMethod(object, name, args);
+                        } catch (MissingMethodException mme) {
+                            return callGlobal(name, args, ctx);
+                        }
+                    }
+                });
+
+                return scriptObject.run();
             }
-
-            // save all current closures into global closures map
-            globalClosures.putAll(closures);
-
-            MetaClass oldMetaClass = scriptObject.getMetaClass();
-
-            /*
-             * We override the MetaClass of this script object so that we can
-             * forward calls to global closures (of previous or future "eval" calls)
-             * This gives the illusion of working on the same "global" scope.
-             */
-            scriptObject.setMetaClass(new DelegatingMetaClass(oldMetaClass) {
-                        @Override
-                        public Object invokeMethod(Object object, String name, Object args) {
-                            if (args == null) {
-                                return invokeMethod(object, name, MetaClassHelper.EMPTY_ARRAY);
-                            }
-                            if (args instanceof Tuple) {
-                                return invokeMethod(object, name, ((Tuple)args).toArray());
-                            }
-                            if (args instanceof Object[]) {
-                                return invokeMethod(object, name, (Object[]) args);
-                            } else {
-                                return invokeMethod(object, name, new Object[] { args });
-                            }
-                        }
-
-                        @Override
-                        public Object invokeMethod(Object object, String name, Object[] args) {
-                            try {
-                                return super.invokeMethod(object, name, args);
-                            } catch (MissingMethodException mme) {
-                                return callGlobal(name, args, ctx);
-                            }
-                        }
-
-                        @Override
-                        public Object invokeStaticMethod(Object object, String name, Object[] args) {
-                            try {
-                                return super.invokeStaticMethod(object, name, args);
-                            } catch (MissingMethodException mme) {
-                                return callGlobal(name, args, ctx);
-                            }
-                        }
-                    });
-
-            return scriptObject.run();
         } catch (Exception e) {
             throw new ScriptException(e);
         } finally {
