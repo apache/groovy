@@ -1,7 +1,5 @@
 package org.codehaus.groovy.jsr223
 
-import junit.framework.TestCase
-
 import javax.script.ScriptEngineManager
 import javax.script.ScriptEngine
 import javax.script.ScriptEngineFactory
@@ -9,7 +7,6 @@ import javax.script.ScriptException
 
 import org.codehaus.groovy.runtime.InvokerHelper
 
-import java.util.Iterator
 import javax.script.SimpleScriptContext
 
 /**
@@ -18,7 +15,7 @@ import javax.script.SimpleScriptContext
  * @author Jim White
  * @author Guillaume Laforge
  */
-public class JSR223Test extends TestCase {
+class JSR223Test extends GroovyTestCase {
     protected ScriptEngineManager manager
 
     protected void setUp() {
@@ -121,5 +118,21 @@ public class JSR223Test extends TestCase {
 
         assert !scriptContext.getAttribute("out"), "Groovy's 'out' variable should not be left in the script context"
         assert !scriptContext.getAttribute("context"), "The 'context' should not be left in the script context"
+    }
+
+    /**
+     * Fix for GROOVY-3816
+     * Evaluating a class should return the class, and not attempt to run it
+     */
+    void testGroovy3816() {
+        def engine = new ScriptEngineManager().getEngineByName('groovy')
+
+        def clazz = engine.eval('class Jsr223Foo {}')
+        assert clazz
+
+        def instance = engine.eval('new Jsr223Foo()')
+        assert instance
+
+        assert instance.class.isAssignableFrom(clazz)
     }
 }
