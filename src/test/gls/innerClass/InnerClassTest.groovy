@@ -285,5 +285,21 @@ class InnerClassTest extends CompilableTestSupport {
             assert bar.foo() == 1
         """
     }
+    
+    void testClassOutputOrdering() {
+        // this does actually not do much, but before this
+        // change the inner class was tried to be executed
+        // because a class ordering bug. The main method 
+        // makes the Foo class executeable, but Foo$Bar is 
+        // not. So if Foo$Bar is returned, asserScript will
+        // fail. If Foo is returned, asserScript will not
+        // fail.
+        assertScript """
+            class Foo {
+                static class Bar{}
+                static main(args){}
+            }
+        """
+    }
 
 } 

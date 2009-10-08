@@ -495,11 +495,16 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         classNode.setGenericsTypes(genericsType);
         configureAST(classNode, classDef);
 
+        // we put the class already in output to avoid the most inner classes
+        // will be used as first class later in the loader. The first class
+        // there determines what GCL#parseClass for example will return, so we
+        // have here to ensure it won't be the inner class
+        output.addClass(classNode);
+
         int oldClassCount = innerClassCounter;
         
         assertNodeType(OBJBLOCK, node);
         objectBlock(node);
-        output.addClass(classNode);
         
         classNode = outerClass;
         innerClassCounter = oldClassCount;
