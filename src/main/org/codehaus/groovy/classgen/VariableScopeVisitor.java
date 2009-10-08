@@ -257,11 +257,6 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
             }
             scope = scope.getParent();
         }
-        if (end.isResolvingDynamic()) {
-            if (end.getDeclaredVariable(var.getName()) == null) {
-                end.putDeclaredVariable(var);
-            }
-        }
 
         return var;
     }
@@ -360,9 +355,6 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         pushState();
 
         inClosure = true;
-        // as result of the Paris meeting Closure resolves
-        // always dynamically
-        currentScope.setDynamicResolving(true);
 
         expression.setVariableScope(currentScope);
 
@@ -409,8 +401,6 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         pushState();
 
         currentClass = node;
-        boolean dynamicMode = node.isScript();
-        currentScope.setDynamicResolving(dynamicMode);
         currentScope.setClassScope(node);
 
         super.visitClass(node);
