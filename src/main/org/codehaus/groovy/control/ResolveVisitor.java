@@ -259,16 +259,64 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             return true;
         }
 
-        return  resolveFromModule(type, testModuleImports) ||
+        return  resolveNestedClass(type) ||
+                resolveFromModule(type, testModuleImports) ||
                 resolveFromCompileUnit(type) ||
                 resolveFromDefaultImports(type, testDefaultImports) ||
                 resolveFromStaticInnerClasses(type, testStaticInnerClasses) ||
                 resolveFromClassCache(type) ||
                 resolveToClass(type) ||
                 resolveToScript(type);
-
     }
-
+    
+    private boolean resolveNestedClass(ClassNode type) {
+        // we have for example a class name A, are in class X
+        // and there is a nested class A$X. we want to be able 
+        // to access that class directly, so A becomes a valid
+        // name in X.
+        String name = currentClass.getName()+"$"+type.getName();
+        ClassNode val = ClassHelper.make(name);
+        if (resolveFromCompileUnit(val)) {
+            type.setRedirect(val);
+            return true;
+        }
+        
+        // another case we want to check here is if we are in a
+        // nested class A$B$C and want to access B without
+        // qualifying it by A.B. A alone will work, since that
+        // is the qualified (minus package) name of that class
+        // anyway. 
+        
+        // That means if the current class is not an InnerClassNode
+        // there is nothing to be done.
+        if (!(currentClass instanceof InnerClassNode)) return false;
+        
+        // since we have B and want to get A we start with the most 
+        // outer class, put them together and then see if that does
+        // already exist. In case of B from within A$B we are done 
+        // after the first step already. In case of for example
+        // A.B.C.D.E.F and accessing E from F we test A$E=failed, 
+        // A$B$E=failed, A$B$C$E=fail, A$B$C$D$E=success
+        
+        LinkedList<ClassNode> outerClasses = new LinkedList<ClassNode>();
+        ClassNode outer = currentClass.getOuterClass();
+        while (outer!=null) {
+            outerClasses.addFirst(outer);
+            outer = outer.getOuterClass();
+        }
+        // most outer class is now element 0
+        for (ClassNode testNode : outerClasses) {
+            name = testNode.getName()+"$"+type.getName();
+            val = ClassHelper.make(name);
+            if (resolveFromCompileUnit(val)) {
+                type.setRedirect(val);
+                return true;
+            }
+        }        
+        
+        return false;   
+    }
+    
     private boolean resolveFromClassCache(ClassNode type) {
         String name = type.getName();
         Object val = cachedClasses.get(name);
@@ -795,8 +843,49 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             }
         }
         Expression ret = pe;
+        checkThisAndSuperAsPropertyAccess(pe);
         if (isTopLevelProperty) ret = correctClassClassChain(pe);
         return ret;
+    }
+    
+    
+    private void checkThisAndSuperAsPropertyAccess(PropertyExpression expression) {
+        if (expression.isImplicitThis()) return;
+        String prop = expression.getPropertyAsString();
+        if (prop==null) return;
+        if (!prop.equals("this") && !prop.equals("super")) return;
+        
+        //TODO: add support for super
+        if (prop.equals("super")) {
+            addError("Inner classes referencing outer classes using super is not supported yet.",expression);
+        }
+        
+        if (!(expression.getObjectExpression() instanceof ClassExpression)) {
+            addError("The usage of '.this' or '.super' requires an explicit class in front.",expression);
+            return;
+        }
+            
+        if (!(currentClass instanceof InnerClassNode)) {
+            addError("The usage of '.this' and '.super' is only allowed in a inner class",expression);
+            return;
+        }
+
+        
+        ClassNode type  = expression.getObjectExpression().getType();
+        ClassNode iterType = currentClass;
+        while (iterType!=null) {
+            if (iterType.equals(type)) break;
+            iterType = iterType.getOuterClass();
+        }
+        if (iterType==null) {
+            addError("The class '"+type.getName()+"' needs to be an "+
+                     "outer class of '"+currentClass.getName()+"'.",expression);
+        }
+
+        
+        if ((currentClass.getModifiers() & Opcodes.ACC_STATIC)==0) return;
+        if (!currentScope.isInStaticContext()) return;
+        addError("The usage of '.this' and '.super' is only in nonstatic context",expression);
     }
 
     protected Expression transformVariableExpression(VariableExpression ve) {

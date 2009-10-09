@@ -2306,7 +2306,7 @@ pathElement[AST prefix] {Token operator = LT(1);}
         |   // The all-powerful dot.
             (nls! DOT!) 
         ) nls!
-        (ta:typeArguments!)?   // TODO: Java 5 type argument application via prefix x.<Integer>y
+        (ta:typeArguments!)?   
         np:namePart!
         { #pathElement = #(create(operator.getType(),operator.getText(),prefix,LT(1)),prefix,ta,np); }
 
@@ -2323,7 +2323,9 @@ pathElement[AST prefix] {Token operator = LT(1);}
         // since the bracket operator is transformed into a method call.
         ipa:indexPropertyArgs[prefix]!
         {   #pathElement = #ipa;  }
-
+    |
+        DOT! nls! thisPart:"this"!
+        { #pathElement = #(create(operator.getType(),operator.getText(),prefix,LT(1)),prefix,thisPart); }
 /*NYI*
     |   DOT^ nls! "this"
 
@@ -2345,7 +2347,6 @@ pathElementStart!
     :   (nls! DOT)
     |   SPREAD_DOT
     |   OPTIONAL_DOT
-//todo - nondeterminisms    |   MEMBER_POINTER_DEFAULT
     |   MEMBER_POINTER
     |   LBRACK
     |   LPAREN
@@ -3004,17 +3005,6 @@ newExpression {Token first = LT(1);}
             {#mca = #mca.getFirstChild();
             #newExpression = #(create(LITERAL_new,"new",first,LT(1)),#ta,#t,#mca,#cb);}
 
-        //|
-        //from blackrag: new Object.f{} matches this part here
-        //and that shouldn't happen unless we decide to support
-        //this kind of Object initialization
-            //apb:appendedBlock[null]!
-            // FIXME:  This node gets dropped, somehow.
-
-            //{#newExpression.addChild(#apb.getFirstChild());}
-
-            //TODO - NYI* (anonymousInnerClassBlock)? *NYI
-
             //java 1.1
             // Note: This will allow bad constructs like
             //      new int[4][][3] {exp,exp}.
@@ -3028,14 +3018,7 @@ newExpression {Token first = LT(1);}
             {#newExpression = #(create(LITERAL_new,"new",first,LT(1)),#ta,#t,#ad);}
 
         )
-        // DECIDE:  Keep 'new x()' syntax?
     ;
-
-/*NYI*
-anonymousInnerClassBlock
-    :   classBlock
-    ;
-*NYI*/
 
 argList
     {

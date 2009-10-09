@@ -301,5 +301,27 @@ class InnerClassTest extends CompilableTestSupport {
             }
         """
     }
-
+    
+    void testInnerClassDotThisUsage() {
+        assertScript """
+            class A{
+                int x = 0;
+                class B{
+                    int y = 2;
+                    class C {
+                        void foo() {
+                          A.this.x  = 1
+                          A.B.this.y = 2*B.this.y;
+                        }
+                    }
+                }
+            }
+            def a = new A()
+            def b = new A.B(a)
+            def c = new A.B.C(b)
+            c.foo()
+            assert a.x == 1
+            assert b.y == 4
+        """
+    }
 } 

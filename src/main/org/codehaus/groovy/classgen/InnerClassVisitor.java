@@ -7,6 +7,7 @@ import java.util.List;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -16,6 +17,7 @@ import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
 import org.codehaus.groovy.ast.stmt.ReturnStatement;
+import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.syntax.Token;
@@ -27,7 +29,8 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
 
     private final SourceUnit sourceUnit;
     private ClassNode classNode;
-    
+    private final static int publicSynthetic = Opcodes.ACC_PUBLIC+Opcodes.ACC_SYNTHETIC;
+    private FieldNode thisField = null;
     
     public InnerClassVisitor(CompilationUnit cu, SourceUnit su) {
         sourceUnit = su;
@@ -40,20 +43,45 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
     @Override
     public void visitClass(ClassNode node) {
         this.classNode = node;
+        thisField = null;
+        InnerClassNode innerClass=null;
+        if (!node.isEnum() && !node.isInterface() &&
+             node instanceof InnerClassNode) 
+        {
+            innerClass = (InnerClassNode) node;
+            if (!isStatic(innerClass) && innerClass.getVariableScope()==null) {
+                thisField = innerClass.addField("this$0", publicSynthetic, node.getOuterClass(), null);
+            }
+            
+            if (innerClass.getVariableScope()==null && 
+                innerClass.getDeclaredConstructors().isEmpty()) 
+            {
+                // add dummy constructor
+                innerClass.addConstructor(publicSynthetic, new Parameter[0], null, null);
+            }
+        }
+
         super.visitClass(node);
+        
         if (node.isEnum() || node.isInterface()) return;
         addDispatcherMethods();
-        if (!(node instanceof InnerClassNode)) return;
+        if (innerClass==null) return;
+        
         if (node.getSuperClass().isInterface()) {
             node.addInterface(node.getUnresolvedSuperClass());
             node.setUnresolvedSuperClass(ClassHelper.OBJECT_TYPE);
-        }
-        addDefaultMethods((InnerClassNode)node);
+        }         
+        addDefaultMethods(innerClass);
+    }
+    
+    private boolean isStatic(InnerClassNode node) {
+        VariableScope scope = node.getVariableScope(); 
+        if (scope!=null) return scope.isInStaticContext(); 
+        return (node.getModifiers() & ACC_STATIC)!=0;
     }
     
     private void addDefaultMethods(InnerClassNode node) {
-        if(node.getVariableScope()==null) return;
-        final boolean isStatic = node.getVariableScope().isInStaticContext();
+        final boolean isStatic = isStatic(node);
         
         final String classInternalName = BytecodeHelper.getClassInternalName(node);
         final String outerClassInternalName = getInternalName(node.getOuterClass(),isStatic);
@@ -174,6 +202,96 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
 	private String getInternalName(ClassNode node, boolean isStatic) {
     	return BytecodeHelper.getClassInternalName(getClassNode(node,isStatic));
 	}
+	
+	@Override
+	public void visitConstructor(ConstructorNode node) {
+	    addThisReference(node);
+	    super.visitConstructor(node);
+	}
+	
+	private void addThisReference(ConstructorNode node) {
+	    if (classNode.isEnum() || classNode.isInterface()) return;
+	    if ((classNode.getModifiers() & Opcodes.ACC_STATIC)!=0) return;
+	    
+	    
+	    Statement code = node.getCode();
+	    
+	    // add "this$0" field init
+	    
+	    if(!(classNode instanceof InnerClassNode)) return;
+	    InnerClassNode innerClass = (InnerClassNode) classNode;
+	    // scope != null means aic, we don't handle that here
+	    if (innerClass.getVariableScope()!=null) return;
+	    // static inner classes don't need this$0
+	    if ((innerClass.getModifiers() & ACC_STATIC)!=0) return;
+	    
+	    //add this parameter to node
+	    Parameter[] params = node.getParameters();
+        Parameter[] newParams = new Parameter[params.length+1];
+        System.arraycopy(params, 0, newParams, 1, params.length);
+        Parameter thisPara = new Parameter(classNode.getOuterClass(),getUniqueName(params,node));
+        newParams[0] = thisPara;
+        node.setParameters(newParams);
+
+        Statement firstStatement = node.getFirstStatement();
+
+        BlockStatement block = null;
+        if (code==null) {
+            block = new BlockStatement();
+        } else if (!(code instanceof BlockStatement)) {
+            block = new BlockStatement();
+            block.addStatement(code);
+        } else {
+            block = (BlockStatement) code;
+        }
+        BlockStatement newCode = new BlockStatement();
+        addFieldInit(thisPara,thisField,newCode);
+        ConstructorCallExpression cce = getFirstIfSpecialConstructorCall(block);
+        if (cce == null) {
+            newCode.addStatement(block);
+        } else if (cce.isThisCall()) {
+            // add thisPara to this(...)
+            TupleExpression args = (TupleExpression) cce.getArguments();
+            List<Expression> expressions = args.getExpressions();
+            VariableExpression ve = new VariableExpression(thisPara.getName());
+            ve.setAccessedVariable(thisPara);
+            expressions.add(0,ve);
+            newCode = block;
+        } else {
+            // we have a call to super here, so we need to add 
+            // our code after that
+            block.getStatements().remove(0);
+            newCode.getStatements().add(0, firstStatement);
+            newCode.addStatement(block);
+        }
+        node.setCode(newCode);
+	}
+	
+	
+	private String getUniqueName(Parameter[] params, ConstructorNode node) {
+	    String namePrefix = "$p";
+	    outer: 
+	    for (int i=0; i<100; i++) {
+	        namePrefix=namePrefix+"$";
+	        for (Parameter p:params) {
+	            if (p.getName().equals(namePrefix)) continue outer;
+	        }
+	        return namePrefix;
+	    }
+	    addError("unable to find a unique prefix name for synthetic this reference", node);
+	    return namePrefix;
+	}
+	
+	
+    private ConstructorCallExpression getFirstIfSpecialConstructorCall(Statement code) {
+        if (code == null || !(code instanceof ExpressionStatement)) return null;
+
+        Expression expression = ((ExpressionStatement)code).getExpression();
+        if (!(expression instanceof ConstructorCallExpression)) return null;
+        ConstructorCallExpression cce = (ConstructorCallExpression) expression;
+        if (cce.isSpecialCall()) return cce;
+        return null;
+    }
 
 	@Override
     public void visitConstructorCallExpression(ConstructorCallExpression call) {
@@ -225,9 +343,9 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         ClassNode outerClassType = getClassNode(innerClass.getOuterClass(),isStatic);
         Parameter thisParameter = new Parameter(outerClassType,"p"+pCount);
         parameters.add(thisParameter);
-        int privateSynthetic = Opcodes.ACC_PRIVATE+Opcodes.ACC_SYNTHETIC;
-        FieldNode thisField = innerClass.addField("this$0", privateSynthetic, outerClassType, null);
-        addFieldInit(thisParameter,thisField,block,false);
+        
+        thisField = innerClass.addField("this$0", publicSynthetic, outerClassType, null);
+        addFieldInit(thisParameter,thisField,block);
 
         // for each shared variable we add a reference and save it as field
         for (Iterator it=scope.getReferencedLocalVariablesIterator(); it.hasNext();) {
@@ -239,15 +357,12 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
             expressions.add(ve);
 
             Parameter p = new Parameter(ClassHelper.REFERENCE_TYPE,"p"+pCount);
-            //p.setClosureSharedVariable(true);
             parameters.add(p);
             final VariableExpression initial = new VariableExpression(p);
             initial.setUseReferenceDirectly(true);
-            final FieldNode pField = innerClass.addFieldFirst(ve.getName(), privateSynthetic, ClassHelper.REFERENCE_TYPE, initial);
+            final FieldNode pField = innerClass.addFieldFirst(ve.getName(), publicSynthetic, ClassHelper.REFERENCE_TYPE, initial);
             final int finalPCount = pCount;
-//            pField.setInitialValueExpression(initial);
             pField.setHolder(true);
-//            addFieldInit(p,pField,block,true);
         }
         
         innerClass.addConstructor(ACC_PUBLIC, (Parameter[]) parameters.toArray(new Parameter[0]), ClassNode.EMPTY_ARRAY, block);
@@ -383,11 +498,9 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         );
 	}
 
-	private static void addFieldInit(Parameter p, FieldNode fn, BlockStatement block, boolean ref) {
+	private static void addFieldInit(Parameter p, FieldNode fn, BlockStatement block) {
         VariableExpression ve = new VariableExpression(p);
-        ve.setUseReferenceDirectly(ref);
         FieldExpression fe = new FieldExpression(fn);
-        fe.setUseReferenceDirectly(ref);
         block.addStatement(new ExpressionStatement(
                 new BinaryExpression(
                         fe,

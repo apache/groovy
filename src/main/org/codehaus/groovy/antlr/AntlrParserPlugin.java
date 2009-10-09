@@ -2160,6 +2160,14 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                 }
                 Expression property = expression(identifierNode,true);
                 
+                
+                // A."this" assumes a VariableExpression can be used for "this"
+                // we correct that here into a ConstantExpression
+                if (property instanceof VariableExpression) {
+                    VariableExpression ve = (VariableExpression) property;
+                    property = new ConstantExpression(ve.getName());
+                }
+                
                 PropertyExpression propertyExpression = new PropertyExpression(leftExpression, property, node.getType() != DOT);
                 if (node.getType() == SPREAD_DOT) {
                     propertyExpression.setSpreadSafe(true);
@@ -2191,13 +2199,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
     protected Expression methodCallExpression(AST methodCallNode) {
         AST node = methodCallNode.getFirstChild();
-        /* // Bad idea, since foo(1)(2) is valid Groovy for foo(1).call(2).
-        if (isType(METHOD_CALL, node)) {
-            // sometimes method calls get wrapped in method calls for some wierd reason
-            return methodCallExpression(node);
-        }
-        */
-
         Expression objectExpression;
         AST selector;
         AST elist = node.getNextSibling();

@@ -2574,15 +2574,34 @@ public class AsmClassGenerator extends ClassGenerator {
                 return;
             }
         }
+        
+        final String propName = expression.getPropertyAsString();
+        //TODO: add support for super here too
+        if (expression.getObjectExpression() instanceof ClassExpression && 
+            propName!=null && propName.equals("this")) 
+        {
+            // we have something like A.B.this, and need to make it
+            // into this.this$0.this$0, where this.this$0 returns 
+            // A.B and this.this$0.this$0 return A.
+            ClassNode type = expression.getObjectExpression().getType();
+            ClassNode iterType = classNode;
+            mv.visitVarInsn(ALOAD, 0);
+            while (!iterType.equals(type)) {
+                String ownerName = BytecodeHelper.getClassInternalName(iterType);
+                iterType = iterType.getOuterClass();
+                String typeName = BytecodeHelper.getTypeDescription(iterType);
+                mv.visitFieldInsn(GETFIELD, ownerName, "this$0", typeName);                
+            }            
+            return;
+        }
 
-        final String methodName = expression.getPropertyAsString();
-        if (adapter == getProperty && !expression.isSpreadSafe() && methodName != null) {
-            makeGetPropertySite(objectExpression, methodName, expression.isSafe(), expression.isImplicitThis());
+        if (adapter == getProperty && !expression.isSpreadSafe() && propName != null) {
+            makeGetPropertySite(objectExpression, propName, expression.isSafe(), expression.isImplicitThis());
         }
         else {
             // arguments already on stack if any
-            if (adapter == getGroovyObjectProperty && !expression.isSpreadSafe() && methodName != null) {
-                makeGroovyObjectGetPropertySite(objectExpression, methodName, expression.isSafe(), expression.isImplicitThis());
+            if (adapter == getGroovyObjectProperty && !expression.isSpreadSafe() && propName != null) {
+                makeGroovyObjectGetPropertySite(objectExpression, propName, expression.isSafe(), expression.isImplicitThis());
             }
             else {
                 makeCall(
