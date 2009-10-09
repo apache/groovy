@@ -32,29 +32,4 @@ class StreamingMarkupBuilderTest extends BuilderTestSupport {
         checkXml(expectedXml, writer)
     }
 
-    /**
-     * test some StreamingMarkupBuilder specific mkp functionality
-     */
-    void testSmallTree() {
-        def m = {
-            mkp.xmlDeclaration(version:'1.0')
-            mkp.pi("xml-stylesheet":[href:"mystyle.css", type:"text/css"])
-            root1(a:5, b:7) {
-                elem1('hello1')
-                elem2('hello2')
-                mkp.comment('hello3')
-                elem3(x:7)
-            }
-        }
-        assertExpectedXml m, '''\
-<?xml version="1.0"?>
-<?xml-stylesheet href="mystyle.css" type="text/css"?>
-<root1 a='5' b='7'>
-  <elem1>hello1</elem1>
-  <elem2>hello2</elem2>
-  <!-- hello3 -->
-  <elem3 x='7'/>
-</root1>'''
-    }
-
 }

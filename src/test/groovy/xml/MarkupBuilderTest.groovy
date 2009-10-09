@@ -37,20 +37,6 @@ class MarkupBuilderTest extends BuilderTestSupport {
         checkXml expectedXml, writer
     }
 
-    void testSmallTree() {
-        xml.root1(a:5, b:7) {
-            elem1('hello1')
-            elem2('hello2')
-            elem3(x:7)
-        }
-        assertExpectedXml '''\
-<root1 a='5' b='7'>
-  <elem1>hello1</elem1>
-  <elem2>hello2</elem2>
-  <elem3 x='7' />
-</root1>'''
-    }
-
     /**
      * It is not recommended practice to use the value attribute
      * when also using nested content as there is no way to specify
@@ -244,18 +230,6 @@ class MarkupBuilderTest extends BuilderTestSupport {
         xml = new MarkupBuilder(new IndentPrinter(new PrintWriter(writer), "", false))
         xml.element(att1:'attr') { subelement('foo') }
         assert writer.toString() == "<element att1='attr'><subelement>foo</subelement></element>"
-    }
-
-    void testMarkupBuilderAllowsMkpToBeDropped() {
-        def m = {
-            p {
-                yield 'Red: Hearts & Diamonds'
-                br()
-                yieldUnescaped 'Black: Spades &amp; Clubs'
-            }
-        }
-        assertExpectedXml m, '''\
-<p>Red: Hearts &amp; Diamonds\n  <br/>Black: Spades &amp; Clubs \n</p>'''
     }
 
     private myMethod(x) {
