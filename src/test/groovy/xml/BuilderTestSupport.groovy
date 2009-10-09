@@ -32,7 +32,7 @@ abstract class BuilderTestSupport extends GroovyTestCase {
     protected checkXml(String expectedXml, StringWriter writer) {
         XMLUnit.ignoreWhitespace = true
         def xmlDiff = new Diff(expectedXml, writer.toString())
-        assert xmlDiff.similar(), xmlDiff.toString()
+        assert xmlDiff.similar(), xmlDiff.toString() + "\n" + writer.toString()
     }
 
     void testHref() {
@@ -197,13 +197,44 @@ require escaping. The other characters consist of:
      * yield and yieldUnescaped should call toString() if a non-String object is passed as argument
      */
     void testYieldObjectToStringRepresentation() {
-        def out = new StringWriter()
-        new MarkupBuilder(out).table {
-            td(id: 999) { mkp.yield 999 }
-            td(id: 99) { mkp.yieldUnescaped 99 }
+        def m = {
+            table {
+                td(id: 999) { mkp.yield 999 }
+                td(id: 99) { mkp.yieldUnescaped 99 }
+            }
         }
+        assertExpectedXml m, "<table><td id='999'>999</td><td id='99'>99</td></table>"
+    }
 
-        assert !out.toString().contains('yield')
+    /**
+     * test special builder mkp functionality
+     */
+    void testSmallTreeWithMkpFunctionality() {
+        def m = {
+            mkp.xmlDeclaration(version: '1.0')
+            mkp.pi("xml-stylesheet": [href: "mystyle.css", type: "text/css"])
+            root1(a: 5, b: 7) {
+                elem1('hello1')
+                elem2('hello2')
+                mkp.comment('hello3')
+                comment('hello4', [:])
+                comment(value: 'hello5')
+                comment {}
+                elem3(x: 7)
+            }
+        }
+        assertExpectedXml m, '''\
+<?xml version="1.0"?>
+<?xml-stylesheet href="mystyle.css" type="text/css"?>
+<root1 a='5' b='7'>
+  <elem1>hello1</elem1>
+  <elem2>hello2</elem2>
+  <!-- hello3 -->
+  <comment>hello4</comment>
+  <comment value='hello5'/>
+  <comment/>
+  <elem3 x='7'/>
+</root1>'''
     }
 
 }

@@ -37,20 +37,6 @@ class MarkupBuilderTest extends BuilderTestSupport {
         checkXml expectedXml, writer
     }
 
-    void testSmallTree() {
-        xml.root1(a:5, b:7) {
-            elem1('hello1')
-            elem2('hello2')
-            elem3(x:7)
-        }
-        assertExpectedXml '''\
-<root1 a='5' b='7'>
-  <elem1>hello1</elem1>
-  <elem2>hello2</elem2>
-  <elem3 x='7' />
-</root1>'''
-    }
-
     /**
      * It is not recommended practice to use the value attribute
      * when also using nested content as there is no way to specify
@@ -246,6 +232,9 @@ class MarkupBuilderTest extends BuilderTestSupport {
         assert writer.toString() == "<element att1='attr'><subelement>foo</subelement></element>"
     }
 
+    /**
+     * For backwards compatibility allow mkp to be dropped just for 1.6
+     */
     void testMarkupBuilderAllowsMkpToBeDropped() {
         def m = {
             p {

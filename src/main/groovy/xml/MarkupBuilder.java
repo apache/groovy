@@ -22,10 +22,13 @@ import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.HashMap;
+import java.util.Set;
+import java.util.Iterator;
 
 /**
- * <p>A helper class for creating XML or HTML markup.  This implementation outputs
- * markup in a 'pretty printed' format.</p>
+ * <p>A helper class for creating XML or HTML markup.
+ * The builder supports various 'pretty printed' formats.</p>
  * <p/>
  * <p>Example:</p>
  * <pre>new MarkupBuilder().root {
@@ -174,23 +177,16 @@ public class MarkupBuilder extends BuilderSupport {
 
     /**
      * Property that may be called from within your builder closure to access
-     * helper methods, namely {@link #yield(String)} and
-     * {@link #yieldUnescaped(String)}.
+     * helper methods, namely {@link MarkupBuilderHelper#yield(String)},
+     * {@link MarkupBuilderHelper#yieldUnescaped(String)},
+     * {@link MarkupBuilderHelper#pi(Map)},
+     * {@link MarkupBuilderHelper#xmlDeclaration(Map)} and
+     * {@link MarkupBuilderHelper#comment(String)}.
      *
      * @return this MarkupBuilder
      */
     public Object getMkp() {
-        return this;
-    }
-
-    /**
-     * Prints data in the body of the current tag, escaping XML entities.
-     * For example: <code>mkp.yield('5 &lt; 7')</code>
-     *
-     * @param value an Object whose toString() representation is to be printed
-     */
-    public void yield(Object value) {
-        yield(value.toString());
+        return new MarkupBuilderHelper(this);
     }
 
     /**
@@ -204,17 +200,7 @@ public class MarkupBuilder extends BuilderSupport {
     }
 
     /**
-     * Print data in the body of the current tag.  Does not escape XML entities.
-     * For example: <code>mkp.yieldUnescaped('I am &lt;i&gt;happy&lt;/i&gt;!')</code>.
-     *
-     * @param value an Object whose toString() representation is to be printed
-     */
-    public void yieldUnescaped(Object value) {
-        yieldUnescaped(value.toString());
-    }
-
-    /**
-     * Print data in the body of the current tag.  Does not escape XML entities.
+     * Print data in the body of the current tag. Does not escape XML entities.
      * For example: <code>mkp.yieldUnescaped('I am &lt;i&gt;happy&lt;/i&gt;!')</code>.
      *
      * @param value the text or markup to print.
@@ -223,7 +209,28 @@ public class MarkupBuilder extends BuilderSupport {
         yield(value, false);
     }
 
-    private void yield(String value, boolean escaping) {
+    /**
+     * Produce an XML processing instruction in the output.
+     * For example:
+     * <pre>
+     * mkp.pi("xml-stylesheet":[href:"mystyle.css", type:"text/css"])
+     * </pre>
+     *
+     * @param args a map with a single entry whose key is the name of the
+     *             processing instruction and whose value is the attributes
+     *             for the processing instruction.
+     */
+    void pi(Map<String, Map<String, Object>> args) {
+        Iterator<Map.Entry<String, Map<String, Object>>> iterator = args.entrySet().iterator();
+        if (iterator.hasNext()) {
+            Map.Entry<String, Map<String, Object>> mapEntry = iterator.next();
+            createNode("?" + mapEntry.getKey(), mapEntry.getValue());
+            state = 2;
+            out.println("?>");
+        }
+    }
+
+    void yield(String value, boolean escaping) {
         if (state == 1) {
             state = 2;
             this.nodeIsEmpty = false;
@@ -275,7 +282,7 @@ public class MarkupBuilder extends BuilderSupport {
             }
         }
         if (value != null) {
-            yield(value.toString());
+            yield(value.toString(), true);
         } else {
             nodeIsEmpty = true;
         }
