@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,8 +52,6 @@ import java.util.logging.Logger;
  */
 public class AntBuilder extends BuilderSupport {
 
-    private static final Class[] ADD_TASK_PARAM_TYPES = { String.class };
-
     private final Logger log = Logger.getLogger(getClass().getName());
     private Project project;
     private final AntXMLContext antXmlContext;
@@ -62,8 +60,8 @@ public class AntBuilder extends BuilderSupport {
     private final Target collectorTarget;
     private final Target implicitTarget;
     private Object lastCompletedNode;
-
-
+    // true when inside a task so special ant.target handling occurs just at top level
+    boolean insideTask;
 
     public AntBuilder() {
         this(createProject());
@@ -169,14 +167,14 @@ public class AntBuilder extends BuilderSupport {
     /**
      * Determines, when the ANT Task that is represented by the "node" should perform.
      * Node must be an ANT Task or no "perform" is called.
-     * If node is an ANT Task, it performs right after complete contstruction.
+     * If node is an ANT Task, it performs right after complete construction.
      * If node is nested in a TaskContainer, calling "perform" is delegated to that
      * TaskContainer.
      * @param parent note: null when node is root
      * @param node the node that now has all its children applied
      */
     protected void nodeCompleted(final Object parent, final Object node) {
-
+        if (parent == null) insideTask = false;
     	antElementHandler.onEndElement(null, null, antXmlContext);
 
     	lastCompletedNode = node;
@@ -199,6 +197,10 @@ public class AntBuilder extends BuilderSupport {
             // UnknownElement may wrap everything: task, path, ...
             if (task instanceof Task) {
             	final String taskName = ((Task) task).getTaskName();
+                if ("antcall".equals(taskName) && parent == null) {
+                    throw new BuildException("antcall not supported within AntBuilder, consider using 'ant.project.executeTarget('targetName')' instead.");
+                }
+
                 // save original streams
                 InputStream savedIn = System.in;
                 InputStream savedProjectInputStream = project.getDefaultInputStream();
@@ -207,7 +209,7 @@ public class AntBuilder extends BuilderSupport {
                     project.setDefaultInputStream(savedIn);
                     System.setIn(new DemuxInputStream(project));
                 }
-                
+
                 try {
                     ((Task) task).perform();
                 } finally {
@@ -281,7 +283,7 @@ public class AntBuilder extends BuilderSupport {
     	if ("import".equals(name)) {
     		antXmlContext.setCurrentTarget(implicitTarget);
     	}
-    	else if ("target".equals(name)) {
+    	else if ("target".equals(name) && !insideTask) {
             return onStartTarget(attrs, tagName, ns);
     	}
 
@@ -293,7 +295,8 @@ public class AntBuilder extends BuilderSupport {
 		{
             log.log(Level.SEVERE, "Caught: " + e, e);
 		}
-    	
+
+        insideTask = true;
 		final RuntimeConfigurable wrapper = (RuntimeConfigurable) antXmlContext.getWrapperStack().lastElement();
     	return wrapper.getProxy();
     }

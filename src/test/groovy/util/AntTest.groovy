@@ -1,6 +1,5 @@
 package groovy.util
 
-import java.io.File
 import org.apache.tools.ant.BuildEvent
 import org.apache.tools.ant.Project
 import org.apache.tools.ant.ProjectHelper
