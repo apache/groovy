@@ -97,9 +97,11 @@ public class GroovyScriptEngine implements ResourceConnector {
    private class ScriptClassLoader extends GroovyClassLoader {
        public ScriptClassLoader(GroovyClassLoader loader) {
            super(loader);
+           setResLoader();
        }
        public ScriptClassLoader(ClassLoader loader) {
            super(loader);
+           setResLoader();
        }       
        private void setResLoader(){
             final GroovyResourceLoader rl = getResourceLoader();
@@ -111,7 +113,7 @@ public class GroovyScriptEngine implements ResourceConnector {
                         URLConnection dependentScriptConn = rc.getResourceConnection(filename);
                         return dependentScriptConn.getURL();
                     } catch (ResourceException e) {
-                        //TODO: maybe do something here?                        
+                        //TODO: maybe do something here?
                     }
                     return rl.loadGroovySource(className);
                 }
@@ -134,7 +136,7 @@ public class GroovyScriptEngine implements ResourceConnector {
         }
         @Override
         public Class parseClass(GroovyCodeSource codeSource, boolean shouldCacheSource) throws CompilationFailedException {
-            Class answer = super.parseClass(codeSource, shouldCacheSource);
+            Class answer = super.parseClass(codeSource, false);
             StringSetMap cache = getDepCache();
             cache.makeTransitiveHull();
             long time = System.currentTimeMillis();
@@ -224,6 +226,7 @@ public class GroovyScriptEngine implements ResourceConnector {
                     se = new ResourceException(message, se);
                 }
             } catch (IOException e1) {
+                groovyScriptConn = null;
                 String message = "Cannot open URL: " + scriptURL;
                 if (se == null) {
                     se = new ResourceException(message);
@@ -414,7 +417,6 @@ public class GroovyScriptEngine implements ResourceConnector {
     protected boolean isSourceNewer(URLConnection conn, ScriptCacheEntry entry) throws ResourceException  {
         if (entry==null) return true;
         final long entryChangeTime = entry.lastModified + config.getMinimumRecompilationInterval();
-        if (entryChangeTime<System.currentTimeMillis()) return false;
         long lastMod;
         // Special handling for file:// protocol, as getLastModified() often reports
         // incorrect results (-1)
