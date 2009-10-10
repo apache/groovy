@@ -2123,7 +2123,7 @@ forIter  {Token first = LT(1);}
 // an exception handler try/catch block
 tryBlock {Token first = LT(1);List catchNodes = new ArrayList();AST newHandler_AST = null;}
     :   "try"! nlsWarn! tryCs:compoundStatement!
-            ( options {greedy=true;} :  nls! h:handler!
+            ( options {greedy=true;} : {!(LA(1) == NLS && LA(2) == LPAREN)}? nls! h:handler!
             
               //expand the list of nodes for each catch statement
               {newHandler_AST = #(null,newHandler_AST,h);}   )*
