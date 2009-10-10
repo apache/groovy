@@ -28,7 +28,8 @@ import javax.management.ObjectName
  * @author Vladimir Vivien
  */
 class JmxBuilderTools {
-    static String DEFAULT_DOMAIN = "groovy.builder.jmx:"
+    static String DEFAULT_DOMAIN = "jmx.builder"
+    static String DEFAULT_NAME_TYPE = "ExportedObject"
     static String NODE_NAME_ATTRIBUTES = "attributes"
     static String NODE_NAME_ATTRIBS = "attribs"
     static String NODE_NAME_CONSTRUCTORS = "constructors"
@@ -186,7 +187,7 @@ class JmxBuilderTools {
      * @return the generated ObjectName() instance.
      */
     public static ObjectName getDefaultObjectName(def obj) {
-        String name = DEFAULT_DOMAIN + "name=${obj.getClass().getName()},hashCode=${obj.hashCode()}"
+        String name = DEFAULT_DOMAIN + ":name=${obj.getClass().getName()},hashCode=${obj.hashCode()}"
         try {
             return new ObjectName(name)
         } catch (Exception ex) {
@@ -272,4 +273,49 @@ class JmxBuilderTools {
 
         return result
     }
+
+    public static GroovyMBean registerMBeanFromMap(String regPolicy, Map metaMap){
+        // get modelmbean info from meta map
+        def info = JmxBeanInfoManager.getModelMBeanInfoFromMap(metaMap)
+
+        // Do mbean export: if target is already mbean, ignore, otherwise build modelmbean
+        def mbean
+        if (metaMap.isMBean) {
+            mbean = metaMap.target
+        } else {
+            mbean = new JmxBuilderModelMBean(info)
+            mbean.setManagedResource(metaMap.target)
+            mbean.addOperationCallListeners metaMap.attributes
+            mbean.addOperationCallListeners metaMap.operations
+
+            if (metaMap.listeners) {
+                mbean.addEventListeners metaMap.server, metaMap.listeners
+            }
+        }
+
+        def gbean
+        switch (regPolicy) {
+            case "replace":
+                if (metaMap.server.isRegistered(metaMap.jmxName)) {
+                    metaMap.server.unregisterMBean metaMap.jmxName
+                }
+                metaMap.server.registerMBean(mbean, metaMap.jmxName)
+                gbean = new GroovyMBean(metaMap.server, metaMap.jmxName)
+                break
+            case "ignore":
+                if (metaMap.server.isRegistered(metaMap.jmxName))
+                break
+            case "error":
+            default:
+                if (metaMap.server.isRegistered(metaMap.jmxName)) {
+                    throw new JmxBuilderException("A Bean with name ${metaMap.jmxName} is already registered on the server.")
+                } else {
+                    metaMap.server.registerMBean(mbean, metaMap.jmxName)
+                    gbean = new GroovyMBean(metaMap.server, metaMap.jmxName)
+                }
+        }
+
+        gbean
+    }
+
 }
