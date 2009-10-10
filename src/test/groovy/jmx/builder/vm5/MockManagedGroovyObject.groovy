@@ -4,6 +4,7 @@ class MockManagedGroovyObject {
   int id
   String name
   def location
+  boolean available
 
   def doSomething() {
     // do sometihng

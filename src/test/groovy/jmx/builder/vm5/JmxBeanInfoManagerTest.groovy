@@ -31,7 +31,7 @@ class JmxBeanInfoManagerTest extends GroovyTestCase {
     assert m.name == object.getClass().name
     assert m.displayName
     assert m.constructors.size() == 3
-    assert m.attributes.size() == 2
+    assert m.attributes.size() == 3
   }
 
   void TODO_testGetModelMBeanInfoFromMap() {

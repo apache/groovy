@@ -7,6 +7,7 @@ public class MockManagedObject {
     private static Logger logger = Logger.getLogger(MockManagedObject.class.getName());
     private String something;
     private int somethingElse;
+    private boolean avail;
 
     public String getSomething() {
         logger.log(Level.FINEST, "Returning Something " + something);
@@ -49,6 +50,14 @@ public class MockManagedObject {
 
     public void dontDoThis(Object param) {
         logger.log(Level.FINER, "Jmx Invoke - method dontDoThis() with param : " + param);
+    }
+
+    public void setAvailable(boolean flag){
+        avail = flag;
+    }
+
+    public boolean isAvailable(){
+        return avail;
     }
 
 }

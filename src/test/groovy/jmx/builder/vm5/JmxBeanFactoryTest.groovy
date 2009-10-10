@@ -68,8 +68,8 @@ class JmxBeanFactoryTest extends GroovyTestCase {
     assert map.isMBean
     assert map.target
     assert map.jmxName
-    assert !map.attributes
-    assert !map.constructors
+    assert map.attributes
+    assert map.constructors
     assert !map.operations
   }
 
