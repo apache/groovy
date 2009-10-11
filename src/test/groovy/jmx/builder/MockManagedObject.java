@@ -1,18 +1,3 @@
-/*
- * Copyright 2003-2009 the original author or authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package groovy.jmx.builder;
 
 import java.util.logging.Level;
@@ -22,6 +7,7 @@ public class MockManagedObject {
     private static Logger logger = Logger.getLogger(MockManagedObject.class.getName());
     private String something;
     private int somethingElse;
+    private boolean avail;
 
     public String getSomething() {
         logger.log(Level.FINEST, "Returning Something " + something);
@@ -64,6 +50,14 @@ public class MockManagedObject {
 
     public void dontDoThis(Object param) {
         logger.log(Level.FINER, "Jmx Invoke - method dontDoThis() with param : " + param);
+    }
+
+    public void setAvailable(boolean flag){
+        avail = flag;
+    }
+
+    public boolean isAvailable(){
+        return avail;
     }
 
 }

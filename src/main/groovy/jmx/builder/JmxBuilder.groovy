@@ -26,8 +26,8 @@ import javax.management.MBeanServerConnection
  */
 class JmxBuilder extends FactoryBuilderSupport {
     private MBeanServerConnection server
-    private String defaultNameDomain = "jmx.builder"
-    private String defaultNameType = "ExportedObject"
+    private String defaultNameDomain = JmxBuilderTools.DEFAULT_DOMAIN
+    private String defaultNameType = JmxBuilderTools.DEFAULT_NAME_TYPE
     private String mode = "markup"
 
     public JmxBuilder() {
@@ -42,6 +42,7 @@ class JmxBuilder extends FactoryBuilderSupport {
     protected void registerFactories() {
         registerFactory "export", new JmxBeanExportFactory()
         registerFactory "bean", new JmxBeanFactory()
+        registerFactory "beans", new JmxBeansFactory()
         registerFactory "timer", new JmxTimerFactory()
         registerFactory "listener", new JmxListenerFactory()
         registerFactory "emitter", new JmxEmitterFactory()

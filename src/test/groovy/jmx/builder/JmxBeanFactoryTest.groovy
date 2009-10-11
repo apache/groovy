@@ -1,25 +1,8 @@
-/*
- * Copyright 2003-2009 the original author or authors.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *     http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package groovy.jmx.builder
 
 import javax.management.MBeanServerConnection
 import javax.management.ObjectName
-import groovy.jmx.builder.MockManagedObject
-import groovy.jmx.builder.MockManagedGroovyObject
-import groovy.jmx.builder.MockSimpleObject
+import groovy.jmx.builder.*
 
 class JmxBeanFactoryTest extends GroovyTestCase {
   def builder
@@ -85,8 +68,8 @@ class JmxBeanFactoryTest extends GroovyTestCase {
     assert map.isMBean
     assert map.target
     assert map.jmxName
-    assert !map.attributes
-    assert !map.constructors
+    assert map.attributes
+    assert map.constructors
     assert !map.operations
   }
 
