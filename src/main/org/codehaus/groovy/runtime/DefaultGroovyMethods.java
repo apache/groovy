@@ -7017,7 +7017,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the string representation of this map.  The string displays the
-     * contents of the map, i.e. <code>{one=1, two=2, three=3}</code>.
+     * contents of the map, i.e. <code>[one:1, two:2, three:3]</code>.
      *
      * @param self a Map
      * @return the string representation
