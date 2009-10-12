@@ -18,6 +18,8 @@ class GroovyScriptEngineTest extends GroovyTestCase {
 	private File helperIntf
 	private File helper
 
+    private List allFiles = [currentDir, srcDir, script, company, util, makeMeSuper, makeMe, helperIntf, helper]
+
     /**
     * Here we have inheritance and delegation-- where the delegate implements an
     * interface-- all used by a dynamically instantiated class named 'MakeMe'.  
@@ -28,6 +30,7 @@ class GroovyScriptEngineTest extends GroovyTestCase {
 		srcDir.mkdir();
 		
 		script = new File(srcDir, 'script.groovy')
+        script.delete()
 		script << """
 		    def obj = dynaInstantiate.instantiate(className, getClass().getClassLoader())
 		    obj.modifyWidth(dim, addThis)
@@ -40,6 +43,7 @@ class GroovyScriptEngineTest extends GroovyTestCase {
 		company.mkdir()
 		
 		makeMeSuper = new File(company, "MakeMeSuper.groovy")
+        makeMeSuper.delete()
 		makeMeSuper << """
 		    package com.company
 		    import com.company.util.*
@@ -52,7 +56,8 @@ class GroovyScriptEngineTest extends GroovyTestCase {
 		 """
 		
 		makeMe = new File(company, "MakeMe.groovy")
-		makeMe << """
+        makeMe.delete()
+        makeMe << """
 		    package com.company
 
 		    class MakeMe extends MakeMeSuper{
@@ -61,20 +66,22 @@ class GroovyScriptEngineTest extends GroovyTestCase {
 		       }
 		    }    
 		 """
-		 
-		 util = new File(company, 'util')
-		 util.mkdir()
-		 
-		 helperIntf = new File(util, "HelperIntf.groovy")
-		 helperIntf << """
+
+        util = new File(company, 'util')
+        util.mkdir()
+
+        helperIntf = new File(util, "HelperIntf.groovy")
+        helperIntf.delete()
+        helperIntf << """
 		    package com.company.util
 		    interface HelperIntf{
 		       public String getMessage();
 		    }    
 		 """
-		 
-		 helper = new File(util, "Helper.groovy")
-		 helper << """
+
+        helper = new File(util, "Helper.groovy")
+        helper.delete()
+        helper << """
 		    package com.company.util
 		    class Helper implements HelperIntf{
 		       public String getMessage(){
@@ -82,20 +89,12 @@ class GroovyScriptEngineTest extends GroovyTestCase {
 		       }
 		    }    
 		 """
-	}
+    }
 	
 	public void tearDown(){
-	    try{
-	    	helperIntf.delete()
-	    	helper.delete()
-	    	util.delete()
-	    	makeMeSuper.delete()
-			makeMe.delete()
- 			company.delete()
- 			com.delete()
- 			script.delete()
- 			srcDir.delete()
- 		}catch(Exception ex){
+	    try {
+            allFiles*.delete()
+ 		} catch(Exception ex){
  			throw new RuntimeException("Could not delete entire dynamic tree inside " + currentDir, ex)
  		}
 	}
