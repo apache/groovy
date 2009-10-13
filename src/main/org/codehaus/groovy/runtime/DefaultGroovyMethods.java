@@ -7802,7 +7802,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates from this number up to the given number, inclusive,
      * incrementing by one each time.
-     * <pre>0.upto( 10 ) {
+     * <pre>0.1.upto( 10 ) {
      *   println it
      * }</pre>
      * Prints numbers 0.1, 1.1, 2.1... to 9.1
