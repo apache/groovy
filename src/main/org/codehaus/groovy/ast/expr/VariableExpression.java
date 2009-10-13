@@ -107,6 +107,7 @@ public class VariableExpression extends Expression implements Variable {
     }
     
     public boolean isDynamicTyped() {
+        if (accessedVariable!=null && accessedVariable!=this) return accessedVariable.isDynamicTyped();
         return isDynamicTyped;
     }
 
