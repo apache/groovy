@@ -37,10 +37,10 @@ import java.util.Map;
  */
 public class DomToGroovy {
 
-    private IndentPrinter out;
-    private boolean inMixed = false;
-    private String qt = "'";
-    private List keywords = Arrays.asList("import", "private", "public", "protected");
+    protected IndentPrinter out;
+    protected boolean inMixed = false;
+    protected String qt = "'";
+    protected List keywords = Arrays.asList("import", "private", "public", "protected");
 
     public DomToGroovy(PrintWriter out) {
         this(new IndentPrinter(out));
@@ -91,7 +91,7 @@ public class DomToGroovy {
 
     // Implementation methods
     //-------------------------------------------------------------------------
-    private static Document parse(String name) throws Exception {
+    protected static Document parse(String name) throws Exception {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
         DocumentBuilder builder = factory.newDocumentBuilder();
@@ -171,7 +171,7 @@ public class DomToGroovy {
         }
     }
 
-    private void printQuoted(String text) {
+    protected void printQuoted(String text) {
         if (text.indexOf("\n") != -1) {
             print("'''");
             print(text);
@@ -212,7 +212,7 @@ public class DomToGroovy {
         }
     }
 
-    private String escapeQuote(String text) {
+    protected String escapeQuote(String text) {
         return text.replaceAll("\\\\", "\\\\\\\\").replaceAll(qt, "\\\\" + qt);
     }
 
@@ -273,7 +273,7 @@ public class DomToGroovy {
         return hasAttribute;
     }
 
-    private void printAttributeWithPrefix(Attr attribute, StringBuffer buffer) {
+    protected void printAttributeWithPrefix(Attr attribute, StringBuffer buffer) {
         String prefix = attribute.getPrefix();
         if (prefix != null && prefix.length() > 0 && !prefix.equals("xmlns")) {
             if (buffer.length() > 0) {
@@ -289,11 +289,11 @@ public class DomToGroovy {
         }
     }
 
-    private String getAttributeValue(Attr attribute) {
+    protected String getAttributeValue(Attr attribute) {
         return attribute.getValue();
     }
 
-    private boolean printAttributeWithoutPrefix(Attr attribute, boolean hasAttribute) {
+    protected boolean printAttributeWithoutPrefix(Attr attribute, boolean hasAttribute) {
         String prefix = attribute.getPrefix();
         if (prefix == null || prefix.length() == 0) {
             if (!hasAttribute) {
@@ -312,7 +312,7 @@ public class DomToGroovy {
         return hasAttribute;
     }
 
-    private boolean checkEscaping(String localName) {
+    protected boolean checkEscaping(String localName) {
         return keywords.contains(localName) || localName.indexOf("-") != -1 || localName.indexOf(":") != -1;
     }
 
