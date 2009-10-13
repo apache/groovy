@@ -34,7 +34,7 @@
         <dependency>
             <groupId>net.sourceforge.cobertura</groupId>
             <artifactId>cobertura</artifactId>
-            <version>1.9.2</version>
+            <version>1.9.3</version>
             <exclusions>
                 <exclusion>
                     <groupId>asm</groupId>
@@ -60,12 +60,12 @@
         <dependency>
             <groupId>com.thoughtworks.qdox</groupId>
             <artifactId>qdox</artifactId>
-            <version>1.9.2</version>
+            <version>1.10</version>
         </dependency>
         <dependency>
             <groupId>biz.aQute</groupId>
             <artifactId>bnd</artifactId>
-            <version>0.0.342</version>
+            <version>0.0.369</version>
         </dependency>
     </dependencies>
     <repositories>
