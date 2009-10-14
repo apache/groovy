@@ -664,9 +664,7 @@ public class Sql {
             if (metaClosure != null) metaClosure.call(results.getMetaData());
 
             GroovyResultSet groovyRS = new GroovyResultSetProxy(results).getImpl();
-            while (groovyRS.next()) {
-                rowClosure.call(groovyRS);
-            }
+            groovyRS.eachRow(rowClosure);
         } catch (SQLException e) {
             log.log(Level.FINE, "Failed to execute: " + sql, e);
             throw e;
