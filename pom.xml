@@ -498,6 +498,10 @@
             <name>Jim Jagielski</name>
             <email></email>
         </contributor>
+        <contributor>
+            <name>John Hurst</name>
+            <email></email>
+        </contributor>
     </contributors>
 
     <dependencies>

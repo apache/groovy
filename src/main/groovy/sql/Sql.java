@@ -59,6 +59,7 @@ import org.codehaus.groovy.runtime.SqlGroovyMethods;
  * @author Paul King
  * @author Marc DeXeT
  * @author John Bito
+ * @author John Hurst
  * @version $Revision$
  */
 public class Sql {
@@ -678,6 +679,60 @@ public class Sql {
      * Performs the given SQL query calling the given Closure with each row of the
      * result set. The row will be a <code>GroovyRowResult</code> which is a Map
      * that also supports accessing the fields using ordinal index values.
+     * In addition, the <code>metaClosure</code> will be called once passing in the
+     * <code>ResultSetMetaData</code> as argument.
+     * The query may contain placeholder question marks which match the given list of parameters.
+     * <p/>
+     * Example usage:
+     * <pre>
+     * def printColNames = { meta ->
+     *     (1..meta.columnCount).each {
+     *         print meta.getColumnLabel(it).padRight(20)
+     *     }
+     *     println()
+     * }
+     * def printRow = { row ->
+     *     row.toRowResult().values().each{ print it.toString().padRight(20) }
+     *     println()
+     * }
+     * sql.eachRow("select * from PERSON where lastname like ?", ['%a%'], printColNames, printRow)
+     * </pre>
+     *
+     * @param sql     the sql statement
+     * @param params  a list of parameters
+     * @param metaClosure called for meta data (only once after sql execution)
+     * @param closure called for each row with a GroovyResultSet
+     * @throws SQLException if a database access error occurs
+     */
+    public void eachRow(String sql, List<Object> params, Closure metaClosure, Closure closure) throws SQLException {
+        Connection connection = createConnection();
+        PreparedStatement statement = null;
+        ResultSet results = null;
+        try {
+            log.fine(sql);
+            statement = getPreparedStatement(connection, sql, params);
+            results = statement.executeQuery();
+
+            if (metaClosure != null) metaClosure.call(results.getMetaData());
+
+            GroovyResultSet groovyRS = new GroovyResultSetProxy(results).getImpl();
+            while (groovyRS.next()) {
+                closure.call(groovyRS);
+            }
+        }
+        catch (SQLException e) {
+            log.log(Level.FINE, "Failed to execute: " + sql, e);
+            throw e;
+        }
+        finally {
+            closeResources(connection, statement, results);
+        }
+    }
+
+    /**
+     * Performs the given SQL query calling the given Closure with each row of the
+     * result set. The row will be a <code>GroovyRowResult</code> which is a Map
+     * that also supports accessing the fields using ordinal index values.
      * The query may contain placeholder question marks which match the given list of parameters.
      * <p/>
      * Example usage:
@@ -693,26 +748,43 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      */
     public void eachRow(String sql, List<Object> params, Closure closure) throws SQLException {
-        Connection connection = createConnection();
-        PreparedStatement statement = null;
-        ResultSet results = null;
-        try {
-            log.fine(sql);
-            statement = getPreparedStatement(connection, sql, params);
-            results = statement.executeQuery();
+        eachRow(sql, params, null, closure);
+    }
 
-            GroovyResultSet groovyRS = new GroovyResultSetProxy(results).getImpl();
-            while (groovyRS.next()) {
-                closure.call(groovyRS);
-            }
-        }
-        catch (SQLException e) {
-            log.log(Level.FINE, "Failed to execute: " + sql, e);
-            throw e;
-        }
-        finally {
-            closeResources(connection, statement, results);
-        }
+    /**
+     * Performs the given SQL query calling the given Closure with each row of the
+     * result set. The row will be a <code>GroovyRowResult</code> which is a Map
+     * that also supports accessing the fields using ordinal index values.
+     * In addition, the <code>metaClosure</code> will be called once passing in the
+     * <code>ResultSetMetaData</code> as argument.
+     * The query may contain GString expressions.
+     * <p/>
+     * Example usage:
+     * <pre>
+     * def location = 25
+     * def printColNames = { meta ->
+     *     (1..meta.columnCount).each {
+     *         print meta.getColumnLabel(it).padRight(20)
+     *     }
+     *     println()
+     * }
+     * def printRow = { row ->
+     *     row.toRowResult().values().each{ print it.toString().padRight(20) }
+     *     println()
+     * }
+     * sql.eachRow("select * from PERSON where location_id < $location", printColNames, printRow)
+     * </pre>
+     *
+     * @param gstring a GString containing the SQL query with embedded params
+     * @param metaClosure called for meta data (only once after sql execution)
+     * @param closure called for each row with a GroovyResultSet
+     * @throws SQLException if a database access error occurs
+     * @see #expand(Object)
+     */
+    public void eachRow(GString gstring, Closure metaClosure, Closure closure) throws SQLException {
+        List<Object> params = getParameters(gstring);
+        String sql = asSql(gstring, params);
+        eachRow(sql, params, metaClosure, closure);
     }
 
     /**
@@ -735,9 +807,7 @@ public class Sql {
      * @see #expand(Object)
      */
     public void eachRow(GString gstring, Closure closure) throws SQLException {
-        List<Object> params = getParameters(gstring);
-        String sql = asSql(gstring, params);
-        eachRow(sql, params, closure);
+        eachRow(gstring, null, closure);
     }
 
     /**
@@ -746,7 +816,8 @@ public class Sql {
      * Example usage:
      * <pre>
      * def ans = sql.rows("select * from PERSON where firstname like 'S%'")
-     * println "Found ${ans.size()} rows"     * </pre>
+     * println "Found ${ans.size()} rows"
+     * </pre>
      *
      * @param sql the SQL statement
      * @return a list of GroovyRowResult objects
@@ -758,28 +829,8 @@ public class Sql {
 
     /**
      * Performs the given SQL query and return the rows of the result set.
-     * The query may contain GString expressions.
-     * <p/>
-     * Example usage:
-     * <pre>
-     * def location = 25
-     * def ans = sql.rows("select * from PERSON where location_id < $location")
-     * println "Found ${ans.size()} rows"
-     * </pre>
-     *
-     * @param gstring a GString containing the SQL query with embedded params
-     * @return a list of GroovyRowResult objects
-     * @throws SQLException if a database access error occurs
-     * @see #expand(Object)
-     */
-    public List<GroovyRowResult> rows(GString gstring) throws SQLException {
-        List<Object> params = getParameters(gstring);
-        String sql = asSql(gstring, params);
-        return rows(sql, params);
-    }
-
-    /**
-     * Performs the given SQL query and return the rows of the result set.
+     * In addition, the <code>metaClosure</code> will be called once passing in the
+     * <code>ResultSetMetaData</code> as argument.
      * <p/>
      * Example usage:
      * <pre>
@@ -798,8 +849,7 @@ public class Sql {
         ResultSet rs = null;
         try {
         	rs = command.execute();
-        	if (metaClosure != null) metaClosure.call(rs.getMetaData());
-        	List<GroovyRowResult> result = asList(sql, rs);
+        	List<GroovyRowResult> result = asList(sql, rs, metaClosure);
         	rs = null;
         	return result;
         } finally {
@@ -827,13 +877,89 @@ public class Sql {
 	 */
 	public List<GroovyRowResult> rows(String sql, List<Object> params)
 			throws SQLException {
+        return rows(sql, params, null);
+	}
+
+    /**
+     * Performs the given SQL query and return the rows of the result set.
+     * In addition, the <code>metaClosure</code> will be called once passing in the
+     * <code>ResultSetMetaData</code> as argument.
+     * The query may contain placeholder question marks which match the given list of parameters.
+     * <p/>
+     * Example usage:
+     * <pre>
+     * def printNumCols = { meta -> println "Found $meta.columnCount columns" }
+     * def ans = sql.rows("select * from PERSON where lastname like ?", ['%a%'], printNumCols)
+     * println "Found ${ans.size()} rows"
+     * </pre>
+     *
+     * @param sql
+     *            the SQL statement
+     * @param params
+     *            a list of parameters
+     * @param metaClosure
+     *            called for meta data (only once after sql execution)
+     * @return a list of GroovyRowResult objects
+     * @throws SQLException
+     *             if a database access error occurs
+     */
+    public List<GroovyRowResult> rows(String sql, List<Object> params, Closure metaClosure)
+            throws SQLException {
         AbstractQueryCommand command = createPreparedQueryCommand(sql, params);
         try {
-        	return asList(sql, command.execute());
-        } finally {
-        	command.closeResources();
+          return asList(sql, command.execute(), metaClosure);
         }
-	}
+        finally {
+          command.closeResources();
+        }
+    }
+
+    /**
+     * Performs the given SQL query and return the rows of the result set.
+     * The query may contain GString expressions.
+     * <p/>
+     * Example usage:
+     * <pre>
+     * def location = 25
+     * def ans = sql.rows("select * from PERSON where location_id < $location")
+     * println "Found ${ans.size()} rows"
+     * </pre>
+     *
+     * @param gstring a GString containing the SQL query with embedded params
+     * @return a list of GroovyRowResult objects
+     * @throws SQLException if a database access error occurs
+     * @see #expand(Object)
+     */
+    public List<GroovyRowResult> rows(GString gstring) throws SQLException {
+        return rows(gstring, null);
+    }
+
+    /**
+     * Performs the given SQL query and return the rows of the result set.
+     * In addition, the <code>metaClosure</code> will be called once passing in the
+     * <code>ResultSetMetaData</code> as argument.
+     * The query may contain GString expressions.
+     * <p/>
+     * Example usage:
+     * <pre>
+     * def location = 25
+     * def printNumCols = { meta -> println "Found $meta.columnCount columns" }
+     * def ans = sql.rows("select * from PERSON where location_id < $location", printNumCols)
+     * println "Found ${ans.size()} rows"
+     * </pre>
+     *
+     * @param gstring a GString containing the SQL query with embedded params
+     * @param metaClosure called with meta data of the ResultSet
+     * @return a list of GroovyRowResult objects
+     * @throws SQLException if a database access error occurs
+     * @see #expand(Object)
+     */
+    public List<GroovyRowResult> rows(GString gstring, Closure metaClosure)
+            throws SQLException {
+        List<Object> params = getParameters(gstring);
+        String sql = asSql(gstring, params);
+        return rows(sql, params, metaClosure);
+    }
 
 	/**
      * Performs the given SQL query and return the first row of the result set.
@@ -962,7 +1088,7 @@ public class Sql {
     }
 
     /**
-     * 
+     *
      * Executes the given piece of SQL with parameters.
      * Also saves the updateCount, if any, for subsequent examination.
      * <p/>
@@ -1101,7 +1227,7 @@ public class Sql {
      * column value of the third row, use <code>keys[3][1]</code>. The
      * method is designed to be used with SQL INSERT statements, but is
      * not limited to them.</p>
-     * 
+     *
      * <p>The standard use for this method is when a table has an
      * autoincrement ID column and you want to know what the ID is for
      * a newly inserted row. In this example, we insert a single row
@@ -1780,9 +1906,27 @@ public class Sql {
      * @throws SQLException if a database error occurs
      */
     protected List<GroovyRowResult> asList(String sql, ResultSet rs) throws SQLException {
+        return asList(sql, rs, null);
+    }
+
+    /**
+     * Hook to allow derived classes to override list of result collection behavior.
+     * The default behavior is to return a list of GroovyRowResult objects corresponding
+     * to each row in the ResultSet.
+     *
+     * @param sql query to execute
+     * @param rs the ResultSet to process
+     * @param metaClosure called for meta data (only once after sql execution)
+     * @return the resulting list of rows
+     * @throws SQLException if a database error occurs
+     */
+    protected List<GroovyRowResult> asList(String sql, ResultSet rs, Closure metaClosure) throws SQLException {
         List<GroovyRowResult> results = new ArrayList<GroovyRowResult>();
 
         try {
+            if (metaClosure != null) {
+                metaClosure.call(rs.getMetaData());
+            }
             while (rs.next()) {
                 results.add(SqlGroovyMethods.toRowResult(rs));
             }
@@ -2262,7 +2406,7 @@ public class Sql {
     			throw e;
     		}
          }
-         
+
          /**
           * After performing the execute operation and making use of its return, it's necessary
           * to free the resources allocated for the statement.
@@ -2270,15 +2414,15 @@ public class Sql {
          public final void closeResources(){
         	 Sql.this.closeResources(connection, statement);
          }
-         
+
          /**
           * After performing the execute operation and making use of its return, it's necessary
           * to free the resources allocated for the statement.
-          * 
+          *
           * @param rs allows the caller to conveniently close its resource as well
           */
          public final void closeResources(ResultSet rs) {
-        	 Sql.this.closeResources(connection, statement, rs);  	 
+        	 Sql.this.closeResources(connection, statement, rs);
          }
 
          /**
@@ -2308,20 +2452,20 @@ public class Sql {
     }
 
     protected final class QueryCommand extends AbstractQueryCommand {
-    	
+
     	QueryCommand(String sql) {
     		super(sql);
     	}
-    	
+
     	@Override
     	protected ResultSet runQuery(Connection connection) throws SQLException {
     		statement = getStatement(connection, sql);
     		return statement.executeQuery(sql);
     	}
     }
-    
+
     /**
-     * Factory for the QueryCommand command pattern object allows subclasses to 
+     * Factory for the QueryCommand command pattern object allows subclasses to
      * supply implementations of the command class. The factory will be used in a pattern
      * similar to
      *  <pre>
@@ -2339,7 +2483,7 @@ public class Sql {
     protected AbstractQueryCommand createQueryCommand(String sql) {
     	return new QueryCommand(sql);
     }
-    
+
     /**
      * Factory for the PreparedQueryCommand command pattern object allows subclass to supply implementations
      * of the command class.
@@ -2351,7 +2495,7 @@ public class Sql {
     protected AbstractQueryCommand createPreparedQueryCommand(String sql, List<Object> queryParams) {
     	return new PreparedQueryCommand(sql, queryParams);
     }
-    
+
     /**
      * Stub needed for testing.  Called when a connection is opened by one of the command-pattern classes
      * so that a test case can monitor the state of the connection through its subclass.
