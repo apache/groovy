@@ -27,7 +27,6 @@ import org.codehaus.groovy.syntax.Types
 */
 class ConfigObject extends LinkedHashMap implements Writable {
 
-    // would be better to have these availabe as constants from Groovy, but couldn't find
     static final KEYWORDS = Types.getKeywords()
 
     static final TAB_CHARACTER = '\t'
