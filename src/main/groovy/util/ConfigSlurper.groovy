@@ -49,7 +49,7 @@ class ConfigSlurper {
     GroovyClassLoader classLoader = new GroovyClassLoader()
     String environment
     private envMode = false
-	private Map bindingVars
+    private Map bindingVars
 
     ConfigSlurper() { }
 
@@ -61,12 +61,12 @@ class ConfigSlurper {
         this.environment = env
     }
 
-	/**
-	 * Sets any additional variables that should be placed into the binding when evaluating Config scripts
-	 */
-	void setBinding(Map vars) {
-		this.bindingVars = vars
-	}
+    /**
+     * Sets any additional variables that should be placed into the binding when evaluating Config scripts
+     */
+    void setBinding(Map vars) {
+        this.bindingVars = vars
+    }
 
     /**
      * Parses a ConfigObject instances from an instance of java.util.Properties
@@ -164,7 +164,7 @@ class ConfigSlurper {
         LinkedList stack = new LinkedList()
         stack << [config:config,scope:[:]]
         def pushStack = { co ->
-	        stack << [config:co,scope:stack.last.scope.clone()]
+            stack << [config:co,scope:stack.last.scope.clone()]
         }
         def assignName = { name, co ->
         	def current = stack.last
@@ -246,10 +246,10 @@ class ConfigSlurper {
         def setProperty = { String name, value ->
             assignName.call(prefix+name, value)
         }                
-     	def binding = new ConfigBinding(setProperty)
-		if(this.bindingVars) {
-			binding.getVariables().putAll(this.bindingVars)
-		}
+        def binding = new ConfigBinding(setProperty)
+        if(this.bindingVars) {
+            binding.getVariables().putAll(this.bindingVars)
+        }
         script.binding = binding
 
 
