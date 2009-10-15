@@ -17,6 +17,7 @@ package org.codehaus.groovy.tools.xml;
 
 import groovy.util.IndentPrinter;
 import org.w3c.dom.*;
+import org.codehaus.groovy.syntax.Types;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -28,6 +29,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * A SAX handler for turning XML into Groovy scripts
@@ -40,7 +42,7 @@ public class DomToGroovy {
     protected IndentPrinter out;
     protected boolean inMixed = false;
     protected String qt = "'";
-    protected List keywords = Arrays.asList("import", "private", "public", "protected");
+    protected Set keywords = Types.getKeywords();
 
     public DomToGroovy(PrintWriter out) {
         this(new IndentPrinter(out));
