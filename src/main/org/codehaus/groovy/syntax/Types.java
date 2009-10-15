@@ -19,6 +19,9 @@ package org.codehaus.groovy.syntax;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.Collections;
 
 import org.codehaus.groovy.GroovyBugError;
 
@@ -1002,7 +1005,7 @@ public class Types
                 return 20;
 
             case BITWISE_OR:
-	    case BITWISE_AND:
+            case BITWISE_AND:
             case BITWISE_XOR:
                 return 22;
 
@@ -1090,7 +1093,11 @@ public class Types
 
     private static final Map TEXTS  = new HashMap();  // symbol/keyword type -> text
     private static final Map LOOKUP = new HashMap();  // text -> symbol/keyword type
+    private static final Set KEYWORDS = new HashSet();  // valid keywords
 
+    public static Set getKeywords() {
+        return Collections.unmodifiableSet(KEYWORDS);
+    }
 
    /**
     *  Returns the type for the specified symbol/keyword text.  Returns UNKNOWN
@@ -1148,10 +1155,9 @@ public class Types
     }
 
 
-   /**
-    *  Adds a element to the TEXTS and LOOKUP.
-    */
-
+    /**
+     *  Adds a element to the TEXTS and LOOKUP.
+     */
     private static void addTranslation( String text, int type ) {
         Integer key = Integer.valueOf( type );
 
@@ -1159,6 +1165,15 @@ public class Types
         LOOKUP.put( text, key );
     }
 
+    /**
+     *  Adds a element to the KEYWORDS, TEXTS and LOOKUP.
+     */
+    private static void addKeyword( String text, int type ) {
+        Integer key = Integer.valueOf( type );
+        KEYWORDS.add(key);
+        TEXTS.put( key, text );
+        LOOKUP.put( text, key );
+    }
 
     static {
 
@@ -1210,8 +1225,7 @@ public class Types
         addTranslation( "\\"          , INTDIV                      );
         addTranslation( "%"           , MOD                         );
 
-	addTranslation( "**"          , POWER                       );
-
+        addTranslation( "**"          , POWER                       );
         addTranslation( "+="          , PLUS_EQUAL                  );
         addTranslation( "-="          , MINUS_EQUAL                 );
         addTranslation( "*="          , MULTIPLY_EQUAL              );
@@ -1250,65 +1264,63 @@ public class Types
         //
         // Keywords
 
-        addTranslation( "abstract"    , KEYWORD_ABSTRACT            );
-        addTranslation( "as"          , KEYWORD_AS                  );
-        addTranslation( "assert"      , KEYWORD_ASSERT              );
-        addTranslation( "break"       , KEYWORD_BREAK               );
-        addTranslation( "case"        , KEYWORD_CASE                );
-        addTranslation( "catch"       , KEYWORD_CATCH               );
-        addTranslation( "class"       , KEYWORD_CLASS               );
-        addTranslation( "const"       , KEYWORD_CONST               );
-        addTranslation( "continue"    , KEYWORD_CONTINUE            );
-        addTranslation( "def"         , KEYWORD_DEF                 );
-        addTranslation( "defmacro"    , KEYWORD_DEF                 ); // xxx br defmacro
-        addTranslation( "default"     , KEYWORD_DEFAULT             );
-        addTranslation( "do"          , KEYWORD_DO                  );
-        addTranslation( "else"        , KEYWORD_ELSE                );
-        addTranslation( "extends"     , KEYWORD_EXTENDS             );
-        addTranslation( "final"       , KEYWORD_FINAL               );
-        addTranslation( "finally"     , KEYWORD_FINALLY             );
-        addTranslation( "for"         , KEYWORD_FOR                 );
-        addTranslation( "goto"        , KEYWORD_GOTO                );
-        addTranslation( "if"          , KEYWORD_IF                  );
-        addTranslation( "in"          , KEYWORD_IN                  );
-        addTranslation( "implements"  , KEYWORD_IMPLEMENTS          );
-        addTranslation( "import"      , KEYWORD_IMPORT              );
-        addTranslation( "instanceof"  , KEYWORD_INSTANCEOF          );
-        addTranslation( "interface"   , KEYWORD_INTERFACE           );
-        addTranslation( "mixin"       , KEYWORD_MIXIN               );
-        addTranslation( "native"      , KEYWORD_NATIVE              );
-        addTranslation( "new"         , KEYWORD_NEW                 );
-        addTranslation( "package"     , KEYWORD_PACKAGE             );
-        addTranslation( "private"     , KEYWORD_PRIVATE             );
-        addTranslation( "property"    , KEYWORD_PROPERTY            );
-        addTranslation( "protected"   , KEYWORD_PROTECTED           );
-        addTranslation( "public"      , KEYWORD_PUBLIC              );
-        addTranslation( "return"      , KEYWORD_RETURN              );
-        addTranslation( "static"      , KEYWORD_STATIC              );
-        addTranslation( "super"       , KEYWORD_SUPER               );
-        addTranslation( "switch"      , KEYWORD_SWITCH              );
-        addTranslation( "synchronized", KEYWORD_SYNCHRONIZED        );
-        addTranslation( "this"        , KEYWORD_THIS                );
-        addTranslation( "throw"       , KEYWORD_THROW               );
-        addTranslation( "throws"      , KEYWORD_THROWS              );
-        addTranslation( "transient"   , KEYWORD_TRANSIENT           );
-        addTranslation( "try"         , KEYWORD_TRY                 );
-        addTranslation( "volatile"    , KEYWORD_VOLATILE            );
-        addTranslation( "while"       , KEYWORD_WHILE               );
-
-        addTranslation( "true"        , KEYWORD_TRUE                );
-        addTranslation( "false"       , KEYWORD_FALSE               );
-        addTranslation( "null"        , KEYWORD_NULL                );
-
-        addTranslation( "void"        , KEYWORD_VOID                );
-        addTranslation( "boolean"     , KEYWORD_BOOLEAN             );
-        addTranslation( "byte"        , KEYWORD_BYTE                );
-        addTranslation( "int"         , KEYWORD_INT                 );
-        addTranslation( "short"       , KEYWORD_SHORT               );
-        addTranslation( "long"        , KEYWORD_LONG                );
-        addTranslation( "float"       , KEYWORD_FLOAT               );
-        addTranslation( "double"      , KEYWORD_DOUBLE              );
-        addTranslation( "char"        , KEYWORD_CHAR                );
+        addKeyword( "abstract"    , KEYWORD_ABSTRACT            );
+        addKeyword( "as"          , KEYWORD_AS                  );
+        addKeyword( "assert"      , KEYWORD_ASSERT              );
+        addKeyword( "break"       , KEYWORD_BREAK               );
+        addKeyword( "case"        , KEYWORD_CASE                );
+        addKeyword( "catch"       , KEYWORD_CATCH               );
+        addKeyword( "class"       , KEYWORD_CLASS               );
+        addKeyword( "const"       , KEYWORD_CONST               );
+        addKeyword( "continue"    , KEYWORD_CONTINUE            );
+        addKeyword( "def"         , KEYWORD_DEF                 );
+        addKeyword( "defmacro"    , KEYWORD_DEF                 ); // xxx br defmacro
+        addKeyword( "default"     , KEYWORD_DEFAULT             );
+        addKeyword( "do"          , KEYWORD_DO                  );
+        addKeyword( "else"        , KEYWORD_ELSE                );
+        addKeyword( "extends"     , KEYWORD_EXTENDS             );
+        addKeyword( "final"       , KEYWORD_FINAL               );
+        addKeyword( "finally"     , KEYWORD_FINALLY             );
+        addKeyword( "for"         , KEYWORD_FOR                 );
+        addKeyword( "goto"        , KEYWORD_GOTO                );
+        addKeyword( "if"          , KEYWORD_IF                  );
+        addKeyword( "in"          , KEYWORD_IN                  );
+        addKeyword( "implements"  , KEYWORD_IMPLEMENTS          );
+        addKeyword( "import"      , KEYWORD_IMPORT              );
+        addKeyword( "instanceof"  , KEYWORD_INSTANCEOF          );
+        addKeyword( "interface"   , KEYWORD_INTERFACE           );
+        addKeyword( "mixin"       , KEYWORD_MIXIN               );
+        addKeyword( "native"      , KEYWORD_NATIVE              );
+        addKeyword( "new"         , KEYWORD_NEW                 );
+        addKeyword( "package"     , KEYWORD_PACKAGE             );
+        addKeyword( "private"     , KEYWORD_PRIVATE             );
+        addKeyword( "property"    , KEYWORD_PROPERTY            );
+        addKeyword( "protected"   , KEYWORD_PROTECTED           );
+        addKeyword( "public"      , KEYWORD_PUBLIC              );
+        addKeyword( "return"      , KEYWORD_RETURN              );
+        addKeyword( "static"      , KEYWORD_STATIC              );
+        addKeyword( "super"       , KEYWORD_SUPER               );
+        addKeyword( "switch"      , KEYWORD_SWITCH              );
+        addKeyword( "synchronized", KEYWORD_SYNCHRONIZED        );
+        addKeyword( "this"        , KEYWORD_THIS                );
+        addKeyword( "throw"       , KEYWORD_THROW               );
+        addKeyword( "throws"      , KEYWORD_THROWS              );
+        addKeyword( "transient"   , KEYWORD_TRANSIENT           );
+        addKeyword( "try"         , KEYWORD_TRY                 );
+        addKeyword( "volatile"    , KEYWORD_VOLATILE            );
+        addKeyword( "while"       , KEYWORD_WHILE               );
+        addKeyword( "true"        , KEYWORD_TRUE                );
+        addKeyword( "false"       , KEYWORD_FALSE               );
+        addKeyword( "null"        , KEYWORD_NULL                );
+        addKeyword( "void"        , KEYWORD_VOID                );
+        addKeyword( "boolean"     , KEYWORD_BOOLEAN             );
+        addKeyword( "byte"        , KEYWORD_BYTE                );
+        addKeyword( "int"         , KEYWORD_INT                 );
+        addKeyword( "short"       , KEYWORD_SHORT               );
+        addKeyword( "long"        , KEYWORD_LONG                );
+        addKeyword( "float"       , KEYWORD_FLOAT               );
+        addKeyword( "double"      , KEYWORD_DOUBLE              );
+        addKeyword( "char"        , KEYWORD_CHAR                );
     }
 
 
