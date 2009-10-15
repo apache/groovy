@@ -15,6 +15,8 @@
  */
 package groovy.util
 
+import org.codehaus.groovy.syntax.Types
+
 /**
 * A ConfigObject at a simple level is a Map that creates configuration entries (other ConfigObjects) when referencing them.
 * This means that navigating to foo.bar.stuff will not return null but nested ConfigObjects which are of course empty maps
@@ -26,13 +28,7 @@ package groovy.util
 class ConfigObject extends LinkedHashMap implements Writable {
 
     // would be better to have these availabe as constants from Groovy, but couldn't find
-    static final KEYWORDS = ['class', 'extends', 'implements', 'package','return','def',
-                             'try','finally','this','new','catch','switch','case','default','while','if',
-                             'else','elseif','private','protected','final','for','in','byte','short','break',
-                             'instanceof','synchronized','const','float','null','throws','do','super','with',
-                             'threadsafe','transient','native','interface','any','double','volatile','as',
-                             'assert','goto','enum','int','boolean','char','false','true','static','abstract',
-                             'continue','import','void','long']
+    static final KEYWORDS = Types.getKeywords()
 
     static final TAB_CHARACTER = '\t'
 
