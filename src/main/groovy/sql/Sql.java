@@ -1109,7 +1109,7 @@ public class Sql {
         Connection connection = createConnection();
         PreparedStatement statement = null;
         try {
-            log.fine(sql);
+            log.fine(sql + " | " + params);
             statement = getPreparedStatement(connection, sql, params);
             // TODO handle multiple results
             boolean isResultSet = statement.execute();
@@ -1199,7 +1199,7 @@ public class Sql {
         Connection connection = createConnection();
         PreparedStatement statement = null;
         try {
-            log.fine(sql);
+            log.fine(sql + " | " + params);
             statement = getPreparedStatement(connection, sql, params, Statement.RETURN_GENERATED_KEYS);
             this.updateCount = statement.executeUpdate();
             ResultSet keys = statement.getGeneratedKeys();
@@ -1297,7 +1297,7 @@ public class Sql {
         Connection connection = createConnection();
         PreparedStatement statement = null;
         try {
-            log.fine(sql);
+            log.fine(sql + " | " + params);
             statement = getPreparedStatement(connection, sql, params);
             this.updateCount = statement.executeUpdate();
             return this.updateCount;
