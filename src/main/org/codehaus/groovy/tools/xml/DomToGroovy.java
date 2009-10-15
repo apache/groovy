@@ -18,6 +18,7 @@ package org.codehaus.groovy.tools.xml;
 import groovy.util.IndentPrinter;
 import org.w3c.dom.*;
 import org.codehaus.groovy.syntax.Types;
+import org.xml.sax.InputSource;
 
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
@@ -25,6 +26,10 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.io.Reader;
+import java.io.InputStream;
+import java.io.FileReader;
+import java.io.BufferedReader;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -93,11 +98,27 @@ public class DomToGroovy {
 
     // Implementation methods
     //-------------------------------------------------------------------------
-    protected static Document parse(String name) throws Exception {
+
+    protected static Document parse(final String fileName) throws Exception {
+        return parse(new File(fileName));
+    }
+
+    public static Document parse(final File file) throws Exception {
+        return parse(new BufferedReader(new FileReader(file)));
+    }
+
+    public static Document parse(final Reader input) throws Exception {
         DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
         factory.setNamespaceAware(true);
         DocumentBuilder builder = factory.newDocumentBuilder();
-        return builder.parse(new File(name));
+        return builder.parse(new InputSource(input));
+    }
+
+    public static Document parse(final InputStream input) throws Exception {
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        factory.setNamespaceAware(true);
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        return builder.parse(new InputSource(input));
     }
 
     protected void print(Node node, Map namespaces, boolean endWithComma) {
