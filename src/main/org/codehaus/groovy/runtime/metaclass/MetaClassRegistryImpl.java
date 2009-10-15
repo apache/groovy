@@ -18,9 +18,7 @@ package org.codehaus.groovy.runtime.metaclass;
 import groovy.lang.*;
 
 import org.codehaus.groovy.reflection.*;
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
-import org.codehaus.groovy.runtime.DefaultGroovyStaticMethods;
-import org.codehaus.groovy.runtime.SwingGroovyMethods;
+import org.codehaus.groovy.runtime.*;
 import org.codehaus.groovy.vmplugin.VMPluginFactory;
 import org.codehaus.groovy.util.FastArray;
 import org.codehaus.groovy.util.ManagedLinkedList;
@@ -82,6 +80,8 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             // let's register the default methods
             registerMethods(DefaultGroovyMethods.class, true, true, map);
             registerMethods(SwingGroovyMethods.class, false, true, map);
+            registerMethods(SqlGroovyMethods.class, false, true, map);
+            registerMethods(XmlGroovyMethods.class, false, true, map);
             Class[] pluginDGMs = VMPluginFactory.getPlugin().getPluginDefaultGroovyMethods();
             for (Class plugin : pluginDGMs) {
                 registerMethods(plugin, false, true, map);
@@ -152,7 +152,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         } else {
             for (CachedMethod method : methods) {
                 final int mod = method.getModifiers();
-                if (Modifier.isStatic(mod) && Modifier.isPublic(mod)) {
+                if (Modifier.isStatic(mod) && Modifier.isPublic(mod) && method.getCachedMethod().getAnnotation(Deprecated.class) == null) {
                     CachedClass[] paramTypes = method.getParameterTypes();
                     if (paramTypes.length > 0) {
                         List<MetaMethod> arr = map.get(paramTypes[0]);
