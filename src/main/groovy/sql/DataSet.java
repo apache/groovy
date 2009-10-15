@@ -149,25 +149,9 @@ public class DataSet extends Sql {
         buffer.append(paramBuffer.toString());
         buffer.append(")");
 
-        Connection connection = createConnection();
-        PreparedStatement statement = null;
-        try {
-            statement = connection.prepareStatement(buffer.toString());
-            int i = 1;
-            for (Object value : map.values()) {
-                setObject(statement, i++, value);
-            }
-            int answer = statement.executeUpdate();
-            if (answer != 1) {
-                log.log(Level.WARNING, "Should have updated 1 row not " + answer + " when trying to add: " + map);
-            }
-        }
-        catch (SQLException e) {
-            log.log(Level.WARNING, "Failed to add row for: " + map, e);
-            throw e;
-        }
-        finally {
-            closeResources(connection, statement);
+        int answer = executeUpdate(buffer.toString(), new ArrayList<Object>(map.values()));
+        if (answer != 1) {
+            log.log(Level.WARNING, "Should have updated 1 row not " + answer + " when trying to add: " + map);
         }
     }
 
