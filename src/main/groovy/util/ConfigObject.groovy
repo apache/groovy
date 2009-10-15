@@ -31,9 +31,9 @@ class ConfigObject extends LinkedHashMap implements Writable {
 
     static final TAB_CHARACTER = '\t'
 
-	/**
-	 * The config file that was used when parsing this ConfigObject
-	 */
+    /**
+     * The config file that was used when parsing this ConfigObject
+     */
     URL configFile
 
     ConfigObject(URL file) {
@@ -43,13 +43,12 @@ class ConfigObject extends LinkedHashMap implements Writable {
     ConfigObject() {}
 
     /**
-	 * Writes this config object into a String serialized representation which can later be parsed back using the parse()
-	 * method
-	 *
+     * Writes this config object into a String serialized representation which can later be parsed back using the parse()
+     * method
+     *
      * @see groovy.lang.Writable#writeTo(java.io.Writer)
-     * @see #parse(URL)
-     */ 
-	Writer writeTo(Writer outArg) {
+     */
+    Writer writeTo(Writer outArg) {
         def out
         try {
             out = new BufferedWriter(outArg)
@@ -58,8 +57,8 @@ class ConfigObject extends LinkedHashMap implements Writable {
             out.flush()
         }
 
-		return outArg
-	}
+        return outArg
+    }
                   
 
     /**
@@ -67,7 +66,7 @@ class ConfigObject extends LinkedHashMap implements Writable {
      * for non-existant keys
      */
     def getProperty(String name) {  
-		if(name == 'configFile') return this.configFile
+        if(name == 'configFile') return this.configFile
         if(!containsKey (name)) {
            ConfigObject prop = new ConfigObject(this.configFile)
            put(name, prop)
@@ -83,6 +82,7 @@ class ConfigObject extends LinkedHashMap implements Writable {
     Map flatten() {
         return flatten(null)
     }
+
     /**
      * Flattens this ConfigObject populating the results into the target Map
      *
@@ -155,8 +155,7 @@ class ConfigObject extends LinkedHashMap implements Writable {
         for(key in map.keySet()) {
             def value = map.get(key)
 
-
-			if(value instanceof ConfigObject) {
+            if(value instanceof ConfigObject) {
                 if(!value.isEmpty()) {
                   def dotsInKeys = value.find { entry -> entry.key.indexOf('.') > -1 }
                   def configSize = value.size()
@@ -195,13 +194,12 @@ class ConfigObject extends LinkedHashMap implements Writable {
                       writeNode(key, space,tab, value, out)
                   }                  
                 }
-			}
-			else {
-
+            }
+            else {
                 writeValue(key, space, prefix, value, out)
-			}
-		}
-	}
+            }
+        }
+    }
 
     private writeValue(key, space, prefix, value, out) {
         key = key.indexOf('.') > -1 ? key.inspect() : key
