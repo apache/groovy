@@ -313,7 +313,7 @@ public class DomToGroovy {
     }
 
     protected boolean checkEscaping(String localName) {
-        return keywords.contains(localName) || localName.indexOf("-") != -1 || localName.indexOf(":") != -1;
+        return keywords.contains(localName) || localName.contains("-") || localName.contains(":") || localName.contains(".");
     }
 
     protected String getTextNodeData(Text node) {
