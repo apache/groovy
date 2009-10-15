@@ -20,6 +20,8 @@ import groovy.sql.GroovyRowResult;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
+import java.sql.Timestamp;
+import java.util.Date;
 import java.util.LinkedHashMap;
 
 /**
@@ -48,5 +50,14 @@ public class SqlGroovyMethods {
         return new GroovyRowResult(lhm);
     }
 
-
+    /**
+     * Return a java.sql.Timestamp given a java.util.Date.
+     *
+     * @param d a date
+     * @return the date wrapped as a Timestamp
+     * @since 1.6.6
+     */
+    public static Timestamp toTimestamp(Date d) {
+        return new Timestamp(d.getTime());
+    }
 }
