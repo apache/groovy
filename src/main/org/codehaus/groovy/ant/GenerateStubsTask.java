@@ -35,12 +35,13 @@ import java.io.File;
 public class GenerateStubsTask
     extends CompileTaskSupport
 {
+    @Override
     protected void compile() {
         GroovyClassLoader gcl = createClassLoader();
-        JavaStubCompilationUnit compilation = new JavaStubCompilationUnit(config, gcl, destdir);
+        JavaStubCompilationUnit cu = new JavaStubCompilationUnit(config, gcl, destdir);
 
         int count = 0;
-        
+
         String[] list = src.list();
         for (int i = 0; i < list.length; i++) {
             File basedir = getProject().resolveFile(list[i]);
@@ -57,7 +58,7 @@ public class GenerateStubsTask
                 log.debug("    "  + includes[j]);
                 
                 File file = new File(basedir, includes[j]);
-                compilation.addSourceFile(file);
+                cu.addSource(file);
 
                 // Increment the count for each non/java src we found
                 if (!includes[j].endsWith(".java")) {
@@ -69,8 +70,9 @@ public class GenerateStubsTask
         if (count > 0) {
             log.info("Generating " + count + " Java stub" + (count > 1 ? "s" : "") + " to " + destdir);
 
-            // Generate the stubs
-            compilation.compile(Phases.CONVERSION);
+            cu.compile();
+
+            log.info("Generated " + cu.getStubCount() + " Java stub(s)");
         }
         else {
             log.info("No sources found for stub generation");

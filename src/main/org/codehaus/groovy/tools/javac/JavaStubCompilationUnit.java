@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright (C) 2006-2007 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,128 +16,98 @@
 
 package org.codehaus.groovy.tools.javac;
 
-import java.io.File;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-
 import groovy.lang.GroovyClassLoader;
-
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.Phases;
-import org.codehaus.groovy.control.ResolveVisitor;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.tools.javac.JavaStubGenerator;
+
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Map;
+import java.net.URL;
 
 /**
- * Compilation unit to <em>only</em> generate Java stubs for Groovy sources.
+ * Compilation unit to only generate stubs.
  *
- * @version $Id$
  * @author <a href="mailto:jason@planet57.com">Jason Dillon</a>
  */
 public class JavaStubCompilationUnit
     extends CompilationUnit
 {
-    private final List javaSources = new LinkedList();
+    private static final String DOT_GROOVY = ".groovy";
+    
+    private final JavaStubGenerator stubGenerator;
 
-    public JavaStubCompilationUnit(final CompilerConfiguration config, final GroovyClassLoader classLoader, final File outputDirectory) {
-        super(config, null, classLoader);
+    private int stubCount;
 
-        addPhaseOperation(new JavaResolverOperation(), Phases.CONVERSION);
-        addPhaseOperation(new StubGeneratorOperation(outputDirectory), Phases.CONVERSION);
-    }
+    public JavaStubCompilationUnit(final CompilerConfiguration config, final GroovyClassLoader gcl, File destDir) {
+        super(config,null,gcl);
+        assert config != null;
 
-    public void gotoPhase(final int phase) throws CompilationFailedException {
-        super.gotoPhase(phase);
-
-        if (phase == Phases.SEMANTIC_ANALYSIS) {
-            javaSources.clear();
+        Map options = config.getJointCompilationOptions();
+        if (destDir == null) {
+            destDir = (File) options.get("stubDir");
         }
-    }
+        boolean useJava5 = config.getTargetBytecode().equals(CompilerConfiguration.POST_JDK5);
+        stubGenerator = new JavaStubGenerator(destDir, false, useJava5);
 
-    public void addSourceFile(final File file) {
-        if (file.getName().endsWith(".java")) {
-            addJavaSource(file);
-        }
-        else {
-            addSource(file);
-        }
-    }
-
-    private void addJavaSource(final File file) {
-        //
-        // FIXME: Um... not really sure what this is doing...
-        //        So either document what its job is... or whack it ;-)
-        //
-
-        String path = file.getAbsolutePath();
-        Iterator iter = javaSources.iterator();
-
-        while (iter.hasNext()) {
-            if (path.equals(iter.next())) {
-                return;
-            }
-        }
-
-        javaSources.add(path);
-    }
-
-    private boolean haveJavaSources() {
-        return !javaSources.isEmpty();
-    }
-
-    //
-    // Custom Operations
-    //
-
-    /**
-     * Operation to resolve Java sources.
-     */
-    private class JavaResolverOperation
-        extends PrimaryClassNodeOperation
-    {
-        public void call(final SourceUnit source, final GeneratorContext context, final ClassNode node) throws CompilationFailedException {
-            if (haveJavaSources()) {
-                ResolveVisitor v = new JavaAwareResolveVisitor(JavaStubCompilationUnit.this);
-                v.startResolving(node, source);
-            }
-        }
-    }
-
-    /**
-     * Operation to generate Java stubs from Groovy sources.
-     */
-    private class StubGeneratorOperation
-        extends PrimaryClassNodeOperation
-    {
-        private final JavaStubGenerator generator;
-
-        public StubGeneratorOperation(final File outputDirectory) {
-            outputDirectory.mkdirs();
-
-            boolean java5 = false;
-            String target = JavaStubCompilationUnit.this.getConfiguration().getTargetBytecode();
-            
-            // Enable java5 mode if the configuration lets us
-            if (target != null && target.trim().equals("1.5")) {
-                java5 = true;
-            }
-
-            generator = new JavaStubGenerator(outputDirectory, true, java5);
-        }
-
-        public void call(final SourceUnit source, final GeneratorContext context, final ClassNode node) throws CompilationFailedException {
-            if (haveJavaSources()) {
+        addPhaseOperation(new PrimaryClassNodeOperation() {
+            @Override
+            public void call(final SourceUnit source, final GeneratorContext context, final ClassNode node) throws CompilationFailedException {
                 try {
-                    generator.generateClass(node);
+                    stubGenerator.generateClass(node);
+                    stubCount++;
                 }
-                catch (Exception e) {
+                catch (FileNotFoundException e) {
                     source.addException(e);
                 }
             }
+        },Phases.CONVERSION);
+    }
+
+    public JavaStubCompilationUnit(final CompilerConfiguration config, final GroovyClassLoader gcl) {
+        this(config, gcl, null);
+    }
+
+    public int getStubCount() {
+        return stubCount;
+    }
+
+    @Override
+    public void compile() throws CompilationFailedException {
+        stubCount = 0;
+        super.compile(Phases.CONVERSION);
+    }
+
+    @Override
+    public void configure(final CompilerConfiguration config) {
+        super.configure(config);
+        // GroovyClassLoader should be able to find classes compiled from java sources
+        File targetDir = config.getTargetDirectory();
+        if (targetDir != null) {
+            final String classOutput = targetDir.getAbsolutePath();
+            getClassLoader().addClasspath(classOutput);
         }
+    }
+
+    @Override
+    public SourceUnit addSource(final File file) {
+        if (file.getName().toLowerCase().endsWith(DOT_GROOVY)) {
+            return super.addSource(file);
+        }
+        return null;
+    }
+
+    @Override
+    public SourceUnit addSource(URL url) {
+        if (url.getPath().toLowerCase().endsWith(DOT_GROOVY)) {
+            return super.addSource(url);
+        }
+        return null;
     }
 }
