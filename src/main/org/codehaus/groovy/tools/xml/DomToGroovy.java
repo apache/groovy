@@ -35,6 +35,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.Collection;
 
 /**
  * A SAX handler for turning XML into Groovy scripts
@@ -47,7 +48,7 @@ public class DomToGroovy {
     protected IndentPrinter out;
     protected boolean inMixed = false;
     protected String qt = "'";
-    protected Set keywords = Types.getKeywords();
+    protected Collection<String> keywords = Types.getKeywords();
 
     public DomToGroovy(PrintWriter out) {
         this(new IndentPrinter(out));
@@ -90,7 +91,7 @@ public class DomToGroovy {
         writer.println("#!/bin/groovy");
         writer.println();
         writer.println("// generated from " + args[0]);
-        writer.println("System.out << new groovy.xml.StreamingMarkupBuilder().bind {");        
+        writer.println("System.out << new groovy.xml.StreamingMarkupBuilder().bind {");
         converter.print(document);
         writer.println("}");
         writer.close();
