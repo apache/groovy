@@ -45,6 +45,7 @@ public class JavaStubGenerator
         this.outputPath = outputPath;
         this.requireSuperResolved = requireSuperResolved;
         this.java5 = java5;
+        outputPath.mkdirs();
     }
 
     public JavaStubGenerator(final File outputPath) {
