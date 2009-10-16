@@ -681,12 +681,12 @@ public class Types
                     return true;
                 }
                 switch( specific )
-				{
-                	case LEFT_PARENTHESIS:
+                {
+                    case LEFT_PARENTHESIS:
                     case GSTRING_START:
                     case SYNTH_GSTRING:
                     case KEYWORD_NEW:
-                    	return true;
+                        return true;
                 }
                 break;
 
@@ -1092,12 +1092,16 @@ public class Types
   //---------------------------------------------------------------------------
   // TEXTS
 
-    private static final Map TEXTS  = new HashMap();  // symbol/keyword type -> text
-    private static final Map LOOKUP = new HashMap();  // text -> symbol/keyword type
+    private static final Map<Integer,String> TEXTS  = new HashMap<Integer,String>();  // symbol/keyword type -> text
+    private static final Map<String,Integer> LOOKUP = new HashMap<String,Integer>();  // text -> symbol/keyword type
     private static final Set<String> KEYWORDS = new HashSet<String>();  // valid keywords
 
     public static Collection<String> getKeywords() {
         return Collections.unmodifiableSet(KEYWORDS);
+    }
+
+    public static boolean isKeyword(final String text) {
+        return KEYWORDS.contains(text);
     }
 
    /**
@@ -1109,7 +1113,7 @@ public class Types
         int type = UNKNOWN;
 
         if( LOOKUP.containsKey(text) ) {
-            type = ((Integer)LOOKUP.get(text)).intValue();
+            type = LOOKUP.get(text);
             if( filter != UNKNOWN && !ofType(type, filter) ) {
                 type = UNKNOWN;
             }
@@ -1145,11 +1149,10 @@ public class Types
     */
 
     public static String getText( int type ) {
-        Integer key = Integer.valueOf( type );
         String text = "";
 
-        if( TEXTS.containsKey(key) ) {
-            text = (String)TEXTS.get( key );
+        if( TEXTS.containsKey(type) ) {
+            text = TEXTS.get( type );
         }
 
         return text;
@@ -1160,10 +1163,8 @@ public class Types
      *  Adds a element to the TEXTS and LOOKUP.
      */
     private static void addTranslation( String text, int type ) {
-        Integer key = Integer.valueOf( type );
-
-        TEXTS.put( key, text );
-        LOOKUP.put( text, key );
+        TEXTS.put( type, text );
+        LOOKUP.put( text, type );
     }
 
     /**
@@ -1329,7 +1330,7 @@ public class Types
   // DESCRIPTIONS
 
 
-    private static final Map DESCRIPTIONS = new HashMap();
+    private static final Map<Integer,String> DESCRIPTIONS = new HashMap<Integer,String>();
 
 
    /**
@@ -1337,10 +1338,8 @@ public class Types
     */
 
     public static String getDescription( int type ) {
-        Integer typeKey = Integer.valueOf(type);
-
-        if (DESCRIPTIONS.containsKey(typeKey)) {
-            return (String)DESCRIPTIONS.get(typeKey);
+        if (DESCRIPTIONS.containsKey(type)) {
+            return DESCRIPTIONS.get(type);
         }
 
         return "<>";
@@ -1352,15 +1351,6 @@ public class Types
     */
 
     private static void addDescription(int type, String description) {
-        addDescription(Integer.valueOf(type), description);
-    }
-
-
-   /**
-    *  Adds a description to the set.
-    */
-
-    private static void addDescription(Integer type, String description) {
         if (description.startsWith("<") && description.endsWith(">")) {
             DESCRIPTIONS.put(type, description);
         }
@@ -1372,12 +1362,11 @@ public class Types
 
     static {
 
-        Iterator iterator = LOOKUP.keySet().iterator();
+        Iterator<String> iterator = LOOKUP.keySet().iterator();
         while( iterator.hasNext() )
         {
-            String text = (String)iterator.next();
-            Integer key = (Integer)LOOKUP.get(text);
-
+            String text = iterator.next();
+            int key = LOOKUP.get(text);
             addDescription( key, text );
         }
 
