@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.Collections;
+import java.util.Collection;
 
 import org.codehaus.groovy.GroovyBugError;
 
@@ -1093,9 +1094,9 @@ public class Types
 
     private static final Map TEXTS  = new HashMap();  // symbol/keyword type -> text
     private static final Map LOOKUP = new HashMap();  // text -> symbol/keyword type
-    private static final Set KEYWORDS = new HashSet();  // valid keywords
+    private static final Set<String> KEYWORDS = new HashSet<String>();  // valid keywords
 
-    public static Set getKeywords() {
+    public static Collection<String> getKeywords() {
         return Collections.unmodifiableSet(KEYWORDS);
     }
 
@@ -1169,10 +1170,8 @@ public class Types
      *  Adds a element to the KEYWORDS, TEXTS and LOOKUP.
      */
     private static void addKeyword( String text, int type ) {
-        Integer key = Integer.valueOf( type );
-        KEYWORDS.add(key);
-        TEXTS.put( key, text );
-        LOOKUP.put( text, key );
+        KEYWORDS.add(text);
+        addTranslation(text, type);
     }
 
     static {
