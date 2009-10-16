@@ -437,6 +437,10 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         return redirect().name;
     }
 
+    public String getUnresolvedName() {
+        return name;
+    }
+
     public String setName(String name) {
         return redirect().name=name;
     }
