@@ -81,7 +81,7 @@ public class JavaStubGenerator
             protected void addTimeStamp(ClassNode node) {}
             protected void addInitialization(ClassNode node) {}   
             protected void addPropertyMethod(MethodNode method) {
-            	propertyMethods.add(method);
+                propertyMethods.add(method);
             }
             protected void addReturnIfNeeded(MethodNode node) {}
         };
@@ -139,7 +139,7 @@ public class JavaStubGenerator
 
             out.println("}");
         } finally {
-        	propertyMethods.clear();
+            propertyMethods.clear();
             try {
                 out.close();
             } catch (Exception e) {
