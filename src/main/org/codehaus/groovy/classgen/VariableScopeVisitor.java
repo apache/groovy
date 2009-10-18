@@ -188,7 +188,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         if (pname.length() == 0) return null;
         pname = java.beans.Introspector.decapitalize(pname);
 
-        if (name.startsWith("get") && m.getReturnType() == ClassHelper.VOID_TYPE) {
+        if (name.startsWith("get") && (m.getReturnType() == ClassHelper.VOID_TYPE || m.getParameters().length != 0)) {
             return null;
         }
         if (name.startsWith("set") && m.getParameters().length != 1) {
