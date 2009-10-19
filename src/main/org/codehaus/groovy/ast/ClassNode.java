@@ -933,6 +933,16 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         superClass = sn;
     }
 
+    public ClassNode [] getUnresolvedInterfaces() {
+        return getUnresolvedInterfaces(true);
+    }
+
+    public ClassNode [] getUnresolvedInterfaces(boolean useRedirect) {
+        if (!useRedirect) return interfaces;
+        if (!redirect().lazyInitDone) redirect().lazyClassInit();
+        return redirect().interfaces;
+    }
+
     public CompileUnit getCompileUnit() {
         if (redirect!=null) return redirect().getCompileUnit();
         if (compileUnit == null && module != null) {
