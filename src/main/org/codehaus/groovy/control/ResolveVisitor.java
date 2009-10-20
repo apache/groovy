@@ -63,6 +63,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private boolean isSpecialConstructorCall = false;
 
     private Map<String, GenericsType> genericParameterNames = new HashMap<String, GenericsType>();
+    private Set<FieldNode> fieldTypesChecked = new HashSet<FieldNode>();
 
     /**
      * we use ConstructedClassWithPackage to limit the resolving the compiler
@@ -169,7 +170,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     public void visitField(FieldNode node) {
         ClassNode t = node.getType();
-        resolveOrFail(t, node);
+        if(!fieldTypesChecked.contains(node)) {
+            resolveOrFail(t, node);
+        }
         super.visitField(node);
     }
 
@@ -177,6 +180,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         ClassNode t = node.getType();
         resolveOrFail(t, node);
         super.visitProperty(node);
+        fieldTypesChecked.add(node.getField());
     }
 
     private boolean resolveToInner (ClassNode type) {
