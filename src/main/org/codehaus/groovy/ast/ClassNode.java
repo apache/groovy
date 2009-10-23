@@ -194,7 +194,11 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      * represented by this ClassNode
      */
     public ClassNode makeArray() {
-        if (redirect!=null) return redirect().makeArray();
+        if (redirect!=null) {
+            ClassNode res = redirect().makeArray();
+            res.componentType = this;
+            return res;
+        }
         ClassNode cn;
         if (clazz!=null) {
             Class ret = Array.newInstance(clazz,0).getClass();
