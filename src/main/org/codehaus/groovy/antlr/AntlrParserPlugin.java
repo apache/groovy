@@ -2037,14 +2037,14 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         Expression leftExpression = expression(leftNode);
 
         AST rightNode = leftNode.getNextSibling();
-        ClassNode type = buildName(rightNode);
+        ClassNode type = makeTypeWithArguments(rightNode);
 
         return CastExpression.asExpression(type, leftExpression);
     }
 
     protected Expression castExpression(AST castNode) {
         AST node = castNode.getFirstChild();
-        ClassNode type = buildName(node);
+        ClassNode type = makeTypeWithArguments(node);
         assertTypeNotNull(type, node);
 
         AST expressionNode = node.getNextSibling();
