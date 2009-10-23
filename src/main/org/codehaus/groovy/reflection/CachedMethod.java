@@ -17,6 +17,8 @@ package org.codehaus.groovy.reflection;
 
 import groovy.lang.MetaClassImpl;
 import groovy.lang.MetaMethod;
+import groovy.lang.MissingMethodException;
+
 import org.codehaus.groovy.classgen.BytecodeHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.callsite.*;
@@ -89,7 +91,9 @@ public class CachedMethod extends MetaMethod implements Comparable {
         } catch (IllegalAccessException e) {
             throw new InvokerInvocationException(e);
         } catch (InvocationTargetException e) {
-            throw e.getCause() instanceof RuntimeException ? (RuntimeException)e.getCause() : new InvokerInvocationException(e);
+            Throwable cause = e.getCause(); 
+            throw (cause instanceof RuntimeException && !(cause instanceof MissingMethodException)) ? 
+                    (RuntimeException) cause : new InvokerInvocationException(e);
         }
     }
 
