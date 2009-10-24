@@ -53,20 +53,17 @@ class ScriptToTreeNodeAdapter {
 
     static {
         URL url =  ClassLoader.getSystemResource("groovy/inspect/swingui/AstBrowserProperties.groovy");
-        File rootProperties = new File(URLDecoder.decode(url.getFile(), "UTF-8"));
-        if (rootProperties.exists()) {
-            def config = new ConfigSlurper().parse(rootProperties.toURL())
-            classNameToStringForm = config.toProperties()
-        } else {
-            classNameToStringForm = new Properties()
-        }
+
+        def config = new ConfigSlurper().parse(url)
+        classNameToStringForm = config.toProperties()
 
         String home = System.getProperty("user.home")
         if (home) {
             File userFile = new File(home + File.separator + ".groovy/AstBrowserProperties.groovy")
             if (userFile.exists()) {
-                def config = new ConfigSlurper().parse(userFile.toURL())
-                classNameToStringForm.putAll(config.toProperties())
+                def customConfig = new ConfigSlurper().parse(userFile.toURL())
+                // layer custom string forms onto defaults with putAll, do not replace them
+                classNameToStringForm.putAll(customConfig.toProperties())
             }
         }
     }
