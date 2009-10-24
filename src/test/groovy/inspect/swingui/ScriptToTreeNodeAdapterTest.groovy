@@ -37,12 +37,15 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
     def assertTreeStructure(String script, List<Closure> specification) {
         ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter()
         TreeNode root = adapter.compile(script, Phases.SEMANTIC_ANALYSIS)
+        def original = root 
         specification.each { spec ->
             root = root?.children()?.find {
                 spec(it)
             }
         }
-        assertNotNull('Could not locate Expression in AST', root)
+        if (!root) {
+            fail("Could not locate Expression in AST: ${printnode(original)}")
+        }
     }
 
 
@@ -68,10 +71,12 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
      * Warning, this uses recursion.
      */
     def printnode(TreeNode node, String prefix = "") {
-        println prefix + node
+        def buffer = new StringBuffer()
+        buffer << '\n' << prefix << node << 
         node.children().each {
-            printnode(it, prefix + "  ")
+            buffer << printnode(it, prefix + "  ") 
         }
+        buffer
     }
 
     /**
@@ -86,9 +91,9 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
         assertTreeStructure(
                 "\"Hello World\"",
                 [
-                        eq('BlockStatement'),
-                        eq('ExpressionStatement'),
-                        eq('Constant - Hello World : java.lang.String')
+                        eq('BlockStatement - (1)'),
+                        startsWith('ExpressionStatement'),
+                        startsWith('Constant - Hello World : java.lang.String')
                 ])
     }
 
@@ -136,11 +141,11 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
         assertTreeStructure(
                 " def x = { parm1 ->  println parm1 } ",
                 [
-                        eq('BlockStatement'),
-                        eq('ExpressionStatement'),
+                        eq('BlockStatement - (1)'),
+                        startsWith('ExpressionStatement'),
                         startsWith('Declaration - (x ='),
-                        eq('ClosureExpression'),
-                        eq('Parameter - parm1'),
+                        startsWith('ClosureExpression'),
+                        startsWith('Parameter - parm1'),
                 ]
         )
     }
@@ -150,12 +155,12 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
         assertTreeStructure(
                 """ def x = { parm1 = "some_value" ->  println parm1 } """,
                 [
-                        eq('BlockStatement'),
-                        eq('ExpressionStatement'),
+                        eq('BlockStatement - (1)'),
+                        startsWith('ExpressionStatement'),
                         startsWith('Declaration - (x ='),
                         eq('ClosureExpression'),
-                        eq('Parameter - parm1'),
-                        eq('Constant - some_value : java.lang.String'),
+                        startsWith('Parameter - parm1'),
+                        startsWith('Constant - some_value : java.lang.String'),
                 ]
         )
     }
@@ -166,15 +171,15 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
         TreeNode root = adapter.compile(script, Phases.SEMANTIC_ANALYSIS)
 
         def namedArgList = root.children()?.find {
-            it.toString() == 'BlockStatement'
+            it.toString().startsWith('BlockStatement')
         }?.children()?.find {
-            it.toString() == 'ExpressionStatement'
+            it.toString().startsWith 'ExpressionStatement'
         }?.children()?.find {
-            it.toString() == 'ConstructorCallExpression'
+            it.toString().startsWith 'ConstructorCall'
         }?.children()?.find {
-            it.toString() == 'TupleExpression'
+            it.toString().startsWith 'Tuple'
         }?.children()?.find {
-            it.toString() == 'NamedArgumentListExpression'
+            it.toString().startsWith 'NamedArgumentListExpression'
         }
         assertNotNull('Could not locate NamedArgumentListExpression in AST', namedArgList)
 
@@ -189,11 +194,11 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
         assertTreeStructure(
                 " foo = 'bar' ",
                 [
-                        eq('BlockStatement'),
-                        eq('ExpressionStatement'),
-                        startsWith('Binary'),
-                        startsWith('Variable'),
-                        eq('DynamicVariable'),
+                        eq('BlockStatement - (1)'),
+                        eq('ExpressionStatement - BinaryExpression'),
+                        eq('Binary - (foo = bar)'),
+                        eq('Variable - foo : java.lang.Object'),
+                        eq('DynamicVariable - foo'),
                 ]
             )
     }
@@ -205,12 +210,12 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
                         startsWith('ClassNode'),
                         eq('Methods'),
                         startsWith('MethodNode - this$dist$invoke$'),
-                        eq('BlockStatement'),
-                        eq('ReturnStatement'),
-                        eq('MethodCallExpression'),
-                        eq('ArgumentListExpression'),
-                        eq('SpreadExpression'),
-                        startsWith('Variable'),
+                        startsWith('BlockStatement'),
+                        startsWith('ReturnStatement'),
+                        startsWith('MethodCall'),
+                        startsWith('ArgumentList'),
+                        eq('Spread - *args'),
+                        startsWith('Variable - args : java.lang.Object'),
                         eq('Parameter - args'),
                 ]
         )
@@ -223,8 +228,8 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
                         startsWith('ClassNode'),
                         eq('Methods'),
                         eq('MethodNode - main'),
-                        eq('ExpressionStatement'),  //notice, there is only one ExpressionStatement
-                        eq('MethodCallExpression'),
+                        startsWith('ExpressionStatement'),  //notice, there is only one ExpressionStatement
+                        startsWith('MethodCall'),
                 ]
         )
     }

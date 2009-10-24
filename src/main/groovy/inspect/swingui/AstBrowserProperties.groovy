@@ -28,17 +28,35 @@ org {
                 PropertyNode        = "PropertyNode - \${expression.field?.name} : \${expression.field?.type}"
                 AnnotationNode      = "AnnotationNode - \${expression.classNode?.name}"
                 Parameter           = "Parameter - \$expression.name"
+                DynamicVariable     = "DynamicVariable - \$expression.name"
 
                 stmt {
-					BlockStatement      = "BlockStatement"
-					ExpressionStatement = "ExpressionStatement"
+					BlockStatement      = "BlockStatement - (\${expression.statements ? expression.statements.size() : 0})"
+					ExpressionStatement = "ExpressionStatement - \${expression?.expression.getClass().simpleName}"
+					ReturnStatement     = "ReturnStatement - \$expression.text"
+					TryCatchStatement   = "TryCatchStatement - \${expression.catchStatements?.size ?: 0} catch, \${expression.finallyStatement ? 1 : 0} finally"
+					CatchStatement      = "CatchStatement - \$expression.exceptionType]"
 				}
 				expr {
+					ConstructorCallExpression   = "ConstructorCall - \$expression.text"
+					SpreadExpression        = "Spread - \$expression.text"
+					ArgumentListExpression  = "ArgumentList - \$expression.text"
+					MethodCallExpression    = "MethodCall - \$expression.text"
+					GStringExpression       = "GString - \$expression.text"
+					AttributeExpression     = "Attribute - \$expression.text"
 					DeclarationExpression   = "Declaration - \$expression.text"
 					VariableExpression      = "Variable - \$expression.name : \$expression.type"
 					ConstantExpression      = "Constant - \$expression.value : \$expression.type"
 					BinaryExpression        = "Binary - \$expression.text"
 					ClassExpression         = "Class - \$expression.text"
+					BooleanExpression       = "Boolean - \$expression.text"
+					ArrayExpression         = "Array - \$expression.text"
+					ListExpression          = "List - \$expression.text"
+					TupleExpression         = "Tuple - \$expression.text"
+					FieldExpression         = "Field - \$expression.text"
+					PropertyExpression      = "Property - \$expression.propertyAsString"
+					NotExpression           = "Not - \$expression.text"
+					CastExpression          = "Cast - \$expression.text"
 				}
 			}
 		}

@@ -513,7 +513,10 @@ private class TreeNodeBuildingVisitor extends CodeVisitorSupport {
     }
 
     public void visitCatchStatement(CatchStatement node) {
-        addNode(node, CatchStatement, { super.visitCatchStatement(it) });
+        addNode(node, CatchStatement, { 
+            if (it.variable) visitParameter(it.variable) 
+            super.visitCatchStatement(it) 
+        });
     }
 
     public void visitArgumentlistExpression(ArgumentListExpression node) {
