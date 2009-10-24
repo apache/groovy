@@ -52,7 +52,7 @@ class ScriptToTreeNodeAdapter {
     def static Properties classNameToStringForm
 
     static {
-        URL url =  ClassLoader.getSystemResource("groovy/inspect/swingui/AstBrowserProperties.groovy");
+        URL url =  ClassLoader.getSystemResource("groovy/inspect/swingui/AstBrowserProperties.groovy")
 
         def config = new ConfigSlurper().parse(url)
         classNameToStringForm = config.toProperties()
