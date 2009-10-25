@@ -333,6 +333,10 @@ private class TreeNodeBuildingVisitor extends CodeVisitorSupport {
     public void visitTryCatchFinally(TryCatchStatement node) {
         addNode(node, TryCatchStatement, { super.visitTryCatchFinally(it) });
     }
+    
+    protected void visitEmptyStatement(EmptyStatement node) {
+        addNode(node, EmptyStatement, { super.visitEmptyStatement(it) });
+    }
 
     public void visitSwitch(SwitchStatement node) {
         addNode(node, SwitchStatement, { super.visitSwitch(it) });
