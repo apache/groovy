@@ -208,6 +208,10 @@ public class AsmClassGenerator extends ClassGenerator {
     public void visitClass(ClassNode classNode) {
         try {
             callSites.clear();
+            if(classNode instanceof InterfaceHelperClassNode) {
+                InterfaceHelperClassNode ihcn = (InterfaceHelperClassNode) classNode;
+                callSites.addAll(ihcn.getCallSites());
+            }
 
             referencedClasses.clear();
             this.classNode = classNode;
@@ -234,7 +238,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 }
                 String outerClassName = owner.getName();
                 String name = outerClassName + "$" + context.getNextInnerClassIdx();
-                interfaceClassLoadingClass = new InnerClassNode(owner, name, 4128, ClassHelper.OBJECT_TYPE);
+                interfaceClassLoadingClass = new InterfaceHelperClassNode(owner, name, 4128, ClassHelper.OBJECT_TYPE, callSites);
 
                 super.visitClass(classNode);
                 createInterfaceSyntheticStaticFields();
@@ -300,7 +304,8 @@ public class AsmClassGenerator extends ClassGenerator {
 
 
     private void generateGetCallSiteArray() {
-        MethodVisitor mv = cv.visitMethod(ACC_PRIVATE+ACC_SYNTHETIC+ACC_STATIC,"$getCallSiteArray", "()[Lorg/codehaus/groovy/runtime/callsite/CallSite;", null, null);
+        int visibility = (classNode instanceof InterfaceHelperClassNode) ? ACC_PUBLIC : ACC_PRIVATE;
+        MethodVisitor mv = cv.visitMethod(visibility + ACC_SYNTHETIC + ACC_STATIC,"$getCallSiteArray", "()[Lorg/codehaus/groovy/runtime/callsite/CallSite;", null, null);
         mv.visitCode();
         mv.visitFieldInsn(GETSTATIC, internalClassName, "$callSiteArray", "Ljava/lang/ref/SoftReference;");
         Label l0 = new Label();
@@ -1853,7 +1858,7 @@ public class AsmClassGenerator extends ClassGenerator {
             mv.visitVarInsn(ALOAD, callSiteArrayVarIndex);
         }
         else {
-            mv.visitMethodInsn(INVOKESTATIC,internalClassName,"$getCallSiteArray","()[Lorg/codehaus/groovy/runtime/callsite/CallSite;");
+            mv.visitMethodInsn(INVOKESTATIC,getClassName(),"$getCallSiteArray","()[Lorg/codehaus/groovy/runtime/callsite/CallSite;");
         }
         final int index = allocateIndex(methodName);
         mv.visitLdcInsn(index);
@@ -1879,7 +1884,7 @@ public class AsmClassGenerator extends ClassGenerator {
             mv.visitVarInsn(ALOAD, callSiteArrayVarIndex);
         }
         else {
-            mv.visitMethodInsn(INVOKESTATIC,internalClassName,"$getCallSiteArray","()[Lorg/codehaus/groovy/runtime/callsite/CallSite;");
+            mv.visitMethodInsn(INVOKESTATIC,getClassName(),"$getCallSiteArray","()[Lorg/codehaus/groovy/runtime/callsite/CallSite;");
         }
         final int index = allocateIndex(methodName);
         mv.visitLdcInsn(index);
@@ -1923,7 +1928,7 @@ public class AsmClassGenerator extends ClassGenerator {
             mv.visitVarInsn(ALOAD, callSiteArrayVarIndex);
         }
         else {
-            mv.visitMethodInsn(INVOKESTATIC,internalClassName,"$getCallSiteArray","()[Lorg/codehaus/groovy/runtime/callsite/CallSite;");
+            mv.visitMethodInsn(INVOKESTATIC,getClassName(),"$getCallSiteArray","()[Lorg/codehaus/groovy/runtime/callsite/CallSite;");
         }
         final int index = allocateIndex(message);
         mv.visitLdcInsn(index);
@@ -2226,13 +2231,23 @@ public class AsmClassGenerator extends ClassGenerator {
             mv.visitVarInsn(ALOAD, callSiteArrayVarIndex);
         }
         else {
-            mv.visitMethodInsn(INVOKESTATIC,internalClassName,"$getCallSiteArray","()[Lorg/codehaus/groovy/runtime/callsite/CallSite;");
+            mv.visitMethodInsn(INVOKESTATIC,getClassName(),"$getCallSiteArray","()[Lorg/codehaus/groovy/runtime/callsite/CallSite;");
         }
         final int index = allocateIndex(message);
         mv.visitLdcInsn(index);
         mv.visitInsn(AALOAD);
     }
 
+    private String getClassName() {
+        String className;
+        if (!classNode.isInterface() || interfaceClassLoadingClass == null) {
+            className = internalClassName;
+        } else {
+            className = BytecodeHelper.getClassInternalName(interfaceClassLoadingClass);
+        }
+        return className;
+    }
+    
     private int allocateIndex(String name) {
         callSites.add(name);
         return callSites.size()-1;
