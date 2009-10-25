@@ -188,6 +188,7 @@ public class AsmClassGenerator extends ClassGenerator {
     private HashMap closureClassMap;
     private SourceUnit source;
     private static final String DTT = BytecodeHelper.getClassInternalName(DefaultTypeTransformation.class.getName());
+    private boolean specialCallWithinConstructor = false;
 
     public AsmClassGenerator(
             SourceUnit source,
@@ -1708,7 +1709,7 @@ public class AsmClassGenerator extends ClassGenerator {
 
         mv.visitTypeInsn(NEW, innerClassinternalName);
         mv.visitInsn(DUP);
-        if (isStaticMethod() && !classNode.declaresInterface(ClassHelper.GENERATED_CLOSURE_Type)) {
+        if ((isStaticMethod() || specialCallWithinConstructor) && !classNode.declaresInterface(ClassHelper.GENERATED_CLOSURE_Type)) {
             visitClassExpression(new ClassExpression(classNode));
             visitClassExpression(new ClassExpression(getOutermostClass()));
         } else {
@@ -2509,7 +2510,10 @@ public class AsmClassGenerator extends ClassGenerator {
         onLineNumber(call, "visitConstructorCallExpression: \"" + call.getType().getName() + "\":");
 
         if (call.isSpecialCall()) {
+            specialCallWithinConstructor = true;
             visitSpecialConstructorCall(call);
+            // reset the variable
+            specialCallWithinConstructor = false;
             return;
         }
 
