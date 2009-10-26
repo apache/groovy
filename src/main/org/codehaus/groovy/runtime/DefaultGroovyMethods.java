@@ -4009,7 +4009,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the value corresponding to the given key
      * @since 1.0
      */
-    public static Object getAt(Map self, Object key) {
+    public static <K,V> V getAt(Map<K,V> self, K key) {
         return self.get(key);
     }
 
@@ -4047,7 +4047,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the value corresponding to the given key
      * @since 1.0
      */
-    public static Object putAt(Map self, Object key, Object value) {
+    public static <K,V> V putAt(Map<K,V> self, K key, V value) {
         self.put(key, value);
         return value;
     }
