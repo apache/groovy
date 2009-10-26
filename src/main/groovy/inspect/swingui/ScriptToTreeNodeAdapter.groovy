@@ -161,7 +161,6 @@ private class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
     }
 
     public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
-
         // module node
         if (!sourceCollected.getAndSet(true)) {
             // display the source unit AST
@@ -169,6 +168,7 @@ private class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
             TreeNodeBuildingVisitor visitor = new TreeNodeBuildingVisitor(adapter)
             ast.getStatementBlock().visit(visitor)
             if (visitor.currentNode) root.add(visitor.currentNode)
+            collectModuleNodeMethodData("Methods", ast.getMethods())
         }
 
         def child = adapter.make(classNode)
@@ -221,10 +221,23 @@ private class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
     private def collectMethodData(TreeNodeWithProperties parent, String name, ClassNode classNode) {
         def allMethods = new DefaultMutableTreeNode(name)
         if (classNode.methods) parent.add(allMethods)
-        classNode.methods?.each {MethodNode methodNode ->
+
+        doCollectMethodData(allMethods, classNode.methods)
+    }
+
+    private def collectModuleNodeMethodData(String name, List methods) {
+        if(!methods) return
+        def allMethods = new DefaultMutableTreeNode(name)
+        root.add(allMethods)
+
+        doCollectMethodData(allMethods, methods)
+    }
+    
+    private def doCollectMethodData(DefaultMutableTreeNode allMethods, List methods) {
+        methods?.each {MethodNode methodNode ->
             def ggrandchild = adapter.make(methodNode)
             allMethods.add(ggrandchild)
-
+    
             // print out parameters of method
             methodNode.parameters?.each {Parameter parameter ->
                 def gggrandchild = adapter.make(parameter)
@@ -235,7 +248,7 @@ private class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
                     if (visitor.currentNode) gggrandchild.add(visitor.currentNode)
                 }
             }
-
+    
             // print out code of method
             TreeNodeBuildingVisitor visitor = new TreeNodeBuildingVisitor(adapter)
             if (methodNode.code) {

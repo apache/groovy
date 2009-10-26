@@ -311,4 +311,27 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
                 ]
         )
     }
+
+    public void testScriptWithMethods() {
+        // verify the free form script
+        assertTreeStructure(
+                "def foo(String bar) {}",
+                [
+                    eq('Methods'),
+                    eq('MethodNode - foo'),
+                    eq('Parameter - bar'),
+                ]
+            )
+
+        // verify the script's class
+        assertTreeStructure(
+                "def foo(String bar) {}",
+                [
+                    startsWith('ClassNode - script'),
+                    eq('Methods'),
+                    eq('MethodNode - foo'),
+                    eq('Parameter - bar'),
+                ]
+            )
+    }
 }
