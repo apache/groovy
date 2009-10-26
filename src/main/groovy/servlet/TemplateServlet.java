@@ -89,7 +89,7 @@ import javax.servlet.http.HttpServletResponse;
  * This implementation provides a verbosity flag switching log statements.
  * The servlet init parameter name is:
  * <pre>
- *   generate.by = true(default) | false
+ *   generated.by = true(default) | false
  * </pre>
  * 
  * @see TemplateServlet#setVariables(ServletBinding)
