@@ -31,17 +31,15 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
 
     /**
      * Asserts that a given script produces the expected tree like
-     * structure. 
+     * structure.
      */
 
     def assertTreeStructure(String script, List<Closure> specification) {
         ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter()
         TreeNode root = adapter.compile(script, Phases.SEMANTIC_ANALYSIS)
-        def original = root 
+        def original = root
         specification.each { spec ->
-            root = root?.children()?.find {
-                spec(it)
-            }
+            root = root?.children()?.find { spec(it) }
         }
         if (!root) {
             fail("Could not locate Expression in AST: ${printnode(original)}")
@@ -60,7 +58,7 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
     }
 
     /**
-     * Returns a function that tests for Groovy Truth equality. 
+     * Returns a function that tests for Groovy Truth equality.
      */
     def eq(String target) {
         return { it.toString() == target }
@@ -72,9 +70,9 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
      */
     def printnode(TreeNode node, String prefix = "") {
         def buffer = new StringBuffer()
-        buffer << '\n' << prefix << node << 
+        buffer << '\n' << prefix << node <<
         node.children().each {
-            buffer << printnode(it, prefix + "  ") 
+            buffer << printnode(it, prefix + "  ")
         }
         buffer
     }
@@ -230,6 +228,86 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
                         eq('MethodNode - main'),
                         startsWith('ExpressionStatement'),  //notice, there is only one ExpressionStatement
                         startsWith('MethodCall'),
+                ]
+        )
+    }
+
+    public void testInnerClass() {
+        assertTreeStructure(
+                """class Outer {
+                    private class Inner1 {
+
+                    }
+                    private class Inner2 {
+
+                    }
+                }""",
+                [
+                        startsWith('InnerClassNode - Outer\$Inner2'),
+                        eq('Constructors'),
+                        startsWith('ConstructorNode'),
+                        startsWith('BlockStatement'),
+                ]
+        )
+    }
+
+    public void testInnerClassWithMethods() {
+        assertTreeStructure(
+                """class Outer {
+                    private class Inner {
+                        def someMethod() {}
+                    }
+                }""",
+                [
+                        startsWith('InnerClassNode - Outer\$Inner'),
+                        eq('Methods'),
+                        startsWith('MethodNode - someMethod'),
+                        startsWith('BlockStatement'),
+                ]
+        )
+    }
+
+    public void testInnerClassWithFields() {
+        assertTreeStructure(
+                """class Outer {
+                    private class Inner {
+                        String field
+                    }
+                }""",
+                [
+                        startsWith('InnerClassNode - Outer\$Inner'),
+                        eq('Fields'),
+                        startsWith('FieldNode - field'),
+                ]
+        )
+    }
+
+    public void testInnerClassWithAnnotations() {
+        assertTreeStructure(
+                """class Outer {
+                    @Singleton
+                    private class Inner {
+                    }
+                }""",
+                [
+                        startsWith('InnerClassNode - Outer\$Inner'),
+                        eq('Annotations'),
+                        startsWith('AnnotationNode - groovy.lang.Singleton'),
+                ]
+        )
+    }
+
+    public void testInnerClassWithProperties() {
+        assertTreeStructure(
+                """class Outer {
+                    private class Inner {
+                        def property
+                    }
+                }""",
+                [
+                        startsWith('InnerClassNode - Outer\$Inner'),
+                        eq('Properties'),
+                        startsWith('PropertyNode - property'),
                 ]
         )
     }

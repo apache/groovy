@@ -174,10 +174,81 @@ private class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
         def child = adapter.make(classNode)
         root.add(child)
 
-        //constructors
-        def allCtors = new DefaultMutableTreeNode("Constructors")
-        if (classNode.constructors) child.add(allCtors)
-        classNode.constructors?.each { ConstructorNode ctorNode ->
+        collectConstructorData(child, "Constructors", classNode)
+        collectMethodData(child, "Methods", classNode)
+        collectFieldData(child, "Fields", classNode)
+        collectPropertyData(child, "Properties", classNode)
+        collectAnnotationData(child, "Annotations", classNode)
+    }
+
+    private List collectAnnotationData(TreeNodeWithProperties parent, String name, ClassNode classNode) {
+        def allAnnotations = new DefaultMutableTreeNode(name)
+        if (classNode.annotations) parent.add(allAnnotations)
+        classNode.annotations?.each {AnnotationNode annotationNode ->
+            def ggrandchild = adapter.make(annotationNode)
+            allAnnotations.add(ggrandchild)
+        }
+    }
+
+    private def collectPropertyData(TreeNodeWithProperties parent, String name, ClassNode classNode) {
+        def allProperties = new DefaultMutableTreeNode(name)
+        if (classNode.properties) parent.add(allProperties)
+        classNode.properties?.each {PropertyNode propertyNode ->
+            def ggrandchild = adapter.make(propertyNode)
+            allProperties.add(ggrandchild)
+            TreeNodeBuildingVisitor visitor = new TreeNodeBuildingVisitor(adapter)
+            if (propertyNode.field?.initialValueExpression) {
+                propertyNode.field.initialValueExpression.visit(visitor)
+                ggrandchild.add(visitor.currentNode)
+            }
+        }
+    }
+
+    private def collectFieldData(TreeNodeWithProperties parent, String name, ClassNode classNode) {
+        def allFields = new DefaultMutableTreeNode(name)
+        if (classNode.fields) parent.add(allFields)
+        classNode.fields?.each {FieldNode fieldNode ->
+            def ggrandchild = adapter.make(fieldNode)
+            allFields.add(ggrandchild)
+            TreeNodeBuildingVisitor visitor = new TreeNodeBuildingVisitor(adapter)
+            if (fieldNode.initialValueExpression) {
+                fieldNode.initialValueExpression.visit(visitor)
+                if (visitor.currentNode) ggrandchild.add(visitor.currentNode)
+            }
+        }
+    }
+
+    private def collectMethodData(TreeNodeWithProperties parent, String name, ClassNode classNode) {
+        def allMethods = new DefaultMutableTreeNode(name)
+        if (classNode.methods) parent.add(allMethods)
+        classNode.methods?.each {MethodNode methodNode ->
+            def ggrandchild = adapter.make(methodNode)
+            allMethods.add(ggrandchild)
+
+            // print out parameters of method
+            methodNode.parameters?.each {Parameter parameter ->
+                def gggrandchild = adapter.make(parameter)
+                ggrandchild.add(gggrandchild)
+                if (parameter.initialExpression) {
+                    TreeNodeBuildingVisitor visitor = new TreeNodeBuildingVisitor(adapter)
+                    parameter.initialExpression.visit(visitor)
+                    if (visitor.currentNode) gggrandchild.add(visitor.currentNode)
+                }
+            }
+
+            // print out code of method
+            TreeNodeBuildingVisitor visitor = new TreeNodeBuildingVisitor(adapter)
+            if (methodNode.code) {
+                methodNode.code.visit(visitor)
+                if (visitor.currentNode) ggrandchild.add(visitor.currentNode)
+            }
+        }
+    }
+
+    private def collectConstructorData(TreeNodeWithProperties parent, String name, ClassNode classNode) {
+        def allCtors = new DefaultMutableTreeNode(name)
+        if (classNode.declaredConstructors) parent.add(allCtors)
+        classNode.declaredConstructors?.each {ConstructorNode ctorNode ->
 
             def ggrandchild = adapter.make(ctorNode)
             allCtors.add(ggrandchild)
@@ -188,65 +259,6 @@ private class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
             }
         }
 
-        // methods
-        def allMethods = new DefaultMutableTreeNode("Methods")
-        if (classNode.methodsList) child.add(allMethods)
-        classNode.methodsList?.each { MethodNode methodNode ->
-            def ggrandchild = adapter.make(methodNode)
-            allMethods.add(ggrandchild)
-            
-            // print out parameters of method
-            methodNode.parameters?.each { Parameter parameter -> 
-              def gggrandchild = adapter.make(parameter)
-              ggrandchild.add(gggrandchild)
-              if (parameter.initialExpression) {
-                TreeNodeBuildingVisitor visitor = new TreeNodeBuildingVisitor(adapter)
-                parameter.initialExpression.visit(visitor)
-                if (visitor.currentNode) gggrandchild.add(visitor.currentNode)
-              }
-            }
-            
-            // print out code of method
-            TreeNodeBuildingVisitor visitor = new TreeNodeBuildingVisitor(adapter)
-            if (methodNode.code) {
-                methodNode.code.visit(visitor)
-                if (visitor.currentNode) ggrandchild.add(visitor.currentNode)
-            }
-        }
-
-        //fields
-        def allFields = new DefaultMutableTreeNode("Fields")
-        if (classNode.fields) child.add(allFields)
-        classNode.fields?.each { FieldNode fieldNode ->
-            def ggrandchild = adapter.make(fieldNode)
-            allFields.add(ggrandchild)
-            TreeNodeBuildingVisitor visitor = new TreeNodeBuildingVisitor(adapter)
-            if (fieldNode.initialValueExpression) {
-                fieldNode.initialValueExpression.visit(visitor)
-                if (visitor.currentNode) ggrandchild.add(visitor.currentNode)
-            }
-        }
-
-        //properties
-        def allProperties = new DefaultMutableTreeNode("Properties")
-        if (classNode.properties) child.add(allProperties)
-        classNode.properties?.each { PropertyNode propertyNode ->
-            def ggrandchild = adapter.make(propertyNode)
-            allProperties.add(ggrandchild)
-            TreeNodeBuildingVisitor visitor = new TreeNodeBuildingVisitor(adapter)
-            if (propertyNode.field?.initialValueExpression) {
-                propertyNode.field.initialValueExpression.visit(visitor)
-                ggrandchild.add(visitor.currentNode)
-            }
-        }
-
-        //annotations
-        def allAnnotations = new DefaultMutableTreeNode("Annotations")
-        if (classNode.annotations) child.add(allAnnotations)
-        classNode.annotations?.each { AnnotationNode annotationNode ->
-            def ggrandchild = adapter.make(annotationNode)
-            allAnnotations.add(ggrandchild)
-        }
     }
 }
 

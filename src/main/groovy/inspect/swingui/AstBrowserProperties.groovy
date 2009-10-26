@@ -22,6 +22,7 @@ org {
 		groovy {
 			ast {
                 ClassNode           = "ClassNode - \$expression.name"
+                InnerClassNode      = "InnerClassNode - \$expression.name"
                 ConstructorNode     = "ConstructorNode - \$expression.name"
                 MethodNode          = "MethodNode - \$expression.name"
                 FieldNode           = "FieldNode - \$expression.name : \$expression.type"
