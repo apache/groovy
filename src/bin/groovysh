@@ -12,8 +12,32 @@
 ##
 
 GROOVY_APP_NAME=GroovyShell
-DIRNAME=`dirname "$0"`
-. "$DIRNAME/startGroovy"
+
+# Resolve links
+PRG=$0
+while [ -h "$PRG" ] ; do
+    ls=`ls -ld "$PRG"`
+    link=`expr "$ls" : '.*-> \(.*\)$'`
+    if expr "$link" : '.*/.*' > /dev/null; then
+        if expr "$link" : '^/' > /dev/null; then
+            PRG="$link"
+        else
+            PRG="`dirname ${PRG}`/${link}"
+        fi
+    else
+        PRG="`dirname $PRG`/$link"
+    fi
+done
+
+GROOVY_HOME=`dirname "$PRG"`
+if [ "GROOVY_HOME" = '.' ] ; then
+    cwd=`pwd`
+    GROOVY_HOME=`dirname $cwd`
+else
+    GROOVY_HOME=`dirname "$GROOVY_HOME"`
+fi
+
+. "$GROOVY_HOME/bin/startGroovy"
 
 if [ "x$OLDSHELL" != "x" ]; then
     startGroovy groovy.ui.InteractiveShell "$@"
