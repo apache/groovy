@@ -24,12 +24,11 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.tools.javac.JavaStubGenerator;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.util.Map;
 import java.net.URL;
+import java.util.Map;
 
 /**
  * Compilation unit to only generate stubs.
