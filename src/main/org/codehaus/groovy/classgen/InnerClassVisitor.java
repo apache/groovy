@@ -405,7 +405,7 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         };
         method = classNode.addSyntheticMethod(
                 "this$dist$set$"+objectDistance, 
-                ACC_PUBLIC+ACC_BRIDGE+ACC_SYNTHETIC, 
+                ACC_PUBLIC+ACC_SYNTHETIC, 
                 ClassHelper.VOID_TYPE, 
                 parameters, 
                 ClassNode.EMPTY_ARRAY, 
@@ -422,7 +422,7 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         };
         method = classNode.addSyntheticMethod(
                 "this$dist$get$"+objectDistance, 
-                ACC_PUBLIC+ACC_BRIDGE+ACC_SYNTHETIC, 
+                ACC_PUBLIC+ACC_SYNTHETIC, 
                 ClassHelper.OBJECT_TYPE, 
                 parameters, 
                 ClassNode.EMPTY_ARRAY, 
