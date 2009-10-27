@@ -45,6 +45,7 @@ import java.util.prefs.Preferences
 public class AstBrowser {
 
     private inputArea, rootElement
+    boolean showScriptFreeForm, showScriptClass
 
     AstBrowser(inputArea, rootElement) {
         this.inputArea = inputArea
@@ -79,16 +80,25 @@ public class AstBrowser {
         def rootNode = new DefaultTreeModel(new DefaultMutableTreeNode("Loading...")) // populated later
         def phasePicker, jTree, propertyTable, splitterPane
 
+        showScriptFreeForm = prefs.showScriptFreeForm
+        showScriptClass = prefs.showScriptClass
+        
         frame = swing.frame(title: 'Groovy AST Browser' + (name ? " - $name":''),
                 location: prefs.frameLocation,
                 size: prefs.frameSize,
                 iconImage: swing.imageIcon(groovy.ui.Console.ICON_PATH).image,
                 defaultCloseOperation: WindowConstants.DISPOSE_ON_CLOSE,
-                windowClosing : { event -> prefs.save(frame, splitterPane) } ) {
+                windowClosing : { event -> prefs.save(frame, splitterPane, showScriptFreeForm, showScriptClass) } ) {
 
             menuBar {
-                menu(text: 'Help') {
-                    menuItem() {action(name: 'About', closure: this.&showAbout)}
+                menu(text: 'Show Script', mnemonic: 'S') {
+                    checkBoxMenuItem(selected: showScriptFreeForm) {action(name: 'Free Form', closure: this.&showScriptFreeForm, 
+                            mnemonic: 'F',)}
+                    checkBoxMenuItem(selected: showScriptClass) {action(name: 'Class Form', closure: this.&showScriptClass, 
+                            mnemonic: 'C')}
+                }
+                menu(text: 'Help', mnemonic: 'H') {
+                    menuItem() {action(name: 'About', closure: this.&showAbout, mnemonic: 'A')}
                 }
             }
             panel {
@@ -177,10 +187,18 @@ public class AstBrowser {
          dialog.show()
     }
 
+    void showScriptFreeForm(EventObject evt) {
+        showScriptFreeForm = evt.source.selected
+    }
+
+    void showScriptClass(EventObject evt) {
+        showScriptClass = evt.source.selected
+    }
 
     void compile(node, swing, String script, int compilePhase) {
         frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR))
-        node.setRoot(new ScriptToTreeNodeAdapter().compile(script, compilePhase))
+        def adapter = new ScriptToTreeNodeAdapter(showScriptFreeForm: showScriptFreeForm, showScriptClass: showScriptClass)
+        node.setRoot(adapter.compile(script, compilePhase))
         frame.setCursor(Cursor.defaultCursor)
     }
 }
@@ -195,6 +213,8 @@ class AstBrowserUiPreferences {
     final def frameLocation
     final def frameSize
     final def dividerLocation
+    final boolean showScriptFreeForm
+    final boolean showScriptClass
 
     def AstBrowserUiPreferences() {
         Preferences prefs = Preferences.userNodeForPackage(AstBrowserUiPreferences)
@@ -205,15 +225,19 @@ class AstBrowserUiPreferences {
                 prefs.getInt("frameWidth", 800),
                 prefs.getInt("frameHeight", 600)]
         dividerLocation = prefs.getInt("splitterPaneLocation", 100)
+        showScriptFreeForm = prefs.getBoolean("showScriptFreeForm", false)
+        showScriptClass = prefs.getBoolean("showScriptClass", true)
     }
 
-    def save(frame, splitter) {
+    def save(frame, splitter, scriptFreeFormPref, scriptClassPref) {
         Preferences prefs = Preferences.userNodeForPackage(AstBrowserUiPreferences)
         prefs.putInt("frameX", frame.location.x as int)
         prefs.putInt("frameY", frame.location.y as int)
         prefs.putInt("frameWidth", frame.size.width as int)
         prefs.putInt("frameHeight", frame.size.height as int)
         prefs.putInt("splitterPaneLocation", splitter.dividerLocation)
+        prefs.putBoolean("showScriptFreeForm", scriptFreeFormPref)
+        prefs.putBoolean("showScriptClass", scriptClassPref)
     }
 }
 

@@ -17,6 +17,7 @@ package groovy.inspect.swingui
 
 import org.codehaus.groovy.control.Phases
 import javax.swing.tree.TreeNode
+import junit.framework.AssertionFailedError
 
 /**
  * Unit test for ScriptToTreeNodeAdapter.
@@ -34,18 +35,21 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
      * structure.
      */
 
-    def assertTreeStructure(String script, List<Closure> specification) {
-        ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter()
-        TreeNode root = adapter.compile(script, Phases.SEMANTIC_ANALYSIS)
-        def original = root
-        specification.each { spec ->
-            root = root?.children()?.find { spec(it) }
-        }
-        if (!root) {
-            fail("Could not locate Expression in AST: ${printnode(original)}")
-        }
-    }
-
+     def assertTreeStructure(String script, List<Closure> specification) {
+         ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter(showScriptFreeForm: true, showScriptClass: true)
+         assertTreeStructure(script, specification, adapter)
+     }
+     
+     def assertTreeStructure(String script, List<Closure> specification, ScriptToTreeNodeAdapter adapter) {
+         TreeNode root = adapter.compile(script, Phases.SEMANTIC_ANALYSIS)
+         def original = root
+         specification.each { spec ->
+             root = root?.children()?.find { spec(it) }
+         }
+         if (!root) {
+             fail("Could not locate Expression in AST: ${printnode(original)}")
+         }
+     }
 
     /**
      * Helper method to assert a map entry element.
@@ -165,7 +169,7 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
 
     public void testNamedArgumentListExpression() {
         def script = "new String(foo: 'bar', baz: 'qux')"
-        ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter()
+        ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter(showScriptFreeForm: true, showScriptClass: true)
         TreeNode root = adapter.compile(script, Phases.SEMANTIC_ANALYSIS)
 
         def namedArgList = root.children()?.find {
@@ -334,4 +338,94 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
                 ]
             )
     }
+
+    public void testScriptWithAdapterThatLoadsClassButNotFreeForm() {
+        ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter(showScriptFreeForm: false, showScriptClass: true)
+
+        // since free standing script is not being loaded, it should fail
+        shouldFail(AssertionFailedError) {
+            assertTreeStructure(
+                    "def foo(String bar) {}",
+                    [
+                        eq('Methods'),
+                        eq('MethodNode - foo'),
+                        eq('Parameter - bar'),
+                    ],
+                    adapter
+                )
+        }
+        
+        // since script class is being loaded, it should go through
+        assertTreeStructure(
+                "def foo(String bar) {}",
+                [
+                    startsWith('ClassNode - script'),
+                    eq('Methods'),
+                    eq('MethodNode - foo'),
+                    eq('Parameter - bar'),
+                ],
+                adapter
+            )
+    }
+
+    public void testScriptWithAdapterThatLoadsFreeFormButNotClass() {
+        ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter(showScriptFreeForm: true, showScriptClass: false)
+
+        // since free standing script is being loaded, it should go through
+        assertTreeStructure(
+                "def foo(String bar) {}",
+                [
+                    eq('Methods'),
+                    eq('MethodNode - foo'),
+                    eq('Parameter - bar'),
+                ],
+                adapter
+            )
+
+        // since script class is not being loaded, it should fail
+        shouldFail(AssertionFailedError) {
+            assertTreeStructure(
+                    "def foo(String bar) {}",
+                    [
+                        startsWith('ClassNode - script'),
+                        eq('Methods'),
+                        eq('MethodNode - foo'),
+                        eq('Parameter - bar'),
+                    ],
+                    adapter
+                )
+        }
+    }
+
+    public void testScriptWithAdapterThatLoadsNitherFreeFormNorClass() {
+        ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter(showScriptFreeForm: false, showScriptClass: false)
+
+        // since free standing script is not being loaded, it should fail
+        shouldFail(AssertionFailedError) {
+            assertTreeStructure(
+                    "def foo(String bar) {}",
+                    [
+                        eq('Methods'),
+                        eq('MethodNode - foo'),
+                        eq('Parameter - bar'),
+                    ],
+                    adapter
+                )
+        }
+
+        // since script class is not being loaded, it should fail
+        shouldFail(AssertionFailedError) {
+            assertTreeStructure(
+                    "def foo(String bar) {}",
+                    [
+                        startsWith('ClassNode - script'),
+                        eq('Methods'),
+                        eq('MethodNode - foo'),
+                        eq('Parameter - bar'),
+                    ],
+                    adapter
+                )
+        }
+    }
+    
 }

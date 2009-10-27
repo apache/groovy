@@ -50,6 +50,7 @@ import org.codehaus.groovy.control.CompilationFailedException
 class ScriptToTreeNodeAdapter {
 
     def static Properties classNameToStringForm
+    boolean showScriptFreeForm, showScriptClass
 
     static {
         URL url =  ClassLoader.getSystemResource("groovy/inspect/swingui/AstBrowserProperties.groovy")
@@ -81,7 +82,7 @@ class ScriptToTreeNodeAdapter {
         GroovyClassLoader classLoader = new GroovyClassLoader()
         GroovyCodeSource codeSource = new GroovyCodeSource(script, scriptName, "/groovy/script")
         CompilationUnit cu = new CompilationUnit(CompilerConfiguration.DEFAULT, codeSource.codeSource, classLoader)
-        TreeNodeBuildingNodeOperation operation = new TreeNodeBuildingNodeOperation(this)
+        TreeNodeBuildingNodeOperation operation = new TreeNodeBuildingNodeOperation(this, showScriptFreeForm, showScriptClass)
         cu.addPhaseOperation(operation, compilePhase)
         cu.addSource(codeSource.getName(), script);
         try {
@@ -154,15 +155,19 @@ private class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
     final def root = new DefaultMutableTreeNode("root")
     final def sourceCollected = new AtomicBoolean(false)
     final ScriptToTreeNodeAdapter adapter
+    final def showScriptFreeForm
+    final def showScriptClass
 
-    def TreeNodeBuildingNodeOperation(ScriptToTreeNodeAdapter adapter) {
+    def TreeNodeBuildingNodeOperation(ScriptToTreeNodeAdapter adapter, showScriptFreeForm, showScriptClass) {
         if (!adapter) throw new IllegalArgumentException("Null: adapter")
-        this.adapter = adapter;
+        this.adapter = adapter
+        this.showScriptFreeForm = showScriptFreeForm
+        this.showScriptClass = showScriptClass
     }
 
     public void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
         // module node
-        if (!sourceCollected.getAndSet(true)) {
+        if (!sourceCollected.getAndSet(true) && showScriptFreeForm) {
             // display the source unit AST
             ModuleNode ast = source.getAST()
             TreeNodeBuildingVisitor visitor = new TreeNodeBuildingVisitor(adapter)
@@ -171,6 +176,8 @@ private class TreeNodeBuildingNodeOperation extends PrimaryClassNodeOperation {
             collectModuleNodeMethodData("Methods", ast.getMethods())
         }
 
+        if(classNode.isScript() && !showScriptClass) return
+        
         def child = adapter.make(classNode)
         root.add(child)
 
