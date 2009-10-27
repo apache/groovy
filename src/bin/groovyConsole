@@ -30,7 +30,7 @@ while [ -h "$PRG" ] ; do
 done
 
 GROOVY_HOME=`dirname "$PRG"`
-if [ "GROOVY_HOME" = '.' ] ; then
+if [ "$GROOVY_HOME" = '.' ] ; then
     cwd=`pwd`
     GROOVY_HOME=`dirname $cwd`
 else
