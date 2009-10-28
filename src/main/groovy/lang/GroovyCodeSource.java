@@ -57,18 +57,33 @@ public class GroovyCodeSource {
 	public GroovyCodeSource(String script, String name, String codeBase) {
 		this.name = name;
         this.scriptText = script;
-        SecurityManager sm = System.getSecurityManager();
-		if (sm != null) {
-		    sm.checkPermission(new GroovyCodeSourcePermission(codeBase));
-		}
-		try {
-			this.codeSource = new CodeSource(new URL("file", "", codeBase), (java.security.cert.Certificate[])null);
-		} catch (MalformedURLException murle) {
-			throw new RuntimeException("A CodeSource file URL cannot be constructed from the supplied codeBase: " + codeBase);
-		}
+        this.codeSource = createCodeSource(codeBase);
 		this.cachable = true;
 	}
-	
+
+    /**
+	 * Construct a GroovyCodeSource for an inputStream of groovyCode that has an
+	 * unknown provenance -- meaning it didn't come from a File or a URL (e.g.&nbsp;a String).
+	 * The supplied codeBase will be used to construct a File URL that should match up
+	 * with a java Policy entry that determines the grants to be associated with the
+	 * class that will be built from the InputStream.
+	 *
+	 * The permission groovy.security.GroovyCodeSourcePermission will be used to determine if the given codeBase
+	 * may be specified.  That is, the current Policy set must have a GroovyCodeSourcePermission that implies
+	 * the codeBase, or an exception will be thrown.  This is to prevent callers from hijacking
+	 * existing codeBase policy entries unless explicitly authorized by the user.
+	 */
+	public GroovyCodeSource(Reader reader, String name, String codeBase) {
+		this.name = name;
+		this.codeSource = createCodeSource(codeBase);
+
+        try {
+            this.scriptText = DefaultGroovyMethods.getText(reader);
+        } catch (IOException e) {
+            throw new RuntimeException("Impossible to read the text content from that reader, for script: " + name + " with codeBase: " + codeBase, e);
+        }
+    }
+
 	/**
 	 * Construct a GroovyCodeSource for an inputStream of groovyCode that has an
 	 * unknown provenance -- meaning it didn't come from a File or a URL (e.g.&nbsp;a String).
@@ -83,22 +98,9 @@ public class GroovyCodeSource {
      *
      * @deprecated Prefer using methods taking a Reader rather than an InputStream to avoid wrong encoding issues.
 	 */
-	public GroovyCodeSource(InputStream inputStream, String name, String codeBase) {
-		this.name = name;
-		SecurityManager sm = System.getSecurityManager();
-		if (sm != null) {
-		    sm.checkPermission(new GroovyCodeSourcePermission(codeBase));
-		}
-		try {
-			this.codeSource = new CodeSource(new URL("file", "", codeBase), (java.security.cert.Certificate[])null);
-		} catch (MalformedURLException murle) {
-			throw new RuntimeException("A CodeSource file URL cannot be constructed from the supplied codeBase: " + codeBase);
-		}
-        try {
-            this.scriptText = DefaultGroovyMethods.getText(inputStream);
-        } catch (IOException e) {
-            throw new RuntimeException("Impossible to read the text content from that input stream, for script: " + name + " with codeBase: " + codeBase, e);
-        }
+    @Deprecated
+	public GroovyCodeSource(InputStream inputStream, String name, String codeBase) throws UnsupportedEncodingException {
+        this(new InputStreamReader(inputStream, "UTF-8"), name, codeBase);
     }
 
     public GroovyCodeSource(final File infile, final String encoding) throws IOException {
@@ -169,22 +171,37 @@ public class GroovyCodeSource {
 		return codeSource;
 	}
 
+    public Reader getReader() {
+        if (file == null) {
+            return new StringReader(scriptText);
+        }
+        else {
+            try {
+                return new BufferedReader(new FileReader(file));
+            }
+            catch (FileNotFoundException e) {
+                throw new RuntimeException("Impossible to read from the associated script: " + file + " with name: " + name);
+            }
+        }
+    }
+    
     /**
      * @deprecated Prefer using methods taking a Reader rather than an InputStream to avoid wrong encoding issues.
      */
+    @Deprecated
 	public InputStream getInputStream() {
-        IOException ioe = null;
+        IOException ioe;
         if (file == null) {
             try {
-                new ByteArrayInputStream(scriptText.getBytes("UTF-8"));
+                return new ByteArrayInputStream(scriptText.getBytes("UTF-8"));
             } catch (UnsupportedEncodingException e) {
                 ioe = e;
             }
         } else {
             try {
-                if (file!=null) return new FileInputStream(file);
-            } catch (FileNotFoundException fnfe) {
-                ioe = fnfe;
+                return new FileInputStream(file);
+            } catch (FileNotFoundException e) {
+                ioe = e;
             }
         }
 
@@ -196,7 +213,7 @@ public class GroovyCodeSource {
         }
     }
 
-    public String getScriptText() {
+	public String getScriptText() {
         return scriptText;
     }
 
@@ -214,5 +231,18 @@ public class GroovyCodeSource {
 
     public boolean isCachable() {
         return cachable;
+    }
+
+    private static CodeSource createCodeSource(final String codeBase) {
+        SecurityManager sm = System.getSecurityManager();
+		if (sm != null) {
+		    sm.checkPermission(new GroovyCodeSourcePermission(codeBase));
+		}
+        try {
+			return new CodeSource(new URL("file", "", codeBase), (java.security.cert.Certificate[])null);
+		}
+        catch (MalformedURLException e) {
+			throw new RuntimeException("A CodeSource file URL cannot be constructed from the supplied codeBase: " + codeBase);
+		}
     }
 }

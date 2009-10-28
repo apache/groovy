@@ -40,10 +40,12 @@ import java.util.Map;
  * @version $Revision$
  */
 public class GroovyShell extends GroovyObjectSupport {
-       
+
+    public static final String DEFAULT_CODE_BASE = "/groovy/shell";
+
+    @Deprecated
     public static final String[] EMPTY_ARGS = {};
 
-    
     private Binding context;
     private int counter;
     private CompilerConfiguration config;
@@ -305,7 +307,7 @@ public class GroovyShell extends GroovyObjectSupport {
                 constructor = scriptClass.getConstructor(new Class[]{});
                 try {
                     // instantiate a runnable and run it
-                    runnable = (Runnable) constructor.newInstance(new Object[]{});
+                    runnable = (Runnable) constructor.newInstance();
                 } catch (Throwable t) {
                     reason = t;
                 }
@@ -450,9 +452,22 @@ public class GroovyShell extends GroovyObjectSupport {
     public Object run(final String scriptText, final String fileName, String[] args) throws CompilationFailedException {
         GroovyCodeSource gcs = (GroovyCodeSource) AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
-                return new GroovyCodeSource(scriptText, fileName, "/groovy/shell");
+                return new GroovyCodeSource(scriptText, fileName, DEFAULT_CODE_BASE);
             }
         });
+        Class scriptClass = parseClass(gcs);
+        return runScriptOrMainOrTestOrRunnable(scriptClass, args);
+    }
+
+    /**
+     * Runs the given script with command line arguments
+     *
+     * @param in       the stream reading the script
+     * @param fileName is the logical file name of the script (which is used to create the class name of the script)
+     * @param args     the command line arguments to pass in
+     */
+    public Object run(final Reader in, final String fileName, String[] args) throws CompilationFailedException {
+        GroovyCodeSource gcs = new GroovyCodeSource(in, fileName, DEFAULT_CODE_BASE);
         Class scriptClass = parseClass(gcs);
         return runScriptOrMainOrTestOrRunnable(scriptClass, args);
     }
@@ -473,7 +488,7 @@ public class GroovyShell extends GroovyObjectSupport {
                     String scriptText = config.getSourceEncoding() != null ?
                             DefaultGroovyMethods.getText(in, config.getSourceEncoding()) :
                             DefaultGroovyMethods.getText(in);
-                    return new GroovyCodeSource(scriptText, fileName, "/groovy/shell");
+                    return new GroovyCodeSource(scriptText, fileName, DEFAULT_CODE_BASE);
                 } catch (IOException e) {
                     throw new RuntimeException("Impossible to read the content of the input stream for file named: " + fileName, e);
                 }
@@ -496,7 +511,6 @@ public class GroovyShell extends GroovyObjectSupport {
      *
      * @param codeSource
      * @throws CompilationFailedException
-     * @throws CompilationFailedException
      */
     public Object evaluate(GroovyCodeSource codeSource) throws CompilationFailedException {
         Script script = parse(codeSource);
@@ -510,7 +524,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param scriptText the text of the script
      */
     public Object evaluate(final String scriptText) throws CompilationFailedException {
-        return evaluate(scriptText, generateScriptName(), "/groovy/shell");
+        return evaluate(scriptText, generateScriptName(), DEFAULT_CODE_BASE);
     }
 
     /**
@@ -520,7 +534,7 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param fileName   is the logical file name of the script (which is used to create the class name of the script)
      */
     public Object evaluate(String scriptText, String fileName) throws CompilationFailedException {
-        return evaluate(scriptText, fileName, "/groovy/shell");
+        return evaluate(scriptText, fileName, DEFAULT_CODE_BASE);
     }
 
     /**
@@ -549,6 +563,34 @@ public class GroovyShell extends GroovyObjectSupport {
      */
     public Object evaluate(File file) throws CompilationFailedException, IOException {
         return evaluate(new GroovyCodeSource(file, config.getSourceEncoding()));
+    }
+
+    /**
+     * Evaluates some script against the current Binding and returns the result
+     *
+     * @param in the stream reading the script
+     */
+    public Object evaluate(Reader in) throws CompilationFailedException {
+        return evaluate(in, generateScriptName());
+    }
+
+    /**
+     * Evaluates some script against the current Binding and returns the result
+     *
+     * @param in       the stream reading the script
+     * @param fileName is the logical file name of the script (which is used to create the class name of the script)
+     */
+    public Object evaluate(Reader in, String fileName) throws CompilationFailedException {
+        Script script = null;
+        try {
+            script = parse(in, fileName);
+            script.setBinding(context);
+            return script.run();
+        } finally {
+            if (script != null) {
+                InvokerHelper.removeClass(script.getClass());
+            }
+        }
     }
 
     /**
@@ -586,6 +628,17 @@ public class GroovyShell extends GroovyObjectSupport {
     /**
      * Parses the given script and returns it ready to be run
      *
+     * @param reader    the stream reading the script
+     * @param fileName  is the logical file name of the script (which is used to create the class name of the script)
+     * @return the parsed script which is ready to be run via @link Script.run()
+     */
+    public Script parse(final Reader reader, final String fileName) throws CompilationFailedException {
+        return parse(new GroovyCodeSource(reader, fileName, DEFAULT_CODE_BASE));
+    }
+
+    /**
+     * Parses the given script and returns it ready to be run
+     *
      * @param in       the stream reading the script
      * @param fileName is the logical file name of the script (which is used to create the class name of the script)
      * @return the parsed script which is ready to be run via @link Script.run()
@@ -599,7 +652,7 @@ public class GroovyShell extends GroovyObjectSupport {
                     String scriptText = config.getSourceEncoding() != null ?
                             DefaultGroovyMethods.getText(in, config.getSourceEncoding()) :
                             DefaultGroovyMethods.getText(in);
-                    return new GroovyCodeSource(scriptText, fileName, "/groovy/shell");
+                    return new GroovyCodeSource(scriptText, fileName, DEFAULT_CODE_BASE);
                 } catch (IOException e) {
                     throw new RuntimeException("Impossible to read the content of the input stream for file named: " + fileName, e);
                 }
@@ -649,10 +702,19 @@ public class GroovyShell extends GroovyObjectSupport {
     public Script parse(final String scriptText, final String fileName) throws CompilationFailedException {
         GroovyCodeSource gcs = (GroovyCodeSource) AccessController.doPrivileged(new PrivilegedAction() {
             public Object run() {
-                return new GroovyCodeSource(scriptText, fileName, "/groovy/shell");
+                return new GroovyCodeSource(scriptText, fileName, DEFAULT_CODE_BASE);
             }
         });
         return parse(gcs);
+    }
+
+    /**
+     * Parses the given script and returns it ready to be run
+     *
+     * @param in the stream reading the script
+     */
+    public Script parse(Reader in) throws CompilationFailedException {
+        return parse(in, generateScriptName());
     }
 
     /**
