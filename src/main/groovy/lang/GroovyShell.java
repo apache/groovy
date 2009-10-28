@@ -87,8 +87,8 @@ public class GroovyShell extends GroovyObjectSupport {
             throw new IllegalArgumentException("Compiler configuration must not be null.");
         }
         final ClassLoader parentLoader = (parent!=null)?parent:GroovyShell.class.getClassLoader();
-        this.loader = (GroovyClassLoader) AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
+        this.loader = AccessController.doPrivileged(new PrivilegedAction<GroovyClassLoader>() {
+            public GroovyClassLoader run() {
                 return new GroovyClassLoader(parentLoader,config);
             }
         });
@@ -139,6 +139,10 @@ public class GroovyShell extends GroovyObjectSupport {
             // ignore, was probably a dynamic property
         }
     }
+
+    //
+    // FIXME: Use List<String> here, current version is not safe
+    //
 
     /**
      * A helper method which runs the given script file with the given command line arguments
@@ -202,8 +206,8 @@ public class GroovyShell extends GroovyObjectSupport {
         // if you are compiling the script because the JVM isn't executing the main method.
         Class scriptClass;
         try {
-            scriptClass = (Class) AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                public Object run() throws CompilationFailedException, IOException {
+            scriptClass = AccessController.doPrivileged(new PrivilegedExceptionAction<Class>() {
+                public Class run() throws CompilationFailedException, IOException {
                     return loader.parseClass(scriptFile);
                 }
             });
@@ -450,8 +454,8 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param args       the command line arguments to pass in
      */
     public Object run(final String scriptText, final String fileName, String[] args) throws CompilationFailedException {
-        GroovyCodeSource gcs = (GroovyCodeSource) AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
+        GroovyCodeSource gcs = AccessController.doPrivileged(new PrivilegedAction<GroovyCodeSource>() {
+            public GroovyCodeSource run() {
                 return new GroovyCodeSource(scriptText, fileName, DEFAULT_CODE_BASE);
             }
         });
@@ -482,8 +486,8 @@ public class GroovyShell extends GroovyObjectSupport {
      * @deprecated Prefer using methods taking a Reader rather than an InputStream to avoid wrong encoding issues.
      */
     public Object run(final InputStream in, final String fileName, String[] args) throws CompilationFailedException {
-        GroovyCodeSource gcs = (GroovyCodeSource) AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
+        GroovyCodeSource gcs = AccessController.doPrivileged(new PrivilegedAction<GroovyCodeSource>() {
+            public GroovyCodeSource run() {
                 try {
                     String scriptText = config.getSourceEncoding() != null ?
                             DefaultGroovyMethods.getText(in, config.getSourceEncoding()) :
@@ -547,8 +551,8 @@ public class GroovyShell extends GroovyObjectSupport {
 		    sm.checkPermission(new GroovyCodeSourcePermission(codeBase));
 		}
 
-        GroovyCodeSource gcs = (GroovyCodeSource) AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
+        GroovyCodeSource gcs = AccessController.doPrivileged(new PrivilegedAction<GroovyCodeSource>() {
+            public GroovyCodeSource run() {
                 return new GroovyCodeSource(scriptText, fileName, codeBase);
             }
         });
@@ -646,8 +650,8 @@ public class GroovyShell extends GroovyObjectSupport {
      * @deprecated Prefer using methods taking a Reader rather than an InputStream to avoid wrong encoding issues.
      */
     public Script parse(final InputStream in, final String fileName) throws CompilationFailedException {
-        GroovyCodeSource gcs = (GroovyCodeSource) AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
+        GroovyCodeSource gcs = AccessController.doPrivileged(new PrivilegedAction<GroovyCodeSource>() {
+            public GroovyCodeSource run() {
                 try {
                     String scriptText = config.getSourceEncoding() != null ?
                             DefaultGroovyMethods.getText(in, config.getSourceEncoding()) :
@@ -700,8 +704,8 @@ public class GroovyShell extends GroovyObjectSupport {
     }
 
     public Script parse(final String scriptText, final String fileName) throws CompilationFailedException {
-        GroovyCodeSource gcs = (GroovyCodeSource) AccessController.doPrivileged(new PrivilegedAction() {
-            public Object run() {
+        GroovyCodeSource gcs = AccessController.doPrivileged(new PrivilegedAction<GroovyCodeSource>() {
+            public GroovyCodeSource run() {
                 return new GroovyCodeSource(scriptText, fileName, DEFAULT_CODE_BASE);
             }
         });
