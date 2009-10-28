@@ -33,6 +33,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
+@Deprecated
 public class GroovyLog extends GroovyObjectSupport {
 
     String prefix;
