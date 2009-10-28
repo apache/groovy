@@ -50,17 +50,6 @@ import org.apache.commons.cli.HelpFormatter;
 import jline.ConsoleReader;
 import jline.SimpleCompletor;
 
-//
-// TODO: See if there is any reason why this class is implemented in Java instead of Groovy, and if there
-//       is none, then port it over ;-)
-//
-
-//
-// NOTE: After GShell becomes a little more mature, this shell could be easily implemented as a set of GShell
-//       commands, and would inherit a lot of functionality and could be extended easily to allow groovysh
-//       to become very, very powerful
-//
-
 /**
  * A simple interactive shell for evaluating groovy expressions on the command line (aka. groovysh).
  *
@@ -74,6 +63,7 @@ import jline.SimpleCompletor;
  *
  * @version $Revision$
  */
+@Deprecated
 public class InteractiveShell
     implements Runnable
 {
