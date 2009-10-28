@@ -16,12 +16,22 @@
 
 package org.codehaus.groovy.tools;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  *  Various utility functions for use in the compiler.
  */
 
 public abstract class Utilities
 {
+    private static final Set<String> INVALID_JAVA_IDENTIFIERS = new HashSet<String>(Arrays.asList((
+            "abstract assert boolean break byte case catch char class const continue default do double else enum " +
+            "extends final finally float for goto if implements import instanceof int interface long native new " +
+            "package private protected public short static strictfp super switch synchronized this throw throws " +
+            "transient try void volatile while true false null").split(" ")));
+
    /**
     *  Returns a string made up of repetitions of the specified string.
     */
@@ -51,7 +61,7 @@ public abstract class Utilities
      * Tells if the given string is a valid Java identifier.
      */
     public static boolean isJavaIdentifier(String name) {
-        if (name.length() == 0) return false;
+        if (name.length() == 0 || INVALID_JAVA_IDENTIFIERS.contains(name)) return false;
         char[] chars = name.toCharArray();
         if (!Character.isJavaIdentifierStart(chars[0])) return false;
         for (int i = 1; i < chars.length; i++ ) {

@@ -7,6 +7,7 @@ class UtilitiesTest extends GroovyTestCase {
     assert Utilities.isJavaIdentifier("\$abc")
     assert Utilities.isJavaIdentifier("_a_b_c")
     assert Utilities.isJavaIdentifier("abc1")
+    assert Utilities.isJavaIdentifier("Boolean")
   }
 
   void testInvalidJavaIdentifiers() {
@@ -17,5 +18,8 @@ class UtilitiesTest extends GroovyTestCase {
     assert !Utilities.isJavaIdentifier("abc?")
     assert !Utilities.isJavaIdentifier("1abc")
     assert !Utilities.isJavaIdentifier("abc()")
+    assert !Utilities.isJavaIdentifier("class")
+    assert !Utilities.isJavaIdentifier("boolean")
+    assert !Utilities.isJavaIdentifier("null")
   }
 }
