@@ -92,7 +92,7 @@ public class JUnit4Utils {
             }
             return result;
         } catch (ClassNotFoundException e) {
-            throw new GroovyRuntimeException("Error running JUnit 4 test.");
+            throw new GroovyRuntimeException("Error running JUnit 4 test.", e);
         }
     }
 }
