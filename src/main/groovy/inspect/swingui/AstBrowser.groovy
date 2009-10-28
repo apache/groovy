@@ -46,10 +46,12 @@ public class AstBrowser {
 
     private inputArea, rootElement
     boolean showScriptFreeForm, showScriptClass
+    GroovyClassLoader classLoader
 
-    AstBrowser(inputArea, rootElement) {
+    AstBrowser(inputArea, rootElement, classLoader) {
         this.inputArea = inputArea
         this.rootElement = rootElement
+        this.classLoader = classLoader
     }
 
     def swing, frame
@@ -64,7 +66,7 @@ public class AstBrowser {
                 println "File $args[0] cannot be found."
             } else {
                 UIManager.setLookAndFeel(UIManager.getSystemLookAndFeelClassName()); 
-                new AstBrowser(null, null).run({file.text}, file.path)
+                new AstBrowser(null, null, new GroovyClassLoader()).run({file.text}, file.path)
             }
         }
     }
@@ -197,7 +199,7 @@ public class AstBrowser {
 
     void compile(node, swing, String script, int compilePhase) {
         frame.setCursor(Cursor.getPredefinedCursor(Cursor.WAIT_CURSOR))
-        def adapter = new ScriptToTreeNodeAdapter(showScriptFreeForm: showScriptFreeForm, showScriptClass: showScriptClass)
+        def adapter = new ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass)
         node.setRoot(adapter.compile(script, compilePhase))
         frame.setCursor(Cursor.defaultCursor)
     }

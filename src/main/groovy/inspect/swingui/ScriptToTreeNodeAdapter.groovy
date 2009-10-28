@@ -51,6 +51,7 @@ class ScriptToTreeNodeAdapter {
 
     def static Properties classNameToStringForm
     boolean showScriptFreeForm, showScriptClass
+    final GroovyClassLoader classLoader
 
     static {
         URL url =  ClassLoader.getSystemResource("groovy/inspect/swingui/AstBrowserProperties.groovy")
@@ -68,6 +69,12 @@ class ScriptToTreeNodeAdapter {
             }
         }
     }
+    
+    def ScriptToTreeNodeAdapter(classLoader, showScriptFreeForm, showScriptClass) {
+        this.classLoader = classLoader
+        this.showScriptFreeForm = showScriptFreeForm
+        this.showScriptClass = showScriptClass
+    }
 
     /**
     * Performs the conversion from script to TreeNode.
@@ -79,7 +86,6 @@ class ScriptToTreeNodeAdapter {
     */
     public TreeNode compile(String script, int compilePhase) {
         def scriptName = "script" + System.currentTimeMillis() + ".groovy"
-        GroovyClassLoader classLoader = new GroovyClassLoader()
         GroovyCodeSource codeSource = new GroovyCodeSource(script, scriptName, "/groovy/script")
         CompilationUnit cu = new CompilationUnit(CompilerConfiguration.DEFAULT, codeSource.codeSource, classLoader)
         TreeNodeBuildingNodeOperation operation = new TreeNodeBuildingNodeOperation(this, showScriptFreeForm, showScriptClass)

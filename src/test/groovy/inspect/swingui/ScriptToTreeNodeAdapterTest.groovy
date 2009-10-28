@@ -30,13 +30,14 @@ import junit.framework.AssertionFailedError
  */
 public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
 
+     def classLoader = new GroovyClassLoader()
     /**
      * Asserts that a given script produces the expected tree like
      * structure.
      */
 
      def assertTreeStructure(String script, List<Closure> specification) {
-         ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter(showScriptFreeForm: true, showScriptClass: true)
+         ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter(classLoader, true, true)
          assertTreeStructure(script, specification, adapter)
      }
      
@@ -169,7 +170,7 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
 
     public void testNamedArgumentListExpression() {
         def script = "new String(foo: 'bar', baz: 'qux')"
-        ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter(showScriptFreeForm: true, showScriptClass: true)
+        ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter(classLoader, true, true)
         TreeNode root = adapter.compile(script, Phases.SEMANTIC_ANALYSIS)
 
         def namedArgList = root.children()?.find {
@@ -340,7 +341,7 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
     }
 
     public void testScriptWithAdapterThatLoadsClassButNotFreeForm() {
-        ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter(showScriptFreeForm: false, showScriptClass: true)
+        ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter(classLoader, false, true)
 
         // since free standing script is not being loaded, it should fail
         shouldFail(AssertionFailedError) {
@@ -369,7 +370,7 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
     }
 
     public void testScriptWithAdapterThatLoadsFreeFormButNotClass() {
-        ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter(showScriptFreeForm: true, showScriptClass: false)
+        ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter(classLoader, true, false)
 
         // since free standing script is being loaded, it should go through
         assertTreeStructure(
@@ -398,7 +399,7 @@ public class ScriptToTreeNodeAdapterTest extends GroovyTestCase {
     }
 
     public void testScriptWithAdapterThatLoadsNitherFreeFormNorClass() {
-        ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter(showScriptFreeForm: false, showScriptClass: false)
+        ScriptToTreeNodeAdapter adapter = new ScriptToTreeNodeAdapter(classLoader, false, false)
 
         // since free standing script is not being loaded, it should fail
         shouldFail(AssertionFailedError) {

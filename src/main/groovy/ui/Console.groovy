@@ -645,7 +645,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener {
     }
 
     void inspectAst(EventObject evt = null) {
-        new AstBrowser(inputArea, rootElement).run({ inputArea.getText() } )
+        new AstBrowser(inputArea, rootElement, shell.getClassLoader()).run({ inputArea.getText() } )
     }
 
     void largerFont(EventObject evt = null) {
