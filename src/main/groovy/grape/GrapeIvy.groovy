@@ -47,6 +47,8 @@ class GrapeIvy implements GrapeEngine {
     Ivy ivyInstance
     // weak hash map so we don't leak loaders directly
     Map<ClassLoader, Set<IvyGrabRecord>> loadedDeps = new WeakHashMap<ClassLoader, Set<IvyGrabRecord>>()
+    // set that stores the IvyGrabRecord(s) for all the dependencies in each grab() call
+    Set<IvyGrabRecord> grabRecordsForCurrDepdendencies = new LinkedHashSet<IvyGrabRecord>()
 
     public GrapeIvy() {
         // if we are already inited, quit
@@ -204,9 +206,11 @@ class GrapeIvy implements GrapeEngine {
     }
 
     public grab(Map args, Map... dependencies) {
+        def loader
+        grabRecordsForCurrDepdendencies.clear()
         try {
             // identify the target classloader early, so we fail before checking repositories
-            def loader = chooseClassLoader(
+            loader = chooseClassLoader(
                 classLoader:args.remove('classLoader'),
                 refObject:args.remove('refObject'),
                 calleeDepth:args.calleeDepth?:DEFAULT_DEPTH,
@@ -221,6 +225,11 @@ class GrapeIvy implements GrapeEngine {
                 loader.addURL(uri.toURL())
             }
         } catch (Exception e) {
+            // clean-up the state first
+            Set<IvyGrabRecord> grabRecordsForCurrLoader = loadedDeps[loader]
+            grabRecordsForCurrLoader.removeAll(grabRecordsForCurrDepdendencies)
+            grabRecordsForCurrDepdendencies.clear()
+            
             if (args.noExceptions) {
                 return e
             } else {
@@ -326,7 +335,11 @@ class GrapeIvy implements GrapeEngine {
             loadedDeps.put(loader, localDeps)
         }
 
-        dependencies.each { localDeps.add(createGrabRecord(it)) }
+        dependencies.each { 
+            IvyGrabRecord igr = createGrabRecord(it)
+            grabRecordsForCurrDepdendencies.add(igr)
+            localDeps.add(igr)
+        }
         // the call to reverse ensures that the newest additions are in
         // front causing existing dependencies to come last and thus
         // claiming higher priority.  Thus when module versions clash we
