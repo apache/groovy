@@ -44,12 +44,16 @@ public class GroovyCodeSource {
 	 * grants to administer security.
 	 */
 	private CodeSource codeSource;
-	/** The name given to the generated class */
+
+    /** The name given to the generated class */
 	private String name;
-	/** The groovy source to be compiled and turned into a class */
+
+    /** The groovy source to be compiled and turned into a class */
 	private String scriptText;
-	/** The certificates used to sign the items from the codesource */
+
+    /** The certificates used to sign the items from the codesource */
 	Certificate[] certs;
+
     private boolean cachable;
 
 	private File file;
@@ -99,8 +103,14 @@ public class GroovyCodeSource {
      * @deprecated Prefer using methods taking a Reader rather than an InputStream to avoid wrong encoding issues.
 	 */
     @Deprecated
-	public GroovyCodeSource(InputStream inputStream, String name, String codeBase) throws UnsupportedEncodingException {
-        this(new InputStreamReader(inputStream, "UTF-8"), name, codeBase);
+	public GroovyCodeSource(InputStream inputStream, String name, String codeBase) {
+		this.name = name;
+		this.codeSource = createCodeSource(codeBase);
+        try {
+            this.scriptText = DefaultGroovyMethods.getText(inputStream);
+        } catch (IOException e) {
+            throw new RuntimeException("Impossible to read the text content from that input stream, for script: " + name + " with codeBase: " + codeBase, e);
+        }
     }
 
     public GroovyCodeSource(final File infile, final String encoding) throws IOException {
@@ -170,20 +180,6 @@ public class GroovyCodeSource {
 	CodeSource getCodeSource() {
 		return codeSource;
 	}
-
-    public Reader getReader() {
-        if (file == null) {
-            return new StringReader(scriptText);
-        }
-        else {
-            try {
-                return new BufferedReader(new FileReader(file));
-            }
-            catch (FileNotFoundException e) {
-                throw new RuntimeException("Impossible to read from the associated script: " + file + " with name: " + name);
-            }
-        }
-    }
     
     /**
      * @deprecated Prefer using methods taking a Reader rather than an InputStream to avoid wrong encoding issues.
