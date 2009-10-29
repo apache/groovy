@@ -1032,7 +1032,7 @@ interfaceDefinition![AST modifiers]  {Token first = cloneToken(LT(1));
                                       }}
     :   "interface" IDENT nls!
         // it _might_ have type paramaters
-        (tp:typeParameters)?
+        (tp:typeParameters nls!)?
         // it might extend some other interfaces
         ie:interfaceExtends
         // now parse the body of the interface (looks like a class...)
