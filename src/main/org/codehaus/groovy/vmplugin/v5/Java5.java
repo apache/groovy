@@ -139,6 +139,7 @@ public class Java5 implements VMPlugin {
         ClassNode cn = ClassHelper.makeWithoutCaching(tv.getName());
         cn.setGenericsPlaceHolder(true);
         ClassNode cn2 = ClassHelper.makeWithoutCaching(tv.getName());
+        cn2.setGenericsPlaceHolder(true);
         GenericsType[] gts = new GenericsType[]{new GenericsType(cn2)};
         cn.setGenericsTypes(gts);
         cn.setRedirect(ClassHelper.OBJECT_TYPE);

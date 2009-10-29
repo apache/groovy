@@ -80,6 +80,7 @@ public class GenericsType extends ASTNode {
 
     public void setPlaceholder(boolean placeholder) {
         this.placeholder = placeholder;
+        type.setGenericsPlaceHolder(true);
     }
     
     public boolean isResolved() {
