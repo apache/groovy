@@ -95,7 +95,8 @@ public class GroovyShell extends GroovyObjectSupport {
         this.context = binding;        
         this.config = config;
     }
-    
+
+    @Deprecated
     public void initializeBinding() {
         Map map = context.getVariables();
         if (map.get("shell")==null) map.put("shell",this);
