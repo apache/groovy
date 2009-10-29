@@ -13,30 +13,21 @@
 
 GROOVY_APP_NAME=GroovyC
 
-# Resolve links
-PRG=$0
+# resolve links - $0 may be a soft-link
+PRG="$0"
+
 while [ -h "$PRG" ] ; do
     ls=`ls -ld "$PRG"`
     link=`expr "$ls" : '.*-> \(.*\)$'`
-    if expr "$link" : '.*/.*' > /dev/null; then
-        if expr "$link" : '^/' > /dev/null; then
-            PRG="$link"
-        else
-            PRG="`dirname ${PRG}`/${link}"
-        fi
+    if expr "$link" : '/.*' > /dev/null; then
+        PRG="$link"
     else
-        PRG="`dirname $PRG`/$link"
+        PRG=`dirname "$PRG"`/"$link"
     fi
 done
 
-GROOVY_HOME=`dirname "$PRG"`
-if [ "$GROOVY_HOME" = '.' ] ; then
-    cwd=`pwd`
-    GROOVY_HOME=`dirname $cwd`
-else
-    GROOVY_HOME=`dirname "$GROOVY_HOME"`
-fi
+DIRNAME=`dirname "$PRG"`
 
-. "$GROOVY_HOME/bin/startGroovy"
+. "$DIRNAME/startGroovy"
 
 startGroovy org.codehaus.groovy.tools.FileSystemCompiler "$@"
