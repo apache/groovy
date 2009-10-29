@@ -471,7 +471,11 @@ public class GroovyShell extends GroovyObjectSupport {
      * @param args     the command line arguments to pass in
      */
     public Object run(final Reader in, final String fileName, String[] args) throws CompilationFailedException {
-        GroovyCodeSource gcs = new GroovyCodeSource(in, fileName, DEFAULT_CODE_BASE);
+        GroovyCodeSource gcs = AccessController.doPrivileged(new PrivilegedAction<GroovyCodeSource>() {
+                    public GroovyCodeSource run() {
+                        return new GroovyCodeSource(in, fileName, DEFAULT_CODE_BASE);
+                    }
+        });
         Class scriptClass = parseClass(gcs);
         return runScriptOrMainOrTestOrRunnable(scriptClass, args);
     }
