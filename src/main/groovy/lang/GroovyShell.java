@@ -348,7 +348,7 @@ public class GroovyShell extends GroovyObjectSupport {
     private Object runJUnit4Test(Class scriptClass) {
         try {
             return InvokerHelper.invokeStaticMethod("org.codehaus.groovy.vmplugin.v5.JUnit4Utils",
-                    "realRunJUnit4Test", new Object[]{scriptClass});
+                    "realRunJUnit4Test", new Object[]{scriptClass, this.loader});
         } catch (ClassNotFoundException e) {
             throw new GroovyRuntimeException("Failed to run the JUnit 4 test.");
         }
@@ -357,7 +357,7 @@ public class GroovyShell extends GroovyObjectSupport {
     private Object runTestNgTest(Class scriptClass) {
         try {
             return InvokerHelper.invokeStaticMethod("org.codehaus.groovy.vmplugin.v5.TestNgUtils",
-                    "realRunTestNgTest", new Object[]{scriptClass});
+                    "realRunTestNgTest", new Object[]{scriptClass, this.loader});
         } catch (ClassNotFoundException e) {
             throw new GroovyRuntimeException("Failed to run the TestNG test.");
         }

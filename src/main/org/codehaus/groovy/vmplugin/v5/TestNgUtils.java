@@ -73,13 +73,15 @@ public class TestNgUtils {
      * @param scriptClass the class we want to run as a test
      * @return the result of running the test
      */
-    static Object realRunTestNgTest(Class scriptClass) {
+    static Object realRunTestNgTest(Class scriptClass, GroovyClassLoader loader) {
         // invoke through reflection to eliminate mandatory TestNG jar dependency
 
         try {
-            Object testng = InvokerHelper.invokeConstructorOf("org.testng.TestNG", new Object[]{});
+            Class testNGClass = loader.loadClass("org.testng.TestNG");
+            Object testng = InvokerHelper.invokeConstructorOf(testNGClass, new Object[]{});
             InvokerHelper.invokeMethod(testng, "setTestClasses", new Object[]{scriptClass});
-            Object listener = InvokerHelper.invokeConstructorOf("org.testng.TestListenerAdapter", new Object[]{});
+            Class listenerClass = loader.loadClass("org.testng.TestListenerAdapter");
+            Object listener = InvokerHelper.invokeConstructorOf(listenerClass, new Object[]{});
             InvokerHelper.invokeMethod(testng, "addListener", new Object[]{listener});
             Object result = InvokerHelper.invokeMethod(testng, "run", new Object[]{});
             return result;
