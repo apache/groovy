@@ -5,8 +5,8 @@ package org.codehaus.groovy.tools.groovydoc;
  * The packages are comma separated.
  */
 public class LinkArgument {
-    private String href;
-    private String packages;
+    private String href = "";
+    private String packages = "";
 
     /**
      * Get the packages attribute.
