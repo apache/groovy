@@ -75,11 +75,12 @@ public class JUnit4Utils {
      * @param scriptClass the class we want to run as a test
      * @return the result of running the test
      */
-    static Object realRunJUnit4Test(Class scriptClass) {
+    static Object realRunJUnit4Test(Class scriptClass, GroovyClassLoader loader) {
         // invoke through reflection to eliminate mandatory JUnit 4 jar dependency
 
         try {
-            Object result = InvokerHelper.invokeStaticMethod("org.junit.runner.JUnitCore",
+            Class junitCoreClass = loader.loadClass("org.junit.runner.JUnitCore");
+            Object result = InvokerHelper.invokeStaticMethod(junitCoreClass,
                     "runClasses", new Object[]{scriptClass});
             System.out.print("JUnit 4 Runner, Tests: " + InvokerHelper.getProperty(result, "runCount"));
             System.out.print(", Failures: " + InvokerHelper.getProperty(result, "failureCount"));
