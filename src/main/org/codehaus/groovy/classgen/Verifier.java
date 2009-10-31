@@ -451,6 +451,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         else if (!node.isAbstract()) {
             if (!(statement instanceof BytecodeSequence)) {
                 BlockStatement newBlock = new BlockStatement();
+                newBlock.setVariableScope(node.getVariableScope());
                 if (statement instanceof BlockStatement) {
                     newBlock.addStatements(((BlockStatement)statement).getStatements());
                 } else {
