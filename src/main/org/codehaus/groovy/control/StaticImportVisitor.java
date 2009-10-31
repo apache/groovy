@@ -108,9 +108,15 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         Expression method = transform(mce.getMethod());
         Expression object = transform(mce.getObjectExpression());
         boolean isExplicitThisOrSuper = false;
+        boolean isExplicitSuper = false;
         if (object instanceof VariableExpression) {
             VariableExpression ve = (VariableExpression) object;
             isExplicitThisOrSuper = !mce.isImplicitThis() && (ve.getName().equals("this") || ve.getName().equals("super"));
+            isExplicitSuper = ve.getName().equals("super");
+            if (isExplicitSuper && currentMethod != null && currentMethod.isStatic()) {
+                addError("'super' cannot be used in a static context, use the explicit class instead.", mce);
+                return mce;
+            }
         }
 
         if (mce.isImplicitThis() || isExplicitThisOrSuper) {
@@ -194,7 +200,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
             VariableExpression ve = (VariableExpression) objectExpression;
             boolean isExplicitSuper = ve.getName().equals("super");
             if (isExplicitSuper && currentMethod != null && currentMethod.isStatic()) {
-                addError("'super' cannot be used in a static context, ex the exlicit class instead.", pe);
+                addError("'super' cannot be used in a static context, use the explicit class instead.", pe);
                 return null;
             }
         }
