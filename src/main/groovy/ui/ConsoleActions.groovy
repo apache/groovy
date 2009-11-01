@@ -276,6 +276,12 @@ showToolbarAction = action(
     mnemonic: 'T'
 )
 
+autoClearOutputAction = action(
+    name: 'Auto Clear Output On Run',
+    closure: controller.&autoClearOutput,
+    mnemonic: 'A'
+)
+
 largerFontAction = action(
     name: 'Larger Font',
     closure: controller.&largerFont,

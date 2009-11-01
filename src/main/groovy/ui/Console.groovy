@@ -85,6 +85,9 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener {
     Component toolbar
     Action showToolbarAction
 
+    boolean autoClearOutput = prefs.getBoolean('autoClearOutput', true)
+    Action autoClearOutputAction
+
     // Maximum size of history
     int maxHistory = 10
 
@@ -418,6 +421,12 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener {
         toolbar.visible = showToolbar
     }
 
+    void autoClearOutput(EventObject evt) {
+        autoClearOutput = evt.source.selected
+        prefs.putBoolean('autoClearOutput', autoClearOutput)
+        toolbar.visible = autoClearOutput
+    }
+
     void caretUpdate(CaretEvent e){
         textSelectionStart = Math.min(e.dot,e.mark)
         textSelectionEnd = Math.max(e.dot,e.mark)
@@ -724,6 +733,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener {
 
         // Kick off a new thread to do the evaluation
         statusLabel.text = 'Running Script...'
+        if (prefs.getBoolean("autoClearOutput", false)) clearOutput()
 
         // Run in a thread outside of EDT, this method is usually called inside the EDT
         runThread = Thread.start {
