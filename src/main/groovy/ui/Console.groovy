@@ -170,8 +170,8 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener {
     Console(ClassLoader parent, Binding binding) {
         newScript(parent, binding);
         try {
-            System.setProperty("groovy.full.stacktrace",
-                Boolean.toString(Boolean.valueOf(System.getProperty("groovy.full.stacktrace", "false"))))
+            System.setProperty("groovy.full.stacktrace", System.getProperty("groovy.full.stacktrace",
+                    Boolean.toString(prefs.getBoolean('fullStackTraces', false))))
         } catch (SecurityException se) {
             fullStackTracesAction.enabled = false;
         }
