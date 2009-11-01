@@ -15,13 +15,16 @@
  */
 package org.codehaus.groovy.runtime;
 
+import groovy.lang.GroovyRuntimeException;
 import groovy.sql.GroovyRowResult;
+import groovy.sql.ResultSetMetaDataWrapper;
 
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.util.Date;
+import java.util.Iterator;
 import java.util.LinkedHashMap;
 
 /**
@@ -30,6 +33,7 @@ import java.util.LinkedHashMap;
  * Static methods are used with the first parameter the destination class.
  *
  * @author Paul King
+ * @author John Hurst
  */
 public class SqlGroovyMethods {
 
@@ -60,4 +64,44 @@ public class SqlGroovyMethods {
     public static Timestamp toTimestamp(Date d) {
         return new Timestamp(d.getTime());
     }
+
+    /**
+     * Return an Iterator given a ResultSetMetaData.
+     *
+     * Enables Groovy collection method syntactic sugar on ResultSetMetaData.
+     *
+     * @param resultSetMetaData the ResultSetMetaData to iterate over
+     * @return an iterator for the ResultSetMetaData
+     * @since 1.7
+     */
+    public static Iterator<ResultSetMetaDataWrapper> iterator(ResultSetMetaData resultSetMetaData) {
+        return new ResultSetMetaDataIterator(resultSetMetaData);
+    }
+
+    private static class ResultSetMetaDataIterator implements Iterator<ResultSetMetaDataWrapper> {
+        private ResultSetMetaData target;
+        private int index = 1;
+
+        public ResultSetMetaDataIterator(ResultSetMetaData target) {
+            this.target = target;
+        }
+
+        public boolean hasNext() {
+            try {
+                return index <= target.getColumnCount();
+            }
+            catch (SQLException ex) {
+                throw new GroovyRuntimeException("Unable to obtain column count from ResultSetMetaData", ex);
+            }
+        }
+
+        public ResultSetMetaDataWrapper next() {
+            return new ResultSetMetaDataWrapper(target, index++);
+        }
+
+        public void remove() {
+            throw new UnsupportedOperationException("Cannot remove from ResultSetMetaData");
+        }
+    }
+
 }

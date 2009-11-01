@@ -27,6 +27,8 @@ class SqlCompleteTest extends TestHelper {
         assert metaData.getColumnName(3) == "ID"
         assert metaData.getColumnName(4) == "LOCATION_ID"
         assert metaData.getColumnName(5) == "LOCATION_NAME"
+        assert metaData.every{ it.columnName.contains('I') || it.columnName == 'LASTNAME' }
+        assert metaData*.columnName == ["FIRSTNAME", "LASTNAME", "ID", "LOCATION_ID", "LOCATION_NAME"]
         personMetaClosureCalled = true
     }
 
@@ -34,6 +36,8 @@ class SqlCompleteTest extends TestHelper {
         assert metaData.columnCount == 2
         assert metaData.getColumnName(1) == "TYPE"
         assert metaData.getColumnName(2) == "NAME"
+        assert metaData.any{ it.columnName.contains('Y') }
+        assert metaData*.columnName == ["TYPE", "NAME"]
         foodMetaClosureCalled = true
     }
 
