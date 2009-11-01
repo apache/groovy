@@ -9,6 +9,7 @@ import javax.swing.text.Style
 import javax.swing.text.StyleContext
 import javax.swing.text.StyledDocument
 import java.util.prefs.Preferences
+import javax.swing.text.StyleConstants
 
 
 def prefs = Preferences.userNodeForPackage(Console)
@@ -41,7 +42,7 @@ actions {
     }
 }
 
-// add styles to the output area, shuold this be moved into SwingBuidler somehow?
+// add styles to the output area, should this be moved into SwingBuilder somehow?
 outputArea.setFont(new Font("Monospaced", outputArea.font.style, outputArea.font.size))
 StyledDocument doc = outputArea.styledDocument
 
@@ -77,6 +78,11 @@ styles.each {styleName, defs ->
     Style style = styleContext.getStyle(styleName)
     if (style) {
         applyStyle(style, defs)
+        String family = defs[StyleConstants.FontFamily]
+        if (style.name == 'default' && family) {
+            inputEditor.defaultFamily = family
+            inputArea.font = new Font(family, Font.PLAIN, (int)inputArea.font.size)
+        }
     }
 }
 

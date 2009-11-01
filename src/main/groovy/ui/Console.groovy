@@ -18,8 +18,6 @@ package groovy.ui
 import groovy.inspect.swingui.ObjectBrowser
 import groovy.inspect.swingui.AstBrowser
 import groovy.swing.SwingBuilder
-import groovy.ui.ConsoleTextEditor
-import groovy.ui.SystemOutputInterceptor
 import groovy.ui.text.FindReplaceUtility
 
 import java.awt.Component
@@ -248,7 +246,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener {
 
         bindResults()
 
-        // stitch some actions togeather
+        // stitch some actions together
         swing.bind(source:swing.inputEditor.undoAction, sourceProperty:'enabled', target:swing.undoAction, targetProperty:'enabled')
         swing.bind(source:swing.inputEditor.redoAction, sourceProperty:'enabled', target:swing.redoAction, targetProperty:'enabled')
 
@@ -812,7 +810,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener {
     }
 
     // Adds a variable to the binding
-    // Useful for adding variables before openning the console
+    // Useful for adding variables before opening the console
     void setVariable(String name, Object value) {
         shell.context.setVariable(name, value)
     }
@@ -878,8 +876,8 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener {
         
         prefs.putInt("fontSize", newFontSize)
 
-        // don't worry, the fonts won't be changed to monospaced face, the styles will only derive from this
-        def newFont = new Font('Monospaced', Font.PLAIN, newFontSize)
+        // don't worry, the fonts won't be changed to this family, the styles will only derive from this
+        def newFont = new Font(inputEditor.defaultFamily, Font.PLAIN, newFontSize)
         inputArea.font = newFont
         outputArea.font = newFont
     }

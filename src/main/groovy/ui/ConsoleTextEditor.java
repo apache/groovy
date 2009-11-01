@@ -23,14 +23,7 @@ import groovy.ui.text.StructuredSyntaxResources;
 import groovy.ui.text.TextEditor;
 import groovy.ui.text.TextUndoManager;
 
-import javax.swing.AbstractAction;
-import javax.swing.Action;
-import javax.swing.ActionMap;
-import javax.swing.InputMap;
-import javax.swing.JComponent;
-import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.KeyStroke;
+import javax.swing.*;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
 import javax.swing.text.BadLocationException;
@@ -59,6 +52,13 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
  * @author Guillaume Laforge
  */
 public class ConsoleTextEditor extends JScrollPane {
+    public String getDefaultFamily() {
+        return defaultFamily;
+    }
+
+    public void setDefaultFamily(String defaultFamily) {
+        this.defaultFamily = defaultFamily;
+    }
 
     private class LineNumbersPanel extends JPanel {
 	
@@ -84,24 +84,26 @@ public class ConsoleTextEditor extends JScrollPane {
 			Document doc = textEditor.getDocument();
 			int startline = doc.getDefaultRootElement().getElementIndex(start) + 1;
 			int endline = doc.getDefaultRootElement().getElementIndex(end) + 1;
-
-			int fontHeight = g.getFontMetrics(textEditor.getFont()).getHeight();
-			int fontDesc = g.getFontMetrics(textEditor.getFont()).getDescent();
+            Font f = textEditor.getFont();
+			int fontHeight = g.getFontMetrics(f).getHeight();
+			int fontDesc = g.getFontMetrics(f).getDescent();
 			int starting_y = -1 ;
 
 			try	{
 				starting_y = textEditor.modelToView(start).y + fontHeight - fontDesc;
 			} catch(BadLocationException e1) {
-				e1.printStackTrace();
+                System.err.println(e1.getMessage());
 			}
-			g.setFont(textEditor.getFont());
+			g.setFont(f);
 			for(int line = startline, y = starting_y; line <= endline; y += fontHeight, line++) {
                 String lineNumber = DefaultGroovyMethods.padLeft(Integer.toString(line), 4, " ");
                 g.drawString(lineNumber, 0, y);
 			}
 		}
     }
-	
+
+    private String defaultFamily = "Monospaced";
+
     private static final PrinterJob PRINTER_JOB = PrinterJob.getPrinterJob();
 
 	private LineNumbersPanel numbersPanel = new LineNumbersPanel();
@@ -135,8 +137,8 @@ public class ConsoleTextEditor extends JScrollPane {
     /**
      * Creates a new instance of ConsoleTextEditor
      */
-    public ConsoleTextEditor() {        
-        textEditor.setFont(StructuredSyntaxResources.EDITOR_FONT);
+    public ConsoleTextEditor() {
+        textEditor.setFont(new Font(defaultFamily, Font.PLAIN, Preferences.userNodeForPackage(Console.class).getInt("fontSize", 12)));
 
         setViewportView(new JPanel(new BorderLayout()) {{
 			add(numbersPanel, BorderLayout.WEST);
