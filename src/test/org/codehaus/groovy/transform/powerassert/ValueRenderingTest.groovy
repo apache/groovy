@@ -60,6 +60,21 @@ assert x == null
         }
     }
 
+    void testMultiLineStringValue() {
+        isRendered """
+assert null == x
+            |  |
+            |  one
+            |  two
+            |  three
+            |  four
+            false
+        """, {
+          def x = "one\ntwo\rthree\r\nfour"
+          assert null == x
+        }
+    }
+
     void testPrimitiveArrayValue() {
         isRendered """
 assert x == null

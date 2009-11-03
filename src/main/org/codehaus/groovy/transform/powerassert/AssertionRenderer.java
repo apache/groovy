@@ -83,7 +83,7 @@ public class AssertionRenderer {
             int startColumn = value.getColumn();
             if (startColumn < 1) continue; // node with invalid source position
 
-            String[] strs = str.split("\n");
+            String[] strs = str.split("\r\n|\r|\n");
             int endColumn = strs.length == 1 ?
                     value.getColumn() + str.length() : // exclusive
                     Integer.MAX_VALUE; // multi-line strings are always placed on new lines
