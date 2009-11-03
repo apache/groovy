@@ -221,6 +221,39 @@ public class Java5 implements VMPlugin {
             }
             node.setMember("value", elementExprs);
         }
+        else {
+            Method[] declaredMethods = type.getDeclaredMethods();
+            for (int i = 0; i < declaredMethods.length; i++) {
+                Method declaredMethod = declaredMethods[i];
+                try {
+                    Object value = declaredMethod.invoke(annotation);
+                    Expression valueExpression = annotationValueToExpression(value);
+                    if (valueExpression == null)
+                        continue;
+                    node.setMember(declaredMethod.getName(), valueExpression);
+                } catch (IllegalAccessException e) {
+                } catch (InvocationTargetException e) {
+                }
+            }
+        }
+    }
+
+    private Expression annotationValueToExpression (Object value) {
+        if (value == null || value instanceof String || value instanceof Number || value instanceof Character || value instanceof Boolean)
+            return new ConstantExpression(value);
+
+        if (value instanceof Class)
+            return new ClassExpression(ClassHelper.makeWithoutCaching((Class)value));
+
+        if (value.getClass().isArray()) {
+            ListExpression elementExprs = new ListExpression();
+            int len = Array.getLength(value);
+            for (int i = 0; i != len; ++i)
+                elementExprs.addExpression(annotationValueToExpression(Array.get(value, i)));
+            return elementExprs;
+        }
+
+        return null;
     }
 
     private void setRetentionPolicy(RetentionPolicy value, AnnotationNode node) {
