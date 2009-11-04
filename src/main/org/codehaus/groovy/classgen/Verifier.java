@@ -569,6 +569,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                             method);
                 }
                 node.addMethod(newMethod);
+                newMethod.setGenericsTypes(method.getGenericsTypes());
             }
         });
     }
