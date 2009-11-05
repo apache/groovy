@@ -789,23 +789,29 @@ public class BytecodeHelper implements Opcodes {
         if (types == null) return;
         ret.append(start);
         for (int i = 0; i < types.length; i++) {
-            String name = types[i].getName();
-            if (types[i].isPlaceholder()) {
-                ret.append('T');
-                ret.append(name);
-                ret.append(';');
-            } else if (types[i].isWildcard()) {
-                if (types[i].getUpperBounds() != null) {
-                    ret.append('+');
-                    writeGenericsBounds(ret, types[i], false);
-                } else if (types[i].getLowerBound() != null) {
-                    ret.append('-');
-                    writeGenericsBounds(ret, types[i], false);
+            if (types[i].getType().isArray()) {
+                ret.append("[");
+                addSubTypes(ret, new GenericsType[]{new GenericsType(types[i].getType().getComponentType())}, "", "");
+            }
+            else {
+                if (types[i].isPlaceholder()) {
+                    ret.append('T');
+                    String name = types[i].getName();
+                    ret.append(name);
+                    ret.append(';');
+                } else if (types[i].isWildcard()) {
+                    if (types[i].getUpperBounds() != null) {
+                        ret.append('+');
+                        writeGenericsBounds(ret, types[i], false);
+                    } else if (types[i].getLowerBound() != null) {
+                        ret.append('-');
+                        writeGenericsBounds(ret, types[i], false);
+                    } else {
+                        ret.append('*');
+                    }
                 } else {
-                    ret.append('*');
+                    writeGenericsBounds(ret, types[i], false);
                 }
-            } else {
-                writeGenericsBounds(ret, types[i], false);
             }
         }
         ret.append(end);
