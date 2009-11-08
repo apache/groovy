@@ -194,13 +194,13 @@ public class GroovyClassLoaderTest extends GroovyTestCase implements Opcodes {
     		package pkg1
 			def x = 1
     	"""
-    	verifyPackageDetails(loader.parseClass(script), "pkg1")
+    	verifyPackageDetails(loader.parseClass(script, 'Pkg1Groovy3537Script.groovy'), "pkg1")
     	
     	script = """
     		package pkg1.pkg2
     		class Groovy3537A{}
     	"""
-    	verifyPackageDetails(loader.parseClass(script), "pkg1.pkg2")
+    	verifyPackageDetails(loader.parseClass(script, 'Pkg1Pkg2Groovy3537A.groovy'), "pkg1.pkg2")
     }
     
     void testPackageDefinitionForGroovyClassesInDefineClass() {
