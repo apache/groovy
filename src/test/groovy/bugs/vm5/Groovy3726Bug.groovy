@@ -12,7 +12,7 @@ class Groovy3726Bug extends GroovyTestCase {
     			@Lazy volatile String foo = "anything"
     		}
     	"""
-    	clazz = cl.parseClass(scriptStr)
+    	clazz = cl.parseClass(scriptStr, 'GroovyBean3726A.groovy')
     	
     	fooGetter = clazz.getMethod('get$foo')
     	assertFalse fooGetter.isBridge()
@@ -23,7 +23,7 @@ class Groovy3726Bug extends GroovyTestCase {
     			volatile String foo = "anything"
     		}
     	"""
-    	clazz = cl.parseClass(scriptStr)
+    	clazz = cl.parseClass(scriptStr, 'GroovyBean3726B.groovy')
     	
     	fooGetter = clazz.getMethod('getFoo')
     	assertFalse fooGetter.isBridge()
@@ -43,7 +43,7 @@ class Groovy3726Bug extends GroovyTestCase {
     			@Lazy transient String bar = "anything"
     		}
     	"""
-    	clazz = cl.parseClass(scriptStr)
+    	clazz = cl.parseClass(scriptStr, 'GroovyBean3726C.groovy')
     	
     	barGetter = clazz.getMethod('get$bar')
     	assertFalse barGetter.isVarArgs()
@@ -54,7 +54,7 @@ class Groovy3726Bug extends GroovyTestCase {
     			transient String bar = "anything"
     		}
     	"""
-    	clazz = cl.parseClass(scriptStr)
+    	clazz = cl.parseClass(scriptStr, 'GroovyBean3726D.groovy')
     	
     	barGetter = clazz.getMethod('getBar')
     	assertFalse barGetter.isVarArgs()
