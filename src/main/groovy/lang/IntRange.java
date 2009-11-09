@@ -34,7 +34,7 @@ import java.util.List;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class IntRange extends AbstractList implements Range {
+public class IntRange extends AbstractList<Integer> implements Range<Integer> {
 
     /**
      * Iterates through each number in an <code>IntRange</code>.
@@ -226,7 +226,7 @@ public class IntRange extends AbstractList implements Range {
     /**
      * {@inheritDoc}
      */
-    public Object get(int index) {
+    public Integer get(int index) {
         if (index < 0) {
             throw new IndexOutOfBoundsException("Index: " + index + " should not be negative");
         }

@@ -28,7 +28,7 @@ import java.util.List;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public interface Range extends List {
+public interface Range<T extends Comparable> extends List<T> {
     /**
      * The lower value in the range.
      *
