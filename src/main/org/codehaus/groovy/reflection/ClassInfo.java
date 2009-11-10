@@ -146,11 +146,20 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
     private MetaClass getMetaClassUnderLock() {
         MetaClass answer;
         answer = getMetaClassForClass();
-        if (answer != null) return answer;
-
         final MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
-        answer = metaClassRegistry.getMetaClassCreationHandler()
-                                  .create(get(), metaClassRegistry);
+        MetaClassRegistry.MetaClassCreationHandle mccHandle = metaClassRegistry.getMetaClassCreationHandler();
+        
+        if (answer != null) {
+            boolean enableGloballyOn = (mccHandle instanceof ExpandoMetaClassCreationHandle);
+            boolean cachedAnswerIsEMC = (answer instanceof ExpandoMetaClass);
+            // if EMC.enableGlobally() is OFF, return whatever the cached answer is.
+            // but if EMC.enableGlobally() is ON and the cached answer is not an EMC, come up with a fresh answer
+            if(!enableGloballyOn || cachedAnswerIsEMC) {
+                return answer;
+            }
+        }
+
+        answer = mccHandle.create(get(), metaClassRegistry);
         answer.initialize();
 
         if (GroovySystem.isKeepJavaMetaClasses()) {
