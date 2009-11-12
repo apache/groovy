@@ -27,6 +27,7 @@ import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.transform.ASTTransformation;
+import org.codehaus.groovy.transform.ASTTransformationVisitor;
 import org.codehaus.groovy.transform.GroovyASTTransformation;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
@@ -219,6 +220,8 @@ public class GrabAnnotationTransformation extends ClassCodeVisitorSupport implem
 
             try {
                 Grape.grab(basicArgs, grabMaps.toArray(new Map[grabMaps.size()]));
+                // grab may have added more transformations through new URLs added to classpath, so do one more scan
+                ASTTransformationVisitor.addGlobalTransformsAfterGrab();
             } catch (RuntimeException re) {
                 // Decided against syntax exception since this is not a syntax error.
                 // The down side is we lose line number information for the offending
