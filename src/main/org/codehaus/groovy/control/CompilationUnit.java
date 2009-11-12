@@ -83,7 +83,7 @@ public class CompilationUnit extends ProcessingUnit {
     protected OptimizerVisitor optimizer;
 
     LinkedList[] phaseOperations;
-
+    LinkedList[] newPhaseOperations;
 
     /**
      * Initializes the CompilationUnit with defaults.
@@ -152,8 +152,10 @@ public class CompilationUnit extends ProcessingUnit {
         this.optimizer = new OptimizerVisitor(this);
 
         phaseOperations = new LinkedList[Phases.ALL + 1];
+        newPhaseOperations = new LinkedList[Phases.ALL + 1];
         for (int i = 0; i < phaseOperations.length; i++) {
             phaseOperations[i] = new LinkedList();
+            newPhaseOperations[i] = new LinkedList();
         }
         addPhaseOperation(new SourceUnitOperation() {
             public void call(SourceUnit source) throws CompilationFailedException {
@@ -202,6 +204,10 @@ public class CompilationUnit extends ProcessingUnit {
         phaseOperations[Phases.OUTPUT].addFirst(op);
     }
 
+    public void addNewPhaseOperation(SourceUnitOperation op, int phase) {
+        if (phase < 0 || phase > Phases.ALL) throw new IllegalArgumentException("phase " + phase + " is unknown");
+        newPhaseOperations[phase].add(op);
+    }
 
     /**
      * Configures its debugging mode and classloader classpath from a given compiler configuration.
@@ -456,16 +462,9 @@ public class CompilationUnit extends ProcessingUnit {
 
         while (throughPhase >= phase && phase <= Phases.ALL) {
 
-            for (Iterator it = phaseOperations[phase].iterator(); it.hasNext();) {
-                Object operation = it.next();
-                if (operation instanceof PrimaryClassNodeOperation) {
-                    applyToPrimaryClassNodes((PrimaryClassNodeOperation) operation);
-                } else if (operation instanceof SourceUnitOperation) {
-                    applyToSourceUnits((SourceUnitOperation) operation);
-                } else {
-                    applyToGeneratedGroovyClasses((GroovyClassOperation) operation);
-                }
-            }
+            processPhaseOperations(phase);
+            // Grab processing may have brought in new AST transforms into various phases, process them as well
+            processNewPhaseOperations(phase);
 
             if (progressCallback != null) progressCallback.call(this, phase);
             completePhase();
@@ -482,7 +481,50 @@ public class CompilationUnit extends ProcessingUnit {
 
         errorCollector.failIfErrors();
     }
+    
+    private void processPhaseOperations(int ph) {
+        LinkedList ops = phaseOperations[ph];
+        for (Iterator it = ops.iterator(); it.hasNext();) {
+            doPhaseOperation(it.next());
+        }
+    }
+    
+    private void processNewPhaseOperations(int currPhase) {
+        recordPhaseOpsInAllOtherPhases(currPhase);
+        LinkedList currentPhaseNewOps = newPhaseOperations[currPhase];
+        while (!currentPhaseNewOps.isEmpty()) {
+            Object operation = currentPhaseNewOps.removeFirst();
+            // push this operation to master list and then process it.
+            phaseOperations[currPhase].add(operation);
+            doPhaseOperation(operation);
+            // if this operation has brought in more phase ops for ast transforms, keep recording them
+            // in master list of other phases and keep processing them for this phase.
+            recordPhaseOpsInAllOtherPhases(currPhase);
+            currentPhaseNewOps = newPhaseOperations[currPhase];
+        }
+        
+    }
+    
+    private void doPhaseOperation(Object operation) {
+        if (operation instanceof PrimaryClassNodeOperation) {
+            applyToPrimaryClassNodes((PrimaryClassNodeOperation) operation);
+        } else if (operation instanceof SourceUnitOperation) {
+            applyToSourceUnits((SourceUnitOperation) operation);
+        } else {
+            applyToGeneratedGroovyClasses((GroovyClassOperation) operation);
+        }
+    }
 
+    private void recordPhaseOpsInAllOtherPhases(int currPhase) {
+        // apart from current phase, push new operations for every other phase in the master phase ops list
+        for (int ph = Phases.INITIALIZATION; ph <= Phases.ALL; ph++) {
+            if(ph != currPhase && !newPhaseOperations[ph].isEmpty()) {
+                phaseOperations[ph].addAll(newPhaseOperations[ph]);
+                newPhaseOperations[ph].clear();
+            }
+        }
+    }
+    
     private void sortClasses() throws CompilationFailedException {
         Iterator modules = this.ast.getModules().iterator();
         while (modules.hasNext()) {

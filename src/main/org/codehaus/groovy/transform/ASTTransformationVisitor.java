@@ -58,6 +58,8 @@ public class ASTTransformationVisitor extends ClassCodeVisitorSupport {
     private List<ASTNode[]> targetNodes;
     private Map<ASTNode, List<ASTTransformation>> transforms;
     private Map<Class<? extends ASTTransformation>, ASTTransformation> transformInstances;
+    private static CompilationUnit compUnit;
+    private static Set<String> globalTransformNames = new HashSet<String>();
 
     private ASTTransformationVisitor(CompilePhase phase) {
         this.phase = phase;
@@ -176,10 +178,19 @@ public class ASTTransformationVisitor extends ClassCodeVisitorSupport {
             }
         }
     }
-
+    
+    public static void addGlobalTransformsAfterGrab() {
+        doAddGlobalTransforms(compUnit, false);
+    }
+    
     public static void addGlobalTransforms(CompilationUnit compilationUnit) {
+        compUnit = compilationUnit;
+        doAddGlobalTransforms(compilationUnit, true);
+    }
+
+    private static void doAddGlobalTransforms(CompilationUnit compilationUnit, boolean isFirstScan) {
         GroovyClassLoader transformLoader = compilationUnit.getTransformLoader();
-        LinkedHashMap<String, URL> globalTransformNames = new LinkedHashMap<String, URL>();
+        Map<String, URL> transformNames = new LinkedHashMap<String, URL>();
         try {
             Enumeration<URL> globalServices = transformLoader.getResources("META-INF/services/org.codehaus.groovy.transform.ASTTransformation");
             while (globalServices.hasMoreElements()) {
@@ -196,12 +207,12 @@ public class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                 }
                 while (className != null) {
                     if (!className.startsWith("#") && className.length() > 0) {
-                        if (globalTransformNames.containsKey(className)) {
-                            if (!service.equals(globalTransformNames.get(className))) {
+                        if (transformNames.containsKey(className)) {
+                            if (!service.equals(transformNames.get(className))) {
                                 compilationUnit.getErrorCollector().addWarning(
                                         WarningMessage.POSSIBLE_ERRORS,
                                         "The global transform for class " + className + " is defined in both "
-                                            + globalTransformNames.get(className).toExternalForm()
+                                            + transformNames.get(className).toExternalForm()
                                             + " and "
                                             + service.toExternalForm()
                                             + " - the former definition will be used and the latter ignored.",
@@ -210,7 +221,7 @@ public class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                             }
 
                         } else {
-                            globalTransformNames.put(className, service);
+                            transformNames.put(className, service);
                         }
                     }
                     try {
@@ -237,7 +248,7 @@ public class ASTTransformationVisitor extends ClassCodeVisitorSupport {
             StringBuffer sb = new StringBuffer();
             sb.append("Global ASTTransformations are not enabled in retro builds of groovy.\n");
             sb.append("The following transformations will be ignored:");
-            for (Map.Entry<String, URL> entry : globalTransformNames.entrySet()) {
+            for (Map.Entry<String, URL> entry : transformNames.entrySet()) {
                 sb.append('\t');
                 sb.append(entry.getKey());
                 sb.append('\n');
@@ -246,7 +257,31 @@ public class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                 WarningMessage.POSSIBLE_ERRORS, sb.toString(), null, null));
             return;
         }
-        for (Map.Entry<String, URL> entry : globalTransformNames.entrySet()) {
+        
+        // record the transforms found in the first scan, so that in the 2nd scan, phase operations 
+        // can be added for only for new transforms that have come in 
+        if(isFirstScan) {
+            for (Map.Entry<String, URL> entry : transformNames.entrySet()) {
+                globalTransformNames.add(entry.getKey());
+            }
+            addPhaseOperationsForGlobalTransforms(compilationUnit, transformNames, isFirstScan);
+        } else {
+            Iterator<Map.Entry<String, URL>> it = transformNames.entrySet().iterator();
+            while(it.hasNext()) {
+                Map.Entry<String, URL> entry = it.next();
+                if(!globalTransformNames.add(entry.getKey())) {
+                    // phase operations for this transform class have already been added before, so remove from current scan cycle
+                    it.remove(); 
+                }
+            }
+            addPhaseOperationsForGlobalTransforms(compilationUnit, transformNames, isFirstScan);
+        }
+    }
+    
+    private static void addPhaseOperationsForGlobalTransforms(CompilationUnit compilationUnit, 
+            Map<String, URL> transformNames, boolean isFirstScan) {
+        GroovyClassLoader transformLoader = compilationUnit.getTransformLoader();
+        for (Map.Entry<String, URL> entry : transformNames.entrySet()) {
             try {
                 Class gTransClass = transformLoader.loadClass(entry.getKey(), false, true, false);
                 //no inspection unchecked
@@ -263,11 +298,16 @@ public class ASTTransformationVisitor extends ClassCodeVisitorSupport {
                 }
                 if (ASTTransformation.class.isAssignableFrom(gTransClass)) {
                     final ASTTransformation instance = (ASTTransformation)gTransClass.newInstance();
-                    compilationUnit.addPhaseOperation(new CompilationUnit.SourceUnitOperation() {
+                    CompilationUnit.SourceUnitOperation suOp = new CompilationUnit.SourceUnitOperation() {
                         public void call(SourceUnit source) throws CompilationFailedException {
                             instance.visit(new ASTNode[] {source.getAST()}, source);
                         }
-                    }, transformAnnotation.phase().getPhaseNumber());
+                    }; 
+                    if(isFirstScan) {
+                        compilationUnit.addPhaseOperation(suOp, transformAnnotation.phase().getPhaseNumber());
+                    } else {
+                        compilationUnit.addNewPhaseOperation(suOp, transformAnnotation.phase().getPhaseNumber());
+                    }
                 } else {
                     compilationUnit.getErrorCollector().addError(new SimpleMessage(
                         "Transform Class " + entry.getKey() + " specified at "
