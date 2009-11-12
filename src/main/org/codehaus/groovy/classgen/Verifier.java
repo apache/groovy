@@ -79,11 +79,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             node.addField("metaClass", ACC_PRIVATE | ACC_TRANSIENT | ACC_SYNTHETIC, ClassHelper.METACLASS_TYPE, new BytecodeExpression() {
                 public void visit(MethodVisitor mv) {
                     mv.visitVarInsn(ALOAD, 0);
-                    mv.visitInsn(DUP);
                     mv.visitMethodInsn(INVOKEVIRTUAL, classInternalName, "$getStaticMetaClass", "()Lgroovy/lang/MetaClass;");
-                    mv.visitFieldInsn(PUTFIELD, classInternalName, "metaClass", "Lgroovy/lang/MetaClass;");
-                    mv.visitVarInsn(ALOAD, 0);
-                    mv.visitFieldInsn(GETFIELD, classInternalName, "metaClass", "Lgroovy/lang/MetaClass;");
                 }
 
                 public ClassNode getType() {
@@ -352,27 +348,29 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     protected void addTimeStamp(ClassNode node) {
-        FieldNode timeTagField = new FieldNode(
-                Verifier.__TIMESTAMP,
-                ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC,
-                ClassHelper.Long_TYPE,
-                //"",
-                node,
-                new ConstantExpression(System.currentTimeMillis()));
-        // alternatively , FieldNode timeTagField = SourceUnit.createFieldNode("public static final long __timeStamp = " + System.currentTimeMillis() + "L");
-        timeTagField.setSynthetic(true);
-        node.addField(timeTagField);
+        if(node.getDeclaredField(Verifier.__TIMESTAMP) == null) { // in case if verifier visited the call already
+            FieldNode timeTagField = new FieldNode(
+                    Verifier.__TIMESTAMP,
+                    ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC,
+                    ClassHelper.Long_TYPE,
+                    //"",
+                    node,
+                    new ConstantExpression(System.currentTimeMillis()));
+            // alternatively , FieldNode timeTagField = SourceUnit.createFieldNode("public static final long __timeStamp = " + System.currentTimeMillis() + "L");
+            timeTagField.setSynthetic(true);
+            node.addField(timeTagField);
 
-        timeTagField = new FieldNode(
-                Verifier.__TIMESTAMP__ + String.valueOf(System.currentTimeMillis()),
-                ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC,
-                ClassHelper.Long_TYPE,
-                //"",
-                node,
-                new ConstantExpression((long) 0));
-        // alternatively , FieldNode timeTagField = SourceUnit.createFieldNode("public static final long __timeStamp = " + System.currentTimeMillis() + "L");
-        timeTagField.setSynthetic(true);
-        node.addField(timeTagField);
+            timeTagField = new FieldNode(
+                    Verifier.__TIMESTAMP__ + String.valueOf(System.currentTimeMillis()),
+                    ACC_PUBLIC | ACC_STATIC | ACC_SYNTHETIC,
+                    ClassHelper.Long_TYPE,
+                    //"",
+                    node,
+                    new ConstantExpression((long) 0));
+            // alternatively , FieldNode timeTagField = SourceUnit.createFieldNode("public static final long __timeStamp = " + System.currentTimeMillis() + "L");
+            timeTagField.setSynthetic(true);
+            node.addField(timeTagField);
+        }
     }
 
     private void checkReturnInObjectInitializer(List init) {
@@ -672,7 +670,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         ConstructorCallExpression first = getFirstIfSpecialConstructorCall(firstStatement);
         
         // in case of this(...) let the other constructor do the init
-        if (first!=null && first.isThisCall()) return;
+        if (first!=null && (first.isThisCall())) return;
         
         List statements = new ArrayList();
         List staticStatements = new ArrayList();
