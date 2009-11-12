@@ -29,7 +29,7 @@ public final class CurriedClosure extends Closure {
     private Object[] curriedParams;
     
     public CurriedClosure(Closure uncurriedClosure, Object[] arguments) {
-        super(uncurriedClosure);
+        super(uncurriedClosure.clone());
         curriedParams = arguments;
         maximumNumberOfParameters = uncurriedClosure.getMaximumNumberOfParameters()-arguments.length;
     }
