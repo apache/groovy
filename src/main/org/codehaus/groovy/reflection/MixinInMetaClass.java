@@ -15,20 +15,25 @@
  */
 package org.codehaus.groovy.reflection;
 
-import groovy.lang.*;
-
-import java.lang.reflect.Modifier;
-import java.util.List;
-import java.util.ArrayList;
-
-import org.codehaus.groovy.runtime.MetaClassHelper;
+import groovy.lang.DelegatingMetaClass;
+import groovy.lang.ExpandoMetaClass;
+import groovy.lang.GroovyRuntimeException;
+import groovy.lang.GroovySystem;
+import groovy.lang.MetaClass;
+import groovy.lang.MetaMethod;
+import groovy.lang.MetaProperty;
 import org.codehaus.groovy.runtime.HandleMetaClass;
-import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
+import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.metaclass.MixedInMetaClass;
 import org.codehaus.groovy.runtime.metaclass.MixinInstanceMetaMethod;
 import org.codehaus.groovy.runtime.metaclass.MixinInstanceMetaProperty;
+import org.codehaus.groovy.runtime.metaclass.NewInstanceMetaMethod;
 import org.codehaus.groovy.util.ManagedConcurrentMap;
 import org.codehaus.groovy.util.ReferenceBundle;
+
+import java.lang.reflect.Modifier;
+import java.util.ArrayList;
+import java.util.List;
 
 public class MixinInMetaClass extends ManagedConcurrentMap {
     final ExpandoMetaClass emc;
@@ -102,14 +107,14 @@ public class MixinInMetaClass extends ManagedConcurrentMap {
 
         ExpandoMetaClass mc = (ExpandoMetaClass) self;
 
-        ArrayList<MetaMethod> arr = new ArrayList<MetaMethod>();
+        List<MetaMethod> arr = new ArrayList<MetaMethod>();
         for (Class categoryClass : categoryClasses) {
 
             final CachedClass cachedCategoryClass = ReflectionCache.getCachedClass(categoryClass);
             final MixinInMetaClass mixin = new MixinInMetaClass(mc, cachedCategoryClass);
 
             final MetaClass metaClass = GroovySystem.getMetaClassRegistry().getMetaClass(categoryClass);
-            final List<MetaProperty> propList = (List<MetaProperty>) metaClass.getProperties();
+            final List<MetaProperty> propList = metaClass.getProperties();
             for (MetaProperty prop : propList)
                 if (self.getMetaProperty(prop.getName()) == null) {
                     mc.registerBeanProperty(prop.getName(), new MixinInstanceMetaProperty(prop, mixin));
@@ -120,7 +125,7 @@ public class MixinInMetaClass extends ManagedConcurrentMap {
                     mc.registerBeanProperty(prop.getName(), new MixinInstanceMetaProperty(prop, mixin));
                 }
 
-            for (MetaMethod method : (List<MetaMethod>) metaClass.getMethods()) {
+            for (MetaMethod method : metaClass.getMethods()) {
                 final int mod = method.getModifiers();
 
                 if (!Modifier.isPublic(mod))
@@ -151,7 +156,7 @@ public class MixinInMetaClass extends ManagedConcurrentMap {
         }
     }
 
-    private static void staticMethod(final MetaClass self, ArrayList<MetaMethod> arr, final CachedMethod method) {
+    private static void staticMethod(final MetaClass self, List<MetaMethod> arr, final CachedMethod method) {
         CachedClass[] paramTypes = method.getParameterTypes();
 
         if (paramTypes.length == 0)
