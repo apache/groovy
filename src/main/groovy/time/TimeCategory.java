@@ -15,11 +15,6 @@
  */
 package groovy.time;
 
-import groovy.time.BaseDuration;
-import groovy.time.DatumDependentDuration;
-import groovy.time.Duration;
-import groovy.time.TimeDuration;
-
 import java.util.Calendar;
 import java.util.Date;
 import java.util.TimeZone;

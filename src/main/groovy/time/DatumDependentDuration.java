@@ -18,8 +18,6 @@ package groovy.time;
 import java.util.Calendar;
 import java.util.Date;
 
-import groovy.time.TimeCategory;
-
 /**
  * DatumDependentDuration represents durations whose length in milliseconds 
  * cannot be determined without knowing the datum point.

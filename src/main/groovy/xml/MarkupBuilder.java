@@ -21,8 +21,6 @@ import groovy.util.IndentPrinter;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.Map;
-import java.util.HashMap;
-import java.util.Set;
 import java.util.Iterator;
 
 /**

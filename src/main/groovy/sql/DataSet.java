@@ -23,7 +23,6 @@ import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.stmt.Statement;
 
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.sql.ResultSet;
 import java.util.ArrayList;

@@ -21,7 +21,6 @@ import groovy.lang.GroovyClassLoader;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
 
-import org.codehaus.groovy.control.Phases;
 import org.codehaus.groovy.tools.javac.JavaStubCompilationUnit;
 
 import java.io.File;
