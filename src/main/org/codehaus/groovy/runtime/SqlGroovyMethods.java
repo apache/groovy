@@ -26,6 +26,7 @@ import java.sql.Timestamp;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.Map;
 
 /**
  * This class defines all the new SQL-related groovy methods which enhance
@@ -47,7 +48,7 @@ public class SqlGroovyMethods {
      */
     public static GroovyRowResult toRowResult(ResultSet rs) throws SQLException {
         ResultSetMetaData metadata = rs.getMetaData();
-        LinkedHashMap<String, Object> lhm = new LinkedHashMap<String, Object>(metadata.getColumnCount(), 1);
+        Map<String, Object> lhm = new LinkedHashMap<String, Object>(metadata.getColumnCount(), 1);
         for (int i = 1; i <= metadata.getColumnCount(); i++) {
             lhm.put(metadata.getColumnLabel(i), rs.getObject(i));
         }

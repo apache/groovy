@@ -30,11 +30,8 @@ import java.io.Reader;
 import java.io.InputStream;
 import java.io.FileReader;
 import java.io.BufferedReader;
-import java.util.Arrays;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.Collection;
 
 /**

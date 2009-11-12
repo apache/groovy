@@ -25,7 +25,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
         return "div";
     }
 
-    public final Object invoke(Object object, Object[] arguments) {
+    public Object invoke(Object object, Object[] arguments) {
         return NumberMath.divide((Number) object, (Number) arguments[0]);
     }
 
@@ -42,7 +42,7 @@ public final class NumberNumberDiv extends NumberNumberMetaMethod {
         return NumberMath.divide(left, right);
     }
 
-    public final CallSite createPojoCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
+    public CallSite createPojoCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
         NumberMath m = NumberMath.getMath((Number)receiver, (Number)args[0]);
 
         if (receiver instanceof Integer) {

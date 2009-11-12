@@ -24,7 +24,7 @@ public class StaticMetaClassSite extends MetaClassSite {
         version = classInfo.getVersion();
     }
 
-    private final boolean checkCall(Object receiver) {
+    private boolean checkCall(Object receiver) {
         return receiver == metaClass.getTheClass()
             && version == classInfo.getVersion(); // metaClass still be valid
     }

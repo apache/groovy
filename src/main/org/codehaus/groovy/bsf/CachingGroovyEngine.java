@@ -26,7 +26,6 @@ import org.apache.bsf.util.BSFFunctions;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.runtime.InvokerHelper;
 
-import java.io.ByteArrayInputStream;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.HashMap;

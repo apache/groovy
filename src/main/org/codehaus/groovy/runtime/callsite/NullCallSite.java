@@ -11,7 +11,7 @@ public final class NullCallSite extends AbstractCallSite {
         super(callSite);
     }
 
-    public final Object call(Object receiver, Object[] args) throws Throwable {
+    public Object call(Object receiver, Object[] args) throws Throwable {
         if (receiver == null) {
             try{
                 return CallSiteArray.defaultCall(this, NullObject.getNullObject(), args);

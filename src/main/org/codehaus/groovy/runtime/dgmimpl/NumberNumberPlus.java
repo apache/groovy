@@ -98,11 +98,11 @@ public final class NumberNumberPlus extends NumberNumberMetaMethod {
             }
 
         return new NumberNumberCallSite (site, metaClass, metaMethod, params, (Number)receiver, (Number)args[0]){
-            public final Object invoke(Object receiver, Object[] args) {
+            public Object invoke(Object receiver, Object[] args) {
                 return math.addImpl((Number)receiver,(Number)args[0]);
             }
 
-            public final Object invoke(Object receiver, Object arg) {
+            public Object invoke(Object receiver, Object arg) {
                 return math.addImpl((Number)receiver,(Number)arg);
             }
         };

@@ -34,9 +34,9 @@ import java.lang.reflect.Modifier;
  */
 public class MethodSelectionException extends GroovyRuntimeException {
 
-    private String methodName;
-    private FastArray methods;
-    private Class[] arguments;
+    private final String methodName;
+    private final FastArray methods;
+    private final Class[] arguments;
     
     /**
      * Creates a new MethodSelectionException.

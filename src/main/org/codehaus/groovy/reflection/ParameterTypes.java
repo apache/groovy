@@ -272,7 +272,7 @@ public class ParameterTypes
         return true;
     }
 
-    private static final boolean testComponentAssignable(Class toTestAgainst, Class toTest) {
+    private static boolean testComponentAssignable(Class toTestAgainst, Class toTest) {
         Class component = toTest.getComponentType();
         if (component==null) return false;
         return MetaClassHelper.isAssignableFrom(toTestAgainst, component);
