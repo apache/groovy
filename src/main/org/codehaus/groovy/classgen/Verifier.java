@@ -200,9 +200,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
             if (!node.hasMethod("getMetaClass", Parameter.EMPTY_ARRAY)) {
                 metaClassField = setMetaClassFieldIfNotExists(node, metaClassField);
-                node.addSyntheticMethod(
+                addMethod(node,!Modifier.isAbstract(node.getModifiers()),
                         "getMetaClass",
-                        ACC_PUBLIC | ACC_SYNTHETIC,
+                        ACC_PUBLIC,
                         ClassHelper.METACLASS_TYPE,
                         Parameter.EMPTY_ARRAY,
                         ClassNode.EMPTY_ARRAY,
@@ -251,7 +251,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                     setMetaClassCode = new BytecodeSequence(list);
                 }
                 
-                node.addSyntheticMethod(
+                addMethod(node,!Modifier.isAbstract(node.getModifiers()),
                         "setMetaClass",
                         ACC_PUBLIC,
                         ClassHelper.VOID_TYPE,
@@ -267,7 +267,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 VariableScope blockScope = new VariableScope();
                 blockScope.putReferencedLocalVariable(vMethods);
                 blockScope.putReferencedLocalVariable(vArguments);
-                node.addSyntheticMethod(
+
+                addMethod(node,!Modifier.isAbstract(node.getModifiers()),
                         "invokeMethod",
                         ACC_PUBLIC,
                         ClassHelper.OBJECT_TYPE, INVOKE_METHOD_PARAMS,
@@ -287,7 +288,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             }
 
             if (!node.hasMethod("getProperty", GET_PROPERTY_PARAMS)) {
-                node.addSyntheticMethod(
+                addMethod(node,!Modifier.isAbstract(node.getModifiers()),
                         "getProperty",
                         ACC_PUBLIC,
                         ClassHelper.OBJECT_TYPE,
@@ -307,7 +308,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             }
 
             if (!node.hasMethod("setProperty", SET_PROPERTY_PARAMS)) {
-                node.addSyntheticMethod(
+                addMethod(node,!Modifier.isAbstract(node.getModifiers()),
                         "setProperty",
                         ACC_PUBLIC,
                         ClassHelper.VOID_TYPE,
@@ -343,6 +344,20 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         node.getObjectInitializerStatements().clear();
         addCovariantMethods(node);
         node.visitContents(this);
+    }
+    
+    /**
+     * Helper method to add a new method to a ClassNode.  Depending on the shouldBeSynthetic flag the 
+     * call will either be made to ClassNode.addSyntheticMethod() or ClassNode.addMethod(). If a non-synthetic method 
+     * is to be added the ACC_SYNTHETIC modifier is removed if it has been accidentally supplied.
+     */
+    private void addMethod(ClassNode node, boolean shouldBeSynthetic, String name, int modifiers, ClassNode returnType, Parameter[] parameters,
+            ClassNode[] exceptions, Statement code) {
+        if (shouldBeSynthetic) {
+            node.addSyntheticMethod(name,modifiers,returnType,parameters,exceptions,code);
+        } else {
+            node.addMethod(name,modifiers&~ACC_SYNTHETIC,returnType,parameters,exceptions,code);            
+        }
     }
 
     protected void addTimeStamp(ClassNode node) {
