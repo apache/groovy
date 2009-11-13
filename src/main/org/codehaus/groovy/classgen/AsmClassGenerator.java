@@ -987,7 +987,7 @@ public class AsmClassGenerator extends ClassGenerator {
             compileStack.removeVar(tempIndex);
         }
         // now the optional exception expression
-        statement.getMessageExpression().visit(this);
+        visitAndAutoboxBoolean(statement.getMessageExpression());
 
         assertFailedMethod.call(mv);
         mv.visitLabel(l1);
