@@ -132,6 +132,9 @@ public class DefaultTypeTransformation {
                 throw new GroovyCastException(c, type);
             }
         }
+        if (object instanceof GString) {
+            return (Number) DefaultGroovyMethods.asType(object.toString(), type);
+        }
         throw new GroovyCastException(object, type);
     }
     
