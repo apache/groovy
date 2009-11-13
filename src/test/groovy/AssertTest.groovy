@@ -42,4 +42,17 @@ class AssertTest extends GroovyTestCase {
         }
         assert runCode, "has not ran the try / catch block code"
     }
+    
+    void testAssertMessageAndExpressionReversed() {
+        try {
+            // the order is wrong for this one ""=="" becomes
+            // the assertion message string. Since it is an
+            // expression it must made sure the expression is
+            // transformed into an object
+            assert "" : "" == ""
+        } catch (AssertionError ae){
+            assert ae.message.contains("true");
+        }
+    
+    }
 }

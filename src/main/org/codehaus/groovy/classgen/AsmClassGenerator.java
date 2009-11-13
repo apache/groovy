@@ -1006,8 +1006,9 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         AssertionTracker savedTracker = assertionTracker;
         assertionTracker = null;
+        
         // now the optional exception expression
-        statement.getMessageExpression().visit(this);
+        visitAndAutoboxBoolean(statement.getMessageExpression());
         assertFailedMethod.call(mv);
         
         if (rewriteAssert) {
