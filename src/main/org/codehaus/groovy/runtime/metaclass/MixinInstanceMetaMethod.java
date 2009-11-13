@@ -33,8 +33,9 @@ public class MixinInstanceMetaMethod extends MetaMethod{
     }
 
     public Object invoke(Object object, Object[] arguments) {
-        final Object result = method.invoke(mixinInMetaClass.getMixinInstance(object), arguments);
-        return result;
+        // make sure parameterTypes gets set
+        method.getParameterTypes();
+        return method.invoke(mixinInMetaClass.getMixinInstance(object), method.correctArguments(arguments));
     }
 
     protected Class[] getPT() {
