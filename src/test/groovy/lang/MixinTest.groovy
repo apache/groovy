@@ -353,6 +353,20 @@ class MixinTest extends GroovyTestCase {
             println "testStackOverflowErrorWithMixinsAndClosure() Done"
         """
     }
+
+    void testMixinWithVarargs() {
+        assertScript """
+            class Dsl {
+                static novarargs(java.util.List s) { "novarargs" + s.size() }
+                static plainVarargs(Object... s) { "plainVarargs" + s.size() }
+                static mixedVarargs(int foo, String... s) { "mixedVarargs" + s.size() }
+            }
+            this.metaClass.mixin(Dsl)
+            assert novarargs(["a", "b"]) == "novarargs2"
+            assert plainVarargs("a", "b", 35) == "plainVarargs3"
+            assert mixedVarargs(3, "a", "b", "c", "d") == "mixedVarargs4"
+        """
+    }
 }
 
 class ArrayListExt {
