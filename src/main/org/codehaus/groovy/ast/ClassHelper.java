@@ -25,7 +25,9 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
+import java.util.WeakHashMap;
 import java.util.regex.Pattern;
+import java.lang.ref.SoftReference;
 
 /**
  * This class is a Helper for ClassNode and classes handling ClassNodes.
@@ -53,27 +55,27 @@ public class ClassHelper {
     };
     
     public static final ClassNode 
-        DYNAMIC_TYPE = new ClassNode(Object.class),  OBJECT_TYPE = DYNAMIC_TYPE,
-        VOID_TYPE = new ClassNode(Void.TYPE),        CLOSURE_TYPE = new ClassNode(Closure.class),
-        GSTRING_TYPE = new ClassNode(GString.class), LIST_TYPE = makeWithoutCaching(List.class),
-        MAP_TYPE = makeWithoutCaching(Map.class),         RANGE_TYPE = new ClassNode(Range.class),
-        PATTERN_TYPE = new ClassNode(Pattern.class), STRING_TYPE = new ClassNode(String.class),
-        SCRIPT_TYPE = new ClassNode(Script.class),   REFERENCE_TYPE = makeWithoutCaching(Reference.class),
+        DYNAMIC_TYPE = makeCached(Object.class),  OBJECT_TYPE = DYNAMIC_TYPE,
+        VOID_TYPE = makeCached(Void.TYPE),        CLOSURE_TYPE = makeCached(Closure.class),
+        GSTRING_TYPE = makeCached(GString.class), LIST_TYPE = makeWithoutCaching(List.class),
+        MAP_TYPE = makeWithoutCaching(Map.class),         RANGE_TYPE = makeCached(Range.class),
+        PATTERN_TYPE = makeCached(Pattern.class), STRING_TYPE = makeCached(String.class),
+        SCRIPT_TYPE = makeCached(Script.class),   REFERENCE_TYPE = makeWithoutCaching(Reference.class),
         
-        boolean_TYPE = new ClassNode(boolean.class),     char_TYPE = new ClassNode(char.class),
-        byte_TYPE = new ClassNode(byte.class),           int_TYPE = new ClassNode(int.class),
-        long_TYPE = new ClassNode(long.class),           short_TYPE = new ClassNode(short.class),
-        double_TYPE = new ClassNode(double.class),       float_TYPE = new ClassNode(float.class),
-        Byte_TYPE = new ClassNode(Byte.class),           Short_TYPE = new ClassNode(Short.class),
-        Integer_TYPE = new ClassNode(Integer.class),     Long_TYPE = new ClassNode(Long.class),
-        Character_TYPE = new ClassNode(Character.class), Float_TYPE = new ClassNode(Float.class),
-        Double_TYPE = new ClassNode(Double.class),       Boolean_TYPE = new ClassNode(Boolean.class),
-        BigInteger_TYPE =  new ClassNode(java.math.BigInteger.class),
-        BigDecimal_TYPE = new ClassNode(java.math.BigDecimal.class),
-        void_WRAPPER_TYPE = new ClassNode(Void.class),   
+        boolean_TYPE = makeCached(boolean.class),     char_TYPE = makeCached(char.class),
+        byte_TYPE = makeCached(byte.class),           int_TYPE = makeCached(int.class),
+        long_TYPE = makeCached(long.class),           short_TYPE = makeCached(short.class),
+        double_TYPE = makeCached(double.class),       float_TYPE = makeCached(float.class),
+        Byte_TYPE = makeCached(Byte.class),           Short_TYPE = makeCached(Short.class),
+        Integer_TYPE = makeCached(Integer.class),     Long_TYPE = makeCached(Long.class),
+        Character_TYPE = makeCached(Character.class), Float_TYPE = makeCached(Float.class),
+        Double_TYPE = makeCached(Double.class),       Boolean_TYPE = makeCached(Boolean.class),
+        BigInteger_TYPE =  makeCached(java.math.BigInteger.class),
+        BigDecimal_TYPE = makeCached(java.math.BigDecimal.class),
+        void_WRAPPER_TYPE = makeCached(Void.class),   
         
-        CLASS_Type = makeWithoutCaching(Class.class),        METACLASS_TYPE = new ClassNode(MetaClass.class),
-        GENERATED_CLOSURE_Type = new ClassNode(GeneratedClosure.class),
+        CLASS_Type = makeWithoutCaching(Class.class),        METACLASS_TYPE = makeCached(MetaClass.class),
+        GENERATED_CLOSURE_Type = makeCached(GeneratedClosure.class),
         Enum_Type = new ClassNode("java.lang.Enum",0,OBJECT_TYPE),
         Annotation_TYPE = new ClassNode("java.lang.annotation.Annotation",0,OBJECT_TYPE),
         ELEMENT_TYPE_TYPE = new ClassNode("java.lang.annotation.ElementType",0,Enum_Type);
@@ -106,8 +108,21 @@ public class ClassHelper {
 
     protected static final ClassNode[] EMPTY_TYPE_ARRAY = {};
     
-    public static final String OBJECT = "java.lang.Object";    
-    
+    public static final String OBJECT = "java.lang.Object";
+
+
+    public static ClassNode makeCached(Class c){
+        final SoftReference<ClassNode> classNodeSoftReference = ClassHelperCache.classCache.get(c);
+        ClassNode classNode;
+        if (classNodeSoftReference == null || (classNode = classNodeSoftReference.get()) == null) {
+            classNode = new ClassNode(c);
+            ClassHelperCache.classCache.put(c, new SoftReference<ClassNode>(classNode));
+
+            VMPluginFactory.getPlugin().setAdditionalClassInformation(classNode);
+        }
+
+        return classNode;
+    }
     
     /**
      * Creates an array of ClassNodes using an array of classes.
@@ -154,9 +169,20 @@ public class ClassHelper {
     }
     
     public static ClassNode makeWithoutCaching(Class c, boolean includeGenerics){
-        ClassNode t = new ClassNode(c);
-        if (includeGenerics) VMPluginFactory.getPlugin().setAdditionalClassInformation(t);
-        return t;
+        if (c.isArray()) {
+            ClassNode cn = makeWithoutCaching(c.getComponentType(),includeGenerics);
+            return cn.makeArray();
+        }
+
+        final ClassNode cached = makeCached(c);
+        if (includeGenerics) {
+            return cached;
+        }
+        else {
+            ClassNode t = makeWithoutCaching(c.getName());
+            t.setRedirect(cached);
+            return t;
+        }
     }
     
     
@@ -176,8 +202,7 @@ public class ClassHelper {
         return cn;
     }
     
-    /**
-     * Creates a ClassNode using a given class.
+    /**     * Creates a ClassNode using a given class.
      * If the name is one of the predefined ClassNodes then the 
      * corresponding ClassNode instance will be returned. If the
      * name is null or of length 0 the dynamic type is returned
@@ -314,5 +339,9 @@ public class ClassHelper {
             if (types[i] == type) return true;
         }
         return false;
+    }
+
+    static class ClassHelperCache {
+        static Map<Class, SoftReference<ClassNode>> classCache = new WeakHashMap<Class,SoftReference<ClassNode>>();
     }
 }
