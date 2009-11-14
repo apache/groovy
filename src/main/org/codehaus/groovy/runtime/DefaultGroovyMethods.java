@@ -11911,6 +11911,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static Object asType(GString self, Class c) {
         if (c == File.class) {
             return new File(self.toString());
+        } else if (Number.class.isAssignableFrom(c)) {
+            return asType(self.toString(), c);
         }
         return asType((Object) self, c);
     }
