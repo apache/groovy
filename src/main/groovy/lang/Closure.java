@@ -177,31 +177,29 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
     }
 
     private Object getPropertyDelegateFirst(String property) {
-        if(delegate == null) return getPropertyOwnerFirst(property);
+        if (delegate == null) return getPropertyOwnerFirst(property);
         return getPropertyTryThese(property, this.delegate, this.owner);
+    }
 
+    private Object getPropertyOwnerFirst(String property) {
+        return getPropertyTryThese(property, this.owner, this.delegate);
     }
 
     private Object getPropertyTryThese(String property, Object firstTry, Object secondTry) {
         try {
-            // lets try getting the property on the owner
+            // let's try getting the property on the first object
             return InvokerHelper.getProperty(firstTry, property);
         } catch (MissingPropertyException e1) {
             if (secondTry != null && firstTry != this && firstTry != secondTry) {
                 try {
-                    // lets try getting the property on the delegate
+                    // let's try getting the property on the second object
                     return InvokerHelper.getProperty(secondTry, property);
                 } catch (GroovyRuntimeException e2) {
                     // ignore, we'll throw e1
                 }
             }
-
             throw e1;
         }
-    }
-
-    private Object getPropertyOwnerFirst(String property) {
-        return getPropertyTryThese(property, this.owner, this.delegate);
     }
 
     public void setProperty(String property, Object newValue) {
