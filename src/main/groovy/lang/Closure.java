@@ -92,7 +92,6 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
     private Object owner;
     private Object thisObject;
     private int resolveStrategy = OWNER_FIRST;
-    private int methodResolveStrategy = OWNER_FIRST;
     private int directive;
     protected Class[] parameterTypes;
     protected int maximumNumberOfParameters;
@@ -332,7 +331,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
     }
 
     /**
-     * @return the maximum number of parameters a doCall methos
+     * @return the maximum number of parameters a doCall method
      * of this closure can take
      */
     public int getMaximumNumberOfParameters() {
