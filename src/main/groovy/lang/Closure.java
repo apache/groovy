@@ -92,6 +92,7 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
     private Object owner;
     private Object thisObject;
     private int resolveStrategy = OWNER_FIRST;
+    private int methodResolveStrategy = OWNER_FIRST;
     private int directive;
     protected Class[] parameterTypes;
     protected int maximumNumberOfParameters;
@@ -231,32 +232,30 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
     }
 
     private void setPropertyDelegateFirst(String property, Object newValue) {
-        if(delegate == null) setPropertyOwnerFirst(property, newValue); 
-        else
-            setPropertyTryThese(property, newValue, this.delegate, this.owner);
+        if (delegate == null) setPropertyOwnerFirst(property, newValue);
+        else setPropertyTryThese(property, newValue, this.delegate, this.owner);
+    }
+
+    private void setPropertyOwnerFirst(String property, Object newValue) {
+        setPropertyTryThese(property, newValue, this.owner, this.delegate);
     }
 
     private void setPropertyTryThese(String property, Object newValue, Object firstTry, Object secondTry) {
         try {
-            // lets try setting the property on the owner
+            // let's try setting the property on the first object
             InvokerHelper.setProperty(firstTry, property, newValue);
         } catch (GroovyRuntimeException e1) {
             if (firstTry != null && firstTry != this && firstTry != secondTry) {
                 try {
-                    // lets try setting the property on the delegate
+                    // let's try setting the property on the second object
                     InvokerHelper.setProperty(secondTry, property, newValue);
                     return;
                 } catch (GroovyRuntimeException e2) {
                     // ignore, we'll throw e1
                 }
             }
-
             throw e1;
         }
-    }
-
-    private void setPropertyOwnerFirst(String property, Object newValue) {
-        setPropertyTryThese(property, newValue, this.owner, this.delegate);
     }
 
     public boolean isCase(Object candidate){
