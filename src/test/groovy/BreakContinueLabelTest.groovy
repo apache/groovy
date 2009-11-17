@@ -1,13 +1,13 @@
 package groovy
 
-import org.codehaus.groovy.control.MultipleCompilationErrorsException
+import gls.CompilableTestSupport
 
 /**
  * todo: add BreakContinueLabelWithClosureTest (when break is used to return from a Closure)
 
  * @author Dierk Koenig
  */
-class BreakContinueLabelTest extends GroovyTestCase {
+class BreakContinueLabelTest extends CompilableTestSupport {
 
     void testDeclareSimpleLabel() {
         label_1: assert true
@@ -116,15 +116,16 @@ class BreakContinueLabelTest extends GroovyTestCase {
         }
     }
 
+    // documents a (minor) limitation of the current implementation compared to Java
     void testBreakToOtherThanLastLabelCausesSyntaxError() {
-        try {
-            new GroovyShell().parse("one: two: three: while (true)\nbreak one")
-            fail()
-        } catch (MultipleCompilationErrorsException e) {
-            def syntaxError = e.errorCollector.getSyntaxError(0)
-            assert syntaxError
-            assert syntaxError.line == 2
-        }
+        shouldNotCompile """
+one:
+two:
+three:
+for (i in 1..2) {
+  break one
+}
+            """
     }
 
     void testContinueToLastLabelSucceeds() {
@@ -137,14 +138,29 @@ class BreakContinueLabelTest extends GroovyTestCase {
         }
     }
 
+    // documents a (minor) limitation of the current implementation compared to Java
     void testContinueToOtherThanLastLabelCausesSyntaxError() {
-        try {
-            new GroovyShell().parse("one: two: three: while (true)\ncontinue two")
+        shouldNotCompile """
+one:
+two:
+three:
+for (i in 1..2) {
+  continue two
+}
+        """
+    }
+
+    // this is in accordance with Java; Spock Framework relies on this
+    void testLabelCanOccurMultipleTimesInSameScope() {
+        one:
+        for (i in 1..2) {
+            break one
             fail()
-        } catch (MultipleCompilationErrorsException e) {
-            def syntaxError = e.errorCollector.getSyntaxError(0)
-            assert syntaxError
-            assert syntaxError.line == 2
+        }
+        one:
+        for (i in 1..2) {
+            break one
+            fail()
         }
     }
 }
