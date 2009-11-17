@@ -17,11 +17,13 @@ import java.lang.annotation.Target;
  * that is not accessible at compile time.  It need not be available at runtime.
  *
  * @author Danno Ferrin (shemnon)
+ * @author Roshan Dawrani (roshandawrani)
  */
 
 @Retention(RetentionPolicy.RUNTIME)
 // in the future the target will be wider than annotations, but for now it is just on annotations
 @Target(ElementType.ANNOTATION_TYPE)
 public @interface GroovyASTTransformationClass {
-    String[] value();
+    String[] value() default {};
+    Class[] classes() default {};
 }
