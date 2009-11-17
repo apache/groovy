@@ -38,6 +38,7 @@ import java.util.Collection;
  * SEMANTIC_ANALYSIS phase of compilation.
  *
  * @author Danno Ferrin (shemnon)
+ * @author Roshan Dawrani (roshandawrani)
  */
 public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSupport {
     private SourceUnit source;
@@ -74,26 +75,47 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
                 // skip if there is no such annotation
                 continue;
             }
-            for (String transformClass : getTransformClasses(transformClassAnnotation)) {
-                try {
-                    Class klass = transformLoader.loadClass(transformClass, false, true, false);
-                    if (ASTTransformation.class.isAssignableFrom(klass)) {
-                        classNode.addTransform(klass, annotation);
-                    } else {
-                        source.getErrorCollector().addError(
-                                new SimpleMessage(
-                                        "Not an ASTTransformation: " + transformClass
-                                        + " declared by " + annotation.getClassNode().getName(),
-                                        source));
-                    }
-                } catch (ClassNotFoundException e) {
-                    source.getErrorCollector().addErrorAndContinue(
-                            new SimpleMessage(
-                                    "Could not find class for Transformation Processor " + transformClass
-                                    + " declared by " + annotation.getClassNode().getName(),
-                                    source));
-                }
+            addTransformsToClassNode(annotation, transformClassAnnotation);
+        }
+    }
+    
+    private void addTransformsToClassNode(AnnotationNode annotation, Annotation transformClassAnnotation) {
+        String[] transformClassNames = getTransformClassNames(transformClassAnnotation);
+        Class[] transformClasses = getTransformClasses(transformClassAnnotation);
+
+        if(transformClassNames.length == 0 && transformClasses.length == 0) {
+            source.getErrorCollector().addError(new SimpleMessage("@GroovyASTTransformationClass in " + 
+                    annotation.getClassNode().getName() + " does not specify any transform class names/classes", source));
+        }
+
+        if(transformClassNames.length > 0 && transformClasses.length > 0) {
+            source.getErrorCollector().addError(new SimpleMessage("@GroovyASTTransformationClass in " + 
+                    annotation.getClassNode().getName() +  " should specify transforms only by class names or by classes and not by both", source));
+        }
+
+        for (String transformClass : transformClassNames) {
+            try {
+                Class klass = transformLoader.loadClass(transformClass, false, true, false);
+                verifyClassAndAddTransform(annotation, klass);
+            } catch (ClassNotFoundException e) {
+                source.getErrorCollector().addErrorAndContinue(
+                        new SimpleMessage(
+                                "Could not find class for Transformation Processor " + transformClass
+                                + " declared by " + annotation.getClassNode().getName(),
+                                source));
             }
+        }
+        for (Class klass : transformClasses) {
+            verifyClassAndAddTransform(annotation, klass);
+        }
+    }
+    
+    private void verifyClassAndAddTransform(AnnotationNode annotation, Class klass) {
+        if (ASTTransformation.class.isAssignableFrom(klass)) {
+            classNode.addTransform(klass, annotation);
+        } else {
+            source.getErrorCollector().addError(new SimpleMessage("Not an ASTTransformation: " + 
+                    klass.getName() + " declared by " + annotation.getClassNode().getName(), source));
         }
     }
 
@@ -112,13 +134,23 @@ public class ASTTransformationCollectorCodeVisitor extends ClassCodeVisitorSuppo
         return null;
     }
 
-    private String[] getTransformClasses(Annotation transformClassAnnotation) {
+    private String[] getTransformClassNames(Annotation transformClassAnnotation) {
         try {
             Method valueMethod = transformClassAnnotation.getClass().getMethod("value");
             return (String[]) valueMethod.invoke(transformClassAnnotation);
         } catch (Exception e) {
             source.addException(e);
             return new String[0];
+        }
+    }
+
+    private Class[] getTransformClasses(Annotation transformClassAnnotation) {
+        try {
+            Method classesMethod = transformClassAnnotation.getClass().getMethod("classes");
+            return (Class[]) classesMethod.invoke(transformClassAnnotation);
+        } catch (Exception e) {
+            source.addException(e);
+            return new Class[0];
         }
     }
 }
