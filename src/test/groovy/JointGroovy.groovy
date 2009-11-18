@@ -1,5 +1,13 @@
 package groovy
 
 class JointGroovy {
-    String property
+    StaticInner property
+
+    static class StaticInner {
+        NonStaticInner property2
+
+        class NonStaticInner {
+            Closure property3 = {}
+        }
+    }
 }

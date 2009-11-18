@@ -15,6 +15,8 @@
  */
 package org.codehaus.groovy.ast;
 
+import java.util.LinkedList;
+
 /**
  * Represents an inner class declaration
  * 
@@ -43,6 +45,10 @@ public class InnerClassNode extends ClassNode {
     public InnerClassNode(ClassNode outerClass, String name, int modifiers, ClassNode superClass, ClassNode[] interfaces, MixinNode[] mixins) {
         super(name, modifiers, superClass, interfaces, mixins);
         this.outerClass = outerClass;
+
+        if (outerClass.innerClasses == null)
+            outerClass.innerClasses = new LinkedList<InnerClassNode> ();
+        outerClass.innerClasses.add(this);
     }
 
     public ClassNode getOuterClass() {

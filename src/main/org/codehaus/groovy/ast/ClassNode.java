@@ -142,6 +142,7 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     private boolean script;
     private ClassNode superClass;
     protected boolean isPrimaryNode;
+    protected List<InnerClassNode> innerClasses;
 
     /**
      * The ASTTransformations to be applied to the Class
@@ -1361,4 +1362,11 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
     public boolean isEnum() {
         return (getModifiers()&Opcodes.ACC_ENUM) != 0;
      }
+
+    /**
+     * @return iterator of inner classes defined inside this one
+     */
+    public Iterator<InnerClassNode> getInnerClasses() {
+        return (innerClasses == null ? Collections.<InnerClassNode>emptyList() : innerClasses).iterator();
+    }
 }

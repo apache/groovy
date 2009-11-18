@@ -65,6 +65,10 @@ public class JavaStubGenerator
             return;
         }
 
+        // owner should take care for us
+        if (classNode instanceof InnerClassNode)
+            return;
+
         // don't generate stubs for private classes, as they are only visible in the same file
         if ((classNode.getModifiers() & Opcodes.ACC_PRIVATE) != 0) return;
 
@@ -76,17 +80,6 @@ public class JavaStubGenerator
         FileOutputStream fos = new FileOutputStream(file);
         PrintWriter out = new PrintWriter(fos);
         
-        Verifier verifier = new Verifier() {
-            public void addCovariantMethods(ClassNode cn) {}
-            protected void addTimeStamp(ClassNode node) {}
-            protected void addInitialization(ClassNode node) {}   
-            protected void addPropertyMethod(MethodNode method) {
-                propertyMethods.add(method);
-            }
-            protected void addReturnIfNeeded(MethodNode node) {}
-        };
-        verifier.visitClass(classNode);
-        
         try {
             String packageName = classNode.getPackageName();
             if (packageName != null) {
@@ -95,11 +88,40 @@ public class JavaStubGenerator
 
             genImports(classNode, out);
 
+            genClassInner(classNode, out);
+
+        } finally {
+            try {
+                out.close();
+            } catch (Exception e) {
+                // ignore
+            }
+            try {
+                fos.close();
+            } catch (IOException e) {
+                // ignore
+            }
+        }
+    }
+
+    private void genClassInner(ClassNode classNode, PrintWriter out) throws FileNotFoundException {
+        try {
+            Verifier verifier = new Verifier() {
+                public void addCovariantMethods(ClassNode cn) {}
+                protected void addTimeStamp(ClassNode node) {}
+                protected void addInitialization(ClassNode node) {}
+                protected void addPropertyMethod(MethodNode method) {
+                    propertyMethods.add(method);
+                }
+                protected void addReturnIfNeeded(MethodNode node) {}
+            };
+            verifier.visitClass(classNode);
+
             boolean isInterface = classNode.isInterface();
             boolean isEnum = (classNode.getModifiers() & Opcodes.ACC_ENUM) !=0;
             printModifiers(out, classNode.getModifiers()
                     & ~(isInterface ? Opcodes.ACC_ABSTRACT : 0));
-            
+
             if (isInterface) {
                 out.print ("interface ");
             } else if (isEnum) {
@@ -107,7 +129,11 @@ public class JavaStubGenerator
             } else {
                 out.print ("class ");
             }
-            out.println(classNode.getNameWithoutPackage());
+
+            String className = classNode.getNameWithoutPackage();
+            if (classNode instanceof InnerClassNode)
+                className = className.substring(className.lastIndexOf("$")+1);
+            out.println(className);
             writeGenericsBounds(out, classNode, true);
 
             ClassNode superClass = classNode.getUnresolvedSuperClass(false);
@@ -115,7 +141,7 @@ public class JavaStubGenerator
             if (!isInterface && !isEnum) {
                 out.print("  extends ");
                 printType(superClass,out);
-            } 
+            }
 
             ClassNode[] interfaces = classNode.getInterfaces();
             if (interfaces != null && interfaces.length > 0) {
@@ -137,19 +163,14 @@ public class JavaStubGenerator
             genFields(classNode, out, isEnum);
             genMethods(classNode, out, isEnum);
 
+            for (Iterator<InnerClassNode> inner = classNode.getInnerClasses(); inner.hasNext(); ) {
+                genClassInner(inner.next(), out);
+            }
+
             out.println("}");
-        } finally {
+        }
+        finally {
             propertyMethods.clear();
-            try {
-                out.close();
-            } catch (Exception e) {
-                // ignore
-            }
-            try {
-                fos.close();
-            } catch (IOException e) {
-                // ignore
-            }
         }
     }
 
@@ -261,7 +282,10 @@ public class JavaStubGenerator
         // printModifiers(out, constructorNode.getModifiers());
 
         out.print("public "); // temporary hack
-        out.print(clazz.getNameWithoutPackage());
+        String className = clazz.getNameWithoutPackage();
+        if (clazz instanceof InnerClassNode)
+            className = className.substring(className.lastIndexOf("$")+1);
+        out.println(className);
 
         printParams(constructorNode, out);
 
