@@ -161,6 +161,10 @@ public class Grape {
     }
 
     public static URI[] resolve(Map<String, Object> args, Map... dependencies) {
+        return resolve(args, null, dependencies);
+    }
+    
+    public static URI[] resolve(Map<String, Object> args, List depsInfo, Map... dependencies) {
         URI[] uris = null;
         if (enableGrapes) {
             GrapeEngine instance = getInstance();
@@ -168,7 +172,7 @@ public class Grape {
                 if (!args.containsKey("autoDownload")) {
                     args.put("autoDownload" , enableAutoDownload);
                 }
-                uris = instance.resolve(args, dependencies);
+                uris = instance.resolve(args, depsInfo, dependencies);
             }
         }
         if (uris == null) {
@@ -176,7 +180,6 @@ public class Grape {
         } else {
             return uris;
         }
-
     }
 
     public static Map[] listDependencies(ClassLoader cl) {
