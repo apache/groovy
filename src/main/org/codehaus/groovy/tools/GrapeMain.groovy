@@ -87,6 +87,11 @@ resolve = {arg, cmd ->
             .withLongOpt("shell")
             .create('s')
     );
+    options.addOption(
+            OptionBuilder.hasArg(false)
+                .withLongOpt("ivy")
+                .create('i')
+        );
     CommandLine cmd2 = new PosixParser().parse(options, arg[1..-1] as String[], true);
     arg = cmd2.args
 
@@ -103,6 +108,7 @@ resolve = {arg, cmd ->
         return
     }
     def before, between, after
+    def ivyFormatRequested = false
 
     if (cmd2.hasOption('a')) {
         before = '<pathelement location="'
@@ -116,6 +122,11 @@ resolve = {arg, cmd ->
         before = 'export CLASSPATH='
         between = ':'
         after = ''
+    } else if (cmd2.hasOption('i')) {
+        ivyFormatRequested = true
+        before = '<dependency '
+        between = '">\n<dependency '
+        after = '">'
     } else {
         before = ''
         between = '\n'
@@ -124,17 +135,27 @@ resolve = {arg, cmd ->
 
     iter = arg.iterator()
     def params = [[:]]
+    def depsInfo = [] // this list will contain the module/group/version info of all resolved dependencies
+    if(ivyFormatRequested) {
+        params << depsInfo
+    }
     while (iter.hasNext()) {
         params.add([group: iter.next(), module: iter.next(), version: iter.next()])
     }
-
     try {
         def results = []
-        for (URI uri: Grape.resolve(* params)) {
-            if (uri.scheme == 'file') {
-                results += new File(uri).path
-            } else {
-                results += uri.toASCIIString()
+        def uris = Grape.resolve(* params)
+        if(!ivyFormatRequested) {
+            for (URI uri: uris) {
+                if (uri.scheme == 'file') {
+                    results += new File(uri).path
+                } else {
+                    results += uri.toASCIIString()
+                }
+            }
+        } else {
+            depsInfo.each { dep ->
+                results += ('org="' + dep.group + '" name="' + dep.module + '" revision="' + dep.revision)   
             }
         }
 

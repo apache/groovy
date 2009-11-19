@@ -31,6 +31,7 @@ import org.codehaus.groovy.runtime.InvokerHelper
 
 /**
  * @author Danno Ferrin
+ * @author Roshan Dawrani (roshandawrani)
  */
 class GrapeIvy implements GrapeEngine {
 
@@ -301,6 +302,10 @@ class GrapeIvy implements GrapeEngine {
     }
 
     public URI [] resolve(Map args, Map... dependencies) {
+        resolve(args, null, dependencies)
+    }
+
+    public URI [] resolve(Map args, List depsInfo, Map... dependencies) {
         // identify the target classloader early, so we fail before checking repositories
         def loader = chooseClassLoader(
             classLoader:args.remove('classLoader'),
@@ -312,10 +317,14 @@ class GrapeIvy implements GrapeEngine {
         // If we were in fail mode we would have already thrown an exception
         if (!loader) return
 
-        resolve(loader, args, dependencies)
+        resolve(loader, args, depsInfo, dependencies)
     }
 
     URI [] resolve(ClassLoader loader, Map args, Map... dependencies) {
+        return resolve(loader, args, null, dependencies);
+    }
+
+    URI [] resolve(ClassLoader loader, Map args, List depsInfo, Map... dependencies) {
         // check for mutually exclusive arguments
         Set keys = args.keySet()
         keys.each {a ->
@@ -328,6 +337,8 @@ class GrapeIvy implements GrapeEngine {
         // check the kill switch
         if (!enableGrapes) { return }
 
+        boolean populateDepsInfo = (depsInfo != null);
+        
         Set<IvyGrabRecord> localDeps = loadedDeps.get(loader)
         if (localDeps == null) {
             // use a linked set to preserve initial insertion order
@@ -356,9 +367,18 @@ class GrapeIvy implements GrapeEngine {
                 results += adl.localFile.toURI()
             }
         }
+        
+        if(populateDepsInfo) {
+            def deps = report.getDependencies()
+            deps.each { depNode ->
+                def id = depNode.getId()
+                depsInfo << ['group' : id.organisation, 'module' : id.name, 'revision' : id.revision]
+            }
+        }
+        
         return results as URI[]
     }
-
+    
     public Map[] listDependencies (ClassLoader classLoader) {
         if (loadedDeps.containsKey(classLoader)) {
             List<Map> results = []
