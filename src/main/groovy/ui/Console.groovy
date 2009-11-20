@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,6 +48,8 @@ import org.codehaus.groovy.control.MultipleCompilationErrorsException
 import org.codehaus.groovy.control.messages.SyntaxErrorMessage
 import org.codehaus.groovy.syntax.SyntaxException
 import org.codehaus.groovy.control.messages.ExceptionMessage
+import java.awt.Dimension
+import java.awt.BorderLayout
 
 /**
  * Groovy Swing console.
@@ -85,6 +87,18 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener {
     Component toolbar
     Action showToolbarAction
 
+    boolean detachedOutput = prefs.getBoolean('detachedOutput', true)
+    Action detachedOutputAction
+    Action showOutputWindowAction
+    Action hideOutputWindowAction1
+    Action hideOutputWindowAction2
+    Action hideOutputWindowAction3
+    Action hideOutputWindowAction4
+    int origDividerSize
+    Component outputWindow
+    Component blank
+    Component scrollArea
+
     boolean autoClearOutput = prefs.getBoolean('autoClearOutput', true)
     Action autoClearOutputAction
 
@@ -98,6 +112,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener {
     SwingBuilder swing
     RootPaneContainer frame
     ConsoleTextEditor inputEditor
+    JSplitPane splitPane
     JTextPane inputArea
     JTextPane outputArea
     JLabel statusLabel
@@ -421,16 +436,36 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener {
         toolbar.visible = showToolbar
     }
 
+    void detachedOutput(EventObject evt) {
+        def oldDetachedOutput = detachedOutput
+        detachedOutput = evt.source.selected
+        prefs.putBoolean('detachedOutput', detachedOutput)
+        if (oldDetachedOutput != detachedOutput) {
+            if (detachedOutput) {
+                splitPane.add(blank, JSplitPane.BOTTOM)
+                origDividerSize = splitPane.dividerSize
+                splitPane.dividerSize = 0
+                splitPane.resizeWeight = 1.0
+                outputWindow.add(scrollArea, BorderLayout.CENTER)
+                prepareOutputWindow()
+            } else {
+                splitPane.add(scrollArea, JSplitPane.BOTTOM)
+                splitPane.dividerSize = origDividerSize
+                outputWindow.add(blank, BorderLayout.CENTER)
+                outputWindow.visible = false
+                splitPane.resizeWeight = 0.5
+            }
+        }
+    }
+
     void autoClearOutput(EventObject evt) {
         autoClearOutput = evt.source.selected
         prefs.putBoolean('autoClearOutput', autoClearOutput)
-        toolbar.visible = autoClearOutput
     }
 
     void caretUpdate(CaretEvent e){
         textSelectionStart = Math.min(e.dot,e.mark)
         textSelectionEnd = Math.max(e.dot,e.mark)
-
         setRowNumAndColNum()
     }
 
@@ -452,6 +487,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener {
             if (frame instanceof java.awt.Window) {
                 frame.hide()
                 frame.dispose()
+                outputWindow?.dispose()
             }
             FindReplaceUtility.dispose()
             consoleControllers.remove(this)
@@ -577,6 +613,14 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener {
             reportException(t)
         }
         bindResults()
+        if (detachedOutput) {
+            prepareOutputWindow()
+            showOutputWindow()
+        }
+    }
+
+    private calcPreferredSize(a, b, c) {
+        [c, [a, b].min()].max()
     }
 
     private reportException(Throwable t) {
@@ -603,6 +647,18 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener {
             statusLabel.text = 'Execution complete. Result was null.'
         }
         bindResults()
+        if (detachedOutput) {
+            prepareOutputWindow()
+            showOutputWindow()
+        }
+    }
+
+    private def prepareOutputWindow() {
+        outputArea.setPreferredSize(null)
+        outputWindow.pack()
+        outputArea.setPreferredSize([calcPreferredSize(outputWindow.getWidth(), inputEditor.getWidth(), 120),
+                calcPreferredSize(outputWindow.getHeight(), inputEditor.getHeight(), 60)] as Dimension)
+        outputWindow.pack()
     }
 
     // Gets the last, non-null result
@@ -854,7 +910,6 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener {
         FindReplaceUtility.showDialog(true)
     }
 
-
     // Shows the 'wait' dialog
     void showRunWaitDialog() {
         runWaitDialog.pack()
@@ -862,9 +917,27 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener {
         runWaitDialog.show()
     }
 
+    // Shows the detached 'outputArea' dialog
+    void showOutputWindow(EventObject evt = null) {
+        if (detachedOutput) {
+            outputWindow.setLocationRelativeTo(frame)
+            outputWindow.show()
+        }
+    }
+
+    void hideOutputWindow(EventObject evt = null) {
+        if (detachedOutput) {
+            outputWindow.visible = false
+        }
+    }
+
+    void hideAndClearOutputWindow(EventObject evt = null) {
+        clearOutput()
+        hideOutputWindow()
+    }
+
     void smallerFont(EventObject evt = null){
         updateFontSize(inputArea.font.size - 2)
-
     }
 
     void updateTitle() {
@@ -970,7 +1043,6 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener {
             editor.moveCaretPosition(newlineAfter)
         }
     }
-
 
     void componentHidden(ComponentEvent e) { }
 

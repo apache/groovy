@@ -91,6 +91,7 @@ if (consoleFrame instanceof java.awt.Window) {
 controller.inputEditor = inputEditor
 controller.inputArea = inputEditor.textEditor
 controller.outputArea = outputArea
+controller.outputWindow = outputWindow
 controller.statusLabel = status
 controller.frame = consoleFrame
 controller.runWaitDialog = runWaitDialog
@@ -103,11 +104,22 @@ controller.prevHistoryAction = historyPrevAction
 controller.nextHistoryAction = historyNextAction
 controller.fullStackTracesAction = fullStackTracesAction
 controller.showToolbarAction = showToolbarAction
+controller.detachedOutputAction = detachedOutputAction
 controller.autoClearOutputAction = autoClearOutputAction
+controller.showOutputWindowAction = showOutputWindowAction
+controller.hideOutputWindowAction1 = hideOutputWindowAction1
+controller.hideOutputWindowAction2 = hideOutputWindowAction2
+controller.hideOutputWindowAction3 = hideOutputWindowAction3
+controller.hideOutputWindowAction4 = hideOutputWindowAction4
+controller.origDividerSize = origDividerSize
+controller.splitPane = splitPane
+controller.blank = blank
+controller.scrollArea = scrollArea
 
 // some more UI linkage
 controller.outputArea.addComponentListener(controller)
 controller.inputArea.addComponentListener(controller)
+controller.outputArea.addHyperlinkListener(controller)
 controller.outputArea.addHyperlinkListener(controller)
 controller.inputArea.addCaretListener(controller)
 controller.inputArea.document.addDocumentListener({ controller.setDirty(true) } as DocumentListener)

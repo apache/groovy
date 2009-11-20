@@ -10,23 +10,29 @@ import javax.swing.text.StyleContext
 import javax.swing.text.StyledDocument
 import java.util.prefs.Preferences
 import javax.swing.text.StyleConstants
-
+import javax.swing.WindowConstants
+import javax.swing.JSplitPane
 
 def prefs = Preferences.userNodeForPackage(Console)
+def detachedOutputFlag = prefs.getBoolean("detachedOutput", false)
+outputWindow = frame(visible:false, defaultCloseOperation: WindowConstants.HIDE_ON_CLOSE) {
+    blank = glue()
+    blank.preferredSize = [0, 0] as Dimension
+}
+splitPane = splitPane(resizeWeight: 0.5, orientation: VERTICAL_SPLIT) {
+    inputEditor = widget(new ConsoleTextEditor(), border:emptyBorder(0))
+    buildOutputArea(prefs)
+}
 
-
-splitPane = splitPane(resizeWeight: 0.50F,
-    orientation: VERTICAL_SPLIT)
-{
-    inputEditor = widget(new ConsoleTextEditor(), border:emptyBorder(0), constraints:BorderLayout.CENTER)
-    scrollPane(border:emptyBorder(0)) {
+private def buildOutputArea(prefs) {
+    scrollArea = scrollPane(border: emptyBorder(0)) {
         outputArea = textPane(
-            editable: false,
-            name: "outputArea",
-            contentType: "text/html",
-            background: new Color(255,255,218),
-            font:new Font("Monospaced", Font.PLAIN, prefs.getInt("fontSize", 12)),
-            border:emptyBorder(4)
+                editable: false,
+                name: "outputArea",
+                contentType: "text/html",
+                background: new Color(255, 255, 218),
+                font: new Font("Monospaced", Font.PLAIN, prefs.getInt("fontSize", 12)),
+                border: emptyBorder(4)
         )
     }
 }
@@ -39,6 +45,13 @@ actions {
     container(inputArea, name: "inputArea", font:new Font("Monospaced", Font.PLAIN, prefs.getInt("fontSize", 12)), border:emptyBorder(4)) {
         action(runAction)
         action(runSelectionAction)
+        action(showOutputWindowAction)
+    }
+    container(outputArea, name: "outputArea") {
+        action(hideOutputWindowAction1)
+        action(hideOutputWindowAction2)
+        action(hideOutputWindowAction3)
+        action(hideOutputWindowAction4)
     }
 }
 
@@ -96,8 +109,16 @@ outputArea.preferredSize = [
     prefs.getInt("outputAreaHeight", (fm.getHeight() + fm.leading) * 12)
 ] as Dimension
 
-//inputArea.setFont(outputArea.font)
 inputEditor.preferredSize = [
     prefs.getInt("inputAreaWidth", fm.charWidth(0x77) * 81),
     prefs.getInt("inputAreaHeight", (fm.getHeight() + fm.leading) * 12)
 ] as Dimension
+
+origDividerSize = -1
+if (detachedOutputFlag) {
+    splitPane.add(blank, JSplitPane.BOTTOM)
+    origDividerSize = splitPane.dividerSize
+    splitPane.dividerSize = 0
+    splitPane.resizeWeight = 1.0
+    outputWindow.add(scrollArea, BorderLayout.CENTER)
+}

@@ -276,6 +276,37 @@ showToolbarAction = action(
     mnemonic: 'T'
 )
 
+detachedOutputAction = action(
+    name: 'Detached Output',
+    closure: controller.&detachedOutput,
+    mnemonic: 'D'
+)
+
+showOutputWindowAction = action(
+    closure: controller.&showOutputWindow,
+    keyStroke: shortcut('shift O'),
+)
+
+hideOutputWindowAction1 = action(
+    closure: controller.&hideOutputWindow,
+    keyStroke: 'SPACE',
+)
+
+hideOutputWindowAction2 = action(
+    closure: controller.&hideOutputWindow,
+    keyStroke: 'ENTER',
+)
+
+hideOutputWindowAction3 = action(
+    closure: controller.&hideOutputWindow,
+    keyStroke: 'ESCAPE',
+)
+
+hideOutputWindowAction4 = action(
+    closure: controller.&hideAndClearOutputWindow,
+    keyStroke: shortcut('W'),
+)
+
 autoClearOutputAction = action(
     name: 'Auto Clear Output On Run',
     closure: controller.&autoClearOutput,

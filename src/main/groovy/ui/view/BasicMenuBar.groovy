@@ -41,6 +41,7 @@ menuBar {
         checkBoxMenuItem(showScriptInOutputAction, selected: controller.showScriptInOutput)
         checkBoxMenuItem(visualizeScriptResultsAction, selected: controller.visualizeScriptResults)
         checkBoxMenuItem(showToolbarAction, selected: controller.showToolbar)
+        checkBoxMenuItem(detachedOutputAction, selected: controller.detachedOutput)
         checkBoxMenuItem(autoClearOutputAction, selected: controller.autoClearOutput)
     }
 
