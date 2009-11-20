@@ -17,6 +17,7 @@
 package groovy.util;
 
 import groovy.lang.Closure;
+import groovy.lang.GString;
 import groovy.lang.MetaProperty;
 import groovy.lang.MissingPropertyException;
 
@@ -57,6 +58,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
     private IdentifierResolver identifierResolver;
     private NewInstanceResolver newInstanceResolver;
     private ObjectFactory objectFactory = new ObjectFactory();
+    private ObjectBeanFactory objectBeanFactory = new ObjectBeanFactory();
     private ObjectRefFactory objectRefFactory = new ObjectRefFactory();
     private ReferenceResolver referenceResolver;
     private RelationNameResolver relationNameResolver;
@@ -64,6 +66,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
     private ClassLoader classLoader;
     private boolean lazyReferencesAllowed = true;
     private List<NodeReference> lazyReferences = new ArrayList<NodeReference>();
+    private String beanFactoryName = "bean";
 
     public ObjectGraphBuilder() {
         classNameResolver = new DefaultClassNameResolver();
@@ -81,6 +84,13 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
                 }
             }
         });
+    }
+
+    /**
+     * Returns the current name of the 'bean' node.
+     */
+    public String getBeanFactoryName() {
+        return beanFactoryName; 
     }
 
     /**
@@ -123,6 +133,13 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
      */
     public boolean isLazyReferencesAllowed() {
         return lazyReferencesAllowed;
+    }
+
+    /**
+     * Sets the name for the 'bean' node.
+     */
+    public void setBeanFactoryName(String beanFactoryName) {
+        this.beanFactoryName = beanFactoryName;
     }
 
     /**
@@ -322,6 +339,9 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
         }
         if (attributes.get(referenceResolver.getReferenceFor((String) name)) != null) {
             return objectRefFactory;
+        }
+        if (beanFactoryName != null && beanFactoryName.equals((String) name)) {
+            return objectBeanFactory;
         }
         return objectFactory;
     }
@@ -603,6 +623,16 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
                                   Map properties) throws InstantiationException, IllegalAccessException {
             ObjectGraphBuilder ogbuilder = (ObjectGraphBuilder) builder;
             String classname = ogbuilder.classNameResolver.resolveClassname((String) name);
+            Class klass = resolveClass(builder, classname, name, value, properties);
+            Map context = builder.getContext();
+            context.put(ObjectGraphBuilder.NODE_NAME, name);
+            context.put(ObjectGraphBuilder.NODE_CLASS, klass);
+            return resolveInstance(builder, name, value, klass, properties);
+        }
+
+        protected Class resolveClass(FactoryBuilderSupport builder, String classname, Object name, Object value,
+                                  Map properties) throws InstantiationException, IllegalAccessException {
+            ObjectGraphBuilder ogbuilder = (ObjectGraphBuilder) builder;
             Class klass = ogbuilder.resolvedClasses.get(classname);
             if (klass == null) {
                 klass = loadClass(ogbuilder.classLoader, classname);
@@ -625,10 +655,12 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
                 ogbuilder.resolvedClasses.put(classname, klass);
             }
 
-            Map context = ogbuilder.getContext();
-            context.put(ObjectGraphBuilder.NODE_NAME, name);
-            context.put(ObjectGraphBuilder.NODE_CLASS, klass);
+            return klass;
+        }
 
+        protected Object resolveInstance(FactoryBuilderSupport builder, Object name, Object value, Class klass,
+                                  Map properties) throws InstantiationException, IllegalAccessException {
+            ObjectGraphBuilder ogbuilder = (ObjectGraphBuilder) builder;
             if (value != null && klass.isAssignableFrom(value.getClass())) {
                 return value;
             }
@@ -680,7 +712,7 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
             }
         }
 
-        private Class loadClass(ClassLoader classLoader, String classname) {
+        protected Class loadClass(ClassLoader classLoader, String classname) {
             if (classLoader == null || classname == null) {
                 return null;
             }
@@ -689,6 +721,38 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
             } catch (ClassNotFoundException e) {
                 return null;
             }
+        }
+    }
+
+    private static class ObjectBeanFactory extends ObjectFactory {
+        public Object newInstance(FactoryBuilderSupport builder, Object name, Object value,
+                                  Map properties) throws InstantiationException, IllegalAccessException {
+            if(value == null) return super.newInstance(builder, name, value, properties);
+
+            Object bean = null;
+            Class klass = null;
+            Map context = builder.getContext();
+            if(value instanceof String || value instanceof GString) {
+                String classname = value.toString();
+                klass = resolveClass(builder, classname, name, value, properties);
+                bean = resolveInstance(builder, name, value, klass, properties);
+            } else if(value instanceof Class) {
+                klass = (Class) value;
+                bean = resolveInstance(builder, name, value, klass, properties);
+            } else {
+                klass = value.getClass();
+                bean = value;
+            }
+
+            String nodename = klass.getSimpleName();
+            if(nodename.length() > 1) {
+                nodename = nodename.substring(0, 1).toLowerCase() + nodename.substring(1);
+            } else {
+                nodename = nodename.toLowerCase();
+            }
+            context.put(ObjectGraphBuilder.NODE_NAME, nodename);
+            context.put(ObjectGraphBuilder.NODE_CLASS, klass);
+            return bean;
         }
     }
 
