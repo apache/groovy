@@ -285,6 +285,32 @@ class ObjectGraphBuilderTest extends GroovyTestCase {
        assert dracula.petMonkeys.size() == 2
    }
 
+   void testCompanyAndEmployeeAndAddressUsingBeanFactory() {
+      def expectedAddress = new Address( line1: '123 Groovy Rd', zip: 12345, state: 'JV' )
+      def expectedEmployee = new Employee( name: 'Duke', employeeId: 1, address: expectedAddress )
+      def expectedCompany = new Company( name: 'ACME' )
+      def actualCompany = builder.bean(new Company(), name: 'ACME', employees: [] ) {
+         bean(Employee, name: 'Duke', employeeId: 1 ) {
+            bean("groovy.util.Address", line1: '123 Groovy Rd', zip: 12345, state: 'JV' )
+         }
+      }
+      assert actualCompany != null
+      // assert actualCompany.class == Company
+      assert actualCompany.name == expectedCompany.name
+      assert actualCompany.employees.size() == 1
+      def actualEmployee = actualCompany.employees[0]
+      // assert actualEmployee.class == Employee
+      assert actualEmployee.name == expectedEmployee.name
+      assert actualEmployee.employeeId == expectedEmployee.employeeId
+      def actualAddress = actualEmployee.address
+      assert actualAddress != null
+      // assert actualAddress.class == Address
+      assert actualAddress.line1 == expectedAddress.line1
+      assert actualAddress.line2 == expectedAddress.line2
+      assert actualAddress.zip == expectedAddress.zip
+      assert actualAddress.state == expectedAddress.state
+   }
+
    void setUp() {
       builder = new ObjectGraphBuilder()
       builder.classNameResolver = "groovy.util"
