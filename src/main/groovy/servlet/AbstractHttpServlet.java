@@ -20,6 +20,7 @@ import groovy.util.ResourceException;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.util.regex.Matcher;
@@ -168,6 +169,16 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
     public URLConnection getResourceConnection(String name) throws ResourceException {
         String basePath = servletContext.getRealPath(".");
         if (name.startsWith(basePath)) name = name.substring(basePath.length());
+        String baseVirtualPath = null;
+        try {
+            URL baseVirtualURL = servletContext.getResource("/");
+            if(baseVirtualURL != null) {
+                baseVirtualPath = baseVirtualURL.getPath();
+                if (name.startsWith(baseVirtualPath)) name = name.substring(baseVirtualPath.length());
+            }
+        } catch (MalformedURLException e1) {
+            // ignore and proceed
+        }
         
         /*
          * First, mangle resource name with the compiled pattern.
