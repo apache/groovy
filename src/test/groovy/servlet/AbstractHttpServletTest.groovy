@@ -129,7 +129,7 @@ class AbstractHttpServletTest extends GroovyTestCase {
 	* Tests finding resource. 
 	*/ 
 	public void testGetResourceConnection_FoundInCurrentDir() {
-		def urlStub = new java.net.URL("http://foo")
+		def urlStub = new java.net.URL("file:realPath/someresource")
 		def servletContext = [
 		    getRealPath: { arg-> "realPath" + arg}, 
 		    getResource: {arg -> 
@@ -153,7 +153,7 @@ class AbstractHttpServletTest extends GroovyTestCase {
 	* Tests finding resource in web-inf directory. 
 	*/ 
 	public void testGetResourceConnection_FoundInWebInf() {
-		def urlStub = new java.net.URL("http://foo")
+		def urlStub = new java.net.URL("file:realPath/WEB-INF/groovy/someresource")
 		def servletContext = [
 		    getRealPath: { arg-> "realPath" + arg}, 
 		    getResource: {arg -> 
@@ -201,7 +201,7 @@ class AbstractHttpServletTest extends GroovyTestCase {
 		def connection = servlet.getResourceConnection("/somefoo/foo")
 		//expecting http://somebar/foo
 		def actual = connection.getURL().toExternalForm() 
-		def expected = new URL("http://somebar/foo").toExternalForm()
+		def expected = new URL("file:realPath//somebar/foo").toExternalForm()
 		assert actual == expected		
 	}
 
@@ -233,7 +233,7 @@ class AbstractHttpServletTest extends GroovyTestCase {
 		def connection = servlet.getResourceConnection("/somefoo/foo")
 		//expecting http://somebar/foo
 		def actual = connection.getURL().toExternalForm() 
-		def expected = new URL("http://somebar/bar").toExternalForm()
+		def expected = new URL("file:realPath//somebar/bar").toExternalForm()
 		assert actual == expected		
 	}
 }
