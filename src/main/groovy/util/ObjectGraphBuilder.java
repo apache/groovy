@@ -733,9 +733,12 @@ public class ObjectGraphBuilder extends FactoryBuilderSupport {
             Class klass = null;
             Map context = builder.getContext();
             if(value instanceof String || value instanceof GString) {
+                /*
                 String classname = value.toString();
                 klass = resolveClass(builder, classname, name, value, properties);
                 bean = resolveInstance(builder, name, value, klass, properties);
+                */
+                throw new IllegalArgumentException("ObjectGraphBuilder."+((ObjectGraphBuilder)builder).getBeanFactoryName()+"() does not accept String nor GString as value.");
             } else if(value instanceof Class) {
                 klass = (Class) value;
                 bean = resolveInstance(builder, name, value, klass, properties);
