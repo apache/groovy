@@ -291,7 +291,7 @@ class ObjectGraphBuilderTest extends GroovyTestCase {
       def expectedCompany = new Company( name: 'ACME' )
       def actualCompany = builder.bean(new Company(), name: 'ACME', employees: [] ) {
          bean(Employee, name: 'Duke', employeeId: 1 ) {
-            bean("groovy.util.Address", line1: '123 Groovy Rd', zip: 12345, state: 'JV' )
+            bean(Address, line1: '123 Groovy Rd', zip: 12345, state: 'JV' )
          }
       }
       assert actualCompany != null
