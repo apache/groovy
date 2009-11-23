@@ -524,6 +524,7 @@
             <artifactId>junit</artifactId>
             <version>4.7</version>
             <scope>compile</scope>
+            <optional>true</optional>
         </dependency>
 
         <!-- dependencies used by optional features -->
@@ -553,6 +554,7 @@
             <artifactId>ant</artifactId>
             <version>1.7.1</version>
             <scope>compile</scope>
+            <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.apache.ant</groupId>
@@ -566,6 +568,7 @@
             <artifactId>ant-launcher</artifactId>
             <version>1.7.1</version>
             <scope>runtime</scope>
+            <optional>true</optional>
         </dependency>
 
         <!-- only used for testing helper classes -->
@@ -703,6 +706,12 @@
             <artifactId>jline</artifactId>
             <version>0.9.94</version>
             <scope>compile</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>junit</groupId>
+                    <artifactId>junit</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
 
         <!-- Used for @Grab and Grapes-->
