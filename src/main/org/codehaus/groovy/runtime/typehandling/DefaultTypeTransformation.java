@@ -281,6 +281,9 @@ public class DefaultTypeTransformation {
                 }
                 return answer;
             } else if (type == BigDecimal.class) {
+                if (n instanceof Float || n instanceof Double) {
+                    return new BigDecimal(n.doubleValue());
+                }
                 return new BigDecimal(n.toString());
             } else if (type == BigInteger.class) {
                 if (object instanceof Float || object instanceof Double) {
