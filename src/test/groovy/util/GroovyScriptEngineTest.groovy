@@ -140,6 +140,15 @@ class GroovyScriptEngineTest extends GroovyTestCase {
         assert aScript instanceof CustomBaseClass
     }
 
+    //GROOVY-3893
+    void testGSEWithNoScriptRoots() {
+        shouldFail ResourceException, {
+            String[] emptyScriptRoots = []
+            GroovyScriptEngine gse = new GroovyScriptEngine(emptyScriptRoots)
+            gse.run("unknownScriptName", "")
+        }
+    }
+
 	/*
 	 * The script passes the className of the class it's supposed to
 	 * instantiate to this method, expecting a newly instantiated object

@@ -173,6 +173,8 @@ public class GroovyScriptEngine implements ResourceConnector {
             }
         }
 
+        if(se == null) se = new ResourceException("No resource for " + resourceName + " was found");
+        
         // If we didn't find anything, report on all the exceptions that occurred.
         if (groovyScriptConn == null) {
             throw se;
