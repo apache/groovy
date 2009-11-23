@@ -80,6 +80,7 @@ import javax.servlet.http.HttpServletRequest;
  * 
  *
  * @author Christian Stein
+ * @author Roshan Dawrani (roshandawrani)
  */
 public abstract class AbstractHttpServlet extends HttpServlet implements ResourceConnector {
 
@@ -188,7 +189,12 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
                 name = replaced; 
             }
         }
-
+        
+        name = name.replaceAll("\\\\", "/");
+        
+        //remove the leading / as we are trying with a leading / now
+        if(name.startsWith("/")) name = name.substring(1);
+        
         /*
          * Try to locate the resource and return an opened connection to it.
          */
