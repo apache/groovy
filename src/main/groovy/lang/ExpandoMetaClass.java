@@ -82,12 +82,15 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * By default methods are only allowed to be added before initialize() is called. In other words you create a new
  * ExpandoMetaClass, add some methods and then call initialize(). If you attempt to add new methods after initialize()
- * has been called an error will be thrown.
- *
- * This is to ensure that the MetaClass can operate appropriately in multi threaded environments as it forces you
- * to do all method additions at the beginning, before using the MetaClass.
- *
- * If you need more fine grained control of how a method is matched you can use DynamicMethodsMetaClass
+ * has been called an error will be thrown.This is to ensure that the MetaClass can operate appropriately in multi 
+ * threaded environments as it forces you to do all method additions at the beginning, before using the MetaClass.
+ * 
+ * ExpandoMetaClass differs here from the default in that it allows you adding methods after initialize has been called.
+ * This is done by setting the initialize flag internally to false and then add the methods. Since this is not thread 
+ * safe it has to be done in a synchronized block. The methods to check for modification and initialization are
+ * therefore synchronized as well. Any method call done through this meta class will first check if the it is 
+ * synchronized. Should this happen during a modification, then the method cannot be selected or called unless the 
+ * modification is completed. 
  *
  * WARNING: This MetaClass uses a thread-bound ThreadLocal instance to store and retrieve properties.
  * In addition properties stored use soft references so they are both bound by the life of the Thread and by the soft
@@ -116,9 +119,9 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     private MetaClass myMetaClass;
     private boolean allowChangesAfterInit;
 
-    private volatile boolean initialized;
+    private boolean initialized;
     private boolean initCalled;
-    private volatile boolean modified;
+    private boolean modified;
     public boolean inRegistry;
     private final Set<MetaMethod> inheritedMetaMethods = new HashSet<MetaMethod>();
     private final Map<String, MetaProperty> beanPropertyCache = new ConcurrentHashMap<String, MetaProperty>();
@@ -235,7 +238,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         this.getPropertyMethod = method;
     }
 
-    public boolean isModified() {
+    public synchronized boolean isModified() {
         return this.modified;
     }
 
@@ -312,14 +315,15 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         }
     }
 
-	/* (non-Javadoc)
+	/**
+	 * Checks if the meta class is initialized.
 	 * @see groovy.lang.MetaClassImpl#isInitialized()
 	 */
-	protected boolean isInitialized() {
+	protected synchronized boolean isInitialized() {
 		return this.initialized;
 	}
 
-    protected void setInitialized(boolean b) {
+    protected synchronized void setInitialized(boolean b) {
         this.initialized = b;
     }
 
@@ -705,7 +709,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
     /**
-     * Overrides the behaviour of parent getMethods() method to make MetaClass aware of added Expando methods
+     * Overrides the behavior of parent getMethods() method to make MetaClass aware of added Expando methods
      *
      * @see MetaObjectProtocol#getMethods()
      *
