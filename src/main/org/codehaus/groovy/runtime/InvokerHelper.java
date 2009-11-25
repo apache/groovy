@@ -21,6 +21,7 @@ import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.wrappers.PojoWrapper;
+import org.codehaus.groovy.util.ReleaseInfo;
 import org.w3c.dom.Element;
 
 import java.beans.Introspector;
@@ -445,15 +446,7 @@ public class InvokerHelper {
     }
 
     public static String getVersion() {
-        String version = null;
-        Package p = Package.getPackage("groovy.lang");
-        if (p != null) {
-            version = p.getImplementationVersion();
-        }
-        if (version == null) {
-            version = "";
-        }
-        return version;
+        return ReleaseInfo.getVersion();
     }
 
     /**

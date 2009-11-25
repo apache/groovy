@@ -526,8 +526,25 @@ Not found: ${groovyJar14path}
                 <include name="org/codehaus/groovy/antlib.xml"/>
             </fileset>
         </copy>
+    	<antcall target="-includeReleaseInfo"/>
     </target>
 
+    <target name="-includeReleaseInfo">
+        <copy file="${mainSourceDirectory}/META-INF/release-info.properties" 
+            todir="${mainClassesDirectory}/META-INF" overwrite="true">
+        </copy>
+        <tstamp>
+            <format property="release.date" pattern="dd-MMM-yyyy"/>
+            <format property="release.time" pattern="hh:mm aa"/>
+        </tstamp>
+        <replace file="${mainClassesDirectory}/META-INF/release-info.properties">
+          <replacefilter token="##ImplementationVersion##" value="${groovyVersion}"/>   
+          <replacefilter token="##BundleVersion##" value="${groovyBundleVersion}"/>
+          <replacefilter token="##BuildDate##" value="${release.date}"/>
+          <replacefilter token="##BuildTime##" value="${release.time}"/>
+        </replace>
+    </target>
+	
     <target name="-includeExamplesResources" depends="-includeGroovyDocTemplates">
         <copy todir="${examplesClassesDirectory}">
             <fileset dir="${examplesSourceDirectory}">

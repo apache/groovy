@@ -17,6 +17,7 @@ package groovy.lang;
 
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.util.ReferenceBundle;
+import org.codehaus.groovy.util.ReleaseInfo;
 
 public final class GroovySystem {
     //
@@ -77,5 +78,9 @@ public final class GroovySystem {
     public static void stopThreadedReferenceManager() {
         ReferenceBundle.getSoftBundle().getManager().stopThread();
         ReferenceBundle.getWeakBundle().getManager().stopThread();
+    }
+
+    public static String getVersion() {
+        return ReleaseInfo.getVersion();
     }
 }
