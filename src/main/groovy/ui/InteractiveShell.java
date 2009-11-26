@@ -19,11 +19,12 @@ package groovy.ui;
 import groovy.lang.Binding;
 import groovy.lang.Closure;
 import groovy.lang.GroovyShell;
+import groovy.lang.GroovySystem;
+
 import org.codehaus.groovy.tools.shell.util.MessageSource;
 
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.SourceUnit;
-import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.tools.ErrorReporter;
@@ -160,7 +161,7 @@ public class InteractiveShell
         }
 
         if (line.hasOption('V')) {
-            writer.println(MESSAGES.format("cli.info.version", new Object[] { InvokerHelper.getVersion() }));
+            writer.println(MESSAGES.format("cli.info.version", new Object[] { GroovySystem.getVersion() }));
             writer.flush();
             System.exit(0);
         }
@@ -255,7 +256,7 @@ public class InteractiveShell
      */
     public void run() {
         // Display the startup banner
-        out.println(MESSAGES.format("startup_banner.0", new Object[] { InvokerHelper.getVersion(), System.getProperty("java.version") }));
+        out.println(MESSAGES.format("startup_banner.0", new Object[] { GroovySystem.getVersion(), System.getProperty("java.version") }));
         out.println(MESSAGES.getMessage("startup_banner.1"));
 
         while (true) {

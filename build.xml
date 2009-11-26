@@ -471,14 +471,14 @@ $Date$
     </target>
 
     <target name="-includeReleaseInfo">
-        <copy file="${mainSourceDirectory}/META-INF/release-info.properties" 
+        <copy file="${mainSourceDirectory}/META-INF/groovy-release-info.properties" 
             todir="${mainClassesDirectory}/META-INF" overwrite="true">
         </copy>
     	<tstamp>
     	    <format property="release.date" pattern="dd-MMM-yyyy"/>
     	    <format property="release.time" pattern="hh:mm aa"/>
     	</tstamp>
-        <replace file="${mainClassesDirectory}/META-INF/release-info.properties">
+        <replace file="${mainClassesDirectory}/META-INF/groovy-release-info.properties">
           <replacefilter token="##ImplementationVersion##" value="${groovyVersion}"/>   
           <replacefilter token="##BundleVersion##" value="${groovyBundleVersion}"/>
           <replacefilter token="##BuildDate##" value="${release.date}"/>

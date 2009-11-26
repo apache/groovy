@@ -16,6 +16,7 @@
 package groovy.ui;
 
 import groovy.lang.GroovyShell;
+import groovy.lang.GroovySystem;
 import groovy.lang.Script;
 
 import java.io.*;
@@ -32,7 +33,6 @@ import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilerConfiguration;
-import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.InvokerInvocationException;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
@@ -104,7 +104,7 @@ public class GroovyMain {
             if (cmd.hasOption('h')) {
                 printHelp(out, options);
             } else if (cmd.hasOption('v')) {
-                String version = InvokerHelper.getVersion();
+                String version = GroovySystem.getVersion();
                 out.println("Groovy Version: " + version + " JVM: " + System.getProperty("java.version"));
             } else {
                 // If we fail, then exit with an error so scripting frameworks can catch it
