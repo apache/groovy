@@ -80,6 +80,9 @@ public final class GroovySystem {
         ReferenceBundle.getWeakBundle().getManager().stopThread();
     }
 
+    /**
+     * Returns the groovy version
+     */
     public static String getVersion() {
         return ReleaseInfo.getVersion();
     }

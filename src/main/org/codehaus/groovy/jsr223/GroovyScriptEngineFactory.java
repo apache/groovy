@@ -24,7 +24,7 @@
 
 package org.codehaus.groovy.jsr223;
 
-import org.codehaus.groovy.runtime.InvokerHelper;
+import groovy.lang.GroovySystem;
 
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
@@ -71,7 +71,7 @@ public class GroovyScriptEngineFactory implements ScriptEngineFactory {
     }
 
     public String getLanguageVersion() {
-        return InvokerHelper.getVersion();
+        return GroovySystem.getVersion();
     }
     
     public List<String> getExtensions() {
@@ -97,7 +97,7 @@ public class GroovyScriptEngineFactory implements ScriptEngineFactory {
         } else if (ScriptEngine.LANGUAGE.equals(key)) {
             return LANGUAGE_NAME;
         } else if (ScriptEngine.LANGUAGE_VERSION.equals(key)) {
-            return InvokerHelper.getVersion();
+            return GroovySystem.getVersion();
         } else if ("THREADING".equals(key)) {
             return "MULTITHREADED";
         } else {

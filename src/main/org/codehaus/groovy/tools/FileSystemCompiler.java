@@ -20,8 +20,9 @@ import org.apache.commons.cli.*;
 import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.control.ConfigurationException;
-import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
+
+import groovy.lang.GroovySystem;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -67,7 +68,7 @@ public class FileSystemCompiler {
     }
 
     public static void displayVersion() {
-        String version = InvokerHelper.getVersion();
+        String version = GroovySystem.getVersion();
         System.err.println("Groovy compiler version " + version);
         System.err.println("Copyright 2003-2009 The Codehaus. http://groovy.codehaus.org/");
         System.err.println("");
