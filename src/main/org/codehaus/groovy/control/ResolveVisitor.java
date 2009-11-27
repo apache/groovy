@@ -1021,7 +1021,10 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
 
         ClassNode sn = node.getUnresolvedSuperClass();
-        if (sn != null) resolveOrFail(sn, node, true);
+        if (sn != null) {
+            resolveOrFail(sn, node, true);
+            checkCyclicInheritence(node);
+        }
 
         ClassNode[] interfaces = node.getInterfaces();
         for (int i = 0; i < interfaces.length; i++) {
@@ -1032,6 +1035,21 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         super.visitClass(node);
 
         currentClass = oldNode;
+    }
+
+    private void checkCyclicInheritence(ClassNode node) {
+        ClassNode sn = node;
+        while(true) {
+            sn = sn.getUnresolvedSuperClass();
+            if(sn == null) break;
+
+            if(node == sn.redirect()) {
+                addError("Cyclic inheritance involving " + sn.getName() + " in class " + node.getName(), node);
+                break;
+            }
+            
+            if(sn == ClassHelper.OBJECT_TYPE) break;
+        }
     }
 
     public void visitCatchStatement(CatchStatement cs) {

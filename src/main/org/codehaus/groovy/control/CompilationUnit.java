@@ -51,6 +51,7 @@ import java.util.*;
  *
  * @author <a href="mailto:cpoirier@dreaming.org">Chris Poirier</a>
  * @author <a href="mailto:blackdrag@gmx.org">Jochen Theodorou</a>
+ * @author <a href="mailto:roshandawrani@codehaus.org">Roshan Dawrani</a>
  * @version $Id$
  */
 
@@ -529,29 +530,7 @@ public class CompilationUnit extends ProcessingUnit {
         Iterator modules = this.ast.getModules().iterator();
         while (modules.hasNext()) {
             ModuleNode module = (ModuleNode) modules.next();
-
-            // before we actually do the sorting we should check
-            // for cyclic references
-            List classes = module.getClasses();
-            for (Iterator iter = classes.iterator(); iter.hasNext();) {
-                ClassNode start = (ClassNode) iter.next();
-                ClassNode cn = start;
-                Set parents = new HashSet();
-                do {
-                    if (parents.contains(cn.getName())) {
-                        getErrorCollector().addErrorAndContinue(
-                                new SimpleMessage("cyclic inheritance involving " + cn.getName() + " in class " + start.getName(), this)
-                        );
-                        cn = null;
-                    } else {
-                        parents.add(cn.getName());
-                        cn = cn.getSuperClass();
-                    }
-                } while (cn != null);
-            }
-            errorCollector.failIfErrors();
             module.sortClasses();
-
         }
     }
 
