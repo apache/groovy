@@ -502,6 +502,10 @@
             <name>John Hurst</name>
             <email></email>
         </contributor>
+        <contributor>
+            <name>Merlyn Albery-Speyer</name>
+            <email></email>
+        </contributor>
     </contributors>
 
     <dependencies>

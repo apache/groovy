@@ -39,5 +39,7 @@ public interface GrapeEngine {
     URI[] resolve(Map args, List depsInfo, Map... dependencies);
 
     Map[] listDependencies(ClassLoader classLoader);
+
+    void addResolver(Map<String, Object> args);
 }
 

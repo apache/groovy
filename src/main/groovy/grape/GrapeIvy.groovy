@@ -32,6 +32,8 @@ import org.apache.ivy.plugins.matcher.ExactPatternMatcher
 import org.apache.ivy.plugins.matcher.PatternMatcher
 import org.apache.ivy.core.module.id.ModuleId
 import org.apache.ivy.core.module.id.ArtifactId
+import org.apache.ivy.plugins.resolver.ChainResolver
+import org.apache.ivy.plugins.resolver.IBiblioResolver
 
 /**
  * @author Danno Ferrin
@@ -55,6 +57,8 @@ class GrapeIvy implements GrapeEngine {
     Map<ClassLoader, Set<IvyGrabRecord>> loadedDeps = new WeakHashMap<ClassLoader, Set<IvyGrabRecord>>()
     // set that stores the IvyGrabRecord(s) for all the dependencies in each grab() call 
     Set<IvyGrabRecord> grabRecordsForCurrDepdendencies = new LinkedHashSet<IvyGrabRecord>()
+	// we keep the settings so that addResolver can add to the resolver chain
+    IvySettings settings
 
     public GrapeIvy() {
         // if we are already inited, quit
@@ -62,7 +66,7 @@ class GrapeIvy implements GrapeEngine {
 
         // start ivy
         Message.setDefaultLogger(new DefaultMessageLogger(-1))
-        IvySettings settings = new IvySettings()
+        settings = new IvySettings()
 
         // configure settings
         def grapeConfig = getLocalGrapeConfig()
@@ -434,6 +438,17 @@ class GrapeIvy implements GrapeEngine {
         } else {
             return null
         }
+    }
+    
+    public void addResolver(Map<String, Object> args) {
+        ChainResolver chainResolver = settings.getResolver("downloadGrapes")
+
+        IBiblioResolver resolver = new IBiblioResolver(name: args.name, root:args.root,
+              m2compatible:(args.m2Compatible ?: true), settings:settings)
+
+        chainResolver.add(resolver)
+    	
+        ivyInstance = Ivy.newInstance(settings)
     }
 }
 
