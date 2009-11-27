@@ -275,7 +275,25 @@ class EnumTest extends GroovyTestCase {
         // GROOVY-3693 - trigger enum class load to test it - asserts are present in the enum 
         GrooyColors3693.r
     }
+    
+    void testCustomMethodOnEnum() {
+        // GROOVY-2443
+        assertScript """
+            enum Day {
+                SUNDAY {
+                    String activity() { 'Relax' }
+                }, MONDAY, TUESDAY, WEDNESDAY,
+                THURSDAY, FRIDAY, SATURDAY
+                String activity() { 'Work' }
+            }
+            assert "Work" == Day.MONDAY.activity() 
+            assert "Relax" == Day.SUNDAY.activity()
+        """
+    }
+
 }
+
+
 
 enum UsCoin {
     penny(1), nickel(5), dime(10), quarter(25)

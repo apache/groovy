@@ -596,9 +596,22 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         String identifier = identifier(element);
         Expression init = null;
         element = element.getNextSibling();
+        
         if (element!=null) {
             init = expression(element);
-            if (isType(ELIST,element)) {
+            ClassNode innerClass = getAnonymousInnerClassNode(init);
+            
+            if (innerClass!=null) {
+                // we have to handle an enum that defines a class for a constant
+                // for example the constant having overwriting a method. we need 
+                // to configure the inner class 
+                innerClass.setSuperClass(classNode);
+                innerClass.setModifiers(classNode.getModifiers() | Opcodes.ACC_FINAL);
+                // we use a ClassExpression for transportation o EnumVisitor
+                init = new ClassExpression(innerClass);
+                // and remove the final modifier from classNode to allow the sub class
+                classNode.setModifiers(classNode.getModifiers() & ~Opcodes.ACC_FINAL);
+            } else if (isType(ELIST,element)) {
             	if(init instanceof ListExpression && !((ListExpression)init).isWrapped()) {
                     ListExpression le = new ListExpression();
                     le.addExpression(init);
@@ -2329,6 +2342,9 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             } else {
                 expressions.add(last);
             }
+        } else if (arguments instanceof AnonymousInnerClassCarrier) {
+            AnonymousInnerClassCarrier carrier = (AnonymousInnerClassCarrier) arguments;
+            return carrier.innerClass;
         }
         return null;
     }

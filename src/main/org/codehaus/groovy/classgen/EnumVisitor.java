@@ -10,6 +10,7 @@ import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
+import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.expr.*;
@@ -46,9 +47,29 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
         return sourceUnit;
     }
 
-    private void completeEnum(final ClassNode enumClass) {
-        ClassNode enumArray = enumClass.makeArray();
+    private void completeEnum(ClassNode enumClass) {
+        boolean isAic = isAnonymousInnerClass(enumClass);
+        // create MIN_VALUE and MAX_VALUE fields
+        FieldNode minValue = null, maxValue = null, values = null;
+       
+        if(!isAic) {
+            // create values field
+            values = new FieldNode("$VALUES",PRIVATE_FS|Opcodes.ACC_SYNTHETIC,enumClass.makeArray(),enumClass,null);
+            values.setSynthetic(true);
+            
+            addMethods(enumClass, values);
+            
+            // create MIN_VALUE and MAX_VALUE fields
+            minValue = new FieldNode("MIN_VALUE", PUBLIC_FS, enumClass, enumClass, null);
+            maxValue = new FieldNode("MAX_VALUE", PUBLIC_FS, enumClass, enumClass, null);
+
+        }
+        addInit(enumClass, minValue, maxValue, values, isAic);
+    }
+    
+    private void addMethods(ClassNode enumClass, FieldNode values) {
         List methods = enumClass.getMethods();
+        
         boolean hasNext = false;
         boolean hasPrevious = false;
         for (int i = 0; i < methods.size(); i++) {
@@ -58,16 +79,10 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
             if (hasNext && hasPrevious) break;
         }
 
-        // create MIN_VALUE and MAX_VALUE fields
-        FieldNode minValue = new FieldNode("MIN_VALUE", PUBLIC_FS, enumClass, enumClass, null);
-        FieldNode maxValue = new FieldNode("MAX_VALUE", PUBLIC_FS, enumClass, enumClass, null);
 
-        // create values field
-        FieldNode values = new FieldNode("$VALUES",PRIVATE_FS|Opcodes.ACC_SYNTHETIC,enumArray,enumClass,null);
-        values.setSynthetic(true);
         {
             // create values() method
-            MethodNode valuesMethod = new MethodNode("values",PUBLIC_FS,enumArray,new Parameter[0],ClassNode.EMPTY_ARRAY,null);
+            MethodNode valuesMethod = new MethodNode("values",PUBLIC_FS,enumClass.makeArray(),new Parameter[0],ClassNode.EMPTY_ARRAY,null);
             valuesMethod.setSynthetic(true);
             BlockStatement code = new BlockStatement();
             code.addStatement(
@@ -221,73 +236,85 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
             valueOfMethod.setSynthetic(true);
             enumClass.addMethod(valueOfMethod);
         }
+    }
+    
+    private void addInit (ClassNode enumClass, FieldNode minValue, 
+                                FieldNode maxValue, FieldNode values,
+                                boolean isAic) 
+    {
         addConstructor(enumClass);
-        {
-            // constructor helper
-            // This method is used instead of calling the constructor as
-            // calling the constructor may require a table with MetaClass
-            // selecting the constructor for each enum value. So instead we
-            // use this method to have a central point for constructor selection
-            // and only one table. The whole construction is needed because 
-            // Reflection forbids access to the enum constructor.
-            // code:
-            // def $INIT(Object[] para) {
-            //  return this(*para)
-            // }            
-            Parameter[] parameter = new Parameter[]{new Parameter(ClassHelper.OBJECT_TYPE.makeArray(), "para")};
-            MethodNode initMethod = new MethodNode("$INIT",PRIVATE_FS,enumClass,parameter,ClassNode.EMPTY_ARRAY,null);
-            initMethod.setSynthetic(true);
-            ConstructorCallExpression cce = new ConstructorCallExpression(
-                    ClassNode.THIS,
-                    new ArgumentListExpression(
-                            new SpreadExpression(new VariableExpression("para"))
+        // constructor helper
+        // This method is used instead of calling the constructor as
+        // calling the constructor may require a table with MetaClass
+        // selecting the constructor for each enum value. So instead we
+        // use this method to have a central point for constructor selection
+        // and only one table. The whole construction is needed because 
+        // Reflection forbids access to the enum constructor.
+        // code:
+        // def $INIT(Object[] para) {
+        //  return this(*para)
+        // }            
+        Parameter[] parameter = new Parameter[]{new Parameter(ClassHelper.OBJECT_TYPE.makeArray(), "para")};
+        MethodNode initMethod = new MethodNode("$INIT",PUBLIC_FS,enumClass,parameter,ClassNode.EMPTY_ARRAY,null);
+        initMethod.setSynthetic(true);
+        ConstructorCallExpression cce = new ConstructorCallExpression(
+                ClassNode.THIS,
+                new ArgumentListExpression(
+                        new SpreadExpression(new VariableExpression("para"))
+                )
+        );
+        BlockStatement code = new BlockStatement();
+        code.addStatement(new ReturnStatement(cce));
+        initMethod.setCode(code);
+        enumClass.addMethod(initMethod);
+       
+        // static init
+        List fields = enumClass.getFields();
+        List arrayInit = new ArrayList();
+        int value = -1;
+        Token assign = Token.newSymbol(Types.ASSIGN, -1, -1);
+        List block = new ArrayList();
+        FieldNode tempMin = null;
+        FieldNode tempMax = null;
+        for (Iterator iterator = fields.iterator(); iterator.hasNext();) {
+            FieldNode field = (FieldNode) iterator.next();
+            if ((field.getModifiers()&Opcodes.ACC_ENUM) == 0) continue;
+            value++;
+            if (tempMin == null) tempMin = field;
+            tempMax = field;
+
+            ClassNode enumBase = enumClass;
+            ArgumentListExpression args = new ArgumentListExpression();
+            args.addExpression(new ConstantExpression(field.getName()));
+            args.addExpression(new ConstantExpression(Integer.valueOf(value)));
+            if (field.getInitialExpression()!=null) {
+                ListExpression oldArgs = (ListExpression) field.getInitialExpression();
+                for (Iterator oldArgsIterator = oldArgs.getExpressions().iterator(); oldArgsIterator.hasNext();) {
+                    Expression exp = (Expression) oldArgsIterator.next();
+                    if (exp instanceof ClassExpression && exp.getType() instanceof InnerClassNode) {
+                        InnerClassNode inner = (InnerClassNode) exp.getType();
+                        if (inner.getVariableScope()==null) {
+                            enumBase = inner;
+                            continue;
+                        }
+                    }
+                    args.addExpression(exp);
+                }
+            }
+            field.setInitialValueExpression(null);
+            block.add(
+                    new ExpressionStatement(
+                            new BinaryExpression(
+                                    new FieldExpression(field),
+                                    assign,
+                                    new StaticMethodCallExpression(enumBase,"$INIT",args)
+                            )
                     )
             );
-            BlockStatement code = new BlockStatement();
-            code.addStatement(new ReturnStatement(cce));
-            initMethod.setCode(code);
-            enumClass.addMethod(initMethod);
+            arrayInit.add(new FieldExpression(field));
         }
 
-        {
-            // static init
-            List fields = enumClass.getFields();
-            List arrayInit = new ArrayList();
-            int value = -1;
-            Token assign = Token.newSymbol(Types.ASSIGN, -1, -1);
-            List block = new ArrayList();
-            FieldNode tempMin = null;
-            FieldNode tempMax = null;
-            for (Iterator iterator = fields.iterator(); iterator.hasNext();) {
-                FieldNode field = (FieldNode) iterator.next();
-                if ((field.getModifiers()&Opcodes.ACC_ENUM) == 0) continue;
-                value++;
-                if (tempMin == null) tempMin = field;
-                tempMax = field;
-
-                ArgumentListExpression args = new ArgumentListExpression();
-                args.addExpression(new ConstantExpression(field.getName()));
-                args.addExpression(new ConstantExpression(Integer.valueOf(value)));
-                if (field.getInitialExpression()!=null) {
-                    ListExpression oldArgs = (ListExpression) field.getInitialExpression();
-                    for (Iterator oldArgsIterator = oldArgs.getExpressions().iterator(); oldArgsIterator.hasNext();) {
-                        Expression exp = (Expression) oldArgsIterator.next();
-                        args.addExpression(exp);
-                    }
-                }
-                field.setInitialValueExpression(null);
-                block.add(
-                        new ExpressionStatement(
-                                new BinaryExpression(
-                                        new FieldExpression(field),
-                                        assign,
-                                        new MethodCallExpression(new ClassExpression(enumClass),"$INIT",args)
-                                )
-                        )
-                );
-                arrayInit.add(new FieldExpression(field));
-            }
-            
+        if (!isAic) {
             if (tempMin!=null) {
                 block.add(
                         new ExpressionStatement(
@@ -310,17 +337,21 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
                 enumClass.addField(minValue);
                 enumClass.addField(maxValue);
             }
-
+    
             block.add(
                     new ExpressionStatement(
                             new BinaryExpression(new FieldExpression(values),assign,new ArrayExpression(enumClass,arrayInit))
                     )
             );
-            enumClass.addStaticInitializerStatements(block, true);
             enumClass.addField(values);
         }
-        
-        
+        enumClass.addStaticInitializerStatements(block, true);
+    }
+
+    private boolean isAnonymousInnerClass(ClassNode enumClass) {
+        if (!(enumClass instanceof InnerClassNode)) return false;
+        InnerClassNode  ic = (InnerClassNode) enumClass;
+        return ic.getVariableScope()==null;
     }
 
     private void addConstructor(ClassNode enumClass) {
@@ -328,7 +359,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
         List ctors = new ArrayList(enumClass.getDeclaredConstructors());
         if (ctors.size()==0) {
             // add default constructor
-            ConstructorNode init = new ConstructorNode(Opcodes.ACC_PRIVATE,new Parameter[0],ClassNode.EMPTY_ARRAY,new BlockStatement());
+            ConstructorNode init = new ConstructorNode(Opcodes.ACC_PUBLIC,new Parameter[0],ClassNode.EMPTY_ARRAY,new BlockStatement());
             enumClass.addConstructor(init);
             ctors.add(init);
         } 
