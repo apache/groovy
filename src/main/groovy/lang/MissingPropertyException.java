@@ -15,6 +15,8 @@
  */
 package groovy.lang;
 
+import org.codehaus.groovy.runtime.MethodRankHelper;
+
 
 /**
  * An exception occurred if a dynamic property dispatch fails with an unknown property.
@@ -61,7 +63,8 @@ public class MissingPropertyException extends GroovyRuntimeException {
             if (super.getMessageWithoutLocationText() != null) {
                 return super.getMessageWithoutLocationText();
             }
-            return "No such property: " + property + " for class: " + type.getName();
+            return "No such property: " + property + " for class: " + type.getName() +
+                   MethodRankHelper.getPropertySuggestionString(property, type);
         }
         return "No such property: " + property + " for class: " + type.getName() + ". Reason: " + cause;
     }

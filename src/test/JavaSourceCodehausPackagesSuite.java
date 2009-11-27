@@ -94,6 +94,7 @@ public class JavaSourceCodehausPackagesSuite {
         suite.addTest(LineColumnCheckTestSuite.suite());
         suite.addTestSuite(MethodCallExpressionTest.class);
         suite.addTestSuite(DependencyTest.class);
+        suite.addTestSuite(MethodRankHelperTest.class);
         return suite;
     }
 }
