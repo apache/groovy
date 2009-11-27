@@ -7,7 +7,7 @@
 */
 class ArithmeticShellTest extends GroovyTestCase {
 
-    private final ArithmeticShell shell
+    private ArithmeticShell shell
 
     void setUp() {
         shell = new ArithmeticShell()
