@@ -308,15 +308,7 @@ public class CachedClass {
     public boolean isVoid() {
         return getTheClass() == void.class;
     }
-
-    public void box(BytecodeHelper helper) {
-        helper.box(getTheClass());
-    }
-
-    public void unbox(BytecodeHelper helper) {
-        helper.unbox(getTheClass());
-    }
-
+    
     public boolean isInterface() {
         return isInterface;
     }
