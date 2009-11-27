@@ -24,6 +24,8 @@ import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.stmt.Statement;
 import org.codehaus.groovy.control.SourceUnit;
+import org.codehaus.groovy.syntax.Types;
+import org.objectweb.asm.Opcodes;
 
 import java.util.LinkedList;
 
@@ -43,6 +45,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
     private boolean inClosure = false;
     private boolean inPropertyExpression = false;
     private boolean isSpecialConstructorCall = false;
+    private boolean inConstructor = false;
 
     private LinkedList stateStack = new LinkedList();
 
@@ -50,11 +53,13 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         VariableScope scope;
         ClassNode clazz;
         boolean closure;
+        boolean inConstructor; 
 
         StateStackElement() {
             scope = VariableScopeVisitor.this.currentScope;
             clazz = VariableScopeVisitor.this.currentClass;
             closure = VariableScopeVisitor.this.inClosure;
+            inConstructor = VariableScopeVisitor.this.inConstructor;
         }
     }
 
@@ -90,6 +95,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         currentScope = element.scope;
         currentClass = element.clazz;
         inClosure = element.closure;
+        inConstructor = element.inConstructor;
     }
 
     private void declare(Parameter[] parameters, ASTNode node) {
@@ -409,9 +415,9 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
         pushState(node.isStatic());
-
+        inConstructor = isConstructor; 
         node.setVariableScope(currentScope);
-
+        
         // GROOVY-2156
         Parameter[] parameters = node.getParameters();
         for (Parameter parameter : parameters) {
@@ -480,6 +486,47 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         }
         inClosure = ic;
         popState();
+    }
+    
+    public void visitBinaryExpression(BinaryExpression expression) {
+        super.visitBinaryExpression(expression);
+        if (inConstructor) return;
+        switch (expression.getOperation().getType()){
+            case Types.EQUAL: // = assignment
+            case Types.BITWISE_AND_EQUAL:
+            case Types.BITWISE_OR_EQUAL:
+            case Types.BITWISE_XOR_EQUAL:
+            case Types.PLUS_EQUAL:
+            case Types.MINUS_EQUAL:
+            case Types.MULTIPLY_EQUAL:
+            case Types.DIVIDE_EQUAL:
+            case Types.INTDIV_EQUAL:
+            case Types.MOD_EQUAL:
+            case Types.POWER_EQUAL:
+            case Types.LEFT_SHIFT_EQUAL:
+            case Types.RIGHT_SHIFT_EQUAL:
+            case Types.RIGHT_SHIFT_UNSIGNED_EQUAL:
+                checkFinalFieldAccess(expression.getLeftExpression());
+                break;
+            default: break;
+        }
+        
+    }
+
+    private void checkFinalFieldAccess(Expression expression) {
+        if (!(expression instanceof VariableExpression)) return;
+        VariableExpression ve = (VariableExpression) expression;
+        Variable v = ve.getAccessedVariable();
+        boolean error = false;
+        if (v instanceof PropertyNode) {
+            PropertyNode pn = (PropertyNode) v;
+            error = (pn.getModifiers()&Opcodes.ACC_FINAL)!=0; 
+        } else if (v instanceof FieldNode) {
+            FieldNode fn = (FieldNode) v;
+            error = (fn.getModifiers()&Opcodes.ACC_FINAL)!=0;
+        }
+        if (error) addError("cannnot access final field or property " +
+                            "outside of constructor.", expression);
     }
 
     public void visitProperty(PropertyNode node) {
