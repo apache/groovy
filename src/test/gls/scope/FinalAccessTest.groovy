@@ -14,4 +14,34 @@ class FinalAccessTest extends CompilableTestSupport {
             }
         """
     }
+
+    void testStaticFinalField1() {
+        shouldCompile """
+            class G3911C1 {
+              static final String foo;
+              static {
+                if (true) {
+                  foo = "roshan";
+                } else {
+                  foo = "jochen";
+                }
+              }
+            }
+        """
+    }
+
+    void testStaticFinalField2() {
+        shouldNotCompile """
+            class G3911C2 {
+              static final String foo;
+              static foo() {
+                if (true) {
+                  foo = "roshan";
+                } else {
+                  foo = "jochen";
+                }
+              }
+            }
+        """
+    }
 }

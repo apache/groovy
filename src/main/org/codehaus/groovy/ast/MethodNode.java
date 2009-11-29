@@ -38,6 +38,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
     private boolean dynamicReturnType;
     private VariableScope variableScope;
     private final ClassNode[] exceptions;
+    private final boolean staticConstructor;
     
     // type spec for generics
     private GenericsType[] genericsTypes=null;
@@ -56,6 +57,7 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
         setParameters(parameters);
         this.hasDefault = false;       
         this.exceptions = exceptions;
+        this.staticConstructor = (name != null && name.equals("<clinit>")) ? true : false;
     }
 
     /**
@@ -218,5 +220,9 @@ public class MethodNode extends AnnotatedNode implements Opcodes {
 
     public boolean hasAnnotationDefault() {
         return hasDefault;
+    }
+
+    public boolean isStaticConstructor() {
+        return staticConstructor;
     }
 }
