@@ -45,6 +45,7 @@ import java.util.*;
  * Note: the method to start the resolving is  startResolving(ClassNode, SourceUnit).
  *
  * @author Jochen Theodorou
+ * @author Roshan Dawrani
  */
 public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private ClassNode currentClass;
@@ -1141,32 +1142,44 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
 
         ClassNode sn = node.getUnresolvedSuperClass();
-        if (sn != null) {
-            resolveOrFail(sn, node, true);
-            checkCyclicInheritence(node);
-        }
+        if (sn != null) resolveOrFail(sn, node, true);
 
         for (ClassNode anInterface : node.getInterfaces()) {
             resolveOrFail(anInterface, node, true);
         }
 
+        checkCyclicInheritence(node, node.getUnresolvedSuperClass(), node.getInterfaces());
+        
         super.visitClass(node);
 
         currentClass = oldNode;
     }
     
-    private void checkCyclicInheritence(ClassNode node) {
-        ClassNode sn = node;
-        while(true) {
-            sn = sn.getUnresolvedSuperClass();
-            if(sn == null) break;
-
-            if(node == sn.redirect()) {
-                addError("Cyclic inheritance involving " + sn.getName() + " in class " + node.getName(), node);
-                break;
+    private void checkCyclicInheritence(ClassNode originalNode, ClassNode parentToCompare, ClassNode[] interfacesToCompare) {
+        if(!originalNode.isInterface()) {
+            if(parentToCompare == null) return;
+            if(originalNode == parentToCompare.redirect()) {
+                addError("Cyclic inheritance involving " + parentToCompare.getName() + " in class " + originalNode.getName(), originalNode);
+                return;
             }
-            
-            if(sn == ClassHelper.OBJECT_TYPE) break;
+            if(parentToCompare == ClassHelper.OBJECT_TYPE) return;
+            checkCyclicInheritence(originalNode, parentToCompare.getUnresolvedSuperClass(), null);
+        } else {
+            if(interfacesToCompare != null && interfacesToCompare.length > 0) {
+                // check interfaces at this level first
+                for(ClassNode intfToCompare : interfacesToCompare) {
+                    if(originalNode == intfToCompare.redirect()) {
+                        addError("Cyclic inheritance involving " + intfToCompare.getName() + " in interface " + originalNode.getName(), originalNode);
+                        return;
+                    }
+                }
+                // check next level of interfaces
+                for(ClassNode intf : interfacesToCompare) {
+                    checkCyclicInheritence(originalNode, null, intf.getInterfaces());
+                }
+            } else {
+                return;
+            }
         }
     }
 
