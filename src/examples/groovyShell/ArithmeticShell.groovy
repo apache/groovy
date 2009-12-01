@@ -384,7 +384,7 @@ private class ArithmeticExpressionEnforcer implements GroovyCodeVisitor {
         throw new SecurityException("Variable expressions forbidden in arithmetic shell.")
     }
     void visitDeclarationExpression(DeclarationExpression declarationExpression) {
-        throw new SecurityException("Declaraion expressions forbidden in arithmetic shell.")
+        throw new SecurityException("Declaration expressions forbidden in arithmetic shell.")
     }
     void visitRegexExpression(RegexExpression regexExpression) {
         throw new SecurityException("Regex expressions forbidden in arithmetic shell.")
