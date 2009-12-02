@@ -17,6 +17,7 @@ package org.codehaus.groovy.runtime;
 
 import groovy.lang.EmptyRange;
 import groovy.lang.IntRange;
+import groovy.lang.Range;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 import java.io.Closeable;
@@ -32,7 +33,7 @@ public class DefaultGroovyMethodsSupport {
     private static final Logger LOG = Logger.getLogger(DefaultGroovyMethodsSupport.class.getName());
 
     // helper method for getAt and putAt
-    protected static RangeInfo subListBorders(int size, IntRange range) {
+    protected static RangeInfo subListBorders(int size, Range range) {
         int from = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getFrom()), size);
         int to = normaliseIndex(DefaultTypeTransformation.intUnbox(range.getTo()), size);
         boolean reverse = range.isReverse();
