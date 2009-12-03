@@ -87,7 +87,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener {
     Component toolbar
     Action showToolbarAction
 
-    boolean detachedOutput = prefs.getBoolean('detachedOutput', true)
+    boolean detachedOutput = prefs.getBoolean('detachedOutput', false)
     Action detachedOutputAction
     Action showOutputWindowAction
     Action hideOutputWindowAction1
@@ -99,7 +99,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener {
     Component blank
     Component scrollArea
 
-    boolean autoClearOutput = prefs.getBoolean('autoClearOutput', true)
+    boolean autoClearOutput = prefs.getBoolean('autoClearOutput', false)
     Action autoClearOutputAction
 
     // Maximum size of history
