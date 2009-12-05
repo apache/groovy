@@ -83,12 +83,12 @@ public abstract class FactoryBuilderSupport extends Binding {
     }
 
     /**
-     * Checks type of value against buidler type
+     * Checks type of value against builder type
      *
      * @param value the node's value
      * @param name  the node's name
      * @param type  a Class that may be assignable to the value's class
-     * @return true if type is assignalbe to the value's class, false if value
+     * @return true if type is assignable to the value's class, false if value
      *         is null.
      */
     public static boolean checkValueIsType(Object value, Object name, Class type) {
@@ -110,7 +110,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      * @param value the node's value
      * @param name  the node's name
      * @param type  a Class that may be assignable to the value's class
-     * @return Returns true if type is assignale to the value's class, false if value is
+     * @return Returns true if type is assignable to the value's class, false if value is
      *         null or a String.
      */
     public static boolean checkValueIsTypeNotString(Object value, Object name, Class type) {
@@ -141,7 +141,7 @@ public abstract class FactoryBuilderSupport extends Binding {
     protected Map<String, Closure[]> explicitProperties = new HashMap<String, Closure[]>();
     protected Map<String, Closure> explicitMethods = new HashMap<String, Closure>();
     protected Map<String, Set<String>> registrationGroup = new HashMap<String, Set<String>>();
-    protected String registringGroupName = ""; // use binding to store?
+    protected String registrationGroupName = ""; // use binding to store?
 
     protected boolean autoRegistrationRunning = false;
     protected boolean autoRegistrationComplete = false;
@@ -152,7 +152,7 @@ public abstract class FactoryBuilderSupport extends Binding {
 
     public FactoryBuilderSupport(boolean init) {
         _globalProxyBuilder = this;
-        registrationGroup.put(registringGroupName, new TreeSet<String>());
+        registrationGroup.put(registrationGroupName, new TreeSet<String>());
         if (init) {
             autoRegisterNodes();
         }
@@ -195,18 +195,18 @@ public abstract class FactoryBuilderSupport extends Binding {
 
         for (Method method : declaredClass.getDeclaredMethods()) {
             if (method.getName().startsWith("register") && method.getParameterTypes().length == 0) {
-                registringGroupName = method.getName().substring("register".length());
-                registrationGroup.put(registringGroupName, new TreeSet<String>());
+                registrationGroupName = method.getName().substring("register".length());
+                registrationGroup.put(registrationGroupName, new TreeSet<String>());
                 try {
                     if (Modifier.isPublic(method.getModifiers())) {
                         method.invoke(this);
                     }
                 } catch (IllegalAccessException e) {
-                    throw new RuntimeException("Cound not init " + getClass().getName() + " because of an access error in " + declaredClass.getName() + "." + method.getName(), e);
+                    throw new RuntimeException("Could not init " + getClass().getName() + " because of an access error in " + declaredClass.getName() + "." + method.getName(), e);
                 } catch (InvocationTargetException e) {
-                    throw new RuntimeException("Cound not init " + getClass().getName() + " because of an exception in " + declaredClass.getName() + "." + method.getName(), e);
+                    throw new RuntimeException("Could not init " + getClass().getName() + " because of an exception in " + declaredClass.getName() + "." + method.getName(), e);
                 } finally {
-                    registringGroupName = "";
+                    registrationGroupName = "";
                 }
             }
         }
@@ -570,7 +570,7 @@ public abstract class FactoryBuilderSupport extends Binding {
     }
 
     public void registerExplicitProperty(String name, Closure getter, Closure setter) {
-        registerExplicitProperty(name, registringGroupName, getter, setter);
+        registerExplicitProperty(name, registrationGroupName, getter, setter);
     }
 
     public void registerExplicitProperty(String name, String groupName, Closure getter, Closure setter) {
@@ -588,7 +588,7 @@ public abstract class FactoryBuilderSupport extends Binding {
     }
 
     public void registerExplicitMethod(String name, Closure closure) {
-        registerExplicitMethod(name, registringGroupName, closure);
+        registerExplicitMethod(name, registrationGroupName, closure);
     }
 
     public void registerExplicitMethod(String name, String groupName, Closure closure) {
@@ -600,18 +600,18 @@ public abstract class FactoryBuilderSupport extends Binding {
 
     /**
      * Registers a factory for a JavaBean.<br>
-     * The JavaBean clas should have a no-args constructor.
+     * The JavaBean class should have a no-args constructor.
      *
      * @param theName   name of the node
      * @param beanClass the factory to handle the name
      */
     public void registerBeanFactory(String theName, Class beanClass) {
-        registerBeanFactory(theName, registringGroupName, beanClass);
+        registerBeanFactory(theName, registrationGroupName, beanClass);
     }
 
     /**
      * Registers a factory for a JavaBean.<br>
-     * The JavaBean clas should have a no-args constructor.
+     * The JavaBean class should have a no-args constructor.
      *
      * @param theName   name of the node
      * @param groupName thr group to register this node in
@@ -639,7 +639,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      * @param factory the factory to return the values
      */
     public void registerFactory(String name, Factory factory) {
-        registerFactory(name, registringGroupName, factory);
+        registerFactory(name, registrationGroupName, factory);
     }
 
     /**
@@ -786,7 +786,7 @@ public abstract class FactoryBuilderSupport extends Binding {
             // so peel off a hashmap from the front, and a closure from the
             // end and presume that is what they meant, since there is
             // no way to distinguish node(a:b,c,d) {..} from
-            // node([a:b],[c,d], {..}), i.e. the user can deliberatly confuse
+            // node([a:b],[c,d], {..}), i.e. the user can deliberately confuse
             // the builder and there is nothing we can really do to prevent
             // that
 
@@ -971,7 +971,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      *
      * @param name       the name of the node
      * @param attributes the attributes for the node
-     * @param node       the object created by teh node factory
+     * @param node       the object created by the node factory
      */
     protected void postInstantiate(Object name, Map attributes, Object node) {
         for (Closure postInstantiateDelegate : getProxyBuilder().postInstantiateDelegates) {
@@ -1040,7 +1040,7 @@ public abstract class FactoryBuilderSupport extends Binding {
      * Maps attributes key/values to properties on node.
      *
      * @param node       the object from the node
-     * @param attributes the attributtes to be set
+     * @param attributes the attributes to be set
      */
     protected void setNodeAttributes(Object node, Map attributes) {
         // set the properties
@@ -1053,7 +1053,7 @@ public abstract class FactoryBuilderSupport extends Binding {
     }
 
     /**
-     * Strategy method to stablish parent/child relationships.
+     * Strategy method to establish parent/child relationships.
      *
      * @param parent the object from the parent node
      * @param child  the object from the child node
@@ -1090,7 +1090,7 @@ public abstract class FactoryBuilderSupport extends Binding {
     }
 
     /**
-     * Restores the state of the curent builder to the same state as an older build.
+     * Restores the state of the current builder to the same state as an older build.
      * 
      * Caution, this will destroy rather than merge the current build context if there is any,
      * @param data the data retrieved from a compatible getContinuationData call
