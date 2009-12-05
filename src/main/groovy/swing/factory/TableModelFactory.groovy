@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -56,7 +56,7 @@ public class TableModelFactory extends AbstractFactory {
                 } as PropertyChangeListener;
 
             parent.addPropertyChangeListener('model', listener)
-            builder.addDisposalClosure( {parent.removeProppertyChangeListener('table', listener)})
+            builder.addDisposalClosure( {parent.removePropertyChangeListener('model', listener)})
 
             // the table has already set the model, so fire the listener manually
             listener.propertyChange(new PropertyChangeEvent(parent, 'model', null, node)) 
