@@ -56,7 +56,7 @@ public class TableModelFactory extends AbstractFactory {
                 } as PropertyChangeListener;
 
             parent.addPropertyChangeListener('model', listener)
-            builder.addDisposalClosure( {parent.removePropertyChangeListener('table', listener)})
+            builder.addDisposalClosure( {parent.removePropertyChangeListener('model', listener)})
 
             // the table has already set the model, so fire the listener manually
             listener.propertyChange(new PropertyChangeEvent(parent, 'model', null, node)) 
