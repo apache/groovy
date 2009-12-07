@@ -147,7 +147,7 @@ public class ParameterTypes
             return MetaClassHelper.EMPTY_ARRAY;
         }
 
-        final CachedClass[] pt = parameterTypes;
+        final CachedClass[] pt = getParameterTypes();
         if (pt.length == 1 && argumentArray.length == 0) {
             if (isVargsMethod)
                 return new Object[]{Array.newInstance(pt[0].getTheClass().getComponentType(), 0)};
