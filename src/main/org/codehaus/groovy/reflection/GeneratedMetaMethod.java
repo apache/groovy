@@ -40,7 +40,7 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
     }
 
     public static class Proxy extends GeneratedMetaMethod {
-        private MetaMethod proxy;
+        private volatile MetaMethod proxy;
         private final String className;
 
         public Proxy(String className, String name, CachedClass declaringClass, Class returnType, Class[] parameters) {
@@ -62,7 +62,7 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
             return proxy().invoke(object, arguments);
         }
 
-        private synchronized MetaMethod proxy() {
+        public final synchronized MetaMethod proxy() {
             if (proxy == null) {
                 createProxy();
             }
