@@ -518,9 +518,9 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             List caseList = swi.getCaseStatements();
             for (Iterator iter = caseList.iterator(); iter.hasNext(); ) {
                 CaseStatement caseStatement = (CaseStatement) iter.next();
-                caseStatement.setCode(adjustSwitchCaseCode(caseStatement.getCode(), scope));
+                caseStatement.setCode(adjustSwitchCaseCode(caseStatement.getCode(), scope, false));
             }
-            swi.setDefaultStatement(adjustSwitchCaseCode(swi.getDefaultStatement(), scope)); 
+            swi.setDefaultStatement(adjustSwitchCaseCode(swi.getDefaultStatement(), scope, true)); 
             return swi;
         }
 
@@ -566,7 +566,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         }
     }
 
-    private Statement adjustSwitchCaseCode(Statement statement, VariableScope scope) {
+    private Statement adjustSwitchCaseCode(Statement statement, VariableScope scope, boolean defaultCase) {
         if(statement instanceof BlockStatement) {
             final List list = ((BlockStatement)statement).getStatements();
             if (!list.isEmpty()) {
@@ -574,6 +574,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 Statement last = (Statement) list.get(idx);
                 if(last instanceof BreakStatement) {
                     list.remove(idx);
+                    return addReturnsIfNeeded(statement, scope);
+                } else if(defaultCase) {
                     return addReturnsIfNeeded(statement, scope);
                 }
             }
