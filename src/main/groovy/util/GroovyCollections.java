@@ -25,6 +25,7 @@ import java.util.*;
  * A Collections utility class
  *
  * @author Paul King
+ * @author Jim White
  */
 public class GroovyCollections {
     /**
@@ -36,6 +37,33 @@ public class GroovyCollections {
      */
     public static List combinations(Object[] collections) {
         return combinations(Arrays.asList(collections));
+    }
+
+    /**
+     * Finds all non-null subsequences of a list.
+     * E.g. <code>subsequences([1, 2, 3])</code> would be:
+     * [[1, 2, 3], [1, 3], [2, 3], [1, 2], [1], [2], [3]]
+     *
+     * @param items the List of items
+     * @return the subsequences from items
+     */
+    public static <T> Set<List<T>> subsequences(List<T> items) {
+        // items.inject([]){ ss, h -> ss.collect { it + [h] }  + ss + [[h]] }
+        Set<List<T>> ans = new HashSet<List<T>>();
+        for (T h : items) {
+            Set<List<T>> next = new HashSet<List<T>>();
+            for (List<T> it : ans) {
+                List<T> sublist = new ArrayList<T>(it);
+                sublist.add(h);
+                next.add(sublist);
+            }
+            next.addAll(ans);
+            List<T> hlist = new ArrayList<T>();
+            hlist.add(h);
+            next.add(hlist);
+            ans = next;
+        }
+        return ans;
     }
 
     /**

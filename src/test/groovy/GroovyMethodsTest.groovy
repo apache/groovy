@@ -820,6 +820,28 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         assert s.class == LinkedBlockingQueue
         [2, 8, 10].each{ assert it in s }
     }
+
+    void testSubsequences() {
+        def items = [1, 2, 3]
+        assert items.subsequences() == [[1, 2, 3], [1, 3], [2, 3], [1, 2], [1], [2], [3]] as Set
+        assert "frog".toList().subsequences() == [
+                ['f', 'r', 'o', 'g'],
+                ['f', 'r', 'o'],
+                ['f', 'r', 'g'],
+                ['f', 'o', 'g'],
+                ['r', 'o', 'g'],
+                ['f', 'g'],
+                ['r', 'g'],
+                ['o', 'g'],
+                ['f', 'o'],
+                ['r', 'o'],
+                ['f', 'r'],
+                ['f'],
+                ['r'],
+                ['o'],
+                ['g']
+        ] as Set
+    }
 }
 
 class WackyList extends LinkedList {

@@ -1893,6 +1893,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Finds all non-null subsequences of a list.
+     * E.g. <code>[1, 2, 3].subsequences()</code> would be:
+     * [[1, 2, 3], [1, 3], [2, 3], [1, 2], [1], [2], [3]]
+     *
+     * @param self the List of items
+     * @return the subsequences from the list
+     */
+    public static <T> Set<List<T>> subsequences(List<T> self) {
+        return GroovyCollections.subsequences(self);
+    }
+
+    /**
      * Adds GroovyCollections#transpose(List) as a method on lists.
      *
      * @param self a List of lists
