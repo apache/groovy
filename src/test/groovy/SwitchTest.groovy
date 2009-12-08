@@ -195,4 +195,16 @@ class SwitchTest extends GroovyTestCase {
         }
         assertEquals 1, i
     }
+    
+    void testSwitchReturnFromDefaultCase() {
+        assert m3('a') == 'letter A' && m3('b') == 'letter B' && m3('z') == 'Unknown letter'
+    }
+
+    def m3(s) {
+       switch(s) {
+           case 'a': 'letter A'; break
+           case 'b': 'letter B'; break
+           default: 'Unknown letter'
+       }
+    }
 }
