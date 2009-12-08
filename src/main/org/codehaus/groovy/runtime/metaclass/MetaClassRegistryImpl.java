@@ -27,6 +27,7 @@ import org.codehaus.groovy.util.ReferenceBundle;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.util.*;
+import java.io.IOException;
 
 /**
  * A registry of MetaClass instances which caches introspection &
@@ -134,15 +135,33 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
         if (useMethodWrapper) {
             // Here we instantiate objects representing MetaMethods for DGM methods.
             // Calls for such meta methods done without reflection, so more effectively.
-            // It gives 7-8% improvement for benchmarks involving just several arithmetic operations
-            for (int i = 0; ; ++i) {
-                try {
-                    final String className = "org.codehaus.groovy.runtime.dgm$" + i;
-                    final Class aClass = Class.forName(className);
-                    createMetaMethodFromClass(map, aClass);
-                } catch (ClassNotFoundException e){
-                    break;
+
+            try {
+                ArrayList<GeneratedMetaMethod.DgmMethodRecord> records = GeneratedMetaMethod.DgmMethodRecord.loadDgmInfo();
+
+                for (GeneratedMetaMethod.DgmMethodRecord record : records) {
+                    Class[] newParams = new Class[record.parameters.length - 1];
+                    System.arraycopy(record.parameters, 1, newParams, 0, record.parameters.length-1);
+
+                    MetaMethod method = new GeneratedMetaMethod.Proxy(
+                            record.className,
+                            record.methodName,
+                            ReflectionCache.getCachedClass(record.parameters[0]),
+                            record.returnType,
+                            newParams
+                    );
+                    final CachedClass declClass = method.getDeclaringClass();
+                    List<MetaMethod> arr = map.get(declClass);
+                    if (arr == null) {
+                        arr = new ArrayList<MetaMethod>(4);
+                        map.put(declClass, arr);
+                    }
+                    arr.add(method);
+                    instanceMethods.add(method);
                 }
+            } catch (Throwable e) {
+                e.printStackTrace();
+                System.exit(0);
             }
 
             final Class[] additionals = DefaultGroovyMethods.additionals;

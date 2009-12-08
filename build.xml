@@ -153,27 +153,25 @@ $Date$
         </target>
     -->
 
-    <target name="dgmConvert" depends="stagedcompile">
-        <java classname="org.codehaus.groovy.tools.DgmConverter"
-              fork="yes"
-              failonerror="true">
-            <classpath refid="compilePath"/>
-            <classpath path="${mainClassesDirectory}"/>
-        </java>
-    </target>
-
-    <target name="compileMain" depends="stagedcompile,dgmConvert"
+    <target name="compileMain" depends="stagedcompile"
             description="Compile the Java and Groovy code in the main source.">
     </target>
 
     <target name="stagedcompile" depends="-init,ensureGrammars,-jvm14BuildWarning" unless="uber">
         <mkdir dir="${mainClassesDirectory}"/>
         <mkdir dir="${toolsClassesDirectory}"/>
+        <mkdir dir="${mainClassesDirectory}/META-INF"/>
 
         <javac srcdir="${mainSourceDirectory}" includeantruntime="false" destdir="${mainClassesDirectory}"
                deprecation="on" debug="yes" source="1.5" target="1.5" fork="true" classpathref="compilePath">
             <exclude name="groovy/ui/**/*.java"/>
         </javac>
+        <java classname="org.codehaus.groovy.tools.DgmConverter"
+              fork="yes"
+              failonerror="true">
+            <classpath refid="compilePath"/>
+            <classpath path="${mainClassesDirectory}"/>
+        </java>
         <antcall inheritrefs="true" target="-stagedcompile-groovy"/>
         <antcall target="-includeResources"/>
     </target>
