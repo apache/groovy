@@ -1905,6 +1905,45 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Finds all permutations of a collection.
+     * E.g. <code>[1, 2, 3].permutations()</code> would be:
+     * [[1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 1], [3, 1, 2], [3, 2, 1]]
+     *
+     * @param self the Collection of items
+     * @return the permutations from the list
+     */
+    public static <T> Set<List<T>> permutations(List<T> self) {
+        Set<List<T>> ans = new HashSet<List<T>>();
+        PermutationGenerator<T> generator = new PermutationGenerator<T>(self);
+        while (generator.hasNext()) {
+            ans.add(generator.next());
+        }
+        return ans;
+    }
+
+    /**
+     * Iterates over all permutations of a collection, running a closure for each iteration.
+     * E.g. <code>[1, 2, 3].eachPermutation{ println it }</code> would print:
+     * [1, 2, 3]
+     * [1, 3, 2]
+     * [2, 1, 3]
+     * [2, 3, 1]
+     * [3, 1, 2]
+     * [3, 2, 1]
+     *
+     * @param self the Collection of items
+     * @param closure the closure to call for each permutation
+     * @return the permutations from the list
+     */
+    public static <T> Iterator<List<T>> eachPermutation(Collection<T> self, Closure closure) {
+        Iterator<List<T>> generator = new PermutationGenerator<T>(self);
+        while (generator.hasNext()) {
+            closure.call(generator.next());
+        }
+        return generator;
+    }
+
+    /**
      * Adds GroovyCollections#transpose(List) as a method on lists.
      *
      * @param self a List of lists
