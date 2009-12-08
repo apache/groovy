@@ -88,9 +88,9 @@ public class ReturnAdder {
         if (statement instanceof SwitchStatement) {
             SwitchStatement swi = (SwitchStatement) statement;
             for (CaseStatement caseStatement : swi.getCaseStatements()) {
-                caseStatement.setCode(adjustSwitchCaseCode(caseStatement.getCode(), scope));
+                caseStatement.setCode(adjustSwitchCaseCode(caseStatement.getCode(), scope, false));
             }
-            swi.setDefaultStatement(adjustSwitchCaseCode(swi.getDefaultStatement(), scope)); 
+            swi.setDefaultStatement(adjustSwitchCaseCode(swi.getDefaultStatement(), scope, true)); 
             return swi;
         }
 
@@ -136,7 +136,7 @@ public class ReturnAdder {
         }
     }
 
-    private static Statement adjustSwitchCaseCode(Statement statement, VariableScope scope) {
+    private static Statement adjustSwitchCaseCode(Statement statement, VariableScope scope, boolean defaultCase) {
         if(statement instanceof BlockStatement) {
             final List list = ((BlockStatement)statement).getStatements();
             if (!list.isEmpty()) {
@@ -144,6 +144,8 @@ public class ReturnAdder {
                 Statement last = (Statement) list.get(idx);
                 if(last instanceof BreakStatement) {
                     list.remove(idx);
+                    return addReturnsIfNeeded(statement, scope);
+                } else if(defaultCase) {
                     return addReturnsIfNeeded(statement, scope);
                 }
             }
