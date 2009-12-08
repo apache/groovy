@@ -95,18 +95,11 @@ private class SecurityFilteringNodeOperation extends PrimaryClassNodeOperation {
     void call(SourceUnit source, GeneratorContext context, ClassNode classNode) {
         ModuleNode ast = source.getAST()
 
-        if (ast.getImports())            { throw new SecurityException("Imports of the form 'import package.ClassName' are not allowed.") }
-        if (ast.getStarImports())        { throw new SecurityException("Imports of the form 'import package.*' are not allowed.") }
-        if (ast.getStaticImports())      { throw new SecurityException("Static imports of the form 'import static package.ClassName.fieldOrMethodName' are not allowed.") }
-        if (ast.getStaticStarImports())  { throw new SecurityException("Static imports of the form 'import static package.ClassName.*' are not allowed.") }
-
-        def staticImports = ast.getStaticStarImports().values()
-        def javaLangMath = new ImportNode(ClassHelper.make(java.lang.Math))
-        // don't allow import annotations
-        javaLangMath.addAnnotations(new ArrayList<AnnotationNode>())
-        if (staticImports != ['java.lang.Math': javaLangMath]) {
-            throw new SecurityException("Only java.lang.Math is allowed for static imports.")
-        }
+        if (ast.getImports()) { throw new SecurityException("Imports of the form 'import package.ClassName' are not allowed.") }
+        if (ast.getStarImports()) { throw new SecurityException("Imports of the form 'import package.*' are not allowed.") }
+        if (ast.getStaticImports()) { throw new SecurityException("Static imports of the form 'import static package.ClassName.fieldOrMethodName' are not allowed.") }
+        def staticStarImports = ast.getStaticStarImports().keySet() as List
+        if (staticStarImports != ['java.lang.Math']) { throw new SecurityException("Only java.lang.Math is allowed for static imports. Found: " + staticStarImports) }
 
         // do not allow package names
         if (ast.getPackage()) { throw new SecurityException("Package definitions are not allowed.") }
@@ -124,8 +117,8 @@ private class SecurityFilteringNodeOperation extends PrimaryClassNodeOperation {
  * Normally, it would be easier to extend CodeVisitorSupport because that provides all the base
  * methods to perform visits on the syntax tree and would make upgrading to newer versions of
  * Groovy easier. However, that would mean that any new syntax in Groovy would be supported by
- * this shell by default which is undesireable in this case. For instance, if a new metaprogramming
- * trick gets introduced, this shell should _not_ allow it to be accessed without considerationg
+ * this shell by default which is undesirable in this case. For instance, if a new metaprogramming
+ * trick gets introduced, this shell should _not_ allow it to be accessed without consideration
  * from the developer.
  */
 private class ArithmeticExpressionEnforcer implements GroovyCodeVisitor {
@@ -384,7 +377,7 @@ private class ArithmeticExpressionEnforcer implements GroovyCodeVisitor {
         throw new SecurityException("Variable expressions forbidden in arithmetic shell.")
     }
     void visitDeclarationExpression(DeclarationExpression declarationExpression) {
-        throw new SecurityException("Declaraion expressions forbidden in arithmetic shell.")
+        throw new SecurityException("Declaration expressions forbidden in arithmetic shell.")
     }
     void visitRegexExpression(RegexExpression regexExpression) {
         throw new SecurityException("Regex expressions forbidden in arithmetic shell.")
