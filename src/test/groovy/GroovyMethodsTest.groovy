@@ -842,6 +842,42 @@ class GroovyMethodsTest extends GroovySwingTestCase {
                 ['g']
         ] as Set
     }
+
+    void testPermutations() {
+        def items = [1, 2, 3]
+        assert items.permutations() == [[1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 1], [3, 1, 2], [3, 2, 1]] as Set
+        items = "frog".toList()
+        def ans = [] as Set
+        items.eachPermutation {
+            ans << it
+        }
+        assert ans == [
+                ['f', 'r', 'o', 'g'],
+                ['f', 'r', 'g', 'o'],
+                ['f', 'o', 'r', 'g'],
+                ['f', 'o', 'g', 'r'],
+                ['f', 'g', 'r', 'o'],
+                ['f', 'g', 'o', 'r'],
+                ['r', 'f', 'o', 'g'],
+                ['r', 'f', 'g', 'o'],
+                ['r', 'o', 'f', 'g'],
+                ['r', 'o', 'g', 'f'],
+                ['r', 'g', 'f', 'o'],
+                ['r', 'g', 'o', 'f'],
+                ['o', 'r', 'f', 'g'],
+                ['o', 'r', 'g', 'f'],
+                ['o', 'f', 'r', 'g'],
+                ['o', 'f', 'g', 'r'],
+                ['o', 'g', 'r', 'f'],
+                ['o', 'g', 'f', 'r'],
+                ['g', 'r', 'o', 'f'],
+                ['g', 'r', 'f', 'o'],
+                ['g', 'o', 'r', 'f'],
+                ['g', 'o', 'f', 'r'],
+                ['g', 'f', 'r', 'o'],
+                ['g', 'f', 'o', 'r'],
+        ] as Set
+    }
 }
 
 class WackyList extends LinkedList {
