@@ -3596,13 +3596,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see java.util.List#subList(int,int)
      * @since 1.0
      */
-    public static <T> List<T> getAt(List<T> self, IntRange range) {
+    public static <T> List<T> getAt(List<T> self, Range range) {
         RangeInfo info = subListBorders(self.size(), range);
         List<T> answer = self.subList(info.from, info.to);  // sublist is always exclusive, but Ranges are not
         if (info.reverse) {
             answer = reverse(answer);
         }
         return answer;
+    }
+
+    /**
+     * Support the range subscript operator for a List
+     *
+     * @param self  a List
+     * @param range a Range indicating the items to get
+     * @return a sublist based on range borders or a new list if range is reversed
+     * @see java.util.List#subList(int,int)
+     * @since 1.0
+     */
+    public static <T> List<T> getAt(List<T> self, EmptyRange range) {
+        return new ArrayList<T> ();
     }
 
     /**
@@ -13211,7 +13224,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return itself
      * @since 1.5.0
      */
-    public static Iterator iterator(Iterator self) {
+    public static <T> Iterator<T> iterator(Iterator<T> self) {
         return self;
     }
 
