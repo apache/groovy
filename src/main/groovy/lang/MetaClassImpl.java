@@ -2788,6 +2788,13 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
      * @param arguments
      */
     protected Object chooseMethod(String methodName, Object methodOrList, Class[] arguments) {
+        Object method = chooseMethodInternal(methodName, methodOrList, arguments);
+        if (method instanceof GeneratedMetaMethod.Proxy)
+            return ((GeneratedMetaMethod.Proxy)method).proxy ();
+        return method;
+    }
+
+    private Object chooseMethodInternal(String methodName, Object methodOrList, Class[] arguments) {
         if (methodOrList instanceof MetaMethod) {
             if (((ParameterTypes) methodOrList).isValidMethod(arguments)) {
                 return methodOrList;
