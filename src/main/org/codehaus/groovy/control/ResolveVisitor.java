@@ -30,6 +30,8 @@ import org.objectweb.asm.Opcodes;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -956,6 +958,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     public void visitAnnotations(AnnotatedNode node) {
         List annotations = node.getAnnotations();
         if (annotations.isEmpty()) return;
+        Map tmpAnnotations = new HashMap();
         Iterator it = annotations.iterator();
         while (it.hasNext()) {
             AnnotationNode an = (AnnotationNode) it.next();
@@ -974,6 +977,16 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                         addError("unable to find class for enum",pe.getObjectExpression());
                     }
                 }
+            }
+            if(type.isResolved()) {
+            	Class annTypeClass = type.getTypeClass();
+            	Retention retAnn = (Retention) annTypeClass.getAnnotation(Retention.class);
+            	if (retAnn != null && retAnn.value().equals(RetentionPolicy.RUNTIME)) {
+            		AnnotationNode anyPrevAnnNode = (AnnotationNode) tmpAnnotations.put(annTypeClass.getName(), an);
+            		if(anyPrevAnnNode != null) {
+            			addError("Cannot specify duplicate annotation on the same member : " + type.getName(), an);
+            		}
+            	}
             }
         }
     }

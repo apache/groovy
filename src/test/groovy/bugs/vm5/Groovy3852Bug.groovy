@@ -21,10 +21,10 @@ class Groovy3852Bug extends CompilableTestSupport {
     void testDuplicationAnnotationOnClassWithParams() {
         try {
             gcl.parseClass """
-                @Newify(auto=false, value=Integer)
-                @Newify(auto=false, value=Integer)
-                @Newify(auto=false, value=Integer)
-                class TooDeprecatedGroovy3852V2 {}
+                import java.lang.annotation.*
+                @Retention(value=RetentionPolicy.CLASS)
+                @Retention(value=RetentionPolicy.CLASS)
+                @interface TooDeprecatedGroovy3852V2 {}
             """
             fail('The class compilation should have failed as it has duplication annotations')
         }catch(ex) {
@@ -59,6 +59,18 @@ class Groovy3852Bug extends CompilableTestSupport {
             fail('The class compilation should have failed as it has duplication annotations on a field')
         }catch(ex) {
             assertTrue ex.message.contains('Cannot specify duplicate annotation')
+        }
+    }
+    
+    void testDuplicationNonRuntimeRetentionPolicyAnnotations() {
+         try {
+            gcl.parseClass """
+                @Newify(auto=false, value=String)
+                @Newify(auto=false, value=String)
+                class Groovy3930 {}
+            """
+        }catch(ex) {
+            fail('The class compilation should have succeeded as it has duplication annotations but with retention policy not at RUNTIME')
         }
     }
 }
