@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2009 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,8 +38,8 @@ public class JavaStubGenerator
     private boolean java5 = false;
     private boolean requireSuperResolved = false;
     private File outputPath;
-    private List toCompile = new ArrayList();
-    private ArrayList propertyMethods = new ArrayList();
+    private List<String> toCompile = new ArrayList<String>();
+    private ArrayList<MethodNode> propertyMethods = new ArrayList<MethodNode>();
 
     public JavaStubGenerator(final File outputPath, final boolean requireSuperResolved, final boolean java5) {
         this.outputPath = outputPath;
@@ -51,14 +51,14 @@ public class JavaStubGenerator
     public JavaStubGenerator(final File outputPath) {
         this(outputPath, false, false);
     }
-    
+
     private void mkdirs(File parent, String relativeFile) {
         int index = relativeFile.lastIndexOf('/');
         if (index==-1) return;
         File dir = new File(parent,relativeFile.substring(0,index));
         dir.mkdirs();
     }
-    
+
     public void generateClass(ClassNode classNode) throws FileNotFoundException {
         // Only attempt to render our self if our super-class is resolved, else wait for it
         if (requireSuperResolved && !classNode.getSuperClass().isResolved()) {
@@ -79,7 +79,7 @@ public class JavaStubGenerator
         File file = new File(outputPath, fileName + ".java");
         FileOutputStream fos = new FileOutputStream(file);
         PrintWriter out = new PrintWriter(fos);
-        
+
         try {
             String packageName = classNode.getPackageName();
             if (packageName != null) {
@@ -160,7 +160,7 @@ public class JavaStubGenerator
             }
             out.println(" {");
 
-            genFields(classNode, out, isEnum);
+            genFields(classNode, out);
             genMethods(classNode, out, isEnum);
 
             for (Iterator<InnerClassNode> inner = classNode.getInnerClasses(); inner.hasNext(); ) {
@@ -177,70 +177,63 @@ public class JavaStubGenerator
     private void genMethods(ClassNode classNode, PrintWriter out, boolean isEnum) {
         if (!isEnum) getConstructors(classNode, out);
 
-        List methods = (List) propertyMethods.clone();
+        @SuppressWarnings("unchecked")
+        List<MethodNode> methods = (List)propertyMethods.clone();
         methods.addAll(classNode.getMethods());
-        if (methods != null)
-            for (Iterator it = methods.iterator(); it.hasNext();) {
-                MethodNode methodNode = (MethodNode) it.next();
-                if(isEnum && methodNode.isSynthetic()) {
-                    // skip values() method and valueOf(String)
-                    String name = methodNode.getName();
-                    Parameter[] params = methodNode.getParameters();
-                    if (name.equals("values") && params.length==0) continue;
-                    if (name.equals("valueOf") && 
-                        params.length==1 &&
-                        params[0].getType().equals(ClassHelper.STRING_TYPE))
-                    {
-                        continue;
-                    }
+        for (MethodNode method : methods) {
+            if (isEnum && method.isSynthetic()) {
+                // skip values() method and valueOf(String)
+                String name = method.getName();
+                Parameter[] params = method.getParameters();
+                if (name.equals("values") && params.length == 0) continue;
+                if (name.equals("valueOf") &&
+                        params.length == 1 &&
+                        params[0].getType().equals(ClassHelper.STRING_TYPE)) {
+                    continue;
                 }
-                genMethod(classNode, methodNode, out);
             }
+            genMethod(classNode, method, out);
+        }
     }
 
     private void getConstructors(ClassNode classNode, PrintWriter out) {
-        List constrs = classNode.getDeclaredConstructors();
+        List<ConstructorNode> constrs = classNode.getDeclaredConstructors();
         if (constrs != null)
-            for (Iterator it = constrs.iterator(); it.hasNext();) {
-                ConstructorNode constrNode = (ConstructorNode) it.next();
-                genConstructor(classNode, constrNode, out);
+            for (ConstructorNode constr : constrs) {
+                genConstructor(classNode, constr, out);
             }
     }
 
-    private void genFields(ClassNode classNode, PrintWriter out, boolean isEnum) {
-        List fields = classNode.getFields();
+    private void genFields(ClassNode classNode, PrintWriter out) {
+        List<FieldNode> fields = classNode.getFields();
         if (fields == null) return;
-        ArrayList enumFields = new ArrayList(fields.size());
-        ArrayList normalFields = new ArrayList(fields.size());
-        for (Iterator it = fields.iterator(); it.hasNext();) {
-            FieldNode fieldNode = (FieldNode) it.next();
-            boolean isEnumField = (fieldNode.getModifiers() & Opcodes.ACC_ENUM) !=0;
-            boolean isSynthetic = (fieldNode.getModifiers() & Opcodes.ACC_SYNTHETIC) !=0;
-            if (isEnumField) {
-                enumFields.add(fieldNode);
+        List<FieldNode> enumFields = new ArrayList<FieldNode>(fields.size());
+        List<FieldNode> normalFields = new ArrayList<FieldNode>(fields.size());
+        for (FieldNode field : fields) {
+            boolean isSynthetic = (field.getModifiers() & Opcodes.ACC_SYNTHETIC) != 0;
+            if (field.isEnum()) {
+                enumFields.add(field);
             } else if (!isSynthetic) {
-                normalFields.add(fieldNode);
+                normalFields.add(field);
             }
         }
         genEnumFields(enumFields, out);
-        for (Iterator iterator = normalFields.iterator(); iterator.hasNext();) {
-            FieldNode fieldNode = (FieldNode) iterator.next();
-            genField(fieldNode, out);            
-        } 
+        for (FieldNode normalField : normalFields) {
+            genField(normalField, out);
+        }
     }
 
-    
-    private void genEnumFields(List fields, PrintWriter out) {
+
+    private void genEnumFields(List<FieldNode> fields, PrintWriter out) {
         if (fields.size()==0) return;
         boolean first = true;
-        for (Iterator iterator = fields.iterator(); iterator.hasNext();) {
-            FieldNode fieldNode = (FieldNode) iterator.next();
+        for (FieldNode field : fields) {
             if (!first) {
                 out.print(", ");
             } else {
                 first = false;
             }
-            out.print(fieldNode.getName());            
+            out.print(field.getName());
         }
         out.println(";");
     }
@@ -303,21 +296,18 @@ public class JavaStubGenerator
         ClassNode type = node.getDeclaringClass();
         ClassNode superType = type.getSuperClass();
 
-        boolean hadPrivateConstructor = false;
-        for (Iterator iter = superType.getDeclaredConstructors().iterator(); iter.hasNext();) {
-            ConstructorNode c = (ConstructorNode)iter.next();
-
+        for (ConstructorNode c : superType.getDeclaredConstructors()) {
             // Only look at things we can actually call
             if (c.isPublic() || c.isProtected()) {
                 return c.getParameters();
             }
         }
-        
+
         // fall back for parameterless constructor 
         if (superType.isPrimaryClassNode()) {
             return Parameter.EMPTY_ARRAY;
         }
-        
+
         return null;
     }
 
@@ -335,7 +325,7 @@ public class JavaStubGenerator
                     out.print(", ");
                 }
             }
-            
+
             out.println(");");
             return;
         }
@@ -353,11 +343,9 @@ public class JavaStubGenerator
         // Else try to render some arguments
         if (arguments instanceof ArgumentListExpression) {
             ArgumentListExpression argumentListExpression = (ArgumentListExpression) arguments;
-            List args = argumentListExpression.getExpressions();
+            List<Expression> args = argumentListExpression.getExpressions();
 
-            for (Iterator it = args.iterator(); it.hasNext();) {
-                Expression arg = (Expression) it.next();
-
+            for (Expression arg : args) {
                 if (arg instanceof ConstantExpression) {
                     ConstantExpression expression = (ConstantExpression) arg;
                     Object o = expression.getValue();
@@ -385,10 +373,9 @@ public class JavaStubGenerator
         if (!(arg instanceof VariableExpression)) return arg.getType();
         VariableExpression vexp = (VariableExpression) arg;
         String name = vexp.getName();
-        Parameter[] params = node.getParameters();
-        for (int i=0; i<params.length; i++) {
-            if (params[i].getName().equals(name)) {
-                return params[i].getType();
+        for (Parameter param : node.getParameters()) {
+            if (param.getName().equals(name)) {
+                return param.getType();
             }
         }
         return vexp.getType();
@@ -463,7 +450,7 @@ public class JavaStubGenerator
             printType(type.getComponentType(),out);
             out.print("[]");
         } else if (java5 && type.isGenericsPlaceHolder()) {
-        	out.print(type.getGenericsTypes()[0].getName());
+            out.print(type.getGenericsTypes()[0].getName());
         } else {
             writeGenericsBounds(out,type,false);
         }
@@ -494,8 +481,8 @@ public class JavaStubGenerator
             out.print(type.redirect().getName().replace('$', '.'));
         }
     }
-    
-    
+
+
     private void writeGenericsBounds(PrintWriter out, ClassNode type, boolean skipName) {
         if (!skipName) printTypeName(type,out);
         if (!java5) return;
@@ -503,7 +490,7 @@ public class JavaStubGenerator
             writeGenericsBounds(out,type.getGenericsTypes());
         }
     }
-    
+
     private void writeGenericsBounds(PrintWriter out, GenericsType[] genericsTypes) {
         if (genericsTypes==null || genericsTypes.length==0) return;
         out.print('<');
@@ -513,7 +500,7 @@ public class JavaStubGenerator
         }
         out.print('>');
     }
-    
+
     private void writeGenericsBounds(PrintWriter out, GenericsType genericsType) {
         if (genericsType.isPlaceholder()) {
             out.print(genericsType.getName());
@@ -542,7 +529,7 @@ public class JavaStubGenerator
         if (parameters != null && parameters.length != 0) {
             for (int i = 0; i != parameters.length; ++i) {
                 printType(parameters[i].getType(), out);
-                
+
                 out.print(" ");
                 out.print(parameters[i].getName());
 
@@ -551,7 +538,7 @@ public class JavaStubGenerator
                 }
             }
         }
-        
+
         out.print(")");
     }
 
@@ -564,7 +551,7 @@ public class JavaStubGenerator
 
         if ((modifiers & Opcodes.ACC_PRIVATE) != 0)
             out.print("private ");
-        
+
         if ((modifiers & Opcodes.ACC_STATIC) != 0)
             out.print("static ");
 
@@ -582,7 +569,7 @@ public class JavaStubGenerator
         // HACK: Add the default imports... since things like Closure and GroovyObject seem to parse out w/o fully qualified classnames.
         //
         imports.addAll(Arrays.asList(ResolveVisitor.DEFAULT_IMPORTS));
-        
+
         ModuleNode moduleNode = classNode.getModule();
         for (ImportNode importNode : moduleNode.getStarImports()) {
             imports.add(importNode.getPackageName());
@@ -604,8 +591,7 @@ public class JavaStubGenerator
     }
 
     public void clean() {
-        for (Iterator it = toCompile.iterator(); it.hasNext();) {
-            String path = (String) it.next();
+        for (String path : toCompile) {
             new File(outputPath, path + ".java").delete();
         }
     }
