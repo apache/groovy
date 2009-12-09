@@ -61,15 +61,29 @@ class Groovy3852Bug extends CompilableTestSupport {
             assertTrue ex.message.contains('Cannot specify duplicate annotation')
         }
     }
-    
+
     void testDuplicationNonRuntimeRetentionPolicyAnnotations() {
-         try {
+        try {
             gcl.parseClass """
                 @Newify(auto=false, value=String)
                 @Newify(auto=false, value=String)
                 class Groovy3930 {}
             """
-        }catch(ex) {
+        } catch (ex) {
+            fail('The class compilation should have succeeded as it has duplication annotations but with retention policy not at RUNTIME')
+        }
+    }
+
+    void testDuplicationAnnotationsForImport() {
+        // TODO: replace with better test - Newify doesn't really make sense for import
+        try {
+            gcl.parseClass """
+                @Newify(auto=false, value=String)
+                @Newify(auto=false, value=String)
+                import java.lang.String
+                class Groovy3925 {}
+            """
+        } catch (ex) {
             fail('The class compilation should have succeeded as it has duplication annotations but with retention policy not at RUNTIME')
         }
     }
