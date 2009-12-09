@@ -264,11 +264,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         List<AnnotationNode> annotations = new ArrayList<AnnotationNode>();
         AST node = packageDef.getFirstChild();
         if (isType(ANNOTATIONS, node)) {
-            if (node.getFirstChild() != null) {
-                AST child = node.getFirstChild();
-                if (isType(ANNOTATION, child))
-                    annotations.add(annotation(child));
-            }
+            processAnnotations(annotations, node);
             node = node.getNextSibling();
         }
         String name = qualifiedName(node);
@@ -283,11 +279,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         AST node = importNode.getFirstChild();
         if (isType(ANNOTATIONS, node)) {
-            if (node.getFirstChild() != null) {
-                AST child = node.getFirstChild();
-                if (isType(ANNOTATION, child))
-                    annotations.add(annotation(child));
-            }
+            processAnnotations(annotations, node);
             node = node.getNextSibling();
         }
 
@@ -343,6 +335,15 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
     }
 
+    private void processAnnotations(List<AnnotationNode> annotations, AST node) {
+        AST child = node.getFirstChild();
+        while (child != null) {
+            if (isType(ANNOTATION, child))
+                annotations.add(annotation(child));
+            child = child.getNextSibling();
+        }
+    }
+    
     protected void annotationDef(AST classDef) {
         List<AnnotationNode> annotations = new ArrayList<AnnotationNode>();
         AST node = classDef.getFirstChild();
