@@ -478,7 +478,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self  a PrintStream
      * @param value the value to print
-     * @since 1.6
+     * @since 1.6.0
      */
     public static void print(PrintStream self, Object value) {
         self.print(InvokerHelper.toString(value));
@@ -567,7 +567,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self  any Object
      * @param value the value to print
-     * @since 1.6
+     * @since 1.6.0
      */
     public static void println(PrintStream self, Object value) {
         self.println(InvokerHelper.toString(value));
@@ -1899,6 +1899,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self the List of items
      * @return the subsequences from the list
+     * @since 1.7.0
      */
     public static <T> Set<List<T>> subsequences(List<T> self) {
         return GroovyCollections.subsequences(self);
@@ -1911,6 +1912,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self the Collection of items
      * @return the permutations from the list
+     * @since 1.7.0
      */
     public static <T> Set<List<T>> permutations(List<T> self) {
         Set<List<T>> ans = new HashSet<List<T>>();
@@ -1934,6 +1936,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self the Collection of items
      * @param closure the closure to call for each permutation
      * @return the permutations from the list
+     * @since 1.7.0
      */
     public static <T> Iterator<List<T>> eachPermutation(Collection<T> self, Closure closure) {
         Iterator<List<T>> generator = new PermutationGenerator<T>(self);
@@ -2972,7 +2975,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param   replacement the string to be substituted for the first match
      * @return  The resulting <tt>String</tt>
      * @see java.lang.String#replaceAll(String, String)
-     *
      * @since 1.6.1
      */
     public static String replaceAll(String self, Pattern pattern, String replacement) {
@@ -2987,7 +2989,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param   pattern the regex Pattern to which the string of interest is to be matched
      * @return  The resulting <tt>String</tt>
      * @see java.lang.String#matches(String)
-     *
      * @since 1.6.1
      */
     public static boolean matches(String self, Pattern pattern) {
@@ -3914,7 +3915,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * A helper method to allow lists to work with subscript operators.
      *
      * @param self  a List
-     * @param range the subset of the list to set
+     * @param range the (in this case empty) subset of the list to set
      * @param value the values to put at the given sublist or a Collection of values
      * @since 1.0
      */
@@ -3931,6 +3932,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
     }
 
+    /**
+     * A helper method to allow lists to work with subscript operators.
+     *
+     * @param self  a List
+     * @param range the (in this case empty) subset of the list to set
+     * @param value the Collection of values
+     * @since 1.0
+     * @see #putAt(List, EmptyRange, Object)
+     */
     public static void putAt(List self, EmptyRange range, Collection value) {
     	putAt(self, range, (Object)value);
     }
@@ -4667,7 +4677,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param object the object to coerce
      * @return the boolean value
-     * @since 1.7-beta-2
+     * @since 1.7.0
      */
     public static boolean asBoolean(Object object) {
         return object != null;
@@ -4678,7 +4688,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param bool the Boolean
      * @return the boolean value
-     * @since 1.7-beta-2
+     * @since 1.7.0
      */
     public static boolean asBoolean(Boolean bool) {
         return bool.booleanValue();
@@ -4689,7 +4699,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param matcher the matcher
      * @return the boolean value
-     * @since 1.7-beta-2
+     * @since 1.7.0
      */
     public static boolean asBoolean(Matcher matcher) {
         RegexSupport.setLastMatcher(matcher);
@@ -4702,7 +4712,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param collection the collection
      * @return the boolean value
-     * @since 1.7-beta-2
+     * @since 1.7.0
      */
     public static boolean asBoolean(Collection collection) {
         return !collection.isEmpty();
@@ -4714,7 +4724,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param map the map
      * @return the boolean value
-     * @since 1.7-beta-2
+     * @since 1.7.0
      */
     public static boolean asBoolean(Map map) {
         return !map.isEmpty();
@@ -4727,7 +4737,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param iterator the iterator
      * @return the boolean value
-     * @since 1.7-beta-2
+     * @since 1.7.0
      */
     public static boolean asBoolean(Iterator iterator) {
         return iterator.hasNext();
@@ -4740,7 +4750,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param enumeration the enumeration
      * @return the boolean value
-     * @since 1.7-beta-2
+     * @since 1.7.0
      */
     public static boolean asBoolean(Enumeration enumeration) {
         return enumeration.hasMoreElements();
@@ -4753,7 +4763,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param string the character sequence
      * @return the boolean value
-     * @since 1.7-beta-2
+     * @since 1.7.0
      */
     public static boolean asBoolean(CharSequence string) {
         return string.length() > 0;
@@ -4766,7 +4776,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param array the array
      * @return the boolean value
-     * @since 1.7-beta-2
+     * @since 1.7.0
      */
     public static boolean asBoolean(Object[] array) {
         return array.length > 0;
@@ -4779,7 +4789,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param character the character
      * @return the boolean value
-     * @since 1.7-beta-2
+     * @since 1.7.0
      */
 
     public static boolean asBoolean(Character character) {
@@ -4793,7 +4803,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param number the number
      * @return the boolean value
-     * @since 1.7-beta-2
+     * @since 1.7.0
      */
     public static boolean asBoolean(Number number) {
         return number.doubleValue() != 0;
@@ -4806,7 +4816,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param grs the GroovyResultSet
      * @return the boolean value
-     * @since 1.7-beta-2
+     * @since 1.7.0
      */
     public static boolean asBoolean(GroovyResultSet grs) {
         //TODO: check why this asBoolean() method is needed for SqlTest to pass with custom boolean coercion in place
@@ -7211,7 +7221,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * 
      * @param self an array
      * @return the string representation
-     * @since 1.6
+     * @since 1.6.0
      */
     public static String toString(boolean[] self) {
         return InvokerHelper.toString(self);
@@ -7222,7 +7232,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * 
      * @param self an array
      * @return the string representation
-     * @since 1.6
+     * @since 1.6.0
      */
     public static String toString(byte[] self) {
         return InvokerHelper.toString(self);
@@ -7233,7 +7243,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * 
      * @param self an array
      * @return the string representation
-     * @since 1.6
+     * @since 1.6.0
      */
     public static String toString(char[] self) {
         return InvokerHelper.toString(self);
@@ -7244,7 +7254,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * 
      * @param self an array
      * @return the string representation
-     * @since 1.6
+     * @since 1.6.0
      */
     public static String toString(short[] self) {
         return InvokerHelper.toString(self);
@@ -7255,7 +7265,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * 
      * @param self an array
      * @return the string representation
-     * @since 1.6
+     * @since 1.6.0
      */
     public static String toString(int[] self) {
         return InvokerHelper.toString(self);
@@ -7266,7 +7276,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * 
      * @param self an array
      * @return the string representation
-     * @since 1.6
+     * @since 1.6.0
      */
     public static String toString(long[] self) {
         return InvokerHelper.toString(self);
@@ -7277,7 +7287,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * 
      * @param self an array
      * @return the string representation
-     * @since 1.6
+     * @since 1.6.0
      */
     public static String toString(float[] self) {
         return InvokerHelper.toString(self);
@@ -7288,7 +7298,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * 
      * @param self an array
      * @return the string representation
-     * @since 1.6
+     * @since 1.6.0
      */
     public static String toString(double[] self) {
         return InvokerHelper.toString(self);
@@ -8475,7 +8485,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param number a Float
      * @param precision the number of decimal places to keep
      * @return the Float rounded to the number of decimal places specified by precision
-     * @since 1.6.x
+     * @since 1.6.0
      */
     public static float round(Float number, int precision) {
         return (float)(Math.floor(number.doubleValue()*Math.pow(10,precision)+0.5)/Math.pow(10,precision));
@@ -8487,7 +8497,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param number a Float
      * @param precision the number of decimal places to keep
      * @return the Float truncated to the number of decimal places specified by precision
-     * @since 1.6.x
+     * @since 1.6.0
      */
     public static float trunc(Float number, int precision) {
         return (float)(Math.floor(number.doubleValue()*Math.pow(10,precision))/Math.pow(10,precision));
@@ -8498,7 +8508,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param number a Double
      * @return the Double truncated to 0 decimal places (i.e. a synonym for floor)
-     * @since 1.6.x
+     * @since 1.6.0
      */
     public static float trunc(Float number) {
         return (float)Math.floor(number.doubleValue());
@@ -9292,6 +9302,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param file a file
      * @return an object output stream
      * @throws IOException if an IOException occurs.
+     * @since 1.5.0
      */
     public static ObjectOutputStream newObjectOutputStream(File file) throws IOException {
         return new ObjectOutputStream(new FileOutputStream(file));
@@ -9303,6 +9314,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param outputStream an output stream
      * @return an object output stream
      * @throws IOException if an IOException occurs.
+     * @since 1.5.0
      */
     public static ObjectOutputStream newObjectOutputStream(OutputStream outputStream) throws IOException {
         return new ObjectOutputStream(outputStream);
@@ -9318,6 +9330,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      * @see #withStream(OutputStream,Closure)
+     * @since 1.5.0
      */
     public static Object withObjectOutputStream(File file, Closure closure) throws IOException {
         return withStream(newObjectOutputStream(file), closure);
@@ -9333,6 +9346,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      * @see #withStream(OutputStream,Closure)
+     * @since 1.5.0
      */
     public static Object withObjectOutputStream(OutputStream outputStream, Closure closure) throws IOException {
         return withStream(newObjectOutputStream(outputStream), closure);
@@ -9356,6 +9370,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param inputStream an input stream
      * @return an object input stream
      * @throws IOException if an IOException occurs.
+     * @since 1.5.0
      */
     public static ObjectInputStream newObjectInputStream(InputStream inputStream) throws IOException {
         return new ObjectInputStream(inputStream);
@@ -9368,6 +9383,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param classLoader the class loader to use when loading the class
      * @return an object input stream
      * @throws IOException if an IOException occurs.
+     * @since 1.5.0
      */
     public static ObjectInputStream newObjectInputStream(InputStream inputStream, final ClassLoader classLoader) throws IOException {
         return new ObjectInputStream(inputStream) {
@@ -9474,6 +9490,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      * @see #withStream(InputStream,Closure)
+     * @since 1.5.0
      */
     public static Object withObjectInputStream(InputStream inputStream, Closure closure) throws IOException {
         return withStream(newObjectInputStream(inputStream), closure);
@@ -9489,6 +9506,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
      * @see #withStream(InputStream,Closure)
+     * @since 1.5.0
      */
     public static Object withObjectInputStream(InputStream inputStream, ClassLoader classLoader, Closure closure) throws IOException {
         return withStream(newObjectInputStream(inputStream, classLoader), closure);
@@ -10348,6 +10366,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param bytes the byte array to append to the end of the File
      * @return the original file
      * @throws IOException if an IOException occurs.
+     * @since 1.5.0
      */
     public static File leftShift(File file, byte[] bytes) throws IOException {
         append(file, bytes);
@@ -10360,6 +10379,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param data an InputStream of data to write to the file
      * @return the file
      * @throws IOException if an IOException occurs.
+     * @since 1.5.0
      */
     public static File leftShift(File file, InputStream data) throws IOException {
     	append(file, data);
@@ -10442,6 +10462,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a File
      * @param stream stream to read data from.  
      * @throws IOException if an IOException occurs.
+     * @since 1.5.0
      */
     public static void append(File self, InputStream stream ) throws IOException {
     	OutputStream out = new FileOutputStream( self, true );
@@ -11101,7 +11122,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param writer   a writer
      * @return a PrintWriter
-     * @since 1.6
+     * @since 1.6.0
      */
     public static PrintWriter newPrintWriter(Writer writer) {
         return new GroovyPrintWriter(writer);
@@ -11147,7 +11168,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the closure to invoke with the PrintWriter
      * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
-     * @since 1.6
+     * @since 1.6.0
      */
     public static Object withPrintWriter(Writer writer, Closure closure) throws IOException {
         return withWriter(newPrintWriter(writer), closure);
