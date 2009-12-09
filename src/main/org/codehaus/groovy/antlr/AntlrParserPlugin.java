@@ -38,12 +38,10 @@ import java.io.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
 /**
@@ -959,7 +957,6 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
         boolean access = false;
         int answer = 0;
-        Map<ClassNode, AnnotationNode> tmpAnnotations = new HashMap<ClassNode, AnnotationNode>();
 
         for (AST node = modifierNode.getFirstChild(); node != null; node = node.getNextSibling()) {
             int type = node.getType();
@@ -970,13 +967,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
 
                     // annotations
                 case ANNOTATION:
-                    AnnotationNode annNode = annotation(node);
-                    AnnotationNode anyPrevAnnNode = tmpAnnotations.put(annNode.getClassNode(), annNode);
-                    if(anyPrevAnnNode != null) {
-                        throw new ASTRuntimeException(modifierNode, 
-                                "Cannot specify duplicate annotation on the same member : " + annNode.getClassNode().getName());
-                    }
-                    annotations.add(annNode);
+                	annotations.add(annotation(node));
                     break;
 
                     // core access scope modifiers
