@@ -540,16 +540,6 @@
             <version>1.2</version>
             <scope>compile</scope>
             <optional>true</optional>
-            <exclusions>
-                <exclusion>
-                    <groupId>commons-lang</groupId>
-                    <artifactId>commons-lang</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>commons-logging</groupId>
-                    <artifactId>commons-logging</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
 
         <!-- only used for Ant tasks & scripting tools -->
@@ -588,6 +578,7 @@
             <version>1.2.0</version>
             <scope>test</scope>
         </dependency>
+
         <dependency>
             <groupId>asm</groupId>
             <artifactId>asm-commons</artifactId>
