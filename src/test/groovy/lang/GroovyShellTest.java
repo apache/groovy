@@ -41,6 +41,8 @@ import junit.textui.TestRunner;
 import org.codehaus.groovy.control.CompilerConfiguration;
 
 import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -118,5 +120,19 @@ public class GroovyShellTest extends GroovyTestCase {
                         "'''";
         shell.evaluate(script);
      
+    }
+
+    public void testWithGCSWithURL() throws Exception {
+    	String scriptFileName = "src/test/groovy/bugs/GROOVY3934Helper.groovy";
+    	File helperScript = new File(scriptFileName);
+    	if(!helperScript.exists()) {
+    		fail("File " + scriptFileName + " does not exist");
+    	} else {
+        	URL url = helperScript.toURL();
+        	GroovyCodeSource gcs = new GroovyCodeSource(url);
+        	GroovyShell shell = new GroovyShell();
+            Object result = shell.evaluate(gcs);
+            assertEquals("GROOVY3934Helper script called", result);
+    	}
     }
 }
