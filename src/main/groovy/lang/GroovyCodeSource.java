@@ -175,6 +175,16 @@ public class GroovyCodeSource {
 		}
 		this.name = url.toExternalForm();
 		this.codeSource = new CodeSource(url, (java.security.cert.Certificate[])null);
+		try {
+			String contentEncoding = url.openConnection().getContentEncoding();
+			if(contentEncoding != null) {
+				this.scriptText = DefaultGroovyMethods.getText(url, contentEncoding);
+			} else {
+				this.scriptText = DefaultGroovyMethods.getText(url); // falls-back on default encoding
+			}
+		} catch (IOException e) {
+			throw new RuntimeException("Impossible to read the text content from " + name, e);
+		}
 	}
 	
 	CodeSource getCodeSource() {
