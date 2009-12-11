@@ -21,6 +21,9 @@ import org.codehaus.groovy.reflection.CachedMethod;
 import org.codehaus.groovy.reflection.ReflectionCache;
 import org.codehaus.groovy.reflection.GeneratedMetaMethod;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.SwingGroovyMethods;
+import org.codehaus.groovy.runtime.SqlGroovyMethods;
+import org.codehaus.groovy.runtime.XmlGroovyMethods;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -28,13 +31,24 @@ import org.objectweb.asm.Opcodes;
 
 import java.io.*;
 import java.util.ArrayList;
+import java.util.Collections;
 
 public class DgmConverter implements Opcodes{
     private static BytecodeHelper helper;
 
     public static void main(String[] args) throws IOException, ClassNotFoundException {
-        final CachedClass dgm = ReflectionCache.getCachedClass(DefaultGroovyMethods.class);
-        final CachedMethod[] cachedMethods = dgm.getMethods();
+        Class [] classes = new Class [] {
+            DefaultGroovyMethods.class,
+            SwingGroovyMethods.class,
+            SqlGroovyMethods.class,
+            XmlGroovyMethods.class
+        };
+
+        ArrayList<CachedMethod> cachedMethodsList = new ArrayList<CachedMethod> ();
+        for (Class aClass : classes) {
+            Collections.addAll(cachedMethodsList, ReflectionCache.getCachedClass(aClass).getMethods());
+        }
+        final CachedMethod[] cachedMethods = cachedMethodsList.toArray(new CachedMethod[cachedMethodsList.size()]);
 
         ArrayList<GeneratedMetaMethod.DgmMethodRecord> records = new ArrayList<GeneratedMetaMethod.DgmMethodRecord> ();
 
@@ -171,7 +185,7 @@ public class DgmConverter implements Opcodes{
             helper.doCast(method.getParameterTypes()[0].getTheClass());
             loadParameters(method,2,mv);
         }
-        mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/DefaultGroovyMethods", method.getName(), methodDescriptor);
+        mv.visitMethodInsn(INVOKESTATIC, BytecodeHelper.getClassInternalName(method.getDeclaringClass().getTheClass()), method.getName(), methodDescriptor);
         helper.box(returnType);
         if (method.getReturnType() == void.class) {
             mv.visitInsn(ACONST_NULL);
@@ -189,7 +203,7 @@ public class DgmConverter implements Opcodes{
         mv.visitVarInsn(ALOAD,1);
         helper.doCast(method.getParameterTypes()[0].getTheClass());
         loadParameters(method,2,mv);
-        mv.visitMethodInsn(INVOKESTATIC, "org/codehaus/groovy/runtime/DefaultGroovyMethods", method.getName(), methodDescriptor);
+        mv.visitMethodInsn(INVOKESTATIC, BytecodeHelper.getClassInternalName(method.getDeclaringClass().getTheClass()), method.getName(), methodDescriptor);
         helper.box(returnType);
         if (method.getReturnType() == void.class) {
             mv.visitInsn(ACONST_NULL);

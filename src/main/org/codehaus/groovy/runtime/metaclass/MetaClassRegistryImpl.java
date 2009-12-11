@@ -79,10 +79,12 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             Map<CachedClass, List<MetaMethod>> map = new HashMap<CachedClass, List<MetaMethod>>();
 
             // let's register the default methods
-            registerMethods(DefaultGroovyMethods.class, true, true, map);
-            registerMethods(SwingGroovyMethods.class, false, true, map);
-            registerMethods(SqlGroovyMethods.class, false, true, map);
-            registerMethods(XmlGroovyMethods.class, false, true, map);
+            registerMethods(null, true, true, map);
+            final Class[] additionals = DefaultGroovyMethods.additionals;
+            for (int i = 0; i != additionals.length; ++i ) {
+                createMetaMethodFromClass(map, additionals[i]);
+            }
+
             Class[] pluginDGMs = VMPluginFactory.getPlugin().getPluginDefaultGroovyMethods();
             for (Class plugin : pluginDGMs) {
                 registerMethods(plugin, false, true, map);
@@ -130,8 +132,6 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
     }
     
     private void registerMethods(final Class theClass, final boolean useMethodWrapper, final boolean useInstanceMethods, Map<CachedClass, List<MetaMethod>> map) {
-        CachedMethod[] methods = ReflectionCache.getCachedClass(theClass).getMethods();
-
         if (useMethodWrapper) {
             // Here we instantiate objects representing MetaMethods for DGM methods.
             // Calls for such meta methods done without reflection, so more effectively.
@@ -163,12 +163,9 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
                 e.printStackTrace();
                 System.exit(0);
             }
-
-            final Class[] additionals = DefaultGroovyMethods.additionals;
-            for (int i = 0; i != additionals.length; ++i ) {
-                createMetaMethodFromClass(map, additionals[i]);
-            }
         } else {
+            CachedMethod[] methods = ReflectionCache.getCachedClass(theClass).getMethods();
+
             for (CachedMethod method : methods) {
                 final int mod = method.getModifiers();
                 if (Modifier.isStatic(mod) && Modifier.isPublic(mod) && method.getCachedMethod().getAnnotation(Deprecated.class) == null) {
