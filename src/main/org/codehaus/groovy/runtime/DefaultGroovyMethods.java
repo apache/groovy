@@ -10618,6 +10618,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Invokes the closure for each descendant file in this directory.
      * Sub-directories are recursively searched in a depth-first fashion.
+     * Both regular files and subdirectories are passed to the closure.
      *
      * @param self    a File
      * @param closure a closure
@@ -10632,7 +10633,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Invokes the closure for each descendant directory of this directory.
      * Sub-directories are recursively searched in a depth-first fashion.
-     * Only directories are passed to the closure; regular files are ignored.
+     * Only subdirectories are passed to the closure; regular files are ignored.
      *
      * @param self    a directory
      * @param closure a closure
@@ -10676,6 +10677,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Invokes the closure for each file whose name (file.name) matches the given filter in the given directory
      * - calling the isCase() method to determine if a match occurs.  This method can be used
      * with different kinds of filters like regular expressions, classes, ranges etc.
+     * Both regular files and subdirectories are matched.
      *
      * @param self    a file
      * @param filter  the filter to perform on the directory (using the isCase(object) method)
@@ -10690,9 +10692,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Invokes the closure for each directory whose name (dir.name) matches the given filter in the given directory
+     * Invokes the closure for each subdirectory whose name (dir.name) matches the given filter in the given directory
      * - calling the isCase() method to determine if a match occurs.  This method can be used
      * with different kinds of filters like regular expressions, classes, ranges etc.
+     * Only subdirectories are matched; regular files are ignored.
      *
      * @param self    a file
      * @param filter  the filter to perform on the directory (using the isCase(object) method)
