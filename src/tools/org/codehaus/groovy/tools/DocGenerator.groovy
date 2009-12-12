@@ -263,7 +263,7 @@ class DocGenerator {
         def packageName = type[0..(-shortClassName.size() - 2)]
         shortClassName += (target.size() > 1 ? '#' + target[1].split('\\(')[0] : '')
         def apiBaseUrl, title
-        if (type.startsWith("groovy")) {
+        if (type.startsWith("groovy") || type.startsWith("org.codehaus.groovy")) {
             apiBaseUrl = "http://groovy.codehaus.org/api/"
             title = "Groovy class in $packageName"
         }
