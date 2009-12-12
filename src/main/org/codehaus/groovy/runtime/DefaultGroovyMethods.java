@@ -1035,7 +1035,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * int value (with 0 indicating the items are not unique).
      *
      * @param self    a Collection
-     * @param closure a Closure used to determine unique items
+     * @param closure a 1 or 2 arg Closure used to determine unique items
      * @return self   without any duplicates
      * @since 1.0 
      */
@@ -1176,7 +1176,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * passed the key and the value.
      *
      * @param self    the map over which we iterate
-     * @param closure the closure applied on each entry of the map
+     * @param closure the 1 or 2 arg closure applied on each entry of the map
      * @return returns the self parameter
      * @since 1.5.0
      */
@@ -1195,7 +1195,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * the index.
      *
      * @param self    the map over which we iterate
-     * @param closure a Closure to operate on each item
+     * @param closure a 2 or 3 arg Closure to operate on each item
      * @return the self Object
      * @since 1.5.0
      */
@@ -1269,10 +1269,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates over the entries of a map, and checks whether a predicate is
-     * valid for all entries.
+     * valid for all entries. If the
+     * closure takes one parameter then it will be passed the Map.Entry
+     * otherwise if the closure takes two parameters then it will be
+     * passed the key and the value.
      *
      * @param self    the map over which we iterate
-     * @param closure the closure predicate used for matching
+     * @param closure the 1 or 2 arg Closure predicate used for matching
      * @return true if every entry of the map matches the closure predicate
      * @since 1.5.0
      */
@@ -1324,10 +1327,13 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates over the entries of a map, and checks whether a predicate is
-     * valid for at least one entry
+     * valid for at least one entry. If the
+     * closure takes one parameter then it will be passed the Map.Entry
+     * otherwise if the closure takes two parameters then it will be
+     * passed the key and the value.
      *
      * @param self    the map over which we iterate
-     * @param closure the closure predicate used for matching
+     * @param closure the 1 or 2 arg closure predicate used for matching
      * @return true if any entry in the map matches the closure predicate
      * @since 1.5.0
      */
@@ -1781,7 +1787,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * one parameter, the Map.Entry object is passed.
      *
      * @param self    a Map
-     * @param closure a closure condition
+     * @param closure a 1 or 2 arg Closure condition
      * @return the first Object found
      * @since 1.0
      */
@@ -1969,7 +1975,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * be returned.
      *
      * @param self    a Map
-     * @param closure a closure condition applying on the entries
+     * @param closure a 1 or 2 arg Closure condition applying on the entries
      * @return a new subMap
      * @since 1.0
      */
@@ -2014,7 +2020,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * group.
      *
      * @param self    a map to group
-     * @param closure a closure mapping entries on keys
+     * @param closure a 1 or 2 arg Closure mapping entries on keys
      * @return a new Map grouped by keys
      * @since 1.5.2
      */
@@ -2459,7 +2465,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * further comparison.
      *
      * @param self    a Collection
-     * @param closure a Closure used to determine the correct ordering
+     * @param closure a 1 or 2 arg Closure used to determine the correct ordering
      * @return the minimum value
      * @since 1.0
      */
@@ -2579,7 +2585,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * further comparison.
      *
      * @param self    a Collection
-     * @param closure a Closure used to determine the correct ordering
+     * @param closure a 1 or 2 arg Closure used to determine the correct ordering
      * @return the maximum value
      * @since 1.0
      */
@@ -4505,7 +4511,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * further comparison.
      *
      * @param self    a Collection to be sorted
-     * @param closure a Closure used to determine the correct ordering
+     * @param closure a 1 or 2 arg Closure used to determine the correct ordering
      * @return a newly created sorted List
      * @since 1.0
      */
@@ -9535,7 +9541,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self    a String
      * @param firstLine the count of the first line
-     * @param closure a closure
+     * @param closure a closure (arg 1 is line, optional arg 2 is line number)
      * @return the last value returned by the closure
      * @throws java.io.IOException if an error occurs
      * @since 1.5.7
@@ -9553,11 +9559,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates through this file line by line.  Each line is passed to the
-     * given 1 or 2 arg closure.  The file reader is closed before this method
-     * returns.
+     * given 1 or 2 arg closure.  The file is read using a reader which
+     * is closed before this method returns.
      *
      * @param self    a File
-     * @param closure a closure
+     * @param closure a closure (arg 1 is line, optional arg 2 is line number starting at line 1)
      * @throws IOException if an IOException occurs.
      * @return the last value returned by the closure
      * @see #eachLine(java.io.File, int, groovy.lang.Closure)
@@ -9569,12 +9575,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates through this file line by line.  Each line is passed
-     * to the given 1 or 2 arg closure.  The file reader is closed
-     * before this method returns.
+     * to the given 1 or 2 arg closure.  The file is read using a reader
+     * which is closed before this method returns.
      *
      * @param self    a File
      * @param firstLine the count of the first line
-     * @param closure a closure
+     * @param closure a closure (arg 1 is line, optional arg 2 is line number)
      * @throws IOException if an IOException occurs.
      * @return the last value returned by the closure
      * @see #eachLine(java.io.Reader, int, groovy.lang.Closure)
@@ -9590,7 +9596,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param stream  a stream
      * @param charset opens the stream with a specified charset
-     * @param closure a closure
+     * @param closure a closure (arg 1 is line, optional arg 2 is line number starting at line 1)
      * @throws IOException if an IOException occurs.
      * @return the last value returned by the closure
      * @see #eachLine(java.io.InputStream, String, int, groovy.lang.Closure)
@@ -9607,7 +9613,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param stream    a stream
      * @param charset   opens the stream with a specified charset
      * @param firstLine the count of the first line
-     * @param closure   a closure
+     * @param closure a closure (arg 1 is line, optional arg 2 is line number)
      * @return the last value returned by the closure
      * @throws IOException if an IOException occurs.
      * @see #eachLine(Reader,Closure)
@@ -9622,7 +9628,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * The stream is closed before this method returns.
      *
      * @param stream  a stream
-     * @param closure a closure
+     * @param closure a closure (arg 1 is line, optional arg 2 is line number starting at line 1)
      * @throws IOException if an IOException occurs.
      * @return the last value returned by the closure
      * @see #eachLine(java.io.InputStream, int, groovy.lang.Closure)
@@ -9638,7 +9644,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param stream  a stream
      * @param firstLine the count of the first line
-     * @param closure a closure
+     * @param closure a closure (arg 1 is line, optional arg 2 is line number)
      * @throws IOException if an IOException occurs.
      * @return the last value returned by the closure
      * @see #eachLine(java.io.Reader, int, groovy.lang.Closure)
@@ -9653,7 +9659,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * line to the given 1 or 2 arg closure. The stream is closed before this method returns.
      *
      * @param url     a URL to open and read
-     * @param closure a closure to apply on each line
+     * @param closure a closure to apply on each line (arg 1 is line, optional arg 2 is line number starting at line 1)
      * @return the last value returned by the closure
      * @throws IOException if an IOException occurs.
      * @see #eachLine(java.net.URL, int, groovy.lang.Closure)
@@ -9669,7 +9675,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param url       a URL to open and read
      * @param firstLine the count of the first line
-     * @param closure   a closure to apply on each line
+     * @param closure   a closure to apply on each line (arg 1 is line, optional arg 2 is line number)
      * @return the last value returned by the closure
      * @throws IOException if an IOException occurs.
      * @see #eachLine(java.io.InputStream, int, groovy.lang.Closure)
@@ -9685,7 +9691,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param url     a URL to open and read
      * @param charset opens the stream with a specified charset
-     * @param closure a closure to apply on each line
+     * @param closure a closure to apply on each line (arg 1 is line, optional arg 2 is line number starting at line 1)
      * @return the last value returned by the closure
      * @throws IOException if an IOException occurs.
      * @see #eachLine(java.net.URL, String, int, groovy.lang.Closure)
@@ -9702,7 +9708,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param url       a URL to open and read
      * @param charset   opens the stream with a specified charset
      * @param firstLine the count of the first line
-     * @param closure   a closure to apply on each line
+     * @param closure   a closure to apply on each line (arg 1 is line, optional arg 2 is line number)
      * @return the last value returned by the closure
      * @throws IOException if an IOException occurs.
      * @see #eachLine(java.io.Reader, int, groovy.lang.Closure)
@@ -9718,7 +9724,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * as the second argument. The Reader is closed before this method returns.
      *
      * @param self    a Reader, closed after the method returns
-     * @param closure a closure
+     * @param closure a closure (arg 1 is line, optional arg 2 is line number starting at line 1)
      * @throws IOException if an IOException occurs.
      * @return the last value returned by the closure
      * @since 1.5.6
@@ -9734,7 +9740,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self      a Reader, closed after the method returns
      * @param firstLine the count of the first line
-     * @param closure   a closure which will be passed each line (or for 2 argument closures the line and count)
+     * @param closure   a closure which will be passed each line (or for 2 arg closures the line and line count)
      * @return the last value returned by the closure
      * @throws IOException if an IOException occurs.
      * @since 1.5.7
@@ -10553,13 +10559,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Invokes the closure for each file in the given directory
+     * Invokes the closure for each 'child' file in this 'parent' folder/directory.
+     * Both regular files and subfolders/subdirectories are processed.
      *
-     * @param self    a File
-     * @param closure a closure
+     * @param self    a File (that happens to be a folder/directory)
+     * @param closure a closure (first parameter is the 'child' file)
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
      * @see File#listFiles()
+     * @see #eachDir(File, Closure)
      * @since 1.5.0
      */
     public static void eachFile(final File self, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
@@ -10567,13 +10575,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Invokes the closure for each directory in this directory,
+     * Invokes the closure for each subdirectory in this directory,
      * ignoring regular files.
      *
-     * @param self    a directory
-     * @param closure a closure
+     * @param self    a File (that happens to be a folder/directory)
+     * @param closure a closure (first parameter is the subdirectory file)
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
+     * @see #eachFile(File, Closure)
      * @since 1.0
      */
     public static void eachDir(File self, Closure closure) throws FileNotFoundException, IllegalArgumentException {
