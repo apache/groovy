@@ -112,6 +112,7 @@ public class Java5 implements VMPlugin {
 
     private ClassNode configureWildcardType(WildcardType wildcardType) {
         ClassNode base = ClassHelper.makeWithoutCaching("?");
+        base.setRedirect(ClassHelper.OBJECT_TYPE);
         //TODO: more than one lower bound for wildcards?
         ClassNode[] lowers = configureTypes(wildcardType.getLowerBounds());
         ClassNode lower = null;
@@ -150,7 +151,13 @@ public class Java5 implements VMPlugin {
         if (ta.length == 0) return null;
         GenericsType[] gts = new GenericsType[ta.length];
         for (int i = 0; i < ta.length; i++) {
-            gts[i] = new GenericsType(configureType(ta[i]));
+            ClassNode t = configureType(ta[i]);
+            if (ta[i] instanceof WildcardType) {
+                GenericsType[] gen = t.getGenericsTypes();
+                gts[i] = gen[0];
+            } else {
+                gts[i] = new GenericsType(t);
+            }
         }
         return gts;
     }
