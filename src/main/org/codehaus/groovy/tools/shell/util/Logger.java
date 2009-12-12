@@ -17,6 +17,10 @@
 package org.codehaus.groovy.tools.shell.util;
 
 import org.codehaus.groovy.tools.shell.IO;
+import static org.fusesource.jansi.Ansi.ansi;
+import static org.fusesource.jansi.Ansi.Color;
+import static org.fusesource.jansi.Ansi.Color.*;
+import static org.fusesource.jansi.Ansi.Attribute.*;
 
 /**
  * Provides a very, very basic logging API.
@@ -49,21 +53,12 @@ public final class Logger {
             }
         }
 
-        StringBuffer buff = new StringBuffer();
-        
-        int color = ANSI.Code.BOLD;
+        Color color = GREEN;
         if (WARN.equals(level) || ERROR.equals(level)) {
-            color = ANSI.Code.RED;
+            color = RED;
         }
 
-        buff.append(ANSI.Renderer.encode(level, color));
-
-        buff.append(" [");
-        buff.append(name);
-        buff.append("] ");
-        buff.append(msg);
-
-        io.out.println(buff);
+        io.out.println(ansi().a(INTENSITY_BOLD).a(color).a(level).reset().a(" [").a(name).a("] ").a(msg));
 
         if (cause != null) {
             cause.printStackTrace(io.out);

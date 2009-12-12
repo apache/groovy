@@ -508,6 +508,19 @@
         </contributor>
     </contributors>
 
+    <repositories>
+        <repository>
+            <id>jansi</id>
+            <url>http://jansi.fusesource.org/repo/release</url>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+        </repository>
+    </repositories>
+
     <dependencies>
 
         <!-- core dependencies -->
@@ -707,6 +720,12 @@
                     <artifactId>junit</artifactId>
                 </exclusion>
             </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.fusesource.jansi</groupId>
+            <artifactId>jansi</artifactId>
+            <version>1.1</version>
         </dependency>
 
         <!-- Used for @Grab and Grapes-->
