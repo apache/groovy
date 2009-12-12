@@ -17,11 +17,14 @@
 package org.codehaus.groovy.tools.shell
 
 import org.codehaus.groovy.runtime.InvokerHelper
-import org.codehaus.groovy.tools.shell.util.ANSI
 import org.codehaus.groovy.tools.shell.util.HelpFormatter
 import org.codehaus.groovy.tools.shell.util.Logger
 import org.codehaus.groovy.tools.shell.util.MessageSource
 import org.codehaus.groovy.tools.shell.util.NoExitSecurityManager
+import java.util.concurrent.Callable
+import org.fusesource.jansi.Ansi
+import org.fusesource.jansi.AnsiConsole
+import jline.Terminal
 
 /**
  * Main CLI entry-point for <tt>groovysh</tt>.
@@ -31,6 +34,14 @@ import org.codehaus.groovy.tools.shell.util.NoExitSecurityManager
  */
 class Main
 {
+    static {
+        // Install the system adapters
+        AnsiConsole.systemInstall()
+
+        // Register jline ansi detector
+        Ansi.setDetector(new AnsiDetector())
+    }
+
     private static final MessageSource messages = new MessageSource(Main.class)
 
     static void main(final String[] args) {
@@ -95,7 +106,7 @@ class Main
         // Add a hook to display some status when shutting down...
         addShutdownHook {
             //
-            // FIXME: We need to configure JLine to catch CTRL-C for us... if that is possible
+            // FIXME: We need to configure JLine to catch CTRL-C for us... Use gshell-io's InputPipe
             //
 
             if (code == null) {
@@ -153,7 +164,7 @@ class Main
             case 'none':
                 type = 'jline.UnsupportedTerminal'
                 // Disable ANSI, for some reason UnsupportedTerminal reports ANSI as enabled, when it shouldn't
-                ANSI.enabled = false
+                Ansi.enabled = false
                 break;
         }
 
@@ -170,7 +181,7 @@ class Main
             value = Boolean.valueOf(value).booleanValue(); // For JDK 1.4 compat
         }
 
-        ANSI.enabled = value
+        Ansi.enabled = value
     }
 
     static void setSystemProperty(final String nameValue) {
@@ -188,5 +199,13 @@ class Main
         }
 
         System.setProperty(name, value)
+    }
+}
+
+class AnsiDetector
+    implements Callable<Boolean>
+{
+    public Boolean call() throws Exception {
+        return Terminal.getTerminal().isANSISupported()
     }
 }

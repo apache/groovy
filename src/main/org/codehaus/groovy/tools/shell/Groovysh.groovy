@@ -21,12 +21,12 @@ import jline.History
 
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.tools.shell.util.MessageSource
-import org.codehaus.groovy.tools.shell.util.ANSI.Renderer as AnsiRenderer
 import org.codehaus.groovy.tools.shell.util.XmlCommandRegistrar
 import org.codehaus.groovy.runtime.StackTraceUtils
 import org.codehaus.groovy.tools.shell.util.Preferences
 import org.codehaus.groovy.tools.shell.Parser
 import org.codehaus.groovy.tools.shell.ParseCode
+import org.fusesource.jansi.AnsiRenderer
 
 /**
  * An interactive shell for evaluating Groovy code from the command-line (aka. groovysh).
@@ -181,12 +181,10 @@ class Groovysh
     // Prompt
     //
 
-    private AnsiRenderer prompt = new AnsiRenderer()
-
     private String renderPrompt() {
         def lineNum = formatLineNumber(buffers.current().size())
 
-        return prompt.render("@|bold groovy:|@${lineNum}@|bold >|@ ")
+        return AnsiRenderer.render("@|bold groovy:|@${lineNum}@|bold >|@ ")
     }
 
     /**

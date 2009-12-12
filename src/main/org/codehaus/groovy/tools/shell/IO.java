@@ -23,8 +23,8 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.io.Reader;
 
-import org.codehaus.groovy.tools.shell.util.ANSI.RenderWriter;
 import org.codehaus.groovy.tools.shell.util.Preferences;
+import org.fusesource.jansi.AnsiRenderWriter;
 
 /**
  * Container for input/output handles.
@@ -65,14 +65,8 @@ public class IO
         this.errorStream = errorStream;
 
         this.in = new InputStreamReader(inputStream);
-
-        //
-        // TODO: Once all user output is in i18n, then it would be more efficent to have the MessageSource
-        //       be ANSI-aware instead of this...
-        //
-
-        this.out = new RenderWriter(outputStream, true);
-        this.err = new RenderWriter(errorStream, true);
+        this.out = new AnsiRenderWriter(outputStream, true);
+        this.err = new AnsiRenderWriter(errorStream, true);
     }
 
     /**
