@@ -4,6 +4,8 @@ import org.apache.tools.ant.BuildEvent
 import org.apache.tools.ant.Project
 import org.apache.tools.ant.ProjectHelper
 import groovy.xml.NamespaceBuilder
+import org.apache.tools.ant.UnknownElement
+import org.junit.Assert
 
 /**
 Tests for the <groovy> task.
@@ -271,6 +273,7 @@ class SimpleListener extends org.apache.tools.ant.DefaultLogger
 	def spoof = new StringBuffer()
 	void taskStarted(BuildEvent event)
 	{
+		if (!(event.task instanceof UnknownElement)) Assert.fail("Task is already configured. Listeners won't have a chance to alter UnknownElement for additional configuration");
 		spoof << "started: " + logTask(event.task) + "\n"
 	}
 	void taskFinished(BuildEvent event)

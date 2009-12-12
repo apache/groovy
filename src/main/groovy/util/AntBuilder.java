@@ -17,6 +17,7 @@ package groovy.util;
 
 import groovy.xml.QName;
 import org.apache.tools.ant.*;
+import org.apache.tools.ant.dispatch.DispatchUtils;
 import org.apache.tools.ant.helper.AntXMLContext;
 import org.apache.tools.ant.helper.ProjectHelper2;
 import org.apache.tools.ant.input.DefaultInputHandler;
@@ -27,6 +28,7 @@ import org.xml.sax.SAXParseException;
 import org.xml.sax.helpers.AttributesImpl;
 
 import java.io.InputStream;
+import java.lang.reflect.Method;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -182,46 +184,36 @@ public class AntBuilder extends BuilderSupport {
             log.finest("parent is not null: no perform on nodeCompleted");
             return; // parent will care about when children perform
         }
-        
+
         // as in Target.execute()
         if (node instanceof Task) {
-            Object task = node;
-            // "Unwrap" the UnknownElement to return the real task to the calling code
-            if (node instanceof UnknownElement) {
-            	final UnknownElement unknownElement = (UnknownElement) node;
-            	unknownElement.maybeConfigure();
-                task = unknownElement.getRealThing();
+            Task task = (Task) node;
+            final String taskName = task.getTaskName();
+
+            if ("antcall".equals(taskName) && parent == null) {
+                throw new BuildException("antcall not supported within AntBuilder, consider using 'ant.project.executeTarget('targetName')' instead.");
             }
-            
-            lastCompletedNode = task;
-            // UnknownElement may wrap everything: task, path, ...
-            if (task instanceof Task) {
-            	final String taskName = ((Task) task).getTaskName();
-                if ("antcall".equals(taskName) && parent == null) {
-                    throw new BuildException("antcall not supported within AntBuilder, consider using 'ant.project.executeTarget('targetName')' instead.");
-                }
 
-                // save original streams
-                InputStream savedIn = System.in;
-                InputStream savedProjectInputStream = project.getDefaultInputStream();
+            // save original streams
+            InputStream savedIn = System.in;
+            InputStream savedProjectInputStream = project.getDefaultInputStream();
 
-                if (!(savedIn instanceof DemuxInputStream)) {
-                    project.setDefaultInputStream(savedIn);
-                    System.setIn(new DemuxInputStream(project));
-                }
+            if (!(savedIn instanceof DemuxInputStream)) {
+                project.setDefaultInputStream(savedIn);
+                System.setIn(new DemuxInputStream(project));
+            }
 
-                try {
-                    ((Task) task).perform();
-                } finally {
-                    // restore original streams
-                    project.setDefaultInputStream(savedProjectInputStream);
-                    System.setIn(savedIn);
-                }
+            try {
+                lastCompletedNode = performTask(task);
+            } finally {
+                // restore original streams
+                project.setDefaultInputStream(savedProjectInputStream);
+                System.setIn(savedIn);
+            }
 
-                // restore dummy collector target
-            	if ("import".equals(taskName)) {
-            		antXmlContext.setCurrentTarget(collectorTarget);
-            	}
+            // restore dummy collector target
+            if ("import".equals(taskName)) {
+                antXmlContext.setCurrentTarget(collectorTarget);
             }
         }
         else if (node instanceof Target) {
@@ -231,6 +223,58 @@ public class AntBuilder extends BuilderSupport {
         else {
             final RuntimeConfigurable r = (RuntimeConfigurable) node;
             r.maybeConfigure(project);
+        }
+    }
+
+    // Copied from org.apache.tools.ant.Task, since we need to get a real thing before it gets nulled in DispatchUtils.execute
+    private Object performTask(Task task) {
+
+        Throwable reason = null;
+        try {
+            // Have to call fireTestStared/fireTestFinished via reflection as they unfortunately have protected access in Project
+            final Method fireTaskStarted = Project.class.getDeclaredMethod("fireTaskStarted", Task.class);
+            fireTaskStarted.setAccessible(true);
+            fireTaskStarted.invoke(project, task);
+
+            Object realThing;
+            realThing = task;
+            task.maybeConfigure();
+            if (task instanceof UnknownElement) {
+                realThing = ((UnknownElement) task).getRealThing();
+            }
+
+            DispatchUtils.execute(task);
+
+            return realThing != null ? realThing : task;
+        }
+        catch (BuildException ex) {
+            if (ex.getLocation() == Location.UNKNOWN_LOCATION) {
+                ex.setLocation(task.getLocation());
+            }
+            reason = ex;
+            throw ex;
+        }
+        catch (Exception ex) {
+            reason = ex;
+            BuildException be = new BuildException(ex);
+            be.setLocation(task.getLocation());
+            throw be;
+        }
+        catch (Error ex) {
+            reason = ex;
+            throw ex;
+        }
+        finally {
+            try {
+                final Method fireTaskFinished = Project.class.getDeclaredMethod("fireTaskFinished", Task.class, Throwable.class);
+                fireTaskFinished.setAccessible(true);
+                fireTaskFinished.invoke(project, task, reason);
+            }
+            catch (Exception e) {
+                BuildException be = new BuildException(e);
+                be.setLocation(task.getLocation());
+                throw be;
+            }
         }
     }
 
