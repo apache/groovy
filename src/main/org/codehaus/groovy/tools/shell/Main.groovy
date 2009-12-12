@@ -23,6 +23,7 @@ import org.codehaus.groovy.tools.shell.util.MessageSource
 import org.codehaus.groovy.tools.shell.util.NoExitSecurityManager
 import java.util.concurrent.Callable
 import org.fusesource.jansi.Ansi
+import org.fusesource.jansi.AnsiConsole
 import jline.Terminal
 
 /**
@@ -34,6 +35,9 @@ import jline.Terminal
 class Main
 {
     static {
+        // Install the system adapters
+        AnsiConsole.systemInstall()
+
         // Register jline ansi detector
         Ansi.setDetector(new AnsiDetector())
     }
