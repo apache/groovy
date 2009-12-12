@@ -33,7 +33,7 @@ import java.util.HashMap;
  * the resources you gave this classloader.
  * <p/>
  * It's possible to add urls to the classpath at runtime through
- * @see #addURL(URL)
+ * @see <a href="#addURL(URL)">addURL(URL)</a>
  *      <p/>
  *      <b>Why using RootLoader?</b>
  *      If you have to load classes with multiple classloaders and a
