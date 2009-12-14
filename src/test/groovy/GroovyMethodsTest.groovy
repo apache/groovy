@@ -101,6 +101,9 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         assert [null].sum() == null
         assert [1].sum() == 1
         assert [1, 2, 3].sum() == 6
+        def nums = [1, 2, 3, 4] as Integer[]
+        assert nums.sum() == 10
+        assert nums.sum(5) == 15
         assert [1, 2, 3].sum("") == "123"
         assert [[1, 2], [3, 4], [5, 6]].sum() == [1, 2, 3, 4, 5, 6]
         assert [[1, 2], [3, 4], [5, 6]].sum("") == "[1, 2][3, 4][5, 6]"

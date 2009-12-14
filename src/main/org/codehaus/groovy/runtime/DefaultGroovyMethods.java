@@ -2198,6 +2198,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Sums the items in an array.  This is equivalent to invoking the
+     * "plus" method on all items in the array.
+     *
+     * @param self The array of values to add together
+     * @return The sum of all of the items
+     * @see #sum(Collection)
+     * @since 1.7.1
+     */
+    public static Object sum(Object[] self) {
+        return sum(toList(self), null, true);
+    }
+
+    /**
      * Sums the items from an Iterator.  This is equivalent to invoking the
      * "plus" method on all items from the Iterator. The iterator will become
      * exhausted of elements after determining the sum value.
@@ -2206,7 +2219,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return The sum of all of the items
      * @since 1.5.5
      */
-    public static Object sum(Iterator self) {
+    public static Object sum(Iterator<Object> self) {
         return sum(toList(self), null, true);
     }
 
@@ -2215,7 +2228,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self         a collection of values to sum
      * @param initialValue the items in the collection will be summed to this initial value
-     * @return The sum of all of the collection items.
+     * @return The sum of all of the items.
      * @since 1.5.0
      */
     public static Object sum(Collection self, Object initialValue) {
@@ -2223,15 +2236,28 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sums the items from an Iterator.  This is equivalent to invoking the
-     * "plus" method on all items from the Iterator.
+     * Sums the items in an array, adding the result to some initial value.
+     *
+     * @param self         an array of values to sum
+     * @param initialValue the items in the array will be summed to this initial value
+     * @return The sum of all of the items.
+     * @since 1.7.1
+     */
+    public static Object sum(Object[] self, Object initialValue) {
+        return sum(toList(self), initialValue, false);
+    }
+
+    /**
+     * Sums the items from an Iterator, adding the result to some initial value.  This is
+     * equivalent to invoking the "plus" method on all items from the Iterator. The iterator
+     * will become exhausted of elements after determining the sum value.
      *
      * @param self         an Iterator for the values to add together
      * @param initialValue the items in the collection will be summed to this initial value
      * @return The sum of all of the items
      * @since 1.5.5
      */
-    public static Object sum(Iterator self, Object initialValue) {
+    public static Object sum(Iterator<Object> self, Object initialValue) {
         return sum(toList(self), initialValue, false);
     }
 
@@ -2259,7 +2285,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    a Collection
      * @param closure a single parameter closure that returns a numeric value.
      * @return The sum of the values returned by applying the closure to each
-     *         item of the list.
+     *         item of the collection.
      * @since 1.0
      */
     public static Object sum(Collection self, Closure closure) {
@@ -2267,19 +2293,83 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sums the result of apply a closure to each item of a collection to sum intial value.
-     * <code>coll.sum(closure)</code> is equivalent to:
-     * <code>coll.collect(closure).sum()</code>.
+     * Sums the result of apply a closure to each item of an array.
+     * <code>array.sum(closure)</code> is equivalent to:
+     * <code>array.collect(closure).sum()</code>.
+     *
+     * @param self    An array
+     * @param closure a single parameter closure that returns a numeric value.
+     * @return The sum of the values returned by applying the closure to each
+     *         item of the array.
+     * @since 1.7.1
+     */
+    public static Object sum(Object[] self, Closure closure) {
+        return sum(toList(self), null, closure, true);
+    }
+
+    /**
+     * Sums the result of apply a closure to each item returned from an iterator.
+     * <code>iter.sum(closure)</code> is equivalent to:
+     * <code>iter.collect(closure).sum()</code>. The iterator will become
+     * exhausted of elements after determining the sum value.
+     *
+     * @param self    An Iterator
+     * @param closure a single parameter closure that returns a numeric value.
+     * @return The sum of the values returned by applying the closure to each
+     *         item from the Iterator.
+     * @since 1.7.1
+     */
+    public static Object sum(Iterator<Object> self, Closure closure) {
+        return sum(toList(self), null, closure, true);
+    }
+
+    /**
+     * Sums the result of applying a closure to each item of a collection to some initial value.
+     * <code>coll.sum(initVal, closure)</code> is equivalent to:
+     * <code>coll.collect(closure).sum(initVal)</code>.
      *
      * @param self         a Collection
      * @param closure      a single parameter closure that returns a numeric value.
      * @param initialValue the closure results will be summed to this initial value
      * @return The sum of the values returned by applying the closure to each
-     *         item of the list.
+     *         item of the collection.
      * @since 1.5.0
      */
     public static Object sum(Collection self, Object initialValue, Closure closure) {
         return sum(self, initialValue, closure, false);
+    }
+
+    /**
+     * Sums the result of applying a closure to each item of an array to some initial value.
+     * <code>array.sum(initVal, closure)</code> is equivalent to:
+     * <code>array.collect(closure).sum(initVal)</code>.
+     *
+     * @param self         an array
+     * @param closure      a single parameter closure that returns a numeric value.
+     * @param initialValue the closure results will be summed to this initial value
+     * @return The sum of the values returned by applying the closure to each
+     *         item of the array.
+     * @since 1.7.1
+     */
+    public static Object sum(Object[] self, Object initialValue, Closure closure) {
+        return sum(toList(self), initialValue, closure, false);
+    }
+
+    /**
+     * Sums the result of applying a closure to each item of an Iterator to some initial value.
+     * <code>iter.sum(initVal, closure)</code> is equivalent to:
+     * <code>iter.collect(closure).sum(initVal)</code>. The iterator will become
+     * exhausted of elements after determining the sum value.
+     *
+     * @param self         an Iterator
+     * @param closure      a single parameter closure that returns a numeric value.
+     * @param initialValue the closure results will be summed to this initial value
+     * @return The sum of the values returned by applying the closure to each
+     *         item from the Iterator.
+     * @since 1.7.1
+     */
+    public static Object sum(Iterator<Object> self, Object initialValue, Closure closure) {
+        return sum(toList(self), initialValue, closure, false);
     }
 
     private static Object sum(Collection self, Object initialValue, Closure closure, boolean first) {
@@ -2311,7 +2401,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return the joined String
      * @since 1.5.5
      */
-    public static String join(Iterator self, String separator) {
+    public static String join(Iterator<Object> self, String separator) {
         return join(toList(self), separator);
     }
 
