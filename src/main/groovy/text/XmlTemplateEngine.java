@@ -181,12 +181,12 @@ public class XmlTemplateEngine extends TemplateEngine {
         }
 
         protected void printLineBegin() {
-            out.print("out.print(\"");
+        	out.print("out.print(\"\"\"");
             out.printIndent();
         }
 
         protected void printLineEnd(String comment) {
-            out.print("\\n\");");
+        	out.print("\\n\"\"\");");
             if (comment != null) {
                 out.print(" // ");
                 out.print(comment);
