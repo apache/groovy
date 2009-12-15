@@ -19,7 +19,7 @@ class PackageAndImportAnnotationTest extends GroovyTestCase {
     void testTransformationOfPropertyInvokedOnThis() {
         assertScript """
             def x = new groovy.annotations.MyClass()
-            assert x.class.annotations[0].value() == 60
+            assert x.class.getAnnotation(groovy.annotations.MyIntegerAnno.class).value() == 60
             assert x.class.package.annotations[0].value() == 30
             new AntBuilder().with {
                 mkdir(dir:'temp')
