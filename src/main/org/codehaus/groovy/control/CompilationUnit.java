@@ -17,8 +17,11 @@ package org.codehaus.groovy.control;
 
 import groovy.lang.GroovyClassLoader;
 import groovy.lang.GroovyRuntimeException;
+import groovy.lang.GroovySystem;
+
 import org.codehaus.groovy.GroovyBugError;
 import org.codehaus.groovy.ast.*;
+import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.classgen.*;
 import org.codehaus.groovy.control.io.InputStreamReaderSource;
 import org.codehaus.groovy.control.io.ReaderSource;
@@ -706,6 +709,11 @@ public class CompilationUnit extends ProcessingUnit {
                 GenericsVisitor genericsVisitor = new GenericsVisitor(source);
                 genericsVisitor.visitClass(classNode);
             }
+            
+			if (!classNode.isSynthetic() && source != null) {
+	            addCompilerVersionStamp(classNode);
+			}
+            
             //
             // Run the Verifier on the outer class
             //
@@ -768,6 +776,14 @@ public class CompilationUnit extends ProcessingUnit {
                 classgen.call(source, context, (ClassNode) innerClasses.removeFirst());
             }
         }
+
+		private void addCompilerVersionStamp(ClassNode classNode) {
+			// add the annotation that will carry in the generated class the groovy compiler version used
+            AnnotationNode compilerVerAnnNode = new AnnotationNode(ClassHelper.make(GroovyCompilerVersion.class));
+            compilerVerAnnNode.setRuntimeRetention(true);
+            compilerVerAnnNode.addMember("value", new ConstantExpression(GroovySystem.getVersion()));
+            classNode.addAnnotation(compilerVerAnnNode);
+		}
     };
 
 
