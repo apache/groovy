@@ -69,4 +69,11 @@ public class XmlTemplateEngineTest extends TestCase {
         assertEquals(xmlResult, template.make(binding).toString());
     }
 
+    public void testDoubleQuotesInAttributeValues() throws Exception{
+        XmlTemplateEngine xmlTemplateEngine = new XmlTemplateEngine();
+        String xmlScript = "<document a='quoted \"string\"'/>";
+        String xmlResult = "<document a='quoted \"string\"'/>\n";
+        Template template = xmlTemplateEngine.createTemplate(xmlScript);
+        assertEquals(xmlResult, template.make().toString());
+    }
 }
