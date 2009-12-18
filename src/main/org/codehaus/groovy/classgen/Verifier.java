@@ -438,6 +438,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     public void visitMethod(MethodNode node) {
+    	//GROOVY-3712 - if it's an MOP method, it's an error as they aren't supposed to exist before ACG is invoked
+    	if(AsmClassGenerator.isMopMethod(node.getName())) {
+    		throw new RuntimeParserException("Found unexpected MOP methods in the class node for " + classNode.getName() +
+    				"(" + node.getName() + ")", classNode);
+    	}
         this.methodNode = node;
         adjustTypesIfStaticMainMethod(node);
         addReturnIfNeeded(node);

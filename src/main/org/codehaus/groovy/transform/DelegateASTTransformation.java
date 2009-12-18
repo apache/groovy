@@ -125,7 +125,7 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
     private void addDelegateMethod(FieldNode fieldNode, ClassNode owner, Map<String, MethodNode> ownMethods, Map.Entry<String, MethodNode> e, boolean deprecated) {
         MethodNode method = e.getValue();
 
-        if (!method.isPublic() || method.isStatic())
+        if (!method.isPublic() || method.isStatic() || 0 != (method.getModifiers () & Opcodes.ACC_SYNTHETIC))
             return;
 
         if (!method.getAnnotations(DEPRECATED_TYPE).isEmpty() && !deprecated)

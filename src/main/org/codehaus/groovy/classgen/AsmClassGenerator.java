@@ -518,15 +518,15 @@ public class AsmClassGenerator extends ClassGenerator {
 
     /**
      * method to determine if a method is a MOP method. This is done by the
-     * method name. If the name starts with "this$" or "super$", then it is
-     * a MOP method
+     * method name. If the name starts with "this$" or "super$" but does not 
+     * contain "$dist$", then it is an MOP method
      *
      * @param methodName name of the method to test
      * @return true if the method is a MOP method
      */
     public static boolean isMopMethod(String methodName) {
-        return methodName.startsWith("this$") ||
-                methodName.startsWith("super$");
+    	return (methodName.startsWith("this$") ||
+    			methodName.startsWith("super$")) && !methodName.contains("$dist$");
     }
 
     protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
