@@ -178,6 +178,14 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                 if (ret != null) {
                     ret.setSourcePosition(mce);
                     return ret;
+                } else if(method instanceof ConstantExpression){
+                	String methodName = (String)((ConstantExpression) method).getValue(); 
+                	ret = findStaticFieldImportFromModule(methodName);
+                	if (ret != null) {
+                		ret = new MethodCallExpression(ret, "call", args);
+                        ret.setSourcePosition(mce);
+                        return ret;
+                	}
                 }
             }
 
