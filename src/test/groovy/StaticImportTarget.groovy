@@ -1,6 +1,7 @@
 package groovy
 
 class StaticImportTarget {
+    static cl = {'StaticImportTarget#static closure called'}
     def static x(String message, int times) {
         return message * times
     }

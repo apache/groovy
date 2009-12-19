@@ -8,6 +8,7 @@ import static junit.framework.Assert.format
 import static junit.framework.Assert.assertEquals
 import static StaticImportTarget.x
 import static StaticImportTarget.z // do not remove
+import static StaticImportTarget.cl
 import static java.lang.Math.*
 import static java.util.Calendar.getInstance as now
 import static groovy.API.*
@@ -124,6 +125,10 @@ class StaticImportTest extends GroovyTestCase {
             super.z()
             fail()
         } catch (MissingMethodException expected) {}
+    }
+
+    void testStaticImportOfAClosureField() { //GROOVY-3945
+        assert cl() == 'StaticImportTarget#static closure called'
     }
 }
 
