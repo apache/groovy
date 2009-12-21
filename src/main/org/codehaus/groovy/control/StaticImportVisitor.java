@@ -194,9 +194,9 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                 Object value = ce.getValue();
                 if (value instanceof String) {
                     String methodName = (String) value;
-                    boolean lookForPossibleStaticMethod = true;
-                    if(this.currentMethod != null && !this.currentMethod.isStatic()) {
-                        if(currentClass.hasPossibleMethod(methodName, args)) {
+                    boolean lookForPossibleStaticMethod = !methodName.equals("call");
+                    if (currentMethod != null && !currentMethod.isStatic()) {
+                        if (currentClass.hasPossibleMethod(methodName, args)) {
                             lookForPossibleStaticMethod = false;
                         }
                     }
