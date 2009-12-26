@@ -676,6 +676,10 @@ public class ScriptBytecodeAdapter {
         return left == right;
     }
 
+    public static boolean compareNotIdentical(Object left, Object right) {
+        return left != right;
+    }
+
     public static boolean compareEqual(Object left, Object right) {
         return DefaultTypeTransformation.compareEqual(left, right);
     }

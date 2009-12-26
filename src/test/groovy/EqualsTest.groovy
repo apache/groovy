@@ -15,7 +15,7 @@
  */
 package groovy
 
-class EqualsTest extends GroovyTestCase {
+class EqualsTest extends GroovyShellTestCase {
 
     void testParentChildrenEquals() {
         def x = new Date()
@@ -32,6 +32,17 @@ class EqualsTest extends GroovyTestCase {
         def n = 3
         assert n != x
         assert x != n
+    }
+
+    void testIdentical() {
+        shouldFail {
+            shell.evaluate """
+                    def x = []
+                    def y = []
+
+                    assert y !== x
+            """
+        }
     }
 
 }
