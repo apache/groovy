@@ -31,6 +31,7 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
+import org.codehaus.groovy.syntax.SyntaxException;
 import org.codehaus.groovy.transform.powerassert.SourceText;
 import org.codehaus.groovy.transform.powerassert.SourceTextNotAvailableException;
 import org.objectweb.asm.AnnotationVisitor;
@@ -121,6 +122,7 @@ public class AsmClassGenerator extends ClassGenerator {
     static final MethodCaller isCaseMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "isCase");
     //compare
     static final MethodCaller compareIdenticalMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareIdentical");
+    static final MethodCaller compareNotIdenticalMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareNotIdentical");
     static final MethodCaller compareEqualMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareEqual");
     static final MethodCaller compareNotEqualMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareNotEqual");
     static final MethodCaller compareToMethod = MethodCaller.newStatic(ScriptBytecodeAdapter.class, "compareTo");
@@ -1435,8 +1437,17 @@ public class AsmClassGenerator extends ClassGenerator {
                 evaluateEqual(expression,false);
                 break;
 
+//            case Types.COMPARE_IDENTICAL: // ===
+//                evaluateBinaryExpression(compareIdenticalMethod, expression);
+//                break;
+//
+//            case Types.COMPARE_NOT_IDENTICAL: // !==
+//                evaluateBinaryExpression(compareNotIdenticalMethod, expression);
+//                break;
+
             case Types.COMPARE_IDENTICAL: // ===
-                evaluateBinaryExpression(compareIdenticalMethod, expression);
+            case Types.COMPARE_NOT_IDENTICAL: // !==
+                source.addError(new SyntaxException("Operators === and !== are not supported. Use this.is(that) instead", expression.getLineNumber(), expression.getColumnNumber()));
                 break;
 
             case Types.COMPARE_EQUAL: // ==
@@ -4204,6 +4215,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 case Types.COMPARE_LESS_THAN_EQUAL:
                 case Types.COMPARE_IDENTICAL:
                 case Types.COMPARE_NOT_EQUAL:
+                case Types.COMPARE_NOT_IDENTICAL:
                 case Types.KEYWORD_INSTANCEOF:
                 case Types.KEYWORD_IN:
                     return true;

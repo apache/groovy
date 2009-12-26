@@ -75,7 +75,6 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     private static final ClassNode SELF_TYPE = new ClassNode(ImmutableASTTransformation.class);
     private static final Token COMPARE_EQUAL = Token.newSymbol(Types.COMPARE_EQUAL, -1, -1);
     private static final Token COMPARE_NOT_EQUAL = Token.newSymbol(Types.COMPARE_NOT_EQUAL, -1, -1);
-    private static final Token COMPARE_IDENTICAL = Token.newSymbol(Types.COMPARE_IDENTICAL, -1, -1);
     private static final Token ASSIGN = Token.newSymbol(Types.ASSIGN, -1, -1);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
@@ -530,7 +529,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private BooleanExpression identicalExpr(Expression self, Expression other) {
-        return new BooleanExpression(new BinaryExpression(self, COMPARE_IDENTICAL, other));
+        return new BooleanExpression(new MethodCallExpression(self, "is", new ArgumentListExpression(other)));
     }
 
     private BooleanExpression notEqualClasses(ClassNode cNode, Expression other) {
