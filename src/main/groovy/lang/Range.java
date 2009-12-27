@@ -77,7 +77,7 @@ public interface Range<T extends Comparable> extends List<T> {
      * @return the list formed by stepping through the range by the indicated
      *         interval.
      */
-    List step(int step);
+    List<T> step(int step);
 
     /**
      * @return the verbose {@link String} representation of this {@link Range} as would be typed into a console

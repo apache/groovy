@@ -339,8 +339,8 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
     /**
      * {@inheritDoc}
      */
-    public List step(int step) {
-        IteratorClosureAdapter adapter = new IteratorClosureAdapter(this);
+    public List<Integer> step(int step) {
+        IteratorClosureAdapter<Integer> adapter = new IteratorClosureAdapter<Integer>(this);
         step(step, adapter);
         return adapter.asList();
     }

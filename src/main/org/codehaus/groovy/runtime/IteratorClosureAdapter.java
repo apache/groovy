@@ -29,9 +29,9 @@ import java.util.List;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class IteratorClosureAdapter extends Closure {
+public class IteratorClosureAdapter<T> extends Closure {
 
-    private final List list = new ArrayList();
+    private final List<T> list = new ArrayList<T>();
     private MetaClass metaClass = InvokerHelper.getMetaClass(getClass());
     
     public IteratorClosureAdapter(Object delegate) {
@@ -46,11 +46,11 @@ public class IteratorClosureAdapter extends Closure {
         this.metaClass = metaClass;
     }
     
-    public List asList() {
+    public List<T> asList() {
         return list;
     }
 
-    protected Object doCall(Object argument) {
+    protected Object doCall(T argument) {
         list.add(argument);
         return null;
     }
