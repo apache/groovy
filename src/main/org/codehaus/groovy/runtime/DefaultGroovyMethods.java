@@ -110,7 +110,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Identity check. Since == is overridden in Groovy with the meaning of equality
      * we need some fallback to check for object identity.  Invoke using the
-     * 'is' operator, like so: <code>def same = (this is that)</code>
+     * 'is' method, like so: <code>def same = this.is(that)</code>
      *
      * @param self  an object
      * @param other an object to compare identity with
@@ -883,10 +883,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * 'Case' implementation for collections which tests if the 'switch'
      * operand is contained in any of the 'case' values.
      * For example:
-     * <pre>switch( item ) {
-     *   case firstList :
-     *     // item is contained in this list
-     *     // etc
+     * <pre class="groovyTestCase">switch( 3 ) {
+     *   case [1,3,5]:
+     *     assert true
+     *     break
+     *   default:
+     *     assert false
      * }</pre>
      *
      * @param caseValue   the case value
@@ -960,6 +962,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Modifies this collection to remove all duplicated items, using the
      * default comparator.
+     * <pre class="groovyTestCase">assert [1,3] == [1,3,3].unique()</pre>
      *
      * @param self a collection
      * @return the now modified collection
@@ -1033,6 +1036,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If the closure takes two parameters, two items from the collection
      * will be passed as arguments, and the closure should return an
      * int value (with 0 indicating the items are not unique).
+     * <pre class="groovyTestCase">assert [1,4] == [1,3,4,5].unique { it % 2 }</pre>
+     * <pre class="groovyTestCase">assert [2,3,4] == [2,3,3,4].unique { a, b -> a <=> b }</pre>
      *
      * @param self    a Collection
      * @param closure a 1 or 2 arg Closure used to determine unique items
@@ -1071,14 +1076,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * by the given Collection's iterator is retained, but all other ones are removed.
      * The given Collection's original order is preserved.
      * <p/>
-     * <code><pre>
+     * <code><pre class="groovyTestCase">
      *     class Person {
      *         def fname, lname
      *         public String toString() {
      *             return fname + " " + lname
      *         }
      *     }
-     * <p/>
+     * 
      *     class PersonComparator implements Comparator {
      *         public int compare(Object o1, Object o2) {
      *             Person p1 = (Person) o1
@@ -1088,21 +1093,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *             else
      *                 return p1.fname.compareTo(p2.fname)
      *         }
-     * <p/>
+     * 
      *         public boolean equals(Object obj) {
      *             return this.equals(obj)
      *         }
      *     }
-     * <p/>
+     * 
      *     Person a = new Person(fname:"John", lname:"Taylor")
      *     Person b = new Person(fname:"Clark", lname:"Taylor")
      *     Person c = new Person(fname:"Tom", lname:"Cruz")
      *     Person d = new Person(fname:"Clark", lname:"Taylor")
-     * <p/>
+     * 
      *     def list = [a, b, c, d]
      *     List list2 = list.unique(new PersonComparator())
      *     assert( list2 == list && list == [a, b, c] )
-     * <p/>
      * </pre></code>
      *
      * @param self       a Collection
@@ -1419,6 +1423,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Counts the number of occurrences of the given value inside this collection.
      * Comparison is done using Groovy's == operator (using
      * <code>compareTo(value) == 0</code> or <code>equals(value)</code> ).
+     * <pre class="groovyTestCase">assert [2,4,2,1,3,5,2,4,3].count(4) == 2</pre>
      *
      * @param self  the collection within which we count the number of occurrences
      * @param value the value being searched for
@@ -1557,6 +1562,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Convert a collection to a List.
+     * <pre class="groovyTestCase">def x = [1,2,3] as HashSet
+     * assert x.class == HashSet
+     * assert x.toList() instanceof List</pre>
      *
      * @param self a collection
      * @return a List
@@ -1636,6 +1644,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates through this collection transforming each entry into a new value using the closure
      * as a transformer, returning a list of transformed values.
+     * <pre class="groovyTestCase">assert [2,4,6] == [1,2,3].collect { it * 2 }</pre>
      *
      * @param self    a collection
      * @param closure the closure used for mapping
@@ -1649,6 +1658,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates through this collection transforming each value into a new value using the closure
      * as a transformer, returning an initial collection plus the transformed values.
+     * <pre class="groovyTestCase">assert [1,2,3] as HashSet == [2,4,5,6].collect(new HashSet()) { (int)(it / 2) }</pre>
      *
      * @param self       a collection
      * @param collection an initial Collection to which the transformed values are added
@@ -1670,6 +1680,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Recursively iterates through this collection transforming each non-Collection value
      * into a new value using the closure as a transformer. Returns a potentially nested
      * list of transformed values.
+     * <pre class="groovyTestCase">assert [2,[4,6],[8],[]] == [1,[2,3],[4],[]].collectAll { it * 2 }</pre>
      *
      * @param self       a collection
      * @param closure    the closure used to transform each element of the collection
@@ -1684,6 +1695,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Recursively iterates through this collection transforming each non-Collection value
      * into a new value using the closure as a transformer. Returns a potentially nested
      * collection of transformed values.
+     * <pre class="groovyTestCase">def x = [1,[2,3],[4],[]].collectAll(new Vector()) { it * 2 }
+     * assert x == [2,[4,6],[8],[]]
+     * assert x instanceof Vector</pre>
      *
      * @param self       a collection
      * @param collection an initial Collection to which the transformed values are added
@@ -1763,8 +1777,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Finds the first value matching the closure condition.  Example:
-     * <pre>def list = [1,2,3]
-     * list.find { it > 1 } // returns 2
+     * <pre class="groovyTestCase">def list = [1,2,3]
+     * assert 2 == list.find { it > 1 }
      * </pre>
      *
      * @param self    a Collection
@@ -1802,6 +1816,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Finds all values matching the closure condition.
+     * <pre class="groovyTestCase">assert [2,4] == [1,2,3,4].findAll { it % 2 == 0 }</pre>
      *
      * @param self    a Collection
      * @param closure a closure condition
@@ -1858,6 +1873,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Splits all items into two collections based on the closure condition.
      * The first list contains all items which match the closure expression.
      * The second list all those that don't.
+     * <pre class="groovyTestCase">assert [[2,4],[1,3]] == [1,2,3,4].split { it % 2 == 0 }</pre>
      *
      * @param self    a Collection of values
      * @param closure a closure condition
@@ -1888,6 +1904,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Adds GroovyCollections#combinations(Collection) as a method on collections.
+     * <pre class="groovyTestCase">assert [['a', 'b'],[1, 2, 3]].combinations() == [['a', 1], ['b', 1], ['a', 2], ['b', 2], ['a', 3], ['b', 3]]</pre>
      *
      * @param self a Collection of lists
      * @return a List of the combinations found
@@ -1931,13 +1948,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates over all permutations of a collection, running a closure for each iteration.
-     * E.g. <code>[1, 2, 3].eachPermutation{ println it }</code> would print:
-     * [1, 2, 3]
-     * [1, 3, 2]
-     * [2, 1, 3]
-     * [2, 3, 1]
-     * [3, 1, 2]
-     * [3, 2, 1]
+     * <pre class="groovyTestCase">def permutations = []
+     * [1, 2, 3].eachPermutation{ permutations << it }
+     * assert permutations == [[1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 1], [3, 1, 2], [3, 2, 1]]</pre>
      *
      * @param self the Collection of items
      * @param closure the closure to call for each permutation
@@ -1995,6 +2008,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * item should be grouped by.  The returned LinkedHashMap will have an entry for each
      * distinct key returned from the closure, with each value being a list of
      * items for that group.
+     * <pre class="groovyTestCase">assert [0:[2,4,6], 1:[1,3,5]] == [1,2,3,4,5,6].groupBy { it % 2 }</pre>
      *
      * @param self    a collection to group (no map)
      * @param closure a closure mapping entries on keys
@@ -2114,6 +2128,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through the given collection, passing in the initial value to
      * the closure along with the current iterated item then passing into the
      * next iteration the value of the previous closure.
+     * <pre class="groovyTestCase">assert 1*1*2*3*4 == [1,2,3,4].inject(1) { acc, val -> acc * val }</pre>
      *
      * @param self    a Collection
      * @param value   a value
@@ -2188,6 +2203,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Sums the items in a collection.  This is equivalent to invoking the
      * "plus" method on all items in the collection.
+     * <pre class="groovyTestCase">assert 1+2+3+4 == [1,2,3,4].sum()</pre>
      *
      * @param self Collection of values to add together
      * @return The sum of all of the items
@@ -2225,6 +2241,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Sums the items in a collection, adding the result to some initial value.
+     * <pre class="groovyTestCase">assert 5+1+2+3+4 == [1,2,3,4].sum(5)</pre>
      *
      * @param self         a collection of values to sum
      * @param initialValue the items in the collection will be summed to this initial value
@@ -2281,6 +2298,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Sums the result of apply a closure to each item of a collection.
      * <code>coll.sum(closure)</code> is equivalent to:
      * <code>coll.collect(closure).sum()</code>.
+     * <pre class="groovyTestCase">assert 4+6+10+12 == [2,3,5,6].sum() { it * 2 }</pre>
      *
      * @param self    a Collection
      * @param closure a single parameter closure that returns a numeric value.
@@ -2327,6 +2345,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Sums the result of applying a closure to each item of a collection to some initial value.
      * <code>coll.sum(initVal, closure)</code> is equivalent to:
      * <code>coll.collect(closure).sum(initVal)</code>.
+     * <pre class="groovyTestCase">assert 50+4+6+10+12 == [2,3,5,6].sum(50) { it * 2 }</pre>
      *
      * @param self         a Collection
      * @param closure      a single parameter closure that returns a numeric value.
@@ -2409,6 +2428,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Concatenates the <code>toString()</code> representation of each
      * item in this collection, with the given String as a separator between
      * each item.
+     * <pre class="groovyTestCase">assert "1, 2, 3" == [1,2,3].join(", ")</pre>
      *
      * @param self      a Collection of objects
      * @param separator a String separator
@@ -2462,6 +2482,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Adds min() method to Collection objects.
+     * <pre class="groovyTestCase">assert 2 == [4,2,5].min()</pre>
      *
      * @param self a Collection
      * @return the minimum value
@@ -2499,6 +2520,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Selects the minimum value found in the collection using the given comparator.
+     * <pre class="groovyTestCase">assert "hi" == ["hello","hi","hey"].min( { a, b -> a.length() <=> b.length() } as Comparator )</pre>
      *
      * @param self       a Collection
      * @param comparator a Comparator
@@ -2553,6 +2575,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * the Closure is assumed to take a single parameter and return a
      * Comparable (typically an Integer) which is then used for
      * further comparison.
+     * <pre class="groovyTestCase">assert "hi" == ["hello","hi","hey"].min { it.length() } </pre>
      *
      * @param self    a Collection
      * @param closure a 1 or 2 arg Closure used to determine the correct ordering
@@ -2626,6 +2649,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Adds max() method to Collection objects.
+     * <pre class="groovyTestCase">assert 5 == [2,3,1,5,4].max()</pre>
      *
      * @param self a Collection
      * @return the maximum value
@@ -2673,6 +2697,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * the Closure is assumed to take a single parameter and return a
      * Comparable (typically an Integer) which is then used for
      * further comparison.
+     * <pre class="groovyTestCase">assert "hello" == ["hello","hi","hey"].max { it.length() }</pre>
+     * <pre class="groovyTestCase">assert "hello" == ["hello","hi","hey"].max { a, b -> a.length() <=> b.length() }</pre>
      *
      * @param self    a Collection
      * @param closure a 1 or 2 arg Closure used to determine the correct ordering
@@ -2745,6 +2771,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Selects the maximum value found in the collection using the given comparator.
+     * <pre class="groovyTestCase">assert "hello" == ["hello","hi","hey"].max( { a, b -> a.length() <=> b.length() } as Comparator )</pre>
      *
      * @param self       a Collection
      * @param comparator a Comparator
@@ -4221,6 +4248,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Support the subscript operator for List
+     * <pre class="groovyTestCase">assert [String, Long, Integer] == ["a",5L,2]["class"]</pre>
      *
      * @param coll     a Collection
      * @param property a String
@@ -4306,6 +4334,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A convenience method for creating an immutable Collection.
+     * <pre class="groovyTestCase">def mutable = [1,2,3]
+     * def immutable = mutable.asImmutable()
+     * mutable << 4
+     * try {
+     *   immutable << 4
+     *   assert false
+     * } catch (UnsupportedOperationException) {
+     *   assert true
+     * }</pre>
      *
      * @param self a Collection
      * @return an immutable Collection
@@ -4443,6 +4480,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Sorts the given collection into a sorted list.  The collection items are
      * assumed to be comparable.
+     * <pre class="groovyTestCase">assert [1,2,3] == [3,1,2].sort()</pre>
      *
      * @param self the collection to be sorted
      * @return the sorted collection as a List
@@ -4516,6 +4554,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Sorts the Collection using the given comparator.  The elements are
      * sorted into a new list, and the existing collection is unchanged.
+     * <pre class="groovyTestCase">assert ["hi","hey","hello"] == ["hello","hi","hey"].sort( { a, b -> a.length() <=> b.length() } as Comparator )</pre>
      *
      * @param self       a collection to be sorted
      * @param comparator a Comparator used for the comparison
@@ -4599,6 +4638,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * the Closure is assumed to take a single parameter and return a
      * Comparable (typically an Integer) which is then used for
      * further comparison.
+     * <pre class="groovyTestCase">assert ["hi","hey","hello"] == ["hello","hi","hey"].sort { it.length() }</pre>
+     * <pre class="groovyTestCase">assert ["hi","hey","hello"] == ["hello","hi","hey"].sort { a, b -> a.length() <=> b.length() }</pre>
      *
      * @param self    a Collection to be sorted
      * @param closure a 1 or 2 arg Closure used to determine the correct ordering
@@ -4754,6 +4795,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Converts this collection to a List.
+     * <pre class="groovyTestCase">assert new HashSet().asList() instanceof List</pre>
      *
      * @param self a collection to be converted into a List
      * @return a newly created List if this collection is not already a List
@@ -4805,6 +4847,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Coerce a collection instance to a boolean value.
      * A collection is coerced to false if it's empty, and to true otherwise.
+     * <pre class="groovyTestCase">assert [1,2].asBoolean() == true</pre>
+     * <pre class="groovyTestCase">assert [].asBoolean() == false</pre>
      *
      * @param collection the collection
      * @return the boolean value
@@ -5087,6 +5131,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * is a Set, then the returned collection will be a Set otherwise a List.
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
+     * <pre class="groovyTestCase">assert [1,2,3,4] == [1,2] + [3,4]</pre>
      *
      * @param left  the left Collection
      * @param right the right Collection
@@ -5104,6 +5149,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * is a Set, then the returned collection will be a Set otherwise a List.
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
+     * <pre class="groovyTestCase">assert [1,2,3] == [1,2] + 3</pre>
      *
      * @param left  a Collection
      * @param right an object to add/append
@@ -5120,6 +5166,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Create a List composed of the elements of this list, repeated
      * a certain number of times.  Note that for non-primitive
      * elements, multiple references to the same instance will be added.
+     * <pre class="groovyTestCase">assert [1,2,3,1,2,3] == [1,2,3] * 2</pre>
      *
      * @param self   a Collection
      * @param factor the number of times to append
@@ -5138,6 +5185,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Create a Collection composed of the intersection of both collections.  Any
      * elements that exist in both collections are added to the resultant collection.
+     * <pre class="groovyTestCase">assert [4,5] == [1,2,3,4,5].intersect([4,5,6,7,8])</pre>
      *
      * @param left  a Collection
      * @param right a Collection
@@ -5171,6 +5219,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns <code>true</code> if the intersection of two collections is empty.
+     * <pre class="groovyTestCase">assert [1,2,3].disjoint([3,4,5]) == false</pre>
+     * <pre class="groovyTestCase">assert [1,2].disjoint([3,4]) == true</pre>
      *
      * @param left  a Collection
      * @param right a Collection
@@ -5565,6 +5615,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Flatten a collection.  This collection and any nested arrays or
      * collections have their contents (recursively) added to the new collection.
+     * <pre class="groovyTestCase">assert [1,2,3,4,5] == [1,[2,3],[[4]],[],5].flatten()</pre>
      *
      * @param self a Collection to flatten
      * @return a flattened Collection
@@ -5740,6 +5791,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Overloads the left shift operator to provide an easy way to append
      * objects to a Collection.
+     * <pre class="groovyTestCase">def list = [1,2]
+     * list << 3
+     * assert list == [1,2,3]</pre>
      *
      * @param self  a Collection
      * @param value an Object to be added to the collection.
