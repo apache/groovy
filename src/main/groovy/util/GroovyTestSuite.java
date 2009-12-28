@@ -29,7 +29,7 @@ import java.io.File;
  * A TestSuite which will run a Groovy unit test case inside any Java IDE
  * either as a unit test case or as an application.
  * <p/>
- * You can specify the GroovyUnitTest to run by running this class as an appplication
+ * You can specify the GroovyUnitTest to run by running this class as an application
  * and specifying the script to run on the command line.
  * <p/>
  * <code>
@@ -79,7 +79,7 @@ public class GroovyTestSuite extends TestSuite {
         Class type = compile(fileName);
         String[] args = {};
         if (!Test.class.isAssignableFrom(type) && Script.class.isAssignableFrom(type)) {
-            // lets treat the script as a Test
+            // let's treat the script as a Test
             addTest(new ScriptTestAdapter(type, args));
         } else {
             addTestSuite(type);
