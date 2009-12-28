@@ -1009,7 +1009,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             Map importPackages = module.getStaticImportClasses();
             for (Iterator iter = importPackages.values().iterator(); iter.hasNext();) {
                 ClassNode type = (ClassNode) iter.next();
-                if (resolve(type, false, false, true)) continue;
+                if (resolve(type, true, false, true)) continue;
                 // May be this type belongs in the same package as the node that is doing the
                 // static import. In that case, the package may not have been explicitly specified.
                 // Try with the node's package too. If still not found, revert to original type name.
