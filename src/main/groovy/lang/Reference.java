@@ -23,14 +23,14 @@ import org.codehaus.groovy.runtime.InvokerHelper;
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
-public class Reference extends GroovyObjectSupport {
+public class Reference<T> extends GroovyObjectSupport {
 
-    private Object value;
+    private T value;
 
     public Reference() {
     }
 
-    public Reference(Object value) {
+    public Reference(T value) {
         this.value = value;
     }
 
@@ -67,11 +67,11 @@ public class Reference extends GroovyObjectSupport {
         }
     }
 
-    public Object get() {
+    public T get() {
         return value;
     }
 
-    public void set(Object value) {
+    public void set(T value) {
         this.value = value;
     }
 }
