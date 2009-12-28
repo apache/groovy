@@ -15,6 +15,7 @@
  */
 
 import groovy.util.AllTestSuite;
+import groovy.util.JavadocAssertionTestSuite;
 import junit.framework.Test;
 import junit.framework.TestCase;
 import junit.framework.TestSuite;
@@ -28,12 +29,14 @@ import junit.framework.TestSuite;
  */
 public class UberTestCaseGroovySourceSubPackages extends TestCase {
     private static final String EXCLUDES = "groovy/*/**/vm6/*Test.groovy";
-    private static final String BASE = "src/test";
+    private static final String CODE_BASE = "src/main";
+    private static final String TEST_BASE = "src/test";
     public static Test suite() {
         TestSuite suite = new TestSuite();
         String excludes = "true".equals(System.getProperty("java.awt.headless"))
                 ? EXCLUDES + ",groovy/*/**/SwingBuilderTest.groovy" : EXCLUDES;
-        suite.addTest(AllTestSuite.suite(BASE, "groovy/*/**/*Test.groovy", excludes));
+        suite.addTest(AllTestSuite.suite(TEST_BASE, "groovy/*/**/*Test.groovy", excludes));
+		suite.addTest(JavadocAssertionTestSuite.suite(CODE_BASE));
         return suite;
     }
 }
