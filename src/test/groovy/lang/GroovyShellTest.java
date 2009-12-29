@@ -39,8 +39,11 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import junit.textui.TestRunner;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import java.io.File;
 import java.net.URL;
 import java.util.HashMap;
@@ -48,6 +51,7 @@ import java.util.Map;
 
 /**
  * @author sam
+ * @author Merlyn Albery-Speyer
  */
 public class GroovyShellTest extends GroovyTestCase {
 
@@ -135,4 +139,26 @@ public class GroovyShellTest extends GroovyTestCase {
             assertEquals("GROOVY3934Helper script called", result);
     	}
     }
+    
+    public void testLaunchesJUnitTestSuite() throws Exception {
+    	// create a valid (empty) test suite on disk
+    	String testName = "GroovyShellTestJUnit3Test"+System.currentTimeMillis();
+		File testSuite = new File(System.getProperty("java.io.tmpdir"), testName);
+		DefaultGroovyMethods.write(testSuite, "import junit.framework.*; \r\n"+
+			"public class "+testName+" extends TestSuite { \r\n"+
+			"    public static Test suite() { \r\n"+
+			"        return new TestSuite(); \r\n"+
+			"    } \r\n" +
+			"} \r\n");
+		testSuite.deleteOnExit();
+		
+		PrintStream out = System.out;
+		System.setOut( new PrintStream(new ByteArrayOutputStream()) );
+		try {
+		    // makes this more of an integration test than a unit test...
+		    GroovyShell.main( new String[] { testSuite.getCanonicalPath() });
+		} finally {
+		    System.setOut( out );
+		}
+	} 
 }
