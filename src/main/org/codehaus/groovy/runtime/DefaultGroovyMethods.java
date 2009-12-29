@@ -9296,7 +9296,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * the line count is passed as the second argument.
      *
      * @param self    a String
-     * @param firstLine the count of the first line
+     * @param firstLine the line number value used for the first line (default is 1, set to 0 to start counting from 0)
      * @param closure a closure
      * @return the last value returned by the closure
      * @throws java.io.IOException if an error occurs
@@ -9330,12 +9330,29 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Iterates through this file line by line.  Each line is passed to the
+     * given 1 or 2 arg closure.  The file is read using a reader which
+     * is closed before this method returns.
+     *
+     * @param self    a File
+     * @param charset opens the file with a specified charset
+     * @param closure a closure (arg 1 is line, optional arg 2 is line number starting at line 1)
+     * @throws IOException if an IOException occurs.
+     * @return the last value returned by the closure
+     * @see #eachLine(java.io.File, int, groovy.lang.Closure)
+     * @since 1.5.5
+     */
+    public static Object eachLine(File self, String charset, Closure closure) throws IOException {
+        return eachLine(self, charset, 1, closure);
+    }
+
+    /**
      * Iterates through this file line by line.  Each line is passed
      * to the given 1 or 2 arg closure.  The file reader is closed
      * before this method returns.
      *
      * @param self    a File
-     * @param firstLine the count of the first line
+     * @param firstLine the line number value used for the first line (default is 1, set to 0 to start counting from 0)
      * @param closure a closure
      * @throws IOException if an IOException occurs.
      * @return the last value returned by the closure
@@ -9344,6 +9361,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Object eachLine(File self, int firstLine, Closure closure) throws IOException {
         return eachLine(newReader(self), firstLine, closure);
+    }
+
+    /**
+     * Iterates through this file line by line.  Each line is passed
+     * to the given 1 or 2 arg closure.  The file is read using a reader
+     * which is closed before this method returns.
+     *
+     * @param self    a File
+     * @param charset opens the file with a specified charset
+     * @param firstLine the line number value used for the first line (default is 1, set to 0 to start counting from 0)
+     * @param closure a closure (arg 1 is line, optional arg 2 is line number)
+     * @throws IOException if an IOException occurs.
+     * @return the last value returned by the closure
+     * @see #eachLine(java.io.Reader, int, groovy.lang.Closure)
+     * @since 1.5.7
+     */
+    public static Object eachLine(File self, String charset, int firstLine, Closure closure) throws IOException {
+        return eachLine(newReader(self, charset), firstLine, closure);
     }
 
     /**
@@ -9368,7 +9403,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param stream    a stream
      * @param charset   opens the stream with a specified charset
-     * @param firstLine the count of the first line
+     * @param firstLine the line number value used for the first line (default is 1, set to 0 to start counting from 0)
      * @param closure   a closure
      * @return the last value returned by the closure
      * @throws IOException if an IOException occurs.
@@ -9399,7 +9434,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * The stream is closed before this method returns.
      *
      * @param stream  a stream
-     * @param firstLine the count of the first line
+     * @param firstLine the line number value used for the first line (default is 1, set to 0 to start counting from 0)
      * @param closure a closure
      * @throws IOException if an IOException occurs.
      * @return the last value returned by the closure
@@ -9430,7 +9465,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * line to the given 1 or 2 arg closure. The stream is closed before this method returns.
      *
      * @param url       a URL to open and read
-     * @param firstLine the count of the first line
+     * @param firstLine the line number value used for the first line (default is 1, set to 0 to start counting from 0)
      * @param closure   a closure to apply on each line
      * @return the last value returned by the closure
      * @throws IOException if an IOException occurs.
@@ -9463,7 +9498,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param url       a URL to open and read
      * @param charset   opens the stream with a specified charset
-     * @param firstLine the count of the first line
+     * @param firstLine the line number value used for the first line (default is 1, set to 0 to start counting from 0)
      * @param closure   a closure to apply on each line
      * @return the last value returned by the closure
      * @throws IOException if an IOException occurs.
@@ -9495,7 +9530,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * as the second argument. The Reader is closed before this method returns.
      *
      * @param self      a Reader, closed after the method returns
-     * @param firstLine the count of the first line
+     * @param firstLine the line number value used for the first line (default is 1, set to 0 to start counting from 0)
      * @param closure   a closure which will be passed each line (or for 2 argument closures the line and count)
      * @return the last value returned by the closure
      * @throws IOException if an IOException occurs.
