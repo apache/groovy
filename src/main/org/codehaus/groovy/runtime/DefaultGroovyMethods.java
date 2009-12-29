@@ -9894,7 +9894,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.7
      */
     public static Object eachLine(URL url, String charset, int firstLine, Closure closure) throws IOException {
-        return eachLine(new InputStreamReader(url.openConnection().getInputStream(), charset), firstLine, closure);
+        return eachLine(newReader(url, charset), firstLine, closure);
     }
 
     /**
@@ -9973,6 +9973,68 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Object splitEachLine(File self, String regex, Closure closure) throws IOException {
         return splitEachLine(newReader(self), regex, closure);
+    }
+
+    /**
+     * Iterates through this file line by line, splitting each line using
+     * the given regex separator. For each line, the given closure is called with
+     * a single parameter being the list of strings computed by splitting the line
+     * around matches of the given regular expression.
+     * Finally the resources used for processing the file are closed.
+     *
+     * @param self    a File
+     * @param regex   the delimiting regular expression
+     * @param charset opens the file with a specified charset
+     * @param closure a closure
+     * @throws IOException if an IOException occurs.
+     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
+     * @return the last value returned by the closure
+     * @see #splitEachLine(Reader,String,Closure)
+     * @since 1.6.8
+     */
+    public static Object splitEachLine(File self, String regex, String charset, Closure closure) throws IOException {
+        return splitEachLine(newReader(self, charset), regex, closure);
+    }
+
+    /**
+     * Iterates through the input stream associated with this URL line by line, splitting each line using
+     * the given regex separator. For each line, the given closure is called with
+     * a single parameter being the list of strings computed by splitting the line
+     * around matches of the given regular expression.
+     * Finally the resources used for processing the URL are closed.
+     *
+     * @param self    a URL to open and read
+     * @param regex   the delimiting regular expression
+     * @param closure a closure
+     * @throws IOException if an IOException occurs.
+     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
+     * @return the last value returned by the closure
+     * @see #splitEachLine(Reader,String,Closure)
+     * @since 1.6.8
+     */
+    public static Object splitEachLine(URL self, String regex, Closure closure) throws IOException {
+        return splitEachLine(newReader(self), regex, closure);
+    }
+
+    /**
+     * Iterates through the input stream associated with this URL line by line, splitting each line using
+     * the given regex separator. For each line, the given closure is called with
+     * a single parameter being the list of strings computed by splitting the line
+     * around matches of the given regular expression.
+     * Finally the resources used for processing the URL are closed.
+     *
+     * @param self    a URL to open and read
+     * @param regex   the delimiting regular expression
+     * @param charset opens the file with a specified charset
+     * @param closure a closure
+     * @throws IOException if an IOException occurs.
+     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
+     * @return the last value returned by the closure
+     * @see #splitEachLine(Reader,String,Closure)
+     * @since 1.6.8
+     */
+    public static Object splitEachLine(URL self, String regex, String charset, Closure closure) throws IOException {
+        return splitEachLine(newReader(self, charset), regex, closure);
     }
 
     /**
@@ -10225,18 +10287,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         );
     }
 
-    /**
-     * Return the lines of a String as a List of Strings.
-     *
-     * @param self a String object
-     * @return a list of lines
-     * @throws java.io.IOException if an error occurs
-     * @since 1.5.5
-     */
-    public static List<String> readLines(String self) throws IOException {
-        return readLines(new StringReader(self));
-    }
-
     static String lineSeparator = null;
     
     /**
@@ -10342,16 +10392,110 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Return the lines of a String as a List of Strings.
+     *
+     * @param self a String object
+     * @return a list of lines
+     * @throws java.io.IOException if an error occurs
+     * @since 1.5.5
+     */
+    public static List<String> readLines(String self) throws IOException {
+        return readLines(new StringReader(self));
+    }
+
+    /**
      * Reads the file into a list of Strings, with one item for each line.
      *
      * @param file a File
      * @return a List of lines
      * @throws IOException if an IOException occurs.
+     * @see #readLines(Reader)
      * @since 1.0
      */
-    public static List readLines(File file) throws IOException {
-        IteratorClosureAdapter closure = new IteratorClosureAdapter(file);
-        eachLine(file, closure);
+    public static List<String> readLines(File file) throws IOException {
+        return readLines(newReader(file));
+    }
+
+    /**
+     * Reads the file into a list of Strings, with one item for each line.
+     *
+     * @param file a File
+     * @param charset opens the file with a specified charset
+     * @return a List of lines
+     * @throws IOException if an IOException occurs.
+     * @see #readLines(Reader)
+     * @since 1.6.8
+     */
+    public static List<String> readLines(File file, String charset) throws IOException {
+        return readLines(newReader(file, charset));
+    }
+
+    /**
+     * Reads the stream into a list, with one element for each line.
+     *
+     * @param stream a stream
+     * @return a List of lines
+     * @throws IOException if an IOException occurs.
+     * @see #readLines(Reader)
+     * @since 1.0
+     */
+    public static List<String> readLines(InputStream stream) throws IOException {
+        return readLines(newReader(stream));
+    }
+
+    /**
+     * Reads the stream into a list, with one element for each line.
+     *
+     * @param stream a stream
+     * @param charset opens the stream with a specified charset
+     * @return a List of lines
+     * @throws IOException if an IOException occurs.
+     * @see #readLines(Reader)
+     * @since 1.6.8
+     */
+    public static List<String> readLines(InputStream stream, String charset) throws IOException {
+        return readLines(newReader(stream, charset));
+    }
+
+    /**
+     * Reads the URL contents into a list, with one element for each line.
+     *
+     * @param self a URL
+     * @return a List of lines
+     * @throws IOException if an IOException occurs.
+     * @see #readLines(Reader)
+     * @since 1.6.8
+     */
+    public static List<String> readLines(URL self) throws IOException {
+        return readLines(newReader(self));
+    }
+
+    /**
+     * Reads the URL contents into a list, with one element for each line.
+     *
+     * @param self a URL
+     * @param charset opens the URL with a specified charset
+     * @return a List of lines
+     * @throws IOException if an IOException occurs.
+     * @see #readLines(Reader)
+     * @since 1.6.8
+     */
+    public static List<String> readLines(URL self, String charset) throws IOException {
+        return readLines(newReader(self, charset));
+    }
+
+    /**
+     * Reads the reader into a list of Strings, with one entry for each line.
+     * The reader is closed before this method returns.
+     *
+     * @param reader a Reader
+     * @return a List of lines
+     * @throws IOException if an IOException occurs.
+     * @since 1.0
+     */
+    public static List<String> readLines(Reader reader) throws IOException {
+        IteratorClosureAdapter closure = new IteratorClosureAdapter(reader);
+        eachLine(reader, closure);
         return closure.asList();
     }
 
@@ -10405,7 +10549,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String getText(URL url, String charset) throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(url.openConnection().getInputStream(), charset));
+        BufferedReader reader = newReader(url, charset);
         return getText(reader);
     }
 
@@ -10682,21 +10826,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         } finally {
             closeWithWarning(writer);
         }
-    }
-
-    /**
-     * Reads the reader into a list of Strings, with one entry for each line.
-     * The reader is closed before this method returns.
-     *
-     * @param reader a Reader
-     * @return a List of lines
-     * @throws IOException if an IOException occurs.
-     * @since 1.0
-     */
-    public static List<String> readLines(Reader reader) throws IOException {
-        IteratorClosureAdapter closure = new IteratorClosureAdapter(reader);
-        eachLine(reader, closure);
-        return closure.asList();
     }
 
     /**
@@ -11443,19 +11572,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Reads the stream into a list, with one element for each line.
-     *
-     * @param stream a stream
-     * @return a List of lines
-     * @throws IOException if an IOException occurs.
-     * @see #readLines(Reader)
-     * @since 1.0
-     */
-    public static List readLines(InputStream stream) throws IOException {
-        return readLines(new BufferedReader(new InputStreamReader(stream)));
-    }
-
-    /**
      * Helper method to create a new BufferedReader for a URL and then
      * passes it to the closure.  The reader is closed after the closure returns.
      *
@@ -11848,6 +11964,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Filters the lines of a File and creates a Writeable in return to
+     * stream the filtered lines.
+     *
+     * @param self    a File
+     * @param charset opens the file with a specified charset
+     * @param closure a closure which returns a boolean indicating to filter
+     *                the line or not
+     * @return a Writable closure
+     * @throws IOException if an IOException occurs
+     * @see #filterLine(Reader,Closure)
+     * @since 1.6.8
+     */
+    public static Writable filterLine(File self, String charset, Closure closure) throws IOException {
+        return filterLine(newReader(self, charset), closure);
+    }
+
+    /**
      * Filter the lines from this File, and write them to the given writer based
      * on the given closure predicate.
      *
@@ -11861,6 +11994,23 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static void filterLine(File self, Writer writer, Closure closure) throws IOException {
         filterLine(newReader(self), writer, closure);
+    }
+
+    /**
+     * Filter the lines from this File, and write them to the given writer based
+     * on the given closure predicate.
+     *
+     * @param self    a File
+     * @param writer  a writer destination to write filtered lines to
+     * @param charset opens the file with a specified charset
+     * @param closure a closure which takes each line as a parameter and returns
+     *                <code>true</code> if the line should be written to this writer.
+     * @throws IOException if an IO error occurs
+     * @see #filterLine(Reader,Writer,Closure)
+     * @since 1.6.8
+     */
+    public static void filterLine(File self, Writer writer, String charset, Closure closure) throws IOException {
+        filterLine(newReader(self, charset), writer, closure);
     }
 
     /**
@@ -11903,20 +12053,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Returns a GroovyRowResult given a ResultSet.
-     *
-     * @param rs a java.sql.ResultSet
-     * @return the resulting groovy.sql.GroovyRowResult
-     * @throws java.sql.SQLException if a database error occurs
-     * @deprecated moved to {@link org.codehaus.groovy.runtime.SqlGroovyMethods#toRowResult(java.sql.ResultSet)}
-     * @since 1.6.0
-     */
-    @Deprecated
-    public static groovy.sql.GroovyRowResult toRowResult(java.sql.ResultSet rs) throws java.sql.SQLException {
-        return SqlGroovyMethods.toRowResult(rs);
-    }
-
-    /**
      * Filter lines from an input stream using a closure predicate.  The closure
      * will be passed each line as a String, and it should return
      * <code>true</code> if the line should be passed to the writer.
@@ -11929,6 +12065,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Writable filterLine(InputStream self, Closure predicate) {
         return filterLine(newReader(self), predicate);
+    }
+
+    /**
+     * Filter lines from an input stream using a closure predicate.  The closure
+     * will be passed each line as a String, and it should return
+     * <code>true</code> if the line should be passed to the writer.
+     *
+     * @param self      an input stream
+     * @param charset   opens the stream with a specified charset
+     * @param predicate a closure which returns boolean and takes a line
+     * @return a writable which writes out the filtered lines
+     * @throws UnsupportedEncodingException if the encoding specified is not supported
+     * @see #filterLine(Reader, Closure)
+     * @since 1.6.8
+     */
+    public static Writable filterLine(InputStream self, String charset, Closure predicate)
+            throws UnsupportedEncodingException {
+        return filterLine(newReader(self, charset), predicate);
     }
 
     /**
@@ -11947,6 +12101,97 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static void filterLine(InputStream self, Writer writer, Closure predicate)
             throws IOException {
         filterLine(newReader(self), writer, predicate);
+    }
+
+    /**
+     * Uses a closure to filter lines from this InputStream and pass them to
+     * the given writer. The closure will be passed each line as a String, and
+     * it should return <code>true</code> if the line should be passed to the
+     * writer.
+     *
+     * @param self      the InputStream
+     * @param writer    a writer to write output to
+     * @param charset   opens the stream with a specified charset
+     * @param predicate a closure which returns true if a line should be accepted
+     * @throws IOException if an IOException occurs.
+     * @see #filterLine(Reader,Writer,Closure)
+     * @since 1.6.8
+     */
+    public static void filterLine(InputStream self, Writer writer, String charset, Closure predicate)
+            throws IOException {
+        filterLine(newReader(self, charset), writer, predicate);
+    }
+
+    /**
+     * Filter lines from a URL using a closure predicate.  The closure
+     * will be passed each line as a String, and it should return
+     * <code>true</code> if the line should be passed to the writer.
+     *
+     * @param self      a URL
+     * @param predicate a closure which returns boolean and takes a line
+     * @return a writable which writes out the filtered lines
+     * @throws IOException if an IO exception occurs
+     * @see #filterLine(Reader, Closure)
+     * @since 1.6.8
+     */
+    public static Writable filterLine(URL self, Closure predicate)
+            throws IOException {
+        return filterLine(newReader(self), predicate);
+    }
+
+    /**
+     * Filter lines from a URL using a closure predicate.  The closure
+     * will be passed each line as a String, and it should return
+     * <code>true</code> if the line should be passed to the writer.
+     *
+     * @param self      the URL
+     * @param charset   opens the URL with a specified charset
+     * @param predicate a closure which returns boolean and takes a line
+     * @return a writable which writes out the filtered lines
+     * @throws IOException if an IO exception occurs
+     * @see #filterLine(Reader, Closure)
+     * @since 1.6.8
+     */
+    public static Writable filterLine(URL self, String charset, Closure predicate)
+            throws IOException {
+        return filterLine(newReader(self, charset), predicate);
+    }
+
+    /**
+     * Uses a closure to filter lines from this URL and pass them to
+     * the given writer. The closure will be passed each line as a String, and
+     * it should return <code>true</code> if the line should be passed to the
+     * writer.
+     *
+     * @param self      the URL
+     * @param writer    a writer to write output to
+     * @param predicate a closure which returns true if a line should be accepted
+     * @throws IOException if an IOException occurs.
+     * @see #filterLine(Reader,Writer,Closure)
+     * @since 1.6.8
+     */
+    public static void filterLine(URL self, Writer writer, Closure predicate)
+            throws IOException {
+        filterLine(newReader(self), writer, predicate);
+    }
+
+    /**
+     * Uses a closure to filter lines from this URL and pass them to
+     * the given writer. The closure will be passed each line as a String, and
+     * it should return <code>true</code> if the line should be passed to the
+     * writer.
+     *
+     * @param self      the URL
+     * @param writer    a writer to write output to
+     * @param charset   opens the URL with a specified charset
+     * @param predicate a closure which returns true if a line should be accepted
+     * @throws IOException if an IOException occurs.
+     * @see #filterLine(Reader,Writer,Closure)
+     * @since 1.6.8
+     */
+    public static void filterLine(URL self, Writer writer, String charset, Closure predicate)
+            throws IOException {
+        filterLine(newReader(self, charset), writer, predicate);
     }
 
     /**
@@ -13494,6 +13739,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static MetaProperty hasProperty(Object self, String name) {
         return InvokerHelper.getMetaClass(self).hasProperty(self, name);
+    }
+
+    /**
+     * Returns a GroovyRowResult given a ResultSet.
+     *
+     * @param rs a java.sql.ResultSet
+     * @return the resulting groovy.sql.GroovyRowResult
+     * @throws java.sql.SQLException if a database error occurs
+     * @deprecated moved to {@link org.codehaus.groovy.runtime.SqlGroovyMethods#toRowResult(java.sql.ResultSet)}
+     * @since 1.6.0
+     */
+    @Deprecated
+    public static groovy.sql.GroovyRowResult toRowResult(java.sql.ResultSet rs) throws java.sql.SQLException {
+        return SqlGroovyMethods.toRowResult(rs);
     }
 
 }
