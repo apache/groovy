@@ -9795,7 +9795,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure (arg 1 is line, optional arg 2 is line number)
      * @return the last value returned by the closure
      * @throws IOException if an IOException occurs.
-     * @see #eachLine(Reader,Closure)
+     * @see #eachLine(java.io.Reader, int, groovy.lang.Closure)
      * @since 1.5.7
      */
     public static Object eachLine(InputStream stream, String charset, int firstLine, Closure closure) throws IOException {
@@ -9906,6 +9906,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure (arg 1 is line, optional arg 2 is line number starting at line 1)
      * @throws IOException if an IOException occurs.
      * @return the last value returned by the closure
+     * @see #eachLine(java.io.Reader, int, groovy.lang.Closure)
      * @since 1.5.6
      */
     public static Object eachLine(Reader self, Closure closure) throws IOException {
