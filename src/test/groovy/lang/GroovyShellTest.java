@@ -1,9 +1,9 @@
 /*
  * $Id$version
  * Nov 23, 2003 9:02:55 PM $user Exp $
- * 
+ *
  * Copyright 2003 (C) Sam Pullara. All Rights Reserved.
- * 
+ *
  * Redistribution and use of this software and associated documentation
  * ("Software"), with or without modification, are permitted provided that the
  * following conditions are met: 1. Redistributions of source code must retain
@@ -18,7 +18,7 @@
  * their names without prior written permission of The Codehaus. "groovy" is a
  * registered trademark of The Codehaus. 5. Due credit should be given to The
  * Codehaus - http://groovy.codehaus.org/
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE CODEHAUS AND CONTRIBUTORS ``AS IS'' AND ANY
  * EXPRESSED OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
  * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
@@ -30,7 +30,7 @@
  * LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
  * OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH
  * DAMAGE.
- *  
+ *
  */
 package groovy.lang;
 
@@ -39,13 +39,18 @@ import junit.framework.Test;
 import junit.framework.TestSuite;
 import junit.textui.TestRunner;
 import org.codehaus.groovy.control.CompilerConfiguration;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
 
 /**
  * @author sam
+ * @author Merlyn Albery-Speyer
  */
 public class GroovyShellTest extends GroovyTestCase {
 
@@ -106,7 +111,7 @@ public class GroovyShellTest extends GroovyTestCase {
         assertEquals("I like Cheddar", result);
         assertEquals("abc", context.getVariable("x"));
     }
-    
+
     public void testClassLoader() {
         Binding context = new Binding();
         CompilerConfiguration config = new CompilerConfiguration();
@@ -117,6 +122,28 @@ public class GroovyShellTest extends GroovyTestCase {
                         "assert evaluate('XXXX') == XXXX\n"+
                         "'''";
         shell.evaluate(script);
-     
+
     }
+
+    public void testLaunchesJUnitTestSuite() throws Exception {
+    	// create a valid (empty) test suite on disk
+    	String testName = "GroovyShellTestJUnit3Test"+System.currentTimeMillis();
+		File testSuite = new File(System.getProperty("java.io.tmpdir"), testName);
+		DefaultGroovyMethods.write(testSuite, "import junit.framework.*; \r\n"+
+			"public class "+testName+" extends TestSuite { \r\n"+
+			"    public static Test suite() { \r\n"+
+			"        return new TestSuite(); \r\n"+
+			"    } \r\n" +
+			"} \r\n");
+		testSuite.deleteOnExit();
+
+		PrintStream out = System.out;
+		System.setOut( new PrintStream(new ByteArrayOutputStream()) );
+		try {
+		    // makes this more of an integration test than a unit test...
+		    GroovyShell.main( new String[] { testSuite.getCanonicalPath() });
+		} finally {
+		    System.setOut( out );
+		}
+	}
 }
