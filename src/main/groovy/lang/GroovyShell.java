@@ -37,6 +37,7 @@ import java.util.Map;
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Guillaume Laforge
+ * @author Paul King
  * @version $Revision$
  */
 public class GroovyShell extends GroovyObjectSupport {
@@ -277,6 +278,10 @@ public class GroovyShell extends GroovyObjectSupport {
             if (isJUnit3Test(scriptClass)) {
                 return runJUnit3Test(scriptClass);
             }
+            // if it's a JUnit 3.8.x test suite, run it with an appropriate runner
+            if (isJUnit3TestSuite(scriptClass)) {
+                return runJUnit3TestSuite(scriptClass);
+            }
             // if it's a JUnit 4.x test, run it with an appropriate runner
             if (isJUnit4Test(scriptClass)) {
                 return runJUnit4Test(scriptClass);
@@ -345,6 +350,23 @@ public class GroovyShell extends GroovyObjectSupport {
         }
     }
 
+    /**
+     * Run the specified class extending TestSuite as a unit test.
+     * This is done through reflection, to avoid adding a dependency to the JUnit framework.
+     * Otherwise, developers embedding Groovy and using GroovyShell to load/parse/compile
+     * groovy scripts and classes would have to add another dependency on their classpath.
+     *
+     * @param scriptClass the class to be run as a unit test
+     */
+    private Object runJUnit3TestSuite(Class scriptClass) {
+        try {
+            Object testSuite = InvokerHelper.invokeStaticMethod(scriptClass, "suite", new Object[]{});
+            return InvokerHelper.invokeStaticMethod("junit.textui.TestRunner", "run", new Object[]{testSuite});
+        } catch (ClassNotFoundException e) {
+            throw new GroovyRuntimeException("Failed to run the unit test. JUnit is not on the Classpath.");
+        }
+    }
+
     private Object runJUnit4Test(Class scriptClass) {
         try {
             return InvokerHelper.invokeStaticMethod("org.codehaus.groovy.vmplugin.v5.JUnit4Utils",
@@ -388,6 +410,33 @@ public class GroovyShell extends GroovyObjectSupport {
             // fall through
         }
         return isUnitTestCase;
+    }
+
+     /**
+     * Utility method to check through reflection if the class appears to be a
+     * JUnit 3.8.x test suite, i.e.&nsbp;checks if it extends JUnit 3.8.x's TestSuite.
+     *
+     * @param scriptClass the class we want to check
+     * @return true if the class appears to be a test
+     */
+    private boolean isJUnit3TestSuite(Class scriptClass) {
+        // check if the parsed class is a TestSuite,
+        // so that it is possible to run it as a JUnit test
+        boolean isUnitTestSuite = false;
+        try {
+            try {
+                Class testSuiteClass = this.loader.loadClass("junit.framework.TestSuite");
+                // if scriptClass extends TestSuiteClass
+                if (testSuiteClass.isAssignableFrom(scriptClass)) {
+                    isUnitTestSuite = true;
+                }
+            } catch (ClassNotFoundException e) {
+                // fall through
+            }
+        } catch (Throwable e) {
+            // fall through
+        }
+        return isUnitTestSuite;
     }
 
     /**
