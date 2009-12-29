@@ -216,7 +216,7 @@ public class MemoryAwareConcurrentReadMap {
      * @param loadFactor  the load factor of the ConcurrentReaderHashMap
      * @throws IllegalArgumentException  if the initial maximum number 
      *               of elements is less
-     *               than zero, or if the load factor is nonpositive.
+     *               than zero, or if the load factor is non-positive.
      */
     public MemoryAwareConcurrentReadMap(int initialCapacity, float loadFactor) {
         if (loadFactor <= 0)
@@ -457,7 +457,7 @@ public class MemoryAwareConcurrentReadMap {
          * oldCapacity+index. We also eliminate unnecessary node
          * creation by catching cases where old nodes can be reused
          * because their next fields won't change. Statistically, at
-         * the default threshhold, only about one-sixth of them need
+         * the default threshold, only about one-sixth of them need
          * cloning. (The nodes they replace will be garbage
          * collectable as soon as they are no longer referenced by any
          * reader thread that may be in the midst of traversing table
@@ -520,7 +520,7 @@ public class MemoryAwareConcurrentReadMap {
         1. Set value field to null, to force get() to retry
         2. Rebuild the list without this entry.
            All entries following removed node can stay in list, but
-           all preceeding ones need to be cloned.  Traversals rely
+           all preceding ones need to be cloned.  Traversals rely
            on this strategy to ensure that elements will not be
           repeated during iteration.
          */
@@ -677,10 +677,10 @@ public class MemoryAwareConcurrentReadMap {
     
     /**
      * A SoftReference representing a key or value of the map. The
-     * instance keeps a pointer to the entry it is sotring a 
+     * instance keeps a pointer to the entry it is storing a
      * key or value for. This is used to identify the entry we 
      * need to remove 
-     * @see CopyOfMemoryAwareConcurrentReadMap#expungeStaleEntries() 
+     * @see MemoryAwareConcurrentReadMap#expungeStaleEntries()
      */
     private static class SoftRef extends SoftReference implements Reference {
         private volatile Entry entry;
