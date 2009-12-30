@@ -1172,6 +1172,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * closure takes one parameter then it will be passed the Map.Entry
      * otherwise if the closure takes two parameters then it will be
      * passed the key and the value.
+     * <pre class="groovyTestCase">def result = ""
+     * [a:1, b:3].each { key, value -> result += "$key$value" }
+     * assert result == "a1b3"</pre>
+     * <pre class="groovyTestCase">def result = ""
+     * [a:1, b:3].each { entry -> result += entry }
+     * assert result == "a=1b=3"</pre>
      *
      * @param self    the map over which we iterate
      * @param closure the closure applied on each entry of the map
@@ -1192,6 +1198,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * the item's index (a counter starting at zero) otherwise if the closure
      * takes three parameters then it will be passed the key, the value, and
      * the index.
+     * <pre class="groovyTestCase">def result = ""
+     * [a:1, b:3].eachWithIndex { key, value, index -> result += "$index($key$value)" }
+     * assert result == "0(a1)1(b3)"</pre>
+     * <pre class="groovyTestCase">def result = ""
+     * [a:1, b:3].eachWithIndex { entry, index -> result += "$index($entry)" }
+     * assert result == "0(a=1)1(b=3)"</pre>
      *
      * @param self    the map over which we iterate
      * @param closure a Closure to operate on each item
@@ -1209,6 +1221,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterate over each element of the list in the reverse order.
+     * <pre class="groovyTestCase">def result = []
+     * [1,2,3].reverseEach { result << it }
+     * assert result == [3,2,1]</pre>
      *
      * @param self    a List
      * @param closure a closure to which each item is passed.
@@ -1270,6 +1285,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the entries of a map, and checks whether a predicate is
      * valid for all entries.
+     * <pre class="groovyTestCase">def map = [a:1, b:2.0, c:2L]
+     * assert !map.every { key, value -> value instanceof Integer }
+     * assert map.every { entry -> entry.value instanceof Number }</pre>
      *
      * @param self    the map over which we iterate
      * @param closure the closure predicate used for matching
@@ -1326,6 +1344,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates over the entries of a map, and checks whether a predicate is
      * valid for at least one entry
+     * <pre class="groovyTestCase">assert [2:3, 4:5, 5:10].any { key, value -> key * 2 == value }
+     * assert ![2:3, 4:5, 5:10].any { entry -> entry.key == entry.value * 2 }</pre>
      *
      * @param self    the map over which we iterate
      * @param closure the closure predicate used for matching
@@ -1599,9 +1619,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Iterates through this object transforming each value into a new value using the
      * closure as a transformer, returning a list of transformed values.
      * Example:
-     * <pre>def list = [1, 'a', 1.23, true ]
+     * <pre class="groovyTestCase">def list = [1, 'a', 1.23, true ]
      * def types = list.collect { it.class }
-     * </pre>
+     * assert types == [Integer, String, BigDecimal, Boolean]</pre>
      *
      * @param self    the values of the object to transform
      * @param closure the closure used to transform each element of the collection
@@ -1706,6 +1726,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates through this Map transforming each entry into a new value using the closure
      * as a transformer, returning a list of transformed values.
+     * <pre class="groovyTestCase">assert [a:1, b:2].collect( [] as HashSet ) { key, value -> key*value } == ["a", "bb"] as Set
+     * assert [3:20, 2:30].collect( [] as HashSet ) { entry -> entry.key * entry.value } == [60] as Set</pre>
      *
      * @param self       a Map
      * @param collection the Collection to which the mapped values are added
@@ -1729,6 +1751,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Iterates through this Map transforming each entry into a new value using the closure
      * as a transformer, returning a list of transformed values.
+     * <pre class="groovyTestCase">assert [a:1, b:2].collect { key, value -> key*value } == ["a", "bb"]
+     * assert [3:20, 2:30].collect { entry -> entry.key * entry.value } == [60, 60]</pre>
      *
      * @param self    a Map
      * @param closure the closure used to map each element of the collection
@@ -1781,6 +1805,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Finds the first entry matching the closure condition.  If the closure takes
      * two parameters, the entry key and value are passed.  If the closure takes
      * one parameter, the Map.Entry object is passed.
+     * <pre class="groovyTestCase">assert [a:1, b:3].find { it.value == 3 }.key == "b"</pre>
      *
      * @param self    a Map
      * @param closure a closure condition
@@ -1896,6 +1921,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Adds GroovyCollections#transpose(List) as a method on lists.
+     * <pre class="groovyTestCase">def result = [['a', 'b'], [1, 2]].transpose()
+     * assert result == [['a', 1], ['b', 2]]</pre>
      *
      * @param self a List of lists
      * @return a List of the transposed lists
@@ -1915,6 +1942,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If the <code>self</code> map is one of TreeMap, LinkedHashMap, Hashtable
      * or Properties, the returned Map will preserve that type, otherwise a HashMap will
      * be returned.
+     * <pre class="groovyTestCase">def result = [a:1, b:2, c:4, d:5].findAll { it.value % 2 == 0 }
+     * assert result.every { it instanceof Map.Entry }
+     * assert result*.key == ["b", "c"]
+     * assert result*.value == [2, 4]</pre>
      *
      * @param self    a Map
      * @param closure a closure condition applying on the entries
@@ -1960,6 +1991,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * resulting map will have an entry for each 'group' key returned by the
      * closure, with values being the list of map entries that belong to each
      * group.
+     * <pre class="groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5,f:6].groupBy { it.value % 2 }
+     * assert result[0]*.key == ["b", "d", "f"]
+     * assert result[1]*.value == [1, 3, 5]</pre>
      *
      * @param self    a map to group
      * @param closure a closure mapping entries on keys
@@ -1987,6 +2021,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If the <code>self</code> map is one of TreeMap, LinkedHashMap, Hashtable
      * or Properties, the returned Map will preserve that type, otherwise a HashMap will
      * be returned.
+     * <pre class="groovyTestCase">def result = [a:1,b:2,c:3,d:4,e:5,f:6].groupBy { it.value % 2 }
+     * assert result == [0:[b:2, d:4, f:6], 1:[a:1, c:3, e:5]]</pre>
      *
      * @param self    a map to group
      * @param closure a closure mapping entries on keys
@@ -3604,6 +3640,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Support the range subscript operator for a List
+     * <pre class="groovyTestCase">def list = [1, "a", 4.5, true]
+     * assert list[1..2] == ["a", 4.5]</pre>
      *
      * @param self  a List
      * @param range a Range indicating the items to get
@@ -3623,6 +3661,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Select a List of items from a List using a Collection to
      * identify the indices to be selected.
+     * <pre class="groovyTestCase">def list = [true, 1, 3.4, false]
+     * assert list[1,0,2] == [1, true, 3.4]</pre>
      *
      * @param self    a List
      * @param indices a Collection of indices
@@ -3730,6 +3770,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Creates a sub-Map containing the given keys. This method is similar to
      * List.subList() but uses keys rather than index ranges.
+     * <pre class="groovyTestCase">assert [1:10, 2:20, 4:40].subMap( [2, 4] ) == [2:20, 4:40]</pre>
      *
      * @param map  a Map
      * @param keys a Collection of keys
@@ -3748,6 +3789,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Looks up an item in a Map for the given key and returns the value - unless
      * there is no entry for the given key in which case add the default value
      * to the map and return that.
+     * <pre class="groovyTestCase">def map=[:]
+     * map.get("a", []) << 5
+     * assert map == [a:[5]]</pre>
      *
      * @param map          a Map
      * @param key          the key to lookup the value of
@@ -3832,6 +3876,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Support the subscript operator for a List.
+     * <pre class="groovyTestCase">def list = [2, "a", 5.3]
+     * assert list[1] == "a"</pre>
      *
      * @param self a List
      * @param idx  an index
@@ -3865,6 +3911,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A helper method to allow lists to work with subscript operators.
+     * <pre class="groovyTestCase">def list = [2, 3]
+     * list[0] = 1
+     * assert list == [1, 3]</pre>
      *
      * @param self  a List
      * @param idx   an index
@@ -3914,6 +3963,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A helper method to allow lists to work with subscript operators.
+     * <pre class="groovyTestCase">def list = ["a", true]
+     * list[1..<1] = 5
+     * assert list == ["a", 5, true]</pre>
      *
      * @param self  a List
      * @param range the subset of the list to set
@@ -3949,7 +4001,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * List subscript assignment operator when given a range as the index and
      * the assignment operand is a collection.
-     * Example: <code>myList[3..5] = anotherList</code>.  Items in the given
+     * Example: <pre class="groovyTestCase">def myList = [4, 3, 5, 1, 2, 8, 10]
+     * myList[3..5] = ["a", true]
+     * assert myList == [4, 3, 5, "a", true, 10]</pre>
+     *
+     * Items in the given
      * range are relaced with items from the collection.
      *
      * @param self  a List
@@ -3965,7 +4021,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * List subscript assignment operator when given a range as the index.
-     * Example: <code>myList[3..5] = newItem</code>.  Items in the given
+     * Example: <pre class="groovyTestCase">def myList = [4, 3, 5, 1, 2, 8, 10]
+     * myList[3..5] = "b"
+     * assert myList == [4, 3, 5, "b", 10]</pre>
+     *
+     * Items in the given
      * range are relaced with the operand.  The <code>value</code> operand is
      * always treated as a single value.
      *
@@ -3981,6 +4041,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A helper method to allow lists to work with subscript operators.
+     * <pre class="groovyTestCase">def list = ["a", true, 42, 9.4]
+     * list[1, 4] = ["x", false]
+     * assert list == ["a", "x", 42, 9.4, false]</pre>
      *
      * @param self   a List
      * @param splice the subset of the list to set
@@ -3996,6 +4059,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * A helper method to allow lists to work with subscript operators.
+     * <pre class="groovyTestCase">def list = ["a", true, 42, 9.4]
+     * list[1, 3] = 5
+     * assert list == ["a", 5, 42, 5]</pre>
      *
      * @param self   a List
      * @param splice the subset of the list to set
@@ -4043,6 +4109,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Support the subscript operator for a Map.
+     * <pre class="groovyTestCase">def map = [a:10]
+     * assert map["a"] == 10</pre>
      *
      * @param self a Map
      * @param key  an Object as a key for the map
@@ -4066,6 +4134,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * but with some additional logic to preserve the <code>left</code> Map type for common cases as
      * described above.
      * </p>
+     * <pre class="groovyTestCase">assert [a:10, b:20] + [a:5, c:7] == [a:5, b:20, c:7]</pre>
      *
      * @param left  a Map
      * @param right a Map
@@ -4330,6 +4399,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Sorts the given map into a sorted map using
      * the closure as a comparator.
+     * <pre class="groovyTestCase">def map = [a:5, b:3, c:6, d:4].sort { a, b -> a.value <=> b.value }
+     * assert map == [b:3, d:4, a:5, c:6]</pre>
      *
      * @param self the map to be sorted
      * @param closure a Closure used as a comparator
@@ -4476,6 +4547,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Removes the last item from the List. Using add() and pop()
      * is similar to push and pop on a Stack.
+     * <pre class="groovyTestCase">def list = ["a", false, 2]
+     * assert list.pop() == 2
+     * assert list == ["a", false]</pre>
      *
      * @param self a List
      * @return the item removed from the List
@@ -4526,6 +4600,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Appends an item to the List. Synonym for add().
+     * <pre class="groovyTestCase">def list = [3, 4, 2]
+     * list.push("x")
+     * assert list == [3, 4, 2, "x"]</pre>
      *
      * @param self a List
      * @param value element to be appended to this list.
@@ -4540,6 +4617,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the last item from the List.
+     * <pre class="groovyTestCase">def list = [3, 4, 2]
+     * assert list.last() == 2
+     * assert list == [3, 4, 2]</pre>
      *
      * @param self a List
      * @return the last item from the List
@@ -4555,6 +4635,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the first item from the List.
+     * <pre class="groovyTestCase">def list = [3, 4, 2]
+     * assert list.first() == 3
+     * assert list == [3, 4, 2]</pre>
      *
      * @param self a List
      * @return the first item from the List
@@ -4570,6 +4653,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the first item from the List.
+     * <pre class="groovyTestCase">def list = [3, 4, 2]
+     * assert list.head() == 3
+     * assert list == [3, 4, 2]</pre>
      *
      * @param self a List
      * @return the first item from the List
@@ -4582,6 +4668,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the items from the List excluding the first item.
+     * <pre class="groovyTestCase">def list = [3, 4, 2]
+     * assert list.tail() == [4, 2]
+     * assert list == [3, 4, 2]</pre>
      *
      * @param self a List
      * @return a list without its first element
@@ -4747,6 +4836,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Reverses the list.  The result is a new List with the identical contents
      * in reverse order.
+     * <pre class="groovyTestCase">def list = ["a", 4, false]
+     * assert list.reverse() == [false, 4, "a"]
+     * assert list == ["a", 4, false]</pre>
      *
      * @param self a List
      * @return a reversed List
@@ -4947,6 +5039,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Determines if the contents of this list are equal to the
      * contents of the given array in the same order.  This returns
      * <code>false</code> if either collection is <code>null</code>.
+     * <pre class="groovyTestCase">assert [1, "a"].equals( [ 1, "a" ] as Object[] )</pre>
      *
      * @param left  this List
      * @param right this Object[] being compared to
@@ -4991,6 +5084,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If numbers exist in the Lists, then they are compared as numbers,
      * for example 2 == 2L.  If either list is <code>null</code>, the result
      * is <code>false</code>.
+     * <pre class="groovyTestCase">assert ["a", 2].equals(["a", 2])
+     * assert ![2, "a"].equals("a", 2)
+     * assert [2.0, "a"].equals(2L, "a") // number comparison at work</pre>
      *
      * @param left  this List
      * @param right the List being compared to.
@@ -5151,8 +5247,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create a List composed of the elements of the first list minus the
-     * elements of the given collection.
+     * Create a List composed of the elements of the first list minus
+     * every occurrence of elements of the given collection.
+     * <pre class="groovyTestCase">assert [1, "a", true, true, false, 5.3] - [true, 5.3] == [1, "a", false]</pre>
      *
      * @param self     a List
      * @param removeMe a Collection of elements to remove
@@ -5225,8 +5322,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Create a new List composed of the elements of the first list minus the
+     * Create a new List composed of the elements of the first list minus every occurrence of the
      * operand.
+     * <pre class="groovyTestCase">assert ["a", 5, 5, true] - 5 == ["a", true]</pre>
      *
      * @param self    a List object
      * @param operand an element to remove from the list

@@ -1,32 +1,26 @@
 /*
-  File: ConcurrentReaderHashMap
-
-  Written by Doug Lea. Adapted and released, under explicit
-  permission, from JDK1.2 HashMap.java and Hashtable.java which
-  carries the following copyright:
-
-     * Copyright 1997 by Sun Microsystems, Inc.,
-     * 901 San Antonio Road, Palo Alto, California, 94303, U.S.A.
-     * All rights reserved.
-     *
-     * This software is the confidential and proprietary information
-     * of Sun Microsystems, Inc. ("Confidential Information").  You
-     * shall not disclose such Confidential Information and shall use
-     * it only in accordance with the terms of the license agreement
-     * you entered into with Sun.
-
-  History:
-  Date       Who                What
-  28oct1999  dl               Created
-  14dec1999  dl               jmm snapshot
-  19apr2000  dl               use barrierLock
-  12jan2001  dl               public release
-  17nov2001  dl               Minor tunings
-  20may2002  dl               BarrierLock can now be serialized.
-  09dec2002  dl               Fix interference checks.
-  23jun2004  dl               Avoid bad array sizings in view toArray methods
-  02jul2007  blackdrag        adaption of package name to Groovy project
-*/
+ * Copyright 2003-2009 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Modified to support mostly-concurrent reading from this file:
+ * http://gee.cs.oswego.edu/cgi-bin/viewcvs.cgi/jsr166/src/main/java/util/concurrent/ConcurrentHashMap.java
+ * which contains the following license information:
+ * 
+ * Written by Doug Lea with assistance from members of JCP JSR-166
+ * Expert Group and released to the public domain, as explained at
+ * http://creativecommons.org/licenses/publicdomain
+ */
 
 package org.codehaus.groovy.runtime.metaclass;
 
@@ -44,9 +38,8 @@ import java.util.NoSuchElementException;
 import java.io.Serializable;
 import java.io.IOException;
 
-
 /**
- * A version of Hashtable that supports mostly-concurrent reading, but
+ * A hash table that supports mostly-concurrent reading, but
  * exclusive writing.  Because reads are not limited to periods
  * without writes, a concurrent reader policy is weaker than a classic
  * reader/writer policy, but is generally faster and allows more
@@ -173,7 +166,6 @@ public class ConcurrentReaderHashMap
 
     * Remove() (also clear()) invalidates removed nodes to alert read
        operations that they must wait out the full modifications.
- 
   */
 
   /** A Serializable class for barrier lock **/
@@ -315,7 +307,7 @@ public class ConcurrentReaderHashMap
    * @param loadFactor  the load factor of the ConcurrentReaderHashMap
    * @throws IllegalArgumentException  if the initial maximum number 
    *               of elements is less
-   *               than zero, or if the load factor is nonpositive.
+   *               than zero, or if the load factor is non-positive.
    */
   public ConcurrentReaderHashMap(int initialCapacity, float loadFactor) {
     if (loadFactor <= 0)
@@ -336,8 +328,7 @@ public class ConcurrentReaderHashMap
    * @param   initialCapacity   the initial capacity of the 
    *                            ConcurrentReaderHashMap.
    * @throws    IllegalArgumentException if the initial maximum number 
-   *              of elements is less
-   *              than zero.
+   *              of elements is less than zero.
    */
   public ConcurrentReaderHashMap(int initialCapacity) {
     this(initialCapacity, DEFAULT_LOAD_FACTOR);
@@ -389,8 +380,7 @@ public class ConcurrentReaderHashMap
    * @return  the value to which the key is mapped in this table;
    *          <code>null</code> if the key is not mapped to any value in
    *          this table.
-   * @exception  NullPointerException  if the key is
-   *               <code>null</code>.
+   * @exception  NullPointerException  if the key is <code>null</code>.
    * @see     #put(Object, Object)
    */
   public Object get(Object key) {
@@ -435,9 +425,9 @@ public class ConcurrentReaderHashMap
           return value;
 
         // Entry was invalidated during deletion. But it could
-        // have been re-inserted, so we must retraverse.
+        // have been re-inserted, so we must re-traverse.
         // To avoid useless contention, get lock to wait out modifications
-        // before retraversing.
+        // before re-traversing.
 
         synchronized(this) {
           tab = table;
@@ -458,8 +448,7 @@ public class ConcurrentReaderHashMap
    * @return  <code>true</code> if and only if the specified object 
    *          is a key in this table, as determined by the 
    *          <tt>equals</tt> method; <code>false</code> otherwise.
-   * @exception  NullPointerException  if the key is
-   *               <code>null</code>.
+   * @exception  NullPointerException  if the key is <code>null</code>.
    * @see     #contains(Object)
    */
   public boolean containsKey(Object key) {
@@ -478,8 +467,7 @@ public class ConcurrentReaderHashMap
    * @param      value   the value.
    * @return     the previous value of the specified key in this table,
    *             or <code>null</code> if it did not have one.
-   * @exception  NullPointerException  if the key or value is
-   *               <code>null</code>.
+   * @exception  NullPointerException  if the key or value is <code>null</code>.
    * @see     Object#equals(Object)
    * @see     #get(Object)
    */
@@ -643,7 +631,7 @@ public class ConcurrentReaderHashMap
         1. Set value field to null, to force get() to retry
         2. Rebuild the list without this entry.
            All entries following removed node can stay in list, but
-           all preceeding ones need to be cloned.  Traversals rely
+           all preceding ones need to be cloned.  Traversals rely
            on this strategy to ensure that elements will not be
           repeated during iteration.
     */
@@ -1143,7 +1131,7 @@ public class ConcurrentReaderHashMap
     public boolean hasNext() {
 
       /*
-        currentkey and currentValue are set here to ensure that next()
+        currentKey and currentValue are set here to ensure that next()
         returns normally if hasNext() returns true. This avoids
         surprises especially when final element is removed during
         traversal -- instead, we just ignore the removal during
@@ -1210,7 +1198,8 @@ public class ConcurrentReaderHashMap
    * instance to a stream (i.e.,
    * serialize it).
    *
-   * @serialData The <i>capacity</i> of the 
+   * @param s the stream
+   * @serialData The <i>capacity</i> of the
    * ConcurrentReaderHashMap (the length of the
    * bucket array) is emitted (int), followed  by the
    * <i>size</i> of the ConcurrentReaderHashMap (the number of key-value
@@ -1245,6 +1234,8 @@ public class ConcurrentReaderHashMap
    * Reconstitute the <tt>ConcurrentReaderHashMap</tt> 
    * instance from a stream (i.e.,
    * deserialize it).
+   *
+   * @param s the stream
    */
   private synchronized void readObject(java.io.ObjectInputStream s)
     throws IOException, ClassNotFoundException  {
@@ -1267,14 +1258,14 @@ public class ConcurrentReaderHashMap
   }
   
   /** 
-   * Return the number of slots in this table 
+   * @return the number of slots in this table
    **/
   public synchronized int capacity() {
     return table.length;
   }
 
   /** 
-   * Return the load factor 
+   * @return the load factor
    **/
   public float loadFactor() {
     return loadFactor;
