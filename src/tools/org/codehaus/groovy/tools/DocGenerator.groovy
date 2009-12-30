@@ -55,6 +55,11 @@ class DocGenerator {
                 def parameters = method.getParameters()
                 def jdkClass = parameters[0].getType().toString()
 
+                if(jdkClass.equals('T')) {
+                    jdkClass = 'java.lang.Object'
+                } else if(jdkClass.equals('T[]')) {
+                    jdkClass = 'java.lang.Object[]'
+                }
                 if (jdkClass.startsWith('groovy')) {
                     // nothing, skip it
                 }
