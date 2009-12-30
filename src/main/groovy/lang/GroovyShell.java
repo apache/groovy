@@ -338,7 +338,7 @@ public class GroovyShell extends GroovyObjectSupport {
             Object testSuite = InvokerHelper.invokeConstructorOf("junit.framework.TestSuite",new Object[]{scriptClass});
             return InvokerHelper.invokeStaticMethod("junit.textui.TestRunner", "run", new Object[]{testSuite});
         } catch (ClassNotFoundException e) {
-            throw new GroovyRuntimeException("Failed to run the unit test. JUnit is not on the Classpath.");
+            throw new GroovyRuntimeException("Failed to run the unit test. JUnit is not on the Classpath.", e);
         }
     }
 
@@ -355,7 +355,7 @@ public class GroovyShell extends GroovyObjectSupport {
             Object testSuite = InvokerHelper.invokeStaticMethod(scriptClass, "suite", new Object[]{});
             return InvokerHelper.invokeStaticMethod("junit.textui.TestRunner", "run", new Object[]{testSuite});
         } catch (ClassNotFoundException e) {
-            throw new GroovyRuntimeException("Failed to run the unit test. JUnit is not on the Classpath.");
+            throw new GroovyRuntimeException("Failed to run the unit test. JUnit is not on the Classpath.", e);
         }
     }
 
@@ -364,7 +364,7 @@ public class GroovyShell extends GroovyObjectSupport {
             return InvokerHelper.invokeStaticMethod("org.codehaus.groovy.vmplugin.v5.JUnit4Utils",
                     "realRunJUnit4Test", new Object[]{scriptClass, this.loader});
         } catch (ClassNotFoundException e) {
-            throw new GroovyRuntimeException("Failed to run the JUnit 4 test.");
+            throw new GroovyRuntimeException("Failed to run the JUnit 4 test.", e);
         }
     }
 
@@ -373,7 +373,7 @@ public class GroovyShell extends GroovyObjectSupport {
             return InvokerHelper.invokeStaticMethod("org.codehaus.groovy.vmplugin.v5.TestNgUtils",
                     "realRunTestNgTest", new Object[]{scriptClass, this.loader});
         } catch (ClassNotFoundException e) {
-            throw new GroovyRuntimeException("Failed to run the TestNG test.");
+            throw new GroovyRuntimeException("Failed to run the TestNG test.", e);
         }
     }
 
@@ -455,7 +455,7 @@ public class GroovyShell extends GroovyObjectSupport {
                 isTest = true;
             };
         } catch (ClassNotFoundException e) {
-            throw new GroovyRuntimeException("Failed to invoke the JUnit 4 helper class.");
+            throw new GroovyRuntimeException("Failed to invoke the JUnit 4 helper class.", e);
         }
         return isTest;
     }
@@ -483,7 +483,7 @@ public class GroovyShell extends GroovyObjectSupport {
                 isTest = true;
             };
         } catch (ClassNotFoundException e) {
-            throw new GroovyRuntimeException("Failed to invoke the TestNG helper class.");
+            throw new GroovyRuntimeException("Failed to invoke the TestNG helper class.", e);
         }
         return isTest;
     }
