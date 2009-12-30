@@ -134,10 +134,10 @@ public class GroovyScriptEngineImpl
     // javax.script.Compilable methods 
     public CompiledScript compile(String scriptSource) throws ScriptException {
         try {
-            return new GroovyCompiledScript(this, 
+            return new GroovyCompiledScript(this,
                                     getScriptClass(scriptSource));
         } catch (SyntaxException e) {
-            throw new ScriptException(e.getMessage(), 
+            throw new ScriptException(e.getMessage(),
                                       e.getSourceLocator(), e.getLine());
         } catch (IOException e) {
             throw new ScriptException(e);
@@ -151,12 +151,12 @@ public class GroovyScriptEngineImpl
     }
    
     // javax.script.Invocable methods.
-    public Object invokeFunction(String name, Object... args) 
+    public Object invokeFunction(String name, Object... args)
              throws ScriptException, NoSuchMethodException  {
         return invokeImpl(null, name, args);
     }
    
-    public Object invokeMethod(Object thiz, String name, Object... args) 
+    public Object invokeMethod(Object thiz, String name, Object... args)
              throws ScriptException, NoSuchMethodException  {
         if (thiz == null) {
             throw new IllegalArgumentException("script object is null");
@@ -335,6 +335,14 @@ public class GroovyScriptEngineImpl
         clazz = loader.parseClass(stream, generateScriptName());
         classMap.put(script, clazz);
         return clazz;
+    }
+
+    public void setClassLoader(final GroovyClassLoader classLoader) {
+      this.loader = classLoader;
+    }
+
+    public GroovyClassLoader getClassLoader() {
+      return this.loader;
     }
 
     //-- Internals only below this point
