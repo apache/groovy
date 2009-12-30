@@ -86,7 +86,7 @@ public class TestNgUtils {
             Object result = InvokerHelper.invokeMethod(testng, "run", new Object[]{});
             return result;
         } catch (ClassNotFoundException e) {
-            throw new GroovyRuntimeException("Error running TestNG test.");
+            throw new GroovyRuntimeException("Error running TestNG test.", e);
         }
     }
 }
