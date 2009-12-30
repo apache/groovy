@@ -36,6 +36,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
  * 
  * @author Steve Goetze
  * @author Guillaume Laforge
+ * @author Merlyn Albery-Speyer
  */
 public class GroovyCodeSource {
 	
@@ -156,7 +157,11 @@ public class GroovyCodeSource {
             this.name = (String) info[0];
             this.codeSource = (CodeSource) info[1];
         } catch (PrivilegedActionException pae) {
-            throw new RuntimeException("Could not construct a URL from: " + file);
+            Throwable cause = pae.getCause();
+            if (cause != null && cause instanceof IOException) {
+            	throw (IOException)cause;
+            }
+            throw new RuntimeException("Could not construct CodeSource for file: " + file, cause);
         }
     }
 
