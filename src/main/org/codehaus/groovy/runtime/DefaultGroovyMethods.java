@@ -47,6 +47,7 @@ import java.security.PrivilegedAction;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
+import java.util.concurrent.BlockingQueue;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -5907,6 +5908,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static <T> Collection<T> leftShift(Collection<T> self, T value) {
         self.add(value);
+        return self;
+    }
+
+    /**
+     * Overloads the left shift operator to provide an easy way to append
+     * objects to a BlockingQueue.
+     * In case of bounded queue the method will block till space in the queue become available
+     * <pre class="groovyTestCase">def list = new java.util.concurrent.LinkedBlockingQueue ()
+     * list << 3 << 2 << 1
+     * assert list.iterator().collect{it} == [3,2,1]</pre>
+     *
+     * @param self  a Collection
+     * @param value an Object to be added to the collection.
+     * @return same collection, after the value was added to it.
+     * @since 1.7.1
+     */
+    public static <T> BlockingQueue<T> leftShift(BlockingQueue<T> self, T value) throws InterruptedException {
+        self.put(value);
         return self;
     }
 
