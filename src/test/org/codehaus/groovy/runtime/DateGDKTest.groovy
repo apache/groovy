@@ -6,9 +6,9 @@ import java.text.SimpleDateFormat
 /**
  * @author tnichols
  */
-public class DateGDKTest extends GroovyTestCase {
+class DateGDKTest extends GroovyTestCase {
 	
-	public void testGDKDateMethods() {
+	void testGDKDateMethods() {
 		Locale defaultLocale = Locale.default
 		TimeZone defaultTZ = TimeZone.default
 		Locale locale = Locale.UK
@@ -30,7 +30,7 @@ public class DateGDKTest extends GroovyTestCase {
 		TimeZone.setDefault defaultTZ
 	}
 	
-	public void testStaticParse() {
+	void testStaticParse() {
 		TimeZone defaultTZ = TimeZone.default
 		TimeZone.setDefault TimeZone.getTimeZone( 'Etc/GMT' )
 
@@ -40,7 +40,7 @@ public class DateGDKTest extends GroovyTestCase {
 		TimeZone.setDefault defaultTZ
 	}
 	
-	public void testRoundTrip() {
+	void testRoundTrip() {
 		Date d = new Date()
 		String pattern = 'dd MMM yyyy, hh:mm:ss,SSS a z'
 		String out = d.format( pattern )
@@ -50,7 +50,7 @@ public class DateGDKTest extends GroovyTestCase {
 		assertEquals d.time, d2.time
 	}
 	
-	public void testCalendarTimeZone() {
+	void testCalendarTimeZone() {
 		Locale defaultLocale = Locale.default
 		TimeZone defaultTZ = TimeZone.default
 		Locale locale = Locale.UK
@@ -79,7 +79,7 @@ public class DateGDKTest extends GroovyTestCase {
         return new java.sql.Date(f.parse(s).time)
     }
     
-    public void testMinusDates() {
+    void testMinusDates() {
         assertEquals(10, f.parse("1/11/2007") - f.parse("1/1/2007"))
         assertEquals(-10, f.parse("1/1/2007") - f.parse("1/11/2007"))
         assertEquals(375, f.parse("1/11/2008") - f.parse("1/1/2007"))
@@ -101,5 +101,21 @@ public class DateGDKTest extends GroovyTestCase {
 
         java.sql.Date sqld = sqlDate("7/4/1776");
         assertEquals(-4444, (sqld - 4444) - sqld);
+    }
+
+    /** GROOVY-3374 */
+    void testClearTime() {
+        def now = new Date()
+        def calendarNow = Calendar.getInstance()
+
+        now.clearTime()
+        calendarNow.clearTime()
+
+        assert now == calendarNow.time
+
+        assert calendarNow.get(Calendar.HOUR) == 0
+        assert calendarNow.get(Calendar.MINUTE) == 0
+        assert calendarNow.get(Calendar.SECOND) == 0
+        assert calendarNow.get(Calendar.MILLISECOND) == 0
     }
 }
