@@ -82,6 +82,7 @@ import java.util.regex.Pattern;
  * @author Ted Naleid
  * @author Brad Long
  * @author Jim Jagielski
+ * @author Rodolfo Velasco
  */
 public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
@@ -9107,6 +9108,60 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static String getDateTimeString( Date self ) {
     	return DateFormat.getDateTimeInstance(DateFormat.SHORT,DateFormat.MEDIUM).format( self );
     }
+
+    /**
+     * Common code for {@link #clearTime(Calendar)} and {@link #clearTime(Date)}
+     * and {@link #clearTime(java.sql.Date)}
+     */
+    private static void clearTimeCommon(final Calendar self) {
+		self.clear(Calendar.HOUR_OF_DAY);
+        self.clear(Calendar.HOUR);
+        self.clear(Calendar.MINUTE);
+        self.clear(Calendar.SECOND);
+        self.clear(Calendar.MILLISECOND);
+	}
+
+    /**
+     * Clears the time portion of this Date instance; Util where it makes sense to
+     * compare month/day/year only portions of a Date
+     *
+     * @param self a Date
+     *
+     * @since 1.6.7
+     */
+	public static void clearTime(final Date self){
+		Calendar calendar = Calendar.getInstance();
+		calendar.setTime(self);
+		clearTimeCommon(calendar);
+		self.setTime(calendar.getTime().getTime());
+	}
+
+    /**
+     * Clears the time portion of this java.sql.Date instance; Util where it makes sense to
+     * compare month/day/year only portions of a Date
+     *
+     * @param self a java.sql.Date
+     *
+     * @since 1.6.7
+     */
+	public static void clearTime(final java.sql.Date self){
+		Calendar calendar = Calendar.getInstance();
+		calendar.setTime(self);
+		clearTimeCommon(calendar);
+		self.setTime(calendar.getTime().getTime());
+	}
+
+    /**
+     * Clears the time portion of this Calendar instance; Util where it makes sense to
+     *
+     * compare month/day/year only portions of a Calendar
+     * @param self a Calendar
+     *
+     * @since 1.6.7
+     */
+	public static void clearTime(final Calendar self){
+		clearTimeCommon(self);
+	}
 
     // Boolean based methods
     //-------------------------------------------------------------------------
