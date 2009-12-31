@@ -1,5 +1,8 @@
 package groovy
 
+import org.codehaus.groovy.runtime.metaclass.MemoryAwareConcurrentReadMap
+import MemoryAwareConcurrentReadMap.Entry
+
 class ImportTest extends GroovyTestCase {
 
     void testImportAll() {
@@ -21,5 +24,9 @@ class ImportTest extends GroovyTestCase {
         def y = [1, 2, 3]
         assert y instanceof List
         assert y.getClass().name.startsWith("java.util.")
+    }
+    
+    void testImportResolutionThroughAnEarlierImport() {
+        assert MemoryAwareConcurrentReadMap.Entry.class != null        
     }
 }

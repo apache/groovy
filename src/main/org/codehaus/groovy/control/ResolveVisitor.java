@@ -1003,7 +1003,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             for (Iterator iter = l.iterator(); iter.hasNext();) {
                 ImportNode element = (ImportNode) iter.next();
                 ClassNode type = element.getType();
-                if (resolve(type, false, false, true)) continue;
+                if (resolve(type, true, false, true)) continue;
                 addError("unable to resolve class " + type.getName(), type);
             }
             Map importPackages = module.getStaticImportClasses();
