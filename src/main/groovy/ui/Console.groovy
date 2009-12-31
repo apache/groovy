@@ -39,6 +39,7 @@ import javax.swing.text.SimpleAttributeSet
 import javax.swing.text.Style
 import javax.swing.text.StyleConstants
 import javax.swing.text.html.HTML
+import javax.swing.filechooser.FileFilter
 
 import org.codehaus.groovy.runtime.InvokerHelper
 import org.codehaus.groovy.runtime.StackTraceUtils
@@ -139,6 +140,8 @@ class Console implements CaretListener, HyperlinkListener {
     Closure afterExecution
 
     public static String ICON_PATH = '/groovy/ui/ConsoleIcon.png' // used by ObjectBrowser too
+
+    private static groovyFileFilter = new GroovyFileFilter()
 
     static void main(args) {
         // allow the full stack traces to bubble up to the root logger
@@ -764,6 +767,7 @@ class Console implements CaretListener, HyperlinkListener {
         def fc = new JFileChooser(currentFileChooserDir)
         fc.fileSelectionMode = JFileChooser.FILES_ONLY
         fc.acceptAllFileFilterUsed = true
+        fc.fileFilter = groovyFileFilter
         if (fc.showDialog(frame, name) == JFileChooser.APPROVE_OPTION) {
             currentFileChooserDir = fc.currentDirectory
             Preferences.userNodeForPackage(Console).put('currentFileChooserDir', currentFileChooserDir.path)
@@ -945,5 +949,31 @@ class Console implements CaretListener, HyperlinkListener {
             editor.setCaretPosition(newlineBefore)
             editor.moveCaretPosition(newlineAfter)
         }
+    }
+}
+
+class GroovyFileFilter extends FileFilter {
+    private static final GROOVY_SOURCE_EXTENSIONS = ['*.groovy', '*.gvy', '*.gy', '*.gsh']
+    private static final GROOVY_SOURCE_EXT_DESC = GROOVY_SOURCE_EXTENSIONS.join(',')
+
+    public boolean accept(File f) {
+        if (f.isDirectory()) {
+            return true
+        }
+        GROOVY_SOURCE_EXTENSIONS.find {it == getExtension(f)} ? true : false
+    }
+
+    public String getDescription() {
+        "Groovy Source Files ($GROOVY_SOURCE_EXT_DESC)"
+    }
+    
+    static String getExtension(f) {
+        def ext = null;
+        def s = f.getName()
+        def i = s.lastIndexOf('.')
+        if (i > 0 &&  i < s.length() - 1) {
+            ext = s.substring(i).toLowerCase()
+        }
+        "*$ext"
     }
 }
