@@ -77,6 +77,7 @@ import java.util.regex.Pattern;
  * @author Ted Naleid
  * @author Brad Long
  * @author Jim Jagielski
+ * @author Rodolfo Velasco
  */
 public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
