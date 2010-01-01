@@ -768,6 +768,9 @@ class Console implements CaretListener, HyperlinkListener {
         fc.fileSelectionMode = JFileChooser.FILES_ONLY
         fc.acceptAllFileFilterUsed = true
         fc.fileFilter = groovyFileFilter
+        if(name == "Save") {
+            fc.selectedFile = new File("*.groovy")
+        }
         if (fc.showDialog(frame, name) == JFileChooser.APPROVE_OPTION) {
             currentFileChooserDir = fc.currentDirectory
             Preferences.userNodeForPackage(Console).put('currentFileChooserDir', currentFileChooserDir.path)
