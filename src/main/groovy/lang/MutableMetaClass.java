@@ -19,7 +19,7 @@ package groovy.lang;
 import java.lang.reflect.Method;
 
 /**
- * <p>An interface that defines methods that implementors of mutable Meta classes should specifiy. It provides operations to perform mutations
+ * <p>An interface that defines methods that implementers of mutable Meta classes should specify. It provides operations to perform mutations
  * on the MetaClass instance.</p>
  *
  * <p>Whether a MetaClass allows mutation is up to the MetaClass itself and considerations of Thread safety
@@ -46,7 +46,7 @@ public interface MutableMetaClass extends MetaClass {
      * adds a new instance method to this MetaClass. Instance
      * methods are able to overwrite the original methods of the
      * class. Calling this method should not be done after
-     * initlise was called.
+     * initialise was called.
      *
      * @param method the method to be added
      */
@@ -54,7 +54,7 @@ public interface MutableMetaClass extends MetaClass {
 
     /**
      * adds a new static method to this MetaClass. This is only
-     * possible as long as initilise was not called.
+     * possible as long as initialise was not called.
      *
      * @param method the method to be added
      */
