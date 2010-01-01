@@ -136,7 +136,7 @@ public interface MetaClass extends MetaObjectProtocol {
      void setAttribute(Class sender, Object receiver, String messageName, Object messageValue, boolean useSuper, boolean fromInsideClass);
     
     /**
-     * complete the initlialisation process. After this method
+     * complete the initialisation process. After this method
      * is called no methods should be added to the meta class.
      * Invocation of methods or access to fields/proeprties is
      * forbidden unless this method is called. This method 
@@ -169,7 +169,7 @@ public interface MetaClass extends MetaObjectProtocol {
       * @return The original AST or null if it cannot be returned
       */
      ClassNode getClassNode();
-     
+
      /**
       * Retrieves a list of MetaMethods held by this class
       *
