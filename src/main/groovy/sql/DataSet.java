@@ -31,7 +31,33 @@ import java.util.Map;
 import java.util.logging.Level;
 
 /**
- * Represents an extent of objects
+ * An enhancement of Groovy's Sql class providing support for accessing
+ * and querying databases using POGO fields and operators rather than
+ * JDBC-level API calls and RDBMS column names. So, instead of a query like:
+ * <pre>
+ * def db = // an instance of groovy.sql.Sql
+ * def sql = '''select * from Person
+ *     where (purchaseCount > ? and birthMonth = ?)
+ *     and (lastName &lt; ? or lastName > ?)
+ *     and age &lt; ? and age > ? and firstName != ?
+ *     order by firstName DESC, age'''
+ * def params = [10, "January", "Zulu", "Alpha", 99, 5, "Bert"]
+ * def sortedPeopleOfInterest = db.rows(sql, params)
+ * </pre>
+ * You can write code like this:
+ * <pre>
+ * def person = new DataSet(db, 'Person') // or db.dataSet('Person'), or db.dataSet(Person)
+ * def janFrequentBuyers = person.findAll { it.purchaseCount > 10 && it.lastName == "January" }
+ * def sortedPeopleOfInterest = janFrequentBuyers.
+ *     findAll{ it.lastName &lt; 'Zulu' || it.lastName > 'Alpha' }.
+ *     findAll{ it.age &lt; 99 }.
+ *     findAll{ it.age > 5 }.
+ *     sort{ it.firstName }.reverse().
+ *     findAll{ it.firstName != 'Bert' }.
+ *     sort{ it.age }
+ * </pre>
+ * Currently, the Groovy source code for any accessed POGO must be on the
+ * classpath at runtime.
  *
  * @author Chris Stevenson
  * @author Paul King
