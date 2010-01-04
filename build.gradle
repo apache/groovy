@@ -18,9 +18,9 @@
 
 //  Assumes Gradle 0.9 is being used.
 
-usePlugin ( 'java' )
+usePlugin ( 'groovy' )
 
-version = '1.8-beta-1-SNAPSHOT'
+version = '1.8.0-beta-1-SNAPSHOT'
 sourceCompatibility = 5
 targetCompatibility = 5
 
@@ -33,6 +33,7 @@ repositories {
 }
 
 dependencies {
+  groovy ( files ( compileJava.destinationDir ) )
   compile ( [
              //  Core dependencies.
              'antlr:antlr:2.7.7' ,
@@ -79,6 +80,8 @@ dependencies {
              //  For BSF adaptor
              'commons-logging:commons-logging:1.1.1' ,
              ] )
+
+  //  How to specify the provided dependency of org.livetribe:livetribe-jsr223:2.0.6
 }
 
 sourceSets {
@@ -91,9 +94,15 @@ sourceSets {
                   'groovy/ui/text/TextEditor.java' ,
                 ] )
     }
+    groovy {
+      srcDir ( 'src/main' )
+    }
   }
   test {
     java {
+      srcDir ( 'src/test' )
+    }
+    groovy {
       srcDir ( 'src/test' )
     }
   }
