@@ -246,6 +246,16 @@ class SqlCompleteTest extends TestHelper {
         assert results == expected
     }
 
+    void testDataSetWithNotEqual() {
+        def sql = createSql()
+        def expected = ["James", "Sam"]
+        def answer = []
+        def people = sql.dataSet(Person)
+        def list = people.findAll { it.firstname != 'Bob' }
+        list.each{ answer << it.firstname }
+        assert answer == expected
+    }
+
     void testDataSetWithFindAllPredicate() {
         def sql = createSql()
         def results = []
