@@ -26,7 +26,7 @@ import java.io.Writer;
  * </p>
  * 
  * <p>It is worth noting that writable implementations often override their 
- * {@link #toString()} implementation as well to allow rendering the same result 
+ * toString() implementation as well to allow rendering the same result 
  * directly to a String; however this is not required.</p>
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>

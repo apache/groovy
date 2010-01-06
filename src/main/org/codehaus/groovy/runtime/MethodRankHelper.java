@@ -106,7 +106,7 @@ public class MethodRankHelper{
      * Returns a string detailing possible solutions to a missning field or property
      * if no good solutions can be found a empty string is returned.
      *
-     * @param fieldname the missing field
+     * @param fieldName the missing field
      * @param type the class on which the field is sought
      * @return a string with probable solutions to the exception
      */
