@@ -1,0 +1,24 @@
+<?xml version="1.0"?>
+<project name="groovy-astbuilder-usage-example" default="compile-transform">
+
+    <!-- groovy-all .jar is assumed to be on your classpath. -->
+    <taskdef name="groovyc" classname="org.codehaus.groovy.ant.Groovyc" />
+    
+    
+    <target name="init" description="cleanup old class files">
+        <delete dir="examples"/>
+    </target>
+
+    <target name="compile-transform" depends="init" description="Compiles the AST Transformation">
+    
+        <groovyc destdir="."
+                srcdir="."
+                includes="Main.groovy,MainTransformation.groovy" 
+                listfiles="true">
+        </groovyc>
+        
+        <echo>You can now run "groovy MainExample.groovy", "groovyc MainExample.groovy", or "groovy MainIntegrationTest.groovy" to see that the transformation worked.</echo>
+    </target>
+
+</project>
+
