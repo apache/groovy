@@ -62,8 +62,8 @@ public class TimeCategory {
     /**
      * Retrieves the default TimeZone for a date by using the default Locale
      * settings.
-     * @param self
-     * @return
+     * @param self a Date
+     * @return the TimeZone
      */
     public static TimeZone getTimeZone(Date self) {
         Calendar calendar = Calendar.getInstance();
@@ -73,7 +73,7 @@ public class TimeCategory {
 
     /**
      * Get the DST offset (if any) for the default locale and the given date.
-     * @param self
+     * @param self a Date
      * @return the DST offset as a Duration.
      */
     public static Duration getDaylightSavingsOffset( Date self ) {
@@ -91,9 +91,9 @@ public class TimeCategory {
      * Return a Duration representing the DST difference (if any) between two 
      * dates.  i.e. if one date is before the DST changeover, and the other 
      * date is after, the resulting duration will represent the DST offset.
-     * @param self
-     * @param other
-     * @return
+     * @param self a Date
+     * @param other another Date
+     * @return a Duration
      */
     public static Duration getRelativeDaylightSavingsOffset(Date self, Date other) {
         Duration d1 = getDaylightSavingsOffset(self);
@@ -103,9 +103,9 @@ public class TimeCategory {
 
     /**
      * Subtract one date from the other.
-     * @param lhs
-     * @param rhs
-     * @return
+     * @param lhs a Date
+     * @param rhs another Date
+     * @return a Duration
      */
     public static TimeDuration minus(final Date lhs, final Date rhs) {
         long milliseconds = lhs.getTime() - rhs.getTime();
