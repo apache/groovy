@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.io.EncodingAwareBufferedWriter;
+import groovy.io.FileType;
 import groovy.io.GroovyPrintWriter;
 import groovy.lang.*;
 import groovy.sql.GroovyResultSet;
@@ -11024,23 +11025,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Common code for {@link #eachFile(File,Closure)} and {@link #eachDir(File,Closure)}
+     * Invokes the closure for each 'child' file in this 'parent' folder/directory.
+     * Both regular files and subfolders/subdirectories can be processed depending
+     * on the fileType enum value.
      *
      * @param self    a file object
+     * @param fileType if normal files or directories or both should be processed
      * @param closure the closure to invoke
-     * @param onlyDir if normal file should be skipped
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @since 1.5.0
+     * @since 1.7.1
      */
-    private static void eachFile(final File self, final Closure closure, final boolean onlyDir)
+    public static void eachFile(final File self, final FileType fileType, final Closure closure)
             throws FileNotFoundException, IllegalArgumentException {
         checkDir(self);
         final File[] files = self.listFiles();
         // null check because of http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4803836
         if (files == null) return;
         for (File file : files) {
-            if (!onlyDir || file.isDirectory()) {
+            if ((fileType != FileType.FilesOnly && file.isDirectory()) ||
+                    (fileType != FileType.DirectoriesOnly && file.isFile())){
                 closure.call(file);
             }
         }
@@ -11055,11 +11059,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
      * @see File#listFiles()
-     * @see #eachDir(File, Closure)
+     * @see #eachDir(File, FileType, Closure)
      * @since 1.5.0
      */
     public static void eachFile(final File self, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
-        eachFile(self, closure, false);
+        eachFile(self, FileType.FilesAndDirectories, closure);
     }
 
     /**
@@ -11070,24 +11074,28 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure (first parameter is the subdirectory file)
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @see #eachFile(File, Closure)
+     * @see File#listFiles()
+     * @see #eachFile(File, FileType, Closure)
      * @since 1.0
      */
     public static void eachDir(File self, Closure closure) throws FileNotFoundException, IllegalArgumentException {
-        eachFile(self, closure, true);
+        eachFile(self, FileType.DirectoriesOnly, closure);
     }
 
     /**
-     * Common code for {@link #eachFileRecurse(File,Closure)} and {@link #eachDirRecurse(File,Closure)}
+     * Invokes the closure for each descendant file in this directory.
+     * Sub-directories are recursively searched in a depth-first fashion.
+     * Both regular files and subdirectories may be passed to the closure
+     * depending on the value of fileType.
      *
      * @param self    a file object
+     * @param fileType if normal files or directories or both should be processed
      * @param closure the closure to invoke on each file
-     * @param onlyDir if normal file should be skipped
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @since 1.5.0
+     * @since 1.7.1
      */
-    private static void eachFileRecurse(final File self, final Closure closure, final boolean onlyDir)
+    public static void eachFileRecurse(final File self, final FileType fileType, final Closure closure)
             throws FileNotFoundException, IllegalArgumentException {
         checkDir(self);
         final File[] files = self.listFiles();
@@ -11095,9 +11103,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (files == null) return;
         for (File file : files) {
             if (file.isDirectory()) {
-                closure.call(file);
-                eachFileRecurse(file, closure, onlyDir);
-            } else if (!onlyDir) {
+                if (fileType != FileType.FilesOnly) closure.call(file);
+                eachFileRecurse(file, fileType, closure);
+            } else if (fileType != FileType.DirectoriesOnly) {
                 closure.call(file);
             }
         }
@@ -11112,10 +11120,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
+     * @see #eachFileRecurse(File, FileType, Closure)
      * @since 1.0
      */
     public static void eachFileRecurse(File self, Closure closure) throws FileNotFoundException, IllegalArgumentException {
-        eachFileRecurse(self, closure, false);
+        eachFileRecurse(self, FileType.FilesAndDirectories, closure);
     }
 
     /**
@@ -11127,26 +11136,29 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @since 1.5.0
-     * @see #eachFileRecurse(File,Closure,boolean)
+     * @see #eachFileRecurse(File, FileType, Closure)
      * @since 1.5.0
      */
     public static void eachDirRecurse(final File self, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
-        eachFileRecurse(self, closure, true);
+        eachFileRecurse(self, FileType.DirectoriesOnly, closure);
     }
 
     /**
-     * Common code for {@link #eachFileMatch(File,Object,Closure)} and {@link #eachDirMatch(File,Object,Closure)}
+     * Invokes the closure for each file whose name (file.name) matches the given filter in the given directory
+     * - calling the isCase() method to determine if a match occurs.  This method can be used
+     * with different kinds of filters like regular expressions, classes, ranges etc.
+     * Both regular files and subdirectories may be candidates for matching depending
+     * on the value of fileType.
      *
      * @param self    a file
+     * @param fileType if normal files or directories or both should be processed
      * @param filter  the filter to perform on the file/directory (using the isCase(object) method)
      * @param closure the closure to invoke
-     * @param onlyDir if normal file should be skipped
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @since 1.5.0
+     * @since 1.7.1
      */
-    private static void eachFileMatch(final File self, final Object filter, final Closure closure, final boolean onlyDir)
+    public static void eachFileMatch(final File self, final FileType fileType, final Object filter, final Closure closure)
             throws FileNotFoundException, IllegalArgumentException {
         checkDir(self);
         final File[] files = self.listFiles();
@@ -11154,9 +11166,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (files == null) return;
         final MetaClass metaClass = InvokerHelper.getMetaClass(filter);
         for (final File currentFile : files) {
-            if ((!onlyDir || currentFile.isDirectory())
-                    && DefaultTypeTransformation.castToBoolean(metaClass.invokeMethod(filter, "isCase", currentFile.getName()))) {
-                closure.call(currentFile);
+            if ((fileType != FileType.FilesOnly && currentFile.isDirectory()) ||
+                    (fileType != FileType.DirectoriesOnly && currentFile.isFile())){
+                if (DefaultTypeTransformation.castToBoolean(metaClass.invokeMethod(filter, "isCase", currentFile.getName())))
+                    closure.call(currentFile);
             }
         }
     }
@@ -11172,11 +11185,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the closure to invoke
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
+     * @see eachFileMatch(File, FileType, Object, Closure)
      * @since 1.5.0
      */
     public static void eachFileMatch(final File self, final Object filter, final Closure closure)
             throws FileNotFoundException, IllegalArgumentException {
-        eachFileMatch(self, filter, closure, false);
+        eachFileMatch(self, FileType.FilesAndDirectories, filter, closure);
     }
 
     /**
@@ -11190,10 +11204,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the closure to invoke
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
+     * @see eachFileMatch(File, FileType, Object, Closure)
      * @since 1.5.0
      */
     public static void eachDirMatch(final File self, final Object filter, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
-        eachFileMatch(self, filter, closure, true);
+        eachFileMatch(self, FileType.DirectoriesOnly, filter, closure);
     }
 
     /**
