@@ -320,4 +320,13 @@ import java.util.concurrent.atomic.AtomicInteger
             assert text.contains("Missing closing bracket '>' for generics types")
         }
     }
+    
+    void testGenericsInfoForClosureParameters() {
+        def cl = { List<String> s -> }
+        def type = cl.getClass().getMethod("call", List).genericParameterTypes[0]
+        assert type.toString().contains("java.util.List<java.lang.String>")
+
+        type = cl.getClass().getMethod("doCall", List).genericParameterTypes[0]
+        assert type.toString().contains("java.util.List<java.lang.String>")
+    }
 }
