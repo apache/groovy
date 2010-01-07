@@ -3628,6 +3628,7 @@ public class AsmClassGenerator extends ClassGenerator {
         InnerClassNode answer = new InnerClassNode(outerClass, name, 0, ClassHelper.CLOSURE_TYPE); // closures are local inners and not public
         answer.setEnclosingMethod(this.methodNode);
         answer.setSynthetic(true);
+        answer.setUsingGenerics(outerClass.isUsingGenerics());
 
         if (staticMethodOrInStaticClass) {
             answer.setStaticClass(true);
