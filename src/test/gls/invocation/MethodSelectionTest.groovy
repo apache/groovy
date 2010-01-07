@@ -174,4 +174,41 @@ public class MethodSelectionTest extends CompilableTestSupport {
       """
     } 
   }
+  
+  void testBDandBIToFloatAutoConversionInMethodSelection() {
+    def foo = new Foo3977()
+    
+    // double examples were working already but float ones were not
+    // adding both here just to make sure the inconsistency doesn't creep in again
+    foo.setMyDouble1 1.0
+    assert foo.getMyDouble1() == 1.0
+    
+    foo.setMyDouble1 new BigInteger('1')
+    assert foo.getMyDouble1() == 1.0
+
+    foo.setMyDouble2 1.0
+    assert foo.getMyDouble2() == 1.0
+    
+    foo.setMyDouble2 new BigInteger('1')
+    assert foo.getMyDouble2() == 1.0
+
+    foo.setMyFloat1 1.0
+    assert foo.getMyFloat1() == 1.0
+    
+    foo.setMyFloat1 new BigInteger('1')
+    assert foo.getMyFloat1() == 1.0
+
+    foo.setMyFloat2 1.0
+    assert foo.getMyFloat2() == 1.0
+    
+    foo.setMyFloat2 new BigInteger('1')
+    assert foo.getMyFloat2() == 1.0
+  }
+}
+
+class Foo3977 {
+    double myDouble1
+    Double myDouble2
+    float myFloat1
+    Float myFloat2
 }

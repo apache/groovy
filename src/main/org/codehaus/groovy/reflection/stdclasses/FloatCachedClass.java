@@ -18,6 +18,7 @@ package org.codehaus.groovy.reflection.stdclasses;
 import org.codehaus.groovy.reflection.ClassInfo;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 
 /**
  * @author Alex.Tkachman
@@ -59,6 +60,8 @@ public class FloatCachedClass extends NumberCachedClass {
                 || classToTransformFrom == Integer.TYPE
                 || classToTransformFrom == Long.TYPE
                 || classToTransformFrom == Short.TYPE
-                || classToTransformFrom == Byte.TYPE;
+                || classToTransformFrom == Byte.TYPE
+                || classToTransformFrom == BigDecimal.class
+                || classToTransformFrom == BigInteger.class;
     }
 }
