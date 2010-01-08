@@ -41,6 +41,7 @@ public class DependencyTracker extends ClassCodeVisitorSupport {
     public void visitClass(ClassNode node) {
         Set<String> old = current;
         current = cache.get(node.getName());
+        addToCache(node);
         addToCache(node.getSuperClass());
         addToCache(node.getInterfaces());
         super.visitClass(node);
