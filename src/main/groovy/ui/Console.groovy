@@ -68,6 +68,7 @@ class Console implements CaretListener, HyperlinkListener {
 
     // Whether or not std output should be captured to the console
     static boolean captureStdOut = prefs.getBoolean('captureStdOut', true)
+    static boolean captureStdErr = prefs.getBoolean('captureStdErr', true)
     static consoleControllers = []
 
     boolean fullStackTraces = prefs.getBoolean('fullStackTraces',
@@ -135,6 +136,7 @@ class Console implements CaretListener, HyperlinkListener {
     GroovyShell shell
     int scriptNameCounter = 0
     SystemOutputInterceptor systemOutInterceptor
+    SystemOutputInterceptor systemErrorInterceptor
     Thread runThread = null
     Closure beforeExecution
     Closure afterExecution
@@ -260,8 +262,10 @@ class Console implements CaretListener, HyperlinkListener {
 
 
     public void installInterceptor() {
-        systemOutInterceptor = new SystemOutputInterceptor(this.&notifySystemOut)
+        systemOutInterceptor = new SystemOutputInterceptor(this.&notifySystemOut, true)
         systemOutInterceptor.start()
+        systemErrorInterceptor = new SystemOutputInterceptor(this.&notifySystemErr, false)
+        systemErrorInterceptor.start()
     }
 
     void addToHistory(record) {
@@ -395,6 +399,11 @@ class Console implements CaretListener, HyperlinkListener {
         prefs.putBoolean('captureStdOut', captureStdOut)
     }
 
+    static void captureStdErr(EventObject evt) {
+        captureStdErr = evt.source.selected
+        prefs.putBoolean('captureStdErr', captureStdErr)
+    }
+    
     void fullStackTraces(EventObject evt) {
         fullStackTraces = evt.source.selected
         System.setProperty("groovy.full.stacktrace",
@@ -448,6 +457,7 @@ class Console implements CaretListener, HyperlinkListener {
             consoleControllers.remove(this)
             if (!consoleControllers) {
                 systemOutInterceptor.stop()
+                systemErrorInterceptor.stop()
             }
         }
 
@@ -467,6 +477,7 @@ class Console implements CaretListener, HyperlinkListener {
             new Binding(
                 new HashMap(shell.context.variables)))
         consoleController.systemOutInterceptor = systemOutInterceptor
+        consoleController.systemErrorInterceptor = systemErrorInterceptor
         SwingBuilder swing = new SwingBuilder()
         consoleController.swing = swing
         frameConsoleDelegates.each {k, v -> swing[k] = v}
@@ -664,6 +675,24 @@ class Console implements CaretListener, HyperlinkListener {
         else {
             SwingUtilities.invokeLater {
                 consoleControllers.each {it.appendOutput(str, it.outputStyle)}
+            }
+        }
+        return false
+    }
+
+    static boolean notifySystemErr(String str) {
+        if (!captureStdErr) {
+            // Output as normal
+            return true
+        }
+
+        // Put onto GUI
+        if (EventQueue.isDispatchThread()) {
+            consoleControllers.each {it.appendStacktrace(str)}
+        }
+        else {
+            SwingUtilities.invokeLater {
+                consoleControllers.each {it.appendStacktrace(str)}
             }
         }
         return false

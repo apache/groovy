@@ -245,6 +245,12 @@ captureStdOutAction = action(
     mnemonic: 'O'
 )
 
+captureStdErrAction = action(
+    name: 'Capture Standard Error Output',
+    closure: controller.&captureStdErr,
+    mnemonic: 'E'
+)
+
 fullStackTracesAction = action(
     name: 'Show Full Stack Traces',
     closure: controller.&fullStackTraces,
