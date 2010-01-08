@@ -23,13 +23,14 @@ import java.io.IOException;
 import java.io.PrintStream;
 
 /**
- * Intercepts System.out. Implementation helper for Console.groovy.
+ * Intercepts System.out/System.err. Implementation helper for Console.groovy.
  *
  * @version $Id$
  */
 public class SystemOutputInterceptor extends FilterOutputStream {
 
     private Closure callback;
+    private boolean output;
 
     /**
      * Constructor
@@ -40,26 +41,49 @@ public class SystemOutputInterceptor extends FilterOutputStream {
      *            System.out, otherwise it will not.
      */
     public SystemOutputInterceptor(final Closure callback) {
-        super(System.out);
+        this(callback, true);
+    }
+
+    /**
+     * Constructor
+     * 
+     * @param callback
+     *            accepts a string to be sent to std out and returns a Boolean.
+     *            If the return value is true, output will be sent to
+     *            System.out/System.err, otherwise it will not.
+     * @param output
+     *            flag that tells whether System.out needs capturing ot System.err
+     */
+    public SystemOutputInterceptor(final Closure callback, boolean output) {
+        super(output ? System.out : System.err);
         
         assert callback != null;
         
         this.callback = callback;
+        this.output = output;
     }
 
     /**
-     * Starts intercepting System.out
+     * Starts intercepting System.out/System.err
      */
     public void start() {
-        System.setOut(new PrintStream(this));
+    	if(output) {
+            System.setOut(new PrintStream(this));
+    	} else {
+            System.setErr(new PrintStream(this));
+    	}
     }
 
     /**
-     * Stops intercepting System.out, sending output to whereever it was
+     * Stops intercepting System.out/System.err, sending output to whereever it was
      * going when this interceptor was created.
      */
     public void stop() {
-        System.setOut((PrintStream) out);
+    	if(output) {
+            System.setOut((PrintStream) out);
+    	} else {
+            System.setErr((PrintStream) out);
+    	}
     }
 
     /**
