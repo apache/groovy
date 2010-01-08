@@ -17,6 +17,7 @@ package org.codehaus.groovy.runtime;
 
 import groovy.io.EncodingAwareBufferedWriter;
 import groovy.io.FileType;
+import groovy.io.FileVisitResult;
 import groovy.io.GroovyPrintWriter;
 import groovy.lang.*;
 import groovy.sql.GroovyResultSet;
@@ -11059,7 +11060,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
      * @see File#listFiles()
-     * @see #eachDir(File, FileType, Closure)
+     * @see #eachFile(File, FileType, Closure)
      * @since 1.5.0
      */
     public static void eachFile(final File self, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
@@ -11109,6 +11110,181 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 closure.call(file);
             }
         }
+    }
+
+    /**
+     * Invokes the closure for each descendant file in this directory tree.
+     * Sub-directories are recursively traversed as found.
+     * The traversal can be adapted by providing various options according
+     * to the following keys:<pre>
+     * type: a FileType enum to determine if normal files or directories or both are processed
+     * preDir: a Closure run before each directory is processed and returning a FileVisitResult value
+     * preRoot: a boolean indicating that the 'preDir' closure should be applied at the root level
+     * postDir: a Closure run after each directory is processed and returning a FileVisitResult value
+     * postRoot: a boolean indicating that the 'postDir' closure should be applied at the root level
+     * visitRoot: a boolean indicating that the given closure should be applied for the root dir
+     *            (not applicable if the type is set to FilesOnly)
+     * maxDepth: the maximum number of directories levels when recursing
+     *           (default is -1 which means infinite, set to 0 for no recursion)
+     * filter: a filter to perform on traversed files/directories (using the isCase(object) method). If set,
+     *         only files/dirs which match are candidates for visiting.
+     * excludeFilter: a filter to perform on traversed files/directories (using the isCase(object) method).
+     *             If set, any candidates which match won't be visited.
+     * sort: a Closure which if set causes the files for each directory to be processed in sorted order
+     * </pre>
+     * This example prints out file counts and size aggregates for groovy source files within a directory tree:
+     * <pre>
+     * def totalSize = 0
+     * def count = 0
+     * def sortByTypeThenName = { a, b ->
+     *     a.isFile() != b.isFile() ? a.isFile() <=> b.isFile() : a.name <=> b.name
+     * }
+     * rootDir.traverse(
+     *         type     : FilesOnly,
+     *         filter   : ~/.*\.groovy/,
+     *         preDir   : { if (it.name == '.svn') return TERMINATE },
+     *         postDir  : { println "Found $count files in $it.name totalling $totalSize bytes"
+     *                     totalSize = 0; count = 0 },
+     *         postRoot : true
+     *         sort     : sortByTypeThenName
+     * ) {it -> totalSize += it.size(); count++ }
+     * </pre>
+     *
+     * @param self    a file object
+     * @param options a Map of options to alter the traversal behavior
+     * @param closure the closure to invoke on each file
+     * @throws FileNotFoundException    if the given directory does not exist
+     * @throws IllegalArgumentException if the provided File object does not represent a directory
+     * @see #sort(Collection, Closure)
+     * @see groovy.io.FileVisitResult
+     * @since 1.7.1
+     */
+    public static void traverse(final File self, final Map<String, Object> options, final Closure closure)
+            throws FileNotFoundException, IllegalArgumentException {
+        Number maxDepthNumber = (Number) asType(options.remove("maxDepth"), Number.class);
+        int maxDepth = maxDepthNumber == null ? -1 : maxDepthNumber.intValue();
+        Boolean visitRoot = (Boolean) asType(get(options, "visitRoot", false), Boolean.class);
+        Boolean preRoot = (Boolean) asType(get(options, "preRoot", false), Boolean.class);
+        Boolean postRoot = (Boolean) asType(get(options, "postRoot", false), Boolean.class);
+        final Closure pre = (Closure) options.get("preDir");
+        final Closure post = (Closure) options.get("postDir");
+        final FileType type = (FileType) options.get("type");
+        final Object filter = options.get("filter");
+        final Object excludeFilter = options.get("excludeFilter");
+        Object preResult = null;
+        if (preRoot && pre != null) {
+            preResult = pre.call(self);
+        }
+        if (preResult == FileVisitResult.TERMINATE ||
+                preResult == FileVisitResult.SKIP_SUBTREE) return;
+
+        FileVisitResult terminated = traverse(self, options, closure, maxDepth);
+
+        if (type != FileType.FilesOnly && visitRoot) {
+            if (notFiltered(self, filter, excludeFilter)) {
+                Object closureResult = closure.call(self);
+                if (closureResult == FileVisitResult.TERMINATE) return;
+            }
+        }
+
+        if (postRoot && post != null && terminated != FileVisitResult.TERMINATE) post.call(self);
+    }
+
+    private static boolean notFiltered(File file, Object filter, Object excludeFilter) {
+        if (filter == null && excludeFilter == null) return true;
+        final MetaClass filterMC = filter == null ? null : InvokerHelper.getMetaClass(filter);
+        final MetaClass excludeMC = excludeFilter == null ? null : InvokerHelper.getMetaClass(excludeFilter);
+        boolean included = filter == null || (filter != null && DefaultTypeTransformation.castToBoolean(filterMC.invokeMethod(filter, "isCase", file.getName())));
+        boolean excluded = excludeFilter != null && DefaultTypeTransformation.castToBoolean(excludeMC.invokeMethod(excludeFilter, "isCase", file.getName()));
+        return included && !excluded;
+    }
+
+    /**
+     * Invokes the closure for each descendant file in this directory tree.
+     * Sub-directories are recursively traversed in a depth-first fashion.
+     * No options to alter the behavior can be specified.
+     *
+     * @param self    a file object
+     * @param options a Map of options to alter the traversal behavior
+     * @throws FileNotFoundException    if the given directory does not exist
+     * @throws IllegalArgumentException if the provided File object does not represent a directory
+     * @see #traverse(Collection, Map, Closure)
+     * @since 1.7.1
+     */
+    public static void traverse(final File self, final Closure closure)
+            throws FileNotFoundException, IllegalArgumentException {
+        traverse(self, new HashMap<String, Object>(), closure);
+    }
+
+    /**
+     * Invokes the closure specified with key 'visit' in the options Map
+     * for each descendant file in this directory tree.
+     *
+     * @param self    a file object
+     * @param options a Map of options to alter the traversal behavior
+     * @throws FileNotFoundException    if the given directory does not exist
+     * @throws IllegalArgumentException if the provided File object does not represent a directory
+     * @see #traverse(Collection, Map, Closure)
+     * @since 1.7.1
+     */
+    public static void traverse(final File self, final Map<String, Object> options)
+            throws FileNotFoundException, IllegalArgumentException {
+        final Closure visit = (Closure) options.remove("visit");
+        traverse(self, options, visit);
+    }
+
+    private static FileVisitResult traverse(final File self, final Map<String, Object> options, final Closure closure, final int maxDepth)
+            throws FileNotFoundException, IllegalArgumentException {
+        checkDir(self);
+        final Closure pre = (Closure) options.get("preDir");
+        final Closure post = (Closure) options.get("postDir");
+        final FileType type = (FileType) options.get("type");
+        final Object filter = options.get("filter");
+        final Object excludeFilter = options.get("excludeFilter");
+        final Closure sort = (Closure) options.get("sort");
+
+        final File[] origFiles = self.listFiles();
+        // null check because of http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4803836
+        if (origFiles != null) {
+            List<File> files = Arrays.asList(origFiles);
+            if (sort != null) files = sort(files, sort);
+            for (File file : files) {
+                if (file.isDirectory()) {
+                    if (type != FileType.FilesOnly) {
+                        if (notFiltered(file, filter, excludeFilter)) {
+                            Object closureResult = closure.call(file);
+                            if (closureResult == FileVisitResult.SKIP_SIBLINGS) break;
+                            if (closureResult == FileVisitResult.TERMINATE) return FileVisitResult.TERMINATE;
+                        }
+                    }
+                    if (maxDepth != 0) {
+                        Object preResult = null;
+                        if (pre != null) {
+                            preResult = pre.call(file);
+                        }
+                        if (preResult == FileVisitResult.SKIP_SIBLINGS) break;
+                        if (preResult == FileVisitResult.TERMINATE) return FileVisitResult.TERMINATE;
+                        if (preResult != FileVisitResult.SKIP_SUBTREE) {
+                            FileVisitResult terminated = traverse(file, options, closure, maxDepth - 1);
+                            if (terminated == FileVisitResult.TERMINATE) return terminated;
+                        }
+                        Object postResult = null;
+                        if (post != null) {
+                            postResult = post.call(file);
+                        }
+                        if (postResult == FileVisitResult.SKIP_SIBLINGS) break;
+                        if (postResult == FileVisitResult.TERMINATE) return FileVisitResult.TERMINATE;
+                    }
+                } else if (type != FileType.DirectoriesOnly) {
+                    if (notFiltered(file, filter, excludeFilter)) {
+                        Object closureResult = closure.call(file);
+                        if (closureResult == FileVisitResult.SKIP_SIBLINGS) break;
+                        if (closureResult == FileVisitResult.TERMINATE) return FileVisitResult.TERMINATE;
+                    }
+                }
+            }
+        }
+        return FileVisitResult.CONTINUE;
     }
 
     /**
@@ -11185,7 +11361,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the closure to invoke
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @see eachFileMatch(File, FileType, Object, Closure)
+     * @see #eachFileMatch(File, FileType, Object, Closure)
      * @since 1.5.0
      */
     public static void eachFileMatch(final File self, final Object filter, final Closure closure)
@@ -11204,7 +11380,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the closure to invoke
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @see eachFileMatch(File, FileType, Object, Closure)
+     * @see #eachFileMatch(File, FileType, Object, Closure)
      * @since 1.5.0
      */
     public static void eachDirMatch(final File self, final Object filter, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
