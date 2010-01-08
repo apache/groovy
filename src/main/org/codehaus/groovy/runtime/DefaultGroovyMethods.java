@@ -11116,22 +11116,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Invokes the closure for each descendant file in this directory tree.
      * Sub-directories are recursively traversed as found.
      * The traversal can be adapted by providing various options according
-     * to the following keys:<pre>
-     * type: a FileType enum to determine if normal files or directories or both are processed
-     * preDir: a Closure run before each directory is processed and returning a FileVisitResult value
-     * preRoot: a boolean indicating that the 'preDir' closure should be applied at the root level
-     * postDir: a Closure run after each directory is processed and returning a FileVisitResult value
-     * postRoot: a boolean indicating that the 'postDir' closure should be applied at the root level
-     * visitRoot: a boolean indicating that the given closure should be applied for the root dir
-     *            (not applicable if the type is set to FilesOnly)
-     * maxDepth: the maximum number of directories levels when recursing
-     *           (default is -1 which means infinite, set to 0 for no recursion)
-     * filter: a filter to perform on traversed files/directories (using the isCase(object) method). If set,
-     *         only files/dirs which match are candidates for visiting.
-     * excludeFilter: a filter to perform on traversed files/directories (using the isCase(object) method).
-     *             If set, any candidates which match won't be visited.
-     * sort: a Closure which if set causes the files for each directory to be processed in sorted order
-     * </pre>
+     * to the following keys:<dl>
+     * <dt>type</dt><dd>a FileType enum to determine if normal files or directories or both are processed</dd>
+     * <dt>preDir</dt><dd>a Closure run before each directory is processed and returning a FileVisitResult value</dd>
+     * <dt>preRoot</dt><dd>a boolean indicating that the 'preDir' closure should be applied at the root level</dd>
+     * <dt>postDir</dt><dd>a Closure run after each directory is processed and returning a FileVisitResult value</dd>
+     * <dt>postRoot</dt><dd>a boolean indicating that the 'postDir' closure should be applied at the root level</dd>
+     * <dt>visitRoot</dt><dd>a boolean indicating that the given closure should be applied for the root dir
+     *            (not applicable if the type is set to FilesOnly)</dd>
+     * <dt>maxDepth</dt><dd>the maximum number of directories levels when recursing
+     *           (default is -1 which means infinite, set to 0 for no recursion)</dd>
+     * <dt>filter</dt><dd>a filter to perform on traversed files/directories (using the isCase(object) method). If set,
+     *         only files/dirs which match are candidates for visiting.</dd>
+     * <dt>excludeFilter</dt><dd>a filter to perform on traversed files/directories (using the isCase(object) method).
+     *             If set, any candidates which match won't be visited.</dd>
+     * <dt>sort</dt><dd>a Closure which if set causes the files for each directory to be processed in sorted order</dd>
+     * </dl>
      * This example prints out file counts and size aggregates for groovy source files within a directory tree:
      * <pre>
      * def totalSize = 0
@@ -11142,7 +11142,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * rootDir.traverse(
      *         type     : FilesOnly,
      *         filter   : ~/.*\.groovy/,
-     *         preDir   : { if (it.name == '.svn') return TERMINATE },
+     *         preDir   : { if (it.name == '.svn') return SKIP_SUBTREE },
      *         postDir  : { println "Found $count files in $it.name totalling $totalSize bytes"
      *                     totalSize = 0; count = 0 },
      *         postRoot : true
@@ -11152,7 +11152,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self    a file object
      * @param options a Map of options to alter the traversal behavior
-     * @param closure the closure to invoke on each file
+     * @param closure the closure to invoke on each file/directory
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
      * @see #sort(Collection, Closure)
@@ -11181,7 +11181,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         FileVisitResult terminated = traverse(self, options, closure, maxDepth);
 
         if (type != FileType.FilesOnly && visitRoot) {
-            if (notFiltered(self, filter, excludeFilter)) {
+            if (closure != null && notFiltered(self, filter, excludeFilter)) {
                 Object closureResult = closure.call(self);
                 if (closureResult == FileVisitResult.TERMINATE) return;
             }
@@ -11205,10 +11205,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * No options to alter the behavior can be specified.
      *
      * @param self    a file object
-     * @param options a Map of options to alter the traversal behavior
+     * @param closure the closure to invoke on each file/directory
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @see #traverse(Collection, Map, Closure)
+     * @see #traverse(File, Map, Closure)
      * @since 1.7.1
      */
     public static void traverse(final File self, final Closure closure)
@@ -11224,7 +11224,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param options a Map of options to alter the traversal behavior
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @see #traverse(Collection, Map, Closure)
+     * @see #traverse(File, Map, Closure)
      * @since 1.7.1
      */
     public static void traverse(final File self, final Map<String, Object> options)
@@ -11251,7 +11251,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             for (File file : files) {
                 if (file.isDirectory()) {
                     if (type != FileType.FilesOnly) {
-                        if (notFiltered(file, filter, excludeFilter)) {
+                        if (closure != null && notFiltered(file, filter, excludeFilter)) {
                             Object closureResult = closure.call(file);
                             if (closureResult == FileVisitResult.SKIP_SIBLINGS) break;
                             if (closureResult == FileVisitResult.TERMINATE) return FileVisitResult.TERMINATE;
@@ -11276,7 +11276,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                         if (postResult == FileVisitResult.TERMINATE) return FileVisitResult.TERMINATE;
                     }
                 } else if (type != FileType.DirectoriesOnly) {
-                    if (notFiltered(file, filter, excludeFilter)) {
+                    if (closure != null && notFiltered(file, filter, excludeFilter)) {
                         Object closureResult = closure.call(file);
                         if (closureResult == FileVisitResult.SKIP_SIBLINGS) break;
                         if (closureResult == FileVisitResult.TERMINATE) return FileVisitResult.TERMINATE;
