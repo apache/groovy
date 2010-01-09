@@ -106,7 +106,7 @@ public abstract class AbstractConcurrentMapBase {
 
         int threshold;
 
-        volatile Object[] table;
+        protected volatile Object[] table;
 
         protected Segment(int initialCapacity) {
             setTable(new Object[initialCapacity]);
