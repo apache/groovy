@@ -1403,7 +1403,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self   the object over which we iterate
-     * @param filter the filter to perform on the collection (using the isCase(object) method)
+     * @param filter the filter to perform on the object (using the {@link #isCase(Object,Object)} method)
      * @return a collection of objects which match the filter
      * @since 1.5.6
      */
@@ -11044,8 +11044,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         // null check because of http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4803836
         if (files == null) return;
         for (File file : files) {
-            if ((fileType != FileType.FilesOnly && file.isDirectory()) ||
-                    (fileType != FileType.DirectoriesOnly && file.isFile())){
+            if ((fileType != FileType.FILES && file.isDirectory()) ||
+                    (fileType != FileType.DIRECTORIES && file.isFile())){
                 closure.call(file);
             }
         }
@@ -11064,7 +11064,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     public static void eachFile(final File self, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
-        eachFile(self, FileType.FilesAndDirectories, closure);
+        eachFile(self, FileType.ANY, closure);
     }
 
     /**
@@ -11080,7 +11080,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static void eachDir(File self, Closure closure) throws FileNotFoundException, IllegalArgumentException {
-        eachFile(self, FileType.DirectoriesOnly, closure);
+        eachFile(self, FileType.DIRECTORIES, closure);
     }
 
     /**
@@ -11089,9 +11089,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Both regular files and subdirectories may be passed to the closure
      * depending on the value of fileType.
      *
-     * @param self    a file object
+     * @param self     a file object
      * @param fileType if normal files or directories or both should be processed
-     * @param closure the closure to invoke on each file
+     * @param closure  the closure to invoke on each file
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
      * @since 1.7.1
@@ -11104,33 +11104,40 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (files == null) return;
         for (File file : files) {
             if (file.isDirectory()) {
-                if (fileType != FileType.FilesOnly) closure.call(file);
+                if (fileType != FileType.FILES) closure.call(file);
                 eachFileRecurse(file, fileType, closure);
-            } else if (fileType != FileType.DirectoriesOnly) {
+            } else if (fileType != FileType.DIRECTORIES) {
                 closure.call(file);
             }
         }
     }
 
     /**
-     * Invokes the closure for each descendant file in this directory tree.
+     * Invokes <code>closure</code> for each descendant file in this directory tree.
      * Sub-directories are recursively traversed as found.
-     * The traversal can be adapted by providing various options according
+     * The traversal can be adapted by providing various options in the <code>options</code> Map according
      * to the following keys:<dl>
-     * <dt>type</dt><dd>a FileType enum to determine if normal files or directories or both are processed</dd>
-     * <dt>preDir</dt><dd>a Closure run before each directory is processed and returning a FileVisitResult value</dd>
-     * <dt>preRoot</dt><dd>a boolean indicating that the 'preDir' closure should be applied at the root level</dd>
-     * <dt>postDir</dt><dd>a Closure run after each directory is processed and returning a FileVisitResult value</dd>
-     * <dt>postRoot</dt><dd>a boolean indicating that the 'postDir' closure should be applied at the root level</dd>
-     * <dt>visitRoot</dt><dd>a boolean indicating that the given closure should be applied for the root dir
-     *            (not applicable if the type is set to FilesOnly)</dd>
-     * <dt>maxDepth</dt><dd>the maximum number of directories levels when recursing
-     *           (default is -1 which means infinite, set to 0 for no recursion)</dd>
-     * <dt>filter</dt><dd>a filter to perform on traversed files/directories (using the isCase(object) method). If set,
-     *         only files/dirs which match are candidates for visiting.</dd>
-     * <dt>excludeFilter</dt><dd>a filter to perform on traversed files/directories (using the isCase(object) method).
-     *             If set, any candidates which match won't be visited.</dd>
-     * <dt>sort</dt><dd>a Closure which if set causes the files for each directory to be processed in sorted order</dd>
+     * <dt>type</dt><dd>A {@link FileType} enum to determine if normal files or directories or both are processed</dd>
+     * <dt>preDir</dt><dd>A {@link Closure} run before each directory is processed and optionally returning a {@link FileVisitResult} value
+     *     which can be used to control subsequent processing.</dd>
+     * <dt>preRoot</dt><dd>A boolean indicating that the 'preDir' closure should be applied at the root level</dd>
+     * <dt>postDir</dt><dd>A {@link Closure} run after each directory is processed and optionally returning a {@link FileVisitResult} value
+     *     which can be used to control subsequent processing.</dd>
+     * <dt>postRoot</dt><dd>A boolean indicating that the 'postDir' closure should be applied at the root level</dd>
+     * <dt>visitRoot</dt><dd>A boolean indicating that the given closure should be applied for the root dir
+     *     (not applicable if the 'type' is set to {@link FileType.FILES})</dd>
+     * <dt>maxDepth</dt><dd>The maximum number of directory levels when recursing
+     *     (default is -1 which means infinite, set to 0 for no recursion)</dd>
+     * <dt>filter</dt><dd>A filter to perform on traversed files/directories (using the {@link #isCase(Object,Object)} method). If set,
+     *     only files/dirs which match are candidates for visiting.</dd>
+     * <dt>nameFilter</dt><dd>A filter to perform on the name of traversed files/directories (using the {@link #isCase(Object,Object)} method). If set,
+     *     only files/dirs which match are candidates for visiting. (Must not be set if 'filter' is set)</dd>
+     * <dt>excludeFilter</dt><dd>A filter to perform on traversed files/directories (using the {@link #isCase(Object,Object)} method).
+     *     If set, any candidates which match won't be visited.</dd>
+     * <dt>excludeNameFilter</dt><dd>A filter to perform on the names of traversed files/directories (using the {@link #isCase(Object,Object)} method).
+     *     If set, any candidates which match won't be visited. (Must not be set if 'excludeFilter' is set)</dd>
+     * <dt>sort</dt><dd>A {@link Closure} which if set causes the files and subdirectories for each directory to be processed in sorted order.
+     *     Note that even when processing only files, the order of visited subdirectories will be affected by this parameter.</dd>
      * </dl>
      * This example prints out file counts and size aggregates for groovy source files within a directory tree:
      * <pre>
@@ -11140,23 +11147,25 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *     a.isFile() != b.isFile() ? a.isFile() <=> b.isFile() : a.name <=> b.name
      * }
      * rootDir.traverse(
-     *         type     : FilesOnly,
-     *         filter   : ~/.*\.groovy/,
-     *         preDir   : { if (it.name == '.svn') return SKIP_SUBTREE },
-     *         postDir  : { println "Found $count files in $it.name totalling $totalSize bytes"
-     *                     totalSize = 0; count = 0 },
-     *         postRoot : true
-     *         sort     : sortByTypeThenName
+     *         type         : FILES,
+     *         nameFilter   : ~/.*\.groovy/,
+     *         preDir       : { if (it.name == '.svn') return SKIP_SUBTREE },
+     *         postDir      : { println "Found $count files in $it.name totalling $totalSize bytes"
+     *                         totalSize = 0; count = 0 },
+     *         postRoot     : true
+     *         sort         : sortByTypeThenName
      * ) {it -> totalSize += it.size(); count++ }
      * </pre>
      *
-     * @param self    a file object
+     * @param self    a File
      * @param options a Map of options to alter the traversal behavior
-     * @param closure the closure to invoke on each file/directory
+     * @param closure the Closure to invoke on each file/directory and optionally returning a {@link FileVisitResult} value
+     *     which can be used to control subsequent processing
      * @throws FileNotFoundException    if the given directory does not exist
-     * @throws IllegalArgumentException if the provided File object does not represent a directory
+     * @throws IllegalArgumentException if the provided File object does not represent a directory or illegal filter combinations are supplied
      * @see #sort(Collection, Closure)
      * @see groovy.io.FileVisitResult
+     * @see groovy.io.FileType
      * @since 1.7.1
      */
     public static void traverse(final File self, final Map<String, Object> options, final Closure closure)
@@ -11170,7 +11179,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         final Closure post = (Closure) options.get("postDir");
         final FileType type = (FileType) options.get("type");
         final Object filter = options.get("filter");
+        final Object nameFilter = options.get("nameFilter");
         final Object excludeFilter = options.get("excludeFilter");
+        final Object excludeNameFilter = options.get("excludeNameFilter");
         Object preResult = null;
         if (preRoot && pre != null) {
             preResult = pre.call(self);
@@ -11180,8 +11191,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
         FileVisitResult terminated = traverse(self, options, closure, maxDepth);
 
-        if (type != FileType.FilesOnly && visitRoot) {
-            if (closure != null && notFiltered(self, filter, excludeFilter)) {
+        if (type != FileType.FILES && visitRoot) {
+            if (closure != null && notFiltered(self, filter, nameFilter, excludeFilter, excludeNameFilter)) {
                 Object closureResult = closure.call(self);
                 if (closureResult == FileVisitResult.TERMINATE) return;
             }
@@ -11190,22 +11201,44 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (postRoot && post != null && terminated != FileVisitResult.TERMINATE) post.call(self);
     }
 
-    private static boolean notFiltered(File file, Object filter, Object excludeFilter) {
-        if (filter == null && excludeFilter == null) return true;
-        final MetaClass filterMC = filter == null ? null : InvokerHelper.getMetaClass(filter);
-        final MetaClass excludeMC = excludeFilter == null ? null : InvokerHelper.getMetaClass(excludeFilter);
-        boolean included = filter == null || (filter != null && DefaultTypeTransformation.castToBoolean(filterMC.invokeMethod(filter, "isCase", file.getName())));
-        boolean excluded = excludeFilter != null && DefaultTypeTransformation.castToBoolean(excludeMC.invokeMethod(excludeFilter, "isCase", file.getName()));
+    private static boolean notFiltered(File file, Object filter, Object nameFilter, Object excludeFilter, Object excludeNameFilter) {
+        if (filter == null && nameFilter == null && excludeFilter == null && excludeNameFilter == null) return true;
+        if (filter != null && nameFilter != null) throw new IllegalArgumentException("Can't set both 'filter' and 'nameFilter'");
+        if (excludeFilter != null && excludeNameFilter != null) throw new IllegalArgumentException("Can't set both 'excludeFilter' and 'excludeNameFilter'");
+        Object filterToUse = null;
+        Object filterParam = null;
+        if (filter != null) {
+            filterToUse = filter;
+            filterParam = file;
+        } else if (nameFilter != null) {
+            filterToUse = nameFilter;
+            filterParam = file.getName();
+        }
+        Object excludeFilterToUse = null;
+        Object excludeParam = null;
+        if (excludeFilter != null) {
+            excludeFilterToUse = excludeFilter;
+            excludeParam = file;
+        } else if (excludeNameFilter != null) {
+            excludeFilterToUse = excludeNameFilter;
+            excludeParam = file.getName();
+        }
+        final MetaClass filterMC = filterToUse == null ? null : InvokerHelper.getMetaClass(filterToUse);
+        final MetaClass excludeMC = excludeFilterToUse == null ? null : InvokerHelper.getMetaClass(excludeFilterToUse);
+        boolean included = filterToUse == null || (filterToUse != null && DefaultTypeTransformation.castToBoolean(filterMC.invokeMethod(filterToUse, "isCase", filterParam)));
+        boolean excluded = excludeFilterToUse != null && DefaultTypeTransformation.castToBoolean(excludeMC.invokeMethod(excludeFilterToUse, "isCase", excludeParam));
         return included && !excluded;
     }
 
     /**
      * Invokes the closure for each descendant file in this directory tree.
      * Sub-directories are recursively traversed in a depth-first fashion.
-     * No options to alter the behavior can be specified.
+     * Convenience method for {@link #traverse(File, Map, Closure)} when
+     * no options to alter the traversal behavior are required.
      *
-     * @param self    a file object
-     * @param closure the closure to invoke on each file/directory
+     * @param self    a File
+     * @param closure the Closure to invoke on each file/directory and optionally returning a {@link FileVisitResult} value
+     *     which can be used to control subsequent processing
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
      * @see #traverse(File, Map, Closure)
@@ -11218,12 +11251,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Invokes the closure specified with key 'visit' in the options Map
-     * for each descendant file in this directory tree.
+     * for each descendant file in this directory tree. Convenience method
+     * for {@link #traverse(File, Map, Closure)} allowing the 'visit' closure
+     * to be included in the options Map rather than as a parameter.
      *
-     * @param self    a file object
+     * @param self    a File
      * @param options a Map of options to alter the traversal behavior
      * @throws FileNotFoundException    if the given directory does not exist
-     * @throws IllegalArgumentException if the provided File object does not represent a directory
+     * @throws IllegalArgumentException if the provided File object does not represent a directory or illegal filter combinations are supplied
      * @see #traverse(File, Map, Closure)
      * @since 1.7.1
      */
@@ -11240,7 +11275,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         final Closure post = (Closure) options.get("postDir");
         final FileType type = (FileType) options.get("type");
         final Object filter = options.get("filter");
+        final Object nameFilter = options.get("nameFilter");
         final Object excludeFilter = options.get("excludeFilter");
+        final Object excludeNameFilter = options.get("excludeNameFilter");
         final Closure sort = (Closure) options.get("sort");
 
         final File[] origFiles = self.listFiles();
@@ -11250,8 +11287,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             if (sort != null) files = sort(files, sort);
             for (File file : files) {
                 if (file.isDirectory()) {
-                    if (type != FileType.FilesOnly) {
-                        if (closure != null && notFiltered(file, filter, excludeFilter)) {
+                    if (type != FileType.FILES) {
+                        if (closure != null && notFiltered(file, filter, nameFilter, excludeFilter, excludeNameFilter)) {
                             Object closureResult = closure.call(file);
                             if (closureResult == FileVisitResult.SKIP_SIBLINGS) break;
                             if (closureResult == FileVisitResult.TERMINATE) return FileVisitResult.TERMINATE;
@@ -11275,8 +11312,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                         if (postResult == FileVisitResult.SKIP_SIBLINGS) break;
                         if (postResult == FileVisitResult.TERMINATE) return FileVisitResult.TERMINATE;
                     }
-                } else if (type != FileType.DirectoriesOnly) {
-                    if (closure != null && notFiltered(file, filter, excludeFilter)) {
+                } else if (type != FileType.DIRECTORIES) {
+                    if (closure != null && notFiltered(file, filter, nameFilter, excludeFilter, excludeNameFilter)) {
                         Object closureResult = closure.call(file);
                         if (closureResult == FileVisitResult.SKIP_SIBLINGS) break;
                         if (closureResult == FileVisitResult.TERMINATE) return FileVisitResult.TERMINATE;
@@ -11300,7 +11337,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static void eachFileRecurse(File self, Closure closure) throws FileNotFoundException, IllegalArgumentException {
-        eachFileRecurse(self, FileType.FilesAndDirectories, closure);
+        eachFileRecurse(self, FileType.ANY, closure);
     }
 
     /**
@@ -11316,75 +11353,75 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.0
      */
     public static void eachDirRecurse(final File self, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
-        eachFileRecurse(self, FileType.DirectoriesOnly, closure);
+        eachFileRecurse(self, FileType.DIRECTORIES, closure);
     }
 
     /**
-     * Invokes the closure for each file whose name (file.name) matches the given filter in the given directory
-     * - calling the isCase() method to determine if a match occurs.  This method can be used
+     * Invokes the closure for each file whose name (file.name) matches the given nameFilter in the given directory
+     * - calling the {@link #isCase(Object,Object)} method to determine if a match occurs.  This method can be used
      * with different kinds of filters like regular expressions, classes, ranges etc.
      * Both regular files and subdirectories may be candidates for matching depending
      * on the value of fileType.
      *
-     * @param self    a file
-     * @param fileType if normal files or directories or both should be processed
-     * @param filter  the filter to perform on the file/directory (using the isCase(object) method)
-     * @param closure the closure to invoke
+     * @param self       a file
+     * @param fileType   whether normal files or directories or both should be processed
+     * @param nameFilter the filter to perform on the name of the file/directory (using the {@link #isCase(Object,Object)} method)
+     * @param closure    the closure to invoke
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
      * @since 1.7.1
      */
-    public static void eachFileMatch(final File self, final FileType fileType, final Object filter, final Closure closure)
+    public static void eachFileMatch(final File self, final FileType fileType, final Object nameFilter, final Closure closure)
             throws FileNotFoundException, IllegalArgumentException {
         checkDir(self);
         final File[] files = self.listFiles();
         // null check because of http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=4803836
         if (files == null) return;
-        final MetaClass metaClass = InvokerHelper.getMetaClass(filter);
+        final MetaClass metaClass = InvokerHelper.getMetaClass(nameFilter);
         for (final File currentFile : files) {
-            if ((fileType != FileType.FilesOnly && currentFile.isDirectory()) ||
-                    (fileType != FileType.DirectoriesOnly && currentFile.isFile())){
-                if (DefaultTypeTransformation.castToBoolean(metaClass.invokeMethod(filter, "isCase", currentFile.getName())))
+            if ((fileType != FileType.FILES && currentFile.isDirectory()) ||
+                    (fileType != FileType.DIRECTORIES && currentFile.isFile())) {
+                if (DefaultTypeTransformation.castToBoolean(metaClass.invokeMethod(nameFilter, "isCase", currentFile.getName())))
                     closure.call(currentFile);
             }
         }
     }
 
     /**
-     * Invokes the closure for each file whose name (file.name) matches the given filter in the given directory
-     * - calling the isCase() method to determine if a match occurs.  This method can be used
+     * Invokes the closure for each file whose name (file.name) matches the given nameFilter in the given directory
+     * - calling the {@link #isCase(Object,Object)} method to determine if a match occurs.  This method can be used
      * with different kinds of filters like regular expressions, classes, ranges etc.
      * Both regular files and subdirectories are matched.
      *
-     * @param self    a file
-     * @param filter  the filter to perform on the directory (using the isCase(object) method)
-     * @param closure the closure to invoke
+     * @param self       a file
+     * @param nameFilter the nameFilter to perform on the name of the file (using the {@link #isCase(Object,Object)} method)
+     * @param closure    the closure to invoke
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
      * @see #eachFileMatch(File, FileType, Object, Closure)
      * @since 1.5.0
      */
-    public static void eachFileMatch(final File self, final Object filter, final Closure closure)
+    public static void eachFileMatch(final File self, final Object nameFilter, final Closure closure)
             throws FileNotFoundException, IllegalArgumentException {
-        eachFileMatch(self, FileType.FilesAndDirectories, filter, closure);
+        eachFileMatch(self, FileType.ANY, nameFilter, closure);
     }
 
     /**
-     * Invokes the closure for each subdirectory whose name (dir.name) matches the given filter in the given directory
-     * - calling the isCase() method to determine if a match occurs.  This method can be used
+     * Invokes the closure for each subdirectory whose name (dir.name) matches the given nameFilter in the given directory
+     * - calling the {@link #isCase(Object,Object)} method to determine if a match occurs.  This method can be used
      * with different kinds of filters like regular expressions, classes, ranges etc.
      * Only subdirectories are matched; regular files are ignored.
      *
-     * @param self    a file
-     * @param filter  the filter to perform on the directory (using the isCase(object) method)
-     * @param closure the closure to invoke
+     * @param self       a file
+     * @param nameFilter the nameFilter to perform on the name of the directory (using the {@link #isCase(Object,Object)} method)
+     * @param closure    the closure to invoke
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
      * @see #eachFileMatch(File, FileType, Object, Closure)
      * @since 1.5.0
      */
-    public static void eachDirMatch(final File self, final Object filter, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
-        eachFileMatch(self, FileType.DirectoriesOnly, filter, closure);
+    public static void eachDirMatch(final File self, final Object nameFilter, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
+        eachFileMatch(self, FileType.DIRECTORIES, nameFilter, closure);
     }
 
     /**

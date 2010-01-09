@@ -53,13 +53,13 @@ class FileTest extends GroovyTestCase {
 
     void testEachFileOnlyFiles() {
         def names = []
-        baseDir.eachFile FilesOnly, {it -> names << it.name }
+        baseDir.eachFile FILES, {it -> names << it.name }
         names.sort() // needs to sort as there is no guarantee on the order within a folder
         def expected = ["foo", "foo.txt"]
         assert names == expected
 
         names = []
-        new File(baseDir, 'folder2').eachFile(FilesOnly) {it -> names << it.name }
+        new File(baseDir, 'folder2').eachFile(FILES) {it -> names << it.name }
         names.sort() // needs to sort as there is no guarantee on the order within a folder
         expected = ['myDoc.doc', 'myDoc.odt']
         assert names == expected
@@ -83,7 +83,7 @@ class FileTest extends GroovyTestCase {
 
     void testEachFileMatchOnlyFiles() {
         def names = []
-        baseDir.eachFileMatch FilesOnly, ~/fo.*/, {it -> names << it.name }
+        baseDir.eachFileMatch FILES, ~/fo.*/, {it -> names << it.name }
         names.sort() // needs to sort as there is no guarantee on the order within a folder
         def expected = ["foo", "foo.txt"]
         assert names == expected
@@ -109,7 +109,7 @@ class FileTest extends GroovyTestCase {
 
     void testEachFileRecurseFilesOnly() {
         def names = []
-        baseDir.eachFileRecurse(FilesOnly) {it -> names << it.name }
+        baseDir.eachFileRecurse(FILES) {it -> names << it.name }
         names.sort() // needs to sort as there is no guarantee on the order within a folder
         def expected = ["Readme", "build.xml",
                 "file1.groovy", "file2.groovy", "file3.groovy", "file4.groovy",
@@ -128,25 +128,25 @@ class FileTest extends GroovyTestCase {
 
     void testTraverseDirRecurse() {
         def names = []
-        baseDir.traverse(type:DirectoriesOnly) {it -> names << it.name }
+        baseDir.traverse(type:DIRECTORIES) {it -> names << it.name }
         names.sort() // needs to sort as there is no guarantee on the order within a folder
         def expected = ["emptyFolder", "folder1", "folder2", "folder3", "subfolder", "subfolder", "subfolder2",]
         assert names == expected
 
         names = []
-        baseDir.traverse(maxDepth:0, type:DirectoriesOnly) {it -> names << it.name }
+        baseDir.traverse(maxDepth:0, type:DIRECTORIES) {it -> names << it.name }
         names.sort() // needs to sort as there is no guarantee on the order within a folder
         expected = ["emptyFolder", "folder1", "folder2", "folder3"]
         assert names == expected
 
         names = []
-        baseDir.traverse(maxDepth: 1, type:DirectoriesOnly) {it -> names << it.name }
+        baseDir.traverse(maxDepth: 1, type:DIRECTORIES) {it -> names << it.name }
         names.sort() // needs to sort as there is no guarantee on the order within a folder
         expected = ["emptyFolder", "folder1", "folder2", "folder3", "subfolder", "subfolder", "subfolder2",]
         assert names == expected
 
         names = []
-        baseDir.traverse(maxDepth: 2, type:DirectoriesOnly) {it -> names << it.name }
+        baseDir.traverse(maxDepth: 2, type:DIRECTORIES) {it -> names << it.name }
         names.sort() // needs to sort as there is no guarantee on the order within a folder
         expected = ["emptyFolder", "folder1", "folder2", "folder3", "subfolder", "subfolder", "subfolder2",]
         assert names == expected
@@ -154,7 +154,7 @@ class FileTest extends GroovyTestCase {
 
     void testTraverseFilesAndDirectoriesRecurse() {
         def names = []
-        baseDir.traverse(type:FilesAndDirectories) {it -> names << it.name }
+        baseDir.traverse(type:ANY) {it -> names << it.name }
         names.sort() // needs to sort as there is no guarantee on the order within a folder
         def expected = ["Readme", "build.xml", "emptyFolder", "file1.groovy", "file2.groovy", "file3.groovy", "file4.groovy",
                 "folder1", "folder2", "folder3", "foo", "foo.txt", "myDoc.doc", "myDoc.odt", "subfolder", "subfolder", "subfolder2"]
@@ -170,33 +170,33 @@ class FileTest extends GroovyTestCase {
 
     void testTraverseFileRecurse() {
         def names = []
-        baseDir.traverse(type:FilesOnly) {it -> names << it.name }
+        baseDir.traverse(type:FILES) {it -> names << it.name }
         names.sort() // needs to sort as there is no guarantee on the order within a folder
         def expected = ["Readme", "build.xml", "file1.groovy", "file2.groovy", "file3.groovy", "file4.groovy",
                 "foo", "foo.txt", "myDoc.doc", "myDoc.odt"]
         assert names == expected
 
         names = []
-        baseDir.traverse(type:FilesOnly, visit:{it -> names << it.name })
+        baseDir.traverse(type:FILES, visit:{it -> names << it.name })
         names.sort() // needs to sort as there is no guarantee on the order within a folder
         expected = ["Readme", "build.xml", "file1.groovy", "file2.groovy", "file3.groovy", "file4.groovy",
                 "foo", "foo.txt", "myDoc.doc", "myDoc.odt"]
         assert names == expected
 
         names = []
-        baseDir.traverse(maxDepth:0, type:FilesOnly) {it -> names << it.name }
+        baseDir.traverse(maxDepth:0, type:FILES) {it -> names << it.name }
         names.sort() // needs to sort as there is no guarantee on the order within a folder
         expected = ["foo", "foo.txt"]
         assert names == expected
 
         names = []
-        baseDir.traverse(maxDepth: 1, type:FilesOnly) {it -> names << it.name }
+        baseDir.traverse(maxDepth: 1, type:FILES) {it -> names << it.name }
         names.sort() // needs to sort as there is no guarantee on the order within a folder
         expected = ["Readme", "build.xml", "foo", "foo.txt", "myDoc.doc", "myDoc.odt"]
         assert names == expected
 
         names = []
-        baseDir.traverse(maxDepth: 2, type:FilesOnly) {it -> names << it.name }
+        baseDir.traverse(maxDepth: 2, type:FILES) {it -> names << it.name }
         names.sort() // needs to sort as there is no guarantee on the order within a folder
         expected = ["Readme", "build.xml", "file1.groovy", "file2.groovy", "file3.groovy", "file4.groovy",
                 "foo", "foo.txt", "myDoc.doc", "myDoc.odt"]
@@ -207,23 +207,23 @@ class FileTest extends GroovyTestCase {
         def byName = { it.name }
 
         def names = []
-        baseDir.traverse(type:FilesOnly, filter:~/.*\..*/, sort:byName) {it -> names << it.name }
+        baseDir.traverse(type:FILES, nameFilter:~/.*\..*/, sort:byName) {it -> names << it.name }
         def expected = ["build.xml", "myDoc.doc", "myDoc.odt", "file1.groovy",
                 "file2.groovy", "file3.groovy", "file4.groovy", "foo.txt"]
         assert names == expected
 
         names = []
-        baseDir.traverse(type:FilesOnly, excludeFilter:~/file\d\.groovy/, sort:byName) {it -> names << it.name }
+        baseDir.traverse(type:FILES, excludeNameFilter:~/file\d\.groovy/, sort:byName) {it -> names << it.name }
         expected = ["Readme", "build.xml", "myDoc.doc", "myDoc.odt", "foo", "foo.txt"]
         assert names == expected
 
         names = []
-        baseDir.traverse(type:FilesOnly, filter: ~/file\d\.groovy/, sort:byName) {it -> names << it.name }
+        baseDir.traverse(type:FILES, filter: { it.name ==~ /file\d\.groovy/}, sort:byName) {it -> names << it.name }
         expected = ["file1.groovy", "file2.groovy", "file3.groovy", "file4.groovy"]
         assert names == expected
 
         names = []
-        baseDir.traverse(type:FilesOnly, filter: ~/file\d\.groovy/, excludeFilter: ~/file[24]\.groovy/, sort:byName) {it -> names << it.name }
+        baseDir.traverse(type:FILES, nameFilter: ~/file\d\.groovy/, excludeNameFilter: ~/file[24]\.groovy/, sort:byName) {it -> names << it.name }
         expected = ["file1.groovy", "file3.groovy"]
         assert names == expected
     }
@@ -232,7 +232,7 @@ class FileTest extends GroovyTestCase {
         def names = []
         def pre = { names << "pre($it.name)" }
         def post = { names << "post($it.name)" }
-        baseDir.traverse(type:FilesOnly, preDir:pre, postDir:post) { names << it.name }
+        baseDir.traverse(type:FILES, preDir:pre, postDir:post) { names << it.name }
         names.sort() // needs to sort as there is no guarantee on the order within a folder
         def expected = ["Readme", "build.xml", "file1.groovy", "file2.groovy", "file3.groovy", "file4.groovy",
                 "foo", "foo.txt", "myDoc.doc", "myDoc.odt", "post(emptyFolder)", "post(folder1)",
@@ -241,26 +241,26 @@ class FileTest extends GroovyTestCase {
         assert names == expected
 
         names = []
-        baseDir.traverse(maxDepth: 0, type:FilesOnly, preRoot:true, preDir:pre, postDir:post) { names << it.name }
+        baseDir.traverse(maxDepth: 0, type:FILES, preRoot:true, preDir:pre, postDir:post) { names << it.name }
         names.sort() // needs to sort as there is no guarantee on the order within a folder
         expected = ["foo", "foo.txt", "pre(filetest)"]
         assert names == expected
 
         names = []
-        baseDir.traverse(maxDepth: 0, type:FilesOnly, postRoot:true, preDir:pre, postDir:post) { names << it.name }
+        baseDir.traverse(maxDepth: 0, type:FILES, postRoot:true, preDir:pre, postDir:post) { names << it.name }
         names.sort() // needs to sort as there is no guarantee on the order within a folder
         expected = ["foo", "foo.txt", "post(filetest)"]
         assert names == expected
 
         names = []
-        baseDir.traverse(maxDepth: 1, type:FilesOnly, preRoot:true, postRoot:true, preDir:pre, postDir:post) { names << it.name }
+        baseDir.traverse(maxDepth: 1, type:FILES, preRoot:true, postRoot:true, preDir:pre, postDir:post) { names << it.name }
         names.sort() // needs to sort as there is no guarantee on the order within a folder
         expected = ["Readme", "build.xml", "foo", "foo.txt", "myDoc.doc", "myDoc.odt", "post(emptyFolder)", "post(filetest)", "post(folder1)",
                 "post(folder2)", "post(folder3)", "pre(emptyFolder)", "pre(filetest)", "pre(folder1)", "pre(folder2)", "pre(folder3)"]
         assert names == expected
 
         names = []
-        baseDir.traverse(maxDepth: 2, type:FilesOnly, preDir:pre, postDir:post) { names << it.name }
+        baseDir.traverse(maxDepth: 2, type:FILES, preDir:pre, postDir:post) { names << it.name }
         names.sort() // needs to sort as there is no guarantee on the order within a folder
         expected = ["Readme", "build.xml", "file1.groovy", "file2.groovy", "file3.groovy", "file4.groovy",
                 "foo", "foo.txt", "myDoc.doc", "myDoc.odt", "post(emptyFolder)", "post(folder1)",
@@ -286,7 +286,7 @@ class FileTest extends GroovyTestCase {
             names << "post($it.name)"
             if (it.name == 'subfolder') return SKIP_SIBLINGS
         }
-        baseDir.traverse(type:FilesOnly, preDir:pre, postDir:post, sort:byName) { names << it.name }
+        baseDir.traverse(type:FILES, preDir:pre, postDir:post, sort:byName) { names << it.name }
         def expected = ["pre(emptyFolder)", "post(emptyFolder)",
                 "pre(folder1)", "Readme", "build.xml", "post(folder1)",
                 "pre(folder2)", "myDoc.doc", "myDoc.odt", "pre(subfolder)", "file1.groovy", "file2.groovy", "post(subfolder)", "post(folder2)",
@@ -294,7 +294,7 @@ class FileTest extends GroovyTestCase {
         assert names == expected
 
         names = []
-        baseDir.traverse(maxDepth: 1, type:FilesOnly, preDir:pre, postDir:post, sort:byName) { names << it.name }
+        baseDir.traverse(maxDepth: 1, type:FILES, preDir:pre, postDir:post, sort:byName) { names << it.name }
         expected = ["pre(emptyFolder)", "post(emptyFolder)",
                 "pre(folder1)", "Readme", "build.xml", "post(folder1)",
                 "pre(folder2)", "myDoc.doc", "myDoc.odt", "post(folder2)",
@@ -302,7 +302,7 @@ class FileTest extends GroovyTestCase {
         assert names == expected
 
         names = []
-        baseDir.traverse(maxDepth: 2, type:FilesOnly, preDir:pre, postDir:post, sort:byName) { names << it.name }
+        baseDir.traverse(maxDepth: 2, type:FILES, preDir:pre, postDir:post, sort:byName) { names << it.name }
         expected = ["pre(emptyFolder)", "post(emptyFolder)",
                 "pre(folder1)", "Readme", "build.xml", "post(folder1)",
                 "pre(folder2)", "myDoc.doc", "myDoc.odt", "pre(subfolder)", "file1.groovy", "file2.groovy", "post(subfolder)", "post(folder2)",
@@ -310,7 +310,7 @@ class FileTest extends GroovyTestCase {
         assert names == expected
 
         names = []
-        baseDir.traverse(type:FilesOnly, preDir:pre2, postDir:post, sort:byName) { names << it.name }
+        baseDir.traverse(type:FILES, preDir:pre2, postDir:post, sort:byName) { names << it.name }
         expected = ["pre(emptyFolder)", "post(emptyFolder)",
                 "pre(folder1)", "Readme", "build.xml", "post(folder1)",
                 "pre(folder2)", "myDoc.doc", "myDoc.odt", "pre(subfolder)", "post(subfolder)", "post(folder2)",
@@ -318,14 +318,14 @@ class FileTest extends GroovyTestCase {
         assert names == expected
 
         names = []
-        baseDir.traverse(type:FilesOnly, preDir:pre, postDir:post2, sort:byName) { names << it.name }
+        baseDir.traverse(type:FILES, preDir:pre, postDir:post2, sort:byName) { names << it.name }
         expected = ["pre(emptyFolder)", "post(emptyFolder)",
                 "pre(folder1)", "Readme", "build.xml", "post(folder1)",
                 "pre(folder2)", "myDoc.doc", "myDoc.odt", "pre(subfolder)", "file1.groovy", "file2.groovy", "post(subfolder)", "post(folder2)"]
         assert names == expected
 
         names = []
-        baseDir.traverse(type:FilesOnly, preDir:pre, postDir:post3, sort:byName) { names << it.name }
+        baseDir.traverse(type:FILES, preDir:pre, postDir:post3, sort:byName) { names << it.name }
         expected = ["pre(emptyFolder)", "post(emptyFolder)",
                 "pre(folder1)", "Readme", "build.xml", "post(folder1)",
                 "pre(folder2)", "myDoc.doc", "myDoc.odt", "pre(subfolder)", "file1.groovy", "file2.groovy", "post(subfolder)", "post(folder2)",
@@ -333,7 +333,7 @@ class FileTest extends GroovyTestCase {
         assert names == expected
 
         names = []
-        baseDir.traverse(type:FilesOnly, preDir:pre, postDir:post, sort:byName) { names << it.name; if (it.name == 'file1.groovy') return TERMINATE }
+        baseDir.traverse(type:FILES, preDir:pre, postDir:post, sort:byName) { names << it.name; if (it.name == 'file1.groovy') return TERMINATE }
         expected = ["pre(emptyFolder)", "post(emptyFolder)",
                 "pre(folder1)", "Readme", "build.xml", "post(folder1)",
                 "pre(folder2)", "myDoc.doc", "myDoc.odt", "pre(subfolder)", "file1.groovy"]

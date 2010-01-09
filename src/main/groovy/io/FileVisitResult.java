@@ -16,8 +16,17 @@
 package groovy.io;
 
 /**
- * Represents special return properties for preDir and postDir closures used with DGM#traverse(File, Map, Closure).
+ * Represents special return values for the 'preDir', 'postDir' and 'visit'/supplied Closures used with
+ * {@link org.codehaus.groovy.runtime.DefaultGroovyMethods#traverse(java.io.File, java.util.Map, groovy.lang.Closure)}
+ * and related methods to control subsequent traversal behavior.
  */
 public enum FileVisitResult {
-    CONTINUE, SKIP_SIBLINGS, SKIP_SUBTREE, TERMINATE
+    /** Continue processing; the default */
+    CONTINUE,
+    /** Skip processing sibling files/directories within the current directory being processed */
+    SKIP_SIBLINGS,
+    /** Do not process the child files/subdirectories within the current directory being processed */
+    SKIP_SUBTREE,
+    /** Do not process any more files */
+    TERMINATE
 }
