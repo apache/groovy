@@ -30,13 +30,13 @@ public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapB
         segmentFor(hash).remove(key, hash);
     }
 
-    protected abstract static class Segment<K,V> extends AbstractConcurrentMapBase.Segment {
+    public abstract static class Segment<K,V> extends AbstractConcurrentMapBase.Segment {
 
         protected Segment(int initialCapacity) {
             super(initialCapacity);
         }
 
-        V get(K key, int hash) {
+        public final V get(K key, int hash) {
             Object[] tab = table;
             Object o = tab[hash & (tab.length - 1)];
             if (o != null) {
@@ -59,7 +59,7 @@ public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapB
             return null;
         }
 
-        Entry<K,V> getOrPut(K key, int hash, V value) {
+        public final Entry<K,V> getOrPut(K key, int hash, V value) {
             Object[] tab = table;
             Object o = tab[hash & (tab.length - 1)];
             if (o != null) {
@@ -82,7 +82,7 @@ public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapB
             return put(key, hash, value);
         }
 
-        Entry put(K key, int hash, V value) {
+        public final Entry put(K key, int hash, V value) {
             lock();
             try {
                 int c = count;
