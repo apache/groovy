@@ -134,6 +134,16 @@ class GenericsTest extends GenericsTestBase {
 	        				  "foo(Ljava/util/List;)Ljava/lang/Cloneable;":"(Ljava/util/List<TT;>;)Ljava/lang/Cloneable;"]
 	}
 	
+    public void testArray() {
+        createClassInfo """
+            class B<T> {
+                T[] get(T[] arr) {return null}
+            }
+        """
+        assert signatures == ["class" : "<T:Ljava/lang/Object;>Ljava/lang/Object;Lgroovy/lang/GroovyObject;", 
+                              "get([Ljava/lang/Object;)[Ljava/lang/Object;":"([TT;)[TT;"]
+    }
+
 	public void testMultipleBounds() {
 	    createClassInfo """
 			class Pair<	A extends Comparable<A> & Cloneable , 

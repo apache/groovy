@@ -101,7 +101,7 @@ public abstract class AbstractConcurrentMapBase {
         return count;
     }
 
-    protected static class Segment extends LockableObject {
+    public static class Segment extends LockableObject {
         volatile int count;
 
         int threshold;
