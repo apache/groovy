@@ -106,6 +106,7 @@ controller.showToolbarAction = showToolbarAction
 
 // some more UI linkage
 controller.outputArea.addHyperlinkListener(controller)
+controller.outputArea.addFocusListener(controller)
 controller.inputArea.addCaretListener(controller)
 controller.inputArea.document.addDocumentListener({ controller.setDirty(true) } as DocumentListener)
 controller.rootElement = inputArea.document.defaultRootElement

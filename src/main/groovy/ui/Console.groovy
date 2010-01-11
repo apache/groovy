@@ -27,6 +27,8 @@ import java.awt.Font
 import java.awt.Toolkit
 import java.awt.Window
 import java.awt.event.ActionEvent
+import java.awt.event.FocusListener
+import java.awt.event.FocusEvent
 import java.util.prefs.Preferences
 import javax.swing.*
 import javax.swing.event.CaretEvent
@@ -60,7 +62,7 @@ import org.codehaus.groovy.control.messages.ExceptionMessage
  * @author Alan Green more features: history, System.out capture, bind result to _
  * @author Guillaume Laforge, stacktrace hyperlinking to the current script line
  */
-class Console implements CaretListener, HyperlinkListener {
+class Console implements CaretListener, HyperlinkListener, FocusListener {
 
     static final String DEFAULT_SCRIPT_NAME_START = "ConsoleScript"
 
@@ -904,10 +906,10 @@ class Console implements CaretListener, HyperlinkListener {
         }
     }
 
-    void invokeTextAction(evt, closure) {
+    void invokeTextAction(evt, closure, area = inputArea) {
         def source = evt.getSource()
         if (source != null) {
-            closure(inputArea)
+            closure(area)
         }
     }
 
@@ -916,7 +918,8 @@ class Console implements CaretListener, HyperlinkListener {
     }
 
     void copy(EventObject evt = null) {
-        invokeTextAction(evt, { source -> source.copy() })
+        def area = inputArea.selectedText ? inputArea : outputArea
+        invokeTextAction(evt, { source -> source.copy() }, area)
     }
 
     void paste(EventObject evt = null) {
@@ -982,6 +985,16 @@ class Console implements CaretListener, HyperlinkListener {
             editor.moveCaretPosition(newlineAfter)
         }
     }
+
+    public void focusGained(FocusEvent e) {
+        // clear inputArea's internal selection as it interferes with text-copy functionality
+        if(e.component == outputArea) {
+            inputArea.selectionStart = 0
+            inputArea.selectionEnd = 0
+        }
+    }
+
+    public void focusLost(FocusEvent e) { }
 }
 
 class GroovyFileFilter extends FileFilter {
