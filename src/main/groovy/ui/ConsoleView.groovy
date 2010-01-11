@@ -121,6 +121,7 @@ controller.outputArea.addComponentListener(controller)
 controller.inputArea.addComponentListener(controller)
 controller.outputArea.addHyperlinkListener(controller)
 controller.outputArea.addHyperlinkListener(controller)
+controller.outputArea.addFocusListener(controller)
 controller.inputArea.addCaretListener(controller)
 controller.inputArea.document.addDocumentListener({ controller.setDirty(true) } as DocumentListener)
 controller.rootElement = inputArea.document.defaultRootElement
