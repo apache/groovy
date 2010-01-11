@@ -295,6 +295,12 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
                         InnerClassNode inner = (InnerClassNode) exp.getType();
                         if (inner.getVariableScope()==null) {
                             enumBase = inner;
+                            /*
+                             * GROOVY-3985: Remove the final modifier from $INIT method in this case
+                             * so that subclasses of enum generated for enum constants (aic) can provide
+                             * their own $INIT method
+                             */
+                            initMethod.setModifiers(initMethod.getModifiers() & ~Opcodes.ACC_FINAL);
                             continue;
                         }
                     }
