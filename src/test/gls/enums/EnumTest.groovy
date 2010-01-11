@@ -19,6 +19,7 @@ package gls.enums
  * Tests various properties of enums.
  *
  * @author Paul King
+ * @author Roshan Dawrani
  */
 class EnumTest extends GroovyTestCase {
 
@@ -291,6 +292,15 @@ class EnumTest extends GroovyTestCase {
         """
     }
 
+    void testEnumConstantSubClassINITMethodOverrideINITOfEnumClass() {
+        try {
+            // cause loading of enum that causes its fields to be set and 
+            // their instance initializer to be executed
+            println Color3985
+        }catch(ExceptionInInitializerError err) {
+            assert err.cause.message == 'Color3985 RED instance initializer called successfully'
+        }
+    }
 }
 
 
@@ -326,4 +336,12 @@ enum GrooyColors3693 {
     static { 
         init() 
     }
+}
+
+enum Color3985 {
+    RED {
+        { 
+            throw new RuntimeException('Color3985 RED instance initializer called successfully') 
+        }
+    },GREEN,BLUE
 }
