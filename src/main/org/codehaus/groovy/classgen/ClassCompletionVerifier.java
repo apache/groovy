@@ -61,7 +61,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
             checkClassForIncorrectModifiers(node);
             checkClassForOverwritingFinal(node);
             checkMethodsForIncorrectModifiers(node);
-            checkMethodsForOverwritingFinal(node);
+            checkMethodsForOverridingFinal(node);
             checkNoAbstractMethodsNonabstractClass(node);
         }
         super.visitClass(node);
@@ -177,7 +177,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
         return method.getName().equals("<clinit>");
     }
 
-    private void checkMethodsForOverwritingFinal(ClassNode cn) {
+    private void checkMethodsForOverridingFinal(ClassNode cn) {
         List methods = cn.getMethods();
         for (Iterator cnIter = methods.iterator(); cnIter.hasNext();) {
             MethodNode method = (MethodNode) cnIter.next();
@@ -187,7 +187,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
                 MethodNode superMethod = (MethodNode) iter.next();
                 Parameter[] superParams = superMethod.getParameters();
                 if (!hasEqualParameterTypes(params, superParams)) continue;
-                if (!Modifier.isFinal(superMethod.getModifiers())) return;
+                if (!Modifier.isFinal(superMethod.getModifiers())) break;
                 addInvalidUseOfFinalError(method, params, superMethod.getDeclaringClass());
                 return;
             }
@@ -196,7 +196,7 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
 
     private void addInvalidUseOfFinalError(MethodNode method, Parameter[] parameters, ClassNode superCN) {
         StringBuffer msg = new StringBuffer();
-        msg.append("You are not allowed to overwrite the final method ").append(method.getName());
+        msg.append("You are not allowed to override the final method ").append(method.getName());
         msg.append("(");
         boolean needsComma = false;
         for (int i = 0; i < parameters.length; i++) {
