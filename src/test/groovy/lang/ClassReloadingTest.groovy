@@ -42,4 +42,30 @@ class ClassReloadingTest extends GroovyTestCase {
             file.delete()
         }
     }
+
+    public void testReloadingInStringStringVersion() {
+        def fileName = "Dummy3981.groovy"
+
+        def cl = new GroovyClassLoader(this.class.classLoader);
+
+        def classStr = """
+            class Groovy3981 {
+                def greeting = "hello"
+            }
+        """
+
+        def groovyClass = cl.parseClass(classStr, fileName)
+        def message = groovyClass.newInstance().greeting
+        assert "hello" == message
+
+        // (string, string) version should not do the caching as it breaks Spring integration (bean refreh)
+        classStr = """
+            class Groovy3981 {
+                def greeting = "goodbye"
+            }
+        """
+        groovyClass = cl.parseClass(classStr, fileName)
+        message = groovyClass.newInstance().greeting
+        assert "goodbye" == message
+    }
 }

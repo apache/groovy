@@ -203,6 +203,7 @@ public class GroovyClassLoader extends URLClassLoader {
                 return new GroovyCodeSource(text, fileName, "/groovy/script");
             }
         });
+        gcs.setCachable(false);
         return parseClass(gcs);
     }
 
