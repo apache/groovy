@@ -275,6 +275,21 @@ class EnumTest extends GroovyTestCase {
     	// GROOVY-3693 - trigger enum class load to test it - asserts are present in the enum 
     	GrooyColors3693.r
     }
+
+    void testEnumStaticInitWithAFieldUsingEnumValues() {
+        //GROOVY-3996
+        assertScript """
+            enum Color3996 {
+                R, G, B
+                public static Color3996[] ALL_COLORS = [R, G, B]
+            }
+            
+            assert Color3996.ALL_COLORS.size() == 3
+            assert Color3996.ALL_COLORS[0] == Color3996.R
+            assert Color3996.ALL_COLORS[1] == Color3996.G
+            assert Color3996.ALL_COLORS[2] == Color3996.B
+        """
+    }
 }
 
 enum UsCoin {

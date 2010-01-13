@@ -833,6 +833,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         			explicitStaticPropsInEnum.add(propNode.getField().getName());
         		}
         	}
+            for (FieldNode fieldNode : node.getFields()) {
+        		if(!fieldNode.isSynthetic() && fieldNode.isStatic() && fieldNode.getType() != node) {
+        			explicitStaticPropsInEnum.add(fieldNode.getName());
+        		}
+            }
         }
         for (Iterator iter = node.getFields().iterator(); iter.hasNext();) {
         	addFieldInitialization(statements, staticStatements, 
