@@ -63,6 +63,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     private ClassNode classNode;
     private String[] tokenNames;
     private int innerClassCounter = 1;
+    private boolean enumConstantBeingDef = false;
     
     public /*final*/ Reduction parseCST(final SourceUnit sourceUnit, Reader reader) throws CompilationFailedException {
         final SourceBuffer sourceBuffer = new SourceBuffer();
@@ -439,7 +440,11 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         ClassNode outerClass = getClassOrScript(oldNode);        
         String fullName = outerClass.getName()+'$'+innerClassCounter;
         innerClassCounter++;
-        classNode = new InnerClassNode(outerClass, fullName, Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
+        if(enumConstantBeingDef) {
+            classNode = new EnumConstantClassNode(outerClass, fullName, Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
+        } else {
+            classNode = new InnerClassNode(outerClass, fullName, Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
+        }
 
         assertNodeType(OBJBLOCK, node);
         objectBlock(node);
@@ -587,6 +592,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     }
     
     protected void enumConstantDef(AST node) {
+    	enumConstantBeingDef = true;
         assertNodeType(ENUM_CONSTANT_DEF, node);
         AST element = node.getFirstChild();
         if (isType(ANNOTATIONS,element)) {
@@ -619,6 +625,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             }
         }
         EnumHelper.addEnumConstant(classNode, identifier, init);
+        enumConstantBeingDef = false;
     }
     
     protected void throwsList(AST node, List list) {
