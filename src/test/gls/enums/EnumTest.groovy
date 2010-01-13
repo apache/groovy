@@ -301,6 +301,21 @@ class EnumTest extends GroovyTestCase {
             assert err.cause.message == 'Color3985 RED instance initializer called successfully'
         }
     }
+
+    void testEnumStaticInitWithAFieldUsingEnumValues() {
+        //GROOVY-3996
+        assertScript """
+            enum Color3996 {
+                R, G, B
+                public static Color3996[] ALL_COLORS = [R, G, B]
+            }
+            
+            assert Color3996.ALL_COLORS.size() == 3
+            assert Color3996.ALL_COLORS[0] == Color3996.R
+            assert Color3996.ALL_COLORS[1] == Color3996.G
+            assert Color3996.ALL_COLORS[2] == Color3996.B
+        """
+    }
 }
 
 
