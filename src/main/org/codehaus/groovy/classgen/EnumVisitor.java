@@ -9,6 +9,7 @@ import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.ConstructorNode;
+import org.codehaus.groovy.ast.EnumConstantClassNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.ast.MethodNode;
@@ -291,7 +292,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
                 ListExpression oldArgs = (ListExpression) field.getInitialExpression();
                 for (Iterator oldArgsIterator = oldArgs.getExpressions().iterator(); oldArgsIterator.hasNext();) {
                     Expression exp = (Expression) oldArgsIterator.next();
-                    if (exp instanceof ClassExpression && exp.getType() instanceof InnerClassNode) {
+                    if (exp instanceof ClassExpression && exp.getType() instanceof EnumConstantClassNode) {
                         InnerClassNode inner = (InnerClassNode) exp.getType();
                         if (inner.getVariableScope()==null) {
                             enumBase = inner;
@@ -355,7 +356,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
     }
 
     private boolean isAnonymousInnerClass(ClassNode enumClass) {
-        if (!(enumClass instanceof InnerClassNode)) return false;
+        if (!(enumClass instanceof EnumConstantClassNode)) return false;
         InnerClassNode  ic = (InnerClassNode) enumClass;
         return ic.getVariableScope()==null;
     }
