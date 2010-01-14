@@ -248,7 +248,7 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         addFieldInit(thisPara,thisField,newCode);
         ConstructorCallExpression cce = getFirstIfSpecialConstructorCall(block);
         if (cce == null) {
-            newCode.addStatement(block);
+            block.getStatements().add(0, newCode);
         } else if (cce.isThisCall()) {
             // add thisPara to this(...)
             TupleExpression args = (TupleExpression) cce.getArguments();
@@ -260,11 +260,9 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         } else {
             // we have a call to super here, so we need to add 
             // our code after that
-            block.getStatements().remove(0);
-            newCode.getStatements().add(0, firstStatement);
-            newCode.addStatement(block);
+            block.getStatements().add(1, newCode);
         }
-        node.setCode(newCode);
+        node.setCode(block);
 	}
 	
 	
@@ -283,10 +281,16 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
 	}
 	
 	
-    private ConstructorCallExpression getFirstIfSpecialConstructorCall(Statement code) {
-        if (code == null || !(code instanceof ExpressionStatement)) return null;
+    private ConstructorCallExpression getFirstIfSpecialConstructorCall(BlockStatement code) {
+        if (code == null) return null;
 
-        Expression expression = ((ExpressionStatement)code).getExpression();
+        final List<Statement> statementList = code.getStatements();
+        if(statementList.isEmpty()) return null;
+
+        final Statement statement = statementList.get(0);
+        if (!(statement instanceof ExpressionStatement)) return null;
+
+        Expression expression = ((ExpressionStatement)statement).getExpression();
         if (!(expression instanceof ConstructorCallExpression)) return null;
         ConstructorCallExpression cce = (ConstructorCallExpression) expression;
         if (cce.isSpecialCall()) return cce;

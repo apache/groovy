@@ -184,7 +184,7 @@ public abstract class AbstractConcurrentMap<K, V> extends AbstractConcurrentMapB
         protected abstract Entry<K,V> createEntry(K key, int hash, V value);
     }
 
-    protected interface Entry<K, V> extends AbstractConcurrentMapBase.Entry<V>{
+    public interface Entry<K, V> extends AbstractConcurrentMapBase.Entry<V>{
         boolean isEqual(K key, int hash);
     }
 }

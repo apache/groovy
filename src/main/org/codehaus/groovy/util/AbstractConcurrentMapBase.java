@@ -275,7 +275,7 @@ public abstract class AbstractConcurrentMapBase {
         }
     }
 
-    interface Entry<V> {
+    public interface Entry<V> {
         V getValue();
 
         void setValue(V value);
