@@ -7383,7 +7383,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Executes the command specified by the <code>self</code> with environment defined by <code>envp</code>
+     * Executes the command specified by <code>self</code> with environment defined by <code>envp</code>
      * and under the working directory <code>dir</code>.
      * <p>For more control over Process construction you can use
      * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
@@ -7425,11 +7425,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static Process execute(final String self, final List<String> envp, final File dir) throws IOException {
-        return execute(self, (String[]) (envp == null ? null : envp.toArray()), dir);
+        return execute(self, (String[]) (envp == null ? null : envp.toArray(new String[envp.size()])), dir);
     }
 
     /**
-     * Executes the command specified by the <code>String</code> array that is the first parameter.
+     * Executes the command specified by the <code>String</code> array given in the first parameter.
      * The first item in the array is the command; the others are the parameters.
      * <p>For more control over Process construction you can use
      * <code>java.lang.ProcessBuilder</code> (JDK 1.5+).</p>
@@ -7445,7 +7445,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Executes the command specified by the <code>String</code> array that is the first parameter,
+     * Executes the command specified by the <code>String</code> array given in the first parameter,
      * with the environment defined by <code>envp</code> and under the working directory <code>dir</code>.
      * The first item in the array is the command; the others are the parameters.
      * <p>For more control over Process construction you can use
@@ -7470,7 +7470,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Executes the command specified by the <code>String</code> array that is the first parameter,
+     * Executes the command specified by the <code>String</code> array given in the first parameter,
      * with the environment defined by <code>envp</code> and under the working directory <code>dir</code>.
      * The first item in the array is the command; the others are the parameters.
      * <p>For more control over Process construction you can use
@@ -7491,7 +7491,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.1
      */
     public static Process execute(final String[] commandArray, final List<String> envp, final File dir) throws IOException {
-        return Runtime.getRuntime().exec(commandArray, (String[]) (envp == null ? null : envp.toArray()), dir);
+        return Runtime.getRuntime().exec(commandArray, (String[]) (envp == null ? null : envp.toArray(new String[envp.size()])), dir);
     }
 
     /**
@@ -7508,11 +7508,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static Process execute(final List<String> commands) throws IOException {
-        return execute((String[]) commands.toArray());
+        return execute((String[]) commands.toArray(new String[commands.size()]));
     }
 
     /**
-     * Executes the command specified by the <code>String</code> list that is the first parameter,
+     * Executes the command specified by the <code>String</code> list given in the first parameter,
      * with the environment defined by <code>envp</code> and under the working directory <code>dir</code>.
      * The first item in the list is the command; the others are the parameters.
      * <p>For more control over Process construction you can use
@@ -7533,11 +7533,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.1
      */
     public static Process execute(final List<String> commands, final String[] envp, final File dir) throws IOException {
-        return Runtime.getRuntime().exec((String[]) (commands == null ? null : commands.toArray()), envp, dir);
+        return Runtime.getRuntime().exec((String[]) (commands == null ? null : commands.toArray(new String[commands.size()])), envp, dir);
     }
 
     /**
-     * Executes the command specified by the list of strings given as the first parameter,
+     * Executes the command specified by the list of strings given in the first parameter,
      * with the environment defined by <code>envp</code> and under the working directory <code>dir</code>.
      * The first item in the list is the command; the others are the parameters.
      * <p>For more control over Process construction you can use
@@ -7558,8 +7558,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.7.1
      */
     public static Process execute(final List<String> commands, final List<String> envp, final File dir) throws IOException {
-        return Runtime.getRuntime().exec((String[]) (commands == null ? null : commands.toArray()),
-                (String[]) (envp == null ? null : envp.toArray()), dir);
+        return Runtime.getRuntime().exec((String[]) (commands == null ? null : commands.toArray(new String[commands.size()])),
+                (String[]) (envp == null ? null : envp.toArray(new String[envp.size()])), dir);
     }
 
     /**

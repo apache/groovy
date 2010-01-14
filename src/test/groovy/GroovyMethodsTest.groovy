@@ -381,7 +381,7 @@ class GroovyMethodsTest extends GroovySwingTestCase {
 
     String getCmd() {
         def cmd = "ls -l"
-        if (System.properties.'os.name'.contains('Win')) {
+        if (System.properties.'os.name'.startsWith('Windows ')) {
             cmd = "cmd /c dir"
         }
         return cmd
@@ -390,7 +390,7 @@ class GroovyMethodsTest extends GroovySwingTestCase {
     void testExecuteCommandLineProcessUsingAString() {
         println "executing command: ${cmd}"
         def process = cmd.execute()
-        // lets have an easier way to do this!
+        // let's have an easier way to do this!
         def count = 0
         println "Read the following lines..."
         /** @todo we should simplify the following line!!! */
@@ -443,7 +443,7 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         println "Read the following lines under the directory ${workDir} ..."
 
         /** @todo we should simplify the following line!!! */
-        new InputStreamReader(process.in).eachLine {line ->
+        process.in.newReader().eachLine {line ->
             println line
             ++count
         }
