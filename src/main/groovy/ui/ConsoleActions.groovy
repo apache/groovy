@@ -340,6 +340,9 @@ aboutAction = action(
 )
 
 interruptAction = action(
-    name: 'Interrupt',
-    closure: controller.&confirmRunInterrupt
+    name: 'Interrupt Script',
+    closure: controller.&confirmRunInterrupt,
+    mnemonic: 'Q',
+    accelerator: shortcut('Q'),
+    shortDescription: 'Interrupt Running Script'
 )

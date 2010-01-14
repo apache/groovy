@@ -121,7 +121,6 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     JTextPane inputArea
     JTextPane outputArea
     JLabel statusLabel
-    JDialog runWaitDialog
     JLabel rowNumAndColNum
 
     // row info
@@ -168,6 +167,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     public static String NODE_ICON_PATH = '/groovy/ui/icons/bullet_green.png' // used by AST Viewer 
 
     private static groovyFileFilter = new GroovyFileFilter()
+    private boolean scriptRunning = false
 
     static void main(args) {
         // allow the full stack traces to bubble up to the root logger
@@ -490,6 +490,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
     // Confirm whether to interrupt the running thread
     void confirmRunInterrupt(EventObject evt) {
+        if(!scriptRunning) return
         def rc = JOptionPane.showConfirmDialog(frame, "Attempt to interrupt script?",
             "GroovyConsole", JOptionPane.YES_NO_OPTION)
         if (rc == JOptionPane.YES_OPTION) {
@@ -805,6 +806,12 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     }
 
     private void runScriptImpl(boolean selected) {
+        if(!scriptRunning) {
+            scriptRunning = true
+        } else {
+            statusLabel.text = 'Cannot run script now as a script is already running. Please wait or press Ctrl-Q to interrupt it.'
+            return
+        }
         def endLine = System.getProperty('line.separator')
         def record = new HistoryRecord( allText: inputArea.getText().replaceAll(endLine, '\n'),
             selectionStart: textSelectionStart, selectionEnd: textSelectionEnd)
@@ -823,13 +830,12 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         appendOutputNl("\n", promptStyle)
 
         // Kick off a new thread to do the evaluation
-        statusLabel.text = 'Running Script...'
         if (prefs.getBoolean("autoClearOutput", false)) clearOutput()
 
         // Run in a thread outside of EDT, this method is usually called inside the EDT
         runThread = Thread.start {
             try {
-                SwingUtilities.invokeLater { showRunWaitDialog() }
+                SwingUtilities.invokeLater { showExecutingMessage() }
                 String name = scriptFile?.name ?: (DEFAULT_SCRIPT_NAME_START + scriptNameCounter++)
                 if(beforeExecution) {
                     beforeExecution()
@@ -843,23 +849,8 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                 SwingUtilities.invokeLater { finishException(t) }
             } finally {
                 runThread = null
+                scriptRunning = false
             }
-        }
-        // Use a watchdog thread to close waiting dialog
-        // apparently invokeLater paired with show/hide does not insure
-        // ordering or atomic execution, likely because of native AWT issues
-        Thread.start {
-            while (!(runWaitDialog?.visible)) {
-                sleep(10)
-            }
-            while (runThread?.alive) {
-                try {
-                    runThread?.join(100)
-                } catch (InterruptedException ie) {
-                    // we got interrupted, just loop again.
-                }
-            }
-            runWaitDialog.hide()
         }
     }
 
@@ -949,11 +940,8 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         FindReplaceUtility.showDialog(true)
     }
 
-    // Shows the 'wait' dialog
-    void showRunWaitDialog() {
-        runWaitDialog.pack()
-        runWaitDialog.setLocationRelativeTo(frame)
-        runWaitDialog.show()
+    void showExecutingMessage() {
+        statusLabel.text = 'Script executing now. Please wait or press Ctrl-Q to interrupt it.'
     }
 
     // Shows the detached 'outputArea' dialog
