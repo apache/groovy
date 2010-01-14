@@ -57,21 +57,6 @@ container(consoleFrame) {
     build(toolBarClass)
 
     build(statusBarClass)
-
-    runWaitDialog = dialog(
-        title: 'Groovy executing',
-        modal: true,
-        pack:true,
-    ) {
-        vbox(border: emptyBorder(6)) {
-            label(text: "Groovy is now executing. Please wait.", alignmentX: 0.5f)
-            vstrut()
-            button(interruptAction,
-                margin: [10, 20, 10, 20],
-                alignmentX: 0.5f
-            )
-        }
-    }
 }
 
 
@@ -94,7 +79,6 @@ controller.outputArea = outputArea
 controller.outputWindow = outputWindow
 controller.statusLabel = status
 controller.frame = consoleFrame
-controller.runWaitDialog = runWaitDialog
 controller.rowNumAndColNum = rowNumAndColNum
 controller.toolbar = toolbar
 

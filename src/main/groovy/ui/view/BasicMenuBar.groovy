@@ -62,6 +62,8 @@ menuBar {
         menuItem(inspectLastAction)
         menuItem(inspectVariablesAction)
         menuItem(inspectAstAction)
+        // invisible - we just need its action to be invoked thru its accelerator key to interrupt script
+        menuItem(interruptAction, visible: false)
     }
 
     menu(text: 'Help', mnemonic: 'H') {
