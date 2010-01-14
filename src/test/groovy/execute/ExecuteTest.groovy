@@ -74,27 +74,29 @@ class ExecuteTest extends GroovyTestCase {
     }
 
     void testExecuteCommandLineProcessAndUseWaitForOrKill() {
-        println "Executing command using waitForOrKill (two cases): $cmd"
+        def cp = System.getProperty('java.class.path')
+        def java = System.getProperty('java.home') + """/bin/java -classpath $cp groovy.ui.GroovyMain -e "println('hi');sleep(200)" """
+        println "Executing this command for two cases:\n$java"
         StringBuffer sbout = new StringBuffer()
         StringBuffer sberr = new StringBuffer()
-        def process = cmd.execute()
+        def process = java.execute()
         def tout = process.consumeProcessOutputStream(sbout)
         def terr = process.consumeProcessErrorStream(sberr)
-        process.waitForOrKill(1000)
+        process.waitForOrKill(10000)
         tout.join()
         terr.join()
         def value = process.exitValue()
         int count = sbout.toString().readLines().size()
         println "Heaps of time case: Exit value: $value, Err lines: ${sberr.toString().readLines().size()}, Out lines: $count"
-        assert count > 1
+        assert count == 1 && sbout.toString().contains('hi')
         assert value == 0
 
         sbout = new StringBuffer()
         sberr = new StringBuffer()
-        process = cmd.execute()
+        process = java.execute()
         tout = process.consumeProcessOutputStream(sbout)
         terr = process.consumeProcessErrorStream(sberr)
-        process.waitForOrKill(5)
+        process.waitForOrKill(50)
         tout.join()
         terr.join()
         value = process.exitValue()
