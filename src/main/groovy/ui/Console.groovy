@@ -168,6 +168,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
     private static groovyFileFilter = new GroovyFileFilter()
     private boolean scriptRunning = false
+    private boolean stackOverFlowError = false
     
     static void main(args) {
         // allow the full stack traces to bubble up to the root logger
@@ -305,8 +306,11 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
     // Ensure we don't have too much in console (takes too much memory)
     private ensureNoDocLengthOverflow(doc) {
+        // if it is a case of stackOverFlowError, show the exception details from the front
+        // as there is no point in showing the repeating details at the back 
+        int offset = stackOverFlowError ? maxOutputChars : 0
         if (doc.length > maxOutputChars) {
-            doc.remove(0, doc.length - maxOutputChars)
+            doc.remove(offset, doc.length - maxOutputChars)
         }
     }
 
@@ -812,6 +816,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             statusLabel.text = 'Cannot run script now as a script is already running. Please wait or press Ctrl-Q to interrupt it.'
             return
         }
+        stackOverFlowError = false // reset this flag before running a script
         def endLine = System.getProperty('line.separator')
         def record = new HistoryRecord( allText: inputArea.getText().replaceAll(endLine, '\n'),
             selectionStart: textSelectionStart, selectionEnd: textSelectionEnd)
@@ -846,6 +851,11 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                 }
                 SwingUtilities.invokeLater { finishNormal(result) }
             } catch (Throwable t) {
+                if(t instanceof StackOverflowError) {
+                    // set the flag that will be used in printing exception details in output pane
+                    stackOverFlowError = true
+                    outputArea.setText('')
+                } 
                 SwingUtilities.invokeLater { finishException(t) }
             } finally {
                 runThread = null
