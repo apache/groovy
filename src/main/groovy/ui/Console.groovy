@@ -146,6 +146,7 @@ class Console implements CaretListener, HyperlinkListener, FocusListener {
     public static String ICON_PATH = '/groovy/ui/ConsoleIcon.png' // used by ObjectBrowser too
 
     private static groovyFileFilter = new GroovyFileFilter()
+    private boolean stackOverFlowError = false
 
     static void main(args) {
         // allow the full stack traces to bubble up to the root logger
@@ -283,8 +284,11 @@ class Console implements CaretListener, HyperlinkListener, FocusListener {
 
     // Ensure we don't have too much in console (takes too much memory)
     private ensureNoDocLengthOverflow(doc) {
+        // if it is a case of stackOverFlowError, show the exception details from the front
+        // as there is no point in showing the repeating details at the back 
+        int offset = stackOverFlowError ? maxOutputChars : 0
         if (doc.length > maxOutputChars) {
-            doc.remove(0, doc.length - maxOutputChars)
+            doc.remove(offset, doc.length - maxOutputChars)
         }
     }
 
@@ -737,6 +741,7 @@ class Console implements CaretListener, HyperlinkListener, FocusListener {
     }
 
     private void runScriptImpl(boolean selected) {
+        stackOverFlowError = false // reset this flag before running a script
         def endLine = System.getProperty('line.separator')
         def record = new HistoryRecord( allText: inputArea.getText().replaceAll(endLine, '\n'),
             selectionStart: textSelectionStart, selectionEnd: textSelectionEnd)
@@ -771,6 +776,11 @@ class Console implements CaretListener, HyperlinkListener, FocusListener {
                 }
                 SwingUtilities.invokeLater { finishNormal(result) }
             } catch (Throwable t) {
+                if(t instanceof StackOverflowError) {
+                    // set the flag that will be used in printing exception details in output pane
+                    stackOverFlowError = true
+                    outputArea.setText('')
+                } 
                 SwingUtilities.invokeLater { finishException(t) }
             } finally {
                 runThread = null
