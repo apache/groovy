@@ -340,9 +340,10 @@ aboutAction = action(
 )
 
 interruptAction = action(
-    name: 'Interrupt Script',
-    closure: controller.&confirmRunInterrupt,
-    mnemonic: 'Q',
-    accelerator: shortcut('Q'),
-    shortDescription: 'Interrupt Running Script'
+    name: 'Interrupt',
+    closure: controller.&doInterrupt,
+    mnemonic: 'T',
+    smallIcon: imageIcon(resource:"icons/cross.png", class:this),
+    shortDescription: 'Interrupt Running Script',
+    enabled: false // controller will enable as needed
 )

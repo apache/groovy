@@ -22,4 +22,5 @@ toolbar = toolBar(rollover:true, visible:controller.showToolbar, constraints:Bor
     button(historyNextAction, text:null)
     separator(orientation:SwingConstants.VERTICAL)
     button(runAction, text:null)
+    button(interruptAction, text:null)
 }
