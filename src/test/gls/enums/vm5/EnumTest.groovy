@@ -19,6 +19,7 @@ package gls.enums.vm5
  * Tests various properties of enums.
  *
  * @author Paul King
+ * @author Roshan Dawrani
  */
 class EnumTest extends GroovyTestCase {
 
@@ -288,6 +289,23 @@ class EnumTest extends GroovyTestCase {
             assert Color3996.ALL_COLORS[0] == Color3996.R
             assert Color3996.ALL_COLORS[1] == Color3996.G
             assert Color3996.ALL_COLORS[2] == Color3996.B
+        """
+    }
+
+    void testResolutionOfInnerEnumInsideEnumBody() {
+        //GROOVY-3995
+        assertScript """
+            class Test3995 {
+                static enum Color {
+                      R, G, B
+                      static Color[] ALL_COLORS = [R, G, B]
+                }
+            }
+            
+            assert Test3995.Color.ALL_COLORS.size() == 3
+            assert Test3995.Color.ALL_COLORS[0] == Test3995.Color.R 
+            assert Test3995.Color.ALL_COLORS[1] == Test3995.Color.G
+            assert Test3995.Color.ALL_COLORS[2] == Test3995.Color.B
         """
     }
 }
