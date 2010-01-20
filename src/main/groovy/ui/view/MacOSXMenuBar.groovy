@@ -91,7 +91,7 @@ menuBar {
     menu(text: 'Script', mnemonic: 'S') {
         menuItem(runAction, icon:null)
         menuItem(runSelectionAction, icon:null)
-        menuItem(interruptAction)
+        menuItem(interruptAction, icon:null)
         separator()
         menuItem(addClasspathJar)
         menuItem(addClasspathDir)
