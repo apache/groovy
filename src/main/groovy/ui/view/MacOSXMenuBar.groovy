@@ -91,6 +91,7 @@ menuBar {
     menu(text: 'Script', mnemonic: 'S') {
         menuItem(runAction, icon:null)
         menuItem(runSelectionAction, icon:null)
+        menuItem(interruptAction, icon:null)
         separator()
         menuItem(addClasspathJar)
         menuItem(addClasspathDir)
@@ -99,8 +100,6 @@ menuBar {
         menuItem(inspectLastAction, icon:null)
         menuItem(inspectVariablesAction, icon:null)
         menuItem(inspectAstAction, icon:null)
-        // invisible - we just need its action to be invoked thru its accelerator key to interrupt script
-        menuItem(interruptAction, visible: false)
     }
 }
 

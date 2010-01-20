@@ -95,6 +95,7 @@ controller.hideOutputWindowAction1 = hideOutputWindowAction1
 controller.hideOutputWindowAction2 = hideOutputWindowAction2
 controller.hideOutputWindowAction3 = hideOutputWindowAction3
 controller.hideOutputWindowAction4 = hideOutputWindowAction4
+controller.interruptAction = interruptAction
 controller.origDividerSize = origDividerSize
 controller.splitPane = splitPane
 controller.blank = blank

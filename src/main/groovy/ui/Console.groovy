@@ -169,6 +169,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     private static groovyFileFilter = new GroovyFileFilter()
     private boolean scriptRunning = false
     private boolean stackOverFlowError = false
+    Action interruptAction
 
     static void main(args) {
         // allow the full stack traces to bubble up to the root logger
@@ -492,31 +493,39 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         outputArea.setText('')
     }
 
-    // Confirm whether to interrupt the running thread
-    void confirmRunInterrupt(EventObject evt) {
-        if(!scriptRunning) return
-        def rc = JOptionPane.showConfirmDialog(frame, "Attempt to interrupt script?",
-            "GroovyConsole", JOptionPane.YES_NO_OPTION)
-        if (rc == JOptionPane.YES_OPTION) {
-            runThread?.interrupt()
+    // If at exit time, a script is running, the user is given an option to interrupt it first
+    def askToInterruptScript() {
+        if(!scriptRunning) return true
+        def rc = JOptionPane.showConfirmDialog(frame, "Script executing. Press 'OK' to attempt to interrupt it before exiting.",
+            "GroovyConsole", JOptionPane.OK_CANCEL_OPTION)
+        if (rc == JOptionPane.OK_OPTION) {
+            doInterrupt()
+            return true
+        } else {
+            return false
         }
     }
 
+    void doInterrupt(EventObject evt = null) {
+        runThread?.interrupt()
+    }
+
     void exit(EventObject evt = null) {
-        if (askToSaveFile()) {
-            if (frame instanceof java.awt.Window) {
-                frame.hide()
-                frame.dispose()
-                outputWindow?.dispose()
-            }
-            FindReplaceUtility.dispose()
-            consoleControllers.remove(this)
-            if (!consoleControllers) {
-                systemOutInterceptor.stop()
-                systemErrorInterceptor.stop()
+        if(askToInterruptScript()) {
+            if (askToSaveFile()) {
+                if (frame instanceof java.awt.Window) {
+                    frame.hide()
+                    frame.dispose()
+                    outputWindow?.dispose()
+                }
+                FindReplaceUtility.dispose()
+                consoleControllers.remove(this)
+                if (!consoleControllers) {
+                    systemOutInterceptor.stop()
+                    systemErrorInterceptor.stop()
+                }
             }
         }
-
     }
 
     void fileNewFile(EventObject evt = null) {
@@ -810,12 +819,12 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     }
 
     private void runScriptImpl(boolean selected) {
-        if(!scriptRunning) {
-            scriptRunning = true
-        } else {
-            statusLabel.text = 'Cannot run script now as a script is already running. Please wait or press Ctrl-Q to interrupt it.'
+        if(scriptRunning) {
+            statusLabel.text = 'Cannot run script now as a script is already running. Please wait or use "Interrupt Script" option.'
             return
         }
+        scriptRunning = true
+        interruptAction.enabled = true
         stackOverFlowError = false // reset this flag before running a script
         def endLine = System.getProperty('line.separator')
         def record = new HistoryRecord( allText: inputArea.getText().replaceAll(endLine, '\n'),
@@ -860,6 +869,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
             } finally {
                 runThread = null
                 scriptRunning = false
+                interruptAction.enabled = false
             }
         }
     }
@@ -951,7 +961,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     }
 
     void showExecutingMessage() {
-        statusLabel.text = 'Script executing now. Please wait or press Ctrl-Q to interrupt it.'
+        statusLabel.text = 'Script executing now. Please wait or use "Interrupt Script" option.'
     }
 
     // Shows the detached 'outputArea' dialog
