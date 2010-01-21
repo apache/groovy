@@ -31,6 +31,8 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
     private ClassNode classNode;
     private final static int publicSynthetic = Opcodes.ACC_PUBLIC+Opcodes.ACC_SYNTHETIC;
     private FieldNode thisField = null;
+    private MethodNode currentMethod;
+    private FieldNode currentField;
     
     public InnerClassVisitor(CompilationUnit cu, SourceUnit su) {
         sourceUnit = su;
@@ -209,21 +211,25 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
 	    super.visitConstructor(node);
 	}
 	
+	private boolean shouldHandleImplicitThisForInnerClass(ClassNode cn) {
+	    if (cn.isEnum() || cn.isInterface()) return false;
+	    if ((cn.getModifiers() & Opcodes.ACC_STATIC)!=0) return false;
+
+	    if(!(cn instanceof InnerClassNode)) return false;
+	    InnerClassNode innerClass = (InnerClassNode) cn;
+	    // scope != null means aic, we don't handle that here
+	    if (innerClass.getVariableScope()!=null) return false;
+	    // static inner classes don't need this$0
+	    if ((innerClass.getModifiers() & ACC_STATIC)!=0) return false;
+	    
+	    return true;
+	}
+	
 	private void addThisReference(ConstructorNode node) {
-	    if (classNode.isEnum() || classNode.isInterface()) return;
-	    if ((classNode.getModifiers() & Opcodes.ACC_STATIC)!=0) return;
-	    
-	    
+		if(!shouldHandleImplicitThisForInnerClass(classNode)) return;
 	    Statement code = node.getCode();
 	    
 	    // add "this$0" field init
-	    
-	    if(!(classNode instanceof InnerClassNode)) return;
-	    InnerClassNode innerClass = (InnerClassNode) classNode;
-	    // scope != null means aic, we don't handle that here
-	    if (innerClass.getVariableScope()!=null) return;
-	    // static inner classes don't need this$0
-	    if ((innerClass.getModifiers() & ACC_STATIC)!=0) return;
 	    
 	    //add this parameter to node
 	    Parameter[] params = node.getParameters();
@@ -297,10 +303,25 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         return null;
     }
 
+    protected void visitConstructorOrMethod(MethodNode node, boolean isConstructor) {
+        this.currentMethod = node;
+        super.visitConstructorOrMethod(node, isConstructor);
+        this.currentMethod = null;
+    }
+
+    public void visitField(FieldNode node) {
+    	this.currentField = node;
+    	super.visitField(node);
+    	this.currentField = null;
+    }
+    
 	@Override
     public void visitConstructorCallExpression(ConstructorCallExpression call) {
         super.visitConstructorCallExpression(call);
-        if (!call.isUsingAnnonymousInnerClass()) return;
+        if (!call.isUsingAnnonymousInnerClass()) {
+        	passThisReference(call);
+        	return;
+        }
         
         InnerClassNode innerClass = (InnerClassNode) call.getType();
         if (!innerClass.getDeclaredConstructors().isEmpty()) return;
@@ -372,6 +393,31 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         innerClass.addConstructor(ACC_PUBLIC, (Parameter[]) parameters.toArray(new Parameter[0]), ClassNode.EMPTY_ARRAY, block);
         
     }
+    
+    // this is the counterpart of addThisReference(). To non-static inner classes, outer this should be
+	// passed as the first argument implicitly.
+	private void passThisReference(ConstructorCallExpression call) {
+		ClassNode cn = call.getType().redirect();
+		if(!shouldHandleImplicitThisForInnerClass(cn)) return;
+		boolean isInStaticContext = true;
+		if(currentMethod != null)
+			isInStaticContext = currentMethod.getVariableScope().isInStaticContext();
+		else if(currentField != null)
+			isInStaticContext = currentField.isStatic();
+		
+		// if constructor call is not in static context, return
+        if(isInStaticContext) return;
+
+		// if constructor call is not in outer class, don't pass 'this' implicitly. Return.
+        if(classNode != ((InnerClassNode) cn).getOuterClass()) return;
+        
+        //add this parameter to node
+        Expression argsExp = call.getArguments();
+        if(argsExp instanceof ArgumentListExpression) {
+        	ArgumentListExpression argsListExp = (ArgumentListExpression) argsExp;
+        	argsListExp.getExpressions().add(0, VariableExpression.THIS_EXPRESSION);
+        }
+	}
     
     private ClassNode getClassNode(ClassNode node, boolean isStatic) {
     	if (isStatic) node = ClassHelper.CLASS_Type;
