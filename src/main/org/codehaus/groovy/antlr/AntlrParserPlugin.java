@@ -2681,29 +2681,39 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     
     protected ClassNode makeTypeWithArguments(AST rootNode) {
         ClassNode basicType = makeType(rootNode);
-        List<GenericsType> typeArgumentList = new LinkedList<GenericsType>();
         AST node = rootNode.getFirstChild();
         if (node==null || isType(INDEX_OP, node) || isType(ARRAY_DECLARATOR, node)) return basicType;
-        //TODO: recognize combinations of inner classes and generic types
-        if (isType(DOT, node)) return basicType;
-        node = node.getFirstChild();
-        if (node==null) return basicType;
+        
+        if (!isType(DOT, node)) {
+            node = node.getFirstChild();
+            if (node == null) return basicType;
+            return addTypeArguments(basicType, node);
+        } else {
+            node = node.getFirstChild();
+            while (node != null && !isType(TYPE_ARGUMENTS, node))
+                node = node.getNextSibling();
+            return node == null ? basicType : addTypeArguments(basicType, node);
+        }
+    }
+
+    private ClassNode addTypeArguments(ClassNode basicType, AST node) {
         assertNodeType(TYPE_ARGUMENTS, node);
+        List<GenericsType> typeArgumentList = new LinkedList<GenericsType>();
         AST typeArgument = node.getFirstChild();
-        
+
         while (typeArgument != null) {
-            assertNodeType(TYPE_ARGUMENT, typeArgument);            
-            GenericsType gt = makeGenericsArgumentType(typeArgument);
-            typeArgumentList.add(gt);
-            typeArgument = typeArgument.getNextSibling();
-        }
-        
-        if (typeArgumentList.size()>0) {
-            basicType.setGenericsTypes(typeArgumentList.toArray(new GenericsType[typeArgumentList.size()]));
-        }
+                assertNodeType(TYPE_ARGUMENT, typeArgument);
+                GenericsType gt = makeGenericsArgumentType(typeArgument);
+                typeArgumentList.add(gt);
+                typeArgument = typeArgument.getNextSibling();
+            }
+
+        if (typeArgumentList.size() > 0) {
+                basicType.setGenericsTypes(typeArgumentList.toArray(new GenericsType[typeArgumentList.size()]));
+            }
         return basicType;
     }
-    
+
     private ClassNode[] makeGenericsBounds(AST rn, int boundType) {
         AST boundsRoot = rn.getNextSibling();
         if (boundsRoot==null) return null;
