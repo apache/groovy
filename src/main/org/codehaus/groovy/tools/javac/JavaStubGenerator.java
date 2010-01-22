@@ -105,6 +105,10 @@ public class JavaStubGenerator
     }
 
     private void genClassInner(ClassNode classNode, PrintWriter out) throws FileNotFoundException {
+    	if(classNode instanceof InnerClassNode && ((InnerClassNode) classNode).isAnonymous()) {
+    		// if it is an anonymous inner class, don't generate the stub code for it.
+    		return;
+    	}
         try {
             Verifier verifier = new Verifier() {
                 public void addCovariantMethods(ClassNode cn) {}

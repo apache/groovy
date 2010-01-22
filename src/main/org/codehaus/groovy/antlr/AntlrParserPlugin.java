@@ -445,7 +445,8 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         } else {
             classNode = new InnerClassNode(outerClass, fullName, Opcodes.ACC_PUBLIC, ClassHelper.OBJECT_TYPE);
         }
-
+        ((InnerClassNode) classNode).setAnonymous(true);
+        
         assertNodeType(OBJBLOCK, node);
         objectBlock(node);
         output.addClass(classNode);
