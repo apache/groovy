@@ -27,6 +27,7 @@ public class InnerClassNode extends ClassNode {
 
     private ClassNode outerClass;
     private VariableScope scope;
+    private boolean anonymous;
 
     /**
      * @param name is the full name of the class
@@ -69,4 +70,12 @@ public class InnerClassNode extends ClassNode {
     public void setVariableScope(VariableScope scope) {
         this.scope = scope;
     }
+
+	public boolean isAnonymous() {
+		return anonymous;
+	}
+
+	public void setAnonymous(boolean anonymous) {
+		this.anonymous = anonymous;
+	}
 }
