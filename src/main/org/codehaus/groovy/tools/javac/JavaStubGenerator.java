@@ -168,7 +168,9 @@ public class JavaStubGenerator
             genMethods(classNode, out, isEnum);
 
             for (Iterator<InnerClassNode> inner = classNode.getInnerClasses(); inner.hasNext(); ) {
-                genClassInner(inner.next(), out);
+            	// GROOVY-4004: Clear the methods from the outer class so that they don't get duplicated in inner ones
+            	propertyMethods.clear();
+            	genClassInner(inner.next(), out);
             }
 
             out.println("}");
