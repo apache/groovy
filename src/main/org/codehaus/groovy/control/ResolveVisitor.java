@@ -67,6 +67,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     private Map genericParameterNames = new HashMap();
     private Set<FieldNode> fieldTypesChecked = new HashSet<FieldNode>();
+    private boolean checkingVariableTypeInDeclaration = false;
 
     /**
      * we use ConstructedClassWithPackage to limit the resolving the compiler
@@ -865,6 +866,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     protected Expression transformVariableExpression(VariableExpression ve) {
         Variable v = ve.getAccessedVariable();
+        
+        if(!(v instanceof DynamicVariable) && !checkingVariableTypeInDeclaration) {
+        	/*
+        	 *  GROOVY-4009: when a normal variable is simply being used, there is no need to try to 
+        	 *  resolve its type. Variable type resolve should proceed only if the variable is being declared. 
+        	 */
+        	return ve;
+        }
         if (v instanceof DynamicVariable){
             String name = ve.getName();
             ClassNode t = ClassHelper.make(name);
@@ -978,7 +987,9 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     protected Expression transformDeclarationExpression(DeclarationExpression de) {
         Expression oldLeft = de.getLeftExpression();
+        checkingVariableTypeInDeclaration = true;
         Expression left = transform(oldLeft);
+        checkingVariableTypeInDeclaration = false;
         if (left instanceof ClassExpression) {
             ClassExpression ce = (ClassExpression) left;
             addError("you tried to assign a value to the class " + ce.getType().getName(), oldLeft);
