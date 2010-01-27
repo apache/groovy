@@ -17,8 +17,9 @@ class GroovyScriptEngineTest extends GroovyTestCase {
 	private File makeMe
 	private File helperIntf
 	private File helper
+    private File bug4013
 
-    private List allFiles = [currentDir, srcDir, script, company, util, makeMeSuper, makeMe, helperIntf, helper]
+    private List allFiles = [currentDir, srcDir, script, company, util, makeMeSuper, makeMe, helperIntf, helper, bug4013]
 
     /**
     * Here we have inheritance and delegation-- where the delegate implements an
@@ -89,6 +90,24 @@ class GroovyScriptEngineTest extends GroovyTestCase {
 		       }
 		    }    
 		 """
+         
+        bug4013 = new File(srcDir, "Groovy4013Helper.groovy")
+        bug4013.delete()
+        bug4013 << """
+            import java.awt.event.*
+            import java.awt.*
+            
+            class Groovy4013Helper
+            {
+               def initPanel()
+               {
+                    def b = new Button('click me')
+                    b.addActionListener( new ActionListener(){
+                        public void actionPerformed(ActionEvent e) {}
+                    })
+               }
+            }
+         """
     }
 	
 	public void tearDown(){
@@ -149,6 +168,22 @@ class GroovyScriptEngineTest extends GroovyTestCase {
         }
     }
 
+    //GROOVY-4013
+    void testGSENoCachingOfInnerClasses() {
+        def klazz, gse
+        
+        String[] roots = new String[1]
+        roots[0] = srcDir.getAbsolutePath()
+
+        gse = new GroovyScriptEngine(roots)
+        
+        klazz = gse.loadScriptByName('Groovy4013Helper.groovy')
+        assert klazz.name == 'Groovy4013Helper'
+        
+        klazz = gse.loadScriptByName('Groovy4013Helper.groovy')
+        assert klazz.name == 'Groovy4013Helper' // we should still get the outer class, not inner one
+    }
+    
 	/*
 	 * The script passes the className of the class it's supposed to
 	 * instantiate to this method, expecting a newly instantiated object

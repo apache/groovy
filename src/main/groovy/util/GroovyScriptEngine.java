@@ -36,6 +36,7 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.InnerClassNode;
 import org.codehaus.groovy.classgen.GeneratorContext;
 import org.codehaus.groovy.control.CompilationFailedException;
 import org.codehaus.groovy.control.CompilationUnit;
@@ -152,6 +153,9 @@ public class GroovyScriptEngine implements ResourceConnector {
                 public void call(final SourceUnit source, GeneratorContext context, ClassNode classNode) 
                     throws CompilationFailedException 
                 {   
+                	// GROOVY-4013: If it is an inner class, tracking its dependencies doesn't really
+                	// serve any purpose and also interferes with the caching done to track dependencies
+                	if(classNode instanceof InnerClassNode) return;
                     DependencyTracker dt = new DependencyTracker(source,cache);
                     dt.visitClass(classNode);
                 }
