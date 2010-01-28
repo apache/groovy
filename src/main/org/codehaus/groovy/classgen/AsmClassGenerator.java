@@ -2475,7 +2475,7 @@ public class AsmClassGenerator extends ClassGenerator {
                 if (ClassHelper.isPrimitiveType(type)) {
                     helper.unbox(type);
                 } else {
-                    helper.doCast(type);
+                	doConvertAndCast(type, true); // GROOVY-4015
                 }
                 helper.swapWithObject(type);
             }
