@@ -144,8 +144,10 @@ public class ClassInfo extends ManagedConcurrentMap.Entry<Class,ClassInfo> {
     }
 
     private MetaClass getMetaClassUnderLock() {
-        MetaClass answer;
-        answer = getMetaClassForClass();
+        MetaClass answer = getStrongMetaClass();
+        if (answer!=null) return answer;
+        
+        answer = getWeakMetaClass();
         final MetaClassRegistry metaClassRegistry = GroovySystem.getMetaClassRegistry();
         MetaClassRegistry.MetaClassCreationHandle mccHandle = metaClassRegistry.getMetaClassCreationHandler();
         
