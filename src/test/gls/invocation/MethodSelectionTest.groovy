@@ -204,32 +204,6 @@ public class MethodSelectionTest extends CompilableTestSupport {
     foo.setMyFloat2 new BigInteger('1')
     assert foo.getMyFloat2() == 1.0
   }
-
-    // GROOVY-4015
-    void testCoercionOfArgumentsInSpecialConstructorCalls() {
-        def a = 2
-
-        try { // this case was working fine
-            new ImplString4015("GString $a")
-            fail('Should have failed if it reached Foo4015#<init>(String)')
-        } catch(RuntimeException ex) {
-            assert ex.message == 'Reached Foo4015#<init>(String) successfully'
-        }
-        
-        try { // this case was working fine
-            new ImplObject4015("String")
-            fail('Should have failed if it reached Foo4015#<init>(String)')
-        } catch(RuntimeException ex) {
-            assert ex.message == 'Reached Foo4015#<init>(String) successfully'
-        }
-
-        try { // this case was not working and was resulting in ClassCastException
-            new ImplObject4015("GString $a")
-            fail('Should have failed if it reached Foo4015#<init>(String)')
-        } catch(RuntimeException ex) {
-            assert ex.message == 'Reached Foo4015#<init>(String) successfully'
-        }
-    }
 }
 
 class Foo3977 {
@@ -237,20 +211,4 @@ class Foo3977 {
     Double myDouble2
     float myFloat1
     Float myFloat2
-}
-
-class Foo4015 {
-    def Foo4015(String s) {
-        throw new RuntimeException('Reached Foo4015#<init>(String) successfully')
-    }
-}
-class ImplString4015 extends Foo4015 {
-    def ImplString4015(String s) { 
-        super(s) 
-    }
-}
-class ImplObject4015 extends Foo4015 {
-    def ImplObject4015(s) { 
-        super(s) 
-    }
 }
