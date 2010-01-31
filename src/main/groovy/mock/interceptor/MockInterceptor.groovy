@@ -17,9 +17,10 @@
 package groovy.mock.interceptor
 
 /**
-    Intercepting calls to the collaborating object and notify the expectation object.
-    @author Dierk Koenig
-*/
+ * Intercepting calls to the collaborating object and notify the expectation object.
+ *
+ * @author Dierk Koenig
+ */
 
 class MockInterceptor implements PropertyAccessInterceptor {
 
@@ -33,7 +34,7 @@ class MockInterceptor implements PropertyAccessInterceptor {
     Object beforeGet(Object object, String property) {
         if (!expectation) throw new IllegalStateException("Property 'expectation' must be set before use.")
         String name = "get${property[0].toUpperCase()}${property[1..-1]}"
-        return expectation.match(name)()                    
+        return expectation.match(name)()
     }
 
     void beforeSet(Object object, String property, Object newValue) {
