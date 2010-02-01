@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,20 +19,23 @@ package groovy.mock.interceptor
 import junit.framework.AssertionFailedError
 
 /**
-    The object that registers method calls on it for the use with Mocks and Stubs.
-    For each call a CallSpec object is added to the recorded list.
-    @author Dierk Koenig
-*/
+ *  The object that registers method calls on it for the use with Mocks and Stubs.
+ *  For each call a CallSpec object is added to the recorded list.
+ *  @author Dierk Koenig
+ */
 
 class Demand {
 
-    def List recorded = []
+    List recorded = []
+    Map ignore = [:]
 
     Object invokeMethod(String methodName, Object args) {
         def range = 1..1
         if (args[0] instanceof IntRange) {
             range = args[0]
             if (range.reverse) throw new IllegalArgumentException('Reverse ranges not supported.')
+        } else if (args[0] instanceof Integer) {
+            range = args[0]..args[0]
         }
         if (args[-1] instanceof Closure) {
             recorded << new CallSpec(name:methodName, behavior:args[-1], range:range)

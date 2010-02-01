@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package groovy.mock.interceptor
 
 import java.lang.reflect.Modifier
 
 /**
-    Facade over the Mocking details.
-    A Mock's expectation is always sequence dependent and it's use always ends with a verify().
-    See also StubFor.
-    @author Dierk Koenig
-    @author Paul King
-*/
-
+ *   Facade over the Mocking details.
+ *   A Mock's expectation is always sequence dependent and it's use always ends with a verify().
+ *
+ *   @see StubFor
+ *   @author Dierk Koenig
+ *   @author Paul King
+ */
 class MockFor {
 
     MockProxyMetaClass proxy
@@ -54,6 +53,10 @@ class MockFor {
 
     void verify(GroovyObject obj) {
         instanceExpectations[obj].verify()
+    }
+
+    def ignore(Object filter, Closure filterBehavior) {
+        demand.ignore.put(filter, filterBehavior)
     }
 
     Object proxyInstance() {
