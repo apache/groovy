@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,11 +19,11 @@ package groovy.mock.interceptor
 import junit.framework.AssertionFailedError
 
 /**
-    Expects demanded call cardinalities to match demanded ranges in the sequence of recording.
-    @see LooseExpectation
-    @author Dierk Koenig
-*/
-
+ *  Expects demanded call cardinalities to match demanded ranges in the sequence of recording.
+ *
+ *  @see LooseExpectation
+ *  @author Dierk Koenig
+ */
 class StrictExpectation {
     Demand fDemand  = null
     int fCallSpecIdx = 0
@@ -34,11 +34,14 @@ class StrictExpectation {
     }
 
     /**
-        Match the requested method name against eligible demands.
-        Fail early if no match possible.
-        Return the demand's behavior closure on match.
-    */
+     * Match the requested method name against eligible demands.
+     * Fail early if no match possible.
+     * Return the demand's behavior closure on match.
+     * Also skips over names matching ignore filter, if any.
+     */
     Closure match(String name) {
+        def filter = fDemand.ignore.keySet().find{ [name].grep(it) }
+        if (filter) return fDemand.ignore.get(filter)
         if (!fCalls[fCallSpecIdx]) fCalls[fCallSpecIdx] = 0
 
         if (fCallSpecIdx >= fDemand.recorded.size()) {

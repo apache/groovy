@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package groovy.mock.interceptor
 
 import java.lang.reflect.Modifier
 
 /**
-    Facade over the Stubbing details.
-    A Stub's expectation is sequence independent and use of verify() is left to the user.
-    @see MockFor.
-    @author Dierk Koenig
-    @author Paul King
-*/
-
+ *  Facade over the Stubbing details.
+ *  A Stub's expectation is sequence independent and use of verify() is left to the user.
+ *
+ *  @see MockFor
+ *  @author Dierk Koenig
+ *  @author Paul King
+ */
 class StubFor {
 
     MockProxyMetaClass proxy
@@ -44,6 +43,10 @@ class StubFor {
 
     void use(Closure closure) {
         proxy.use closure
+    }
+
+    def ignore(Object filter, Closure filterBehavior) {
+        demand.ignore.put(filter, filterBehavior)
     }
 
     void use(GroovyObject obj, Closure closure) {
@@ -83,9 +86,9 @@ class StubFor {
         instance.metaClass = thisproxy
         def wrapped = null
         if (clazz.isInterface()) {
-            wrapped = ProxyGenerator.instantiateDelegate([clazz], instance)
+            wrapped = ProxyGenerator.INSTANCE.instantiateDelegate([clazz], instance)
         } else {
-            wrapped = ProxyGenerator.instantiateDelegate(instance)
+            wrapped = ProxyGenerator.INSTANCE.instantiateDelegate(instance)
         }
         instanceExpectations[wrapped] = thisexpect
         return wrapped
@@ -94,20 +97,20 @@ class StubFor {
     private getInstance(Class clazz, args) {
         def instance = null
         if (clazz.isInterface()) {
-            instance = ProxyGenerator.instantiateAggregateFromInterface(clazz)
+            instance = ProxyGenerator.INSTANCE.instantiateAggregateFromInterface(clazz)
         } else if (Modifier.isAbstract(clazz.modifiers)) {
-            instance = ProxyGenerator.instantiateAggregateFromBaseClass(clazz, args)
+            instance = ProxyGenerator.INSTANCE.instantiateAggregateFromBaseClass(clazz, args)
         } else if (args != null) {
             if (clazz instanceof GroovyObject) {
                 instance = clazz.newInstance(args)
             } else {
-                instance = ProxyGenerator.instantiateDelegate(clazz.newInstance(args))
+                instance = ProxyGenerator.INSTANCE.instantiateDelegate(clazz.newInstance(args))
             }
         } else {
             if (clazz instanceof GroovyObject) {
                 instance = clazz.newInstance()
             } else {
-                instance = ProxyGenerator.instantiateDelegate(clazz.newInstance())
+                instance = ProxyGenerator.INSTANCE.instantiateDelegate(clazz.newInstance())
             }
         }
         return instance
