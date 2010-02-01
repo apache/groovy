@@ -413,8 +413,8 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         
         //add this parameter to node
         Expression argsExp = call.getArguments();
-        if(argsExp instanceof ArgumentListExpression) {
-        	ArgumentListExpression argsListExp = (ArgumentListExpression) argsExp;
+        if(argsExp instanceof TupleExpression) {
+        	TupleExpression argsListExp = (TupleExpression) argsExp;
         	argsListExp.getExpressions().add(0, VariableExpression.THIS_EXPRESSION);
         }
 	}
