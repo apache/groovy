@@ -324,4 +324,21 @@ class InnerClassTest extends CompilableTestSupport {
             assert b.y == 4
         """
     }
+    
+    void testImplicitThisPassingWithNamedArguments() {
+        def oc = new MyOuterClass4028()
+        assert oc.foo().propMap.size() == 2
+    }
 } 
+
+class MyOuterClass4028 {
+    def foo() {
+        new MyInnerClass4028(fName: 'Roshan', lName: 'Dawrani')
+    }
+    class MyInnerClass4028 {
+        Map propMap
+        def MyInnerClass4028(Map propMap) {
+            this.propMap = propMap
+        }
+    }
+}
