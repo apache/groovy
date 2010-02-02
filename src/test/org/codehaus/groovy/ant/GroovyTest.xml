@@ -42,7 +42,7 @@
     </target>
 
     <target name="groovyClasspath_nestedClasspath" depends="defineTask">
-        <groovy classpathref="myClasspathRef">
+        <groovy>
             <classpath>
                 <pathelement location="groovytest3"/>
             </classpath>
