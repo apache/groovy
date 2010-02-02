@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,6 +22,7 @@ import java.beans.IntrospectionException;
 /**
  * The ProxyMetaClass for the MockInterceptor.
  * Instance and class methods are intercepted, but constructors are not to allow mocking of aggregated objects.
+ *
  * @author Dierk Koenig
  */
 
@@ -45,40 +46,38 @@ public class MockProxyMetaClass extends ProxyMetaClass {
 
     public Object invokeMethod(final Object object, final String methodName, final Object[] arguments) {
         if (null == interceptor) {
-            throw new RuntimeException("cannot invoke without interceptor");
+            throw new RuntimeException("cannot invoke method '" + methodName + "' without interceptor");
         }
         return interceptor.beforeInvoke(object, methodName, arguments);
     }
 
     public Object invokeStaticMethod(final Object object, final String methodName, final Object[] arguments) {
         if (null == interceptor) {
-            throw new RuntimeException("cannot invoke without interceptor");
+            throw new RuntimeException("cannot invoke static method '" + methodName + "' without interceptor");
         }
         return interceptor.beforeInvoke(object, methodName, arguments);
     }
 
     public Object getProperty(Class aClass, Object object, String property, boolean b, boolean b1) {
         if (null == interceptor) {
-            throw new RuntimeException("cannot invoke without interceptor");
+            throw new RuntimeException("cannot get property '" + property + "' without interceptor");
         }
-        if(interceptor instanceof PropertyAccessInterceptor) {
-            return ((PropertyAccessInterceptor)interceptor).beforeGet(object,property);
-        }
-        else {
-            return super.getProperty(aClass,object,property,b,b);
+        if (interceptor instanceof PropertyAccessInterceptor) {
+            return ((PropertyAccessInterceptor) interceptor).beforeGet(object, property);
+        } else {
+            return super.getProperty(aClass, object, property, b, b);
         }
     }
 
     public void setProperty(Class aClass, Object object, String property, Object newValue, boolean b, boolean b1) {
         if (null == interceptor) {
-            throw new RuntimeException("cannot invoke without interceptor");
+            throw new RuntimeException("cannot set property '" + property + "' without interceptor");
         }
 
-        if(interceptor instanceof PropertyAccessInterceptor) {
-            ((PropertyAccessInterceptor)interceptor).beforeSet(object,property, newValue);
-        }
-        else {
-            super.setProperty(aClass,object,property,newValue,b,b);
+        if (interceptor instanceof PropertyAccessInterceptor) {
+            ((PropertyAccessInterceptor) interceptor).beforeSet(object, property, newValue);
+        } else {
+            super.setProperty(aClass, object, property, newValue, b, b);
         }
     }
 
@@ -88,5 +87,5 @@ public class MockProxyMetaClass extends ProxyMetaClass {
     public Object invokeConstructor(final Object[] arguments) {
         return adaptee.invokeConstructor(arguments);
     }
-    
+
 }
