@@ -408,14 +408,22 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
 		// if constructor call is not in static context, return
         if(isInStaticContext) return;
 
-		// if constructor call is not in outer class, don't pass 'this' implicitly. Return.
-        if(classNode != ((InnerClassNode) cn).getOuterClass()) return;
+        // calculate outer class which we need for this$0
+        ClassNode parent = classNode;
+        int level = 0;
+        for(; parent != null && parent != cn.getOuterClass(); parent = parent.getOuterClass()) { level++; }
+
+        // if constructor call is not in outer class, don't pass 'this' implicitly. Return.
+        if (parent == null) return;
         
         //add this parameter to node
         Expression argsExp = call.getArguments();
         if(argsExp instanceof TupleExpression) {
         	TupleExpression argsListExp = (TupleExpression) argsExp;
-        	argsListExp.getExpressions().add(0, VariableExpression.THIS_EXPRESSION);
+            Expression this0 = VariableExpression.THIS_EXPRESSION;
+            for (int i = 0; i != level; ++i)
+                this0 = new PropertyExpression(this0, "this$0");
+            argsListExp.getExpressions().add(0, this0);
         }
 	}
     
