@@ -11227,7 +11227,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *     which can be used to control subsequent processing.</dd>
      * <dt>postRoot</dt><dd>A boolean indicating that the 'postDir' closure should be applied at the root level</dd>
      * <dt>visitRoot</dt><dd>A boolean indicating that the given closure should be applied for the root dir
-     *     (not applicable if the 'type' is set to {@link FileType.FILES})</dd>
+     *     (not applicable if the 'type' is set to {@link FileType#FILES})</dd>
      * <dt>maxDepth</dt><dd>The maximum number of directory levels when recursing
      *     (default is -1 which means infinite, set to 0 for no recursion)</dd>
      * <dt>filter</dt><dd>A filter to perform on traversed files/directories (using the {@link #isCase(Object,Object)} method). If set,
