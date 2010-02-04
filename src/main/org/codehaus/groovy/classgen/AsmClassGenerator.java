@@ -1920,7 +1920,9 @@ public class AsmClassGenerator extends ClassGenerator {
         // message name
         Expression messageName = new CastExpression(ClassHelper.STRING_TYPE, call.getMethod());
         if (useSuper) {
-            makeCall(new ClassExpression(getOutermostClass().getSuperClass()),
+        	ClassNode superClass = isInClosure() ? 
+        			getOutermostClass().getSuperClass() : classNode.getSuperClass(); // GROOVY-4035
+            makeCall(new ClassExpression(superClass),
                     objectExpression, messageName,
                     call.getArguments(), adapter,
                     call.isSafe(), call.isSpreadSafe(),
