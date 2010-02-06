@@ -176,4 +176,11 @@ class MapTest extends GroovyTestCase {
         assert ([a: 1, b: 2] as LinkedHashMap) + other == [a:1, b:2, c:3] as LinkedHashMap
         assert ([a: 1, b: 2] as TreeMap)       + other == [a:1, b:2, c:3] as TreeMap
     }
+
+    void testFlattenUsingClosure() {
+        def map = [a: 1, b: 2, c: 3, d: [e: 4, f: 5]]
+        def findingNestedMapValues = { it.value instanceof Map ? it.value.entrySet() : it }
+        def result = [:].putAll(map.entrySet().flatten(findingNestedMapValues))
+        assert result == [a: 1, b: 2, c: 3, e: 4, f: 5]
+    }
 }
