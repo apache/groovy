@@ -5522,7 +5522,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 if (flattened instanceof Collection && !returnedSelf) {
                     flatten((Collection) flattened, addTo, flattenUsing);
                 } else {
-                    addTo.add(element);
+                    addTo.add(flattened);
                 }
             }
         }
