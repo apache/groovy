@@ -262,7 +262,8 @@ class ListTest extends GroovyTestCase {
     // incorporates GROOVY-2904 and GROOVY-3102
     void testFlattenListWithSuppliedClosure() {
         def orig = [[[4, 5, 6, [46, 7, "erer"]], null, 4, [3, 6, 78]], 4]
-        def flat = orig.flatten{ it.iterator().toList() }
+        def notSelfAsList = { def ans = it.iterator().toList(); ans != [it] ? ans : it }
+        def flat = orig.flatten(notSelfAsList)
         assert flat == [4, 5, 6, 46, 7, "e", "r", "e", "r", 4, 3, 6, 78, 4]
     }
 
