@@ -28,63 +28,144 @@ import java.beans.IntrospectionException;
 
 public class MockProxyMetaClass extends ProxyMetaClass {
 
+    public final boolean interceptConstruction;
+    private boolean fallingThrough;
+
+    static class FallThroughMarker extends Closure {
+        public FallThroughMarker(Object owner) {
+            super(owner);
+        }
+    }
+    static final FallThroughMarker FALL_THROUGH_MARKER = new FallThroughMarker(new Object());
+
     /**
      * @param adaptee the MetaClass to decorate with interceptability
      */
     public MockProxyMetaClass(MetaClassRegistry registry, Class theClass, MetaClass adaptee) throws IntrospectionException {
+        this(registry, theClass, adaptee, false);
+    }
+
+    /**
+     * @param adaptee the MetaClass to decorate with interceptability
+     */
+    public MockProxyMetaClass(MetaClassRegistry registry, Class theClass, MetaClass adaptee, boolean interceptConstruction) throws IntrospectionException {
         super(registry, theClass, adaptee);
+        this.interceptConstruction = interceptConstruction;
     }
 
     /**
      * convenience factory method for the most usual case.
      */
     public static MockProxyMetaClass make(Class theClass) throws IntrospectionException {
+        return make(theClass, false);
+    }
+
+    /**
+     * convenience factory method allowing interceptConstruction to be set.
+     */
+    public static MockProxyMetaClass make(Class theClass, boolean interceptConstruction) throws IntrospectionException {
         MetaClassRegistry metaRegistry = GroovySystem.getMetaClassRegistry();
         MetaClass meta = metaRegistry.getMetaClass(theClass);
-        return new MockProxyMetaClass(metaRegistry, theClass, meta);
+        return new MockProxyMetaClass(metaRegistry, theClass, meta, interceptConstruction);
     }
 
     public Object invokeMethod(final Object object, final String methodName, final Object[] arguments) {
-        if (null == interceptor) {
+        if (null == interceptor && !fallingThrough) {
             throw new RuntimeException("cannot invoke method '" + methodName + "' without interceptor");
         }
-        return interceptor.beforeInvoke(object, methodName, arguments);
+        Object result = FALL_THROUGH_MARKER;
+        if (interceptor != null) {
+            result = interceptor.beforeInvoke(object, methodName, arguments);
+        }
+        if (result == FALL_THROUGH_MARKER) {
+            Interceptor saved = interceptor;
+            interceptor = null;
+            boolean savedFallingThrough = fallingThrough;
+            fallingThrough = true;
+            result = adaptee.invokeMethod(object, methodName, arguments);
+            fallingThrough = savedFallingThrough;
+            interceptor = saved;
+        }
+        return result;
     }
 
     public Object invokeStaticMethod(final Object object, final String methodName, final Object[] arguments) {
-        if (null == interceptor) {
+        if (null == interceptor && !fallingThrough) {
             throw new RuntimeException("cannot invoke static method '" + methodName + "' without interceptor");
         }
-        return interceptor.beforeInvoke(object, methodName, arguments);
+        Object result = FALL_THROUGH_MARKER;
+        if (interceptor != null) {
+            result = interceptor.beforeInvoke(object, methodName, arguments);
+        }
+        if (result == FALL_THROUGH_MARKER) {
+            Interceptor saved = interceptor;
+            interceptor = null;
+            boolean savedFallingThrough = fallingThrough;
+            fallingThrough = true;
+            result = adaptee.invokeStaticMethod(object, methodName, arguments);
+            fallingThrough = savedFallingThrough;
+            interceptor = saved;
+        }
+        return result;
     }
 
     public Object getProperty(Class aClass, Object object, String property, boolean b, boolean b1) {
-        if (null == interceptor) {
+        if (null == interceptor && !fallingThrough) {
             throw new RuntimeException("cannot get property '" + property + "' without interceptor");
         }
-        if (interceptor instanceof PropertyAccessInterceptor) {
-            return ((PropertyAccessInterceptor) interceptor).beforeGet(object, property);
-        } else {
-            return super.getProperty(aClass, object, property, b, b);
+        Object result = FALL_THROUGH_MARKER;
+        if (interceptor != null && interceptor instanceof PropertyAccessInterceptor) {
+            result = ((PropertyAccessInterceptor) interceptor).beforeGet(object, property);
         }
+        if (result == FALL_THROUGH_MARKER) {
+            Interceptor saved = interceptor;
+            interceptor = null;
+            boolean savedFallingThrough = fallingThrough;
+            fallingThrough = true;
+            result = adaptee.getProperty(aClass, object, property, b, b1);
+            fallingThrough = savedFallingThrough;
+            interceptor = saved;
+        }
+        return result;
     }
 
     public void setProperty(Class aClass, Object object, String property, Object newValue, boolean b, boolean b1) {
-        if (null == interceptor) {
+        if (null == interceptor && !fallingThrough) {
             throw new RuntimeException("cannot set property '" + property + "' without interceptor");
         }
 
-        if (interceptor instanceof PropertyAccessInterceptor) {
-            ((PropertyAccessInterceptor) interceptor).beforeSet(object, property, newValue);
-        } else {
-            super.setProperty(aClass, object, property, newValue, b, b);
+        Object result = FALL_THROUGH_MARKER;
+        if (interceptor != null && interceptor instanceof PropertyAccessInterceptor) {
+            // cheat and borrow first param for result as we don't use it anyway
+            Object[] resultHolder = new Object[1];
+            ((PropertyAccessInterceptor) interceptor).beforeSet(resultHolder, property, newValue);
+            result = resultHolder[0];
+        }
+        if (result == FALL_THROUGH_MARKER) {
+            Interceptor saved = interceptor;
+            interceptor = null;
+            boolean savedFallingThrough = fallingThrough;
+            fallingThrough = true;
+            adaptee.setProperty(aClass, object, property, newValue, b, b1);
+            fallingThrough = savedFallingThrough;
+            interceptor = saved;
         }
     }
 
     /**
      * Unlike general impl in superclass, ctors are not intercepted but relayed
+     * unless interceptConstruction is set.
      */
     public Object invokeConstructor(final Object[] arguments) {
+        if (interceptConstruction && null == interceptor)
+            throw new RuntimeException("cannot invoke constructor without interceptor");
+
+        if (interceptConstruction) {
+            GroovyObject newInstance = (GroovyObject) interceptor.beforeInvoke(null, getTheClass().getSimpleName(), arguments);
+            newInstance.setMetaClass(this);
+            return newInstance;
+        }
+
         return adaptee.invokeConstructor(arguments);
     }
 

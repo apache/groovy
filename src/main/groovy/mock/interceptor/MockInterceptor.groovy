@@ -26,24 +26,34 @@ class MockInterceptor implements PropertyAccessInterceptor {
 
     def expectation = null
 
-    Object beforeInvoke(Object object, String methodName, Object[] arguments) {
+    def beforeInvoke(Object object, String methodName, Object[] arguments) {
         if (!expectation) throw new IllegalStateException("Property 'expectation' must be set before use.")
-        return expectation.match(methodName)(*arguments)
+        def result = expectation.match(methodName)
+        if (result == MockProxyMetaClass.FALL_THROUGH_MARKER) return result
+        return result(*arguments)
     }
 
-    Object beforeGet(Object object, String property) {
+    def beforeGet(Object object, String property) {
         if (!expectation) throw new IllegalStateException("Property 'expectation' must be set before use.")
         String name = "get${property[0].toUpperCase()}${property[1..-1]}"
-        return expectation.match(name)()
+        def result = expectation.match(name)
+        if (result == MockProxyMetaClass.FALL_THROUGH_MARKER) return result
+        return result()
     }
 
     void beforeSet(Object object, String property, Object newValue) {
         if (!expectation) throw new IllegalStateException("Property 'expectation' must be set before use.")
         String name = "set${property[0].toUpperCase()}${property[1..-1]}"
-        expectation.match(name)(newValue)
+        def result = expectation.match(name)
+        if (result != MockProxyMetaClass.FALL_THROUGH_MARKER) {
+            result(newValue)
+            result = null
+        }
+        // object is never used so cheat and use it for return value
+        if (object instanceof Object[]) ((Object[])object)[0] = result
     }
 
-    Object afterInvoke(Object object, String methodName, Object[] arguments, Object result) {
+    def afterInvoke(Object object, String methodName, Object[] arguments, Object result) {
         return null // never used
     }
 

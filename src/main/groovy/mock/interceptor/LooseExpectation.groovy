@@ -17,6 +17,7 @@
 package groovy.mock.interceptor
 
 import junit.framework.AssertionFailedError
+import org.codehaus.groovy.runtime.DefaultGroovyMethods
 
 /**
  *  Expects demanded call cardinalities to match demanded ranges.
@@ -41,7 +42,7 @@ class LooseExpectation {
      * Also skips over names matching ignore filter, if any.
      */
     Closure match(String name) {
-        def filter = fDemand.ignore.keySet().find{ [name].grep(it) }
+        def filter = fDemand.ignore.keySet().find{ DefaultGroovyMethods.grep([name], it) }
         if (filter) return fDemand.ignore.get(filter)
         def callIndex = 0
         // find first eligible callSpec
