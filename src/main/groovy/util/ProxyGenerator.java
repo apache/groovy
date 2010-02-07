@@ -87,51 +87,51 @@ public class ProxyGenerator {
         this.override = override;
     }
 
-    public Object instantiateAggregateFromBaseClass(Class clazz) {
+    public GroovyObject instantiateAggregateFromBaseClass(Class clazz) {
         return instantiateAggregateFromBaseClass((Map)null, clazz);
     }
 
-    public Object instantiateAggregateFromBaseClass(Map map, Class clazz) {
+    public GroovyObject instantiateAggregateFromBaseClass(Map map, Class clazz) {
         return instantiateAggregateFromBaseClass(map, clazz, null);
     }
 
-    public Object instantiateAggregateFromBaseClass(Closure cl, Class clazz) {
+    public GroovyObject instantiateAggregateFromBaseClass(Closure cl, Class clazz) {
         Map m = new HashMap();
         m.put("*", cl);
         return instantiateAggregateFromBaseClass(m, clazz, null);
     }
 
-    public Object instantiateAggregateFromBaseClass(Class clazz, Object[] constructorArgs) {
+    public GroovyObject instantiateAggregateFromBaseClass(Class clazz, Object[] constructorArgs) {
     	return instantiateAggregate(null, null, clazz, constructorArgs);
     }
     
-    public Object instantiateAggregateFromBaseClass(Map map, Class clazz, Object[] constructorArgs) {
+    public GroovyObject instantiateAggregateFromBaseClass(Map map, Class clazz, Object[] constructorArgs) {
         return instantiateAggregate(map, null, clazz, constructorArgs);
     }
 
-    public Object instantiateAggregateFromInterface(Class clazz) {
+    public GroovyObject instantiateAggregateFromInterface(Class clazz) {
         return instantiateAggregateFromInterface(null, clazz);
     }
 
-    public Object instantiateAggregateFromInterface(Map map, Class clazz) {
+    public GroovyObject instantiateAggregateFromInterface(Map map, Class clazz) {
         List interfaces = new ArrayList();
         interfaces.add(clazz);
         return instantiateAggregate(map, interfaces);
     }
 
-    public Object instantiateAggregate(List interfaces) {
+    public GroovyObject instantiateAggregate(List interfaces) {
         return instantiateAggregate(null, interfaces);
     }
 
-    public Object instantiateAggregate(Map closureMap, List interfaces) {
+    public GroovyObject instantiateAggregate(Map closureMap, List interfaces) {
         return instantiateAggregate(closureMap, interfaces, null);
     }
 
-    public Object instantiateAggregate(Map closureMap, List interfaces, Class clazz) {
+    public GroovyObject instantiateAggregate(Map closureMap, List interfaces, Class clazz) {
         return instantiateAggregate(closureMap, interfaces, clazz, null);
     }
 
-    public Object instantiateAggregate(Map closureMap, List interfaces, Class clazz, Object[] constructorArgs) {
+    public GroovyObject instantiateAggregate(Map closureMap, List interfaces, Class clazz, Object[] constructorArgs) {
         Map map = new HashMap();
         if (closureMap != null) {
             map = closureMap;
@@ -241,34 +241,34 @@ public class ProxyGenerator {
         if (debug)
             System.out.println("proxy source:\n------------------\n" + buffer.toString() + "\n------------------");
         try {
-            return shell.evaluate(buffer.toString());
+            return (GroovyObject) shell.evaluate(buffer.toString());
         } catch (MultipleCompilationErrorsException err) {
             throw new GroovyRuntimeException("Error creating proxy: " + err.getMessage());
         }
     }
 
-    public Object instantiateDelegate(Object delegate) {
+    public GroovyObject instantiateDelegate(Object delegate) {
         return instantiateDelegate(null, delegate);
     }
 
-    public Object instantiateDelegate(List interfaces, Object delegate) {
+    public GroovyObject instantiateDelegate(List interfaces, Object delegate) {
         return instantiateDelegate(null, interfaces, delegate);
     }
 
-    public Object instantiateDelegate(Map closureMap, List interfaces, Object delegate) {
+    public GroovyObject instantiateDelegate(Map closureMap, List interfaces, Object delegate) {
         return instantiateDelegateWithBaseClass(closureMap, interfaces, delegate, null);
     }
 
-    public Object instantiateDelegateWithBaseClass(Map closureMap, List interfaces, Object delegate) {
+    public GroovyObject instantiateDelegateWithBaseClass(Map closureMap, List interfaces, Object delegate) {
         return instantiateDelegateWithBaseClass(closureMap, interfaces, delegate, delegate.getClass());
     }
 
-    public Object instantiateDelegateWithBaseClass(Map closureMap, List interfaces, Object delegate, Class baseClass) {
+    public GroovyObject instantiateDelegateWithBaseClass(Map closureMap, List interfaces, Object delegate, Class baseClass) {
         String name = shortName(delegate.getClass().getName()) + "_delegateProxy";
         return instantiateDelegateWithBaseClass(closureMap, interfaces, delegate, baseClass, name);
     }
 
-    public Object instantiateDelegateWithBaseClass(Map closureMap, List interfaces, Object delegate, Class baseClass, String name) {
+    public GroovyObject instantiateDelegateWithBaseClass(Map closureMap, List interfaces, Object delegate, Class baseClass, String name) {
         Map map = new HashMap();
         if (closureMap != null) {
             map = closureMap;
@@ -350,7 +350,7 @@ public class ProxyGenerator {
         if (debug)
             System.out.println("proxy source:\n------------------\n" + buffer.toString() + "\n------------------");
         try {
-            return shell.evaluate(buffer.toString());
+            return (GroovyObject) shell.evaluate(buffer.toString());
         } catch (MultipleCompilationErrorsException err) {
             throw new GroovyRuntimeException("Error creating proxy: " + err.getMessage());
         }

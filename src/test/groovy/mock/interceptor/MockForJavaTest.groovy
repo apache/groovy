@@ -26,12 +26,12 @@ class MockForJavaTest extends GroovyTestCase {
     }
 
     void testString() {
-        def iteratorContext = new MockFor(String)
-        iteratorContext.demand.endsWith(2..2) { String arg -> arg == "foo" }
-        def s = iteratorContext.proxyDelegateInstance()
+        def stringContext = new MockFor(String)
+        stringContext.demand.endsWith(2..2) { String arg -> arg == "foo" }
+        def s = stringContext.proxyDelegateInstance()
         assert !s.endsWith("bar")
         assert s.endsWith("foo")
-        iteratorContext.verify(s)
+        stringContext.verify(s)
     }
 
 }

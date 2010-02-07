@@ -17,6 +17,7 @@
 package groovy.mock.interceptor
 
 import junit.framework.AssertionFailedError
+import org.codehaus.groovy.runtime.DefaultGroovyMethods
 
 /**
  *  Expects demanded call cardinalities to match demanded ranges in the sequence of recording.
@@ -40,7 +41,7 @@ class StrictExpectation {
      * Also skips over names matching ignore filter, if any.
      */
     Closure match(String name) {
-        def filter = fDemand.ignore.keySet().find{ [name].grep(it) }
+        def filter = fDemand.ignore.keySet().find{ DefaultGroovyMethods.grep([name], it) }
         if (filter) return fDemand.ignore.get(filter)
         if (!fCalls[fCallSpecIdx]) fCalls[fCallSpecIdx] = 0
 
