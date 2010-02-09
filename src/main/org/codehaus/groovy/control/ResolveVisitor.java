@@ -282,12 +282,24 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         // and there is a nested class A$X. we want to be able 
         // to access that class directly, so A becomes a valid
         // name in X.
-        String name = currentClass.getName()+"$"+type.getName();
-        ClassNode val = ClassHelper.make(name);
-        if (resolveFromCompileUnit(val)) {
-            type.setRedirect(val);
-            return true;
-        }
+    	// GROOVY-4043: Do this check up the hierarchy, if needed
+    	Map<String, ClassNode> hierClasses = new LinkedHashMap<String, ClassNode>();
+    	ClassNode val;
+        String name;
+    	for(ClassNode classToCheck = currentClass; classToCheck != ClassHelper.OBJECT_TYPE; 
+    		classToCheck = classToCheck.getSuperClass()) {
+    		if(classToCheck == null || hierClasses.containsKey(classToCheck.getName())) break;
+            hierClasses.put(classToCheck.getName(), classToCheck);
+    	}
+    	
+    	for (ClassNode classToCheck : hierClasses.values()) {
+            name = classToCheck.getName()+"$"+type.getName();
+            val = ClassHelper.make(name);
+            if (resolveFromCompileUnit(val)) {
+                type.setRedirect(val);
+                return true;
+            }
+    	}
         
         // another case we want to check here is if we are in a
         // nested class A$B$C and want to access B without
