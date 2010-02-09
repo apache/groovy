@@ -264,12 +264,12 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Retrieves the list of {@link MetaProperty} objects for 'self' and wraps it
-     * in a list of {@link PropertyValue} objects that additionally provide
+     * Retrieves the list of {@link groovy.lang.MetaProperty} objects for 'self' and wraps it
+     * in a list of {@link groovy.lang.PropertyValue} objects that additionally provide
      * the value for each property of 'self'.
      *
      * @param self the receiver object
-     * @return list of {@link PropertyValue} objects
+     * @return list of {@link groovy.lang.PropertyValue} objects
      * @see groovy.util.Expando#getMetaPropertyValues()
      * @since 1.0
      */
@@ -284,7 +284,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Convenience method that calls {@link #getMetaPropertyValues(Object)}(self)
+     * Convenience method that calls {@link #getMetaPropertyValues(java.lang.Object)}(self)
      * and provides the data in form of simple key/value pairs, i.e.&nsbp;without
      * type() information.
      *
@@ -898,7 +898,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param caseValue   the case value
      * @param switchValue the switch value
      * @return true if the caseValue is deemed to contain the switchValue
-     * @see java.util.Collection#contains(Object)
+     * @see java.util.Collection#contains(java.lang.Object)
      * @since 1.0
      */
     public static boolean isCase(Collection caseValue, Object switchValue) {
@@ -906,7 +906,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * 'Case' implementation for the {@link Pattern} class, which allows
+     * 'Case' implementation for the {@link java.util.regex.Pattern} class, which allows
      * testing a String against a number of regular expressions.
      * For example:
      * <pre>switch( str ) {
@@ -1015,7 +1015,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If the closure takes a
      * single parameter, the argument passed will be each element, and the
      * closure should return a value used for comparison (either using
-     * {@link Comparable#compareTo(Object)} or {@link Object#equals(Object)}).
+     * {@link java.lang.Comparable#compareTo(java.lang.Object)} or {@link java.lang.Object#equals(java.lang.Object)}).
      * If the closure takes two parameters, two items from the Iterator
      * will be passed as arguments, and the closure should return an
      * int value (with 0 indicating the items are not unique).
@@ -1036,7 +1036,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If the closure takes a single parameter, the
      * argument passed will be each element, and the closure
      * should return a value used for comparison (either using
-     * {@link Comparable#compareTo(Object)} or {@link Object#equals(Object)}).
+     * {@link java.lang.Comparable#compareTo(java.lang.Object)} or {@link java.lang.Object#equals(java.lang.Object)}).
      * If the closure takes two parameters, two items from the collection
      * will be passed as arguments, and the closure should return an
      * int value (with 0 indicating the items are not unique).
@@ -1394,7 +1394,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates over every element of the collection and returns each item that matches
-     * the given filter - calling the <code>{@link #isCase(Object,Object)}</code>
+     * the given filter - calling the <code>{@link #isCase(java.lang.Object, java.lang.Object)}</code>
      * method used by switch statements.  This method can be used with different
      * kinds of filters like regular expressions, classes, ranges etc.
      * Example:
@@ -1403,7 +1403,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * </pre>
      *
      * @param self   the object over which we iterate
-     * @param filter the filter to perform on the object (using the {@link #isCase(Object,Object)} method)
+     * @param filter the filter to perform on the object (using the {@link #isCase(java.lang.Object, java.lang.Object)} method)
      * @return a collection of objects which match the filter
      * @since 1.5.6
      */
@@ -2259,7 +2259,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self The array of values to add together
      * @return The sum of all of the items
-     * @see #sum(Collection)
+     * @see #sum(java.util.Collection)
      * @since 1.7.1
      */
     public static Object sum(Object[] self) {
@@ -3058,7 +3058,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a String
      * @return a new string with all the characters reversed.
      * @since 1.0
-     * @see StringBuilder#reverse()
+     * @see java.lang.StringBuilder#reverse()
      */
     public static String reverse(String self) {
         return new StringBuilder(self).reverse().toString();
@@ -3114,7 +3114,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param   pattern the regex Pattern to which the string of interest is to be matched
      * @param   replacement the string to be substituted for the first match
      * @return  The resulting <tt>String</tt>
-     * @see java.lang.String#replaceFirst(String, String)
+     * @see java.lang.String#replaceFirst(java.lang.String, java.lang.String)
      *
      * @since 1.6.1
      */
@@ -3137,7 +3137,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param   pattern the regex Pattern to which the string of interest is to be matched
      * @param   replacement the string to be substituted for the first match
      * @return  The resulting <tt>String</tt>
-     * @see java.lang.String#replaceAll(String, String)
+     * @see java.lang.String#replaceAll(java.lang.String, java.lang.String)
      * @since 1.6.1
      */
     public static String replaceAll(String self, Pattern pattern, String replacement) {
@@ -3151,7 +3151,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param   self the string that is to be matched
      * @param   pattern the regex Pattern to which the string of interest is to be matched
      * @return  The resulting <tt>String</tt>
-     * @see java.lang.String#matches(String)
+     * @see java.lang.String#matches(java.lang.String)
      * @since 1.6.1
      */
     public static boolean matches(String self, Pattern pattern) {
@@ -3502,7 +3502,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the closure to apply on each captured group
      * @return a String with replaced content
      * @since 1.0
-     * @see java.util.regex.Matcher#quoteReplacement(String)
+     * @see java.util.regex.Matcher#quoteReplacement(java.lang.String)
      */
     public static String replaceAll(final String self, final String regex, final Closure closure) {
         final Matcher matcher = Pattern.compile(regex).matcher(self);
@@ -4123,7 +4123,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param range the (in this case empty) subset of the list to set
      * @param value the Collection of values
      * @since 1.0
-     * @see #putAt(List, EmptyRange, Object)
+     * @see #putAt(java.util.List, groovy.lang.EmptyRange, java.lang.Object)
      */
     public static void putAt(List self, EmptyRange range, Collection value) {
     	putAt(self, range, (Object)value);
@@ -4504,7 +4504,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Synonym for {@link #toSpreadMap(Map)}.
+     * Synonym for {@link #toSpreadMap(java.util.Map)}.
      * @param self a map
      * @return a newly created Spreadmap
      * @since 1.0
@@ -5074,7 +5074,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param col   a collection
      * @param clazz the desired class
      * @return the object resulting from this type conversion
-     * @see #asType(Object,Class)
+     * @see #asType(java.lang.Object, java.lang.Class)
      * @since 1.0
      */
     public static Object asType(Collection col, Class clazz) {
@@ -5120,7 +5120,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param ary   an array
      * @param clazz the desired class
      * @return the object resulting from this type conversion
-     * @see #asType(Object,Class)
+     * @see #asType(java.lang.Object, java.lang.Class)
      * @since 1.5.1
      */
     public static Object asType(Object[] ary, Class clazz) {
@@ -6684,7 +6684,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Allows arrays to behave similar to collections.
      * @param array a boolean array
      * @return the length of the array
-     * @see Array#getLength(Object)
+     * @see java.lang.reflect.Array#getLength(java.lang.Object)
      * @since 1.5.0
      */
     public static int size(boolean[] array) {
@@ -6695,7 +6695,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Allows arrays to behave similar to collections.
      * @param array a byte array
      * @return the length of the array
-     * @see Array#getLength(Object)
+     * @see java.lang.reflect.Array#getLength(java.lang.Object)
      * @since 1.0
      */
     public static int size(byte[] array) {
@@ -6706,7 +6706,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Allows arrays to behave similar to collections.
      * @param array a char array
      * @return the length of the array
-     * @see Array#getLength(Object)
+     * @see java.lang.reflect.Array#getLength(java.lang.Object)
      * @since 1.0
      */
     public static int size(char[] array) {
@@ -6717,7 +6717,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Allows arrays to behave similar to collections.
      * @param array a short array
      * @return the length of the array
-     * @see Array#getLength(Object)
+     * @see java.lang.reflect.Array#getLength(java.lang.Object)
      * @since 1.0
      */
     public static int size(short[] array) {
@@ -6728,7 +6728,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Allows arrays to behave similar to collections.
      * @param array an int array
      * @return the length of the array
-     * @see Array#getLength(Object)
+     * @see java.lang.reflect.Array#getLength(java.lang.Object)
      * @since 1.0
      */
     public static int size(int[] array) {
@@ -6739,7 +6739,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Allows arrays to behave similar to collections.
      * @param array a long array
      * @return the length of the array
-     * @see Array#getLength(Object)
+     * @see java.lang.reflect.Array#getLength(java.lang.Object)
      * @since 1.0
      */
     public static int size(long[] array) {
@@ -6750,7 +6750,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Allows arrays to behave similar to collections.
      * @param array a float array
      * @return the length of the array
-     * @see Array#getLength(Object)
+     * @see java.lang.reflect.Array#getLength(java.lang.Object)
      * @since 1.0
      */
     public static int size(float[] array) {
@@ -6761,7 +6761,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Allows arrays to behave similar to collections.
      * @param array a double array
      * @return the length of the array
-     * @see Array#getLength(Object)
+     * @see java.lang.reflect.Array#getLength(java.lang.Object)
      * @since 1.0
      */
     public static int size(double[] array) {
@@ -7186,7 +7186,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self the GString to split
      * @return String[] result of split
-     * @see #split(String)
+     * @see #split(java.lang.String)
      * @since 1.6.1
      */
     public static String[] split(GString self) {
@@ -7211,7 +7211,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a String
      * @return a List of tokens
-     * @see StringTokenizer#StringTokenizer(java.lang.String)
+     * @see java.util.StringTokenizer#StringTokenizer(java.lang.String)
      * @since 1.0
      */
     public static List tokenize(String self) {
@@ -7282,7 +7282,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Provide an implementation of contains() like
-     * {@link Collection#contains(Object)} to make Strings more polymorphic.
+     * {@link java.util.Collection#contains(java.lang.Object)} to make Strings more polymorphic.
      * This method is not required on JDK 1.5 onwards
      *
      * @param self a String
@@ -7688,7 +7688,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a Map
      * @return the string representation
-     * @see #toMapString(Map)
+     * @see #toMapString(java.util.Map)
      * @since 1.0
      */
     public static String toString(AbstractMap self) {
@@ -7714,7 +7714,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a Collection
      * @return the string representation
-     * @see #toListString(Collection)
+     * @see #toListString(java.util.Collection)
      * @since 1.0
      */
     public static String toString(AbstractCollection self) {
@@ -7739,7 +7739,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self an Object[]
      * @return the string representation
-     * @see #toArrayString(Object[])
+     * @see #toArrayString(java.lang.Object[])
      * @since 1.0
      */
     public static String toString(Object[] self) {
@@ -7823,7 +7823,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
      *
-     * @see Integer#valueOf(int)
+     * @see java.lang.Integer#valueOf(int)
      * @param left  a Character
      * @param right a Number
      * @return the Number corresponding to the addition of left and right
@@ -7838,7 +7838,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * is used in the addition (the ordinal value is the unicode
      * value which for simple character sets is the ASCII value).
      *
-     * @see Integer#valueOf(int)
+     * @see java.lang.Integer#valueOf(int)
      * @param left  a Number
      * @param right a Character
      * @return The Number corresponding to the addition of left and right
@@ -7855,7 +7855,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
      *
-     * @see #plus(Number, Character)
+     * @see #plus(lava.lang.Number, java.lang.Character)
      * @param left  a Character
      * @param right a Character
      * @return the Number corresponding to the addition of left and right
@@ -9118,7 +9118,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a String
      * @return true if the string can be parsed
-     * @see #isBigDecimal(String)
+     * @see #isBigDecimal(java.lang.String)
      * @since 1.5.0
      */
     public static boolean isNumber(String self) {
@@ -9317,7 +9317,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Transform this number to a the given type, using the 'as' operator.  The
      * following types are supported in addition to the default
-     * {@link #asType(Object,Class)}:
+     * {@link #asType(java.lang.Object, java.lang.Class)}:
      * <ul>
      *  <li>BigDecimal</li>
      *  <li>BigInteger</li>
@@ -9529,15 +9529,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * 
      * <p>For example, if the system timezone is GMT, 
      * <code>new Date(0).format('MM/dd/yy')</code> would return the string 
-     * <code>"01/01/70"</code>. See documentation for {@link SimpleDateFormat} 
+     * <code>"01/01/70"</code>. See documentation for {@link java.text.SimpleDateFormat}
      * for format pattern use.</p>
      * 
      * <p>Note that a new DateFormat instance is created for every 
      * invocation of this method (for thread safety).</p>
      *    
-     * @see SimpleDateFormat
+     * @see java.text.SimpleDateFormat
      * @param self a Date
-     * @param format the format pattern to use according to {@link SimpleDateFormat}
+     * @param format the format pattern to use according to {@link java.text.SimpleDateFormat}
      * @return a string representation of this date.
      * @since 1.5.7
      */
@@ -9547,14 +9547,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     
     /**
      * <p>Return a string representation of the 'day' portion of this date 
-     * according to the locale-specific {@link DateFormat#SHORT} default format.
+     * according to the locale-specific {@link java.text.DateFormat#SHORT} default format.
      * For an "en_UK" system locale, this would be <code>dd/MM/yy</code>.</p>
      * 
      * <p>Note that a new DateFormat instance is created for every 
      * invocation of this method (for thread safety).</p>
      * 
-     * @see DateFormat#getDateInstance(int)
-     * @see DateFormat#SHORT
+     * @see java.text.DateFormat#getDateInstance(int)
+     * @see java.text.DateFormat#SHORT
      * @param self a Date
      * @return a string representation of this date
      * @since 1.5.7
@@ -9565,14 +9565,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     
     /**
      * <p>Return a string representation of the time portion of this date 
-     * according to the locale-specific {@link DateFormat#MEDIUM} default format.
+     * according to the locale-specific {@link java.text.DateFormat#MEDIUM} default format.
      * For an "en_UK" system locale, this would be <code>HH:MM:ss</code>.</p>
      * 
      * <p>Note that a new DateFormat instance is created for every 
      * invocation of this method (for thread safety).</p>
      * 
-     * @see DateFormat#getTimeInstance(int)
-     * @see DateFormat#MEDIUM
+     * @see java.text.DateFormat#getTimeInstance(int)
+     * @see java.text.DateFormat#MEDIUM
      * @param self a Date
      * @return a string representing the time portion of this date
      * @since 1.5.7
@@ -9584,14 +9584,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * <p>Return a string representation of the date and time time portion of 
      * this Date instance, according to the locale-specific format used by 
-     * {@link DateFormat}.  This method uses the {@link DateFormat#SHORT} 
-     * preset for the day portion and {@link DateFormat#MEDIUM} for the time 
+     * {@link java.text.DateFormat}.  This method uses the {@link java.text.DateFormat#SHORT}
+     * preset for the day portion and {@link java.text.DateFormat#MEDIUM} for the time
      * portion of the output string.</p>
      *  
      * <p>Note that a new DateFormat instance is created for every 
      * invocation of this method (for thread safety).</p>
      *  
-     * @see DateFormat#getDateTimeInstance(int, int) 
+     * @see java.text.DateFormat#getDateTimeInstance(int, int)
      * @param self a Date
      * @return a string representation of this date and time
      * @since 1.5.7
@@ -9601,7 +9601,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Common code for {@link #clearTime(Calendar)} and {@link #clearTime(Date)}
+     * Common code for {@link #clearTime(java.util.Calendar)} and {@link #clearTime(java.util.Date)}
      * and {@link #clearTime(java.sql.Date)}
      */
     private static void clearTimeCommon(final Calendar self) {
@@ -9655,22 +9655,22 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 	}
     
     /**
-     * <p>Shortcut for {@link SimpleDateFormat} to output a String representation
+     * <p>Shortcut for {@link java.text.SimpleDateFormat} to output a String representation
      * of this calendar instance.  This method respects the Calendar's assigned 
-     * {@link TimeZone}, whereas calling <code>cal.time.format('HH:mm:ss')</code> 
+     * {@link java.util.TimeZone}, whereas calling <code>cal.time.format('HH:mm:ss')</code>
      * would use the system timezone.</p>
      * <p>Note that Calendar equivalents of <code>date.getDateString()</code> 
      * and variants do not exist because those methods are Locale-dependent.  
-     * Although a Calendar may be assigned a {@link Locale}, that information is 
+     * Although a Calendar may be assigned a {@link java.util.Locale}, that information is
      * lost and therefore cannot be used to control the default date/time formats 
      * provided by these methods.  Instead, the system Locale would always be 
      * used.  The alternative is to simply call 
-     * {@link DateFormat#getDateInstance(int, Locale)} and pass the same Locale
+     * {@link java.text.DateFormat#getDateInstance(int, Locale)} and pass the same Locale
      * that was used for the Calendar.</p>
      * 
-     * @see DateFormat#setTimeZone(TimeZone)
-     * @see SimpleDateFormat#format(Date)
-     * @see #format(Date, String)
+     * @see java.text.DateFormat#setTimeZone(java.util.TimeZone)
+     * @see java.text.SimpleDateFormat#format(java.util.Date)
+     * @see #format(java.util.Date, java.lang.String)
      * @param self this calendar
      * @param pattern format pattern
      * @return String representation of this calendar with the given format.
@@ -9762,7 +9762,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
-     * @see #withStream(OutputStream,Closure)
+     * @see #withStream(java.io.OutputStream, groovy.lang.Closure)
      * @since 1.5.0
      */
     public static Object withObjectOutputStream(File file, Closure closure) throws IOException {
@@ -9778,7 +9778,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure      a closure
      * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
-     * @see #withStream(OutputStream,Closure)
+     * @see #withStream(java.io.OutputStream, groovy.lang.Closure)
      * @since 1.5.0
      */
     public static Object withObjectOutputStream(OutputStream outputStream, Closure closure) throws IOException {
@@ -9847,7 +9847,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @throws IOException            if an IOException occurs.
      * @throws ClassNotFoundException if the class  is not found.
-     * @see #eachObject(ObjectInputStream,Closure)
+     * @see #eachObject(java.io.ObjectInputStream, groovy.lang.Closure)
      * @since 1.0
      */
     public static void eachObject(File self, Closure closure) throws IOException, ClassNotFoundException {
@@ -9891,7 +9891,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
-     * @see #withStream(InputStream,Closure)
+     * @see #withStream(java.io.InputStream, groovy.lang.Closure)
      * @since 1.5.2
      */
     public static Object withObjectInputStream(File file, Closure closure) throws IOException {
@@ -9907,7 +9907,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure     a closure
      * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
-     * @see #withStream(InputStream,Closure)
+     * @see #withStream(java.io.InputStream, groovy.lang.Closure)
      * @since 1.5.2
      */
     public static Object withObjectInputStream(File file, ClassLoader classLoader, Closure closure) throws IOException {
@@ -9922,7 +9922,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure     a closure
      * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
-     * @see #withStream(InputStream,Closure)
+     * @see #withStream(java.io.InputStream, groovy.lang.Closure)
      * @since 1.5.0
      */
     public static Object withObjectInputStream(InputStream inputStream, Closure closure) throws IOException {
@@ -9938,7 +9938,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure     a closure
      * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
-     * @see #withStream(InputStream,Closure)
+     * @see #withStream(java.io.InputStream, groovy.lang.Closure)
      * @since 1.5.0
      */
     public static Object withObjectInputStream(InputStream inputStream, ClassLoader classLoader, Closure closure) throws IOException {
@@ -9954,7 +9954,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @return the last value returned by the closure
      * @throws java.io.IOException if an error occurs
-     * @see #eachLine(String, int, groovy.lang.Closure)
+     * @see #eachLine(java.lang.String, int, groovy.lang.Closure)
      * @since 1.5.5
      */
     public static Object eachLine(String self, Closure closure) throws IOException {
@@ -10010,7 +10010,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure (arg 1 is line, optional arg 2 is line number starting at line 1)
      * @throws IOException if an IOException occurs.
      * @return the last value returned by the closure
-     * @see #eachLine(java.io.File, String, int, groovy.lang.Closure)
+     * @see #eachLine(java.io.File, java.lang.String, int, groovy.lang.Closure)
      * @since 1.6.8
      */
     public static Object eachLine(File self, String charset, Closure closure) throws IOException {
@@ -10061,7 +10061,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure (arg 1 is line, optional arg 2 is line number starting at line 1)
      * @throws IOException if an IOException occurs.
      * @return the last value returned by the closure
-     * @see #eachLine(java.io.InputStream, String, int, groovy.lang.Closure)
+     * @see #eachLine(java.io.InputStream, java.lang.String, int, groovy.lang.Closure)
      * @since 1.5.5
      */
     public static Object eachLine(InputStream stream, String charset, Closure closure) throws IOException {
@@ -10156,7 +10156,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure to apply on each line (arg 1 is line, optional arg 2 is line number starting at line 1)
      * @return the last value returned by the closure
      * @throws IOException if an IOException occurs.
-     * @see #eachLine(java.net.URL, String, int, groovy.lang.Closure)
+     * @see #eachLine(java.net.URL, java.lang.String, int, groovy.lang.Closure)
      * @since 1.5.6
      */
     public static Object eachLine(URL url, String charset, Closure closure) throws IOException {
@@ -10251,7 +10251,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
      * @return the last value returned by the closure
-     * @see #splitEachLine(Reader,String,Closure)
+     * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
      * @since 1.5.5
      */
     public static Object splitEachLine(File self, String regex, Closure closure) throws IOException {
@@ -10272,7 +10272,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
      * @return the last value returned by the closure
-     * @see #splitEachLine(Reader,String,Closure)
+     * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
      * @since 1.6.8
      */
     public static Object splitEachLine(File self, String regex, String charset, Closure closure) throws IOException {
@@ -10292,7 +10292,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
      * @return the last value returned by the closure
-     * @see #splitEachLine(Reader,String,Closure)
+     * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
      * @since 1.6.8
      */
     public static Object splitEachLine(URL self, String regex, Closure closure) throws IOException {
@@ -10313,7 +10313,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
      * @return the last value returned by the closure
-     * @see #splitEachLine(Reader,String,Closure)
+     * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
      * @since 1.6.8
      */
     public static Object splitEachLine(URL self, String regex, String charset, Closure closure) throws IOException {
@@ -10342,7 +10342,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws IOException if an IOException occurs.
      * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
      * @return the last value returned by the closure
-     * @see java.lang.String#split(String)
+     * @see java.lang.String#split(java.lang.String)
      * @since 1.5.5
      */
     public static Object splitEachLine(Reader self, String regex, Closure closure) throws IOException {
@@ -10386,7 +10386,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @throws IOException if an IOException occurs.
      * @return the last value returned by the closure
-     * @see #splitEachLine(Reader,String,Closure)
+     * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
      * @since 1.5.5
      */
     public static Object splitEachLine(InputStream stream, String sep, String charset, Closure closure) throws IOException {
@@ -10403,7 +10403,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @throws IOException if an IOException occurs.
      * @return the last value returned by the closure
-     * @see #splitEachLine(Reader,String,Closure)
+     * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
      * @since 1.5.6
      */
     public static Object splitEachLine(InputStream stream, String sep, Closure closure) throws IOException {
@@ -10420,7 +10420,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @return the last value returned by the closure
      * @throws java.io.IOException if an error occurs
-     * @see String#split(String)
+     * @see java.lang.String#split(java.lang.String)
      * @since 1.5.5
      */
     public static Object splitEachLine(String self, String sep, Closure closure) throws IOException {
@@ -10692,7 +10692,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param file a File
      * @return a List of lines
      * @throws IOException if an IOException occurs.
-     * @see #readLines(Reader)
+     * @see #readLines(java.io.Reader)
      * @since 1.0
      */
     public static List<String> readLines(File file) throws IOException {
@@ -10706,7 +10706,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param charset opens the file with a specified charset
      * @return a List of lines
      * @throws IOException if an IOException occurs.
-     * @see #readLines(Reader)
+     * @see #readLines(java.io.Reader)
      * @since 1.6.8
      */
     public static List<String> readLines(File file, String charset) throws IOException {
@@ -10719,7 +10719,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param stream a stream
      * @return a List of lines
      * @throws IOException if an IOException occurs.
-     * @see #readLines(Reader)
+     * @see #readLines(java.io.Reader)
      * @since 1.0
      */
     public static List<String> readLines(InputStream stream) throws IOException {
@@ -10733,7 +10733,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param charset opens the stream with a specified charset
      * @return a List of lines
      * @throws IOException if an IOException occurs.
-     * @see #readLines(Reader)
+     * @see #readLines(java.io.Reader)
      * @since 1.6.8
      */
     public static List<String> readLines(InputStream stream, String charset) throws IOException {
@@ -10746,7 +10746,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a URL
      * @return a List of lines
      * @throws IOException if an IOException occurs.
-     * @see #readLines(Reader)
+     * @see #readLines(java.io.Reader)
      * @since 1.6.8
      */
     public static List<String> readLines(URL self) throws IOException {
@@ -10760,7 +10760,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param charset opens the URL with a specified charset
      * @return a List of lines
      * @throws IOException if an IOException occurs.
-     * @see #readLines(Reader)
+     * @see #readLines(java.io.Reader)
      * @since 1.6.8
      */
     public static List<String> readLines(URL self, String charset) throws IOException {
@@ -10828,7 +10828,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param charset opens the stream with a specified charset
      * @return the text from that URL
      * @throws IOException if an IOException occurs.
-     * @see URLConnection#getInputStream()
+     * @see java.net.URLConnection#getInputStream()
      * @since 1.0
      */
     public static String getText(URL url, String charset) throws IOException {
@@ -10872,7 +10872,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param reader a Reader whose content we want to read
      * @return a String containing the content of the buffered reader
      * @throws IOException if an IOException occurs.
-     * @see #getText(BufferedReader)
+     * @see #getText(java.io.BufferedReader)
      * @since 1.0
      */
     public static String getText(Reader reader) throws IOException {
@@ -10951,7 +10951,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param file a File
      * @param text the text to write to the File
      * @throws IOException if an IOException occurs.
-     * @see #write(File, String)
+     * @see #write(java.io.File, java.lang.String)
      * @since 1.5.1
      */
     public static void setText(File file, String text) throws IOException {
@@ -10987,7 +10987,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Append binary data to the file.  See {@link #append(File, InputStream)} 
+     * Append binary data to the file.  See {@link #append(java.io.File, java.io.InputStream)}
      * @param file a File
      * @param data an InputStream of data to write to the file
      * @return the file
@@ -11161,8 +11161,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure (first parameter is the 'child' file)
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @see File#listFiles()
-     * @see #eachFile(File, FileType, Closure)
+     * @see java.io.File#listFiles()
+     * @see #eachFile(java.io.File, groovy.io.FileType, groovy.lang.Closure)
      * @since 1.5.0
      */
     public static void eachFile(final File self, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
@@ -11177,8 +11177,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure (first parameter is the subdirectory file)
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @see File#listFiles()
-     * @see #eachFile(File, FileType, Closure)
+     * @see java.io.File#listFiles()
+     * @see #eachFile(java.io.File, groovy.io.FileType, groovy.lang.Closure)
      * @since 1.0
      */
     public static void eachDir(File self, Closure closure) throws FileNotFoundException, IllegalArgumentException {
@@ -11219,26 +11219,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Sub-directories are recursively traversed as found.
      * The traversal can be adapted by providing various options in the <code>options</code> Map according
      * to the following keys:<dl>
-     * <dt>type</dt><dd>A {@link FileType} enum to determine if normal files or directories or both are processed</dd>
-     * <dt>preDir</dt><dd>A {@link Closure} run before each directory is processed and optionally returning a {@link FileVisitResult} value
+     * <dt>type</dt><dd>A {@link groovy.io.FileType} enum to determine if normal files or directories or both are processed</dd>
+     * <dt>preDir</dt><dd>A {@link groovy.lang.Closure} run before each directory is processed and optionally returning a {@link groovy.io.FileVisitResult} value
      *     which can be used to control subsequent processing.</dd>
      * <dt>preRoot</dt><dd>A boolean indicating that the 'preDir' closure should be applied at the root level</dd>
-     * <dt>postDir</dt><dd>A {@link Closure} run after each directory is processed and optionally returning a {@link FileVisitResult} value
+     * <dt>postDir</dt><dd>A {@link groovy.lang.Closure} run after each directory is processed and optionally returning a {@link groovy.io.FileVisitResult} value
      *     which can be used to control subsequent processing.</dd>
      * <dt>postRoot</dt><dd>A boolean indicating that the 'postDir' closure should be applied at the root level</dd>
      * <dt>visitRoot</dt><dd>A boolean indicating that the given closure should be applied for the root dir
-     *     (not applicable if the 'type' is set to {@link FileType#FILES})</dd>
+     *     (not applicable if the 'type' is set to {@link groovy.io.FileType#FILES})</dd>
      * <dt>maxDepth</dt><dd>The maximum number of directory levels when recursing
      *     (default is -1 which means infinite, set to 0 for no recursion)</dd>
-     * <dt>filter</dt><dd>A filter to perform on traversed files/directories (using the {@link #isCase(Object,Object)} method). If set,
+     * <dt>filter</dt><dd>A filter to perform on traversed files/directories (using the {@link #isCase(java.lang.Object, java.lang.Object)} method). If set,
      *     only files/dirs which match are candidates for visiting.</dd>
-     * <dt>nameFilter</dt><dd>A filter to perform on the name of traversed files/directories (using the {@link #isCase(Object,Object)} method). If set,
+     * <dt>nameFilter</dt><dd>A filter to perform on the name of traversed files/directories (using the {@link #isCase(java.lang.Object, java.lang.Object)} method). If set,
      *     only files/dirs which match are candidates for visiting. (Must not be set if 'filter' is set)</dd>
-     * <dt>excludeFilter</dt><dd>A filter to perform on traversed files/directories (using the {@link #isCase(Object,Object)} method).
+     * <dt>excludeFilter</dt><dd>A filter to perform on traversed files/directories (using the {@link #isCase(java.lang.Object, java.lang.Object)} method).
      *     If set, any candidates which match won't be visited.</dd>
-     * <dt>excludeNameFilter</dt><dd>A filter to perform on the names of traversed files/directories (using the {@link #isCase(Object,Object)} method).
+     * <dt>excludeNameFilter</dt><dd>A filter to perform on the names of traversed files/directories (using the {@link #isCase(java.lang.Object, java.lang.Object)} method).
      *     If set, any candidates which match won't be visited. (Must not be set if 'excludeFilter' is set)</dd>
-     * <dt>sort</dt><dd>A {@link Closure} which if set causes the files and subdirectories for each directory to be processed in sorted order.
+     * <dt>sort</dt><dd>A {@link groovy.lang.Closure} which if set causes the files and subdirectories for each directory to be processed in sorted order.
      *     Note that even when processing only files, the order of visited subdirectories will be affected by this parameter.</dd>
      * </dl>
      * This example prints out file counts and size aggregates for groovy source files within a directory tree:
@@ -11261,11 +11261,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self    a File
      * @param options a Map of options to alter the traversal behavior
-     * @param closure the Closure to invoke on each file/directory and optionally returning a {@link FileVisitResult} value
+     * @param closure the Closure to invoke on each file/directory and optionally returning a {@link groovy.io.FileVisitResult} value
      *     which can be used to control subsequent processing
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory or illegal filter combinations are supplied
-     * @see #sort(Collection, Closure)
+     * @see #sort(java.util.Collection, groovy.lang.Closure)
      * @see groovy.io.FileVisitResult
      * @see groovy.io.FileType
      * @since 1.7.1
@@ -11335,15 +11335,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Invokes the closure for each descendant file in this directory tree.
      * Sub-directories are recursively traversed in a depth-first fashion.
-     * Convenience method for {@link #traverse(File, Map, Closure)} when
+     * Convenience method for {@link #traverse(java.io.File, java.util.Map, groovy.lang.Closure)} when
      * no options to alter the traversal behavior are required.
      *
      * @param self    a File
-     * @param closure the Closure to invoke on each file/directory and optionally returning a {@link FileVisitResult} value
+     * @param closure the Closure to invoke on each file/directory and optionally returning a {@link groovy.io.FileVisitResult} value
      *     which can be used to control subsequent processing
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @see #traverse(File, Map, Closure)
+     * @see #traverse(java.io.File, java.util.Map, groovy.lang.Closure)
      * @since 1.7.1
      */
     public static void traverse(final File self, final Closure closure)
@@ -11354,14 +11354,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * Invokes the closure specified with key 'visit' in the options Map
      * for each descendant file in this directory tree. Convenience method
-     * for {@link #traverse(File, Map, Closure)} allowing the 'visit' closure
+     * for {@link #traverse(java.io.File, java.util.Map, groovy.lang.Closure)} allowing the 'visit' closure
      * to be included in the options Map rather than as a parameter.
      *
      * @param self    a File
      * @param options a Map of options to alter the traversal behavior
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory or illegal filter combinations are supplied
-     * @see #traverse(File, Map, Closure)
+     * @see #traverse(java.io.File, java.util.Map, groovy.lang.Closure)
      * @since 1.7.1
      */
     public static void traverse(final File self, final Map<String, Object> options)
@@ -11435,7 +11435,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @see #eachFileRecurse(File, FileType, Closure)
+     * @see #eachFileRecurse(java.io.File, groovy.io.FileType, groovy.lang.Closure)
      * @since 1.0
      */
     public static void eachFileRecurse(File self, Closure closure) throws FileNotFoundException, IllegalArgumentException {
@@ -11451,7 +11451,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @see #eachFileRecurse(File, FileType, Closure)
+     * @see #eachFileRecurse(java.io.File, groovy.io.FileType, groovy.lang.Closure)
      * @since 1.5.0
      */
     public static void eachDirRecurse(final File self, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
@@ -11460,14 +11460,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Invokes the closure for each file whose name (file.name) matches the given nameFilter in the given directory
-     * - calling the {@link #isCase(Object,Object)} method to determine if a match occurs.  This method can be used
+     * - calling the {@link #isCase(java.lang.Object, java.lang.Object)} method to determine if a match occurs.  This method can be used
      * with different kinds of filters like regular expressions, classes, ranges etc.
      * Both regular files and subdirectories may be candidates for matching depending
      * on the value of fileType.
      *
      * @param self       a file
      * @param fileType   whether normal files or directories or both should be processed
-     * @param nameFilter the filter to perform on the name of the file/directory (using the {@link #isCase(Object,Object)} method)
+     * @param nameFilter the filter to perform on the name of the file/directory (using the {@link #isCase(java.lang.Object, java.lang.Object)} method)
      * @param closure    the closure to invoke
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
@@ -11491,16 +11491,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Invokes the closure for each file whose name (file.name) matches the given nameFilter in the given directory
-     * - calling the {@link #isCase(Object,Object)} method to determine if a match occurs.  This method can be used
+     * - calling the {@link #isCase(java.lang.Object, java.lang.Object)} method to determine if a match occurs.  This method can be used
      * with different kinds of filters like regular expressions, classes, ranges etc.
      * Both regular files and subdirectories are matched.
      *
      * @param self       a file
-     * @param nameFilter the nameFilter to perform on the name of the file (using the {@link #isCase(Object,Object)} method)
+     * @param nameFilter the nameFilter to perform on the name of the file (using the {@link #isCase(java.lang.Object, java.lang.Object)} method)
      * @param closure    the closure to invoke
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @see #eachFileMatch(File, FileType, Object, Closure)
+     * @see #eachFileMatch(java.io.File, groovy.io.FileType, java.lang.Object, groovy.lang.Closure)
      * @since 1.5.0
      */
     public static void eachFileMatch(final File self, final Object nameFilter, final Closure closure)
@@ -11510,16 +11510,16 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Invokes the closure for each subdirectory whose name (dir.name) matches the given nameFilter in the given directory
-     * - calling the {@link #isCase(Object,Object)} method to determine if a match occurs.  This method can be used
+     * - calling the {@link #isCase(java.lang.Object, java.lang.Object)} method to determine if a match occurs.  This method can be used
      * with different kinds of filters like regular expressions, classes, ranges etc.
      * Only subdirectories are matched; regular files are ignored.
      *
      * @param self       a file
-     * @param nameFilter the nameFilter to perform on the name of the directory (using the {@link #isCase(Object,Object)} method)
+     * @param nameFilter the nameFilter to perform on the name of the directory (using the {@link #isCase(java.lang.Object, java.lang.Object)} method)
      * @param closure    the closure to invoke
      * @throws FileNotFoundException    if the given directory does not exist
      * @throws IllegalArgumentException if the provided File object does not represent a directory
-     * @see #eachFileMatch(File, FileType, Object, Closure)
+     * @see #eachFileMatch(java.io.File, groovy.io.FileType, java.lang.Object, groovy.lang.Closure)
      * @since 1.5.0
      */
     public static void eachDirMatch(final File self, final Object nameFilter, final Closure closure) throws FileNotFoundException, IllegalArgumentException {
@@ -11708,7 +11708,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
-     * @see #withStream(OutputStream,Closure)
+     * @see #withStream(java.io.OutputStream, groovy.lang.Closure)
      * @since 1.5.2
      */
     public static Object withOutputStream(File file, Closure closure) throws IOException {
@@ -11723,7 +11723,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
-     * @see #withStream(InputStream,Closure)
+     * @see #withStream(java.io.InputStream, groovy.lang.Closure)
      * @since 1.5.2
      */
     public static Object withInputStream(File file, Closure closure) throws IOException {
@@ -11738,7 +11738,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
-     * @see #withStream(InputStream,Closure)
+     * @see #withStream(java.io.InputStream, groovy.lang.Closure)
      * @since 1.5.2
      */
     public static Object withInputStream(URL url, Closure closure) throws IOException {
@@ -11753,7 +11753,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
-     * @see #withStream(OutputStream,Closure)
+     * @see #withStream(java.io.OutputStream, groovy.lang.Closure)
      * @since 1.5.2
      */
     public static Object withDataOutputStream(File file, Closure closure) throws IOException {
@@ -11768,7 +11768,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
-     * @see #withStream(InputStream,Closure)
+     * @see #withStream(java.io.InputStream, groovy.lang.Closure)
      * @since 1.5.2
      */
     public static Object withDataInputStream(File file, Closure closure) throws IOException {
@@ -12150,7 +12150,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the closure that the writer is passed into
      * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
-     * @see #withWriter(Writer,Closure)
+     * @see #withWriter(java.io.Writer, groovy.lang.Closure)
      * @since 1.5.2
      */
     public static Object withWriter(OutputStream stream, Closure closure) throws IOException {
@@ -12166,7 +12166,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure the closure that the writer is passed into
      * @return the value returned by the closure
      * @throws IOException if an IOException occurs.
-     * @see #withWriter(Writer,Closure)
+     * @see #withWriter(java.io.Writer, groovy.lang.Closure)
      * @since 1.5.2
      */
     public static Object withWriter(OutputStream stream, String charset, Closure closure) throws IOException {
@@ -12268,7 +12268,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    a File
      * @param closure a closure
      * @throws IOException if an IOException occurs.
-     * @see #eachByte(InputStream,Closure)
+     * @see #eachByte(java.io.InputStream, groovy.lang.Closure)
      * @since 1.0
      */
     public static void eachByte(File self, Closure closure) throws IOException {
@@ -12281,7 +12281,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self    a Byte array
      * @param closure a closure
-     * @see #each(Object,Closure)
+     * @see #each(java.lang.Object, groovy.lang.Closure)
      * @since 1.5.5
      */
     public static void eachByte(Byte[] self, Closure closure) {
@@ -12293,7 +12293,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self    a byte array
      * @param closure a closure
-     * @see #each(Object,Closure)
+     * @see #each(java.lang.Object, groovy.lang.Closure)
      * @since 1.5.5
      */
     public static void eachByte(byte[] self, Closure closure) {
@@ -12335,7 +12335,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param url     url to iterate over
      * @param closure closure to apply to each byte
      * @throws IOException if an IOException occurs.
-     * @see #eachByte(InputStream,Closure)
+     * @see #eachByte(java.io.InputStream, groovy.lang.Closure)
      * @since 1.0
      */
     public static void eachByte(URL url, Closure closure) throws IOException {
@@ -12465,7 +12465,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *                the line or not
      * @return a Writable closure
      * @throws IOException if <code>self</code> is not readable
-     * @see #filterLine(Reader,Closure)
+     * @see #filterLine(java.io.Reader, groovy.lang.Closure)
      * @since 1.0
      */
     public static Writable filterLine(File self, Closure closure) throws IOException {
@@ -12482,7 +12482,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *                the line or not
      * @return a Writable closure
      * @throws IOException if an IOException occurs
-     * @see #filterLine(Reader,Closure)
+     * @see #filterLine(java.io.Reader, groovy.lang.Closure)
      * @since 1.6.8
      */
     public static Writable filterLine(File self, String charset, Closure closure) throws IOException {
@@ -12498,7 +12498,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure which takes each line as a parameter and returns
      *                <code>true</code> if the line should be written to this writer.
      * @throws IOException if <code>self</code> is not readable
-     * @see #filterLine(Reader,Writer,Closure)
+     * @see #filterLine(java.io.Reader, java.io.Writer, groovy.lang.Closure)
      * @since 1.0
      */
     public static void filterLine(File self, Writer writer, Closure closure) throws IOException {
@@ -12515,7 +12515,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure which takes each line as a parameter and returns
      *                <code>true</code> if the line should be written to this writer.
      * @throws IOException if an IO error occurs
-     * @see #filterLine(Reader,Writer,Closure)
+     * @see #filterLine(java.io.Reader, java.io.Writer, groovy.lang.Closure)
      * @since 1.6.8
      */
     public static void filterLine(File self, Writer writer, String charset, Closure closure) throws IOException {
@@ -12569,7 +12569,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self      an input stream
      * @param predicate a closure which returns boolean and takes a line
      * @return a writable which writes out the filtered lines
-     * @see #filterLine(Reader, Closure)
+     * @see #filterLine(java.io.Reader, groovy.lang.Closure)
      * @since 1.0
      */
     public static Writable filterLine(InputStream self, Closure predicate) {
@@ -12586,7 +12586,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param predicate a closure which returns boolean and takes a line
      * @return a writable which writes out the filtered lines
      * @throws UnsupportedEncodingException if the encoding specified is not supported
-     * @see #filterLine(Reader, Closure)
+     * @see #filterLine(java.io.Reader, groovy.lang.Closure)
      * @since 1.6.8
      */
     public static Writable filterLine(InputStream self, String charset, Closure predicate)
@@ -12604,7 +12604,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param writer    a writer to write output to
      * @param predicate a closure which returns true if a line should be accepted
      * @throws IOException if an IOException occurs.
-     * @see #filterLine(Reader,Writer,Closure)
+     * @see #filterLine(java.io.Reader, java.io.Writer, groovy.lang.Closure)
      * @since 1.0
      */
     public static void filterLine(InputStream self, Writer writer, Closure predicate)
@@ -12623,7 +12623,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param charset   opens the stream with a specified charset
      * @param predicate a closure which returns true if a line should be accepted
      * @throws IOException if an IOException occurs.
-     * @see #filterLine(Reader,Writer,Closure)
+     * @see #filterLine(java.io.Reader, java.io.Writer, groovy.lang.Closure)
      * @since 1.6.8
      */
     public static void filterLine(InputStream self, Writer writer, String charset, Closure predicate)
@@ -12640,7 +12640,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param predicate a closure which returns boolean and takes a line
      * @return a writable which writes out the filtered lines
      * @throws IOException if an IO exception occurs
-     * @see #filterLine(Reader, Closure)
+     * @see #filterLine(java.io.Reader, groovy.lang.Closure)
      * @since 1.6.8
      */
     public static Writable filterLine(URL self, Closure predicate)
@@ -12658,7 +12658,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param predicate a closure which returns boolean and takes a line
      * @return a writable which writes out the filtered lines
      * @throws IOException if an IO exception occurs
-     * @see #filterLine(Reader, Closure)
+     * @see #filterLine(java.io.Reader, groovy.lang.Closure)
      * @since 1.6.8
      */
     public static Writable filterLine(URL self, String charset, Closure predicate)
@@ -12676,7 +12676,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param writer    a writer to write output to
      * @param predicate a closure which returns true if a line should be accepted
      * @throws IOException if an IOException occurs.
-     * @see #filterLine(Reader,Writer,Closure)
+     * @see #filterLine(java.io.Reader, java.io.Writer, groovy.lang.Closure)
      * @since 1.6.8
      */
     public static void filterLine(URL self, Writer writer, Closure predicate)
@@ -12695,7 +12695,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param charset   opens the URL with a specified charset
      * @param predicate a closure which returns true if a line should be accepted
      * @throws IOException if an IOException occurs.
-     * @see #filterLine(Reader,Writer,Closure)
+     * @see #filterLine(java.io.Reader, java.io.Writer, groovy.lang.Closure)
      * @since 1.6.8
      */
     public static void filterLine(URL self, Writer writer, String charset, Closure predicate)
@@ -12862,7 +12862,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
 
     /**
-     * Converts this File to a {@link Writable}.
+     * Converts this File to a {@link groovy.lang.Writable}.
      *
      * @param file a File
      * @return a File which wraps the input file and which implements Writable
@@ -12873,8 +12873,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Converts this File to a {@link Writable} or delegates to default
-     * {@link #asType(Object,Class)}.
+     * Converts this File to a {@link groovy.lang.Writable} or delegates to default
+     * {@link #asType(java.lang.Object, java.lang.Class)}.
      *
      * @param f a File
      * @param c the desired class
@@ -12923,7 +12923,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param self a String
      * @return an array of characters
-     * @see String#toCharArray()
+     * @see java.lang.String#toCharArray()
      * @since 1.6.0
      */
     public static char[] getChars(String self) {
@@ -12932,7 +12932,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Converts the GString to a File, or delegates to the default
-     * {@link #asType(Object,Class)}
+     * {@link #asType(java.lang.Object, java.lang.Class)}
      *
      * @param self a GString
      * @param c    the desired class
@@ -12968,7 +12968,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * <li>Subclasses of Enum (Java 5 and above)</li>
      * </ul>
      * If any other type is given, the call is delegated to
-     * {@link #asType(Object,Class)}.
+     * {@link #asType(java.lang.Object, java.lang.Class)}.
      *
      * @param self a String
      * @param c    the desired class
@@ -13931,7 +13931,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param a an array
      * @return an Iterator for the given Array.
-     * @see DefaultTypeTransformation#asCollection(Object[])
+     * @see org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation#asCollection(java.lang.Object[])
      * @since 1.6.4
      */
     public static <T> Iterator<T> iterator(T[] a) {
@@ -13944,7 +13944,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *
      * @param o an object
      * @return an Iterator for the given Object.
-     * @see DefaultTypeTransformation#asCollection(Object)
+     * @see org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation#asCollection(java.lang.Object)
      * @since 1.0
      */
     public static Iterator iterator(Object o) {
@@ -13953,7 +13953,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Allows an Enumeration to behave like an Iterator.  Note that the
-     * {@link Iterator#remove() remove()} method is unsupported since the
+     * {@link java.util.Iterator#remove() remove()} method is unsupported since the
      * underlying Enumeration does not provide a mechanism for removing items.
      *
      * @param enumeration an Enumeration object
@@ -13994,11 +13994,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Returns an {@link Iterator} which traverses each match.
+     * Returns an {@link java.util.Iterator} which traverses each match.
      *
      * @param matcher a Matcher object
      * @return an Iterator for a Matcher
-     * @see Matcher#group()
+     * @see java.util.regex.Matcher#group()
      * @since 1.0
      */
     public static Iterator iterator(final Matcher matcher) {
@@ -14208,7 +14208,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param name The name of the method of interest
      * @param argTypes The argument types to match against
      * @return A List of MetaMethods matching the argument types which will be empty if no matching methods exist
-     * @see MetaObjectProtocol#respondsTo(Object, String, Object[])
+     * @see groovy.lang.MetaObjectProtocol#respondsTo(java.lang.Object, java.lang.String, java.lang.Object[])
      * @since 1.6.0
      */
     public static List respondsTo(Object self, String name, Object[] argTypes) {
@@ -14227,7 +14227,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self The object to inspect
      * @param name The name of the method of interest
      * @return A List of MetaMethods matching the given name or an empty list if no matching methods exist
-     * @see MetaObjectProtocol#respondsTo(Object, String)
+     * @see groovy.lang.MetaObjectProtocol#respondsTo(java.lang.Object, java.lang.String)
      * @since 1.6.1
      */
     public static List respondsTo(Object self, String name) {
@@ -14243,7 +14243,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self The object to inspect
      * @param name The name of the property of interest
      * @return The found MetaProperty or null if it doesn't exist
-     * @see MetaObjectProtocol#hasProperty(Object, String)
+     * @see groovy.lang.MetaObjectProtocol#hasProperty(java.lang.Object, java.lang.String)
      * @since 1.6.1
      */
     public static MetaProperty hasProperty(Object self, String name) {
