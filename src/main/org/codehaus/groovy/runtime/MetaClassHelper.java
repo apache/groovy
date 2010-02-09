@@ -303,8 +303,6 @@ public class MetaClassHelper {
             // choose the distance to Object if a parameter is null
             // this will mean that Object is preferred over a more
             // specific type
-            // remove one to dist to be sure Object is preferred
-            objectDistance--;
             Class clazz = parameter.getTheClass();
             if (clazz.isPrimitive()) {
                 objectDistance += 2;
