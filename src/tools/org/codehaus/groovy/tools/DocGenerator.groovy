@@ -49,7 +49,6 @@ class DocGenerator {
             }
         }
 
-        def start = System.currentTimeMillis();
         for (method in methods) {
             if (method.isPublic() && method.isStatic()) {
                 def parameters = method.getParameters()
@@ -171,7 +170,7 @@ class DocGenerator {
                             'class': packageName + '.' + simpleClassName,
                             'method': method,
                             'parametersSignature': getParametersDecl(method),
-                            'shortComment': getFirstSentence(getComment(method)),
+                            'shortComment': linkify(getFirstSentence(getComment(method)), curPackage),
                     ])
                 }
             }
@@ -223,18 +222,19 @@ class DocGenerator {
             if (parameters)
                 parameters.remove(0) // method is static, first arg is the "real this"
 
-            def seeComments = method.getTagsByName("see").collect {[target: getDocUrl(it.value)]}
+            def seeComments = method.getTagsByName("see").collect { [target: getDocUrl(it.value, curPackage)]}
 
             def returnType = getReturnType(method)
+            def comment = getComment(method)
             def methodInfo = [
                     name: method.name,
-                    comment: getComment(method),
-                    shortComment: getFirstSentence(getComment(method)),
+                    comment: linkify(comment, curPackage),
+                    shortComment: linkify(getFirstSentence(comment), curPackage),
                     returnComment: method.getTagByName("return")?.getValue() ?: '',
                     seeComments: seeComments,
-                    returnTypeDocUrl: getDocUrl(returnType),
+                    returnTypeDocUrl: getDocUrl(returnType, curPackage),
                     parametersSignature: getParametersDecl(method),
-                    parametersDocUrl: getParametersDocUrl(method),
+                    parametersDocUrl: getParametersDocUrl(method, curPackage),
                     parameters: parameters,
                     isStatic: method.parentClass.name == 'DefaultGroovyStaticMethods',
                     since: method.getTagByName("since")?.getValue() ?: null
@@ -253,25 +253,42 @@ class DocGenerator {
         }
     }
 
-    private String getParametersDocUrl(method) {
-        getParameters(method).collect {"${getDocUrl(it.type.toString())} ${it.getName()}"}.join(", ")
+    private String getParametersDocUrl(method, curPackage) {
+        getParameters(method).collect {"${getDocUrl(it.type.toString(), curPackage)}"}.join(", ")
     }
 
-    // TODO make this understand @see references within the same file, i.e. beginning with #
-    private String getDocUrl(type) {
-        if (!type.contains('.'))
+    private String getDocUrl(type, curPackage) {
+        def inGdk = false
+        if (type.startsWith('#')) {
+            def matchNameArgs = /#([^(]*)\(([^)]+)\)/
+            def m = type =~ matchNameArgs
+            def name = m[0][1]
+            def args = m[0][2].split(/,\s?/).toList()
+            def first = args.remove(0)
+            type = "$first#$name(${args.join(', ')})".toString()
+            inGdk = true
+        }
+        if (type in ['T', 'K', 'V']) {
+            type = "java.lang.Object"
+        } else if (type == 'T[]') {
+            type = "java.lang.Object[]"
+        }
+        if (!type.contains('.')) {
             return type
-
+        }
         def target = type.split('#')
         def shortClassName = target[0].replaceAll(/.*\./, "")
-        def packageName = type[0..(-shortClassName.size() - 2)]
+        def packageName = target[0][0..(-shortClassName.size() - 2)]
         shortClassName += (target.size() > 1 ? '#' + target[1].split('\\(')[0] : '')
         def apiBaseUrl, title
-        if (type.startsWith("groovy") || type.startsWith("org.codehaus.groovy")) {
+        if (inGdk) {
+            apiBaseUrl = ""
+            curPackage.split('\\.').size().times { apiBaseUrl += '../'}
+            title = "GDK enhancement for ${target[0]}"
+        } else if (type.startsWith("groovy") || type.startsWith("org.codehaus.groovy")) {
             apiBaseUrl = "http://groovy.codehaus.org/api/"
             title = "Groovy class in $packageName"
-        }
-        else {
+        } else {
             apiBaseUrl = "http://java.sun.com/j2se/1.5.0/docs/api/"
             title = "JDK class in $packageName"
         }
@@ -326,7 +343,7 @@ class DocGenerator {
      * @return the declaration of the method (long version)
      */
     private getParametersDecl(method) {
-        getParameters(method).collect {"${it.getType()} ${it.getName()}"}.join(", ")
+        getParameters(method).collect {"${it.getType()}"}.join(", ")
     }
 
     /**
@@ -352,6 +369,10 @@ class DocGenerator {
         def ans = method.getComment()
         if (ans == null) return ""
         return ans
+    }
+
+    private linkify(orig, curPackage) {
+        orig.replaceAll(/\{@link\s+([^}]*)\s*\}/) {all, link -> getDocUrl(link, curPackage) }
     }
 
     /**
