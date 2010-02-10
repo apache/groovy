@@ -26,6 +26,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
     private static final Pattern TAG_REGEX = Pattern.compile("(?m)@([a-z]+)\\s+(.*$[^@]*)");
     private static final Pattern LINK_REGEX = Pattern.compile("(?m)[{]@(link)\\s+([^}]*)}");
     private static final Pattern CODE_REGEX = Pattern.compile("(?m)[{]@(code)\\s+([^}]*)}");
+    private static final Pattern REF_LABEL_REGEX = Pattern.compile("([\\w.#]*(\\(.*\\))?)(\\s(.*))?");
 
     private final List<GroovyConstructorDoc> constructors;
     private final List<GroovyFieldDoc> fields;
@@ -329,16 +330,23 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         if (type.indexOf('.') == -1)
             return type;
 
+        String label = null;
+        Matcher matcher = REF_LABEL_REGEX.matcher(type);
+        if (matcher.find()) {
+            type = matcher.group(1);
+            label = matcher.group(4);
+        }
+
         final String[] target = type.split("#");
         String shortClassName = target[0].replaceAll(".*\\.", "");
         shortClassName += (target.length > 1 ? "#" + target[1].split("\\(")[0] : "");
-        String name = full ? target[0] : shortClassName;
+        String name = (full ? target[0] : shortClassName).replaceAll("#", ".");
         for (LinkArgument link : links) {
             final StringTokenizer tokenizer = new StringTokenizer(link.getPackages(), ", ");
             while (tokenizer.hasMoreTokens()) {
                 final String token = tokenizer.nextToken();
                 if (type.startsWith(token)) {
-                    return buildUrl(link.getHref(), target, name);
+                    return buildUrl(link.getHref(), target, label == null ? name : label);
                 }
             }
         }
