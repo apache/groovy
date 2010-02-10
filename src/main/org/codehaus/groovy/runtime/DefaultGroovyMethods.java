@@ -7855,7 +7855,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * This operation will always create a new object for the result,
      * while the operands remain unchanged.
      *
-     * @see #plus(lava.lang.Number, java.lang.Character)
+     * @see #plus(java.lang.Number, java.lang.Character)
      * @param left  a Character
      * @param right a Character
      * @return the Number corresponding to the addition of left and right
