@@ -552,7 +552,7 @@ public class DefaultTypeTransformation {
                 return ((String) left).compareTo(right.toString());
             }
             if (!equalityCheckOnly || left.getClass().isAssignableFrom(right.getClass())
-                    || right.getClass().isAssignableFrom(left.getClass())
+                    || (right.getClass() != Object.class && right.getClass().isAssignableFrom(left.getClass())) //GROOVY-4046
                     || (left instanceof GString && right instanceof String)) {
                 Comparable comparable = (Comparable) left;
                 return comparable.compareTo(right);
