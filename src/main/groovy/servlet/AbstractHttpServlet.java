@@ -32,13 +32,13 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 
 /**
- * A common ground dealing with the HTTP servlet API wrinkles.
+ * A base class dealing with common HTTP servlet API housekeeping aspects.
  * 
  * <h4>Resource name mangling (pattern replacement)</h4>
  * 
  * <p> 
- * Also implements Groovy's {@link groovy.util.ResourceConnector} in dynamic
- * manner. It allows to modifiy the resource name that is searched for with a
+ * Also implements Groovy's {@link groovy.util.ResourceConnector} in a dynamic
+ * manner. It allows you to modify the resource name that is searched for with a
  * <i>replace all</i> operation. See {@link java.util.regex.Pattern} and
  * {@link java.util.regex.Matcher} for details.
  * The servlet init parameter names are:
@@ -111,7 +111,7 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
 
     /**
      * Either <code>null</code> or a compiled pattern matcher read from "{@code resource.name.regex}"
-     * and used in {@link groovy.servlet.AbstractHttpServlet#getResourceConnection(String)}.
+     * and used in {@link AbstractHttpServlet#getResourceConnection(String)}.
      */
     protected Matcher resourceNameMatcher;
 
@@ -308,7 +308,7 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
      * Overrides the generic init method to set some debug flags.
      * 
      * @param config
-     *  the servlet coniguration provided by the container
+     *  the servlet configuration provided by the container
      * @throws ServletException if init() method defined in super class 
      *  javax.servlet.GenericServlet throws it
      */
@@ -401,7 +401,7 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
      * </ul>
      * </p>
      * <p>
-     * And via implicite hard-coded keywords:
+     * And via implicit hard-coded keywords:
      * <ul>
      * <li><tt>"out"</tt> : response.getWriter() </li>
      * <li><tt>"sout"</tt> : response.getOutputStream() </li>
@@ -419,7 +419,7 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
      *
      * <p>Example binding all servlet context variables:
      * <pre><code>
-     * class Mytlet extends TemplateServlet {
+     * class MyServlet extends TemplateServlet {
      * 
      *   protected void setVariables(ServletBinding binding) {
      *     // Bind a simple variable
