@@ -109,8 +109,8 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
     protected ServletContext servletContext;
 
     /**
-     * <b>Null</b> or compiled pattern matcher read from "resource.name.regex"
-     *  and used in {@link AbstractHttpServlet#getResourceConnection(String)}.
+     * Either <code>null</code> or a compiled pattern matcher read from "{@code resource.name.regex}"
+     * and used in {@link groovy.servlet.AbstractHttpServlet#getResourceConnection(String)}.
      */
     protected Matcher resourceNameMatcher;
 

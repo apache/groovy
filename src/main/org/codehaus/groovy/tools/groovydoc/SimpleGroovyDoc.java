@@ -30,7 +30,7 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
     private String name;
     private String commentText = "";
     private String rawCommentText = "";
-    private String firstSentenceCommentText = "";
+    private String firstSentenceCommentText = null;
     private int definitionType;
     private boolean deprecated;
     private GroovyTag[] tags;
@@ -65,12 +65,14 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
     }
 
     public String firstSentenceCommentText() {
-        return firstSentenceCommentText; // derived from rawCommentText
+        if (firstSentenceCommentText == null) {
+            firstSentenceCommentText = stripTags(calculateFirstSentence(rawCommentText));
+        }
+        return firstSentenceCommentText;
     }
 
     public void setRawCommentText(String rawCommentText) {
         this.rawCommentText = rawCommentText;
-        setFirstSentenceCommentText(calculateFirstSentence(rawCommentText));
         calculateTags(rawCommentText);
     }
 
@@ -114,11 +116,10 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
             // need to abbreviate this comment for the summary
             text = text.substring(start, end);
         }
-        // hide groovydoc tags in summaries
-        return stripTags(text);
+        return text;
     }
 
-    private static String stripTags(String text) {
+    public static String stripTags(String text) {
         return text.replaceAll("(?m)@([a-z]+\\s*.*)$", "");
     }
 
