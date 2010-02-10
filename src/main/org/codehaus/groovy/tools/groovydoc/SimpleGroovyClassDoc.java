@@ -42,6 +42,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
     private GroovyClassDoc outer;
     private String superClassName;
     private String fullPathName;
+    private GroovyRootDoc savedRootDoc = null;
 
     public SimpleGroovyClassDoc(List<String> importedClassesAndPackages, String name, List<LinkArgument> links) {
         super(name);
@@ -251,6 +252,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
     }
 
     void resolve(GroovyRootDoc rootDoc) {
+        this.savedRootDoc = rootDoc;
         Map visibleClasses = rootDoc.getVisibleClasses(importedClassesAndPackages);
 
         // resolve constructor parameter types
@@ -317,18 +319,6 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         if (type == null)
             return type;
         type = type.trim();
-        if (type.startsWith("#"))
-            return "<a href='" + type + "'>" + type + "</a>";
-        if (type.endsWith("[]")) {
-            return getDocUrl(type.substring(0, type.length() - 2), full) + "[]";
-        }
-        // TODO move next 4 lines to resolve?
-        if (type.indexOf('.') == -1) {
-            Class c = resolveExternalClassFromImport(type);
-            if (c != null) type = c.getName();
-        }
-        if (type.indexOf('.') == -1)
-            return type;
 
         String label = null;
         Matcher matcher = REF_LABEL_REGEX.matcher(type);
@@ -337,10 +327,38 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
             label = matcher.group(4);
         }
 
+        if (type.startsWith("#"))
+            return "<a href='" + type + "'>" + label == null ? type : label + "</a>";
+
+        // TODO broken for labels?
+        if (type.endsWith("[]")) {
+            return getDocUrl(type.substring(0, type.length() - 2), full) + "[]";
+        }
+
+        if (type.indexOf('.') == -1) {
+            String[] pieces = type.split("#");
+            String candidate = pieces[0];
+            Class c = resolveExternalClassFromImport(candidate);
+            if (c != null) type = c.getName();
+            if (pieces.length > 1) type += "#" + pieces[1];
+        }
+        if (type.indexOf('.') == -1)
+            return type;
+
         final String[] target = type.split("#");
         String shortClassName = target[0].replaceAll(".*\\.", "");
         shortClassName += (target.length > 1 ? "#" + target[1].split("\\(")[0] : "");
         String name = (full ? target[0] : shortClassName).replaceAll("#", ".");
+
+        if (savedRootDoc != null) {
+            GroovyClassDoc doc = savedRootDoc.classNamed(target[0].replaceAll("\\.", "/"));
+            String base = "./";
+            for (int i = 0; i < fullPathName.split("/").length - 1; i++) {
+                base += "../";
+            }
+            if (doc != null) return buildUrl(base, target, label == null ? name : label);
+        }
+
         for (LinkArgument link : links) {
             final StringTokenizer tokenizer = new StringTokenizer(link.getPackages(), ", ");
             while (tokenizer.hasMoreTokens()) {
