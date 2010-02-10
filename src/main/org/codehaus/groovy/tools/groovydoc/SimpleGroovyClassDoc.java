@@ -509,6 +509,10 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         interfaceNames.add(className);
     }
 
+    public String firstSentenceCommentText() {
+        return stripTags(replaceTags(calculateFirstSentence(getRawCommentText())));
+    }
+
     public void setRawCommentText(String rawCommentText) {
         super.setRawCommentText(rawCommentText);
         setCommentText(replaceTags(rawCommentText));
