@@ -218,7 +218,7 @@ public class GroovyRootDocBuilder {
     }
 
     private void calcThenSetSummary(String src, SimpleGroovyPackageDoc packageDoc) {
-        packageDoc.setSummary(SimpleGroovyDoc.calculateFirstSentence(src));
+        packageDoc.setSummary(SimpleGroovyDoc.stripTags(SimpleGroovyDoc.calculateFirstSentence(src)));
     }
 
     private void calcThenSetOverviewDescription(String src) {
