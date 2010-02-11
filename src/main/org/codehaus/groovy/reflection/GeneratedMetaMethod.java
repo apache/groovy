@@ -167,23 +167,42 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
                 if (skip++ < primitiveClasses.length)
                     continue;
 
-                Class cls = loader.loadClass(name);
+                Class cls = null;
+                try {
+                    cls = loader.loadClass(name);
+                } catch (ClassNotFoundException e) {
+                    // under certain restrictive environments, loading certain classes may be forbidden
+                    // and could yield a ClassNotFoundException (Google App Engine)
+                    continue;
+                }
                 classes.put(key, cls);
             }
 
             int size = in.readInt();
             ArrayList<DgmMethodRecord> res = new ArrayList<DgmMethodRecord>(size);
             for (int i = 0; i != size; ++i) {
+                boolean skipRecord = false;
                 DgmMethodRecord record = new DgmMethodRecord();
                 record.className = in.readUTF();
                 record.methodName = in.readUTF();
                 record.returnType = classes.get(in.readInt());
+
+                if (record.returnType == null) {
+                    skipRecord = true;
+                }
+
                 int psize = in.readInt();
                 record.parameters = new Class[psize];
                 for (int j = 0; j < record.parameters.length; j++) {
-                      record.parameters[j] = classes.get(in.readInt());
+                    record.parameters[j] = classes.get(in.readInt());
+
+                    if (record.parameters[j] == null) {
+                        skipRecord = true;
+                    }
                 }
-                res.add(record);
+                if (!skipRecord) {
+                    res.add(record);
+                }
             }
 
             in.close();
