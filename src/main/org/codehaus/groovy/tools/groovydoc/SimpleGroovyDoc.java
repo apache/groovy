@@ -28,7 +28,7 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
     private static final Pattern TAG2_PATTERN = Pattern.compile("(?s)([a-z]+)\\s+(.*)");
     private static final Pattern TAG3_PATTERN = Pattern.compile("(?s)([a-z]+)\\s+(\\S*)\\s+(.*)");
     private String name;
-    private String commentText = "";
+    private String commentText = null;
     private String rawCommentText = "";
     private String firstSentenceCommentText = null;
     private int definitionType;
@@ -57,18 +57,15 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
     }
 
     public String commentText() {
-        return commentText; // derived from rawCommentText
+        return commentText;
+    }
+
+    public String firstSentenceCommentText() {
+        return firstSentenceCommentText;
     }
 
     public String getRawCommentText() {
         return rawCommentText;
-    }
-
-    public String firstSentenceCommentText() {
-        if (firstSentenceCommentText == null) {
-            firstSentenceCommentText = stripTags(calculateFirstSentence(rawCommentText));
-        }
-        return firstSentenceCommentText;
     }
 
     public void setRawCommentText(String rawCommentText) {

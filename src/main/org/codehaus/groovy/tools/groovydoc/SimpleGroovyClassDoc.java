@@ -350,13 +350,13 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         shortClassName += (target.length > 1 ? "#" + target[1].split("\\(")[0] : "");
         String name = (full ? target[0] : shortClassName).replaceAll("#", ".");
 
+        // last chance lookup for classes within the current codebase
         if (savedRootDoc != null) {
-            GroovyClassDoc doc = savedRootDoc.classNamed(target[0].replaceAll("\\.", "/"));
-            String base = "./";
-            for (int i = 0; i < fullPathName.split("/").length - 1; i++) {
-                base += "../";
+            String slashedName = target[0].replaceAll("\\.", "/");
+            GroovyClassDoc doc = savedRootDoc.classNamed(slashedName);
+            if (doc != null) {
+                return buildUrl(getRelativeRootPath(), target, label == null ? name : label);
             }
-            if (doc != null) return buildUrl(base, target, label == null ? name : label);
         }
 
         for (LinkArgument link : links) {
@@ -536,13 +536,16 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
     }
 
     public String firstSentenceCommentText() {
-        return stripTags(replaceTags(calculateFirstSentence(getRawCommentText())));
+        if (super.firstSentenceCommentText() == null)
+            setFirstSentenceCommentText(stripTags(replaceTags(calculateFirstSentence(getRawCommentText()))));
+        return super.firstSentenceCommentText();
     }
 
-    public void setRawCommentText(String rawCommentText) {
-        super.setRawCommentText(rawCommentText);
-        setCommentText(replaceTags(rawCommentText));
-     }
+    public String commentText() {
+        if (super.commentText() == null)
+            setCommentText(stripTags(replaceTags(getRawCommentText())));
+        return super.commentText();
+    }
 
     public String replaceTags(String comment) {
         String result = comment.replaceAll("(?m)^\\s*\\*", ""); // todo precompile regex

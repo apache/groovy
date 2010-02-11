@@ -38,17 +38,16 @@ public class SimpleGroovyMemberDoc extends SimpleGroovyProgramElementDoc impleme
         return false;
     }
 
-    public GroovyClassDoc getBelongsToClass() {
-        return belongsToClass;
+    public String firstSentenceCommentText() {
+        if (super.firstSentenceCommentText() == null)
+            setFirstSentenceCommentText(stripTags(((SimpleGroovyClassDoc)belongsToClass).replaceTags(calculateFirstSentence(getRawCommentText()))));
+        return super.firstSentenceCommentText();
     }
 
-    public void setRawCommentText(String rawCommentText) {
-        super.setRawCommentText(rawCommentText);
-        setCommentText(((SimpleGroovyClassDoc)belongsToClass).replaceTags(rawCommentText));
-     }
-
-    public String firstSentenceCommentText() {
-        return stripTags(((SimpleGroovyClassDoc)belongsToClass).replaceTags(calculateFirstSentence(getRawCommentText())));
+    public String commentText() {
+        if (super.commentText() == null)
+            setCommentText(stripTags(((SimpleGroovyClassDoc)belongsToClass).replaceTags(getRawCommentText())));
+        return super.commentText();
     }
 
 }
