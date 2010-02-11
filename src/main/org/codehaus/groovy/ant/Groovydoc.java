@@ -21,6 +21,7 @@ import org.apache.tools.ant.Task;
 import org.apache.tools.ant.types.DirSet;
 import org.apache.tools.ant.types.Path;
 import org.apache.tools.ant.types.PatternSet;
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.tools.groovydoc.ClasspathResourceManager;
 import org.codehaus.groovy.tools.groovydoc.FileOutputTool;
 import org.codehaus.groovy.tools.groovydoc.GroovyDocTool;
@@ -28,6 +29,7 @@ import org.codehaus.groovy.tools.groovydoc.LinkArgument;
 
 import java.io.File;
 import java.io.FilenameFilter;
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -59,6 +61,7 @@ public class Groovydoc extends Task {
     private List<String> sourceFilesToDoc;
     private List<LinkArgument> links = new ArrayList<LinkArgument>();
     private File overviewFile;
+    private File styleSheetFile;
 
     public Groovydoc() {
         packageNames = new ArrayList<String>();
@@ -150,7 +153,7 @@ public class Groovydoc extends Task {
      *
      * @param file the overview file
      */
-    public void setOverview(java.io.File file) {
+    public void setOverview(File file) {
         overviewFile = file;
     }
 
@@ -214,6 +217,16 @@ public class Groovydoc extends Task {
      */
     public void setHeader(String header) {
         this.header = header;
+    }
+
+    /**
+     * Specifies a stylesheet file to use. If not specified,
+     * a default one will be generated for you.
+     *
+     * @param styleSheetFile the css stylesheet file to use
+     */
+    public void setStyleSheetFile(File styleSheetFile) {
+        this.styleSheetFile = styleSheetFile;
     }
 
     /**
@@ -352,7 +365,7 @@ public class Groovydoc extends Task {
                         TEMPLATE_BASEDIR + "topLevel/help-doc.html",
                         TEMPLATE_BASEDIR + "topLevel/index-all.html",
                         TEMPLATE_BASEDIR + "topLevel/deprecated-list.html",
-                        TEMPLATE_BASEDIR + "topLevel/stylesheet.css",
+                        TEMPLATE_BASEDIR + "topLevel/stylesheet.css", // copy default one, may override later
                         TEMPLATE_BASEDIR + "topLevel/inherit.gif",
                         DOCGEN_BASEDIR + "groovy.ico",
                 },
@@ -373,6 +386,16 @@ public class Groovydoc extends Task {
             htmlTool.renderToOutput(output, destDir.getCanonicalPath()); // TODO push destDir through APIs?
         } catch (Exception e) {
             e.printStackTrace();
+        }
+        // try to override the default stylesheet with custom specified one if needed
+        if (styleSheetFile != null) {
+            try {
+                String css = DefaultGroovyMethods.getText(styleSheetFile);
+                File outfile = new File(destDir, "stylesheet.css");
+                DefaultGroovyMethods.setText(outfile, css);
+            } catch (IOException e) {
+                System.out.println("Warning: Unable to copy specified stylesheet '" + styleSheetFile.getAbsolutePath() + "'. Using default stylesheet instead. Due to: " + e.getMessage());
+            }
         }
     }
 
