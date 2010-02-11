@@ -39,14 +39,18 @@ public class SimpleGroovyMemberDoc extends SimpleGroovyProgramElementDoc impleme
     }
 
     public String firstSentenceCommentText() {
-        if (super.firstSentenceCommentText() == null)
-            setFirstSentenceCommentText(stripTags(((SimpleGroovyClassDoc)belongsToClass).replaceTags(calculateFirstSentence(getRawCommentText()))));
+        if (super.firstSentenceCommentText() == null) {
+            SimpleGroovyClassDoc classDoc = (SimpleGroovyClassDoc) belongsToClass;
+            setFirstSentenceCommentText(stripTags(classDoc.replaceTags(calculateFirstSentence(getRawCommentText()))));
+        }
         return super.firstSentenceCommentText();
     }
 
     public String commentText() {
-        if (super.commentText() == null)
-            setCommentText(stripTags(((SimpleGroovyClassDoc)belongsToClass).replaceTags(getRawCommentText())));
+        if (super.commentText() == null) {
+            SimpleGroovyClassDoc classDoc = (SimpleGroovyClassDoc) belongsToClass;
+            setCommentText(stripTags(classDoc.replaceTags(getRawCommentText())));
+        }
         return super.commentText();
     }
 

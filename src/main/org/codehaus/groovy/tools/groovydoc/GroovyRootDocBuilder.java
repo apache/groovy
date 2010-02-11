@@ -41,6 +41,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /*
  *  todo: order methods alphabetically (implement compareTo enough?)
@@ -213,9 +215,48 @@ public class GroovyRootDocBuilder {
         } else {
             description = trimPackageAndComments(src);
         }
+        description = replaceTags(description, packageDoc);
         packageDoc.setDescription(description);
         return description;
     }
+
+    private String replaceTags(String orig, SimpleGroovyPackageDoc packageDoc) {
+        String result = orig.replaceAll("(?m)^\\s*\\*", ""); // todo precompile regex
+
+        // {@link processing hack}
+        result = replaceAllTags(result, "", "", SimpleGroovyClassDoc.LINK_REGEX, packageDoc);
+
+        // {@code processing hack}
+        result = replaceAllTags(result, "<TT>", "</TT>", SimpleGroovyClassDoc.CODE_REGEX, packageDoc);
+
+        // hack to reformat other groovydoc tags (@see, @return, @link, @param, @throws, @author, @since) into html
+        // todo: replace with proper tag support
+        result = replaceAllTags(result, "<DL><DT><B>$1:</B></DT><DD>", "</DD></DL>", SimpleGroovyClassDoc.TAG_REGEX, packageDoc);
+
+        return SimpleGroovyClassDoc.decodeSpecialSymbols(result);
+    }
+
+    private String replaceAllTags(String self, String s1, String s2, Pattern regex, SimpleGroovyPackageDoc packageDoc) {
+        Matcher matcher = regex.matcher(self);
+        if (matcher.find()) {
+            matcher.reset();
+            StringBuffer sb = new StringBuffer();
+            while (matcher.find()) {
+                String tagname = matcher.group(1);
+                if (tagname.equals("see") || tagname.equals("link")) {
+                    matcher.appendReplacement(sb, s1 + SimpleGroovyClassDoc.getDocUrl(
+                            SimpleGroovyClassDoc.encodeSpecialSymbols(matcher.group(2)), false, links, packageDoc.getRelativeRootPath(), rootDoc, null) + s2);
+                } else if (!tagname.equals("interface")) {
+                    matcher.appendReplacement(sb, s1 + SimpleGroovyClassDoc.encodeSpecialSymbols(matcher.group(2)) + s2);
+                }
+            }
+            matcher.appendTail(sb);
+            return sb.toString();
+        } else {
+            return self;
+        }
+    }
+
 
     private void calcThenSetSummary(String src, SimpleGroovyPackageDoc packageDoc) {
         packageDoc.setSummary(SimpleGroovyDoc.stripTags(SimpleGroovyDoc.calculateFirstSentence(src)));

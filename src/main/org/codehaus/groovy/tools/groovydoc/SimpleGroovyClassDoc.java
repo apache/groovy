@@ -23,10 +23,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implements GroovyClassDoc {
-    private static final Pattern TAG_REGEX = Pattern.compile("(?m)@([a-z]+)\\s+(.*$[^@]*)");
-    private static final Pattern LINK_REGEX = Pattern.compile("(?m)[{]@(link)\\s+([^}]*)}");
-    private static final Pattern CODE_REGEX = Pattern.compile("(?m)[{]@(code)\\s+([^}]*)}");
-    private static final Pattern REF_LABEL_REGEX = Pattern.compile("([\\w.#]*(\\(.*\\))?)(\\s(.*))?");
+    public static final Pattern TAG_REGEX = Pattern.compile("(?m)@([a-z]+)\\s+(.*$[^@]*)");
+    public static final Pattern LINK_REGEX = Pattern.compile("(?m)[{]@(link)\\s+([^}]*)}");
+    public static final Pattern CODE_REGEX = Pattern.compile("(?m)[{]@(code)\\s+([^}]*)}");
+    public static final Pattern REF_LABEL_REGEX = Pattern.compile("([\\w.#]*(\\(.*\\))?)(\\s(.*))?");
 
     private final List<GroovyConstructorDoc> constructors;
     private final List<GroovyFieldDoc> fields;
@@ -316,6 +316,10 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
     }
 
     public String getDocUrl(String type, boolean full) {
+        return getDocUrl(type, full, links, getRelativeRootPath(), savedRootDoc, this);
+    }
+
+    public static String getDocUrl(String type, boolean full, List<LinkArgument> links, String relativePath, GroovyRootDoc rootDoc, SimpleGroovyClassDoc classDoc) {
         if (type == null)
             return type;
         type = type.trim();
@@ -332,13 +336,13 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
 
         // TODO broken for labels?
         if (type.endsWith("[]")) {
-            return getDocUrl(type.substring(0, type.length() - 2), full) + "[]";
+            return getDocUrl(type.substring(0, type.length() - 2), full, links, relativePath, rootDoc, classDoc) + "[]";
         }
 
-        if (type.indexOf('.') == -1) {
+        if (type.indexOf('.') == -1 && classDoc != null) {
             String[] pieces = type.split("#");
             String candidate = pieces[0];
-            Class c = resolveExternalClassFromImport(candidate);
+            Class c = classDoc.resolveExternalClassFromImport(candidate);
             if (c != null) type = c.getName();
             if (pieces.length > 1) type += "#" + pieces[1];
         }
@@ -351,11 +355,11 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         String name = (full ? target[0] : shortClassName).replaceAll("#", ".");
 
         // last chance lookup for classes within the current codebase
-        if (savedRootDoc != null) {
+        if (rootDoc != null) {
             String slashedName = target[0].replaceAll("\\.", "/");
-            GroovyClassDoc doc = savedRootDoc.classNamed(slashedName);
+            GroovyClassDoc doc = rootDoc.classNamed(slashedName);
             if (doc != null) {
-                return buildUrl(getRelativeRootPath(), target, label == null ? name : label);
+                return buildUrl(relativePath, target, label == null ? name : label);
             }
         }
 
@@ -371,7 +375,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         return type;
     }
 
-    private String buildUrl(String relativeRoot, String[] target, String shortClassName) {
+    private static String buildUrl(String relativeRoot, String[] target, String shortClassName) {
         if (!relativeRoot.endsWith("/")) {
             relativeRoot += "/";
         }
@@ -584,11 +588,11 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         }
     }
 
-    private String encodeSpecialSymbols(String text) {
+    public static String encodeSpecialSymbols(String text) {
         return Matcher.quoteReplacement(text.replaceAll("@", "&at;"));
     }
 
-    private String decodeSpecialSymbols(String text) {
+    public static String decodeSpecialSymbols(String text) {
         return text.replaceAll("&at;", "@");
     }
 
