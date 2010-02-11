@@ -50,7 +50,11 @@ public class MethodCallExpression extends Expression {
     public MethodCallExpression(Expression objectExpression, Expression method, Expression arguments) {
         this.objectExpression = objectExpression;
         this.method = method;
-        this.arguments = arguments;
+        if (!(arguments instanceof TupleExpression)){
+            this.arguments = new TupleExpression(arguments);
+        } else {
+            this.arguments = arguments;
+        }
         //TODO: set correct type here
         // if setting type and a methodcall is the last expression in a method,
         // then the method will return null if the method itself is not void too!
@@ -77,17 +81,19 @@ public class MethodCallExpression extends Expression {
         return arguments;
     }
 
-    public void setArguments(Expression arguments)
-    {
-      this.arguments = arguments;
+    public void setArguments(Expression arguments) {
+        if (!(arguments instanceof TupleExpression)){
+            this.arguments = new TupleExpression(arguments);
+        } else {
+            this.arguments = arguments;
+        }
     }
 
     public Expression getMethod() {
         return method;
     }
 
-    public void setMethod(Expression method)
-    {
+    public void setMethod(Expression method) {
       this.method = method;
     }
 
@@ -101,8 +107,7 @@ public class MethodCallExpression extends Expression {
         return constant.getText();
     }
 
-    public void setObjectExpression(Expression objectExpression)
-    {
+    public void setObjectExpression(Expression objectExpression) {
       this.objectExpression = objectExpression;
     }
 
