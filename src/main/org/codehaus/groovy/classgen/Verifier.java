@@ -136,14 +136,6 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             throw new RuntimeParserException("Duplicate interfaces in implements list: " + interfaces, classNode);
         }
         
-        // check if the class implements itself by mistake GROOVY-2855
-        for (Object intf : interfaces) {
-        	String intfName = (String) intf;
-        	if(intfName.equals(node.getName())) {
-        		throw new RuntimeParserException("Cycle detected: the type " + node.getName() + " cannot implement itself", classNode);
-        	}
-        }
-
         addDefaultParameterMethods(node);
         addDefaultParameterConstructors(node);
 

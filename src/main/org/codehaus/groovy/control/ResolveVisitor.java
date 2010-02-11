@@ -1116,6 +1116,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 addError("Cyclic inheritance involving " + parentToCompare.getName() + " in class " + originalNode.getName(), originalNode);
                 return;
             }
+            if(interfacesToCompare != null && interfacesToCompare.length > 0) {
+                for(ClassNode intfToCompare : interfacesToCompare) {
+                    if(originalNode == intfToCompare.redirect()) {
+                        addError("Cycle detected: the type " + originalNode.getName() + " cannot implement itself" , originalNode);
+                        return;
+                    }
+                }
+            }
             if(parentToCompare == ClassHelper.OBJECT_TYPE) return;
             checkCyclicInheritence(originalNode, parentToCompare.getUnresolvedSuperClass(), null);
         } else {
