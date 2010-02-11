@@ -13608,8 +13608,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a new instance of this class
      * @since 1.0
      */
-    public static Object newInstance(Class c) {
-        return InvokerHelper.invokeConstructorOf(c, null);
+    public static <T> T newInstance(Class<T> c) {
+        return (T)InvokerHelper.invokeConstructorOf(c, null);
     }
 
     /**
@@ -13623,9 +13623,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return a new instance of this class.
      * @since 1.0
      */
-    public static Object newInstance(Class c, Object[] args) {
+    public static <T> T newInstance(Class<T> c, Object[] args) {
         if (args == null) args = new Object[]{null};
-        return InvokerHelper.invokeConstructorOf(c, args);
+        return (T)InvokerHelper.invokeConstructorOf(c, args);
     }
 
 
