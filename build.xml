@@ -745,7 +745,6 @@ $Date$
         <path id="groovydocpath">
             <path path="${mainClassesDirectory}"/>
             <path refid="runtimePath"/>
-            <path path="${java.class.path}"/>
         </path>
         <antforked target="realgroovydoc" maxmemory="${groovyDoc_mx}" classpathref="groovydocpath"/>
     </target>
