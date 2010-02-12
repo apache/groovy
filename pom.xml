@@ -577,10 +577,35 @@
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
-        <!-- only needed for groovydoc runtime if you have 1.7.0 nodeps jar on your classpath -->
+        <!-- needed for groovydoc -->
         <dependency>
             <groupId>org.apache.ant</groupId>
-            <artifactId>ant-nodeps</artifactId>
+            <artifactId>ant-trax</artifactId>
+            <version>1.8.0</version>
+            <scope>runtime</scope>
+            <optional>true</optional>
+            <exclusions>
+                <exclusion>
+                    <groupId>xerces</groupId>
+                    <artifactId>xercesImpl</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>xml-apis</groupId>
+                    <artifactId>xml-apis</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>xalan</groupId>
+                    <artifactId>xalan</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.ant</groupId>
+                    <artifactId>ant-nodeps</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.ant</groupId>
+            <artifactId>ant-antlr</artifactId>
             <version>1.8.0</version>
             <scope>runtime</scope>
             <optional>true</optional>
