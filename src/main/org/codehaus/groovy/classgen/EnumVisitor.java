@@ -104,7 +104,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
             //     }
             Token assign = Token.newSymbol(Types.ASSIGN, -1, -1);
             Token ge = Token.newSymbol(Types.COMPARE_GREATER_THAN_EQUAL, -1, -1);
-            MethodNode nextMethod = new MethodNode("next", Opcodes.ACC_PUBLIC, enumClass, new Parameter[0], ClassNode.EMPTY_ARRAY, null);
+            MethodNode nextMethod = new MethodNode("next", Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, enumClass, new Parameter[0], ClassNode.EMPTY_ARRAY, null);
             nextMethod.setSynthetic(true);
             BlockStatement code = new BlockStatement();
             BlockStatement ifStatement = new BlockStatement();
@@ -163,7 +163,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
             //    }
             Token assign = Token.newSymbol(Types.ASSIGN, -1, -1);
             Token lt = Token.newSymbol(Types.COMPARE_LESS_THAN, -1, -1);
-            MethodNode nextMethod = new MethodNode("previous", Opcodes.ACC_PUBLIC, enumClass, new Parameter[0], ClassNode.EMPTY_ARRAY, null);
+            MethodNode nextMethod = new MethodNode("previous", Opcodes.ACC_PUBLIC | Opcodes.ACC_SYNTHETIC, enumClass, new Parameter[0], ClassNode.EMPTY_ARRAY, null);
             nextMethod.setSynthetic(true);
             BlockStatement code = new BlockStatement();
             BlockStatement ifStatement = new BlockStatement();
@@ -256,7 +256,7 @@ public class EnumVisitor extends ClassCodeVisitorSupport{
         //  return this(*para)
         // }            
         Parameter[] parameter = new Parameter[]{new Parameter(ClassHelper.OBJECT_TYPE.makeArray(), "para")};
-        MethodNode initMethod = new MethodNode("$INIT",PUBLIC_FS,enumClass,parameter,ClassNode.EMPTY_ARRAY,null);
+        MethodNode initMethod = new MethodNode("$INIT",PUBLIC_FS | Opcodes.ACC_SYNTHETIC,enumClass,parameter,ClassNode.EMPTY_ARRAY,null);
         initMethod.setSynthetic(true);
         ConstructorCallExpression cce = new ConstructorCallExpression(
                 ClassNode.THIS,
