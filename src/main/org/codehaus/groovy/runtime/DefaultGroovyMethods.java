@@ -10381,7 +10381,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * is closed.
      *
      * @param stream  an InputStream
-     * @param sep     a String separator
+     * @param regex   the delimiting regular expression
      * @param charset opens the stream with a specified charset
      * @param closure a closure
      * @throws IOException if an IOException occurs.
@@ -10389,8 +10389,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
      * @since 1.5.5
      */
-    public static Object splitEachLine(InputStream stream, String sep, String charset, Closure closure) throws IOException {
-        return splitEachLine(new BufferedReader(new InputStreamReader(stream, charset)), sep, closure);
+    public static Object splitEachLine(InputStream stream, String regex, String charset, Closure closure) throws IOException {
+        return splitEachLine(new BufferedReader(new InputStreamReader(stream, charset)), regex, closure);
     }
 
     /**
@@ -10399,15 +10399,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * the given closure. The stream is closed before the method returns.
      *
      * @param stream  an InputStream
-     * @param sep     a String separator
+     * @param regex   the delimiting regular expression
      * @param closure a closure
      * @throws IOException if an IOException occurs.
      * @return the last value returned by the closure
      * @see #splitEachLine(java.io.Reader, java.lang.String, groovy.lang.Closure)
      * @since 1.5.6
      */
-    public static Object splitEachLine(InputStream stream, String sep, Closure closure) throws IOException {
-        return splitEachLine(new BufferedReader(new InputStreamReader(stream)), sep, closure);
+    public static Object splitEachLine(InputStream stream, String regex, Closure closure) throws IOException {
+        return splitEachLine(new BufferedReader(new InputStreamReader(stream)), regex, closure);
     }
 
     /**
@@ -10416,18 +10416,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * the given closure.
      *
      * @param self    a String
-     * @param sep     a String separator
+     * @param regex   the delimiting regular expression
      * @param closure a closure
      * @return the last value returned by the closure
      * @throws java.io.IOException if an error occurs
      * @see java.lang.String#split(java.lang.String)
      * @since 1.5.5
      */
-    public static Object splitEachLine(String self, String sep, Closure closure) throws IOException {
+    public static Object splitEachLine(String self, String regex, Closure closure) throws IOException {
         final List<String> list = readLines(self);
         Object result = null;
         for (String line : list) {
-            List vals = Arrays.asList(line.split(sep));
+            List vals = Arrays.asList(line.split(regex));
             result = closure.call(vals);
         }
         return result;
