@@ -3370,16 +3370,52 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param regex   the capturing regex
      * @param closure the closure to apply on each captured group
      * @return a String with replaced content
+     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
      * @since 1.0
      * @see java.util.regex.Matcher#quoteReplacement(String)
      */
     public static String replaceAll(final String self, final String regex, final Closure closure) {
-        final Matcher matcher = Pattern.compile(regex).matcher(self);
+        return replaceAll(self, Pattern.compile(regex), closure);
+    }
+
+    /**
+     * Replaces all occurrences of a captured group by the result of a closure on that text.
+     * <p/>
+     * <p> For examples,
+     * <pre>
+     *     assert "FOOBAR-FOOBAR-" == "foobar-FooBar-".replaceAll(~"(([fF][oO]{2})[bB]ar)", { Object[] it -> it[0].toUpperCase() })
+     * <p/>
+     *     Here,
+     *          it[0] is the global string of the matched group
+     *          it[1] is the first string in the matched group
+     *          it[2] is the second string in the matched group
+     * <p/>
+     * <p/>
+     *     assert "FOO-FOO-" == "foobar-FooBar-".replaceAll("(([fF][oO]{2})[bB]ar)", { x, y, z -> z.toUpperCase() })
+     * <p/>
+     *     Here,
+     *          x is the global string of the matched group
+     *          y is the first string in the matched group
+     *          z is the second string in the matched group
+     * </pre>
+     * <p>Note that unlike String.replaceAll(String regex, String replacement), where the replacement string
+     * treats '$' and '\' specially (for group substitution), the result of the closure is converted to a string
+     * and that value is used literally for the replacement.</p>
+     *
+     * @param self    a String
+     * @param pattern the capturing regex Pattern
+     * @param closure the closure to apply on each captured group
+     * @return a String with replaced content
+     * @since 1.6.8
+     * @see java.util.regex.Matcher#quoteReplacement(java.lang.String)
+     */
+    public static String replaceAll(final String self, final Pattern pattern, final Closure closure) {
+        final Matcher matcher = pattern.matcher(self);
         if (matcher.find()) {
             final StringBuffer sb = new StringBuffer(self.length() + 16);
             do {
                 int count = matcher.groupCount();
-                List groups = new ArrayList();
+                List<String> groups = new ArrayList<String>();
                 for (int i = 0; i <= count; i++) {
                     groups.add(matcher.group(i));
                 }
@@ -9742,6 +9778,25 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates through this file line by line, splitting each line using
+     * the given separator Pattern. For each line, the given closure is called with
+     * a single parameter being the list of strings computed by splitting the line
+     * around matches of the given regular expression Pattern.
+     * Finally the resources used for processing the file are closed.
+     *
+     * @param self    a File
+     * @param pattern the regular expression Pattern for the delimiter
+     * @param closure a closure
+     * @throws IOException if an IOException occurs.
+     * @return the last value returned by the closure
+     * @see #splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
+     * @since 1.6.8
+     */
+    public static Object splitEachLine(File self, Pattern pattern, Closure closure) throws IOException {
+        return splitEachLine(newReader(self), pattern, closure);
+    }
+
+    /**
+     * Iterates through this file line by line, splitting each line using
      * the given regex separator. For each line, the given closure is called with
      * a single parameter being the list of strings computed by splitting the line
      * around matches of the given regular expression.
@@ -9759,6 +9814,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Object splitEachLine(File self, String regex, String charset, Closure closure) throws IOException {
         return splitEachLine(newReader(self, charset), regex, closure);
+    }
+
+    /**
+     * Iterates through this file line by line, splitting each line using
+     * the given regex separator Pattern. For each line, the given closure is called with
+     * a single parameter being the list of strings computed by splitting the line
+     * around matches of the given regular expression.
+     * Finally the resources used for processing the file are closed.
+     *
+     * @param self    a File
+     * @param pattern the regular expression Pattern for the delimiter
+     * @param charset opens the file with a specified charset
+     * @param closure a closure
+     * @throws IOException if an IOException occurs.
+     * @return the last value returned by the closure
+     * @see #splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
+     * @since 1.6.8
+     */
+    public static Object splitEachLine(File self, Pattern pattern, String charset, Closure closure) throws IOException {
+        return splitEachLine(newReader(self, charset), pattern, closure);
     }
 
     /**
@@ -9783,6 +9858,25 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Iterates through the input stream associated with this URL line by line, splitting each line using
+     * the given regex separator Pattern. For each line, the given closure is called with
+     * a single parameter being the list of strings computed by splitting the line
+     * around matches of the given regular expression.
+     * Finally the resources used for processing the URL are closed.
+     *
+     * @param self    a URL to open and read
+     * @param pattern the regular expression Pattern for the delimiter
+     * @param closure a closure
+     * @throws IOException if an IOException occurs.
+     * @return the last value returned by the closure
+     * @see #splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
+     * @since 1.6.8
+     */
+    public static Object splitEachLine(URL self, Pattern pattern, Closure closure) throws IOException {
+        return splitEachLine(newReader(self), pattern, closure);
+    }
+
+    /**
+     * Iterates through the input stream associated with this URL line by line, splitting each line using
      * the given regex separator. For each line, the given closure is called with
      * a single parameter being the list of strings computed by splitting the line
      * around matches of the given regular expression.
@@ -9800,6 +9894,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static Object splitEachLine(URL self, String regex, String charset, Closure closure) throws IOException {
         return splitEachLine(newReader(self, charset), regex, closure);
+    }
+
+    /**
+     * Iterates through the input stream associated with this URL line by line, splitting each line using
+     * the given regex separator Pattern. For each line, the given closure is called with
+     * a single parameter being the list of strings computed by splitting the line
+     * around matches of the given regular expression.
+     * Finally the resources used for processing the URL are closed.
+     *
+     * @param self    a URL to open and read
+     * @param pattern the regular expression Pattern for the delimiter
+     * @param charset opens the file with a specified charset
+     * @param closure a closure
+     * @throws IOException if an IOException occurs.
+     * @return the last value returned by the closure
+     * @see #splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
+     * @since 1.6.8
+     */
+    public static Object splitEachLine(URL self, Pattern pattern, String charset, Closure closure) throws IOException {
+        return splitEachLine(newReader(self, charset), pattern, closure);
     }
 
     /**
@@ -9828,6 +9942,35 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.5.5
      */
     public static Object splitEachLine(Reader self, String regex, Closure closure) throws IOException {
+        return splitEachLine(self, Pattern.compile(regex), closure);
+    }
+
+    /**
+     * Iterates through the given reader line by line, splitting each line using
+     * the given regex separator Pattern. For each line, the given closure is called with
+     * a single parameter being the list of strings computed by splitting the line
+     * around matches of the given regular expression.  The Reader is closed afterwards.
+     * <p/>
+     * Here is an example:
+     * <pre>
+     * def s = 'The 3 quick\nbrown 4 fox'
+     * def result = ''
+     * new StringReader(s).splitEachLine(~/\d/){ parts ->
+     *     result += "${parts[0]}_${parts[1]}|"
+     * }
+     * assert result == 'The _ quick|brown _ fox|'
+     * </pre>
+     *
+     * @param self    a Reader, closed after the method returns
+     * @param pattern the regular expression Pattern for the delimiter
+     * @param closure a closure
+     * @throws IOException if an IOException occurs.
+     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
+     * @return the last value returned by the closure
+     * @see java.lang.String#split(java.lang.String)
+     * @since 1.6.8
+     */
+    public static Object splitEachLine(Reader self, Pattern pattern, Closure closure) throws IOException {
         BufferedReader br;
         Object result = null;
 
@@ -9842,7 +9985,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 if (line == null) {
                     break;
                 } else {
-                    List vals = Arrays.asList(line.split(regex));
+                    List vals = Arrays.asList(pattern.split(line));
                     result = closure.call(vals);
                 }
             }
@@ -9863,16 +10006,36 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * is closed.
      *
      * @param stream  an InputStream
-     * @param sep     a String separator
+     * @param regex   the delimiting regular expression
      * @param charset opens the stream with a specified charset
      * @param closure a closure
      * @throws IOException if an IOException occurs.
+     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
      * @return the last value returned by the closure
      * @see #splitEachLine(Reader,String,Closure)
      * @since 1.5.5
      */
-    public static Object splitEachLine(InputStream stream, String sep, String charset, Closure closure) throws IOException {
-        return splitEachLine(new BufferedReader(new InputStreamReader(stream, charset)), sep, closure);
+    public static Object splitEachLine(InputStream stream, String regex, String charset, Closure closure) throws IOException {
+        return splitEachLine(new BufferedReader(new InputStreamReader(stream, charset)), regex, closure);
+    }
+
+    /**
+     * Iterates through the given InputStream line by line using the specified
+     * encoding, splitting each line using the given separator Pattern.  The list of tokens
+     * for each line is then passed to the given closure. Finally, the stream
+     * is closed.
+     *
+     * @param stream  an InputStream
+     * @param pattern the regular expression Pattern for the delimiter
+     * @param charset opens the stream with a specified charset
+     * @param closure a closure
+     * @throws IOException if an IOException occurs.
+     * @return the last value returned by the closure
+     * @see #splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
+     * @since 1.6.8
+     */
+    public static Object splitEachLine(InputStream stream, Pattern pattern, String charset, Closure closure) throws IOException {
+        return splitEachLine(new BufferedReader(new InputStreamReader(stream, charset)), pattern, closure);
     }
 
     /**
@@ -9881,15 +10044,33 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * the given closure. The stream is closed before the method returns.
      *
      * @param stream  an InputStream
-     * @param sep     a String separator
+     * @param regex   the delimiting regular expression
      * @param closure a closure
      * @throws IOException if an IOException occurs.
+     * @throws java.util.regex.PatternSyntaxException if the regular expression's syntax is invalid
      * @return the last value returned by the closure
      * @see #splitEachLine(Reader,String,Closure)
      * @since 1.5.6
      */
-    public static Object splitEachLine(InputStream stream, String sep, Closure closure) throws IOException {
-        return splitEachLine(new BufferedReader(new InputStreamReader(stream)), sep, closure);
+    public static Object splitEachLine(InputStream stream, String regex, Closure closure) throws IOException {
+        return splitEachLine(new BufferedReader(new InputStreamReader(stream)), regex, closure);
+    }
+
+    /**
+     * Iterates through the given InputStream line by line, splitting each line using
+     * the given separator Pattern.  The list of tokens for each line is then passed to
+     * the given closure. The stream is closed before the method returns.
+     *
+     * @param stream  an InputStream
+     * @param pattern the regular expression Pattern for the delimiter
+     * @param closure a closure
+     * @throws IOException if an IOException occurs.
+     * @return the last value returned by the closure
+     * @see #splitEachLine(java.io.Reader, java.util.regex.Pattern, groovy.lang.Closure)
+     * @since 1.6.8
+     */
+    public static Object splitEachLine(InputStream stream, Pattern pattern, Closure closure) throws IOException {
+        return splitEachLine(new BufferedReader(new InputStreamReader(stream)), pattern, closure);
     }
 
     /**
@@ -9898,18 +10079,35 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * the given closure.
      *
      * @param self    a String
-     * @param sep     a String separator
+     * @param regex   the delimiting regular expression
      * @param closure a closure
      * @return the last value returned by the closure
      * @throws java.io.IOException if an error occurs
      * @see String#split(String)
      * @since 1.5.5
      */
-    public static Object splitEachLine(String self, String sep, Closure closure) throws IOException {
+    public static Object splitEachLine(String self, String regex, Closure closure) throws IOException {
+        return splitEachLine(self, Pattern.compile(regex), closure);
+    }
+
+    /**
+     * Iterates through the given String line by line, splitting each line using
+     * the given separator Pattern.  The list of tokens for each line is then passed to
+     * the given closure.
+     *
+     * @param self    a String
+     * @param pattern the regular expression Pattern for the delimiter
+     * @param closure a closure
+     * @return the last value returned by the closure
+     * @throws java.io.IOException if an error occurs
+     * @see java.util.regex.Pattern#split(java.lang.String)
+     * @since 1.6.8
+     */
+    public static Object splitEachLine(String self, Pattern pattern, Closure closure) throws IOException {
         final List<String> list = readLines(self);
         Object result = null;
         for (String line : list) {
-            List vals = Arrays.asList(line.split(sep));
+            List vals = Arrays.asList(pattern.split(line));
             result = closure.call(vals);
         }
         return result;

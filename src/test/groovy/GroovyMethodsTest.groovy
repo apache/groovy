@@ -566,6 +566,10 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         assert "1 a 2 b 3 c 4".replaceAll("\\p{Digit}") {it * 2} == "11 a 22 b 33 c 44"
     }
 
+    void testReplaceAllClosurePattern() {
+        assert "1 a 2 b 3 c 4".replaceAll(~"\\p{Digit}") {it * 2} == "11 a 22 b 33 c 44"
+    }
+
     void testObjectSleep() {
         long start = System.currentTimeMillis()
         sleep 1000
