@@ -4592,6 +4592,30 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Wraps a map using the delegate pattern with a wrapper that intercepts all calls
+     * to <code>get(key)</code>. If an unknown key is found, a default value will be
+     * stored into the Map before being returned. The default value stored will be the
+     * result of calling the supplied Closure with the key as the parameter to the Closure.
+     * Example usage:
+     * <pre class="groovyTestCase">
+     * def map = [a:1, b:2].withDefault{ k -> k.toCharacter().isLowerCase() ? 10 : -10 }
+     * def expected = [a:1, b:2, c:10, D:-10]
+     * assert expected.every{ e -> e.value == map[e.key] }
+     *
+     * def constMap = [:].withDefault{ 42 }
+     * assert constMap.foo == 42
+     * assert constMap.size() == 1
+     * </pre>
+     *
+     * @param self a Map
+     * @param init a Closure which is passed the unknown key
+     * @return the wrapped Map
+     */
+    public static <K, V> Map<K, V> withDefault(Map<K, V> self, Closure init) {
+        return MapWithDefault.newInstance(self, init);
+    }
+
+    /**
      * Sorts the given collection into a sorted list.  The collection items are
      * assumed to be comparable.
      * <pre class="groovyTestCase">assert [1,2,3] == [3,1,2].sort()</pre>
