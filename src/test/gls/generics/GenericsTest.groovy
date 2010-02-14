@@ -199,6 +199,17 @@ class GenericsTest extends GenericsTestBase {
 	}	
 	
 	
+    public void testTypeParamAsBound() {
+        createClassInfo """
+    class Box<A> {
+      public <V extends A> void foo(V v) {
+      }
+
+    }
+        """
+        assert signatures == ["foo(Ljava/lang/Object;)V":"<V:TA;>(TV;)V", "class":"<A:Ljava/lang/Object;>Ljava/lang/Object;Lgroovy/lang/GroovyObject;"]
+    }
+
 	public void testInvalidParameterUsage() {
 	    shouldNotCompile """
 	    	abstract class B<T> implements Map<T>{}

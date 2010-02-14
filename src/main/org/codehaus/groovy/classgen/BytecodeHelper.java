@@ -771,9 +771,16 @@ public class BytecodeHelper implements Opcodes {
 
     private static void writeGenericsBoundType(StringBuffer ret, ClassNode printType, boolean writeInterfaceMarker) {
         if (writeInterfaceMarker && printType.isInterface()) ret.append(":");
-        ret.append(getTypeDescription(printType, false));
-        addSubTypes(ret, printType.getGenericsTypes(), "<", ">");
-        if (!ClassHelper.isPrimitiveType(printType)) ret.append(";");
+        if (printType.equals(ClassHelper.OBJECT_TYPE) && printType.getGenericsTypes() != null) {
+            ret.append("T");
+            ret.append(printType.getGenericsTypes()[0].getName());
+            ret.append(";");
+        }
+        else {
+            ret.append(getTypeDescription(printType, false));
+            addSubTypes(ret, printType.getGenericsTypes(), "<", ">");
+            if (!ClassHelper.isPrimitiveType(printType)) ret.append(";");
+        }
     }
 
     private static void writeGenericsBounds(StringBuffer ret, GenericsType type, boolean writeInterfaceMarker) {
