@@ -169,4 +169,16 @@ E F G H
         assert all_lines == [["A", "B", "C", "D"], ["E", "F", "G", "H"], ["1", "2", "3", "4"]]
     }
 
+    void testSplitEachLinePattern() {
+        String s = """A B C D
+E F G H
+1 2 3 4
+"""
+        def all_lines = []
+        s.splitEachLine(~" ") { list ->
+            all_lines << list
+        }
+        assert all_lines == [["A", "B", "C", "D"], ["E", "F", "G", "H"], ["1", "2", "3", "4"]]
+    }
+
 }
