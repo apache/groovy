@@ -27,7 +27,9 @@ import java.util.Map;
 
 public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDoc {
     private Map<String, GroovyPackageDoc> packageDocs;
+    private List<GroovyPackageDoc> packageDocValues = null;
     private Map<String, GroovyClassDoc> classDocs;
+    private List<GroovyClassDoc> classDocValues = null;
     private String description = "";
 
     public SimpleGroovyRootDoc(String name) {
@@ -36,8 +38,8 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
         classDocs = new HashMap<String, GroovyClassDoc>();
     }
 
-    // todo - take better account of package names !
     public GroovyClassDoc classNamed(String name) {
+        // look for full match or match excluding package
         for (String key : classDocs.keySet()) {
             if (key.equals(name)) return classDocs.get(key);
             int lastSlashIdx = key.lastIndexOf('/');
@@ -60,8 +62,10 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
     }
 
     public GroovyClassDoc[] classes() {
-        List<GroovyClassDoc> classDocValues = new ArrayList<GroovyClassDoc>(classDocs.values());
-        Collections.sort(classDocValues); // todo - performance / maybe move into a sortMe() method
+        if (classDocValues == null) {
+            classDocValues = new ArrayList<GroovyClassDoc>(classDocs.values());
+            Collections.sort(classDocValues);
+        }
         return classDocValues.toArray(new GroovyClassDoc[classDocValues.size()]);
     }
 
@@ -75,10 +79,12 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
 
     public void putAllClasses(Map<String, GroovyClassDoc> classes) {
         classDocs.putAll(classes);
+        classDocValues = null;
     }
 
     public void put(String packageName, GroovyPackageDoc packageDoc) {
         packageDocs.put(packageName, packageDoc);
+        packageDocValues = null;
     }
 
     public GroovyClassDoc[] specifiedClasses() {/*todo*/
@@ -86,8 +92,10 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
     }
 
     public GroovyPackageDoc[] specifiedPackages() {
-        List<GroovyPackageDoc> packageDocValues = new ArrayList<GroovyPackageDoc>(packageDocs.values());
-        Collections.sort(packageDocValues);
+        if (packageDocValues == null) {
+            packageDocValues = new ArrayList<GroovyPackageDoc>(packageDocs.values());
+            Collections.sort(packageDocValues);
+        }
         return packageDocValues.toArray(new GroovyPackageDoc[packageDocValues.size()]);
     }
 

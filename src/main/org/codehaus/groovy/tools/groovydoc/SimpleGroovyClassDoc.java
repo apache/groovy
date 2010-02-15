@@ -23,11 +23,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implements GroovyClassDoc {
-    public static final Pattern TAG_REGEX = Pattern.compile("(?m)@([a-z]+)\\s+(.*$[^@]*)");
+    public static final Pattern TAG_REGEX = Pattern.compile("(?m)@([a-zA-Z]+)\\s+(.*$[^@]*)");
     public static final Pattern LINK_REGEX = Pattern.compile("(?m)[{]@(link)\\s+([^}]*)}");
     public static final Pattern CODE_REGEX = Pattern.compile("(?m)[{]@(code)\\s+([^}]*)}");
     public static final Pattern REF_LABEL_REGEX = Pattern.compile("([\\w.#]*(\\(.*\\))?)(\\s(.*))?");
-
+    private static final List<String> PRIMITIVES = Arrays.asList("void", "boolean", "byte", "short", "char", "int", "long", "float", "double");
     private final List<GroovyConstructorDoc> constructors;
     private final List<GroovyFieldDoc> fields;
     private final List<GroovyFieldDoc> properties;
@@ -334,8 +334,9 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         if (type.startsWith("#"))
             return "<a href='" + type + "'>" + label == null ? type : label + "</a>";
 
-        // TODO broken for labels?
         if (type.endsWith("[]")) {
+            if (label != null)
+                return getDocUrl(type.substring(0, type.length() - 2) + " " + label, full, links, relativePath, rootDoc, classDoc);
             return getDocUrl(type.substring(0, type.length() - 2), full, links, relativePath, rootDoc, classDoc) + "[]";
         }
 
@@ -393,7 +394,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         Class c = null;
         if (slashIndex > 0) {
             shortname = name.substring(slashIndex + 1);
-            c = resolveExternalClass(name);
+            c = resolveExternalFullyQualifiedClass(name);
         } else {
             c = resolveExternalClassFromImport(name);
         }
@@ -408,9 +409,15 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
     }
 
     private Class resolveExternalClassFromImport(String name) {
+        if (PRIMITIVES.contains(name)) return null;
         for (String importName : importedClassesAndPackages) {
-            if (importName.endsWith("/*")) {
-                String candidate = importName.substring(0, importName.length() - 2).replace('/', '.') + "." + name;
+            String candidate = null;
+            if (importName.endsWith("/" + name)) {
+                candidate = importName.replaceAll("/", ".");
+            } else if (importName.endsWith("/*")) {
+                candidate = importName.substring(0, importName.length() - 2).replace('/', '.') + "." + name;
+            }
+            if (candidate != null) {
                 try {
                     // TODO cache these??
                     return Class.forName(candidate);
@@ -422,7 +429,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         return null;
     }
 
-    private Class resolveExternalClass(String name) {
+    private Class resolveExternalFullyQualifiedClass(String name) {
         String candidate = name.replace('/', '.');
         try {
             // TODO cache these??

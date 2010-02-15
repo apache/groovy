@@ -462,12 +462,13 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         return returnValue;
     }
 
-    // preempt resolve as info is available here - TODO is this always safe?
+    // preempt resolve as info is partially available here (star imports won't match here)
     private String extractName(GroovySourceAST typeNode) {
         String typeName = typeNode.getText();
-        if (typeName.indexOf(".") == -1) {
+        if (typeName.indexOf("/") == -1) {
+            String slashName = "/" + typeName;
             for (String name : importedClassesAndPackages) {
-                if (name.endsWith(typeName)) {
+                if (name.endsWith(slashName)) {
                     typeName = name;
                 }
             }
