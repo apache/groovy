@@ -449,7 +449,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     private boolean isMajorType(GroovySourceAST t) {
         if (t == null) return false;
         int tt = t.getType();
-        return tt == CLASS_DEF || tt == INTERFACE_DEF || tt == METHOD_DEF || tt == ANNOTATION_DEF ||
+        return tt == CLASS_DEF || tt == INTERFACE_DEF || tt == METHOD_DEF || tt == ANNOTATION_DEF || tt == ENUM_DEF ||
                 tt == VARIABLE_DEF || tt == ANNOTATION_FIELD_DEF || tt == ENUM_CONSTANT_DEF || tt == CTOR_IDENT;
     }
 
