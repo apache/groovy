@@ -220,6 +220,7 @@ public class GroovyRootDocBuilder {
         return description;
     }
 
+    // TODO remove dup with SimpleGroovyClassDoc
     private String replaceTags(String orig, SimpleGroovyPackageDoc packageDoc) {
         String result = orig.replaceAll("(?m)^\\s*\\*", ""); // todo precompile regex
 
@@ -229,13 +230,14 @@ public class GroovyRootDocBuilder {
         // {@code processing hack}
         result = replaceAllTags(result, "<TT>", "</TT>", SimpleGroovyClassDoc.CODE_REGEX, packageDoc);
 
-        // hack to reformat other groovydoc tags (@see, @return, @link, @param, @throws, @author, @since) into html
+        // hack to reformat other groovydoc tags (@see, @return, @param, @throws, @author, @since) into html
         // todo: replace with proper tag support
         result = replaceAllTags(result, "<DL><DT><B>$1:</B></DT><DD>", "</DD></DL>", SimpleGroovyClassDoc.TAG_REGEX, packageDoc);
 
         return SimpleGroovyClassDoc.decodeSpecialSymbols(result);
     }
 
+    // TODO remove dup with SimpleGroovyClassDoc
     private String replaceAllTags(String self, String s1, String s2, Pattern regex, SimpleGroovyPackageDoc packageDoc) {
         Matcher matcher = regex.matcher(self);
         if (matcher.find()) {
