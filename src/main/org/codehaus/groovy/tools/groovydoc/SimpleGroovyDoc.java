@@ -103,7 +103,11 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
 
     public static String calculateFirstSentence(String raw) {
         // remove all the * from beginning of lines
-        String text = raw.replaceAll("(?m)^\\s*\\*", ""); // todo precompile regex
+        String text = raw.replaceAll("(?m)^\\s*\\*", "").trim();
+        // assume completely blank line signifies end of sentence
+        text = text.replaceFirst("(?ms)\\n\\s*\\n.*", "").trim();
+        // assume @tag signifies end of sentence
+        text = text.replaceFirst("(?ms)\\n\\s*@(see|param|throws|return|author|since|exception|version|deprecated|todo)\\s.*", "").trim();
         // Comment Summary using first sentence (Locale sensitive)
         BreakIterator boundary = BreakIterator.getSentenceInstance(Locale.getDefault()); // todo - allow locale to be passed in
         boundary.setText(text);
@@ -114,10 +118,6 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
             text = text.substring(start, end);
         }
         return text;
-    }
-
-    public static String stripTags(String text) {
-        return text.replaceAll("(?m)@([a-z]+\\s*.*)$", "");
     }
 
     public boolean isClass() {
