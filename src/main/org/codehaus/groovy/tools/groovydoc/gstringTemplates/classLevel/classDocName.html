@@ -51,6 +51,7 @@
     def upcase = { n -> n[0].toUpperCase() + n[1..-1] }
     def paramsOf = { n, boolean brief -> n.parameters().collect{ param -> (brief?'':annotations(param, ' ')) + linkable(param.isTypeAvailable()?param.type():param.typeName()) + ' ' + param.name() + (param.defaultValue() ? " = " + param.defaultValue():"") }.join(", ") }
     def nameFromParams = { n -> n.name() + '(' + n.parameters().collect{ param -> param.isTypeAvailable()?param.type().qualifiedTypeName():param.typeName() }.join(', ') + ')' }
+    def nameFromJavaParams = { n -> n.name + '(' + n.parameterTypes.collect{ param -> param.name }.join(', ') + ')' }
 %>
 <html>
 <head>
@@ -449,7 +450,7 @@ ${classDoc.commentText()}
             } else {
                 list = c.externalClass().methods.findAll{ isVisible(it) }.collect { method ->
                     // "<a href='${classDoc.relativeRootPath}${c.fullPathName}.html#${nameFromParams(method)}'>${method.name()}</a>"
-                    method.name
+                    linkable(c.externalClass().name + "#" + nameFromJavaParams(method) + " " + method.name)
                 }
             }
             if (list) {
