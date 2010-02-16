@@ -272,8 +272,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     }
 
     private boolean isNested() {
-        GroovySourceAST gpn = getGrandParentNode();
-        return getParentNode() != null && gpn != null && (gpn.getType() == CLASS_DEF || gpn.getType() == INTERFACE_DEF);
+        return getCurrentClassDoc() != null;
     }
 
     private boolean isTopLevelConstruct(GroovySourceAST node) {
@@ -617,11 +616,13 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     }
 
     private SimpleGroovyClassDoc getCurrentClassDoc() {
-        GroovySourceAST pn = getParentNode();
-        if (isTopLevelConstruct(pn)) return foundClasses.get(getIdentFor(pn));
-        GroovySourceAST gpn = getGrandParentNode();
-        if (isTopLevelConstruct(gpn)) return foundClasses.get(getIdentFor(gpn));
-        return null;
+        if (stack.isEmpty()) return null;
+        GroovySourceAST node = getParentNode();
+        if (isTopLevelConstruct(node)) return foundClasses.get(getIdentFor(node));
+        GroovySourceAST saved = stack.pop();
+        SimpleGroovyClassDoc result = getCurrentClassDoc();
+        stack.push(saved);
+        return result;
     }
 
     private String getIdentFor(GroovySourceAST gpn) {
