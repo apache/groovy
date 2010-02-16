@@ -23,7 +23,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implements GroovyClassDoc {
-    public static final Pattern TAG_REGEX = Pattern.compile("(?m)@([a-zA-Z]+)\\s+(.*)");
+    public static final Pattern TAG_REGEX = Pattern.compile("(?sm)\\s*@([a-zA-Z.]+)\\s+(.*?)(?=\\s*@)");
     public static final Pattern LINK_REGEX = Pattern.compile("(?m)[{]@(link)\\s+([^}]*)}");
     public static final Pattern CODE_REGEX = Pattern.compile("(?m)[{]@(code)\\s+([^}]*)}");
     public static final Pattern REF_LABEL_REGEX = Pattern.compile("([\\w.#]*(\\(.*\\))?)(\\s(.*))?");
@@ -567,9 +567,10 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         // {@code processing hack}
         result = replaceAllTags(result, "<TT>", "</TT>", CODE_REGEX);
 
-        // hack to reformat other groovydoc tags (@see, @return, @param, @throws, @author, @since) into html
-        // todo: replace with proper tag support
-        result = replaceAllTags(result, "<DL><DT><B>$1:</B></DT><DD>", "</DD></DL>", TAG_REGEX);
+        // hack to reformat other groovydoc block tags (@see, @return, @param, @throws, @author, @since) into html
+        result = replaceAllTags(result + "@endMarker", "<DL><DT><B>$1:</B></DT><DD>", "</DD></DL>", TAG_REGEX);
+        // remove @endMarker
+        result = result.substring(0, result.length() - 10);
 
         return decodeSpecialSymbols(result);
     }
