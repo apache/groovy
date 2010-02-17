@@ -20,6 +20,21 @@ class InnerClassTest extends CompilableTestSupport {
         """
     }
 
+    void testAICReferenceInClosure() {
+        assertScript """
+            def y = [true]
+            def o = new Object() {
+              def foo() {
+                def c = {
+                  assert y[0]
+                }
+                c()
+              }
+            }
+            o.foo()
+        """
+    }
+
     void testExtendsObjectAndAccessAFinalVariableInScope() {
         assertScript """
             final String objName = "My name is Guillaume"
