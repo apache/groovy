@@ -194,11 +194,16 @@ class AbstractHttpServletTest extends GroovyTestCase {
 		        else  return null
 		    }] as ServletConfig
 
+        def request = [ 
+            getAttribute: {null}, 
+            getServletPath: {"/somefoo/foo"}, 
+            getPathInfo: {null}] as HttpServletRequest
+            
 		//servlet config is used to find resources
 		servlet.init(servletConfig)    
-
+        
 		//replace first foo with bar in resources
-		def connection = servlet.getResourceConnection("/somefoo/foo")
+		def connection = servlet.getResourceConnection(servlet.getScriptUri(request))
 		//expecting http://somebar/foo
 		def actual = connection.getURL().toExternalForm() 
 		def expected = new URL("file:realPath/somebar/foo").toExternalForm()
@@ -226,11 +231,16 @@ class AbstractHttpServletTest extends GroovyTestCase {
 		        else  return null
 		    }] as ServletConfig
 
+        def request = [ 
+            getAttribute: {null}, 
+            getServletPath: {"/somefoo/foo"}, 
+            getPathInfo: {null}] as HttpServletRequest
+            
 		//servlet config is used to find resources
 		servlet.init(servletConfig)    
 
-		//replace first foo with bar in resources
-		def connection = servlet.getResourceConnection("/somefoo/foo")
+		//replace all foo(s) with bar in resources
+        def connection = servlet.getResourceConnection(servlet.getScriptUri(request))
 		//expecting http://somebar/foo
 		def actual = connection.getURL().toExternalForm() 
 		def expected = new URL("file:realPath/somebar/bar").toExternalForm()
