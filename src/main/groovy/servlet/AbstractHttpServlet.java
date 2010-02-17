@@ -111,7 +111,7 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
 
     /**
      * Either <code>null</code> or a compiled pattern matcher read from "{@code resource.name.regex}"
-     * and used in {@link AbstractHttpServlet#getResourceConnection(String)}.
+     * and used in {@link AbstractHttpServlet#getScriptUri(HttpServletRequest)}.
      */
     protected Matcher resourceNameMatcher;
 
@@ -169,26 +169,6 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
     public URLConnection getResourceConnection(String name) throws ResourceException {
         String basePath = servletContext.getRealPath("/");
         if (name.startsWith(basePath)) name = name.substring(basePath.length());
-        
-        /*
-         * First, mangle resource name with the compiled pattern.
-         */
-        Matcher matcher = resourceNameMatcher;
-        if (matcher != null) {
-            matcher.reset(name);
-            String replaced;
-            if (resourceNameReplaceAll) {
-                replaced = resourceNameMatcher.replaceAll(resourceNameReplacement);
-            } else {
-                replaced = resourceNameMatcher.replaceFirst(resourceNameReplacement);
-            }
-            if (!name.equals(replaced)) {
-                if (verbose) {
-                    log("Replaced resource name \"" + name + "\" with \"" + replaced + "\".");
-                }
-                name = replaced; 
-            }
-        }
         
         name = name.replaceAll("\\\\", "/");
         
@@ -270,7 +250,7 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
             if (info != null) {
                 uri += info;
             }
-            return uri;
+            return applyResourceNameMatcher(uri);
         }
 
         //
@@ -289,6 +269,30 @@ public abstract class AbstractHttpServlet extends HttpServlet implements Resourc
          * http://cvs.groovy.codehaus.org/viewrep/groovy/groovy/groovy-core/src/main/groovy/servlet/GroovyServlet.java?r=1.10#l259 
          */
 
+        return applyResourceNameMatcher(uri);
+    }
+	
+    private String applyResourceNameMatcher(final String aUri) {
+        /*
+         * mangle resource name with the compiled pattern.
+         */
+        String uri = aUri;
+        Matcher matcher = resourceNameMatcher;
+        if (matcher != null) {
+            matcher.reset(uri);
+            String replaced;
+            if (resourceNameReplaceAll) {
+                replaced = matcher.replaceAll(resourceNameReplacement);
+            } else {
+                replaced = matcher.replaceFirst(resourceNameReplacement);
+            }
+            if (!uri.equals(replaced)) {
+                if (verbose) {
+                    log("Replaced resource name \"" + uri + "\" with \"" + replaced + "\".");
+                }
+                uri = replaced;
+            }
+        }
         return uri;
     }
 
