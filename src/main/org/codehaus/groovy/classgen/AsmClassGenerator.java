@@ -1095,7 +1095,7 @@ public class AsmClassGenerator extends ClassGenerator {
         // add catch any block to exception table
         exceptionBlocks.add(new Runnable() {
             public void run() {
-                mv.visitTryCatchBlock(tryStart, endOfAllCatches, catchAny, null);
+                mv.visitTryCatchBlock(tryStart, tryEnd, catchAny, null);
             }
         });
     }
