@@ -1747,7 +1747,7 @@ public class AsmClassGenerator extends ClassGenerator {
             if (!compileStack.containsVariable(name) && compileStack.getScope().isReferencedClassVariable(name)) {
                 visitFieldExpression(new FieldExpression(classNode.getDeclaredField(name)));
             } else {
-                Variable v = compileStack.getVariable(name, classNode.getSuperClass() != ClassHelper.CLOSURE_TYPE);
+                Variable v = compileStack.getVariable(name, !classNodeUsesReferences());
                 if (v == null) {
                     // variable is not on stack because we are
                     // inside a nested Closure and this variable
@@ -1780,7 +1780,17 @@ public class AsmClassGenerator extends ClassGenerator {
                 BytecodeHelper.getMethodDescriptor(ClassHelper.VOID_TYPE, localVariableParams));
     }
 
-    /**
+    private boolean classNodeUsesReferences() {
+		boolean ret = classNode.getSuperClass() == ClassHelper.CLOSURE_TYPE;
+		if (ret) return ret;
+		if (classNode instanceof InnerClassNode) {
+			InnerClassNode inner = (InnerClassNode) classNode;
+			return inner.isAnonymous();
+		}
+		return false;
+	}
+
+	/**
      * Loads either this object or if we're inside a closure then load the top level owner
      */
     protected void loadThisOrOwner() {
