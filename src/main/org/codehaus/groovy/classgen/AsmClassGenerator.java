@@ -1037,7 +1037,7 @@ public class AsmClassGenerator extends ClassGenerator {
         
         mv.visitLabel(afterAssert);
         assertionTracker = oldTracker;
-        // close possibly open file handles from getting a smaple for 
+        // close possibly open file handles from getting a sample for 
         // power asserts
         janitor.cleanup();
     }
