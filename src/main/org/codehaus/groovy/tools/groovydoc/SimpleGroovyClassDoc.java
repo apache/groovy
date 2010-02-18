@@ -424,12 +424,18 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
 
     private GroovyClassDoc resolveClass(GroovyRootDoc rootDoc, String name) {
         if (PRIMITIVES.contains(name)) return null;
-        GroovyClassDoc doc = rootDoc.classNamed(name);
+        GroovyClassDoc doc = ((SimpleGroovyRootDoc)rootDoc).classNamedExact(name);
         if (doc != null) return doc;
+        int slashIndex = name.lastIndexOf("/");
+        if (slashIndex < 1) {
+            doc = resolveInternalClassDocFromImport(rootDoc, name);
+            if (doc != null) return doc;
+            doc = rootDoc.classNamed(name);
+            if (doc != null) return doc;
+        }
 
         // The class is not in the tree being documented
         String shortname = name;
-        int slashIndex = name.lastIndexOf("/");
         Class c = null;
         if (slashIndex > 0) {
             shortname = name.substring(slashIndex + 1);
@@ -445,6 +451,20 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         SimpleGroovyClassDoc placeholder = new SimpleGroovyClassDoc(null, shortname);
         placeholder.setFullPathName(name);
         return placeholder;
+    }
+
+    private GroovyClassDoc resolveInternalClassDocFromImport(GroovyRootDoc rootDoc, String baseName) {
+        if (PRIMITIVES.contains(baseName)) return null;
+        for (String importName : importedClassesAndPackages) {
+            if (importName.endsWith("/" + baseName)) {
+                GroovyClassDoc doc = ((SimpleGroovyRootDoc)rootDoc).classNamedExact(importName);
+                if (doc != null) return doc;
+            } else if (importName.endsWith("/*")) {
+                GroovyClassDoc doc = ((SimpleGroovyRootDoc)rootDoc).classNamedExact(importName.substring(0, importName.length() - 2) + baseName);
+                if (doc != null) return doc;
+            }
+        }
+        return null;
     }
 
     private Class resolveExternalClassFromImport(String name) {
