@@ -53,6 +53,13 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
         return null;
     }
 
+    public GroovyClassDoc classNamedExact(String name) {
+        for (String key : classDocs.keySet()) {
+            if (key.equals(name)) return classDocs.get(key);
+        }
+        return null;
+    }
+
     public void setDescription(String description) {
         this.description = description;
     }
