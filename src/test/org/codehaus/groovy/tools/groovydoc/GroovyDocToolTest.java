@@ -127,7 +127,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
 
         String consoleDoc = output.getText(MOCK_DIR + "/groovy/ui/Console.html");
         assertTrue(consoleDoc.indexOf("<constructor modifiers=\"public \" name=\"Console\">") > 0);
-        assertTrue(consoleDoc.indexOf("<parameter type=\"ClassLoader\" name=\"parent\" />") > 0);
+        assertTrue(consoleDoc.indexOf("<parameter type=\"java.lang.ClassLoader\" name=\"parent\" />") > 0);
     }
 
     public void testClassComment() throws Exception {
@@ -225,7 +225,7 @@ public class GroovyDocToolTest extends GroovyTestCase {
         MockOutputTool output = new MockOutputTool();
         xmlTool.renderToOutput(output, MOCK_DIR);
         String sqlDoc = output.getText(MOCK_DIR + "/groovy/sql/Sql.html");
-        assertTrue(sqlDoc.indexOf("<method modifiers=\"public static \" returns=\"InParameter\" name=\"VARBINARY\">") > 0); // VARBINARY() and other methods in Sql.java were assumed to be Constructors, make sure they aren't anymore...
+        assertTrue(sqlDoc.indexOf("<method modifiers=\"public static \" returns=\"groovy.sql.InParameter\" name=\"VARBINARY\">") > 0); // VARBINARY() and other methods in Sql.java were assumed to be Constructors, make sure they aren't anymore...
     }
 
     public void testReturnTypeResolution() throws Exception {
