@@ -80,6 +80,7 @@ import java.util.regex.Pattern;
  * @author Brad Long
  * @author Jim Jagielski
  * @author Rodolfo Velasco
+ * @author jeremi Joslin
  */
 public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
