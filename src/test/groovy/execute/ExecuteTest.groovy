@@ -75,7 +75,7 @@ class ExecuteTest extends GroovyTestCase {
 
     void testExecuteCommandLineProcessAndUseWaitForOrKill() {
         def cp = System.getProperty('java.class.path')
-        def java = System.getProperty('java.home') + """/bin/java -cp $cp groovy.ui.GroovyMain -e "sleep 2000; println 'Done'" """
+        def java = System.getProperty('java.home') + """/bin/java -cp $cp groovy.ui.GroovyMain -e "sleep(2000); println 'Done'" """
         println "Executing this command for two cases:\n$java"
         StringBuffer sbout = new StringBuffer()
         StringBuffer sberr = new StringBuffer()
