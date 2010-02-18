@@ -227,7 +227,7 @@ class GrapeIvy implements GrapeEngine {
             }
         } catch (Exception e) {
             // clean-up the state first
-            Set<IvyGrabRecord> grabRecordsForCurrLoader = loadedDeps[loader]
+            Set<IvyGrabRecord> grabRecordsForCurrLoader = getLoadedDepsForLoader(loader)
             grabRecordsForCurrLoader.removeAll(grabRecordsForCurrDepdendencies)
             grabRecordsForCurrDepdendencies.clear()
             
@@ -339,12 +339,7 @@ class GrapeIvy implements GrapeEngine {
 
         boolean populateDepsInfo = (depsInfo != null);
         
-        Set<IvyGrabRecord> localDeps = loadedDeps.get(loader)
-        if (localDeps == null) {
-            // use a linked set to preserve initial insertion order
-            localDeps = new LinkedHashSet<IvyGrabRecord>()
-            loadedDeps.put(loader, localDeps)
-        }
+        Set<IvyGrabRecord> localDeps = getLoadedDepsForLoader(loader)
 
         dependencies.each { 
             IvyGrabRecord igr = createGrabRecord(it)
@@ -379,6 +374,16 @@ class GrapeIvy implements GrapeEngine {
         return results as URI[]
     }
     
+    private Set<IvyGrabRecord> getLoadedDepsForLoader(ClassLoader loader) {
+        Set<IvyGrabRecord> localDeps = loadedDeps.get(loader)
+        if (localDeps == null) {
+            // use a linked set to preserve initial insertion order
+            localDeps = new LinkedHashSet<IvyGrabRecord>()
+            loadedDeps.put(loader, localDeps)
+        }
+        return localDeps
+    }
+
     public Map[] listDependencies (ClassLoader classLoader) {
         if (loadedDeps.containsKey(classLoader)) {
             List<Map> results = []
