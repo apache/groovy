@@ -49,6 +49,10 @@ package org.codehaus.groovy.runtime;
 import groovy.lang.Closure;
 import groovy.util.GroovyTestCase;
 
+import java.io.BufferedReader;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.net.URI;
@@ -205,6 +209,34 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
         assertFalse(DefaultGroovyMethods.isNumber(nonNumberStr));
     }
 
+    public void testGetBytes() {
+        byte[] bytes = {42,45,47,14,10,84};
+        ByteArrayInputStream is = new ByteArrayInputStream(bytes);
+        try {
+            byte[] answer = DefaultGroovyMethods.getBytes(is);
+            assertEquals(bytes.length, answer.length);
+            for (int i = 0; i < bytes.length; i++) {
+                assertEquals(bytes[i], answer[i]);       
+            }
+        } catch (IOException e) {
+            fail();
+        }
+    }
+
+    public void testSetBytes() {
+        byte[] bytes = {42,45,47,14,10,84};
+        ByteArrayOutputStream os = new ByteArrayOutputStream();
+        try {
+            DefaultGroovyMethods.setBytes(os, bytes);
+            byte[] answer = os.toByteArray();
+            assertEquals(bytes.length, answer.length);
+            for (int i = 0; i < bytes.length; i++) {
+                assertEquals(bytes[i], answer[i]);
+            }
+        } catch (IOException e) {
+            fail();
+        }
+    }
 
     public void testDownto() {
         final int[] count = new int[]{0};
