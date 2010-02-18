@@ -82,13 +82,13 @@ class ExecuteTest extends GroovyTestCase {
         def process = java.execute()
         def tout = process.consumeProcessOutputStream(sbout)
         def terr = process.consumeProcessErrorStream(sberr)
-        process.waitForOrKill(5000)
+        process.waitForOrKill(10000)
         tout.join()
         terr.join()
         def value = process.exitValue()
         int count = sbout.toString().readLines().size()
         println "Heaps of time case: Exit value: $value, Err lines: ${sberr.toString().readLines().size()}, Out lines: $count"
-        assert sbout.toString().contains('Done')
+        assert sbout.toString().contains('Done'), "Expected 'Done' but found: " + sbout.toString()
         assert value == 0
 
         sbout = new StringBuffer()
