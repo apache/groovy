@@ -88,6 +88,8 @@ class ExecuteTest extends GroovyTestCase {
         def value = process.exitValue()
         int count = sbout.toString().readLines().size()
         println "Heaps of time case: Exit value: $value, Err lines: ${sberr.toString().readLines().size()}, Out lines: $count"
+        System.err.println 'std err: ' + sberr.toString()
+        System.err.println 'std out: ' + sbout.toString()
         assert sbout.toString().contains('Done'), "Expected 'Done' but found: " + sbout.toString() + " with error: " + sberr.toString()
         assert value == 0
 
