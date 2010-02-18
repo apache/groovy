@@ -75,7 +75,7 @@ class ExecuteTest extends GroovyTestCase {
 
     void testExecuteCommandLineProcessAndUseWaitForOrKill() {
         def cp = System.getProperty('java.class.path')
-        def java = System.getProperty('java.home') + """/bin/java -version"""
+        def java = System.getProperty('java.home') + """/bin/java -cp $cp groovy.ui.GroovyMain -e "sleep 2000; println 'Done'" """
         println "Executing this command for two cases:\n$java"
         StringBuffer sbout = new StringBuffer()
         StringBuffer sberr = new StringBuffer()
@@ -88,21 +88,22 @@ class ExecuteTest extends GroovyTestCase {
         def value = process.exitValue()
         int count = sbout.toString().readLines().size()
         println "Heaps of time case: Exit value: $value, Err lines: ${sberr.toString().readLines().size()}, Out lines: $count"
-        // written to stderr normally but cater for any JVM by looking at both
-        assert (sberr.toString() + sbout.toString()).toLowerCase().contains('java')
+        assert sbout.toString().contains('Done')
         assert value == 0
 
         sbout = new StringBuffer()
         sberr = new StringBuffer()
         process = java.execute()
+        process.pipeTo(process)
         tout = process.consumeProcessOutputStream(sbout)
         terr = process.consumeProcessErrorStream(sberr)
-        process.waitForOrKill(20)
+        process.waitForOrKill(500)
         tout.join()
         terr.join()
         value = process.exitValue()
         count = sbout.toString().readLines().size()
         println "Insufficient time case: Exit value: $value, Err lines: ${sberr.toString().readLines().size()}, Out lines: $count"
+        assert !sbout.toString().contains('Done')
         assert value != 0 // should have been killed
     }
 
