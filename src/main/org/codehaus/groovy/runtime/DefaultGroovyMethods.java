@@ -11133,6 +11133,84 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Read the content of the File and returns it as a byte[].
+     *
+     * @param file the file whose content we want to read
+     * @return a String containing the content of the file
+     * @throws IOException if an IOException occurs.
+     * @since 1.7.1
+     */
+    public static byte[] getBytes(File file) throws IOException {
+        return getBytes(new FileInputStream(file));
+    }
+
+    /**
+     * Read the content of this URL and returns it as a byte[].
+     *
+     * @param url URL to read content from
+     * @return the byte[] from that URL
+     * @throws IOException if an IOException occurs.
+     * @since 1.7.1
+     */
+    public static byte[] getBytes(URL url) throws IOException {
+        return getBytes(url.openConnection().getInputStream());
+    }    
+
+    /**
+     * Read the content of this InputStream and return it as a byte[].
+     * The stream is closed before this method returns.
+     *
+     * @param is an input stream
+     * @return the byte[] from that InputStream
+     * @throws IOException if an IOException occurs.
+     * @since 1.7.1
+     */
+    public static byte[] getBytes(InputStream is) throws IOException {
+        ByteArrayOutputStream answer = new ByteArrayOutputStream();
+        // reading the content of the file within a byte buffer
+        byte[] byteBuffer = new byte[8192];
+        int nbByteRead /* = 0*/;
+        try {
+            while ((nbByteRead = is.read(byteBuffer)) != -1) {
+                // appends buffer
+                answer.write(byteBuffer, 0, nbByteRead);
+            }
+        } finally {
+            closeWithWarning(is);
+        }
+        return answer.toByteArray();        
+    }
+
+    /**
+     * Write the bytes from the byte array to the File.
+     *
+     * @param file  the file to write to
+     * @param bytes the byte[] to write to the file
+     * @throws IOException if an IOException occurs.
+     * @since 1.7.1
+     */
+    public static void setBytes(File file, byte[] bytes) throws IOException {
+        setBytes(new FileOutputStream(file), bytes);
+    }
+
+    /**
+     * Write the byte[] to the output stream.
+     * The stream is closed before this method returns.
+     *
+     * @param os    an output stream
+     * @param bytes the byte[] to write to the output stream
+     * @throws IOException if an IOException occurs.
+     * @since 1.7.1
+     */
+    public static void setBytes(OutputStream os, byte[] bytes) throws IOException {
+        try {
+            os.write(bytes);
+        } finally {
+            closeWithWarning(os);
+        }
+    }
+
+    /**
      * Write the text and append a newline (using the platform's line-ending).
      *
      * @param writer a BufferedWriter
