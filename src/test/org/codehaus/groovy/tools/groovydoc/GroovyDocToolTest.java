@@ -17,7 +17,7 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
-import groovy.util.GroovyTestCase;
+import groovy.util.GroovySwingTestCase;
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyMethodDoc;
 import org.codehaus.groovy.groovydoc.GroovyRootDoc;
@@ -29,7 +29,7 @@ import java.util.Properties;
 /**
  * @author Jeremy Rayner
  */
-public class GroovyDocToolTest extends GroovyTestCase {
+public class GroovyDocToolTest extends GroovySwingTestCase {
     private static final String MOCK_DIR = "mock/doc";
     private static final String TEMPLATES_DIR = "main/org/codehaus/groovy/tools/groovydoc/gstringTemplates";
 
@@ -87,7 +87,10 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testGroovyDocTheCategoryMethodClass() throws Exception {
-        List srcList = new ArrayList();
+        if (isHeadless()) {
+            return;
+        }
+        List<String> srcList = new ArrayList<String>();
         srcList.add("groovy/util/CliBuilder.groovy");
         srcList.add("groovy/lang/GroovyLogTestCase.groovy");
         srcList.add("groovy/mock/interceptor/StrictExpectation.groovy");
@@ -119,7 +122,10 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testConstructors() throws Exception {
-        List srcList = new ArrayList();
+        if (isHeadless()) {
+            return;
+        }
+        List<String> srcList = new ArrayList<String>();
         srcList.add("groovy/ui/Console.groovy");
         xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
@@ -199,7 +205,10 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testStaticModifier() throws Exception {
-        List srcList = new ArrayList();
+        if (isHeadless()) {
+            return;
+        }
+        List<String> srcList = new ArrayList<String>();
         srcList.add("groovy/swing/binding/AbstractButtonProperties.java");
         xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
@@ -209,7 +218,10 @@ public class GroovyDocToolTest extends GroovyTestCase {
     }
 
     public void testAnonymousInnerClassMethodsNotIncluded() throws Exception {
-        List srcList = new ArrayList();
+        if (isHeadless()) {
+            return;
+        }
+        List<String> srcList = new ArrayList<String>();
         srcList.add("groovy/swing/binding/AbstractButtonProperties.java");
         xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
