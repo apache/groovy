@@ -383,6 +383,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
             Class c = classDoc.resolveExternalClassFromImport(candidate);
             if (c != null) type = c.getName();
             if (pieces.length > 1) type += "#" + pieces[1];
+            type = resolveMethodArgs(rootDoc, classDoc, type);
         }
         if (type.indexOf('.') == -1)
             return type;
