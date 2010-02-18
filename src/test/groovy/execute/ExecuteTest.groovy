@@ -75,7 +75,7 @@ class ExecuteTest extends GroovyTestCase {
 
     void testExecuteCommandLineProcessAndUseWaitForOrKill() {
         def cp = System.getProperty('java.class.path')
-        def java = System.getProperty('java.home') + """/bin/java -cp $cp groovy.ui.GroovyMain -e "sleep(2000); println 'Done'" """
+        def java = System.getProperty('java.home') + """/bin/java -cp $cp groovy.ui.GroovyMain -e "sleep(2000); println('Done')" """
         println "Executing this command for two cases:\n$java"
         StringBuffer sbout = new StringBuffer()
         StringBuffer sberr = new StringBuffer()
@@ -88,7 +88,7 @@ class ExecuteTest extends GroovyTestCase {
         def value = process.exitValue()
         int count = sbout.toString().readLines().size()
         println "Heaps of time case: Exit value: $value, Err lines: ${sberr.toString().readLines().size()}, Out lines: $count"
-//        assert sbout.toString().contains('Done'), "Expected 'Done' but found: " + sbout.toString() + " with error: " + sberr.toString()
+        assert sbout.toString().contains('Done'), "Expected 'Done' but found: " + sbout.toString() + " with error: " + sberr.toString()
         assert value == 0
 
         sbout = new StringBuffer()
