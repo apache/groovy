@@ -449,7 +449,6 @@ ${classDoc.commentText()}
                 }
             } else {
                 list = c.externalClass().methods.findAll{ isVisible(it) }.collect { method ->
-                    // "<a href='${classDoc.relativeRootPath}${c.fullPathName}.html#${nameFromParams(method)}'>${method.name()}</a>"
                     linkable(c.externalClass().name + "#" + nameFromJavaParams(method) + " " + method.name)
                 }
             }

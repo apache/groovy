@@ -23,10 +23,12 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implements GroovyClassDoc {
-    public static final Pattern TAG_REGEX = Pattern.compile("(?sm)\\s*@([a-zA-Z.]+)\\s+(.*?)(?=\\s*@)");
+    public static final Pattern TAG_REGEX = Pattern.compile("(?sm)\\s*@([a-zA-Z.]+)\\s+(.*?)(?=\\s+@)");
     public static final Pattern LINK_REGEX = Pattern.compile("(?m)[{]@(link)\\s+([^}]*)}");
     public static final Pattern CODE_REGEX = Pattern.compile("(?m)[{]@(code)\\s+([^}]*)}");
     public static final Pattern REF_LABEL_REGEX = Pattern.compile("([\\w.#]*(\\(.*\\))?)(\\s(.*))?");
+    public static final Pattern NAME_ARGS_REGEX = Pattern.compile("([^(]+)\\(([^)]*)\\)");
+    public static final Pattern SPLIT_ARGS_REGEX = Pattern.compile(",\\s*");
     private static final List<String> PRIMITIVES = Arrays.asList("void", "boolean", "byte", "short", "char", "int", "long", "float", "double");
     private final List<GroovyConstructorDoc> constructors;
     private final List<GroovyFieldDoc> fields;
@@ -264,6 +266,9 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
                 String paramTypeName = param.typeName();
                 if (visibleClasses.containsKey(paramTypeName)) {
                     param.setType((GroovyType) visibleClasses.get(paramTypeName));
+                } else {
+                    GroovyClassDoc doc = resolveClass(rootDoc, paramTypeName);
+                    if (doc != null) param.setType(doc);
                 }
             }
         }
@@ -274,6 +279,9 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
             String typeName = fieldType.typeName();
             if (visibleClasses.containsKey(typeName)) {
                 mutableField.setType((GroovyType) visibleClasses.get(typeName));
+            } else {
+                GroovyClassDoc doc = resolveClass(rootDoc, typeName);
+                if (doc != null) mutableField.setType(doc);
             }
         }
 
@@ -285,6 +293,9 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
             String typeName = returnType.typeName();
             if (visibleClasses.containsKey(typeName)) {
                 method.setReturnType((GroovyType) visibleClasses.get(typeName));
+            } else {
+                GroovyClassDoc doc = resolveClass(rootDoc, typeName);
+                if (doc != null) method.setReturnType(doc);
             }
 
             // parameters
@@ -293,6 +304,9 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
                 String paramTypeName = param.typeName();
                 if (visibleClasses.containsKey(paramTypeName)) {
                     param.setType((GroovyType) visibleClasses.get(paramTypeName));
+                } else {
+                    GroovyClassDoc doc = resolveClass(rootDoc, paramTypeName);
+                    if (doc != null) param.setType(doc);
                 }
             }
         }
@@ -319,6 +333,29 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         return getDocUrl(type, full, links, getRelativeRootPath(), savedRootDoc, this);
     }
 
+    private static String resolveMethodArgs(GroovyRootDoc rootDoc, SimpleGroovyClassDoc classDoc, String type) {
+        if (type.indexOf("(") < 0) return type;
+        Matcher m = NAME_ARGS_REGEX.matcher(type);
+        if (m.matches()) {
+            String name = m.group(1);
+            String args = m.group(2);
+            StringBuilder sb = new StringBuilder();
+            sb.append(name);
+            sb.append("(");
+            String[] argParts = SPLIT_ARGS_REGEX.split(args);
+            boolean first = true;
+            for (String argPart : argParts) {
+                if (first) first = false;
+                else sb.append(", ");
+                GroovyClassDoc doc = classDoc.resolveClass(rootDoc, argPart);
+                sb.append(doc == null ? argPart : doc.qualifiedTypeName());
+            }
+            sb.append(")");
+            return sb.toString();
+        }
+        return type;
+    }
+
     public static String getDocUrl(String type, boolean full, List<LinkArgument> links, String relativePath, GroovyRootDoc rootDoc, SimpleGroovyClassDoc classDoc) {
         if (type == null)
             return type;
@@ -332,7 +369,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         }
 
         if (type.startsWith("#"))
-            return "<a href='" + type + "'>" + label == null ? type : label + "</a>";
+            return "<a href='" + resolveMethodArgs(rootDoc, classDoc, type) + "'>" + (label == null ? type.substring(1) : label) + "</a>";
 
         if (type.endsWith("[]")) {
             if (label != null)
@@ -385,6 +422,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
     }
 
     private GroovyClassDoc resolveClass(GroovyRootDoc rootDoc, String name) {
+        if (PRIMITIVES.contains(name)) return null;
         GroovyClassDoc doc = rootDoc.classNamed(name);
         if (doc != null) return doc;
 
