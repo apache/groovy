@@ -360,6 +360,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         if (type == null)
             return type;
         type = type.trim();
+        if (isPrimitiveType(type)) return type;
 
         String label = null;
         Matcher matcher = REF_LABEL_REGEX.matcher(type);
@@ -423,13 +424,17 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
     }
 
     private GroovyClassDoc resolveClass(GroovyRootDoc rootDoc, String name) {
-        if (PRIMITIVES.contains(name)) return null;
+        if (isPrimitiveType(name)) return null;
         GroovyClassDoc doc = ((SimpleGroovyRootDoc)rootDoc).classNamedExact(name);
         if (doc != null) return doc;
         int slashIndex = name.lastIndexOf("/");
         if (slashIndex < 1) {
             doc = resolveInternalClassDocFromImport(rootDoc, name);
             if (doc != null) return doc;
+            for (GroovyClassDoc nestedDoc : nested) {
+                if (nestedDoc.name().endsWith("." + name))
+                    return nestedDoc;
+            }
             doc = rootDoc.classNamed(name);
             if (doc != null) return doc;
         }
@@ -453,8 +458,14 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         return placeholder;
     }
 
+    private static boolean isPrimitiveType(String name) {
+        String type = name;
+        if (name.endsWith("[]")) type = name.substring(0, name.length() - 2);
+        return PRIMITIVES.contains(type);
+    }
+
     private GroovyClassDoc resolveInternalClassDocFromImport(GroovyRootDoc rootDoc, String baseName) {
-        if (PRIMITIVES.contains(baseName)) return null;
+        if (isPrimitiveType(baseName)) return null;
         for (String importName : importedClassesAndPackages) {
             if (importName.endsWith("/" + baseName)) {
                 GroovyClassDoc doc = ((SimpleGroovyRootDoc)rootDoc).classNamedExact(importName);
@@ -468,7 +479,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
     }
 
     private Class resolveExternalClassFromImport(String name) {
-        if (PRIMITIVES.contains(name)) return null;
+        if (isPrimitiveType(name)) return null;
         for (String importName : importedClassesAndPackages) {
             String candidate = null;
             if (importName.endsWith("/" + name)) {
