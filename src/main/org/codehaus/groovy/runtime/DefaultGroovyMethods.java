@@ -13455,6 +13455,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * want the process to run silently - use carefully however, because since the stream
      * data is thrown away, it might be difficult to track down when something goes wrong.
      * For this, two Threads are started, but join()ed, so we wait.
+     * As implied by the waitFor... name, we also wait until we finish
+     * was well.
      *
      * @param self a Process
      * @since 1.6.5
@@ -13468,6 +13470,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * to keep the process from blocking due to a full output buffer.
      * The processed stream data is appended to the supplied StringBuffer.
      * For this, two Threads are started, but join()ed, so we wait.
+     * As implied by the waitFor... name, we also wait until we finish
+     * was well.
      *
      * @param self a Process
      * @param output a StringBuffer to capture the process stdout
@@ -13479,6 +13483,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         Thread terr = consumeProcessErrorStream(self, error);
         try { tout.join(); } catch (InterruptedException ignore) {}
         try { terr.join(); } catch (InterruptedException ignore) {}
+        try { self.waitFor(); } catch (InterruptedException ignore) {}
     }
 
     /**
@@ -13486,6 +13491,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * to keep the process from blocking due to a full output buffer.
      * The processed stream data is appended to the supplied OutputStream.
      * For this, two Threads are started, but join()ed, so we wait.
+     * As implied by the waitFor... name, we also wait until we finish
+     * was well.
      *
      * @param self a Process
      * @param output an OutputStream to capture the process stdout
@@ -13497,6 +13504,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         Thread terr = consumeProcessErrorStream(self, error);
         try { tout.join(); } catch (InterruptedException ignore) {}
         try { terr.join(); } catch (InterruptedException ignore) {}
+        try { self.waitFor(); } catch (InterruptedException ignore) {}
     }
 
     /**
