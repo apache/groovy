@@ -298,15 +298,27 @@ public class LoaderConfiguration {
 
     /**
      * Adds a classpath to this configuration. It expects a string with
-     * multiple paths, seperated by the system dependent path separator
+     * multiple paths, separated by the system dependent path separator.
+     * Expands wildcards, e.g. dir/* into all the jars in dir.
      *
      * @param path the path as a path separator delimited string
      * @see java.io.File#pathSeparator
      */
     public void addClassPath(String path) {
-        String[] paths = path.split(File.pathSeparator);
-        for (int i = 0; i < paths.length; i++) {
-            addFile(new File(paths[i]));
+       String[] paths = path.split(File.pathSeparator);
+        for (String cpPath : paths) {
+            // Check to support wild card classpath
+            if (cpPath.endsWith("*")) {
+                File dir = new File(cpPath.substring(0, cpPath.length() - 1));
+                File[] files = dir.listFiles();
+                if (files != null) {
+                    for (File file : files) {
+                        if (file.isFile() && file.getName().endsWith(".jar")) addFile(file);
+                    }
+                }
+            } else {
+                addFile(new File(cpPath));
+            }
         }
     }
 
