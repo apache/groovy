@@ -35,7 +35,6 @@ class ExecuteTest extends GroovyTestCase {
         StringBuffer sberr = new StringBuffer()
         def process = cmd.execute()
         process.waitForProcessOutput sbout, sberr
-        process.waitFor()
         def value = process.exitValue()
         int count = sbout.toString().readLines().size()
         println "Exit value: $value, Err lines: ${sberr.toString().readLines().size()}, Out lines: $count"
@@ -50,7 +49,6 @@ class ExecuteTest extends GroovyTestCase {
         StringBuffer sberr = new StringBuffer()
         def process = cmdArray.execute()
         process.waitForProcessOutput sbout, sberr
-        process.waitFor()
         def value = process.exitValue()
         int count = sbout.toString().readLines().size()
         println "Exit value: $value, Err lines: ${sberr.toString().readLines().size()}, Out lines: $count"
@@ -65,7 +63,6 @@ class ExecuteTest extends GroovyTestCase {
         StringBuffer sberr = new StringBuffer()
         def process = cmdList.execute()
         process.waitForProcessOutput sbout, sberr
-        process.waitFor()
         def value = process.exitValue()
         int count = sbout.toString().readLines().size()
         println "Exit value: $value, Err lines: ${sberr.toString().readLines().size()}, Out lines: $count"
@@ -115,7 +112,6 @@ class ExecuteTest extends GroovyTestCase {
         StringBuffer sberr = new StringBuffer()
         def process = cmd.execute(null, new File('..'))
         process.waitForProcessOutput sbout, sberr
-        process.waitFor()
         def value = process.exitValue()
         int count = sbout.toString().readLines().size()
         println "Exit value: $value, Err lines: ${sberr.toString().readLines().size()}, Out lines: $count"
@@ -133,7 +129,6 @@ class ExecuteTest extends GroovyTestCase {
         StringBuffer sberr = new StringBuffer()
         def process = java.execute(props, null)
         process.waitForProcessOutput sbout, sberr
-        process.waitFor()
         def value = process.exitValue()
         int count = sbout.toString().readLines().size()
         println "Exit value: $value, Err lines: ${sberr.toString().readLines().size()}, Out lines: $count"
