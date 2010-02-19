@@ -90,7 +90,7 @@ public class GroovyDocToolTest extends GroovySwingTestCase {
         if (isHeadless()) {
             return;
         }
-        List<String> srcList = new ArrayList<String>();
+        List srcList = new ArrayList();
         srcList.add("groovy/util/CliBuilder.groovy");
         srcList.add("groovy/lang/GroovyLogTestCase.groovy");
         srcList.add("groovy/mock/interceptor/StrictExpectation.groovy");
@@ -125,7 +125,7 @@ public class GroovyDocToolTest extends GroovySwingTestCase {
         if (isHeadless()) {
             return;
         }
-        List<String> srcList = new ArrayList<String>();
+        List srcList = new ArrayList();
         srcList.add("groovy/ui/Console.groovy");
         xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
@@ -208,7 +208,7 @@ public class GroovyDocToolTest extends GroovySwingTestCase {
         if (isHeadless()) {
             return;
         }
-        List<String> srcList = new ArrayList<String>();
+        List srcList = new ArrayList();
         srcList.add("groovy/swing/binding/AbstractButtonProperties.java");
         xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
@@ -221,7 +221,7 @@ public class GroovyDocToolTest extends GroovySwingTestCase {
         if (isHeadless()) {
             return;
         }
-        List<String> srcList = new ArrayList<String>();
+        List srcList = new ArrayList();
         srcList.add("groovy/swing/binding/AbstractButtonProperties.java");
         xmlTool.add(srcList);
         MockOutputTool output = new MockOutputTool();
@@ -261,7 +261,7 @@ public class GroovyDocToolTest extends GroovySwingTestCase {
         String text = output.getText(MOCK_DIR + "/org/codehaus/groovy/tools/groovydoc/SimpleGroovyRootDoc.html");
         assertTrue(text.indexOf("<parameter type=\"org.codehaus.groovy.groovydoc.GroovyPackageDoc\"") > 0);
     }
-    
+
     public void testMultipleSourcePaths() throws Exception {
         GroovyDocTool multipleXmlTool = new GroovyDocTool(
                 new FileSystemResourceManager("src"), // template storage
@@ -272,7 +272,7 @@ public class GroovyDocToolTest extends GroovySwingTestCase {
                 new ArrayList(),
                 new Properties()
         );
-        
+
         List srcList = new ArrayList();
         srcList.add("groovy/model/DefaultTableColumn.java");
         srcList.add("org/codehaus/groovy/tools/groovydoc/GroovyDocToolTestSampleGroovy.groovy");
