@@ -491,6 +491,8 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
                 try {
                     // TODO cache these??
                     return Class.forName(candidate);
+                } catch (NoClassDefFoundError e) {
+                    // ignore
                 } catch (ClassNotFoundException e) {
                     // ignore
                 }
@@ -504,6 +506,8 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         try {
             // TODO cache these??
             return Class.forName(candidate);
+        } catch (NoClassDefFoundError e) {
+            // ignore
         } catch (ClassNotFoundException e) {
             // ignore
         }
