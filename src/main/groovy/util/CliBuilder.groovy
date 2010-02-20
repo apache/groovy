@@ -110,8 +110,11 @@ class OptionAccessor {
     def getProperty(String name) {
         def methodname = 'getOptionValue'
         if (name.size() > 1 && name.endsWith('s')) {
-            name = name[0..-2]
-            methodname += 's'
+            def singularName = name[0..-2]
+            if(hasOption(singularName)) {
+                name = singularName
+                methodname += 's'
+            }
         }
         if (name.size() == 1) name = name as char
         def result = InvokerHelper.getMetaClass(inner).invokeMethod(inner, methodname, name)

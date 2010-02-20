@@ -356,4 +356,15 @@ usage: groovy
     assertEquals ( [ '-v' , '-h' ] , options.arguments ( ) )
   }
 
+    void testLongOptEndingWithS () {
+        def cli = new CliBuilder ()
+        cli.s ( longOpt : 'number_of_seconds', 'a long arg that ends with an "s"' )
+        
+        def options = cli.parse (['-s'])
+        
+        assert options.hasOption ( 's' )
+        assert options.hasOption ( 'number_of_seconds' )
+        assert options.s
+        assert options.number_of_seconds
+    }
 }
