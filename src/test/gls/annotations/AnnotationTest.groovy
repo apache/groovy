@@ -285,8 +285,8 @@ import java.lang.annotation.*
 class Foo {}
 
 Annotation[] annotations = Foo.class.annotations
-assert annotations.size() == 1 + 1 // + 1 for implicit @GroovyCompilerVersion
-MyAnnotation my = Foo.class.getAnnotation(MyAnnotation)
+assert annotations.size() == 1
+MyAnnotation my = annotations[0]
 assert my.stringValue() == "for class"
 assert my.intValue() == 100
 assert my.defaultInt() == 1
@@ -306,8 +306,8 @@ import java.lang.annotation.*
 class Foo {}
 
 Annotation[] annotations = Foo.class.annotations
-assert annotations.size() == 1 + 1// + 1 for implicit @GroovyCompilerVersion
-JavaAnnotation my = Foo.class.getAnnotation(JavaAnnotation)
+assert annotations.size() == 1
+JavaAnnotation my = annotations[0]
 assert my.in() == 3
     """
   }
@@ -319,7 +319,7 @@ import java.lang.annotation.*
 @Deprecated
 class Foo{}
 
-assert Foo.class.annotations.size() == 1 + 1 // + 1 for implicit @GroovyCompilerVersion
+assert Foo.class.annotations.size() == 1
   """
   }
 
@@ -337,8 +337,8 @@ import java.lang.annotation.*
 class Foo {}
 
 Annotation[] annotations = Foo.class.annotations
-assert annotations.size() == 1 + 1 // + 1 for implicit @GroovyCompilerVersion
-MyAnnotation my = Foo.class.getAnnotation(MyAnnotation)
+assert annotations.size() == 1
+MyAnnotation my = annotations[0]
 assert my.things().size() == 1
 assert my.things()[0] == "x"
     """
@@ -461,7 +461,7 @@ class Foo {}
         }
 
         def c1 = new MyClass()
-        assert c1.class.getAnnotation(MyAnnotation).value() == 'class'
+        assert c1.class.annotations[0].value() == 'class'
 
         def field = c1.class.fields.find{ it.name == 'myField' }
         assert field.annotations[0].value() == 'field'
