@@ -1,7 +1,25 @@
+/*
+ * Copyright 2003-2010 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package groovy.xml
 
+/**
+ * @author Paul King
+ */
 class GpathSyntaxTestSupport {
-    private static def sampleXml = '''
+    private static sampleXml = '''
 <characters>
     <character id="1" name="Wallace">
     	<likes>cheese</likes>
@@ -17,7 +35,7 @@ class GpathSyntaxTestSupport {
 </characters>
 '''
 
-    private static def nestedXml = '''
+    private static nestedXml = '''
 <root>
     <a><z/><z/><y/></a>
     <b><z/></b>
@@ -214,6 +232,48 @@ class GpathSyntaxTestSupport {
         } else if (isDom(root)) {
             assert (root.parent() instanceof org.w3c.dom.Document)
         }
+    }
+
+    static void checkNegativeIndices(Closure getRoot) {
+        def root = getRoot('<a><b>B1</b><b>B2</b><b>B3</b><c><n id="n1"/><n id="n2"/></c></a>')
+        assert root.b[-1].text() == 'B3'
+        assert root.b[-3].text() == 'B1'
+        assert root.c.n[-1].'@id' == 'n2'
+        assert root.c.n[-2].'@id' == 'n1'
+    }
+
+    static void checkRangeIndex(Closure getRoot) {
+        def root = getRoot('<a><b>B1</b><b>B2</b><b>B3</b><c><n id="n1"/><n id="n2"/></c></a>')
+        def bs = root.b[1..2]
+        assert bs.size() == 2
+        assert bs[0].text() == 'B2'
+        assert bs[1].text() == 'B3'
+
+        bs = root.b[1..-1]
+        assert bs.size() == 2
+        assert bs[0].text() == 'B2'
+        assert bs[1].text() == 'B3'
+
+        bs = root.b[-3..-2]
+        assert bs.size() == 2
+        assert bs[0].text() == 'B1'
+        assert bs[1].text() == 'B2'
+
+        // Reverse order.
+        bs = root.b[2..1]
+        assert bs.size() == 2
+        assert bs[0].text() == 'B3'
+        assert bs[1].text() == 'B2'
+
+        bs = root.b[-2..-3]
+        assert bs.size() == 2
+        assert bs[0].text() == 'B2'
+        assert bs[1].text() == 'B1'
+
+        bs = root.b[1..-3]
+        assert bs.size() == 2
+        assert bs[0].text() == 'B2'
+        assert bs[1].text() == 'B1'
     }
 
     private static boolean isSlurper(node) {
