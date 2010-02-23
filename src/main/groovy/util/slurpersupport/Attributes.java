@@ -61,7 +61,7 @@ class Attributes extends NodeChildren {
                     } else {
                         final String value = (String) ((Node) next).attributes().get(Attributes.this.attributeName);
                         if (value != null) {
-                            return new Attribute(Attributes.this.attributeName,
+                            return new Attribute(Attributes.this.name,
                                     value,
                                     new NodeChild((Node) next, Attributes.this.parent.parent, "", Attributes.this.namespaceTagHints),
                                     "",
