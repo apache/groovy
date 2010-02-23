@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,16 +15,28 @@
  */
 package groovy.xml.dom;
 
-import groovy.xml.QName;
 import groovy.lang.GroovyRuntimeException;
+import groovy.lang.IntRange;
+import groovy.xml.QName;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.XmlGroovyMethods;
-import org.w3c.dom.*;
+import org.w3c.dom.Attr;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Text;
 
-import javax.xml.xpath.XPathFactory;
 import javax.xml.xpath.XPath;
 import javax.xml.xpath.XPathExpressionException;
-import java.util.*;
+import javax.xml.xpath.XPathFactory;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 /**
  * @author sam
@@ -106,6 +118,18 @@ public class DOMCategory {
         return nodeGetAt(o, i);
     }
 
+    public static NodeList getAt(Node o, IntRange r) {
+        return nodesGetAt(o, r);
+    }
+
+    public static NodeList getAt(NodeListsHolder o, IntRange r) {
+        return nodesGetAt(o, r);
+    }
+
+    public static NodeList getAt(NodesHolder o, IntRange r) {
+        return nodesGetAt(o, r);
+    }
+
     private static Node nodeGetAt(Object o, int i) {
         if (o instanceof Element) {
             Node n = xgetAt((Element)o, i);
@@ -117,19 +141,76 @@ public class DOMCategory {
         return null;
     }
 
+    private static NodeList nodesGetAt(Object o, IntRange r) {
+        if (o instanceof Element) {
+            NodeList n = xgetAt((Element)o, r);
+            if (n != null) return n;
+        }
+        if (o instanceof NodeList) {
+            return xgetAt((NodeList)o, r);
+        }
+        return null;
+    }
+
     private static Node xgetAt(Element element, int i) {
         if (hasChildElements(element, "*")) {
             NodeList nodeList = getChildElements(element, "*");
-            return nodeList.item(i);
+            return xgetAt(nodeList, i);
         }
         return null;
     }
 
     private static Node xgetAt(NodeList nodeList, int i) {
+        if (i < 0) {
+            i += nodeList.getLength();
+        }
+
         if (i >= 0 && i < nodeList.getLength()) {
             return nodeList.item(i);
         }
         return null;
+    }
+
+    private static NodeList xgetAt(Element element, IntRange r) {
+        if (hasChildElements(element, "*")) {
+            NodeList nodeList = getChildElements(element, "*");
+            return xgetAt(nodeList, r);
+        }
+        return null;
+    }
+
+    private static NodeList xgetAt(NodeList nodeList, IntRange r) {
+        int from = r.getFromInt();
+        int to = r.getToInt();
+
+        // If the range is of size 1, then we can use the existing
+        // xgetAt() that takes an integer index.
+        if (from == to) return new NodesHolder(Arrays.asList(xgetAt(nodeList, from)));
+
+        // Normalise negative indices.
+        if (from < 0) from = from + nodeList.getLength();
+        if (to < 0) to = to + nodeList.getLength();
+
+        // After normalisation, 'from' may be greater than 'to'. In that
+        // case, we need to reverse them and make sure the range's 'reverse'
+        // property is correct.
+        // TODO We should probably use DefaultGroovyMethodsSupport.subListBorders(),
+        // but that's protected and unavailable to us.
+        if (from > to) {
+            r = r.isReverse() ? new IntRange(to, from) : new IntRange(from, to);
+            from = r.getFromInt();
+            to = r.getToInt();
+        }
+
+        // Copy the required nodes into a new list.
+        ArrayList<Node> nodes = new ArrayList<Node>(to - from + 1);
+        if (r.isReverse()) {
+            for (int i = to; i >= from; i--) nodes.add(nodeList.item(i));
+        }
+        else {
+            for (int i = from; i <= to; i++) nodes.add(nodeList.item(i));
+        }
+        return new NodesHolder(nodes);
     }
 
     public static String name(Element element) {

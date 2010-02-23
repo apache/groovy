@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -43,11 +43,9 @@ import java.util.Stack;
 
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
-
 /**
  * @author John Wilson
  */
-
 public abstract class GPathResult extends GroovyObjectSupport implements Writable, Buildable {
     protected final GPathResult parent;
     protected final String name;
@@ -120,31 +118,28 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
     public void setProperty(final String property, final Object newValue) {
         if (property.startsWith("@")) {
             if (newValue instanceof String || newValue instanceof GString) {
-            final Iterator iter = iterator();
-            
+                final Iterator iter = iterator();
+
                 while (iter.hasNext()) {
-                final NodeChild child = (NodeChild)iter.next();
-                
+                    final NodeChild child = (NodeChild) iter.next();
+
                     child.attributes().put(property.substring(1), newValue);
                 }
             }
         } else {
-        final GPathResult result = new NodeChildren(this, property, this.namespaceTagHints);
-        
+            final GPathResult result = new NodeChildren(this, property, this.namespaceTagHints);
+
             if (newValue instanceof Map) {
-            final Iterator iter = ((Map)newValue).entrySet().iterator();
-            
-                while (iter.hasNext()) {
-                final Map.Entry entry = (Map.Entry)iter.next();
-                
+                for (Object o : ((Map) newValue).entrySet()) {
+                    final Map.Entry entry = (Map.Entry) o;
                     result.setProperty("@" + entry.getKey(), entry.getValue());
                 }
-            } else {           
-              if (newValue instanceof Closure) {
-                  result.replaceNode((Closure)newValue);
-              } else {
-                  result.replaceBody(newValue);
-              }
+            } else {
+                if (newValue instanceof Closure) {
+                    result.replaceNode((Closure) newValue);
+                } else {
+                    result.replaceBody(newValue);
+                }
             }
         }
     }
@@ -245,65 +240,35 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
     }
 
     public Object getAt(final int index) {
-        if (index < 0) throw new ArrayIndexOutOfBoundsException(index);
-        
-        final Iterator iter = iterator();
-        int count = 0;
-    
-        while (iter.hasNext()) {
-            if (count++ == index) {
-                return iter.next();
-            } else {
-                iter.next();
+        if (index < 0) {
+            // calculate whole list in this case
+            // recommend avoiding -ve's as this is obviously not as efficient
+            List list = list();
+            int adjustedIndex = index + list.size();
+            if (adjustedIndex >= 0 && adjustedIndex < list.size())
+                return list.get(adjustedIndex);
+        } else {
+            final Iterator iter = iterator();
+            int count = 0;
+
+            while (iter.hasNext()) {
+                if (count++ == index) {
+                    return iter.next();
+                } else {
+                    iter.next();
+                }
             }
         }
-        
+
         return new NoChildren(this, this.name, this.namespaceTagHints);
     }
 
     public Object getAt(final IntRange range) {
-    final int from = range.getFromInt();
-    final int to = range.getToInt();
-    
-        if (range.isReverse()) {
-            throw new GroovyRuntimeException("Reverse ranges not supported, range supplied is ["+ to + ".." + from + "]");
-        } else if (from < 0 || to < 0) {
-            throw new GroovyRuntimeException("Negative range indexes not supported, range supplied is ["+ from + ".." + to + "]");
-        } else {
-            return new Iterator() {
-            final Iterator iter = iterator();
-            Object next;
-            int count = 0;
-            
-               public boolean hasNext() {
-                   if (count <= to) {
-                       while (iter.hasNext()) {
-                           if (count++ >= from) {
-                               this.next = iter.next();
-                               return true;
-                           } else {
-                               iter.next();
-                           }
-                       }
-                   }
-
-                   return false;
-                }
-
-                public Object next() {
-                    return next;
-                }
-
-                public void remove() {
-                    throw new UnsupportedOperationException();
-                }
-                
-            };
-        }
-     }
+        return DefaultGroovyMethods.getAt(list(), range);
+    }
 
     public void putAt(final int index, final Object newValue) {
-    final GPathResult result = (GPathResult)getAt(index);
+        final GPathResult result = (GPathResult)getAt(index);
     
         if (newValue instanceof Closure) {
             result.replaceNode((Closure)newValue);
@@ -392,8 +357,8 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
                         children.add(node.children());
                     } else {
                         List nextLevel = new ArrayList();
-                        for (int i = 0; i < children.size(); i++) {
-                            GPathResult next = (GPathResult) children.get(i);
+                        for (Object child : children) {
+                            GPathResult next = (GPathResult) child;
                             Iterator iterator = next.iterator();
                             while (iterator.hasNext()) {
                                 nextLevel.add(iterator.next());
@@ -438,15 +403,13 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
                 Node node = (Node)thisObject.getAt(0);
                 List children = node.children();
 
-                for(int i=0;  i<children.size(); i++){
-                    Object child = children.get(i);
+                for (Object child : children) {
                     delegate.getProperty("mkp");
-                    if(child instanceof Node){
-                        delegate.invokeMethod("yield", new Object[]{new NodeChild((Node)child, thisObject,"*",null)});
-                    }   
-                    else{
+                    if (child instanceof Node) {
+                        delegate.invokeMethod("yield", new Object[]{new NodeChild((Node) child, thisObject, "*", null)});
+                    } else {
                         delegate.invokeMethod("yield", new Object[]{child});
-                    }   
+                    }
                 }                
             }
         };
