@@ -170,6 +170,19 @@ class GpathSyntaxTestSupport {
             def actualName = gromit.@name
             assert actualName == 'Gromit'
         }
+        if (isSlurper(root)) {
+            // validate the behavior of the '.name()' method.
+            root.character.each {
+                assert 'id' == it.@id.name()
+                assert 'name' == it.@name.name()
+            }
+            root.character.@id.each {
+                assert 'id' == it.name()
+            }
+            root.character.@name.each {
+                assert 'name' == it.name()
+            }
+        }
     }
 
     static void checkAttributes(Closure getRoot) {
