@@ -4060,6 +4060,55 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Support the subscript operator for an Iterator. The iterator
+     * will be partially exhausted up until the idx entry after returning
+     * if a +ve or 0 idx is used, or fully exhausted if a -ve idx is used
+     * or no corresponding entry was found. Typical usage:
+     * <pre class="groovyTestCase">
+     * def iter = [2, "a", 5.3].iterator()
+     * assert iter[1] == "a"
+     * </pre>
+     * A more elaborate example:
+     * <pre class="groovyTestCase">
+     * def items = [2, "a", 5.3]
+     * def iter = items.iterator()
+     * assert iter[-1] == 5.3
+     * // iter exhausted, so reset
+     * iter = items.iterator()
+     * assert iter[1] == "a"
+     * // iter partially exhausted so now idx starts after "a"
+     * assert iter[0] == 5.3
+     * </pre>
+     *
+     * @param self an Iterator
+     * @param idx  an index value (-self.size() <= idx < self.size())
+     * @return the value at the given index (after normalisation) or null if no corresponding value was found
+     * @since 1.7.2
+     */
+    public static <T> T getAt(Iterator<T> self, int idx) {
+        if (idx < 0) {
+            // calculate whole list in this case
+            // recommend avoiding -ve's as this is not as efficient
+            List<T> list = toList(self);
+            int adjustedIndex = idx + list.size();
+            if (adjustedIndex < 0 || adjustedIndex >= list.size()) return null;
+            return list.get(adjustedIndex);
+        }
+
+        int count = 0;
+        while (self.hasNext()) {
+            if (count == idx) {
+                return self.next();
+            } else {
+                count++;
+                self.next();
+            }
+        }
+
+        return null;
+    }
+
+    /**
      * Support the subscript operator for a Date.
      *
      * @param self  a Date
