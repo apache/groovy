@@ -56,18 +56,52 @@ public class Node implements Serializable {
 
     private Object value;
 
+    /**
+     * Creates a new Node named <code>name</code> and if a parent is supplied, adds
+     * the newly created node as a child of the parent.
+     *
+     * @param parent the parent node or null if no parent
+     * @param name the name of the node
+     */
     public Node(Node parent, Object name) {
         this(parent, name, new NodeList());
     }
 
+    /**
+     * Creates a new Node named <code>name</code> with value <code>value</code> and
+     * if a parent is supplied, adds the newly created node as a child of the parent.
+     *
+     * @param parent the parent node or null if no parent
+     * @param name the name of the node
+     * @param value the Node value, e.g. some text but in general any Object
+     */
     public Node(Node parent, Object name, Object value) {
         this(parent, name, new HashMap(), value);
     }
 
+    /**
+     * Creates a new Node named <code>name</code> with
+     * attributes specified in the <code>attributes</code> Map. If a parent is supplied,
+     * the newly created node is added as a child of the parent.
+     *
+     * @param parent the parent node or null if no parent
+     * @param name the name of the node
+     * @param attributes a Map of name-value pairs
+     */
     public Node(Node parent, Object name, Map attributes) {
         this(parent, name, attributes, new NodeList());
     }
 
+    /**
+     * Creates a new Node named <code>name</code> with value <code>value</code> and
+     * with attributes specified in the <code>attributes</code> Map. If a parent is supplied,
+     * the newly created node is added as a child of the parent.
+     *
+     * @param parent the parent node or null if no parent
+     * @param name the name of the node
+     * @param attributes a Map of name-value pairs
+     * @param value the Node value, e.g. some text but in general any Object
+     */
     public Node(Node parent, Object name, Map attributes, Object value) {
         this.parent = parent;
         this.name = name;
