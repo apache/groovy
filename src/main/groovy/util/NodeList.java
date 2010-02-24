@@ -169,14 +169,8 @@ public class NodeList extends ArrayList {
     }
 
     public void plus(Closure c) {
-        Node afterNode = (Node) get(size() - 1);
-        List<Node> list = afterNode.parent().children();
-        int afterIndex = list.indexOf(afterNode);
-        List<Node> leftOvers = new ArrayList<Node>(list.subList(afterIndex + 1, list.size()));
-        list.subList(afterIndex + 1, list.size()).clear();
-        afterNode.plus(c);
-        for (Node child : leftOvers) {
-            afterNode.parent().children().add(child);
+        for (Object o : this) {
+            ((Node) o).plus(c);
         }
     }
 
