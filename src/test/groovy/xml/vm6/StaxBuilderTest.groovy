@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,8 +18,10 @@ package groovy.xml.vm6
 
 import javax.xml.stream.XMLOutputFactory
 import groovy.xml.StaxBuilder
-//import org.codehaus.jettison.mapped.MappedNamespaceConvention
-//import org.codehaus.jettison.mapped.MappedXMLStreamWriter
+import org.custommonkey.xmlunit.XMLUnit
+import org.custommonkey.xmlunit.Diff
+
+//import org.codehaus.jettison.mapped.*
 
 /**
  * Tests Stax builder with XML
@@ -38,21 +40,24 @@ class StaxBuilderTest extends GroovyTestCase {
             elem2('hello2')
             elem3(x:7)
         }
-		assert writer, """<root1 a="5" b="7"><elem1>hello1</elem1><elem2>hello2</elem2><elem3 x="7" /></root1>"""
+        def expected = """<root1 a="5" b="7"><elem1>hello1</elem1><elem2>hello2</elem2><elem3 x="7" /></root1>"""
+        XMLUnit.ignoreWhitespace = true
+        def xmlDiff = new Diff(writer.toString(), expected)
+        assert xmlDiff.similar(), xmlDiff.toString()
 	}
 
-// @Grab(groupId:'org.codehaus.jettison', artifactId:'jettison', version:'1.0.1', scope:'test', optional:'true')
-//	void testJettison() {
-//        MappedNamespaceConvention con = new MappedNamespaceConvention();
-//		StringWriter writer = new StringWriter()
-//		MappedXMLStreamWriter mappedWriter = new MappedXMLStreamWriter(con, writer);
-//		StaxBuilder builder = new StaxBuilder(mappedWriter)
+//    @Grab('org.codehaus.jettison:jettison:1.2')
+//    void testJettison() {
+//        def conv = new MappedNamespaceConvention()
+//        def writer = new StringWriter()
+//        def mappedWriter = new MappedXMLStreamWriter(conv, writer)
+//        def builder = new groovy.xml.StaxBuilder(mappedWriter)
 //        builder.root1(a:5, b:7) {
 //            elem1('hello1')
 //            elem2('hello2')
 //            elem3(x:7)
 //        }
-//		assert writer, """{"root1":{"@a":"5","@b":"7","elem1":"hello1","elem2":"hello2","elem3":{"@x":"7"}}}"""
-//	}
+//        assert writer.toString() == """{"root1":{"@a":"5","@b":"7","elem1":"hello1","elem2":"hello2","elem3":{"@x":"7"}}}"""
+//    }
 
 }
