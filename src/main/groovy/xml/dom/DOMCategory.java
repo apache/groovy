@@ -347,16 +347,8 @@ public class DOMCategory {
     }
 
     public static void plus(NodeList self, Closure c) {
-        Node lastNode = self.item(self.getLength() - 1);
-        Node parent = lastNode.getParentNode();
-        Node beforeNode = lastNode.getNextSibling();
-
-        DOMBuilder b = new DOMBuilder(lastNode.getOwnerDocument());
-        Element newNodes = (Element) b.invokeMethod("rootNode", c);
-
-        Iterator<Node> iter = XmlGroovyMethods.iterator(children(newNodes));
-        while (iter.hasNext()) {
-            parent.insertBefore(iter.next(), beforeNode);
+        for (int i = 0; i < self.getLength(); i++) {
+            plus((Element) self.item(i), c);
         }
     }
 

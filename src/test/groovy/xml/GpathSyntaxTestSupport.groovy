@@ -16,6 +16,8 @@
 package groovy.xml
 
 import groovy.util.slurpersupport.GPathResult
+import org.custommonkey.xmlunit.XMLUnit
+import org.custommonkey.xmlunit.Diff
 
 /**
  * @author Paul King
@@ -83,11 +85,11 @@ class GpathSyntaxTestSupport {
 
     static void checkFindElement(Closure getRoot) {
         def root = getRoot(sampleXml)
-        // lets find Gromit
+        // let's find Gromit
         def gromit = root.character.find { it.'@id' == '2' }
         assert gromit != null, "Should have found Gromit!"
         assert gromit['@name'] == "Gromit"
-        // lets find what Wallace likes in 1 query
+        // let's find what Wallace likes in 1 query
         def answer = root.character.find { it['@id'] == '1' }.likes[0].text()
         assert answer == "cheese"
     }
@@ -302,7 +304,7 @@ class GpathSyntaxTestSupport {
         // TODO remove need for cast
         if (isSlurper(root)) result = XmlUtil.serialize((GPathResult)root)
         else result = XmlUtil.serialize(root)
-        assert result.normalize() == '''\
+        def expected = '''\
 <?xml version="1.0" encoding="UTF-8"?>
 <a>
   <b>B1</b>
@@ -312,6 +314,10 @@ class GpathSyntaxTestSupport {
   </n>
 </a>
 '''
+        XMLUnit.ignoreWhitespace = true
+        def xmlDiff = new Diff(result, expected)
+        assert xmlDiff.similar(), xmlDiff.toString()
+
         // XmlSlurper replacements are deferred so can't check here
         if (!isSlurper(root)) {
             assert r.name() == 'n'
@@ -346,39 +352,30 @@ class GpathSyntaxTestSupport {
         root.b + {
             b('B3')
         }
+        root.b[-1] + {
+            b('B4')
+        }
         String result
         // TODO remove need for cast
-        // TODO align Slurper and non-Slurper behavior
-        if (isSlurper(root)) {
-            result = XmlUtil.serialize((GPathResult)root)
-            assert result.normalize() == '''\
+        if (isSlurper(root)) result = XmlUtil.serialize((GPathResult)root)
+        else result = XmlUtil.serialize(root)
+        def expected = '''\
 <?xml version="1.0" encoding="UTF-8"?>
 <a>
   <b>B1</b>
   <b>B3</b>
   <b>B2</b>
   <b>B3</b>
+  <b>B4</b>
   <c a1="4" a2="true">C</c>
   <n type="string">
     <hello>world</hello>
   </n>
 </a>
 '''
-        } else {
-            result = XmlUtil.serialize(root)
-            assert result.normalize() == '''\
-<?xml version="1.0" encoding="UTF-8"?>
-<a>
-  <b>B1</b>
-  <b>B2</b>
-  <b>B3</b>
-  <c a1="4" a2="true">C</c>
-  <n type="string">
-    <hello>world</hello>
-  </n>
-</a>
-'''
-        }
+        XMLUnit.ignoreWhitespace = true
+        def xmlDiff = new Diff(result, expected)
+        assert xmlDiff.similar(), xmlDiff.toString()
     }
 
     private static boolean isSlurper(node) {
