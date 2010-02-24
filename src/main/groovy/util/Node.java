@@ -131,11 +131,20 @@ public class Node implements Serializable {
     }
 
     public void plus(Closure c) {
+        List<Node> list = this.parent().children();
+        int afterIndex = list.indexOf(this);
+        List<Node> leftOvers = new ArrayList<Node>(list.subList(afterIndex + 1, list.size()));
+        list.subList(afterIndex + 1, list.size()).clear();
+
         NodeBuilder b = new NodeBuilder();
         Node newNode = (Node) b.invokeMethod("dummyNode", c);
         List<Node> children = newNode.children();
         for (Node child : children) {
             parent.appendNode(child.name(), child.attributes(), child.value());
+        }
+
+        for (Node child : leftOvers) {
+            this.parent().children().add(child);
         }
     }
 
