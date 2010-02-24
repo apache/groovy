@@ -218,10 +218,10 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
      * <p>Examples:</p>
      * <pre>
      * // get the markup as a string:
-     * new StreamingMarkupBuilder.bind { div { out << "hello world" } }.toString()
+     * new StreamingMarkupBuilder().bind { div { out << "hello world" } }.toString()
      * 
      * // send the output directly to a file:
-     * new StreamingMarkupBuilder.bind { div { out << "hello world" } } \
+     * new StreamingMarkupBuilder().bind { div { out << "hello world" } } \
      * 	 .writeTo( new File('myFile.xml').newWriter() )
      * </pre>
      * @return a {@link Writable} to render the markup

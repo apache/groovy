@@ -361,6 +361,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
             return type;
         type = type.trim();
         if (isPrimitiveType(type)) return type;
+        if (type.equals("def")) type = "java.lang.Object def";
 
         String label = null;
         Matcher matcher = REF_LABEL_REGEX.matcher(type);
