@@ -19,6 +19,7 @@ import groovy.lang.Writable;
 import groovy.util.Node;
 import groovy.util.XmlNodePrinter;
 import groovy.util.slurpersupport.GPathResult;
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.w3c.dom.Element;
 
 import javax.xml.transform.*;
@@ -199,7 +200,14 @@ public class XmlUtil {
     }
 
     private static String asString(GPathResult node) {
-        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + new StreamingMarkupBuilder().bindNode(node).toString();
+        // little bit of hackery to avoid Groovy dependency in this file
+        try {
+            Object builder = ((Class) Class.forName("groovy.xml.StreamingMarkupBuilder")).newInstance();
+            Writable w = (Writable) InvokerHelper.invokeMethod(builder, "bindNode", node);
+            return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + w.toString();
+        } catch (Exception e) {
+            return "Couldn't convert node to string because: " + e.getMessage();
+        }
     }
 
     // TODO: replace with stream-based version
