@@ -318,6 +318,67 @@ class GpathSyntaxTestSupport {
             assert r.'@type' == 'string'
             assert r.hello.text() == 'world'
         }
+
+        // TODO behaviour when multiple nodes added?
+//        root.c.replaceNode {
+//            n(type: 'string') {
+//                hello('world')
+//            }
+//            n(type: 'int', 330)
+//        }
+
+        // TODO behavior when replaceNode() is operating on a node list?
+//        root.b.replaceNode {
+//            n(type: 'string') {
+//                hello('world')
+//            }
+//        }
+
+    }
+
+    static void checkPlus(Closure getRoot) {
+        def root = getRoot('<a><b>B1</b><b>B2</b><c a1="4" a2="true">C</c></a>')
+        root.c + {
+            n(type: 'string') {
+                hello('world')
+            }
+        }
+        root.b + {
+            b('B3')
+        }
+        String result
+        // TODO remove need for cast
+        // TODO align Slurper and non-Slurper behavior
+        if (isSlurper(root)) {
+            result = XmlUtil.serialize((GPathResult)root)
+            assert result.normalize() == '''\
+<?xml version="1.0" encoding="UTF-8"?>
+<a>
+  <b>B1</b>
+  <b>B3</b>
+  <b>B2</b>
+  <b>B3</b>
+  <c a1="4" a2="true">C</c>
+  <n type="string">
+    <hello>world</hello>
+  </n>
+</a>
+'''
+        } else {
+            result = XmlUtil.serialize(root)
+            assert result.normalize() == '''\
+<?xml version="1.0" encoding="UTF-8"?>
+<a>
+  <b>B1</b>
+  <b>B2</b>
+  <b>B3</b>
+  <c a1="4" a2="true">C</c>
+  <n type="string">
+    <hello>world</hello>
+  </n>
+</a>
+'''
+        }
     }
 
     private static boolean isSlurper(node) {

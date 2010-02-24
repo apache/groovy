@@ -29,9 +29,10 @@ class DOMCategoryTest extends GroovyTestCase {
         doc.documentElement
     }
 
-    void testReplacements() {
+    void testReplacementsAndAdditions() {
         use(DOMCategory) {
             GpathSyntaxTestSupport.checkReplaceNode(getRoot)
+            GpathSyntaxTestSupport.checkPlus(getRoot)
         }
     }
 

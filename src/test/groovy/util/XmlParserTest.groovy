@@ -226,8 +226,9 @@ p() {
         GpathSyntaxTestSupport.checkRangeIndex(getRoot)
     }
 
-    void testReplacements() {
+    void testReplacementsAndAdditions() {
         GpathSyntaxTestSupport.checkReplaceNode(getRoot)
+        GpathSyntaxTestSupport.checkPlus(getRoot)
     }
 
     void testMixedMarkup() {

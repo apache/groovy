@@ -333,6 +333,33 @@ public class DOMCategory {
         return newNode;
     }
 
+    public static void plus(Element self, Closure c) {
+        Node parent = self.getParentNode();
+        Node beforeNode = self.getNextSibling();
+
+        DOMBuilder b = new DOMBuilder(self.getOwnerDocument());
+        Element newNodes = (Element) b.invokeMethod("rootNode", c);
+
+        Iterator<Node> iter = XmlGroovyMethods.iterator(children(newNodes));
+        while (iter.hasNext()) {
+            parent.insertBefore(iter.next(), beforeNode);
+        }
+    }
+
+    public static void plus(NodeList self, Closure c) {
+        Node lastNode = self.item(self.getLength() - 1);
+        Node parent = lastNode.getParentNode();
+        Node beforeNode = lastNode.getNextSibling();
+
+        DOMBuilder b = new DOMBuilder(lastNode.getOwnerDocument());
+        Element newNodes = (Element) b.invokeMethod("rootNode", c);
+
+        Iterator<Node> iter = XmlGroovyMethods.iterator(children(newNodes));
+        while (iter.hasNext()) {
+            parent.insertBefore(iter.next(), beforeNode);
+        }
+    }
+
     private static NodeList createNodeList(Element self) {
         List first = new ArrayList();
         first.add(self);
