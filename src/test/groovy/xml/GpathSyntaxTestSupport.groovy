@@ -16,6 +16,8 @@
 package groovy.xml
 
 import groovy.util.slurpersupport.GPathResult
+import org.custommonkey.xmlunit.XMLUnit
+import org.custommonkey.xmlunit.Diff
 
 /**
  * @author Paul King
@@ -302,7 +304,7 @@ class GpathSyntaxTestSupport {
         // TODO remove need for cast
         if (isSlurper(root)) result = XmlUtil.serialize((GPathResult)root)
         else result = XmlUtil.serialize(root)
-        assert result.normalize() == '''\
+        def expected = '''\
 <?xml version="1.0" encoding="UTF-8"?>
 <a>
   <b>B1</b>
@@ -312,6 +314,10 @@ class GpathSyntaxTestSupport {
   </n>
 </a>
 '''
+        XMLUnit.ignoreWhitespace = true
+        def xmlDiff = new Diff(result, expected)
+        assert xmlDiff.similar(), xmlDiff.toString()
+
         // XmlSlurper replacements are deferred so can't check here
         if (!isSlurper(root)) {
             assert r.name() == 'n'
@@ -353,7 +359,7 @@ class GpathSyntaxTestSupport {
         // TODO remove need for cast
         if (isSlurper(root)) result = XmlUtil.serialize((GPathResult)root)
         else result = XmlUtil.serialize(root)
-        assert result.normalize() == '''\
+        def expected = '''\
 <?xml version="1.0" encoding="UTF-8"?>
 <a>
   <b>B1</b>
@@ -367,6 +373,9 @@ class GpathSyntaxTestSupport {
   </n>
 </a>
 '''
+        XMLUnit.ignoreWhitespace = true
+        def xmlDiff = new Diff(result, expected)
+        assert xmlDiff.similar(), xmlDiff.toString()
     }
 
     private static boolean isSlurper(node) {
