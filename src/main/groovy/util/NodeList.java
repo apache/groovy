@@ -67,10 +67,8 @@ public class NodeList extends ArrayList {
 
             @Override
             public void setAttribute(final Object object, final String attribute, final Object newValue) {
-                NodeList nl = (NodeList) object;
-                Iterator it = nl.iterator();
-                while (it.hasNext()) {
-                    Node node = (Node) it.next();
+                for (Object o : (NodeList) object) {
+                    Node node = (Node) o;
                     node.attributes().put(attribute, newValue);
                 }
             }
@@ -95,8 +93,7 @@ public class NodeList extends ArrayList {
      */
     public NodeList getAt(String name) {
         NodeList answer = new NodeList();
-        for (Iterator iter = iterator(); iter.hasNext();) {
-            Object child = iter.next();
+        for (Object child : this) {
             if (child instanceof Node) {
                 Node childNode = (Node) child;
                 Object temp = childNode.get(name);
@@ -118,8 +115,7 @@ public class NodeList extends ArrayList {
      */
     public NodeList getAt(QName name) {
         NodeList answer = new NodeList();
-        for (Iterator iter = iterator(); iter.hasNext();) {
-            Object child = iter.next();
+        for (Object child : this) {
             if (child instanceof Node) {
                 Node childNode = (Node) child;
                 NodeList temp = childNode.getAt(name);
@@ -137,8 +133,7 @@ public class NodeList extends ArrayList {
     public String text() {
         String previousText = null;
         StringBuffer buffer = null;
-        for (Iterator iter = this.iterator(); iter.hasNext();) {
-            Object child = iter.next();
+        for (Object child : this) {
             String text = null;
             if (child instanceof String) {
                 text = (String) child;
@@ -171,6 +166,18 @@ public class NodeList extends ArrayList {
             throw new GroovyRuntimeException("replaceNode() can only be used to replace a single node.");
         }
         return ((Node)get(0)).replaceNode(c);
+    }
+
+    public void plus(Closure c) {
+        Node afterNode = (Node) get(size() - 1);
+        List<Node> list = afterNode.parent().children();
+        int afterIndex = list.indexOf(afterNode);
+        List<Node> leftOvers = new ArrayList<Node>(list.subList(afterIndex + 1, list.size()));
+        list.subList(afterIndex + 1, list.size()).clear();
+        afterNode.plus(c);
+        for (Node child : leftOvers) {
+            afterNode.parent().children().add(child);
+        }
     }
 
 }

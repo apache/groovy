@@ -130,6 +130,15 @@ public class Node implements Serializable {
         return result;
     }
 
+    public void plus(Closure c) {
+        NodeBuilder b = new NodeBuilder();
+        Node newNode = (Node) b.invokeMethod("dummyNode", c);
+        List<Node> children = newNode.children();
+        for (Node child : children) {
+            parent.appendNode(child.name(), child.attributes(), child.value());
+        }
+    }
+
     protected static void setMetaClass(final MetaClass metaClass, Class nodeClass) {
         final MetaClass newMetaClass = new DelegatingMetaClass(metaClass) {
             @Override
