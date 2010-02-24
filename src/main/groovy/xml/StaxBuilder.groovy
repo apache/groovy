@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,36 @@
 package groovy.xml
 
 /**
- * Groovy builder that works with Stax processors
+ * A Groovy builder that works with Stax processors.
+ * Using Java 6, typical usage is as follows:
+ * <pre>
+ * def factory = XMLOutputFactory.newInstance()
+ * def writer = new StringWriter()
+ * def builder = new StaxBuilder(factory.createXMLStreamWriter(writer))
+ * builder.root1(a:5, b:7) {
+ *     elem1('hello1')
+ *     elem2('hello2')
+ *     elem3(x:7)
+ * }
+ * assert writer == """<root1 a="5" b="7"><elem1>hello1</elem1><elem2>hello2</elem2><elem3 x="7" /></root1>"""
+ * </pre>
+ * Or an external library such as Jettison can be used as follows:
+ * <pre>
+ * @Grab('org.codehaus.jettison:jettison:1.2')
+ * import org.codehaus.jettison.mapped.*
+ * import javax.xml.stream.XMLStreamException
+ *
+ * def conv = new MappedNamespaceConvention()
+ * def writer = new StringWriter()
+ * def mappedWriter = new MappedXMLStreamWriter(conv, writer)
+ * def builder = new groovy.xml.StaxBuilder(mappedWriter)
+ * builder.root1(a:5, b:7) {
+ *     elem1('hello1')
+ *     elem2('hello2')
+ *     elem3(x:7)
+ * }
+ * assert writer.toString() == '''{"root1":{"@a":"5","@b":"7","elem1":"hello1","elem2":"hello2","elem3":{"@x":"7"}}}'''
+ * </pre>
  *
  * @author <a href="dejan@nighttale.net">Dejan Bosanac</a>
  * @author Paul King
@@ -26,8 +55,9 @@ public class StaxBuilder extends BuilderSupport {
 
     def writer
 
-    public StaxBuilder(xmlstreamwriter) {
-        writer = xmlstreamwriter
+    public StaxBuilder(xmlStreamWriter) {
+        writer = xmlStreamWriter
+        writer.writeStartDocument()
     }
 
     protected createNode(name) {
