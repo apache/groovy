@@ -29,6 +29,12 @@ class DOMCategoryTest extends GroovyTestCase {
         doc.documentElement
     }
 
+    void testReplacements() {
+        use(DOMCategory) {
+            GpathSyntaxTestSupport.checkReplaceNode(getRoot)
+        }
+    }
+
     void testMixedMarkup() {
         use(DOMCategory) {
             MixedMarkupTestSupport.checkMixedMarkup(getRoot)

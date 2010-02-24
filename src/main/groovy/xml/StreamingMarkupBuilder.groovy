@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -235,5 +235,17 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
             boundClosure.trigger = out
             out.flush()
         }.asWritable()
+    }
+
+    /**
+     * Convenience method for binding a single node.
+     * The call <code>bindNode(node)</code> is equivalent to <code>bind{ out << node }</code>.
+     * <p>Returns a {@link Writable} object, which may be used to render
+     * the markup directly to a String, or send the output to a stream.</p>
+     * @see #bind(Closure)
+     * @return a {@link Writable} to render the markup
+     */
+    public bindNode(node) {
+        bind { out << node }
     }
 }
