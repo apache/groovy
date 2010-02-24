@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,9 @@
  */
 package groovy.util;
 
+import groovy.lang.Closure;
 import groovy.lang.DelegatingMetaClass;
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
 import groovy.xml.QName;
@@ -163,4 +165,12 @@ public class NodeList extends ArrayList {
         }
         return "";
     }
+
+    public Node replaceNode(Closure c) {
+        if (size() <= 0 || size() > 1) {
+            throw new GroovyRuntimeException("replaceNode() can only be used to replace a single node.");
+        }
+        return ((Node)get(0)).replaceNode(c);
+    }
+
 }

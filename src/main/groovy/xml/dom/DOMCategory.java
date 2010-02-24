@@ -15,8 +15,10 @@
  */
 package groovy.xml.dom;
 
+import groovy.lang.Closure;
 import groovy.lang.GroovyRuntimeException;
 import groovy.lang.IntRange;
+import groovy.xml.DOMBuilder;
 import groovy.xml.QName;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.XmlGroovyMethods;
@@ -303,6 +305,32 @@ public class DOMCategory {
             putAt(result, "@" + e.getKey().toString(), e.getValue());
         }
         return result;
+    }
+
+    public static Element replaceNode(NodesHolder self, Closure c) {
+        if (self.getLength() <= 0 || self.getLength() > 1) {
+            throw new GroovyRuntimeException("replaceNode() can only be used to replace a single element.");
+        }
+        return replaceNode((Element) self.item(0), c);
+    }
+
+    public static Element replaceNode(Element self, Closure c) {
+        // Use DOMBuilder to generate the replacement node.
+        DOMBuilder b = new DOMBuilder(self.getOwnerDocument());
+        Element newNode = (Element) b.invokeMethod("rootNode", c);
+
+        // The replacement node is the first child element of 'rootNode'.
+        Node n = newNode.getFirstChild();
+        while (n != null && n.getNodeType() != Node.ELEMENT_NODE) {
+            n = n.getNextSibling();
+        }
+
+        if (n == null) throw new GroovyRuntimeException("Replacement node must be an element.");
+
+        // Now replace the required node and return the replacement element.
+        newNode = (Element) n;
+        self.getParentNode().replaceChild(newNode, self);
+        return newNode;
     }
 
     private static NodeList createNodeList(Element self) {

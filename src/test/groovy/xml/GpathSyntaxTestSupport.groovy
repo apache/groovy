@@ -15,6 +15,8 @@
  */
 package groovy.xml
 
+import groovy.util.slurpersupport.GPathResult
+
 /**
  * @author Paul King
  */
@@ -137,7 +139,7 @@ class GpathSyntaxTestSupport {
         assert sLikes.size() == 1
         assert root.likes.size() == 0
         if (isDom(root)) {
-            // addtitional DOMCategory long-hand notation gets nested nodes from root
+            // additional DOMCategory long-hand notation gets nested nodes from root
             assert root.getElementsByTagName('likes').size() == 2
         }
         assert 'sleep' == sLikes[0].text()
@@ -287,6 +289,35 @@ class GpathSyntaxTestSupport {
         assert bs.size() == 2
         assert bs[0].text() == 'B2'
         assert bs[1].text() == 'B1'
+    }
+
+    static void checkReplaceNode(Closure getRoot) {
+        def root = getRoot('<a><b>B1</b><b>B2</b><c a1="4" a2="true"><x>500</x></c></a>')
+        def r = root.c.replaceNode {
+            n(type: 'string') {
+                hello('world')
+            }
+        }
+        String result
+        // TODO remove need for cast
+        if (isSlurper(root)) result = XmlUtil.serialize((GPathResult)root)
+        else result = XmlUtil.serialize(root)
+        assert result.normalize() == '''\
+<?xml version="1.0" encoding="UTF-8"?>
+<a>
+  <b>B1</b>
+  <b>B2</b>
+  <n type="string">
+    <hello>world</hello>
+  </n>
+</a>
+'''
+        // XmlSlurper replacements are deferred so can't check here
+        if (!isSlurper(root)) {
+            assert r.name() == 'n'
+            assert r.'@type' == 'string'
+            assert r.hello.text() == 'world'
+        }
     }
 
     private static boolean isSlurper(node) {

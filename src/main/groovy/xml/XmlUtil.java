@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,9 @@
 package groovy.xml;
 
 import groovy.lang.Writable;
+import groovy.util.Node;
+import groovy.util.XmlNodePrinter;
+import groovy.util.slurpersupport.GPathResult;
 import org.w3c.dom.Element;
 
 import javax.xml.transform.*;
@@ -26,13 +29,15 @@ import java.io.*;
 
 /**
  * Used for pretty printing XML content.
+ *
+ * @author Paul King
  */
 public class XmlUtil {
     /**
      * Return a pretty String version of the Element.
      *
-     * @param element the element to serialize
-     * @return the pretty String representation of the element
+     * @param element the Element to serialize
+     * @return the pretty String representation of the Element
      */
     public static String serialize(Element element) {
         StringWriter sw = new StringWriter();
@@ -43,8 +48,8 @@ public class XmlUtil {
     /**
      * Write a pretty version of the Element to the OutputStream.
      *
-     * @param element the element to serialize
-     * @param os      the outputstream to write to
+     * @param element the Element to serialize
+     * @param os      the OutputStream to write to
      */
     public static void serialize(Element element, OutputStream os) {
         Source source = new DOMSource(element);
@@ -52,10 +57,81 @@ public class XmlUtil {
     }
 
     /**
+     * Write a pretty version of the Element to the Writer.
+     *
+     * @param element the Element to serialize
+     * @param w       the Writer to write to
+     */
+    public static void serialize(Element element, Writer w) {
+        Source source = new DOMSource(element);
+        serialize(source, w);
+    }
+
+    /**
+     * Return a pretty String version of the Node.
+     *
+     * @param node the Node to serialize
+     * @return the pretty String representation of the Node
+     */
+    public static String serialize(Node node) {
+        return serialize(asString(node));
+    }
+
+    /**
+     * Write a pretty version of the Node to the OutputStream.
+     *
+     * @param node the Node to serialize
+     * @param os   the OutputStream to write to
+     */
+    public static void serialize(Node node, OutputStream os) {
+        serialize(asString(node), os);
+    }
+
+    /**
+     * Write a pretty version of the Node to the Writer.
+     *
+     * @param node the Node to serialize
+     * @param w    the Writer to write to
+     */
+    public static void serialize(Node node, Writer w) {
+        serialize(asString(node), w);
+    }
+
+    /**
+     * Return a pretty version of the GPathResult.
+     *
+     * @param node a GPathResult to serialize to a String
+     * @return the pretty String representation of the GPathResult
+     */
+    public static String serialize(GPathResult node) {
+        return serialize(asString(node));
+    }
+
+    /**
+     * Write a pretty version of the GPathResult to the OutputStream.
+     *
+     * @param node a GPathResult to serialize
+     * @param os       the OutputStream to write to
+     */
+    public static void serialize(GPathResult node, OutputStream os) {
+        serialize(asString(node), os);
+    }
+
+    /**
+     * Write a pretty version of the GPathResult to the Writer.
+     *
+     * @param node a GPathResult to serialize
+     * @param w    the Writer to write to
+     */
+    public static void serialize(GPathResult node, Writer w) {
+        serialize(asString(node), w);
+    }
+
+    /**
      * Return a pretty String version of the XML content produced by the Writable.
      *
-     * @param writable the writable to serialize
-     * @return the pretty String representation of the element
+     * @param writable the Writable to serialize
+     * @return the pretty String representation of the content from the Writable
      */
     public static String serialize(Writable writable) {
         return serialize(asString(writable));
@@ -64,18 +140,28 @@ public class XmlUtil {
     /**
      * Write a pretty version of the XML content produced by the Writable to the OutputStream.
      *
-     * @param writable the writable to serialize
-     * @param os       the outputstream to write to
+     * @param writable the Writable to serialize
+     * @param os       the OutputStream to write to
      */
     public static void serialize(Writable writable, OutputStream os) {
         serialize(asString(writable), os);
     }
 
     /**
+     * Write a pretty version of the XML content produced by the Writable to the Writer.
+     *
+     * @param writable the Writable to serialize
+     * @param w        the Writer to write to
+     */
+    public static void serialize(Writable writable, Writer w) {
+        serialize(asString(writable), w);
+    }
+
+    /**
      * Return a pretty version of the XML content contained in the given String.
      *
-     * @param xmlString the string to serialize
-     * @return the pretty String representation of the element
+     * @param xmlString the String to serialize
+     * @return the pretty String representation of the original content
      */
     public static String serialize(String xmlString) {
         StringWriter sw = new StringWriter();
@@ -86,11 +172,34 @@ public class XmlUtil {
     /**
      * Write a pretty version of the given XML string to the OutputStream.
      *
-     * @param xmlString the string to serialize
-     * @param os        the outputstream to write to
+     * @param xmlString the String to serialize
+     * @param os        the OutputStream to write to
      */
     public static void serialize(String xmlString, OutputStream os) {
         serialize(asStreamSource(xmlString), os);
+    }
+
+    /**
+     * Write a pretty version of the given XML string to the Writer.
+     *
+     * @param xmlString the String to serialize
+     * @param w         the Writer to write to
+     */
+    public static void serialize(String xmlString, Writer w) {
+        serialize(asStreamSource(xmlString), w);
+    }
+
+    private static String asString(Node node) {
+        StringWriter sw = new StringWriter();
+        PrintWriter pw = new PrintWriter(sw);
+        XmlNodePrinter nodePrinter = new XmlNodePrinter(pw);
+        nodePrinter.setPreserveWhitespace(true);
+        nodePrinter.print(node);
+        return sw.toString();
+    }
+
+    private static String asString(GPathResult node) {
+        return "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + new StreamingMarkupBuilder().bindNode(node).toString();
     }
 
     // TODO: replace with stream-based version

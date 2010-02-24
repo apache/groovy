@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,6 +15,7 @@
  */
 package groovy.util;
 
+import groovy.lang.Closure;
 import groovy.lang.DelegatingMetaClass;
 import groovy.lang.GroovySystem;
 import groovy.lang.MetaClass;
@@ -115,6 +116,18 @@ public class Node implements Serializable {
 
     public Node appendNode(Object name, Map attributes, Object value) {
         return new Node(this, name, attributes, value);
+    }
+
+    public Node replaceNode(Closure c) {
+        getParentList(parent).remove(this);
+        NodeBuilder b = new NodeBuilder();
+        Node newNode = (Node) b.invokeMethod("dummyNode", c);
+        List<Node> children = newNode.children();
+        Node result = this;
+        for (Node child : children) {
+            result = parent.appendNode(child.name(), child.attributes(), child.value());
+        }
+        return result;
     }
 
     protected static void setMetaClass(final MetaClass metaClass, Class nodeClass) {
