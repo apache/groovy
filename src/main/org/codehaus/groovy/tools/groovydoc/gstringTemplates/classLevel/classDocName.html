@@ -22,6 +22,7 @@
             return classDoc.getDocUrl(t, b)
         }
         if (t instanceof org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc) {
+            if (t.fullPathName == 'def') return classDoc.getDocUrl("java.lang.Object def", b)
             return "<a href='" + classDoc.relativeRootPath + t.fullPathName + ".html'>" + (b ? t.qualifiedTypeName() : t.name()) + "</a>"
         }
         return classDoc.getDocUrl(t.qualifiedTypeName(), b)
