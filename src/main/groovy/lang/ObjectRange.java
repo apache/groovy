@@ -343,10 +343,18 @@ public class ObjectRange extends AbstractList implements Range {
      * {@inheritDoc}
      */
     public void step(int step, Closure closure) {
+    	if(step == 0) {
+    		if(compareTo(from, to) != 0) {
+        		throw new GroovyRuntimeException("Infinite loop detected due to step size of 0");
+    		} else {
+    			return; // from == to and step == 0, nothing to do, so return
+    		}
+    	}
+    	
         if (reverse) {
             step = -step;
         }
-        if (step >= 0) {
+        if (step > 0) {
             Comparable first = from;
             Comparable value = from;
             while (compareTo(value, to) <= 0) {

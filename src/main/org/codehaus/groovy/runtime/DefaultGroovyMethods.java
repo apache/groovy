@@ -8877,7 +8877,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 for (BigDecimal i = self1; i.compareTo(to1) > 0; i = i.add(stepNumber1)) {
                     closure.call(i);
                 }
-            } else
+            } else if(self1.compareTo(to1) != 0)
                 throw new GroovyRuntimeException("Infinite loop in " + self1 + ".step(" + to1 + ", " + stepNumber1 + ")");
         } else if (self instanceof BigInteger || to instanceof BigInteger || stepNumber instanceof BigInteger) {
             final BigInteger zero = BigInteger.valueOf(0);
@@ -8892,7 +8892,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 for (BigInteger i = self1; i.compareTo(to1) > 0; i = i.add(stepNumber1)) {
                     closure.call(i);
                 }
-            } else
+            } else if(self1.compareTo(to1) != 0)
                 throw new GroovyRuntimeException("Infinite loop in " + self1 + ".step(" + to1 + ", " + stepNumber1 + ")");
         } else {
             int self1 = self.intValue();
@@ -8906,7 +8906,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 for (int i = self1; i > to1; i += stepNumber1) {
                     closure.call(i);
                 }
-            } else
+            } else if(self1 != to1)
                 throw new GroovyRuntimeException("Infinite loop in " + self1 + ".step(" + to1 + ", " + stepNumber1 + ")");
         }
     }
