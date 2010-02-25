@@ -16,11 +16,20 @@
 
 package org.codehaus.groovy.runtime;
 
-
 import groovy.lang.Closure;
  
 /**
- * Represents wrapper around a Closure to support currying
+ * Represents wrapper around a Closure to support currying.
+ * Normally used only internally through the <code>curry()</code> method on <code>Closure</code>.
+ * Typical usages:
+ * <pre>
+ * import org.codehaus.groovy.runtime.CurriedClosure
+ * def unitAdder = { first, second, unit -> "${first + second} $unit" }
+ * assert unitAdder(10, 15, "minutes") == "25 minutes"
+ * assert unitAdder.curry(60)(15, "minutes") == "75 minutes"
+ * assert new CurriedClosure(unitAdder, 45)(15, "minutes") == "60 minutes"
+ * assert new CurriedClosure(unitAdder, "six", "ty")("minutes") == "sixty minutes"
+ * </pre>
  * 
  * @author Jochen Theodorou
  */
