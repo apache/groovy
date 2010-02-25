@@ -318,10 +318,18 @@ public class IntRange extends AbstractList<Integer> implements Range<Integer> {
      * {@inheritDoc}
      */
     public void step(int step, Closure closure) {
+    	if(step == 0) {
+    		if(from != to) {
+        		throw new GroovyRuntimeException("Infinite loop detected due to step size of 0");
+    		} else {
+    			return; // from == to and step == 0, nothing to do, so return
+    		}
+    	}
+
         if (reverse) {
             step = -step;
         }
-        if (step >= 0) {
+        if (step > 0) {
             int value = from;
             while (value <= to) {
                 closure.call(Integer.valueOf(value));
