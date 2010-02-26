@@ -78,7 +78,7 @@ public class ExtendedVerifier implements GroovyClassVisitor {
             visitAnnotations(parameter, AnnotationNode.PARAMETER_TARGET);
         }
 
-        if (this.currentClass.isAnnotationDefinition()) {
+        if (this.currentClass.isAnnotationDefinition() && !node.isStaticConstructor()) {
             ErrorCollector errorCollector = new ErrorCollector(this.source.getConfiguration());
             AnnotationVisitor visitor = new AnnotationVisitor(this.source, errorCollector);
             visitor.setReportClass(currentClass);
