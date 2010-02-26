@@ -550,7 +550,7 @@ public class AsmClassGenerator extends ClassGenerator {
         }
         helper = new BytecodeHelper(mv);
 
-        if (classNode.isAnnotationDefinition()) {
+        if (classNode.isAnnotationDefinition() && !node.isStaticConstructor()) {
             visitAnnotationDefault(node, mv);
         } else if (!node.isAbstract()) {
             Statement code = node.getCode();
