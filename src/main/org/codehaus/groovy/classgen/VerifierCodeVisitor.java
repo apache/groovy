@@ -19,9 +19,11 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.codehaus.groovy.ast.ASTNode;
+import org.codehaus.groovy.ast.ClassNode;
 import org.codehaus.groovy.ast.CodeVisitorSupport;
 import org.codehaus.groovy.ast.stmt.ForStatement;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
+import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.ListExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
@@ -121,5 +123,12 @@ public class VerifierCodeVisitor extends CodeVisitorSupport implements Opcodes {
             }
         }
         super.visitListExpression(expression);
+    }
+
+    public void visitConstructorCallExpression(ConstructorCallExpression call) {
+    	ClassNode callType = call.getType(); 
+    	if(callType.isEnum() && !callType.equals(verifier.getClassNode())) {
+    		throw new RuntimeParserException ("Enum constructor calls are only allowed inside the enum class",(Expression) call);
+    	}
     }
 }
