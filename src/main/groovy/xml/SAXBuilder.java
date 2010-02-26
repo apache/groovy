@@ -26,7 +26,7 @@ import org.xml.sax.SAXException;
 import org.xml.sax.helpers.AttributesImpl;
 
 /**
- * A helper class for creating a W3C D
+ * A builder for generating W3C SAX events.  Use similar to MarkupBuilder.
  * 
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$

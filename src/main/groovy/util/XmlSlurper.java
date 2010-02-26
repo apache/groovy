@@ -49,10 +49,33 @@ import org.xml.sax.XMLReader;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
+ * <p>Parse XML into a document tree that may be traversed similar to XPath 
+ * expressions.  For example:</p>
+ * <pre>
+ * def rootNode = new XmlSlurper().parseText( 
+ *    '&lt;root&gt;&lt;one a1="uno!" /&gt;&lt;two&gt;Some text!&lt;/two&gt;&lt;/root&gt;' )
+ *    
+ * assert rootNode.name() == 'root'
+ * assert rootNode.one.@a1 == 'uno!'
+ * assert rootNode.two.text() == 'Some text!'
+ * rootNode.children().each { assert it.name() in ['one','two'] }  
+ * </pre>
+ * 
+ * <p>Note that in some cases, a 'selector' expression may not resolve to a 
+ * single node.  For example: </p>
+ * <pre>
+ * def rootNode = new XmlSlurper().parseText( 
+ *    '''&lt;root&gt;
+ *         &lt;a&gt;one!&lt;/a&gt;
+ *         &lt;a&gt;two!&lt;/a&gt;
+ *       &lt;/root&gt;''' )
+ *    
+ * assert rootNode.a.size() == 2
+ * rootNode.a.each { assert it.text() in ['one!','two!'] }  
+ * </pre>
+ * @see GPathResult
  * @author John Wilson
- *
  */
-
 public class XmlSlurper extends DefaultHandler {
   private final XMLReader reader;
   private Node currentNode = null;
@@ -61,6 +84,11 @@ public class XmlSlurper extends DefaultHandler {
   private final Map namespaceTagHints = new Hashtable();
   private boolean keepWhitespace = false;
 
+  /**
+   * Uses the defaults of not validating and namespace aware.
+   * @throws ParserConfigurationException
+   * @throws SAXException
+   */
   public XmlSlurper() throws ParserConfigurationException, SAXException {
     this(false, true);
   }
