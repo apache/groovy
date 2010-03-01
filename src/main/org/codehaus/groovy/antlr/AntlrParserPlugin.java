@@ -712,6 +712,10 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }  else if (node!=null && classNode.isAnnotationDefinition()) {
             code = statement(node);
             hasAnnotationDefault = true;
+        } else if ((modifiers & Opcodes.ACC_ABSTRACT) > 0) {
+            if (node != null) {
+                throw new ASTRuntimeException(methodDef, "Abstract methods do not define a body.");
+            }
         }
 
         MethodNode methodNode = new MethodNode(name, modifiers, returnType, parameters, exceptions, code);

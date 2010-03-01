@@ -147,7 +147,7 @@ class InnerClassTest extends CompilableTestSupport {
     void testUsageOfOuterField() {
         assertScript """
             interface Run {
-                def run() {}
+                def run()
             }
             class Foo {
                 private x = 1
@@ -169,7 +169,7 @@ class InnerClassTest extends CompilableTestSupport {
 
         assertScript """
             interface Run {
-                def run() {}
+                def run()
             }
             class Foo {
                 private static x = 1
@@ -194,7 +194,7 @@ class InnerClassTest extends CompilableTestSupport {
 
         assertScript """
             interface Run {
-                def run(){}
+                def run()
             }
             class Foo {
                 private x = 1
@@ -224,7 +224,7 @@ class InnerClassTest extends CompilableTestSupport {
     void testUsageOfOuterMethod() {
         assertScript """
             interface Run {
-                def run(){}
+                def run()
             }
             class Foo {
                 private x(){1}
@@ -241,7 +241,7 @@ class InnerClassTest extends CompilableTestSupport {
 
         assertScript """
             interface Run {
-                def run() {}
+                def run()
             }
             class Foo {
                 private static x() {1}
@@ -261,7 +261,7 @@ class InnerClassTest extends CompilableTestSupport {
     void testUsageOfOuterMethodOverriden() {
         assertScript """
             interface Run {
-                def run(){}
+                def run()
             }
             class Foo {
                 private x(){1}
@@ -281,7 +281,7 @@ class InnerClassTest extends CompilableTestSupport {
 
         assertScript """
             interface Run {
-                def run() {}
+                def run()
             }
             class Foo {
                 private static x() { 1 }
