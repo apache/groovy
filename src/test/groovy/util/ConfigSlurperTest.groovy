@@ -18,6 +18,7 @@ package groovy.util
  * Tests for the ConfigSlurper class
  
  * @author Graeme Rocher
+ * @author Guillaume Laforge
  * @since 0.6
   *
  * Created: Jun 19, 2007
@@ -459,7 +460,7 @@ log4j {
         assertEquals false, config.log4j.additivity.org.codehaus.groovy.grails
 	}
 
-    public void testNotProperlyNestedPropertiesArePreserved() throws IOException{
+    void testNotProperlyNestedPropertiesArePreserved() throws IOException{
         Properties props = new Properties()
         props.load(ConfigSlurperTest.class.getResourceAsStream("system.properties"))
         assertEquals("false", props.get("catalog.prov"))
@@ -473,7 +474,7 @@ log4j {
         assertEquals("sa", props.get("catalog.prov.db.user"))
     }
     
-    public void testSameElementNestingWithoutDuplication() {
+    void testSameElementNestingWithoutDuplication() {
         def cfg = """ 
             a { b { a { foo = 1 } } } 
             a.foo = 2
@@ -486,4 +487,35 @@ log4j {
         assert c.a.b.a.bar == 3
     }
 
+    /**
+     * Test for GROOVY-3186:
+     * ConfigSlurper only allows a single block for any given name
+     */
+    void testTwoSameBlocks() {
+        def config = new ConfigSlurper().parse("""
+            topNode {
+                one = "1"
+            }
+
+            topNode {
+                two = "2"
+            }
+
+            log4j {
+                logger {
+                    foo.bar = "debug"
+                }
+            }
+
+            log4j {
+                logger.extraLogger = "info"
+            }
+        """)
+
+        assert config.topNode.one == "1"
+        assert config.topNode.two == "2"
+
+        assert config.log4j.logger.foo.bar == "debug"
+        assert config.log4j.logger.extraLogger == "info"
+    }
 }
