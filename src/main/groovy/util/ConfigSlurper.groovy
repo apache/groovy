@@ -171,7 +171,7 @@ class ConfigSlurper {
         	current.config[name] = co
         	current.scope[name] = co
         }
-        mc.getProperty = { String name ->
+        def getPropertyClosure = { String name ->
             def current = stack.last
             def result
             if(current.config.get(name)) {
@@ -188,6 +188,7 @@ class ConfigSlurper {
             }
             result
         }
+        mc.getProperty = getPropertyClosure
         mc.invokeMethod = { String name, args ->
             def result
             if(args.length == 1 && args[0] instanceof Closure) {
