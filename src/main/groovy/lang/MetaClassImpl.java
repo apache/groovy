@@ -2195,7 +2195,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         propertyIndex.put(propName, mp);
     }
 
-    private void applyPropertyDescriptors(PropertyDescriptor[] propertyDescriptors) {
+    protected void applyPropertyDescriptors(PropertyDescriptor[] propertyDescriptors) {
         // now iterate over the map of property descriptors and generate
         // MetaBeanProperty objects
         for (PropertyDescriptor pd : propertyDescriptors) {
