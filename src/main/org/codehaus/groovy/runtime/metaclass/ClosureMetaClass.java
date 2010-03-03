@@ -26,6 +26,7 @@ import org.codehaus.groovy.runtime.callsite.PogoMetaClassSite;
 import org.codehaus.groovy.runtime.wrappers.Wrapper;
 import org.codehaus.groovy.util.FastArray;
 
+import java.beans.PropertyDescriptor;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Method;
 import java.util.*;
@@ -694,5 +695,27 @@ public final class ClosureMetaClass extends MetaClassImpl {
 
     public CallSite createPogoCallCurrentSite(CallSite site, Class sender, Object[] args) {
         return new PogoMetaClassSite(site, this);
+    }
+
+    public List respondsTo(Object obj, String name, Object[] argTypes) {
+    	loadMetaInfo();
+    	return super.respondsTo(obj, name, argTypes);
+    }
+
+    public List respondsTo(final Object obj, final String name) {
+    	loadMetaInfo();
+    	return super.respondsTo(obj, name);
+    }
+    
+    private synchronized void loadMetaInfo() {
+    	if(metaMethodIndex.isEmpty()) {
+    		initialized = false;
+    		super.initialize();
+    		initialized = true;
+    	}
+    }
+    
+    protected void applyPropertyDescriptors(PropertyDescriptor[] propertyDescriptors) {
+    	// do nothing
     }
 }
