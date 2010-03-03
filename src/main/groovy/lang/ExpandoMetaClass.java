@@ -1121,7 +1121,9 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         Class[] params = MetaClassHelper.convertToTypeArray(args);
         MetaMethod method = pickMethod(GROOVY_CONSTRUCTOR, params);
         if(method!=null && method.getParameterTypes().length == args.length) {
-           return new ConstructorMetaMethodSite(site, this, method, params);
+        	if(method.getDeclaringClass().getTheClass().equals(getTheClass())) {
+                return new ConstructorMetaMethodSite(site, this, method, params);
+        	}
         }
 
         return super.createConstructorSite(site, args);
