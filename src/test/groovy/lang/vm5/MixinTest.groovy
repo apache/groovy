@@ -353,6 +353,20 @@ class MixinTest extends GroovyTestCase {
             assert mixedVarargs(3, "a", "b", "c", "d") == "mixedVarargs4"
         """
     }
+
+    void testObjectGetClassInvocation() { // GROOVY-4034
+        assertScript """
+            class M4034 {
+                def doIt() {
+                    assert metaClass.owner.class == T4034
+                }
+            }
+            
+            class T4034 {}
+            T4034.mixin(M4034)
+            new T4034().doIt()
+        """
+    }
 }
 
 class ArrayListExt {

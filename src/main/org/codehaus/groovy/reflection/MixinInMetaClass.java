@@ -119,7 +119,7 @@ public class MixinInMetaClass extends ManagedConcurrentMap {
                     if (method instanceof CachedMethod)
                       staticMethod(self, arr, (CachedMethod) method);
                 }
-                else {
+                else if (method.getDeclaringClass().getTheClass() != Object.class || method.getName().equals("toString")) {
 //                    if(self.pickMethod(method.getName(), method.getNativeParameterTypes()) == null) {
                         final MixinInstanceMetaMethod metaMethod = new MixinInstanceMetaMethod(method, mixin);
                         arr.add(metaMethod);
