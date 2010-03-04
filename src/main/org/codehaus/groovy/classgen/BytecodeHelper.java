@@ -705,11 +705,7 @@ public class BytecodeHelper implements Opcodes {
             }
         }
         addSubTypes(ret, paramTypes, "(", ")");
-        if (returnType.isGenericsPlaceHolder()) {
-            addSubTypes(ret, returnType.getGenericsTypes(), "", "");
-        } else {
-            addSubTypes(ret, new GenericsType[]{new GenericsType(returnType)}, "", "");
-        }
+        addSubTypes(ret, new GenericsType[]{new GenericsType(returnType)}, "", "");
         return ret.toString();
     }
 
