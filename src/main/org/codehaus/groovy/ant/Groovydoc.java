@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,6 +26,7 @@ import org.codehaus.groovy.tools.groovydoc.ClasspathResourceManager;
 import org.codehaus.groovy.tools.groovydoc.FileOutputTool;
 import org.codehaus.groovy.tools.groovydoc.GroovyDocTool;
 import org.codehaus.groovy.tools.groovydoc.LinkArgument;
+import org.codehaus.groovy.tools.groovydoc.gstringTemplates.GroovyDocTemplateInfo;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -38,8 +39,6 @@ import java.util.*;
  * @version $Id$
  */
 public class Groovydoc extends Task {
-    private static final String TEMPLATE_BASEDIR = "org/codehaus/groovy/tools/groovydoc/gstringTemplates/";
-    private static final String DOCGEN_BASEDIR = "org/codehaus/groovy/tools/";
     private final LoggingHelper log = new LoggingHelper(this);
 
     private Path sourcePath;
@@ -357,25 +356,9 @@ public class Groovydoc extends Task {
         GroovyDocTool htmlTool = new GroovyDocTool(
                 new ClasspathResourceManager(), // we're gonna get the default templates out of the dist jar file
                 sourcePath.list(), // sourcepaths
-                new String[]{ // top level templates
-                        TEMPLATE_BASEDIR + "topLevel/index.html",
-                        TEMPLATE_BASEDIR + "topLevel/overview-frame.html", // needs all package names
-                        TEMPLATE_BASEDIR + "topLevel/allclasses-frame.html", // needs all packages / class names
-                        TEMPLATE_BASEDIR + "topLevel/overview-summary.html", // needs all packages
-                        TEMPLATE_BASEDIR + "topLevel/help-doc.html",
-                        TEMPLATE_BASEDIR + "topLevel/index-all.html",
-                        TEMPLATE_BASEDIR + "topLevel/deprecated-list.html",
-                        TEMPLATE_BASEDIR + "topLevel/stylesheet.css", // copy default one, may override later
-                        TEMPLATE_BASEDIR + "topLevel/inherit.gif",
-                        DOCGEN_BASEDIR + "groovy.ico",
-                },
-                new String[]{ // package level templates
-                        TEMPLATE_BASEDIR + "packageLevel/package-frame.html",
-                        TEMPLATE_BASEDIR + "packageLevel/package-summary.html"
-                },
-                new String[]{ // class level templates
-                        TEMPLATE_BASEDIR + "classLevel/classDocName.html"
-                },
+                GroovyDocTemplateInfo.DEFAULT_DOC_TEMPLATES,
+                GroovyDocTemplateInfo.DEFAULT_PACKAGE_TEMPLATES,
+                GroovyDocTemplateInfo.DEFAULT_CLASS_TEMPLATES,
                 links,
                 properties
         );
