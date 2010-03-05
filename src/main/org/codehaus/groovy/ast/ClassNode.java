@@ -314,11 +314,6 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         }
         this.methods = new MapOfLists();
         this.methodsList = new ArrayList<MethodNode>();
-
-        transformInstances = new EnumMap<CompilePhase, Map<Class <? extends ASTTransformation>, Set<ASTNode>>>(CompilePhase.class);
-        for (CompilePhase phase : CompilePhase.values()) {
-            transformInstances.put(phase, new HashMap<Class <? extends ASTTransformation>, Set<ASTNode>>());
-        }
     }
 
     /**
@@ -1338,16 +1333,16 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
 
     public void addTransform(Class<? extends ASTTransformation> transform, ASTNode node) {
         GroovyASTTransformation annotation = transform.getAnnotation(GroovyASTTransformation.class);
-        Set<ASTNode> nodes = transformInstances.get(annotation.phase()).get(transform);
+        Set<ASTNode> nodes = getTransformInstances().get(annotation.phase()).get(transform);
         if (nodes == null) {
             nodes = new LinkedHashSet<ASTNode>();
-            transformInstances.get(annotation.phase()).put(transform, nodes);
+            getTransformInstances().get(annotation.phase()).put(transform, nodes);
         }
         nodes.add(node);
     }
 
     public Map<Class <? extends ASTTransformation>, Set<ASTNode>> getTransforms(CompilePhase phase) {
-        return transformInstances.get(phase);
+        return getTransformInstances().get(phase);
     }
 
     public void renameField(String oldName, String newName) {
@@ -1376,5 +1371,15 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
      */
     public Iterator<InnerClassNode> getInnerClasses() {
         return (innerClasses == null ? Collections.<InnerClassNode>emptyList() : innerClasses).iterator();
+    }
+
+    private Map<CompilePhase, Map<Class<? extends ASTTransformation>, Set<ASTNode>>> getTransformInstances() {
+        if(transformInstances == null){
+            transformInstances = new EnumMap<CompilePhase, Map<Class <? extends ASTTransformation>, Set<ASTNode>>>(CompilePhase.class);
+            for (CompilePhase phase : CompilePhase.values()) {
+                transformInstances.put(phase, new HashMap<Class <? extends ASTTransformation>, Set<ASTNode>>());
+            }
+        }
+        return transformInstances;
     }
 }
