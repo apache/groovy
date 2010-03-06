@@ -61,7 +61,7 @@ public class ObjectRange extends AbstractList implements Range {
 
     /**
      * Creates a new {@link ObjectRange}. Creates a reversed range if
-     * <code>from</code> < <code>to</code>.
+     * <code>from</code> &lt; <code>to</code>.
      *
      * @param from the first value in the range.
      * @param to   the last value in the range.
@@ -74,7 +74,11 @@ public class ObjectRange extends AbstractList implements Range {
             throw new IllegalArgumentException("Must specify a non-null value for the 'to' index in a Range");
         }
 
-        this.reverse = ScriptBytecodeAdapter.compareGreaterThan(from, to);
+        try {
+            this.reverse = ScriptBytecodeAdapter.compareGreaterThan(from, to);
+        } catch (ClassCastException cce) {
+            throw new IllegalArgumentException("Unable to create range due to incompatible types: " + from.getClass().getSimpleName() + ".." + to.getClass().getSimpleName() + " (possible missing brackets around range?)", cce);
+        }
         if (this.reverse) {
             constructorHelper(to, from);
         } else {
