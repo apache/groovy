@@ -58,6 +58,7 @@ import java.math.BigInteger;
 import java.net.URI;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -254,5 +255,17 @@ public class DefaultGroovyMethodsTest extends GroovyTestCase {
 
         DefaultGroovyMethods.downto(new BigInteger("1"), new BigDecimal("0.123"), closure);
         assertEquals(count[0], 1);
+    }
+
+    public void testBulkCollectionForArrayOperations() {
+        List<String> list = new ArrayList<String>();
+        assertTrue(DefaultGroovyMethods.addAll(list, "abcd".split("")));
+        assertTrue(DefaultGroovyMethods.removeAll(list, "def".split("")));
+        assertTrue(DefaultGroovyMethods.retainAll(list, "bcd".split("")));
+        List<String> bAndC = Arrays.asList("b", "c");
+        assertTrue(DefaultGroovyMethods.containsAll(list, bAndC.toArray()));
+        assertEquals(list, bAndC);
+        assertTrue(DefaultGroovyMethods.addAll(list, 1, Arrays.asList("a", "s", "i").toArray(new String[3])));
+        assertEquals(list, Arrays.asList("b", "a", "s", "i", "c"));
     }
 }

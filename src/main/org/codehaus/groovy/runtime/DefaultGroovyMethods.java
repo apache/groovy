@@ -1884,6 +1884,77 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Returns <tt>true</tt> if this collection contains all of the elements
+     * in the specified array.
+     *
+     * @param  items array to be checked for containment in this collection
+     * @return <tt>true</tt> if this collection contains all of the elements
+     *	       in the specified array
+     * @see    Collection#containsAll(Collection)
+     */
+    public static boolean containsAll(Collection self, Object[] items) {
+        return self.containsAll(Arrays.asList(items));
+    }
+
+    /**
+     * Removes all of this collection's elements that are also contained in the
+     * specified array.  After this call returns, this collection will contain
+     * no elements in common with the specified array.
+     *
+     * @param  items array containing elements to be removed from this collection
+     * @return <tt>true</tt> if this collection changed as a result of the call
+     * @see    Collection#removeAll(Collection)
+     */
+    public static <T> boolean removeAll(Collection<T> self, T[] items) {
+        return self.removeAll(Arrays.asList(items));
+    }
+
+    /**
+     * Retains only the elements in this collection that are contained in the
+     * specified array.  In other words, removes from this collection all of
+     * its elements that are not contained in the specified array.
+     *
+     * @param  items array containing elements to be retained from this collection
+     * @return <tt>true</tt> if this collection changed as a result of the call
+     * @see    Collection#retainAll(Collection)
+     */
+    public static <T> boolean retainAll(Collection<T> self, T[] items) {
+        return self.retainAll(Arrays.asList(items));
+    }
+
+    /**
+     * Adds all of the elements in the specified array to this collection.
+     * The behavior of this operation is undefined if
+     * the specified array is modified while the operation is in progress.
+     *
+     * @param  items array containing elements to be added to this collection
+     * @return <tt>true</tt> if this collection changed as a result of the call
+     * @see    Collection#addAll(Collection)
+     */
+    public static <T> boolean addAll(Collection<T> self, T[] items) {
+        return self.addAll(Arrays.asList(items));
+    }
+
+    /**
+     * Inserts all of the elements in the specified array into this
+     * list at the specified position.  Shifts the
+     * element currently at that position (if any) and any subsequent
+     * elements to the right (increases their indices).  The new elements
+     * will appear in this list in the order that they occur in the array.
+     * The behavior of this operation is undefined if the specified array
+     * is modified while the operation is in progress.
+     *
+     * @param  items array containing elements to be added to this collection
+     * @param  index index at which to insert the first element from the
+     *              specified array
+     * @return <tt>true</tt> if this collection changed as a result of the call
+     * @see    List#addAll(int, Collection)
+     */
+    public static <T> boolean addAll(List<T> self, int index, T[] items) {
+        return self.addAll(index, Arrays.asList(items));
+    }
+
+    /**
      * Splits all items into two lists based on the closure condition.
      * The first list contains all items matching the closure expression.
      * The second list all those that don't.
