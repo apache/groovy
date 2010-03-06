@@ -7393,6 +7393,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Tokenize a String based on the given character delimiter.
+     * For example:
+     * <pre class="groovyTestCase">
+     * char pathSep = ':'
+     * assert "/tmp:/usr".tokenize(pathSep) == ["/tmp", "/usr"]
+     * </pre>
+     *
+     * @param self  a String
+     * @param token the delimiter
+     * @return a List of tokens
+     * @see java.util.StringTokenizer#StringTokenizer(java.lang.String, java.lang.String)
+     * @since 1.7.2
+     */
+    public static List tokenize(String self, Character token) {
+        return tokenize(self, token.toString());
+    }
+
+    /**
      * Tokenize a String (with a whitespace as the delimiter).
      *
      * @param self a String
