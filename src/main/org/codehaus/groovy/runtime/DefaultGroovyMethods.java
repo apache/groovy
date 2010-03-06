@@ -1891,6 +1891,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @return <tt>true</tt> if this collection contains all of the elements
      *	       in the specified array
      * @see    Collection#containsAll(Collection)
+     * @since 1.7.2
      */
     public static boolean containsAll(Collection self, Object[] items) {
         return self.containsAll(Arrays.asList(items));
@@ -1904,6 +1905,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param  items array containing elements to be removed from this collection
      * @return <tt>true</tt> if this collection changed as a result of the call
      * @see    Collection#removeAll(Collection)
+     * @since 1.7.2
      */
     public static <T> boolean removeAll(Collection<T> self, T[] items) {
         return self.removeAll(Arrays.asList(items));
@@ -1917,6 +1919,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param  items array containing elements to be retained from this collection
      * @return <tt>true</tt> if this collection changed as a result of the call
      * @see    Collection#retainAll(Collection)
+     * @since 1.7.2
      */
     public static <T> boolean retainAll(Collection<T> self, T[] items) {
         return self.retainAll(Arrays.asList(items));
@@ -1930,6 +1933,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param  items array containing elements to be added to this collection
      * @return <tt>true</tt> if this collection changed as a result of the call
      * @see    Collection#addAll(Collection)
+     * @since 1.7.2
      */
     public static <T> boolean addAll(Collection<T> self, T[] items) {
         return self.addAll(Arrays.asList(items));
@@ -1949,6 +1953,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *              specified array
      * @return <tt>true</tt> if this collection changed as a result of the call
      * @see    List#addAll(int, Collection)
+     * @since 1.7.2
      */
     public static <T> boolean addAll(List<T> self, int index, T[] items) {
         return self.addAll(index, Arrays.asList(items));
