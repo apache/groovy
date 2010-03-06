@@ -61,6 +61,8 @@ public class Groovydoc extends Task {
     private List<LinkArgument> links = new ArrayList<LinkArgument>();
     private File overviewFile;
     private File styleSheetFile;
+    // dev note: update javadoc comment for #setExtensions(String) if updating below
+    private String extensions = ".java:.groovy:.gv:.gvy:.gsh";
 
     public Groovydoc() {
         packageNames = new ArrayList<String>();
@@ -99,7 +101,6 @@ public class Groovydoc extends Task {
         // todo: maybe tell groovydoc to use file output
     }
 
-
     /**
      * If set to false, author will not be displayed.
      * Currently not used.
@@ -108,6 +109,16 @@ public class Groovydoc extends Task {
      */
     public void setAuthor(boolean author) {
         this.author = author;
+    }
+
+    /**
+     * A colon-separated list of filename extensions to look for when searching for files to process in a given directory.
+     * Default value: <code>.java:.groovy:.gv:.gvy:.gsh</code>
+     *
+     * @param extensions new value
+     */
+    public void setExtensions(String extensions) {
+        this.extensions = extensions;
     }
 
     /**
@@ -294,13 +305,14 @@ public class Groovydoc extends Task {
                 File pd = new File(baseDir, dir);
                 String[] files = pd.list(new FilenameFilter() {
                     public boolean accept(File dir1, String name) {
-                        return name.endsWith(".java")
-                                || name.endsWith(".groovy")
-                                || name.endsWith(".gv")
-                                || name.endsWith(".gvy")
-                                || name.endsWith(".gsh")
-                                || (!includeNoSourcePackages
-                                && name.equals("package.html"));
+                        if (!includeNoSourcePackages
+                                && name.equals("package.html")) return true;
+                        final StringTokenizer tokenizer = new StringTokenizer(extensions, ":");
+                        while (tokenizer.hasMoreTokens()) {
+                            String ext = tokenizer.nextToken();
+                            if (name.endsWith(ext)) return true;
+                        }
+                        return false;
                     }
                 });
 
@@ -355,7 +367,7 @@ public class Groovydoc extends Task {
         
         GroovyDocTool htmlTool = new GroovyDocTool(
                 new ClasspathResourceManager(), // we're gonna get the default templates out of the dist jar file
-                sourcePath.list(), // sourcepaths
+                sourcePath.list(),
                 GroovyDocTemplateInfo.DEFAULT_DOC_TEMPLATES,
                 GroovyDocTemplateInfo.DEFAULT_PACKAGE_TEMPLATES,
                 GroovyDocTemplateInfo.DEFAULT_CLASS_TEMPLATES,
