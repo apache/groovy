@@ -43,7 +43,8 @@ import org.codehaus.groovy.runtime.InvokerHelper
  * An underlying parser that supports what is called argument 'bursting' is used
  * by default. Bursting would convert '-alt' into '-a -l -t' provided no long
  * option exists with value 'alt' and provided that none of 'a', 'l' or 't'
- * takes an argument. The bursting behavior can be turned off by using an
+ * takes an argument (in fact the last one is allowed to take an argument).
+ * The bursting behavior can be turned off by using an
  * alternate underlying parser. The simplest way to achieve this is by setting
  * the posix property on the CliBuilder to false, i.e. include
  * <code>posix: false</code> in the constructor call.
@@ -99,10 +100,15 @@ import org.codehaus.groovy.runtime.InvokerHelper
  *     --url &lt;URL>     Set URL to work with
  * </pre>
  * This example shows a common convention. When mixing short and long names, the
- * short names are often one character in size. The example also shows
+ * short names are often one character in size. One character options with
+ * arguments don't require a space between the option and the argument, e.g.
+ * <code>-Ddebug=true</code>. The example also shows
  * the use of '_' when no short option is applicable.
  * <p>
- * If a long option name contains a hyphen, e.g. '--max-wait' then you can either
+ * Also note that '_' was used multiple times. This is supported but if
+ * any other shortOpt or any longOpt is repeated, then the behavior is undefined.
+ * <p>
+ * Short option names may not contain a hyphen. If a long option name contains a hyphen, e.g. '--max-wait' then you can either
  * use the long hand method call <code>options.hasOption('max-wait')</code> or surround
  * the option name in quotes, e.g. <code>options.'max-wait'</code>.
  * <p>
@@ -246,12 +252,7 @@ class CliBuilder {
         } else {
             option = new Option(shortname, info)
         }
-        details.each { key, value ->
-            if (key == 'optionalArg')       // surprising that this extra handling is needed
-                option.setOptionalArg(value)
-            else
-                option[key] = value
-        }
+        details.each { key, value -> option[key] = value }
         return option
     }
 }
