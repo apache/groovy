@@ -1,5 +1,5 @@
 /*
- *  Copyright 2003-2009 the original author or authors.
+ *  Copyright 2003-2010 the original author or authors.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in
  *  compliance with the License.  You may obtain a copy of the License at
@@ -48,322 +48,371 @@ import org.apache.commons.cli.BasicParser
  *
  *  <p>Commons CLI 1.2 is supposed to fix all the bugs!</p>
  *
- *  @author Dierk König
- *  @author Russel Winder
+ * @author Dierk König
+ * @author Russel Winder
+ * @author Paul King
  */
 
 class CliBuilderTest extends GroovyTestCase {
 
-  private StringWriter stringWriter
-  private PrintWriter printWriter
+    private StringWriter stringWriter
+    private PrintWriter printWriter
 
-  void setUp ( ) {
-    stringWriter = new StringWriter ( )
-    printWriter = new PrintWriter ( stringWriter )
-  }
+    void setUp() {
+        stringWriter = new StringWriter()
+        printWriter = new PrintWriter(stringWriter)
+    }
 
-  private final expectedParameter = 'ASCII'
-  private final usageString =  'groovy [option]* filename'
+    private final expectedParameter = 'ASCII'
+    private final usageString = 'groovy [option]* filename'
 
-  private void runSample ( parser , optionList ) {
-    def cli = new CliBuilder ( usage : usageString , writer : printWriter , parser : parser )
-    cli.h ( longOpt : 'help', 'usage information' )
-    cli.c ( argName : 'charset' , args :1 , longOpt : 'encoding' , 'character encoding' )
-    cli.i ( argName : 'extension' , optionalArg : true, 'modify files in place, create backup if extension is given (e.g. \'.bak\')' )
-    def stringified = cli.options.toString ( )
-    assert stringified =~ /i=\[ option: i  :: modify files in place, create backup if extension is given/
-    assert stringified =~ /c=\[ option: c encoding  \[ARG] :: character encoding/ // 1.2 behaves differently to 1.0 and 1.1 here.
-    assert stringified =~ /h=\[ option: h help  :: usage information/
-    assert stringified =~ /encoding=\[ option: c encoding  \[ARG] :: character encoding/ // 1.2 behaves differently to 1.0 and 1.1 here.
-    assert stringified =~ /help=\[ option: h help  :: usage information/
-    def options = cli.parse ( optionList )
-    assert options.hasOption ( 'h' )
-    assert options.hasOption ( 'help' )  //// Fails in 1.0, works for 1.x where x > 1.
-    assert options.h
-    assert options.help  //// Fails in 1.0, works for 1.x where x > 1.
-    if ( options.h ) { cli.usage ( ) }
-    def expectedUsage = """usage: $usageString
+    private void runSample(parser, optionList) {
+        def cli = new CliBuilder(usage: usageString, writer: printWriter, parser: parser)
+        cli.h(longOpt: 'help', 'usage information')
+        cli.c(argName: 'charset', args: 1, longOpt: 'encoding', 'character encoding')
+        cli.i(argName: 'extension', optionalArg: true, 'modify files in place, create backup if extension is given (e.g. \'.bak\')')
+        def stringified = cli.options.toString()
+        assert stringified =~ /i=\[ option: i  :: modify files in place, create backup if extension is given/
+        assert stringified =~ /c=\[ option: c encoding  \[ARG] :: character encoding/ // 1.2 behaves differently to 1.0 and 1.1 here.
+        assert stringified =~ /h=\[ option: h help  :: usage information/
+        assert stringified =~ /encoding=\[ option: c encoding  \[ARG] :: character encoding/ // 1.2 behaves differently to 1.0 and 1.1 here.
+        assert stringified =~ /help=\[ option: h help  :: usage information/
+        def options = cli.parse(optionList)
+        assert options.hasOption('h')
+        assert options.hasOption('help')  //// Fails in 1.0, works for 1.x where x > 1.
+        assert options.h
+        assert options.help  //// Fails in 1.0, works for 1.x where x > 1.
+        if (options.h) { cli.usage() }
+        def expectedUsage = """usage: $usageString
  -c,--encoding <charset>   character encoding
  -h,--help                 usage information
  -i                        modify files in place, create backup if
                            extension is given (e.g. '.bak')"""
-    assertEquals ( expectedUsage , stringWriter.toString ( ).tokenize ( '\r\n' ).join ( '\n' ) )
-    stringWriter = new StringWriter ( )
-    printWriter = new PrintWriter ( stringWriter )
-    cli.writer = printWriter
-    if ( options.help ) { cli.usage ( ) }  //// Fails in 1.0, works for 1.x where x > 1.
-    assertEquals ( expectedUsage , stringWriter.toString ( ).tokenize ( '\r\n' ).join ( '\n' ) )  //// Fails in 1.0, works for 1.x where x > 1.
-    assert options.hasOption ( 'c' )
-    assert options.c
-    assert options.hasOption ( 'encoding' )  //// Fails in 1.0, works for 1.x where x > 1.
-    assert options.encoding  //// Fails in 1.0, works for 1.x where x > 1.
-    assertEquals ( expectedParameter, options.getOptionValue ( 'c' ) )
-    assertEquals ( expectedParameter, options.c )
-    assertEquals ( expectedParameter, options.getOptionValue ( 'encoding' ) )  //// Fails in 1.0, works for 1.x where x > 1.
-    assertEquals ( expectedParameter, options.encoding )  //// Fails in 1.0, works for 1.x where x > 1.
-    assertEquals ( false, options.noSuchOptionGiven )
-    assertEquals ( false, options.hasOption ( 'noSuchOptionGiven' ) )
-    assertEquals ( false, options.x )
-    assertEquals ( false, options.hasOption ( 'x' ) )
-  }
-  void testSampleShort_BasicParser ( ) {
-    runSample ( new BasicParser ( ) , [ '-h' , '-c' , expectedParameter ] )
-  }
-  void testSampleShort_GnuParser ( ) {
-    runSample ( new GnuParser ( ) , [ '-h' , '-c' , expectedParameter ] )
-  }
-  void testSampleShort_PosixParser ( ) {
-    runSample ( new PosixParser ( ) , [ '-h' , '-c' , expectedParameter ] )
-  }
-  void testSampleLong_BasicParser ( ) {
-    runSample ( new BasicParser ( ) , [ '--help' , '--encoding' , expectedParameter ] )
-  }
-  void testSampleLong_GnuParser ( ) {
-    runSample ( new GnuParser ( ) , [ '--help' , '--encoding' , expectedParameter ] )
-  }
-  void testSampleLong_PosixParser ( ) {
-    runSample ( new PosixParser ( ) , [ '--help' , '--encoding' , expectedParameter ] )
-  }
-
-  void multipleArgs ( parser ) {
-    def cli = new CliBuilder ( parser : parser )
-    cli.a ( longOpt : 'arg' , args : 2 , valueSeparator : ',' as char , 'arguments' )
-    def options = cli.parse ( [ '-a' , '1,2' ] )
-    assertEquals ( '1' , options.a )
-    assertEquals ( [ '1' , '2' ] , options.as )
-    assertEquals ( '1' , options.arg )  //// Fails in 1.0, works for 1.x where x > 1.
-    assertEquals ( [ '1' , '2' ] , options.args )  //// Fails in 1.0, works for 1.x where x > 1.
-  }
-  void testMultipleArgs_BasicParser ( ) { multipleArgs ( new BasicParser ( ) ) }
-  void testMultipleArgs_GnuParser ( ) { multipleArgs ( new GnuParser ( ) ) }
-  void testMultipleArgs_PosixParser ( ) { multipleArgs ( new PosixParser ( ) ) }
-
-  void doArgs ( parser ) {
-    def cli = new CliBuilder ( parser : parser )
-    cli.a ( [:] , '' )
-    def options = cli.parse ( [ '-a' , '1' , '2' ] )
-    assertEquals ( [ '1' , '2' ] , options.arguments ( ) )
-  }
-  void testArgs_BasicParser ( ) { doArgs ( new BasicParser ( ) ) }
-  void testArgs_GnuParser ( ) { doArgs ( new GnuParser ( ) ) }
-  void testArgs_PosixParser ( ) { doArgs ( new PosixParser ( ) ) }
-
-  void testFailedParsePrintsUsage ( ) {
-    def cli = new CliBuilder ( writer : printWriter )
-    cli.x ( required : true , 'message' )
-    cli.parse ( [ ] )
-    //
-    // NB: This test is very fragile and is bound to fail on different locales and versions of commons-cli... :-(
-    //
-    /*
-     *  1.0 version is
-     *
-    assertEquals ( '''error: -x
-usage: groovy
- -x   message''',  stringWriter.toString ( ).tokenize ( '\r\n' ).join ( '\n' ) )
-     *
-     */
-    assertEquals ( '''error: Missing required option: x
-usage: groovy
- -x   message''',  stringWriter.toString ( ).tokenize ( '\r\n' ).join ( '\n' ) )
+        assertEquals(expectedUsage, stringWriter.toString().tokenize('\r\n').join('\n'))
+        stringWriter = new StringWriter()
+        printWriter = new PrintWriter(stringWriter)
+        cli.writer = printWriter
+        if (options.help) { cli.usage() }  //// Fails in 1.0, works for 1.x where x > 1.
+        assertEquals(expectedUsage, stringWriter.toString().tokenize('\r\n').join('\n'))  //// Fails in 1.0, works for 1.x where x > 1.
+        assert options.hasOption('c')
+        assert options.c
+        assert options.hasOption('encoding')  //// Fails in 1.0, works for 1.x where x > 1.
+        assert options.encoding  //// Fails in 1.0, works for 1.x where x > 1.
+        assertEquals(expectedParameter, options.getOptionValue('c'))
+        assertEquals(expectedParameter, options.c)
+        assertEquals(expectedParameter, options.getOptionValue('encoding'))  //// Fails in 1.0, works for 1.x where x > 1.
+        assertEquals(expectedParameter, options.encoding)  //// Fails in 1.0, works for 1.x where x > 1.
+        assertEquals(false, options.noSuchOptionGiven)
+        assertEquals(false, options.hasOption('noSuchOptionGiven'))
+        assertEquals(false, options.x)
+        assertEquals(false, options.hasOption('x'))
     }
 
-  void testLongOptsOnly_GnuParser ( ) {
-    def cli = new CliBuilder ( writer : printWriter , parser : new GnuParser ( ) )
-    def anOption = OptionBuilder.withLongOpt ( 'anOption' ).hasArg ( ).withDescription ( 'An option.' ).create ( )
-    cli.options.addOption ( anOption )
-    def options = cli.parse ( [ '-v' , '--anOption' , 'something' ] )
-    assert options.getOptionValue ( 'anOption' ) == null
-    assert ! options.anOption
-    assert ! options.v
-  }
-  
-  void testLongOptsOnly_PosixParser ( ) {
-    def cli = new CliBuilder ( writer : printWriter , parser : new PosixParser ( ) )
-    def anOption = OptionBuilder.withLongOpt ( 'anOption' ).hasArg ( ).withDescription ( 'An option.' ).create ( )
-    cli.options.addOption ( anOption )
-    def options = cli.parse ( [ '-v' , '--anOption' , 'something' ] )
+    void testSampleShort_BasicParser() {
+        runSample(new BasicParser(), ['-h', '-c', expectedParameter])
+    }
+
+    void testSampleShort_GnuParser() {
+        runSample(new GnuParser(), ['-h', '-c', expectedParameter])
+    }
+
+    void testSampleShort_PosixParser() {
+        runSample(new PosixParser(), ['-h', '-c', expectedParameter])
+    }
+
+    void testSampleLong_BasicParser() {
+        runSample(new BasicParser(), ['--help', '--encoding', expectedParameter])
+    }
+
+    void testSampleLong_GnuParser() {
+        runSample(new GnuParser(), ['--help', '--encoding', expectedParameter])
+    }
+
+    void testSampleLong_PosixParser() {
+        runSample(new PosixParser(), ['--help', '--encoding', expectedParameter])
+    }
+
+    private void multipleArgs(parser) {
+        def cli = new CliBuilder(parser: parser)
+        cli.a(longOpt: 'arg', args: 2, valueSeparator: ',' as char, 'arguments')
+        def options = cli.parse(['-a', '1,2'])
+        assertEquals('1', options.a)
+        assertEquals(['1', '2'], options.as)
+        assertEquals('1', options.arg)  //// Fails in 1.0, works for 1.x where x > 1.
+        assertEquals(['1', '2'], options.args)  //// Fails in 1.0, works for 1.x where x > 1.
+    }
+
+    void testMultipleArgs_BasicParser() { multipleArgs(new BasicParser()) }
+
+    void testMultipleArgs_GnuParser() { multipleArgs(new GnuParser()) }
+
+    void testMultipleArgs_PosixParser() { multipleArgs(new PosixParser()) }
+
+    private void doArgs(parser) {
+        def cli = new CliBuilder(parser: parser)
+        cli.a([:], '')
+        def options = cli.parse(['-a', '1', '2'])
+        assertEquals(['1', '2'], options.arguments())
+    }
+
+    void testArgs_BasicParser() { doArgs(new BasicParser()) }
+
+    void testArgs_GnuParser() { doArgs(new GnuParser()) }
+
+    void testArgs_PosixParser() { doArgs(new PosixParser()) }
+
+    void testFailedParsePrintsUsage() {
+        def cli = new CliBuilder(writer: printWriter)
+        cli.x(required: true, 'message')
+        cli.parse([])
+        //
+        // NB: This test is very fragile and is bound to fail on different locales and versions of commons-cli... :-(
+        //
+        assert stringWriter.toString().normalize() == '''error: Missing required option: x
+usage: groovy
+ -x   message
+'''
+    }
+
+    private void checkLongOptsOnly_nonOptionShouldStopArgProcessing(CliBuilder cli) {
+        def anOption = OptionBuilder.withLongOpt('anOption').hasArg().withDescription('An option.').create()
+        cli.options.addOption(anOption)
+        def options = cli.parse(['-v', '--anOption', 'something'])
+        // no options should be found
+        assert options.getOptionValue('anOption') == null
+        assert !options.anOption
+        assert !options.v
+        // arguments should be still sitting there
+        assert options.arguments() == ['-v', '--anOption', 'something']
+    }
+
+    void testLongOptsOnly_GnuParser() {
+        def cli = new CliBuilder(parser: new GnuParser())
+        checkLongOptsOnly_nonOptionShouldStopArgProcessing(cli)
+    }
+
+    void testLongOptsOnly_PosixParser() {
+        def cli = new CliBuilder(parser: new PosixParser())
+        checkLongOptsOnly_nonOptionShouldStopArgProcessing(cli)
+    }
+
+    void testLongOptsOnly_GnuParser_settingPosixBooleanFalse() {
+        def cli = new CliBuilder(posix: false)
+        checkLongOptsOnly_nonOptionShouldStopArgProcessing(cli)
+    }
+
+    private void checkLongAndShortOpts_allOptionsValid(parser) {
+        def cli = new CliBuilder(parser: parser)
+        def anOption = OptionBuilder.withLongOpt('anOption').hasArg().withDescription('An option.').create()
+        cli.options.addOption(anOption)
+        cli.v(longOpt: 'verbose', 'verbose mode')
+        def options = cli.parse(['-v', '--anOption', 'something'])
+        assert options.v
+        assert options.getOptionValue('anOption') == 'something'
+        assert options.anOption == 'something'
+        assert !options.arguments()
+    }
+
+    void testLongAndShortOpts_BasicParser() {
+        checkLongAndShortOpts_allOptionsValid(new BasicParser())
+    }
+
+    void testLongAndShortOpts_PosixParser() {
+        checkLongAndShortOpts_allOptionsValid(new PosixParser())
+    }
+
+    void testLongAndShortOpts_GnuParser() {
+        checkLongAndShortOpts_allOptionsValid(new GnuParser())
+    }
+
+    void unknownOptions(parser) {
+        def cli = new CliBuilder(parser: parser)
+        cli.v(longOpt: 'verbose', 'verbose mode')
+        def options = cli.parse(['-x', '-yyy', '--zzz', 'something'])
+        assertEquals(['-x', '-yyy', '--zzz', 'something'], options.arguments())
+    }
+
+    void testUnrecognizedOptions_BasicParser() { unknownOptions(new BasicParser()) }
+
+    void testUnrecognizedOptions_GnuParser() { unknownOptions(new GnuParser()) }
+
+    void testUnrecognizedOptions_PosixParser() { unknownOptions(new PosixParser()) }
+
+    void bizarreProcessing(parser) {
+        def cli = new CliBuilder(parser: parser)
+        def options = cli.parse(['-xxxx'])
+        assertEquals(['-xxxx'], options.arguments())
+    }
+
+    void testBizarreProcessing_BasicParser() { bizarreProcessing(new BasicParser()) }
+
+    void testBizarreProcessing_GnuParser() { bizarreProcessing(new GnuParser()) }
+
+    void testPosixBizarreness() {
+        def cli = new CliBuilder(parser: new PosixParser())
+        def options = cli.parse(['-xxxx'])
+        assertEquals(['xxxx'], options.arguments())
+    }
+
+    private void multipleOccurrencesSeparateSeparate(parser) {
+        def cli = new CliBuilder(parser: parser)
+        cli.a(longOpt: 'arg', args: Option.UNLIMITED_VALUES, 'arguments')
+        def options = cli.parse(['-a', '1', '-a', '2', '-a', '3'])
+        assertEquals('1', options.a)
+        assertEquals(['1', '2', '3'], options.as)
+        assertEquals('1', options.arg)  //// Fails in 1.0, works for 1.x where x > 1.
+        assertEquals(['1', '2', '3'], options.args)  //// Fails in 1.0, works for 1.x where x > 1.
+        assertEquals([], options.arguments())
+    }
+
+    void testMultipleOccurrencesSeparateSeparate_BasicParser() { multipleOccurrencesSeparateSeparate(new BasicParser()) }
+
+    void testMultipleOccurrencesSeparateSeparate_GnuParser() { multipleOccurrencesSeparateSeparate(new GnuParser()) }
+
+    void testMultipleOccurrencesSeparateSeparate_PosixParser() { multipleOccurrencesSeparateSeparate(new PosixParser()) }
+
+    private void multipleOccurrencesSeparateJuxtaposed(parser) {
+        def cli = new CliBuilder(parser: parser)
+        //cli.a ( longOpt : 'arg' , args : Option.UNLIMITED_VALUES , 'arguments' )
+        cli.a(longOpt: 'arg', args: 1, 'arguments')
+        def options = cli.parse(['-a1', '-a2', '-a3'])
+        assertEquals('1', options.a)
+        assertEquals(['1', '2', '3'], options.as)
+        assertEquals('1', options.arg)  //// Fails in 1.0, works for 1.x where x > 1.
+        assertEquals(['1', '2', '3'], options.args)  //// Fails in 1.0, works for 1.x where x > 1.
+        assertEquals([], options.arguments())
+    }
+    //
+    //  BasicParser cannot handle this one.
+    //
+    //void testMultipleOccurrencesSeparateJuxtaposed_BasicParser ( ) { multipleOccurrencesSeparateJuxtaposed ( new BasicParser ( ) ) }
+
+    void testMultipleOccurrencesSeparateJuxtaposed_GnuParser() { multipleOccurrencesSeparateJuxtaposed(new GnuParser()) }
+
+    void testMultipleOccurrencesSeparateJuxtaposed_PosixParser() { multipleOccurrencesSeparateJuxtaposed(new PosixParser()) }
+
+    private void multipleOccurrencesTogetherSeparate(parser) {
+        def cli = new CliBuilder(parser: parser)
+        cli.a(longOpt: 'arg', args: Option.UNLIMITED_VALUES, valueSeparator: ',' as char, 'arguments')
+        def options = cli.parse(['-a 1,2,3'])
+        assertEquals(' 1', options.a)
+        assertEquals([' 1', '2', '3'], options.as)
+        assertEquals(' 1', options.arg)  //// Fails in 1.0, works for 1.x where x > 1.
+        assertEquals([' 1', '2', '3'], options.args)  //// Fails in 1.0, works for 1.x where x > 1.
+        assertEquals([], options.arguments())
+    }
+    //
+    //  BasicParser cannot handle this one.
+    //
+    //void testMultipleOccurrencesTogetherSeparate_BasicParser ( ) { multipleOccurrencesTogetherSeparate ( new BasicParser ( ) ) }
+
+    void testMultipleOccurrencesTogetherSeparate_GnuParser() { multipleOccurrencesTogetherSeparate(new GnuParser()) }
+
+    void testMultipleOccurrencesTogetherSeparate_PosixParser() { multipleOccurrencesTogetherSeparate(new PosixParser()) }
+
+    private void multipleOccurrencesTogetherJuxtaposed(parser) {
+        def cli = new CliBuilder(parser: parser)
+        cli.a(longOpt: 'arg', args: Option.UNLIMITED_VALUES, valueSeparator: ',' as char, 'arguments')
+        def options = cli.parse(['-a1,2,3'])
+        assertEquals('1', options.a)
+        assertEquals(['1', '2', '3'], options.as)
+        assertEquals('1', options.arg)  //// Fails in 1.0, works for 1.x where x > 1.
+        assertEquals(['1', '2', '3'], options.args)  //// Fails in 1.0, works for 1.x where x > 1.
+        assertEquals([], options.arguments())
+    }
+    //
+    //  BasicParser cannot handle this one.
+    //
+    //void testMultipleOccurrencesTogetherJuxtaposed_BasicParser ( ) { multipleOccurrencesTogetherJuxtaposed ( new BasicParser ( ) ) }
+
+    void testMultipleOccurrencesTogetherJuxtaposed_GnuParser() { multipleOccurrencesTogetherJuxtaposed(new GnuParser()) }
+
+    void testMultipleOccurrencesTogetherJuxtaposed_PosixParser() { multipleOccurrencesTogetherJuxtaposed(new PosixParser()) }
+
     /*
-    assert 'something' == options.getOptionValue ( 'anOption' )
-    assert 'something' == options.anOption
-     */
-    assert options.getOptionValue ( 'anOption' ) == null
-    assert ! options.anOption
-    assert ! options.v
-  }
+    *  Behaviour with unrecognized options.
+    *
+    *  TODO: Should add the BasicParser here as well.
+    */
 
-  void testLongOptsOnly_GnuParser_settingPosixBooleanFalse ( ) {
-    def cli = new CliBuilder ( writer : printWriter , posix : false )
-    def anOption = OptionBuilder.withLongOpt ( 'anOption' ).hasArg ( ).withDescription ( 'An option.' ).create ( )
-    cli.options.addOption ( anOption )
-    def options = cli.parse ( [ '-v' , '--anOption' , 'something' ] )
-    assert options.getOptionValue ( 'anOption' ) == null
-    assert ! options.anOption
-    assert ! options.v
-  }
+    void testUnrecognizedOptionSilentlyIgnored_GnuParser() {
+        def cli = new CliBuilder(usage: usageString, writer: printWriter, parser: new GnuParser())
+        def options = cli.parse(['-v'])
+        assertEquals('''''', stringWriter.toString().tokenize('\r\n').join('\n'))
+        assert !options.v
+    }
 
-  private createOptionsWithLongAndShortOpts ( parser ) {
-    def cli = new CliBuilder ( writer : printWriter , parser : parser )
-    def anOption = OptionBuilder.withLongOpt ( 'anOption' ).hasArg ( ).withDescription ( 'An option.' ).create ( )
-    cli.options.addOption ( anOption )
-    cli.v ( longOpt : 'verbose' , 'verbose mode' )
-    def options = cli.parse ( [ '-v' , '--anOption' , 'something' ] )
-    assert options.v
-    return options
-  }
+    private void checkNoOutput() {
+        assert stringWriter.toString().tokenize('\r\n').join('\n') == ''''''
+    }
 
-  void testLongAndShortOpts_BasicParser ( ) {
-    def options = createOptionsWithLongAndShortOpts ( new BasicParser ( ) )
-    assertEquals ( 'something' , options.getOptionValue ( 'anOption' ) )
-    assertEquals ( 'something' , options.anOption )
-  }
+    void testUnrecognizedOptionSilentlyIgnored_PosixParser() {
+        def cli = new CliBuilder(usage: usageString, writer: printWriter, parser: new PosixParser())
+        def options = cli.parse(['-v'])
+        checkNoOutput()
+        assert !options.v
+    }
 
-  void testLongAndShortOpts_PosixParser ( ) {
-    def options = createOptionsWithLongAndShortOpts ( new PosixParser ( ) )
-    assertEquals ( 'something' , options.getOptionValue ( 'anOption' ) )
-    assertEquals ( 'something' , options.anOption )
-  }
+    void testUnrecognizedOptionTerminatesParse_GnuParser() {
+        def cli = new CliBuilder(usage: usageString, writer: printWriter, parser: new GnuParser())
+        cli.h(longOpt: 'help', 'usage information')
+        def options = cli.parse(['-v', '-h'])
+        checkNoOutput()
+        assert !options.v
+        assert !options.h
+        assertEquals(['-v', '-h'], options.arguments())
+    }
 
-  void testLongAndShortOpts_GnuParser ( ) {
-    def options = createOptionsWithLongAndShortOpts ( new GnuParser ( ) )
-    assertEquals ( 'something' , options.getOptionValue ( 'anOption' ) )
-    assertEquals ( 'something' , options.anOption )
-  }
+    void testUnrecognizedOptionTerminatesParse_PosixParser() {
+        def cli = new CliBuilder(usage: usageString, writer: printWriter, parser: new PosixParser())
+        cli.h(longOpt: 'help', 'usage information')
+        def options = cli.parse(['-v', '-h'])
+        checkNoOutput()
+        assert !options.v
+        assert !options.h
+        assertEquals(['-v', '-h'], options.arguments())
+    }
 
-  void unknownOptions ( parser ) {
-    def cli = new CliBuilder ( parser : parser )
-    cli.v ( longOpt : 'verbose' , 'verbose mode' )
-    def options = cli.parse ( [ '-x' , '-yyy' , '--zzz' , 'something' ] )
-    assertEquals ( [ '-x' , '-yyy' , '--zzz' , 'something' ] , options.arguments ( ) )
-  }
-  void testUnrecognizedOptions_BasicParser ( ) { unknownOptions ( new BasicParser ( ) ) }
-  void testUnrecognizedOptions_GnuParser ( ) { unknownOptions ( new GnuParser ( ) ) }
-  void testUnrecognizedOptions_PosixParser ( ) { unknownOptions ( new PosixParser ( ) ) }
+    private checkMultiCharShortOpt(posix) {
+        def cli = new CliBuilder(writer: printWriter, posix:posix)
+        cli.abc('abc option')
+        cli.def(longOpt: 'defdef', 'def option')
+        def options = cli.parse(['-abc', '--defdef', 'ghi'])
+        assert options
+        assert options.arguments() == ['ghi']
+        assert options.abc && options.def && options.defdef
+        checkNoOutput()
+    }
 
-  void bizarreProcessing ( parser ) {
-    def cli = new CliBuilder ( parser : parser )
-    def options = cli.parse ( [ '-xxxx' ] )
-    assertEquals ( [ '-xxxx' ] , options.arguments ( ) )
-  }
-  void testBizarreProcessing_BasicParser ( ) { bizarreProcessing ( new BasicParser ( ) ) }
-  void testBizarreProcessing_GnuParser ( ) { bizarreProcessing ( new GnuParser ( ) ) }
-  void testPosixBizarreness ( ) {
-    def cli = new CliBuilder ( parser : new PosixParser ( ) )
-    def options = cli.parse ( [ '-xxxx' ] )
-    assertEquals ( [ 'xxxx' ] , options.arguments ( ) )
-  }
+    void testMultiCharShortOpt_PosixParser() {
+        checkMultiCharShortOpt(true)
+    }
 
-  private void multipleOccurrencesSeparateSeparate ( parser ) {
-    def cli = new CliBuilder ( parser : parser )
-    cli.a ( longOpt : 'arg' , args : Option.UNLIMITED_VALUES , 'arguments' )
-    def options = cli.parse ( [ '-a' , '1' , '-a' , '2' , '-a' , '3' ] )
-    assertEquals ( '1' , options.a )
-    assertEquals ( [ '1' , '2' , '3' ] , options.as )
-    assertEquals ( '1' , options.arg )  //// Fails in 1.0, works for 1.x where x > 1.
-    assertEquals ( [ '1' , '2' , '3' ] , options.args )  //// Fails in 1.0, works for 1.x where x > 1.
-    assertEquals ( [ ] , options.arguments ( ) )
-  }
-  void testMultipleOccurrencesSeparateSeparate_BasicParser ( ) { multipleOccurrencesSeparateSeparate ( new BasicParser ( ) ) }
-  void testMultipleOccurrencesSeparateSeparate_GnuParser ( ) { multipleOccurrencesSeparateSeparate ( new GnuParser ( ) ) }
-  void testMultipleOccurrencesSeparateSeparate_PosixParser ( ) { multipleOccurrencesSeparateSeparate ( new PosixParser ( ) ) }
+    void testMultiCharShortOpt_GnuParser() {
+        checkMultiCharShortOpt(false)
+    }
 
-  private void multipleOccurrencesSeparateJuxtaposed ( parser ) {
-    def cli = new CliBuilder ( parser : parser )
-    //cli.a ( longOpt : 'arg' , args : Option.UNLIMITED_VALUES , 'arguments' )
-    cli.a ( longOpt : 'arg' , args : 1 , 'arguments' )
-    def options = cli.parse ( [ '-a1' , '-a2' , '-a3' ] )
-    assertEquals ( '1' , options.a )
-    assertEquals ( [ '1' , '2' , '3' ] , options.as )
-    assertEquals ( '1' , options.arg )  //// Fails in 1.0, works for 1.x where x > 1.
-    assertEquals ( [ '1' , '2' , '3' ] , options.args )  //// Fails in 1.0, works for 1.x where x > 1.
-    assertEquals ( [ ] , options.arguments ( ) )
-  }
-  //
-  //  BasicParser cannot handle this one.
-  //
-  //void testMultipleOccurrencesSeparateJuxtaposed_BasicParser ( ) { multipleOccurrencesSeparateJuxtaposed ( new BasicParser ( ) ) }
-  void testMultipleOccurrencesSeparateJuxtaposed_GnuParser ( ) { multipleOccurrencesSeparateJuxtaposed ( new GnuParser ( ) ) }
-  void testMultipleOccurrencesSeparateJuxtaposed_PosixParser ( ) { multipleOccurrencesSeparateJuxtaposed ( new PosixParser ( ) ) }
+    void testArgumentBursting_PosixParserOnly() {
+        def cli = new CliBuilder(writer: printWriter)
+        // must not have longOpt 'abc' and also no args for a or b
+        cli.a('a')
+        cli.b('b')
+        cli.c('c')
+        def options = cli.parse(['-abc', '-d'])
+        assert options
+        assert options.arguments() == ['-d']
+        assert options.a && options.b && options.c && !options.d
+        checkNoOutput()
+    }
 
-  private void multipleOccurrencesTogetherSeparate ( parser ) {
-    def cli = new CliBuilder ( parser : parser )
-    cli.a ( longOpt : 'arg' , args : Option.UNLIMITED_VALUES , valueSeparator : ',' as char , 'arguments' )
-    def options = cli.parse ( [ '-a 1,2,3' ] )
-    assertEquals ( ' 1' , options.a )
-    assertEquals ( [ ' 1' , '2' , '3' ] , options.as )
-    assertEquals ( ' 1' , options.arg )  //// Fails in 1.0, works for 1.x where x > 1.
-    assertEquals ( [ ' 1' , '2' , '3' ] , options.args )  //// Fails in 1.0, works for 1.x where x > 1.
-    assertEquals ( [ ] , options.arguments ( ) )
-  }
-  //
-  //  BasicParser cannot handle this one.
-  //
-  //void testMultipleOccurrencesTogetherSeparate_BasicParser ( ) { multipleOccurrencesTogetherSeparate ( new BasicParser ( ) ) }
-  void testMultipleOccurrencesTogetherSeparate_GnuParser ( ) { multipleOccurrencesTogetherSeparate ( new GnuParser ( ) ) }
-  void testMultipleOccurrencesTogetherSeparate_PosixParser ( ) { multipleOccurrencesTogetherSeparate ( new PosixParser ( ) ) }
+    void testLongOptEndingWithS() {
+        def cli = new CliBuilder()
+        cli.s(longOpt: 'number_of_seconds', 'a long arg that ends with an "s"')
 
-  private void multipleOccurrencesTogetherJuxtaposed ( parser ) {
-    def cli = new CliBuilder ( parser : parser )
-    cli.a ( longOpt : 'arg' , args : Option.UNLIMITED_VALUES , valueSeparator : ',' as char , 'arguments' )
-    def options = cli.parse ( [ '-a1,2,3' ] )
-    assertEquals ( '1' , options.a )
-    assertEquals ( [ '1' , '2' , '3' ] , options.as )
-    assertEquals ( '1' , options.arg )  //// Fails in 1.0, works for 1.x where x > 1.
-    assertEquals ( [ '1' , '2' , '3' ] , options.args )  //// Fails in 1.0, works for 1.x where x > 1.
-    assertEquals ( [ ] , options.arguments ( ) )
-  }
-  //
-  //  BasicParser cannot handle this one.
-  //
-  //void testMultipleOccurrencesTogetherJuxtaposed_BasicParser ( ) { multipleOccurrencesTogetherJuxtaposed ( new BasicParser ( ) ) }
-  void testMultipleOccurrencesTogetherJuxtaposed_GnuParser ( ) { multipleOccurrencesTogetherJuxtaposed ( new GnuParser ( ) ) }
-  void testMultipleOccurrencesTogetherJuxtaposed_PosixParser ( ) { multipleOccurrencesTogetherJuxtaposed ( new PosixParser ( ) ) }
+        def options = cli.parse(['-s'])
 
-  /*
-   *  Behaviour with unrecognized options.
-   *
-   *  TODO: Should add the BasicParser here as well.
-   */
-
-  void testUnrecognizedOptionSilentlyIgnored_GnuParser ( ) {
-    def cli = new CliBuilder ( usage : usageString , writer : printWriter , parser : new GnuParser ( ) )
-    def options = cli.parse ( [ '-v' ] )
-    assertEquals ( '''''', stringWriter.toString ( ).tokenize ( '\r\n' ).join ( '\n' ) )
-    assert !options.v
-  }
-  void testUnrecognizedOptionSilentlyIgnored_PosixParser ( ) {
-    def cli = new CliBuilder ( usage : usageString , writer : printWriter , parser : new PosixParser ( ) )
-    def options = cli.parse ( [ '-v' ] )
-    assertEquals ( '''''', stringWriter.toString ( ).tokenize ( '\r\n' ).join ( '\n' ) )
-    assert ! options.v
-  }
-  void testUnrecognizedOptionTerminatesParse_GnuParser ( ) {
-    def cli = new CliBuilder ( usage : usageString , writer : printWriter , parser : new GnuParser ( ) )
-    cli.h ( longOpt : 'help', 'usage information' )
-    def options = cli.parse ( [ '-v' , '-h' ] )
-    assertEquals ( '''''', stringWriter.toString ( ).tokenize ( '\r\n' ).join ( '\n' ) )
-    assert ! options.v
-    assert ! options.h
-    assertEquals ( [ '-v' , '-h' ] , options.arguments ( ) )
-  }
-  void testUnrecognizedOptionTerminatesParse_PosixParser ( ) {
-    def cli = new CliBuilder ( usage : usageString , writer : printWriter , parser : new PosixParser ( ) )
-    cli.h ( longOpt : 'help', 'usage information' )
-    def options = cli.parse ( [ '-v' , '-h' ] )
-    assertEquals ( '''''', stringWriter.toString ( ).tokenize ( '\r\n' ).join ( '\n' ) )
-    assert ! options.v
-    assert ! options.h
-    assertEquals ( [ '-v' , '-h' ] , options.arguments ( ) )
-  }
-
-    void testLongOptEndingWithS () {
-        def cli = new CliBuilder ()
-        cli.s ( longOpt : 'number_of_seconds', 'a long arg that ends with an "s"' )
-        
-        def options = cli.parse (['-s'])
-        
-        assert options.hasOption ( 's' )
-        assert options.hasOption ( 'number_of_seconds' )
+        assert options.hasOption('s')
+        assert options.hasOption('number_of_seconds')
         assert options.s
         assert options.number_of_seconds
     }
