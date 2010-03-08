@@ -949,6 +949,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     private MethodNode getCovariantImplementation(final MethodNode oldMethod, final MethodNode overridingMethod, Map genericsSpec) {
         // method name
         if (!oldMethod.getName().equals(overridingMethod.getName())) return null;
+        if ((overridingMethod.getModifiers() & ACC_BRIDGE) != 0) return null;
 
         // parameters
         boolean normalEqualParameters = equalParametersNormal(overridingMethod,oldMethod);
