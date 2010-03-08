@@ -264,22 +264,17 @@ public class GroovyTestCase extends TestCase {
         Throwable th = null;
         try {
             code.call();
-        } catch (GroovyRuntimeException gre) {
-            th = gre;
-            while (th.getCause()!=null && th.getCause()!=gre){ // if wrapped, find the root cause
-                th=th.getCause();
-                if (th!=gre && (th instanceof GroovyRuntimeException)) {
-                    gre = (GroovyRuntimeException) th;
-                }
-            }
         } catch (Throwable e) {
             th = e;
+            while(th.getCause()!=null) {
+                th = th.getCause();
+            }
         }
 
         if (th==null) {
-            fail("Closure " + code + " should have failed with an exception of type " + clazz.getName());
+            fail("Closure " + code + " should have failed with an exception caused by type " + clazz.getName());
         } else if (! clazz.isInstance(th)) {
-            fail("Closure " + code + " should have failed with an exception of type " + clazz.getName() + ", instead got Exception " + th);
+            fail("Closure " + code + " should have failed with an exception caused by type " + clazz.getName() + ", instead got Exception " + th);
         }
         return th.getMessage();
     }
