@@ -1926,6 +1926,53 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Retains only the elements in this collection that are matched according
+     * to the specified closure condition.  In other words, removes from this
+     * collection all of its elements that don't match.
+     *
+     * @param  self a Collection to be modified
+     * @param  closure a closure condition
+     * @return <tt>true</tt> if this collection changed as a result of the call
+     * @see    Iterator#remove()
+     * @since 1.7.2
+     */
+    public static boolean retainAll(Collection self, Closure closure) {
+        Iterator iter = InvokerHelper.asIterator(self);
+        boolean result = false;
+        while (iter.hasNext()) {
+            Object value = iter.next();
+            if (!DefaultTypeTransformation.castToBoolean(closure.call(value))) {
+                iter.remove();
+                result = true;
+            }
+        }
+        return result;
+    }
+
+    /**
+     * Removes the elements in this collection that are matched according
+     * to the specified closure condition.
+     *
+     * @param  self a Collection to be modified
+     * @param  closure a closure condition
+     * @return <tt>true</tt> if this collection changed as a result of the call
+     * @see    Iterator#remove()
+     * @since 1.7.2
+     */
+    public static boolean removeAll(Collection self, Closure closure) {
+        Iterator iter = InvokerHelper.asIterator(self);
+        boolean result = false;
+        while (iter.hasNext()) {
+            Object value = iter.next();
+            if (DefaultTypeTransformation.castToBoolean(closure.call(value))) {
+                iter.remove();
+                result = true;
+            }
+        }
+        return result;
+    }
+
+    /**
      * Adds all of the elements in the specified array to this collection.
      * The behavior of this operation is undefined if
      * the specified array is modified while the operation is in progress.
