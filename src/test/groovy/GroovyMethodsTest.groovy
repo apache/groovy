@@ -773,6 +773,18 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         ] as Set
     }
 
+    void testRemoveAll() {
+        def items = [1, 2, 3, 4]
+        assert items.removeAll{ it % 2 == 0 }
+        assert items == [1, 3]
+    }
+
+    void testRetainAll() {
+        def items = [1, 2, 3, 4]
+        assert items.retainAll{ it % 2 == 0 }
+        assert items == [2, 4]
+    }
+
     void testPermutations() {
         def items = [1, 2, 3]
         assert items.permutations() == [[1, 2, 3], [1, 3, 2], [2, 1, 3], [2, 3, 1], [3, 1, 2], [3, 2, 1]] as Set
