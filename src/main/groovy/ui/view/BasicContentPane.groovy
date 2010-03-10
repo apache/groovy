@@ -56,7 +56,7 @@ actions {
 }
 
 // add styles to the output area, should this be moved into SwingBuilder somehow?
-outputArea.setFont(new Font("Monospaced", outputArea.font.style, outputArea.font.size))
+outputArea.font = new Font("Monospaced", outputArea.font.style, outputArea.font.size)
 StyledDocument doc = outputArea.styledDocument
 
 Style defStyle = StyleContext.defaultStyleContext.getStyle(StyleContext.DEFAULT_STYLE)
@@ -85,8 +85,8 @@ hyperlinkStyle = doc.addStyle("hyperlink", regular)
 applyStyle(hyperlinkStyle, styles.hyperlink)
 
 // redo styles for editor
-doc = inputArea.getStyledDocument()
-StyleContext styleContext = StyleContext.getDefaultStyleContext()
+doc = inputArea.styledDocument
+StyleContext styleContext = StyleContext.defaultStyleContext
 styles.each {styleName, defs ->
     Style style = styleContext.getStyle(styleName)
     if (style) {
@@ -94,7 +94,7 @@ styles.each {styleName, defs ->
         String family = defs[StyleConstants.FontFamily]
         if (style.name == 'default' && family) {
             inputEditor.defaultFamily = family
-            inputArea.font = new Font(family, Font.PLAIN, (int)inputArea.font.size)
+            inputArea.font = new Font(family, Font.PLAIN, inputArea.font.size)
         }
     }
 }

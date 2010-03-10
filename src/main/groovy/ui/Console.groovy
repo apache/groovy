@@ -323,11 +323,11 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     }
 
     void appendOutput(Window window, AttributeSet style) {
-        append(window.toString(), style)
+        appendOutput(window.toString(), style)
     }
 
     void appendOutput(Object object, AttributeSet style) {
-        append(object.toString(), style)
+        appendOutput(object.toString(), style)
     }
 
     void appendOutput(Component component, AttributeSet style) {
@@ -385,13 +385,23 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     }
 
     // Append a string to the output area on a new line
-    void appendOutputNl(text, style){
+    void appendOutputNl(text, style) {
         def doc = outputArea.styledDocument
         def len = doc.length
-        if (len > 0 && doc.getText(len - 1, 1) != "\n") {
-            appendOutput("\n", style)
+        def alreadyNewLine = (len == 0 || doc.getText(len - 1, 1) == "\n")
+        appendOutput(" \n", style)
+        if (alreadyNewLine) {
+            doc.remove(len, 2) // windows hack to fix (improve?) line spacing
         }
         appendOutput(text, style)
+    }
+
+    void appendOutputLines(text, style) {
+        appendOutput(text, style)
+        def doc = outputArea.styledDocument
+        def len = doc.length
+        appendOutput(" \n", style)
+        doc.remove(len, 2) // windows hack to fix (improve?) line spacing
     }
 
     // Return false if use elected to cancel
@@ -490,7 +500,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     }
 
     void clearOutput(EventObject evt = null) {
-        outputArea.setText('')
+        outputArea.text = ''
     }
 
     // If at exit time, a script is running, the user is given an option to interrupt it first
@@ -754,11 +764,11 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
 
         // Put onto GUI
         if (EventQueue.isDispatchThread()) {
-            consoleControllers.each {it.appendOutput(str, it.outputStyle)}
+            consoleControllers.each {it.appendOutputLines(str, it.outputStyle)}
         }
         else {
             SwingUtilities.invokeLater {
-                consoleControllers.each {it.appendOutput(str, it.outputStyle)}
+                consoleControllers.each {it.appendOutputLines(str, it.outputStyle)}
             }
         }
         return false
@@ -832,20 +842,18 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         addToHistory(record)
         pendingRecord = new HistoryRecord(allText:'', selectionStart:0, selectionEnd:0)
 
+        if (prefs.getBoolean("autoClearOutput", false)) clearOutput()
+
         // Print the input text
         if (showScriptInOutput) {
             for (line in record.getTextToRun(selected).tokenize("\n")) {
                 appendOutputNl('groovy> ', promptStyle)
                 appendOutput(line, commandStyle)
             }
+            appendOutputNl(" \n", promptStyle)
         }
 
-        //appendOutputNl("") - with wrong number of args, causes StackOverFlowError
-        appendOutputNl("\n", promptStyle)
-
         // Kick off a new thread to do the evaluation
-        if (prefs.getBoolean("autoClearOutput", false)) clearOutput()
-
         // Run in a thread outside of EDT, this method is usually called inside the EDT
         runThread = Thread.start {
             try {
@@ -860,11 +868,11 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
                 }
                 SwingUtilities.invokeLater { finishNormal(result) }
             } catch (Throwable t) {
-            	if(t instanceof StackOverflowError) {
-            		// set the flag that will be used in printing exception details in output pane
-            		stackOverFlowError = true
-            		outputArea.setText('')
-				} 
+                if(t instanceof StackOverflowError) {
+                    // set the flag that will be used in printing exception details in output pane
+                    stackOverFlowError = true
+                    clearOutput()
+                } 
                 SwingUtilities.invokeLater { finishException(t) }
             } finally {
                 runThread = null

@@ -199,7 +199,7 @@ class PropertyTest extends GroovySwingTestCase {
         bean.superThing= 'x'
 
         // attempt to read it
-        shouldFailWithCause(MissingPropertyException) {
+        shouldFail(MissingPropertyException) {
             fail("We shouldn't be able to read bean.superThing, but we can: '$bean.superThing'")
         }
     }
