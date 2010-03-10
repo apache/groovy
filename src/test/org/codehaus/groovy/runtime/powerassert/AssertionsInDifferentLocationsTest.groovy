@@ -17,6 +17,7 @@
 package org.codehaus.groovy.transform.powerassert
 
 import static org.codehaus.groovy.transform.powerassert.AssertionTestUtil.*
+import org.codehaus.groovy.runtime.powerassert.PowerAssertionError
 
 /**
  * Defines assertions in different locations and checks if they are transformed.

@@ -14,28 +14,20 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.transform.powerassert;
+package org.codehaus.groovy.runtime.powerassert;
 
 /**
- * A value recorded during evaluation of an assertion, along with the column it
- * is associated with in the assertion's normalized source text.
+ * Indicates that a power assertion has failed.
  *
  * @author Peter Niederwieser
  */
-public class Value {
-    private final Object value;
-    private final int column;
-
-    public Value(Object value, int column) {
-        this.value = value;
-        this.column = column;
+public class PowerAssertionError extends java.lang.AssertionError {
+    public PowerAssertionError(String msg) {
+        super(msg);
     }
 
-    public Object getValue() {
-        return value;
-    }
-
-    public int getColumn() {
-        return column;
+    @Override
+    public String toString() {
+        return String.format("Assertion failed: \n\n%s\n", getMessage());
     }
 }

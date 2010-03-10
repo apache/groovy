@@ -27,13 +27,13 @@ import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.codehaus.groovy.runtime.ScriptBytecodeAdapter;
 import org.codehaus.groovy.runtime.callsite.CallSite;
+import org.codehaus.groovy.runtime.powerassert.SourceText;
+import org.codehaus.groovy.runtime.powerassert.SourceTextNotAvailableException;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.syntax.RuntimeParserException;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.syntax.SyntaxException;
-import org.codehaus.groovy.transform.powerassert.SourceText;
-import org.codehaus.groovy.transform.powerassert.SourceTextNotAvailableException;
 import org.objectweb.asm.AnnotationVisitor;
 import org.objectweb.asm.*;
 
@@ -962,9 +962,9 @@ public class AsmClassGenerator extends ClassGenerator {
                 // because source position seems to be more reliable for statements
                 // than for expressions, we get the source text for the whole statement
                 assertionTracker.sourceText = new SourceText(statement, source, janitor);
-                mv.visitTypeInsn(NEW, "org/codehaus/groovy/transform/powerassert/ValueRecorder");
+                mv.visitTypeInsn(NEW, "org/codehaus/groovy/runtime/powerassert/ValueRecorder");
                 mv.visitInsn(DUP);
-                mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/transform/powerassert/ValueRecorder", "<init>", "()V");
+                mv.visitMethodInsn(INVOKESPECIAL, "org/codehaus/groovy/runtime/powerassert/ValueRecorder", "<init>", "()V");
                 assertionTracker.recorderIndex = compileStack.defineTemporaryVariable("recorder", true);
                 mv.visitLabel(tryStart);
             } catch (SourceTextNotAvailableException e) {
@@ -986,7 +986,7 @@ public class AsmClassGenerator extends ClassGenerator {
             mv.visitVarInsn(ALOAD, assertionTracker.recorderIndex);
             mv.visitMethodInsn(
                     INVOKEVIRTUAL, 
-                    "org/codehaus/groovy/transform/powerassert/ValueRecorder", 
+                    "org/codehaus/groovy/runtime/powerassert/ValueRecorder",
                     "clear", 
                     "()V");
         }
@@ -999,9 +999,9 @@ public class AsmClassGenerator extends ClassGenerator {
             mv.visitVarInsn(ALOAD, assertionTracker.recorderIndex);
             mv.visitMethodInsn(
                     INVOKESTATIC, 
-                    "org/codehaus/groovy/transform/powerassert/AssertionRenderer", 
+                    "org/codehaus/groovy/runtime/powerassert/AssertionRenderer",
                     "render", 
-                    "(Ljava/lang/String;Lorg/codehaus/groovy/transform/powerassert/ValueRecorder;)Ljava/lang/String;"
+                    "(Ljava/lang/String;Lorg/codehaus/groovy/runtime/powerassert/ValueRecorder;)Ljava/lang/String;"
             );
         } else {
             writeSourclessAssertText(statement);
@@ -1023,7 +1023,7 @@ public class AsmClassGenerator extends ClassGenerator {
             mv.visitVarInsn(ALOAD, savedTracker.recorderIndex);
             mv.visitMethodInsn(
                     INVOKEVIRTUAL, 
-                    "org/codehaus/groovy/transform/powerassert/ValueRecorder", 
+                    "org/codehaus/groovy/runtime/powerassert/ValueRecorder",
                     "clear", 
                     "()V");
             mv.visitInsn(ATHROW);
@@ -1685,7 +1685,7 @@ public class AsmClassGenerator extends ClassGenerator {
         mv.visitLdcInsn(normalizedColumn);
         mv.visitMethodInsn(
                 INVOKEVIRTUAL, 
-                "org/codehaus/groovy/transform/powerassert/ValueRecorder", 
+                "org/codehaus/groovy/runtime/powerassert/ValueRecorder", 
                 "record", 
                 "(Ljava/lang/Object;I)Ljava/lang/Object;");
     }

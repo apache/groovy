@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.transform.powerassert;
+package org.codehaus.groovy.runtime.powerassert;
 
 import java.util.*;
 

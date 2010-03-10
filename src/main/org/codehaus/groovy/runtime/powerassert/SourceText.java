@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.transform.powerassert;
+package org.codehaus.groovy.runtime.powerassert;
 
 import org.codehaus.groovy.ast.ASTNode;
 import org.codehaus.groovy.ast.stmt.AssertStatement;
@@ -98,29 +98,13 @@ public class SourceText {
      */
     public int getNormalizedColumn(int line, int column) {
         int deltaLine = line - firstLine;
-        if (deltaLine < 0) // wrong line information
+        if (deltaLine < 0 || deltaLine >= lineOffsets.size()) // wrong line information
             return -1;
         int deltaColumn = column - lineOffsets.get(deltaLine);
         if (deltaColumn < 0) // wrong column information
             return -1;
 
         return textOffsets.get(deltaLine) + deltaColumn;
-    }
-
-    /**
-     * Returns the normalized column of the last occurrence of the given
-     * substring within the original source text ending before the given
-     * line and column (exclusive), or -1 if no such occurrence is found.
-     *
-     * @param str    a substring in the original source text
-     * @param line   a line number
-     * @param column a column number
-     * @return the normalized column of the last occurrence of the given
-     *         substring within the original source text ending before the given
-     *         line and column (exclusive), or -1 if no such occurrence is found
-     */
-    public int getNormalizedColumn(String str, int line, int column) {
-        return getNormalizedText().lastIndexOf(str, getNormalizedColumn(line, column) - 1 - str.length()) + 1;
     }
 
     private boolean hasPlausibleSourcePosition(ASTNode node) {

@@ -16,7 +16,7 @@
 
 package org.codehaus.groovy.transform.powerassert
 
-import org.codehaus.groovy.transform.powerassert.PowerAssertionError
+import org.codehaus.groovy.runtime.powerassert.PowerAssertionError
 
 import junit.framework.Assert
 
@@ -39,7 +39,7 @@ abstract class AssertionTestUtil {
             failingAssertion()
             throw new RuntimeException("assertion should have failed but didn't")
         } catch (AssertionError expected) {
-            if (expected instanceof org.codehaus.groovy.transform.powerassert.PowerAssertionError)
+            if (expected instanceof PowerAssertionError)
                 throw new RuntimeException("assertion shouldn't have been but was transformed")
         }
     }

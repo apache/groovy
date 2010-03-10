@@ -14,20 +14,30 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.transform.powerassert;
+package org.codehaus.groovy.runtime.powerassert;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
- * Indicates that a power assertion has failed.
+ * Records values produced during evaluation of an assertion statement's truth
+ * expression.
  *
  * @author Peter Niederwieser
  */
-public class PowerAssertionError extends java.lang.AssertionError {
-    public PowerAssertionError(String msg) {
-        super(msg);
+public class ValueRecorder {
+    private final List<Value> values = new ArrayList<Value>();
+
+    public void clear() {
+        values.clear();
     }
 
-    @Override
-    public String toString() {
-        return String.format("Assertion failed: \n\n%s\n", getMessage());
+    public Object record(Object value, int anchor) {
+        values.add(new Value(value, anchor));
+        return value;
+    }
+
+    public List<Value> getValues() {
+        return values;
     }
 }

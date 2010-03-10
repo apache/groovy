@@ -19,9 +19,9 @@ import groovy.lang.*;
 import groovy.xml.XmlUtil;
 import org.codehaus.groovy.runtime.metaclass.MetaClassRegistryImpl;
 import org.codehaus.groovy.runtime.metaclass.MissingMethodExecutionFailed;
+import org.codehaus.groovy.runtime.powerassert.PowerAssertionError;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.runtime.wrappers.PojoWrapper;
-import org.codehaus.groovy.transform.powerassert.PowerAssertionError;
 import org.codehaus.groovy.util.ReleaseInfo;
 import org.w3c.dom.Element;
 

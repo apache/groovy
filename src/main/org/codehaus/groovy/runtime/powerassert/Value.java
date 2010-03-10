@@ -14,35 +14,28 @@
  * limitations under the License.
  */
 
-package org.codehaus.groovy.transform.powerassert;
-
-import java.util.ArrayList;
-import java.util.List;
+package org.codehaus.groovy.runtime.powerassert;
 
 /**
- * Records values produced during evaluation of an assertion statement's truth
- * expression.
+ * A value recorded during evaluation of an assertion, along with the column it
+ * is associated with in the assertion's normalized source text.
  *
  * @author Peter Niederwieser
  */
-public class ValueRecorder {
-    // used for code generation
-    public static final String RECORD_METHOD_NAME = "record";
-    // used for code generation
-    public static final String CLEAR_METHOD_NAME = "clear";
+public class Value {
+    private final Object value;
+    private final int column;
 
-    private final List<Value> values = new ArrayList<Value>();
-
-    public void clear() {
-        values.clear();
+    public Value(Object value, int column) {
+        this.value = value;
+        this.column = column;
     }
 
-    public Object record(Object value, int anchor) {
-        values.add(new Value(value, anchor));
+    public Object getValue() {
         return value;
     }
 
-    public List<Value> getValues() {
-        return values;
+    public int getColumn() {
+        return column;
     }
 }
