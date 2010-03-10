@@ -48,9 +48,18 @@ public class VerifierCodeVisitor extends CodeVisitorSupport implements Opcodes {
         this.verifier = verifier;
     }
 
+    public void visitMethodCallExpression(MethodCallExpression call) {
+        super.visitMethodCallExpression(call);
+    }
+
     public void visitForLoop(ForStatement expression) {
         assertValidIdentifier(expression.getVariable().getName(), "for loop variable name", expression);
         super.visitForLoop(expression);
+    }
+
+    public void visitPropertyExpression(PropertyExpression expression) {
+        // assertValidIdentifier(expression.getProperty(), "property name", expression);  // This has been commented out to fix the issue Groovy-843
+        super.visitPropertyExpression(expression);
     }
 
     public void visitFieldExpression(FieldExpression expression) {
@@ -63,6 +72,25 @@ public class VerifierCodeVisitor extends CodeVisitorSupport implements Opcodes {
     public void visitVariableExpression(VariableExpression expression) {
         assertValidIdentifier(expression.getName(), "variable name", expression);
         super.visitVariableExpression(expression);
+    }
+
+    public void visitBinaryExpression(BinaryExpression expression) {
+        /*
+        if (verifier.getClassNode().isScript() && expression.getOperation().getType() == Token.EQUAL) {
+            // lets turn variable assignments into property assignments
+            Expression left = expression.getLeftExpression();
+            if (left instanceof VariableExpression) {
+                VariableExpression varExp = (VariableExpression) left;
+
+                //System.out.println("Converting variable expression: " + varExp.getVariable());
+
+                PropertyExpression propExp =
+                    new PropertyExpression(VariableExpression.THIS_EXPRESSION, varExp.getVariable());
+                expression.setLeftExpression(propExp);
+            }
+        }
+        */
+        super.visitBinaryExpression(expression);
     }
 
     public static void assertValidIdentifier(String name, String message, ASTNode node) {
