@@ -236,6 +236,8 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         body.addStatement(returnFalseIfWrongType(cNode, other));
         body.addStatement(returnTrueIfIdentical(VariableExpression.THIS_EXPRESSION, other));
 
+        body.addStatement(new ExpressionStatement(new BinaryExpression(other, ASSIGN, new CastExpression(cNode, other))));
+
         final List<PropertyNode> list = cNode.getProperties();
         // fields
         for (PropertyNode pNode : list) {
