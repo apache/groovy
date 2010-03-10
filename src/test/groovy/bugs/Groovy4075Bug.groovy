@@ -18,6 +18,6 @@ class Groovy4075Bug extends GroovyTestCase {
     void testUncheckedFailure() {
         assert shouldFailWithCause(IllegalArgumentException) {
             Groovy4075Bug.failUnchecked()
-        } == "IOE in failUnchecked"
+        } == "IAE in failUnchecked"
     }
 }
