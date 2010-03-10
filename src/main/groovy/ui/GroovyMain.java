@@ -207,7 +207,7 @@ public class GroovyMain {
         options.addOption(
             OptionBuilder.withArgName("port")
             .hasOptionalArg()
-            .withDescription("listen on a port and process inbound lines")
+            .withDescription("listen on a port and process inbound lines (default: 1960)")
             .create('l'));
         options.addOption(
             OptionBuilder.withArgName("splitPattern")
