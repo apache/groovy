@@ -260,23 +260,54 @@ public class GroovyTestCase extends TestCase {
         return th.getMessage();
     }
 
+    /**
+     * Asserts that the given code closure fails when it is evaluated
+     * and that a particular exception can be attributed to the cause.
+     * The expected exception class is compared with the actual exception
+     * and then any wrapped exceptions using getCause() recursively
+     * until either a match is found or no more nested exceptions exist.
+     * If a match is found the error message associated with the matching
+     * exception is returned. If no match was found the method will fail.
+     *
+     * @param clazz the class of the expected exception
+     * @param code the closure that should fail
+     * @return the message of the expected Throwable
+     */
     protected String shouldFailWithCause(Class clazz, Closure code) {
         Throwable th = null;
+        Throwable orig = null;
         try {
             code.call();
         } catch (Throwable e) {
             th = e;
-            while(th.getCause()!=null) {
+            orig = e;
+            while (th != null && !clazz.isInstance(th)) {
                 th = th.getCause();
             }
         }
 
-        if (th==null) {
+        if (orig == null) {
             fail("Closure " + code + " should have failed with an exception caused by type " + clazz.getName());
-        } else if (! clazz.isInstance(th)) {
-            fail("Closure " + code + " should have failed with an exception caused by type " + clazz.getName() + ", instead got Exception " + th);
+        } else if (th == null) {
+            fail("Closure " + code + " should have failed with an exception caused by type " + clazz.getName() + ", instead found these Exceptions:\n" + buildExceptionList(orig));
         }
         return th.getMessage();
+    }
+
+    private String buildExceptionList(Throwable th) {
+        StringBuilder sb = new StringBuilder();
+        int level = 0;
+        while (th != null) {
+            if (level > 1) {
+                for (int i = 0; i < level - 1; i++) sb.append("   ");
+            }
+            if (level > 0) sb.append("-> ");
+            sb.append(th.getClass().getName());
+            sb.append("\n");
+            th = th.getCause();
+            level++;
+        }
+        return sb.toString();
     }
 
     /**
