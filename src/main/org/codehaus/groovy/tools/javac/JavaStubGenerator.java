@@ -40,6 +40,7 @@ public class JavaStubGenerator
     private File outputPath;
     private List<String> toCompile = new ArrayList<String>();
     private ArrayList<MethodNode> propertyMethods = new ArrayList<MethodNode>();
+    private boolean defaultConstructor;
 
     public JavaStubGenerator(final File outputPath, final boolean requireSuperResolved, final boolean java5) {
         this.outputPath = outputPath;
@@ -118,6 +119,11 @@ public class JavaStubGenerator
                     propertyMethods.add(method);
                 }
                 protected void addReturnIfNeeded(MethodNode node) {}
+                protected void addDefaultConstructor(ClassNode node) {
+                    if (!node.getDeclaredConstructors().isEmpty()) return;
+                    defaultConstructor = true;
+                }
+
             };
             verifier.visitClass(classNode);
 
@@ -170,6 +176,7 @@ public class JavaStubGenerator
             for (Iterator<InnerClassNode> inner = classNode.getInnerClasses(); inner.hasNext(); ) {
             	// GROOVY-4004: Clear the methods from the outer class so that they don't get duplicated in inner ones
             	propertyMethods.clear();
+                defaultConstructor = false;
             	genClassInner(inner.next(), out);
             }
 
@@ -177,11 +184,12 @@ public class JavaStubGenerator
         }
         finally {
             propertyMethods.clear();
+            defaultConstructor = false;
         }
     }
 
     private void genMethods(ClassNode classNode, PrintWriter out, boolean isEnum) {
-        if (!isEnum) getConstructors(classNode, out);
+        if (!isEnum) genConstructors(classNode, out);
 
         @SuppressWarnings("unchecked")
         List<MethodNode> methods = (List)propertyMethods.clone();
@@ -202,12 +210,20 @@ public class JavaStubGenerator
         }
     }
 
-    private void getConstructors(ClassNode classNode, PrintWriter out) {
+    private void genConstructors(ClassNode classNode, PrintWriter out) {
         List<ConstructorNode> constrs = classNode.getDeclaredConstructors();
         if (constrs != null)
             for (ConstructorNode constr : constrs) {
                 genConstructor(classNode, constr, out);
             }
+        if (defaultConstructor) {
+            out.print("public "); // temporary hack
+            String className = classNode.getNameWithoutPackage();
+            if (classNode instanceof InnerClassNode)
+                className = className.substring(className.lastIndexOf("$")+1);
+            out.print(className);
+            out.println("(){}");
+        }
     }
 
     private void genFields(ClassNode classNode, PrintWriter out) {

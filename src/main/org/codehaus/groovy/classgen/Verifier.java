@@ -121,16 +121,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             return;
         }
 
-        ClassNode[] classNodes = classNode.getInterfaces();
-        List interfaces = new ArrayList();
-        for (int i = 0; i < classNodes.length; i++) {
-            ClassNode classNode = classNodes[i];
-            interfaces.add(classNode.getName());
-        }
-        Set interfaceSet = new HashSet(interfaces);
-        if (interfaceSet.size() != interfaces.size()) {
-            throw new RuntimeParserException("Duplicate interfaces in implements list: " + interfaces, classNode);
-        }
+        checkDuplicateInterfaces();
 
         addDefaultParameterMethods(node);
         addDefaultParameterConstructors(node);
@@ -151,13 +142,24 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         if (!(node instanceof InnerClassNode)) addTimeStamp(node);
 
         addInitialization(node);
-        checkReturnInObjectInitializer(node.getObjectInitializerStatements());
-        node.getObjectInitializerStatements().clear();
         addCovariantMethods(node);
         node.visitContents(this);
     }
 
-    private void addDefaultConstructor(ClassNode node) {
+    private void checkDuplicateInterfaces() {
+        ClassNode[] classNodes = classNode.getInterfaces();
+        List interfaces = new ArrayList();
+        for (int i = 0; i < classNodes.length; i++) {
+            ClassNode classNode = classNodes[i];
+            interfaces.add(classNode.getName());
+        }
+        Set interfaceSet = new HashSet(interfaces);
+        if (interfaceSet.size() != interfaces.size()) {
+            throw new RuntimeParserException("Duplicate interfaces in implements list: " + interfaces, classNode);
+        }
+    }
+
+    protected void addDefaultConstructor(ClassNode node) {
         if (!node.getDeclaredConstructors().isEmpty()) return;
         
         ConstructorNode constructor = new ConstructorNode(ACC_PUBLIC, null);
@@ -541,7 +543,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     protected void addPropertyMethod(MethodNode method) {
-    	classNode.addMethod(method);
+        classNode.addMethod(method);
     }
     
     // Implementation methods
@@ -675,6 +677,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         for (Iterator iter = node.getDeclaredConstructors().iterator(); iter.hasNext();) {
             addInitialization(node, (ConstructorNode) iter.next());
         }
+        checkReturnInObjectInitializer(node.getObjectInitializerStatements());
+        node.getObjectInitializerStatements().clear();
     }
 
     protected void addInitialization(ClassNode node, ConstructorNode constructorNode) {
@@ -805,14 +809,15 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     protected Statement createGetterBlock(PropertyNode propertyNode, final FieldNode field) {
+        final ClassNode biClassNode = classNode;
         return new BytecodeSequence(new BytecodeInstruction(){
             public void visit(MethodVisitor mv) {
                 if (field.isStatic()) {
-                    mv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(classNode), field.getName(), BytecodeHelper.getTypeDescription(field.getType()));
+                    mv.visitFieldInsn(GETSTATIC, BytecodeHelper.getClassInternalName(biClassNode), field.getName(), BytecodeHelper.getTypeDescription(field.getType()));
                 }
                 else {
                     mv.visitVarInsn(ALOAD, 0);
-                    mv.visitFieldInsn(GETFIELD, BytecodeHelper.getClassInternalName(classNode), field.getName(), BytecodeHelper.getTypeDescription(field.getType()));
+                    mv.visitFieldInsn(GETFIELD, BytecodeHelper.getClassInternalName(biClassNode), field.getName(), BytecodeHelper.getTypeDescription(field.getType()));
                 }
                 final BytecodeHelper helper = new BytecodeHelper(mv);
                 helper.doReturn(field.getType());
@@ -821,17 +826,18 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     }
 
     protected Statement createSetterBlock(PropertyNode propertyNode, final FieldNode field) {
+        final ClassNode biClassNode = classNode;
         return new BytecodeSequence(new BytecodeInstruction(){
             public void visit(MethodVisitor mv) {
                 final BytecodeHelper helper = new BytecodeHelper(mv);
                 if (field.isStatic()) {
                     helper.load(field.getType(), 0);
-                    mv.visitFieldInsn(PUTSTATIC, BytecodeHelper.getClassInternalName(classNode), field.getName(), BytecodeHelper.getTypeDescription(field.getType()));
+                    mv.visitFieldInsn(PUTSTATIC, BytecodeHelper.getClassInternalName(biClassNode), field.getName(), BytecodeHelper.getTypeDescription(field.getType()));
                 }
                 else {
                     mv.visitVarInsn(ALOAD, 0);
                     helper.load(field.getType(), 1);
-                    mv.visitFieldInsn(PUTFIELD, BytecodeHelper.getClassInternalName(classNode), field.getName(), BytecodeHelper.getTypeDescription(field.getType()));
+                    mv.visitFieldInsn(PUTFIELD, BytecodeHelper.getClassInternalName(biClassNode), field.getName(), BytecodeHelper.getTypeDescription(field.getType()));
                 }
                 mv.visitInsn(RETURN);
             }
@@ -1000,6 +1006,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 null
         );
         List instructions = new ArrayList(1);
+        final ClassNode biClassNode = classNode;
         instructions.add (
                 new BytecodeInstruction() {
                     public void visit(MethodVisitor mv) {
@@ -1015,7 +1022,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                         }
                         mv.visitMethodInsn(
                                 INVOKEVIRTUAL, 
-                                BytecodeHelper.getClassInternalName(classNode),
+                                BytecodeHelper.getClassInternalName(biClassNode),
                                 overridingMethod.getName(),
                                 BytecodeHelper.getMethodDescriptor(overridingMethod.getReturnType(), overridingMethod.getParameters()));
                         helper.doReturn(oldMethod.getReturnType());
