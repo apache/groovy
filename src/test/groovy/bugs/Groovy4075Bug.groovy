@@ -1,19 +1,23 @@
 package groovy.bugs
 
 class Groovy4075Bug extends GroovyTestCase {
-    public static void failChecked() throws Exception {
-        throw new Exception(new IOException());
+    static void failChecked() throws Exception {
+        throw new Exception(new IOException(new NullPointerException("NPE in failChecked")));
     }
     
-    public static void failUnchecked() {
-        throw new RuntimeException(new IOException());
+    static void failUnchecked() {
+        throw new RuntimeException(new IOException("IOE in failUnchecked", new NullPointerException()));
     }
     
-    public void testCheckedFailure() {
-        shouldFailWithCause(IOException.class, {Groovy4075Bug.failChecked()})    
+    void testCheckedFailure() {
+        assert shouldFailWithCause(NullPointerException) {
+            Groovy4075Bug.failChecked()
+        } == "NPE in failChecked"
     }
     
-    public void testUncheckedFailure() {
-        shouldFailWithCause(IOException.class, {Groovy4075Bug.failUnchecked()})    
+    void testUncheckedFailure() {
+        assert shouldFailWithCause(IOException) {
+            Groovy4075Bug.failUnchecked()
+        } == "IOE in failUnchecked"
     }
 }
