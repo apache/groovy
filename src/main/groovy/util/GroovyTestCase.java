@@ -263,9 +263,10 @@ public class GroovyTestCase extends TestCase {
     /**
      * Asserts that the given code closure fails when it is evaluated
      * and that a particular exception can be attributed to the cause.
-     * The expected exception class is compared with the actual exception
-     * and then any wrapped exceptions using getCause() recursively
-     * until either a match is found or no more nested exceptions exist.
+     * The expected exception class is compared recursively with any nested
+     * exceptions using getCause() until either a match is found or no more
+     * nested exceptions exist.
+     * 
      * If a match is found the error message associated with the matching
      * exception is returned. If no match was found the method will fail.
      *
@@ -278,12 +279,16 @@ public class GroovyTestCase extends TestCase {
         Throwable orig = null;
         try {
             code.call();
+        } catch (GroovyRuntimeException gre) {
+            orig = ScriptBytecodeAdapter.unwrap(gre);
+            th = orig.getCause();
         } catch (Throwable e) {
-            th = e;
             orig = e;
-            while (th != null && !clazz.isInstance(th)) {
-                th = th.getCause();
-            }
+            th = orig.getCause();
+        }
+
+        while (th != null && !clazz.isInstance(th)) {
+            th = th.getCause();
         }
 
         if (orig == null) {
@@ -302,8 +307,7 @@ public class GroovyTestCase extends TestCase {
                 for (int i = 0; i < level - 1; i++) sb.append("   ");
             }
             if (level > 0) sb.append("-> ");
-            sb.append(th.getClass().getName());
-            sb.append("\n");
+            sb.append(th.getClass().getName()).append(": ").append(th.getMessage()).append("\n");
             th = th.getCause();
             level++;
         }
