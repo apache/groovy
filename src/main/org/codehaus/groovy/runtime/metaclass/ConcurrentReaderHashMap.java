@@ -18,10 +18,9 @@
  * which contains the following license information:
  * 
  * Written by Doug Lea with assistance from members of JCP JSR-166
- * Expert Group and released to the public domain, as explained at
+ * Expert Group and released to the public domain, as explained at:
  * http://creativecommons.org/licenses/publicdomain
  */
-
 package org.codehaus.groovy.runtime.metaclass;
 
 import java.util.Map;
@@ -139,7 +138,10 @@ import java.io.IOException;
  * revisions are in place.
  *
  * <p>[<a href="http://gee.cs.oswego.edu/dl/classes/EDU/oswego/cs/dl/util/concurrent/intro.html"> Introduction to this package. </a>]
- **/
+ *
+ * @author Adapted from ConcurrentHashMap (Doug Lea)
+ * @author adapted by the Groovy community
+ */
 public class ConcurrentReaderHashMap 
   extends AbstractMap 
   implements Map, Cloneable, Serializable {
