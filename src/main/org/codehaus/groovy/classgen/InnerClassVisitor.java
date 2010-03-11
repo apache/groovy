@@ -29,7 +29,7 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
 
     private final SourceUnit sourceUnit;
     private ClassNode classNode;
-    private final static int publicSynthetic = Opcodes.ACC_PUBLIC+Opcodes.ACC_SYNTHETIC;
+    private static final int publicSynthetic = Opcodes.ACC_PUBLIC+Opcodes.ACC_SYNTHETIC;
     private FieldNode thisField = null;
     private MethodNode currentMethod;
     private FieldNode currentField;

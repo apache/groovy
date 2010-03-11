@@ -21,7 +21,7 @@ package org.codehaus.groovy.runtime.typehandling;
  * 
  * @author Steve Goetze
  */
-public class FloatingPointMath extends NumberMath {
+public final class FloatingPointMath extends NumberMath {
 
 	public static final FloatingPointMath INSTANCE = new FloatingPointMath();
 	

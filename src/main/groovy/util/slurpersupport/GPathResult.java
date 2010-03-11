@@ -22,7 +22,6 @@ import groovy.lang.DelegatingMetaClass;
 import groovy.lang.GString;
 import groovy.lang.GroovyObject;
 import groovy.lang.GroovyObjectSupport;
-import groovy.lang.GroovyRuntimeException;
 import groovy.lang.IntRange;
 import groovy.lang.MetaClass;
 import groovy.lang.Writable;

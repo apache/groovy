@@ -24,10 +24,10 @@ import java.util.Set;
  *
  * @author Paul King
  */
-public class MapWithDefault<K, V> implements Map<K, V> {
+public final class MapWithDefault<K, V> implements Map<K, V> {
 
-    private Map<K, V> delegate;
-    private Closure initClosure;
+    private final Map<K, V> delegate;
+    private final Closure initClosure;
 
     private MapWithDefault(Map<K, V> m, Closure initClosure) {
         delegate = m;

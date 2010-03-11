@@ -27,7 +27,6 @@ import org.codehaus.groovy.util.ReferenceBundle;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.util.*;
-import java.io.IOException;
 
 /**
  * A registry of MetaClass instances which caches introspection &
@@ -137,7 +136,7 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
             // Calls for such meta methods done without reflection, so more effectively.
 
             try {
-                ArrayList<GeneratedMetaMethod.DgmMethodRecord> records = GeneratedMetaMethod.DgmMethodRecord.loadDgmInfo();
+                List<GeneratedMetaMethod.DgmMethodRecord> records = GeneratedMetaMethod.DgmMethodRecord.loadDgmInfo();
 
                 for (GeneratedMetaMethod.DgmMethodRecord record : records) {
                     Class[] newParams = new Class[record.parameters.length - 1];

@@ -21,7 +21,7 @@ package org.codehaus.groovy.runtime.typehandling;
  * 
  * @author Steve Goetze
  */
-public class BigIntegerMath extends NumberMath {
+public final class BigIntegerMath extends NumberMath {
 
 	public static final BigIntegerMath INSTANCE = new BigIntegerMath();
 	

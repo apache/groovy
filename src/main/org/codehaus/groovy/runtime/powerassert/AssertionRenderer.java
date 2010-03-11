@@ -23,7 +23,7 @@ import java.util.*;
  *
  * @author Peter Niederwieser
  */
-public class AssertionRenderer {
+public final class AssertionRenderer {
     private final String text;
     private final ValueRecorder recorder;
     private final List<StringBuilder> lines = new ArrayList<StringBuilder>();

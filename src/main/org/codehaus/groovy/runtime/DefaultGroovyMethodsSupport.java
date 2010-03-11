@@ -16,7 +16,6 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.EmptyRange;
-import groovy.lang.IntRange;
 import groovy.lang.Range;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
@@ -102,8 +101,9 @@ public class DefaultGroovyMethodsSupport {
     }
 
     protected static class RangeInfo {
-        public int from, to;
-        public boolean reverse;
+        public final int from;
+        public final int to;
+        public final boolean reverse;
 
         public RangeInfo(int from, int to, boolean reverse) {
             this.from = from;

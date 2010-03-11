@@ -27,7 +27,6 @@ import groovy.lang.GroovyClassLoader;
 
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
-import java.util.Collection;
 
 /**
  * This visitor walks the AST tree and collects references to Annotations that

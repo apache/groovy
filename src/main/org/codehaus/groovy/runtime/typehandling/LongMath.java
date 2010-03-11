@@ -20,7 +20,7 @@ package org.codehaus.groovy.runtime.typehandling;
  * 
  * @author Steve Goetze
  */
-public class LongMath extends NumberMath {
+public final class LongMath extends NumberMath {
 
 	public static final LongMath INSTANCE = new LongMath();
 

@@ -62,7 +62,7 @@ public class GroovyScriptEngine implements ResourceConnector {
     private static final ClassLoader CL_STUB = new ClassLoader(){};
     
     private static WeakReference<ThreadLocal<StringSetMap>> dependencyCache = new WeakReference<ThreadLocal<StringSetMap>>(null);
-    private synchronized static ThreadLocal<StringSetMap> getDepCache() {
+    private static synchronized ThreadLocal<StringSetMap> getDepCache() {
         ThreadLocal<StringSetMap> local = dependencyCache.get();
         if (local!=null) return local;
         local = new ThreadLocal<StringSetMap>() {
@@ -76,7 +76,7 @@ public class GroovyScriptEngine implements ResourceConnector {
     }
     
     private static WeakReference<ThreadLocal<CompilationUnit>> localCu = new WeakReference<ThreadLocal<CompilationUnit>>(null);
-    private synchronized static ThreadLocal<CompilationUnit> getLocalCompilationUnit() {
+    private static synchronized ThreadLocal<CompilationUnit> getLocalCompilationUnit() {
         ThreadLocal<CompilationUnit> local = localCu.get();
         if (local!=null) return local;
         local = new ThreadLocal<CompilationUnit>();
@@ -93,9 +93,9 @@ public class GroovyScriptEngine implements ResourceConnector {
 
     //TODO: more finals?
     private static class ScriptCacheEntry {
-        final private Class scriptClass;
-        final private long lastModified;
-        final private Set<String> dependencies;
+        private final Class scriptClass;
+        private final long lastModified;
+        private final Set<String> dependencies;
         
         public ScriptCacheEntry(Class clazz, long modified, Set<String> depend) {
             this.scriptClass = clazz;
