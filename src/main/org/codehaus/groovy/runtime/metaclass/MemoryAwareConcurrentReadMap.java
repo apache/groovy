@@ -1,39 +1,30 @@
 /*
-  File: ConcurrentReaderHashMap
-
-  Written by Doug Lea. Adapted and released, under explicit
-  permission, from JDK1.2 HashMap.java and Hashtable.java which
-  carries the following copyright:
-
- * Copyright 1997 by Sun Microsystems, Inc.,
- * 901 San Antonio Road, Palo Alto, California, 94303, U.S.A.
- * All rights reserved.
+ * Copyright 2003-2009 the original author or authors.
  *
- * This software is the confidential and proprietary information
- * of Sun Microsystems, Inc. ("Confidential Information").  You
- * shall not disclose such Confidential Information and shall use
- * it only in accordance with the terms of the license agreement
- * you entered into with Sun.
-
-  History:
-  Date       Who                What
-  28oct1999  dl               Created
-  14dec1999  dl               jmm snapshot
-  19apr2000  dl               use barrierLock
-  12jan2001  dl               public release
-  17nov2001  dl               Minor tunings
-  20may2002  dl               BarrierLock can now be serialized.
-  09dec2002  dl               Fix interference checks.
-  23jun2004  dl               Avoid bad array sizings in view toArray methods
-  02jul2007  blackdrag        adaption of package name to Groovy project
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ * Modified to hold values and keys as SoftReferences from this file:
+ * http://gee.cs.oswego.edu/cgi-bin/viewcvs.cgi/jsr166/src/main/java/util/concurrent/ConcurrentHashMap.java
+ * which contains the following license information:
+ *
+ * Written by Doug Lea with assistance from members of JCP JSR-166
+ * Expert Group and released to the public domain, as explained at:
+ * http://creativecommons.org/licenses/publicdomain
  */
-
 package org.codehaus.groovy.runtime.metaclass;
-
 
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
-
 
 /**
  * This Map is a stripped down version of ConcurrentReaderHashMap with
@@ -47,7 +38,10 @@ import java.lang.ref.SoftReference;
  * operations and tries not to lock if possible. SoftReferenced values
  * are only removed from the map if the map goes into a synchronization
  * block on this. This may affect reads, but only in rare cases.
- **/
+ *
+ * @author Adapted from ConcurrentHashMap (Doug Lea)
+ * @author adapted by the Groovy community
+ */
 public class MemoryAwareConcurrentReadMap {
 
 

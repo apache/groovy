@@ -151,6 +151,9 @@
         <!--</module>-->
         <!-- add below in eventually for consistency -->
         <!--<module name="ArrayTypeStyle"/>-->
+        <module name="RegexpHeader">
+            <property name="headerFile" value="config/checkstyle/codeHeader.txt"/>
+        </module>
     </module>
     <module name="PackageHtml"/>
     <module name="au.com.redhillconsulting.simian.SimianCheck">
