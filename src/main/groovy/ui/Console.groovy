@@ -389,7 +389,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         def doc = outputArea.styledDocument
         def len = doc.length
         def alreadyNewLine = (len == 0 || doc.getText(len - 1, 1) == "\n")
-        appendOutput(" \n", style)
+        doc.insertString(doc.length, " \n", style)
         if (alreadyNewLine) {
             doc.remove(len, 2) // windows hack to fix (improve?) line spacing
         }
@@ -400,7 +400,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
         appendOutput(text, style)
         def doc = outputArea.styledDocument
         def len = doc.length
-        appendOutput(" \n", style)
+        doc.insertString(len, " \n", style)
         doc.remove(len, 2) // windows hack to fix (improve?) line spacing
     }
 
