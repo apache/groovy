@@ -23,7 +23,7 @@ import java.math.BigDecimal;
  * 
  * @author Steve Goetze
  */
-public class BigDecimalMath extends NumberMath {
+public final class BigDecimalMath extends NumberMath {
 
 	//This is an arbitrary value, picked as a reasonable choice for a rounding point
 	//for typical user math.

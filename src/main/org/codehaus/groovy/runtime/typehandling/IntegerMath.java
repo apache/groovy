@@ -20,7 +20,7 @@ package org.codehaus.groovy.runtime.typehandling;
  * 
  * @author Steve Goetze
  */
-public class IntegerMath extends NumberMath {
+public final class IntegerMath extends NumberMath {
 
 	public static final IntegerMath INSTANCE = new IntegerMath();
 

@@ -51,7 +51,7 @@ import java.util.*;
  *
  * @author Danno Ferrin (shemnon)
  */
-public class ASTTransformationVisitor extends ClassCodeVisitorSupport {
+public final class ASTTransformationVisitor extends ClassCodeVisitorSupport {
 
     private CompilePhase phase;
     private SourceUnit source;

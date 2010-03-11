@@ -2,14 +2,10 @@ package org.codehaus.groovy.reflection;
 
 import groovy.lang.MetaMethod;
 
-import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.io.*;
 import java.util.*;
-
-import org.apache.tools.ant.util.ReflectWrapper;
 
 public abstract class GeneratedMetaMethod extends MetaMethod {
     private final String name;
@@ -88,7 +84,7 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
         public Class   returnType;
         public Class[] parameters;
 
-        private static final Class[] primitiveClasses = new Class[] {
+        private static final Class[] PRIMITIVE_CLASSES = {
             Boolean.TYPE, Character.TYPE, Byte.TYPE, Short.TYPE,
             Integer.TYPE, Long.TYPE, Double.TYPE, Float.TYPE, Void.TYPE,
 
@@ -98,13 +94,13 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
             Object [].class, String [].class, Class  [].class, Byte[].class
         };
 
-        public static void saveDgmInfo(ArrayList<DgmMethodRecord> records, String file) throws IOException {
+        public static void saveDgmInfo(List<DgmMethodRecord> records, String file) throws IOException {
             DataOutputStream out = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file)));
-            LinkedHashMap<String,Integer> classes = new LinkedHashMap<String,Integer> ();
+            Map<String,Integer> classes = new LinkedHashMap<String,Integer> ();
 
             int nextClassId = 0;
-            for (int i = 0; i < primitiveClasses.length; i++) {
-                classes.put(primitiveClasses[i].getName(), nextClassId++);
+            for (int i = 0; i < PRIMITIVE_CLASSES.length; i++) {
+                classes.put(PRIMITIVE_CLASSES[i].getName(), nextClassId++);
             }
 
             for (DgmMethodRecord record : records) {
@@ -146,14 +142,14 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
             out.close();
         }
 
-        public static ArrayList<DgmMethodRecord>  loadDgmInfo() throws IOException, ClassNotFoundException {
+        public static List<DgmMethodRecord>  loadDgmInfo() throws IOException, ClassNotFoundException {
 
             ClassLoader loader = DgmMethodRecord.class.getClassLoader();
             DataInputStream in = new DataInputStream(new BufferedInputStream(loader.getResourceAsStream("META-INF/dgminfo")));
 
-            HashMap<Integer,Class> classes = new HashMap<Integer, Class>();
-            for (int i = 0; i < primitiveClasses.length; i++) {
-                classes.put(i, primitiveClasses[i]);
+            Map<Integer,Class> classes = new HashMap<Integer, Class>();
+            for (int i = 0; i < PRIMITIVE_CLASSES.length; i++) {
+                classes.put(i, PRIMITIVE_CLASSES[i]);
             }
 
             int skip = 0;
@@ -164,7 +160,7 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
 
                 int key = in.readInt();
 
-                if (skip++ < primitiveClasses.length)
+                if (skip++ < PRIMITIVE_CLASSES.length)
                     continue;
 
                 Class cls = null;
@@ -179,7 +175,7 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
             }
 
             int size = in.readInt();
-            ArrayList<DgmMethodRecord> res = new ArrayList<DgmMethodRecord>(size);
+            List<DgmMethodRecord> res = new ArrayList<DgmMethodRecord>(size);
             for (int i = 0; i != size; ++i) {
                 boolean skipRecord = false;
                 DgmMethodRecord record = new DgmMethodRecord();
