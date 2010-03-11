@@ -34,13 +34,17 @@ public class CachedField extends MetaProperty {
         return Modifier.isStatic(getModifiers());
     }
 
+    public boolean isFinal() {
+        return Modifier.isFinal(getModifiers());
+    }
+
     public int getModifiers() {
         return field.getModifiers();
     }
 
     /**
      * @return the property of the given object
-     * @throws Exception if the property could not be evaluated
+     * @throws RuntimeException if the property could not be evaluated
      */
     public Object getProperty(final Object object) {
         try {
@@ -60,6 +64,9 @@ public class CachedField extends MetaProperty {
     public void setProperty(final Object object, Object newValue) {
         final Object goalValue = DefaultTypeTransformation.castToType(newValue, field.getType());
 
+        if (isFinal()) {
+            throw new GroovyRuntimeException("Cannot set the property '" + name + "' because the backing field is final.");
+        }
         try {
             field.set(object, goalValue);
         } catch (IllegalAccessException ex) {

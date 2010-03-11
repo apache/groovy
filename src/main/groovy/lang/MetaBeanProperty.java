@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -45,11 +45,13 @@ public class MetaBeanProperty extends MetaProperty {
      *
      * @param object which to be got
      * @return the property of the given object
-     * @throws Exception if the property could not be evaluated
+     * @throws RuntimeException if the property could not be evaluated
      */
     public Object getProperty(Object object) {
-    	MetaMethod getter = getGetter();
+        MetaMethod getter = getGetter();
         if (getter == null) {
+            if (Modifier.isPublic(field.getModifiers()))
+                return field.getProperty(object);
             //TODO: we probably need a WriteOnlyException class
             throw new GroovyRuntimeException("Cannot read write-only property: " + name);
         }
@@ -66,6 +68,10 @@ public class MetaBeanProperty extends MetaProperty {
     public void setProperty(Object object, Object newValue) {
     	MetaMethod setter = getSetter();
         if (setter == null) {
+            if (Modifier.isPublic(field.getModifiers()) && !Modifier.isFinal(field.getModifiers())) {
+                field.setProperty(object, newValue);
+                return;
+            }
             throw new GroovyRuntimeException("Cannot set read-only property: " + name);
         }
         newValue = DefaultTypeTransformation.castToType(newValue, getType());
