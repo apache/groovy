@@ -523,27 +523,23 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
 
     private void checkFinalFieldAccess(Expression expression) {
         if (!(expression instanceof VariableExpression)) return;
-        boolean isFinal, isStatic, error;
-        int modifiers = 0;
         VariableExpression ve = (VariableExpression) expression;
         Variable v = ve.getAccessedVariable();
-        if (v instanceof PropertyNode) {
-            PropertyNode pn = (PropertyNode) v;
-            modifiers = pn.getModifiers();
-        } else if (v instanceof FieldNode) {
+        if (v instanceof FieldNode) {
             FieldNode fn = (FieldNode) v;
-            modifiers = fn.getModifiers();
-        }
-        /*
-         *  if it is static final but not accessed inside a static constructor, or,
-         *  if it is an instance final but not accessed inside a instance constructor, it is an error
-         */
-        isFinal = (modifiers & Opcodes.ACC_FINAL) != 0;
-        isStatic = (modifiers & Opcodes.ACC_STATIC) != 0;
-        error = isFinal && ((isStatic && !inStaticConstructor) || (!isStatic && !inConstructor));
+            int modifiers = fn.getModifiers();
 
-        if (error) addError("cannnot access final field or property " +
-                            "outside of constructor.", expression);
+            /*
+             *  if it is static final but not accessed inside a static constructor, or,
+             *  if it is an instance final but not accessed inside a instance constructor, it is an error
+             */
+            boolean isFinal = (modifiers & Opcodes.ACC_FINAL) != 0;
+            boolean isStatic = (modifiers & Opcodes.ACC_STATIC) != 0;
+            boolean error = isFinal && ((isStatic && !inStaticConstructor) || (!isStatic && !inConstructor));
+
+            if (error) addError("cannot modify" + (isStatic ? " static" : "") + " final field '" + fn.getName() +
+                    "' outside of " + (isStatic ? "static initialization block." : "constructor."), expression);
+        }
     }
 
     public void visitProperty(PropertyNode node) {
