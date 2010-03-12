@@ -41,6 +41,7 @@ public class GroovyTestCase extends TestCase {
 
     protected static Logger log = Logger.getLogger(GroovyTestCase.class.getName());
     private static int counter;
+    private static final int MAX_NESTED_EXCEPTIONS = 10;
     public static final String TEST_SCRIPT_NAME_PREFIX = "TestScript";
 
     private boolean useAgileDoxNaming = false;
@@ -252,9 +253,9 @@ public class GroovyTestCase extends TestCase {
             th = e;
         }
 
-        if (th==null) {
+        if (th == null) {
             fail("Closure " + code + " should have failed with an exception of type " + clazz.getName());
-        } else if (! clazz.isInstance(th)) {
+        } else if (!clazz.isInstance(th)) {
             fail("Closure " + code + " should have failed with an exception of type " + clazz.getName() + ", instead got Exception " + th);
         }
         return th.getMessage();
@@ -277,6 +278,7 @@ public class GroovyTestCase extends TestCase {
     protected String shouldFailWithCause(Class clazz, Closure code) {
         Throwable th = null;
         Throwable orig = null;
+        int level = 0;
         try {
             code.call();
         } catch (GroovyRuntimeException gre) {
@@ -287,13 +289,14 @@ public class GroovyTestCase extends TestCase {
             th = orig.getCause();
         }
 
-        while (th != null && !clazz.isInstance(th)) {
+        while (th != null && !clazz.isInstance(th) && th != th.getCause() && level < MAX_NESTED_EXCEPTIONS) {
             th = th.getCause();
+            level++;
         }
 
         if (orig == null) {
             fail("Closure " + code + " should have failed with an exception caused by type " + clazz.getName());
-        } else if (th == null) {
+        } else if (th == null || !clazz.isInstance(th)) {
             fail("Closure " + code + " should have failed with an exception caused by type " + clazz.getName() + ", instead found these Exceptions:\n" + buildExceptionList(orig));
         }
         return th.getMessage();
@@ -307,7 +310,14 @@ public class GroovyTestCase extends TestCase {
                 for (int i = 0; i < level - 1; i++) sb.append("   ");
             }
             if (level > 0) sb.append("-> ");
+            if (level > MAX_NESTED_EXCEPTIONS) {
+                sb.append("...");
+                break;
+            }
             sb.append(th.getClass().getName()).append(": ").append(th.getMessage()).append("\n");
+            if (th == th.getCause()) {
+                break;
+            }
             th = th.getCause();
             level++;
         }

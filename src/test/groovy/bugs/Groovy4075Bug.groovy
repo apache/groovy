@@ -2,11 +2,11 @@ package groovy.bugs
 
 class Groovy4075Bug extends GroovyTestCase {
     static void failChecked() throws Exception {
-        throw new Exception(new IllegalArgumentException(new NullPointerException("NPE in failChecked")));
+        throw new Exception(new IllegalArgumentException(new NullPointerException("NPE in failChecked")))
     }
     
     static void failUnchecked() {
-        throw new RuntimeException(new IllegalArgumentException("IAE in failUnchecked", new NullPointerException()));
+        throw new RuntimeException(new IllegalArgumentException("IAE in failUnchecked", new NullPointerException()))
     }
     
     void testCheckedFailure() {
