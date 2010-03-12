@@ -1,6 +1,6 @@
-package examples.local
+package examples.astbuilder
 
-import org.codehaus.groovy.ast.builder.TranformTestHelper
+import org.codehaus.groovy.tools.ast.TranformTestHelper
 import org.codehaus.groovy.control.CompilePhase
 
 /**

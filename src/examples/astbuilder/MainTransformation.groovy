@@ -1,4 +1,4 @@
-package examples.local
+package examples.astbuilder
 
 import org.codehaus.groovy.control.CompilePhase
 import org.codehaus.groovy.transform.GroovyASTTransformation

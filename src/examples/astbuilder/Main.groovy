@@ -1,4 +1,4 @@
-package examples.local
+package examples.astbuilder
 
 import org.codehaus.groovy.transform.GroovyASTTransformationClass
 import java.lang.annotation.ElementType

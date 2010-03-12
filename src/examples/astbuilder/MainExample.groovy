@@ -1,4 +1,4 @@
-package examples.local
+package examples.astbuilder
 
 /**
  * Exists to test the @Main annotation. At compile time, there will be a main()
