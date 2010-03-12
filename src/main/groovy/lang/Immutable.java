@@ -41,7 +41,7 @@ import java.lang.annotation.Target;
  * </pre>
  * A class created in this way has the following characteristics:
  * <ul>
- * <li>The class is automatically made final if not already final.
+ * <li>The class is automatically made final.
  * <li>Properties automatically have private, final backing fields with getters.
  * Attempts to update the property will result in a {@code ReadOnlyPropertyException}.
  * <li>A map-based constructor is provided which allows you to set properties by name.
@@ -69,10 +69,13 @@ import java.lang.annotation.Target;
  * then you can write explicit get and set methods. Such an approach, isn't currently prohibited (to give you some
  * wiggle room to get around these conventions) but any fields created in this way are deemed not to be part of the
  * significant state of the object and aren't factored into the {@code equals} or {@code hashCode} methods.
- * Use at your own risk!
+ * Similarly, you may use static properties (though usually this is discouraged) and these too will be ignored
+ * as far as significant state is concerned. If you do break standard conventions, you do so at your own risk and
+ * your objects may no longer be immutable. It is up to you to ensure that your objects remain immutable at least
+ * to the extent expected in other parts of your program!
  * </ul>
  * <p/>
- * Such classes are particularly useful for functional and concurrent styles of programming
+ * Immutable classes are particularly useful for functional and concurrent styles of programming
  * and for use as key values within maps.
  * <p/>
  * Limitations:

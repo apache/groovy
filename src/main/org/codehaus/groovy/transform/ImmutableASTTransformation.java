@@ -97,7 +97,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
                 cNode.setModifiers(cNode.getModifiers() | ACC_FINAL);
             }
 
-            final List<PropertyNode> pList = cNode.getProperties();
+            final List<PropertyNode> pList = getInstanceProperties(cNode);
             for (PropertyNode pNode : pList) {
                 adjustPropertyForImmutability(pNode, newNodes);
             }
@@ -143,7 +143,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         final FieldNode hashField = cNode.addField("$hash$code", ACC_PRIVATE | ACC_SYNTHETIC, ClassHelper.int_TYPE, null);
         final BlockStatement body = new BlockStatement();
         final Expression hash = new FieldExpression(hashField);
-        final List<PropertyNode> list = cNode.getProperties();
+        final List<PropertyNode> list = getInstanceProperties(cNode);
 
         body.addStatement(new IfStatement(
                 isZeroExpr(hash),
@@ -163,7 +163,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         if (hasExistingToString && hasDeclaredMethod(cNode, "_toString", 0)) return;
         
         final BlockStatement body = new BlockStatement();
-        final List<PropertyNode> list = cNode.getProperties();
+        final List<PropertyNode> list = getInstanceProperties(cNode);
         // def _result = new StringBuffer()
         final Expression result = new VariableExpression("_result");
         final Expression init = new ConstructorCallExpression(STRINGBUFFER_TYPE, MethodCallExpression.NO_ARGUMENTS);
@@ -238,7 +238,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
 
         body.addStatement(new ExpressionStatement(new BinaryExpression(other, ASSIGN, new CastExpression(cNode, other))));
 
-        final List<PropertyNode> list = cNode.getProperties();
+        final List<PropertyNode> list = getInstanceProperties(cNode);
         // fields
         for (PropertyNode pNode : list) {
             body.addStatement(returnFalseIfPropertyNotEqual(pNode, other));
@@ -303,7 +303,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
             throw new RuntimeException("Explicit constructors not allowed for " + MY_TYPE_NAME + " class: " + cNode.getNameWithoutPackage());
         }
 
-        List<PropertyNode> list = cNode.getProperties();
+        List<PropertyNode> list = getInstanceProperties(cNode);
         boolean specialHashMapCase = list.size() == 1 && list.get(0).getField().getType().equals(HASHMAP_TYPE);
         if (specialHashMapCase) {
             createConstructorMapSpecial(cNode, constructorStyle, list);
@@ -311,6 +311,16 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
             createConstructorMap(cNode, constructorStyle, list);
             createConstructorOrdered(cNode, constructorStyle, list);
         }
+    }
+
+    private List<PropertyNode> getInstanceProperties(ClassNode cNode) {
+        final List<PropertyNode> result = new ArrayList<PropertyNode>();
+        for (PropertyNode pNode : cNode.getProperties()) {
+            if (!pNode.isStatic()) {
+                result.add(pNode);
+            }
+        }
+        return result;
     }
 
     private void createConstructorMapSpecial(ClassNode cNode, FieldExpression constructorStyle, List<PropertyNode> list) {
