@@ -9856,8 +9856,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * and {@link #clearTime(java.sql.Date)}
      */
     private static void clearTimeCommon(final Calendar self) {
-		self.clear(Calendar.HOUR_OF_DAY);
-        self.clear(Calendar.HOUR);
+		self.set(Calendar.HOUR_OF_DAY, 0);
         self.clear(Calendar.MINUTE);
         self.clear(Calendar.SECOND);
         self.clear(Calendar.MILLISECOND);
