@@ -102,7 +102,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
                 adjustPropertyForImmutability(pNode, newNodes);
             }
             for (PropertyNode pNode : newNodes) {
-                pList.remove(pNode);
+                cNode.getProperties().remove(pNode);
                 addProperty(cNode, pNode);
             }
             final List<FieldNode> fList = cNode.getFields();
