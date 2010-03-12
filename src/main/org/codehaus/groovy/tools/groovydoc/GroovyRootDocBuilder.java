@@ -272,7 +272,7 @@ public class GroovyRootDocBuilder {
 
     private String trimPackageAndComments(String src) {
         return src.replaceFirst("(?sm)^package.*", "")
-                .replaceFirst("(?sm)/\\*\\*(.*)\\*/", "$1")
+                .replaceFirst("(?sm)/.*\\*\\*(.*)\\*/", "$1")
                 .replaceAll("(?m)^\\s*\\*", "");
     }
 
