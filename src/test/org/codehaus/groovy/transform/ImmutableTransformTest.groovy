@@ -58,6 +58,16 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         """
     }
 
+    void testImmutableWithInvalidPropertyName() {
+        def msg = shouldFail(MissingPropertyException) {
+            assertScript """
+                @Immutable class Simple { }
+                new Simple(missing:'Name')
+            """
+        }
+        assert msg.contains('No such property: missing for class: Simple')
+    }
+
     void testImmutableWithHashMap() {
         assertScript """
             @Immutable final class HasHashMap {
