@@ -186,4 +186,33 @@ class ImmutableTransformTest extends GroovyShellTestCase {
             assert baz2.hashCode() == -100
         """
     }
+
+    void testStaticsAllowed_ThoughUsuallyBadDesign() {
+        // design here is questionable as getDescription() method is not idempotent
+        assertScript '''
+            @Immutable class Person {
+               String first, last
+               static species = 'Human'
+               String getFullname() {
+                 "$first $last"
+               }
+               String getDescription() {
+                 "$fullname is a $species"
+               }
+            }
+
+            def spock = new Person('Leonard', 'Nimoy')
+            assert spock.species == 'Human'
+            assert spock.fullname == 'Leonard Nimoy'
+            assert spock.description == 'Leonard Nimoy is a Human'
+
+            spock.species = 'Romulan'
+            assert spock.species == 'Romulan'
+
+            Person.species = 'Vulcan'
+            assert spock.species == 'Vulcan'
+            assert spock.fullname == 'Leonard Nimoy'
+            assert spock.description == 'Leonard Nimoy is a Vulcan'
+        '''
+    }
 }
