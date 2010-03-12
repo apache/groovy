@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 the original author or authors.
+ * Copyright 2008-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,10 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package org.codehaus.groovy.transform;
 
+import groovy.lang.GroovyObject;
 import groovy.lang.Immutable;
+import groovy.lang.MetaClass;
+import groovy.lang.MissingPropertyException;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.*;
@@ -334,6 +336,9 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         for (PropertyNode pNode : list) {
             body.addStatement(createConstructorStatement(cNode, pNode));
         }
+        // check for missing properties
+        Expression checkArgs = new ArgumentListExpression(new VariableExpression("this"), new VariableExpression("args"));
+        body.addStatement(new ExpressionStatement(new StaticMethodCallExpression(SELF_TYPE, "checkPropNames", checkArgs)));
         createConstructorMapCommon(cNode, constructorStyle, body);
     }
 
@@ -635,4 +640,11 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         throw new RuntimeException(createErrorMessage(className, fieldName, typeName, "constructing"));
     }
 
+    private static void checkPropNames(GroovyObject instance, Map<String, Object> args) {
+        final MetaClass metaClass = instance.getMetaClass();
+        for (String k : args.keySet()) {
+            if (metaClass.hasProperty(instance, k) == null)
+                throw new MissingPropertyException(k, instance.getClass());
+        }
+    }
 }
