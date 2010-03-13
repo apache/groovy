@@ -1190,6 +1190,11 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * [a:1, b:3].each { entry -> result += entry }
      * assert result == "a=1b=3"</pre>
      *
+     * In general, the order in which the map contents are processed
+     * cannot be guaranteed. In practise, specialized forms of Map,
+     * e.g. a TreeMap will have its contents processed according to
+     * the natural ordering of the map.
+     *
      * @param self    the map over which we iterate
      * @param closure the 1 or 2 arg closure applied on each entry of the map
      * @return returns the self parameter
@@ -1198,6 +1203,28 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static <K, V> Map<K, V> each(Map<K, V> self, Closure closure) {
         for (Map.Entry entry : self.entrySet()) {
             callClosureForMapEntry(closure, entry);
+        }
+        return self;
+    }
+
+    /**
+     * Allows a Map to be iterated through in reverse order using a closure.
+     *
+     * In general, the order in which the map contents are processed
+     * cannot be guaranteed. In practise, specialized forms of Map,
+     * e.g. a TreeMap will have its contents processed according to the
+     * reverse of the natural ordering of the map.
+     *
+     * @param self    the map over which we iterate
+     * @param closure the 1 or 2 arg closure applied on each entry of the map
+     * @return returns the self parameter
+     * @see #each(Map, Closure)
+     * @since 1.7.2
+     */
+    public static <K, V> Map<K, V> reverseEach(Map<K, V> self, Closure closure) {
+        final Iterator<Map.Entry<K, V>> entries = reverse(self.entrySet().iterator());
+        while (entries.hasNext()) {
+            callClosureForMapEntry(closure, entries.next());
         }
         return self;
     }
