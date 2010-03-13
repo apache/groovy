@@ -183,4 +183,13 @@ class MapTest extends GroovyTestCase {
         def result = [:].putAll(map.entrySet().flatten(findingNestedMapValues))
         assert result == [a: 1, b: 2, c: 3, e: 4, f: 5]
     }
+
+    void testTreeMapEach() {
+        TreeMap map = [c:2, b:3, a:1]
+        String result1 = "", result2 = ""
+        map.each{ k, v -> result1 += "$k$v " }
+        assert result1 == "a1 b3 c2 "
+        map.reverseEach{ e -> result2 += "$e.key$e.value " }
+        assert result2 == "c2 b3 a1 "
+    }
 }
