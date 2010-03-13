@@ -4831,8 +4831,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Sorts the given map into a sorted map using
-     * the closure as a comparator.
+     * Sorts the elements from the given map into a new ordered map using
+     * the closure as a comparator to determine the ordering.
      * <pre class="groovyTestCase">def map = [a:5, b:3, c:6, d:4].sort { a, b -> a.value <=> b.value }
      * assert map == [b:3, d:4, a:5, c:6]</pre>
      *
@@ -4849,6 +4849,38 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             result.put(entry.getKey(), entry.getValue());
         }
         return result;
+    }
+
+    /**
+     * Sorts the elements from the given map into a new ordered Map using
+     * the specified key comparator to determine the ordering.
+     * <pre class="groovyTestCase">def map = [ba:3, cz:6, ab:5].sort({ a, b -> a[-1] <=> b[-1] } as Comparator)
+     * assert map*.value == [3, 5, 6]</pre>
+     *
+     * @param self the map to be sorted
+     * @param closure a Closure used as a comparator
+     * @return the sorted map
+     * @since 1.7.2
+     */
+    public static <K, V> Map<K, V> sort(Map<K, V> self, Comparator<K> comparator) {
+        Map<K, V> result = new TreeMap<K, V>(comparator);
+        result.putAll(self);
+        return result;
+    }
+
+    /**
+     * Sorts the elements from the given map into a new ordered Map using
+     * the natural ordering of the keys to determine the ordering.
+     * <pre class="groovyTestCase">map = [ba:3, cz:6, ab:5].sort()
+     * assert map*.value == [5, 3, 6]
+     * </pre>
+     *
+     * @param self the map to be sorted
+     * @return the sorted map
+     * @since 1.7.2
+     */
+    public static <K, V> Map<K, V> sort(Map<K, V> self) {
+        return new TreeMap<K, V>(self);
     }
 
     /**
