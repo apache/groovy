@@ -545,8 +545,10 @@ public class Sql {
     /**
      * Constructs an SQL instance using the given Connection. It is the caller's
      * responsibility to close the Connection after the Sql instance has been
-     * used. You can do this on the connection object directly or by calling the
-     * {@link Connection#close()} method.
+     * used. Depending on which features you are using, you may be able to do
+     * this on the connection object directly but the preferred approach is to
+     * call the {@link #close()} method which will close the connection but also
+     * free any caches resources.
      *
      * @param connection the Connection to use
      */
