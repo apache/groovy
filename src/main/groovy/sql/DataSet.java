@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,7 +28,6 @@ import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 
 /**
  * An enhancement of Groovy's Sql class providing support for accessing
@@ -176,7 +175,7 @@ public class DataSet extends Sql {
 
         int answer = executeUpdate(buffer.toString(), new ArrayList<Object>(map.values()));
         if (answer != 1) {
-            log.log(Level.WARNING, "Should have updated 1 row not " + answer + " when trying to add: " + map);
+            LOG.warning("Should have updated 1 row not " + answer + " when trying to add: " + map);
         }
     }
 
