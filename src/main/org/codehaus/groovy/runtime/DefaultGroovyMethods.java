@@ -6239,6 +6239,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Overloads the left shift operator to provide an easy way to put
+     * one maps entries into another map. This allows the compact syntax
+     * <code>map1 << map2</code>; otherwise it's just a synonym for
+     * <code>putAll</code> though it returns the original map rather than
+     * being a <code>void</code> method. Example usage:
+     * <pre class="groovyTestCase">def map = [a:1, b:2]
+     * map << [c:3, d:4]
+     * assert map == [a:1, b:2, c:3, d:4]</pre>
+     *
+     * @param self  a Map
+     * @param other another Map whose entries should be added to the original Map.
+     * @return same map, after the values have been added to it.
+     * @since 1.7.2
+     */
+    public static <K, V> Map<K, V> leftShift(Map<K, V> self, Map<K, V> other) {
+        self.putAll(other);
+        return self;
+    }
+
+    /**
      * Overloads the left shift operator to provide an easy way to append multiple
      * objects as string representations to a String.
      *
