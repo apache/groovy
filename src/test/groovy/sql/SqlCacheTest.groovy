@@ -109,6 +109,7 @@ class SqlCacheTest extends GroovyTestCase {
             invokeQuery()
         }
         assert prepareStatementCallCounter == 3 // 3 diff statements
+        sql.close()
     }
 
     void testCacheConnection() {
@@ -123,6 +124,7 @@ class SqlCacheTest extends GroovyTestCase {
         prepareStatementCallCounter = 0
         invokeQuery()
         assert prepareStatementCallCounter == 13
+        sql.close()
     }
 
     private invokeQuery() {

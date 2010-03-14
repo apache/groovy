@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +30,6 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.sql.Types;
 import java.util.*;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -49,8 +48,86 @@ import org.codehaus.groovy.runtime.SqlGroovyMethods;
  * through result sets, a special GString syntax for representing
  * prepared statements and treating result sets like collections
  * of maps with the normal Groovy collection methods available.
+ *
+ * <h4>Typical usage</h4>
+ *
+ * First you need to set up your sql instance. There are several constructors
+ * and a few <code>newInstance</code> factory methods available to do this.
+ * In simple cases, you can just provide
+ * the necessary details to set up a connection (e.g. for hsqldb):
+ * <pre>
+ * def db = [url:'jdbc:hsqldb:mem:testDB', user:'sa', password:'', driver:'org.hsqldb.jdbcDriver']
+ * def sql = Sql.newInstance(db.url, db.user, db.password, db.driver)
+ * </pre>
+ * or if you have an existing connection (perhaps from a connection pool) or a
+ * datasource use one of the constructors:
+ * <pre>
+ * def sql = new Sql(datasource)
+ * </pre>
+ * Now you can invoke sql, e.g. to create a table:
+ * <pre>
+ * sql.execute '''
+ *     create table PROJECT (
+ *         id integer not null,
+ *         name varchar(50),
+ *         url varchar(100),
+ *     )
+ * '''
+ * </pre>
+ * Or insert a row using JDBC PreparedStatement inspired syntax:
+ * <pre>
+ * def params = [10, 'Groovy', 'http://groovy.codehaus.org']
+ * sql.execute 'insert into PROJECT (id, name, url) values (?, ?, ?)', params
+ * </pre>
+ * Or insert a row using GString syntax:
+ * <pre>
+ * def map = [id:20, name:'Grails', url:'http://grails.codehaus.org']
+ * sql.execute "insert into PROJECT (id, name, url) values ($map.id, $map.name, $map.url)"
+ * </pre>
+ * Or a row update:
+ * <pre>
+ * def newUrl = 'http://grails.org'
+ * def project = 'Grails'
+ * sql.executeUpdate "update PROJECT set url=$newUrl where name=$project"
+ * </pre>
+ * Now try a query using <code>eachRow</code>:
+ * <pre>
+ * println 'Some GR8 projects:'
+ * sql.eachRow('select * from PROJECT') { row ->
+ *     println "${row.name.padRight(10)} ($row.url)"
+ * }
+ * </pre>
+ * Which will produce something like this:
+ * <pre>
+ * Some GR8 projects:
+ * Groovy     (http://groovy.codehaus.org)
+ * Grails     (http://grails.org)
+ * Griffon    (http://griffon.codehaus.org)
+ * Gradle     (http://gradle.org)
+ * </pre>
+ * Now try a query using <code>rows</code>:
+ * <pre>
+ * def rows = sql.rows("select * from PROJECT where name like 'Gra%'")
+ * assert rows.size() == 2
+ * println rows.join('\n')
+ * </pre>
+ * with output like this:
+ * <pre>
+ * [ID:20, NAME:Grails, URL:http://grails.org]
+ * [ID:40, NAME:Gradle, URL:http://gradle.org]
+ * </pre>
+ * Finally, we should clean up:
+ * <pre>
+ * sql.close()
+ * </pre>
+ * If we are using a DataSource and we haven't enabled statement caching, then
+ * strictly speaking the final <code>close()</code> method isn't required - as all connection
+ * handling is performed transparently on our behalf; however, it doesn't hurt to
+ * have it there as it will return silently in that case.
  * <p/>
- * The class provides numerous extension points for overriding the
+ * See the method and constructor JavaDoc for more details.
+ * <p/>
+ * For advanced usage, the class provides numerous extension points for overriding the
  * facade behavior associated with the various aspects of managing
  * the interaction with the underlying database.
  *
@@ -67,7 +144,7 @@ public class Sql {
     /**
      * Hook to allow derived classes to access the log
      */
-    protected static Logger log = Logger.getLogger(Sql.class.getName());
+    protected static final Logger LOG = Logger.getLogger(Sql.class.getName());
 
     private static final List<Object> EMPTY_LIST = Collections.emptyList();
 
@@ -163,7 +240,7 @@ public class Sql {
      * a username, a password and a driver class name.
      *
      * @param url             a database url of the form
-     *                        <code> jdbc:<em>subprotocol</em>:<em>subname</em></code>
+     *                        <code>jdbc:<em>subprotocol</em>:<em>subname</em></code>
      * @param user            the database user on whose behalf the connection
      *                        is being made
      * @param password        the user's password
@@ -521,12 +598,12 @@ public class Sql {
         Statement statement = getStatement(connection, sql);
         ResultSet results = null;
         try {
-            log.fine(sql);
+            LOG.fine(sql);
             results = statement.executeQuery(sql);
             closure.call(results);
         }
         catch (SQLException e) {
-            log.log(Level.FINE, "Failed to execute: " + sql, e);
+            LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
             throw e;
         }
         finally {
@@ -560,13 +637,13 @@ public class Sql {
         PreparedStatement statement = null;
         ResultSet results = null;
         try {
-            log.fine(sql);
+            LOG.fine(sql);
             statement = getPreparedStatement(connection, sql, params);
             results = statement.executeQuery();
             closure.call(results);
         }
         catch (SQLException e) {
-            log.log(Level.FINE, "Failed to execute: " + sql, e);
+            LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
             throw e;
         }
         finally {
@@ -618,6 +695,8 @@ public class Sql {
      * }
      * </pre>
      *
+     * Resource handling is performed automatically where appropriate.
+     *
      * @param sql     the sql statement
      * @param closure called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
@@ -648,6 +727,8 @@ public class Sql {
      * sql.eachRow("select * from PERSON", printColNames, printRow)
      * </pre>
      *
+     * Resource handling is performed automatically where appropriate.
+     *
      * @param sql         the sql statement
      * @param metaClosure called for meta data (only once after sql execution)
      * @param rowClosure  called for each row with a GroovyResultSet
@@ -658,7 +739,7 @@ public class Sql {
         Statement statement = getStatement(connection, sql);
         ResultSet results = null;
         try {
-            log.fine(sql);
+            LOG.fine(sql);
             results = statement.executeQuery(sql);
 
             if (metaClosure != null) metaClosure.call(results.getMetaData());
@@ -666,7 +747,7 @@ public class Sql {
             GroovyResultSet groovyRS = new GroovyResultSetProxy(results).getImpl();
             groovyRS.eachRow(rowClosure);
         } catch (SQLException e) {
-            log.log(Level.FINE, "Failed to execute: " + sql, e);
+            LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
             throw e;
         } finally {
             closeResources(connection, statement, results);
@@ -696,6 +777,8 @@ public class Sql {
      * sql.eachRow("select * from PERSON where lastname like ?", ['%a%'], printColNames, printRow)
      * </pre>
      *
+     * Resource handling is performed automatically where appropriate.
+     *
      * @param sql     the sql statement
      * @param params  a list of parameters
      * @param metaClosure called for meta data (only once after sql execution)
@@ -707,7 +790,7 @@ public class Sql {
         PreparedStatement statement = null;
         ResultSet results = null;
         try {
-            log.fine(sql);
+            LOG.fine(sql);
             statement = getPreparedStatement(connection, sql, params);
             results = statement.executeQuery();
 
@@ -719,7 +802,7 @@ public class Sql {
             }
         }
         catch (SQLException e) {
-            log.log(Level.FINE, "Failed to execute: " + sql, e);
+            LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
             throw e;
         }
         finally {
@@ -739,6 +822,8 @@ public class Sql {
      *     println "${row[1]} $row.lastname"
      * }
      * </pre>
+     *
+     * Resource handling is performed automatically where appropriate.
      *
      * @param sql     the sql statement
      * @param params  a list of parameters
@@ -773,6 +858,8 @@ public class Sql {
      * sql.eachRow("select * from PERSON where location_id < $location", printColNames, printRow)
      * </pre>
      *
+     * Resource handling is performed automatically where appropriate.
+     *
      * @param gstring a GString containing the SQL query with embedded params
      * @param metaClosure called for meta data (only once after sql execution)
      * @param closure called for each row with a GroovyResultSet
@@ -799,6 +886,8 @@ public class Sql {
      * }
      * </pre>
      *
+     * Resource handling is performed automatically where appropriate.
+     *
      * @param gstring a GString containing the SQL query with embedded params
      * @param closure called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
@@ -816,6 +905,8 @@ public class Sql {
      * def ans = sql.rows("select * from PERSON where firstname like 'S%'")
      * println "Found ${ans.size()} rows"
      * </pre>
+     *
+     * Resource handling is performed automatically where appropriate.
      *
      * @param sql the SQL statement
      * @return a list of GroovyRowResult objects
@@ -837,6 +928,8 @@ public class Sql {
      * println "Found ${ans.size()} rows"
      * </pre>
      *
+     * Resource handling is performed automatically where appropriate.
+     *
      * @param sql         the SQL statement
      * @param metaClosure called with meta data of the ResultSet
      * @return a list of GroovyRowResult objects
@@ -855,8 +948,8 @@ public class Sql {
         }
     }
 
-	/**
-	 * Performs the given SQL query and return the rows of the result set.
+    /**
+     * Performs the given SQL query and return the rows of the result set.
      * The query may contain placeholder question marks which match the given list of parameters.
      * <p/>
      * Example usage:
@@ -864,17 +957,16 @@ public class Sql {
      * def ans = sql.rows("select * from PERSON where lastname like ?", ['%a%'])
      * println "Found ${ans.size()} rows"
      * </pre>
-	 *
-	 * @param sql
-	 *            the SQL statement
-	 * @param params
-	 *            a list of parameters
-	 * @return a list of GroovyRowResult objects
-	 * @throws SQLException
-	 *             if a database access error occurs
-	 */
-	public List<GroovyRowResult> rows(String sql, List<Object> params)
-			throws SQLException {
+     * <p/>
+     * Resource handling is performed automatically where appropriate.
+     *
+     * @param sql    the SQL statement
+     * @param params a list of parameters
+     * @return a list of GroovyRowResult objects
+     * @throws SQLException if a database access error occurs
+     */
+    public List<GroovyRowResult> rows(String sql, List<Object> params)
+            throws SQLException {
         return rows(sql, params, null);
 	}
 
@@ -890,25 +982,23 @@ public class Sql {
      * def ans = sql.rows("select * from PERSON where lastname like ?", ['%a%'], printNumCols)
      * println "Found ${ans.size()} rows"
      * </pre>
+     * <p/>
+     * Resource handling is performed automatically where appropriate.
      *
-     * @param sql
-     *            the SQL statement
-     * @param params
-     *            a list of parameters
-     * @param metaClosure
-     *            called for meta data (only once after sql execution)
+     * @param sql         the SQL statement
+     * @param params      a list of parameters
+     * @param metaClosure called for meta data (only once after sql execution)
      * @return a list of GroovyRowResult objects
-     * @throws SQLException
-     *             if a database access error occurs
+     * @throws SQLException if a database access error occurs
      */
     public List<GroovyRowResult> rows(String sql, List<Object> params, Closure metaClosure)
             throws SQLException {
         AbstractQueryCommand command = createPreparedQueryCommand(sql, params);
         try {
-          return asList(sql, command.execute(), metaClosure);
+            return asList(sql, command.execute(), metaClosure);
         }
         finally {
-          command.closeResources();
+            command.closeResources();
         }
     }
 
@@ -922,6 +1012,8 @@ public class Sql {
      * def ans = sql.rows("select * from PERSON where location_id < $location")
      * println "Found ${ans.size()} rows"
      * </pre>
+     *
+     * Resource handling is performed automatically where appropriate.
      *
      * @param gstring a GString containing the SQL query with embedded params
      * @return a list of GroovyRowResult objects
@@ -946,6 +1038,8 @@ public class Sql {
      * println "Found ${ans.size()} rows"
      * </pre>
      *
+     * Resource handling is performed automatically where appropriate.
+     *
      * @param gstring a GString containing the SQL query with embedded params
      * @param metaClosure called with meta data of the ResultSet
      * @return a list of GroovyRowResult objects
@@ -968,6 +1062,8 @@ public class Sql {
      * println ans.firstname
      * </pre>
      *
+     * Resource handling is performed automatically where appropriate.
+     *
      * @param sql the SQL statement
      * @return a GroovyRowResult object or <code>null</code> if no row is found
      * @throws SQLException if a database access error occurs
@@ -989,6 +1085,8 @@ public class Sql {
      * def ans = sql.firstRow("select * from PERSON where location_id < $location")
      * println ans.firstname
      * </pre>
+     *
+     * Resource handling is performed automatically where appropriate.
      *
      * @param gstring a GString containing the SQL query with embedded params
      * @return a GroovyRowResult object or <code>null</code> if no row is found
@@ -1025,6 +1123,8 @@ public class Sql {
      * assert sql.firstRow("{call FullName(?)}", ['Sam'])[0] == 'Sam Pullara'
      * </pre>
      *
+     * Resource handling is performed automatically where appropriate.
+     *
      * @param sql    the SQL statement
      * @param params a list of parameters
      * @return a GroovyRowResult object or <code>null</code> if no row is found
@@ -1059,6 +1159,8 @@ public class Sql {
      * assert sql.updateCount == 1
      * </pre>
      *
+     * Resource handling is performed automatically where appropriate.
+     *
      * @param sql the SQL to execute
      * @return <code>true</code> if the first result is a <code>ResultSet</code>
      *         object; <code>false</code> if it is an update count or there are
@@ -1069,7 +1171,7 @@ public class Sql {
         Connection connection = createConnection();
         Statement statement = null;
         try {
-            log.fine(sql);
+            LOG.fine(sql);
             statement = getStatement(connection, sql);
             // TODO handle multiple results
             boolean isResultSet = statement.execute(sql);
@@ -1077,7 +1179,7 @@ public class Sql {
             return isResultSet;
         }
         catch (SQLException e) {
-            log.log(Level.FINE, "Failed to execute: " + sql, e);
+            LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
             throw e;
         }
         finally {
@@ -1098,6 +1200,8 @@ public class Sql {
      * assert sql.updateCount == 1
      * </pre>
      *
+     * Resource handling is performed automatically where appropriate.
+     *
      * @param sql    the SQL statement
      * @param params a list of parameters
      * @return <code>true</code> if the first result is a <code>ResultSet</code>
@@ -1109,7 +1213,7 @@ public class Sql {
         Connection connection = createConnection();
         PreparedStatement statement = null;
         try {
-            log.fine(sql + " | " + params);
+            LOG.fine(sql + " | " + params);
             statement = getPreparedStatement(connection, sql, params);
             // TODO handle multiple results
             boolean isResultSet = statement.execute();
@@ -1117,7 +1221,7 @@ public class Sql {
             return isResultSet;
         }
         catch (SQLException e) {
-            log.log(Level.FINE, "Failed to execute: " + sql, e);
+            LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
             throw e;
         }
         finally {
@@ -1138,6 +1242,8 @@ public class Sql {
      * assert sql.updateCount == 1
      * </pre>
      *
+     * Resource handling is performed automatically where appropriate.
+     *
      * @param gstring a GString containing the SQL query with embedded params
      * @return <code>true</code> if the first result is a <code>ResultSet</code>
      *         object; <code>false</code> if it is an update count or there are
@@ -1157,6 +1263,8 @@ public class Sql {
      * auto-generated columns, such as an autoincrement ID field.
      * See {@link #executeInsert(GString)} for more details.
      *
+     * Resource handling is performed automatically where appropriate.
+     *
      * @param sql The SQL statement to execute
      * @return A list of the auto-generated column values for each
      *         inserted row (typically auto-generated keys)
@@ -1166,14 +1274,14 @@ public class Sql {
         Connection connection = createConnection();
         Statement statement = null;
         try {
-            log.fine(sql);
+            LOG.fine(sql);
             statement = getStatement(connection, sql);
             this.updateCount = statement.executeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
             ResultSet keys = statement.getGeneratedKeys();
             return calculateKeys(keys);
         }
         catch (SQLException e) {
-            log.log(Level.FINE, "Failed to execute: " + sql, e);
+            LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
             throw e;
         }
         finally {
@@ -1188,6 +1296,8 @@ public class Sql {
      * The query may contain placeholder question marks which match the given list of parameters.
      * See {@link #executeInsert(GString)} for more details.
      *
+     * Resource handling is performed automatically where appropriate.
+     *
      * @param sql    The SQL statement to execute
      * @param params The parameter values that will be substituted
      *               into the SQL statement's parameter slots
@@ -1199,14 +1309,14 @@ public class Sql {
         Connection connection = createConnection();
         PreparedStatement statement = null;
         try {
-            log.fine(sql + " | " + params);
+            LOG.fine(sql + " | " + params);
             statement = getPreparedStatement(connection, sql, params, Statement.RETURN_GENERATED_KEYS);
             this.updateCount = statement.executeUpdate();
             ResultSet keys = statement.getGeneratedKeys();
             return calculateKeys(keys);
         }
         catch (SQLException e) {
-            log.log(Level.FINE, "Failed to execute: " + sql, e);
+            LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
             throw e;
         }
         finally {
@@ -1248,6 +1358,8 @@ public class Sql {
      *     ...
      * </pre>
      *
+     * Resource handling is performed automatically where appropriate.
+     *
      * @param gstring a GString containing the SQL query with embedded params
      * @return A list of the auto-generated column values for each
      *         inserted row (typically auto-generated keys)
@@ -1263,6 +1375,8 @@ public class Sql {
     /**
      * Executes the given SQL update.
      *
+     * Resource handling is performed automatically where appropriate.
+     *
      * @param sql the SQL to execute
      * @return the number of rows updated or 0 for SQL statements that return nothing
      * @throws SQLException if a database access error occurs
@@ -1271,13 +1385,13 @@ public class Sql {
         Connection connection = createConnection();
         Statement statement = null;
         try {
-            log.fine(sql);
+            LOG.fine(sql);
             statement = getStatement(connection, sql);
             this.updateCount = statement.executeUpdate(sql);
             return this.updateCount;
         }
         catch (SQLException e) {
-            log.log(Level.FINE, "Failed to execute: " + sql, e);
+            LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
             throw e;
         }
         finally {
@@ -1288,6 +1402,8 @@ public class Sql {
     /**
      * Executes the given SQL update with parameters.
      *
+     * Resource handling is performed automatically where appropriate.
+     *
      * @param sql    the SQL statement
      * @param params a list of parameters
      * @return the number of rows updated or 0 for SQL statements that return nothing
@@ -1297,13 +1413,13 @@ public class Sql {
         Connection connection = createConnection();
         PreparedStatement statement = null;
         try {
-            log.fine(sql + " | " + params);
+            LOG.fine(sql + " | " + params);
             statement = getPreparedStatement(connection, sql, params);
             this.updateCount = statement.executeUpdate();
             return this.updateCount;
         }
         catch (SQLException e) {
-            log.log(Level.FINE, "Failed to execute: " + sql, e);
+            LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
             throw e;
         }
         finally {
@@ -1313,6 +1429,8 @@ public class Sql {
 
     /**
      * Executes the given SQL update with embedded expressions inside.
+     *
+     * Resource handling is performed automatically where appropriate.
      *
      * @param gstring a GString containing the SQL query with embedded params
      * @return the number of rows updated or 0 for SQL statements that return nothing
@@ -1373,6 +1491,8 @@ public class Sql {
      * assert rowsChanged == 2
      * </pre>
      *
+     * Resource handling is performed automatically where appropriate.
+     *
      * @param gstring a GString containing the SQL query with embedded params
      * @return the number of rows updated or 0 for SQL statements that return nothing
      * @throws SQLException if a database access error occurs
@@ -1396,6 +1516,8 @@ public class Sql {
      * assert rowsChanged == 2
      * </pre>
      *
+     * Resource handling is performed automatically where appropriate.
+     *
      * @param sql    the SQL statement
      * @param params a list of parameters
      * @return the number of rows updated or 0 for SQL statements that return nothing
@@ -1406,13 +1528,13 @@ public class Sql {
         Connection connection = createConnection();
         CallableStatement statement = connection.prepareCall(sql);
         try {
-            log.fine(sql);
+            LOG.fine(sql);
             setParameters(params, statement);
             configure(statement);
             return statement.executeUpdate();
         }
         catch (SQLException e) {
-            log.log(Level.FINE, "Failed to execute: " + sql, e);
+            LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
             throw e;
         }
         finally {
@@ -1493,6 +1615,8 @@ public class Sql {
      * }
      * </pre>
      *
+     * Resource handling is performed automatically where appropriate.
+     *
      * @param sql     the sql statement
      * @param params  a list of parameters
      * @param closure called for each row with a GroovyResultSet
@@ -1503,7 +1627,7 @@ public class Sql {
         CallableStatement statement = connection.prepareCall(sql);
         List<GroovyResultSet> resultSetResources = new ArrayList<GroovyResultSet>();
         try {
-            log.fine(sql);
+            LOG.fine(sql);
             setParameters(params, statement);
             // TODO handle multiple results and mechanism for retrieving ResultSet if any (GROOVY-3048)
             statement.execute();
@@ -1532,7 +1656,7 @@ public class Sql {
             }
             closure.call(results.toArray(new Object[inouts]));
         } catch (SQLException e) {
-            log.log(Level.WARNING, "Failed to execute: " + sql, e);
+            LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
             throw e;
         } finally {
             closeResources(connection, statement);
@@ -1567,6 +1691,8 @@ public class Sql {
      * }
      * </pre>
      *
+     * Resource handling is performed automatically where appropriate.
+     *
      * @param gstring a GString containing the SQL query with embedded params
      * @param closure called for each row with a GroovyResultSet
      * @throws SQLException if a database access error occurs
@@ -1582,21 +1708,23 @@ public class Sql {
     /**
      * If this SQL object was created with a Connection then this method closes
      * the connection. If this SQL object was created from a DataSource then
-     * this method does nothing.
+     * this method only frees any cached objects (statements in particular).
      *
      * @throws SQLException if a database access error occurs
      */
-    public void close() throws SQLException {
-        if (useConnection == null) {
-            log.log(Level.FINEST, "Close operation not supported when using datasets - attempt to close ignored");
-            return;
-        }
+    public void close() {
         try {
-            useConnection.close();
+            clearStatementCache();
         }
-        catch (SQLException e) {
-            log.log(Level.SEVERE, "Caught exception closing connection: " + e, e);
-            throw e;
+        finally {
+            if (useConnection != null) {
+                try {
+                    useConnection.close();
+                }
+                catch (SQLException e) {
+                    LOG.finest("Caught exception closing connection: " + e.getMessage());
+                }
+            }
         }
     }
 
@@ -1614,14 +1742,14 @@ public class Sql {
      */
     public void commit() throws SQLException {
         if (useConnection == null) {
-            log.log(Level.FINEST, "Commit operation not supported when using datasets unless using withTransaction or cacheConnection - attempt to commit ignored");
+            LOG.info("Commit operation not supported when using datasets unless using withTransaction or cacheConnection - attempt to commit ignored");
             return;
         }
         try {
             useConnection.commit();
         }
         catch (SQLException e) {
-            log.log(Level.SEVERE, "Caught exception committing connection: " + e, e);
+            LOG.warning("Caught exception committing connection: " + e.getMessage());
             throw e;
         }
     }
@@ -1635,14 +1763,14 @@ public class Sql {
      */
     public void rollback() throws SQLException {
         if (useConnection == null) {
-            log.log(Level.FINEST, "Rollback operation not supported when using datasets unless using withTransaction or cacheConnection - attempt to rollback ignored");
+            LOG.info("Rollback operation not supported when using datasets unless using withTransaction or cacheConnection - attempt to rollback ignored");
             return;
         }
         try {
             useConnection.rollback();
         }
         catch (SQLException e) {
-            log.log(Level.SEVERE, "Caught exception rolling back connection: " + e, e);
+            LOG.warning("Caught exception rolling back connection: " + e.getMessage());
             throw e;
         }
     }
@@ -1805,7 +1933,7 @@ public class Sql {
             closure.call(statement);
             int[] result = statement.executeBatch();
             connection.commit();
-            log.fine("Successfully executed batch with " + result.length + " command(s)");
+            LOG.fine("Successfully executed batch with " + result.length + " command(s)");
             return result;
         } catch (SQLException e) {
             handleError(connection, e);
@@ -1930,7 +2058,7 @@ public class Sql {
             }
             return (results);
         } catch (SQLException e) {
-            log.log(Level.INFO, "Failed to retrieve row from ResultSet for: " + sql, e);
+            LOG.warning("Failed to retrieve row from ResultSet for: " + sql + " because: " + e.getMessage());
             throw e;
         } finally {
             rs.close();
@@ -1971,7 +2099,7 @@ public class Sql {
                             String nextText = strings[i + 1];
                             if ((text.endsWith("\"") || text.endsWith("'")) && (nextText.startsWith("'") || nextText.startsWith("\""))) {
                                 if (!warned) {
-                                    log.warning("In Groovy SQL please do not use quotes around dynamic expressions " +
+                                    LOG.warning("In Groovy SQL please do not use quotes around dynamic expressions " +
                                             "(which start with $) as this means we cannot use a JDBC PreparedStatement " +
                                             "and so is a security hole. Groovy has worked around your mistake but the security hole is still there. " +
                                             "The expression so far is: " + buffer.toString() + "?" + nextText);
@@ -2178,7 +2306,7 @@ public class Sql {
                 results.close();
             }
             catch (SQLException e) {
-                log.log(Level.INFO, "Caught exception closing resultSet: " + e.getMessage() + " - continuing", e);
+                LOG.finest("Caught exception closing resultSet: " + e.getMessage() + " - continuing");
             }
         }
         closeResources(connection, statement);
@@ -2198,7 +2326,7 @@ public class Sql {
                 statement.close();
             }
             catch (SQLException e) {
-                log.log(Level.INFO, "Caught exception closing statement: " + e.getMessage() + " - continuing", e);
+                LOG.finest("Caught exception closing statement: " + e.getMessage() + " - continuing");
             }
         }
         if (cacheConnection) return;
@@ -2207,7 +2335,7 @@ public class Sql {
                 connection.close();
             }
             catch (SQLException e) {
-                log.log(Level.INFO, "Caught exception closing connection: " + e.getMessage() + " - continuing", e);
+                LOG.finest("Caught exception closing connection: " + e.getMessage() + " - continuing");
             }
         }
     }
@@ -2257,7 +2385,7 @@ public class Sql {
 
     private void handleError(Connection connection, Throwable t) throws SQLException {
         if (connection != null) {
-            log.log(Level.INFO, "Rolling back due to: " + t.getMessage(), t);
+            LOG.warning("Rolling back due to: " + t.getMessage());
             connection.rollback();
         }
     }
@@ -2284,9 +2412,11 @@ public class Sql {
         for (Statement s : statements) {
             try {
                 s.close();
-            } catch (SQLException e) {
-                log.log(Level.INFO, "Failed to close statement. Already closed?", e);
-                // If there's a closed statement in the cache, the cache is corrupted.
+            } catch (Exception e) {
+                // It's normally safe to ignore exceptions during cleanup but here if there is
+                // a closed statement in the cache, the cache is possibly corrupted, hence log
+                // at slightly elevated level than similar cases.
+                LOG.info("Failed to close statement. Already closed? Exception message: " + e.getMessage());
             }
         }
     }
@@ -2391,13 +2521,13 @@ public class Sql {
      		setInternalConnection(connection);
     		statement = null;
     		try {
-    			log.fine(sql);
+    			LOG.fine(sql);
     			// The variation in the pattern is isolated
     			ResultSet result = runQuery(connection);
     			assert (null != statement);
     			return result;
     		} catch (SQLException e) {
-    			log.log(Level.FINE, "Failed to execute: " + sql, e);
+    			LOG.warning("Failed to execute: " + sql + " because: " + e.getMessage());
     			closeResources();
     			connection = null;
     			statement = null;
