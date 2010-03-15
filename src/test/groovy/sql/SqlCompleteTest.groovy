@@ -52,6 +52,30 @@ class SqlCompleteTest extends TestHelper {
         assert !personMetaClosureCalled
     }
 
+    void testEachRowWithNamedParams() {
+        def sql = createSql()
+        def results = [:]
+        sql.eachRow("select * from PERSON where firstname like :firstPat and lastname like ?.lastPat", [[firstPat:'%am%', lastPat:'%a%']]) {
+            results.put(it.firstname, it['lastname'])
+        }
+        def expected = ["James": "Strachan", "Sam": "Pullara"]
+        assert results == expected
+        assert !personMetaClosureCalled
+    }
+
+    void testEachRowWithNamedOrdinalParams() {
+        def lastPatHolder = new Expando()
+        lastPatHolder.lastPat = '%a%'
+        def sql = createSql()
+        def results = [:]
+        sql.eachRow("select * from PERSON where firstname like ?1.firstPat and lastname like ?2.lastPat", [[firstPat:'%am%'], lastPatHolder]) {
+            results.put(it.firstname, it['lastname'])
+        }
+        def expected = ["James": "Strachan", "Sam": "Pullara"]
+        assert results == expected
+        assert !personMetaClosureCalled
+    }
+
     void testEachRowWithStringAndClosure() {
         def sql = createSql()
         def results = [:]
