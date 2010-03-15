@@ -36,6 +36,7 @@ import java.util.regex.Pattern;
 
 import javax.sql.DataSource;
 
+import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.SqlGroovyMethods;
 
@@ -126,6 +127,33 @@ import org.codehaus.groovy.runtime.SqlGroovyMethods;
  * handling is performed transparently on our behalf; however, it doesn't hurt to
  * have it there as it will return silently in that case.
  * <p/>
+ *
+ * <h4>Named and named ordinal parameters</h4>
+ *
+ * Several of the methods in this class which have a String-based sql query and
+ * params in a List<Object> or Object[] support <em>named</em> or <em>named ordinal</em> parameters.
+ * These methods are useful for queries with large numbers of parameters - though the GString
+ * variations are often preferred in such cases too.
+ * <p/>
+ * Named parameter queries use placeholder values in the query String. Two forms are supported
+ * ':propname1' and '?.propname2'. For these variations, a single <em>model</em> object is
+ * supplied in the parameter list. The propname refers to a property of that model object.
+ * The model object could be a map, Expando or domain class instance. Here are some examples:
+ * <pre>
+ * println sql.rows('select * from PROJECT where name=:foo', [foo:'Gradle'])
+ * println sql.rows('select * from PROJECT where name=:foo and id=?.bar', [foo:'Gradle', bar:40])
+ * class MyDomainClass { def baz = 'Griffon' }
+ * println sql.rows('select * from PROJECT where name=?.baz', new MyDomainClass())
+ * </pre>
+ * Named ordinal parameter queries have multiple model objects with the index number (starting
+ * at 1) also supplied in the placeholder. Only the question mark variation of placeholder is supported.
+ * Here is an example:
+ * <pre>
+ * println sql.rows("select * from PROJECT where name=?1.baz and id=?2.num", new MyDomainClass(), [num:30])
+ * </pre>
+ *
+ * <h4>More details</h4>
+ *
  * See the method and constructor JavaDoc for more details.
  * <p/>
  * For advanced usage, the class provides numerous extension points for overriding the
@@ -148,6 +176,8 @@ public class Sql {
     protected static final Logger LOG = Logger.getLogger(Sql.class.getName());
 
     private static final List<Object> EMPTY_LIST = Collections.emptyList();
+
+    private static final Pattern NAMED_QUERY_PATTERN = Pattern.compile("(?::|\\?(\\d?)\\.)(\\w+)");
 
     private DataSource dataSource;
 
@@ -698,6 +728,9 @@ public class Sql {
      * }
      * </pre>
      *
+     * This method supports named and named ordinal parameters.
+     * See the class Javadoc for more details.
+     * <p/>
      * All resources including the ResultSet are closed automatically
      * after the closure is called.
      *
@@ -851,6 +884,9 @@ public class Sql {
      * sql.eachRow("select * from PERSON where lastname like ?", ['%a%'], printColNames, printRow)
      * </pre>
      *
+     * This method supports named and named ordinal parameters.
+     * See the class Javadoc for more details.
+     * <p/>
      * Resource handling is performed automatically where appropriate.
      *
      * @param sql     the sql statement
@@ -1046,6 +1082,21 @@ public class Sql {
 
     /**
      * Performs the given SQL query and return the rows of the result set.
+     *
+     * An Object array variant of {@link #rows(String, List)}.
+     *
+     * @param sql    the SQL statement
+     * @param params a list of parameters
+     * @return a list of GroovyRowResult objects
+     * @throws SQLException if a database access error occurs
+     */
+    public List<GroovyRowResult> rows(String sql, Object[] params)
+            throws SQLException {
+        return rows(sql, Arrays.asList(params), null);
+	}
+
+    /**
+     * Performs the given SQL query and return the rows of the result set.
      * In addition, the <code>metaClosure</code> will be called once passing in the
      * <code>ResultSetMetaData</code> as argument.
      * The query may contain placeholder question marks which match the given list of parameters.
@@ -1056,6 +1107,9 @@ public class Sql {
      * def ans = sql.rows("select * from PERSON where lastname like ?", ['%a%'], printNumCols)
      * println "Found ${ans.size()} rows"
      * </pre>
+     *
+     * This method supports named and named ordinal parameters.
+     * See the class Javadoc for more details.
      * <p/>
      * Resource handling is performed automatically where appropriate.
      *
@@ -1211,6 +1265,20 @@ public class Sql {
     }
 
     /**
+     * Performs the given SQL query and return the first row of the result set.
+     *
+     * An Object array variant of {@link #firstRow(String, List)}.
+     *
+     * @param sql    the SQL statement
+     * @param params a list of parameters
+     * @return a GroovyRowResult object or <code>null</code> if no row is found
+     * @throws SQLException if a database access error occurs
+     */
+    public Object firstRow(String sql, Object[] params) throws SQLException {
+        return firstRow(sql, Arrays.asList(params));
+    }
+
+    /**
      * Executes the given piece of SQL.
      * Also saves the updateCount, if any, for subsequent examination.
      * <p/>
@@ -1262,7 +1330,6 @@ public class Sql {
     }
 
     /**
-     *
      * Executes the given piece of SQL with parameters.
      * Also saves the updateCount, if any, for subsequent examination.
      * <p/>
@@ -1274,6 +1341,9 @@ public class Sql {
      * assert sql.updateCount == 1
      * </pre>
      *
+     * This method supports named and named ordinal parameters.
+     * See the class Javadoc for more details.
+     * <p/>
      * Resource handling is performed automatically where appropriate.
      *
      * @param sql    the SQL statement
@@ -1301,6 +1371,22 @@ public class Sql {
         finally {
             closeResources(connection, statement);
         }
+    }
+
+    /**
+     * Executes the given piece of SQL with parameters.
+     *
+     * An Object array variant of {@link #execute(String, List)}.
+     *
+     * @param sql    the SQL statement
+     * @param params a list of parameters
+     * @return <code>true</code> if the first result is a <code>ResultSet</code>
+     *         object; <code>false</code> if it is an update count or there are
+     *         no results
+     * @throws SQLException if a database access error occurs
+     */
+    public boolean execute(String sql, Object[] params) throws SQLException {
+        return execute(sql, Arrays.asList(params));
     }
 
     /**
@@ -1370,6 +1456,9 @@ public class Sql {
      * The query may contain placeholder question marks which match the given list of parameters.
      * See {@link #executeInsert(GString)} for more details.
      *
+     * This method supports named and named ordinal parameters.
+     * See the class Javadoc for more details.
+     * <p/>
      * Resource handling is performed automatically where appropriate.
      *
      * @param sql    The SQL statement to execute
@@ -1396,6 +1485,22 @@ public class Sql {
         finally {
             closeResources(connection, statement);
         }
+    }
+
+    /**
+     * Executes the given SQL statement (typically an INSERT statement).
+     *
+     * An Object array variant of {@link #executeInsert(String, List)}.
+     *
+     * @param sql    The SQL statement to execute
+     * @param params The parameter values that will be substituted
+     *               into the SQL statement's parameter slots
+     * @return A list of the auto-generated column values for each
+     *         inserted row (typically auto-generated keys)
+     * @throws SQLException if a database access error occurs
+     */
+    public List<List<Object>> executeInsert(String sql, Object[] params) throws SQLException {
+        return executeInsert(sql, Arrays.asList(params));
     }
 
     /**
@@ -1476,6 +1581,9 @@ public class Sql {
     /**
      * Executes the given SQL update with parameters.
      *
+     * This method supports named and named ordinal parameters.
+     * See the class Javadoc for more details.
+     * <p/>
      * Resource handling is performed automatically where appropriate.
      *
      * @param sql    the SQL statement
@@ -1499,6 +1607,20 @@ public class Sql {
         finally {
             closeResources(connection, statement);
         }
+    }
+
+    /**
+     * Executes the given SQL update with parameters.
+     *
+     * An Object array variant of {@link #executeUpdate(String, List)}.
+     *
+     * @param sql    the SQL statement
+     * @param params an array of parameters
+     * @return the number of rows updated or 0 for SQL statements that return nothing
+     * @throws SQLException if a database access error occurs
+     */
+    public int executeUpdate(String sql, Object[] params) throws SQLException {
+        return executeUpdate(sql, Arrays.asList(params));
     }
 
     /**
@@ -2522,10 +2644,72 @@ public class Sql {
     }
 
     private PreparedStatement getPreparedStatement(Connection connection, String sql, List<Object> params, int returnGeneratedKeys) throws SQLException {
-        PreparedStatement statement = (PreparedStatement) getAbstractStatement(new CreatePreparedStatementCommand(returnGeneratedKeys), connection, sql);
-        setParameters(params, statement);
+        SqlWithParams updated = checkForNamedParams(sql, params);
+        PreparedStatement statement = (PreparedStatement) getAbstractStatement(new CreatePreparedStatementCommand(returnGeneratedKeys), connection, updated.getSql());
+        setParameters(updated.getParams(), statement);
         configure(statement);
         return statement;
+    }
+
+    public SqlWithParams checkForNamedParams(String sql, List<Object> params) {
+        // look for quick exit
+        if (!sql.contains("'") && !NAMED_QUERY_PATTERN.matcher(sql).find()) {
+            return new SqlWithParams(sql, params);
+        }
+
+        List<Object> updatedParams = new ArrayList<Object>();
+        StringBuilder sb = new StringBuilder();
+        StringBuilder currentChunk = new StringBuilder();
+        char[] chars = sql.toCharArray();
+        int i = 0;
+        boolean inString = false; //TODO: Cater for comments?
+        while (i < chars.length) {
+            switch (chars[i]) {
+                case '\'':
+                    inString = !inString;
+                    if (inString) {
+                        sb.append(adaptForNamedParams(currentChunk.toString(), params, updatedParams));
+                        currentChunk = new StringBuilder();
+                        currentChunk.append(chars[i]);
+                    } else {
+                        currentChunk.append(chars[i]);
+                        sb.append(currentChunk);
+                        currentChunk = new StringBuilder();
+                    }
+                    break;
+                default:
+                    currentChunk.append(chars[i]);
+            }
+            i++;
+        }
+        if (inString)
+            throw new IllegalStateException("Failed to process query. Unterminated ' character?");
+        sb.append(adaptForNamedParams(currentChunk.toString(), params, updatedParams));
+
+        String newSql = sb.toString();
+        if (!sql.equals(newSql))
+            LOG.fine(newSql + " | " + updatedParams);
+
+        return new SqlWithParams(newSql, updatedParams);
+    }
+
+    private String adaptForNamedParams(String sql, List<Object> params, List<Object> updatedParams) {
+        StringBuilder newSql = new StringBuilder();
+        int txtIndex = 0;
+
+        Matcher matcher = NAMED_QUERY_PATTERN.matcher(sql);
+        while (matcher.find()) {
+            newSql.append(sql.substring(txtIndex, matcher.start())).append('?');
+            String indexStr = matcher.group(1);
+            int index = (indexStr == null || indexStr.length() == 0) ? 0 : new Integer(matcher.group(1)) - 1;
+            if (index < 0 || index >= params.size())
+                throw new IllegalArgumentException("Invalid index " + index + " should be in range 1.." + params.size());
+            String prop = matcher.group(2);
+            updatedParams.add(InvokerHelper.getProperty(params.get(index), prop));
+            txtIndex = matcher.end();
+        }
+        newSql.append(sql.substring(txtIndex)); // append ending SQL after last param.
+        return newSql.toString();
     }
 
     private PreparedStatement getPreparedStatement(Connection connection, String sql, List<Object> params) throws SQLException {
