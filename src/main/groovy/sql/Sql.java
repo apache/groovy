@@ -36,6 +36,7 @@ import java.util.regex.Pattern;
 
 import javax.sql.DataSource;
 
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.SqlGroovyMethods;
 
 /**
@@ -269,6 +270,73 @@ public class Sql {
     public static Sql newInstance(String url, String driverClassName) throws SQLException, ClassNotFoundException {
         loadDriver(driverClassName);
         return newInstance(url);
+    }
+
+    /**
+     * Creates a new Sql instance given parameters in a Map.
+     * Recognized keys for the Map include:
+     * <pre>
+     * driverClassName the fully qualified class name of the driver class
+     * driver          a synonym for driverClassName
+     * url             a database url of the form: jdbc:<em>subprotocol</em>:<em>subname</em>
+     * user            the database user on whose behalf the connection is being made
+     * password        the user's password
+     * properties      a list of arbitrary string tag/value pairs as connection arguments;
+     *                 normally at least a "user" and "password" property should be included
+     * <em>other</em>           any of the public setter methods of this class may be used with property notation
+     *                 e.g. <em>cacheStatements: true, resultSetConcurrency: ResultSet.CONCUR_READ_ONLY</em>
+     * </pre>
+     * Of these, '<code>url</code>' is required. Others may be needed depending on your database.<br>
+     * If '<code>properties</code>' is supplied, neither '<code>user</code>' nor '<code>password</code>' should be supplied.<br>
+     * If one of '<code>user</code>' or '<code>password</code>' is supplied, both should be supplied.
+     *<p/>
+     * Example usage:
+     * <pre>
+     * import groovy.sql.Sql
+     * import static java.sql.ResultSet.*
+     *
+     * def sql = Sql.newInstance(
+     *     url:'jdbc:hsqldb:mem:testDB',
+     *     user:'sa',
+     *     password:'',
+     *     driver:'org.hsqldb.jdbcDriver',
+     *     cacheStatements: true,
+     *     resultSetConcurrency: CONCUR_READ_ONLY
+     * )
+     * </pre>
+     * 
+     * @param args a Map contain further arguments
+     * @return a new Sql instance with a connection
+     * @throws SQLException           if a database access error occurs
+     * @throws ClassNotFoundException if the class cannot be found or loaded
+     */
+    public static Sql newInstance(Map<String, Object> args) throws SQLException, ClassNotFoundException {
+        if (args.containsKey("driverClassName") && args.containsKey("driver"))
+            throw new IllegalArgumentException("Only one of 'driverClassName' and 'driver' should be provided");
+        String driverClassName = (String) args.remove("driverClassName");
+        if (driverClassName == null) driverClassName = (String) args.remove("driver");
+        if (driverClassName != null) loadDriver(driverClassName);
+
+        String url = (String) args.remove("url");
+        if (url == null) throw new IllegalArgumentException("Argument 'url' is required");
+
+        Properties props = (Properties) args.remove("properties");
+        if (props != null && args.containsKey("user"))
+            throw new IllegalArgumentException("Only one of 'properties' and 'user' should be supplied");
+        if (props != null && args.containsKey("password"))
+            throw new IllegalArgumentException("Only one of 'properties' and 'password' should be supplied");
+        if (args.containsKey("user") ^ args.containsKey("password"))
+            throw new IllegalArgumentException("Found one but not both of 'user' and 'password'");
+
+        Connection connection;
+        if (props != null) connection = DriverManager.getConnection(url, props);
+        else if (args.containsKey("user")) connection =
+                DriverManager.getConnection(url, (String) args.remove("user"), (String) args.remove("password"));
+        else connection = DriverManager.getConnection(url);
+
+        Sql result = (Sql) InvokerHelper.invokeConstructorOf(Sql.class, args);
+        result.setConnection(connection);
+        return result;
     }
 
     /**
@@ -562,6 +630,10 @@ public class Sql {
     public Sql(Sql parent) {
         this.dataSource = parent.dataSource;
         this.useConnection = parent.useConnection;
+    }
+
+    private Sql() {
+        // supports Map style newInstance method
     }
 
     public DataSet dataSet(String table) {
@@ -1794,6 +1866,10 @@ public class Sql {
      */
     public Connection getConnection() {
         return useConnection;
+    }
+
+    private void setConnection(Connection connection) {
+        useConnection = connection;
     }
 
     /**
