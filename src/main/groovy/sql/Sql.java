@@ -36,7 +36,6 @@ import java.util.regex.Pattern;
 
 import javax.sql.DataSource;
 
-import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.SqlGroovyMethods;
 
