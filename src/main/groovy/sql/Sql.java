@@ -743,7 +743,7 @@ public class Sql {
         PreparedStatement statement = null;
         ResultSet results = null;
         try {
-            LOG.fine(sql);
+            LOG.fine(sql + " | " + params);
             statement = getPreparedStatement(connection, sql, params);
             results = statement.executeQuery();
             closure.call(results);
@@ -899,7 +899,7 @@ public class Sql {
         PreparedStatement statement = null;
         ResultSet results = null;
         try {
-            LOG.fine(sql);
+            LOG.fine(sql + " | " + params);
             statement = getPreparedStatement(connection, sql, params);
             results = statement.executeQuery();
 
@@ -1723,7 +1723,7 @@ public class Sql {
         Connection connection = createConnection();
         CallableStatement statement = connection.prepareCall(sql);
         try {
-            LOG.fine(sql);
+            LOG.fine(sql + " | " + params);
             setParameters(params, statement);
             configure(statement);
             return statement.executeUpdate();
@@ -1822,7 +1822,7 @@ public class Sql {
         CallableStatement statement = connection.prepareCall(sql);
         List<GroovyResultSet> resultSetResources = new ArrayList<GroovyResultSet>();
         try {
-            LOG.fine(sql);
+            LOG.fine(sql + " | " + params);
             setParameters(params, statement);
             // TODO handle multiple results and mechanism for retrieving ResultSet if any (GROOVY-3048)
             statement.execute();
@@ -2652,7 +2652,7 @@ public class Sql {
 
     public SqlWithParams checkForNamedParams(String sql, List<Object> params) {
         // look for quick exit
-        if (!sql.contains("'") && !NAMED_QUERY_PATTERN.matcher(sql).find()) {
+        if (!NAMED_QUERY_PATTERN.matcher(sql).find()) {
             return new SqlWithParams(sql, params);
         }
 
@@ -2686,8 +2686,11 @@ public class Sql {
         sb.append(adaptForNamedParams(currentChunk.toString(), params, updatedParams));
 
         String newSql = sb.toString();
-        if (!sql.equals(newSql))
-            LOG.fine(newSql + " | " + updatedParams);
+        if (sql.equals(newSql)) {
+            return new SqlWithParams(sql, params);
+        } else {
+            LOG.fine(newSql + " | " + updatedParams);            
+        }
 
         return new SqlWithParams(newSql, updatedParams);
     }

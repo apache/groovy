@@ -60,7 +60,16 @@ class SqlCompleteTest extends TestHelper {
         }
         def expected = ["James": "Strachan", "Sam": "Pullara"]
         assert results == expected
-        assert !personMetaClosureCalled
+    }
+
+    void testEachRowWithParamsAndEmbeddedString() {
+        def sql = createSql()
+        def results = [:]
+        sql.eachRow("select * from PERSON where firstname != ':dummy' and lastname = ?", ["Mcwhirter"]) {
+            results.put(it.firstname, it['lastname'])
+        }
+        def expected = ["Bob": "Mcwhirter"]
+        assert results == expected
     }
 
     void testEachRowWithNamedOrdinalParams() {
@@ -73,7 +82,6 @@ class SqlCompleteTest extends TestHelper {
         }
         def expected = ["James": "Strachan", "Sam": "Pullara"]
         assert results == expected
-        assert !personMetaClosureCalled
     }
 
     void testEachRowWithStringAndClosure() {
