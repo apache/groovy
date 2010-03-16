@@ -701,7 +701,6 @@ public class Sql {
         Statement statement = getStatement(connection, sql);
         ResultSet results = null;
         try {
-            LOG.fine(sql);
             results = statement.executeQuery(sql);
             closure.call(results);
         }
@@ -743,7 +742,6 @@ public class Sql {
         PreparedStatement statement = null;
         ResultSet results = null;
         try {
-            LOG.fine(sql + " | " + params);
             statement = getPreparedStatement(connection, sql, params);
             results = statement.executeQuery();
             closure.call(results);
@@ -845,7 +843,6 @@ public class Sql {
         Statement statement = getStatement(connection, sql);
         ResultSet results = null;
         try {
-            LOG.fine(sql);
             results = statement.executeQuery(sql);
 
             if (metaClosure != null) metaClosure.call(results.getMetaData());
@@ -899,7 +896,6 @@ public class Sql {
         PreparedStatement statement = null;
         ResultSet results = null;
         try {
-            LOG.fine(sql + " | " + params);
             statement = getPreparedStatement(connection, sql, params);
             results = statement.executeQuery();
 
@@ -1312,7 +1308,6 @@ public class Sql {
         Connection connection = createConnection();
         Statement statement = null;
         try {
-            LOG.fine(sql);
             statement = getStatement(connection, sql);
             // TODO handle multiple results
             boolean isResultSet = statement.execute(sql);
@@ -1356,7 +1351,6 @@ public class Sql {
         Connection connection = createConnection();
         PreparedStatement statement = null;
         try {
-            LOG.fine(sql + " | " + params);
             statement = getPreparedStatement(connection, sql, params);
             // TODO handle multiple results
             boolean isResultSet = statement.execute();
@@ -1433,7 +1427,6 @@ public class Sql {
         Connection connection = createConnection();
         Statement statement = null;
         try {
-            LOG.fine(sql);
             statement = getStatement(connection, sql);
             this.updateCount = statement.executeUpdate(sql, Statement.RETURN_GENERATED_KEYS);
             ResultSet keys = statement.getGeneratedKeys();
@@ -1471,7 +1464,6 @@ public class Sql {
         Connection connection = createConnection();
         PreparedStatement statement = null;
         try {
-            LOG.fine(sql + " | " + params);
             statement = getPreparedStatement(connection, sql, params, Statement.RETURN_GENERATED_KEYS);
             this.updateCount = statement.executeUpdate();
             ResultSet keys = statement.getGeneratedKeys();
@@ -1563,7 +1555,6 @@ public class Sql {
         Connection connection = createConnection();
         Statement statement = null;
         try {
-            LOG.fine(sql);
             statement = getStatement(connection, sql);
             this.updateCount = statement.executeUpdate(sql);
             return this.updateCount;
@@ -1594,7 +1585,6 @@ public class Sql {
         Connection connection = createConnection();
         PreparedStatement statement = null;
         try {
-            LOG.fine(sql + " | " + params);
             statement = getPreparedStatement(connection, sql, params);
             this.updateCount = statement.executeUpdate();
             return this.updateCount;
@@ -2637,6 +2627,7 @@ public class Sql {
     }
 
     private Statement getStatement(Connection connection, String sql) throws SQLException {
+        LOG.fine(sql);
         Statement stmt = getAbstractStatement(new CreateStatementCommand(), connection, sql);
         configure(stmt);
         return stmt;
@@ -2644,6 +2635,7 @@ public class Sql {
 
     private PreparedStatement getPreparedStatement(Connection connection, String sql, List<Object> params, int returnGeneratedKeys) throws SQLException {
         SqlWithParams updated = checkForNamedParams(sql, params);
+        LOG.fine(updated.getSql() + " | " + updated.getParams());
         PreparedStatement statement = (PreparedStatement) getAbstractStatement(new CreatePreparedStatementCommand(returnGeneratedKeys), connection, updated.getSql());
         setParameters(updated.getParams(), statement);
         configure(statement);
@@ -2688,8 +2680,6 @@ public class Sql {
         String newSql = sb.toString();
         if (sql.equals(newSql)) {
             return new SqlWithParams(sql, params);
-        } else {
-            LOG.fine(newSql + " | " + updatedParams);            
         }
 
         return new SqlWithParams(newSql, updatedParams);
@@ -2785,7 +2775,6 @@ public class Sql {
      		setInternalConnection(connection);
     		statement = null;
     		try {
-    			LOG.fine(sql);
     			// The variation in the pattern is isolated
     			ResultSet result = runQuery(connection);
     			assert (null != statement);
