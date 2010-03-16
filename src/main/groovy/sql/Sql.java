@@ -1081,7 +1081,7 @@ public class Sql {
      * An Object array variant of {@link #rows(String, List)}.
      *
      * @param sql    the SQL statement
-     * @param params a list of parameters
+     * @param params an array of parameters
      * @return a list of GroovyRowResult objects
      * @throws SQLException if a database access error occurs
      */
@@ -1265,7 +1265,7 @@ public class Sql {
      * An Object array variant of {@link #firstRow(String, List)}.
      *
      * @param sql    the SQL statement
-     * @param params a list of parameters
+     * @param params an array of parameters
      * @return a GroovyRowResult object or <code>null</code> if no row is found
      * @throws SQLException if a database access error occurs
      */
@@ -1372,7 +1372,7 @@ public class Sql {
      * An Object array variant of {@link #execute(String, List)}.
      *
      * @param sql    the SQL statement
-     * @param params a list of parameters
+     * @param params an array of parameters
      * @return <code>true</code> if the first result is a <code>ResultSet</code>
      *         object; <code>false</code> if it is an update count or there are
      *         no results
@@ -1725,6 +1725,21 @@ public class Sql {
         finally {
             closeResources(connection, statement);
         }
+    }
+
+    /**
+     * Performs a stored procedure call with the given parameters.
+     * <p/>
+     * An Object array variant of {@link #call(String, List)}.
+     *
+     * @param sql    the SQL statement
+     * @param params an array of parameters
+     * @return the number of rows updated or 0 for SQL statements that return nothing
+     * @throws SQLException if a database access error occurs
+     * @see #call(String)
+     */
+    public int call(String sql, Object[] params) throws Exception {
+        return call(sql, Arrays.asList(params));
     }
 
     /**
