@@ -68,6 +68,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     private Map<String, GenericsType> genericParameterNames = new HashMap<String, GenericsType>();
     private Set<FieldNode> fieldTypesChecked = new HashSet<FieldNode>();
     private boolean checkingVariableTypeInDeclaration = false;
+    private ImportNode currImportNode = null;
 
     /**
      * we use ConstructedClassWithPackage to limit the resolving the compiler
@@ -541,7 +542,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
          */
         while (true) {
             pname = name.substring(0, index);
-            ClassNode aliasedNode = module.getImportType(pname);
+            ClassNode aliasedNode = null;
+            ImportNode importNode = module.getImport(pname);
+            if(importNode != null && importNode != currImportNode) {
+                aliasedNode = importNode.getType();
+            }
 
             if (aliasedNode != null) {
                 if (pname.length() == name.length()) {
@@ -1148,8 +1153,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (!module.hasImportsResolved()) {
             List l = module.getImports();
             for (ImportNode importNode : module.getImports()) {
+            	currImportNode = importNode;
                 ClassNode type = importNode.getType();
-                if (resolve(type, true, false, true)) continue;
+                if (resolve(type, true, false, true)) {
+                	currImportNode = null;
+                	continue;
+                }
+                currImportNode = null;
                 addError("unable to resolve class " + type.getName(), type);
             }
             for (ImportNode importNode : module.getStaticStarImports().values()) {
