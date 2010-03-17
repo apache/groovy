@@ -36,6 +36,7 @@ import java.util.regex.Pattern;
 
 import javax.sql.DataSource;
 
+import groovy.lang.Tuple;
 import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.runtime.SqlGroovyMethods;
 
@@ -197,6 +198,8 @@ public class Sql {
     private boolean cacheStatements;
 
     private final Map<String, Statement> statementCache = new HashMap<String, Statement>();
+    private final Map<String, String> namedParamSqlCache = new HashMap<String, String>();
+    private final Map<String, List<Tuple>> namedParamIndexPropCache = new HashMap<String, List<Tuple>>();
 
     /**
      * Creates a new Sql instance given a JDBC connection URL.
@@ -1913,6 +1916,8 @@ public class Sql {
      * @throws SQLException if a database access error occurs
      */
     public void close() {
+        namedParamSqlCache.clear();
+        namedParamIndexPropCache.clear();
         try {
             clearStatementCache();
         }
@@ -2663,44 +2668,61 @@ public class Sql {
             return new SqlWithParams(sql, params);
         }
 
-        List<Object> updatedParams = new ArrayList<Object>();
-        StringBuilder sb = new StringBuilder();
-        StringBuilder currentChunk = new StringBuilder();
-        char[] chars = sql.toCharArray();
-        int i = 0;
-        boolean inString = false; //TODO: Cater for comments?
-        while (i < chars.length) {
-            switch (chars[i]) {
-                case '\'':
-                    inString = !inString;
-                    if (inString) {
-                        sb.append(adaptForNamedParams(currentChunk.toString(), params, updatedParams));
-                        currentChunk = new StringBuilder();
+        List<Tuple> indexPropList;
+        String newSql;
+        if (namedParamSqlCache.containsKey(sql)) {
+            newSql = namedParamSqlCache.get(sql);
+            indexPropList = namedParamIndexPropCache.get(sql);
+        } else {
+            indexPropList = new ArrayList<Tuple>();
+            StringBuilder sb = new StringBuilder();
+            StringBuilder currentChunk = new StringBuilder();
+            char[] chars = sql.toCharArray();
+            int i = 0;
+            boolean inString = false; //TODO: Cater for comments?
+            while (i < chars.length) {
+                switch (chars[i]) {
+                    case '\'':
+                        inString = !inString;
+                        if (inString) {
+                            sb.append(adaptForNamedParams(currentChunk.toString(), indexPropList));
+                            currentChunk = new StringBuilder();
+                            currentChunk.append(chars[i]);
+                        } else {
+                            currentChunk.append(chars[i]);
+                            sb.append(currentChunk);
+                            currentChunk = new StringBuilder();
+                        }
+                        break;
+                    default:
                         currentChunk.append(chars[i]);
-                    } else {
-                        currentChunk.append(chars[i]);
-                        sb.append(currentChunk);
-                        currentChunk = new StringBuilder();
-                    }
-                    break;
-                default:
-                    currentChunk.append(chars[i]);
+                }
+                i++;
             }
-            i++;
+            if (inString)
+                throw new IllegalStateException("Failed to process query. Unterminated ' character?");
+            sb.append(adaptForNamedParams(currentChunk.toString(), indexPropList));
+            newSql = sb.toString();
+            namedParamSqlCache.put(sql, newSql);
+            namedParamIndexPropCache.put(sql, indexPropList);
         }
-        if (inString)
-            throw new IllegalStateException("Failed to process query. Unterminated ' character?");
-        sb.append(adaptForNamedParams(currentChunk.toString(), params, updatedParams));
-
-        String newSql = sb.toString();
         if (sql.equals(newSql)) {
             return new SqlWithParams(sql, params);
+        }
+
+        List<Object> updatedParams = new ArrayList<Object>();
+        for (Tuple tuple : indexPropList) {
+            int index = (Integer) tuple.get(0);
+            String prop = (String) tuple.get(1);
+            if (index < 0 || index >= params.size())
+                throw new IllegalArgumentException("Invalid index " + index + " should be in range 1.." + params.size());
+            updatedParams.add(InvokerHelper.getProperty(params.get(index), prop));
         }
 
         return new SqlWithParams(newSql, updatedParams);
     }
 
-    private String adaptForNamedParams(String sql, List<Object> params, List<Object> updatedParams) {
+    private String adaptForNamedParams(String sql, List<Tuple> indexPropList) {
         StringBuilder newSql = new StringBuilder();
         int txtIndex = 0;
 
@@ -2709,10 +2731,8 @@ public class Sql {
             newSql.append(sql.substring(txtIndex, matcher.start())).append('?');
             String indexStr = matcher.group(1);
             int index = (indexStr == null || indexStr.length() == 0) ? 0 : new Integer(matcher.group(1)) - 1;
-            if (index < 0 || index >= params.size())
-                throw new IllegalArgumentException("Invalid index " + index + " should be in range 1.." + params.size());
             String prop = matcher.group(2);
-            updatedParams.add(InvokerHelper.getProperty(params.get(index), prop));
+            indexPropList.add(new Tuple(new Object[]{index, prop}));
             txtIndex = matcher.end();
         }
         newSql.append(sql.substring(txtIndex)); // append ending SQL after last param.
