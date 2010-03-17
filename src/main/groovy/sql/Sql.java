@@ -197,6 +197,10 @@ public class Sql {
 
     private boolean cacheStatements;
 
+    private boolean cacheNamedQueries = true;
+
+    private boolean enableNamedQueries = true;
+
     private final Map<String, Statement> statementCache = new HashMap<String, Statement>();
     private final Map<String, String> namedParamSqlCache = new HashMap<String, String>();
     private final Map<String, List<Tuple>> namedParamIndexPropCache = new HashMap<String, List<Tuple>>();
@@ -2016,8 +2020,8 @@ public class Sql {
 
     /**
      * Enables statement caching.</br>
-     * if <i>b</i> is true, cache is created and all created prepared statements will be cached.</br>
-     * if <i>b</i> is false, all cached statements will be properly closed.
+     * if <i>cacheStatements</i> is true, cache is created and all created prepared statements will be cached.</br>
+     * if <i>cacheStatements</i> is false, all cached statements will be properly closed.
      *
      * @param cacheStatements the new value
      */
@@ -2029,7 +2033,7 @@ public class Sql {
     }
 
     /**
-     * @return boolean    true if cache is enabled
+     * @return boolean true if cache is enabled (default is false)
      */
     public boolean isCacheStatements() {
         return cacheStatements;
@@ -2658,13 +2662,13 @@ public class Sql {
 
     public SqlWithParams checkForNamedParams(String sql, List<Object> params) {
         // look for quick exit
-        if (!NAMED_QUERY_PATTERN.matcher(sql).find()) {
+        if (!enableNamedQueries || !NAMED_QUERY_PATTERN.matcher(sql).find()) {
             return new SqlWithParams(sql, params);
         }
 
         List<Tuple> indexPropList;
         String newSql;
-        if (namedParamSqlCache.containsKey(sql)) {
+        if (cacheNamedQueries && namedParamSqlCache.containsKey(sql)) {
             newSql = namedParamSqlCache.get(sql);
             indexPropList = namedParamIndexPropCache.get(sql);
         } else {
@@ -2735,6 +2739,42 @@ public class Sql {
 
     private PreparedStatement getPreparedStatement(Connection connection, String sql, List<Object> params) throws SQLException {
         return getPreparedStatement(connection, sql, params, 0);
+    }
+
+    /**
+     * @return boolean    true if caching is enabled (the default is true)
+     */
+    public boolean isCacheNamedQueries() {
+        return cacheNamedQueries;
+    }
+
+    /**
+     * Enables named query caching.</br>
+     * if <i>cacheNamedQueries</i> is true, cache is created and processed named queries will be cached.</br>
+     * if <i>cacheNamedQueries</i> is false, no caching will occur saving memory at the cost of additional processing time.
+     *
+     * @param cacheNamedQueries the new value
+     */
+    public void setCacheNamedQueries(boolean cacheNamedQueries) {
+        this.cacheNamedQueries = cacheNamedQueries;
+    }
+
+    /**
+     * @return boolean    true if named query processing is enabled (the default is true)
+     */
+    public boolean isEnableNamedQueries() {
+        return enableNamedQueries;
+    }
+
+    /**
+     * Enables named query support.</br>
+     * if <i>enableNamedQueries</i> is true, queries with ':propname' and '?1.propname' style placeholders will be processed.</br>
+     * if <i>enableNamedQueries</i> is false, this feature will be turned off.
+     *
+     * @param enableNamedQueries the new value
+     */
+    public void setEnableNamedQueries(boolean enableNamedQueries) {
+        this.enableNamedQueries = enableNamedQueries;
     }
 
     // command pattern implementation classes
