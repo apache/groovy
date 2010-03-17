@@ -105,4 +105,46 @@ class Groovy4098Bug extends GroovyTestCase {
         }
         assert msg == "Cannot set the property 'propertySix' because the backing field is final."
     }
+
+    void testOneProtected() {
+        def p = new Groovy4098Child()
+        p.propertyOne = "one normal"
+        assert p.propertyOne == "one normal"
+
+        def metaProperty = p.metaClass.getMetaProperty("propertyOne")
+        metaProperty.setProperty(p, "one mop")
+        assert metaProperty.getProperty(p) == "one mop"
+    }
+
+    void testTwoProtected() {
+        def p = new Groovy4098Child()
+        p.propertyTwo = "two normal"
+        assert p.propertyTwo == "two normal"
+
+        def metaProperty = p.metaClass.getMetaProperty("propertyTwo")
+        metaProperty.setProperty(p, "two mop")
+        assert metaProperty.getProperty(p) == "two mop"
+    }
+
+    void testThreeProtected() {
+        def p = new Groovy4098Child()
+        p.propertyThree = "three normal"
+        assert p.propertyThree == "three normal"
+
+        def metaProperty = p.metaClass.getMetaProperty("propertyThree")
+        assert metaProperty.getProperty(p) == "three normal"
+        metaProperty.setProperty(p, "three mop")
+        assert metaProperty.getProperty(p) == "three mop"
+    }
+
+    void testFourProtected() {
+        def p = new Groovy4098Child()
+        p.propertyOne = "four normal"
+        assert p.propertyOne == "four normal"
+
+        def metaProperty = p.metaClass.getMetaProperty("propertyFour")
+        metaProperty.setProperty(p, "four mop")
+        assert metaProperty.getProperty(p) == "four mop"
+    }
+
 }
