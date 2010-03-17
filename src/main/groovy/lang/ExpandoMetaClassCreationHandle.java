@@ -46,7 +46,7 @@ public class ExpandoMetaClassCreationHandle extends MetaClassCreationHandle {
 			return new ExpandoMetaClass(theClass, true, true);
 		}
 		else {
-			return super.create(theClass, registry);
+			return super.createNormalMetaClass(theClass, registry);
 		}
 	}
 
