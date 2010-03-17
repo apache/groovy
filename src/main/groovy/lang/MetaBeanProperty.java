@@ -50,9 +50,8 @@ public class MetaBeanProperty extends MetaProperty {
     public Object getProperty(Object object) {
         MetaMethod getter = getGetter();
         if (getter == null) {
-            if (Modifier.isPublic(field.getModifiers()))
-                return field.getProperty(object);
-            //TODO: we probably need a WriteOnlyException class
+            if (field != null) return field.getProperty(object);
+            //TODO: create a WriteOnlyException class?
             throw new GroovyRuntimeException("Cannot read write-only property: " + name);
         }
         return getter.invoke(object, MetaClassHelper.EMPTY_ARRAY);
@@ -68,7 +67,7 @@ public class MetaBeanProperty extends MetaProperty {
     public void setProperty(Object object, Object newValue) {
     	MetaMethod setter = getSetter();
         if (setter == null) {
-            if (Modifier.isPublic(field.getModifiers()) && !Modifier.isFinal(field.getModifiers())) {
+            if (field != null && !Modifier.isFinal(field.getModifiers())) {
                 field.setProperty(object, newValue);
                 return;
             }
