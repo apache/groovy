@@ -16,10 +16,9 @@
 package org.codehaus.groovy.runtime;
 
 import groovy.lang.Closure;
+import groovy.lang.MetaMethod;
 
-import java.lang.reflect.Method;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
+import java.util.List;
 
 
 /**
@@ -42,31 +41,16 @@ public class MethodClosure extends Closure {
         maximumNumberOfParameters = 0;
         parameterTypes = new Class [0];
 
-        Method[] methods = (Method[]) AccessController.doPrivileged(new  PrivilegedAction() {
-            public Object run() {
-                return clazz.getMethods();
-            }
-        });
-        for (int j = 0; j < methods.length; j++) {
-            if (method.equals(methods[j].getName()) && methods[j].getParameterTypes().length > maximumNumberOfParameters) {
-                Class[] pt = methods[j].getParameterTypes();
+        List methods = InvokerHelper.getMetaClass(clazz).respondsTo(owner, method);
+
+        for (int j = 0; j < methods.size(); j++) {
+        	MetaMethod m = (MetaMethod) methods.get(j);
+            if (method.equals(m.getName()) && m.getParameterTypes().length > maximumNumberOfParameters) {
+                Class[] pt = m.getNativeParameterTypes();
                 maximumNumberOfParameters = pt.length;
                 parameterTypes = pt;
             }
         }        
-        methods = (Method[]) AccessController.doPrivileged(new  PrivilegedAction() {
-            public Object run() {
-                return clazz.getDeclaredMethods();
-            }
-        });
-        for (int j = 0; j < methods.length; j++) {
-            if (method.equals(methods[j].getName()) && methods[j].getParameterTypes().length > maximumNumberOfParameters) {
-                Class[] pt = methods[j].getParameterTypes();
-                maximumNumberOfParameters = pt.length;
-                parameterTypes = pt;
-            }
-        }
-
     }
     
     public String getMethod() {
