@@ -1912,23 +1912,17 @@ public class Sql {
      * If this SQL object was created with a Connection then this method closes
      * the connection. If this SQL object was created from a DataSource then
      * this method only frees any cached objects (statements in particular).
-     *
-     * @throws SQLException if a database access error occurs
      */
     public void close() {
         namedParamSqlCache.clear();
         namedParamIndexPropCache.clear();
-        try {
-            clearStatementCache();
-        }
-        finally {
-            if (useConnection != null) {
-                try {
-                    useConnection.close();
-                }
-                catch (SQLException e) {
-                    LOG.finest("Caught exception closing connection: " + e.getMessage());
-                }
+        clearStatementCache();
+        if (useConnection != null) {
+            try {
+                useConnection.close();
+            }
+            catch (SQLException e) {
+                LOG.finest("Caught exception closing connection: " + e.getMessage());
             }
         }
     }
