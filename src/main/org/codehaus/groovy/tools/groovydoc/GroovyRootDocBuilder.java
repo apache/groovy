@@ -151,8 +151,10 @@ public class GroovyRootDocBuilder {
         setOverview();
 
         List<File> sourcepathFiles = new ArrayList<File>();
-        for (String sourcepath : sourcepaths) {
-            sourcepathFiles.add(new File(sourcepath).getAbsoluteFile());
+        if (sourcepaths != null) {
+            for (String sourcepath : sourcepaths) {
+                sourcepathFiles.add(new File(sourcepath).getAbsoluteFile());
+            }
         }
 
         for (String filename : filenames) {
