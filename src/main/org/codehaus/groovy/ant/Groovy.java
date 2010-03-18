@@ -475,9 +475,11 @@ public class Groovy extends Java {
         }
         String groovyHome = null;
         final String[] strings = getSysProperties().getVariables();
-        for (String prop : strings) {
-            if (prop.startsWith("-Dgroovy.home=")) {
-                groovyHome = prop.substring("-Dgroovy.home=".length());
+        if (strings != null) {
+            for (String prop : strings) {
+                if (prop.startsWith("-Dgroovy.home=")) {
+                    groovyHome = prop.substring("-Dgroovy.home=".length());
+                }
             }
         }
         if (groovyHome == null) {
