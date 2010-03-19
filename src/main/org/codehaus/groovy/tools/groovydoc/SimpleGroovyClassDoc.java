@@ -602,7 +602,8 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
     }
 
     public String qualifiedTypeName() {
-        return fullPathName == null ? "null" : fullPathName.replace('/', '.');
+        String qtnWithSlashes = fullPathName.startsWith("DefaultPackage/") ? fullPathName.substring("DefaultPackage/".length()) : fullPathName;
+        return qtnWithSlashes.replace('/', '.');
     }
 
     // TODO remove dupe with SimpleGroovyType

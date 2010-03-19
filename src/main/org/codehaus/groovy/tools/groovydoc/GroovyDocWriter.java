@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.tools.groovydoc;
 
+import java.io.File;
 import java.util.Arrays;
 import java.util.Iterator;
 
@@ -52,6 +53,7 @@ public class GroovyDocWriter {
 
     public void writePackages(GroovyRootDoc rootDoc, String destdir) throws Exception {
         for (GroovyPackageDoc packageDoc : Arrays.asList(rootDoc.specifiedPackages())) {
+            if (new File(packageDoc.name()).isAbsolute()) continue;
             output.makeOutputArea(destdir + FS + packageDoc.name());
             writePackageToOutput(packageDoc, destdir);
         }

@@ -45,6 +45,8 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     private boolean insideEnum;
     private Map<String, SimpleGroovyClassDoc> foundClasses;
     private boolean isGroovy;
+    private boolean deferSetup;
+    private String className;
 
     public SimpleGroovyClassDocAssembler(String packagePath, String file, SourceBuffer sourceBuffer, List<LinkArgument> links, Properties properties, boolean isGroovy) {
         this.sourceBuffer = sourceBuffer;
@@ -55,14 +57,20 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
 
         stack = new Stack<GroovySourceAST>();
         classDocs = new HashMap<String, GroovyClassDoc>();
-        String className = file;
+        className = file;
         if (file != null) {
             // todo: replace this simple idea of default class name
             int idx = file.lastIndexOf(".");
             className = file.substring(0, idx);
         }
 
+        deferSetup = packagePath.equals("DefaultPackage");
         importedClassesAndPackages = new ArrayList<String>();
+        if (!deferSetup) setUpImports(packagePath, links, isGroovy, className);
+        lastLineCol = new LineColumn(1, 1);
+    }
+
+    private void setUpImports(String packagePath, List<LinkArgument> links, boolean isGroovy, String className) {
         importedClassesAndPackages.add(packagePath + "/*");  // everything in this package
         if (isGroovy) {
             for (String pkg : ResolveVisitor.DEFAULT_IMPORTS) {
@@ -74,7 +82,6 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         SimpleGroovyClassDoc currentClassDoc = new SimpleGroovyClassDoc(importedClassesAndPackages, className, links);
         currentClassDoc.setFullPathName(packagePath + FS + className);
         classDocs.put(currentClassDoc.getFullPathName(), currentClassDoc);
-        lastLineCol = new LineColumn(1, 1);
     }
 
     public Map<String, GroovyClassDoc> getGroovyClassDocs() {
@@ -126,6 +133,14 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 parent.addNested(current);
                 current.setOuter(parent);
             }
+        }
+    }
+
+    @Override
+    public void visitPackageDef(GroovySourceAST t, int visit) {
+        if (visit == OPENING_VISIT && deferSetup) {
+            String packageWithSlashes = extractImportPath(t);
+            setUpImports(packageWithSlashes, links, isGroovy, className);
         }
     }
 

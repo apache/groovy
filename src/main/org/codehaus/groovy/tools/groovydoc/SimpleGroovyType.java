@@ -33,7 +33,7 @@ public class SimpleGroovyType implements GroovyType {
     }
 
     public String qualifiedTypeName() {
-        return typeName;
+        return typeName.startsWith("DefaultPackage.") ? typeName.substring("DefaultPackage.".length()) : typeName;
     }
 
     public String simpleTypeName() {
