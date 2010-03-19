@@ -24,7 +24,6 @@ import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
-import org.codehaus.groovy.ast.expr.ConstructorCallExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
 import org.codehaus.groovy.ast.expr.Expression;
 import org.codehaus.groovy.ast.expr.GStringExpression;
@@ -225,14 +224,6 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
 
     protected SourceUnit getSourceUnit() {
         return source;
-    }
-
-    public void visitConstructorCallExpression(ConstructorCallExpression call) {
-        ClassNode type = call.getType();
-        if (Modifier.isAbstract(type.getModifiers())) {
-            addError("You cannot create an instance from the abstract " + getDescription(type) + ".", call);
-        }
-        super.visitConstructorCallExpression(call);
     }
 
     public void visitMethod(MethodNode node) {

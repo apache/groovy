@@ -32,6 +32,7 @@ import java.io.File;
 import java.io.IOException;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
+import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
@@ -1015,12 +1016,19 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
     protected Expression transformConstructorCallExpression(ConstructorCallExpression cce) {
         ClassNode type = cce.getType();
         resolveOrFail(type, cce);
+        if (Modifier.isAbstract(type.getModifiers())) {
+            addError("You cannot create an instance from the abstract " + getDescription(type) + ".", cce);
+        }
         isSpecialConstructorCall = cce.isSpecialCall();
         Expression ret = cce.transformExpression(this);
         isSpecialConstructorCall = false;
         return ret;
     }
 
+    private String getDescription(ClassNode node) {
+        return (node.isInterface() ? "interface" : "class") + " '" + node.getName() + "'";
+    }
+    
     protected Expression transformMethodCallExpression(MethodCallExpression mce) {
         Expression args = transform(mce.getArguments());
         Expression method = transform(mce.getMethod());
