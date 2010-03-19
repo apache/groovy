@@ -168,10 +168,15 @@ DETAIL:&nbsp;<%
 <HR>
 <!-- ======== START OF CLASS DATA ======== -->
 <H2>
+<%
+def pkg = classDoc.containingPackage().nameWithDots()
+if (pkg != "DefaultPackage") {
+%>
 <FONT SIZE="-1">
-${classDoc.containingPackage().nameWithDots()}</FONT>
+${pkg}</FONT>
 <BR>
-<FONT CLASS="ClassTitleFont">${classDoc.typeDescription} ${classDoc.name()}</FONT></H2>
+<% } %>
+<span CLASS="ClassTitleFont">${classDoc.typeDescription} ${classDoc.name()}</span></H2>
 <%
 def parents = classDoc.isInterface() ? classDoc.parentInterfaces : classDoc.parentClasses
 if (parents.size() >= 2) {

@@ -158,10 +158,15 @@ public class GroovyRootDocBuilder {
         }
 
         for (String filename : filenames) {
+            File srcFile = new File(filename);
+            if (srcFile.exists()) {
+                processFile(filename, srcFile, true);
+                continue;
+            }
             for (File spath : sourcepathFiles) {
-                File srcFile = new File(spath, filename);
+                srcFile = new File(spath, filename);
                 if (srcFile.exists()) {
-                    processFile(filename, srcFile);
+                    processFile(filename, srcFile, false);
                     break;
                 }
             }
@@ -180,15 +185,19 @@ public class GroovyRootDocBuilder {
         }
     }
 
-    private void processFile(String filename, File srcFile) throws IOException {
+    private void processFile(String filename, File srcFile, boolean isAbsolute) throws IOException {
         String src = DefaultGroovyMethods.getText(srcFile);
-        String packagePath = tool.getPath(filename).replace('\\', FS);
+        String packagePath = isAbsolute ? "DefaultPackage" : tool.getPath(filename).replace('\\', FS);
         String file = tool.getFile(filename);
-        SimpleGroovyPackageDoc packageDoc = (SimpleGroovyPackageDoc) rootDoc.packageNamed(packagePath);
-        if (packageDoc == null) {
-            packageDoc = new SimpleGroovyPackageDoc(packagePath);
+        SimpleGroovyPackageDoc packageDoc = null;
+        if (!isAbsolute) {
+            packageDoc = (SimpleGroovyPackageDoc) rootDoc.packageNamed(packagePath);
         }
+        // todo: this might not work correctly for absolute paths
         if (filename.endsWith("package.html") || filename.endsWith("package-info.java") || filename.endsWith("package-info.groovy")) {
+            if (packageDoc == null) {
+                packageDoc = new SimpleGroovyPackageDoc(packagePath);
+            }
             processPackageInfo(src, filename, packageDoc);
             rootDoc.put(packagePath, packageDoc);
             return;
@@ -196,6 +205,16 @@ public class GroovyRootDocBuilder {
         try {
             Map<String, GroovyClassDoc> classDocs = getClassDocsFromSingleSource(packagePath, file, src);
             rootDoc.putAllClasses(classDocs);
+            if (isAbsolute) {
+                final Map.Entry<String, GroovyClassDoc> docEntry = classDocs.entrySet().iterator().next();
+                String fullPath = docEntry.getValue().getFullPathName();
+                int slash = fullPath.lastIndexOf(FS);
+                if (slash > 0) packagePath = fullPath.substring(0, slash);
+                packageDoc = (SimpleGroovyPackageDoc) rootDoc.packageNamed(packagePath);
+            }
+            if (packageDoc == null) {
+                packageDoc = new SimpleGroovyPackageDoc(packagePath);
+            }
             packageDoc.putAll(classDocs);
             rootDoc.put(packagePath, packageDoc);
         } catch (RecognitionException e) {

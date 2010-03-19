@@ -461,6 +461,7 @@ $Date$
                 <include name="groovy/ui/**/*.png"/>
                 <include name="groovy/inspect/swingui/AstBrowserProperties.groovy"/>
                 <include name="org/codehaus/groovy/tools/shell/**/*.properties"/>
+                <include name="org/codehaus/groovy/tools/groovydoc/**/*.properties"/>
                 <include name="org/codehaus/groovy/tools/shell/**/*.xml"/>
                 <include name="org/codehaus/groovy/antlib.xml"/>
             </fileset>
@@ -652,6 +653,12 @@ $Date$
             <filterset>
                 <filter token="GROOVYJAR" value="groovy-${groovyVersion}.jar"/>
             </filterset>
+        </copy>
+        <!-- icon -->
+        <copy todir="${installDirectory}/bin" flatten="true">
+            <fileset dir="${toolsSourceDirectory}">
+                <include name="org/codehaus/groovy/tools/groovy.ico"/>
+            </fileset>
         </copy>
 
         <!-- Tweak scripts for platform compatibility -->
