@@ -33,7 +33,7 @@ class MarkupBuilderTest extends BuilderTestSupport {
         xml = new MarkupBuilder(writer)
     }
 
-    private assertExpectedXml(expectedXml) {
+    private assertExpectedXmlDefault(expectedXml) {
         checkXml expectedXml, writer
     }
 
@@ -199,31 +199,31 @@ class MarkupBuilderTest extends BuilderTestSupport {
          em(aValue)
       }
 
-      assertExpectedXml '<p><em>call to outside</em></p>'
+      assertExpectedXmlDefault '<p><em>call to outside</em></p>'
     }
 
     void testOmitAttributeSettingsKeepBothDefaultCase() {
         xml.element(att1:null, att2:'')
-        assertExpectedXml "<element att1='' att2='' />"
+        assertExpectedXmlDefault "<element att1='' att2='' />"
     }
 
     void testOmitAttributeSettingsOmitNullKeepEmpty() {
         xml.omitNullAttributes = true
         xml.element(att1:null, att2:'')
-        assertExpectedXml "<element att2='' />"
+        assertExpectedXmlDefault "<element att2='' />"
     }
 
     void testOmitAttributeSettingsKeepNullOmitEmpty() {
         xml.omitEmptyAttributes = true
         xml.element(att1:null, att2:'')
-        assertExpectedXml "<element att1='' />"
+        assertExpectedXmlDefault "<element att1='' />"
     }
 
     void testOmitAttributeSettingsOmitBoth() {
         xml.omitEmptyAttributes = true
         xml.omitNullAttributes = true
         xml.element(att1:null, att2:'')
-        assertExpectedXml "<element />"
+        assertExpectedXmlDefault "<element />"
     }
 
     void testWithIndentPrinter() {
@@ -238,8 +238,14 @@ class MarkupBuilderTest extends BuilderTestSupport {
     }
 
     protected assertExpectedXml(Closure markup, String expectedXml) {
+        assertExpectedXml markup, null, expectedXml
+    }
+
+    protected assertExpectedXml(Closure markup, Closure configureBuilder, String expectedXml) {
         def writer = new StringWriter()
-        markup.delegate = new MarkupBuilder(writer)
+        def builder = new MarkupBuilder(writer)
+        if (configureBuilder) configureBuilder(builder)
+        markup.delegate = builder
         markup()
         checkXml(expectedXml, writer)
     }

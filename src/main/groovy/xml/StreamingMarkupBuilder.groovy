@@ -46,6 +46,8 @@ import groovy.xml.streamingmarkupsupport.BaseMarkupBuilder
  *
  */
 class StreamingMarkupBuilder extends AbstractStreamingBuilder {
+    boolean useDoubleQuotes = false
+    def getQt() { useDoubleQuotes ? '"' : "'" }
     def pendingStack = []
     
     /**
@@ -66,10 +68,10 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
             if (instruction instanceof Map) {
                 out.unescaped() << target
                 instruction.each {name, value ->
-                    if (value.toString().contains('"')) {
-                        out.unescaped() << " $name='$value'"
-                    } else {
+                    if (value.toString().contains('\'') || (useDoubleQuotes && !value.toString().contains('"'))) {
                         out.unescaped() << " $name=\"$value\""
+                    } else {
+                        out.unescaped() << " $name='$value'"
                     }
                 }
             } else {
@@ -83,8 +85,8 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
      * Invoked by calling <code>mkp.xmlDeclaration</code>
      */
     def declarationClosure = {doc, pendingNamespaces, namespaces, namespaceSpecificTags, prefix, attrs, body, out ->
-        out.unescaped() << '<?xml version="1.0"'
-        if (out.encodingKnown) out.escaped() << " encoding=\"${out.encoding}\""
+        out.unescaped() << '<?xml version=' + qt + '1.0' + qt
+        if (out.encodingKnown) out.escaped() << " encoding=" + qt + out.encoding + qt
         out.unescaped() << '?>\n'
     }
 
@@ -139,11 +141,11 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
                 }
             }
 
-            out << " ${key}='"
+            out << " ${key}=" + qt
             out.writingAttribute = true
             "${value}".build(doc)
             out.writingAttribute = false
-            out << "'"
+            out << qt
         }
 
         def hiddenNamespaces = [:]
@@ -151,11 +153,11 @@ class StreamingMarkupBuilder extends AbstractStreamingBuilder {
         pendingNamespaces.each {key, value ->
             hiddenNamespaces[key] = namespaces[key]
             namespaces[key] = value
-            out << ((key == ":") ? " xmlns='" : " xmlns:${key}='")
+            out << ((key == ":") ? " xmlns=" + qt : " xmlns:${key}=" + qt)
             out.writingAttribute = true
             "${value}".build(doc)
             out.writingAttribute = false
-            out << "'"
+            out << qt
         }
 
         if (body == null) {

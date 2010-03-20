@@ -26,7 +26,12 @@ package groovy.xml
 class StreamingMarkupBuilderTest extends BuilderTestSupport {
 
     protected assertExpectedXml(Closure markup, String expectedXml) {
+        assertExpectedXml markup, null, expectedXml
+    }
+
+    protected assertExpectedXml(Closure markup, Closure configureBuilder, String expectedXml) {
         def builder = new StreamingMarkupBuilder()
+        if (configureBuilder) configureBuilder(builder)
         def writer = new StringWriter()
         writer << builder.bind(markup)
         checkXml(expectedXml, writer)

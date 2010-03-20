@@ -29,6 +29,8 @@ abstract class BuilderTestSupport extends GroovyTestCase {
 
     protected abstract assertExpectedXml(Closure markup, String expectedXml)
 
+    protected abstract assertExpectedXml(Closure markup, Closure configureBuilder, String expectedXml)
+
     protected checkXml(String expectedXml, StringWriter writer) {
         XMLUnit.ignoreWhitespace = true
         def xmlDiff = new Diff(expectedXml, writer.toString())
@@ -40,6 +42,13 @@ abstract class BuilderTestSupport extends GroovyTestCase {
             a(href: "http://groovy.codehaus.org", "groovy")
         }
         assertExpectedXml m, "<a href='http://groovy.codehaus.org'>groovy</a>"
+    }
+
+    void testHrefDoubleQuotes() {
+        def m = {
+            a(href: "http://groovy.codehaus.org", "groovy")
+        }
+        assertExpectedXml m, { it.useDoubleQuotes = true }, '<a href="http://groovy.codehaus.org">groovy</a>'
     }
 
     void testTree() {
