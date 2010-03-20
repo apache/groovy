@@ -12,7 +12,7 @@ class Groovy_2473Bug extends GroovyTestCase {
         a("\u0083")
       }
   
-      assertEquals('<?xml version="1.0"?>\n<a>&#x83;</a>', w.toString())
+      assertEquals("<?xml version='1.0'?>\n<a>&#x83;</a>", w.toString())
       
       b.encoding = "UTF-8"
       
@@ -23,6 +23,6 @@ class Groovy_2473Bug extends GroovyTestCase {
         a("\u0083")
       }
   
-      assertEquals('<?xml version="1.0" encoding="UTF-8"?>\n<a>\u0083</a>', w.toString())
+      assertEquals("<?xml version='1.0' encoding='UTF-8'?>\n<a>\u0083</a>", w.toString())
     }
 }
