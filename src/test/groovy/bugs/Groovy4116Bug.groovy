@@ -38,4 +38,26 @@ class Groovy4116Bug extends GroovyTestCase {
             assert syntaxError.message.contains('The method foo should be public as it implements the corresponding method from interface I4116')
         }
     }
+
+    void testAnInterfaceMethodNotImplementedPublicV2SuperClassInterface() {
+        try {
+            new GroovyShell().parse """
+                abstract class S4116V2 implements I4116V2 { }
+                class C4116V2 extends S4116V2 {
+                    protected foo() {}
+                }
+                
+                interface I4116V2 {
+                    def foo()
+                }
+                
+                def c = new C4116V2()
+                c.foo()
+            """
+            fail('The compilation should have failed as the interface method is not implemented as public')
+        } catch (MultipleCompilationErrorsException e) {
+            def syntaxError = e.errorCollector.getSyntaxError(0)
+            assert syntaxError.message.contains('The method foo should be public as it implements the corresponding method from interface I4116')
+        }
+    }
 }

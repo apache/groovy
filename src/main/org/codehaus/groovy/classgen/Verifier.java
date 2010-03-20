@@ -871,27 +871,32 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         // unimplemented abstract methods from interfaces
         Map abstractMethods = new HashMap();
+        Map<String, MethodNode> allInterfaceMethods = new HashMap<String, MethodNode>();
         ClassNode[] interfaces = classNode.getInterfaces();
         for (int i = 0; i < interfaces.length; i++) {
             ClassNode iface = interfaces[i];
             Map ifaceMethodsMap = iface.getDeclaredMethodsMap();
             abstractMethods.putAll(ifaceMethodsMap);
+            allInterfaceMethods.putAll(ifaceMethodsMap);
         }
+        
+        collectSuperInterfaceMethods(classNode, allInterfaceMethods);
         
         List declaredMethods = new ArrayList(classNode.getMethods());
         // remove all static, private and package private methods
         for (Iterator methodsIterator = declaredMethods.iterator(); methodsIterator.hasNext();) {
             MethodNode m = (MethodNode) methodsIterator.next();
-            MethodNode removed = (MethodNode) abstractMethods.remove(m.getTypeDescriptor());
-            if(removed != null && !m.isPublic() && !m.isStaticConstructor()) {
-                throw new RuntimeParserException("The method " + m.getName() +
-                        " should be public as it implements the corresponding method from interface " + 
-                        removed.getDeclaringClass(), m);
-            	
-            }
+            abstractMethods.remove(m.getTypeDescriptor());
             if (m.isStatic() || !(m.isPublic() || m.isProtected())) {
                 methodsIterator.remove();
-            } 
+            }
+            MethodNode intfMethod = allInterfaceMethods.get(m.getTypeDescriptor());
+            if(intfMethod != null && !m.isPublic() && !m.isStaticConstructor()) {
+                throw new RuntimeParserException("The method " + m.getName() +
+                        " should be public as it implements the corresponding method from interface " + 
+                        intfMethod.getDeclaringClass(), m);
+            	
+            }
         }
         
         addCovariantMethods(classNode, declaredMethods, abstractMethods, methodsToAdd, genericsSpec);
@@ -912,6 +917,22 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             if (mn!=null && mn.getDeclaringClass().equals(classNode)) continue;
             classNode.addMethod(method);
         }
+    }
+    
+    private void collectSuperInterfaceMethods(ClassNode cn, Map allInterfaceMethods) {
+    	List cnInterfaces = Arrays.asList(cn.getInterfaces());
+    	ClassNode sn = cn.getSuperClass(); 
+    	while(!sn.equals(ClassHelper.OBJECT_TYPE)) {
+            ClassNode[] interfaces = sn.getInterfaces();
+            for (int i = 0; i < interfaces.length; i++) {
+                ClassNode iface = interfaces[i];
+                if(!cnInterfaces.contains(iface)) {
+                    Map ifaceMethodsMap = iface.getDeclaredMethodsMap();
+                    allInterfaceMethods.putAll(ifaceMethodsMap);
+                }
+            }
+            sn = sn.getSuperClass();
+    	}
     }
     
     private void addCovariantMethods(ClassNode classNode, List declaredMethods, Map abstractMethods, Map methodsToAdd, Map oldGenericsSpec) {
