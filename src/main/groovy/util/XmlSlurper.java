@@ -53,10 +53,10 @@ import org.xml.sax.helpers.DefaultHandler;
  * expressions.  For example:</p>
  * <pre>
  * def rootNode = new XmlSlurper().parseText( 
- *    '&lt;root&gt;&lt;one a1="uno!" /&gt;&lt;two&gt;Some text!&lt;/two&gt;&lt;/root&gt;' )
+ *    '&lt;root&gt;&lt;one a1="uno!"/&gt;&lt;two&gt;Some text!&lt;/two&gt;&lt;/root&gt;' )
  *    
  * assert rootNode.name() == 'root'
- * assert rootNode.one.@a1 == 'uno!'
+ * assert rootNode.one[0].@a1 == 'uno!'
  * assert rootNode.two.text() == 'Some text!'
  * rootNode.children().each { assert it.name() in ['one','two'] }  
  * </pre>

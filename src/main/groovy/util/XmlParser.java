@@ -36,6 +36,16 @@ import java.util.Map;
  * the XML into a Node for each element in the XML with attributes
  * and child Nodes and Strings. This simple model is sufficient for
  * most simple use cases of processing XML.
+ * <p/>
+ * Example usage:
+ * <pre>
+ * def xml = '&lt;root&gt;&lt;one a1="uno!"/&gt;&lt;two&gt;Some text!&lt;/two&gt;&lt;/root&gt;'
+ * def rootNode = new XmlParser().parseText(xml)
+ * assert rootNode.name() == 'root'
+ * assert rootNode.one[0].@a1 == 'uno!'
+ * assert rootNode.two.text() == 'Some text!'
+ * rootNode.children().each { assert it.name() in ['one','two'] }
+ * </pre>
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Paul King
