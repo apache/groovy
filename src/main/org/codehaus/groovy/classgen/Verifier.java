@@ -882,7 +882,13 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         // remove all static, private and package private methods
         for (Iterator methodsIterator = declaredMethods.iterator(); methodsIterator.hasNext();) {
             MethodNode m = (MethodNode) methodsIterator.next();
-            abstractMethods.remove(m.getTypeDescriptor());
+            MethodNode removed = (MethodNode) abstractMethods.remove(m.getTypeDescriptor());
+            if(removed != null && !m.isPublic() && !m.isStaticConstructor()) {
+                throw new RuntimeParserException("The method " + m.getName() +
+                        " should be public as it implements the corresponding method from interface " + 
+                        removed.getDeclaringClass(), m);
+            	
+            }
             if (m.isStatic() || !(m.isPublic() || m.isProtected())) {
                 methodsIterator.remove();
             } 
