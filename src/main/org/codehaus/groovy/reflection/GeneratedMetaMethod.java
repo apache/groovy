@@ -15,6 +15,7 @@
  */
 package org.codehaus.groovy.reflection;
 
+import groovy.lang.GroovyRuntimeException;
 import groovy.lang.MetaMethod;
 
 import java.lang.reflect.Modifier;
@@ -88,7 +89,7 @@ public abstract class GeneratedMetaMethod extends MetaMethod {
             }
             catch (Throwable t) {
                 t.printStackTrace();
-                System.exit(0);
+                throw new GroovyRuntimeException("Failed to create DGM method proxy : " + t, t);
             }
         }
     }
