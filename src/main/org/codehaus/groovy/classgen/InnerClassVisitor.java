@@ -421,7 +421,16 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
 			isInStaticContext = currentField.isStatic();
 		
 		// if constructor call is not in static context, return
-        if(isInStaticContext) return;
+        if(isInStaticContext) {
+        	// constructor call is in static context and the inner class is non-static - 1st arg is supposed to be 
+        	// passed as enclosing "this" instance
+        	//
+        	Expression args = call.getArguments();
+        	if(args instanceof TupleExpression && ((TupleExpression)args).getExpressions().isEmpty()) {
+        		addError("No enclosing instance passed in constructor call of a non-static inner class", call);
+        	}
+        	return;
+        }
 
         // calculate outer class which we need for this$0
         ClassNode parent = classNode;
