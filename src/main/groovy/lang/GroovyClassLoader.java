@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -38,10 +38,10 @@ import java.util.*;
 
 /**
  * A ClassLoader which can load Groovy classes. The loaded classes are cached,
- * classes from other classlaoders should not be cached. To be able to load a
+ * classes from other classloaders should not be cached. To be able to load a
  * script that was asked for earlier but was created later it is essential not
  * to keep anything like a "class not found" information for that class name.
- * This includes possible parent loaders. Classes that are not chached are always
+ * This includes possible parent loaders. Classes that are not cached are always
  * reloaded.
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
@@ -103,7 +103,7 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     /**
-     * creates a GroovyClassLaoder.
+     * creates a GroovyClassLoader.
      *
      * @param parent                    the parent class loader
      * @param config                    the compiler configuration
@@ -461,7 +461,7 @@ public class GroovyClassLoader extends URLClassLoader {
      * creates a ClassCollector for a new compilation.
      *
      * @param unit the compilationUnit
-     * @param su   the SoruceUnit
+     * @param su   the SourceUnit
      * @return the ClassCollector
      */
     protected ClassCollector createCollector(CompilationUnit unit, SourceUnit su) {
@@ -597,11 +597,11 @@ public class GroovyClassLoader extends URLClassLoader {
     }
 
     /**
-     * Indicates if a class is recompilable. Recompileable means, that the classloader
+     * Indicates if a class is recompilable. Recompilable means, that the classloader
      * will try to locate a groovy source file for this class and then compile it again,
      * adding the resulting class as entry to the cache. Giving null as class is like a
      * recompilation, so the method should always return true here. Only classes that are
-     * implementing GroovyObject are compileable and only if the timestamp in the class
+     * implementing GroovyObject are compilable and only if the timestamp in the class
      * is lower than Long.MAX_VALUE.
      * <p/>
      * NOTE: First the parent loaders will be asked and only if they don't return a
@@ -801,7 +801,7 @@ public class GroovyClassLoader extends URLClassLoader {
         try {
             decodedFile = URLDecoder.decode(fileName, "UTF-8");
         } catch (UnsupportedEncodingException e) {
-            System.err.println("Encounted an invalid encoding scheme when trying to use URLDecoder.decode() inside of the GroovyClassLoader.decodeFileName() method.  Returning the unencoded URL.");
+            System.err.println("Encountered an invalid encoding scheme when trying to use URLDecoder.decode() inside of the GroovyClassLoader.decodeFileName() method.  Returning the unencoded URL.");
             System.err.println("Please note that if you encounter this error and you have spaces in your directory you will run into issues.  Refer to GROOVY-1787 for description of this bug.");
         }
 
