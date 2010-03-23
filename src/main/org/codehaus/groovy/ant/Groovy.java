@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -102,6 +102,7 @@ public class Groovy extends Java {
     private CompilerConfiguration configuration = new CompilerConfiguration();
 
     private Commandline cmdline = new Commandline();
+    private boolean contextClassLoader;
 
     /**
      * Should the script be executed using a forked process. Defaults to false.
@@ -375,8 +376,14 @@ public class Groovy extends Java {
         Object mavenPom = null;
         final Project project = getProject();
         final ClassLoader baseClassLoader;
+        ClassLoader savedLoader = null;
+        final Thread thread = Thread.currentThread();
+        boolean maven = "org.apache.commons.grant.GrantProject".equals(project.getClass().getName());
         // treat the case Ant is run through Maven, and
-        if ("org.apache.commons.grant.GrantProject".equals(project.getClass().getName())) {
+        if (maven) {
+            if (contextClassLoader) {
+                throw new BuildException("Using setContextClassLoader not permitted when using Maven.", getLocation());
+            }
             try {
                 final Object propsHandler = project.getClass().getMethod("getPropsHandler").invoke(project);
                 final Field contextField = propsHandler.getClass().getDeclaredField("context");
@@ -387,13 +394,15 @@ public class Groovy extends Java {
             catch (Exception e) {
                 throw new BuildException("Impossible to retrieve Maven's Ant project: " + e.getMessage(), getLocation());
             }
-            // let ASM lookup "root" classloader
-            Thread.currentThread().setContextClassLoader(GroovyShell.class.getClassLoader());
             // load groovy into "root.maven" classloader instead of "root" so that
             // groovy script can access Maven classes
             baseClassLoader = mavenPom.getClass().getClassLoader();
         } else {
             baseClassLoader = GroovyShell.class.getClassLoader();
+        }
+        if (contextClassLoader || maven) {
+            savedLoader = thread.getContextClassLoader();
+            thread.setContextClassLoader(GroovyShell.class.getClassLoader());
         }
 
         final String scriptName = computeScriptName();
@@ -401,7 +410,11 @@ public class Groovy extends Java {
         addClassPathes(classLoader);
 
         final GroovyShell groovy = new GroovyShell(classLoader, new Binding(), configuration);
-        parseAndRunScript(groovy, txt, mavenPom, scriptName, null, new AntBuilder(this));
+        try {
+            parseAndRunScript(groovy, txt, mavenPom, scriptName, null, new AntBuilder(this));
+        } finally {
+            if (contextClassLoader || maven) thread.setContextClassLoader(savedLoader);
+        }
     }
 
     private void parseAndRunScript(GroovyShell shell, String txt, Object mavenPom, String scriptName, File scriptFile, AntBuilder builder) {
@@ -564,5 +577,17 @@ public class Groovy extends Java {
         StringBuffer line = new StringBuffer();
         out.println(line);
         out.println();
+    }
+
+    /**
+     * Setting to true will cause the contextClassLoader to be set with
+     * the classLoader of the shell used to run the script. Not used if
+     * fork is true. Not allowed when running from Maven but in that
+     * case the context classLoader is set appropriately for Maven.
+     *
+     * @param contextClassLoader set to true to set the context classloader
+     */
+    public void setContextClassLoader(boolean contextClassLoader) {
+        this.contextClassLoader = contextClassLoader;
     }
 }
