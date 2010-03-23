@@ -1673,7 +1673,7 @@ public class Sql {
      * configured using this closure. The statement being configured is passed into the closure
      * as its single argument, e.g.:
      * <pre>
-     * sql.withStatement{ stmt -> stmt.maxRows == 10 }
+     * sql.withStatement{ stmt -> stmt.maxRows = 10 }
      * def firstTenRows = sql.rows("select * from table")
      * </pre>
      *
