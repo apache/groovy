@@ -24,9 +24,9 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Class annotation used for making a class immutable.
+ * Class annotation used to assist in the creation of immutable classes.
  * <p/>
- * It allows you to write code snippets like this:
+ * It allows you to write classes in this shortened form:
  * <pre>
  * {@code @Immutable} class Customer {
  *     String first, last
@@ -39,16 +39,27 @@ import java.lang.annotation.Target;
  * def c2 = new Customer('Tom', 'Jones', 21, d, ['Books', 'Games'])
  * assert c1 == c2
  * </pre>
+ * The @Immutable annotation instructs the compiler to execute an
+ * AST transformation which adds the necessary getters, constructors,
+ * equals, hashCode and other helper methods that are typically written
+ * when creating immutable classes with the defined properties.
+ * <p/>
  * A class created in this way has the following characteristics:
  * <ul>
  * <li>The class is automatically made final.
+ * <li>Properties must be of an immutable type or a type with a strategy for handling non-immutable
+ * characteristics. Specifically, the type must be one of the primitive or wrapper types, Strings, enums,
+ * other @Immutable classes or known immutables (e.g. java.awt.Color, java.net.URI). Also handled are
+ * Cloneable classes, collections, maps and arrays, and other "effectively immutable" classes with
+ * special handling (e.g. java.util.Date).
  * <li>Properties automatically have private, final backing fields with getters.
  * Attempts to update the property will result in a {@code ReadOnlyPropertyException}.
  * <li>A map-based constructor is provided which allows you to set properties by name.
  * <li>A tuple-style constructor is provided which allows you to set properties in the same order as they are defined.
  * <li>Default {@code equals}, {@code hashCode} and {@code toString} methods are provided based on the property values.
  * Though not normally required, you may write your own implementations of these methods. For {@code equals} and {@code hashCode},
- * if you do write your own method, it is up to you to obey the general contract for {@code equals} methods and supply a corresponding matching {@code hashCode} method.
+ * if you do write your own method, it is up to you to obey the general contract for {@code equals} methods and supply
+ * a corresponding matching {@code hashCode} method.
  * If you do provide one of these methods explicitly, the default implementation will be made available in a private
  * "underscore" variant which you can call. E.g., you could provide a (not very elegant) multi-line formatted
  * {@code toString} method for {@code Customer} above as follows:
@@ -92,11 +103,12 @@ import java.lang.annotation.Target;
  * http://bugs.sun.com/bugdatabase/view_bug.do?bug_id=6348370
  * </li>
  * <li>
- * {@code java.awt.Color} is treated as immutable but is not final so while not normally used with child
+ * {@code java.awt.Color} is treated as "effectively immutable" but is not final so while not normally used with child
  * classes, it isn't strictly immutable. Use at your own risk.
  * </li>
  * <li>
- * {@code java.util.Date} is treated as immutable but is not final so it isn't strictly immutable. Use at your own risk.
+ * {@code java.util.Date} is treated as "effectively immutable" but is not final so it isn't strictly immutable.
+ * Use at your own risk.
  * </li>
  * </ul>
  *

@@ -61,6 +61,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
             java.math.BigInteger.class,
             java.math.BigDecimal.class,
             java.awt.Color.class,
+            java.net.URI.class,
     };
     private static final Class MY_CLASS = Immutable.class;
     private static final ClassNode MY_TYPE = new ClassNode(MY_CLASS);
@@ -595,8 +596,8 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
                 prettyTypeName(typeName) + "' while " + mode + " class " + className + ".\n" +
                 MY_TYPE_NAME + " classes currently only support properties with known immutable types " +
                 "or types where special handling achieves immutable behavior, including:\n" +
-                "- Strings, primitive types, wrapper types, BigInteger and BigDecimal\n" +
-                "- enums, other " + MY_TYPE_NAME + " classes and known immutables (java.awt.Color)\n" +
+                "- Strings, primitive types, wrapper types, BigInteger and BigDecimal, enums\n" +
+                "- other " + MY_TYPE_NAME + " classes and known immutables (java.awt.Color, java.net.URI)\n" +
                 "- Cloneable classes, collections, maps and arrays, and other classes with special handling (java.util.Date)\n" +
                 "Other restrictions apply, please see the groovydoc for " + MY_TYPE_NAME + " for further details";
     }
