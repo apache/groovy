@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -36,6 +36,7 @@ import org.codehaus.groovy.control.CompilationUnit;
 import org.codehaus.groovy.control.CompilerConfiguration;
 import org.codehaus.groovy.tools.ErrorReporter;
 import org.codehaus.groovy.tools.FileSystemCompiler;
+import org.codehaus.groovy.tools.RootLoader;
 import org.codehaus.groovy.tools.javac.JavaAwareCompilationUnit;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
@@ -44,6 +45,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.StringWriter;
+import java.net.URL;
 import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -153,7 +155,7 @@ public class Groovyc extends MatchingTask {
     /**
      * Gets the source dirs to find the source java files.
      *
-     * @return the source directorys as a path
+     * @return the source directories as a path
      */
     public Path getSrcdir() {
         return src;
@@ -267,6 +269,7 @@ public class Groovyc extends MatchingTask {
 
     /**
      * If true, list the source files being handed off to the compiler.
+     * Default is false.
      *
      * @param list if true list the source files
      */
@@ -371,7 +374,7 @@ public class Groovyc extends MatchingTask {
 
     /**
      * Enable verbose compiling which will display which files
-     * are being compiled
+     * are being compiled. Default is false.
      */
     public void setVerbose(boolean verbose) {
         this.verbose = verbose;
@@ -387,7 +390,10 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
-     * If true, includes Ant's own classpath in the classpath.
+     * If true, includes Ant's own classpath in the classpath. Default is true.
+     * If setting to false and using groovyc in conjunction with AntBuilder
+     * you might need to explicitly add the Groovy jar(s) to the groovyc
+     * classpath using a nested classpath task.
      *
      * @param include if true, includes Ant's own classpath in the classpath
      */
@@ -405,7 +411,7 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
-     * If true, includes the Java runtime libraries in the classpath.
+     * If true, includes the Java runtime libraries in the classpath. Default is false.
      *
      * @param include if true, includes the Java runtime libraries in the classpath
      */
@@ -424,7 +430,7 @@ public class Groovyc extends MatchingTask {
     }
 
     /**
-     * If true forks the Groovy compiler.
+     * If true forks the Groovy compiler. Default is false.
      *
      * @param f "true|false|on|off|yes|no"
      */
@@ -511,7 +517,7 @@ public class Groovyc extends MatchingTask {
 
     /**
      * Enable compiler to report stack trace information if a problem occurs
-     * during compilation.
+     * during compilation. Default is false.
      */
     public void setStacktrace(boolean stacktrace) {
         this.stacktrace = stacktrace;
@@ -865,7 +871,9 @@ public class Groovyc extends MatchingTask {
 
 
     protected GroovyClassLoader buildClassLoaderFor() {
-        ClassLoader parent = this.getClass().getClassLoader();
+        ClassLoader parent = getIncludeantruntime()
+                ? getClass().getClassLoader()
+                : new AntClassLoader(new RootLoader(new URL[0], null), getProject(), getClasspath());
         if (parent instanceof AntClassLoader) {
             AntClassLoader antLoader = (AntClassLoader) parent;
             String[] pathElm = antLoader.getClasspath().split(File.pathSeparator);
