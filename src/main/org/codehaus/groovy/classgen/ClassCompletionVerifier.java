@@ -18,10 +18,12 @@ import java.util.List;
 import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
 import org.codehaus.groovy.ast.ClassHelper;
 import org.codehaus.groovy.ast.ClassNode;
+import org.codehaus.groovy.ast.ConstructorNode;
 import org.codehaus.groovy.ast.FieldNode;
 import org.codehaus.groovy.ast.MethodNode;
 import org.codehaus.groovy.ast.Parameter;
 import org.codehaus.groovy.ast.PropertyNode;
+import org.codehaus.groovy.ast.Variable;
 import org.codehaus.groovy.ast.expr.BinaryExpression;
 import org.codehaus.groovy.ast.expr.ConstantExpression;
 import org.codehaus.groovy.ast.expr.DeclarationExpression;
@@ -30,6 +32,7 @@ import org.codehaus.groovy.ast.expr.GStringExpression;
 import org.codehaus.groovy.ast.expr.MapEntryExpression;
 import org.codehaus.groovy.ast.expr.MethodCallExpression;
 import org.codehaus.groovy.ast.expr.TupleExpression;
+import org.codehaus.groovy.ast.expr.VariableExpression;
 import org.codehaus.groovy.ast.stmt.CatchStatement;
 import org.codehaus.groovy.control.SourceUnit;
 import org.objectweb.asm.Opcodes;
@@ -43,6 +46,8 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
 
     private ClassNode currentClass;
     private SourceUnit source;
+    private boolean inConstructor = false;
+    private boolean inStaticConstructor = false;
 
     public ClassCompletionVerifier(SourceUnit source) {
         this.source = source;
@@ -227,6 +232,8 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
     }
 
     public void visitMethod(MethodNode node) {
+    	inConstructor = false;
+    	inStaticConstructor = node.isStaticConstructor();
         checkAbstractDeclaration(node);
         checkRepetitiveMethod(node);
         checkOverloadingPrivateAndPublic(node);
@@ -338,8 +345,54 @@ public class ClassCompletionVerifier extends ClassCodeVisitorSupport {
                     expression.getRightExpression());
         }
         super.visitBinaryExpression(expression);
+
+        switch (expression.getOperation().getType()){
+	        case Types.EQUAL: // = assignment
+	        case Types.BITWISE_AND_EQUAL:
+	        case Types.BITWISE_OR_EQUAL:
+	        case Types.BITWISE_XOR_EQUAL:
+	        case Types.PLUS_EQUAL:
+	        case Types.MINUS_EQUAL:
+	        case Types.MULTIPLY_EQUAL:
+	        case Types.DIVIDE_EQUAL:
+	        case Types.INTDIV_EQUAL:
+	        case Types.MOD_EQUAL:
+	        case Types.POWER_EQUAL:
+	        case Types.LEFT_SHIFT_EQUAL:
+	        case Types.RIGHT_SHIFT_EQUAL:
+	        case Types.RIGHT_SHIFT_UNSIGNED_EQUAL:
+	            checkFinalFieldAccess(expression.getLeftExpression());
+	            break;
+	        default: break;
+        }
     }
 
+    private void checkFinalFieldAccess(Expression expression) {
+        if (!(expression instanceof VariableExpression)) return;
+        VariableExpression ve = (VariableExpression) expression;
+        Variable v = ve.getAccessedVariable();
+        if (v instanceof FieldNode) {
+            FieldNode fn = (FieldNode) v;
+            int modifiers = fn.getModifiers();
+
+            /*
+             *  if it is static final but not accessed inside a static constructor, or,
+             *  if it is an instance final but not accessed inside a instance constructor, it is an error
+             */
+            boolean isFinal = (modifiers & Opcodes.ACC_FINAL) != 0;
+            boolean isStatic = (modifiers & Opcodes.ACC_STATIC) != 0;
+            boolean error = isFinal && ((isStatic && !inStaticConstructor) || (!isStatic && !inConstructor));
+
+            if (error) addError("cannot modify" + (isStatic ? " static" : "") + " final field '" + fn.getName() +
+                    "' outside of " + (isStatic ? "static initialization block." : "constructor."), expression);
+        }
+    }
+
+    public void visitConstructor(ConstructorNode node) {
+    	inConstructor = true;
+    	inStaticConstructor = node.isStaticConstructor();
+        super.visitConstructor(node);
+    }
     public void visitCatchStatement(CatchStatement cs) {
         if (!(cs.getExceptionType().isDerivedFrom(ClassHelper.make(Throwable.class)))) {
             addError("Catch statement parameter type is not a subclass of Throwable.", cs);
