@@ -2191,6 +2191,17 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
                     configureAST(attributeExpression, node);
                     return attributeExpression;
                 }
+                if (isType(SLIST, identifierNode)) {
+                    Statement code = statementList(identifierNode);
+                    ClosureExpression closureExpression = new ClosureExpression(Parameter.EMPTY_ARRAY, code);
+                    configureAST(closureExpression, identifierNode);
+                    final PropertyExpression propertyExpression = new PropertyExpression(leftExpression, closureExpression);
+                    if (node.getType() == SPREAD_DOT) {
+                        propertyExpression.setSpreadSafe(true);
+                    }
+                    configureAST(propertyExpression, node);
+                    return propertyExpression;
+                }
                 Expression property = expression(identifierNode,true);
                 
                 

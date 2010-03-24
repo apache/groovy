@@ -128,4 +128,33 @@ class Groovy4006Bug extends GroovyTestCase {
     		assert ex.message == 'V4 - Inner class now successfully refers to implicitly passed outer this reference!'
     	}
     }
+
+    void testOuterThisReferenceImplicitPassingToInnerClassConstructorWithArgInAProperty() {
+    	try {
+	        assertScript """
+				class MyOuterClass4006V5 {
+					def outerName = 'OC5'
+					def icProp = new MyInnerClass4006V5();
+					def foo() {
+						icProp.bar()
+					}
+					class MyInnerClass4006V5 {
+						MyInnerClass4006V5() {
+						}
+						def bar() {
+							assert this.outerName == 'OC5'
+							this.outerName = 'OC5New'
+							assert this.outerName == 'OC5New'
+							throw new RuntimeException('V5 - Inner class now successfully refers to implicitly passed outer this reference!')
+						}
+					}
+				}
+				def oc = new MyOuterClass4006V5()
+				oc.foo()
+	        """
+	        fail('The script run should have failed with RuntimeException, coming from bar() of inner class')
+    	} catch (RuntimeException ex) {
+    		assert ex.message == 'V5 - Inner class now successfully refers to implicitly passed outer this reference!'
+    	}
+    }
 }

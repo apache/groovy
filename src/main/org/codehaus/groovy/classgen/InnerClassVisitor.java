@@ -19,15 +19,7 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.codehaus.groovy.ast.ClassCodeVisitorSupport;
-import org.codehaus.groovy.ast.ClassHelper;
-import org.codehaus.groovy.ast.ClassNode;
-import org.codehaus.groovy.ast.ConstructorNode;
-import org.codehaus.groovy.ast.FieldNode;
-import org.codehaus.groovy.ast.InnerClassNode;
-import org.codehaus.groovy.ast.MethodNode;
-import org.codehaus.groovy.ast.Parameter;
-import org.codehaus.groovy.ast.VariableScope;
+import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.BlockStatement;
 import org.codehaus.groovy.ast.stmt.ExpressionStatement;
@@ -48,8 +40,7 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
     private FieldNode thisField = null;
     private MethodNode currentMethod;
     private FieldNode currentField;
-    private boolean processingObjInitStatements = false;
-    
+
     public InnerClassVisitor(CompilationUnit cu, SourceUnit su) {
         sourceUnit = su;
     }
@@ -337,7 +328,15 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
     	super.visitField(node);
     	this.currentField = null;
     }
-    
+
+    public void visitProperty(PropertyNode node) {
+        final FieldNode field = node.getField();
+        final Expression init = field.getInitialExpression();
+        field.setInitialValueExpression(null);
+        super.visitProperty(node);
+        field.setInitialValueExpression(init);
+    }
+
     @Override
     public void visitConstructorCallExpression(ConstructorCallExpression call) {
         super.visitConstructorCallExpression(call);
@@ -422,6 +421,7 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
 	private void passThisReference(ConstructorCallExpression call) {
 		ClassNode cn = call.getType().redirect();
 		if(!shouldHandleImplicitThisForInnerClass(cn)) return;
+
 		boolean isInStaticContext = true;
 		if(currentMethod != null)
 			isInStaticContext = currentMethod.getVariableScope().isInStaticContext();
