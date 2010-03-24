@@ -48,6 +48,10 @@ public abstract class ClassCodeVisitorSupport extends CodeVisitorSupport impleme
         visitPackage(node.getPackage());
         visitImports(node.getModule());
         node.visitContents(this);
+        visitObjectInitializerStatements(node);
+    }
+    
+    protected void visitObjectInitializerStatements(ClassNode node) {
         for (Statement element : node.getObjectInitializerStatements()) {
             element.visit(this);
         }
