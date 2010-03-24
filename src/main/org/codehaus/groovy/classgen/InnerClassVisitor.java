@@ -48,6 +48,7 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
     private FieldNode thisField = null;
     private MethodNode currentMethod;
     private FieldNode currentField;
+    private boolean processingObjInitStatements = false;
     
     public InnerClassVisitor(CompilationUnit cu, SourceUnit su) {
         sourceUnit = su;
@@ -89,6 +90,12 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
             node.setUnresolvedSuperClass(ClassHelper.OBJECT_TYPE);
         }         
         addDefaultMethods(innerClass);
+    }
+    
+    protected void visitObjectInitializerStatements(ClassNode node) {
+    	processingObjInitStatements = true;
+    	super.visitObjectInitializerStatements(node);
+    	processingObjInitStatements = false;
     }
     
     private boolean isStatic(InnerClassNode node) {
@@ -420,6 +427,8 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
 			isInStaticContext = currentMethod.getVariableScope().isInStaticContext();
 		else if(currentField != null)
 			isInStaticContext = currentField.isStatic();
+		else if(processingObjInitStatements)
+			isInStaticContext = false;
 		
 		// if constructor call is not in static context, return
         if(isInStaticContext) {
