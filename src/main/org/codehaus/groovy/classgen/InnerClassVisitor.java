@@ -40,6 +40,7 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
     private FieldNode thisField = null;
     private MethodNode currentMethod;
     private FieldNode currentField;
+    private boolean processingObjInitStatements;
 
     public InnerClassVisitor(CompilationUnit cu, SourceUnit su) {
         sourceUnit = su;
