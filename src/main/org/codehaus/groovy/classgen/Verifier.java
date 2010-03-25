@@ -903,7 +903,8 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 methodsIterator.remove();
             }
             MethodNode intfMethod = allInterfaceMethods.get(m.getTypeDescriptor());
-            if(intfMethod != null && !m.isPublic() && !m.isStaticConstructor()) {
+            if(intfMethod != null && ((m.getModifiers() & ACC_SYNTHETIC) == 0) 
+            		&& !m.isPublic() && !m.isStaticConstructor()) {
                 throw new RuntimeParserException("The method " + m.getName() +
                         " should be public as it implements the corresponding method from interface " +
                         intfMethod.getDeclaringClass(), m);
