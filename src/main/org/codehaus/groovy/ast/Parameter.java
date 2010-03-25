@@ -21,7 +21,7 @@ import org.codehaus.groovy.ast.expr.*;
 /**
  * Represents a parameter on a constructor or method call. The type name is
  * optional - it defaults to java.lang.Object if unknown.
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @version $Revision$
  */
@@ -43,7 +43,7 @@ public class Parameter extends AnnotatedNode implements Variable {
         this.setType(type);
         this.hasDefaultValue = false;
     }
-    
+
     public Parameter(ClassNode type, String name, Expression defaultValue) {
         this(type,name);
         this.defaultValue = defaultValue;
@@ -66,11 +66,11 @@ public class Parameter extends AnnotatedNode implements Variable {
         this.type = type;
         dynamicTyped |= type==ClassHelper.DYNAMIC_TYPE;
     }
-    
+
     public boolean hasInitialExpression() {
         return this.hasDefaultValue;
     }
-    
+
     /**
      * @return the default value expression for this parameter or null if
      * no default value is specified
@@ -78,16 +78,16 @@ public class Parameter extends AnnotatedNode implements Variable {
     public Expression getInitialExpression() {
         return defaultValue;
     }
-    
+
     public void setInitialExpression(Expression init) {
         defaultValue = init;
-        if (defaultValue==null) hasDefaultValue=false;
+        hasDefaultValue = defaultValue != null;
     }
-    
+
     public boolean isInStaticContext() {
         return inStaticContext;
     }
-    
+
     public void setInStaticContext(boolean inStaticContext) {
         this.inStaticContext = inStaticContext;
     }
@@ -101,7 +101,7 @@ public class Parameter extends AnnotatedNode implements Variable {
     }
 
     public void setClosureSharedVariable(boolean inClosure) {
-        closureShare = inClosure;        
+        closureShare = inClosure;
     }
 
 	public ClassNode getOriginType() {
