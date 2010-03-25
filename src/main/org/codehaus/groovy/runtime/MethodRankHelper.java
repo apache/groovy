@@ -163,6 +163,7 @@ public class MethodRankHelper{
      */
     private static List<MetaMethod> rankMethods(String name, Object[] arguments, List<MetaMethod> methods) {
         ArrayList<RankableMethod> rm = new ArrayList(methods.size());
+        if (arguments==null) arguments = new Object[0];
         Class[] ta = new Class[arguments.length];
     
         Class nullC =  NullObject.class;

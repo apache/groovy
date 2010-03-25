@@ -87,12 +87,11 @@ public class CompileStack implements Opcodes {
     private Map superBlockNamedLabels = new HashMap();
     // map containing named labels of current block
     private Map currentBlockNamedLabels = new HashMap();
-    // list containing runnables representing a finally block
+    // list containing finally blocks
     // such a block is created by synchronized or finally and
     // must be called for break/continue/return
-    private LinkedList finallyBlocks = new LinkedList();
-    // a list of blocks already visiting. 
-    private final List visitedBlocks = new LinkedList();
+    private LinkedList<BlockRecorder> finallyBlocks = new LinkedList<BlockRecorder>();
+    private LinkedList<BlockRecorder> visitedBlocks = new LinkedList<BlockRecorder>();
     
     private Label thisStartLabel, thisEndLabel;
 
@@ -112,20 +111,51 @@ public class CompileStack implements Opcodes {
     // in a loop where foo is a label.
 	private final Map namedLoopContinueLabel = new HashMap();
     private String className;
+    private LinkedList<ExceptionTableEntry> typedExceptions = new LinkedList<ExceptionTableEntry>();
+    private LinkedList<ExceptionTableEntry> untypedExceptions = new LinkedList<ExceptionTableEntry>();
+	    
+    
+    protected static class LabelRange {
+    	public Label start;
+    	public Label end;
+    }
+    
+    protected static class BlockRecorder {
+    	private boolean isEmpty = true;
+    	public Runnable excludedStatement;
+    	public LinkedList<LabelRange> ranges;
+    	public BlockRecorder() {
+    		ranges = new LinkedList<LabelRange>();
+    	}
+    	public BlockRecorder(Runnable excludedStatement) {
+    		this();
+    		this.excludedStatement = excludedStatement;
+    	}
+    	public void startRange(Label start) {
+    		LabelRange range = new LabelRange();
+    		range.start = start;
+    		ranges.add(range);
+    		isEmpty = false;
+    	}
+    	public void closeRange(Label end) {
+    		ranges.getLast().end = end;
+    	}
+    }
+    
+    private class ExceptionTableEntry {
+    	Label start,end,goal;
+    	String sig;
+    }
 	
     private class StateStackElement {
         final VariableScope scope;
         final Label continueLabel;
         final Label breakLabel;
-        Label finallyLabel;
         final int lastVariableIndex;
         final int nextVariableIndex;
         final Map stackVariables;
-        List temporaryVariables = new LinkedList();
-        List usedVariables = new LinkedList();
-        final Map superBlockNamedLabels;
         final Map currentBlockNamedLabels;
-        final LinkedList finallyBlocks;
+        final LinkedList<BlockRecorder> finallyBlocks;
         
         StateStackElement() {
             scope = CompileStack.this.scope;
@@ -133,9 +163,7 @@ public class CompileStack implements Opcodes {
             breakLabel = CompileStack.this.breakLabel;
             lastVariableIndex = CompileStack.this.currentVariableIndex;
             stackVariables = CompileStack.this.stackVariables;
-            temporaryVariables = CompileStack.this.temporaryVariables;
             nextVariableIndex = CompileStack.this.nextVariableIndex;
-            superBlockNamedLabels = CompileStack.this.superBlockNamedLabels;
             currentBlockNamedLabels = CompileStack.this.currentBlockNamedLabels;
             finallyBlocks = CompileStack.this.finallyBlocks;
         }
@@ -303,10 +331,24 @@ public class CompileStack implements Opcodes {
                 mv.visitLocalVariable(v.getName(), type, null, start, end, v.getIndex());
             }
         }
+        
+        //exception table writing
+        for (ExceptionTableEntry ep : typedExceptions) {
+        	mv.visitTryCatchBlock(ep.start, ep.end, ep.goal, ep.sig);
+        }
+        //exception table writing
+        for (ExceptionTableEntry ep : untypedExceptions) {
+        	mv.visitTryCatchBlock(ep.start, ep.end, ep.goal, ep.sig);
+        }
+        
+        
         pop();
+        typedExceptions.clear();
+        untypedExceptions.clear();
         stackVariables.clear();
         usedVariables.clear();
         scope = null;
+        finallyBlocks.clear();
         mv=null;
         resetVariableIndex(false);
         superBlockNamedLabels.clear();
@@ -318,6 +360,23 @@ public class CompileStack implements Opcodes {
         helper = null;
         thisStartLabel=null;
         thisEndLabel=null;
+    }
+    
+    public void addExceptionBlock (Label start, Label end, Label goal, 
+    							   String sig) 
+    { 
+		// this code is in an extra method to avoid
+		// lazy initialization issues
+    	ExceptionTableEntry ep = new ExceptionTableEntry();
+    	ep.start = start;
+    	ep.end = end;
+    	ep.sig = sig;
+    	ep.goal = goal;
+    	if (sig==null) {
+    		untypedExceptions.add(ep);
+    	} else {
+    		typedExceptions.add(ep);
+    	}
     }
     
     /**
@@ -524,7 +583,7 @@ public class CompileStack implements Opcodes {
     }
 
     /**
-     * Calculates the index of the next free register stores ir
+     * Calculates the index of the next free register stores it
      * and sets the current variable index to the old value
      */
     private void makeNextVariableID(ClassNode type) {
@@ -577,50 +636,68 @@ public class CompileStack implements Opcodes {
             }
         }
         
-        List blocksToRemove;
+        List<BlockRecorder> blocksToRemove;
         if (result==null) {
             // all Blocks do know the label, so use all finally blocks
-            blocksToRemove = Collections.EMPTY_LIST;
+            blocksToRemove = (List<BlockRecorder>) Collections.EMPTY_LIST;
         } else {
             blocksToRemove = result.finallyBlocks;
         }
         
-        ArrayList blocks = new ArrayList(finallyBlocks);
+        List<BlockRecorder> blocks = new LinkedList<BlockRecorder>(finallyBlocks);
         blocks.removeAll(blocksToRemove);
-        applyFinallyBlocks(blocks);
+        applyBlockRecorder(blocks);
     }
 
-    private void applyFinallyBlocks(List blocks) {
-        for (Iterator iter = blocks.iterator(); iter.hasNext();) {
-            Runnable block = (Runnable) iter.next();
-            if (visitedBlocks.contains(block)) continue;
-            block.run();
-        }     
-    }
-    
-    public void applyFinallyBlocks() {
-        applyFinallyBlocks(finallyBlocks); 
+    private void applyBlockRecorder(List<BlockRecorder> blocks) {
+    	if (blocks.size()==0 || blocks.size()==visitedBlocks.size()) return;
+    	
+		Label end = new Label();
+		mv.visitInsn(NOP);
+		mv.visitLabel(end);
+		Label newStart = new Label();
+
+    	for (BlockRecorder fb : blocks) {
+    		if (visitedBlocks.contains(fb)) continue;
+
+    		fb.closeRange(end);
+   		
+    		// we exclude the finally block from the exception table
+    		// here to avoid double visiting of finally statements
+    		fb.excludedStatement.run();
+    		
+    		fb.startRange(newStart);
+    	}
+    	
+		mv.visitInsn(NOP);
+		mv.visitLabel(newStart);
     }
 
-    public boolean hasFinallyBlocks() {
+    public void applyBlockRecorder() {
+        applyBlockRecorder(finallyBlocks); 
+    }
+
+    public boolean hasBlockRecorder() {
         return !finallyBlocks.isEmpty();
     }
 
-    public void pushFinallyBlock(Runnable block) {
-        finallyBlocks.addFirst(block);
+    public void pushBlockRecorder(BlockRecorder recorder) {
         pushState();
-    }
-
-    public void popFinallyBlock() {
-        popState();
-        finallyBlocks.removeFirst();
-    }
-
-    public void pushFinallyBlockVisit(Runnable block) {
-        visitedBlocks.add(block);
+        finallyBlocks.addFirst(recorder);
     }
     
-    public void popFinallyBlockVisit(Runnable block) {
-        visitedBlocks.remove(block);
-    }
+    public void pushBlockRecorderVisit(BlockRecorder finallyBlock) {
+        visitedBlocks.add(finallyBlock);
+	}
+	
+	public void popBlockRecorderVisit(BlockRecorder finallyBlock) {
+	    visitedBlocks.remove(finallyBlock);
+	}
+
+	public void writeExceptionTable(BlockRecorder block, Label goal, String sig) {
+	    if (block.isEmpty) return;
+	    for (LabelRange range : block.ranges) {
+	        mv.visitTryCatchBlock(range.start, range.end, goal, sig);
+	    }
+	}
 }
