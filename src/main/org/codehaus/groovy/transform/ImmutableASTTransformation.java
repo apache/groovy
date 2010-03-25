@@ -633,7 +633,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
                 new ExpressionStatement(expression));
     }
 
-    private static Object checkImmutable(String className, String fieldName, Object field) {
+    public static Object checkImmutable(String className, String fieldName, Object field) {
         if (field == null || field instanceof Enum || inImmutableList(field.getClass())) return field;
         if (field instanceof Collection) return DefaultGroovyMethods.asImmutable((Collection) field);
         if (field.getClass().getAnnotation(MY_CLASS) != null) return field;
@@ -641,7 +641,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         throw new RuntimeException(createErrorMessage(className, fieldName, typeName, "constructing"));
     }
 
-    private static void checkPropNames(GroovyObject instance, Map<String, Object> args) {
+    public static void checkPropNames(GroovyObject instance, Map<String, Object> args) {
         final MetaClass metaClass = instance.getMetaClass();
         for (String k : args.keySet()) {
             if (metaClass.hasProperty(instance, k) == null)
