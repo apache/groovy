@@ -345,7 +345,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
      * call will either be made to ClassNode.addSyntheticMethod() or ClassNode.addMethod(). If a non-synthetic method 
      * is to be added the ACC_SYNTHETIC modifier is removed if it has been accidentally supplied.
      */
-    private void addMethod(ClassNode node, boolean shouldBeSynthetic, String name, int modifiers, ClassNode returnType, Parameter[] parameters,
+    protected void addMethod(ClassNode node, boolean shouldBeSynthetic, String name, int modifiers, ClassNode returnType, Parameter[] parameters,
             ClassNode[] exceptions, Statement code) {
         if (shouldBeSynthetic) {
             node.addSyntheticMethod(name,modifiers,returnType,parameters,exceptions,code);
@@ -543,11 +543,11 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     protected void addPropertyMethod(MethodNode method) {
     	classNode.addMethod(method);
     }
-    
+
     // Implementation methods
     //-------------------------------------------------------------------------
     
-    private interface DefaultArgsAction {
+    public interface DefaultArgsAction {
         void call(ArgumentListExpression arguments, Parameter[] newParams, MethodNode method);
     }
     
@@ -578,12 +578,12 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                             "\" that is already defined.",
                             method);
                 }
-                node.addMethod(newMethod);
+                addPropertyMethod(newMethod);
                 newMethod.setGenericsTypes(method.getGenericsTypes());
             }
         });
     }
-    
+
     protected void addDefaultParameterConstructors(final ClassNode node) {
         List methods = new ArrayList(node.getDeclaredConstructors());
         addDefaultParameters(methods, new DefaultArgsAction(){
@@ -591,9 +591,13 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
                 ConstructorNode ctor = (ConstructorNode) method;
                 ConstructorCallExpression expression = new ConstructorCallExpression(ClassNode.THIS, arguments);
                 Statement code = new ExpressionStatement(expression);
-                node.addConstructor(ctor.getModifiers(), newParams, ctor.getExceptions(), code);
+                addConstructor(newParams, ctor, code, node);
             }
         });
+    }
+
+    protected void addConstructor(Parameter[] newParams, ConstructorNode ctor, Statement code, ClassNode node) {
+        node.addConstructor(ctor.getModifiers(), newParams, ctor.getExceptions(), code);
     }
 
     /**
@@ -603,67 +607,71 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             MethodNode method = (MethodNode) iter.next();
             if (method.hasDefaultValue()) {
-                Parameter[] parameters = method.getParameters();
-                int counter = 0;
-                List paramValues = new ArrayList();
-                int size = parameters.length;
-                for (int i = size - 1; i >= 0; i--) {
-                    Parameter parameter = parameters[i];
-                    if (parameter != null && parameter.hasInitialExpression()) {
-                        paramValues.add(Integer.valueOf(i));
-                        paramValues.add(
-                                new CastExpression(
-                                        parameter.getType(),
-                                        parameter.getInitialExpression()
-                                )
-                        );
-                        counter++;
-                    }
-                }
+                addDefaultParameters(action, method);
+            }
+        }
+    }
 
-                for (int j = 1; j <= counter; j++) {
-                    Parameter[] newParams =  new Parameter[parameters.length - j];
-                    ArgumentListExpression arguments = new ArgumentListExpression();
-                    int index = 0;
-                    int k = 1;
-                    for (int i = 0; i < parameters.length; i++) {
-                        if (k > counter - j && parameters[i] != null && parameters[i].hasInitialExpression()) {
-                            arguments.addExpression(
-                                    new CastExpression(
-                                            parameters[i].getType(),
-                                            parameters[i].getInitialExpression()
-                                    )
-                            );
-                            k++;
-                        }
-                        else if (parameters[i] != null && parameters[i].hasInitialExpression()) {
-                            newParams[index++] = parameters[i];
-                            arguments.addExpression(
-                                    new CastExpression(
-                                            parameters[i].getType(),
-                                            new VariableExpression(parameters[i].getName())
-                                    )
-                            );
-                            k++;
-                        }
-                        else {
-                            newParams[index++] = parameters[i];
-                            arguments.addExpression(
-                                    new CastExpression(
-                                            parameters[i].getType(),
-                                            new VariableExpression(parameters[i].getName())
-                                    )
-                            );
-                        }
-                    }
-                    action.call(arguments,newParams,method);
+    protected void addDefaultParameters(DefaultArgsAction action, MethodNode method) {
+        Parameter[] parameters = method.getParameters();
+        int counter = 0;
+        List paramValues = new ArrayList();
+        int size = parameters.length;
+        for (int i = size - 1; i >= 0; i--) {
+            Parameter parameter = parameters[i];
+            if (parameter != null && parameter.hasInitialExpression()) {
+                paramValues.add(Integer.valueOf(i));
+                paramValues.add(
+                        new CastExpression(
+                                parameter.getType(),
+                                parameter.getInitialExpression()
+                        )
+                );
+                counter++;
+            }
+        }
+
+        for (int j = 1; j <= counter; j++) {
+            Parameter[] newParams =  new Parameter[parameters.length - j];
+            ArgumentListExpression arguments = new ArgumentListExpression();
+            int index = 0;
+            int k = 1;
+            for (int i = 0; i < parameters.length; i++) {
+                if (k > counter - j && parameters[i] != null && parameters[i].hasInitialExpression()) {
+                    arguments.addExpression(
+                            new CastExpression(
+                                    parameters[i].getType(),
+                                    parameters[i].getInitialExpression()
+                            )
+                    );
+                    k++;
                 }
-                
-                for (int i = 0; i < parameters.length; i++) {
-                    // remove default expression
-                    parameters[i].setInitialExpression(null);
+                else if (parameters[i] != null && parameters[i].hasInitialExpression()) {
+                    newParams[index++] = parameters[i];
+                    arguments.addExpression(
+                            new CastExpression(
+                                    parameters[i].getType(),
+                                    new VariableExpression(parameters[i].getName())
+                            )
+                    );
+                    k++;
+                }
+                else {
+                    newParams[index++] = parameters[i];
+                    arguments.addExpression(
+                            new CastExpression(
+                                    parameters[i].getType(),
+                                    new VariableExpression(parameters[i].getName())
+                            )
+                    );
                 }
             }
+            action.call(arguments,newParams,method);
+        }
+
+        for (int i = 0; i < parameters.length; i++) {
+            // remove default expression
+            parameters[i].setInitialExpression(null);
         }
     }
 
@@ -679,6 +687,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     protected void addInitialization(ClassNode node, ConstructorNode constructorNode) {
         Statement firstStatement = constructorNode.getFirstStatement();
+        // if some transformation decided to generate constructor then it probably knows who it does
+        if (firstStatement instanceof BytecodeSequence)
+            return;
+
         ConstructorCallExpression first = getFirstIfSpecialConstructorCall(firstStatement);
         
         // in case of this(...) let the other constructor do the init
@@ -915,7 +927,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
             // we skip bridge methods implemented in current class already
             MethodNode mn = (MethodNode) declaredMethodsMap.get(entry.getKey());
             if (mn!=null && mn.getDeclaringClass().equals(classNode)) continue;
-            classNode.addMethod(method);
+            addPropertyMethod(method);
         }
     }
     

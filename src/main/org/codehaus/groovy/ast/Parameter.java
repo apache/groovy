@@ -81,7 +81,7 @@ public class Parameter extends AnnotatedNode implements Variable {
     
     public void setInitialExpression(Expression init) {
         defaultValue = init;
-        if (defaultValue==null) hasDefaultValue=false;
+        hasDefaultValue = defaultValue != null;
     }
     
     public boolean isInStaticContext() {

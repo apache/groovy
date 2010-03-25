@@ -40,6 +40,7 @@ public class JavaStubGenerator
     private File outputPath;
     private List<String> toCompile = new ArrayList<String>();
     private ArrayList<MethodNode> propertyMethods = new ArrayList<MethodNode>();
+    private ArrayList<ConstructorNode> constructors = new ArrayList<ConstructorNode>();
 
     public JavaStubGenerator(final File outputPath, final boolean requireSuperResolved, final boolean java5) {
         this.outputPath = outputPath;
@@ -118,6 +119,25 @@ public class JavaStubGenerator
                     propertyMethods.add(method);
                 }
                 protected void addReturnIfNeeded(MethodNode node) {}
+                protected void addMethod(ClassNode node, boolean shouldBeSynthetic, String name, int modifiers, ClassNode returnType, Parameter[] parameters, ClassNode[] exceptions, Statement code) {
+                    propertyMethods.add(new MethodNode(name, modifiers, returnType, parameters, exceptions, code));
+                }
+                protected void addConstructor(Parameter[] newParams, ConstructorNode ctor, Statement code, ClassNode node) {
+                    constructors.add(new ConstructorNode(ctor.getModifiers(), newParams, ctor.getExceptions(), code));
+                }
+                protected void addDefaultParameters(DefaultArgsAction action, MethodNode method) {
+                    final Parameter[] parameters = method.getParameters();
+                    final Expression [] saved = new Expression[parameters.length];
+                    for (int i = 0; i < parameters.length; i++) {
+                        if (parameters[i].hasInitialExpression())
+                            saved[i] = parameters[i].getInitialExpression();
+                    }
+                    super.addDefaultParameters(action, method);
+                    for (int i = 0; i < parameters.length; i++) {
+                        if (saved[i] != null)
+                            parameters[i].setInitialExpression(saved[i]);
+                    }
+                }
             };
             verifier.visitClass(classNode);
 
@@ -170,6 +190,7 @@ public class JavaStubGenerator
             for (Iterator<InnerClassNode> inner = classNode.getInnerClasses(); inner.hasNext(); ) {
             	// GROOVY-4004: Clear the methods from the outer class so that they don't get duplicated in inner ones
             	propertyMethods.clear();
+                constructors.clear();
             	genClassInner(inner.next(), out);
             }
 
@@ -177,6 +198,7 @@ public class JavaStubGenerator
         }
         finally {
             propertyMethods.clear();
+            constructors.clear();
         }
     }
 
@@ -203,7 +225,8 @@ public class JavaStubGenerator
     }
 
     private void getConstructors(ClassNode classNode, PrintWriter out) {
-        List<ConstructorNode> constrs = classNode.getDeclaredConstructors();
+        List<ConstructorNode> constrs = (List<ConstructorNode>) constructors.clone();
+        constrs.addAll(classNode.getDeclaredConstructors());
         if (constrs != null)
             for (ConstructorNode constr : constrs) {
                 genConstructor(classNode, constr, out);
