@@ -54,6 +54,7 @@
             <id>codehaus.org</id>
             <name>Groovy Central Development Repository</name>
             <url>dav:https://dav.codehaus.org/snapshots.repository/groovy/</url>
+            <uniqueVersion>false</uniqueVersion>
         </snapshotRepository>
         <!-- not currently used -->
         <site>
