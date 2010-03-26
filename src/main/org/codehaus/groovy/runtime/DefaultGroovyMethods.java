@@ -14174,6 +14174,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 if (mixedIn != null)
                   return mixedIn;
             }
+            if (type.isInterface()) {
+                try {
+                    List<Class> interfaces = new ArrayList<Class>();
+                    interfaces.add(type);
+                    return ProxyGenerator.INSTANCE.instantiateDelegate(interfaces, obj);
+                } catch (GroovyRuntimeException cause) {
+                    // ignore
+                }
+            }
             throw e;
         }
     }
