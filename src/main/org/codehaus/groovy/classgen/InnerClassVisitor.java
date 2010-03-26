@@ -359,16 +359,17 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         // block = init code for the constructor we produce
         BlockStatement block = new BlockStatement();
         // parameters = parameters of the constructor
-        List parameters = new ArrayList(expressions.size()+1+scope.getReferencedLocalVariablesCount());
+        final int additionalParamCount = 1 + scope.getReferencedLocalVariablesCount();
+        List parameters = new ArrayList(expressions.size() + additionalParamCount);
         // superCallArguments = arguments for the super call == the constructor call arguments
         List superCallArguments = new ArrayList(expressions.size());
         
         // first we add a super() call for all expressions given in the 
         // constructor call expression
-        int pCount = 0;
+        int pCount = additionalParamCount;
         for (Expression expr : expressions) {
             pCount++;
-            // add one parameter for each expression in the 
+            // add one parameter for each expression in the
             // constructor call
             Parameter param = new Parameter(ClassHelper.OBJECT_TYPE,"p"+pCount);
             parameters.add(param);
@@ -381,15 +382,16 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
                 ClassNode.SUPER,
                 new TupleExpression(superCallArguments)
         );
+
         block.addStatement(new ExpressionStatement(cce));
         
         // we need to add "this" to access unknown methods/properties
         // this is saved in a field named this$0
-        expressions.add(VariableExpression.THIS_EXPRESSION);
-        pCount++;
+        pCount = 0;
+        expressions.add(pCount, VariableExpression.THIS_EXPRESSION);
         ClassNode outerClassType = getClassNode(innerClass.getOuterClass(),isStatic);
         Parameter thisParameter = new Parameter(outerClassType,"p"+pCount);
-        parameters.add(thisParameter);
+        parameters.add(pCount, thisParameter);
         
         thisField = innerClass.addField("this$0", publicSynthetic, outerClassType, null);
         addFieldInit(thisParameter,thisField,block);
@@ -401,19 +403,17 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
             VariableExpression ve = new VariableExpression(var);
             ve.setClosureSharedVariable(true);
             ve.setUseReferenceDirectly(true);
-            expressions.add(ve);
+            expressions.add(pCount, ve);
 
             Parameter p = new Parameter(ClassHelper.REFERENCE_TYPE,"p"+pCount);
-            parameters.add(p);
+            parameters.add(pCount, p);
             final VariableExpression initial = new VariableExpression(p);
             initial.setUseReferenceDirectly(true);
             final FieldNode pField = innerClass.addFieldFirst(ve.getName(), publicSynthetic, ClassHelper.REFERENCE_TYPE, initial);
-            final int finalPCount = pCount;
             pField.setHolder(true);
         }
         
-        innerClass.addConstructor(ACC_PUBLIC, (Parameter[]) parameters.toArray(new Parameter[0]), ClassNode.EMPTY_ARRAY, block);
-        
+        innerClass.addConstructor(ACC_SYNTHETIC, (Parameter[]) parameters.toArray(new Parameter[0]), ClassNode.EMPTY_ARRAY, block);
     }
     
     // this is the counterpart of addThisReference(). To non-static inner classes, outer this should be
