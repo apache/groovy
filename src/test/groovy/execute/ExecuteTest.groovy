@@ -79,7 +79,7 @@ class ExecuteTest extends GroovyTestCase {
         def process = java.execute()
         def tout = process.consumeProcessOutputStream(sbout)
         def terr = process.consumeProcessErrorStream(sberr)
-        process.waitForOrKill(10000)
+        process.waitForOrKill(60000)
         tout.join()
         terr.join()
         def value = process.exitValue()
