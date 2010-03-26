@@ -331,6 +331,7 @@ public class ModuleNode extends ASTNode implements Opcodes {
      * If a main method is provided by user, account for it under run() as scripts generate their own 'main' so they can run.  
      */
     private void handleMainMethodIfPresent(List methods) {
+    	boolean found = false;
         for (Iterator iter = methods.iterator(); iter.hasNext();) {
             MethodNode node = (MethodNode) iter.next();
             if(node.getName().equals("main")) {
@@ -344,6 +345,11 @@ public class ModuleNode extends ASTNode implements Opcodes {
                     retTypeMatches = (retType == ClassHelper.VOID_TYPE || retType == ClassHelper.OBJECT_TYPE);
                     
                     if(retTypeMatches && argTypeMatches) {
+                    	if(found) {
+                    		throw new RuntimeException("Repetitive main method found.");
+                    	} else {
+                    		found = true;
+                    	}
                         // if script has both loose statements as well as main(), then main() is ignored
                         if(statementBlock.isEmpty()) {
                             addStatement(node.getCode());
