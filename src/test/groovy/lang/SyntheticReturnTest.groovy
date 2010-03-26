@@ -100,7 +100,7 @@ class SyntheticReturnTest extends GroovyShellTestCase{
         synchronized (new Object()) {
             try {
                 if (x == 1)
-                    throw NullPointerException()
+                    throw new NullPointerException()
                 else
                     2*x
             }
