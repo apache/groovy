@@ -147,6 +147,18 @@ class DelegateTransformTest extends GroovyShellTestCase {
             assert b2.foo() == 'foo'
         }
     }
+
+    /** GROOVY-4133   */
+    void testDelegateAnnotationWithNativeMethods() {
+        new GroovyShell().evaluate """
+            class String4133 {
+                @Delegate String str
+            }
+            
+            /* loading of class used to fail earlier with ClassFormatError */
+            assert String4133 != null
+        """
+    }
 }
 
 interface DelegateFoo {
