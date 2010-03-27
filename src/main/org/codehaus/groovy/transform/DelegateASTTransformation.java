@@ -143,7 +143,7 @@ public class DelegateASTTransformation implements ASTTransformation, Opcodes {
                 args.addExpression(new VariableExpression(newParam));
             }
             owner.addMethod(method.getName(),
-                    method.getModifiers() & (~ACC_ABSTRACT),
+                    method.getModifiers() & (~ACC_ABSTRACT) & (~ACC_NATIVE),
                     nonGeneric(method.getReturnType()),
                     newParams,
                     method.getExceptions(),
