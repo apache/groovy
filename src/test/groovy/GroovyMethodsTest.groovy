@@ -76,6 +76,20 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         assert d0 == [width: 100, height: 200] as Dimension
     }
 
+    void testAsCoercionInterface() {
+        def letters = ['a', 'b', 'c']
+        def ol = new ObserverLike()
+        def o = new Observable()
+        o.addObserver(ol as Observer) // addObserver takes Observer as param
+        letters.each{ o.changed = true; o.notifyObservers(it) }
+        assert ol.observed == letters
+    }
+
+    private class ObserverLike {
+      def observed = []
+      void update(Observable o, arg) {observed << arg }
+    }
+
     void testCombinations() {
         def lists = [['a', 'b'], [1, 2, 3]]
         def sets = [['a', 'b'] as Set, [1, 2, 3] as Set]
