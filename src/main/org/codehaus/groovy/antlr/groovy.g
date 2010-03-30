@@ -278,7 +278,7 @@ tokens {
     }
     
     private AST attachLast(AST t, Object last) {
-    	if ((t instanceof GroovySourceAST) && (last instanceof SourceInfo)) {
+        if ((t instanceof GroovySourceAST) && (last instanceof SourceInfo)) {
             SourceInfo lastInfo = (SourceInfo) last;
             GroovySourceAST node = (GroovySourceAST)t;
             node.setColumnLast(lastInfo.getColumn());
@@ -301,7 +301,7 @@ tokens {
         return attachLast(create(type, txt, first), last);
     }
     
-    /** 
+    /**
     *   Clones the token
     */
     public Token cloneToken(Token t) {
@@ -867,7 +867,7 @@ identifierStar {Token first = LT(1);}
         (   d2:DOT!  nls! s:STAR! 
             {#i1 = #(create(DOT,".",first,LT(1)),i1,s);}
         |   "as"! nls! alias:IDENT!
-        	{#i1 = #(create(LITERAL_as,"as",first,LT(1)),i1,alias);}
+            {#i1 = #(create(LITERAL_as,"as",first,LT(1)),i1,alias);}
         )?
         {#identifierStar = #i1;}
     ;
@@ -2884,7 +2884,7 @@ listOrMapConstructorExpression
         args:argList                 { hasLabels |= argListHasLabels;  }  // any argument label implies a map
         RBRACK!
         {   int type = hasLabels ? MAP_CONSTRUCTOR : LIST_CONSTRUCTOR;
-        	#listOrMapConstructorExpression = #(create(type,"[",lcon,LT(1)),args); 
+            #listOrMapConstructorExpression = #(create(type,"[",lcon,LT(1)),args); 
         }
     |
         /* Special case:  [:] is an empty map constructor. */
