@@ -496,7 +496,7 @@ $Date$
     <target name="-includeGroovyDocTemplates">
         <copy todir="${mainClassesDirectory}">
             <fileset dir="${mainSourceDirectory}">
-                <include name="org/codehaus/groovy/tools/groovydoc/gstringTemplates/**/*.*"/>
+                <include name="org/codehaus/groovy/tools/groovydoc/gstringTemplates/*/*.*"/>
             </fileset>
             <fileset dir="${toolsSourceDirectory}">
                 <include name="org/codehaus/groovy/tools/groovy.ico"/>
