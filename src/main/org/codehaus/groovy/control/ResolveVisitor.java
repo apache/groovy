@@ -978,11 +978,46 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             addError(error, be.getLeftExpression());
             return be;
         }
-        if (left instanceof ClassExpression && be.getRightExpression() instanceof ListExpression) {
-            // we have C[] if the list is empty -> should be an array then!
-            ListExpression list = (ListExpression) be.getRightExpression();
-            if (list.getExpressions().isEmpty()) {
-                return new ClassExpression(left.getType().makeArray());
+        if (left instanceof ClassExpression) {
+            if (be.getRightExpression() instanceof ListExpression) {
+                ListExpression list = (ListExpression) be.getRightExpression();
+                if (list.getExpressions().isEmpty()) {
+                    // we have C[] if the list is empty -> should be an array then!
+                    final ClassExpression ce = new ClassExpression(left.getType().makeArray());
+                    ce.setSourcePosition(be);
+                    return ce;
+                }
+                else {
+                    // may be we have C[k1:v1, k2:v2] -> should become (C)([k1:v1, k2:v2])
+                    boolean map = true;
+                    for (Expression expression : list.getExpressions()) {
+                        if(!(expression instanceof MapEntryExpression)) {
+                            map = false;
+                            break;
+                        }
+                    }
+
+                    if (map) {
+                        final MapExpression me = new MapExpression();
+                        for (Expression expression : list.getExpressions()) {
+                            me.addMapEntryExpression((MapEntryExpression) expression);
+                        }
+                        me.setSourcePosition(list);
+                        final CastExpression ce = new CastExpression(left.getType(), me);
+                        ce.setSourcePosition(be);
+                        return ce;
+                    }
+                }
+            }
+
+            if (be.getRightExpression() instanceof MapEntryExpression) {
+                // may be we have C[k1:v1] -> should become (C)([k1:v1])
+                final MapExpression me = new MapExpression();
+                me.addMapEntryExpression((MapEntryExpression) be.getRightExpression());
+                me.setSourcePosition(be.getRightExpression());
+                final CastExpression ce = new CastExpression(left.getType(), me);
+                ce.setSourcePosition(be);
+                return ce;
             }
         }
         Expression right = transform(be.getRightExpression());
