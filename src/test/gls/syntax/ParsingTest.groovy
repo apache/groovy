@@ -34,6 +34,12 @@ public class ParsingTest extends gls.CompilableTestSupport {
         def val4 = (short[]) {-> return numbers}.call()
         assert val4.class.componentType == short
     }
+
+    void testExpressionParsingWithCastInFrontOfAMap() {
+        shouldCompile """
+            def m = (Map)[a:{ "foo"; println 'bar' }]
+        """
+    }
 }
 
 class Groovy2605 {
