@@ -952,7 +952,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 if(paras[i].hasInitialExpression()) {
                 	Object initialVal = paras[i].getInitialExpression();
                 	if(initialVal instanceof Expression) {
-                		transform((Expression)initialVal);
+                		paras[i].setInitialExpression(transform((Expression) initialVal));
                 	}
                 }
             }
