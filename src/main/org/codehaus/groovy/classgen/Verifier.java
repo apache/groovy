@@ -162,6 +162,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
         ConstructorNode constructor = new ConstructorNode(ACC_PUBLIC, null);
         constructor.setSynthetic(true);
+        constructor.setSourcePosition(node);
+        BlockStatement empty = new BlockStatement();
+        empty.setSourcePosition(constructor);
+        constructor.setCode(empty);
         node.addConstructor(constructor);
     }
 
