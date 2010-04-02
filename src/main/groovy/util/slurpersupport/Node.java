@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package groovy.util.slurpersupport;
 
 import groovy.lang.Buildable;
@@ -31,9 +30,10 @@ import java.util.Map;
 import java.util.Stack;
 
 /**
+ * Represents a node.
+ *
  * @author John Wilson
  */
-
 public class Node implements Writable {
     private final String name;
     private final Map attributes;
@@ -42,6 +42,13 @@ public class Node implements Writable {
     private final List children = new LinkedList();
     private final Stack replacementNodeStack = new Stack();
 
+    /**
+     * @param parent the parent node
+     * @param name the name for the node
+     * @param attributes the attributes for the node
+     * @param attributeNamespaces the namespace mappings for attributes
+     * @param namespaceURI the namespace URI if any
+     */
     public Node(final Node parent, final String name, final Map attributes, final Map attributeNamespaces, final String namespaceURI) {
         this.name = name;
         this.attributes = attributes;
@@ -71,7 +78,7 @@ public class Node implements Writable {
 
     public void replaceNode(final Closure replacementClosure, final GPathResult result) {
         this.replacementNodeStack.push(new ReplacementNode() {
-            public void build(final GroovyObject builder, final Map namespaceMap, final Map namespaceTagHints) {
+            public void build(final GroovyObject builder, final Map namespaceMap, final Map<String, String> namespaceTagHints) {
                 final Closure c = (Closure) replacementClosure.clone();
                 Node.this.replacementNodeStack.pop(); // disable the replacement whilst the closure is being executed
                 c.setDelegate(builder);
@@ -90,7 +97,7 @@ public class Node implements Writable {
     protected void appendNode(final Object newValue, final GPathResult result) {
         if (newValue instanceof Closure) {
             this.children.add(new ReplacementNode() {
-                public void build(final GroovyObject builder, final Map namespaceMap, final Map namespaceTagHints) {
+                public void build(final GroovyObject builder, final Map namespaceMap, final Map<String, String> namespaceTagHints) {
                     final Closure c = (Closure) ((Closure) newValue).clone();
                     c.setDelegate(builder);
                     c.call(new Object[]{result});
@@ -178,7 +185,7 @@ public class Node implements Writable {
         }
     }
 
-    public void build(final GroovyObject builder, final Map namespaceMap, final Map namespaceTagHints) {
+    public void build(final GroovyObject builder, final Map namespaceMap, final Map<String, String> namespaceTagHints) {
         if (this.replacementNodeStack.empty()) {
             final Closure rest = new Closure(null) {
                 public Object doCall(final Object o) {
@@ -283,7 +290,7 @@ public class Node implements Writable {
         return null;
     }
 
-    private void buildChildren(final GroovyObject builder, final Map namespaceMap, final Map namespaceTagHints) {
+    private void buildChildren(final GroovyObject builder, final Map namespaceMap, final Map<String, String> namespaceTagHints) {
         final Iterator iter = this.children.iterator();
         while (iter.hasNext()) {
             final Object child = iter.next();

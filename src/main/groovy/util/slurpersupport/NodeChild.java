@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,18 +28,30 @@ import java.util.Map;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 /**
+ * Lazy evaluated representation of a child node.
+ *
  * @author John Wilson
  */
-
 public class NodeChild extends GPathResult {
     private final Node node;
 
-    public NodeChild(final Node node, final GPathResult parent, final String namespacePrefix, final Map namespaceTagHints) {
+    /**
+     * @param node a node
+     * @param parent the GPathResult prior to the application of the expression creating this GPathResult
+     * @param namespacePrefix the namespace prefix if any
+     * @param namespaceTagHints the known tag to namespace mappings
+     */
+    public NodeChild(final Node node, final GPathResult parent, final String namespacePrefix, final Map<String, String> namespaceTagHints) {
         super(parent, node.name(), namespacePrefix, namespaceTagHints);
         this.node = node;
     }
 
-    public NodeChild(final Node node, final GPathResult parent, final Map namespaceTagHints) {
+    /**
+     * @param node a node
+     * @param parent the GPathResult prior to the application of the expression creating this GPathResult
+     * @param namespaceTagHints the known tag to namespace mappings
+     */
+    public NodeChild(final Node node, final GPathResult parent, final Map<String, String> namespaceTagHints) {
         this(node, parent, "*", namespaceTagHints);
     }
 

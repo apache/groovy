@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,8 +23,13 @@ import java.io.IOException;
 import java.io.Writer;
 import java.util.Map;
 
+/**
+ * Helper base class used for lazy updates.
+ *
+ * @author John Wilson
+ */
 public abstract class ReplacementNode implements Buildable, Writable {
-    public abstract void build(GroovyObject builder, Map namespaceMap, Map namespaceTagHints);
+    public abstract void build(GroovyObject builder, Map namespaceMap, Map<String, String> namespaceTagHints);
     
     public void build(final GroovyObject builder) {
         build(builder, null, null);

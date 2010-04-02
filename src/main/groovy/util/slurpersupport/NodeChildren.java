@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package groovy.util.slurpersupport;
 
 import groovy.lang.Buildable;
@@ -29,36 +28,37 @@ import java.util.Map;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 
 /**
+ * Lazy evaluated representation of child nodes.
+ *
  * @author John Wilson
  */
-
 class NodeChildren extends GPathResult {
     private int size = -1;
 
     /**
-     * @param parent
-     * @param name
-     * @param namespacePrefix
-     * @param namespaceTagHints
+     * @param parent the GPathResult prior to the application of the expression creating this GPathResult
+     * @param name if the GPathResult corresponds to something with a name, e.g. a node
+     * @param namespacePrefix the namespace prefix if any
+     * @param namespaceTagHints the known tag to namespace mappings
      */
-    public NodeChildren(final GPathResult parent, final String name, final String namespacePrefix, final Map namespaceTagHints) {
+    public NodeChildren(final GPathResult parent, final String name, final String namespacePrefix, final Map<String, String> namespaceTagHints) {
         super(parent, name, namespacePrefix, namespaceTagHints);
     }
 
     /**
-     * @param parent
-     * @param name
-     * @param namespaceTagHints
+     * @param parent the GPathResult prior to the application of the expression creating this GPathResult
+     * @param name if the GPathResult corresponds to something with a name, e.g. a node
+     * @param namespaceTagHints the known tag to namespace mappings
      */
-    public NodeChildren(final GPathResult parent, final String name, final Map namespaceTagHints) {
+    public NodeChildren(final GPathResult parent, final String name, final Map<String, String> namespaceTagHints) {
         this(parent, name, "*", namespaceTagHints);
     }
 
     /**
-     * @param parent
-     * @param namespaceTagHints
+     * @param parent the GPathResult prior to the application of the expression creating this GPathResult
+     * @param namespaceTagHints the known tag to namespace mappings
      */
-    public NodeChildren(final GPathResult parent, final Map namespaceTagHints) {
+    public NodeChildren(final GPathResult parent, final Map<String, String> namespaceTagHints) {
         this(parent, "*", namespaceTagHints);
     }
 

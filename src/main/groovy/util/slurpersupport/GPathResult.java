@@ -43,6 +43,8 @@ import java.util.Stack;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 
 /**
+ * Base class for representing lazy evaluated GPath expressions.
+ *
  * @author John Wilson
  */
 public abstract class GPathResult extends GroovyObjectSupport implements Writable, Buildable {
@@ -50,15 +52,15 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
     protected final String name;
     protected final String namespacePrefix;
     protected final Map namespaceMap = new HashMap();
-    protected final Map namespaceTagHints;
+    protected final Map<String, String> namespaceTagHints;
 
     /**
-     * @param parent
-     * @param name
-     * @param namespacePrefix
-     * @param namespaceTagHints
+     * @param parent the GPathResult prior to the application of the expression creating this GPathResult
+     * @param name if the GPathResult corresponds to something with a name, e.g. a node
+     * @param namespacePrefix the namespace prefix if any
+     * @param namespaceTagHints the known tag to namespace mappings
      */
-    public GPathResult(final GPathResult parent, final String name, final String namespacePrefix, final Map namespaceTagHints) {
+    public GPathResult(final GPathResult parent, final String name, final String namespacePrefix, final Map<String, String> namespaceTagHints) {
         if (parent == null) {
             // we are the top of the tree
             this.parent = this;
@@ -183,7 +185,7 @@ public abstract class GPathResult extends GroovyObjectSupport implements Writabl
     }
     
     public String lookupNamespace(final String prefix) {
-        return (String)this.namespaceTagHints.get(prefix);
+        return this.namespaceTagHints.get(prefix);
     }
 
     public String toString() {

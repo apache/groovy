@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,13 +23,19 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import groovy.lang.Closure;
 
 /**
+ * Lazy evaluated representation of child nodes filtered by a Closure.
+ *
  * @author John Wilson
  */
-
 public class FilteredNodeChildren extends NodeChildren {
     private final Closure closure;
 
-    public FilteredNodeChildren(final GPathResult parent, final Closure closure, final Map namespaceTagHints) {
+    /**
+     * @param parent the GPathResult prior to the application of the expression creating this GPathResult
+     * @param closure the Closure to use to filter the nodes
+     * @param namespaceTagHints the known tag to namespace mappings
+     */
+    public FilteredNodeChildren(final GPathResult parent, final Closure closure, final Map<String, String> namespaceTagHints) {
         super(parent, parent.name, namespaceTagHints);
         this.closure = closure;
     }

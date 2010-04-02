@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,18 +27,30 @@ import java.util.List;
 import java.util.ArrayList;
 
 /**
+ * Lazy evaluated representation of a node's attributes.
+ *
  * @author John Wilson
  */
-
 class Attributes extends NodeChildren {
     final String attributeName;
 
-    public Attributes(final GPathResult parent, final String name, final String namespacePrefix, final Map namespaceTagHints) {
+    /**
+     * @param parent the GPathResult prior to the application of the expression creating this GPathResult
+     * @param name if the GPathResult corresponds to something with a name, e.g. a node
+     * @param namespacePrefix the namespace prefix if any
+     * @param namespaceTagHints the known tag to namespace mappings
+     */
+    public Attributes(final GPathResult parent, final String name, final String namespacePrefix, final Map<String, String> namespaceTagHints) {
         super(parent, name, namespacePrefix, namespaceTagHints);
         this.attributeName = this.name.substring(1);
     }
 
-    public Attributes(final GPathResult parent, final String name, final Map namespaceTagHints) {
+    /**
+     * @param parent the GPathResult prior to the application of the expression creating this GPathResult
+     * @param name if the GPathResult corresponds to something with a name, e.g. a node
+     * @param namespaceTagHints the known tag to namespace mappings
+     */
+    public Attributes(final GPathResult parent, final String name, final Map<String, String> namespaceTagHints) {
         this(parent, name, "*", namespaceTagHints);
     }
 
@@ -48,7 +60,7 @@ class Attributes extends NodeChildren {
     }
 
     public Iterator childNodes() {
-        throw new GroovyRuntimeException("Can't get the child nodes on a a GPath expression selecting attributes: ...." + this.parent.name() + "." + name() + ".childNodes()");
+        throw new GroovyRuntimeException("Can't get the child nodes on a GPath expression selecting attributes: ...." + this.parent.name() + "." + name() + ".childNodes()");
     }
 
     public Iterator iterator() {

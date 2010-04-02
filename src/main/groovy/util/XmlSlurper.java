@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -81,7 +81,7 @@ public class XmlSlurper extends DefaultHandler {
   private Node currentNode = null;
   private final Stack stack = new Stack();
   private final StringBuffer charBuffer = new StringBuffer();
-  private final Map namespaceTagHints = new Hashtable();
+  private final Map<String, String> namespaceTagHints = new Hashtable<String, String>();
   private boolean keepWhitespace = false;
 
   /**
@@ -391,7 +391,7 @@ public class XmlSlurper extends DefaultHandler {
   private void addCdata() {
     if (this.charBuffer.length() != 0) {
       //
-      // This element is preceeded by CDATA if keepWhitespace is false (the default setting) and 
+      // This element is preceded by CDATA if keepWhitespace is false (the default setting) and
       // it's not whitespace add it to the body
       // Note that, according to the XML spec, we should preserve the CDATA if it's all whitespace
       // but for the sort of work I'm doing ignoring the whitespace is preferable

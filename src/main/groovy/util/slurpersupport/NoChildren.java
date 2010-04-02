@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 package groovy.util.slurpersupport;
 
 import groovy.lang.Closure;
@@ -26,16 +25,17 @@ import java.util.Iterator;
 import java.util.Map;
 
 /**
- * @author John Wilson
+ * Lazy evaluated representation of a GPath expression returning no children.
  *
+ * @author John Wilson
  */
-
 public class NoChildren extends GPathResult {
   /**
-   * @param parent
-   * @param name
+   * @param parent the GPathResult prior to the application of the expression creating this GPathResult
+   * @param name if the GPathResult corresponds to something with a name, e.g. a node
+   * @param namespaceTagHints the known tag to namespace mappings
    */
-  public NoChildren(final GPathResult parent, final String name, final Map namespaceTagHints) {
+  public NoChildren(final GPathResult parent, final String name, final Map<String, String> namespaceTagHints) {
     super(parent, name, "*", namespaceTagHints);
   }
 
