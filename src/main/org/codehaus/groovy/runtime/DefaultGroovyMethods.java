@@ -12034,6 +12034,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * with different kinds of filters like regular expressions, classes, ranges etc.
      * Both regular files and subdirectories may be candidates for matching depending
      * on the value of fileType.
+     * <pre>
+     * // collect names of files in baseDir matching supplied regex pattern
+     * import static groovy.io.FileType.*
+     * def names = []
+     * baseDir.eachFileMatch FILES, ~/foo\d\.txt/, { names << it.name }
+     * assert names == ['foo1.txt', 'foo2.txt']
+     *
+     * // remove all *.bak files in baseDir
+     * baseDir.eachFileMatch FILES, ~/.*\.bak/, { File bak -> bak.delete() }
+     *
+     * // print out files > 4K in size from baseDir
+     * baseDir.eachFileMatch FILES, { new File(baseDir, it).size() > 4096 }, { println "$it.name ${it.size()}" }
+     * </pre>
      *
      * @param self       a file
      * @param fileType   whether normal files or directories or both should be processed
