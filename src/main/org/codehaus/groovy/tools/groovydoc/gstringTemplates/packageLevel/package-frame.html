@@ -28,8 +28,9 @@ def pluralize = { name -> name + (name.endsWith("s") ? "es" : "s") }
 <A HREF="package-summary.html" target="classFrame">${packageDoc.nameWithDots()}</A></FONT>
 
 <%
+def isVisible = { it.isPublic() || (it.isProtected() && props.protectedScope == 'true') || (!it.isProtected() && !it.isPrivate() && props.packageScope == 'true') || props.privateScope == 'true' }
 classTypes.each{ k, v ->
-    if (packageDoc.allClasses().any{ v(it) }) {
+    if (packageDoc.allClasses().any{ isVisible(it) && v(it) }) {
 %>
 
 <TABLE BORDER="0" WIDTH="100%" SUMMARY="">
@@ -37,14 +38,12 @@ classTypes.each{ k, v ->
 <TD NOWRAP><FONT size="+1" CLASS="FrameHeadingFont">
 ${pluralize(k)}</FONT>&nbsp;
 <FONT CLASS="FrameItemFont"><%
-    for (classDoc in packageDoc.allClasses()) {
-        if (v(classDoc)) {
-            %><BR><A HREF="${classDoc.name()}.html" title="${k.toLowerCase()} in ${packageDoc.nameWithDots()}" target="classFrame"><%
-            if (classDoc.isInterface()) { %><I><% }
-            %>${classDoc.name()}<%
-            if (classDoc.isInterface()) { %></I><% }
-            %></A><%
-        }
+    for (classDoc in packageDoc.allClasses().findAll{ isVisible(it) && v(it) }) {
+        %><BR><A HREF="${classDoc.name()}.html" title="${k.toLowerCase()} in ${packageDoc.nameWithDots()}" target="classFrame"><%
+        if (classDoc.isInterface()) { %><I><% }
+        %>${classDoc.name()}<%
+        if (classDoc.isInterface()) { %></I><% }
+        %></A><%
     }
 %></FONT></TD>
 </TR>

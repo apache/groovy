@@ -115,8 +115,9 @@ function windowTitle()
 <hr>
 
 <%
+def isVisible = { it.isPublic() || (it.isProtected() && props.protectedScope == 'true') || (!it.isProtected() && !it.isPrivate() && props.packageScope == 'true') || props.privateScope == 'true' }
 classTypes.each{ k, v ->
-    if (rootDoc.classes().any{ v(it) }) {
+    if (rootDoc.classes().any{ isVisible(it) && v(it) }) {
 %>
 
 <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
@@ -125,21 +126,19 @@ classTypes.each{ k, v ->
 <B>${pluralize(k)}</B></FONT></TH>
 </TR>
 <FONT CLASS="FrameItemFont"><%
-    for (classDoc in rootDoc.classes()) {
-        if (v(classDoc)) {
-            def packageOrInnerName = classDoc.qualifiedTypeName() - ('.' + classDoc.simpleTypeName())
-            %><TR BGCOLOR="white" CLASS="TableRowColor">
-            <TD>
-                <CODE><b><a href="${classDoc.fullPathName}.html" title="${k.toLowerCase()} in ${packageOrInnerName}" target="classFrame"><%
-                if (classDoc.isInterface()) { %><I><% }
-                %>${classDoc.name()}<%
-                if (classDoc.isInterface()) { %></I><% }
-                %></a></b></CODE>
-                <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                ${classDoc.firstSentenceCommentText()}
-            </TD>
-            </TR><%
-        }
+    for (classDoc in rootDoc.classes().findAll{ isVisible(it) && v(it) }) {
+        def packageOrInnerName = classDoc.qualifiedTypeName() - ('.' + classDoc.simpleTypeName())
+        %><TR BGCOLOR="white" CLASS="TableRowColor">
+        <TD>
+            <CODE><b><a href="${classDoc.fullPathName}.html" title="${k.toLowerCase()} in ${packageOrInnerName}" target="classFrame"><%
+            if (classDoc.isInterface()) { %><I><% }
+            %>${classDoc.name()}<%
+            if (classDoc.isInterface()) { %></I><% }
+            %></a></b></CODE>
+            <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+            ${classDoc.firstSentenceCommentText()}
+        </TD>
+        </TR><%
     }
 %></FONT></TD>
 </TR>
@@ -149,7 +148,7 @@ classTypes.each{ k, v ->
 
 <%
 methodTypes.each{ k, v ->
-    if (rootDoc.classes().any{ v(it) }) {
+    if (rootDoc.classes().any{ isVisible(it) && v(it) }) {
 %>
 
 <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
@@ -159,17 +158,15 @@ methodTypes.each{ k, v ->
 </TR>
 
 <FONT CLASS="FrameItemFont"><%
-    for (classDoc in rootDoc.classes()) {
-        if (v(classDoc)) {
-            for (methOrConstr in v(classDoc)) {
-                %><TR BGCOLOR="white" CLASS="TableRowColor">
-                <TD>
-                    <CODE><b><a href="${classDoc.fullPathName}.html#${nameFromParams(methOrConstr)}">${classDoc.name()}#${methOrConstr.name()}</a></b>(${paramsOf(methOrConstr, classDoc, true)})</CODE>
-                    <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-                    ${methOrConstr.firstSentenceCommentText()}
-                </TD>
-                </TR><%
-            }
+    for (classDoc in rootDoc.classes().findAll{ isVisible(it) && v(it) }) {
+        for (methOrConstr in v(classDoc)) {
+            %><TR BGCOLOR="white" CLASS="TableRowColor">
+            <TD>
+                <CODE><b><a href="${classDoc.fullPathName}.html#${nameFromParams(methOrConstr)}">${classDoc.name()}#${methOrConstr.name()}</a></b>(${paramsOf(methOrConstr, classDoc, true)})</CODE>
+                <BR>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                ${methOrConstr.firstSentenceCommentText()}
+            </TD>
+            </TR><%
         }
     }
 %></FONT></TD>

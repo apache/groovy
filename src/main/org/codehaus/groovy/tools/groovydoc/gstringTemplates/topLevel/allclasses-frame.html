@@ -21,7 +21,9 @@ All Classes
 <TD NOWRAP><FONT CLASS="FrameItemFont">
 <!--<A HREF="org/omg/CORBA/ARG_IN.html" title="interface in org.omg.CORBA" target="classFrame"><I>ARG_IN</I></A>-->
 <!--<BR>-->
-<% for (classDoc in rootDoc.classes()) {
+<%
+  def isVisible = { it.isPublic() || (it.isProtected() && props.protectedScope == 'true') || (!it.isProtected() && !it.isPrivate() && props.packageScope == 'true') || props.privateScope == 'true' }
+  for (classDoc in rootDoc.classes().findAll(isVisible)) {
     def packageOrInnerName = classDoc.qualifiedTypeName() - ('.' + classDoc.simpleTypeName())
     %><A HREF="${classDoc.getFullPathName()}.html" title="${classDoc.typeDescription.toLowerCase()} in ${packageOrInnerName}" target="classFrame">${classDoc.isInterface()?'<I>':''}${classDoc.name()}${classDoc.isInterface()?'</I>':''}</A>
 <BR>

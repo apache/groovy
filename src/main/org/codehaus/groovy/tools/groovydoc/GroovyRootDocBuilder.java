@@ -97,7 +97,7 @@ public class GroovyRootDocBuilder {
         java2groovyTraverser.process(ast);
 
         // now mutate (groovify) the ast into groovy
-        Visitor groovifier = new Groovifier(tokenNames);
+        Visitor groovifier = new Groovifier(tokenNames, false);
         AntlrASTProcessor groovifierTraverser = new PreOrderTraversal(groovifier);
         groovifierTraverser.process(ast);
 
