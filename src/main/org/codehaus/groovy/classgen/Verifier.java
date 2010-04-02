@@ -160,12 +160,10 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
     private void addDefaultConstructor(ClassNode node) {
         if (!node.getDeclaredConstructors().isEmpty()) return;
 
-        ConstructorNode constructor = new ConstructorNode(ACC_PUBLIC, null);
-        constructor.setSynthetic(true);
-        constructor.setSourcePosition(node);
         BlockStatement empty = new BlockStatement();
-        empty.setSourcePosition(constructor);
-        constructor.setCode(empty);
+        empty.setSourcePosition(node);
+        ConstructorNode constructor = new ConstructorNode(ACC_PUBLIC, empty);
+        constructor.setSourcePosition(node);
         node.addConstructor(constructor);
     }
 
