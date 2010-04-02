@@ -2,6 +2,7 @@
 <html>
 <head>
 <%
+def isVisible = { it.isPublic() || (it.isProtected() && props.protectedScope == 'true') || (!it.isProtected() && !it.isPrivate() && props.packageScope == 'true') || props.privateScope == 'true' }
 def title = packageDoc.nameWithDots() + (props.windowTitle ? " ($props.windowTitle)" : "")
 // TODO enable errors(), enums() etc in SimpleGroovyPackageDoc then replace closures below
 def classTypes = [
@@ -94,7 +95,7 @@ ${packageDoc.description()}
 
 <%
 classTypes.each{ k, v ->
-    if (packageDoc.allClasses().any{ v(it) }) {
+    if (packageDoc.allClasses().any{ isVisible(it) && v(it) }) {
 %>
 
 <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
@@ -102,16 +103,12 @@ classTypes.each{ k, v ->
     <TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2">
     <B>${k} Summary</B></FONT></TH>
     </TR>
-<%
-    for (classDoc in packageDoc.allClasses()) {
-        if (v(classDoc)) {
-%>
-            <TR BGCOLOR="white" CLASS="TableRowColor">
-            <TD WIDTH="15%"><B><A HREF="${classDoc.name()}.html" title="class in ${packageDoc.name()}">${classDoc.name()}</A></B></TD>
-            <TD>${classDoc.firstSentenceCommentText()}</TD>
-            </TR>
-        <% } %>
-    <% } %>
+<%  for (classDoc in packageDoc.allClasses().findAll{ isVisible(it) && v(it) }) { %>
+        <TR BGCOLOR="white" CLASS="TableRowColor">
+        <TD WIDTH="15%"><B><A HREF="${classDoc.name()}.html" title="class in ${packageDoc.name()}">${classDoc.name()}</A></B></TD>
+        <TD>${classDoc.firstSentenceCommentText()}</TD>
+        </TR>
+<%  } %>
 </TABLE>
 &nbsp;
 <P>

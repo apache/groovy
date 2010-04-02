@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,8 +16,8 @@
 package org.codehaus.groovy.tools.groovydoc;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.Iterator;
+import java.util.Properties;
 
 import org.codehaus.groovy.groovydoc.GroovyClassDoc;
 import org.codehaus.groovy.groovydoc.GroovyPackageDoc;
@@ -31,34 +31,39 @@ public class GroovyDocWriter {
     private OutputTool output;
     private GroovyDocTemplateEngine templateEngine;
     private static final String FS = "/";
+    private Properties properties;
 
-    public GroovyDocWriter(GroovyDocTool tool, OutputTool output, GroovyDocTemplateEngine templateEngine) {
+    public GroovyDocWriter(GroovyDocTool tool, OutputTool output, GroovyDocTemplateEngine templateEngine, Properties properties) {
         this.tool = tool;
         this.output = output;
         this.templateEngine = templateEngine;
+        this.properties = properties;
     }
 
     public void writeClasses(GroovyRootDoc rootDoc, String destdir) throws Exception {
-        for (GroovyClassDoc classDoc : Arrays.asList(rootDoc.classes())) {
+        for (GroovyClassDoc classDoc : rootDoc.classes()) {
             writeClassToOutput(classDoc, destdir);
         }
     }
 
     public void writeClassToOutput(GroovyClassDoc classDoc, String destdir) throws Exception {
-        String destFileName = destdir + FS + classDoc.getFullPathName() + ".html";
-        System.out.println("Generating " + destFileName);
-        String renderedSrc = templateEngine.applyClassTemplates(classDoc);
-        output.writeToOutput(destFileName, renderedSrc);
+        if (classDoc.isPublic() || classDoc.isProtected() && "true".equals(properties.getProperty("protectedScope")) ||
+                classDoc.isPackagePrivate() && "true".equals(properties.getProperty("packageScope")) || "true".equals(properties.getProperty("privateScope"))) {
+            String destFileName = destdir + FS + classDoc.getFullPathName() + ".html";
+            System.out.println("Generating " + destFileName);
+            String renderedSrc = templateEngine.applyClassTemplates(classDoc);
+            output.writeToOutput(destFileName, renderedSrc);
+        }
     }
 
     public void writePackages(GroovyRootDoc rootDoc, String destdir) throws Exception {
-        for (GroovyPackageDoc packageDoc : Arrays.asList(rootDoc.specifiedPackages())) {
+        for (GroovyPackageDoc packageDoc : rootDoc.specifiedPackages()) {
             if (new File(packageDoc.name()).isAbsolute()) continue;
             output.makeOutputArea(destdir + FS + packageDoc.name());
             writePackageToOutput(packageDoc, destdir);
         }
         StringBuilder sb = new StringBuilder();
-        for (GroovyPackageDoc packageDoc : Arrays.asList(rootDoc.specifiedPackages())) {
+        for (GroovyPackageDoc packageDoc : rootDoc.specifiedPackages()) {
             sb.append(packageDoc.nameWithDots());
             sb.append("\n");
         }

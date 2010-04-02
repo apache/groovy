@@ -5,18 +5,19 @@
 <!-- **************************************************************** -->
 <%
     def title = classDoc.name() + (props.docTitle ? " (${props.docTitle})" : "")
-    def visibleFields = classDoc.fields().findAll{ !it.isPrivate() || props.privateScope }
-    def visibleProperties = classDoc.properties().findAll{ !it.isPrivate() || props.privateScope }
-    boolean hasFields = !classDoc.isAnnotationType() && visibleFields.size() > 0
-    boolean hasProperties = !classDoc.isAnnotationType() && visibleProperties.size() > 0
-    boolean hasElements = classDoc.isAnnotationType() && visibleFields.size() > 0
-    boolean hasConstructors = classDoc.constructors().size() > 0
-    boolean hasNested = classDoc.innerClasses().size() > 0
-    def visibleMethods = classDoc.methods().findAll{ !it.isPrivate() || props.privateScope }
-    boolean hasMethods = visibleMethods.size() > 0
-    boolean methodSummaryShown = hasMethods
+    def isVisible = { it.isPublic() || (it.isProtected() && props.protectedScope == 'true') || (!it.isProtected() && !it.isPrivate() && props.packageScope == 'true') || props.privateScope == 'true' }
+    def isVisibleExt = { t -> java.lang.reflect.Modifier.isPublic(t.modifiers) || java.lang.reflect.Modifier.isProtected(t.modifiers) }
+    def visibleFields = classDoc.fields().findAll(isVisible)
+    def visibleProperties = classDoc.properties().findAll(isVisible)
+    def visibleMethods = classDoc.methods().findAll(isVisible)
+    def visibleConstructors = classDoc.constructors().findAll(isVisible)
+    def visibleNested = classDoc.innerClasses().findAll(isVisible)
+    boolean hasFields = !classDoc.isAnnotationType() && visibleFields
+    boolean hasProperties = !classDoc.isAnnotationType() && visibleProperties
+    boolean hasElements = classDoc.isAnnotationType() && visibleFields
+    boolean methodSummaryShown = visibleMethods
     boolean fieldSummaryShown = hasFields
-    boolean hasEnumConstants = classDoc.enumConstants().size() > 0
+    boolean hasEnumConstants = classDoc.enumConstants().findAll(isVisible)
     def dolink = { t, boolean b ->
         if (!t || t instanceof String) {
             return classDoc.getDocUrl(t, b)
@@ -43,7 +44,6 @@
         (t.isStatic()?"static&nbsp;":"")
     }
     def annotations = { t, sepChar -> t.annotations() ? t.annotations()*.description().join(sepChar) + sepChar : '' }
-    def isVisible = { t -> java.lang.reflect.Modifier.isPublic(t.modifiers) || java.lang.reflect.Modifier.isProtected(t.modifiers) }
     def elementTypes = [
         "required":"true",
         "optional":"false"
@@ -132,16 +132,16 @@ SUMMARY:&nbsp;<%
         %><% if (hasReq) { %><A HREF="#required_element_summary"><% } %>REQUIRED<% if (hasReq) { %></A><% }
         %> | <% if (hasOpt) { %><A HREF="#optional_element_summary"><% } %>OPTIONAL<% if (hasOpt) { %></A><% } %><%
     } else {
-        if (hasNested) { %><A HREF="#nested_summary"><% } %>NESTED<% if (hasNested) { %></A><% }
+        if (visibleNested) { %><A HREF="#nested_summary"><% } %>NESTED<% if (visibleNested) { %></A><% }
         if (classDoc.isEnum()) {
             %>&nbsp;|&nbsp;<% if (hasEnumConstants) { %><A HREF="#enum_constant_summary"><% } %>ENUM CONSTANTS<% if (hasEnumConstants) { %></A><% }
         }
         %>&nbsp;|&nbsp;<% if (hasFields) { %><A HREF="#field_summary"><% } %>FIELD<% if (hasFields) { %></A><% }
         if (hasProperties) { %>&nbsp;|&nbsp;<A HREF="#property_summary">PROPERTY</A><% }
         if (classDoc.isClass()) {
-            %>&nbsp;|&nbsp;<% if (hasConstructors) { %><A HREF="#constructor_summary"><% } %>CONSTR<% if (hasConstructors) { %></A><% }
+            %>&nbsp;|&nbsp;<% if (visibleConstructors) { %><A HREF="#constructor_summary"><% } %>CONSTR<% if (visibleConstructors) { %></A><% }
         }
-        %>&nbsp;|&nbsp;<% if (hasMethods) { %><A HREF="#method_summary"><% } %>METHOD<% if (hasMethods) { %></A><% }
+        %>&nbsp;|&nbsp;<% if (visibleMethods) { %><A HREF="#method_summary"><% } %>METHOD<% if (visibleMethods) { %></A><% }
     }
     %></FONT></TD>
 <TD VALIGN="top" CLASS="NavBarCell3"><FONT SIZE="-2">
@@ -155,9 +155,9 @@ DETAIL:&nbsp;<%
         if (hasFields) { %><A HREF="#field_detail"><% } %>FIELD<% if (hasFields) { %></A><% }
         if (hasProperties) { %>&nbsp;|&nbsp;<A HREF="#prop_detail">PROPERTY</A><% }
         if (classDoc.isClass()) {
-            %>&nbsp;|&nbsp;<% if (hasConstructors) { %><A HREF="#constructor_detail"><% } %>CONSTR<% if (hasConstructors) { %></A><% }
+            %>&nbsp;|&nbsp;<% if (visibleConstructors) { %><A HREF="#constructor_detail"><% } %>CONSTR<% if (visibleConstructors) { %></A><% }
         }
-        %>&nbsp;|&nbsp;<% if (hasMethods) { %><A HREF="#method_detail"><% } %>METHOD<% if (hasMethods) { %></A><% }
+        %>&nbsp;|&nbsp;<% if (visibleMethods) { %><A HREF="#method_detail"><% } %>METHOD<% if (visibleMethods) { %></A><% }
     }
     %></FONT></TD>
 </TR>
@@ -217,13 +217,13 @@ ${classDoc.commentText()}
 <!-- =========== NESTED CLASS SUMMARY =========== -->
 
 <A NAME="nested_summary"><!-- --></A>
-<% if (hasNested) { %>
+<% if (visibleNested) { %>
     <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
     <TR BGCOLOR="#CCCCFF" CLASS="TableHeadingColor">
     <TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2">
     <B>Nested Class Summary</B></FONT></TH>
     </TR>
-    <% for (c in classDoc.innerClasses()) { %>
+    <% for (c in visibleNested) { %>
         <TR BGCOLOR="white" CLASS="TableRowColor">
         <TD ALIGN="right" VALIGN="top" WIDTH="1%"><FONT SIZE="-1">
         <CODE>${modifiersBrief(c) + c.typeSourceDescription}</CODE></FONT></TD>
@@ -247,7 +247,7 @@ ${classDoc.commentText()}
     <TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2">
     <B>Enum Constant Summary</B></FONT></TH>
     </TR>
-    <% for (ec in classDoc.enumConstants()) { %>
+    <% for (ec in classDoc.enumConstants().findAll(isVisible)) { %>
         <TR BGCOLOR="white" CLASS="TableRowColor">
         <TD>
             <CODE><B><A HREF="#${ec.name()}">${ec.name()}</A></B></CODE>
@@ -300,11 +300,11 @@ ${classDoc.commentText()}
             visited += nextLevel
             def list = []
             if (c instanceof org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc) {
-                list = c.fields().findAll{ it.isPublic() || it.isProtected() }.collect { field ->
+                list = c.fields().findAll(isVisible).collect { field ->
                     "<a href='${classDoc.relativeRootPath}${c.fullPathName}.html#${field.name()}'>${field.name()}</a>"
                 }
             } else {
-                list = c.externalClass().fields.findAll{ isVisible(it) }.collect { field ->
+                list = c.externalClass().fields.findAll{ isVisibleExt(it) }.collect { field ->
                     // "<a href='${classDoc.relativeRootPath}${c.fullPathName}.html#${field.name()}'>${field.name()}</a>"
                     field.name
                 }
@@ -390,13 +390,13 @@ ${classDoc.commentText()}
 <!-- ======== CONSTRUCTOR SUMMARY ======== -->
 
 <A NAME="constructor_summary"><!-- --></A>
-<% if (hasConstructors) { %>
+<% if (visibleConstructors) { %>
     <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
     <TR BGCOLOR="#D5D5FF" CLASS="TableHeadingColor">
     <TD COLSPAN=2><FONT SIZE="+2">
     <B>Constructor Summary</B></FONT></TD>
     </TR>
-    <% for (constructor in classDoc.constructors()) { %>
+    <% for (constructor in visibleConstructors) { %>
         <TR BGCOLOR="white" CLASS="TableRowColor">
         <TD>
             <CODE>${modifiersBrief(constructor)}<B><a href="#${nameFromParams(constructor)}">${constructor.name()}</a></B>(${paramsOf(constructor, true)})</CODE>
@@ -412,7 +412,7 @@ ${classDoc.commentText()}
 <!-- ========== METHOD SUMMARY =========== -->
 
 <A NAME="method_summary"><!-- --></A>
-<% if (hasMethods) { %>
+<% if (visibleMethods) { %>
     <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
     <TR CLASS="TableHeadingColor">
     <TH ALIGN="left" COLSPAN="2"><FONT SIZE="+2" CLASS="ClassHeadingFont">
@@ -450,11 +450,11 @@ ${classDoc.commentText()}
             visited += nextLevel
             def list = []
             if (c instanceof org.codehaus.groovy.tools.groovydoc.SimpleGroovyClassDoc) {
-                list = c.methods().findAll{ it.isPublic() || it.isProtected() }.collect { method ->
+                list = c.methods().findAll(isVisible).collect { method ->
                     "<a href='${classDoc.relativeRootPath}${c.fullPathName}.html#${nameFromParams(method)}'>${method.name()}</a>"
                 }
             } else {
-                list = c.externalClass().methods.findAll{ isVisible(it) }.collect { method ->
+                list = c.externalClass().methods.findAll{ isVisibleExt(it) }.collect { method ->
                     linkable(c.externalClass().name + "#" + nameFromJavaParams(method) + " " + method.name)
                 }
             }
@@ -579,14 +579,14 @@ ${classDoc.commentText()}
 <!-- ========= CONSTRUCTOR DETAIL ======== -->
 
 <A NAME="constructor_detail"><!-- --></A>
-<% if (hasConstructors) { %>
+<% if (visibleConstructors) { %>
     <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
     <TR BGCOLOR="#CCCCFF" CLASS="TableHeadingColor">
     <TH ALIGN="left" COLSPAN="1"><FONT SIZE="+2">
     <B>Constructor Detail</B></FONT></TH>
     </TR>
     </TABLE>
-    <% for (constructor in classDoc.constructors()) { %>
+    <% for (constructor in visibleConstructors) { %>
         <A NAME="${nameFromParams(constructor)}"><!-- --></A><H3>
         ${constructor.name()}</H3>
         <PRE>${annotations(constructor, '\n') + modifiers(constructor)}<B>${constructor.name()}</B>(${paramsOf(constructor, false)})</PRE>
@@ -603,7 +603,7 @@ ${classDoc.commentText()}
 <!-- ============ METHOD DETAIL ========== -->
 
 <A NAME="method_detail"><!-- --></A>
-<% if (hasMethods) { %>
+<% if (visibleMethods) { %>
     <TABLE BORDER="1" WIDTH="100%" CELLPADDING="3" CELLSPACING="0" SUMMARY="">
     <TR BGCOLOR="#CCCCFF" CLASS="TableHeadingColor">
     <TH ALIGN="left" COLSPAN="1"><FONT SIZE="+2">

@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,9 +23,15 @@ import org.codehaus.groovy.antlr.treewalker.VisitorAdapter;
 public class Groovifier extends VisitorAdapter implements GroovyTokenTypes {
     private String[] tokenNames;
     private String currentClassName = "";
+    private boolean cleanRedundantPublic;
 
     public Groovifier(String[] tokenNames) {
-		this.tokenNames = tokenNames;
+        this(tokenNames, true);
+	}
+
+    public Groovifier(String[] tokenNames, boolean cleanRedundantPublic) {
+        this.tokenNames = tokenNames;
+		this.cleanRedundantPublic = cleanRedundantPublic;
 	}
 
     public void visitClassDef(GroovySourceAST t,int visit) {
@@ -37,8 +43,8 @@ public class Groovifier extends VisitorAdapter implements GroovyTokenTypes {
         if (visit == OPENING_VISIT) {
             // only want to do this once per node...
 
-        	// remove 'public' when implied already
-        	if (t.getType() == LITERAL_public) {
+        	// remove 'public' when implied already if requested
+        	if (t.getType() == LITERAL_public && cleanRedundantPublic) {
         		t.setType(EXPR);
         	}
         	

@@ -111,8 +111,21 @@ class Main {
         author = Boolean.valueOf(options.author) ?: false
         packageScope = Boolean.valueOf(options.package) ?: false
         privateScope = Boolean.valueOf(options.private) ?: false
-        protectedScope = Boolean.valueOf(options.protected) ?: true
-        publicScope = Boolean.valueOf(options.public) ?: true
+        protectedScope = Boolean.valueOf(options.protected) ?: false
+        publicScope = Boolean.valueOf(options.public) ?: false
+
+        int scopeCount = 0
+        if (packageScope) scopeCount++
+        if (privateScope) scopeCount++
+        if (protectedScope) scopeCount++
+        if (publicScope) scopeCount++
+        if (scopeCount == 0) {
+            protectedScope = true
+        } else if (scopeCount > 1) {
+            System.err.println "groovydoc: Error - More than one of -public, -private, -package, or -protected specified."
+            cli.usage()
+            return
+        }
 
         windowTitle = options.windowtitle ?: ''
         docTitle = options.doctitle ?: ''
@@ -140,7 +153,7 @@ class Main {
         }
         remainingArgs = options.arguments()
         if (!remainingArgs) {
-            println "groovydoc: Error - No packages or classes specified."
+            System.err.println "groovydoc: Error - No packages or classes specified."
             cli.usage()
             return
         }

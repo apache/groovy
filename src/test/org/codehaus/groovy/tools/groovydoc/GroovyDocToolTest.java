@@ -105,9 +105,9 @@ public class GroovyDocToolTest extends GroovySwingTestCase {
         assertTrue(groovyCategorySupportDocument != null &&
                 groovyCategorySupportDocument.indexOf("<method modifiers=\"public static \" returns=\"boolean\" name=\"hasCategoryInAnyThread\">") > 0);
 
-        String categoryMethodDocument = output.getText(MOCK_DIR + "/org/codehaus/groovy/runtime/GroovyCategorySupport.CategoryMethod.html");
+        String categoryMethodDocument = output.getText(MOCK_DIR + "/org/codehaus/groovy/runtime/GroovyCategorySupport.CategoryMethodList.html");
         assertTrue(categoryMethodDocument != null &&
-                categoryMethodDocument.indexOf("<method modifiers=\"\" returns=\"boolean\" name=\"isChildOfParent\">") > 0);
+                categoryMethodDocument.indexOf("<method modifiers=\"public \" returns=\"boolean\" name=\"add\">") > 0);
 
         String packageDocument = output.getText(MOCK_DIR + "/org/codehaus/groovy/runtime/packageDocStructuredData.xml");
         assertTrue("Failed to find 'packageDocStructuredData.xml' in generated output", packageDocument != null);

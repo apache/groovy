@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -127,6 +127,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             current.setFullPathName(packagePath + FS + current.name());
             current.setTokenType(t.getType());
             processAnnotations(t, current);
+            processModifiers(t, current);
             classDocs.put(current.getFullPathName(), current);
             foundClasses.put(shortName, current);
             if (parent != null) {
@@ -401,7 +402,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         return grandParentNode != null && grandParentNode.getType() == LITERAL_new;
     }
 
-    private boolean processModifiers(GroovySourceAST t, SimpleGroovyMemberDoc memberDoc) {
+    private boolean processModifiers(GroovySourceAST t, SimpleGroovyAbstractableElementDoc memberOrClass) {
         GroovySourceAST modifiers = t.childOfType(MODIFIERS);
         if (modifiers != null) {
             AST currentModifier = modifiers.getFirstChild();
@@ -411,36 +412,43 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                 int type = currentModifier.getType();
                 switch (type) {
                     case LITERAL_public:
-                        memberDoc.setPublic(true);
+                        memberOrClass.setPublic(true);
                         hasPublicVisibility = true;
                         break;
                     case LITERAL_protected:
-                        memberDoc.setProtected(true);
+                        memberOrClass.setProtected(true);
                         hasNonPublicVisibility = true;
                         break;
                     case LITERAL_private:
-                        memberDoc.setPrivate(true);
+                        memberOrClass.setPrivate(true);
                         hasNonPublicVisibility = true;
                         break;
                     case LITERAL_static:
-                        memberDoc.setStatic(true);
+                        memberOrClass.setStatic(true);
                         break;
                     case FINAL:
-                        memberDoc.setFinal(true);
+                        memberOrClass.setFinal(true);
                         break;
                     case ABSTRACT:
-                        memberDoc.setAbstract(true);
+                        memberOrClass.setAbstract(true);
                         break;
                 }
                 currentModifier = currentModifier.getNextSibling();
             }
-            if (!hasNonPublicVisibility && !(memberDoc instanceof GroovyFieldDoc)) {
-                // in groovy (and java asts turned into groovy by Groovifier), methods are assumed public, unless informed otherwise
-                memberDoc.setPublic(true);
+            if (!hasNonPublicVisibility && isGroovy && !(memberOrClass instanceof GroovyFieldDoc)) {
+                // in groovy methods and classes are assumed public, unless informed otherwise
+                memberOrClass.setPublic(true);
+            } else if (!hasNonPublicVisibility && !hasPublicVisibility && !isGroovy) {
+                memberOrClass.setPackagePrivate(true);
             }
-            if (memberDoc instanceof GroovyFieldDoc && !hasNonPublicVisibility && !hasPublicVisibility && isGroovy) return true;
+            if (memberOrClass instanceof GroovyFieldDoc && !hasNonPublicVisibility && !hasPublicVisibility && isGroovy) return true;
+        } else if (isGroovy && !(memberOrClass instanceof GroovyFieldDoc)) {
+            // in groovy methods and classes are assumed public, unless informed otherwise
+            memberOrClass.setPublic(true);
+        } else if (!isGroovy) {
+            memberOrClass.setPackagePrivate(true);
         }
-        return memberDoc instanceof GroovyFieldDoc && isGroovy;
+        return memberOrClass instanceof GroovyFieldDoc && isGroovy;
     }
 
     // todo - If no comment before node, then get comment from same node on parent class - ouch!

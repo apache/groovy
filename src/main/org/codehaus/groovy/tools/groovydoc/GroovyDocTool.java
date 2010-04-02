@@ -1,5 +1,5 @@
 /*
- * Copyright 2007-2009 the original author or authors.
+ * Copyright 2007-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ public class GroovyDocTool {
 
     private final GroovyRootDocBuilder rootDocBuilder;
     private final GroovyDocTemplateEngine templateEngine;
+    private Properties properties;
 
     /**
      * Constructor for use by people who only want to interact with the Groovy Doclet Tree (rootDoc)
@@ -48,6 +49,7 @@ public class GroovyDocTool {
 
     public GroovyDocTool(ResourceManager resourceManager, String[] sourcepaths, String[] docTemplates, String[] packageTemplates, String[] classTemplates, List<LinkArgument> links, Properties properties) {
         rootDocBuilder = new GroovyRootDocBuilder(this, sourcepaths, links, properties);
+        this.properties = properties;
         if (resourceManager == null) {
             templateEngine = null;
         } else {
@@ -68,8 +70,12 @@ public class GroovyDocTool {
     }
 
     public void renderToOutput(OutputTool output, String destdir) throws Exception {
+        // expect just one scope to be set on the way in but now also set higher levels of visibility
+        if ("true".equals(properties.getProperty("privateScope"))) properties.setProperty("packageScope", "true");
+        if ("true".equals(properties.getProperty("packageScope"))) properties.setProperty("protectedScope", "true");
+        if ("true".equals(properties.getProperty("protectedScope"))) properties.setProperty("publicScope", "true");
         if (templateEngine != null) {
-            GroovyDocWriter writer = new GroovyDocWriter(this, output, templateEngine);
+            GroovyDocWriter writer = new GroovyDocWriter(this, output, templateEngine, properties);
             GroovyRootDoc rootDoc = rootDocBuilder.getRootDoc();
             writer.writeRoot(rootDoc, destdir);
             writer.writePackages(rootDoc, destdir);

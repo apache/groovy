@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,21 +17,12 @@ package org.codehaus.groovy.tools.groovydoc;
 
 import org.codehaus.groovy.groovydoc.*;
 
-public class SimpleGroovyMemberDoc extends SimpleGroovyProgramElementDoc implements GroovyMemberDoc {
-    private boolean abstractElement;
+public class SimpleGroovyMemberDoc extends SimpleGroovyAbstractableElementDoc implements GroovyMemberDoc {
     protected GroovyClassDoc belongsToClass;
 
     public SimpleGroovyMemberDoc(String name, GroovyClassDoc belongsToClass) {
         super(name);
         this.belongsToClass = belongsToClass;
-    }
-
-    public void setAbstract(boolean b) {
-        abstractElement = b;
-    }
-
-    public boolean isAbstract() {
-        return abstractElement;
     }
 
     public boolean isSynthetic() {/*todo*/

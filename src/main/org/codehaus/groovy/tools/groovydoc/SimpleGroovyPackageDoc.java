@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -48,13 +48,13 @@ public class SimpleGroovyPackageDoc extends SimpleGroovyDoc implements GroovyPac
     }
 
     public void putAll(Map<String, GroovyClassDoc> classes) {
-        // 2 way relationship
+        // 2 way relationship for visible classes:
         // add reference to classes inside this package
-        classDocs.putAll(classes);
-
         // add reference to this package inside classes
-        for (GroovyClassDoc doc : classes.values()) {
-            SimpleGroovyProgramElementDoc programElement = (SimpleGroovyProgramElementDoc) doc;
+        for (Map.Entry<String, GroovyClassDoc> docEntry : classes.entrySet()) {
+            final GroovyClassDoc classDoc = docEntry.getValue();
+            classDocs.put(docEntry.getKey(), classDoc);
+            SimpleGroovyProgramElementDoc programElement = (SimpleGroovyProgramElementDoc) classDoc;
             programElement.setContainingPackage(this);
         }
     }

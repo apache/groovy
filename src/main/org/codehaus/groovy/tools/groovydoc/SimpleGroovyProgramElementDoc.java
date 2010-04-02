@@ -25,11 +25,12 @@ import java.util.List;
 
 public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements GroovyProgramElementDoc {
 	private GroovyPackageDoc packageDoc;
-    private boolean publicElement;
     private boolean staticElement;
     private boolean finalElement;
-    private boolean privateElement;
-    private boolean protectedElement;
+    private boolean publicScope;
+    private boolean protectedScope;
+    private boolean packagePrivateScope;
+    private boolean privateScope;
     private final List<GroovyAnnotationRef> annotationRefs;
 
     public SimpleGroovyProgramElementDoc(String name) {
@@ -45,14 +46,6 @@ public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements Gr
         this.packageDoc = packageDoc;
     }
 
-    public void setPublic(boolean b) {
-        publicElement = b;
-    }
-
-    public boolean isPublic() {
-        return publicElement;
-    }
-
     public void setStatic(boolean b) {
         staticElement = b;
     }
@@ -61,28 +54,44 @@ public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements Gr
         return staticElement;
     }
 
-    public boolean isFinal() {
-        return finalElement;
-    }
-
     public void setFinal(boolean b) {
         this.finalElement = b;
     }
 
-    public void setPrivate(boolean b) {
-        privateElement = b;
+    public boolean isFinal() {
+        return finalElement;
+    }
+
+    public void setPublic(boolean b) {
+        publicScope = b;
+    }
+
+    public boolean isPublic() {
+        return publicScope;
     }
 
     public void setProtected(boolean b) {
-        protectedElement = b;
-    }
-
-    public boolean isPrivate() {
-        return privateElement;
+        protectedScope = b;
     }
 
     public boolean isProtected() {
-        return protectedElement;
+        return protectedScope;
+    }
+
+    public void setPackagePrivate(boolean b) {
+        packagePrivateScope = b;
+    }
+
+    public boolean isPackagePrivate() {
+        return packagePrivateScope;
+    }
+
+    public void setPrivate(boolean b) {
+        privateScope = b;
+    }
+
+    public boolean isPrivate() {
+        return privateScope;
     }
 
     public GroovyAnnotationRef[] annotations() {
@@ -94,8 +103,6 @@ public class SimpleGroovyProgramElementDoc extends SimpleGroovyDoc implements Gr
     }
 
 	public GroovyClassDoc containingClass() {/*todo*/return null;}
-
-    public boolean isPackagePrivate() {/*todo*/return false;}
 
     public String modifiers() {/*todo*/return null;}
 

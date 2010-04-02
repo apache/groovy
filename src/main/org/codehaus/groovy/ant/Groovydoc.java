@@ -49,13 +49,13 @@ public class Groovydoc extends Task {
     private String docTitle = "Groovy Documentation";
     private String footer = "Groovy Documentation";
     private String header = "Groovy Documentation";
-    private boolean privateScope;
-    private boolean protectedScope;
-    private boolean packageScope;
-    private boolean publicScope;
+    private Boolean privateScope;
+    private Boolean protectedScope;
+    private Boolean packageScope;
+    private Boolean publicScope;
+    private Boolean author;
     private boolean useDefaultExcludes;
     private boolean includeNoSourcePackages;
-    private boolean author;
     private List<DirSet> packageSets;
     private List<String> sourceFilesToDoc;
     private List<LinkArgument> links = new ArrayList<LinkArgument>();
@@ -168,6 +168,19 @@ public class Groovydoc extends Task {
     }
 
     /**
+     * Indicates the access mode or scope of interest: one of public, protected, package, or private.
+     * Package scoped access is ignored for fields of Groovy classes where they correspond to properties.
+     *
+     * @param access one of public, protected, package, or private
+     */
+    public void setAccess(String access) {
+        if ("public".equals(access)) publicScope = true;
+        else if ("protected".equals(access)) protectedScope = true;
+        else if ("package".equals(access)) packageScope = true;
+        else if ("private".equals(access)) privateScope = true;
+    }
+
+    /**
      * Indicate whether all classes and
      * members are to be included in the scope processed.
      *
@@ -179,7 +192,6 @@ public class Groovydoc extends Task {
 
     /**
      * Indicate whether only public classes and members are to be included in the scope processed.
-     * Currently not used.
      *
      * @param b true if scope only includes public level classes and members
      */
@@ -189,7 +201,6 @@ public class Groovydoc extends Task {
 
     /**
      * Indicate whether only protected and public classes and members are to be included in the scope processed.
-     * Currently not used.
      *
      * @param b true if scope includes protected level classes and members
      */
@@ -199,7 +210,7 @@ public class Groovydoc extends Task {
 
     /**
      * Indicate whether only package, protected and public classes and members are to be included in the scope processed.
-     * Currently not used.
+     * Package scoped access is ignored for fields of Groovy classes where they correspond to properties.
      *
      * @param b true if scope includes package level classes and members
      */
@@ -340,7 +351,7 @@ public class Groovydoc extends Task {
                 // Path.list does it for us.
                 sourcePath.createPathElement().setLocation(baseDir);
             } else {
-                log.verbose(baseDir + " doesn\'t contain any packages, dropping it.");
+                log.verbose(baseDir + " doesn't contain any packages, dropping it.");
             }
         }
     }
@@ -349,22 +360,23 @@ public class Groovydoc extends Task {
         List<String> packagesToDoc = new ArrayList<String>();
         Path sourceDirs = new Path(getProject());
         Properties properties = new Properties();
-        properties.put("windowTitle", windowTitle);
-        properties.put("docTitle", docTitle);
-        properties.put("footer", footer);
-        properties.put("header", header);
-        properties.put("privateScope", privateScope);
-        properties.put("protectedScope", protectedScope);
-        properties.put("publicScope", publicScope);
-        properties.put("packageScope", packageScope);
-        properties.put("author", author);
-        properties.put("overviewFile", overviewFile != null ? overviewFile.getAbsolutePath() : "");
+        properties.setProperty("windowTitle", windowTitle);
+        properties.setProperty("docTitle", docTitle);
+        properties.setProperty("footer", footer);
+        properties.setProperty("header", header);
+        checkScopeProperties(properties);
+        properties.setProperty("publicScope", publicScope.toString());
+        properties.setProperty("protectedScope", protectedScope.toString());
+        properties.setProperty("packageScope", packageScope.toString());
+        properties.setProperty("privateScope", privateScope.toString());
+        properties.setProperty("author", author.toString());
+        properties.setProperty("overviewFile", overviewFile != null ? overviewFile.getAbsolutePath() : "");
 
         if (sourcePath != null) {
             sourceDirs.addExisting(sourcePath);
         }
         parsePackages(packagesToDoc, sourceDirs);
-        
+
         GroovyDocTool htmlTool = new GroovyDocTool(
                 new ClasspathResourceManager(), // we're gonna get the default templates out of the dist jar file
                 sourcePath.list(),
@@ -389,8 +401,23 @@ public class Groovydoc extends Task {
                 File outfile = new File(destDir, "stylesheet.css");
                 DefaultGroovyMethods.setText(outfile, css);
             } catch (IOException e) {
-                System.out.println("Warning: Unable to copy specified stylesheet '" + styleSheetFile.getAbsolutePath() + "'. Using default stylesheet instead. Due to: " + e.getMessage());
+                System.out.println("Warning: Unable to copy specified stylesheet '" + styleSheetFile.getAbsolutePath() +
+                        "'. Using default stylesheet instead. Due to: " + e.getMessage());
             }
+        }
+    }
+
+    private void checkScopeProperties(Properties properties) {
+        // make protected the default scope and check for invalid duplication
+        int scopeCount = 0;
+        if (packageScope) scopeCount++;
+        if (privateScope) scopeCount++;
+        if (protectedScope) scopeCount++;
+        if (publicScope) scopeCount++;
+        if (scopeCount == 0) {
+            protectedScope = true;
+        } else if (scopeCount > 1) {
+            throw new BuildException("More than one of public, private, package, or protected scopes specified.");
         }
     }
 

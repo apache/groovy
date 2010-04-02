@@ -10,7 +10,7 @@ def elementTypes = [
     "Property" : { it.properties() },
     "Enum Constant" : { it.enumConstants() },
 ]
-def isVisible = { !it.isPrivate() || props.privateScope }
+def isVisible = { it.isPublic() || (it.isProtected() && props.protectedScope == 'true') || (!it.isProtected() && !it.isPrivate() && props.packageScope == 'true') || props.privateScope == 'true' }
 def paramsOf = { n, classDoc, boolean brief -> n.parameters().collect{ param -> param.isTypeAvailable()?param.type().name():param.typeName() }.join(", ") }
 def nameFromParams = { n -> n.name() + '(' + n.parameters().collect{ param -> param.isTypeAvailable()?param.type().qualifiedTypeName():param.typeName() }.join(', ') + ')' }
 %>
