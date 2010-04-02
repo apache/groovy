@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +23,7 @@ import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import groovy.lang.Closure;
 
 /**
- * Lazy evaluated representation of nodes filtered by attributes.
+ * Lazy evaluated representation of a node's attributes filtered by a Closure.
  *
  * @author John Wilson
  */
@@ -31,7 +31,12 @@ public class FilteredAttributes extends Attributes
 {
     private final Closure closure;
 
-    public FilteredAttributes(final GPathResult parent, final Closure closure, final Map namespaceTagHints) {
+    /**
+     * @param parent the GPathResult prior to the application of the expression creating this GPathResult
+     * @param closure the Closure to use to filter the attributes
+     * @param namespaceTagHints the known tag to namespace mappings
+     */
+    public FilteredAttributes(final GPathResult parent, final Closure closure, final Map<String, String> namespaceTagHints) {
         super(parent, parent.name, namespaceTagHints);
         this.closure = closure;
     }
