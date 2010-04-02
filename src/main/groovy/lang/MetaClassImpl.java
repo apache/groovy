@@ -2308,7 +2308,8 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         }
 
         // check for a category method named like a setter
-        if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()) {
+        if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()
+        		&& name.length() > 0) {
             String getterName = "set" + MetaClassHelper.capitalize(name);
             MetaMethod categoryMethod = getCategoryMethodSetter(sender, getterName, false);
             if (categoryMethod != null) {
