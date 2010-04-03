@@ -218,7 +218,7 @@ class DocGenerator {
         def methods = []
         listOfMethods.each {method ->
             def parameters = method.getTagsByName("param").collect {
-                [name: it.value.replaceAll(' .*', ''), comment: it.value.replaceAll('^\\w*', '')]
+                [name: it.value.replaceAll(' .*', ''), comment: linkify(it.value.replaceAll('^\\w*', ''), curPackage)]
             }
             if (parameters)
                 parameters.remove(0) // method is static, first arg is the "real this"
@@ -255,7 +255,7 @@ class DocGenerator {
     }
 
     private String getParametersDocUrl(method, curPackage) {
-        getParameters(method).collect {"${getDocUrl(it.type.toString(), curPackage)}"}.join(", ")
+        getParameters(method).collect {"${getDocUrl(it.type.toString(), curPackage)} $it.name"}.join(", ")
     }
 
     private String getDocUrl(type, curPackage) {
