@@ -103,7 +103,7 @@ public abstract class BaseDuration {
         if (this.minutes    != 0) buffer.add(this.minutes + " minutes");
 
         if (this.seconds != 0 || this.millis != 0)
-            buffer.add(this.seconds + "." + DefaultGroovyMethods.padLeft("" + this.millis, new Integer(3), "0")  + " seconds");
+            buffer.add(this.seconds + "." + DefaultGroovyMethods.padLeft("" + Math.abs(millis), 3, "0")  + " seconds");
 
         if (buffer.size()!=0) {
             return DefaultGroovyMethods.join(buffer, ", ");
