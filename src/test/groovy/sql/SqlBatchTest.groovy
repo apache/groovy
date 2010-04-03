@@ -79,4 +79,21 @@ class SqlBatchTest extends GroovyTestCase {
         assert sql.rows("SELECT * FROM PERSON").size() == 5
     }
 
+    void testWithBatchHavingSize() {
+        def numRows = sql.rows("SELECT * FROM PERSON").size()
+        assert numRows == 3
+        def myOthers = ['f4':'l4','f5':'l5','f6':'l6','f7':'l7']
+        def result = sql.withBatch(3) { stmt ->
+            myOthers.eachWithIndex { k, v, index ->
+                def id = index + numRows + 1
+                stmt.addBatch("insert into PERSON (id, firstname, lastname) values ($id, '$k', '$v')")
+            }
+        }
+        assert result == [1] * myOthers.size()
+        assert sql.rows("SELECT * FROM PERSON").size() == numRows + myOthers.size()
+        // end result the same as if no batching was in place but logging should show:
+        // FINE: Successfully executed batch with 3 command(s)
+        // FINE: Successfully executed batch with 1 command(s)
+    }
+
 }
