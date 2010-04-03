@@ -201,6 +201,8 @@ public class Sql {
 
     private boolean enableNamedQueries = true;
 
+    private boolean withinBatch;
+
     private final Map<String, Statement> statementCache = new HashMap<String, Statement>();
     private final Map<String, String> namedParamSqlCache = new HashMap<String, String>();
     private final Map<String, List<Tuple>> namedParamIndexPropCache = new HashMap<String, List<Tuple>>();
@@ -2105,14 +2107,25 @@ public class Sql {
     }
 
     /**
+     * Returns true if the current Sql object is currently executing a withBatch
+     * method call.
+     *
+     * @return true if a withBatch call is currently being executed.
+     */
+    public boolean isWithinBatch() {
+        return withinBatch;
+    }
+
+    /**
      * Performs the closure within a batch using a cached connection.
-     * The closure will be called with a single argument; the statement
-     * associated with this batch. Use it like this:
+     * Uses a batch size of zero, i.e. no automatic partitioning of batches.
+     * Use it like this:
      * <pre>
      * def updateCounts = sql.withBatch { stmt ->
      *     stmt.addBatch("insert into TABLENAME ...")
      *     stmt.addBatch("insert into TABLENAME ...")
      *     stmt.addBatch("insert into TABLENAME ...")
+     *     ...
      * }
      * </pre>
      *
@@ -2121,26 +2134,67 @@ public class Sql {
      *         command in the batch.  The elements of the array are ordered according
      *         to the order in which commands were added to the batch.
      * @throws SQLException if a database access error occurs,
-     *                      or this method is called on a closed <code>Statement</code>, or the
-     *                      driver does not support batch statements. Throws {@link java.sql.BatchUpdateException}
-     *                      (a subclass of <code>SQLException</code>) if one of the commands sent to the
-     *                      database fails to execute properly or attempts to return a result set.
+     *         or this method is called on a closed <code>Statement</code>, or the
+     *         driver does not support batch statements. Throws {@link java.sql.BatchUpdateException}
+     *         (a subclass of <code>SQLException</code>) if one of the commands sent to the
+     *         database fails to execute properly or attempts to return a result set.
+     * @see #withBatch(int, Closure)
      */
     public synchronized int[] withBatch(Closure closure) throws SQLException {
+        return withBatch(0, closure);
+    }
+
+    /**
+     * Performs the closure within a batch using a cached connection.
+     * The closure will be called with a single argument; the statement
+     * associated with this batch. Use it like this for batchSize of 20:
+     * <pre>
+     * def updateCounts = sql.withBatch(20) { stmt ->
+     *     stmt.addBatch("insert into TABLENAME ...")
+     *     stmt.addBatch("insert into TABLENAME ...")
+     *     stmt.addBatch("insert into TABLENAME ...")
+     *     ...
+     * }
+     * </pre>
+     *
+     * @param batchSize partition the batch into batchSize pieces, i.e. after batchSize
+     *        <code>addBatch()</code> invocations, call <code>executeBatch()</code> automatically;
+     *        0 means manual calls to executeBatch are required
+     * @param closure the closure containing batch and optionally other statements
+     * @return an array of update counts containing one element for each
+     *         command in the batch.  The elements of the array are ordered according
+     *         to the order in which commands were added to the batch.
+     * @throws SQLException if a database access error occurs,
+     *         or this method is called on a closed <code>Statement</code>, or the
+     *         driver does not support batch statements. Throws {@link java.sql.BatchUpdateException}
+     *         (a subclass of <code>SQLException</code>) if one of the commands sent to the
+     *         database fails to execute properly or attempts to return a result set.
+     * @see #withBatch(Closure)
+     */
+    public synchronized int[] withBatch(int batchSize, Closure closure) throws SQLException {
         boolean savedCacheConnection = cacheConnection;
         cacheConnection = true;
         Connection connection = null;
         Statement statement = null;
         boolean savedAutoCommit = true;
+        boolean savedWithinBatch = withinBatch;
         try {
+            withinBatch = true;
             connection = createConnection();
             savedAutoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
-            statement = createStatement(connection);
+            if (batchSize == 0) {
+                statement = createStatement(connection);
+            } else {
+                statement = new BatchingStatementWrapper(createStatement(connection), batchSize, LOG, connection);
+            }
             closure.call(statement);
             int[] result = statement.executeBatch();
             connection.commit();
-            LOG.fine("Successfully executed batch with " + result.length + " command(s)");
+            if (batchSize == 0) {
+                // BatchingStatementWrapper does its own logging
+                LOG.fine("Successfully executed batch with " + result.length + " command(s)");
+            }
             return result;
         } catch (SQLException e) {
             handleError(connection, e);
@@ -2156,6 +2210,7 @@ public class Sql {
             cacheConnection = false;
             closeResources(connection, statement);
             cacheConnection = savedCacheConnection;
+            withinBatch = savedWithinBatch;
             if (dataSource != null && !cacheConnection) {
                 useConnection = null;
             }
