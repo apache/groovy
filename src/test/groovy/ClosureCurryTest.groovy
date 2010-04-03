@@ -114,5 +114,28 @@ class ClosureCurryTest extends GroovyTestCase {
         assert d.bar() == 'baz' + sz
     }
 
+    void testCurryMultiply() {
+        def multiply = { a, b -> a * b }
+        def doubler = multiply.curry(2)
+        assert doubler(4) == 8
+    }
+
+    void testRCurryDivide() {
+        def divide = { a, b -> a / b }
+        def halver = divide.rcurry(2)
+        assert halver(8) == 4
+    }
+
+    void testNCurryBinarySearch() {
+        def caseInsensitive = { a, b -> a.toLowerCase() <=> b.toLowerCase() } as Comparator
+        def caseSensitive = { a, b -> a <=> b } as Comparator
+        def animals1 = ['ant', 'dog', 'BEE']
+        def animals2 = animals1 + ['Cat']
+        // curry middle param of this utility method:
+        // Collections#binarySearch(List list, Object key, Comparator c)
+        def catSearcher = Collections.&binarySearch.ncurry(1, "cat")
+        def combos = [[animals1, animals2], [caseInsensitive, caseSensitive]].combinations()
+        assert combos.collect{ a, c -> catSearcher(a.sort(c), c) } == [-3, 2, -3, -4]
+    }
 
 }
