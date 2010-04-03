@@ -66,6 +66,11 @@ public final class CurriedClosure extends Closure {
         this(0, uncurriedClosure, arguments);
     }
 
+    @Deprecated
+    public CurriedClosure(Closure uncurriedClosure, int i) {
+        this(uncurriedClosure, new Object[]{Integer.valueOf(i)});
+    }
+
     public Object[] getUncurriedArguments(Object[] arguments) {
         final Object newCurriedParams[] = new Object[curriedParams.length + arguments.length];
         System.arraycopy(arguments, 0, newCurriedParams, 0, index);
