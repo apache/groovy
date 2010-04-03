@@ -355,13 +355,71 @@ public abstract class Closure extends GroovyObjectSupport implements Cloneable, 
     }
 
     /**
-     * Support for closure currying
+     * Support for Closure currying.
+     * Typical usage:
+     * <pre>
+     * def multiply = { a, b -> a * b }
+     * def doubler = multiply.curry(2)
+     * assert doubler(4) == 8
+     * </pre>
      *
      * @param arguments the arguments to bind
      * @return the new closure with its arguments bound
      */
     public Closure curry(final Object arguments[]) {
-        return new CurriedClosure(this,arguments);
+        return new CurriedClosure(this, arguments);
+    }
+
+    /**
+     * Support for Closure "right" currying.
+     * Parameters are supplied on the right rather than left as per the normal curry() method.
+     * Typical usage:
+     * <pre>
+     * def divide = { a, b -> a / b }
+     * def halver = divide.rcurry(2)
+     * assert halver(8) == 4
+     * </pre>
+     *
+     * @param arguments the arguments to bind
+     * @return the new closure with its arguments bound
+     * @see #curry(Object[])
+     */
+    public Closure rcurry(final Object arguments[]) {
+        return new CurriedClosure(-arguments.length, this, arguments);
+    }
+
+    /**
+     * Support for Closure currying at a given index.
+     * Parameters are supplied from index position "n".
+     * Typical usage:
+     * <pre>
+     * def caseInsensitive = { a, b -> a.toLowerCase() <=> b.toLowerCase() } as Comparator
+     * def caseSensitive = { a, b -> a <=> b } as Comparator
+     * def animals1 = ['ant', 'dog', 'BEE']
+     * def animals2 = animals1 + ['Cat']
+     * // curry middle param of this utility method:
+     * // Collections#binarySearch(List list, Object key, Comparator c)
+     * def catSearcher = Collections.&binarySearch.ncurry(1, "cat")
+     * [[animals1, animals2], [caseInsensitive, caseSensitive]].combinations().each{ a, c ->
+     *   def idx = catSearcher(a.sort(c), c)
+     *   print a.sort(c).toString().padRight(22)
+     *   if (idx < 0) println "Not found but would belong in position ${-idx - 1}"
+     *   else println "Found at index $idx"
+     * }
+     * // =>
+     * // [ant, BEE, dog]       Not found but would belong in position 2
+     * // [ant, BEE, Cat, dog]  Found at index 2
+     * // [BEE, ant, dog]       Not found but would belong in position 2
+     * // [BEE, Cat, ant, dog]  Not found but would belong in position 3
+     * </pre>
+     *
+     * @param n the index from which to bind parameters (may be -ve in which case it will be normalized)
+     * @param arguments the arguments to bind
+     * @return the new closure with its arguments bound
+     * @see #curry(Object[])
+     */
+    public Closure ncurry(int n, final Object arguments[]) {
+        return new CurriedClosure(n, this, arguments);
     }
 
     /* (non-Javadoc)
