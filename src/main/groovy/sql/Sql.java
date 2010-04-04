@@ -2175,7 +2175,7 @@ public class Sql {
         boolean savedCacheConnection = cacheConnection;
         cacheConnection = true;
         Connection connection = null;
-        Statement statement = null;
+        BatchingStatementWrapper statement = null;
         boolean savedAutoCommit = true;
         boolean savedWithinBatch = withinBatch;
         try {
@@ -2183,18 +2183,10 @@ public class Sql {
             connection = createConnection();
             savedAutoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
-            if (batchSize == 0) {
-                statement = createStatement(connection);
-            } else {
-                statement = new BatchingStatementWrapper(createStatement(connection), batchSize, LOG, connection);
-            }
+            statement = new BatchingStatementWrapper(createStatement(connection), batchSize, LOG, connection);
             closure.call(statement);
             int[] result = statement.executeBatch();
             connection.commit();
-            if (batchSize == 0) {
-                // BatchingStatementWrapper does its own logging
-                LOG.fine("Successfully executed batch with " + result.length + " command(s)");
-            }
             return result;
         } catch (SQLException e) {
             handleError(connection, e);
@@ -2208,7 +2200,8 @@ public class Sql {
         } finally {
             if (connection != null) connection.setAutoCommit(savedAutoCommit);
             cacheConnection = false;
-            closeResources(connection, statement);
+            closeResources(statement);
+            closeResources(connection);
             cacheConnection = savedCacheConnection;
             withinBatch = savedWithinBatch;
             if (dataSource != null && !cacheConnection) {
@@ -2591,6 +2584,28 @@ public class Sql {
                 LOG.finest("Caught exception closing statement: " + e.getMessage() + " - continuing");
             }
         }
+        closeResources(connection);
+    }
+
+    private void closeResources(BatchingStatementWrapper statement) {
+        if (cacheStatements) return;
+        if (statement != null) {
+            try {
+                statement.close();
+            }
+            catch (SQLException e) {
+                LOG.finest("Caught exception closing statement: " + e.getMessage() + " - continuing");
+            }
+        }
+    }
+
+    /**
+     * An extension point allowing the behavior of resource closing to be
+     * overridden in derived classes.
+     *
+     * @param connection the connection to close
+     */
+    protected void closeResources(Connection connection) {
         if (cacheConnection) return;
         if (connection != null && dataSource != null) {
             try {
