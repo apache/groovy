@@ -15,6 +15,7 @@ import static groovy.API.*
 import static groovy.StaticImportChild.*
 import groovy.bugs.Groovy3953
 import static Groovy3953.*
+import static groovy.bugs.Groovy4145.foo4145
 
 class StaticImportTest extends GroovyTestCase {
     void testFieldWithAliasInExpression() {
@@ -135,6 +136,10 @@ class StaticImportTest extends GroovyTestCase {
     
     void testStaticStarImportOnAModuleImport() { //GROOVY-3953
         assert foo3953() == 'Groovy3953#foo3953() called'
+    }
+
+    void testStaticPropertyImportedImplementedAsGetter() { //GROOVY-4145
+        assert foo4145 == 3
     }
 }
 
