@@ -13,9 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.codehaus.groovy.runtime
-
-import groovy.time.TimeCategory
+package groovy.time
 
 /** 
  * Tests the groovy.time.TimeCategory class. 
@@ -199,6 +197,24 @@ class TimeCategoryTest extends GroovyTestCase {
             assert result.years == 0
             assert result.months == 0
 
+        }
+    }
+
+    void testToStringForNegativeValues() {
+        use(TimeCategory) {
+            def t1 = Calendar.instance.time
+            def t2 = t1 - 4.seconds + 2.milliseconds
+            def t3 = t1 + 4.seconds + 2.milliseconds
+            def t4 = t1 - 4.seconds - 2.milliseconds
+            def t5 = t1 + 4.seconds - 2.milliseconds
+            def t6 = t1 -             2.milliseconds
+            def t7 = t1 +             2.milliseconds
+            assert (t1 - t2).toString() == '3.998 seconds'
+            assert (t1 - t3).toString() == '-4.002 seconds'
+            assert (t1 - t4).toString() == '4.002 seconds'
+            assert (t1 - t5).toString() == '-3.998 seconds'
+            assert (t1 - t6).toString() == '0.002 seconds'
+            assert (t1 - t7).toString() == '-0.002 seconds'
         }
     }
 

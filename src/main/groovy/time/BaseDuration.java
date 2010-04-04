@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -98,7 +98,7 @@ public abstract class BaseDuration {
         if (this.minutes    != 0) buffer.add(this.minutes + " minutes");
 
         if (this.seconds != 0 || this.millis != 0)
-            buffer.add(this.seconds + "." + DefaultGroovyMethods.padLeft("" + this.millis, new Integer(3), "0")  + " seconds");
+            buffer.add((seconds == 0 ? (millis < 0 ? "-0" : "0") : seconds) + "." + DefaultGroovyMethods.padLeft("" + Math.abs(millis), 3, "0")  + " seconds");
 
         return DefaultGroovyMethods.join(buffer, ", ");
     }
