@@ -18,6 +18,7 @@ package org.codehaus.groovy.control;
 import org.codehaus.groovy.ast.*;
 import org.codehaus.groovy.ast.expr.*;
 import org.codehaus.groovy.ast.stmt.Statement;
+import org.codehaus.groovy.runtime.MetaClassHelper;
 import org.objectweb.asm.Opcodes;
 
 import java.util.*;
@@ -316,15 +317,24 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
             ImportNode importNode = importNodes.get(name);
             Expression expression = findStaticField(importNode.getType(), importNode.getFieldName());
             if (expression != null) return expression;
+            expression = findStaticGetterForField(importNode.getType(), importNode.getFieldName());
+            if (expression != null) return expression;
         }
         for (ImportNode importNode : module.getStaticStarImports().values()) {
             ClassNode node = importNode.getType();
             Expression expression = findStaticField(node, name);
             if (expression != null) return expression;
+            expression = findStaticGetterForField(node, name);
+            if (expression != null) return expression;
         }
         return null;
     }
 
+    private Expression findStaticGetterForField(ClassNode staticImportType, String fieldName) {
+    	String getterName = "get" + MetaClassHelper.capitalize(fieldName);
+    	return findStaticMethod(staticImportType, getterName, ArgumentListExpression.EMPTY_ARGUMENTS);
+    }
+    
     private Expression findStaticField(ClassNode staticImportType, String fieldName) {
         if (staticImportType.isPrimaryClassNode() || staticImportType.isResolved()) {
             staticImportType.getFields(); // force init
