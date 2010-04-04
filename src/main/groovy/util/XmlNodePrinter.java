@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -26,10 +26,23 @@ import java.util.List;
 import java.util.Map;
 
 /**
- * Prints a node with all children in XML format.
+ * Prints a <code>groovy.util.Node</code> (as used with <code>XmlParser</code>) including all children in XML format.
+ * Typical usage:
+ * <pre>
+ * def xml = '&lt;html&gt;&lt;head&gt;&lt;title&gt;Title&lt;/title&gt;&lt;/head&gt;&lt;body&gt;&lt;h1&gt;Header&lt;/h1&gt;&lt;/body&gt;&lt;/html&gt;'
+ * def root = new XmlParser().parseText(xml)
+ * new XmlNodePrinter(preserveWhitespace:true).print(root.body[0])
+ * </pre>
+ * which when run produces this on stdout (or use your own <code>PrintWriter</code> to direct elsewhere):
+ * <pre>
+ * &lt;body&gt;
+ *   &lt;h1&gt;Header&lt;/h1&gt;
+ * &lt;/body&gt;
+ * </pre>
  *
  * @author Christian Stein
  * @see groovy.util.NodePrinter
+ * @see groovy.xml.XmlUtil#serialize(Node)
  */
 public class XmlNodePrinter {
 
