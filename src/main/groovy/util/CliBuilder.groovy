@@ -126,6 +126,31 @@ import org.codehaus.groovy.runtime.InvokerHelper
  * ...
  * </pre>
  *
+ * CliBuilder also supports Argument File processing. If an argument starts with
+ * an '@' character followed by a filename, then the contents of the file with name
+ * filename are placed into the command line. The feature can be turned off by
+ * setting expandArgumentFiles to false. If turned on, you can still pass a real
+ * parameter with an initial '@' character by escaping it with an additional '@'
+ * symbol, e.g. '@@foo' will become '@foo' and not be subject to expansion. As an
+ * example, if the file temp.args contains the content:
+ * <pre>
+ * -arg1
+ * paramA
+ * paramB paramC
+ * </pre>
+ * Then calling the command line with:
+ * <pre>
+ * someCommand @temp.args -arg2 paramD
+ * </pre>
+ * Is the same as calling this:
+ * <pre>
+ * someCommand -arg1 paramA paramB paramC -arg2 paramD
+ * </pre>
+ * This feature is particularly useful on operating systems which place limitations
+ * on the size of the command line (e.g. Windows). The feature is similar to
+ * the 'Command Line Argument File' processing supported by javadoc and javac.
+ * Consult the corresponding documentation for those tools if you wish to see further examples.
+ *
  * Supported Option Properties:
  *   argName:        String
  *   longOpt:        String
@@ -156,6 +181,11 @@ class CliBuilder {
      * To change from the default PosixParser to the GnuParser. Ignored if the parser is explicitly set.
      */
     boolean posix = true
+
+    /**
+     * Whether @filename will be expanded into args within filename.
+     */
+    boolean expandArgumentFiles = true
 
     /**
      * Normally set internally but can be overridden if you want to customise how the usage message is displayed.
@@ -219,6 +249,7 @@ class CliBuilder {
      * Returns null on bad command lines after displaying usage message.
      */
     OptionAccessor parse(args) {
+        if (expandArgumentFiles) args = expandArgumentFiles(args)
         if (!parser) {
             parser = posix ? new PosixParser() : new GnuParser()
         }
@@ -255,6 +286,39 @@ class CliBuilder {
         details.each { key, value -> option[key] = value }
         return option
     }
+
+    static expandArgumentFiles(args) throws IOException {
+        def result = []
+        for (arg in args) {
+            if (arg[0] == '@') {
+                arg = arg.substring(1)
+                if (arg[0] != '@') {
+                    expandArgumentFile(arg, result)
+                    continue
+                }
+            }
+            result << arg
+        }
+        return result
+    }
+
+    private static expandArgumentFile(name, args) throws IOException {
+        def charAsInt = { String s -> s.toCharacter() as int }
+        new File(name).withReader { r ->
+            new StreamTokenizer(r).with {
+                resetSyntax()
+                wordChars(charAsInt(' '), 255)
+                whitespaceChars(0, charAsInt(' '))
+                commentChar(charAsInt('#'))
+                quoteChar(charAsInt('"'))
+                quoteChar(charAsInt('\''))
+                while (nextToken() != StreamTokenizer.TT_EOF) {
+                    args << sval
+                }
+            }
+        }
+    }
+
 }
 
 class OptionAccessor {
