@@ -416,4 +416,32 @@ usage: groovy
         assert options.s
         assert options.number_of_seconds
     }
+
+    void testArgumentFileExpansion() {
+        def cli = new CliBuilder(usage: 'test usage')
+        cli.h(longOpt: 'help', 'usage information')
+        cli.d(longOpt: 'debug', 'turn on debug info')
+        def args = ['-h', '@temp.args', 'foo', '@@baz']
+        def temp = new File('temp.args')
+        temp.deleteOnExit()
+        temp.text = '-d bar'
+        def options = cli.parse(args)
+        assert options.h
+        assert options.d
+        assert options.arguments() == ['bar', 'foo', '@baz']
+    }
+
+    void testArgumentFileExpansionTurnedOff() {
+        def cli = new CliBuilder(usage: 'test usage', expandArgumentFiles:false)
+        cli.h(longOpt: 'help', 'usage information')
+        cli.d(longOpt: 'debug', 'turn on debug info')
+        def args = ['-h', '@temp.args', 'foo', '@@baz']
+        def temp = new File('temp.args')
+        temp.deleteOnExit()
+        temp.text = '-d bar'
+        def options = cli.parse(args)
+        assert options.h
+        assert !options.d
+        assert options.arguments() == ['@temp.args', 'foo', '@@baz']
+    }
 }
