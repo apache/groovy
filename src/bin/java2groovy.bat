@@ -16,3 +16,4 @@ if "%DIRNAME%" == "" set DIRNAME=.\
 
 @rem End local scope for the variables with windows NT shell
 if "%OS%"=="Windows_NT" endlocal
+%COMSPEC% /C exit /B %ERRORLEVEL%
