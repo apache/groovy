@@ -54,7 +54,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * A MetaClass that implements GroovyObject and behaves like an Expando, allowing the addition of new methods on the fly.
  *
  * Some examples of usage:
- * <code><pre>
+ * <pre>
  * // defines or replaces instance method:
  * metaClass.myMethod = { args -> }
  *
@@ -78,14 +78,163 @@ import java.util.concurrent.ConcurrentHashMap;
  *
  * // defines a new property with an initial value of "blah"
  * metaClass.myProperty = "blah"
- * </code></pre>
+ * </pre>
  *
- * By default methods are only allowed to be added before initialize() is called. In other words you create a new
- * ExpandoMetaClass, add some methods and then call initialize(). If you attempt to add new methods after initialize()
- * has been called an error will be thrown.This is to ensure that the MetaClass can operate appropriately in multi 
- * threaded environments as it forces you to do all method additions at the beginning, before using the MetaClass.
+ * ExpandoMetaClass also supports a DSL/builder like notation to combine multiple definitions together. So instead of this:
+ * <pre>
+ * Number.metaClass.multiply = { Amount amount -> amount.times(delegate) }
+ * Number.metaClass.div =      { Amount amount -> amount.inverse().times(delegate) }
+ * </pre>
+ * You can now do this:
+ * <pre>
+ * Number.metaClass {
+ *     multiply { Amount amount -> amount.times(delegate) }
+ *     div      { Amount amount -> amount.inverse().times(delegate) }
+ * }
+ * </pre>
  * 
- * ExpandoMetaClass differs here from the default in that it allows you adding methods after initialize has been called.
+ * ExpandoMetaClass also supports runtime mixins. While {@code @Mixin} allowed you to mix in new behavior
+ * to classes you owned and were designing, you could not mixin anything to types you didn't own.
+ * Runtime mixins let you add a mixin on any type at runtime.
+ * <pre>
+ * interface Vehicle {
+ *     String getName()
+ * }
+ *
+ * // Category annotation style
+ * {@code @Category}(Vehicle) class FlyingAbility {
+ *     def fly() { "I'm the ${name} and I fly!" }
+ * }
+ *
+ * // traditional category style
+ * class DivingAbility {
+ *     static dive(Vehicle self) { "I'm the ${self.name} and I dive!" }
+ * }
+ *
+ * // provided by a third-party, so can't augment using Mixin annotation
+ * class JamesBondVehicle implements Vehicle {
+ *     String getName() { "James Bond's vehicle" }
+ * }
+ *
+ * // Can be added via metaClass, e.g.:
+ * // JamesBondVehicle.metaClass.mixin DivingAbility, FlyingAbility
+ * // Or using shorthand through DGM method on Class
+ * JamesBondVehicle.mixin DivingAbility, FlyingAbility
+ *
+ * assert new JamesBondVehicle().fly() ==
+ *        "I'm the James Bond's vehicle and I fly!"
+ * assert new JamesBondVehicle().dive() ==
+ *        "I'm the James Bond's vehicle and I dive!"
+ * </pre>
+ * As another example, consider the following class definitions:
+ * <pre>
+ * class Student {
+ *     List<String> schedule = []
+ *     def addLecture(String lecture) { schedule << lecture }
+ * }
+ *
+ * class Worker {
+ *     List<String> schedule = []
+ *     def addMeeting(String meeting) { schedule << meeting }
+ * }
+ * </pre>
+ * We can mimic a form of multiple inheritance as follows:
+ * <pre>
+ * class CollegeStudent {
+ *     static { mixin Student, Worker }
+ * }
+ * new CollegeStudent().with {
+ *     addMeeting('Performance review with Boss')
+ *     addLecture('Learn about Groovy Mixins')
+ *     println schedule
+ *     println mixedIn[Student].schedule
+ *     println mixedIn[Worker].schedule
+ * }
+ * </pre>
+ * Which outputs these lines when run:
+ * <pre>
+ * [Performance review with Boss]
+ * [Learn about Groovy Mixins]
+ * [Performance review with Boss]
+ * </pre>
+ * Perhaps some explanation is required here. The methods of Student and Worker are added
+ * to CollegeStudent. Worker is added last, so for overlapping methods, its methods will
+ * be used, e.g. when calling <code>schedule</code>, it will be the schedule method from
+ * Worker that is used. The schedule method from Student will be shadowed but the mixedIn
+ * notation allows us to get to that method too if we need as the last two lines show.
+ *
+ * We can also be a little more dynamic and not require the CollegeStudent class to
+ * be defined at all, e.g.:
+ * <pre>
+ * def cs = new Object()
+ * cs.metaClass {
+ *     mixin Student, Worker
+ *     getSchedule {
+ *         mixedIn[Student].schedule + mixedIn[Worker].schedule
+ *     }
+ * }
+ * cs.with {
+ *     addMeeting('Performance review with Boss')
+ *     addLecture('Learn about Groovy Mixins')
+ *     println schedule
+ * }
+ * </pre>
+ * Which outputs this line when run:
+ * <pre>
+ * [Learn about Groovy Mixins, Performance review with Boss]
+ * </pre>
+ * As another example, we can also define a no dup queue by mixing in some
+ * Queue and Set functionality as follows:
+ * <pre>
+ * def ndq = new Object()
+ * ndq.metaClass {
+ *   mixin ArrayDeque
+ *   mixin HashSet
+ *   leftShift = { Object o ->
+ *     if (!mixedIn[Set].contains(o)) {
+ *       mixedIn[Queue].push(o)
+ *       mixedIn[Set].add(o)
+ *     }
+ *   }
+ * }
+ * ndq << 1
+ * ndq << 2
+ * ndq << 1
+ * assert ndq.size() == 2
+ * </pre>
+ * As a final example, we sometimes need to pass such mixed in classes or objects
+ * into Java methods which need a given type but the mixin approach is very dynamic
+ * uses duck typing rather than static interface definitions. The mixins capability
+ * of EMC supports the use of the 'as InterfaceType' notation to produce an object
+ * having the correct type so that it can be passed to the Java method call in question.
+ * A slightly contrived example illustrating this feature:
+ * <pre>
+ * class CustomComparator implements Comparator {
+ *     int compare(Object a, b) { return a.size() - b.size() }
+ * }
+ *
+ * class CustomCloseable implements Closeable {
+ *     void close() { println 'Lights out - I am closing' }
+ * }
+ *
+ * import static mypackage.IOUtils.closeQuietly
+ * import static java.util.Collections.sort
+ * def o = new Object()
+ * o.metaClass.mixin CustomComparator, CustomCloseable
+ * def items = ['a', 'bbb', 'cc']
+ * sort(items, o as Comparator)
+ * println items                // => [a, cc, bbb]
+ * closeQuietly(o as Closeable) // => Lights out - I am closing
+ * </pre>
+ *
+ * <b>Further details</b>
+ *
+ * When using the default implementations of MetaClass, methods are only allowed to be added before initialize() is called.
+ * In other words you create a new MetaClass, add some methods and then call initialize(). If you attempt to add new methods
+ * after initialize() has been called, an error will be thrown. This is to ensure that the MetaClass can operate appropriately
+ * in multi-threaded environments as it forces you to do all method additions at the beginning, before using the MetaClass.
+ * 
+ * ExpandoMetaClass differs here from the default in that it allows you to add methods after initialize has been called.
  * This is done by setting the initialize flag internally to false and then add the methods. Since this is not thread 
  * safe it has to be done in a synchronized block. The methods to check for modification and initialization are
  * therefore synchronized as well. Any method call done through this meta class will first check if the it is 
