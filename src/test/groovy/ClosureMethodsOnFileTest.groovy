@@ -42,12 +42,6 @@ class ClosureMethodsOnFileTest extends GroovyTestCase {
         file.eachLine { line, count -> println "$count > $line" }
     }
 
-    void testForEachLine() {
-        shouldFail (DeprecationException) {
-          for (line in file) { println(line) }
-        }
-    }
-
     void testReadLines() {
         def lines = file.readLines()
         assert lines != null

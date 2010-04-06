@@ -14766,24 +14766,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Just throws a DeprecationException.  DO NOT USE.  It used to provide an iterator for text file content
-     * one line at a time.
-     *
-     * @param self a file object
-     * @return a line-based iterator
-     * @throws IOException if there is a problem processing the file (e.g. file is not found)
-     * @deprecated use File#eachLine instead please
-     * @since 1.5.0
-     */
-    public static Iterator iterator(File self) throws IOException {
-        throw new DeprecationException(
-                "Iterators on files are not supported any more. " +
-                        "Use File.eachLine() instead. Alternatively you can use FileReader.iterator() " +
-                        "and provide your own exception handling."
-        );
-    }
-
-    /**
      * An identity function for iterators, supporting 'duck-typing' when trying to get an
      * iterator for each object within a collection, some of which may already be iterators.
      *
