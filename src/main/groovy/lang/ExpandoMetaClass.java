@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,7 +51,8 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * A MetaClass that implements GroovyObject and behaves like an Expando, allowing the addition of new methods on the fly.
+ * ExpandoMetaClass is a MetaClass that behaves like an Expando, allowing the addition or replacement
+ * of methods, properties and constructors on the fly.
  *
  * Some examples of usage:
  * <pre>
@@ -85,7 +86,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * Number.metaClass.multiply = { Amount amount -> amount.times(delegate) }
  * Number.metaClass.div =      { Amount amount -> amount.inverse().times(delegate) }
  * </pre>
- * You can now do this:
+ * You can also now do this:
  * <pre>
  * Number.metaClass {
  *     multiply { Amount amount -> amount.times(delegate) }
@@ -93,8 +94,9 @@ import java.util.concurrent.ConcurrentHashMap;
  * }
  * </pre>
  * 
- * ExpandoMetaClass also supports runtime mixins. While {@code @Mixin} allowed you to mix in new behavior
- * to classes you owned and were designing, you could not mixin anything to types you didn't own.
+ * ExpandoMetaClass also supports runtime mixins. While {@code @Mixin} allows you to mix in new behavior
+ * to classes you own and are designing, you can not easily mixin anything to types you didn't own, e.g.
+ * from third party libraries or from JDK library classes.
  * Runtime mixins let you add a mixin on any type at runtime.
  * <pre>
  * interface Vehicle {
@@ -157,12 +159,12 @@ import java.util.concurrent.ConcurrentHashMap;
  * [Learn about Groovy Mixins]
  * [Performance review with Boss]
  * </pre>
- * Perhaps some explanation is required here. The methods of Student and Worker are added
- * to CollegeStudent. Worker is added last, so for overlapping methods, its methods will
- * be used, e.g. when calling <code>schedule</code>, it will be the schedule method from
- * Worker that is used. The schedule method from Student will be shadowed but the mixedIn
- * notation allows us to get to that method too if we need as the last two lines show.
- *
+ * Perhaps some explanation is required here. The methods and properties of Student and Worker are
+ * added to CollegeStudent. Worker is added last, so for overlapping methods, its methods will
+ * be used, e.g. when calling <code>schedule</code>, it will be the schedule property (getSchedule method)
+ * from Worker that is used. The schedule property from Student will be shadowed but the <code>mixedIn</code>
+ * notation allows us to get to that too if we need as the last two lines show.
+ * <p/>
  * We can also be a little more dynamic and not require the CollegeStudent class to
  * be defined at all, e.g.:
  * <pre>
@@ -188,14 +190,14 @@ import java.util.concurrent.ConcurrentHashMap;
  * <pre>
  * def ndq = new Object()
  * ndq.metaClass {
- *   mixin ArrayDeque
- *   mixin HashSet
- *   leftShift = { Object o ->
- *     if (!mixedIn[Set].contains(o)) {
- *       mixedIn[Queue].push(o)
- *       mixedIn[Set].add(o)
+ *     mixin ArrayDeque
+ *     mixin HashSet
+ *     leftShift = { Object o ->
+ *         if (!mixedIn[Set].contains(o)) {
+ *             mixedIn[Queue].push(o)
+ *             mixedIn[Set].add(o)
+ *         }
  *     }
- *   }
  * }
  * ndq << 1
  * ndq << 2
@@ -203,10 +205,11 @@ import java.util.concurrent.ConcurrentHashMap;
  * assert ndq.size() == 2
  * </pre>
  * As a final example, we sometimes need to pass such mixed in classes or objects
- * into Java methods which need a given type but the mixin approach is very dynamic
- * uses duck typing rather than static interface definitions. The mixins capability
- * of EMC supports the use of the 'as InterfaceType' notation to produce an object
- * having the correct type so that it can be passed to the Java method call in question.
+ * into Java methods which require a given static type but the ExpandoMetaClass mixin approach uses a very dynamic
+ * approach based on duck typing rather than static interface definitions, so doesn't by default
+ * produce objects matching the required static type. Luckily, there is a mixins capability
+ * within ExpandoMetaClass which supports the use of Groovy's common 'as StaticType' notation to produce an object
+ * having the correct static type so that it can be passed to the Java method call in question.
  * A slightly contrived example illustrating this feature:
  * <pre>
  * class CustomComparator implements Comparator {
@@ -228,19 +231,19 @@ import java.util.concurrent.ConcurrentHashMap;
  * </pre>
  *
  * <b>Further details</b>
- *
+ * <p/>
  * When using the default implementations of MetaClass, methods are only allowed to be added before initialize() is called.
  * In other words you create a new MetaClass, add some methods and then call initialize(). If you attempt to add new methods
  * after initialize() has been called, an error will be thrown. This is to ensure that the MetaClass can operate appropriately
  * in multi-threaded environments as it forces you to do all method additions at the beginning, before using the MetaClass.
- * 
+ * <p/>
  * ExpandoMetaClass differs here from the default in that it allows you to add methods after initialize has been called.
  * This is done by setting the initialize flag internally to false and then add the methods. Since this is not thread 
  * safe it has to be done in a synchronized block. The methods to check for modification and initialization are
  * therefore synchronized as well. Any method call done through this meta class will first check if the it is 
  * synchronized. Should this happen during a modification, then the method cannot be selected or called unless the 
  * modification is completed. 
- *
+ * <p/>
  * WARNING: This MetaClass uses a thread-bound ThreadLocal instance to store and retrieve properties.
  * In addition properties stored use soft references so they are both bound by the life of the Thread and by the soft
  * references. The implication here is you should NEVER use dynamic properties if you want their values to stick around
@@ -372,7 +375,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
     protected void onSuperMethodFoundInHierarchy(MetaMethod method) {
-        addSuperMethodIfNotOverriden(method);
+        addSuperMethodIfNotOverridden(method);
     }
 
     protected void onSuperPropertyFoundInHierarchy(MetaBeanProperty property) {
@@ -476,7 +479,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
         this.initialized = b;
     }
 
-    private void addSuperMethodIfNotOverriden(final MetaMethod metaMethodFromSuper) {
+    private void addSuperMethodIfNotOverridden(final MetaMethod metaMethodFromSuper) {
 		performOperationOnMetaClass(new Callable() {
 			public void call() {
 
@@ -1022,7 +1025,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
                     continue; // don't inherit static methods except our own
                 registerStaticMethod(metaMethod.getName(), (Closure) ((ClosureStaticMetaMethod) metaMethod).getClosure().clone());
             } else
-                addSuperMethodIfNotOverriden(metaMethod);
+                addSuperMethodIfNotOverridden(metaMethod);
         }
         Collection<MetaProperty> metaProperties = superExpando.getExpandoProperties();
         for (Object metaProperty : metaProperties) {
@@ -1053,7 +1056,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
     /**
-     * Overrides default implementation just in case invokeMethod has been overriden by ExpandoMetaClass
+     * Overrides default implementation just in case invokeMethod has been overridden by ExpandoMetaClass
      *
      * @see groovy.lang.MetaClassImpl#invokeMethod(Class, Object, String, Object[], boolean, boolean)
      */
@@ -1093,7 +1096,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
     /**
-     * Overrides default implementation just in case getProperty method has been overriden by ExpandoMetaClass
+     * Overrides default implementation just in case getProperty method has been overridden by ExpandoMetaClass
      *
      * @see MetaClassImpl#getProperty(Object, String)
      */
@@ -1109,7 +1112,7 @@ public class ExpandoMetaClass extends MetaClassImpl implements GroovyObject {
     }
 
     /**
-     * Overrides default implementation just in case setProperty method has been overriden by ExpandoMetaClass
+     * Overrides default implementation just in case setProperty method has been overridden by ExpandoMetaClass
      *
      * @see MetaClassImpl#setProperty(Class, Object, String, Object, boolean, boolean)
      */
