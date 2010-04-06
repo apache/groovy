@@ -138,7 +138,7 @@ public interface MetaClass extends MetaObjectProtocol {
     /**
      * complete the initialisation process. After this method
      * is called no methods should be added to the meta class.
-     * Invocation of methods or access to fields/proeprties is
+     * Invocation of methods or access to fields/properties is
      * forbidden unless this method is called. This method 
      * should contain any initialisation code, taking a longer
      * time to complete. An example is the creation of the 
@@ -148,7 +148,7 @@ public interface MetaClass extends MetaObjectProtocol {
      void initialize();
 
     /**
-     * Retrives a list of MetaProperty instances that the MetaClass has
+     * Retrieves a list of MetaProperty instances that the MetaClass has
      *
      * @see MetaProperty
      *
