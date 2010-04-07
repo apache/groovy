@@ -204,11 +204,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             if (resolve(type)) return true;
         }
         if(resolveToInnerEnum (type)) return true;
-        
+
         type.setName(saved);
         return false;
     }
-    
+
     private boolean resolveToInnerEnum (ClassNode type) {
         // GROOVY-3483: It may be an inner enum defined by this class itself, in which case it does not need to be
         // explicitly qualified by the currentClass name
@@ -282,7 +282,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     private boolean resolveNestedClass(ClassNode type) {
         // we have for example a class name A, are in class X
-        // and there is a nested class A$X. we want to be able 
+        // and there is a nested class A$X. we want to be able
         // to access that class directly, so A becomes a valid
         // name in X.
         String name = currentClass.getName()+"$"+type.getName();
@@ -291,24 +291,24 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             type.setRedirect(val);
             return true;
         }
-        
+
         // another case we want to check here is if we are in a
         // nested class A$B$C and want to access B without
         // qualifying it by A.B. A alone will work, since that
         // is the qualified (minus package) name of that class
-        // anyway. 
-        
+        // anyway.
+
         // That means if the current class is not an InnerClassNode
         // there is nothing to be done.
         if (!(currentClass instanceof InnerClassNode)) return false;
-        
-        // since we have B and want to get A we start with the most 
+
+        // since we have B and want to get A we start with the most
         // outer class, put them together and then see if that does
-        // already exist. In case of B from within A$B we are done 
+        // already exist. In case of B from within A$B we are done
         // after the first step already. In case of for example
-        // A.B.C.D.E.F and accessing E from F we test A$E=failed, 
+        // A.B.C.D.E.F and accessing E from F we test A$E=failed,
         // A$B$E=failed, A$B$C$E=fail, A$B$C$D$E=success
-        
+
         LinkedList<ClassNode> outerClasses = new LinkedList<ClassNode>();
         ClassNode outer = currentClass.getOuterClass();
         while (outer!=null) {
@@ -323,11 +323,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                 type.setRedirect(val);
                 return true;
             }
-        }        
-        
-        return false;   
+        }
+
+        return false;
     }
-    
+
     private boolean resolveFromClassCache(ClassNode type) {
         String name = type.getName();
         Object val = cachedClasses.get(name);
@@ -380,7 +380,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         if (type instanceof LowerCaseClass) {
             cachedClasses.put(name, NO_CLASS);
         }
-        
+
         if (cachedClasses.get(name) == NO_CLASS) return false;
         if (cachedClasses.get(name) == SCRIPT) cachedClasses.put(name, NO_CLASS);
         if (name.startsWith("java.")) return type.isResolved();
@@ -866,11 +866,11 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
 
     protected Expression transformVariableExpression(VariableExpression ve) {
         Variable v = ve.getAccessedVariable();
-        
+
         if(!(v instanceof DynamicVariable) && !checkingVariableTypeInDeclaration) {
         	/*
-        	 *  GROOVY-4009: when a normal variable is simply being used, there is no need to try to 
-        	 *  resolve its type. Variable type resolve should proceed only if the variable is being declared. 
+        	 *  GROOVY-4009: when a normal variable is simply being used, there is no need to try to
+        	 *  resolve its type. Variable type resolve should proceed only if the variable is being declared.
         	 */
         	return ve;
         }
@@ -1063,13 +1063,13 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
             for (Iterator iter = l.iterator(); iter.hasNext();) {
                 ImportNode element = (ImportNode) iter.next();
                 ClassNode type = element.getType();
-                if (resolve(type, true, false, true)) continue;
+                if (resolve(type, false, false, true)) continue;
                 addError("unable to resolve class " + type.getName(), type);
             }
             Map importPackages = module.getStaticImportClasses();
             for (Iterator iter = importPackages.values().iterator(); iter.hasNext();) {
                 ClassNode type = (ClassNode) iter.next();
-                if (resolve(type, true, false, true)) continue;
+                if (resolve(type, false, false, true)) continue;
                 // May be this type belongs in the same package as the node that is doing the
                 // static import. In that case, the package may not have been explicitly specified.
                 // Try with the node's package too. If still not found, revert to original type name.
@@ -1103,7 +1103,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         }
 
         checkCyclicInheritence(node, node.getUnresolvedSuperClass(), node.getInterfaces());
-        
+
         super.visitClass(node);
 
         currentClass = oldNode;
