@@ -781,7 +781,7 @@ protected typeArgumentsOrParametersEnd
     |   BSR! {ltCounter-=3;}
     ;
 
-// Restriction on wildcard types based on super class or derrived class
+// Restriction on wildcard types based on super class or derived class
 typeArgumentBounds
     {Token first = LT(1);boolean isUpperBounds = false;}
     :
@@ -1133,7 +1133,7 @@ interfaceBlock  {Token first = LT(1);}
     ;
 
 // This is the body of an annotation. You can have annotation fields and extra semicolons,
-// That's about it (until you see what an annoation field is...)
+// That's about it (until you see what an annotation field is...)
 annotationBlock  {Token first = LT(1);}
     :   LCURLY!
         ( annotationField )? ( sep! ( annotationField )? )*
@@ -1150,7 +1150,7 @@ enumBlock  {Token first = LT(1);}
             // can start with foo() as well as classField.
             // (It's a true ambiguity, visible in the specification.
             // To resolve in practice, use "def" before a real method.)
-            (enumConstantsStart)=> enumConstants
+            (enumConstantsStart) => enumConstants
         |   (classField)?
         )
         ( sep! (classField)? )*
@@ -1223,7 +1223,7 @@ enumConstantBlock  {Token first = LT(1);}
     ;
 
 //An enum constant field is just like a class field but without
-//the posibility of a constructor definition or a static initializer
+//the possibility of a constructor definition or a static initializer
 
 // TODO - maybe allow 'declaration' production within this production,
 // but how to disallow constructors and static initializers...
@@ -1688,7 +1688,7 @@ closableBlockParam!  {Token first = LT(1);}
 // Inside a class definition without "static":
 // it is an instance initializer
 // As the body of a method
-// As a completely indepdent braced block of code inside a method
+// As a completely independent braced block of code inside a method
 // it starts a new scope for variable definitions
 // In Groovy, this is called an "open block".  It cannot have closure arguments.
 
@@ -2209,7 +2209,7 @@ commandArgument
 //
 // the last two are not usually on a precedence chart; I put them in
 // to point out that new has a higher precedence than '.', so you
-// can validy use
+// can validly use
 //       new Frame().show()
 //
 // Note that the above precedence levels map to the rules below...
@@ -2680,7 +2680,7 @@ powerExpression[int lc_stmt]
 
 // math power operator (**) (level 3)
 // (without ++(prefix)/--(prefix)/+(unary)/-(unary))
-// The different rules are needed to avoid ambigous selection
+// The different rules are needed to avoid ambiguous selection
 // of alternatives.
 powerExpressionNotPlusMinus[int lc_stmt]
     :   unaryExpressionNotPlusMinus[lc_stmt] (STAR_STAR^ nls! unaryExpression[0])*
@@ -2784,7 +2784,7 @@ parenthesizedExpression
              {hasClosureList=true;}
              (sce=strictContextExpression[true] | { astFactory.addASTChild(currentAST,astFactory.create(EMPTY_STAT, "EMPTY_STAT")); })
            )*
-           // if the first exrpession contained a declaration,
+           // if the first expression contained a declaration,
            // but we are having only one expression at all, then
            // the first declaration is of the kind (def a=b)
            // which is invalid. Therefore if there was no closure
@@ -3916,7 +3916,7 @@ options {
 
 // an identifier. Note that testLiterals is set to true! This means
 // that after we match the rule, we look in the literals table to see
-// if it's a literal or really an identifer
+// if it's a literal or really an identifier
 IDENT
 options {
     paraphrase="an identifier";
@@ -3936,7 +3936,7 @@ options {
             }
             int ttype = testLiteralsTable(IDENT);
             // Java doesn't have the keywords 'as', 'in' or 'def so we make some allowances
-            // for them in package names for better integration with existng Java packages
+            // for them in package names for better integration with existing Java packages
             if ((ttype == LITERAL_as || ttype == LITERAL_def || ttype == LITERAL_in) &&
                 (LA(1) == '.' || lastSigTokenType == DOT || lastSigTokenType == LITERAL_package)) {
                 ttype = IDENT;
