@@ -2854,6 +2854,7 @@ stringConstructorExpression  {Token first = LT(1);}
 stringConstructorValuePart
     :
     (   identifier
+    |   "this" |   "super"
     |   openOrClosableBlock
     )
     ;
