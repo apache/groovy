@@ -4810,6 +4810,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self a Map
      * @param init a Closure which is passed the unknown key
      * @return the wrapped Map
+     * @since 1.7.1
      */
     public static <K, V> Map<K, V> withDefault(Map<K, V> self, Closure init) {
         return MapWithDefault.newInstance(self, init);
