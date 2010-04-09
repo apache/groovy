@@ -93,7 +93,7 @@ public final class CurriedClosure extends Closure {
 
     public Object clone() {
         Closure uncurriedClosure = (Closure) ((Closure) getOwner()).clone();
-        return new CurriedClosure(uncurriedClosure, curriedParams);
+        return new CurriedClosure(index, uncurriedClosure, curriedParams);
     }
 
     public Class[] getParameterTypes() {
