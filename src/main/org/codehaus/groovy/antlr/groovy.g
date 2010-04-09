@@ -1160,15 +1160,22 @@ enumBlock  {Token first = LT(1);}
 
 /** Guard for enumConstants.  */
 enumConstantsStart
-    :   enumConstant (COMMA | SEMI | NLS | RCURLY)
+    :   annotationsOpt IDENT (LCURLY | LPAREN | nls (SEMI | COMMA | modifiersOpt | RCURLY))
     ;
 
 /** Comma-separated list of one or more enum constant definitions.  */
 enumConstants
     :
         enumConstant
-        ( options{greedy=true;}: COMMA! nls! enumConstant )*
-        ( COMMA! nls! )?            // trailing extra comma is OK
+        (    options {generateAmbigWarnings=false;} :
+            (nls (RCURLY | classField)) => { break; /* leave ()* loop */ }
+        |   nls! COMMA!
+            (
+                (nls (RCURLY | classField)) => { break; /* leave ()* loop */ }
+            |
+                (nls annotationsOpt IDENT) => nls! enumConstant
+            )
+        )*
     ;
 
 // An annotation field
