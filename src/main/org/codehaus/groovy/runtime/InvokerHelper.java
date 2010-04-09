@@ -493,6 +493,10 @@ public class InvokerHelper {
     }
 
     protected static String format(Object arguments, boolean verbose) {
+        return format(arguments, verbose, -1);
+    }
+
+    protected static String format(Object arguments, boolean verbose, int maxSize) {
         if (arguments == null) {
             final NullObject nullObject = NullObject.getNullObject();
             return (String) nullObject.getMetaClass().invokeMethod(nullObject, "toString", EMPTY_ARGS);
@@ -512,10 +516,10 @@ public class InvokerHelper {
             }
         }
         if (arguments instanceof Collection) {
-            return formatList((Collection) arguments, verbose);
+            return formatList((Collection) arguments, verbose, maxSize);
         }
         if (arguments instanceof Map) {
-            return formatMap((Map) arguments, verbose);
+            return formatMap((Map) arguments, verbose, maxSize);
         }
         if (arguments instanceof Element) {
             return XmlUtil.serialize((Element) arguments);
@@ -538,41 +542,57 @@ public class InvokerHelper {
         return arguments.toString();
     }
 
-    private static String formatMap(Map map, boolean verbose) {
+    private static String formatMap(Map map, boolean verbose, int maxSize) {
         if (map.isEmpty()) {
             return "[:]";
         }
         StringBuffer buffer = new StringBuffer("[");
         boolean first = true;
-        for (Iterator iter = map.entrySet().iterator(); iter.hasNext();) {
+        for (Object o : map.entrySet()) {
             if (first) {
                 first = false;
             } else {
                 buffer.append(", ");
             }
-            Map.Entry entry = (Map.Entry) iter.next();
+            if (maxSize != -1 && buffer.length() > maxSize) {
+                buffer.append("...");
+                break;
+            }
+            Map.Entry entry = (Map.Entry) o;
             buffer.append(format(entry.getKey(), verbose));
             buffer.append(":");
             if (entry.getValue() == map) {
-                buffer.append("this Map_");
+                buffer.append("(this Map)");
             } else {
-                buffer.append(format(entry.getValue(), verbose));
+                buffer.append(format(entry.getValue(), verbose, sizeLeft(maxSize, buffer)));
             }
         }
         buffer.append("]");
         return buffer.toString();
     }
 
-    private static String formatList(Collection list, boolean verbose) {
+    private static int sizeLeft(int maxSize, StringBuffer buffer) {
+        return maxSize == -1 ? maxSize : Math.max(0, maxSize - buffer.length());
+    }
+
+    private static String formatList(Collection collection, boolean verbose, int maxSize) {
         StringBuffer buffer = new StringBuffer("[");
         boolean first = true;
-        for (Iterator iter = list.iterator(); iter.hasNext();) {
+        for (Object item : collection) {
             if (first) {
                 first = false;
             } else {
                 buffer.append(", ");
             }
-            buffer.append(format(iter.next(), verbose));
+            if (maxSize != -1 && buffer.length() > maxSize) {
+                buffer.append("...");
+                break;
+            }
+            if (item == collection) {
+                buffer.append("(this Collection)");
+            } else {
+                buffer.append(format(item, verbose, sizeLeft(maxSize, buffer)));
+            }
         }
         buffer.append("]");
         return buffer.toString();
@@ -605,7 +625,18 @@ public class InvokerHelper {
      * @return the string representation of the map
      */
     public static String toMapString(Map arg) {
-        return formatMap(arg, false);
+        return toMapString(arg, -1);
+    }
+
+    /**
+     * A helper method to return the string representation of a map with bracket boundaries "[" and "]".
+     *
+     * @param arg the map to process
+     * @param maxSize stop after approximately this many characters and append '...'
+     * @return the string representation of the map
+     */
+    public static String toMapString(Map arg, int maxSize) {
+        return formatMap(arg, false, maxSize);
     }
 
     /**
@@ -615,7 +646,18 @@ public class InvokerHelper {
      * @return the string representation of the collection
      */
     public static String toListString(Collection arg) {
-        return formatList(arg, false);
+        return toListString(arg, -1);
+    }
+
+    /**
+     * A helper method to return the string representation of a list with bracket boundaries "[" and "]".
+     *
+     * @param arg the collection to process
+     * @param maxSize stop after approximately this many characters and append '...'
+     * @return the string representation of the collection
+     */
+    public static String toListString(Collection arg, int maxSize) {
+        return formatList(arg, false, maxSize);
     }
 
     /**

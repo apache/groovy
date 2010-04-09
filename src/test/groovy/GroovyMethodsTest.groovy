@@ -787,6 +787,24 @@ class GroovyMethodsTest extends GroovySwingTestCase {
         ] as Set
     }
 
+    void testPrettyPrintingRecursiveStructures() {
+        def m = [a:1]
+        m.self = m
+        assert m.toMapString() == '[a:1, self:(this Map)]'
+
+        def l = ['first']
+        l << l
+        assert l.toListString() == '[first, (this Collection)]'
+
+        def animals = ['ant', 'bee', 'cat']
+        animals << [pets:animals]
+        assert animals.toListString(5) == '[ant, ...]'
+        assert animals.toListString(10) == '[ant, bee, ...]'
+        assert animals.toListString(15) == '[ant, bee, cat, ...]'
+        assert animals.toListString(20) == '[ant, bee, cat, [pets:[...]]]'
+        assert animals.toListString(40) == '[ant, bee, cat, [pets:[ant, bee, cat, [pets:[...]]]]]'
+    }
+
     void testRemoveAll() {
         def items = [1, 2, 3, 4]
         assert items.removeAll{ it % 2 == 0 }
