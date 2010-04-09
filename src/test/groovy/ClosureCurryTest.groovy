@@ -138,4 +138,11 @@ class ClosureCurryTest extends GroovyTestCase {
         assert combos.collect{ a, c -> catSearcher(a.sort(c), c) } == [-3, 2, -3, -4]
     }
 
+    void testNestedNcurryRcurry() {
+        def operation = { int x, Closure f, int y -> f(x, y) }
+        def divider = operation.ncurry(1) { a, b -> a / b }
+        def halver = divider.rcurry(2)
+        assert 50 == halver(100)
+    }
+
 }
