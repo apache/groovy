@@ -39,10 +39,6 @@ grant codeBase "file:${user.dir}/target/dist/-" {
     permission java.security.AllPermission;
 };
 
-grant codeBase "file:${user.dir}/@relativePathToRealBasedir@/target/dist/-" {
-    permission java.security.AllPermission;
-};
-
 grant codeBase "file:${user.dir}/target/instrumented-classes/-" {
     permission java.security.AllPermission;
 };
