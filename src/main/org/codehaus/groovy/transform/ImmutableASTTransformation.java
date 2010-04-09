@@ -48,21 +48,21 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
       Also, Color is not final so while not normally used with child
       classes, it isn't strictly immutable. Use at your own risk.
      */
-    private static Class[] immutableList = {
-            Boolean.class,
-            Byte.class,
-            Character.class,
-            Double.class,
-            Float.class,
-            Integer.class,
-            Long.class,
-            Short.class,
-            String.class,
-            java.math.BigInteger.class,
-            java.math.BigDecimal.class,
-            java.awt.Color.class,
-            java.net.URI.class,
-    };
+    private static List<String> immutableList = Arrays.asList(
+            "java.lang.Boolean",
+            "java.lang.Byte",
+            "java.lang.Character",
+            "java.lang.Double",
+            "java.lang.Float",
+            "java.lang.Integer",
+            "java.lang.Long",
+            "java.lang.Short",
+            "java.lang.String",
+            "java.math.BigInteger",
+            "java.math.BigDecimal",
+            "java.awt.Color",
+            "java.net.URI"
+    );
     private static final Class MY_CLASS = Immutable.class;
     private static final ClassNode MY_TYPE = new ClassNode(MY_CLASS);
     private static final String MY_TYPE_NAME = "@" + MY_TYPE.getNameWithoutPackage();
@@ -459,14 +459,13 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
 
     private boolean isKnownImmutable(ClassNode fieldType) {
         if (!fieldType.isResolved()) return false;
-        Class typeClass = fieldType.getTypeClass();
-        return typeClass.isEnum() ||
-                typeClass.isPrimitive() ||
-                inImmutableList(typeClass);
+        return fieldType.isEnum() ||
+                ClassHelper.isPrimitiveType(fieldType) ||
+                inImmutableList(fieldType.getName());
     }
 
-    private static boolean inImmutableList(Class typeClass) {
-        return Arrays.asList(immutableList).contains(typeClass);
+    private static boolean inImmutableList(String typeName) {
+        return immutableList.contains(typeName);
     }
 
     private Statement createConstructorStatementDefault(FieldNode fNode) {
@@ -634,7 +633,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     }
 
     public static Object checkImmutable(String className, String fieldName, Object field) {
-        if (field == null || field instanceof Enum || inImmutableList(field.getClass())) return field;
+        if (field == null || field instanceof Enum || inImmutableList(field.getClass().getName())) return field;
         if (field instanceof Collection) return DefaultGroovyMethods.asImmutable((Collection) field);
         if (field.getClass().getAnnotation(MY_CLASS) != null) return field;
         final String typeName = field.getClass().getName();
