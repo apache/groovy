@@ -15,13 +15,15 @@
  */
 package gls.enums
 
+import gls.CompilableTestSupport
+
 /**
  * Tests various properties of enums.
  *
  * @author Paul King
  * @author Roshan Dawrani
  */
-class EnumTest extends GroovyTestCase {
+class EnumTest extends CompilableTestSupport {
 
     void testValues() {
         assert UsCoin.values().size() == 4
@@ -316,8 +318,56 @@ class EnumTest extends GroovyTestCase {
             assert Color3996.ALL_COLORS[2] == Color3996.B
         """
     }
-}
 
+    void testEnumWithTopLevelNoBracketsMethodCall() {
+        // GROOVY-3986
+        assertScript """
+            enum Color3986 {
+                RED {
+                  String toString() { sprintf '%s', 'foo' }
+                },GREEN,BLUE
+            }
+            assert Color3986.RED.toString() == 'foo'
+        """
+    }
+
+    void testEnumConstantSeparators() {
+        // GROOVY-3047
+        shouldCompile """
+            enum Foo0 { X }
+            enum Foo1 {
+
+              Y
+
+            }
+            enum Foo2 {
+              Z,
+            }
+            enum Foo3 { X, Y, Z,
+            }
+            enum Foo4 {
+              X
+              ,
+            }
+            enum Foo5 {
+              X
+              ,
+              Y
+            }
+            enum Foo6 {
+              X
+              ,
+              Y,
+            }
+            enum Foo7 {
+              X
+              ,
+              Y
+              ,
+            }
+        """
+    }
+}
 
 
 enum UsCoin {
@@ -331,6 +381,11 @@ enum EmptyEnum{}
 
 enum GroovyColors3161 {
 	red, blue, green
+	static def ALL_COLORS = [red, blue, green]
+}
+
+enum GroovyColors3161B {
+	red, blue, green,
 	static def ALL_COLORS = [red, blue, green]
 }
 
