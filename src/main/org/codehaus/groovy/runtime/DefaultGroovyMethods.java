@@ -8035,7 +8035,20 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String toMapString(Map self) {
-        return (self == null) ? "null" : InvokerHelper.toMapString(self);
+        return toMapString(self, -1);
+    }
+
+    /**
+     * Returns the string representation of this map.  The string displays the
+     * contents of the map, i.e. <code>[one:1, two:2, three:3]</code>.
+     *
+     * @param self a Map
+     * @param maxSize stop after approximately this many characters and append '...'
+     * @return the string representation
+     * @since 1.0
+     */
+    public static String toMapString(Map self, int maxSize) {
+        return (self == null) ? "null" : InvokerHelper.toMapString(self, maxSize);
     }
 
     /**
@@ -8062,7 +8075,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @since 1.0
      */
     public static String toListString(Collection self) {
-        return (self == null) ? "null" : InvokerHelper.toListString(self);
+        return toListString(self, -1);
+    }
+
+    /**
+     * Returns the string representation of the given list.  The string
+     * displays the contents of the list, similar to a list literal, i.e.
+     * <code>[1, 2, a]</code>.
+     *
+     * @param self a Collection
+     * @param maxSize stop after approximately this many characters and append '...'
+     * @return the string representation
+     * @since 1.7.3
+     */
+    public static String toListString(Collection self, int maxSize) {
+        return (self == null) ? "null" : InvokerHelper.toListString(self, maxSize);
     }
 
     /**
