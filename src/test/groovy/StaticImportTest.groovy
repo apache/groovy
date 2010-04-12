@@ -6,9 +6,9 @@ import static java.util.regex.Pattern.*
 import static java.text.DateFormat.MEDIUM
 import static junit.framework.Assert.format
 import static junit.framework.Assert.assertEquals
-import static StaticImportTarget.x
-import static StaticImportTarget.z // do not remove
-import static StaticImportTarget.cl
+import static groovy.StaticImportTarget.x
+import static groovy.StaticImportTarget.z // do not remove
+import static groovy.StaticImportTarget.cl
 import static java.lang.Math.*
 import static java.util.Calendar.getInstance as now
 import static groovy.API.*
@@ -110,6 +110,62 @@ class StaticImportTest extends GroovyTestCase {
         
         Bar.bar()
       """  
+    }
+
+    void testStaticImportProperty() {
+        def sources = [
+            "class Foo { static x = 'foo'" + " }",
+            "class Foo { static x = 'foo'" + "; static getX() { x + '_get' } }",
+            "class Foo { static x = 'foo'" + ";                               static void setX(newx) { x = newx + '_set' } }",
+            "class Foo { static x = 'foo'" + "; static getX() { x + '_get' }; static void setX(newx) { x = newx + '_set' } }"
+        ]
+        def imports = [
+            "import static Foo.*",
+            "import static Foo.getX; import static Foo.setX"
+        ]
+        def results = [
+            "assert x == 'foo';     x = 'bar'; assert getX() == 'bar';         setX('baz'); assert 'baz'         == x",
+            "assert x == 'foo_get'; x = 'bar'; assert getX() == 'bar_get';     setX('baz'); assert 'baz_get'     == x",
+            "assert x == 'foo';     x = 'bar'; assert getX() == 'bar_set';     setX('baz'); assert 'baz_set'     == x",
+            "assert x == 'foo_get'; x = 'bar'; assert getX() == 'bar_set_get'; setX('baz'); assert 'baz_set_get' == x"
+        ]
+        [0..<sources.size(), 0..<imports.size()].combinations().each { i, j ->
+            assertScript sources[i] + "\n" + imports[j] + "\n" + results[i]
+        }
+    }
+
+    void testStaticImportPropertyWithAliases() {
+        def sources = [
+            "class Foo { static x = 'foo'" + " }",
+            "class Foo { static x = 'foo'" + "; static getX() { x + '_get' } }",
+            "class Foo { static x = 'foo'" + ";                               static void setX(newx) { x = newx + '_set' } }",
+            "class Foo { static x = 'foo'" + "; static getX() { x + '_get' }; static void setX(newx) { x = newx + '_set' } }"
+        ]
+        def imports = [
+            "import static Foo.x as z",
+            "import static Foo.getX as getZ; import static Foo.setX as setZ"
+        ]
+        def results = [
+            "assert z == 'foo';     z = 'bar'; assert getZ() == 'bar';         setZ('baz'); assert 'baz'         == z",
+            "assert z == 'foo_get'; z = 'bar'; assert getZ() == 'bar_get';     setZ('baz'); assert 'baz_get'     == z",
+            "assert z == 'foo';     z = 'bar'; assert getZ() == 'bar_set';     setZ('baz'); assert 'baz_set'     == z",
+            "assert z == 'foo_get'; z = 'bar'; assert getZ() == 'bar_set_get'; setZ('baz'); assert 'baz_set_get' == z"
+        ]
+        [0..<sources.size(), 0..<imports.size()].combinations().each { i, j ->
+            assertScript sources[i] + "\n" + imports[j] + "\n" + results[i]
+        }
+    }
+
+    void testConstructorArgsAliasing() {
+        // not recommended style to use statics in constructors but supported
+        assertScript """
+        class Foo {
+            static x
+        }
+        import static Foo.x as z
+        new Foo(z:'hi')
+        assert z == 'hi'
+        """
     }
 
     void testMethodCallWithThisTargetIsNotResolvedToStaticallyImportedMethod() {
