@@ -27,6 +27,7 @@ public class AnnotatedNode extends ASTNode {
     private List<AnnotationNode> annotations = Collections.emptyList();
     private boolean synthetic;
     ClassNode declaringClass;
+    private boolean hasNoRealSourcePositionFlag;
 
     public AnnotatedNode() {
     }
@@ -91,5 +92,13 @@ public class AnnotatedNode extends ASTNode {
      */
     public void setDeclaringClass(ClassNode declaringClass) {
         this.declaringClass = declaringClass;
+    }
+
+    public boolean hasNoRealSourcePosition() {
+        return hasNoRealSourcePositionFlag;
+    }
+
+    public void setHasNoRealSourcePosition(boolean value) {
+        this.hasNoRealSourcePositionFlag = value;
     }
 }
