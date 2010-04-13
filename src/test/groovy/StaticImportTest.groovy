@@ -134,6 +134,32 @@ class StaticImportTest extends GroovyTestCase {
         }
     }
 
+    void testStaticImportPropertyWithPublicField() {
+        def sources = [
+            "class Foo { public static x = 'foo'" + " }",
+            "class Foo { public static x = 'foo'" + "; static getX() { x + '_get' } }",
+            "class Foo { public static x = 'foo'" + ";                               static void setX(newx) { x = newx + '_set' } }",
+            "class Foo { public static x = 'foo'" + "; static getX() { x + '_get' }; static void setX(newx) { x = newx + '_set' } }"
+        ]
+        def imports = [
+            "import static Foo.*",
+            "import static Foo.x"
+        ]
+        def results = [
+            "assert x == 'foo';     x = 'bar'; assert      x == 'bar';         x = 'baz'  ; assert 'baz'         == x",
+            "assert x == 'foo_get'; x = 'bar'; assert getX() == 'bar_get';     x = 'baz'  ; assert 'baz_get'     == x",
+            "assert x == 'foo';     x = 'bar'; assert      x == 'bar_set';     setX('baz'); assert 'baz_set'     == x",
+            "assert x == 'foo_get'; x = 'bar'; assert getX() == 'bar_set_get'; setX('baz'); assert 'baz_set_get' == x"
+        ]
+        [0..<sources.size(), 0..<imports.size()].combinations().each { i, j ->
+            assertScript sources[i] + "\n" + imports[j] + "\n" + results[i]
+        }
+        assertScript sources[3] + """
+            import static Foo.getX; import static Foo.setX
+            assert getX() == 'foo_get'; setX('bar'); assert getX() == 'bar_set_get'; setX('baz'); assert 'baz_set_get' == getX()
+        """
+    }
+
     void testStaticImportPropertyWithAliases() {
         def sources = [
             "class Foo { static x = 'foo'" + " }",
