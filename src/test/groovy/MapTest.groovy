@@ -192,4 +192,13 @@ class MapTest extends GroovyTestCase {
         map.reverseEach{ e -> result2 += "$e.key$e.value " }
         assert result2 == "c2 b3 a1 "
     }
+
+    void testMapWithDefault() {
+        def m = [:].withDefault {k -> k * 2}
+        m[1] = 3
+        assert m[1] == 3
+        assert m[2] == 4
+        assert [1: 3, 2: 4] == m
+        assert m == [1: 3, 2: 4]
+    }
 }
