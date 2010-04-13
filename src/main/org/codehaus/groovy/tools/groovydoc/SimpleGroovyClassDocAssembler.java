@@ -402,12 +402,13 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         return grandParentNode != null && grandParentNode.getType() == LITERAL_new;
     }
 
+    // return true if a property is found
     private boolean processModifiers(GroovySourceAST t, SimpleGroovyAbstractableElementDoc memberOrClass) {
         GroovySourceAST modifiers = t.childOfType(MODIFIERS);
+        boolean hasNonPublicVisibility = false;
+        boolean hasPublicVisibility = false;
         if (modifiers != null) {
             AST currentModifier = modifiers.getFirstChild();
-            boolean hasNonPublicVisibility = false;
-            boolean hasPublicVisibility = false;
             while (currentModifier != null) {
                 int type = currentModifier.getType();
                 switch (type) {
@@ -448,7 +449,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         } else if (!isGroovy) {
             memberOrClass.setPackagePrivate(true);
         }
-        return memberOrClass instanceof GroovyFieldDoc && isGroovy;
+        return memberOrClass instanceof GroovyFieldDoc && isGroovy && !hasNonPublicVisibility & !hasPublicVisibility;
     }
 
     // todo - If no comment before node, then get comment from same node on parent class - ouch!

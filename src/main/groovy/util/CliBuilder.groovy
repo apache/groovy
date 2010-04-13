@@ -150,8 +150,9 @@ import org.codehaus.groovy.runtime.InvokerHelper
  * on the size of the command line (e.g. Windows). The feature is similar to
  * the 'Command Line Argument File' processing supported by javadoc and javac.
  * Consult the corresponding documentation for those tools if you wish to see further examples.
- *
+ *<p/>
  * Supported Option Properties:
+ * <pre>
  *   argName:        String
  *   longOpt:        String
  *   args:           int
@@ -159,6 +160,7 @@ import org.codehaus.groovy.runtime.InvokerHelper
  *   required:       boolean
  *   type:           Object (not currently used)
  *   valueSeparator: char
+ * </pre>
  *
  * @see org.apache.commons.cli.Option for the meaning of the parameters.
  * @see CliBuilderTest for further examples.
@@ -178,12 +180,12 @@ class CliBuilder {
     CommandLineParser parser = null
 
     /**
-     * To change from the default PosixParser to the GnuParser. Ignored if the parser is explicitly set.
+     * To change from the default PosixParser to the GnuParser, set this to false. Ignored if the parser is explicitly set.
      */
     boolean posix = true
 
     /**
-     * Whether @filename will be expanded into args within filename.
+     * Whether @filename will be expanded into args within filename (default true).
      */
     boolean expandArgumentFiles = true
 
@@ -209,7 +211,7 @@ class CliBuilder {
 
     /**
      * Indicates that option processing should continue for all arguments even
-     * if arguments not recognized as options are encountered.
+     * if arguments not recognized as options are encountered (default true).
      */
     boolean stopAtNonOption = true
 
