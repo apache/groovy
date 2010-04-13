@@ -164,6 +164,7 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
         empty.setSourcePosition(node);
         ConstructorNode constructor = new ConstructorNode(ACC_PUBLIC, empty);
         constructor.setSourcePosition(node);
+        constructor.setHasNoRealSourcePosition(true);
         node.addConstructor(constructor);
     }
 
