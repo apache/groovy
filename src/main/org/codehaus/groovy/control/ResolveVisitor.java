@@ -1040,6 +1040,7 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
                     	para.setInitialExpression(transform((Expression) initialVal));
                     }
                 }
+                visitAnnotations(para);
             }
         }
         Statement code = ce.getCode();
