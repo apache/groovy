@@ -8,7 +8,7 @@
     def isVisible = { it.isPublic() || (it.isProtected() && props.protectedScope == 'true') || (!it.isProtected() && !it.isPrivate() && props.packageScope == 'true') || props.privateScope == 'true' }
     def isVisibleExt = { t -> java.lang.reflect.Modifier.isPublic(t.modifiers) || java.lang.reflect.Modifier.isProtected(t.modifiers) }
     def visibleFields = classDoc.fields().findAll(isVisible)
-    def visibleProperties = classDoc.properties().findAll(isVisible)
+    def visibleProperties = classDoc.properties() // props visible be defn
     def visibleMethods = classDoc.methods().findAll(isVisible)
     def visibleConstructors = classDoc.constructors().findAll(isVisible)
     def visibleNested = classDoc.innerClasses().findAll(isVisible)
