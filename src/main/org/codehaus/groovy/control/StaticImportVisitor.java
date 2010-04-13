@@ -147,6 +147,7 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
         int type = be.getOperation().getType();
         boolean oldInLeftExpression;
         Expression right = transform(be.getRightExpression());
+        be.setRightExpression(right);
         if (type == Types.EQUAL) {
             oldInLeftExpression = inLeftExpression;
             inLeftExpression = true;
@@ -158,10 +159,15 @@ public class StaticImportVisitor extends ClassCodeExpressionTransformer {
                 result.setSourcePosition(be);
                 return result;
             }
+            if (left instanceof FieldExpression) {
+                FieldExpression fe = (FieldExpression) left;
+                fe.setSourcePosition(left);
+                be.setLeftExpression(left);
+                return be;
+            }
         }
         Expression left = transform(be.getLeftExpression());
         be.setLeftExpression(left);
-        be.setRightExpression(right);
         return be;
     }
 
