@@ -60,6 +60,18 @@ grant codeBase "file:${maven.home}/-" {
 };
 
 /*
+ * When running from Gradle, this codebase is required.
+ * If not running from Gradle, the codesource will not be found, but will not cause an error.
+ */
+grant codeBase "file:${gradle.home}/-" {
+    permission java.security.AllPermission;
+};
+
+grant codeBase "file:${gradle.junit}" {
+    permission java.security.AllPermission;
+};
+
+/*
  * When running from ant, this codebase is required.
  * If not running from ant, the codesource will not be found, but will not cause an error.
  * TODO: narrow this down to specific jars

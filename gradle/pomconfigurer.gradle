@@ -1,0 +1,528 @@
+project.pomConfigureClosure = {
+    // todo The maven pom builder is not fully compatible with the 2.x Maven model shipped with Gradle. As soon as we update
+    // to Maven 3 we can also add the distribution management in builder notation
+    model.distributionManagement = configure(new org.apache.maven.model.DistributionManagement()) {
+        repository = configure(new org.apache.maven.model.DeploymentRepository()) {
+            id = 'codehaus.org'
+            name = 'Groovy Central Repository'
+            url = 'dav:https://dav.codehaus.org/repository/groovy/'
+        }
+        snapshotRepository = configure(new org.apache.maven.model.DeploymentRepository()) {
+            id = 'codehaus.org'
+            name = 'Groovy Central Development Repository'
+            url = 'dav:https://dav.codehaus.org/snapshots.repository/groovy/'
+        }
+        site = configure(new org.apache.maven.model.Site()) {
+            id = 'codehaus.org'
+            name = 'Groovy Web Site'
+            url = 'dav:https://dav.codehaus.org/groovy'
+        }
+    }
+
+    project {
+        modelVersion '4.0.0'
+        groupId 'org.codehaus.groovy'
+        artifactId 'groovy'
+        version '1.8.0-beta-1-SNAPSHOT'
+        name 'Groovy'
+        description 'Groovy: A powerful, dynamic language for the JVM'
+        url 'http://groovy.codehaus.org/'
+        inceptionYear '2003'
+        organization {
+            name 'The Codehaus'
+            url 'http://codehaus.org'
+        }
+        developers {
+            developer {
+                id 'glaforge'
+                name 'Guillaume Laforge'
+                organization 'SpringSource'
+                roles {
+                    role 'Project Manager'
+                    role 'Developer'
+                }
+            }
+            developer {
+                id 'bob'
+                name 'bob mcwhirter'
+                email 'bob@werken.com'
+                organization 'The Werken Company'
+                roles {
+                    role 'Founder'
+                }
+            }
+            developer {
+                id 'jstrachan'
+                name 'James Strachan'
+                email 'james@coredevelopers.com'
+                organization 'Core Developers Network'
+                roles {
+                    role 'Founder'
+                }
+            }
+            developer {
+                id 'joe'
+                name 'Joe Walnes'
+                organization 'ThoughtWorks'
+                roles {
+                    role 'Developer Emeritus'
+                }
+            }
+            developer {
+                id 'skizz'
+                name 'Chris Stevenson'
+                organization 'ThoughtWorks'
+                roles {
+                    role 'Developer Emeritus'
+                }
+            }
+            developer {
+                id 'jamiemc'
+                name 'Jamie McCrindle'
+                organization 'Three'
+                roles {
+                    role 'Developer Emeritus'
+                }
+            }
+            developer {
+                id 'mattf'
+                name 'Matt Foemmel'
+                organization 'ThoughtWorks'
+                roles {
+                    role 'Developer Emeritus'
+                }
+            }
+            developer {
+                id 'spullara'
+                name 'Sam Pullara'
+                email 'sam@sampullara.com'
+                roles {
+                    role 'Developer Emeritus'
+                }
+            }
+            developer {
+                id 'kasper'
+                name 'Kasper Nielsen'
+                roles {
+                    role 'Developer Emeritus'
+                }
+            }
+            developer {
+                id 'travis'
+                name 'Travis Kay'
+                roles {
+                    role 'Developer Emeritus'
+                }
+            }
+            developer {
+                id 'zohar'
+                name 'Zohar Melamed'
+                roles {
+                    role 'Developer Emeritus'
+                }
+            }
+            developer {
+                id 'jwilson'
+                name 'John Wilson'
+                email 'tug@wilson.co.uk'
+                organization 'The Wilson Partnership'
+                roles {
+                    role 'Developer Emeritus'
+                }
+            }
+            developer {
+                id 'cpoirier'
+                name 'Chris Poirier'
+                email 'cpoirier@dreaming.org'
+                roles {
+                    role 'Developer Emeritus'
+                }
+            }
+            developer {
+                id 'ckl'
+                name 'Christiaan ten Klooster'
+                email 'ckl@dacelo.nl'
+                organization 'Dacelo WebDevelopment'
+                roles {
+                    role 'Developer Emeritus'
+                }
+            }
+            developer {
+                id 'goetze'
+                name 'Steve Goetze'
+                email 'goetze@dovetail.com'
+                organization 'Dovetailed Technologies, LLC'
+                roles {
+                    role 'Developer Emeritus'
+                }
+            }
+            developer {
+                id 'bran'
+                name 'Bing Ran'
+                email 'b55r@sina.com'
+                organization 'Leadingcare'
+                roles {
+                    role 'Developer Emeritus'
+                }
+            }
+            developer {
+                id 'jez'
+                name 'Jeremy Rayner'
+                email 'jeremy.rayner@gmail.com'
+                organization 'javanicus'
+                roles {
+                    role 'Developer'
+                }
+            }
+            developer {
+                id 'jstump'
+                name 'John Stump'
+                email 'johnstump2@yahoo.com'
+                roles {
+                    role 'Developer Emeritus'
+                }
+            }
+            developer {
+                id 'blackdrag'
+                name 'Jochen Theodorou'
+                email 'blackdrag@gmx.org'
+                roles {
+                    role 'Developer'
+                }
+            }
+            developer {
+                id 'russel'
+                name 'Russel Winder'
+                email 'russel@russel.org.uk'
+                organization 'Concertant LLP & It\'z Interactive Ltd'
+                roles {
+                    role 'Developer'
+                    role 'Founder of Gant'
+                }
+            }
+            developer {
+                id 'phk'
+                name 'Pilho Kim'
+                email 'phkim@cluecom.co.kr'
+                roles {
+                    role 'Developer Emeritus'
+                }
+            }
+            developer {
+                id 'cstein'
+                name 'Christian Stein'
+                email 'sormuras@gmx.de'
+                organization 'CTSR.de'
+                roles {
+                    role 'Developer Emeritus'
+                }
+            }
+            developer {
+                id 'mittie'
+                name 'Dierk Koenig'
+                email 'dierk.koenig@canoo.com'
+                organization 'Canoo Engineering AG'
+                roles {
+                    role 'Developer'
+                }
+            }
+            developer {
+                id 'paulk'
+                name 'Paul King'
+                email 'paulk@asert.com.au'
+                organization 'ASERT, Australia'
+                roles {
+                    role 'Developer'
+                }
+            }
+            developer {
+                id 'galleon'
+                name 'Guillaume Alleon'
+                email 'guillaume.alleon@gmail.com'
+                roles {
+                    role 'Developer'
+                }
+            }
+            developer {
+                id 'user57'
+                name 'Jason Dillon'
+                email 'jason@planet57.com'
+                roles {
+                    role 'Developer'
+                }
+            }
+            developer {
+                id 'shemnon'
+                name 'Danno Ferrin'
+                roles {
+                    role 'Developer'
+                }
+            }
+            developer {
+                id 'jwill'
+                name 'James Williams'
+                roles {
+                    role 'Developer'
+                }
+            }
+            developer {
+                id 'aalmiray'
+                name 'Andres Almiray'
+                email 'aalmiray@users.sourceforge.net'
+                roles {
+                    role 'Developer'
+                }
+            }
+            developer {
+                id 'mguillem'
+                name 'Marc Guillemot'
+                email 'mguillemot@yahoo.fr'
+                roles {
+                    role 'Developer'
+                }
+            }
+            developer {
+                id 'jimwhite'
+                name 'Jim White'
+                email 'jim@pagesmiths.com'
+                organization 'IFCX.org'
+                roles {
+                    role 'Developer'
+                }
+            }
+            developer {
+                id 'pniederw'
+                name 'Peter Niederwieser'
+                email 'pniederw@gmail.com'
+                roles {
+                    role 'Developer'
+                }
+            }
+            developer {
+                id 'hamletdrc'
+                name 'Hamlet D\'Arcy'
+                email 'hamletdrc@gmail.com'
+                roles {
+                    role 'Developer'
+                }
+            }
+        }
+        contributors {
+            contributor {
+                name 'Joern Eyrich'
+            }
+            contributor {
+                name 'Robert Kuzelj'
+            }
+            contributor {
+                name 'Rod Cope'
+            }
+            contributor {
+                name 'Yuri Schimke'
+            }
+            contributor {
+                name 'James Birchfield'
+            }
+            contributor {
+                name 'Robert Fuller'
+            }
+            contributor {
+                name 'Sergey Udovenko'
+            }
+            contributor {
+                name 'Hallvard Traetteberg'
+            }
+            contributor {
+                name 'Peter Reilly'
+            }
+            contributor {
+                name 'Brian McCallister'
+            }
+            contributor {
+                name 'Richard Monson-Haefel'
+            }
+            contributor {
+                name 'Brian Larson'
+            }
+            contributor {
+                name 'Artur Biesiadowski'
+                email 'abies@pg.gda.pl'
+            }
+            contributor {
+                name 'Ivan Z. Ganza'
+            }
+            contributor {
+                name 'Arjun Nayyar'
+            }
+            contributor {
+                name 'Mark Chu-Carroll'
+            }
+            contributor {
+                name 'Mark Turansky'
+            }
+            contributor {
+                name 'Jean-Louis Berliet'
+            }
+            contributor {
+                name 'Graham Miller'
+            }
+            contributor {
+                name 'Marc Palmer'
+            }
+            contributor {
+                name 'Tugdual Grall'
+            }
+            contributor {
+                name 'Edwin Tellman'
+            }
+            contributor {
+                name 'Evan A Slatis'
+            }
+            contributor {
+                name 'Mike Dillon'
+            }
+            contributor {
+                name 'Bernhard Huber'
+            }
+            contributor {
+                name 'Marc DeXeT'
+            }
+            contributor {
+                name 'Dejan Bosanac'
+                email 'dejan@nighttale.net'
+            }
+            contributor {
+                name 'Denver Dino'
+            }
+            contributor {
+                name 'Ted Naleid'
+            }
+            contributor {
+                name 'Chanwit Kaewkasi'
+            }
+            contributor {
+                name 'Brad Long'
+            }
+            contributor {
+                name 'John Bito'
+            }
+            contributor {
+                name 'Jim Jagielski'
+            }
+            contributor {
+                name 'John Hurst'
+            }
+            contributor {
+                name 'Merlyn Albery-Speyer'
+            }
+            contributor {
+                name 'jeremi Joslin'
+            }
+        }
+        mailingLists {
+            mailingList {
+                name 'Groovy JSR Discussion List'
+                archive 'http://dir.gmane.org/gmane.comp.lang.groovy.jsr'
+            }
+            mailingList {
+                name 'Groovy Developer List'
+                archive 'http://dir.gmane.org/gmane.comp.lang.groovy.devel'
+            }
+            mailingList {
+                name 'Groovy User List'
+                archive 'http://dir.gmane.org/gmane.comp.lang.groovy.user'
+            }
+        }
+        scm {
+            connection 'scm:svn:http://svn.groovy.codehaus.org/browse/groovy/trunk/groovy/groovy-core'
+            developerConnection 'scm:svn:https://${maven.username}@svn.groovy.codehaus.org/browse/groovy/trunk/groovy/groovy-core'
+            url 'http://svn.groovy.codehaus.org/browse/groovy/trunk/groovy/groovy-core'
+        }
+        build {
+            sourceDirectory 'src/main'
+            testSourceDirectory 'src/test'
+            defaultGoal 'install'
+            pluginManagement {
+                plugins {
+                    plugin {
+                        artifactId 'maven-antrun-plugin'
+                        version '1.1'
+                    }
+                    plugin {
+                        artifactId 'maven-idea-plugin'
+                        version '2.1'
+                        configuration {
+                            jdkName '1.4'
+                            jdkLevel '1.4'
+                            linkModules 'true'
+                        }
+                    }
+                    plugin {
+                        artifactId 'maven-compiler-plugin'
+                        version '2.0.2'
+                        configuration {
+                            excludes {
+                                exclude '**'
+                            }
+                            skip 'true'
+                        }
+                    }
+                    plugin {
+                        artifactId 'maven-surefire-plugin'
+                        version '2.3'
+                        configuration {
+                            skip 'true'
+                        }
+                    }
+                }
+            }
+            plugins {
+                plugin {
+                    artifactId 'maven-antrun-plugin'
+                    executions {
+                        execution {
+                            phase 'install'
+                            goals {
+                                goal 'run'
+                            }
+                            configuration {
+                                tasks {
+                                    exec(dir: '${pom.basedir}', executable: 'ant') {
+                                        arg(value: 'installRepo')
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        profiles {
+            profile {
+                id 'idea'
+                build {
+                    defaultGoal 'validate'
+                    plugins {
+                        plugin {
+                            artifactId 'maven-idea-plugin'
+                            executions {
+                                execution {
+                                    phase 'validate'
+                                    goals {
+                                        goal 'clean'
+                                        goal 'idea'
+                                    }
+                                }
+                            }
+                            configuration {
+                                overwrite 'true'
+                                downloadSources 'true'
+                                downloadJavadocs 'true'
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}

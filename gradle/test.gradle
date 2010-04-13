@@ -1,0 +1,87 @@
+test {
+    jvmArgs "-ea", "-Xms${groovyJUnit_ms}", "-Xmx${groovyJUnit_mx}", "-XX:PermSize=${groovyJUnit_permSize}", "-XX:MaxPermSize=${groovyJUnit_maxPermSize}"
+    def headless = System.properties['java.awt.headless']
+    if (headless == 'true') {
+        systemProperties 'java.awt.headless': "true"
+    }
+    def testdb = System.properties['groovy.testdb.props']
+    if (testdb) {
+        systemProperties 'groovy.testdb.props': testdb
+    }
+    systemProperties 'apple.awt.UIElement': "true", "javadocAssertion.src.dir": './src/main'
+    systemProperties "gradle.home": gradle.gradleHomeDir // this is needed by the security.policy
+    doFirst {
+        // this is needed by the security.policy. We set it at execution time to avoid resolving a configuration when not needed. 
+        systemProperties "gradle.junit": configurations.testCompile.fileCollection { dep -> dep.name == 'junit' }.singleFile.absolutePath
+    }
+    classpath = files('src/test') + classpath
+    forkEvery = 1
+    scanForTestClasses = false
+    ignoreFailures = false
+    resultText = ''
+    includes = includePattern
+}
+
+tasks.addRule("Pattern: testSingle<Name> will test **/<Name>.class") {String taskName ->
+    if (taskName.startsWith("testSingle")) {
+        tasks.add(taskName).dependsOn(test)
+        test.includes = ['**/' + taskName.substring(10) + '.class']
+        test.outputs.upToDateWhen { false }
+    }
+}
+
+def getIncludePattern() {
+    def baseInclude = ['UberTestCaseBugs.class',
+            'UberTestCaseGroovySourceCodehausPackages.class',
+            'UberTestCaseGroovySourceRootPackage.class',
+            "UberTestCaseGroovySourceSubPackages.class",
+            "UberTestCaseJavaSourceCodehausPackages.class",
+            "UberTestCaseJavaSourceGroovyPackagesNonSecurity.class",
+            "UberTestCaseTCK.class",
+            "UberTestCaseJavaSourceGroovyPackagesSecurity.class"]
+    if (System.properties['junit.network']) {
+        baseInclude += ['groovy/grape/*Test.class']    
+    }
+    if (isJava16()) {
+        baseInclude += ["UberTestCaseGroovySourceSubPackages_VM6.class"]   
+    }
+    baseInclude
+}
+
+task compareTests << {
+    def uberTestCases = ['UberTestCaseBugs.xml',
+            'UberTestCaseGroovySourceCodehausPackages.xml',
+            'UberTestCaseGroovySourceRootPackage.xml',
+            "UberTestCaseGroovySourceSubPackages.xml",
+            "UberTestCaseJavaSourceCodehausPackages.xml",
+            "UberTestCaseJavaSourceGroovyPackagesNonSecurity.xml",
+            "UberTestCaseTCK.xml",
+            "UberTestCaseGroovySourceSubPackages_VM6.xml",
+            "UberTestCaseJavaSourceGroovyPackagesSecurity.xml"]
+    uberTestCases.each { testCaseName ->
+        compareAntWithGradle("target/test-reports/TEST-$testCaseName" as File, "target/test-results/TEST-$testCaseName" as File)
+    }
+}
+
+def compareAntWithGradle(File antResult, File gradleResult) {
+    Set antTests = testsRun(antResult)
+    Set gradleTests = testsRun(gradleResult)
+    Set commonTests = antTests.intersect(gradleTests)
+    Set antOnly = antTests - commonTests
+    Set gradleOnly = gradleTests - commonTests
+    if (antOnly) {
+        println "Tests only run by Ant: " + antOnly
+    }
+    if (gradleOnly) {
+        println "Tests only run by Gradle: " + gradleOnly
+    }
+}
+
+Set testsRun(File resultsXmlFile) {
+    def testsuite = new XmlParser().parse(resultsXmlFile)
+    Set tests = []
+    testsuite.testcase.each { testcase ->
+        tests.add("${testcase.'@classname'}:${testcase.'@name'}")    
+    }
+    tests
+}

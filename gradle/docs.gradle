@@ -1,0 +1,64 @@
+task doc(dependsOn: [javadoc, groovydoc, 'docGDK']) {
+    footer = "Copyright &amp;copy; 2003-2010 The Codehaus. All rights reserved."
+    title = "Groovy ${groovyVersion}"
+}
+
+javadoc {
+    maxMemory = javaDoc_mx
+    project.configure(options) {
+        windowTitle = doc.title
+        docTitle = doc.title
+        encoding = "ISO-8859-1"
+        author = true
+        version = true
+        overview = "src/main/overview.html"
+        footer = doc.footer
+        source = "1.5"
+        links("http://java.sun.com/j2se/1.5.0/docs/api", "http://www.dpml.net/api/ant/1.7.0",
+                "http://junit.sourceforge.net/junit3.8.1/javadoc/", "http://java.sun.com/j2se/1.4/docs/api", "http://www.antlr2.org/javadoc")
+    }
+}
+
+groovydoc {
+    dependsOn classes
+    use = true
+    windowtitle = doc.title
+    doctitle = doc.title
+    header = doc.title
+    footer = doc.footer
+    overview = file("src/main/overview.html")
+    includePrivate = false
+    link "http://java.sun.com/j2ee/1.4/docs/api", "javax.servlet.", "javax.management."
+    link "http://java.sun.com/javase/6/docs/api/", "java.", "org.xml.", "javax.", "org.xml."
+    link "http://www.dpml.net/api/ant/1.7.0", "org.apache.ant.", "org.apache.tools.ant."
+    link "http://junit.sourceforge.net/junit3.8.1/javadoc/", "org.junit.", "junit."
+    link "http://www.antlr2.org/javadoc/", "antlr."
+}
+
+task docGDK {
+    destinationDir = "$buildDir/html/groovy-jdk"
+    inputs.files sourceSets.tools.runtimeClasspath
+    outputs.dir destinationDir
+    doFirst {task ->
+        ant {
+            java(classname: "org.codehaus.groovy.tools.DocGenerator", fork: "yes", failonerror: "true",
+                    classpath: sourceSets.tools.runtimeClasspath.asPath,
+                    errorproperty: 'edr',
+                    outputproperty: 'odr') {
+                arg(value: "org.codehaus.groovy.runtime.DefaultGroovyMethods")
+                arg(value: "org.codehaus.groovy.runtime.SqlGroovyMethods")
+                arg(value: "org.codehaus.groovy.runtime.SwingGroovyMethods")
+                arg(value: "org.codehaus.groovy.runtime.XmlGroovyMethods")
+                arg(value: "org.codehaus.groovy.runtime.DefaultGroovyStaticMethods")
+                arg(value: "org.codehaus.groovy.vmplugin.v5.PluginDefaultGroovyMethods")
+            }
+//            println "Out: " + ant.properties.edr
+//            println "Err: " + ant.properties.odr
+        }
+        copy {
+            into task.destinationDir
+            from "src/tools/org/codehaus/groovy/tools/groovy.ico", "src/tools/org/codehaus/groovy/tools/stylesheet.css"
+        }
+    }
+}
+

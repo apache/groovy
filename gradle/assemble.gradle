@@ -1,0 +1,293 @@
+import java.util.jar.Manifest
+import org.apache.commons.io.FileUtils
+import org.apache.tools.ant.filters.ReplaceTokens
+import org.apache.tools.ant.taskdefs.Replace
+import java.text.SimpleDateFormat
+
+apply plugin: 'osgi'
+
+group = 'org.codehaus.groovy'
+archivesBaseName = 'groovy'
+
+allManifest = manifest {
+    attributes("Built-By": System.properties['user.name'],
+            "Extension-Name": 'groovy',
+            "Specification-Title": 'Groovy: a powerful, dynamic language for the JVM',
+            "Specification-Version": project.version,
+            "Specification-Vendor": 'The Codehaus',
+            "Implementation-Title": 'Groovy: a powerful, dynamic language for the JVM',
+            "Implementation-Version": project.version,
+            "Implementation-Vendor": 'The Codehaus',
+            "Bundle-ManifestVersion": '2',
+            "Bundle-Name": 'Groovy Runtime',
+            "Bundle-Description": 'Groovy Runtime',
+            "Bundle-Version": groovyBundleVersion,
+            "Bundle-Vendor": 'The Codehaus',
+            "Bundle-ClassPath": '.',
+            "Bundle-RequiredExecutionEnvironment": 'J2SE-1.5',
+            "Eclipse-BuddyPolicy": 'dependent',
+            "Eclipse-LazyStart": 'true',
+            "DynamicImport-Package": '*')
+}
+
+licenseSpec = copySpec {
+    from "$projectDir/config/build"
+    from(zipTree(configurations.compile.fileCollection { it.name.startsWith 'commons-cli' }.singleFile).matching {
+        include 'META-INF/LICENSE.txt'
+    }) {
+        eachFile {details ->
+            details.path = details.path - 'META-INF'
+            details.name = "CLI-LICENSE.txt"
+        }
+    }
+}
+
+binaryJarsMetaInf = {
+    Date buildTime = new Date()
+    from "$projectDir/LICENSE.txt"
+    from("$projectDir/src/main/META-INF/groovy-release-info.properties") {
+        filter {String line ->
+            ['##ImplementationVersion##': project.version, '##BundleVersion##': project.groovyBundleVersion,
+                    '##BuildDate##': new SimpleDateFormat('dd-MMM-yyyy').format(buildTime),
+                    '##BuildTime##': new SimpleDateFormat('hh:mm aa').format(buildTime)].each {key, value ->
+                line = line.replace(key, value)
+            }
+            line
+        }
+    }
+}
+
+task copy(type: Copy) {
+    into "$buildDir/meta"
+    with licenseSpec
+}
+
+commonOsgiManifest = {
+    // We exclude the Bnd-LastModified attribute as it always triggers a rebuild without being really needed.
+    from(allManifest) {
+        eachEntry {details ->
+            if (details.key == 'Bnd-LastModified') {
+                details.exclude()
+            }
+        }
+    }
+    version = groovyBundleVersion
+    instruction '-nouses', 'true'
+    instruction 'Export-Package', "*;version=${version}"
+    classpath = sourceSets.main.runtimeClasspath
+}
+
+jar {
+    metaInf binaryJarsMetaInf
+    manifest = osgiManifest {
+        symbolicName = 'groovy'
+        instruction 'Import-Package', "antlr", "org.objectweb.asm", "*;resolution:=optional"
+        classesDir = sourceSets.main.classesDir
+    }
+    manifest commonOsgiManifest
+}
+
+task jarAll(type: Jar, dependsOn: jar) {
+    metaInfDir = "$buildDir/tmp/groovy-all-metainf"
+    inputs.files jar.archivePath
+    inputs.dir metaInfDir
+    appendix = 'all'
+    doLast {
+        manifest.writeTo("$metaInfDir/MANIFEST.MF")
+        copy {
+            into "$buildDir/tmp/groovy-all-metainf"
+            with licenseSpec
+        }
+        project.ant {
+            taskdef name: "jarjar", classname: "com.tonicsystems.jarjar.JarJarTask", classpath: configurations.tools.asPath
+            jarjar(jarfile: archivePath, manifest: "$metaInfDir/MANIFEST.MF") {
+                zipfileset(dir: "$metaInfDir", prefix: 'META-INF')
+                zipfileset(src: jar.archivePath)
+                configurations.runtime.files.findAll {file ->
+                    ['antlr', 'asm', 'commons-cli'].any { file.name.startsWith(it) } && ['asm-attr', 'asm-util', 'asm-analysis'].every { !file.name.startsWith(it) }
+                }.each {jarjarFile ->
+                    zipfileset(src: jarjarFile)
+                }
+                rule pattern: "antlr.**", result: "groovyjarjarantlr.@1"
+                rule pattern: "org.objectweb.**", result: "groovyjarjarasm.@1"
+                rule pattern: "org.apache.commons.cli.**", result: "groovyjarjarcommonscli.@1"
+            }
+        }
+    }
+    // We exclude the Bnd-LastModified attribute as it always triggers a rebuild without being really needed.
+    manifest = osgiManifest {
+        symbolicName = 'groovy-all'
+        instruction 'Import-Package', "*;resolution:=optional"
+        classesDir = jar.archivePath
+    }
+    manifest commonOsgiManifest
+}
+
+task sourceJar(type: Jar) {
+    classifier = 'sources'
+    //    from sourceSets.main.allSource
+    from "$projectDir/src/main"
+}
+
+task sourceAllJar(type: Jar, dependsOn: sourceJar) {
+    appendix = 'all'
+    classifier = 'sources'
+    with sourceJar.rootSpec
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    classifier = 'javadoc'
+    from javadoc.destinationDir
+}
+
+task javadocAllJar(type: Jar, dependsOn: javadocJar) {
+    appendix = 'all'
+    classifier = 'javadoc'
+    with javadocJar.rootSpec
+}
+
+
+distSpec = copySpec {
+    from("$projectDir") {
+        include "LICENSE.txt", "NOTICE.txt"
+    }
+    into("lib") {
+        from configurations.runtime.fileCollection {dep ->
+            !(dep instanceof FileCollectionDependency) && !dep.name.startsWith('livetribe')
+        }, jar.archivePath
+    }
+    into("conf") {
+        from "src/conf"
+    }
+    into("bin") {
+        from("src/bin") {
+            filter(ReplaceTokens, tokens: [token: 'GROOVYJAR', value: jar.archiveName])
+            fileMode = 0755
+        }
+        from("src/tools/org/codehaus/groovy/tools/groovy.ico")
+    }
+    into("embeddable") {
+        from jarAll.archivePath
+    }
+}
+
+task installGroovy(type: Sync, dependsOn: [jar, jarAll]) {
+    from distSpec
+    into System.properties.installDirectory ?: "$buildDir/install"
+}
+
+//task jars(dependsOn: tasks.withType(Jar))
+//task dists(dependsOn: tasks.withType(Zip).matching {task -> !(task instanceof Jar)})
+
+task distBin(type: Zip, dependsOn: [jar, jarAll]) {
+    appendix = 'binary'
+    into("groovy-$version") {
+        with distSpec
+        with licenseSpec
+    }
+}
+
+task distDoc(type: Zip, dependsOn: doc) {
+    appendix = 'docs'
+    into("groovy-$version")
+    into("pdf") {
+        from 'src/wiki-snapshot.pdf'
+    }
+    into("html/api") {
+        from javadoc.destinationDir
+    }
+    into("html/gapi") {
+        from groovydoc.destinationDir
+    }
+    into("html/groovy-jdk") {
+        from docGDK.destinationDir
+    }
+}
+
+task distSrc(type: Zip, dependsOn: [javadoc, groovydoc, docGDK]) {
+    appendix = 'src'
+    into("groovy-$version")
+    from(projectDir) {
+        exclude 'target', buildDirName, 'classes/**', 'cruise/**', '.clover/*', 'local.build.properties',
+                'cobertura.ser', 'junitvmwatcher*.properties'
+    }
+}
+
+task compareArchives << {
+    jarTasks = tasks.withType(Zip)
+    jarTasks.each {jar ->
+        File antJar = "$projectDir/target/dist/${jar.archivePath.name}" as File
+        println "Comparing $jar.name with ant jar $antJar. Ant jar exists=${antJar.isFile()}"
+        if (antJar.isFile()) {
+            compare(jar.archiveName, jar.archivePath, antJar, true)
+        }
+    }
+}
+
+def compare(String name, File gradleJar, File antJar, boolean checkManifest) {
+    def File diffDir = new File(buildDir, "diff/$name")
+    ant.delete(dir: diffDir)
+    def unzipGradle = new File(diffDir, "gradle")
+    def unzipAnt = new File(diffDir, "ant")
+    ant.unzip(src: gradleJar, dest: unzipGradle)
+    ant.unzip(src: antJar, dest: unzipAnt)
+
+    def antFiles = [:]
+    def gradleFiles = [:]
+
+    FileUtils.listFiles(unzipAnt, null, true).each {File file ->
+        antFiles[file.absolutePath - unzipAnt.absolutePath] = file
+    }
+    FileUtils.listFiles(unzipGradle, null, true).each {File file ->
+        gradleFiles[file.absolutePath - unzipGradle.absolutePath] = file
+    }
+
+    antFiles.each {key, value ->
+        if (!gradleFiles[key]) {
+            println "ant only: $key"
+        } else if (checkManifest && key == '/META-INF/MANIFEST.MF') {
+            Manifest manifestAnt = new Manifest(new FileInputStream(antFiles[key]))
+            Manifest manifestGradle = new Manifest(new FileInputStream(gradleFiles[key]))
+            if (!manifestAnt.equals(manifestGradle)) {
+                def ant = manifestAnt.mainAttributes
+                def gradle = manifestGradle.mainAttributes
+                compareMap(ant, gradle)
+            }
+        }
+        gradleFiles.remove(key)
+    }
+
+    gradleFiles.keySet().each {file ->
+        println "gradle only: $file"
+    }
+}
+
+def compareMap(Map ant, Map gradle) {
+    (ant.keySet() + gradle.keySet()).each {attribute ->
+        antValue = ant[attribute]
+        gradleValue = gradle[attribute]
+        if (!(['Ant-Version', 'Created-By', 'Bnd-LastModified', 'Tool', 'Originally-Created-By'].contains(attribute as String))) {
+            if (antValue) {
+                if (!gradleValue) {
+                    println "$attribute: ant only"
+                } else if (antValue != gradleValue) {
+                    if (attribute.toString() == 'Export-Package' || attribute.toString() == 'Import-Package') {
+                        def antOnly = antValue.split(',') as LinkedHashSet
+                        def gradleOnly = gradleValue.split(',') as LinkedHashSet
+                        antOnly.removeAll(gradleOnly)
+                        gradleOnly.removeAll(antValue.split(',') as LinkedHashSet)
+                        println("""$attribute:
+                            ant only: $antOnly
+                            gradle only: $gradleOnly""")
+                    } else {
+                        println("""$attribute:
+                            ant value: ${antValue}
+                            gradle value: ${gradleValue}""")
+                    }
+                }
+            } else {
+                println "$attribute: gradle only"
+            }
+        }
+    }
+}

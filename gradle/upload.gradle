@@ -1,0 +1,117 @@
+import org.custommonkey.xmlunit.Diff
+import org.custommonkey.xmlunit.DetailedDiff
+import org.custommonkey.xmlunit.ElementNameAndAttributeQualifier
+import org.custommonkey.xmlunit.XMLAssert
+
+buildscript {
+    repositories {
+        mavenCentral()
+    }
+    dependencies {
+        classpath 'xmlunit:xmlunit:1.3'
+    }
+}
+
+apply plugin: 'maven'
+apply from: 'gradle/pomconfigurer.gradle'
+
+configurations {
+    deployerJars
+}
+
+dependencies {
+    deployerJars "org.apache.maven.wagon:wagon-webdav:1.0-beta-2"
+}
+
+task generatePoms {
+    pom = pom()
+    pom.scopeMappings.addMapping(10, configurations.groovy, 'compile')
+    pomAll = pom()
+    [pomAll, pom]*.whenConfigured {pom ->
+        pom.dependencies.find {dep -> dep.artifactId == 'livetribe-jsr223' }.scope = 'provided'
+        pom.dependencies.find {dep -> dep.artifactId == 'ivy' }.addExclusion(new org.apache.maven.model.Exclusion(groupId: '*', artifactId: '*'))
+        pom.dependencies.each { dep -> dep.optional = dep.scope == 'test' ? false : true }
+    }
+    pomAll.whenConfigured {pom ->
+        pom.artifactId = 'groovy-all'
+        pom.dependencies.remove(pom.dependencies.find {dep -> dep.artifactId == 'commons-cli'})     
+    }
+    def groovyConfDeps = configurations.groovy.dependencies.collect { dep -> dep.name } 
+    pom.whenConfigured {pom ->
+        pom.dependencies.each { dep ->  if (groovyConfDeps.contains(dep.artifactId)) { dep.optional = false }}
+    }
+    pomFile = "$buildDir/generatedPoms/groovy.pom" as File
+    pomAllFile = "$buildDir/generatedPoms/groovy-all.pom" as File
+    doFirst {
+        configure(pom, pomConfigureClosure)
+        configure(pomAll, pomConfigureClosure)
+        pom.writeTo(pomFile)
+        pomAll.writeTo(pomAllFile)
+    }
+}
+
+def artifact = groovy.xml.NamespaceBuilder.newInstance(ant, 'antlib:org.apache.maven.artifact.ant')
+task mavenInstall(dependsOn: [generatePoms, jar, jarAll]) {
+    inputs.files generatePoms.pomFile, generatePoms.pomAllFile, jar.archivePath, jarAll.archivePath
+    doFirst {
+        [(jar): generatePoms.pomFile, (jarAll):generatePoms.pomAllFile].each {jar, pomFile ->
+            println pomFile
+            artifact.install(file: jar.archivePath) {
+                pom(file: pomFile)
+            }
+        }
+    }
+}
+
+task mavenDeploy(dependsOn: [generatePoms, jar, jarAll]) << {
+    [(jar): generatePoms.pomFile, (jarAll):generatePoms.pomAllFile].each {jar, pomFile ->
+        // todo Once we have better classpath isolation and/or we have migrated to Maven 3 we don't need to execute the below with the IsolatedAntBuilder
+        def antBuilderClasspath = ["${gradle.gradleHomeDir}/lib/maven-ant-tasks-2.1.0.jar" as File] + services.get(org.gradle.api.internal.ClassPathRegistry).getClassPathFiles('ANT') +
+                services.get(org.gradle.api.internal.ClassPathRegistry).getClassPathFiles('LOCAL_GROOVY') + configurations.deployerJars.files
+        def isolatedAnt = services.get(org.gradle.api.internal.project.IsolatedAntBuilder)
+        isolatedAnt.execute(antBuilderClasspath) {
+            'antlib:org.apache.maven.artifact.ant:deploy'(file: jar.archivePath) {
+                pom(file: pomFile)
+            }
+        }
+    }                                                               
+}
+
+task comparePoms << {
+    println 'Compare groovy.pom:'
+    comparePoms("pom.xml", "target/generatedPoms/groovy.pom")
+    println 'Compare groovy-all.pom:'
+    comparePoms("target/groovy-all.pom", "target/generatedPoms/groovy-all.pom")
+//    Diff diff = new Diff(file("target/groovy-all.pom").text, file("target/generatedPom/groovy-all.pom").text)
+//    diff.overrideElementQualifier(new ElementNameAndAttributeQualifier())
+//    DetailedDiff ddiff = new DetailedDiff(diff)
+//    XMLAssert.assertXMLEqual(ddiff, true);
+}
+
+def comparePoms(def antPom, def gradlePom) {
+    Set antDependencies = getDependencies(antPom)
+    Set gradleDependencies = getDependencies(gradlePom)
+    Set commonDependencies = antDependencies.intersect(gradleDependencies)
+    Set antOnly = antDependencies - commonDependencies
+    Set gradleOnly = gradleDependencies - commonDependencies
+    if (antOnly) {
+        println "Dependency only in Ant Pom: " + antOnly
+    }
+    if (gradleOnly) {
+        println "Dependency only in Gradle Pom: " + gradleOnly
+    }
+}
+
+def getDependencies(def pomFile) {
+    def project = new XmlParser().parse(pomFile as File)
+    Set dependencies = []
+    project.dependencies.dependency.each {dependency ->
+        def optional = dependency.optional?.text() ? 'optional' : 'non-optional'
+        String exclusions = 'exclusions:'
+        dependency.exclusions?.exclusion.each { exclusion ->
+            exclusions += "${exclusion.groupId.text()}:${exclusion.artifactId.text()}"
+        }
+        dependencies.add("${dependency.groupId.text()}:${dependency.artifactId.text()}:${dependency.version.text()}:$optional:$exclusions:${dependency.scope.text()}")
+    }
+    return dependencies
+}
