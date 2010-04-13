@@ -23,6 +23,7 @@ import java.util.Set;
  * A wrapper for Map which allows a default value to be specified.
  *
  * @author Paul King
+ * @since 1.7.1
  */
 public final class MapWithDefault<K, V> implements Map<K, V> {
 
@@ -87,5 +88,15 @@ public final class MapWithDefault<K, V> implements Map<K, V> {
 
     public Set<Map.Entry<K, V>> entrySet() {
         return delegate.entrySet();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return delegate.equals(obj);
+    }
+
+    @Override
+    public int hashCode() {
+        return delegate.hashCode();
     }
 }
