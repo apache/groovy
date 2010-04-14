@@ -44,7 +44,7 @@ public class MethodClosure extends Closure {
         List<MetaMethod> methods = InvokerHelper.getMetaClass(clazz).respondsTo(owner, method);
         
         for(MetaMethod m : methods) {
-            if (method.equals(m.getName()) && m.getParameterTypes().length > maximumNumberOfParameters) {
+            if (m.getParameterTypes().length > maximumNumberOfParameters) {
                 Class[] pt = m.getNativeParameterTypes();
                 maximumNumberOfParameters = pt.length;
                 parameterTypes = pt;
