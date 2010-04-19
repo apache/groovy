@@ -3296,6 +3296,51 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Translates a string by replacing characters from the sourceSet with characters from replacementSet.
+     * If the first character from sourceSet appears in the string, it will be replaced with the first character from replacementSet.
+     * If the second character from sourceSet appears in the string, it will be replaced with the second character from replacementSet.
+     * and so on for all provided replacement characters.
+     * <p/>
+     * Here is an example which converts the vowels in a word from lower to uppercase:
+     * <pre>
+     * assert 'hello'.tr('aeiou', 'AEIOU') == 'hEllO'
+     * </pre>
+     * A character range using regex-style syntax can also be used, e.g. here is an example which converts a word from lower to uppercase:
+     * <pre>
+     * assert 'hello'.tr('a-z', 'A-Z') == 'HELLO'
+     * </pre>
+     * Hyphens at the start or end of sourceSet or replacementSet are treated as normal hyphens and are not
+     * considered to be part of a range specification. Similarly, a hyphen immediately after an earlier range
+     * is treated as a normal hyphen. So, '-x', 'x-' have no ranges while 'a-c-e' has the range 'a-c' plus
+     * the '-' character plus the 'e' character. 
+     * <p/>
+     * Unlike the unix tr command, Groovy's tr command supports reverse ranges, e.g.:
+     * <pre>
+     * assert 'hello'.tr('z-a', 'Z-A') == 'HELLO'
+     * </pre>
+     * If replacementSet is smaller than sourceSet, then the last character from replacementSet is used as the replacement for all remaining source characters as shown here:
+     * <pre>
+     * assert 'Hello World!'.tr('a-z', 'A') == 'HAAAA WAAAA!'
+     * </pre>
+     * If sourceSet contains repeated characters, the last specified replacement is used as shown here:
+     * <pre>
+     * assert 'Hello World!'.tr('lloo', '1234') == 'He224 W4r2d!'
+     * </pre> 
+     * The functionality provided by tr can be achieved using regular expressions but tr provides a much more compact
+     * notation and efficient implementation for certain scenarios.
+     *
+     * @param   self the string that is to be translated
+     * @param   sourceSet the set of characters to translate from
+     * @param   replacementSet the set of replacement characters
+     * @return  The resulting translated <tt>String</tt>
+     * @see org.codehaus.groovy.util.StringUtil#tr(String, String, String)
+     * @since 1.7.3
+     */
+    public static String tr(final String self, String sourceSet, String replacementSet) throws ClassNotFoundException {
+        return (String) InvokerHelper.invokeStaticMethod("org.codehaus.groovy.util.StringUtil", "tr", new Object[]{self, sourceSet, replacementSet});
+    }
+
+    /**
      * Tells whether or not self matches the given
      * compiled regular expression Pattern.
      *

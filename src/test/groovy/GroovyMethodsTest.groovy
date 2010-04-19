@@ -17,6 +17,7 @@ package groovy
 
 import java.awt.Dimension
 import java.util.concurrent.LinkedBlockingQueue
+import org.codehaus.groovy.util.StringUtil
 
 /** 
  * Tests the various new Groovy methods
@@ -851,6 +852,37 @@ class GroovyMethodsTest extends GroovySwingTestCase {
                 ['g', 'f', 'r', 'o'],
                 ['g', 'f', 'o', 'r'],
         ] as Set
+    }
+
+    void testStringTranslate() {
+        assert StringUtil.tr("abcdefghijklmn", "abcdefghijklmn", "ABCDEFGHIJKLMN") == "ABCDEFGHIJKLMN"
+        assert StringUtil.tr("abcdefghijklmn", "abc", "ABC") == "ABCdefghijklmn"
+        assert StringUtil.tr("abcdefghijklmn", "ace", "ACE") == "AbCdEfghijklmn"
+        assert StringUtil.tr("abcdefghijklmn", "afghn", "AFGHN") == "AbcdeFGHijklmN"
+        assert StringUtil.tr("abcdefghijklmn", "xyz", "XYZ") == "abcdefghijklmn"
+        assert StringUtil.tr("abcdefghijklmn", "", "") == "abcdefghijklmn"
+    }
+
+    void testTr_Expand() {
+        assert StringUtil.tr("abcdefghijklmn", "a-n", "ABCDEFGHIJKLMN") == "ABCDEFGHIJKLMN"
+        assert StringUtil.tr("abcdefghijklmn", "abcdefghijklmn", "A-N") == "ABCDEFGHIJKLMN"
+        assert StringUtil.tr("abcdefghijklmn", "a-n", "A-N") == "ABCDEFGHIJKLMN"
+        assert StringUtil.tr("abcdefghijklmn", "a-c", "A-C") == "ABCdefghijklmn"
+        assert StringUtil.tr("abcdefghijklmn", "af-hn", "AF-HN") == "AbcdeFGHijklmN"
+        assert StringUtil.tr("abcdefghijklmn", "x-z", "X-Z") == "abcdefghijklmn"
+        assert StringUtil.tr("abcdefghijklmn", "a-cfj-l", "A-CFJ-L") == "ABCdeFghiJKLmn"
+        assert StringUtil.tr("-abc-", "-", "*") == "*abc*"
+        assert StringUtil.tr("-abcdef--ghijklmn-", "-cfj-l", "*CFJ-L") == "*abCdeF**ghiJKLmn*"
+        assert StringUtil.tr("abcdefghijklmn", "a-n", "A-C") == "ABCCCCCCCCCCCC"
+        assert StringUtil.tr("abcdefghijklmn", "a-c", "A-N") == "ABCdefghijklmn"
+        assert 'hello'.tr('aeiou', 'AEIOU') == 'hEllO'
+        assert 'Hello World!'.tr('a-z', 'A') == 'HAAAA WAAAA!'
+        assert 'Hello World!'.tr('a-z', 'A-Z') == 'HELLO WORLD!'
+        assert 'Hello World!'.tr('z-a', 'Z-A') == 'HELLO WORLD!'
+        assert 'Hello World!'.tr('lloo', '1234') == 'He224 W4r2d!'
+        assert 'Hello-World!'.tr('a-d-f-m-s', '_') == 'He__o_Wor__!'
+        assert 'Hello-World!'.tr('--a', 'Z') == 'ZelloZZorld!'
+        assert 'Hello, World!'.tr(' --', 'Z') == 'HelloZZWorldZ'
     }
 }
 
