@@ -418,6 +418,12 @@ project.pomConfigureClosure = {
             contributor {
                 name 'jeremi Joslin'
             }
+            contributor {
+                name 'UEHARA Junji'
+            }
+            contributor {
+                name 'NAKANO Yasuharu'
+            }
         }
         mailingLists {
             mailingList {
