@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,7 +20,7 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
  * A constructor call
- * 
+ *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Jochen Theodorou
  * @version $Revision$
@@ -28,26 +28,26 @@ import org.codehaus.groovy.ast.GroovyCodeVisitor;
 public class ConstructorCallExpression extends Expression {
 
     private final Expression arguments;
-    private boolean usesAnnonymousInnerClass;
+    private boolean usesAnonymousInnerClass;
 
     public ConstructorCallExpression(ClassNode type, Expression arguments) {
         super.setType(type);
-        if (!(arguments instanceof TupleExpression)){
+        if (!(arguments instanceof TupleExpression)) {
             this.arguments = new TupleExpression(arguments);
         } else {
             this.arguments = arguments;
         }
     }
-    
+
     public void visit(GroovyCodeVisitor visitor) {
         visitor.visitConstructorCallExpression(this);
     }
-    
+
     public Expression transformExpression(ExpressionTransformer transformer) {
         Expression args = transformer.transform(arguments);
         ConstructorCallExpression ret = new ConstructorCallExpression(getType(), args);
         ret.setSourcePosition(this);
-        ret.setUsingAnonymousInnerClass(isUsingAnnonymousInnerClass());
+        ret.setUsingAnonymousInnerClass(isUsingAnonymousInnerClass());
         return ret;
     }
 
@@ -62,7 +62,7 @@ public class ConstructorCallExpression extends Expression {
         } else if (isThisCall()) {
             text = "this ";
         } else {
-            text = "new "+ getType().getName();
+            text = "new " + getType().getName();
         }
         return text + arguments.getText();
     }
@@ -70,24 +70,29 @@ public class ConstructorCallExpression extends Expression {
     public String toString() {
         return super.toString() + "[type: " + getType() + " arguments: " + arguments + "]";
     }
-    
+
     public boolean isSuperCall() {
-        return getType()==ClassNode.SUPER;
+        return getType() == ClassNode.SUPER;
     }
-    
-    public boolean isSpecialCall(){
+
+    public boolean isSpecialCall() {
         return isThisCall() || isSuperCall();
     }
-    
+
     public boolean isThisCall() {
-        return getType()==ClassNode.THIS;
+        return getType() == ClassNode.THIS;
     }
 
     public void setUsingAnonymousInnerClass(boolean usage) {
-        this.usesAnnonymousInnerClass=usage;
+        this.usesAnonymousInnerClass = usage;
     }
-    
+
+    public boolean isUsingAnonymousInnerClass() {
+        return usesAnonymousInnerClass;
+    }
+
+    @Deprecated
     public boolean isUsingAnnonymousInnerClass() {
-        return usesAnnonymousInnerClass;
+        return isUsingAnonymousInnerClass();
     }
 }
