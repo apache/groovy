@@ -90,9 +90,4 @@ public class ConstructorCallExpression extends Expression {
     public boolean isUsingAnonymousInnerClass() {
         return usesAnonymousInnerClass;
     }
-
-    @Deprecated
-    public boolean isUsingAnnonymousInnerClass() {
-        return isUsingAnonymousInnerClass();
-    }
 }
