@@ -37,10 +37,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -206,11 +203,14 @@ public class GroovyRootDocBuilder {
             Map<String, GroovyClassDoc> classDocs = getClassDocsFromSingleSource(packagePath, file, src);
             rootDoc.putAllClasses(classDocs);
             if (isAbsolute) {
-                final Map.Entry<String, GroovyClassDoc> docEntry = classDocs.entrySet().iterator().next();
-                String fullPath = docEntry.getValue().getFullPathName();
-                int slash = fullPath.lastIndexOf(FS);
-                if (slash > 0) packagePath = fullPath.substring(0, slash);
-                packageDoc = (SimpleGroovyPackageDoc) rootDoc.packageNamed(packagePath);
+                Iterator<Map.Entry<String, GroovyClassDoc>> iterator = classDocs.entrySet().iterator();
+                if (iterator.hasNext()) {
+                    final Map.Entry<String, GroovyClassDoc> docEntry = iterator.next();
+                    String fullPath = docEntry.getValue().getFullPathName();
+                    int slash = fullPath.lastIndexOf(FS);
+                    if (slash > 0) packagePath = fullPath.substring(0, slash);
+                    packageDoc = (SimpleGroovyPackageDoc) rootDoc.packageNamed(packagePath);
+                }
             }
             if (packageDoc == null) {
                 packageDoc = new SimpleGroovyPackageDoc(packagePath);
