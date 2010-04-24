@@ -465,7 +465,7 @@ public class VariableScopeVisitor extends ClassCodeVisitorSupport {
         isSpecialConstructorCall = call.isSpecialCall();
         super.visitConstructorCallExpression(call);
         isSpecialConstructorCall = false;
-        if (!call.isUsingAnnonymousInnerClass()) return;
+        if (!call.isUsingAnonymousInnerClass()) return;
 
         pushState();
         InnerClassNode innerClass = (InnerClassNode) call.getType();

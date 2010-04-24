@@ -340,7 +340,7 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
     @Override
     public void visitConstructorCallExpression(ConstructorCallExpression call) {
         super.visitConstructorCallExpression(call);
-        if (!call.isUsingAnnonymousInnerClass()) {
+        if (!call.isUsingAnonymousInnerClass()) {
         	passThisReference(call);
         	return;
         }
