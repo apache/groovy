@@ -1353,6 +1353,15 @@ public class ClassNode extends AnnotatedNode implements Opcodes {
         index.put(newName, index.remove(oldName));
     }
     
+    public void removeField(String oldName) {
+        ClassNode r = redirect ();
+        if (r.fieldIndex == null)
+            r.fieldIndex = new HashMap<String,FieldNode> ();
+        final Map<String,FieldNode> index = r.fieldIndex;
+        r.fields.remove(index.get(oldName));
+        index.remove(oldName);
+    }
+
     public boolean isEnum() {
         return (getModifiers()&Opcodes.ACC_ENUM) != 0;
      }
