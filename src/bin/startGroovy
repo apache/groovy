@@ -194,8 +194,7 @@ TOOLS_JAR="$JAVA_HOME/lib/tools.jar"
 
 # For Darwin, add GROOVY_APP_NAME to the JAVA_OPTS as -Xdock:name
 if $darwin; then
-    JAVA_OPTS="$JAVA_OPTS -Xdock:name=$GROOVY_APP_NAME"
-# we may also want to set -Xdock:image    
+    JAVA_OPTS="$JAVA_OPTS -Xdock:name=$GROOVY_APP_NAME -Xdock:icon=$GROOVY_HOME/bin/groovy.icns"
 fi
 
 # For Cygwin, switch paths to Windows format before running java
