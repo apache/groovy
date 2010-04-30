@@ -33,6 +33,7 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
     private String firstSentenceCommentText = null;
     private int definitionType;
     private boolean deprecated;
+    private boolean isScript;
     private GroovyTag[] tags;
 
     public SimpleGroovyDoc(String name) {
@@ -71,6 +72,10 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
     public void setRawCommentText(String rawCommentText) {
         this.rawCommentText = rawCommentText;
         calculateTags(rawCommentText);
+    }
+
+    public void setScript(boolean script) {
+        isScript = script;
     }
 
     private void calculateTags(String rawCommentText) {
@@ -121,7 +126,11 @@ public class SimpleGroovyDoc implements GroovyDoc, GroovyTokenTypes {
     }
 
     public boolean isClass() {
-        return definitionType == CLASS_DEF;
+        return definitionType == CLASS_DEF && !isScript;
+    }
+
+    public boolean isScript() {
+        return definitionType == CLASS_DEF && isScript;
     }
 
     public boolean isInterface() {

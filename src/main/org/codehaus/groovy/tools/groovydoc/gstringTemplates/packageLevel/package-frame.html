@@ -12,7 +12,8 @@ def classTypes = [
     "Enum" : { it.isEnum() },
     "Exception" : { it.isClass() && it.parentClasses*.qualifiedTypeName().contains('java.lang.Exception') },
     "Error" : { it.isClass() && it.parentClasses*.qualifiedTypeName().contains('java.lang.Error') },
-    "Annotation Type" : { it.isAnnotationType() }
+    "Annotation Type" : { it.isAnnotationType() },
+    "Script" : { it.isScript() }
 ]
 def pluralize = { name -> name + (name.endsWith("s") ? "es" : "s") }
 %>

@@ -206,16 +206,27 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     public void visitMethodDef(GroovySourceAST t, int visit) {
         if (visit == OPENING_VISIT && !insideEnum && !insideAnonymousInnerClass()) {
             SimpleGroovyClassDoc currentClassDoc = getCurrentClassDoc();
-            if (currentClassDoc != null) {
-                String methodName = getIdentFor(t);
-                SimpleGroovyMethodDoc currentMethodDoc = new SimpleGroovyMethodDoc(methodName, currentClassDoc);
-                currentMethodDoc.setRawCommentText(getJavaDocCommentsBeforeNode(t));
-                processModifiers(t, currentMethodDoc);
-                currentMethodDoc.setReturnType(new SimpleGroovyType(getTypeOrDefault(t)));
-                addParametersTo(t, currentMethodDoc);
-                processAnnotations(t, currentMethodDoc);
-                currentClassDoc.add(currentMethodDoc);
+            if (currentClassDoc == null) {
+                // assume we have a script
+                currentClassDoc = new SimpleGroovyClassDoc(importedClassesAndPackages, className, links);
+                currentClassDoc.setFullPathName(packagePath + FS + className);
+                currentClassDoc.setPublic(true);
+                currentClassDoc.setScript(true);
+                currentClassDoc.setSuperClassName("groovy/lang/Script");
+                classDocs.put(currentClassDoc.getFullPathName(), currentClassDoc);
+                if (foundClasses == null) {
+                    foundClasses = new HashMap<String, SimpleGroovyClassDoc>();
+                }
+                foundClasses.put(className, currentClassDoc);
             }
+            String methodName = getIdentFor(t);
+            SimpleGroovyMethodDoc currentMethodDoc = new SimpleGroovyMethodDoc(methodName, currentClassDoc);
+            currentMethodDoc.setRawCommentText(getJavaDocCommentsBeforeNode(t));
+            processModifiers(t, currentMethodDoc);
+            currentMethodDoc.setReturnType(new SimpleGroovyType(getTypeOrDefault(t)));
+            addParametersTo(t, currentMethodDoc);
+            processAnnotations(t, currentMethodDoc);
+            currentClassDoc.add(currentMethodDoc);
         }
     }
 
@@ -264,6 +275,30 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                     currentClassDoc.addProperty(currentFieldDoc);
                 } else {
                     currentClassDoc.add(currentFieldDoc);
+                }
+            }
+        }
+    }
+
+    @Override
+    public void visitAssign(GroovySourceAST t, int visit) {
+        gobbleComments(t, visit);
+    }
+
+    @Override
+    public void visitMethodCall(GroovySourceAST t, int visit) {
+        gobbleComments(t, visit);
+    }
+
+    private void gobbleComments(GroovySourceAST t, int visit) {
+        if (visit == OPENING_VISIT) {
+            SimpleGroovyClassDoc currentClassDoc = getCurrentClassDoc();
+            if (currentClassDoc == null || currentClassDoc.isScript()) {
+                if (t.getLine() > lastLineCol.getLine() ||
+                        (t.getLine() == lastLineCol.getLine() && t.getColumn() > lastLineCol.getColumn())) {
+                    getJavaDocCommentsBeforeNode(t);
+                    // not normally set for non-major types but appropriate for a script
+                    lastLineCol = new LineColumn(t.getLine(), t.getColumn());
                 }
             }
         }
