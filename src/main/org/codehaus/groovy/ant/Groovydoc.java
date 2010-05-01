@@ -54,6 +54,8 @@ public class Groovydoc extends Task {
     private Boolean packageScope;
     private Boolean publicScope;
     private Boolean author;
+    private Boolean processScripts;
+    private Boolean includeMainForScripts;
     private boolean useDefaultExcludes;
     private boolean includeNoSourcePackages;
     private List<DirSet> packageSets;
@@ -76,6 +78,8 @@ public class Groovydoc extends Task {
         useDefaultExcludes = true;
         includeNoSourcePackages = false;
         author = true;
+        processScripts = true;
+        includeMainForScripts = true;
     }
 
     /**
@@ -109,6 +113,26 @@ public class Groovydoc extends Task {
      */
     public void setAuthor(boolean author) {
         this.author = author;
+    }
+
+    /**
+     * If set to false, Scripts will not be processed.
+     * Defaults to true.
+     *
+     * @param processScripts new value
+     */
+    public void setProcessScripts(boolean processScripts) {
+        this.processScripts = processScripts;
+    }
+
+    /**
+     * If set to false, 'public static void main' method will not be displayed.
+     * Defaults to true. Ignored when not processing Scripts.
+     *
+     * @param includeMainForScripts new value
+     */
+    public void setIncludeMainForScripts(boolean includeMainForScripts) {
+        this.includeMainForScripts = includeMainForScripts;
     }
 
     /**
@@ -370,6 +394,8 @@ public class Groovydoc extends Task {
         properties.setProperty("packageScope", packageScope.toString());
         properties.setProperty("privateScope", privateScope.toString());
         properties.setProperty("author", author.toString());
+        properties.setProperty("processScripts", processScripts.toString());
+        properties.setProperty("includeMainForScripts", includeMainForScripts.toString());
         properties.setProperty("overviewFile", overviewFile != null ? overviewFile.getAbsolutePath() : "");
 
         if (sourcePath != null) {

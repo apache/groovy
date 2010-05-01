@@ -22,9 +22,7 @@ import org.codehaus.groovy.antlr.SourceBuffer;
 import org.codehaus.groovy.antlr.parser.GroovyTokenTypes;
 import org.codehaus.groovy.antlr.treewalker.VisitorAdapter;
 import org.codehaus.groovy.control.ResolveVisitor;
-import org.codehaus.groovy.groovydoc.GroovyClassDoc;
-import org.codehaus.groovy.groovydoc.GroovyConstructorDoc;
-import org.codehaus.groovy.groovydoc.GroovyFieldDoc;
+import org.codehaus.groovy.groovydoc.*;
 
 import java.util.*;
 import java.util.regex.Matcher;
@@ -37,7 +35,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
     private Map<String, GroovyClassDoc> classDocs;
     private List<String> importedClassesAndPackages;
     private List<LinkArgument> links;
-    private Properties properties; // TODO use it or lose it
+    private Properties properties;
     private SimpleGroovyFieldDoc currentFieldDoc;
     private SourceBuffer sourceBuffer;
     private String packagePath;
@@ -208,16 +206,23 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             SimpleGroovyClassDoc currentClassDoc = getCurrentClassDoc();
             if (currentClassDoc == null) {
                 // assume we have a script
-                currentClassDoc = new SimpleGroovyClassDoc(importedClassesAndPackages, className, links);
-                currentClassDoc.setFullPathName(packagePath + FS + className);
-                currentClassDoc.setPublic(true);
-                currentClassDoc.setScript(true);
-                currentClassDoc.setSuperClassName("groovy/lang/Script");
-                classDocs.put(currentClassDoc.getFullPathName(), currentClassDoc);
-                if (foundClasses == null) {
-                    foundClasses = new HashMap<String, SimpleGroovyClassDoc>();
+                if ("true".equals(properties.getProperty("processScripts", "true"))) {
+                    currentClassDoc = new SimpleGroovyClassDoc(importedClassesAndPackages, className, links);
+                    currentClassDoc.setFullPathName(packagePath + FS + className);
+                    currentClassDoc.setPublic(true);
+                    currentClassDoc.setScript(true);
+                    currentClassDoc.setSuperClassName("groovy/lang/Script");
+                    if ("true".equals(properties.getProperty("includeMainForScripts", "true"))) {
+                        currentClassDoc.add(createMainMethod(currentClassDoc));
+                    }
+                    classDocs.put(currentClassDoc.getFullPathName(), currentClassDoc);
+                    if (foundClasses == null) {
+                        foundClasses = new HashMap<String, SimpleGroovyClassDoc>();
+                    }
+                    foundClasses.put(className, currentClassDoc);
+                } else {
+                    return;
                 }
-                foundClasses.put(className, currentClassDoc);
             }
             String methodName = getIdentFor(t);
             SimpleGroovyMethodDoc currentMethodDoc = new SimpleGroovyMethodDoc(methodName, currentClassDoc);
@@ -228,6 +233,21 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             processAnnotations(t, currentMethodDoc);
             currentClassDoc.add(currentMethodDoc);
         }
+    }
+
+    private GroovyMethodDoc createMainMethod(SimpleGroovyClassDoc currentClassDoc) {
+        SimpleGroovyMethodDoc mainMethod = new SimpleGroovyMethodDoc("main", currentClassDoc);
+        mainMethod.setPublic(true);
+        mainMethod.setStatic(true);
+        mainMethod.setCommentText("Implicit main method for Groovy Scripts");
+        mainMethod.setFirstSentenceCommentText(mainMethod.commentText());
+        SimpleGroovyParameter args = new SimpleGroovyParameter("args");
+        GroovyType argsType = new SimpleGroovyType("java.lang.String[]");
+        args.setType(argsType);
+        mainMethod.add(args);
+        GroovyType returnType = new SimpleGroovyType("void");
+        mainMethod.setReturnType(returnType);
+        return mainMethod;
     }
 
     @Override
