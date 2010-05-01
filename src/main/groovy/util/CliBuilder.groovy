@@ -185,7 +185,7 @@ class CliBuilder {
     boolean posix = true
 
     /**
-     * Whether @filename will be expanded into args within filename (default true).
+     * Whether {@code @filename} will be expanded into args within filename (default true).
      */
     boolean expandArgumentFiles = true
 
