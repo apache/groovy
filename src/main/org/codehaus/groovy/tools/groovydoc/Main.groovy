@@ -37,6 +37,8 @@ class Main {
     private static String header
     private static String footer
     private static Boolean author
+    private static Boolean noScripts
+    private static Boolean noMainForScripts
     private static Boolean privateScope
     private static Boolean packageScope
     private static Boolean publicScope
@@ -61,6 +63,8 @@ class Main {
         cli._(longOpt: 'debug', messages['cli.option.debug.description'])
         cli.d(longOpt: 'destdir', args:1, argName: 'dir', messages['cli.option.destdir.description'])
         cli.author(messages['cli.option.author.description'])
+        cli.noscripts(messages['cli.option.noscripts.description'])
+        cli.nomainforscripts(messages['cli.option.nomainforscripts.description'])
         cli.overview(args:1, argName: 'file', messages['cli.option.overview.description'])
         cli.public(messages['cli.option.public.description'])
         cli.protected(messages['cli.option.protected.description'])
@@ -109,6 +113,8 @@ class Main {
         }
 
         author = Boolean.valueOf(options.author) ?: false
+        noScripts = Boolean.valueOf(options.noscripts) ?: false
+        noMainForScripts = Boolean.valueOf(options.nomainforscripts) ?: false
         packageScope = Boolean.valueOf(options.package) ?: false
         privateScope = Boolean.valueOf(options.private) ?: false
         protectedScope = Boolean.valueOf(options.protected) ?: false
@@ -171,6 +177,8 @@ class Main {
         properties.put("publicScope", publicScope.toString())
         properties.put("packageScope", packageScope.toString())
         properties.put("author", author.toString())
+        properties.put("processScripts", (!noScripts).toString())
+        properties.put("includeMainForScripts", (!noMainForScripts).toString())
         properties.put("overviewFile", overviewFile?.absolutePath ?: "")
 
         def links = new ArrayList<LinkArgument>();
