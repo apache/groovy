@@ -68,6 +68,10 @@ public class SimpleGroovyRootDoc extends SimpleGroovyDoc implements GroovyRootDo
         return description;
     }
 
+    public String summary() {
+        return SimpleGroovyDoc.calculateFirstSentence(description);
+    }
+
     public GroovyClassDoc[] classes() {
         if (classDocValues == null) {
             classDocValues = new ArrayList<GroovyClassDoc>(classDocs.values());
