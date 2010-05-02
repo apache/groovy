@@ -212,6 +212,8 @@ public class GroovyRootDocBuilder {
         String description;
         if (filename.endsWith(".html")) {
             description = scrubOffExcessiveTags(src);
+            description = pruneTagFromFront(description, "p");
+            description = pruneTagFromEnd(description, "/p");
         } else {
             description = trimPackageAndComments(src);
         }
@@ -260,7 +262,6 @@ public class GroovyRootDocBuilder {
         }
     }
 
-
     private void calcThenSetSummary(String src, SimpleGroovyPackageDoc packageDoc) {
         packageDoc.setSummary(SimpleGroovyDoc.calculateFirstSentence(src));
     }
@@ -280,8 +281,6 @@ public class GroovyRootDocBuilder {
         String description = pruneTagFromFront(src, "html");
         description = pruneTagFromFront(description, "/head");
         description = pruneTagFromFront(description, "body");
-        description = pruneTagFromFront(description, "p");
-        description = pruneTagFromEnd(description, "/p");
         description = pruneTagFromEnd(description, "/html");
         return pruneTagFromEnd(description, "/body");
     }
@@ -293,8 +292,8 @@ public class GroovyRootDocBuilder {
     }
 
     private String pruneTagFromEnd(String description, String tag) {
-        int index = Math.max(description.indexOf("<" + tag.toLowerCase() + ">"),
-                description.indexOf("<" + tag.toUpperCase() + ">"));
+        int index = Math.max(description.lastIndexOf("<" + tag.toLowerCase() + ">"),
+                description.lastIndexOf("<" + tag.toUpperCase() + ">"));
         if (index < 0) return description;
         return description.substring(0, index);
     }

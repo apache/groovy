@@ -43,7 +43,7 @@ public class GroovyDocTool {
     }
 
     public GroovyDocTool(ResourceManager resourceManager, String[] sourcepaths, String classTemplate) {
-        this(resourceManager, sourcepaths, new String[]{}, new String[]{}, new String[]{classTemplate}, new ArrayList(), new Properties());
+        this(resourceManager, sourcepaths, new String[]{}, new String[]{}, new String[]{classTemplate}, new ArrayList<LinkArgument>(), new Properties());
     }
 
     public GroovyDocTool(ResourceManager resourceManager, String[] sourcepaths, String[] docTemplates, String[] packageTemplates, String[] classTemplates, List<LinkArgument> links, Properties properties) {

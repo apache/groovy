@@ -30,6 +30,17 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
     public static final Pattern NAME_ARGS_REGEX = Pattern.compile("([^(]+)\\(([^)]*)\\)");
     public static final Pattern SPLIT_ARGS_REGEX = Pattern.compile(",\\s*");
     private static final List<String> PRIMITIVES = Arrays.asList("void", "boolean", "byte", "short", "char", "int", "long", "float", "double");
+    private static final Map<String, String> TAG_TEXT = new HashMap<String, String>();
+    static {
+        TAG_TEXT.put("see", "See Also");
+        TAG_TEXT.put("param", "Parameters");
+        TAG_TEXT.put("throw", "Throws");
+        TAG_TEXT.put("exception", "Throws");
+        TAG_TEXT.put("return", "Returns");
+        TAG_TEXT.put("since", "Since");
+        TAG_TEXT.put("author", "Authors");
+        TAG_TEXT.put("version", "Version");
+    }
     private final List<GroovyConstructorDoc> constructors;
     private final List<GroovyFieldDoc> fields;
     private final List<GroovyFieldDoc> properties;
@@ -643,9 +654,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
         result = replaceAllTags(result, "<TT>", "</TT>", CODE_REGEX);
 
         // hack to reformat other groovydoc block tags (@see, @return, @param, @throws, @author, @since) into html
-        result = replaceAllTags(result + "@endMarker", "<DL><DT><B>$1:</B></DT><DD>", "</DD></DL>", TAG_REGEX);
-        // remove @endMarker
-        result = result.substring(0, result.length() - 10);
+        result = replaceAllTagsCollated(result, "<DL><DT><B>", ":</B></DT><DD>", "</DD><DD>", "</DD></DL>", TAG_REGEX);
 
         return decodeSpecialSymbols(result);
     }
@@ -658,13 +667,65 @@ public class SimpleGroovyClassDoc extends SimpleGroovyProgramElementDoc implemen
             StringBuffer sb = new StringBuffer();
             while (matcher.find()) {
                 String tagname = matcher.group(1);
-                if (tagname.equals("see") || tagname.equals("link")) {
-                    matcher.appendReplacement(sb, s1 + getDocUrl(encodeSpecialSymbols(matcher.group(2))) + s2);
-                } else if (!tagname.equals("interface")) {
-                    matcher.appendReplacement(sb, s1 + encodeSpecialSymbols(matcher.group(2)) + s2);
+                if (!tagname.equals("interface")) {
+                    String content = encodeSpecialSymbols(matcher.group(2));
+                    if (tagname.equals("link")) {
+                        content = getDocUrl(content);
+                    }
+                    matcher.appendReplacement(sb, s1 + content + s2);
                 }
             }
             matcher.appendTail(sb);
+            return sb.toString();
+        } else {
+            return self;
+        }
+    }
+
+    // TODO: is there a better way to do this?
+    public String replaceAllTagsCollated(String self, String preKey, String postKey,
+                                         String valueSeparator, String postValues, Pattern regex) {
+        Matcher matcher = regex.matcher(self + "@endMarker");
+        if (matcher.find()) {
+            matcher.reset();
+            Map<String, List<String>> savedTags = new HashMap<String, List<String>>();
+            StringBuffer sb = new StringBuffer();
+            while (matcher.find()) {
+                String tagname = matcher.group(1);
+                if (!tagname.equals("interface")) {
+                    String content = encodeSpecialSymbols(matcher.group(2));
+                    if ("see".equals(tagname)) {
+                        content = getDocUrl(content);
+                    } else if ("param".equals(tagname)) {
+                        int index = content.indexOf(" ");
+                        if (index >= 0) {
+                            content = "<code>" + content.substring(0, index) + "</code> - " + content.substring(index);
+                        }
+                    }
+                    if (TAG_TEXT.containsKey(tagname)) {
+                        String text = TAG_TEXT.get(tagname);
+                        List<String> contents = savedTags.get(text);
+                        if (contents == null) {
+                            contents = new ArrayList<String>();
+                            savedTags.put(text, contents);
+                        }
+                        contents.add(content);
+                        matcher.appendReplacement(sb, "");
+                    } else {
+                        matcher.appendReplacement(sb, preKey + tagname + postKey + content + postValues);
+                    }
+                }
+            }
+            matcher.appendTail(sb);
+            // remove @endMarker
+            sb = new StringBuffer(sb.substring(0, sb.length() - 10));
+            for (Map.Entry<String, List<String>> e : savedTags.entrySet()) {
+                sb.append(preKey);
+                sb.append(e.getKey());
+                sb.append(postKey);
+                sb.append(DefaultGroovyMethods.join(e.getValue(), valueSeparator));
+                sb.append(postValues);
+            }
             return sb.toString();
         } else {
             return self;
