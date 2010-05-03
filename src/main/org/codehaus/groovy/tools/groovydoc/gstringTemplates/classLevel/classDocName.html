@@ -30,14 +30,15 @@
     }
     def linkfull = { t -> dolink(t, true) }
     def linkable = { t -> dolink(t, false) }
-    def modifiers = { t ->
+    def modifiersWithIgnore = { t, boolean ignorePublic ->
         (t.isPrivate()?"private&nbsp;":"") +
-        (t.isPublic()?"public&nbsp;":"") +
+        (t.isPublic() && !ignorePublic?"public&nbsp;":"") +
         (t.isProtected()?"protected&nbsp;":"") +
         (t.isStatic()?"static&nbsp;":"") +
         (t.isFinal()?"final&nbsp;":"") +
         (t.respondsTo('isAbstract') && t.isAbstract()?"abstract&nbsp;":"")
     }
+    def modifiers = { t -> modifiersWithIgnore(t, classDoc.isGroovy()) }
     def modifiersBrief = { t ->
         (t.isPrivate()?"private&nbsp;":"") +
         (t.isProtected()?"protected&nbsp;":"") +
@@ -519,7 +520,7 @@ ${classDoc.commentText()}
     </TABLE>
     <% for (field in visibleFields) { %>
         <A NAME="${field.name()}"><!-- --></A><H3>${field.name()}</H3>
-        <PRE>${annotations(field, '\n') + modifiers(field) + linkable(field.type())} <B>${field.name()}</B></PRE>
+        <PRE>${annotations(field, '\n') + modifiersWithIgnore(field, false) + linkable(field.type())} <B>${field.name()}</B></PRE>
         <DL>
         <DD>${field.commentText()}
         </DD>
