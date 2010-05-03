@@ -137,6 +137,7 @@ sourceSets {
             srcDirs = ["$projectDir/src/test"]
             if (!isJava16()) {
                 exclude "groovy/**/vm6/*Test.groovy"
+                exclude "org/codehaus/groovy/**/vm6/*Test.groovy"
             }
         }
         classesDir = "$buildDir/test-classes" as File

@@ -43,7 +43,10 @@ def getIncludePattern() {
         baseInclude += ['groovy/grape/*Test.class']    
     }
     if (isJava16()) {
-        baseInclude += ["UberTestCaseGroovySourceSubPackages_VM6.class"]   
+        baseInclude += [
+                "UberTestCaseGroovySourceSubPackages_VM6.class",
+                "UberTestCaseGroovySourceCodehausPackages_VM6.class"
+        ]
     }
     baseInclude
 }
