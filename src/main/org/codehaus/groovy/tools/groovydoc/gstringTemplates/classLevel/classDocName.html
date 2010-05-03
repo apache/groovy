@@ -176,7 +176,7 @@ if (pkg != "DefaultPackage") {
 ${pkg}</FONT>
 <BR>
 <% } %>
-<span CLASS="ClassTitleFont">${classDoc.typeDescription} ${classDoc.name()}</span></H2>
+<span CLASS="ClassTitleFont">${classDoc.isGroovy() ? "[Groovy]" : "[Java]"} ${classDoc.typeDescription} ${classDoc.name()}</span></H2>
 <%
 def parents = classDoc.isInterface() ? classDoc.parentInterfaces : classDoc.parentClasses
 if (parents.size() >= 2) {

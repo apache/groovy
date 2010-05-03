@@ -79,6 +79,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
         }
         SimpleGroovyClassDoc currentClassDoc = new SimpleGroovyClassDoc(importedClassesAndPackages, className, links);
         currentClassDoc.setFullPathName(packagePath + FS + className);
+        currentClassDoc.setGroovy(isGroovy);
         classDocs.put(currentClassDoc.getFullPathName(), currentClassDoc);
     }
 
@@ -120,6 +121,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
             SimpleGroovyClassDoc current = (SimpleGroovyClassDoc) classDocs.get(packagePath + FS + className);
             if (current == null) {
                 current = new SimpleGroovyClassDoc(importedClassesAndPackages, className, links);
+                current.setGroovy(isGroovy);
             }
             current.setRawCommentText(getJavaDocCommentsBeforeNode(t));
             current.setFullPathName(packagePath + FS + current.name());
@@ -211,6 +213,7 @@ public class SimpleGroovyClassDocAssembler extends VisitorAdapter implements Gro
                     currentClassDoc.setFullPathName(packagePath + FS + className);
                     currentClassDoc.setPublic(true);
                     currentClassDoc.setScript(true);
+                    currentClassDoc.setGroovy(isGroovy);
                     currentClassDoc.setSuperClassName("groovy/lang/Script");
                     if ("true".equals(properties.getProperty("includeMainForScripts", "true"))) {
                         currentClassDoc.add(createMainMethod(currentClassDoc));
