@@ -3,7 +3,7 @@ package org.codehaus.groovy.jsr223.vm6
 import javax.script.ScriptEngineManager
 
 class JavascriptTest extends GroovyTestCase {
-    void testEvalMethodsWithBindingAndMissingPropertyLanguageSelection() {
+    void testIntegrationWithBuiltinJavaScript() {
         def binding = new Binding()
         binding.x = 10
         binding.y = 5
