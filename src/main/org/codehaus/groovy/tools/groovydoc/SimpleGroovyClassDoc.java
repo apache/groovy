@@ -55,6 +55,7 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
     private GroovyClassDoc outer;
     private String superClassName;
     private String fullPathName;
+    private boolean isgroovy;
     private GroovyRootDoc savedRootDoc = null;
 
     public SimpleGroovyClassDoc(List<String> importedClassesAndPackages, String name, List<LinkArgument> links) {
@@ -94,6 +95,14 @@ public class SimpleGroovyClassDoc extends SimpleGroovyAbstractableElementDoc imp
 
     public void setOuter(GroovyClassDoc outer) {
         this.outer = outer;
+    }
+
+    public boolean isGroovy() {
+        return isgroovy;
+    }
+
+    public void setGroovy(boolean isgroovy) {
+        this.isgroovy = isgroovy;
     }
 
     /**
