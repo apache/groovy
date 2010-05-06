@@ -11654,6 +11654,28 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Synonym for write(text, charset) allowing:
+     * <pre>
+     * myFile.setText('some text', charset)
+     * </pre>
+     * or with some help from <code>ExpandoMetaClass</code>, you could do something like:
+     * <pre>
+     * myFile.metaClass.setText = { String s -> delegate.setText(s, 'UTF-8') }
+     * myfile.text = 'some text'
+     * </pre>
+     *
+     * @param file A File
+     * @param charset The charset used when writing to the file
+     * @param text The text to write to the File
+     * @throws IOException if an IOException occurs.
+     * @see #write(java.io.File, java.lang.String, java.lang.String)
+     * @since 1.7.3
+     */
+    public static void setText(File file, String text, String charset) throws IOException {
+        write(file, text, charset);
+    }
+
+    /**
      * Write the text to the File.
      *
      * @param file a File
