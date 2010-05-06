@@ -92,7 +92,15 @@ public class Verifier implements GroovyClassVisitor, Opcodes {
 
     private FieldNode getMetaClassField(ClassNode node) {
         FieldNode ret = node.getDeclaredField("metaClass");
-        if (ret != null) return ret;
+        if (ret != null) {
+        	ClassNode mcFieldType = ret.getType();
+        	if (!mcFieldType.equals(ClassHelper.METACLASS_TYPE)) {
+                throw new RuntimeParserException("The class " + node.getName() +
+                        " cannot declare field 'metaClass' of type " + mcFieldType.getName() + " as it needs to be of " +
+                        		"the type " + ClassHelper.METACLASS_TYPE.getName() + " for internal groovy purposes", ret);
+        	}
+        	return ret;
+        }
         ClassNode current = node;
         while (current != ClassHelper.OBJECT_TYPE) {
             current = current.getSuperClass();
