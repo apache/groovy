@@ -39,27 +39,27 @@ public class ObjectArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
 
     public Object invoke(Object object, Object[] arguments) {
         final Object[] objects = (Object[]) object;
-        Object newValue = arguments[1];
-    	Class arrayComponentClass = objects.getClass().getComponentType();
     	final int index = normaliseIndex(((Integer) arguments[0]).intValue(), objects.length);
+        objects[index] = adjustNewValue(objects, arguments[1]);
+        return null;
+    }
+    
+    private static Object adjustNewValue(Object[] objects, Object newValue) {
+    	Class arrayComponentClass = objects.getClass().getComponentType();
+    	Object adjustedNewVal = newValue;
         if (newValue instanceof Number) {
         	if (!arrayComponentClass.equals(newValue.getClass())) {
-        		Object newVal = DefaultTypeTransformation.castToType(newValue, arrayComponentClass);
-        		objects[index] = newVal;
-        		return null;
+        		adjustedNewVal = DefaultTypeTransformation.castToType(newValue, arrayComponentClass);
         	}
         } else if (Character.class.isAssignableFrom(arrayComponentClass)) {
-        	objects[index] = DefaultTypeTransformation.getCharFromSizeOneString(newValue);
-            return null;
+        	adjustedNewVal = DefaultTypeTransformation.getCharFromSizeOneString(newValue);
         } else if (Number.class.isAssignableFrom(arrayComponentClass)) {
         	if(newValue instanceof Character || newValue instanceof String || newValue instanceof GString) {
         		Character ch = DefaultTypeTransformation.getCharFromSizeOneString(newValue);
-        		objects[index] = DefaultTypeTransformation.castToType(ch, arrayComponentClass);
-        		return null;
+        		adjustedNewVal = DefaultTypeTransformation.castToType(ch, arrayComponentClass);
         	}
         }
-        objects[index] = arguments[1];
-        return null;
+        return adjustedNewVal;
     }
 
     public CallSite createPojoCallSite(CallSite site, MetaClassImpl metaClass, MetaMethod metaMethod, Class[] params, Object receiver, Object[] args) {
@@ -78,7 +78,7 @@ public class ObjectArrayPutAtMetaMethod extends ArrayPutAtMetaMethod {
             if (checkPojoMetaClass()) {
                 try {
                     final Object[] objects = (Object[]) receiver;
-                    objects[normaliseIndex(((Integer) arg1).intValue(), objects.length)] = arg2;
+                    objects[normaliseIndex(((Integer) arg1).intValue(), objects.length)] = adjustNewValue(objects, arg2);
                     return null;
                 }
                 catch (ClassCastException e) {
