@@ -97,22 +97,23 @@ public class ImportNode extends AnnotatedNode implements Opcodes {
      * @return the text display of this import
      */
     public String getText() {
+    	String typeName = getClassName();
         if (isStar && !isStatic) {
             return "import " + packageName + "*";
         }
         if (isStar) {
-            return "import static " + type.getName() + ".*";
+            return "import static " + typeName + ".*";
         }
         if (isStatic) {
             if (alias != null && alias.length() != 0 && !alias.equals(fieldName)) {
-                return "import static " + type.getName() + "." + fieldName + " as " + alias;
+                return "import static " + typeName + "." + fieldName + " as " + alias;
             }
-            return "import static " + type.getName() + "." + fieldName;
+            return "import static " + typeName + "." + fieldName;
         }
         if (alias == null || alias.length() == 0) {
-            return "import " + type.getName();
+            return "import " + typeName;
         }
-        return "import " + type.getName() + " as " + alias;
+        return "import " + typeName + " as " + alias;
     }
     
     public String getPackageName() {
@@ -140,7 +141,7 @@ public class ImportNode extends AnnotatedNode implements Opcodes {
     }
     
     public String getClassName() {
-    	return type.getName();
+    	return type == null ? null : type.getName();
     }
 
     public void visit(GroovyCodeVisitor visitor) {
