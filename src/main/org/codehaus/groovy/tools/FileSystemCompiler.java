@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -244,27 +244,28 @@ public class FileSystemCompiler {
 
         Options options = new Options();
 
-        options.addOption(OptionBuilder.withLongOpt("classpath").hasArg().withArgName("path").withDescription("Specify where to find the class files.").create());
-        options.addOption(OptionBuilder.withLongOpt("sourcepath").hasArg().withArgName("path").withDescription("Specify where to find the source files.").create());
-        options.addOption(OptionBuilder.withLongOpt("temp").hasArg().withArgName("temp").withDescription("").create());
-        options.addOption(OptionBuilder.withLongOpt("encoding").hasArg().withArgName("encoding").withDescription("Specify the encoding of the user class files.").create());
-        options.addOption(OptionBuilder.hasArg().withDescription("Specify where to place generated class files.").create('d'));
+        options.addOption(OptionBuilder.hasArg().withArgName("path").withDescription("Specify where to find the class files - must be first argument").create("classpath"));
+        options.addOption(OptionBuilder.withLongOpt("classpath").hasArg().withArgName("path").withDescription("Aliases for '-classpath'").create("cp"));
+        options.addOption(OptionBuilder.withLongOpt("sourcepath").hasArg().withArgName("path").withDescription("Specify where to find the source files").create());
+        options.addOption(OptionBuilder.withLongOpt("temp").hasArg().withArgName("temp").withDescription("Specify temporary directory").create());
+        options.addOption(OptionBuilder.withLongOpt("encoding").hasArg().withArgName("encoding").withDescription("Specify the encoding of the user class files").create());
+        options.addOption(OptionBuilder.hasArg().withDescription("Specify where to place generated class files").create('d'));
 //            options.addOption(OptionBuilder.withLongOpt("strict").withDescription("Turn on strict type safety.").create('s'));
-        options.addOption(OptionBuilder.withLongOpt("help").withDescription("Print a synopsis of standard options.").create('h'));
-        options.addOption(OptionBuilder.withLongOpt("version").withDescription("Print the version.").create('v'));
-        options.addOption(OptionBuilder.withLongOpt("exception").withDescription("Print stack trace on error.").create('e'));
-        options.addOption(OptionBuilder.withLongOpt("jointCompilation").withDescription("Attach javac compiler to compile .java files.").create('j'));
+        options.addOption(OptionBuilder.withLongOpt("help").withDescription("Print a synopsis of standard options").create('h'));
+        options.addOption(OptionBuilder.withLongOpt("version").withDescription("Print the version").create('v'));
+        options.addOption(OptionBuilder.withLongOpt("exception").withDescription("Print stack trace on error").create('e'));
+        options.addOption(OptionBuilder.withLongOpt("jointCompilation").withDescription("Attach javac compiler to compile .java files").create('j'));
 
         options.addOption(
                 OptionBuilder.withArgName("property=value")
                         .withValueSeparator()
                         .hasArgs(2)
-                        .withDescription("")
+                        .withDescription("name-value pairs to pass to javac")
                         .create("J"));
         options.addOption(
                 OptionBuilder.withArgName("flag")
                         .hasArg()
-                        .withDescription("")
+                        .withDescription("passed to javac for joint compilation")
                         .create("F"));
         return options;
     }

@@ -60,7 +60,7 @@ case "`uname`" in
     ;;
 esac
 
-if [ "$1" = "-cp" -o "$1" = "-classpath" ] ; then
+if [ "$1" = "-cp" -o "$1" = "-classpath" -o "$1" = "--classpath" ] ; then
     CP=$2
     shift 2
 fi
