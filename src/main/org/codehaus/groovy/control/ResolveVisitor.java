@@ -1070,11 +1070,14 @@ public class ResolveVisitor extends ClassCodeExpressionTransformer {
         Expression method = transform(mce.getMethod());
         Expression object = transform(mce.getObjectExpression());
 
+        resolveGenericsTypes(mce.getGenericsTypes());
+        
         MethodCallExpression result = new MethodCallExpression(object, method, args);
         result.setSafe(mce.isSafe());
         result.setImplicitThis(mce.isImplicitThis());
         result.setSpreadSafe(mce.isSpreadSafe());
         result.setSourcePosition(mce);
+        result.setGenericsTypes(mce.getGenericsTypes());
         return result;
     }
     

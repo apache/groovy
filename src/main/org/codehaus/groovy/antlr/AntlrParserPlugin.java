@@ -2246,6 +2246,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         Expression objectExpression;
         AST selector;
         AST elist = node.getNextSibling();
+        List<GenericsType> typeArgumentList = null;
         
         boolean implicitThis = false;
         boolean safe = isType(OPTIONAL_DOT, node);
@@ -2260,6 +2261,11 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             selector = node;
         } 
 
+        if (isType(TYPE_ARGUMENTS,selector)) {
+        	typeArgumentList = getTypeArgumentsList(selector);
+        	selector = selector.getNextSibling();
+        }
+        
         Expression name = null;
         if (isType(LITERAL_super, selector)) {
             implicitThis = true;
@@ -2276,6 +2282,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
             configureAST(attributeExpression, node);
             Expression arguments = arguments(elist);
             MethodCallExpression expression = new MethodCallExpression(attributeExpression, "call", arguments);
+            setTypeArgumentsOnMethodCallExpression(expression, typeArgumentList);
             configureAST(expression, methodCallNode);
             return expression;
         } else if  
@@ -2300,6 +2307,7 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         expression.setSafe(safe);
         expression.setSpreadSafe(spreadSafe);
         expression.setImplicitThis(implicitThis);
+        setTypeArgumentsOnMethodCallExpression(expression, typeArgumentList);
         Expression ret = expression;
         //FIXME: do we really want this() to create a new object regardless
         // the position.. for example not as first statement in a constructor
@@ -2310,6 +2318,13 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
         }
         configureAST(ret, methodCallNode);
         return ret;
+    }
+    
+    private void setTypeArgumentsOnMethodCallExpression(MethodCallExpression expression, 
+    		List<GenericsType> typeArgumentList) {
+    	if (typeArgumentList != null && typeArgumentList.size() > 0) {
+    		expression.setGenericsTypes(typeArgumentList.toArray(new GenericsType[typeArgumentList.size()]));
+    	}
     }
     
     protected Expression constructorCallExpression(AST node) {
@@ -2698,29 +2713,37 @@ public class AntlrParserPlugin extends ASTHelper implements ParserPlugin, Groovy
     
     protected ClassNode makeTypeWithArguments(AST rootNode) {
         ClassNode basicType = makeType(rootNode);
-        List<GenericsType> typeArgumentList = new LinkedList<GenericsType>();
         AST node = rootNode.getFirstChild();
         if (node==null || isType(INDEX_OP, node) || isType(ARRAY_DECLARATOR, node)) return basicType;
         //TODO: recognize combinations of inner classes and generic types
         if (isType(DOT, node)) return basicType;
         node = node.getFirstChild();
         if (node==null) return basicType;
-        assertNodeType(TYPE_ARGUMENTS, node);
-        AST typeArgument = node.getFirstChild();
-        
-        while (typeArgument != null) {
-            assertNodeType(TYPE_ARGUMENT, typeArgument);            
-            GenericsType gt = makeGenericsArgumentType(typeArgument);
-            typeArgumentList.add(gt);
-            typeArgument = typeArgument.getNextSibling();
-        }
-        
-        if (typeArgumentList.size()>0) {
+        return addTypeArguments(basicType, node);
+    }
+    
+    private ClassNode addTypeArguments(ClassNode basicType, AST node) {
+        List<GenericsType> typeArgumentList = getTypeArgumentsList(node);
+        if (typeArgumentList.size() > 0) {
             basicType.setGenericsTypes(typeArgumentList.toArray(new GenericsType[typeArgumentList.size()]));
         }
         return basicType;
     }
     
+    private List<GenericsType> getTypeArgumentsList(AST node) {
+    	assertNodeType(TYPE_ARGUMENTS, node);
+    	List<GenericsType> typeArgumentList = new LinkedList<GenericsType>();
+        AST typeArgument = node.getFirstChild();
+
+        while (typeArgument != null) {
+            assertNodeType(TYPE_ARGUMENT, typeArgument);
+            GenericsType gt = makeGenericsArgumentType(typeArgument);
+            typeArgumentList.add(gt);
+            typeArgument = typeArgument.getNextSibling();
+        }
+    	return typeArgumentList;
+    }
+
     private ClassNode[] makeGenericsBounds(AST rn, int boundType) {
         AST boundsRoot = rn.getNextSibling();
         if (boundsRoot==null) return null;
