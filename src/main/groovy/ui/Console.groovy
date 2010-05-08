@@ -172,6 +172,14 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     Action interruptAction
     
     static void main(args) {
+        if (args.length == 1 && args[0] == '--help') {
+            println '''usage: groovyConsole [options] [filename]
+options:
+  --help                               This Help message
+  -cp,-classpath,--classpath <path>    Specify classpath'''
+            return
+        }
+
         // allow the full stack traces to bubble up to the root logger
         java.util.logging.Logger.getLogger(StackTraceUtils.STACK_LOG_NAME).useParentHandlers = true
 
