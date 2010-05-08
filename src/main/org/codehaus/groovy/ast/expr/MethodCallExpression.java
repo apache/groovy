@@ -17,6 +17,7 @@ package org.codehaus.groovy.ast.expr;
 
 import groovy.lang.MetaMethod;
 import org.codehaus.groovy.ast.ClassHelper;
+import org.codehaus.groovy.ast.GenericsType;
 import org.codehaus.groovy.ast.GroovyCodeVisitor;
 
 /**
@@ -33,6 +34,10 @@ public class MethodCallExpression extends Expression {
     private boolean spreadSafe = false;
     private boolean safe = false;
     private boolean implicitThis;
+
+    // type spec for generics
+    private GenericsType[] genericsTypes = null;
+    private boolean usesGenerics = false;
     
     public static final Expression NO_ARGUMENTS = new TupleExpression();
 
@@ -169,5 +174,18 @@ public class MethodCallExpression extends Expression {
     public void setMetaMethod(MetaMethod mmeth) {
         //this.metaMethod = mmeth;
         //super.setType(ClassHelper.make(mmeth.getReturnType()));
+    }
+
+    public GenericsType[] getGenericsTypes() {
+        return genericsTypes;
+    }
+
+    public void setGenericsTypes(GenericsType[] genericsTypes) {
+        usesGenerics = usesGenerics || genericsTypes != null;
+        this.genericsTypes = genericsTypes;
+    }
+
+    public boolean isUsingGenerics() {
+        return usesGenerics;
     }
 }
