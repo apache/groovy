@@ -72,6 +72,7 @@
             <organization>SpringSource</organization>
             <roles>
                 <role>Project Manager</role>
+                <role>Despot</role>
                 <role>Developer</role>
             </roles>
         </developer>
@@ -235,6 +236,7 @@
             <organization></organization>
             <roles>
                 <role>Developer</role>
+                <role>Despot</role>
             </roles>
         </developer>
         <developer>
@@ -281,6 +283,7 @@
             <organization>ASERT, Australia</organization>
             <roles>
                 <role>Developer</role>
+                <role>Despot</role>
             </roles>
         </developer>
         <developer>
@@ -559,54 +562,36 @@
         <dependency>
             <groupId>org.apache.ant</groupId>
             <artifactId>ant</artifactId>
-            <version>1.8.0</version>
+            <version>1.8.1</version>
             <scope>compile</scope>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.apache.ant</groupId>
             <artifactId>ant-junit</artifactId>
-            <version>1.8.0</version>
+            <version>1.8.1</version>
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
         <dependency>
             <groupId>org.apache.ant</groupId>
             <artifactId>ant-launcher</artifactId>
-            <version>1.8.0</version>
+            <version>1.8.1</version>
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
-        <!-- needed for groovydoc -->
+        <!-- needed for xslt ant task -->
         <dependency>
             <groupId>org.apache.ant</groupId>
-            <artifactId>ant-trax</artifactId>
-            <version>1.8.0</version>
+            <artifactId>ant-nodeps</artifactId>
+            <version>1.8.1</version>
             <scope>runtime</scope>
             <optional>true</optional>
-            <exclusions>
-                <exclusion>
-                    <groupId>xerces</groupId>
-                    <artifactId>xercesImpl</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>xml-apis</groupId>
-                    <artifactId>xml-apis</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>xalan</groupId>
-                    <artifactId>xalan</artifactId>
-                </exclusion>
-                <exclusion>
-                    <groupId>org.apache.ant</groupId>
-                    <artifactId>ant-nodeps</artifactId>
-                </exclusion>
-            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.apache.ant</groupId>
             <artifactId>ant-antlr</artifactId>
-            <version>1.8.0</version>
+            <version>1.8.1</version>
             <scope>runtime</scope>
             <optional>true</optional>
         </dependency>
@@ -687,6 +672,7 @@
             </exclusions>
         </dependency>
 
+        <!-- for scripting when on Java 5 -->
         <dependency>
             <groupId>org.livetribe</groupId>
             <artifactId>livetribe-jsr223</artifactId>
