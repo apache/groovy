@@ -157,6 +157,8 @@ public class GroovyMain {
      */
     private static synchronized Options buildOptions() {
         Options options = new Options();
+        options.addOption(OptionBuilder.hasArg().withArgName("path").withDescription("Specify where to find the class files - must be first argument").create("classpath"));
+        options.addOption(OptionBuilder.withLongOpt("classpath").hasArg().withArgName("path").withDescription("Aliases for '-classpath'").create("cp"));
 
         options.addOption(
             OptionBuilder.withLongOpt("define").

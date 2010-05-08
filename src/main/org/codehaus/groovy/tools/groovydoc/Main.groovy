@@ -61,6 +61,8 @@ class Main {
         cli.quiet(messages['cli.option.quiet.description'])
         // TODO is debug needed?
         cli._(longOpt: 'debug', messages['cli.option.debug.description'])
+        cli.classpath(messages['cli.option.classpath.description'])
+        cli.cp(longOpt: 'classpath', messages['cli.option.cp.description'])
         cli.d(longOpt: 'destdir', args:1, argName: 'dir', messages['cli.option.destdir.description'])
         cli.author(messages['cli.option.author.description'])
         cli.noscripts(messages['cli.option.noscripts.description'])
