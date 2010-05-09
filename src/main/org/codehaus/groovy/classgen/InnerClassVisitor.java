@@ -269,16 +269,18 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         addFieldInit(thisPara,thisField,newCode);
         ConstructorCallExpression cce = getFirstIfSpecialConstructorCall(block);
         if (cce == null) {
-            block.getStatements().add(0, newCode);
-        } else if (cce.isThisCall()) {
+        	cce = new ConstructorCallExpression(ClassNode.SUPER, new TupleExpression());
+        	block.getStatements().add(0, new ExpressionStatement(cce));
+        } 
+        if (shouldImplicitlyPassThisPara(cce)) {
             // add thisPara to this(...)
             TupleExpression args = (TupleExpression) cce.getArguments();
             List<Expression> expressions = args.getExpressions();
             VariableExpression ve = new VariableExpression(thisPara.getName());
             ve.setAccessedVariable(thisPara);
             expressions.add(0,ve);
-            newCode = block;
-        } else {
+        } 
+        if(cce.isSuperCall()) {
             // we have a call to super here, so we need to add 
             // our code after that
             block.getStatements().add(1, newCode);
@@ -286,6 +288,24 @@ public class InnerClassVisitor extends ClassCodeVisitorSupport implements Opcode
         node.setCode(block);
 	}
 	
+	private boolean shouldImplicitlyPassThisPara(ConstructorCallExpression cce) {
+		boolean pass = false;
+		ClassNode superCN = classNode.getSuperClass();
+		if(cce.isThisCall()) {
+			pass = true;
+		}
+		else if(cce.isSuperCall()) {
+			// if the super class is another non-static inner class in the same outer class, implicit this
+			// needs to be passed
+			if(!superCN.isEnum() && !superCN.isInterface() && superCN instanceof InnerClassNode) {
+				InnerClassNode superInnerCN = (InnerClassNode) superCN;  
+				if(!isStatic(superInnerCN) && superCN.getOuterClass().equals(classNode.getOuterClass())) {
+					pass = true;
+				}
+			}
+		}
+		return pass;
+	}
 	
 	private String getUniqueName(Parameter[] params, ConstructorNode node) {
 	    String namePrefix = "$p";
