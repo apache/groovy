@@ -33,6 +33,12 @@ class DateTest extends GroovyTestCase {
         assert list == expected
     }
 
+    void testCalendarIndex() {
+        Calendar c = new GregorianCalendar(2002, FEBRUARY, 2)
+        assert c[MONTH] == FEBRUARY
+        assert c[DAY_OF_WEEK] == SATURDAY
+    }
+
     void testDateIndex() {
         Date d = new GregorianCalendar(2002, FEBRUARY, 2).time
         assert d[MONTH] == FEBRUARY
