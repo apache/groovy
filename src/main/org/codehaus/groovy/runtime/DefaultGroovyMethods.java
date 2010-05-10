@@ -4321,6 +4321,19 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Support the subscript operator for a Calendar.
+     *
+     * @param self  a Calendar
+     * @param field a Calendar field, e.g. MONTH
+     * @return the value for the given field, e.g. FEBRUARY
+     * @see java.util.Calendar
+     * @since 1.7.3
+     */
+    public static int getAt(Calendar self, int field) {
+        return self.get(field);
+    }
+
+    /**
      * A helper method to allow lists to work with subscript operators.
      * <pre class="groovyTestCase">def list = [2, 3]
      * list[0] = 1
