@@ -116,23 +116,27 @@ public class ReturnAdder {
                 if (!statementReturns(last)) {
                     list.add(new ReturnStatement(ConstantExpression.NULL));
                 }
-            }
-            else {
+            } else {
                 ReturnStatement ret = new ReturnStatement(ConstantExpression.NULL);
                 ret.setSourcePosition(block);
                 return ret;
             }
 
-            return new BlockStatement(list,block.getVariableScope());
+            BlockStatement newBlock = new BlockStatement(list, block.getVariableScope());
+            newBlock.setSourcePosition(block);
+            return newBlock;
         }
 
-        if (statement == null)
-          return new ReturnStatement(ConstantExpression.NULL);
-        else {
+        if (statement == null) {
+            return new ReturnStatement(ConstantExpression.NULL);
+        } else {
             final List list = new ArrayList();
             list.add(statement);
             list.add(new ReturnStatement(ConstantExpression.NULL));
-            return new BlockStatement(list,new VariableScope(scope));
+
+            BlockStatement newBlock = new BlockStatement(list, new VariableScope(scope));
+            newBlock.setSourcePosition(statement);
+            return newBlock;
         }
     }
 
