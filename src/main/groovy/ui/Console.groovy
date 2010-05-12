@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -66,6 +66,7 @@ import java.awt.BorderLayout
  * @author Guillaume Laforge, stacktrace hyperlinking to the current script line
  * @author Hamlet D'Arcy, AST browser
  * @author Roshan Dawrani
+ * @author Paul King
  */
 class Console implements CaretListener, HyperlinkListener, ComponentListener, FocusListener {
 
@@ -101,6 +102,7 @@ class Console implements CaretListener, HyperlinkListener, ComponentListener, Fo
     Action hideOutputWindowAction4
     int origDividerSize
     Component outputWindow
+    Component copyFromComponent
     Component blank
     Component scrollArea
 
@@ -1040,8 +1042,7 @@ options:
     }
 
     void copy(EventObject evt = null) {
-        def area = inputArea.selectedText ? inputArea : outputArea
-        invokeTextAction(evt, { source -> source.copy() }, area)
+        invokeTextAction(evt, { source -> source.copy() }, copyFromComponent ?: inputArea)
     }
 
     void paste(EventObject evt = null) {
@@ -1121,10 +1122,9 @@ options:
     public void componentShown(ComponentEvent e) { }
 
     public void focusGained(FocusEvent e) {
-        // clear inputArea's internal selection as it interferes with text-copy functionality
-        if(e.component == outputArea) {
-            inputArea.selectionStart = 0
-            inputArea.selectionEnd = 0
+        // remember component with focus for text-copy functionality
+        if (e.component == outputArea || e.component == inputArea) {
+            copyFromComponent = e.component
         }
     }
 
