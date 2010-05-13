@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -172,9 +172,10 @@ public class TextEditor extends JTextPane implements Pageable, Printable {
             aMap = aMap.getParent();
         } while (aMap != null);
         aMap = getActionMap();
-        KeyStroke keyStroke =
-            KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, 0, false);
         InputMap iMap = getInputMap();
+        KeyStroke keyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, 0, false);
+        iMap.put(keyStroke, "delete");
+        keyStroke = KeyStroke.getKeyStroke(KeyEvent.VK_BACK_SPACE, KeyEvent.SHIFT_MASK, false);
         iMap.put(keyStroke, "delete");
         aMap.put("delete", action);
     
