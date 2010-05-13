@@ -56,6 +56,8 @@ public class HashCodeHelper {
 
     public static int updateHash(int current, Object var) {
         if (var == null) return updateHash(current, 0);
+        if (var.getClass().isArray())
+            return shift(current) + Arrays.hashCode((Object[]) var);
         return updateHash(current, var.hashCode());
     }
 
@@ -95,11 +97,6 @@ public class HashCodeHelper {
     }
 
     public static int updateHash(int current, double[] var) {
-        if (var == null) return updateHash(current, 0);
-        return shift(current) + Arrays.hashCode(var);
-    }
-
-    public static int updateHash(int current, Object[] var) {
         if (var == null) return updateHash(current, 0);
         return shift(current) + Arrays.hashCode(var);
     }

@@ -25,6 +25,7 @@ import org.codehaus.groovy.ast.stmt.*;
 import org.codehaus.groovy.control.CompilePhase;
 import org.codehaus.groovy.control.SourceUnit;
 import org.codehaus.groovy.runtime.DefaultGroovyMethods;
+import org.codehaus.groovy.runtime.InvokerHelper;
 import org.codehaus.groovy.syntax.Token;
 import org.codehaus.groovy.syntax.Types;
 import org.codehaus.groovy.util.HashCodeHelper;
@@ -34,7 +35,6 @@ import java.util.*;
 
 /**
  * Handles generation of code for the @Immutable annotation.
- * This is experimental, use at your own risk.
  *
  * @author Paul King
  */
@@ -75,6 +75,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
     private static final ClassNode HASHUTIL_TYPE = new ClassNode(HashCodeHelper.class);
     private static final ClassNode STRINGBUFFER_TYPE = new ClassNode(StringBuffer.class);
     private static final ClassNode DGM_TYPE = new ClassNode(DefaultGroovyMethods.class);
+    private static final ClassNode INVOKER_TYPE = new ClassNode(InvokerHelper.class);
     private static final ClassNode SELF_TYPE = new ClassNode(ImmutableASTTransformation.class);
     private static final Token COMPARE_EQUAL = Token.newSymbol(Types.COMPARE_EQUAL, -1, -1);
     private static final Token COMPARE_NOT_EQUAL = Token.newSymbol(Types.COMPARE_NOT_EQUAL, -1, -1);
@@ -187,7 +188,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
                     new EmptyStatement()
             ));
             final FieldExpression fieldExpr = new FieldExpression(pNode.getField());
-            body.addStatement(append(result, new MethodCallExpression(fieldExpr, "toString", MethodCallExpression.NO_ARGUMENTS)));
+            body.addStatement(append(result, new StaticMethodCallExpression(INVOKER_TYPE, "toString", fieldExpr)));
         }
         body.addStatement(append(result, new ConstantExpression(")")));
         body.addStatement(new ReturnStatement(new MethodCallExpression(result, "toString", MethodCallExpression.NO_ARGUMENTS)));
@@ -378,11 +379,11 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         FieldNode fNode = pNode.getField();
         final ClassNode fieldType = fNode.getType();
         final Statement statement;
-        if (fieldType.isArray() || implementsInterface(fieldType, CLONEABLE_TYPE)) {
+        if (fieldType.isArray() || fieldType.implementsInterface(CLONEABLE_TYPE)) {
             statement = createConstructorStatementArrayOrCloneable(fNode);
         } else if (fieldType.isDerivedFrom(DATE_TYPE)) {
             statement = createConstructorStatementDate(fNode);
-        } else if (fieldType.isDerivedFrom(COLLECTION_TYPE) || fieldType.isDerivedFrom(MAP_TYPE)) {
+        } else if (isOrImplements(fieldType, COLLECTION_TYPE) || isOrImplements(fieldType, MAP_TYPE)) {
             statement = createConstructorStatementCollection(fNode);
         } else if (isKnownImmutable(fieldType)) {
             statement = createConstructorStatementDefault(fNode);
@@ -394,8 +395,8 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         return statement;
     }
 
-    private boolean implementsInterface(ClassNode fieldType, ClassNode interfaceType) {
-        return Arrays.asList(fieldType.getInterfaces()).contains(interfaceType);
+    private boolean isOrImplements(ClassNode fieldType, ClassNode interfaceType) {
+        return fieldType.equals(interfaceType) || fieldType.implementsInterface(interfaceType);
     }
 
     private Statement createConstructorStatementGuarded(ClassNode cNode, FieldNode fNode) {
@@ -574,7 +575,7 @@ public class ImmutableASTTransformation implements ASTTransformation, Opcodes {
         BlockStatement body = new BlockStatement();
         final ClassNode fieldType = fNode.getType();
         final Statement statement;
-        if (fieldType.isArray() || implementsInterface(fieldType, CLONEABLE_TYPE)) {
+        if (fieldType.isArray() || fieldType.implementsInterface(CLONEABLE_TYPE)) {
             statement = createGetterBodyArrayOrCloneable(fNode);
         } else if (fieldType.isDerivedFrom(DATE_TYPE)) {
             statement = createGetterBodyDate(fNode);
