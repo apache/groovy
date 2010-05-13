@@ -115,6 +115,8 @@ public class Groovyc extends MatchingTask {
     private boolean jointCompilation;
 
     private List<File> temporaryFiles = new ArrayList(2);
+    private File stubDir;
+    private boolean keepStubs;
 
 
     /**
@@ -667,7 +669,7 @@ public class Groovyc extends MatchingTask {
                                 || (key.contains("encoding"))
                                 || (key.contains("source"))
                                 || (key.contains("target"))
-                                || (key.contains("verbose"))) {
+                                || (key.contains("verbose"))) { // TODO remove extra verbose?
                             jointOptions.add("-J" + key + "=" + value);
                         } else {
                             log("The option " + key + " cannot be set on the contained <javac> element. The option will be ignored", Project.MSG_WARN);
@@ -859,12 +861,18 @@ public class Groovyc extends MatchingTask {
     }
 
     protected CompilationUnit makeCompileUnit() {
-        if (configuration.getJointCompilationOptions() != null) {
-            if (!configuration.getJointCompilationOptions().containsKey("stubDir")) {
+        Map<String, Object> options = configuration.getJointCompilationOptions();
+        if (options != null) {
+            if (keepStubs) {
+                options.put("keepStubs", Boolean.TRUE);
+            }
+            if (stubDir != null) {
+                options.put("stubDir", stubDir);
+            } else {
                 try {
                     File tempStubDir = FileSystemCompiler.createTempDir();
                     temporaryFiles.add(tempStubDir);
-                    configuration.getJointCompilationOptions().put("stubDir", tempStubDir);
+                    options.put("stubDir", tempStubDir);
                 } catch (IOException ioe) {
                     throw new BuildException(ioe);
                 }
@@ -911,14 +919,15 @@ public class Groovyc extends MatchingTask {
 
     /**
      * Set the stub directory into which the Java source stub
-     * files should be generated. The directory should exist 
-     * will not be deleted automatically.
+     * files should be generated. The directory need not exist
+     * and will not be deleted automatically - though its contents
+     * will be cleared unless 'keepStubs' is true. Ignored when forked.
      *
      * @param stubDir the stub directory
      */
     public void setStubdir(File stubDir) {
         jointCompilation = true;
-        configuration.getJointCompilationOptions().put("stubDir", stubDir);
+        this.stubDir = stubDir;
     }
 
     /**
@@ -928,6 +937,25 @@ public class Groovyc extends MatchingTask {
      * @return the stub directory
      */
     public File getStubdir() {
-        return (File) configuration.getJointCompilationOptions().get("stubDir");
+        return stubDir;
+    }
+
+    /**
+     * Set the keepStubs flag. Defaults to false. Set to true for debugging.
+     * Ignored when forked.
+     *
+     * @param keepStubs should stubs be retained
+     */
+    public void setKeepStubs(boolean keepStubs) {
+        this.keepStubs = keepStubs;
+    }
+
+    /**
+     * Gets the keepStubs flag.
+     *
+     * @return the keepStubs flag
+     */
+    public boolean getKeepStubs() {
+        return keepStubs;
     }
 }
