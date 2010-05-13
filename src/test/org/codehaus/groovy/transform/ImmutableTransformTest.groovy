@@ -37,6 +37,24 @@ class ImmutableTransformTest extends GroovyShellTestCase {
         assertTrue objects[0].nums.class.name.contains("Unmodifiable")
     }
 
+    void testImmutableListProp() {
+        def objects = evaluate("""
+              @Immutable class HasList {
+                  String[] letters
+                  List nums
+              }
+              def letters = 'A,B,C'.split(',')
+              def nums = [1, 2]
+              [new HasList(letters:letters, nums:nums),
+               new HasList(letters, nums)]
+        """)
+
+        assertEquals objects[0].hashCode(), objects[1].hashCode()
+        assertEquals objects[0], objects[1]
+        assert objects[0].letters.size() == 3
+        assert objects[0].nums.size() == 2
+    }
+
     void testImmutableAsMapKey() {
         assertScript """
             @Immutable final class HasString {
