@@ -599,6 +599,9 @@ options:
                 }
             } finally {
                 swing.edt { inputArea.editable = true }
+                // GROOVY-3684: focus away and then back to inputArea ensures caret blinks
+                swing.doLater outputArea.&requestFocusInWindow
+                swing.doLater inputArea.&requestFocusInWindow
             }
         }
     }
