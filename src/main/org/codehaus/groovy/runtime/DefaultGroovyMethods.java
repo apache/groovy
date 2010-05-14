@@ -3218,6 +3218,143 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * <p>Strip leading whitespace/control characters followed by '|' from
+     * every line in a String.</p>
+     * <pre class="groovyTestCase">
+     * assert 'ABC\n123\n456' == '''ABC
+     *                             |123
+     *                             |456'''.stripMargin()
+     * </pre>
+     *
+     * @param self The String to strip the margin from
+     * @see #stripMargin(String, char)
+     * @since 1.7.3
+     */
+    public static String stripMargin(String self) {
+        return stripMargin(self, '|');
+    }
+
+    /**
+     * <p>Strip leading whitespace/control characters followed by <tt>marginChar</tt> from
+     * every line in a String.</p>
+     *
+     * @param self       The String to strip the margin from
+     * @param marginChar Any character that serves as margin delimiter
+     * @see #stripMargin(String, char)
+     * @since 1.7.3
+     */
+    public static String stripMargin(String self, String marginChar) {
+        if (marginChar == null || marginChar.length() == 0) return stripMargin(self, '|');
+        // TODO IllegalArgumentException for marginChar.length() > 1 ? Or support String as marker?
+        return stripMargin(self, marginChar.charAt(0));
+    }
+
+    /**
+     * <p>Strip leading whitespace/control characters followed by <tt>marginChar</tt> from
+     * every line in a String.</p>
+     * <pre class="groovyTestCase">
+     * assert 'ABC\n123\n456' == '''ABC
+     *                             *123
+     *                             *456'''.stripMargin('*')
+     * </pre>
+     *
+     * @param self       The String to strip the margin from
+     * @param marginChar Any character that serves as margin delimiter
+     * @since 1.7.3
+     */
+    public static String stripMargin(String self, char marginChar) {
+        if (self.length() == 0) return self;
+        try {
+            StringBuilder builder = new StringBuilder();
+            for (String line : readLines(self)) {
+                builder.append(stripMarginFromLine(line, marginChar));
+                builder.append("\n");
+            }
+            builder.deleteCharAt(builder.length() - 1);
+            return builder.toString();
+        } catch (IOException e) {
+            /* ignore */
+        }
+        return self;
+    }
+
+    // TODO expose this for stream based stripping?
+    private static String stripMarginFromLine(String line, char marginChar) {
+        int length = line.length();
+        int index = 0;
+        while (index < length && line.charAt(index) <= ' ') index++;
+        return (index < length && line.charAt(index) == marginChar) ? line.substring(index + 1) : line;
+    }
+
+    /**
+     * <p>Strip leading spaces from every line in a String. The
+     * line with the least number of leading spaces determines
+     * the number to remove.</p>
+     * <pre class="groovyTestCase">
+     * assert '  A\n B\nC' == '   A\n  B\n C'.stripIndent()
+     * </pre>
+     *
+     * @param self     The String to strip the leading spaces from
+     * @see #stripIndent(String, int)
+     * @since 1.7.3
+     */
+    public static String stripIndent(String self) {
+        if (self.length() == 0) return self;
+        int runningCount = -1;
+        try {
+            for (String line : readLines(self)) {
+                if (runningCount == -1) runningCount = line.length();
+                runningCount = findMinimumLeadingSpaces(line, runningCount);
+                if (runningCount == 0) break;
+            }
+        } catch (IOException e) {
+            /* ignore */
+        }
+        return stripIndent(self, runningCount == -1 ? 0 : runningCount);
+    }
+
+    // TODO expose this for stream based scenarios?
+    private static int findMinimumLeadingSpaces(String line, int count) {
+        int length = line.length();
+        int index = 0;
+        while (index < length && index < count && line.charAt(index) == ' ') index++;
+        return index;
+    }
+
+    /**
+     * <p>Strip <tt>numChar</tt> leading characters from
+     * every line in a String.</p>
+     * <pre class="groovyTestCase">
+     * assert 'DEF\n456' == '''ABCDEF\n123456'''.stripIndent(3)
+     * </pre>
+     *
+     * @param self     The String to strip the characters from
+     * @param numChars The number of characters to strip
+     * @since 1.7.3
+     */
+    public static String stripIndent(String self, int numChars) {
+        if (self.length() == 0 || numChars <= 0) return self;
+        try {
+            StringBuilder builder = new StringBuilder();
+            for (String line : readLines(self)) {
+                builder.append(stripIndentFromLine(line, numChars));
+                builder.append("\n");
+            }
+            builder.deleteCharAt(builder.length() - 1);
+            return builder.toString();
+        } catch (IOException e) {
+            /* ignore */
+        }
+        return self;
+    }
+
+    // TODO expose this for stream based stripping?
+    private static String stripIndentFromLine(String line, int numChars) {
+        int length = line.length();
+        return numChars <= length ? line.substring(numChars) : "";
+    }
+
+    /**
      * Transforms a String representing a URL into a URL object.
      *
      * @param self the String representing a URL
