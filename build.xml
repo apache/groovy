@@ -652,7 +652,7 @@ $Date$
         </copy>
 
         <!-- Tweak scripts for platform compatibility -->
-        <fixcrlf srcdir="${installDirectory}/bin" eol="lf" excludes="*.bat"/>
+        <fixcrlf srcdir="${installDirectory}/bin" eol="lf" excludes="*.bat, *.icns"/>
         <fixcrlf srcdir="${installDirectory}/bin" eol="crlf" includes="*.bat"/>
         <chmod perm="ugo+x">
             <fileset dir="${installDirectory}/bin" includes="*,*.*"/>
