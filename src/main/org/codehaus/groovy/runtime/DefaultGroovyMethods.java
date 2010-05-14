@@ -3292,7 +3292,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     /**
      * <p>Strip leading spaces from every line in a String. The
      * line with the least number of leading spaces determines
-     * the number to remove.</p>
+     * the number to remove. Lines only containing whitespace are
+     * ignored when calculating the number of leading spaces to strip.</p>
      * <pre class="groovyTestCase">
      * assert '  A\n B\nC' == '   A\n  B\n C'.stripIndent()
      * </pre>
@@ -3323,8 +3324,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     private static boolean isAllSpaces(String line) {
         for (int i = 0; i < line.length(); i++) {
-            char c = line.charAt(i);
-            if (c != ' ')
+            if (Character.isWhitespace(line.charAt(i)))
                 return false;
         }
         return true;
@@ -3334,7 +3334,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     private static int findMinimumLeadingSpaces(String line, int count) {
         int length = line.length();
         int index = 0;
-        while (index < length && index < count && line.charAt(index) == ' ') index++;
+        while (index < length && index < count && Character.isWhitespace(line.charAt(index))) index++;
         return index;
     }
 
