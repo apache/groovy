@@ -3270,7 +3270,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 builder.append(stripMarginFromLine(line, marginChar));
                 builder.append("\n");
             }
-            builder.deleteCharAt(builder.length() - 1);
+            // remove the normalized ending line ending if it was not present
+            if (!self.endsWith("\n")) {
+                builder.deleteCharAt(builder.length() - 1);
+            }
             return builder.toString();
         } catch (IOException e) {
             /* ignore */
@@ -3303,6 +3306,8 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         int runningCount = -1;
         try {
             for (String line : readLines(self)) {
+                // don't take blank lines into account for calculating the indent
+                if (isAllSpaces(line)) continue;
                 if (runningCount == -1) runningCount = line.length();
                 runningCount = findMinimumLeadingSpaces(line, runningCount);
                 if (runningCount == 0) break;
@@ -3311,6 +3316,18 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             /* ignore */
         }
         return stripIndent(self, runningCount == -1 ? 0 : runningCount);
+    }
+
+    /**
+     * @return true if all characters are spaces
+     */
+    private static boolean isAllSpaces(String line) {
+        for (int i = 0; i < line.length(); i++) {
+            char c = line.charAt(i);
+            if (c != ' ')
+                return false;
+        }
+        return true;
     }
 
     // TODO expose this for stream based scenarios?
@@ -3337,10 +3354,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         try {
             StringBuilder builder = new StringBuilder();
             for (String line : readLines(self)) {
-                builder.append(stripIndentFromLine(line, numChars));
+                // normalize an empty or whitespace line to \n
+                // or strip the indent for lines containing non-space characters
+                if (!isAllSpaces(line)) {
+                    builder.append(stripIndentFromLine(line, numChars));
+                }
                 builder.append("\n");
             }
-            builder.deleteCharAt(builder.length() - 1);
+            // remove the normalized ending line ending if it was not present
+            if (!self.endsWith("\n")) {
+                builder.deleteCharAt(builder.length() - 1);
+            }
             return builder.toString();
         } catch (IOException e) {
             /* ignore */
