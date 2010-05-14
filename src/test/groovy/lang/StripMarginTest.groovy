@@ -28,4 +28,48 @@ class StripMarginTest extends GroovyTestCase {
      ||jumps over the lazy dog""".stripMargin()
         assert expected == actual
     }
+
+    void testStripIndent() {
+        def actual   = """
+                return 'foo'
+            }
+
+            def method() {
+                return 'bar'
+            }
+        """.stripIndent()
+
+        def expected = """
+    return 'foo'
+}
+
+def method() {
+    return 'bar'
+}
+"""
+
+        assert expected == actual
+    }
+
+    void testStripIndentWithFirstLineBackslash() {
+        def actual   = """\
+                return 'foo'
+            }
+
+            def method() {
+                return 'bar'
+            }
+        """.stripIndent()
+        
+        def expected = """\
+    return 'foo'
+}
+
+def method() {
+    return 'bar'
+}
+"""
+
+        assert expected == actual
+    }
 }
