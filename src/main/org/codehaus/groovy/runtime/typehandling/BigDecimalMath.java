@@ -28,11 +28,11 @@ public final class BigDecimalMath extends NumberMath {
 
     // This is an arbitrary value, picked as a reasonable choice for a precision
     // for typical user math when a non-terminating result would otherwise occur.
-    public static final int ADDITIONAL_PRECISION = 10;
+    public static final int DIVISION_EXTRA_PRECISION = 10;
 
     //This is an arbitrary value, picked as a reasonable choice for a rounding point
     //for typical user math.
-    public static final int MAX_DIVISION_SCALE = 10;
+    public static final int DIVISION_MIN_SCALE = 10;
 
     public static final BigDecimalMath INSTANCE = new BigDecimalMath();
 
@@ -62,9 +62,9 @@ public final class BigDecimalMath extends NumberMath {
             return bigLeft.divide(bigRight);
         } catch (ArithmeticException e) {
             // set a DEFAULT precision if otherwise non-terminating
-            int precision = Math.max(bigLeft.precision(), bigRight.precision()) + ADDITIONAL_PRECISION;
+            int precision = Math.max(bigLeft.precision(), bigRight.precision()) + DIVISION_EXTRA_PRECISION;
             BigDecimal result = bigLeft.divide(bigRight, new MathContext(precision));
-            int scale = Math.max(Math.max(bigLeft.scale(), bigRight.scale()), MAX_DIVISION_SCALE);
+            int scale = Math.max(Math.max(bigLeft.scale(), bigRight.scale()), DIVISION_MIN_SCALE);
             if (result.scale() > scale) result = result.setScale(scale, BigDecimal.ROUND_HALF_UP);
             return result;
         }
