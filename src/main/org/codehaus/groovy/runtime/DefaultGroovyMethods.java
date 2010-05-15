@@ -3324,7 +3324,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     private static boolean isAllSpaces(String line) {
         for (int i = 0; i < line.length(); i++) {
-            if (Character.isWhitespace(line.charAt(i)))
+            if (!Character.isWhitespace(line.charAt(i)))
                 return false;
         }
         return true;
