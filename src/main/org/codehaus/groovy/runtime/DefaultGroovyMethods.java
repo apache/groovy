@@ -468,7 +468,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             System.out.print(InvokerHelper.toString(value));
         }
     }
-    
+
     /**
      * Print a value formatted Groovy style to the print writer.
      *
@@ -479,7 +479,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static void print(PrintWriter self, Object value) {
         self.print(InvokerHelper.toString(value));
     }
-    
+
     /**
      * Print a value formatted Groovy style to the print stream.
      *
@@ -490,7 +490,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static void print(PrintStream self, Object value) {
         self.print(InvokerHelper.toString(value));
     }
-    
+
     /**
      * Print a value to the standard output stream.
      * This method delegates to the owner to execute the method.
@@ -557,7 +557,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             System.out.println(InvokerHelper.toString(value));
         }
     }
-    
+
     /**
      * Print a value formatted Groovy style (followed by a newline) to the print writer.
      *
@@ -568,7 +568,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static void println(PrintWriter self, Object value) {
         self.println(InvokerHelper.toString(value));
     }
-    
+
     /**
      * Print a value formatted Groovy style (followed by a newline) to the print stream.
      *
@@ -579,7 +579,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static void println(PrintStream self, Object value) {
         self.println(InvokerHelper.toString(value));
     }
-    
+
     /**
      * Print a value (followed by a newline) to the standard output stream.
      * This method delegates to the owner to execute the method.
@@ -1049,7 +1049,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param self    a Collection
      * @param closure a 1 or 2 arg Closure used to determine unique items
      * @return self   without any duplicates
-     * @since 1.0 
+     * @since 1.0
      */
     public static <T> Collection<T> unique(Collection<T> self, Closure closure) {
         // use a comparator of one item or two
@@ -1090,7 +1090,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *             return fname + " " + lname
      *         }
      *     }
-     * 
+     *
      *     class PersonComparator implements Comparator {
      *         public int compare(Object o1, Object o2) {
      *             Person p1 = (Person) o1
@@ -1100,17 +1100,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      *             else
      *                 return p1.fname.compareTo(p2.fname)
      *         }
-     * 
+     *
      *         public boolean equals(Object obj) {
      *             return this.equals(obj)
      *         }
      *     }
-     * 
+     *
      *     Person a = new Person(fname:"John", lname:"Taylor")
      *     Person b = new Person(fname:"Clark", lname:"Taylor")
      *     Person c = new Person(fname:"Tom", lname:"Cruz")
      *     Person d = new Person(fname:"Clark", lname:"Taylor")
-     * 
+     *
      *     def list = [a, b, c, d]
      *     List list2 = list.unique(new PersonComparator())
      *     assert( list2 == list && list == [a, b, c] )
@@ -2288,7 +2288,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             answer.put(value, groupedElements);
         }
     }
-    
+
     // internal helper method
     protected static Object callClosureForMapEntry(Closure closure, Map.Entry entry) {
         if (closure.getMaximumNumberOfParameters() == 2) {
@@ -3479,7 +3479,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Hyphens at the start or end of sourceSet or replacementSet are treated as normal hyphens and are not
      * considered to be part of a range specification. Similarly, a hyphen immediately after an earlier range
      * is treated as a normal hyphen. So, '-x', 'x-' have no ranges while 'a-c-e' has the range 'a-c' plus
-     * the '-' character plus the 'e' character. 
+     * the '-' character plus the 'e' character.
      * <p/>
      * Unlike the unix tr command, Groovy's tr command supports reverse ranges, e.g.:
      * <pre>
@@ -3492,7 +3492,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * If sourceSet contains repeated characters, the last specified replacement is used as shown here:
      * <pre>
      * assert 'Hello World!'.tr('lloo', '1234') == 'He224 W4r2d!'
-     * </pre> 
+     * </pre>
      * The functionality provided by tr can be achieved using regular expressions but tr provides a much more compact
      * notation and efficient implementation for certain scenarios.
      *
@@ -5620,7 +5620,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             stack.addAll(col);
             return stack;
         }
-        
+
         Object[] args = {col};
         try {
             return InvokerHelper.invokeConstructorOf(clazz, args);
@@ -8030,10 +8030,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         }
         return answer.toString();
     }
-    
+
     /**
      * Returns the string representation of the given array.
-     * 
+     *
      * @param self an array
      * @return the string representation
      * @since 1.6.0
@@ -8044,7 +8044,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the string representation of the given array.
-     * 
+     *
      * @param self an array
      * @return the string representation
      * @since 1.6.0
@@ -8055,7 +8055,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the string representation of the given array.
-     * 
+     *
      * @param self an array
      * @return the string representation
      * @since 1.6.0
@@ -8066,7 +8066,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the string representation of the given array.
-     * 
+     *
      * @param self an array
      * @return the string representation
      * @since 1.6.0
@@ -8077,7 +8077,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the string representation of the given array.
-     * 
+     *
      * @param self an array
      * @return the string representation
      * @since 1.6.0
@@ -8088,7 +8088,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the string representation of the given array.
-     * 
+     *
      * @param self an array
      * @return the string representation
      * @since 1.6.0
@@ -8099,7 +8099,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the string representation of the given array.
-     * 
+     *
      * @param self an array
      * @return the string representation
      * @since 1.6.0
@@ -8110,7 +8110,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Returns the string representation of the given array.
-     * 
+     *
      * @param self an array
      * @return the string representation
      * @since 1.6.0
@@ -9320,7 +9320,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static int round(Float number) {
         return Math.round(number.floatValue());
     }
-    
+
     /**
      * Round the value
      *
@@ -9332,7 +9332,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static float round(Float number, int precision) {
         return (float)(Math.floor(number.doubleValue()*Math.pow(10,precision)+0.5)/Math.pow(10,precision));
     }
-    
+
     /**
      * Truncate the value
      *
@@ -9344,7 +9344,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static float trunc(Float number, int precision) {
         return (float)(Math.floor(number.doubleValue()*Math.pow(10,precision))/Math.pow(10,precision));
     }
-    
+
     /**
      * Truncate the value
      *
@@ -9366,7 +9366,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static long round(Double number) {
         return Math.round(number);
     }
-    
+
     /**
      * Round the value
      *
@@ -9378,7 +9378,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static double round(Double number, int precision) {
         return Math.floor(number *Math.pow(10,precision)+0.5)/Math.pow(10,precision);
     }
-    
+
     /**
      * Truncate the value
      *
@@ -9389,7 +9389,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static double trunc(Double number) {
         return Math.floor(number);
     }
-    
+
     /**
      * Truncate the value
      *
@@ -9739,21 +9739,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static Double toDouble(Number self) {
         // Conversions in which all decimal digits are known to be good.
         if ((self instanceof Double)
-            || (self instanceof Long) 
+            || (self instanceof Long)
             || (self instanceof Integer)
             || (self instanceof Short)
-            || (self instanceof Byte)) 
+            || (self instanceof Byte))
         {
             return self.doubleValue();
         }
-        
+
         // Chances are this is a Float or a Big.
         // With Float we're extending binary precision and that gets ugly in decimal.
         // If we used Float.doubleValue() on 0.1f we get 0.10000000149011612.
         // Note that this is different than casting '(double) 0.1f' which will do the
         // binary extension just like in Java.
         // With Bigs and other unkowns, this is likely to be the same.
-        
+
         return Double.valueOf(self.toString());
     }
 
@@ -9766,14 +9766,14 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static BigDecimal toBigDecimal(Number self) {
         // Quick method for scalars.
-        if ((self instanceof Long) 
+        if ((self instanceof Long)
             || (self instanceof Integer)
             || (self instanceof Short)
-            || (self instanceof Byte)) 
+            || (self instanceof Byte))
         {
             return BigDecimal.valueOf(self.longValue());
         }
-        
+
         return new BigDecimal(self.toString());
     }
 
@@ -9923,7 +9923,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static java.sql.Date minus(java.sql.Date self, int days) {
         return new java.sql.Date(minus((Date) self, days).getTime());
     }
-    
+
     /**
      * Subtract another date from this one and return the number of days of the difference.
      *
@@ -9987,17 +9987,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * <p>Create a String representation of this date according to the given 
+     * <p>Create a String representation of this date according to the given
      * format pattern.</p>
-     * 
-     * <p>For example, if the system timezone is GMT, 
-     * <code>new Date(0).format('MM/dd/yy')</code> would return the string 
+     *
+     * <p>For example, if the system timezone is GMT,
+     * <code>new Date(0).format('MM/dd/yy')</code> would return the string
      * <code>"01/01/70"</code>. See documentation for {@link java.text.SimpleDateFormat}
      * for format pattern use.</p>
-     * 
-     * <p>Note that a new DateFormat instance is created for every 
+     *
+     * <p>Note that a new DateFormat instance is created for every
      * invocation of this method (for thread safety).</p>
-     *    
+     *
      * @see java.text.SimpleDateFormat
      * @param self a Date
      * @param format the format pattern to use according to {@link java.text.SimpleDateFormat}
@@ -10007,15 +10007,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static String format( Date self, String format ) {
     	return new SimpleDateFormat( format ).format( self );
     }
-    
+
     /**
-     * <p>Return a string representation of the 'day' portion of this date 
+     * <p>Return a string representation of the 'day' portion of this date
      * according to the locale-specific {@link java.text.DateFormat#SHORT} default format.
      * For an "en_UK" system locale, this would be <code>dd/MM/yy</code>.</p>
-     * 
-     * <p>Note that a new DateFormat instance is created for every 
+     *
+     * <p>Note that a new DateFormat instance is created for every
      * invocation of this method (for thread safety).</p>
-     * 
+     *
      * @see java.text.DateFormat#getDateInstance(int)
      * @see java.text.DateFormat#SHORT
      * @param self a Date
@@ -10025,15 +10025,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static String getDateString( Date self ) {
     	return DateFormat.getDateInstance(DateFormat.SHORT).format( self );
     }
-    
+
     /**
-     * <p>Return a string representation of the time portion of this date 
+     * <p>Return a string representation of the time portion of this date
      * according to the locale-specific {@link java.text.DateFormat#MEDIUM} default format.
      * For an "en_UK" system locale, this would be <code>HH:MM:ss</code>.</p>
-     * 
-     * <p>Note that a new DateFormat instance is created for every 
+     *
+     * <p>Note that a new DateFormat instance is created for every
      * invocation of this method (for thread safety).</p>
-     * 
+     *
      * @see java.text.DateFormat#getTimeInstance(int)
      * @see java.text.DateFormat#MEDIUM
      * @param self a Date
@@ -10043,17 +10043,17 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static String getTimeString( Date self ) {
     	return DateFormat.getTimeInstance(DateFormat.MEDIUM).format( self );
     }
-    
+
     /**
-     * <p>Return a string representation of the date and time time portion of 
-     * this Date instance, according to the locale-specific format used by 
+     * <p>Return a string representation of the date and time time portion of
+     * this Date instance, according to the locale-specific format used by
      * {@link java.text.DateFormat}.  This method uses the {@link java.text.DateFormat#SHORT}
      * preset for the day portion and {@link java.text.DateFormat#MEDIUM} for the time
      * portion of the output string.</p>
-     *  
-     * <p>Note that a new DateFormat instance is created for every 
+     *
+     * <p>Note that a new DateFormat instance is created for every
      * invocation of this method (for thread safety).</p>
-     *  
+     *
      * @see java.text.DateFormat#getDateTimeInstance(int, int)
      * @param self a Date
      * @return a string representation of this date and time
@@ -10115,21 +10115,21 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 	public static void clearTime(final Calendar self){
 		clearTimeCommon(self);
 	}
-    
+
     /**
      * <p>Shortcut for {@link java.text.SimpleDateFormat} to output a String representation
-     * of this calendar instance.  This method respects the Calendar's assigned 
+     * of this calendar instance.  This method respects the Calendar's assigned
      * {@link java.util.TimeZone}, whereas calling <code>cal.time.format('HH:mm:ss')</code>
      * would use the system timezone.</p>
-     * <p>Note that Calendar equivalents of <code>date.getDateString()</code> 
-     * and variants do not exist because those methods are Locale-dependent.  
+     * <p>Note that Calendar equivalents of <code>date.getDateString()</code>
+     * and variants do not exist because those methods are Locale-dependent.
      * Although a Calendar may be assigned a {@link java.util.Locale}, that information is
-     * lost and therefore cannot be used to control the default date/time formats 
-     * provided by these methods.  Instead, the system Locale would always be 
-     * used.  The alternative is to simply call 
+     * lost and therefore cannot be used to control the default date/time formats
+     * provided by these methods.  Instead, the system Locale would always be
+     * used.  The alternative is to simply call
      * {@link java.text.DateFormat#getDateInstance(int, Locale)} and pass the same Locale
      * that was used for the Calendar.</p>
-     * 
+     *
      * @see java.text.DateFormat#setTimeZone(java.util.TimeZone)
      * @see java.text.SimpleDateFormat#format(java.util.Date)
      * @see #format(java.util.Date, java.lang.String)
@@ -10143,7 +10143,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     	sdf.setTimeZone( self.getTimeZone() );
     	return sdf.format( self.getTime() );
     }
-    
+
     // Boolean based methods
     //-------------------------------------------------------------------------
 
@@ -11196,10 +11196,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     static String lineSeparator = null;
-    
+
     /**
      * Return a String with lines (separated by LF, CR/LF, or CR)
-     * terminated by the platform specific line separator. 
+     * terminated by the platform specific line separator.
      *
      * @param self a String object
      * @return the denormalized string
@@ -11223,29 +11223,29 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 lineSeparator = "\n";
             }
         }
-        
+
         final int len = self.length();
-        
+
         if (len < 1) {
             return self;
         }
-        
+
         final StringBuilder sb = new StringBuilder((110 * len) / 100);
 
         int i = 0;
-        
+
         while (i < len) {
             final char ch = self.charAt(i++);
 
             switch (ch) {
                 case '\r':
                     sb.append(lineSeparator);
-                    
+
                     // Eat the following LF if any.
                     if ((i < len) && (self.charAt(i) == '\n')) {
                         ++i;
                     }
-                    
+
                     break;
 
                 case '\n':
@@ -11270,30 +11270,30 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static String normalize(final String self) {
         int nx = self.indexOf('\r');
-        
+
         if (nx < 0) {
             return self;
         }
-      
+
         final int len = self.length();
         final StringBuilder sb = new StringBuilder(len);
 
         int i = 0;
-        
+
         do {
             sb.append(self, i, nx);
             sb.append('\n');
-            
+
             if ((i = nx + 1) >= len) break;
-            
+
             if (self.charAt(i) == '\n') {
                 // skip the LF in CR LF
                 if (++i >= len) break;
             }
-            
+
             nx = self.indexOf('\r', i);
         } while (nx > 0);
-        
+
         sb.append(self, i, len);
 
         return sb.toString();
@@ -11556,7 +11556,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static byte[] getBytes(URL url) throws IOException {
         return getBytes(url.openConnection().getInputStream());
-    }    
+    }
 
     /**
      * Read the content of this InputStream and return it as a byte[].
@@ -11580,7 +11580,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         } finally {
             closeWithWarning(is);
         }
-        return answer.toByteArray();        
+        return answer.toByteArray();
     }
 
     /**
@@ -11795,10 +11795,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Append binary data to the file.  It <strong>will not</strong> be 
+     * Append binary data to the file.  It <strong>will not</strong> be
      * interpreted as text.
      * @param self a File
-     * @param stream stream to read data from.  
+     * @param stream stream to read data from.
      * @throws IOException if an IOException occurs.
      * @since 1.5.0
      */
@@ -11808,7 +11808,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     		leftShift( out, stream );
     	}
     	finally {
-    		closeWithWarning( out ); 
+    		closeWithWarning( out );
     	}
     }
 
@@ -12831,7 +12831,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static Object withReader(URL url, Closure closure) throws IOException {
         return withReader(url.openConnection().getInputStream(), closure);
     }
-    
+
     /**
      * Helper method to create a new Reader for a URL and then
      * passes it to the closure.  The reader is closed after the closure returns.
@@ -12846,10 +12846,10 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     public static Object withReader(URL url, String charset, Closure closure) throws IOException {
         return withReader(url.openConnection().getInputStream(), charset, closure);
     }
-    
+
     /**
      * Helper method to create a new Reader for a stream and then
-     * passes it into the closure.  The reader (and this stream) is closed after 
+     * passes it into the closure.  The reader (and this stream) is closed after
      * the closure returns.
      *
      * @see java.io.InputStreamReader
@@ -12865,7 +12865,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
 
     /**
      * Helper method to create a new Reader for a stream and then
-     * passes it into the closure.  The reader (and this stream) is closed after 
+     * passes it into the closure.  The reader (and this stream) is closed after
      * the closure returns.
      *
      * @see java.io.InputStreamReader
@@ -14312,7 +14312,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             if(current.getName().equals(RootLoader.class.getName())) return true;
             current = current.getSuperclass();
         }
-        
+
         return false;
     }
 
@@ -14330,7 +14330,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         if (String.class == type) {
             return InvokerHelper.toString(obj);
         }
-        
+
         try {
           return DefaultTypeTransformation.castToType(obj, type);
         }
@@ -14587,7 +14587,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         public ProcessRunner(Process process) {
             this.process = process;
         }
-        
+
         private void doProcessWait() {
             try {
                 process.waitFor();
@@ -14732,20 +14732,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
                 throw new UnsupportedOperationException("Cannot remove() from an Enumeration");
             }
         };
-    }
-
-    /**
-     * Makes org.w3c.dom.NodeList iterable by returning a read-only Iterator which traverses
-     * over each Node.
-     *
-     * @param nodeList a NodeList
-     * @return an Iterator for a NodeList
-     * @since 1.0
-     * @deprecated moved to {@link org.codehaus.groovy.runtime.XmlGroovyMethods}
-     */
-    @Deprecated
-    public static Iterator<org.w3c.dom.Node> iterator(final org.w3c.dom.NodeList nodeList) {
-        return XmlGroovyMethods.iterator(nodeList);
     }
 
     /**
@@ -15006,17 +14992,58 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Returns a GroovyRowResult given a ResultSet.
-     *
-     * @param rs a java.sql.ResultSet
-     * @return the resulting groovy.sql.GroovyRowResult
-     * @throws java.sql.SQLException if a database error occurs
+     * @deprecated moved to {@link org.codehaus.groovy.runtime.XmlGroovyMethods#iterator(org.w3c.dom.NodeList)}
+     */
+    @Deprecated
+    public static Iterator<org.w3c.dom.Node> iterator(final org.w3c.dom.NodeList nodeList) {
+        return XmlGroovyMethods.iterator(nodeList);
+    }
+
+    /**
      * @deprecated moved to {@link org.codehaus.groovy.runtime.SqlGroovyMethods#toRowResult(java.sql.ResultSet)}
-     * @since 1.6.0
      */
     @Deprecated
     public static groovy.sql.GroovyRowResult toRowResult(java.sql.ResultSet rs) throws java.sql.SQLException {
         return SqlGroovyMethods.toRowResult(rs);
     }
 
+    /**
+     * @deprecated moved to {@link org.codehaus.groovy.runtime.EncodingGroovyMethods#encodeBase64(java.lang.Byte[], boolean)}
+     */
+    @Deprecated
+    public static Writable encodeBase64(Byte[] data, final boolean chunked) {
+        return EncodingGroovyMethods.encodeBase64(data, chunked);
+    }
+
+    /**
+     * @deprecated moved to {@link org.codehaus.groovy.runtime.EncodingGroovyMethods#encodeBase64(java.lang.Byte[])}
+     */
+    @Deprecated
+    public static Writable encodeBase64(Byte[] data) {
+        return EncodingGroovyMethods.encodeBase64(data);
+    }
+
+    /**
+     * @deprecated moved to {@link org.codehaus.groovy.runtime.EncodingGroovyMethods#encodeBase64(byte[], boolean)}
+     */
+    @Deprecated
+    public static Writable encodeBase64(byte[] data, final boolean chunked) {
+        return EncodingGroovyMethods.encodeBase64(data, chunked);
+    }
+
+    /**
+     * @deprecated moved to {@link org.codehaus.groovy.runtime.EncodingGroovyMethods#encodeBase64(byte[])}
+     */
+    @Deprecated
+    public static Writable encodeBase64(byte[] data) {
+        return EncodingGroovyMethods.encodeBase64(data);
+    }
+
+    /**
+     * @deprecated moved to {@link org.codehaus.groovy.runtime.EncodingGroovyMethods#decodeBase64(java.lang.String)}
+     */
+    @Deprecated
+    public static byte[] decodeBase64(String value) {
+        return EncodingGroovyMethods.decodeBase64(value);
+    }
 }
