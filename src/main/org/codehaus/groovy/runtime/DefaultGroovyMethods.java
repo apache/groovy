@@ -3308,7 +3308,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         try {
             for (String line : readLines(self)) {
                 // don't take blank lines into account for calculating the indent
-                if (isAllSpaces(line)) continue;
+                if (isAllWhitespace(line)) continue;
                 if (runningCount == -1) runningCount = line.length();
                 runningCount = findMinimumLeadingSpaces(line, runningCount);
                 if (runningCount == 0) break;
@@ -3320,11 +3320,15 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * @return true if all characters are spaces
+     * True if a String only contains whitespace characters.
+     *
+     * @param self The String to check the characters in
+     * @return true If all characters are whitespace characters
+     * @see Character#isWhitespace(char)
      */
-    private static boolean isAllSpaces(String line) {
-        for (int i = 0; i < line.length(); i++) {
-            if (!Character.isWhitespace(line.charAt(i)))
+    public static boolean isAllWhitespace(String self) {
+        for (int i = 0; i < self.length(); i++) {
+            if (!Character.isWhitespace(self.charAt(i)))
                 return false;
         }
         return true;
@@ -3356,7 +3360,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             for (String line : readLines(self)) {
                 // normalize an empty or whitespace line to \n
                 // or strip the indent for lines containing non-space characters
-                if (!isAllSpaces(line)) {
+                if (!isAllWhitespace(line)) {
                     builder.append(stripIndentFromLine(line, numChars));
                 }
                 builder.append("\n");
