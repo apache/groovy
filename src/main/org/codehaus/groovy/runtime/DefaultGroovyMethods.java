@@ -7530,6 +7530,26 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Convenience method to capitalize the first letter of a string
+     * (typically the first letter of a word). Example usage:
+     * <pre class="groovyTestCase">
+     * assert 'h'.capitalize() == 'H'
+     * assert 'hello'.capitalize() == 'Hello'
+     * assert 'hello world'.capitalize() == 'Hello world'
+     * assert 'Hello World' ==
+     *     'hello world'.split(' ').collect{ it.capitalize() }.join(' ')
+     * </pre>
+     *
+     * @param self The string to capitalize
+     * @return String The capitalized String result of split
+     * @since 1.7.3
+     */
+    public static String capitalize(String self) {
+        if (self == null || self.length() == 0) return self;
+        return Character.toUpperCase(self.charAt(0)) + self.substring(1);
+    }
+
+    /**
      * Convenience method to split a GString (with whitespace as delimiter).
      *
      * @param self the GString to split
