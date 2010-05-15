@@ -14735,20 +14735,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
-     * Makes org.w3c.dom.NodeList iterable by returning a read-only Iterator which traverses
-     * over each Node.
-     *
-     * @param nodeList a NodeList
-     * @return an Iterator for a NodeList
-     * @since 1.0
-     * @deprecated moved to {@link org.codehaus.groovy.runtime.XmlGroovyMethods}
-     */
-    @Deprecated
-    public static Iterator<org.w3c.dom.Node> iterator(final org.w3c.dom.NodeList nodeList) {
-        return XmlGroovyMethods.iterator(nodeList);
-    }
-
-    /**
      * Returns an {@link java.util.Iterator} which traverses each match.
      *
      * @param matcher a Matcher object
@@ -14985,20 +14971,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      */
     public static MetaProperty hasProperty(Object self, String name) {
         return InvokerHelper.getMetaClass(self).hasProperty(self, name);
-    }
-
-    /**
-     * Returns a GroovyRowResult given a ResultSet.
-     *
-     * @param rs a java.sql.ResultSet
-     * @return the resulting groovy.sql.GroovyRowResult
-     * @throws java.sql.SQLException if a database error occurs
-     * @deprecated moved to {@link org.codehaus.groovy.runtime.SqlGroovyMethods#toRowResult(java.sql.ResultSet)}
-     * @since 1.6.0
-     */
-    @Deprecated
-    public static groovy.sql.GroovyRowResult toRowResult(java.sql.ResultSet rs) throws java.sql.SQLException {
-        return SqlGroovyMethods.toRowResult(rs);
     }
 
 }
