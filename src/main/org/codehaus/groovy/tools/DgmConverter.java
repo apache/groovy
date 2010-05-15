@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@ import org.codehaus.groovy.runtime.DefaultGroovyMethods;
 import org.codehaus.groovy.runtime.SwingGroovyMethods;
 import org.codehaus.groovy.runtime.SqlGroovyMethods;
 import org.codehaus.groovy.runtime.XmlGroovyMethods;
+import org.codehaus.groovy.runtime.EncodingGroovyMethods;
 import org.objectweb.asm.ClassWriter;
 import org.objectweb.asm.Label;
 import org.objectweb.asm.MethodVisitor;
@@ -41,7 +42,8 @@ public class DgmConverter implements Opcodes{
             DefaultGroovyMethods.class,
             SwingGroovyMethods.class,
             SqlGroovyMethods.class,
-            XmlGroovyMethods.class
+            XmlGroovyMethods.class,
+            EncodingGroovyMethods.class
         };
 
         ArrayList<CachedMethod> cachedMethodsList = new ArrayList<CachedMethod> ();
