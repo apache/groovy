@@ -167,8 +167,8 @@ if "x1" == "x%_SKIP%" goto skip_1
 
 rem now unescape -q, -s, -d
 set _ARG=%_ARG:-s=*%
-set _ARG=%_ARG:-d=-%
 set _ARG=%_ARG:-q="%
+set _ARG=%_ARG:-d=-%
 
 set CMD_LINE_ARGS=%CMD_LINE_ARGS% %_ARG%
 set _ARG=
