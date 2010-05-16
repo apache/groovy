@@ -57,9 +57,19 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * This class defines all the new groovy methods which appear on normal JDK
+ * This class defines new groovy methods which appear on normal JDK
  * classes inside the Groovy environment. Static methods are used with the
- * first parameter the destination class.
+ * first parameter being the destination class,
+ * i.e. <code>public static String reverse(String self)</code>
+ * provides a <code>reverse()</code> method for <code>String</code>.
+ * <p>
+ * NOTE: While this class contains many 'public' static methods, it is
+ * primarily regarded as an internal class (its internal package name
+ * suggests this also). We value backwards compatibility of these
+ * methods when used within Groovy but value less backwards compatibility
+ * at the Java method call level. I.e. future versions of Groovy may
+ * remove or move a method call in this file but would normally
+ * aim to keep the method available from within Groovy.
  *
  * @author <a href="mailto:james@coredevelopers.net">James Strachan</a>
  * @author Jeremy Rayner
