@@ -7560,6 +7560,133 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Expands all tabs into spaces with tabStops of size 8.
+     *
+     * @param self A String to expand
+     * @return The expanded String
+     * @since 1.7.3
+     * @see #expand(java.lang.String, int)
+     */
+    public static String expand(String self) {
+        return expand(self, 8);
+    }
+
+    /**
+     * Expands all tabs into spaces.
+     *
+     * @param self A String to expand
+     * @param tabStop The number of spaces a tab represents
+     * @return The expanded String
+     * @since 1.7.3
+     */
+    public static String expand(String self, int tabStop) {
+        if (self.length() == 0) return self;
+        try {
+            StringBuilder builder = new StringBuilder();
+            for (String line : readLines(self)) {
+                builder.append(expandLine(line, tabStop));
+                builder.append("\n");
+            }
+            // remove the normalized ending line ending if it was not present
+            if (!self.endsWith("\n")) {
+                builder.deleteCharAt(builder.length() - 1);
+            }
+            return builder.toString();
+        } catch (IOException e) {
+            /* ignore */
+        }
+        return self;
+    }
+
+    /**
+     * Expands all tabs into spaces.
+     *
+     * @param self A line to expand
+     * @param tabStop The number of spaces a tab represents
+     * @return The expanded String
+     * @since 1.7.3
+     */
+    public static String expandLine(String self, int tabStop) {
+        int index;
+        while ((index = self.indexOf('\t')) != -1) {
+            StringBuilder builder = new StringBuilder(self);
+            int count = tabStop - index % tabStop;
+            builder.deleteCharAt(index);
+            for (int i = 0; i < count; i++) builder.insert(index, " ");
+            self = builder.toString();
+        }
+        return self;
+    }
+
+    /**
+     * Replaces sequences of whitespaces with tabs using tabStops of size 8.
+     *
+     * @param self A String to unexpand
+     * @return The unexpanded String
+     * @since 1.7.3
+     * @see #unexpand(java.lang.String, int)
+     */
+    public static String unexpand(String self) {
+        return unexpand(self, 8);
+    }
+
+    /**
+     * Replaces sequences of whitespaces with tabs.
+     *
+     * @param self A String to unexpand
+     * @param tabStop The number of spaces a tab represents
+     * @return The unexpanded String
+     * @since 1.7.3
+     */
+    public static String unexpand(String self, int tabStop) {
+        if (self.length() == 0) return self;
+        try {
+            StringBuilder builder = new StringBuilder();
+            for (String line : readLines(self)) {
+                builder.append(unexpandLine(line, tabStop));
+                builder.append("\n");
+            }
+            // remove the normalized ending line ending if it was not present
+            if (!self.endsWith("\n")) {
+                builder.deleteCharAt(builder.length() - 1);
+            }
+            return builder.toString();
+        } catch (IOException e) {
+            /* ignore */
+        }
+        return self;
+    }
+
+    /**
+     * Replaces sequences of whitespaces with tabs within a line.
+     *
+     * @param self A line to unexpand
+     * @param tabStop The number of spaces a tab represents
+     * @return The unexpanded String
+     * @since 1.7.3
+     */
+    public static String unexpandLine(String self, int tabStop) {
+        StringBuilder builder = new StringBuilder(self);
+        int index = 0;
+        while (index + tabStop < builder.length()) {
+            // cut original string in tabstop-length pieces
+            String piece = builder.substring(index, index + tabStop);
+            // count trailing whitespace characters
+            int count = 0;
+            while ((count < tabStop) && (Character.isWhitespace(piece.charAt(tabStop - (count + 1)))))
+                count++;
+            // replace if whitespace was found
+            if (count > 0) {
+                piece = piece.substring(0, tabStop - count) + '\t';
+                builder.replace(index, index + tabStop, piece);
+                index = index + tabStop - (count - 1);
+            } else
+                index = index + tabStop;
+        }
+        return builder.toString();
+    }
+
+    /**
      * Convenience method to split a GString (with whitespace as delimiter).
      *
      * @param self the GString to split

@@ -288,4 +288,10 @@ y''', 3, 'x\ny');
         assert s.indexOf(subs) >= 0
     }
 
+    void testExpandUnexpand() {
+        assert '\t\tabc\tdef\n12345\t67\t '.expand().unexpand() == '\t\tabc\tdef\n12345\t67\t '
+        assert '1234567\t8\t '.expand() == '1234567 8        '
+        assert '    x    '.unexpand() == '    x\t '
+        assert '    x    \n'.unexpand() == '    x\t \n'
+    }
 }
