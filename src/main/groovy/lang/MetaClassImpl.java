@@ -1097,12 +1097,12 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return delegateMetaClass.invokeMethod(closure.getClass(), closure, CLOSURE_DO_CALL_METHOD, originalArguments, false, fromInsideClass);
         }
 
-        if(object instanceof Script) {
-        	Object bindingVar = ((Script)object).getBinding().getVariables().get(methodName);
-        	if(bindingVar != null) {
-        		MetaClass bindingVarMC = ((MetaClassRegistryImpl)registry).getMetaClass(bindingVar);
-        		return bindingVarMC.invokeMethod(bindingVar, CLOSURE_CALL_METHOD, originalArguments);
-        	}
+        if (object instanceof Script) {
+            Object bindingVar = ((Script) object).getBinding().getVariables().get(methodName);
+            if (bindingVar != null) {
+                MetaClass bindingVarMC = ((MetaClassRegistryImpl) registry).getMetaClass(bindingVar);
+                return bindingVarMC.invokeMethod(bindingVar, CLOSURE_CALL_METHOD, originalArguments);
+            }
         }
         return invokeMissingMethod(object, methodName, originalArguments, null, isCallToSuper);
     }
@@ -1124,7 +1124,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     public MetaMethod getMethodWithCaching(Class sender, String methodName, Object[] arguments, boolean isCallToSuper) {
-        // lets try use the cache to find the method
+        // let's try use the cache to find the method
         if (!isCallToSuper && GroovyCategorySupport.hasCategoryInCurrentThread()) {
             return getMethodWithoutCaching(sender, methodName, MetaClassHelper.convertToTypeArray(arguments), isCallToSuper);
         } else {
@@ -1137,21 +1137,18 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private static boolean sameClasses(Class[] params, Class[] arguments, boolean weakNullCheck) {
-        // we do here a null check because the params field might not have been
-  	 	// set yet
-  	 	if (params==null) return false;
-        
-        if (params.length != arguments.length)
-          return false;
+        // we do here a null check because the params field might not have been set yet
+        if (params == null) return false;
 
-        for (int i = params.length-1; i >= 0; i--) {
+        if (params.length != arguments.length)
+            return false;
+
+        for (int i = params.length - 1; i >= 0; i--) {
             Object arg = arguments[i];
             if (arg != null) {
-               if (params[i] != arguments[i])
-                  return false;
-            }
-            else
-              if (!weakNullCheck)
+                if (params[i] != arguments[i])
+                    return false;
+            } else if (!weakNullCheck)
                 return false;
         }
 
@@ -1298,7 +1295,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 //        Class[] argClasses = MetaClassHelper.convertToTypeArray(arguments);
 
         MetaMethod method = retrieveStaticMethod(methodName, arguments);
-        // lets try use the cache to find the method
+        // let's try use the cache to find the method
 
         if (method != null) {
             MetaClassHelper.unwrap(arguments);
@@ -1338,9 +1335,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             superClass = superClass.getSuperclass();
         }
 
-        if(prop != null) {
-        	MetaClass propMC = registry.getMetaClass(prop.getClass());
-    		return propMC.invokeMethod(prop, CLOSURE_CALL_METHOD, arguments);
+        if (prop != null) {
+            MetaClass propMC = registry.getMetaClass(prop.getClass());
+            return propMC.invokeMethod(prop, CLOSURE_CALL_METHOD, arguments);
         }
 
         return invokeStaticMissingMethod(sender, methodName, arguments);
@@ -1379,9 +1376,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         if (method == null) {
             method = (MetaMethod) chooseMethod(methodName, methods, MetaClassHelper.convertToTypeArray(arguments));
         }
-        
-        if(method == null && mse != null) {
-        	throw mse;
+
+        if (method == null && mse != null) {
+            throw mse;
         } else {
             return method;
         }
@@ -1863,7 +1860,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
         return ret;
     }
 
-    private MetaMethod findPropertyMethod(Object methodOrList, boolean isGetter) {
+    private MetaMethod findPropertyMethod(Object methodOrList, boolean isGetter, boolean booleanGetter) {
         if (methodOrList == null)
           return null;
 
@@ -1877,6 +1874,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             }
             if (isGetter &&
                     !(element.getReturnType() == Void.class || element.getReturnType() == Void.TYPE) &&
+                    (!booleanGetter || element.getReturnType() == Boolean.class || element.getReturnType() == Boolean.TYPE) &&
                     element.getParameterTypes().length == 0) {
                 ret = addElementToList(ret, element);
             }
@@ -2126,13 +2124,15 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             for (MetaMethodIndex.Entry e = header.head; e != null; e = e.nextClassEntry) {
                 String methodName = e.name;
                 // name too short?
-                if (methodName.length() < 4) continue;
+                if (methodName.length() < 3 ||
+                        (!methodName.startsWith("is") && methodName.length() < 4)) continue;
                 // possible getter/setter?
-                boolean isGetter = methodName.startsWith("get");
+                boolean isGetter = methodName.startsWith("get") || methodName.startsWith("is");
+                boolean isBooleanGetter = methodName.startsWith("is");
                 boolean isSetter = methodName.startsWith("set");
                 if (!isGetter && !isSetter) continue;
 
-                MetaMethod propertyMethod = findPropertyMethod(isThis ? e.methods : e.methodsForSuper, isGetter);
+                MetaMethod propertyMethod = findPropertyMethod(isThis ? e.methods : e.methodsForSuper, isGetter, isBooleanGetter);
                 if (propertyMethod == null) continue;
 
                 String propName = getPropName(methodName);
@@ -2149,7 +2149,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             return name;
 
         synchronized (propNames) {
-            String propName = java.beans.Introspector.decapitalize(methodName.substring(3));
+            // assume "is" or "[gs]et"
+            String stripped = methodName.startsWith("is") ? methodName.substring(2) : methodName.substring(3);
+            String propName = java.beans.Introspector.decapitalize(stripped);
             propNames.put(methodName, propName);
             return propName;
         }
@@ -2309,7 +2311,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
 
         // check for a category method named like a setter
         if (!useSuper && !isStatic && GroovyCategorySupport.hasCategoryInCurrentThread()
-        		&& name.length() > 0) {
+                && name.length() > 0) {
             String getterName = "set" + MetaClassHelper.capitalize(name);
             MetaMethod categoryMethod = getCategoryMethodSetter(sender, getterName, false);
             if (categoryMethod != null) {
@@ -2328,7 +2330,7 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
             if (method != null &&
                     !ambiguousListener &&
                     newValue instanceof Closure) {
-                // lets create a dynamic proxy
+                // let's create a dynamic proxy
                 Object proxy = Proxy.newProxyInstance(
                         theClass.getClassLoader(),
                         new Class[]{method.getParameterTypes()[0].getTheClass()},
@@ -2410,9 +2412,9 @@ public class MetaClassImpl implements MetaClass, MutableMetaClass {
     }
 
     private boolean isPrivateOrPkgPrivate(int mod) {
-    	return !Modifier.isProtected(mod) && !Modifier.isPublic(mod); 
+        return !Modifier.isProtected(mod) && !Modifier.isPublic(mod);
     }
-    
+
     private MetaProperty getMetaProperty(Class _clazz, String name, boolean useSuper, boolean useStatic) {
         if (_clazz == theClass)
           return getMetaProperty(name, useStatic);
