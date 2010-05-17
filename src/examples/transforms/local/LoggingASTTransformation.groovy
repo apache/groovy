@@ -1,4 +1,4 @@
-package examples.local
+package transforms.local
 
 import org.codehaus.groovy.transform.ASTTransformation
 import org.codehaus.groovy.ast.ASTNode
