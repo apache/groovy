@@ -573,7 +573,9 @@ $Date$
             </filterset>
         </copy>
         <property name="jarsToWrap" value="groovy.jar,groovy-all.jar" />
-        <bndwrap definitions="${targetDistDirectory}" output="${targetDistDirectory}" failok="true">
+        <property name="runtimeJars" refid="runtimePath"/>
+        <bndwrap definitions="${targetDistDirectory}" output="${targetDistDirectory}" failok="true"
+                 classpath="${runtimeJars}">
             <fileset dir="${targetDistDirectory}" includes="${jarsToWrap}"/>
         </bndwrap>
         <delete dir="${targetDistDirectory}" includes="${jarsToWrap}"/>
