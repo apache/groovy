@@ -92,7 +92,7 @@ $Date$
             <fileset dir="${compileLibDirectory}" includes="**/*.jar"/>
         </path>
         <path id="runtimePath">
-	    <fileset dir="${runtimeLibDirectory}" includes="**/*.jar"/>
+            <fileset dir="${runtimeLibDirectory}" includes="**/*.jar"/>
         </path>
         <path id="testLibPath">
             <fileset dir="${testLibDirectory}" includes="**/*.jar"/>
@@ -102,9 +102,6 @@ $Date$
         </path>
         <path id="examplesPath">
             <fileset dir="${examplesLibDirectory}" includes="**/*.jar"/>
-        </path>
-        <path id="jdk14ExtrasPath">
-            <fileset dir="${extrasLibDirectory}" includes="**/*.jar"/>
         </path>
     </target>
 
