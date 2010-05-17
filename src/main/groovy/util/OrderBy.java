@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,6 +16,7 @@
 package groovy.util;
 
 import groovy.lang.Closure;
+import org.codehaus.groovy.runtime.NumberAwareComparator;
 
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -30,7 +31,8 @@ import java.util.List;
  */
 public class OrderBy<T> implements Comparator<T> {
 
-    private List<Closure> closures;
+    private final List<Closure> closures;
+    private final NumberAwareComparator<Object> numberAwareComparator = new NumberAwareComparator<Object>();
 
     public OrderBy() {
         this.closures = new ArrayList<Closure>();
@@ -53,26 +55,9 @@ public class OrderBy<T> implements Comparator<T> {
         for (Closure closure : closures) {
             Object value1 = closure.call(object1);
             Object value2 = closure.call(object2);
-
-            if (value1 == value2) {
-                continue;
-            }
-            if (value1 == null) {
-                return -1;
-            }
-            if (value1 instanceof Comparable) {
-                Comparable c1 = (Comparable) value1;
-                int result = c1.compareTo(value2);
-                if (result == 0) {
-                    continue;
-                } else {
-                    return result;
-                }
-            }
-            if (value1.equals(value2)) {
-                continue;
-            }
-            return value1.hashCode() - value2.hashCode();
+            int result = numberAwareComparator.compare(value1, value2);
+            if (result == 0) continue;
+            return result;
         }
         return 0;
     }

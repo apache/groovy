@@ -22,6 +22,15 @@ class SortTest extends GroovyTestCase {
         assert (x == y && y == [null, 1, 2, 3, 'a'])
     }
 
+    // GROOVY-1956
+    void testSortWithNullUsingOrderBy() {
+        def x = [1, 2, 'Z', 'a', null]
+        def y =  x.sort()
+        assert y == [null, 1, 2, 'Z', 'a']
+        def z = x.sort{ it?.respondsTo('toUpperCase') ? it?.toUpperCase() : it }
+        assert z == [null, 1, 2, 'a', 'Z']
+    }
+
     void testSortWithOrderBy() {
         def list = getPeople()
         def order = new OrderBy( { it.cheese } )
