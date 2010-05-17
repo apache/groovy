@@ -1,4 +1,4 @@
-
+package transforms.global
 
 /**
 * Demonstrates how a global transformation works. 
