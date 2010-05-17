@@ -5874,25 +5874,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
         return true;
     }
 
-    // Default comparator for objects accounting for numbers of different types.
-    // Also handles nulls. Null is less than everything else.
-    private static class NumberAwareComparator<T> implements Comparator<T> {
-        public int compare(T o1, T o2) {
-            try {
-                return DefaultTypeTransformation.compareTo(o1, o2);
-            } catch (ClassCastException cce) {
-            } catch (GroovyRuntimeException gre) {}
-            // since the object does not have a valid compareTo method
-            // we compare using the hashcodes. null cases are handled by
-            // DefaultTypeTransformation.compareTo
-            int x1 = o1.hashCode();
-            int x2 = o2.hashCode();
-            if (x1==x2) return 0;
-            if (x1<x2)  return -1;
-            return 1;
-        }
-    }
-
     /**
      * Compare the contents of this array to the contents of the given array.
      *
