@@ -70,7 +70,7 @@ public class FileSystemCompiler {
     public static void displayVersion() {
         String version = GroovySystem.getVersion();
         System.err.println("Groovy compiler version " + version);
-        System.err.println("Copyright 2003-2009 The Codehaus. http://groovy.codehaus.org/");
+        System.err.println("Copyright 2003-2010 The Codehaus. http://groovy.codehaus.org/");
         System.err.println("");
     }
 
