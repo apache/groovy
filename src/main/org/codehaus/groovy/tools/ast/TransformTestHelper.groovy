@@ -30,7 +30,8 @@ import org.codehaus.groovy.ast.ClassNode
 * using the Jar services mechanism, which requires building a jar.
 * 
 * To use this simply create an instance of TransformTestHelper with
-* an ASTTransformation and CompilePhase, then invoke parse(File). 
+* an ASTTransformation and CompilePhase, then invoke parse(File) or
+* parse(String). 
 * 
 * This test harness is not exactly the same as executing a global transformation
 * but can greatly aide in debugging and testing a transform. You should still
@@ -39,7 +40,7 @@ import org.codehaus.groovy.ast.ClassNode
 * 
 * @author Hamlet D'Arcy
 */
-class TranformTestHelper {
+class TransformTestHelper {
 
     private ASTTransformation transform
     private CompilePhase phase
@@ -51,7 +52,7 @@ class TranformTestHelper {
      * @param phase
      *      the phase to run the transform in 
      */
-    def TranformTestHelper(ASTTransformation transform, CompilePhase phase) {
+    def TransformTestHelper(ASTTransformation transform, CompilePhase phase) {
         this.transform = transform
         this.phase = phase
     }
@@ -62,6 +63,16 @@ class TranformTestHelper {
      *      must be a groovy source file
      */
     public Class parse(File input) {
+        TestHarnessClassLoader loader = new TestHarnessClassLoader(transform, phase)
+        return loader.parseClass(input)
+    }
+
+    /**
+     * Compiles the String into a Class applying the tranform specified in the constructor.
+     * @input input
+     *      must be a valid groovy source string
+     */
+    public Class parse(String input) {
         TestHarnessClassLoader loader = new TestHarnessClassLoader(transform, phase)
         return loader.parseClass(input)
     }
