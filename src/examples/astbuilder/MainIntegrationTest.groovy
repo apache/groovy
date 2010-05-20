@@ -1,6 +1,6 @@
 package examples.astbuilder
 
-import org.codehaus.groovy.tools.ast.TranformTestHelper
+import org.codehaus.groovy.tools.ast.TransformTestHelper
 import org.codehaus.groovy.control.CompilePhase
 
 /**
@@ -14,7 +14,7 @@ import org.codehaus.groovy.control.CompilePhase
 class MainIntegrationTest extends GroovyTestCase {
 
      public void testInvokeUnitTest() {
-        def invoker = new TranformTestHelper(new MainTransformation(), CompilePhase.CANONICALIZATION)
+        def invoker = new TransformTestHelper(new MainTransformation(), CompilePhase.CANONICALIZATION)
 
         def file = new File('./MainExample.groovy')
         assert file.exists()
