@@ -22,7 +22,7 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
  *    log.name(exp)
  * }</pre>
  * Here name is a place holder for info, fine, finer, finest, config, warning, severe.
- * NAME is name tranformed to upper case. if anything else is used it will result in
+ * NAME is name transformed to upper case. if anything else is used it will result in
  * an exception at runtime. If the expression exp is a constant or only a variable access
  * the method call will not be transformed. But this will still cause a call on the injected
  * logger.
