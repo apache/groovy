@@ -424,6 +424,15 @@ project.pomConfigureClosure = {
             contributor {
                 name 'NAKANO Yasuharu'
             }
+            contributor {
+                name 'Dinko Srkoc'
+            }
+            contributor {
+                name 'Raffaele Cigni'
+            }
+            contributor {
+                name 'Alberto Vilches Raton'
+            }
         }
         mailingLists {
             mailingList {
