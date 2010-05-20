@@ -9,8 +9,8 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 
 /**
  * This local transform adds a logging ability to your program using
- * java.util.logging. Every method call on a unbound variable named <i>log</i> 
- * will be mapped to a call to the logger. For this a <i>log</i> field will be 
+ * java.util.logging. Every method call on a unbound variable named <i>log</i>
+ * will be mapped to a call to the logger. For this a <i>log</i> field will be
  * inserted in the class. If the field already exists the usage of this transform
  * will cause a compilation error. The method name will be used to determine
  * what to call on the logger.
@@ -22,11 +22,11 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
  *    log.name(exp)
  * }</pre>
  * Here name is a place holder for info, fine, finer, finest, config, warning, severe.
- * NAME is name tranformed to upper case. if anything else is used it will result in 
+ * NAME is name tranformed to upper case. if anything else is used it will result in
  * an exception at runtime. If the expression exp is a constant or only a variable access
- * the method call will not be transformed. But this will still cause a call on the injected 
+ * the method call will not be transformed. But this will still cause a call on the injected
  * logger.
- * 
+ *
  * @author Guillaume Laforge
  * @author Jochen Theodorou
  * @author Dinko Srkoc
@@ -38,5 +38,5 @@ import org.codehaus.groovy.transform.GroovyASTTransformationClass;
 @Target({ElementType.TYPE})
 @GroovyASTTransformationClass("org.codehaus.groovy.transform.LogASTTransformation")
 public @interface Log {
-	
+
 }
