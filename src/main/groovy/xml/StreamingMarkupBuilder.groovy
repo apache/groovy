@@ -24,15 +24,15 @@ import groovy.xml.streamingmarkupsupport.BaseMarkupBuilder
  * {@link StreamingMarkupWriter} to handle output.</p>
  * 
  * <p>Example:</p>
- * <pre>new StreamingMarkupBuilder().bind {
+ * <pre>System.out << new StreamingMarkupBuilder().bind {
  *   root {
  *     a( a1:'one' ) {
  *       b { mkp.yield( '3 < 5' ) }
  *       c( a2:'two', 'blah' )
  *     }
  *   }
- * }.toString()</pre>
- * Will return the following String, without newlines or indentation:  
+ * }</pre>
+ * Will output the following String, without newlines or indentation:  
  * <pre>&lt;root&gt;
  *   &lt;a a1='one'&gt;
  *     &lt;b&gt;3 &amp;lt; 5&lt;/b&gt;
