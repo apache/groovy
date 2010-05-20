@@ -115,7 +115,7 @@ class LogTest extends GroovyTestCase {
             }
         }
         def phase = CompilePhase.CANONICALIZATION
-        def invoker = new TranformTestHelper(transform, phase)
+        def invoker = new TransformTestHelper(transform, phase)
         Class clazz = invoker.parse(f)
         clazz
     }
