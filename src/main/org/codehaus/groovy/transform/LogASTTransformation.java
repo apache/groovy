@@ -39,7 +39,6 @@ import org.objectweb.asm.Opcodes;
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class LogASTTransformation implements ASTTransformation {
 	
-	@Override
 	public void visit(ASTNode[] nodes, final SourceUnit source) {
 		if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
             addError("Internal error: expecting [AnnotationNode, AnnotatedNode] but got: " + Arrays.asList(nodes), nodes[0], source);
