@@ -24,12 +24,13 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Method annotation to make a method call synchronized for concurrency handling.
+ * Method annotation to make a method call synchronized for concurrency handling
+ * with some useful baked-in conventions.
  * <p>
- * {@code @}Synchronized is a safer variant of the <code>synchronized</code> method modifier.
- * The annotation can be used on static and instance methods only. It operates similarly to
+ * {@code @Synchronized} is a safer variant of the <code>synchronized</code> method modifier.
+ * The annotation can only be used on static and instance methods. It operates similarly to
  * the <code>synchronized</code> keyword, but it locks on different objects. When used with
- * an instance method, the synchronized keyword locks on <code>this</code>, but the annotation
+ * an instance method, the <code>synchronized</code> keyword locks on <code>this</code>, but the annotation
  * locks on a (by default automatically generated) field named <code>$lock</code>.
  * If the field does not exist, it is created for you. If you annotate a static method,
  * the annotation locks on a static field named <code>$LOCK</code> instead.
@@ -37,14 +38,14 @@ import java.lang.annotation.Target;
  * If you want, you can create these locks yourself.
  * The <code>$lock</code> and <code>$LOCK</code> fields will not be generated if you create
  * them yourself. You can also choose to lock on another field, by specifying its name as
- * parameter to the {@code @}Synchronized annotation. In this usage variant, the lock field
+ * parameter to the {@code @Synchronized} annotation. In this usage variant, the lock field
  * will not be created automatically, and you must explicitly create it yourself.
  * <p>
- * Rationale: Locking on this or your own class object can have unfortunate side-effects,
+ * <em>Rationale:</em> Locking on <code>this</code> or your own class object can have unfortunate side-effects,
  * as other code not under your control can lock on these objects as well, which can
  * cause race conditions and other nasty threading-related bugs.
  * <p>
- * Example usage:
+ * <em>Example usage:</em>
  * <pre>
  * class SynchronizedExample {
  *   private final myLock = new Object()
@@ -92,14 +93,14 @@ import java.lang.annotation.Target;
  * }
  * </pre>
  *
- * Credits: this annotation is inspired by the Project Lombok annotation of the
+ * <em>Credits:</em> this annotation is inspired by the Project Lombok annotation of the
  * same name. The functionality has been kept similar to ease the learning
  * curve when swapping between these two tools.
- *
- * Details: If $lock and/or $LOCK are auto-generated, the fields are initialized
- * with an empty Object[] array, and not just a new Object() as many snippets using
- * this pattern tend to use. This is because a new Object is NOT serializable, but
- * a 0-size array is. Therefore, using {@code @}Synchronized will not prevent your
+ * <p>
+ * <em>Details:</em> If <code>$lock</code> and/or <code>$LOCK</code> are auto-generated, the fields are initialized
+ * with an empty <code>Object[]</code> array, and not just a new <code>Object()</code> as many snippets using
+ * this pattern tend to use. This is because a new <code>Object</code> is NOT serializable, but
+ * a 0-size array is. Therefore, using {@code @Synchronized} will not prevent your
  * object from being serialized.
  *
  * @author Paul King
