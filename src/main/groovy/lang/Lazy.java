@@ -1,5 +1,5 @@
 /*
- * Copyright 2008 the original author or authors.
+ * Copyright 2008-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,7 +24,25 @@ import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
 
 /**
- * Field annotation to make a field lazy initializable.
+ * Field annotation to simplify lazy initialization.
+ * <p>
+ * Example usage:
+ * <pre>
+ * {@code @Lazy} T x
+ * </pre>
+ * becomes
+ * <pre>
+ * private T $x
+ *
+ * T getX() {
+ *    if ($x != null)
+ *       return $x
+ *    else {
+ *        $x = new T()
+ *        return $x
+ *    }
+ * }
+ * </pre>
  *
  * If the field is declared volatile then initialization will be synchronized.
  *
@@ -35,21 +53,23 @@ import java.lang.annotation.Target;
  * <pre>
  * private volatile T $x
  *
- * T getX () {
- *   if ($x != null)
- *     return $x
- *   else {
- *     synchronized(this) {
- *        $x = new T ()
- *        return $x
- *     }
- *   }
+ * T getX() {
+ *    if ($x != null)
+ *       return $x
+ *    else {
+ *       synchronized(this) {
+ *          if ($x == null) {
+ *             $x = new T()
+ *          }
+ *          return $x
+ *       }
+ *    }
  * }
  * </pre>
  *
  * By default a field will be initialized by calling its default constructor.
  *
- * If the field has an initial value expression then this expression will be used instead of default constructor.
+ * If the field has an initial value expression then this expression will be used instead of calling the default constructor.
  * In particular, it is possible to use closure <code>{ ... } ()</code> syntax as follows:
  *
  * <pre>
@@ -59,13 +79,17 @@ import java.lang.annotation.Target;
  * <pre>
  * private T $x
  *
- * T getX () {
- *   if ($x != null)
- *     return $x
- *   else {
- *     $x = { [1, 2, 3] } ()
- *     return $x
- *   }
+ * T getX() {
+ *    if ($x != null)
+ *       return $x
+ *    else {
+ *       synchronized(this) {
+ *          if ($x == null) {
+ *             $x = { [1,2,3] } ()
+ *          }
+ *          return $x
+ *       }
+ *    }
  * }
  * </pre>
  *
