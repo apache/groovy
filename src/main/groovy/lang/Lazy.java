@@ -96,6 +96,7 @@ import java.lang.annotation.Target;
  * <code>@Lazy(soft=true)</code> will use a soft reference instead of the field and use the above rules each time re-initialization is required.
  *
  * @author Alex Tkachman
+ * @author Paul King
  */
 @Retention(RetentionPolicy.SOURCE)
 @Target({ElementType.FIELD})
