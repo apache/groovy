@@ -4509,6 +4509,187 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Support the subscript operator for mutating a Calendar.
+     * Example usage:
+     * <pre>
+     * import static java.util.Calendar.*
+     * def cal = Calendar.instance
+     * cal[DAY_OF_WEEK] = MONDAY
+     * cal[MONTH] = MARCH
+     * println cal.time // A Monday in March
+     * </pre>
+     *
+     * @param self  A Calendar
+     * @param field A Calendar field, e.g. MONTH
+     * @param value The value for the given field, e.g. FEBRUARY
+     * @see java.util.Calendar#set(int, int)
+     * @since 1.7.3
+     */
+    public static void putAt(Calendar self, int field, int value) {
+        self.set(field, value);
+    }
+
+    /**
+     * Support the subscript operator for mutating a Date.
+     *
+     * @param self  A Date
+     * @param field A Calendar field, e.g. MONTH
+     * @param value The value for the given field, e.g. FEBRUARY
+     * @see #putAt(java.util.Calendar, int, int)
+     * @see java.util.Calendar#set(int, int)
+     * @since 1.7.3
+     */
+    public static void putAt(Date self, int field, int value) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(self);
+        putAt(cal, field, value);
+        self.setTime(cal.getTimeInMillis());
+    }
+
+    /**
+     * Support mutating a Calendar with a Map.
+     *
+     * The map values are the normal values provided as the
+     * second parameter to <code>java.util.Calendar#set(int, int)</code>.
+     * The keys can either be the normal fields values provided as
+     * the first parameter to that method or one of the following Strings:
+     * <table border="1" cellpadding="4">
+     * <tr><td>year</td><td>Calendar.YEAR</td></tr>
+     * <tr><td>month</td><td>Calendar.MONTH</td></tr>
+     * <tr><td>date</td><td>Calendar.DATE</td></tr>
+     * <tr><td>hourOfDay</td><td>Calendar.HOUR_OF_DAY</td></tr>
+     * <tr><td>minute</td><td>Calendar.MINUTE</td></tr>
+     * <tr><td>second</td><td>Calendar.SECOND</td></tr>
+     * </table>
+     * Example usage:
+     * <pre>
+     * import static java.util.Calendar.*
+     * def cal = Calendar.instance
+     * def m = [:]
+     * m[YEAR] = 2010
+     * m[MONTH] = DECEMBER
+     * m[DATE] = 25
+     * cal.set(m)
+     * println cal.time // Christmas 2010
+     *
+     * cal.set(year:2011, month:DECEMBER, date:25)
+     * println cal.time // Christmas 2010
+     * </pre>
+     *
+     * @param self    A Calendar
+     * @param updates A Map of Calendar keys and values
+     * @see java.util.Calendar#set(int, int)
+     * @see java.util.Calendar#set(int, int, int, int, int, int)
+     * @since 1.7.3
+     */
+    public static void set(Calendar self, Map<Object, Integer> updates) {
+        for (Map.Entry<Object, Integer> entry : updates.entrySet()) {
+            Object key = entry.getKey();
+            if (key instanceof String) key = CAL_MAP.get(key);
+            if (key instanceof Integer) self.set((Integer) key, entry.getValue());
+        }
+    }
+
+    /**
+     * Support creating a new Date having similar properties to
+     * an existing Date (which remains unaltered) but with
+     * some fields updated according to a Map of changes.
+     * <p>
+     * Example usage:
+     * <pre>
+     * import static java.util.Calendar.YEAR
+     * def now = Calendar.instance
+     * def nextYear = now[YEAR] + 1
+     * def oneYearFromNow = now.updated(year: nextYear)
+     * println now.time
+     * println oneYearFromNow.time
+     * </pre>
+     *
+     * @param self    A Calendar
+     * @param updates A Map of Calendar keys and values
+     * @see java.util.Calendar#set(int, int)
+     * @see java.util.Calendar#set(int, int, int, int, int, int)
+     * @see #set(java.util.Calendar, java.util.Map)
+     * @return The newly created Calendar
+     * @since 1.7.3
+     */
+    public static Calendar updated(Calendar self, Map<Object, Integer> updates) {
+        Calendar result = (Calendar) self.clone();
+        for (Map.Entry<Object, Integer> entry : updates.entrySet()) {
+            Object key = entry.getKey();
+            if (key instanceof String) key = CAL_MAP.get(key);
+            if (key instanceof Integer) result.set((Integer) key, entry.getValue());
+        }
+        return result;
+    }
+
+    /**
+     * Support mutating a Date with a Map.
+     * <p>
+     * Example usage:
+     * <pre>
+     * import static java.util.Calendar.YEAR
+     * def date = new Date()
+     * def nextYear = date[YEAR] + 1
+     * date.set(year: nextYear)
+     * println date
+     * </pre>
+     *
+     * @param self    A Date
+     * @param updates A Map of Calendar keys and values
+     * @see java.util.Calendar#set(int, int)
+     * @see #set(java.util.Calendar, java.util.Map)
+     * @since 1.7.3
+     */
+    public static void set(Date self, Map<Object, Integer> updates) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(self);
+        set(cal, updates);
+        self.setTime(cal.getTimeInMillis());
+    }
+
+    /**
+     * Support creating a new Date having similar properties to
+     * an existing Date (which remains unaltered) but with
+     * some fields updated according to a Map of changes.
+     * <p>
+     * Example usage:
+     * <pre>
+     * import static java.util.Calendar.YEAR
+     * def today = new Date()
+     * def nextYear = today[YEAR] + 1
+     * def oneYearFromNow = today.updated(year: nextYear)
+     * println today
+     * println oneYearFromNow
+     * </pre>
+     *
+     * @param self    A Date
+     * @param updates A Map of Calendar keys and values
+     * @return The newly created Date
+     * @see java.util.Calendar#set(int, int)
+     * @see #set(java.util.Date, java.util.Map)
+     * @see #set(java.util.Calendar, java.util.Map)
+     * @see #updated(java.util.Calendar, java.util.Map)
+     * @since 1.7.3
+     */
+    public static Date updated(Date self, Map<Object, Integer> updates) {
+        Calendar cal = Calendar.getInstance();
+        cal.setTime(self);
+        set(cal, updates);
+        return cal.getTime();
+    }
+
+    private static final Map<String, Integer> CAL_MAP = new HashMap<String, Integer>();
+    static {
+        CAL_MAP.put("year", Calendar.YEAR);
+        CAL_MAP.put("month", Calendar.MONTH);
+        CAL_MAP.put("date", Calendar.DATE);
+        CAL_MAP.put("hourOfDay", Calendar.HOUR_OF_DAY);
+        CAL_MAP.put("minute", Calendar.MINUTE);
+        CAL_MAP.put("second", Calendar.SECOND);
+    }
+
+    /**
      * A helper method to allow lists to work with subscript operators.
      * <pre class="groovyTestCase">def list = [2, 3]
      * list[0] = 1
