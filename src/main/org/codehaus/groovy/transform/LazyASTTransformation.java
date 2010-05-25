@@ -78,7 +78,7 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
                     new BooleanExpression(new BinaryExpression(fieldExpr, notEqualsOp(), NULL_EXPR)),
                     new ReturnStatement(fieldExpr),
                     new SynchronizedStatement(
-                            synchTarget(),
+                            synchTarget(fieldNode),
                             new IfStatement(
                                     new BooleanExpression(new BinaryExpression(fieldExpr, notEqualsOp(), NULL_EXPR)),
                                     new ReturnStatement(fieldExpr),
@@ -92,6 +92,7 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
 
     private void addMethod(FieldNode fieldNode, BlockStatement body, ClassNode type) {
         int visibility = ACC_PUBLIC;
+        if (fieldNode.isStatic()) visibility |= ACC_STATIC;
         final String name = "get" + MetaClassHelper.capitalize(fieldNode.getName().substring(1));
         fieldNode.getDeclaringClass().addMethod(name, visibility, type, Parameter.EMPTY_ARRAY, ClassNode.EMPTY_ARRAY, body);
     }
@@ -131,7 +132,7 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
             body.addStatement(new IfStatement(
                     new BooleanExpression(new BinaryExpression(resExpr, notEqualsOp(), NULL_EXPR)),
                     new ExpressionStatement(resExpr),
-                    new SynchronizedStatement(synchTarget(), mainIf)
+                    new SynchronizedStatement(synchTarget(fieldNode), mainIf)
             ));
         }
         addMethod(fieldNode, body, type);
@@ -149,11 +150,12 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
                 new ExpressionStatement(new BinaryExpression(fieldExpr, equalsOp(), NULL_EXPR))
         ));
         int visibility = ACC_PUBLIC;
+        if (fieldNode.isStatic()) visibility |= ACC_STATIC;
         fieldNode.getDeclaringClass().addMethod(name, visibility, ClassHelper.VOID_TYPE, new Parameter[]{parameter}, ClassNode.EMPTY_ARRAY, body);
     }
 
-    private Expression synchTarget() {
-        return VariableExpression.THIS_EXPRESSION;
+    private Expression synchTarget(FieldNode fieldNode) {
+        return fieldNode.isStatic() ? new ClassExpression(fieldNode.getDeclaringClass()) : VariableExpression.THIS_EXPRESSION;
     }
 
     private static Token equalsOp() {
