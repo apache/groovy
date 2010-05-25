@@ -4591,7 +4591,49 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
     }
 
     /**
+     * Support creating a new Date having similar properties to
+     * an existing Date (which remains unaltered) but with
+     * some fields updated according to a Map of changes.
+     * <p>
+     * Example usage:
+     * <pre>
+     * import static java.util.Calendar.YEAR
+     * def now = Calendar.instance
+     * def nextYear = now[YEAR] + 1
+     * def oneYearFromNow = now.updated(year: nextYear)
+     * println now.time
+     * println oneYearFromNow.time
+     * </pre>
+     *
+     * @param self    A Calendar
+     * @param updates A Map of Calendar keys and values
+     * @see java.util.Calendar#set(int, int)
+     * @see java.util.Calendar#set(int, int, int, int, int, int)
+     * @see #set(java.util.Calendar, java.util.Map)
+     * @return The newly created Calendar
+     * @since 1.7.3
+     */
+    public static Calendar updated(Calendar self, Map<Object, Integer> updates) {
+        Calendar result = (Calendar) self.clone();
+        for (Map.Entry<Object, Integer> entry : updates.entrySet()) {
+            Object key = entry.getKey();
+            if (key instanceof String) key = CAL_MAP.get(key);
+            if (key instanceof Integer) result.set((Integer) key, entry.getValue());
+        }
+        return result;
+    }
+
+    /**
      * Support mutating a Date with a Map.
+     * <p>
+     * Example usage:
+     * <pre>
+     * import static java.util.Calendar.YEAR
+     * def date = new Date()
+     * def nextYear = date[YEAR] + 1
+     * date.set(year: nextYear)
+     * println date
+     * </pre>
      *
      * @param self    A Date
      * @param updates A Map of Calendar keys and values
@@ -4610,11 +4652,24 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * Support creating a new Date having similar properties to
      * an existing Date (which remains unaltered) but with
      * some fields updated according to a Map of changes.
+     * <p>
+     * Example usage:
+     * <pre>
+     * import static java.util.Calendar.YEAR
+     * def today = new Date()
+     * def nextYear = today[YEAR] + 1
+     * def oneYearFromNow = today.updated(year: nextYear)
+     * println today
+     * println oneYearFromNow
+     * </pre>
      *
      * @param self    A Date
      * @param updates A Map of Calendar keys and values
+     * @return The newly created Date
      * @see java.util.Calendar#set(int, int)
      * @see #set(java.util.Date, java.util.Map)
+     * @see #set(java.util.Calendar, java.util.Map)
+     * @see #updated(java.util.Calendar, java.util.Map)
      * @since 1.7.3
      */
     public static Date updated(Date self, Map<Object, Integer> updates) {
