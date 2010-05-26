@@ -5275,7 +5275,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * assert map*.value == [3, 5, 6]</pre>
      *
      * @param self the map to be sorted
-     * @param closure a Closure used as a comparator
+     * @param comparator a Comparator
      * @return the sorted map
      * @since 1.7.2
      */
@@ -8081,9 +8081,9 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @throws NullPointerException if the argument is null
      * @see #eval(ScriptEngine, Reader, Binding)
      */
-    public static Object eval(ScriptEngine self, Reader script, Binding binding) throws javax.script.ScriptException {
+    public static Object eval(ScriptEngine self, Reader reader, Binding binding) throws javax.script.ScriptException {
         storeBindingVars(self, binding);
-        Object result = self.eval(script);
+        Object result = self.eval(reader);
         retrieveBindingVars(self, binding);
         return result;
     }
@@ -11344,7 +11344,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @return the last value returned by the closure
      * @throws java.io.IOException if an error occurs
-     * @see java.util.regex.Pattern#split(java.lang.String)
+     * @see java.util.regex.Pattern#split(java.lang.CharSequence)
      * @since 1.6.8
      */
     public static Object splitEachLine(String self, Pattern pattern, Closure closure) throws IOException {
