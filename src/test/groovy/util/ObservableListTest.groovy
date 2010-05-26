@@ -25,137 +25,199 @@ import java.beans.PropertyChangeListener
 class ObservableListTest extends GroovyTestCase {
    void testFireEvent_add_withoutTest(){
       def list = new ObservableList()
-      def listener = new SampleListPropertyChangeListener()
-      list.addPropertyChangeListener( listener )
+      def contentListener = new SampleListPropertyChangeListener()
+      list.addPropertyChangeListener( ObservableList.CONTENT_PROPERTY, contentListener )
+      def sizeListener = new SampleListPropertyChangeListener()
+      list.addPropertyChangeListener( ObservableList.SIZE_PROPERTY, sizeListener )
 
       def value1 = 'value1'
       def value2 = 'value2'
 
       list << value1
-      assertNotNull( listener.event )
-      assertEquals( list, listener.event.source )
-      assertNull( listener.event.oldValue )
-      assertEquals( value1, listener.event.newValue )
+      assertNotNull( contentListener.event )
+      assertEquals( list, contentListener.event.source )
+      assertNull( contentListener.event.oldValue )
+      assertEquals( value1, contentListener.event.newValue )
+      assertNotNull( sizeListener.event )
+      assertEquals( list, contentListener.event.source )
+      assertEquals( 0i, sizeListener.event.oldValue )
+      assertEquals( 1i, sizeListener.event.newValue )
 
       list << value2
-      assertNotNull( listener.event )
-      assertEquals( list, listener.event.source )
-      assertNull( listener.event.oldValue )
-      assertEquals( value2, listener.event.newValue )
+      assertNotNull( contentListener.event )
+      assertEquals( list, contentListener.event.source )
+      assertNull( contentListener.event.oldValue )
+      assertEquals( value2, contentListener.event.newValue )
 
-      listener.event = null
+      contentListener.event = null
       list[1] = value1
-      assertNotNull( listener.event )
-      assertEquals( list, listener.event.source )
-      assertEquals( value2, listener.event.oldValue )
-      assertEquals( value1, listener.event.newValue )
-      assertEquals( 1, listener.event.index )
+      assertNotNull( contentListener.event )
+      assertEquals( list, contentListener.event.source )
+      assertEquals( value2, contentListener.event.oldValue )
+      assertEquals( value1, contentListener.event.newValue )
+      assertEquals( 1, contentListener.event.index )
 
-      listener.event = null
+      contentListener.event = null
       list[0] = value1
-      assertNull( listener.event )
+      assertNull( contentListener.event )
    }
 
    void testFireEvent_remove(){
       def list = new ObservableList()
-      def listener = new SampleListPropertyChangeListener()
-      list.addPropertyChangeListener( listener )
+      def contentListener = new SampleListPropertyChangeListener()
+      list.addPropertyChangeListener( ObservableList.CONTENT_PROPERTY, contentListener )
+      def sizeListener = new SampleListPropertyChangeListener()
+      list.addPropertyChangeListener( ObservableList.SIZE_PROPERTY, sizeListener )
 
       def value1 = 'value1'
       def value2 = 'value2'
 
       list << value1
-      assertNotNull( listener.event )
-      assertEquals( list, listener.event.source )
-      assertNull( listener.event.oldValue )
-      assertEquals( value1, listener.event.newValue )
+      assertNotNull( contentListener.event )
+      assertEquals( list, contentListener.event.source )
+      assertNull( contentListener.event.oldValue )
+      assertEquals( value1, contentListener.event.newValue )
+      assertNotNull( sizeListener.event )
+      assertEquals( list, contentListener.event.source )
+      assertEquals( 0i, sizeListener.event.oldValue )
+      assertEquals( 1i, sizeListener.event.newValue )
 
       list << value2
-      assertNotNull( listener.event )
-      assertEquals( list, listener.event.source )
-      assertNull( listener.event.oldValue )
-      assertEquals( value2, listener.event.newValue )
+      assertNotNull( contentListener.event )
+      assertEquals( list, contentListener.event.source )
+      assertNull( contentListener.event.oldValue )
+      assertEquals( value2, contentListener.event.newValue )
+      assertNotNull( sizeListener.event )
+      assertEquals( list, contentListener.event.source )
+      assertEquals( 1i, sizeListener.event.oldValue )
+      assertEquals( 2i, sizeListener.event.newValue )
 
       list.remove(value2)
-      assertNotNull( listener.event )
-      assertTrue( listener.event instanceof ObservableList.ElementRemovedEvent )
-      assertEquals( list, listener.event.source )
-      assertEquals( value2, listener.event.newValue )
-      assertEquals( 1, listener.event.index )
+      assertNotNull( contentListener.event )
+      assertTrue( contentListener.event instanceof ObservableList.ElementRemovedEvent )
+      assertEquals( list, contentListener.event.source )
+      assertEquals( value2, contentListener.event.oldValue )
+      assertEquals( 1, contentListener.event.index )
+      assertNotNull( sizeListener.event )
+      assertEquals( list, contentListener.event.source )
+      assertEquals( 2i, sizeListener.event.oldValue )
+      assertEquals( 1i, sizeListener.event.newValue )
       
       list.remove(value1)
-      assertNotNull( listener.event )
-      assertTrue( listener.event instanceof ObservableList.ElementRemovedEvent )
-      assertEquals( list, listener.event.source )
-      assertEquals( value1, listener.event.newValue )
-      assertEquals( 0, listener.event.index )
+      assertNotNull( contentListener.event )
+      assertTrue( contentListener.event instanceof ObservableList.ElementRemovedEvent )
+      assertEquals( list, contentListener.event.source )
+      assertEquals( value1, contentListener.event.oldValue )
+      assertEquals( 0, contentListener.event.index )
+      assertNotNull( sizeListener.event )
+      assertEquals( list, contentListener.event.source )
+      assertEquals( 1i, sizeListener.event.oldValue )
+      assertEquals( 0i, sizeListener.event.newValue )
    }
 
    void testFireEvent_clear(){
       def list = new ObservableList()
-      def listener = new SampleListPropertyChangeListener()
-      list.addPropertyChangeListener( listener )
+      def contentListener = new SampleListPropertyChangeListener()
+      list.addPropertyChangeListener( ObservableList.CONTENT_PROPERTY, contentListener )
+      def sizeListener = new SampleListPropertyChangeListener()
+      list.addPropertyChangeListener( ObservableList.SIZE_PROPERTY, sizeListener )
 
       def value1 = 'value1'
       def value2 = 'value2'
       list << value1
       list << value2
+
+      assertNotNull( sizeListener.event )
+      assertEquals( list, contentListener.event.source )
+      assertEquals( 1i, sizeListener.event.oldValue )
+      assertEquals( 2i, sizeListener.event.newValue )
+
       list.clear()
 
-      assertNotNull( listener.event )
-      assertTrue( listener.event instanceof ObservableList.ElementClearedEvent )
-      assertEquals( list, listener.event.source )
-      def values = listener.event.values
+      assertNotNull( contentListener.event )
+      assertTrue( contentListener.event instanceof ObservableList.ElementClearedEvent )
+      assertEquals( list, contentListener.event.source )
+      def values = contentListener.event.values
       assertNotNull( values )
       assertEquals( 2, values.size() )
       assertEquals( value1, values[0] )
       assertEquals( value2, values[1] )
+      assertNotNull( sizeListener.event )
+      assertEquals( list, contentListener.event.source )
+      assertEquals( 2i, sizeListener.event.oldValue )
+      assertEquals( 0i, sizeListener.event.newValue )
    }
 
    void testFireEvent_addAll(){
       def list = new ObservableList()
-      def listener = new SampleListPropertyChangeListener()
-      list.addPropertyChangeListener( listener )
+      def contentListener = new SampleListPropertyChangeListener()
+      list.addPropertyChangeListener( ObservableList.CONTENT_PROPERTY, contentListener )
+      def sizeListener = new SampleListPropertyChangeListener()
+      list.addPropertyChangeListener( ObservableList.SIZE_PROPERTY, sizeListener )
 
       def value1 = 'value1'
       def value2 = 'value2'
       list << value1
+
+      assertNotNull( sizeListener.event )
+      assertEquals( list, contentListener.event.source )
+      assertEquals( 0i, sizeListener.event.oldValue )
+      assertEquals( 1i, sizeListener.event.newValue )
+
       list.addAll( [value1, value2] )
 
-      assertNotNull( listener.event )
-      assertTrue( listener.event instanceof ObservableList.MultiElementAddedEvent )
-      assertEquals( list, listener.event.source )
-      def values = listener.event.values
+      assertNotNull( contentListener.event )
+      assertTrue( contentListener.event instanceof ObservableList.MultiElementAddedEvent )
+      assertEquals( list, contentListener.event.source )
+      def values = contentListener.event.values
       assertNotNull( values )
       assertEquals( 2, values.size() )
       assertEquals( value1, values[0] )
       assertEquals( value2, values[1] )
+      assertNotNull( sizeListener.event )
+      assertEquals( list, contentListener.event.source )
+      assertEquals( 1i, sizeListener.event.oldValue )
+      assertEquals( 3i, sizeListener.event.newValue )
    }
    
    void testFireEvent_removeAll(){
       def list = new ObservableList()
-      def listener = new SampleListPropertyChangeListener()
-      list.addPropertyChangeListener( listener )
+      def contentListener = new SampleListPropertyChangeListener()
+      list.addPropertyChangeListener( ObservableList.CONTENT_PROPERTY, contentListener )
+      def sizeListener = new SampleListPropertyChangeListener()
+      list.addPropertyChangeListener( ObservableList.SIZE_PROPERTY, sizeListener )
 
       def value1 = 'value1'
       def value2 = 'value2'
       list << value1
       list << value2
+
+      assertNotNull( sizeListener.event )
+      assertEquals( list, contentListener.event.source )
+      assertEquals( 1i, sizeListener.event.oldValue )
+      assertEquals( 2i, sizeListener.event.newValue )
+
       list.removeAll( [value2] )
 
-      assertNotNull( listener.event )
-      assertTrue( listener.event instanceof ObservableList.MultiElementRemovedEvent )
-      assertEquals( list, listener.event.source )
-      def values = listener.event.values
+      assertNotNull( contentListener.event )
+      assertTrue( contentListener.event instanceof ObservableList.MultiElementRemovedEvent )
+      assertEquals( list, contentListener.event.source )
+      def values = contentListener.event.values
       assertNotNull( values )
       assertEquals( 1, values.size() )
       assertEquals( value2, values[0] )
+      assertNotNull( sizeListener.event )
+      assertEquals( list, contentListener.event.source )
+      assertEquals( 2i, sizeListener.event.oldValue )
+      assertEquals( 1i, sizeListener.event.newValue )
    }
    
    void testFireEvent_retainAll(){
       def list = new ObservableList()
-      def listener = new SampleListPropertyChangeListener()
-      list.addPropertyChangeListener( listener )
+      def contentListener = new SampleListPropertyChangeListener()
+      list.addPropertyChangeListener( ObservableList.CONTENT_PROPERTY, contentListener )
+      def sizeListener = new SampleListPropertyChangeListener()
+      list.addPropertyChangeListener( ObservableList.SIZE_PROPERTY, sizeListener )
 
       def value1 = 'value1'
       def value2 = 'value2'
@@ -163,34 +225,44 @@ class ObservableListTest extends GroovyTestCase {
       list << value1
       list << value2
       list << value3
+
+      assertNotNull( sizeListener.event )
+      assertEquals( list, contentListener.event.source )
+      assertEquals( 2i, sizeListener.event.oldValue )
+      assertEquals( 3i, sizeListener.event.newValue )
+
       list.retainAll( [value2] )
 
-      assertNotNull( listener.event )
-      assertTrue( listener.event instanceof ObservableList.MultiElementRemovedEvent )
-      assertEquals( list, listener.event.source )
-      def values = listener.event.values
+      assertNotNull( contentListener.event )
+      assertTrue( contentListener.event instanceof ObservableList.MultiElementRemovedEvent )
+      assertEquals( list, contentListener.event.source )
+      def values = contentListener.event.values
       assertNotNull( values )
       assertEquals( 2, values.size() )
       assertEquals( value1, values[0] )
       assertEquals( value3, values[1] )
+      assertNotNull( sizeListener.event )
+      assertEquals( list, contentListener.event.source )
+      assertEquals( 3i, sizeListener.event.oldValue )
+      assertEquals( 1i, sizeListener.event.newValue )
    }
 
    void testFireEvent_withTest(){
       def list = new ObservableList( { !(it instanceof String) } )
-      def listener = new SampleListPropertyChangeListener()
-      list.addPropertyChangeListener( listener )
+      def contentListener = new SampleListPropertyChangeListener()
+      list.addPropertyChangeListener( ObservableList.CONTENT_PROPERTY, contentListener )
 
       def value1 = 1
       def value2 = 'value2'
       list << value1
-      assertNotNull( listener.event )
-      assertEquals( list, listener.event.source )
-      assertNull( listener.event.oldValue )
-      assertEquals( value1, listener.event.newValue )
+      assertNotNull( contentListener.event )
+      assertEquals( list, contentListener.event.source )
+      assertNull( contentListener.event.oldValue )
+      assertEquals( value1, contentListener.event.newValue )
 
-      listener.event = null
+      contentListener.event = null
       list << value2
-      assertNull( listener.event )
+      assertNull( contentListener.event )
    }
 }
 
