@@ -26,7 +26,7 @@ import java.lang.annotation.Target;
 /**
  * Field annotation to simplify lazy initialization.
  * <p>
- * Example usage:
+ * Example usage without any special modifiers just defers initialization until the first call but is not thread-safe:
  * <pre>
  * {@code @Lazy} T x
  * </pre>
@@ -38,13 +38,14 @@ import java.lang.annotation.Target;
  *    if ($x != null)
  *       return $x
  *    else {
- *        $x = new T()
- *        return $x
+ *       $x = new T()
+ *       return $x
  *    }
  * }
  * </pre>
  *
- * If the field is declared volatile then initialization will be synchronized.
+ * If the field is declared volatile then initialization will be synchronized using
+ * the <a href="http://en.wikipedia.org/wiki/Double-checked_locking">double-checked locking</a> pattern as shown here:
  *
  * <pre>
  * {@code @Lazy} volatile T x
@@ -54,8 +55,9 @@ import java.lang.annotation.Target;
  * private volatile T $x
  *
  * T getX() {
- *    if ($x != null)
- *       return $x
+ *    T $x_local = $x
+ *    if ($x_local != null)
+ *       return $x_local
  *    else {
  *       synchronized(this) {
  *          if ($x == null) {
@@ -73,27 +75,72 @@ import java.lang.annotation.Target;
  * In particular, it is possible to use closure <code>{ ... } ()</code> syntax as follows:
  *
  * <pre>
- * {@code @Lazy} T x = { [1,2,3] } ()
+ * {@code @Lazy} T x = { [1, 2, 3] } ()
  * </pre>
  * becomes
  * <pre>
  * private T $x
  *
  * T getX() {
- *    if ($x != null)
- *       return $x
+ *    T $x_local = $x
+ *    if ($x_local != null)
+ *       return $x_local
  *    else {
  *       synchronized(this) {
  *          if ($x == null) {
- *             $x = { [1,2,3] } ()
+ *             $x = { [1, 2, 3] } ()
  *          }
  *          return $x
  *       }
  *    }
  * }
  * </pre>
- *
+ * <p>
  * <code>@Lazy(soft=true)</code> will use a soft reference instead of the field and use the above rules each time re-initialization is required.
+ * <p>
+ * If the <code>soft</code> flag for the annotation is not set but the field is static, then
+ * the <a href="http://en.wikipedia.org/wiki/Initialization_on_demand_holder_idiom">initialization on demand holder idiom</a> is
+ * used as follows:
+ * <pre>
+ * {@code @Lazy} static FieldType field
+ * {@code @Lazy} static Date date1
+ * {@code @Lazy} static Date date2 = { new Date().updated(year: 2000) }()
+ * {@code @Lazy} static Date date3 = new GregorianCalendar(2009, Calendar.JANUARY, 1).time
+ * </pre>
+ * becomes these methods and inners classes within the class containing the above definitions:
+ * <pre>
+ * private static class FieldTypeHolder_field {
+ *     private static final FieldType INSTANCE = new FieldType()
+ * }
+ *
+ * private static class DateHolder_date1 {
+ *     private static final Date INSTANCE = new Date()
+ * }
+ *
+ * private static class DateHolder_date2 {
+ *     private static final Date INSTANCE = { new Date().updated(year: 2000) }()
+ * }
+ *
+ * private static class DateHolder_date3 {
+ *     private static final Date INSTANCE = new GregorianCalendar(2009, Calendar.JANUARY, 1).time
+ * }
+ *
+ * static FieldType getField() {
+ *     return FieldTypeHolder_field.INSTANCE
+ * }
+ *
+ * static Date getDate1() {
+ *     return DateHolder_date1.INSTANCE
+ * }
+ *
+ * static Date getDate2() {
+ *     return DateHolder_date2.INSTANCE
+ * }
+ *
+ * static Date getDate3() {
+ *     return DateHolder_date3.INSTANCE
+ * }
+ * </pre>
  *
  * @author Alex Tkachman
  * @author Paul King

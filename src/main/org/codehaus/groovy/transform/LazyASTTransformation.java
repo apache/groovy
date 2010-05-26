@@ -37,8 +37,11 @@ import java.util.Arrays;
 @GroovyASTTransformation(phase = CompilePhase.CANONICALIZATION)
 public class LazyASTTransformation implements ASTTransformation, Opcodes {
 
-    static final ClassNode SOFT_REF = ClassHelper.make(SoftReference.class);
-    static final Expression NULL_EXPR = ConstantExpression.NULL;
+    private static final ClassNode SOFT_REF = ClassHelper.make(SoftReference.class);
+    private static final Expression NULL_EXPR = ConstantExpression.NULL;
+    private static final ClassNode OBJECT_TYPE = new ClassNode(Object.class);
+    private static final Token ASSIGN = Token.newSymbol("=", -1, -1);
+    private static final Token COMPARE_NOT_EQUAL = Token.newSymbol("!=", -1, -1);
 
     public void visit(ASTNode[] nodes, SourceUnit source) {
         if (nodes.length != 2 || !(nodes[0] instanceof AnnotationNode) || !(nodes[1] instanceof AnnotatedNode)) {
@@ -49,7 +52,7 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
         AnnotationNode node = (AnnotationNode) nodes[0];
 
         if (parent instanceof FieldNode) {
-            FieldNode fieldNode = (FieldNode) parent;
+            final FieldNode fieldNode = (FieldNode) parent;
             final Expression member = node.getMember("soft");
             final Expression init = getInitExpr(fieldNode);
 
@@ -60,34 +63,64 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
                 createSoft(fieldNode, init);
             else {
                 create(fieldNode, init);
+                // @Lazy not meaningful with primitive so convert to wrapper if needed
+                if (ClassHelper.isPrimitiveType(fieldNode.getType())) {
+                    fieldNode.setType(ClassHelper.getWrapper(fieldNode.getType()));
+                }
             }
         }
     }
 
     private void create(FieldNode fieldNode, final Expression initExpr) {
-        BlockStatement body = new BlockStatement();
-        final Expression fieldExpr = new FieldExpression(fieldNode);
-        if ((fieldNode.getModifiers() & ACC_VOLATILE) == 0) {
-            body.addStatement(new IfStatement(
-                    new BooleanExpression(new BinaryExpression(fieldExpr, notEqualsOp(), NULL_EXPR)),
-                    new ExpressionStatement(fieldExpr),
-                    new ExpressionStatement(new BinaryExpression(fieldExpr, equalsOp(), initExpr))
-            ));
+        final BlockStatement body = new BlockStatement();
+        if (fieldNode.isStatic()) {
+            addHolderClassIdiomBody(body, fieldNode, initExpr);
+        } else if (isVolatile(fieldNode)) {
+            addNonThreadSafeBody(body, fieldNode, initExpr);
         } else {
-            body.addStatement(new IfStatement(
-                    new BooleanExpression(new BinaryExpression(fieldExpr, notEqualsOp(), NULL_EXPR)),
-                    new ReturnStatement(fieldExpr),
-                    new SynchronizedStatement(
-                            synchTarget(fieldNode),
-                            new IfStatement(
-                                    new BooleanExpression(new BinaryExpression(fieldExpr, notEqualsOp(), NULL_EXPR)),
-                                    new ReturnStatement(fieldExpr),
-                                    new ReturnStatement(new BinaryExpression(fieldExpr, equalsOp(), initExpr))
-                            )
-                    )
-            ));
+            addDoubleCheckedLockingBody(body, fieldNode, initExpr);
         }
         addMethod(fieldNode, body, fieldNode.getType());
+    }
+
+    private void addHolderClassIdiomBody(BlockStatement body, FieldNode fieldNode, Expression initExpr) {
+        final ClassNode declaringClass = fieldNode.getDeclaringClass();
+        final ClassNode fieldType = fieldNode.getType();
+        final int visibility = ACC_PRIVATE | ACC_STATIC;
+        final String fullName = declaringClass.getName() + "$" + fieldType.getNameWithoutPackage() + "Holder_" + fieldNode.getName().substring(1);
+        final InnerClassNode holderClass = new InnerClassNode(declaringClass, fullName, visibility, OBJECT_TYPE);
+        final String innerFieldName = "INSTANCE";
+        holderClass.addField(innerFieldName, ACC_PRIVATE | ACC_STATIC | ACC_FINAL, fieldType, initExpr);
+        final Expression innerField = new PropertyExpression(new ClassExpression(holderClass), innerFieldName);
+        declaringClass.getModule().addClass(holderClass);
+        body.addStatement(new ReturnStatement(innerField));
+    }
+
+    private void addDoubleCheckedLockingBody(BlockStatement body, FieldNode fieldNode, Expression initExpr) {
+        final Expression fieldExpr = new FieldExpression(fieldNode);
+        final VariableExpression localVar = new VariableExpression(fieldNode.getName() + "_local", fieldNode.getType());
+        body.addStatement(new ExpressionStatement(new DeclarationExpression(localVar, ASSIGN, fieldExpr)));
+        body.addStatement(new IfStatement(
+                new BooleanExpression(new BinaryExpression(localVar, COMPARE_NOT_EQUAL, NULL_EXPR)),
+                new ReturnStatement(localVar),
+                new SynchronizedStatement(
+                        synchTarget(fieldNode),
+                        new IfStatement(
+                                new BooleanExpression(new BinaryExpression(fieldExpr, COMPARE_NOT_EQUAL, NULL_EXPR)),
+                                new ReturnStatement(fieldExpr),
+                                new ReturnStatement(new BinaryExpression(fieldExpr, ASSIGN, initExpr))
+                        )
+                )
+        ));
+    }
+
+    private void addNonThreadSafeBody(BlockStatement body, FieldNode fieldNode, Expression initExpr) {
+        final Expression fieldExpr = new FieldExpression(fieldNode);
+        body.addStatement(new IfStatement(
+                new BooleanExpression(new BinaryExpression(fieldExpr, COMPARE_NOT_EQUAL, NULL_EXPR)),
+                new ExpressionStatement(fieldExpr),
+                new ExpressionStatement(new BinaryExpression(fieldExpr, ASSIGN, initExpr))
+        ));
     }
 
     private void addMethod(FieldNode fieldNode, BlockStatement body, ClassNode type) {
@@ -98,39 +131,36 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private void createSoft(FieldNode fieldNode, Expression initExpr) {
-        ClassNode type = fieldNode.getType();
-
+        final ClassNode type = fieldNode.getType();
         fieldNode.setType(SOFT_REF);
-
         createSoftGetter(fieldNode, initExpr, type);
         createSoftSetter(fieldNode, type);
     }
 
     private void createSoftGetter(FieldNode fieldNode, Expression initExpr, ClassNode type) {
-        BlockStatement body = new BlockStatement();
+        final BlockStatement body = new BlockStatement();
         final Expression fieldExpr = new FieldExpression(fieldNode);
-
         final Expression resExpr = new VariableExpression("res", type);
         final MethodCallExpression callExpression = new MethodCallExpression(new FieldExpression(fieldNode), "get", new ArgumentListExpression());
         callExpression.setSafe(true);
-        body.addStatement(new ExpressionStatement(new DeclarationExpression(resExpr, equalsOp(), callExpression)));
+        body.addStatement(new ExpressionStatement(new DeclarationExpression(resExpr, ASSIGN, callExpression)));
 
-        BlockStatement elseBlock = new BlockStatement();
-        elseBlock.addStatement(new ExpressionStatement(new BinaryExpression(resExpr, equalsOp(), initExpr)));
-        elseBlock.addStatement(new ExpressionStatement(new BinaryExpression(fieldExpr, equalsOp(), new ConstructorCallExpression(SOFT_REF, resExpr))));
+        final BlockStatement elseBlock = new BlockStatement();
+        elseBlock.addStatement(new ExpressionStatement(new BinaryExpression(resExpr, ASSIGN, initExpr)));
+        elseBlock.addStatement(new ExpressionStatement(new BinaryExpression(fieldExpr, ASSIGN, new ConstructorCallExpression(SOFT_REF, resExpr))));
         elseBlock.addStatement(new ExpressionStatement(resExpr));
 
         final Statement mainIf = new IfStatement(
-                new BooleanExpression(new BinaryExpression(resExpr, notEqualsOp(), NULL_EXPR)),
+                new BooleanExpression(new BinaryExpression(resExpr, COMPARE_NOT_EQUAL, NULL_EXPR)),
                 new ExpressionStatement(resExpr),
                 elseBlock
         );
 
-        if ((fieldNode.getModifiers() & ACC_VOLATILE) == 0) {
+        if (isVolatile(fieldNode)) {
             body.addStatement(mainIf);
         } else {
             body.addStatement(new IfStatement(
-                    new BooleanExpression(new BinaryExpression(resExpr, notEqualsOp(), NULL_EXPR)),
+                    new BooleanExpression(new BinaryExpression(resExpr, COMPARE_NOT_EQUAL, NULL_EXPR)),
                     new ExpressionStatement(resExpr),
                     new SynchronizedStatement(synchTarget(fieldNode), mainIf)
             ));
@@ -139,15 +169,15 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
     }
 
     private void createSoftSetter(FieldNode fieldNode, ClassNode type) {
-        BlockStatement body = new BlockStatement();
+        final BlockStatement body = new BlockStatement();
         final Expression fieldExpr = new FieldExpression(fieldNode);
         final String name = "set" + MetaClassHelper.capitalize(fieldNode.getName().substring(1));
         final Parameter parameter = new Parameter(type, "value");
         final Expression paramExpr = new VariableExpression(parameter);
         body.addStatement(new IfStatement(
-                new BooleanExpression(new BinaryExpression(paramExpr, notEqualsOp(), NULL_EXPR)),
-                new ExpressionStatement(new BinaryExpression(fieldExpr, equalsOp(), new ConstructorCallExpression(SOFT_REF, paramExpr))),
-                new ExpressionStatement(new BinaryExpression(fieldExpr, equalsOp(), NULL_EXPR))
+                new BooleanExpression(new BinaryExpression(paramExpr, COMPARE_NOT_EQUAL, NULL_EXPR)),
+                new ExpressionStatement(new BinaryExpression(fieldExpr, ASSIGN, new ConstructorCallExpression(SOFT_REF, paramExpr))),
+                new ExpressionStatement(new BinaryExpression(fieldExpr, ASSIGN, NULL_EXPR))
         ));
         int visibility = ACC_PUBLIC;
         if (fieldNode.isStatic()) visibility |= ACC_STATIC;
@@ -158,12 +188,8 @@ public class LazyASTTransformation implements ASTTransformation, Opcodes {
         return fieldNode.isStatic() ? new ClassExpression(fieldNode.getDeclaringClass()) : VariableExpression.THIS_EXPRESSION;
     }
 
-    private static Token equalsOp() {
-        return Token.newSymbol("=", -1, -1);
-    }
-
-    private static Token notEqualsOp() {
-        return Token.newSymbol("!=", -1, -1);
+    private boolean isVolatile(FieldNode fieldNode) {
+        return (fieldNode.getModifiers() & ACC_VOLATILE) == 0;
     }
 
     private Expression getInitExpr(FieldNode fieldNode) {
