@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2008 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ import java.lang.ref.SoftReference
 
 /**
  * @author Alex Tkachman
+ * @author Paul King
  */
 class LazyTransformTest extends GroovyShellTestCase {
 
@@ -95,6 +96,33 @@ class LazyTransformTest extends GroovyShellTestCase {
         assertNull res.@'$list'
         res.op ()
         assertEquals([1,2,3], res.list)
+    }
+
+    void testStatic() {
+        def res = evaluate("""
+              class X {
+                @Lazy static List list = { [1,2,3] } ()
+              }
+              new X ()
+        """)
+
+        assertNull res.@'$list'
+        assert res.list == [1, 2, 3]
+    }
+
+    void testLazyPrimitivePromotedToWrapper() {
+        def res = evaluate("""
+              class X {
+                @Lazy int val1 = 1
+                @Lazy volatile int val2 = 2
+              }
+              new X ()
+        """)
+
+        assertNull res.@'$val1'
+        assertNull res.@'$val2'
+        assert res.val1 == 1
+        assert res.val2 == 2
     }
 
     void testSoft() {
