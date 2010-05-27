@@ -14,8 +14,9 @@ javadoc {
         overview = "src/main/overview.html"
         footer = doc.footer
         source = "1.5"
-        links("http://java.sun.com/j2se/1.5.0/docs/api", "http://www.dpml.net/api/ant/1.7.0",
-                "http://junit.sourceforge.net/junit3.8.1/javadoc/", "http://java.sun.com/j2se/1.4/docs/api", "http://www.antlr2.org/javadoc")
+        links("http://java.sun.com/javase/6/docs/api", "http://www.dpml.net/api/ant/1.7.0",
+                "http://commons.apache.org/cli/api-release", "http://junit.sourceforge.net/junit3.8.1/javadoc",
+                "http://java.sun.com/j2ee/1.4/docs/api", "http://www.antlr2.org/javadoc")
     }
 }
 
@@ -29,10 +30,11 @@ groovydoc {
     overview = file("src/main/overview.html")
     includePrivate = false
     link "http://java.sun.com/j2ee/1.4/docs/api", "javax.servlet.", "javax.management."
-    link "http://java.sun.com/javase/6/docs/api/", "java.", "org.xml.", "javax.", "org.xml."
+    link "http://java.sun.com/javase/6/docs/api", "java.", "org.xml.", "javax.", "org.xml."
     link "http://www.dpml.net/api/ant/1.7.0", "org.apache.ant.", "org.apache.tools.ant."
-    link "http://junit.sourceforge.net/junit3.8.1/javadoc/", "org.junit.", "junit."
-    link "http://www.antlr2.org/javadoc/", "antlr."
+    link "http://junit.sourceforge.net/junit3.8.1/javadoc", "org.junit.", "junit."
+    link "http://www.antlr2.org/javadoc", "antlr."
+    link "http://commons.apache.org/cli/api-release", "org.apache.commons.cli."
 }
 
 task docGDK {
