@@ -10099,7 +10099,7 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
      * @param closure a closure
      * @return the last value returned by the closure
      * @throws java.io.IOException if an error occurs
-     * @see java.util.regex.Pattern#split(java.lang.String)
+     * @see java.util.regex.Pattern#split(java.lang.CharSequence)
      * @since 1.6.8
      */
     public static Object splitEachLine(String self, Pattern pattern, Closure closure) throws IOException {
