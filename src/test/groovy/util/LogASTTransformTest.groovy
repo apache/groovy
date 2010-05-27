@@ -15,7 +15,7 @@ import org.codehaus.groovy.transform.*
  * @author Raffaele Cigni
  * @author Alberto Vilches Raton
  */
-class LogTest extends GroovyTestCase {
+class LogASTTransformTest extends GroovyTestCase {
 
     def logObserver = new LoggingObserver()
 
