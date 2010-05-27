@@ -50,6 +50,7 @@ task docGDK {
                 arg(value: "org.codehaus.groovy.runtime.SwingGroovyMethods")
                 arg(value: "org.codehaus.groovy.runtime.XmlGroovyMethods")
                 arg(value: "org.codehaus.groovy.runtime.EncodingGroovyMethods")
+                arg(value: "org.codehaus.groovy.runtime.DateGroovyMethods")
                 arg(value: "org.codehaus.groovy.runtime.DefaultGroovyStaticMethods")
                 arg(value: "org.codehaus.groovy.vmplugin.v5.PluginDefaultGroovyMethods")
             }
