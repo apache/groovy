@@ -65,17 +65,17 @@
         <dependency>
             <groupId>net.sf.retrotranslator</groupId>
             <artifactId>retrotranslator-transformer</artifactId>
-            <version>1.2.7</version>
+            <version>1.2.9</version>
         </dependency>
         <dependency>
             <groupId>net.sf.retrotranslator</groupId>
             <artifactId>retrotranslator-runtime</artifactId>
-            <version>1.2.7</version>
+            <version>1.2.9</version>
         </dependency>
         <dependency>
             <groupId>biz.aQute</groupId>
             <artifactId>bnd</artifactId>
-            <version>0.0.388</version>
+            <version>0.0.401</version>
         </dependency>
     </dependencies>
     <repositories>
