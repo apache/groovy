@@ -7,7 +7,7 @@ class JavascriptTest extends GroovyTestCase {
         def binding = new Binding()
         binding.x = 10
         binding.y = 5
-        def js = ScriptEngineManager.javascript
+        def js = new ScriptEngineManager().getEngineByName("javascript")
         if (!js) System.err.println("Warning: JavaScript not available on this JVM - test ignored")
         else {
             def eval = js.&eval.rcurry(binding)
