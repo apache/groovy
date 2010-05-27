@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -89,6 +89,10 @@ public class MetaClassRegistryImpl implements MetaClassRegistry{
                 registerMethods(plugin, false, true, map);
             }
             registerMethods(DefaultGroovyStaticMethods.class, false, false, map);
+            Class[] staticPluginDGMs = VMPluginFactory.getPlugin().getPluginStaticGroovyMethods();
+            for (Class plugin : staticPluginDGMs) {
+                registerMethods(plugin, false, false, map);
+            }
 
             for (Map.Entry<CachedClass, List<MetaMethod>> e : map.entrySet()) {
                 CachedClass cls = e.getKey();

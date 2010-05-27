@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2009 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -32,6 +32,7 @@ import org.codehaus.groovy.ast.stmt.ReturnStatement;
  * @author Jochen Theodorou
  */
 public class Java5 implements VMPlugin {
+    private static Class[] EMPTY_CLASS_ARRAY = new Class[0];
     private static final Class[] PLUGIN_DGM = {PluginDefaultGroovyMethods.class};
 
     public void setAdditionalClassInformation(ClassNode cn) {
@@ -164,6 +165,10 @@ public class Java5 implements VMPlugin {
 
     public Class[] getPluginDefaultGroovyMethods() {
         return PLUGIN_DGM;
+    }
+
+    public Class[] getPluginStaticGroovyMethods() {
+        return EMPTY_CLASS_ARRAY;
     }
 
     private void setAnnotationMetaData(Annotation[] annotations, AnnotatedNode an) {

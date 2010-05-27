@@ -26,9 +26,6 @@ import java.util.regex.Matcher;
 import org.codehaus.groovy.runtime.typehandling.DefaultTypeTransformation;
 import org.codehaus.groovy.reflection.ReflectionUtils;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptEngineManager;
-
 /**
  * This class defines all the new static groovy methods which appear on normal
  * JDK classes inside the Groovy environment. Static methods are used with the
@@ -214,19 +211,6 @@ public class DefaultGroovyStaticMethods {
         ClassLoader targetCL = ReflectionUtils.getCallingClass().getClassLoader();
         if (targetCL == null) targetCL = ClassLoader.getSystemClassLoader();
         return ResourceBundle.getBundle(bundleName, locale, targetCL);        
-    }
-
-    /**
-     * Provides a convenient shorthand for accessing a Scripting Engine with name <code>languageShortName</code>
-     * using a newly created <code>ScriptEngineManager</code> instance.
-     *
-     * @param self              Placeholder variable used by Groovy categories; ignored for default static methods
-     * @param languageShortName The short name of the scripting engine of interest
-     * @return the ScriptEngine corresponding to the supplied short name or null if no engine was found
-     */
-    public static ScriptEngine $static_propertyMissing(ScriptEngineManager self, String languageShortName) {
-        ScriptEngineManager manager = new ScriptEngineManager();
-        return manager.getEngineByName(languageShortName);
     }
 
 }

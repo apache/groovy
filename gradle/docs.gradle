@@ -55,6 +55,8 @@ task docGDK {
                 arg(value: "org.codehaus.groovy.runtime.DateGroovyMethods")
                 arg(value: "org.codehaus.groovy.runtime.DefaultGroovyStaticMethods")
                 arg(value: "org.codehaus.groovy.vmplugin.v5.PluginDefaultGroovyMethods")
+                arg(value: "org.codehaus.groovy.vmplugin.v6.PluginDefaultGroovyMethods")
+                arg(value: "org.codehaus.groovy.vmplugin.v6.PluginStaticGroovyMethods")
             }
 //            println "Out: " + ant.properties.edr
 //            println "Err: " + ant.properties.odr

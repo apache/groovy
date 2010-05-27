@@ -13,20 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.codehaus.groovy.vmplugin;
 
-import org.codehaus.groovy.ast.*;
+package org.codehaus.groovy.vmplugin.v7;
+
+import org.codehaus.groovy.vmplugin.v6.Java6;
 
 /**
- * Interface to access VM version based actions.
- * This interface is for internal use only!
- * 
+ * Java 7 based functions. Currently just a stub but you can
+ * add your own methods to your own version and place it on the claspath
+ * ahead of this one.
+ *
  * @author Jochen Theodorou
  */
-public interface VMPlugin {
-    void setAdditionalClassInformation(ClassNode c);
-    Class[] getPluginDefaultGroovyMethods();
-    Class[] getPluginStaticGroovyMethods();
-    void configureAnnotation(AnnotationNode an);
-    void configureClassNode(CompileUnit compileUnit, ClassNode classNode);
+public class Java7 extends Java6 {
 }

@@ -13,20 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package org.codehaus.groovy.vmplugin;
 
-import org.codehaus.groovy.ast.*;
+package org.codehaus.groovy.vmplugin.v6;
+
+import org.codehaus.groovy.vmplugin.v5.Java5;
 
 /**
- * Interface to access VM version based actions.
- * This interface is for internal use only!
- * 
+ * Java 6 based functions
+ *
  * @author Jochen Theodorou
  */
-public interface VMPlugin {
-    void setAdditionalClassInformation(ClassNode c);
-    Class[] getPluginDefaultGroovyMethods();
-    Class[] getPluginStaticGroovyMethods();
-    void configureAnnotation(AnnotationNode an);
-    void configureClassNode(CompileUnit compileUnit, ClassNode classNode);
+public class Java6 extends Java5 {
+    private static final Class[] PLUGIN_DGM = {PluginDefaultGroovyMethods.class,
+            org.codehaus.groovy.vmplugin.v5.PluginDefaultGroovyMethods.class};
+    private static final Class[] STATIC_PLUGIN_DGM = {PluginStaticGroovyMethods.class};
+
+    public Class[] getPluginDefaultGroovyMethods() {
+        return PLUGIN_DGM;
+    }
+
+    public Class[] getPluginStaticGroovyMethods() {
+        return STATIC_PLUGIN_DGM;
+    }
+
 }
+

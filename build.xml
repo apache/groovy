@@ -790,6 +790,8 @@ $Date$
             <arg value="org.codehaus.groovy.runtime.DateGroovyMethods"/>
             <arg value="org.codehaus.groovy.runtime.DefaultGroovyStaticMethods"/>
             <arg value="org.codehaus.groovy.vmplugin.v5.PluginDefaultGroovyMethods"/>
+            <arg value="org.codehaus.groovy.vmplugin.v6.PluginDefaultGroovyMethods"/>
+            <arg value="org.codehaus.groovy.vmplugin.v6.PluginStaticGroovyMethods"/>
         </java>
         <copy todir="target/html/groovy-jdk" file="src/tools/org/codehaus/groovy/tools/groovy.ico"/>
         <copy todir="target/html/groovy-jdk" file="src/tools/org/codehaus/groovy/tools/stylesheet.css"/>

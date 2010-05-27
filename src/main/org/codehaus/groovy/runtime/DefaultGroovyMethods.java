@@ -36,8 +36,6 @@ import org.codehaus.groovy.runtime.typehandling.GroovyCastException;
 import org.codehaus.groovy.runtime.typehandling.NumberMath;
 import org.codehaus.groovy.tools.RootLoader;
 
-import javax.script.ScriptEngine;
-import javax.script.ScriptContext;
 import java.io.*;
 import java.lang.reflect.Array;
 import java.lang.reflect.Field;
@@ -7839,56 +7837,6 @@ public class DefaultGroovyMethods extends DefaultGroovyMethodsSupport {
             buffer.setCharAt(buffer.length() - 1, next);
         }
         return buffer.toString();
-    }
-
-    /**
-     * Executes the specified script.  The default <code>ScriptContext</code> for the <code>ScriptEngine</code>
-     * is used. Variables from a Groovy <code>Binding</code> are made available in the default scope of the
-     * <code>Bindings</code> of the <code>ScriptEngine</code>. Resulting variables in the <code>Bindings</code>
-     * are returned back to the Groovy <code>Binding</code>.
-     *
-     * @param script The script language source to be executed
-     * @return The value returned from the execution of the script (if supported by the Script engine)
-     * @throws javax.script.ScriptException if error occurrs in script
-     * @throws NullPointerException if the argument is null
-     */
-    public static Object eval(ScriptEngine self, String script, Binding binding) throws javax.script.ScriptException {
-        storeBindingVars(self, binding);
-        Object result = self.eval(script);
-        retrieveBindingVars(self, binding);
-        return result;
-    }
-
-    /**
-     * Same as <code>eval(ScriptEngine, Reader, Binding)</code> except that the
-     * source of the script is provided as a <code>Reader</code>
-     *
-     * @param reader The source of the script
-     * @return The value returned by the script
-     * @throws javax.script.ScriptException if an error occurs in script
-     * @throws NullPointerException if the argument is null
-     * @see #eval(ScriptEngine, Reader, Binding)
-     */
-    public static Object eval(ScriptEngine self, Reader reader, Binding binding) throws javax.script.ScriptException {
-        storeBindingVars(self, binding);
-        Object result = self.eval(reader);
-        retrieveBindingVars(self, binding);
-        return result;
-    }
-
-    private static void retrieveBindingVars(ScriptEngine self, Binding binding) {
-        Set<Map.Entry<String, Object>> returnVars = self.getBindings(ScriptContext.ENGINE_SCOPE).entrySet();
-        for (Map.Entry<String, Object> me : returnVars) {
-            binding.setVariable(me.getKey(), me.getValue());
-        }
-    }
-
-    @SuppressWarnings("unchecked")
-    private static void storeBindingVars(ScriptEngine self, Binding binding) {
-        Set<Map.Entry> vars = binding.getVariables().entrySet();
-        for (Map.Entry me : vars) {
-            self.put(me.getKey().toString(), me.getValue());
-        }
     }
 
     /**

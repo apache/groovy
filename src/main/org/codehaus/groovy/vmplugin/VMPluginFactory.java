@@ -1,5 +1,5 @@
 /*
- * Copyright 2003-2007 the original author or authors.
+ * Copyright 2003-2010 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,14 +27,40 @@ public class VMPluginFactory {
     
     private static final String JDK5_CLASSNAME_CHECK = "java.lang.annotation.Annotation";
     private static final String JDK5_PLUGIN_NAME = "org.codehaus.groovy.vmplugin.v5.Java5";
+    private static final String JDK6_CLASSNAME_CHECK = "javax.script.ScriptEngine";
+    private static final String JDK6_PLUGIN_NAME = "org.codehaus.groovy.vmplugin.v6.Java6";
+    private static final String JDK7_CLASSNAME_CHECK = "java.nio.file.FileRef";
+    private static final String JDK7_PLUGIN_NAME = "org.codehaus.groovy.vmplugin.v7.Java7";
     private static VMPlugin plugin;
     static {
         try {
+            // v6 plugin is the same as v5 but with some scripting stuff
+            // so check below is good enough for now (can be true for JVM 5)
             ClassLoader loader = VMPluginFactory.class.getClassLoader();
-            loader.loadClass(JDK5_CLASSNAME_CHECK);
-            plugin = (VMPlugin) loader.loadClass(JDK5_PLUGIN_NAME).newInstance();
+            loader.loadClass(JDK7_CLASSNAME_CHECK);
+            plugin = (VMPlugin) loader.loadClass(JDK7_PLUGIN_NAME).newInstance();
         } catch(Exception ex) {
-            plugin = new Java4();
+            /* ignore */
+        }
+        if (plugin == null) {
+            try {
+                // v6 plugin is the same as v5 but with some scripting stuff
+                // so check below is good enough for now (can be true for JVM 5)
+                ClassLoader loader = VMPluginFactory.class.getClassLoader();
+                loader.loadClass(JDK6_CLASSNAME_CHECK);
+                plugin = (VMPlugin) loader.loadClass(JDK6_PLUGIN_NAME).newInstance();
+            } catch (Exception ex) {
+                /* ignore */
+            }
+        }
+        if (plugin == null) {
+            try {
+                ClassLoader loader = VMPluginFactory.class.getClassLoader();
+                loader.loadClass(JDK5_CLASSNAME_CHECK);
+                plugin = (VMPlugin) loader.loadClass(JDK5_PLUGIN_NAME).newInstance();
+            } catch(Exception ex) {
+                plugin = new Java4();
+            }
         }
     }
     
